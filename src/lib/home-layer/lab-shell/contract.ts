@@ -48,6 +48,21 @@ import type { LabScope, LabViewState } from "./lab-url";
  * HOME_EXPERIENCE §10.1, verbatim, plus `ready` for the ordinary case. One
  * name per state, used in copy, in announcements and in test fixtures. No
  * surface invents a synonym.
+ *
+ * THREE ABSENCES, THREE STATES, and they may never be collapsed into one.
+ *
+ *   `unavailable`  the read was attempted and did not come back.
+ *   `empty`        the read came back, the reader is authorized, and there is
+ *                  genuinely nothing in it.
+ *   `first-run`    there is nothing to read yet, because the reader has no
+ *                  Project. Nothing was attempted and nothing failed.
+ *
+ * `first-run` was added 2026-08-13 after two blind panels found every
+ * direction rendering a person's first ever screen as a failed read, because
+ * the shell resolved a reader with no Project to `unavailable`. That is this
+ * programme's own governing rule pointed the wrong way: it renders NOT YET as
+ * BROKEN, which is exactly as untruthful as rendering a broken read as a calm
+ * day. HOME_EXPERIENCE §10.3 and D-HX11 govern.
  */
 export type HomeStateName =
   | "ready"
@@ -61,6 +76,7 @@ export type HomeStateName =
   | "unavailable"
   | "archived"
   | "empty"
+  | "first-run"
   | "failed"
   | "offline"
   | "all-clear";
@@ -120,6 +136,50 @@ export type RowAction = Readonly<{
   href: string | null;
   /** True when the action reaches a source that must confirm before success. */
   needsSourceConfirmation: boolean;
+}>;
+
+// ── The first screen ────────────────────────────────────────────────────────
+
+/**
+ * The one move a first screen owes its reader.
+ *
+ * `href` is a real production route rather than a shown path. Everywhere else
+ * in this contract a production route travels as `sourcePath` and is rendered
+ * but never followed, because the lab does not leave the lab. This is the
+ * exception, and the reason is the finding: a reader with no Project has
+ * nowhere to go inside Home, so a path they cannot follow is not an action, it
+ * is a caption. Work lives in a Project and Projects are made in Tasks, so the
+ * link leaves.
+ */
+export type FirstRunAction = Readonly<{
+  id: string;
+  label: string;
+  href: string;
+}>;
+
+/**
+ * WHAT A PERSON'S FIRST EVER SCREEN CARRIES, composed once, here.
+ *
+ * Present exactly when the reader has no Project at all. Every mode is in
+ * `first-run` in that world, so every mode has this to render and none of the
+ * four directions has to improvise a welcome around a shell that told it the
+ * read had failed.
+ *
+ * A direction still owns everything that matters about it: where it sits, how
+ * much of the page it takes, whether it is the whole screen or a section
+ * inside one, and what the rest of the mode does around it. What it may not do
+ * is drop it. A first screen with no action on it is a dead end, however
+ * accurately the dead end is labelled.
+ */
+export type FirstRunView = Readonly<{
+  /** The section heading, for a direction that gives this its own region. */
+  heading: string;
+  /** One sentence naming what is missing. Never a failure sentence. */
+  line: string;
+  /** One sentence saying what to do about it. */
+  nextLine: string;
+  /** Never empty. There is always at least one real move. */
+  actions: readonly FirstRunAction[];
 }>;
 
 // ── Today ───────────────────────────────────────────────────────────────────
@@ -565,6 +625,13 @@ export type HomeCandidateProps = Readonly<{
   state: LabViewState;
   /** Which world is on screen, and what it exists to prove. */
   world: Readonly<{ id: ScenarioId; label: string; proves: string }>;
+  /**
+   * Non-null exactly when the reader has no Project, which is the one world in
+   * thirteen where every mode is in `first-run`. Null everywhere else, so a
+   * direction reads it as the fact it is rather than testing a state name in
+   * five places.
+   */
+  firstRun: FirstRunView | null;
   chrome: HomeChrome;
   today: TodayView;
   inbox: InboxView;

@@ -1,76 +1,77 @@
-﻿/*
- * Context Rail · the direction's expression. Rationale lives in the TSX docs;
- * this file records only what a reader of the CSS cannot infer.
+/*
+ * MERIDIAN · the direction's expression.
  *
- * THE STATE SPINE, one rule down the navigation, one segment per mode:
- *   read     1px solid  ink-faint       continuous
- *   empty    1px dotted ink-faint       looked at, holding nothing
- *   limited  2px dashed status-flight   read in part
- *   broken   3px solid  status-blocked  severed above and below
- * Weight and pattern carry it, colour is redundant, and the word is printed
- * under every mode in every world. The same four weights grade the notices in
- * the page. Below 1024 the instrument rotates through 90 degrees.
+ * Rationale lives in the TSX doc comments. This file records only what a reader
+ * of the CSS cannot infer from it.
  *
- * No tint, no filled row, no bordered card, no button. Every token is
- * vendored; nothing is redefined; no arbitrary type size is introduced.
- *
- * BANDS  1440+ rail 15rem measure 46rem, shell capped 80rem and centred ·
- * 1280 rail 14rem measure 44rem, Inbox splits only with an event open ·
- * 1024 rail 12.5rem measure 40rem, no split · below 1024 the rail is a
- * four-mode bar and the suite moves to the foot of the page.
- *
- * Motion is transform and opacity only, under the 300ms ceiling, inside a
+ * THE TWO RULES are the only full-bleed elements in the direction. They break
+ * out of the page's padding with a negative inline margin and put it back as
+ * padding, so the line runs edge to edge while its labels stay on the measure.
+ * On arrival each one draws itself once, left to right, transform only, 200ms
+ * and 260ms — both under the 300ms ceiling, and both inside a
  * `prefers-reduced-motion: no-preference` block.
+ *
+ * THE MATERIAL OF THE READ. `[data-band]` on the notice under the meridian is
+ * the direction's state language, and it is carried by three things at once:
+ *   read     nothing is drawn at all
+ *   waiting  nothing is drawn at all
+ *   partial  a block, two hairlines, the sentence at heading size
+ *   broken   the same block on RULED ground, which is time Home could not see
+ *            into, and which survives forced colours as a real border pattern
+ * The state's own word is printed under every mode name in every world, so
+ * nothing here is state carried by colour alone.
+ *
+ * THE GUTTER is the axis: one right-aligned mono column of the shell's own
+ * temporal sentences, 10rem from 1024 up, 8rem from 640, and below 640 it
+ * rotates into a dateline above each entry. That rotation is the mobile
+ * transformation, and it is why the phone keeps the whole argument.
+ *
+ * BANDS  ≥1200 two columns, stream 56rem and the read 22rem · 1024–1199 two
+ * columns, narrower · 640–1023 one column, the read after the stream · <640 the
+ * gutter rotates and the suite line wraps.
+ *
+ * Every colour, size, space and duration is a vendored token. There is not a
+ * hex value, an arbitrary px font size or a redefined token in this file.
  */
 
 /* ── Frame ───────────────────────────────────────────────────────────────── */
 
-.rl-root {
+.mr-root {
   font-family: var(--font-sans);
   font-size: var(--text-body);
   line-height: var(--leading-body);
   color: var(--ink);
-  overflow-wrap: break-word;
   background: var(--paper);
+  overflow-wrap: break-word;
 }
 
-.rl-shell {
-  --rl-rail: 15rem;
-  --rl-pad-x: var(--space-10);
-  --rl-pad-y: var(--space-9);
-  --rl-measure: 46rem;
-  --rl-shell-max: 80rem;
+.mr-page {
+  --mr-pad: var(--space-10);
+  --mr-gutter: 10rem;
+  --mr-stream: 56rem;
+  --mr-record: 22rem;
 
-  display: grid;
-  grid-template-columns: var(--rl-rail) minmax(0, 1fr);
-  min-height: 100svh;
-  max-width: var(--rl-shell-max);
+  max-width: 90rem;
   margin-inline: auto;
-  /* One hairline down the column edge, painted on the shell so it runs the
-     full height of the page rather than stopping where the rail's own content
-     stops. There is no tint behind it. */
-  background: linear-gradient(
-    to right,
-    transparent 0 calc(var(--rl-rail) - 1px),
-    var(--hairline) calc(var(--rl-rail) - 1px) var(--rl-rail),
-    transparent var(--rl-rail)
-  );
+  padding-inline: var(--mr-pad);
+  padding-block: var(--space-6) var(--space-12);
+  min-height: 100svh;
 }
 
-.rl-root :focus-visible {
+.mr-root :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.rl-root a:focus-visible,
-.rl-root summary:focus-visible,
-.rl-root [tabindex]:focus-visible {
+.mr-root a:focus-visible,
+.mr-root summary:focus-visible,
+.mr-root [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
-.rl-sr {
+.mr-sr {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -82,1924 +83,1331 @@
   border: 0;
 }
 
-.rl-skip {
+.mr-skip {
   position: fixed;
   top: var(--space-3);
   left: var(--space-3);
   z-index: 40;
   padding: var(--space-3) var(--space-4);
   background: var(--accent);
-  color: #ffffff;
+  color: var(--zinc-50);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
   text-decoration: none;
-  transform: translateY(calc(-100% - var(--space-4)));
+  transform: translateY(calc(-100% - var(--space-6)));
 }
 
-.rl-skip:focus {
+.mr-skip:focus {
   transform: none;
 }
 
-/* ── The rail ────────────────────────────────────────────────────────────── */
+/* ── The suite line ──────────────────────────────────────────────────────── */
 
-.rl-rail {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: start;
-  position: sticky;
-  top: 0;
+.mr-suite {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-7);
-  /* Always leaves room for the suite, which rides the bottom of the same
-     column, so the two can never meet on a short window. */
-  max-height: calc(100svh - 13rem);
-  overflow-y: auto;
-  padding: var(--space-8) var(--space-6) var(--space-6);
-  font-size: var(--text-body-sm);
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-4) var(--space-7);
+  padding-block-end: var(--space-5);
+  border-block-end: 1px solid var(--hairline-soft);
 }
 
-.rl-label {
-  margin: 0 0 var(--space-3);
+.mr-wordmark {
+  margin: 0;
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink);
 }
 
-.rl-nav-list,
-.rl-subnav,
-.rl-scope-list,
-.rl-product-list {
-  list-style: none;
+.mr-suite-nav {
+  flex: 1 1 auto;
+}
+
+.mr-suite-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
   margin: 0;
   padding: 0;
+  list-style: none;
 }
 
-/* The spine. One segment per mode, no gaps between segments, so on a fully
-   answered day it is a single unbroken line. */
-.rl-mode {
-  position: relative;
-  padding-left: var(--space-4);
-}
-
-.rl-mode::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  border-left: 1px solid var(--ink-faint);
-}
-
-/* THE LADDER, stated once and used by the spine, by the status line and by
-   every notice in the page, so the shell and the content grade a state in the
-   same vocabulary. */
-.rl-mode[data-band="empty"]::before,
-.rl-status[data-band="empty"],
-.rl-notice[data-band="empty"] {
-  border-left-style: dotted;
-}
-
-.rl-mode[data-band="limited"]::before,
-.rl-status[data-band="limited"],
-.rl-notice[data-band="limited"] {
-  border-left-width: 2px;
-  border-left-style: dashed;
-  border-left-color: var(--status-flight);
-}
-
-.rl-mode[data-band="broken"]::before,
-.rl-status[data-band="broken"],
-.rl-notice[data-band="broken"] {
-  border-left-width: 3px;
-  border-left-color: var(--status-blocked);
-}
-
-/* The one state that cuts the line. The gap is the signal. */
-.rl-mode[data-band="broken"]::before {
-  top: 7px;
-  bottom: 7px;
-}
-
-.rl-nav-link {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
+.mr-suite-link {
+  display: inline-block;
+  padding-block: var(--space-2);
+  font-size: var(--text-body-sm);
   color: var(--ink-soft);
   text-decoration: none;
 }
 
-.rl-nav-link:hover .rl-nav-name {
+.mr-suite-link:hover {
+  color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--accent);
   text-underline-offset: 3px;
 }
 
-/* Where you are standing: a tick across the spine, and the label at full ink.
-   No fill, no pill, no tinted row. */
-.rl-mode[data-here] > .rl-nav-link::before {
-  content: "";
-  position: absolute;
-  left: calc((var(--space-4) + var(--space-3) + 7px) * -1);
-  top: calc(50% - 1px);
-  width: 16px;
-  height: 2px;
-  background: var(--accent);
-}
-
-.rl-mode[data-here] > .rl-nav-link .rl-nav-name {
+/* Where you are in the suite, marked by ink and a rule rather than by hue. */
+.mr-suite-link[aria-current] {
   color: var(--ink);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
+  box-shadow: inset 0 -2px 0 0 var(--ink);
 }
 
-.rl-nav-label {
+.mr-actor {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.rl-nav-name {
-  font-size: var(--text-body-sm);
-}
-
-.rl-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 6px;
-  border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: #ffffff;
-  font-size: var(--text-label);
-  font-weight: var(--weight-medium);
-  font-variant-numeric: tabular-nums;
-}
-
-/* A count that could not be checked in full does not get to look settled. */
-.rl-badge[data-coverage="partial"],
-.rl-badge[data-coverage="unavailable"] {
-  background: transparent;
-  color: var(--ink);
-  border: 1px dashed var(--status-flight);
-}
-
-/*
- * The state word, printed under every mode in every world, including the good
- * one. Silence used to stand for "read", which meant a reader could not tell a
- * mode that was read from a mode that was never evaluated.
- */
-.rl-mode-state {
-  display: block;
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-soft);
-}
-
-.rl-mode[data-band="broken"] .rl-mode-state {
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
-
-.rl-subnav {
-  margin-left: var(--space-5);
-}
-
-.rl-nav-sub {
-  position: relative;
-  min-height: 44px;
-  font-size: var(--text-caption);
-}
-
-/* Depth, drawn. Today keeps the subtree match and its tick; the briefing is
-   the exact page and gets a tick of its own, indented under its parent. Both
-   are marked at once, which is the two-level model rather than a description
-   of it. */
-.rl-nav-sub[aria-current="page"] {
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
-
-.rl-nav-sub[aria-current="page"]::before {
-  content: "";
-  position: absolute;
-  left: calc((var(--space-3) + 7px) * -1);
-  top: calc(50% - 1px);
-  width: 12px;
-  height: 2px;
-  background: var(--accent);
-}
-
-/* ── Read Scope ──────────────────────────────────────────────────────────── */
-
-.rl-scope-summary {
-  display: block;
-  list-style: none;
-  min-height: 44px;
-  padding: var(--space-2) 0;
-  cursor: pointer;
-}
-
-.rl-scope-summary::-webkit-details-marker {
-  display: none;
-}
-
-.rl-scope-value {
-  display: block;
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
-
-.rl-scope-value::after {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-left: var(--space-2);
-  border-right: 1.5px solid var(--ink-faint);
-  border-bottom: 1.5px solid var(--ink-faint);
-  transform: translateY(-2px) rotate(45deg);
-  transition: transform var(--motion-fast) var(--ease-out);
-}
-
-.rl-scope[open] .rl-scope-value::after {
-  transform: translateY(1px) rotate(-135deg);
-}
-
-.rl-scope-body {
-  padding: var(--space-2) 0 0;
-}
-
-.rl-scope-help,
-.rl-scope-coverage,
-.rl-active {
-  margin: 0 0 var(--space-3);
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-soft);
-}
-
-.rl-active {
-  margin: var(--space-3) 0 0;
-}
-
-.rl-scope-projects {
-  max-height: 12rem;
-  overflow-y: auto;
-}
-
-.rl-scope-option {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border-left: 1px solid var(--hairline);
-  color: var(--ink-soft);
-  text-decoration: none;
-}
-
-.rl-scope-option:hover {
-  color: var(--ink);
-  text-decoration: underline;
-}
-
-.rl-scope-option[aria-current] {
-  border-left: 2px solid var(--accent);
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
-
-.rl-scope-reset {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--accent);
-  font-size: var(--text-caption);
-}
-
-/* ── The read status, always on screen ───────────────────────────────────── */
-
-.rl-status {
-  display: block;
-  padding-left: var(--space-4);
-  border-left: 1px solid var(--ink-faint);
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-soft);
-}
-
-.rl-status-state {
-  display: block;
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
-
-.rl-status-when {
-  display: block;
-}
-
-/* ── The suite, as a colophon ────────────────────────────────────────────── */
-
-.rl-suite {
-  grid-column: 1;
-  grid-row: 1;
-  align-self: end;
-  position: sticky;
-  bottom: 0;
-  padding: var(--space-6);
-  border-top: 1px solid var(--hairline);
-  background: var(--paper);
-  font-size: var(--text-body-sm);
-}
-
-.rl-nav-product {
-  min-height: 44px;
-  padding: var(--space-1) 0;
-}
-
-.rl-actor {
-  margin-top: var(--space-4);
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-soft);
-}
-
-.rl-actor-name {
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
   margin: 0;
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
-
-.rl-actor-role {
-  margin: 0;
-}
-
-.rl-account {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--accent);
-  text-decoration: none;
-}
-
-.rl-account:hover {
-  text-decoration: underline;
-}
-
-.rl-wordmark {
-  margin: var(--space-4) 0 0;
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--hairline-soft);
-  font-size: var(--text-label);
-  font-family: var(--font-mono);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
+  font-size: var(--text-caption);
   color: var(--ink-faint);
 }
 
-/* ── The page ────────────────────────────────────────────────────────────── */
-
-.rl-main {
-  grid-column: 2;
-  grid-row: 1;
-  min-width: 0;
-  padding: var(--rl-pad-y) var(--rl-pad-x) var(--space-11);
+.mr-actor-name {
+  color: var(--ink-soft);
 }
 
-.rl-page > * {
-  max-width: var(--rl-measure);
-}
-
-/* The one place the measure widens, and it earns it by being tabular. */
-.rl-page .rl-block-wide,
-.rl-page .rl-inbox[data-selected] {
-  max-width: none;
-}
-
-/* My work is set narrower than the other modes so the lateness and the title
-   it belongs to stay pairable by eye, and every element on the page shares the
-   one right edge. */
-.rl-page[data-mode="my-work"] > * {
-  max-width: 40rem;
+.mr-account-link {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ── Masthead ────────────────────────────────────────────────────────────── */
 
-.rl-masthead {
-  margin-bottom: var(--space-7);
+.mr-masthead {
+  padding-block: var(--space-7) var(--space-5);
+  max-width: 46rem;
 }
 
-.rl-h1 {
+.mr-h1 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
   margin: 0;
 }
 
-.rl-h1-eyebrow {
-  display: block;
-  margin-bottom: var(--space-2);
+.mr-h1-eyebrow {
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--ink-faint);
 }
 
-.rl-h1-line {
-  display: block;
+.mr-h1-line {
   font-size: var(--text-section);
   line-height: var(--leading-section);
   letter-spacing: var(--tracking-section);
   font-weight: var(--weight-semibold);
-  text-wrap: balance;
+  color: var(--ink);
 }
 
-.rl-lead {
+.mr-lead {
   margin: var(--space-4) 0 0;
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
   color: var(--ink-soft);
 }
 
-.rl-return {
-  display: inline-flex;
-  align-items: center;
+/* ── The four modes ──────────────────────────────────────────────────────── */
+
+.mr-modes {
+  padding-block-end: var(--space-4);
+}
+
+.mr-mode-list,
+.mr-submode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-7);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mr-submode {
+  margin-block-start: var(--space-3);
+}
+
+.mr-mode-link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   min-height: 44px;
-  margin-top: var(--space-3);
-  color: var(--accent);
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
+  padding-block: var(--space-2);
   text-decoration: none;
 }
 
-.rl-return::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  margin-right: var(--space-2);
-  border-left: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg);
-}
-
-.rl-return:hover {
-  text-decoration: underline;
-}
-
-/* ── Notices, graded by state and never by subject ───────────────────────── */
-
-.rl-notices {
-  margin-bottom: var(--space-7);
-}
-
-.rl-notice-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-3);
-}
-
-.rl-notice {
-  margin: 0;
-  padding: 0 0 0 var(--space-4);
-  border-left: 1px solid var(--ink-faint);
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
+.mr-mode-name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
   color: var(--ink-soft);
 }
 
-/* The worst state is also the loudest words on the page. It used to be the
-   calmest, because the rule in front of it was chosen by subject rather than
-   by severity. */
-.rl-notice[data-band="broken"] {
+.mr-mode-link:hover .mr-mode-name {
+  color: var(--ink);
+}
+
+.mr-mode-link[aria-current] .mr-mode-name {
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+
+.mr-mode-state {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* The read of a mode you are not standing in, marked before you click it. The
+   word is always printed; the rule is the redundant second carrier. */
+.mr-mode[data-band="partial"] .mr-mode-state {
+  color: var(--ink-soft);
+  box-shadow: inset 2px 0 0 0 var(--status-flight);
+  padding-inline-start: var(--space-2);
+}
+
+.mr-mode[data-band="broken"] .mr-mode-state {
+  color: var(--ink);
+  box-shadow: inset 3px 0 0 0 var(--status-blocked);
+  padding-inline-start: var(--space-2);
+}
+
+.mr-mode[data-band="waiting"] .mr-mode-state {
+  box-shadow: inset 2px 0 0 0 var(--ink-ghost);
+  padding-inline-start: var(--space-2);
+}
+
+.mr-badge {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--ink);
+}
+
+.mr-mode-sub {
+  padding-inline-start: var(--space-4);
+  border-inline-start: 1px solid var(--hairline);
+}
+
+/* ── Controls ────────────────────────────────────────────────────────────── */
+
+.mr-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  padding-block-end: var(--space-4);
+}
+
+.mr-scope {
+  max-width: 32rem;
+}
+
+.mr-scope-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding-block: var(--space-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.mr-scope-summary::-webkit-details-marker {
+  display: none;
+}
+
+.mr-scope-verb {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.mr-scope-value {
+  font-size: var(--text-body);
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--ink-ghost);
+}
+
+.mr-scope-body {
+  padding-block: var(--space-4);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.mr-scope-help,
+.mr-scope-coverage {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.mr-scope-list {
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.mr-scope-option {
+  display: block;
+  min-height: 44px;
+  padding-block: var(--space-3);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-block-end: 1px solid var(--hairline-soft);
+}
+
+.mr-scope-option:hover {
+  color: var(--ink);
+}
+
+.mr-scope-option[aria-current] {
   color: var(--ink);
   font-weight: var(--weight-medium);
 }
 
-.rl-notice-single {
-  margin-bottom: var(--space-6);
-}
-
-/* A fact that qualifies the list without limiting it carries no rule, so the
-   count of real limits is legible without reading a sentence. */
-.rl-notice-plain {
-  padding-left: var(--space-4);
+.mr-scope-reset {
+  display: inline-block;
   font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
-  color: var(--ink-soft);
+  color: var(--accent);
 }
 
-/* ── What was never connected ────────────────────────────────────────────── */
-
-.rl-unsupported {
-  margin-bottom: var(--space-7);
-}
-
-.rl-unsupported-list {
+.mr-status {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: var(--space-2);
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
+  padding-block: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.mr-status[data-band="partial"] {
   color: var(--ink-soft);
+  box-shadow: inset 0 -2px 0 0 var(--status-flight);
 }
 
-/* ── Blocks and headings ─────────────────────────────────────────────────── */
-
-.rl-block {
-  margin-bottom: var(--space-9);
+.mr-status[data-band="broken"] {
+  color: var(--ink);
+  box-shadow: inset 0 -3px 0 0 var(--status-blocked);
 }
 
-.rl-block-foot {
-  margin-top: var(--space-9);
-}
+/* ── THE MERIDIAN AND THE HORIZON ────────────────────────────────────────── */
 
-.rl-h2 {
+.mr-meridian,
+.mr-horizon {
+  position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--space-3);
-  margin: 0 0 var(--space-5);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--hairline);
-  font-size: var(--text-heading);
-  line-height: var(--leading-heading);
-  letter-spacing: var(--tracking-heading);
-  font-weight: var(--weight-semibold);
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin: 0;
+  margin-inline: calc(-1 * var(--mr-pad));
+  padding-inline: var(--mr-pad);
 }
 
-/* The day's decisions are the one section the eye should find first. */
-.rl-block-signal .rl-h2 {
-  border-bottom-color: var(--accent);
+.mr-meridian {
+  padding-block: var(--space-3) var(--space-6);
 }
 
-.rl-h2-count {
+.mr-horizon {
+  padding-block: var(--space-5) var(--space-4);
+}
+
+/* The rules themselves, drawn as pseudo-elements so the entrance can scale a
+   line without moving a word. */
+.mr-meridian::before,
+.mr-horizon::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: left center;
+}
+
+.mr-meridian::before {
+  inset-block-start: 0;
+}
+
+.mr-horizon::before {
+  inset-block-start: 0;
+  height: 1px;
+  background: var(--ink-faint);
+}
+
+.mr-meridian-mark,
+.mr-horizon-mark {
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+  color: var(--ink);
 }
 
-.rl-group-note,
-.rl-window,
-.rl-ledger-coverage,
-.rl-cover-line {
-  margin: calc(var(--space-3) * -1) 0 var(--space-5);
+.mr-horizon-mark {
+  color: var(--ink-faint);
+}
+
+.mr-meridian-when,
+.mr-horizon-line {
   font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
-  color: var(--ink-soft);
+  color: var(--ink-faint);
 }
 
-.rl-window {
-  margin: 0 0 var(--space-6);
+/* ── The field between the rules ─────────────────────────────────────────── */
+
+.mr-field {
+  position: relative;
+  min-height: 21rem;
 }
 
-.rl-cover-line {
-  margin: 0 0 var(--space-3);
+.mr-columns {
+  display: grid;
+  grid-template-columns: minmax(0, var(--mr-stream)) minmax(0, var(--mr-record));
+  justify-content: space-between;
+  gap: var(--space-10);
 }
 
-.rl-empty {
+.mr-stream {
+  min-width: 0;
+}
+
+/* THE ONE THING THAT BREAKS THE MEASURE. */
+.mr-wide {
+  margin-block-start: var(--space-10);
+  padding-block-start: var(--space-7);
+  border-block-start: 1px solid var(--hairline);
+}
+
+/* ── The read that did not finish ────────────────────────────────────────── */
+
+.mr-read-notice {
+  margin: 0 0 var(--space-8);
+  padding-block: var(--space-5);
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  border-block: 1px solid var(--ink-ghost);
+  max-width: 46rem;
+}
+
+.mr-read-notice[data-band="partial"] {
+  box-shadow: inset 0 3px 0 0 var(--status-flight);
+}
+
+/*
+ * A SOURCE THAT DID NOT ANSWER CHANGES THE PAPER.
+ *
+ * The time is still there and Home could not see into it, so the ground under
+ * the whole notice is ruled. It is a repeating gradient, so it costs nothing
+ * and cannot be mistaken for content; the sentence sits over it on its own
+ * paper so nothing is ever read through a line. Forced colours drop the
+ * gradient and keep the heavy border, and the words say it either way.
+ */
+.mr-read-notice[data-band="broken"] {
+  padding: 0;
+  border-block: 3px solid var(--status-blocked);
+  max-width: none;
+}
+
+/*
+ * The ruled ground is drawn ABOVE AND BELOW the sentence rather than behind it.
+ * Behind it, the leading between two wrapped lines shows a rule through the
+ * type at narrow widths, which is a legibility fault dressed as an idea. In
+ * bands it is unambiguous: two stretches of time Home could not see into, with
+ * the reason set on clean paper between them.
+ */
+.mr-read-notice[data-band="broken"]::before,
+.mr-read-notice[data-band="broken"]::after {
+  content: "";
+  display: block;
+  height: var(--space-9);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--hairline) 0 1px,
+    transparent 1px 12px
+  );
+}
+
+.mr-read-notice[data-band="broken"] .mr-read-notice-text {
+  display: block;
+  padding-block: var(--space-5);
+}
+
+/* ── Bands, entries and the time gutter ──────────────────────────────────── */
+
+.mr-band {
+  margin-block-end: var(--space-9);
+}
+
+.mr-h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.mr-band-note {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.mr-entries {
   margin: 0;
-  padding: var(--space-5) 0;
-  font-size: var(--text-body-lg);
-  color: var(--ink-soft);
+  padding: 0;
+  list-style: none;
 }
 
-.rl-inline-link {
-  color: var(--accent);
+.mr-entries-nested {
+  margin-block-start: var(--space-4);
+}
+
+.mr-entry {
+  display: grid;
+  grid-template-columns: var(--mr-gutter) minmax(0, 44rem);
+  column-gap: var(--space-6);
+  padding-block: var(--space-5);
+  border-block-start: 1px solid var(--hairline-soft);
+}
+
+.mr-entry:first-child {
+  border-block-start: 0;
+}
+
+/*
+ * THE AXIS. One right-aligned mono column, and the only place a time appears.
+ * Tabular figures so the column aligns on the digit rather than on the glyph.
+ */
+.mr-time {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: var(--leading-body);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  text-align: right;
+  text-wrap: balance;
+}
+
+/* Lateness is a mark, never red running text. The words already say it. */
+.mr-entry[data-overdue="yes"] .mr-time {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+  padding-inline-end: var(--space-3);
+  border-inline-end: 3px solid var(--status-blocked);
+}
+
+.mr-entry[data-selected="yes"] {
+  box-shadow: inset 3px 0 0 0 var(--accent);
+  padding-inline-start: var(--space-4);
+  margin-inline-start: calc(-1 * var(--space-4));
+}
+
+.mr-body {
+  min-width: 0;
+}
+
+.mr-title {
+  display: block;
+  margin: 0;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-heading);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
   text-decoration: none;
 }
 
-.rl-inline-link:hover {
+.mr-title-link:hover {
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
-/* ── Metadata ────────────────────────────────────────────────────────────── */
+.mr-kind {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
 
-.rl-meta {
+.mr-why {
   margin: var(--space-2) 0 0;
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
+  font-size: var(--text-body);
   color: var(--ink-soft);
 }
 
-.rl-sep {
-  margin: 0 var(--space-2);
+.mr-meta {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.mr-sep {
+  padding-inline: var(--space-2);
   color: var(--ink-ghost);
 }
 
-.rl-when-rel,
-.rl-when-abs {
-  font-variant-numeric: tabular-nums;
+.mr-prov {
+  color: var(--ink-faint);
 }
 
-/* Lateness: the word at full ink, the hue on a mark in front of it. The word
-   used to be set in #ef4444, which is 3.76:1 on white. */
-.rl-when[data-overdue] .rl-when-rel {
+.mr-abs {
+  color: var(--ink-faint);
+}
+
+.mr-aside {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.mr-return {
+  margin: var(--space-3) 0 0;
+  padding-inline-start: var(--space-3);
+  border-inline-start: 2px solid var(--accent);
+  font-size: var(--text-body-sm);
+  color: var(--ink);
+}
+
+.mr-warn {
+  margin: var(--space-3) 0 0;
+  padding-inline-start: var(--space-3);
+  font-size: var(--text-body-sm);
+  color: var(--ink);
+  border-inline-start: 2px solid var(--ink-ghost);
+}
+
+.mr-warn[data-band="partial"] {
+  border-inline-start-color: var(--status-flight);
+}
+
+.mr-warn[data-band="broken"] {
+  border-inline-start-width: 3px;
+  border-inline-start-color: var(--status-blocked);
+}
+
+.mr-warn[data-band="read"] {
+  border-inline-start-color: var(--status-done);
+}
+
+.mr-recovery {
+  display: inline-block;
+  margin-inline-start: var(--space-3);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mr-suppressed {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.mr-suppressed .mr-inline-link {
+  margin-inline-start: var(--space-3);
+}
+
+.mr-day {
+  margin: 0 0 var(--space-7);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  color: var(--ink);
+  max-width: 44rem;
+}
+
+.mr-thread {
+  padding-block: var(--space-5);
+  border-block-start: 1px solid var(--hairline-soft);
+}
+
+.mr-thread:first-child {
+  border-block-start: 0;
+}
+
+.mr-thread-head {
+  margin: 0;
+  padding-inline-start: calc(var(--mr-gutter) + var(--space-6));
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.mr-thread-sub {
+  margin: var(--space-1) 0 0;
+  padding-inline-start: calc(var(--mr-gutter) + var(--space-6));
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+/* ── Detail, in place, at the time the thing sits ────────────────────────── */
+
+.mr-detail {
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.mr-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.mr-source-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.mr-source-path {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+.mr-close {
+  font-size: var(--text-body-sm);
+  color: var(--accent);
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+
+.mr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mr-action {
+  min-width: 0;
+}
+
+.mr-act-open,
+.mr-act-summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
+  color: var(--accent);
+  cursor: pointer;
+  list-style: none;
+}
+
+.mr-act-summary::-webkit-details-marker {
+  display: none;
+}
+
+.mr-act-body {
+  padding-block: var(--space-3);
+  max-width: 34rem;
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.mr-act-body p {
+  margin: 0;
+}
+
+/* A refusal is a statement, not a control, so it does not claim a 44px target
+   and it does not sit at the weight of the things you can actually do. */
+.mr-act-refused {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding-block: var(--space-3);
+  font-size: var(--text-caption);
+  color: var(--ink-faint);
+}
+
+.mr-action[data-refused="yes"] {
+  flex: 0 1 auto;
+}
+
+.mr-act-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-ghost);
+}
+
+.mr-act-why {
+  color: var(--ink-faint);
+}
+
+/* ── The read, as a column ───────────────────────────────────────────────── */
+
+/*
+ * THE READ FOLLOWS THE READER. My work and Analytics run to two thousand pixels,
+ * and an account of the read that scrolls away at the first screen is an account
+ * the reader has to go back for. One sticky element, no fixed positioning, and
+ * only where there is width to spare.
+ */
+.mr-record {
+  min-width: 0;
+  padding-block-start: var(--space-1);
+  position: sticky;
+  top: var(--space-6);
+  align-self: start;
+  max-height: calc(100svh - var(--space-9));
+  overflow-y: auto;
+}
+
+.mr-record .mr-field-row {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+}
+
+.mr-scope-account {
+  margin-block: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.mr-label {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.mr-notices {
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  list-style: none;
+}
+
+.mr-notice {
+  margin-block-end: var(--space-4);
+  padding-inline-start: var(--space-3);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
+  border-inline-start: 2px solid var(--ink-ghost);
+}
+
+.mr-notice[data-band="partial"] {
+  border-inline-start-color: var(--status-flight);
+  color: var(--ink);
+}
+
+.mr-notice[data-band="broken"] {
+  border-inline-start-width: 3px;
+  border-inline-start-color: var(--status-blocked);
   color: var(--ink);
   font-weight: var(--weight-medium);
 }
 
-.rl-when[data-overdue] .rl-when-rel::before {
-  content: "";
-  display: inline-block;
-  width: 3px;
-  height: 0.85em;
-  margin-right: var(--space-2);
-  vertical-align: -1px;
-  background: var(--status-blocked);
+.mr-notice-alone {
+  margin: 0 0 var(--space-6);
+  max-width: 44rem;
 }
 
-/* ── Today ───────────────────────────────────────────────────────────────── */
+.mr-record .mr-account,
+.mr-record .mr-active {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
 
-.rl-decisions {
-  list-style: none;
+.mr-unsupported {
+  margin-block: var(--space-6);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.mr-unsupported-list {
   margin: 0;
   padding: 0;
+  list-style: none;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
 }
 
-/*
- * The cap, drawn as a judgement. Three graded rules, 3px then 2px then 1px, so
- * the ranking the engine performed is visible before a word is read, and the
- * three are unmistakably not the first three rows of the ledger beneath them.
- * They are not numbered: a rank is a weight before it is a numeral.
- */
-.rl-decision {
-  position: relative;
-  margin-bottom: var(--space-6);
-  padding: 0 0 var(--space-6) var(--space-5);
-  border-bottom: 1px solid var(--hairline-soft);
+.mr-unsupported-list li {
+  margin-block-end: var(--space-3);
 }
 
-.rl-decision::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 6px;
-  bottom: var(--space-6);
-  border-left: 1px solid var(--accent);
+.mr-schedule {
+  margin-block: var(--space-6);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--hairline);
 }
 
-.rl-decision[data-rank="0"]::before {
-  border-left-width: 3px;
-}
+/* ── Fields ──────────────────────────────────────────────────────────────── */
 
-.rl-decision[data-rank="1"]::before {
-  border-left-width: 2px;
-}
-
-.rl-decision:last-child {
-  border-bottom: 0;
-  margin-bottom: 0;
-}
-
-.rl-decision-title {
+.mr-fields {
   margin: 0;
 }
 
-.rl-decision-link {
-  display: inline-block;
-  padding: 10px 0;
-  font-size: var(--text-heading);
-  line-height: var(--leading-heading);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-heading);
+.mr-field-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  padding-block: var(--space-3);
+  border-block-end: 1px solid var(--hairline-soft);
+}
+
+.mr-field-row dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.mr-field-row dd {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+/* ── The first screen ────────────────────────────────────────────────────── */
+
+.mr-first {
+  max-width: 40rem;
+  padding-block: var(--space-8) var(--space-10);
+}
+
+.mr-first-line {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
   color: var(--ink);
-  text-decoration: none;
 }
 
-.rl-decision-link:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 4px;
-}
-
-.rl-decision-reason {
-  margin: 0;
+.mr-first-next {
+  margin: var(--space-3) 0 0;
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
   color: var(--ink-soft);
 }
 
-.rl-decision[data-selected] {
-  background: none;
+.mr-first-actions {
+  margin: var(--space-6) 0 0;
 }
 
-.rl-decision[data-selected]::before {
-  border-left-color: var(--accent);
-  border-left-width: 3px;
-}
-
-.rl-tled-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rl-tled {
-  padding: var(--space-2) 0 var(--space-4);
-  border-bottom: 1px solid var(--hairline-soft);
-}
-
-.rl-tled[data-selected],
-.rl-work[data-selected] {
-  padding-left: var(--space-4);
-  border-left: 2px solid var(--accent);
-}
-
-.rl-tled-title,
-.rl-work-title {
-  margin: 0;
-}
-
-.rl-tled-link,
-.rl-work-link {
-  display: inline-block;
-  padding: 12px 0;
-  font-size: var(--text-body);
-  line-height: var(--leading-body);
-  font-weight: var(--weight-medium);
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.rl-tled-link:hover,
-.rl-work-link:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 3px;
-}
-
-.rl-tled-reason,
-.rl-suppressed,
-.rl-work-note {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-}
-
-.rl-suppressed {
-  margin-top: var(--space-4);
-}
-
-.rl-fold {
-  border-bottom: 1px solid var(--hairline);
-}
-
-.rl-fold-summary {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  list-style: none;
-  min-height: 44px;
-  padding: var(--space-3) 0;
-  cursor: pointer;
-}
-
-.rl-fold-summary::-webkit-details-marker {
-  display: none;
-}
-
-.rl-fold-heading {
-  font-size: var(--text-heading);
-  letter-spacing: var(--tracking-heading);
-  font-weight: var(--weight-semibold);
-}
-
-.rl-fold-count {
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  color: var(--ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
-.rl-fold-window {
-  font-size: var(--text-caption);
-  color: var(--ink-soft);
-}
-
-/* The chevron holds the right edge at every width, so a section with a window
-   line and one without still open from the same place. */
-.rl-fold-summary::after {
-  content: "";
-  order: 9;
-  margin-left: auto;
-  width: 6px;
-  height: 6px;
-  border-right: 1.5px solid var(--ink-faint);
-  border-bottom: 1.5px solid var(--ink-faint);
-  transform: rotate(45deg);
-  transition: transform var(--motion-fast) var(--ease-out);
-}
-
-.rl-fold[open] .rl-fold-summary::after {
-  transform: translateY(2px) rotate(-135deg);
-}
-
-.rl-fold[open] .rl-fold-summary {
-  border-bottom: 1px solid var(--hairline-soft);
-}
-
-/* A link, not a button. It was the only button chrome in the lab. */
-.rl-briefing {
-  margin: var(--space-5) 0 0;
-}
-
-.rl-briefing-link {
+.mr-first-do {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--accent);
-  font-size: var(--text-body-sm);
+  padding-inline: var(--space-5);
+  background: var(--accent);
+  color: var(--zinc-50);
+  font-size: var(--text-body);
   font-weight: var(--weight-medium);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+.mr-first-do:hover {
+  background: var(--accent-hover);
+}
+
+/* ── Emptiness, and what it is doing ─────────────────────────────────────── */
+
+.mr-empty {
+  margin: 0 0 var(--space-9);
+  max-width: 40rem;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  color: var(--ink-faint);
+}
+
+.mr-beyond {
+  padding-block-start: var(--space-7);
+}
+
+.mr-beyond-caption {
+  margin: 0 0 var(--space-7);
+  max-width: 44rem;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.mr-beyond-empty {
+  margin: 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.mr-onward {
+  margin: var(--space-6) 0 0;
+}
+
+.mr-onward-link,
+.mr-inline-link {
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--accent);
   text-decoration: underline;
-  text-decoration-thickness: 1px;
   text-underline-offset: 4px;
 }
 
-.rl-briefing-link::after {
-  content: "";
-  width: 6px;
-  height: 6px;
-  margin-left: var(--space-2);
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(-45deg);
-}
-
-/* ── Selection detail, shared by Today and My work ───────────────────────── */
-
-.rl-selected {
-  margin-top: var(--space-4);
-  padding-left: var(--space-4);
-  border-left: 2px solid var(--accent);
-}
-
-.rl-path {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
-  color: var(--ink-soft);
-  overflow-wrap: anywhere;
-}
-
-.rl-close {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--accent);
-  font-size: var(--text-body-sm);
-  text-decoration: none;
-}
-
-.rl-close:hover {
-  text-decoration: underline;
-}
-
-/* ── Disclosure panels ───────────────────────────────────────────────────── */
-
-.rl-block-foot {
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--hairline);
-}
-
-.rl-read-summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  list-style: none;
-  min-height: 44px;
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
-  color: var(--ink-soft);
-  cursor: pointer;
-}
-
-.rl-read-summary::-webkit-details-marker {
-  display: none;
-}
-
-.rl-read-summary::after {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg);
-  transition: transform var(--motion-fast) var(--ease-out);
-}
-
-details[open] > .rl-read-summary::after {
-  transform: translateY(2px) rotate(-135deg);
-}
-
-.rl-read-body {
-  padding: 0 0 var(--space-4);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-}
-
-.rl-read-line {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-}
-
-.rl-read-list {
-  margin: 0 0 var(--space-3);
-  padding-left: var(--space-5);
-}
-
-.rl-read-list li {
-  margin-bottom: var(--space-1);
-}
-
-/* Ruled fielded metadata. This is what replaced the bordered panel. */
-.rl-fields {
-  margin: var(--space-4) 0;
-  display: grid;
-}
-
-.rl-field {
-  display: grid;
-  grid-template-columns: 9rem minmax(0, 1fr);
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--hairline-soft);
-}
-
-.rl-field:last-child {
-  border-bottom: 1px solid var(--hairline-soft);
-}
-
-.rl-field dt {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  padding-top: 2px;
-}
-
-.rl-field dd {
-  margin: 0;
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-  overflow-wrap: anywhere;
-}
-
-/* ── Actions ─────────────────────────────────────────────────────────────── */
-
-.rl-actions {
-  margin-top: var(--space-5);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--hairline);
-}
-
-.rl-action-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rl-action-open,
-.rl-action-summary {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  list-style: none;
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
-  color: var(--ink);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.rl-action-summary::-webkit-details-marker {
-  display: none;
-}
-
-.rl-action-open:hover,
-.rl-action-summary:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 3px;
-}
-
-.rl-action-summary::after {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-right: 1.5px solid var(--ink-faint);
-  border-bottom: 1.5px solid var(--ink-faint);
-  transform: rotate(45deg);
-  transition: transform var(--motion-fast) var(--ease-out);
-}
-
-.rl-action-details[open] > .rl-action-summary::after {
-  transform: translateY(2px) rotate(-135deg);
-}
-
-.rl-action-body {
-  padding: 0 0 var(--space-3) var(--space-4);
-  border-left: 1px solid var(--hairline);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-}
-
-.rl-action-body p {
-  margin: 0;
-}
-
-.rl-action-refused {
-  padding: var(--space-2) 0 var(--space-2) var(--space-4);
-  border-left: 2px solid var(--ink-ghost);
-}
-
-.rl-action-name {
-  display: block;
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
-  color: var(--ink-soft);
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-}
-
-/* Why an action is refused is honesty content, so it reads at the same
-   contrast as everything else that keeps the page honest. */
-.rl-action-why {
-  display: block;
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-soft);
-}
-
-/* ── Inbox ───────────────────────────────────────────────────────────────── */
-
-.rl-inbox {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-8);
-}
-
-.rl-queue,
-.rl-detail {
-  min-width: 0;
-}
-
-.rl-thread-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rl-thread {
-  padding: var(--space-6) 0;
-  border-bottom: 1px solid var(--hairline);
-}
-
-.rl-thread:first-child {
-  padding-top: 0;
-}
-
-.rl-thread-title {
-  margin: 0;
-  font-size: var(--text-body-lg);
-  line-height: var(--leading-heading);
-  letter-spacing: var(--tracking-heading);
-  font-weight: var(--weight-semibold);
-}
-
-.rl-thread-sub {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-caption);
-  color: var(--ink-soft);
-}
-
-.rl-event-list {
-  list-style: none;
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-5);
-}
-
-.rl-thread[data-multi] .rl-event {
-  padding-left: var(--space-4);
-  border-left: 1px solid var(--hairline);
-}
-
-.rl-event[data-current] {
-  padding-left: var(--space-4);
-  border-left: 2px solid var(--accent);
-}
-
-.rl-event-kind {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.rl-event-title {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-body);
-  font-weight: var(--weight-medium);
-}
-
-.rl-event-title[data-state="undetermined"],
-.rl-event-title[data-state="unavailable"],
-.rl-detail-title[data-state="undetermined"],
-.rl-detail-title[data-state="unavailable"] {
-  font-weight: var(--weight-regular);
-  font-style: italic;
-  color: var(--ink-soft);
-}
-
-.rl-event-state {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-caption);
-  color: var(--ink-soft);
-}
-
-.rl-vis[data-vis="new"] {
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-}
-
-.rl-event-note {
-  margin: var(--space-2) 0 0;
-  padding-left: var(--space-3);
-  border-left: 2px solid var(--ink-ghost);
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-soft);
-}
-
-.rl-event-note[data-band="limited"],
-.rl-event-note[data-outcome="undetermined"] {
-  border-left-style: dashed;
-  border-left-color: var(--status-flight);
-}
-
-.rl-event-note[data-outcome="refused"] {
-  border-left-width: 3px;
-  border-left-color: var(--status-blocked);
-  color: var(--ink);
-}
-
-.rl-event-note[data-outcome="committed"] {
-  border-left-color: var(--status-done);
-}
-
-.rl-event-open {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--accent);
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
-  text-decoration: none;
-}
-
-.rl-event-open:hover {
-  text-decoration: underline;
-}
-
-.rl-queue-foot {
-  margin-top: var(--space-8);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--hairline);
-}
-
-/* The detail is a region, not a card. A rule and space set it apart. */
-.rl-detail {
-  padding-top: var(--space-2);
-}
-
-.rl-back {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  color: var(--accent);
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
-  text-decoration: none;
-}
-
-.rl-back::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  margin-right: var(--space-2);
-  border-left: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg);
-}
-
-.rl-back:hover {
-  text-decoration: underline;
-}
-
-.rl-detail-kind {
-  margin: var(--space-2) 0 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.rl-detail-title {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-heading);
-  line-height: var(--leading-heading);
-  letter-spacing: var(--tracking-heading);
-  font-weight: var(--weight-semibold);
-}
-
-.rl-attempt {
-  margin-top: var(--space-5);
-  padding-left: var(--space-4);
-  border-left: 2px solid var(--ink-ghost);
-}
-
-.rl-attempt[data-outcome="committed"] {
-  border-left-color: var(--status-done);
-}
-
-.rl-attempt[data-outcome="refused"] {
-  border-left-width: 3px;
-  border-left-color: var(--status-blocked);
-}
-
-.rl-attempt[data-outcome="undetermined"] {
-  border-left-style: dashed;
-  border-left-color: var(--status-flight);
-}
-
-.rl-attempt-line {
-  margin: 0;
-  font-size: var(--text-body-sm);
-  color: var(--ink);
-}
-
-.rl-attempt-recovery {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-medium);
-  color: var(--accent);
-}
-
-.rl-thread-more {
-  margin-top: var(--space-4);
-  padding-left: var(--space-4);
-  border-left: 1px solid var(--hairline);
-}
-
-/* ── My work ─────────────────────────────────────────────────────────────── */
-
-.rl-work-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.rl-work {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-3) var(--space-5);
-  align-items: baseline;
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid var(--hairline-soft);
-}
-
-.rl-work-main {
-  min-width: 0;
-}
-
-.rl-work-when {
-  text-align: right;
-  font-size: var(--text-caption);
-  color: var(--ink-soft);
-}
-
-.rl-work-when .rl-when {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-}
-
-.rl-work-when .rl-sep {
-  display: none;
-}
-
-.rl-work-unparsed {
-  display: block;
-}
-
-.rl-work .rl-selected {
-  grid-column: 1 / -1;
-}
-
-.rl-more {
-  margin: var(--space-5) 0 0;
+.mr-inline-link {
   font-size: var(--text-body-sm);
 }
 
 /* ── Analytics ───────────────────────────────────────────────────────────── */
 
-.rl-lens {
-  margin-bottom: var(--space-6);
-  padding-left: var(--space-4);
-  border-left: 3px solid var(--accent);
-}
-
-.rl-lens-line {
-  margin: 0 0 var(--space-2);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-}
-
-.rl-claims {
-  list-style: none;
+.mr-claim-q {
   margin: 0;
-  padding: 0;
-}
-
-.rl-claim {
-  padding: var(--space-6) 0;
-  border-bottom: 1px solid var(--hairline-soft);
-}
-
-.rl-claim:first-child {
-  padding-top: 0;
-}
-
-/* The claim leads. The value is a figure inside a sentence, not a billboard. */
-.rl-claim-question {
-  margin: 0;
-  font-size: var(--text-body-lg);
-  line-height: var(--leading-heading);
-  font-weight: var(--weight-semibold);
-}
-
-.rl-claim-value {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  margin: var(--space-2) 0 0;
-}
-
-.rl-claim-number {
   font-size: var(--text-body-lg);
   line-height: var(--leading-heading);
   font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.mr-claim-value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: var(--space-3) 0 0;
+}
+
+.mr-claim-number {
+  font-size: var(--text-heading);
+  font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
-.rl-claim-metric {
+.mr-claim-metric {
   font-family: var(--font-mono);
   font-size: var(--text-label);
-  font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.rl-claim-nonvalue {
-  margin: var(--space-2) 0 0;
-  padding-left: var(--space-3);
-  border-left: 2px dashed var(--status-flight);
+.mr-claim-none {
+  margin: var(--space-3) 0 0;
   font-size: var(--text-body);
   font-weight: var(--weight-medium);
   color: var(--ink);
 }
 
-.rl-claim-population {
+.mr-claim-pop,
+.mr-claim-limit {
   margin: var(--space-2) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-soft);
+  color: var(--ink-faint);
 }
 
-.rl-claim-status {
-  margin: var(--space-2) 0 0;
-  padding-left: var(--space-3);
-  border-left: 2px dashed var(--status-flight);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
+.mr-exception {
+  padding-block: var(--space-5);
+  border-block-start: 1px solid var(--hairline-soft);
 }
 
-/* A claim's limitation is the part that keeps it honest, so it reads at the
-   same contrast as the claim rather than as a footnote. */
-.rl-claim-limit {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
-  color: var(--ink-soft);
+.mr-exception:first-child {
+  border-block-start: 0;
 }
 
-.rl-claim-more {
-  margin-top: var(--space-2);
-}
-
-.rl-exc-list {
-  list-style: none;
+.mr-exc-head {
   margin: 0;
-  padding: 0;
-}
-
-.rl-exc {
-  padding: var(--space-4) 0;
-  border-bottom: 1px solid var(--hairline-soft);
-}
-
-.rl-exc-head {
-  margin: 0;
-  font-size: var(--text-body);
+  font-size: var(--text-body-lg);
   font-weight: var(--weight-medium);
+  color: var(--ink);
 }
 
-.rl-exc-suggestion {
+.mr-exc-suggestion {
   margin: var(--space-2) 0 0;
-  font-size: var(--text-body-sm);
+  font-size: var(--text-body);
   color: var(--ink-soft);
 }
 
-.rl-label-inline {
-  display: inline-block;
-  margin-right: var(--space-2);
+.mr-exc-tag {
+  margin-inline-end: var(--space-3);
   font-family: var(--font-mono);
   font-size: var(--text-label);
-  font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--ink-faint);
 }
 
-.rl-ledger-wrap {
+.mr-lens {
+  margin-block-end: var(--space-7);
+  padding-inline-start: var(--space-4);
+  border-inline-start: 3px solid var(--accent);
+}
+
+.mr-table-wrap {
   overflow-x: auto;
 }
 
-.rl-ledger {
+.mr-wide > section {
+  max-width: 68rem;
+}
+
+.mr-table {
   width: 100%;
-  min-width: 34rem;
   border-collapse: collapse;
   font-size: var(--text-body-sm);
 }
 
-.rl-ledger th,
-.rl-ledger td {
-  height: 44px;
+.mr-table th,
+.mr-table td {
   padding: var(--space-3) var(--space-4) var(--space-3) 0;
-  border-bottom: 1px solid var(--hairline-soft);
   text-align: left;
-  vertical-align: top;
+  vertical-align: baseline;
+  border-block-end: 1px solid var(--hairline-soft);
 }
 
-.rl-ledger thead th {
-  height: auto;
-  border-bottom: 1px solid var(--hairline);
+.mr-table thead th {
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   color: var(--ink-faint);
+  border-block-end: 1px solid var(--ink-ghost);
 }
 
-.rl-ledger tbody th {
+.mr-table tbody th {
   font-weight: var(--weight-medium);
   color: var(--ink);
 }
 
-.rl-ledger td {
+.mr-table td {
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
-  /* The counts are already sentences; letting them wrap turns a scannable
-     column into three lines of ragged text. The region scrolls instead. */
-  white-space: nowrap;
 }
 
-/* A project that could not be read is marked, not greyed into invisibility. */
-.rl-ledger tr[data-state="unavailable"] th,
-.rl-ledger tr[data-state="unresolved"] th {
-  border-left: 3px solid var(--status-blocked);
-  padding-left: var(--space-3);
+.mr-table tr[data-state="unavailable"] th,
+.mr-table tr[data-state="unresolved"] th {
+  box-shadow: inset 3px 0 0 0 var(--status-blocked);
+  padding-inline-start: var(--space-3);
 }
 
-.rl-ledger-link {
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.rl-ledger-link:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 3px;
-}
-
-.rl-trend {
+.mr-receipt {
   margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
 }
 
-.rl-trend-svg {
+.mr-receipt li {
+  margin-block-end: var(--space-2);
+}
+
+.mr-trend,
+.mr-trend-refused {
+  margin: 0 0 var(--space-9);
+  max-width: 44rem;
+}
+
+.mr-stream .mr-trend,
+.mr-stream .mr-trend-refused {
+  margin-block-start: var(--space-7);
+}
+
+.mr-trend-line {
+  margin: 0;
+  font-size: var(--text-body);
+  color: var(--ink);
+}
+
+.mr-trend-svg {
   display: block;
   width: 100%;
-  height: 120px;
+  height: 7rem;
 }
 
-.rl-trend-base {
-  stroke: var(--hairline);
+.mr-trend-base {
+  stroke: var(--ink-ghost);
   stroke-width: 1;
 }
 
-.rl-trend-line {
+.mr-trend-line-svg {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 1.5;
+  stroke-width: 2;
   stroke-linejoin: round;
-  stroke-linecap: round;
 }
 
-.rl-trend-cap {
-  margin-top: var(--space-3);
+.mr-trend-cap {
+  margin: var(--space-3) 0 var(--space-4);
   font-size: var(--text-body-sm);
-  color: var(--ink-soft);
+  color: var(--ink-faint);
 }
 
-.rl-trend-refused {
-  margin: 0;
-  padding-left: var(--space-4);
-  border-left: 2px dashed var(--status-flight);
-  font-size: var(--text-body);
-  color: var(--ink-soft);
-}
+/* ── Bands of width ──────────────────────────────────────────────────────── */
 
-/* ── 1439 and down ───────────────────────────────────────────────────────── */
+@media (max-width: 1199px) {
+  .mr-page {
+    --mr-pad: var(--space-8);
+    --mr-record: 18rem;
+  }
 
-@media (max-width: 1439px) {
-  .rl-shell {
-    --rl-rail: 14rem;
-    --rl-pad-x: var(--space-8);
-    --rl-pad-y: var(--space-8);
-    --rl-measure: 44rem;
+  .mr-columns {
+    gap: var(--space-8);
+  }
+
+  .mr-entry {
+    grid-template-columns: var(--mr-gutter) minmax(0, 1fr);
   }
 }
-
-/* The Inbox splits only when there is something to put in the second column,
-   and only where the split can carry both without wrapping. */
-@media (min-width: 1280px) {
-  .rl-inbox[data-selected] {
-    grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
-    align-items: start;
-  }
-
-  .rl-inbox[data-selected] .rl-detail {
-    position: sticky;
-    top: var(--space-7);
-    padding-left: var(--space-7);
-    border-left: 1px solid var(--hairline);
-  }
-}
-
-@media (max-width: 1279px) {
-  .rl-shell {
-    --rl-rail: 12.5rem;
-    --rl-pad-x: var(--space-7);
-    --rl-measure: 40rem;
-  }
-
-  .rl-rail {
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
-  }
-
-  .rl-suite {
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
-  }
-
-  /* Below the split threshold an opened event replaces the queue with a
-     full-measure detail carrying its own way back. */
-  .rl-inbox[data-selected] .rl-queue {
-    display: none;
-  }
-}
-
-/* ── Below 1024: the instrument rotates ──────────────────────────────────── */
 
 @media (max-width: 1023px) {
-  .rl-shell {
-    display: block;
-    --rl-pad-x: var(--space-6);
-    --rl-pad-y: var(--space-6);
-    --rl-measure: none;
-    max-width: none;
-    background: var(--paper);
+  .mr-page {
+    --mr-pad: var(--space-6);
+    --mr-gutter: 8rem;
   }
 
-  /* A compact bar: four text-labelled modes, their state, and the scope. The
-     wordmark, the products, the reader and Account are at the foot of the
-     page, so the headline is the first thing on the screen. */
-  .rl-rail {
+  /* One column. The read follows the stream rather than leading it: the
+     sentence that matters most is already under the meridian, and a founder
+     opening this on a tablet should reach the first decision first. */
+  .mr-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-9);
+  }
+
+  /* One column, so nothing sticks: a sticky block in a single-column flow just
+     pins itself over the work underneath it. */
+  .mr-record {
+    padding-block-start: var(--space-7);
+    border-block-start: 1px solid var(--hairline);
     position: static;
     max-height: none;
     overflow: visible;
-    gap: var(--space-3);
-    padding: var(--space-4) var(--rl-pad-x) var(--space-3);
-    border-bottom: 1px solid var(--hairline);
-  }
-
-  /* The scope names itself and states its value on one line, so the whole bar
-     costs about 200px and the headline is the first thing after it. */
-  .rl-scope-summary {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 var(--space-3);
-  }
-
-  .rl-scope-summary .rl-label {
-    margin: 0;
-  }
-
-  .rl-masthead,
-  .rl-notices,
-  .rl-unsupported {
-    margin-bottom: var(--space-6);
-  }
-
-  .rl-group-home > .rl-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .rl-spine {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    column-gap: var(--space-3);
-  }
-
-  /* The spine rotates: the same four weights, drawn across the top of the
-     four cells, still one continuous line on a fully answered day. */
-  .rl-mode {
-    padding: var(--space-3) 0 0;
-  }
-
-  .rl-mode::before {
-    left: calc(var(--space-3) * -0.5);
-    right: calc(var(--space-3) * -0.5);
-    top: 0;
-    bottom: auto;
-    border-left: 0;
-    border-top: 1px solid var(--ink-faint);
-  }
-
-  .rl-mode[data-band="empty"]::before {
-    border-top-style: dotted;
-  }
-
-  .rl-mode[data-band="limited"]::before {
-    border-top-width: 2px;
-    border-top-style: dashed;
-    border-top-color: var(--status-flight);
-  }
-
-  .rl-mode[data-band="broken"]::before {
-    top: 0;
-    bottom: auto;
-    left: var(--space-3);
-    right: var(--space-3);
-    border-top-width: 3px;
-    border-top-color: var(--status-blocked);
-  }
-
-  .rl-mode[data-here] > .rl-nav-link::before {
-    left: calc(50% - 1px);
-    top: calc((var(--space-3) + 7px) * -1);
-    width: 2px;
-    height: 16px;
-  }
-
-  .rl-nav-link {
-    min-height: 44px;
-    padding: var(--space-2) 0;
-  }
-
-  .rl-nav-name {
-    font-size: var(--text-body);
-  }
-
-  .rl-nav-label {
-    justify-content: flex-start;
-  }
-
-  .rl-subnav {
-    grid-column: 1 / -1;
-    margin-left: 0;
-  }
-
-  .rl-scope,
-  .rl-group-scope {
-    border-top: 1px solid var(--hairline-soft);
-    padding-top: var(--space-2);
-  }
-
-  .rl-scope-projects {
-    max-height: none;
-  }
-
-  .rl-status {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-1) var(--space-4);
-  }
-
-  .rl-main {
-    padding-bottom: var(--space-10);
-  }
-
-  .rl-suite {
-    position: static;
-    padding: var(--space-6) var(--rl-pad-x) var(--space-10);
-  }
-
-  .rl-product-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 var(--space-6);
-  }
-
-  .rl-actor {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-1) var(--space-4);
   }
 }
 
-/* ── Below 640: one column everywhere, nothing hidden ────────────────────── */
-
 @media (max-width: 639px) {
-  .rl-shell {
-    --rl-pad-x: var(--space-4);
+  .mr-page {
+    --mr-pad: var(--space-5);
+    padding-block-end: var(--space-10);
   }
 
-  .rl-page > *,
-  .rl-page .rl-block,
-  .rl-page[data-mode="my-work"] .rl-block {
-    max-width: none;
-  }
-
-  .rl-work {
+  /* THE AXIS ROTATES. The gutter becomes a dateline above each entry, in the
+     same mono, at the same weight, so the temporal reading survives the phone
+     instead of being dropped at the first breakpoint. */
+  .mr-entry {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-2);
+    row-gap: var(--space-2);
   }
 
-  .rl-work-when {
+  .mr-time {
     text-align: left;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-label);
+    font-size: var(--text-label);
+    color: var(--ink-faint);
   }
 
-  .rl-work-when .rl-when {
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--space-2);
+  .mr-entry[data-overdue="yes"] .mr-time {
+    padding-inline: var(--space-3) 0;
+    border-inline: 3px solid var(--status-blocked) 0;
+    border-inline-end: 0;
   }
 
-  .rl-field {
+  .mr-thread-head,
+  .mr-thread-sub {
+    padding-inline-start: 0;
+  }
+
+  .mr-masthead {
+    padding-block: var(--space-5) var(--space-4);
+  }
+
+  .mr-mode-list {
+    gap: var(--space-2) var(--space-5);
+  }
+
+  .mr-modes {
+    padding-block-end: var(--space-3);
+  }
+
+  .mr-field {
+    min-height: 16rem;
+  }
+
+  .mr-controls {
+    align-items: flex-start;
+  }
+
+  .mr-field-row {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-1);
-  }
-
-  .rl-fold-summary {
-    flex-wrap: wrap;
-  }
-
-  .rl-fold-window {
-    order: 10;
-    flex-basis: 100%;
   }
 }
 
 /* ── Motion ──────────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: no-preference) {
-  .rl-page > * {
-    animation: rl-rise var(--motion-base) var(--ease-out) both;
+  .mr-meridian::before {
+    animation: mr-draw 200ms var(--ease-out) both;
   }
 
-  .rl-page > *:nth-child(2) {
-    animation-delay: 40ms;
+  .mr-horizon::before {
+    animation: mr-draw 260ms var(--ease-out) 60ms both;
   }
 
-  .rl-page > *:nth-child(3) {
-    animation-delay: 80ms;
-  }
-
-  .rl-page > *:nth-child(4) {
-    animation-delay: 120ms;
-  }
-
-  .rl-page > *:nth-child(n + 5) {
-    animation-delay: 160ms;
-  }
-
-  /* The spine draws itself in, one segment at a time, and the state words
-     settle a beat behind it. This is the one moment the navigation is allowed
-     to draw the eye, and it is over in 320ms. */
-  .rl-mode::before {
-    animation: rl-draw 200ms var(--ease-out) both;
-    animation-delay: calc(var(--rl-i, 0) * 40ms);
-    transform-origin: top;
-  }
-
-  .rl-mode-state {
-    animation: rl-fade 200ms var(--ease-out) both;
-    animation-delay: calc(var(--rl-i, 0) * 40ms + 120ms);
-  }
-}
-
-@keyframes rl-rise {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes rl-draw {
-  from {
-    opacity: 0;
-    transform: scaleY(0.2);
-  }
-
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes rl-fade {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
+  @keyframes mr-draw {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
   }
 }
 
 /* ── Forced colours ──────────────────────────────────────────────────────── */
 
 @media (forced-colors: active) {
-  .rl-mode[data-here] > .rl-nav-link::before,
-  .rl-decision[data-selected]::before,
-  .rl-work[data-selected],
-  .rl-tled[data-selected],
-  .rl-event[data-current] {
-    forced-color-adjust: none;
-    outline: 2px solid Highlight;
-    outline-offset: -2px;
-  }
-
-  .rl-when[data-overdue] .rl-when-rel::before {
+  .mr-meridian::before,
+  .mr-horizon::before {
     background: CanvasText;
+    forced-color-adjust: none;
   }
 
-  .rl-trend-line {
-    stroke: CanvasText;
+  .mr-read-notice {
+    border-block: 3px solid CanvasText;
+  }
+
+  .mr-entry[data-overdue="yes"] .mr-time {
+    border-inline-end: 3px solid CanvasText;
+  }
+
+  .mr-first-do {
+    border: 1px solid CanvasText;
   }
 }

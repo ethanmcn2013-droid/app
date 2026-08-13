@@ -25,6 +25,7 @@
  */
 
 import type {
+  AnalyticsView,
   Disclosure,
   HomeCandidateProps,
   HomeChrome,
@@ -65,6 +66,11 @@ export function nothingConnectedYet(chrome: HomeChrome): boolean {
 
 /** Which register a single disclosure belongs in. */
 export function registerOfDisclosure(entry: Disclosure, noProjects: boolean): Register {
+  // ROUND 3. The shell now publishes `first-run` as a state of its own, so the
+  // reader who has not started is named by the shell rather than inferred here.
+  // Both tests stay: the shell's word is authoritative, and the old inference
+  // remains as the fallback for a world that reaches this by another route.
+  if (entry.state === "first-run") return "setup";
   if (entry.tone === "setup") return "setup";
   if (entry.tone === "scope") {
     if (entry.state === "ready") return "read";
@@ -84,6 +90,7 @@ function registerOfState(state: HomeStateName, noProjects: boolean): Register {
     return "read";
   }
   if (state === "refreshing") return "read";
+  if (state === "first-run") return "setup";
   if (state === "unavailable" || state === "failed" || state === "offline") {
     return noProjects ? "setup" : "failed";
   }
@@ -143,6 +150,26 @@ export type ModeReading = Readonly<{
  * cannot tell whether Inbox was fully read." Every mode's view model is on the
  * props whichever mode is on screen, so this costs one pass and no new data.
  */
+/**
+ * ANALYTICS WITHHOLDS A CLAIM WITHOUT SAYING SO IN ITS STATE.
+ *
+ * Round 2: "The 'ELSEWHERE IN HOME' ledger names Inbox and My work as partly
+ * read and omits Analytics, while Analytics has withheld its trend for
+ * insufficient history. An omission from a list of degraded modes reads as a
+ * clean bill of health." Correct, and it is a real hole: `analytics.state` is
+ * `ready` on the signature day because the READ succeeded — what failed is a
+ * CLAIM inside it, which the state does not model. So the claims are examined
+ * directly. A mode holding a number back is partly read, which is the shell's
+ * own word for it, not a synonym invented here.
+ */
+function analyticsWithholds(analytics: AnalyticsView): HomeStateName | null {
+  // Worst first. A claim that could not be computed at all outranks a trend
+  // that is only waiting for more readings.
+  if (analytics.claims.some((claim) => claim.valueLabel === null)) return "partial";
+  if (!analytics.trend.renderChart) return "insufficient-history";
+  return null;
+}
+
 export function readAcrossModes(props: HomeCandidateProps): readonly ModeReading[] {
   const { chrome, copy, today, inbox, myWork, analytics } = props;
   const noProjects = nothingConnectedYet(chrome);
@@ -166,6 +193,13 @@ export function readAcrossModes(props: HomeCandidateProps): readonly ModeReading
       if (SEVERITY[from] > SEVERITY[register]) {
         register = from;
         stateLabel = copy.states[entry.state];
+      }
+    }
+    if (mode.mode === "analytics" && register === "read") {
+      const withheld = analyticsWithholds(analytics);
+      if (withheld !== null) {
+        register = "limited";
+        stateLabel = copy.states[withheld];
       }
     }
     return { mode: mode.mode, label: mode.label, register, stateLabel };

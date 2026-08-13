@@ -15,12 +15,28 @@
  * sticky pixel is spent twice at 320 and at 400% zoom, and this direction would
  * rather spend it on the read.
  *
- * PER-MODE READ HEALTH. Standing in Today you could not tell that Analytics was
- * partly read, so every mode change was taken blind. Each tab now carries the
- * same three-state mark the readline carries, in miniature: no mark when that
- * mode's read is complete, a broken rule when it is partial, a stopped rule in
- * the alarm ink when something refused. The state also joins the link's
- * accessible name, so it is not carried by the mark alone.
+ * PER-MODE READ HEALTH, IN WORDS. Standing in Today you could not tell that
+ * Analytics was partly read, so every mode change was taken blind.
+ *
+ * Round 2 answered that with a mark: a 6px upright tick beside each mode name,
+ * whose meaning was recoverable only from a key at the foot of the page. Four
+ * directors said the same thing about it in four different ways, and they were
+ * right — a morning page must not need a decoder ring, and the one piece of
+ * always-on chrome had become the least legible part of the state system. The
+ * mark is deleted, and nothing replaced it in the tab row, because a tab row at
+ * 320px cannot carry four state words without wrapping into a paragraph.
+ *
+ * What carries it instead is one line under the modes, in the direction's own
+ * fielded grammar: the modes whose read did not finish, each named with its own
+ * state word. "Inbox, partly read. My work, partly read. Analytics, not enough
+ * history." No glyph, no key, legible at 200% text, and it wraps as a sentence
+ * wraps rather than overflowing as a row does.
+ *
+ * The line is ABSENT when every other mode read in full, which is the same rule
+ * the readline follows and the opposite of round 1's band: presence is the
+ * signal. It names only the modes you are NOT standing in, because the readline
+ * three inches below already carries the one you are. The state also stays in
+ * each link's accessible name, so nothing here is the only channel.
  *
  * WHAT IS INVENTED HERE, said out loud. The lab shell publishes the Home layer
  * and nothing above it, so the suite line (Home · Notes · Tasks · Timeline) is
@@ -42,6 +58,49 @@ const PRODUCTS: readonly Readonly<{ label: string; href: string }>[] = [
 ];
 
 export type ModeRead = Readonly<{ klass: ReadClass; word: string }>;
+
+/**
+ * `notyet` is a fact about the reader, not about the read, so it never reaches
+ * the strip. On a first morning all four modes are in it, and naming three of
+ * them "nothing set up yet" under a headline that already says so is the
+ * homework the panel marked the first screen down for.
+ */
+const isLimited = (read: ModeRead | undefined): read is ModeRead =>
+  read !== undefined && read.klass !== "complete" && read.klass !== "notyet";
+
+/**
+ * "Inbox, My work and Analytics", never "Inbox, My work, Analytics".
+ */
+function nameList(names: readonly string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/**
+ * GROUPED BY WHAT HAPPENED, NOT BY MODE.
+ *
+ * Printed one field per mode, a provider failure at 390 read "Inbox, did not
+ * answer · My work, did not answer · Analytics, did not answer" and took three
+ * lines of chrome to say one thing three times. Grouped, the same fact is one
+ * field and one line: "Did not answer: Inbox, My work and Analytics". The state
+ * leads, which is the same order the readline uses, so the two are one grammar.
+ */
+function groupByWord(
+  entries: readonly Readonly<{ label: string; word: string }>[],
+): readonly Readonly<{ word: string; names: string }>[] {
+  const order: string[] = [];
+  const byWord = new Map<string, string[]>();
+  for (const entry of entries) {
+    const names = byWord.get(entry.word);
+    if (names) {
+      names.push(entry.label);
+    } else {
+      order.push(entry.word);
+      byWord.set(entry.word, [entry.label]);
+    }
+  }
+  return order.map((word) => ({ word, names: nameList(byWord.get(word) ?? []) }));
+}
 
 export function DeskHead({
   chrome,
@@ -72,6 +131,24 @@ export function DeskHead({
 }) {
   const readScope = chrome.scope.options.filter((option) => option.group === "read-scope");
   const projects = chrome.scope.options.filter((option) => option.group === "project");
+
+  /*
+   * NOT ON THE FULL BRIEFING, which is the one page that already carries a third
+   * band. The briefing is depth reached from Today, where the reader has just
+   * read this exact line, and stacking a fourth band on the page a director
+   * already called over-chromed would be the shell competing with what it
+   * frames. It returns the moment they go back up.
+   */
+  const elsewhere = groupByWord(
+    depth !== null
+      ? []
+      : chrome.modes.flatMap((mode) => {
+          if (mode.ariaCurrent !== null) return [];
+          const read = modeRead[mode.mode];
+          if (!isLimited(read)) return [];
+          return [{ label: mode.label, word: read.word }];
+        }),
+  );
 
   return (
     <header className="dk-head">
@@ -151,7 +228,7 @@ export function DeskHead({
             <ul>
               {chrome.modes.map((mode) => {
                 const read = modeRead[mode.mode];
-                const limited = read !== undefined && read.klass !== "complete";
+                const limited = isLimited(read);
                 const base = mode.badge?.announce ? badgeName : mode.label;
                 return (
                   <li key={mode.mode}>
@@ -184,9 +261,6 @@ export function DeskHead({
                           </span>
                         </>
                       ) : null}
-                      {limited ? (
-                        <span className="dk-tabstate" data-read={read.klass} aria-hidden="true" />
-                      ) : null}
                     </a>
                   </li>
                 );
@@ -197,6 +271,17 @@ export function DeskHead({
           <p className="dk-actor">
             <strong>{chrome.actor.name}</strong>. {chrome.actor.roleLabel}.
           </p>
+
+          {elsewhere.length > 0 ? (
+            <p className="dk-elsewhere">
+              <span className="dk-key">The other modes</span>
+              {elsewhere.map((entry) => (
+                <span className="dk-elsewhere-part" key={entry.word}>
+                  <b>{entry.word}:</b> {entry.names}
+                </span>
+              ))}
+            </p>
+          ) : null}
         </div>
 
         {depth ? (

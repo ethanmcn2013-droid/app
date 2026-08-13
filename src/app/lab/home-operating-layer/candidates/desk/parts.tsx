@@ -14,15 +14,26 @@
  *   partial    the same rule with a hole cut in it
  *   refused    the rule runs a third of the way and stops, in one alarm ink
  *
+ * ROUND 3 adds the fourth, and it is the one the whole lab got wrong:
+ *
+ *   notyet     a dashed rule, in the quiet ink. The line has not been drawn
+ *              because there is nothing to draw it for.
+ *
+ * A reader with no Project has not suffered a failed read. Dressing their first
+ * morning in the refusal's red rule and the refusal's words is this programme's
+ * governing rule pointed backwards, so `first-run` takes its own silhouette, its
+ * own sentence and the only control this direction ever draws as a control.
+ *
  * That is the spine's own grammar turned on its side: a line that breaks where
  * the read broke. It carries no tint, no box and no container, it differs before
- * a word is read, and the three states are still three different silhouettes in
+ * a word is read, and the four states are still four different silhouettes in
  * greyscale, in forced colours and with every colour removed.
  */
 
 import type { ReactNode } from "react";
 import type {
   Disclosure,
+  FirstRunView,
   HomeChrome,
   HomeCopy,
   HomeStateName,
@@ -38,8 +49,7 @@ import type {
  * Nothing here is the sole carrier of anything: every entry that takes a mark
  * also renders the shell's own sentence for the same fact. The mark is a way of
  * reading fifty rows at a glance, not a way of saying something the words do
- * not. The legend at the foot is therefore a reference, never a dependency, and
- * it now says so in its own first line.
+ * not.
  */
 export type MarkKind =
   | "now"
@@ -60,6 +70,38 @@ export const MARK_LEGEND: readonly Readonly<{ mark: MarkKind; text: string }>[] 
   { mark: "plain", text: "No mark. It is in the list with nothing pressing about it." },
 ];
 
+/**
+ * WHEN A PAGE IS ALLOWED TO CARRY A KEY, and why the number is three.
+ *
+ * Round 2 printed the whole seven-mark legend at the foot of every page,
+ * including the quiet day, where not one marked row existed and the key was the
+ * largest block on the screen. That is the exact thing the brief rejects on
+ * sight — empty furniture used to fill a quiet day — and it was being spent on
+ * the emptiest screen in the product.
+ *
+ * The legend is now built from the marks THIS page actually drew, and it renders
+ * only when three or more distinct marks are on it. Below three, a reader can
+ * hold the shapes against the words beside them without a reference; the key
+ * would be teaching a system that is not on the page. A quiet day has no marked
+ * rows at all, so it carries no key, and the fifty-row scale world carries a key
+ * of exactly the marks it used.
+ *
+ * `plain` is the absence of a mark, so it is never counted toward the three. It
+ * is still listed when it is on the page, because "this row deliberately has no
+ * mark" is a fact worth stating once a key exists.
+ */
+const LEGEND_MIN_MARKS = 3;
+
+const drawnMarkCount = (marks: ReadonlySet<MarkKind>): number =>
+  [...marks].filter((mark) => mark !== "plain").length;
+
+export function legendEntries(
+  marks: ReadonlySet<MarkKind>,
+): readonly Readonly<{ mark: MarkKind; text: string }>[] {
+  if (drawnMarkCount(marks) < LEGEND_MIN_MARKS) return [];
+  return MARK_LEGEND.filter((entry) => marks.has(entry.mark));
+}
+
 /** A project that did not resolve breaks the line, whatever else is true. */
 export function markForProvenance(provenance: Provenance, fallback: MarkKind): MarkKind {
   return provenance.projectName === null ? "broken" : fallback;
@@ -68,7 +110,7 @@ export function markForProvenance(provenance: Provenance, fallback: MarkKind): M
 // ── The read state, classified ──────────────────────────────────────────────
 
 /**
- * THREE CLASSES, AND WHY THE SHELL'S OWN `state` IS NOT ENOUGH.
+ * FOUR CLASSES, AND WHY THE SHELL'S OWN `state` IS NOT ENOUGH.
  *
  * `today.state` is `partial` on BOTH the partial-coverage world and the
  * provider-failure world, which is exactly why round 1 rendered them as the same
@@ -80,8 +122,9 @@ export function markForProvenance(provenance: Provenance, fallback: MarkKind): M
  *   complete   nothing about THIS read is unresolved
  *   partial    something answered for part of what was asked
  *   refused    something did not answer at all, or could not be reached
+ *   notyet     there is no Project, so no read was attempted
  */
-export type ReadClass = "complete" | "partial" | "refused";
+export type ReadClass = "complete" | "partial" | "refused" | "notyet";
 
 export type ReadVerdict = Readonly<{
   klass: ReadClass;
@@ -118,6 +161,18 @@ export function readVerdict(
   disclosures: readonly Disclosure[],
   copy: HomeCopy,
 ): ReadVerdict {
+  /**
+   * Before every other test, and it cannot be reached by looking at the notes.
+   *
+   * The shell's first-run disclosure is `tone: "setup"`, which the partial
+   * branch below would have swept up and labelled with the ordinary limited
+   * vocabulary. A reader who has not started is not a reader whose read came
+   * back short, so the state name decides it and nothing else gets a vote.
+   */
+  if (state === "first-run") {
+    return { klass: "notyet", word: copy.states["first-run"], notes: [], clean: false };
+  }
+
   const notes = disclosures.filter(isLive);
   const refusal = notes.find(isRefusal);
 
@@ -158,6 +213,8 @@ export function ReadLine({
   chrome,
   standing,
   statusLabel,
+  lead,
+  legendHref,
 }: {
   verdict: ReadVerdict;
   chrome: HomeChrome;
@@ -169,6 +226,14 @@ export function ReadLine({
    */
   standing: readonly Disclosure[];
   statusLabel: string;
+  /** Replaces the composed sentence. The first screen's own line uses it. */
+  lead?: string | null;
+  /**
+   * Set only when this page actually drew enough marks to earn a key. Round 2
+   * left the key discoverable after 2,400px of scroll; six unexplained shapes
+   * preceded their own explanation on every read.
+   */
+  legendHref?: string | null;
 }) {
   const standingLine =
     standing.length === 0
@@ -177,7 +242,7 @@ export function ReadLine({
         ? "One kind of work has no source connected."
         : `${standing.length} kinds of work have no source connected.`;
 
-  const lead = verdict.notes[0] ?? null;
+  const note = verdict.notes[0] ?? null;
   const rest = verdict.notes.slice(1);
 
   return (
@@ -192,21 +257,23 @@ export function ReadLine({
       <p className="dk-readstate">
         <b className="dk-readword">{verdict.word}.</b>{" "}
         {lead
-          ? lead.text
-          : verdict.clean
-            ? `Every project at this scope answered.${standingLine ? ` ${standingLine}` : ""}`
-            : (standingLine ?? "")}
+          ? lead
+          : note
+            ? note.text
+            : verdict.clean
+              ? `Every project at this scope answered.${standingLine ? ` ${standingLine}` : ""}`
+              : (standingLine ?? "")}
       </p>
 
-      {rest.map((note) => (
-        <p className="dk-readnote" key={note.id}>
-          {note.text}
+      {rest.map((entry) => (
+        <p className="dk-readnote" key={entry.id}>
+          {entry.text}
         </p>
       ))}
 
       {/* When there IS news, the standing fact is subordinate to it and is set
           that way. It is still on the first screen, because it is still true. */}
-      {lead && standingLine ? (
+      {!lead && note && standingLine ? (
         <p className="dk-readnote dk-readstanding">{standingLine}</p>
       ) : null}
 
@@ -216,6 +283,11 @@ export function ReadLine({
         {verdict.notes.length > 0 || standing.length > 0 ? (
           <span className="dk-meta-part">
             <a href="#dk-limits">Every note on this read</a>
+          </span>
+        ) : null}
+        {legendHref ? (
+          <span className="dk-meta-part">
+            <a href={legendHref}>How to read the line</a>
           </span>
         ) : null}
       </p>
@@ -234,6 +306,112 @@ export function SectionCaveat({ limited }: { limited: boolean }) {
     <p className="dk-caveat">
       Some sources did not answer, so this list can be short. Short is not empty.
     </p>
+  );
+}
+
+// ── The first screen ────────────────────────────────────────────────────────
+
+/**
+ * WHERE TO START, and the only control this direction ever draws as a control.
+ *
+ * Everything else here is a link in running text or a native disclosure, because
+ * every other page in this direction is a read and a read has no primary action.
+ * A first screen has exactly one, so it gets the one drawn affordance in the
+ * whole system, and the singularity is the emphasis. There is nothing else on
+ * the page competing with it.
+ *
+ * `line` is not repeated here. It is already the sentence in the readline above,
+ * which is where a reader is standing when they arrive, and printing the same
+ * fact twice in two registers is what the panel marked the quiet day down for.
+ */
+export function FirstRun({ view }: { view: FirstRunView }) {
+  return (
+    <section className="dk-first" id="dk-first" aria-labelledby="dk-first-heading">
+      <h2 className="dk-h2" id="dk-first-heading" data-plain="true">
+        {view.heading}
+      </h2>
+      <p className="dk-first-line">{view.nextLine}</p>
+      <p className="dk-first-acts">
+        {view.actions.map((action) => (
+          <a className="dk-act" href={action.href} key={action.id}>
+            {action.label}
+          </a>
+        ))}
+      </p>
+    </section>
+  );
+}
+
+// ── The index in the margin ─────────────────────────────────────────────────
+
+export type IndexItem = Readonly<{
+  id: string;
+  label: string;
+  /**
+   * Null where a section is not a count of anything, and null rather than zero
+   * where a section renders for a reason other than its rows — a bare 0 beside
+   * a heading in a contents column is the shape this programme spends its whole
+   * effort refusing.
+   */
+  count: number | null;
+  /** The ranked section. Exactly one per read, or none. */
+  lead?: boolean;
+}>;
+
+/** Zero rows is not a count worth printing in a margin. */
+export const indexCount = (rows: number): number | null => (rows > 0 ? rows : null);
+
+/**
+ * WHAT THE OTHER SIX HUNDRED PIXELS ARE FOR. LAB_BRIEF Amendment 1, answered.
+ *
+ * This direction's answer is that the full width is the DESK and the measure is
+ * the SHEET lying on it, so the margin is a material rather than a leftover. The
+ * left desk then carries the one thing that belongs beside a document and not
+ * inside it: the read's own index, with a count against every section.
+ *
+ * It does three jobs that the page itself cannot do:
+ *
+ *   1. It states the shape of the read before the reader scrolls it. Today's cap
+ *      of three stops being an arbitrary section limit and becomes a visible
+ *      ranking — 3 against 2, 4 and 4 — because the counts sit in one column,
+ *      one under the other, with the ranked section set a weight above the rest.
+ *   2. It is the only navigation of the read that exists, so a founder can go
+ *      straight to Moving well without passing the decisions again.
+ *   3. It is absent when it would be furniture. A read with fewer than two
+ *      sections renders no index at all, so the quiet day and the first screen
+ *      keep their bare desk.
+ *
+ * It is a `nav` rather than an `aside` because it is navigation, and it carries
+ * no heading, so the heading tree is identical at every viewport where the CSS
+ * shows or hides it.
+ */
+export function ReadIndex({
+  label,
+  items,
+}: {
+  label: string;
+  items: readonly IndexItem[];
+}) {
+  if (items.length < 2) return null;
+  return (
+    <nav className="dk-index" aria-label={label}>
+      <p className="dk-key">In this read</p>
+      <ul>
+        {items.map((item) => (
+          <li data-lead={item.lead ? "true" : undefined} key={item.id}>
+            <a href={`#${item.id}`}>
+              <span className="dk-index-label">{item.label}</span>
+              {item.count === null ? null : (
+                <span className="dk-index-count">
+                  {item.count}
+                  <span className="dk-sr">{item.count === 1 ? " item" : " items"}</span>
+                </span>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }
 
@@ -316,13 +494,55 @@ export function whenPart(due: WhenLabel | null): MetaPart {
 }
 
 /**
- * What a row offers, and what it does not.
+ * WHAT A ROW OFFERS, ON THE ROW, AT ARRIVAL.
  *
- * Rendered as a statement rather than as controls. The lab writes nothing: a
- * button here would either do nothing, which is a dead control, or claim an
- * outcome the source never confirmed, which D-HX06 forbids outright. An action
- * that carries a real href is a real link; everything else is disclosed as what
- * it is, including the reason it is unavailable.
+ * Round 2 deferred every disposition to a detail state, so the Inbox and My work
+ * arrival screens carried ten titles and not one affordance, and four of the
+ * sixteen journeys were unevidenced anywhere a director could see them. They are
+ * on the row now.
+ *
+ * What has NOT changed is the refusal to draw a button that writes nothing. A
+ * control that claims an outcome the source never confirmed is D-HX06, and the
+ * lab has no source. So an action with a real href is a real link, and an action
+ * without one is stated as an offer in words. An action that is closed to you
+ * carries its reason on the same line rather than vanishing, because a control
+ * that disappears tells the reader nothing about why.
+ */
+export function RowActions({
+  actions,
+  exclude,
+}: {
+  actions: readonly RowAction[];
+  /** Ids already carried by the row's own title link. */
+  exclude?: readonly string[];
+}) {
+  const shown = actions.filter((action) => !exclude?.includes(action.id));
+  if (shown.length === 0) return null;
+  return (
+    <ul className="dk-rowacts">
+      {shown.map((action) => (
+        <li data-available={action.available ? "true" : "false"} key={action.id}>
+          {action.available ? (
+            action.href ? (
+              <a href={action.href}>{action.label}</a>
+            ) : (
+              <b>{action.label}</b>
+            )
+          ) : (
+            <>
+              <b>{action.label}</b>
+              {action.unavailableReason ? <span>{action.unavailableReason}</span> : null}
+            </>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The same set, opened out, for a detail state where there is room to group them
+ * and where the reader has asked for exactly this one thing.
  */
 export function Offers({ actions }: { actions: readonly RowAction[] }) {
   if (actions.length === 0) return null;
@@ -362,6 +582,10 @@ export function Offers({ actions }: { actions: readonly RowAction[] }) {
   );
 }
 
+/** Said once per mode that offers anything, rather than once per row. */
+export const LAB_WRITES_NOTHING =
+  "Every offer on a row is named, including the ones closed to you. The lab writes nothing, so nothing here is marked done until the source says it is.";
+
 // ── The foot ────────────────────────────────────────────────────────────────
 
 function Note({ eyebrow, text }: { eyebrow: string; text: string }) {
@@ -374,25 +598,34 @@ function Note({ eyebrow, text }: { eyebrow: string; text: string }) {
 }
 
 /**
- * The foot: every note in full, then how to read the line, then the way back.
+ * The foot: what this read could not see, then how to read the line, then the
+ * way back.
  *
- * Two changes from round 1, both of them things the pixels showed rather than
- * things a review caught. The notes section no longer renders when there are no
- * notes, because a heading with nothing under it is worse than no heading. And
- * the mark legend is no longer folded inside a `<details>` — it printed as a
- * bare heading over empty space on every capture, which is the one thing a
- * direction that encodes row state in shapes cannot afford.
+ * ROUND 3, and both changes are about a quiet day rather than about a busy one.
+ *
+ * The standing limits — kinds of work Home has no source for at all — are folded
+ * now. They were 200px of printed explanation on every page, and they are true
+ * every morning for every reader, so printing them in full is how a page starts
+ * looking busy on the day it has nothing to say. They are one labelled click
+ * away and the summary carries their count, so the shut state states the fact
+ * rather than promising one.
+ *
+ * And the mark key is built from the marks THIS page drew, and only when it drew
+ * at least three. A quiet day has no marked rows, so it carries no key at all.
  */
 export function Foot({
   copy,
   disclosures,
   standing,
   extra,
+  marks,
 }: {
   copy: HomeCopy;
   disclosures: readonly Disclosure[];
   standing?: readonly Disclosure[];
   extra?: readonly (string | null)[];
+  /** Every mark this page actually put on the spine. */
+  marks?: ReadonlySet<MarkKind>;
 }) {
   const live = disclosures.filter(isLive);
   const about = [
@@ -401,32 +634,19 @@ export function Foot({
   ];
   const standingNotes = standing ?? [];
   const anything = live.length + about.length + standingNotes.length > 0;
+  const legend = legendEntries(marks ?? new Set<MarkKind>());
 
   return (
     <>
       {anything ? (
-        <section className="dk-limits" id="dk-limits" aria-labelledby="dk-limits-heading">
-          <h2 className="dk-h2" id="dk-limits-heading" data-plain="true">
-            What this read could not see
-          </h2>
-
+        <section className="dk-limits" id="dk-limits" aria-label="Notes on this read">
           {live.length > 0 ? (
-            <ul className="dk-notes">
-              {live.map((note) => (
-                <Note key={note.id} eyebrow={noteWord(note, copy)} text={note.text} />
-              ))}
-            </ul>
-          ) : null}
-
-          {standingNotes.length > 0 ? (
             <>
-              <h3 className="dk-h3">True of every read</h3>
-              <p className="dk-said dk-said-quiet">
-                These are not about today. They are the kinds of work Home has no source for
-                at all, so no page here can count them.
-              </p>
+              <h2 className="dk-h2" data-plain="true">
+                What this read could not see
+              </h2>
               <ul className="dk-notes">
-                {standingNotes.map((note) => (
+                {live.map((note) => (
                   <Note key={note.id} eyebrow={noteWord(note, copy)} text={note.text} />
                 ))}
               </ul>
@@ -445,31 +665,59 @@ export function Foot({
               </ul>
             </>
           ) : null}
+
+          {standingNotes.length > 0 ? (
+            <details className="dk-fold dk-fold-standing">
+              <summary>
+                True of every read, not of today ({standingNotes.length})
+              </summary>
+              <div className="dk-fold-body">
+                <p className="dk-said dk-said-quiet">
+                  These are the kinds of work Home has no source for at all, so no page here
+                  can count them.
+                </p>
+                <ul className="dk-notes">
+                  {standingNotes.map((note) => (
+                    <Note key={note.id} eyebrow={noteWord(note, copy)} text={note.text} />
+                  ))}
+                </ul>
+              </div>
+            </details>
+          ) : null}
         </section>
       ) : null}
 
-      <section className="dk-legend" aria-labelledby="dk-legend-heading">
-        <h2 className="dk-h2" id="dk-legend-heading" data-plain="true">
-          How to read the line
-        </h2>
-        <p className="dk-said">
-          The line breaks where a source did not answer. Every mark on it repeats something
-          the row beside it already says in words, so nothing here is carried by a shape.
-        </p>
-        <ul className="dk-legend-list">
-          {MARK_LEGEND.map((entry) => (
-            <li key={entry.mark}>
-              <span className="dk-glyph" data-mark={entry.mark} aria-hidden="true" />
-              <span>{entry.text}</span>
-            </li>
-          ))}
-        </ul>
+      {/* A read with nothing at its foot has nothing to come back from, and a
+          return link on a screen that never scrolled is the furniture this
+          round exists to remove. */}
+      {legend.length > 0 ? (
+        <section className="dk-legend" id="dk-legend" aria-labelledby="dk-legend-heading">
+          <h2 className="dk-h2" id="dk-legend-heading" data-plain="true">
+            How to read the line
+          </h2>
+          <p className="dk-said">
+            The line breaks where a source did not answer. Every mark on it repeats something
+            the row beside it already says in words, so nothing here is carried by a shape.
+            These are the marks on this page.
+          </p>
+          <ul className="dk-legend-list">
+            {legend.map((entry) => (
+              <li key={entry.mark}>
+                <span className="dk-glyph" data-mark={entry.mark} aria-hidden="true" />
+                <span>{entry.text}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {live.length > 0 || about.length > 0 || legend.length > 0 ? (
         <p className="dk-back-top">
           <a className="dk-more" href="#dk-read">
             Back to the top of this read
           </a>
         </p>
-      </section>
+      ) : null}
     </>
   );
 }

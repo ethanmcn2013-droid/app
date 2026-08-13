@@ -1,13 +1,28 @@
 /**
  * SIGNAL DESK — variant 4.
  *
- * THE THESIS. Home is not a page you read, it is a surface you sit at. So the
- * chrome is a shallow warm band at the top of a sheet of warm paper, and the
- * work is ruled onto the paper beneath it by a single vertical line — the
- * spine — that stays in exactly the same place in all five modes. Moving from
- * Today to Inbox to My work to Analytics changes the marks hanging on the line;
- * it does not change the furniture around them. That is the whole of the
- * spatial continuity, and it costs one pixel of width.
+ * THE THESIS. Home is not a page you read, it is a surface you sit at. So there
+ * is a desk and there is a sheet on it: the canvas is warm and full-bleed, the
+ * read sits on a sheet of the estate's own white paper laid on top of it, and
+ * the work is ruled onto that sheet by a single vertical line — the spine —
+ * that stays in exactly the same place in all five modes. Moving from Today to
+ * Inbox to My work to Analytics changes the marks hanging on the line; it does
+ * not change the furniture around them. That is the whole of the spatial
+ * continuity, and it costs one pixel of width.
+ *
+ * ROUND 3 MOVED THE WARMTH OFF THE PAGE AND INTO THE ROOM, and that is the one
+ * structural change this round makes. Four directors raised the warm canvas as a
+ * standing cost: Home is explicitly not a fourth product, and giving it its own
+ * paper is the single cue that argues it is, so a founder leaving Home for Tasks
+ * crossed a visible seam in a suite that is meant to read as one system. One
+ * director protected it as a real pro-attention move at 7am and was also right.
+ * Both are satisfied by putting the warmth where there is no text: the words in
+ * Home now sit on `--paper`, the same white as Notes, Tasks and Timeline, and
+ * the warmth is the surround the sheet lies on. At 1440 two thirds of the screen
+ * is still warm, so the 7am quality survives; under every sentence the reader
+ * actually reads, the paper is the estate's, so the seam does not exist. The
+ * token comment says it outright — "Paper — white, locked by operator decision"
+ * — and a wildcard's licence covers expression, not a locked decision.
  *
  * THE SIGNATURE, AND WHY IT IS EARNED. A line that breaks where the read broke.
  * It is drawn twice on every page and it is the only device here that carries
@@ -36,11 +51,19 @@
  * true every single day are no longer raised as if they were news; they are
  * named in the metadata line and printed in full at the foot.
  *
- * WHAT IT COSTS. Warm paper is a real departure from the estate's white, and it
- * pulls every contrast ratio with it; the mixes in desk.css are measured
- * against the warm value rather than the token's. And the spine wants a left
- * gutter on every entry, which is 36px of width this direction never gets back
- * — at 320px it drops to 28px and the measure is tight.
+ * WHAT THE WIDTH IS FOR, which LAB_BRIEF Amendment 1 now requires an answer to.
+ * The full width is the desk. The measure is the sheet. The left desk carries
+ * the read's own index, with a count against every section, so the shape of the
+ * read — three ranked decisions, then two, then four, then four — is legible
+ * before a single row is scrolled. The index is absent when a read has fewer
+ * than two sections, so a quiet day and a first morning keep a bare desk, and
+ * the emptiness is the material rather than an unmade decision.
+ *
+ * WHAT IT COSTS. The spine wants a left gutter on every entry, which is 36px of
+ * width this direction never gets back — at 320px it drops to 28px and the
+ * measure is tight. And the desk tint is one declared hue, the only literal
+ * colour in the direction; everything else is mixed from the theme's own tokens,
+ * so dark follows without a second palette.
  *
  * WHAT IT SPENDS AT RUNTIME. Nothing. Every file in this folder is a server
  * component, depth is `<details>`, selection is the URL, motion is one CSS
@@ -48,7 +71,7 @@
  */
 
 import type { HomeCandidate, HomeCandidateProps } from "@/lib/home-layer/lab-shell";
-import { AnalyticsMode } from "./analytics";
+import { AnalyticsMode, analyticsRead } from "./analytics";
 import { DeskHead, type ModeRead } from "./chrome";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
@@ -68,12 +91,16 @@ const Desk: HomeCandidate = (props: HomeCandidateProps) => {
    * folded in: a kind of work with no source at all is a standing fact about the
    * product, not a fact about this morning, and treating the two the same is
    * what made the old band furniture.
+   *
+   * Analytics goes through its own derivation because every source can answer in
+   * full and the page can still be unable to say something. One function serves
+   * the tab row and the Analytics readline, so the two can never disagree.
    */
   const modeRead: Record<string, ModeRead> = {
     today: readVerdict(props.today.state, props.today.disclosures, copy),
     inbox: readVerdict(props.inbox.state, props.inbox.disclosures, copy),
     "my-work": readVerdict(props.myWork.state, props.myWork.disclosures, copy),
-    analytics: readVerdict(props.analytics.state, props.analytics.disclosures, copy),
+    analytics: analyticsRead(props.analytics, copy).verdict,
   };
 
   /* The sheet is ONE measure in every mode. Round 1 widened the whole page for

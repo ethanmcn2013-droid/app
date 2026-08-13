@@ -11,10 +11,20 @@
  * counting anything. The rank is not a numeral in a margin; it is weight, which
  * is what an editor actually spends when something matters more.
  *
- * The full briefing is complete. Every section takes the same weight, every row
- * takes a heading, nothing is capped and nothing is ranked. Set beside Today its
- * first screen is flat where Today's is stepped, which is the difference between
- * depth and the same page twice.
+ * ROUND 3: THE CAP IS NOW DEFENDED BY THE COMPOSITION, NOT BY A COUNT. Round 2
+ * announced a cap of three and then ran ten more rows below it under headings of
+ * identical weight, so nothing about the page said the three mattered more —
+ * only the number did, and it was the longest page in the lab on a phone. The
+ * two sections that are neither decisions nor review — Coming up and Moving well
+ * — are drawers now, each named with its count in the shut state. Nothing is
+ * removed and nothing is summarised away: the count is a fact, not a promise,
+ * and one click opens the full section. Today therefore opens as three decisions
+ * and two review rows above two closed drawers, which is the ranking said in the
+ * shape of the page. The full briefing keeps every section open, so depth and
+ * arrival are now two different documents rather than the same one twice.
+ *
+ * The index in the left desk states the same ranking again in counts, for a
+ * reader who wants the shape before the scroll.
  */
 
 import type {
@@ -24,15 +34,23 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import {
   Entry,
+  FirstRun,
   Foot,
+  indexCount,
+  legendEntries,
   markForProvenance,
   Meta,
+  ReadIndex,
   ReadLine,
   readVerdict,
   SectionCaveat,
   whenPart,
+  type IndexItem,
   type MarkKind,
 } from "./parts";
+
+/** The two sections that are neither a decision nor a review. */
+const FOLDED_SECTIONS: readonly TodaySection["id"][] = ["comingUp", "movingWell"];
 
 function markForTodayRow(row: TodayRow, section: TodaySection["id"]): MarkKind {
   if (section === "movingWell") return markForProvenance(row.provenance, "held");
@@ -113,6 +131,7 @@ function Section({
   section,
   weight,
   rank,
+  fold,
   limited,
   openKey,
   closeHref,
@@ -122,6 +141,8 @@ function Section({
   weight: "lead" | "quiet";
   /** Today's capped three. An ordered list, and the lead takes a type step. */
   rank: boolean;
+  /** A drawer rather than a printed section. Never on the briefing. */
+  fold: boolean;
   /** True when the read this section was drawn from did not finish. */
   limited: boolean;
   openKey: string | null;
@@ -142,11 +163,8 @@ function Section({
     />
   ));
 
-  return (
-    <section className="dk-section" aria-labelledby={`${id}-heading`}>
-      <h2 className="dk-h2" id={`${id}-heading`}>
-        {section.heading}
-      </h2>
+  const body = (
+    <>
       {section.windowLine ? <p className="dk-note">{section.windowLine}</p> : null}
 
       {section.rows.length > 0 ? (
@@ -176,12 +194,37 @@ function Section({
       ) : null}
 
       {section.rows.length > 0 ? <SectionCaveat limited={limited} /> : null}
+    </>
+  );
+
+  if (fold) {
+    return (
+      <section className="dk-section" id={id} aria-labelledby={`${id}-heading`}>
+        <details className="dk-drawer">
+          <summary>
+            <h2 className="dk-h2" id={`${id}-heading`}>
+              {section.heading}
+            </h2>
+            <span className="dk-drawer-count">{section.rows.length}</span>
+          </summary>
+          <div className="dk-drawer-body">{body}</div>
+        </details>
+      </section>
+    );
+  }
+
+  return (
+    <section className="dk-section" id={id} aria-labelledby={`${id}-heading`}>
+      <h2 className="dk-h2" id={`${id}-heading`}>
+        {section.heading}
+      </h2>
+      {body}
     </section>
   );
 }
 
 export function TodayMode(props: HomeCandidateProps) {
-  const { today, copy, chrome } = props;
+  const { today, copy, chrome, firstRun } = props;
   const openKey = today.selection?.key ?? null;
   const closeHref = props.hrefFor({ mode: "today", item: null });
 
@@ -189,9 +232,56 @@ export function TodayMode(props: HomeCandidateProps) {
      all is true of every read, every day, for every reader; raising it under the
      headline every morning is what stopped the old strip from meaning anything
      by the day a provider actually broke. It is named in the readline's metadata
-     and printed in full at the foot. */
+     and folded at the foot. */
   const verdict = readVerdict(today.state, today.disclosures, copy);
-  const limited = verdict.klass !== "complete";
+  const limited = verdict.klass === "partial" || verdict.klass === "refused";
+
+  const marks = new Set<MarkKind>();
+  for (const section of today.sections) {
+    for (const row of section.rows) marks.add(markForTodayRow(row, section.id));
+  }
+  const legendHref = legendEntries(marks).length > 0 ? "#dk-legend" : null;
+
+  /**
+   * A FIRST MORNING IS ITS OWN DOCUMENT.
+   *
+   * Not the failed read with the alarm taken off it: a different page. There is
+   * no accounting of a read that did not happen, no briefing of nothing to open,
+   * no list of what a read could not see when no read was attempted, and no key
+   * for marks that are not on the screen. What there is: the state in its own
+   * words, one sentence, and one control. The standing limits are still here, in
+   * the fold at the foot, because they are true and because a first screen is
+   * not the place to print them.
+   */
+  if (firstRun) {
+    return (
+      <>
+        <ReadLine
+          verdict={verdict}
+          chrome={chrome}
+          standing={[]}
+          statusLabel={chrome.statusRegionLabel}
+          lead={firstRun.line}
+        />
+        <FirstRun view={firstRun} />
+        <Foot copy={copy} disclosures={[]} standing={today.unsupported} />
+      </>
+    );
+  }
+
+  const shownSections = today.sections.filter(
+    (section) => section.rows.length > 0 || section.suppressedLine,
+  );
+
+  const indexItems: readonly IndexItem[] = [
+    ...shownSections.map((section) => ({
+      id: `dk-section-${section.id}`,
+      label: section.heading,
+      count: indexCount(section.rows.length),
+      lead: section.id === "todaysSignal",
+    })),
+    { id: "dk-today-depth", label: "The whole day", count: null },
+  ];
 
   return (
     <>
@@ -200,6 +290,7 @@ export function TodayMode(props: HomeCandidateProps) {
         chrome={chrome}
         standing={today.unsupported}
         statusLabel={chrome.statusRegionLabel}
+        legendHref={legendHref}
       />
 
       {/* The quiet read. It is not an all clear and it does not pretend to be:
@@ -210,13 +301,16 @@ export function TodayMode(props: HomeCandidateProps) {
         <p className="dk-lead">{today.selectionMissingLine}</p>
       ) : null}
 
-      <div className="dk-column">
+      <div className="dk-column" data-indexed={indexItems.length > 1 ? "true" : undefined}>
+        <ReadIndex label="Sections of this read" items={indexItems} />
+
         {today.sections.map((section) => (
           <Section
             key={section.id}
             section={section}
             weight={section.id === "todaysSignal" ? "lead" : "quiet"}
             rank={section.id === "todaysSignal"}
+            fold={FOLDED_SECTIONS.includes(section.id)}
             limited={limited}
             openKey={openKey}
             closeHref={closeHref}
@@ -224,7 +318,7 @@ export function TodayMode(props: HomeCandidateProps) {
           />
         ))}
 
-        <section className="dk-section" aria-labelledby="dk-today-depth-heading">
+        <section className="dk-section" id="dk-today-depth" aria-labelledby="dk-today-depth-heading">
           <h2 className="dk-h2" id="dk-today-depth-heading">
             The whole day
           </h2>
@@ -242,6 +336,7 @@ export function TodayMode(props: HomeCandidateProps) {
         disclosures={today.disclosures}
         standing={today.unsupported}
         extra={[today.quiet.readIsQuiet ? null : today.quiet.line]}
+        marks={marks}
       />
     </>
   );
@@ -251,6 +346,20 @@ export function BriefingMode(props: HomeCandidateProps) {
   const { briefing, copy, chrome } = props;
   const verdict = readVerdict(briefing.state, briefing.disclosures, copy);
 
+  const marks = new Set<MarkKind>();
+  for (const section of briefing.sections) {
+    for (const row of section.rows) marks.add(markForTodayRow(row, section.id));
+  }
+  const legendHref = legendEntries(marks).length > 0 ? "#dk-legend" : null;
+
+  const indexItems: readonly IndexItem[] = briefing.sections
+    .filter((section) => section.rows.length > 0 || section.suppressedLine)
+    .map((section) => ({
+      id: `dk-section-${section.id}`,
+      label: section.heading,
+      count: indexCount(section.rows.length),
+    }));
+
   return (
     <>
       <ReadLine
@@ -258,20 +367,24 @@ export function BriefingMode(props: HomeCandidateProps) {
         chrome={chrome}
         standing={[]}
         statusLabel={chrome.statusRegionLabel}
+        legendHref={legendHref}
       />
 
       <p className="dk-lead">
         {briefing.accountingLine ?? briefing.accountingWithheldLine}
       </p>
 
-      <div className="dk-column">
+      <div className="dk-column" data-indexed={indexItems.length > 1 ? "true" : undefined}>
+        <ReadIndex label="Sections of this briefing" items={indexItems} />
+
         {briefing.sections.map((section) => (
           <Section
             key={section.id}
             section={section}
             weight="lead"
             rank={false}
-            limited={verdict.klass !== "complete"}
+            fold={false}
+            limited={verdict.klass === "partial" || verdict.klass === "refused"}
             openKey={null}
             closeHref={briefing.returnHref}
             copy={copy}
@@ -285,7 +398,7 @@ export function BriefingMode(props: HomeCandidateProps) {
         </a>
       </p>
 
-      <Foot copy={copy} disclosures={briefing.disclosures} />
+      <Foot copy={copy} disclosures={briefing.disclosures} marks={marks} />
     </>
   );
 }

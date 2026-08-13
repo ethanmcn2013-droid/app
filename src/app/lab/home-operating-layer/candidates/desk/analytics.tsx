@@ -22,8 +22,72 @@ import type {
   AnalyticsLedgerRowView,
   AnalyticsView,
   HomeCandidateProps,
+  HomeCopy,
 } from "@/lib/home-layer/lab-shell";
-import { Entry, Foot, Meta, ReadLine, readVerdict, type MarkKind } from "./parts";
+import {
+  Entry,
+  FirstRun,
+  Foot,
+  indexCount,
+  legendEntries,
+  Meta,
+  ReadIndex,
+  ReadLine,
+  readVerdict,
+  type IndexItem,
+  type MarkKind,
+  type ReadVerdict,
+} from "./parts";
+
+/**
+ * The state word leads the readline and the shell's sentence follows it, so a
+ * sentence that opens with the same words says them twice: "Not enough history.
+ * Not enough history yet. 6 of 14 comparable daily readings." The echo is
+ * removed by an EXACT prefix test and nothing looser — if the sentence does not
+ * literally begin with the word, every character of it renders.
+ */
+function withoutEcho(word: string, sentence: string): string {
+  if (!sentence.startsWith(word)) return sentence;
+  const stop = sentence.indexOf(". ");
+  if (stop === -1) return sentence;
+  return sentence.slice(stop + 2);
+}
+
+/**
+ * ANALYTICS HAS A SECOND WAY OF BEING LIMITED, and the coverage notes never
+ * carry it.
+ *
+ * Every source can answer in full and this page can still be unable to say
+ * something: a claim that could not be computed, or a trend withheld because
+ * there is not enough history behind it. Round 2 opened Analytics with the word
+ * "Read." while the trend under it said "Not enough history yet", and marked the
+ * other three modes as limited in a row where Analytics stayed silent, which in
+ * a row that names its neighbours reads as a clean one.
+ *
+ * One derivation, used by the mode row and by this page's own readline, is the
+ * only way those two stay the same word. The sentence beneath it is the shell's,
+ * not invented here: whatever was withheld says why in its own words.
+ */
+export function analyticsRead(
+  analytics: AnalyticsView,
+  copy: HomeCopy,
+): Readonly<{ verdict: ReadVerdict; lead: string | null }> {
+  const base = readVerdict(analytics.state, analytics.disclosures, copy);
+  if (base.klass !== "complete") return { verdict: base, lead: null };
+
+  const withheld = analytics.claims.find((claim) => claim.status !== "available");
+  if (!withheld && analytics.trend.renderChart) return { verdict: base, lead: null };
+
+  const word =
+    withheld && withheld.status !== "insufficient_history"
+      ? copy.states.partial
+      : copy.states["insufficient-history"];
+
+  return {
+    verdict: { klass: "partial", word, notes: [], clean: false },
+    lead: withoutEcho(word, withheld?.statusLine ?? analytics.trend.line),
+  };
+}
 
 /**
  * The trend as the fixture derived it. Reached through the view model rather
@@ -182,8 +246,45 @@ function Claim({ claim }: { claim: AnalyticsClaimView }) {
 }
 
 export function AnalyticsMode(props: HomeCandidateProps) {
-  const { analytics, copy, chrome } = props;
-  const verdict = readVerdict(analytics.state, analytics.disclosures, copy);
+  const { analytics, copy, chrome, firstRun } = props;
+  const { verdict, lead } = analyticsRead(analytics, copy);
+
+  if (firstRun) {
+    return (
+      <>
+        <ReadLine
+          verdict={verdict}
+          chrome={chrome}
+          standing={[]}
+          statusLabel={chrome.statusRegionLabel}
+          lead={firstRun.line}
+        />
+        <FirstRun view={firstRun} />
+        <Foot copy={copy} disclosures={[]} />
+      </>
+    );
+  }
+
+  const marks = new Set<MarkKind>();
+  for (const claim of analytics.claims) marks.add(markForClaim(claim));
+  if (analytics.exceptions.length > 0) marks.add("waiting");
+  for (const row of analytics.ledger) marks.add(markForLedgerRow(row));
+  const legendHref = legendEntries(marks).length > 0 ? "#dk-legend" : null;
+
+  const indexItems: readonly IndexItem[] = [
+    { id: "dk-claims", label: "What the records answer", count: indexCount(analytics.claims.length), lead: true },
+    ...(analytics.exceptions.length > 0
+      ? [
+          {
+            id: "dk-exceptions",
+            label: analytics.exceptionsHeading,
+            count: indexCount(analytics.exceptions.length),
+          },
+        ]
+      : []),
+    { id: "dk-trend", label: analytics.trend.heading, count: null },
+    { id: "dk-ledger", label: analytics.ledgerHeading, count: indexCount(analytics.ledger.length) },
+  ];
 
   return (
     <>
@@ -192,6 +293,8 @@ export function AnalyticsMode(props: HomeCandidateProps) {
         chrome={chrome}
         standing={[]}
         statusLabel={chrome.statusRegionLabel}
+        legendHref={legendHref}
+        lead={lead}
       />
 
       <p className="dk-lead">{analytics.leadLine}</p>
@@ -210,8 +313,10 @@ export function AnalyticsMode(props: HomeCandidateProps) {
         </div>
       ) : null}
 
-      <div className="dk-column">
-        <section className="dk-section" aria-labelledby="dk-claims-heading">
+      <div className="dk-column" data-indexed="true">
+        <ReadIndex label="Sections of this reading" items={indexItems} />
+
+        <section className="dk-section" id="dk-claims" aria-labelledby="dk-claims-heading">
           <h2 className="dk-h2" id="dk-claims-heading">
             What the records answer
           </h2>
@@ -231,7 +336,7 @@ export function AnalyticsMode(props: HomeCandidateProps) {
         </section>
 
         {analytics.exceptions.length > 0 ? (
-          <section className="dk-section" aria-labelledby="dk-exceptions-heading">
+          <section className="dk-section" id="dk-exceptions" aria-labelledby="dk-exceptions-heading">
             <h2 className="dk-h2" id="dk-exceptions-heading">
               {analytics.exceptionsHeading}
             </h2>
@@ -252,7 +357,7 @@ export function AnalyticsMode(props: HomeCandidateProps) {
           </section>
         ) : null}
 
-        <section className="dk-section" aria-labelledby="dk-trend-heading">
+        <section className="dk-section" id="dk-trend" aria-labelledby="dk-trend-heading">
           <h2 className="dk-h2" id="dk-trend-heading">
             {analytics.trend.heading}
           </h2>
@@ -266,7 +371,7 @@ export function AnalyticsMode(props: HomeCandidateProps) {
           because it is the one thing here that is a list of every project rather
           than a piece of writing. */}
       <div className="dk-column dk-wide">
-        <section className="dk-section" aria-labelledby="dk-ledger-heading">
+        <section className="dk-section" id="dk-ledger" aria-labelledby="dk-ledger-heading">
           <h2 className="dk-h2" id="dk-ledger-heading">
             {analytics.ledgerHeading}
           </h2>
@@ -295,7 +400,7 @@ export function AnalyticsMode(props: HomeCandidateProps) {
         </section>
       </div>
 
-      <Foot copy={copy} disclosures={analytics.disclosures} />
+      <Foot copy={copy} disclosures={analytics.disclosures} marks={marks} />
     </>
   );
 }

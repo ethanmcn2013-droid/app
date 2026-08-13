@@ -15,7 +15,12 @@
  */
 
 import type { HomeMode, MyWorkGroup } from "../fixtures";
-import type { HomeCopy, HomeStateName, TodaySectionId } from "./contract";
+import type {
+  FirstRunView,
+  HomeCopy,
+  HomeStateName,
+  TodaySectionId,
+} from "./contract";
 
 export const MODE_NAMES: Readonly<Record<HomeMode, string>> = Object.freeze({
   today: "Today",
@@ -80,6 +85,10 @@ export const STATE_NAMES: Readonly<Record<HomeStateName, string>> = Object.freez
   unavailable: "Could not be read",
   archived: "Archived",
   empty: "Nothing in it",
+  // Three different facts, three different words. "Could not be read" is a
+  // read that failed, "Nothing in it" is a read that came back holding
+  // nothing, and this is a reader who has not started.
+  "first-run": "Nothing set up yet",
   failed: "Did not load",
   offline: "No connection",
   "all-clear": "Nothing needs you",
@@ -131,6 +140,55 @@ export const MODE_HEADLINES: Readonly<Record<HomeMode, string>> = Object.freeze(
   analytics: "What the records support.",
   briefing: "The whole day, in order.",
 });
+
+// ── The first screen ────────────────────────────────────────────────────────
+
+/**
+ * A PERSON'S FIRST EVER SCREEN, written once so four directions get it without
+ * improvising it.
+ *
+ * Editorial Line improvised this well under round-1 review and a director
+ * called it the single best decision anyone made in the lab. It should not
+ * have had to: the shell was telling all four that the read had failed. So the
+ * words move here, unchanged in substance, and every direction is handed them.
+ *
+ * The rule they follow, LAB_BRIEF Amendment 2: one plain sentence saying what
+ * is missing, and at least one thing the reader can actually do. Nothing here
+ * apologises, nothing here says a read failed, and nothing here calls an
+ * absence of setup an absence of work.
+ */
+export const FIRST_RUN: FirstRunView = Object.freeze({
+  heading: "Where to start",
+  line: "There is no project yet, so Home has nothing to read.",
+  nextLine:
+    "Work lives in a project. Make one in Tasks, and Home reads it from the next read.",
+  actions: Object.freeze([
+    Object.freeze({ id: "open-tasks", label: "Open Tasks", href: "/app/tasks" }),
+  ]),
+});
+
+/**
+ * The disclosure that carries the state, for a direction that shows its
+ * disclosures as a run. It says the fact and then refuses the two wrong
+ * readings of it in the same breath.
+ */
+export const FIRST_RUN_DISCLOSURE =
+  "There is no project yet. Nothing failed, and nothing here counts as zero.";
+
+/**
+ * Today's own line when there is nothing to read. Without it a first screen
+ * borrows the failed-read sentence and opens on "This is not an all clear",
+ * which tells a new reader that something went wrong on their first morning.
+ */
+export const FIRST_RUN_QUIET_LINE =
+  "Nothing has been set up yet, so there was nothing to read. This is not a failed read, and it is not an all clear either.";
+
+/**
+ * Replaces the withheld-accounting sentence, which otherwise blames a source
+ * that did not answer. There is no source. There is nothing connected.
+ */
+export const FIRST_RUN_ACCOUNTING_LINE =
+  "There is nothing connected yet, so there is no read to account for.";
 
 /** The lead sentence Analytics opens on. Prose first, never a chart wall. */
 export const ANALYTICS_LEAD =

@@ -16,13 +16,20 @@
 import type { HomeCandidateProps, MyWorkRowView } from "@/lib/home-layer/lab-shell";
 import {
   Entry,
+  FirstRun,
   Foot,
+  LAB_WRITES_NOTHING,
+  indexCount,
+  legendEntries,
   Meta,
   Offers,
+  ReadIndex,
   ReadLine,
   readVerdict,
+  RowActions,
   SectionCaveat,
   whenPart,
+  type IndexItem,
   type MarkKind,
 } from "./parts";
 
@@ -36,11 +43,11 @@ function markForRow(row: MyWorkRowView): MarkKind {
 }
 
 export function MyWorkMode(props: HomeCandidateProps) {
-  const { myWork, copy, chrome } = props;
+  const { myWork, copy, chrome, firstRun } = props;
   const openKey = myWork.selection?.key ?? null;
   const closeHref = props.hrefFor({ mode: "my-work", item: null });
   const verdict = readVerdict(myWork.state, myWork.disclosures, copy);
-  const limited = verdict.klass !== "complete";
+  const limited = verdict.klass === "partial" || verdict.klass === "refused";
 
   /**
    * A waiting line that is a fact about the PROJECT rather than about the row
@@ -77,6 +84,40 @@ export function MyWorkMode(props: HomeCandidateProps) {
             ? myWork.emptyLine
             : null;
 
+  if (firstRun) {
+    return (
+      <>
+        <ReadLine
+          verdict={verdict}
+          chrome={chrome}
+          standing={[]}
+          statusLabel={chrome.statusRegionLabel}
+          lead={firstRun.line}
+        />
+        <FirstRun view={firstRun} />
+        <Foot copy={copy} disclosures={[]} />
+      </>
+    );
+  }
+
+  const marks = new Set<MarkKind>();
+  for (const group of myWork.groups) {
+    for (const row of group.rows) marks.add(markForRow(row));
+  }
+  const legendHref = legendEntries(marks).length > 0 ? "#dk-legend" : null;
+
+  const indexItems: readonly IndexItem[] = [
+    ...myWork.groups
+      .filter((group) => group.rows.length > 0)
+      .map((group) => ({
+        id: `dk-group-${group.id}`,
+        label: group.heading,
+        count: indexCount(group.rows.length),
+        lead: group.id === "now",
+      })),
+    { id: "dk-mywork-reading", label: "About this list", count: null },
+  ];
+
   return (
     <>
       <ReadLine
@@ -84,6 +125,7 @@ export function MyWorkMode(props: HomeCandidateProps) {
         chrome={chrome}
         standing={[]}
         statusLabel={chrome.statusRegionLabel}
+        legendHref={legendHref}
       />
 
       {kindLine ? <p className="dk-lead">{kindLine}</p> : null}
@@ -91,12 +133,14 @@ export function MyWorkMode(props: HomeCandidateProps) {
         <p className="dk-lead">{myWork.selectionMissingLine}</p>
       ) : null}
 
-      <div className="dk-column">
+      <div className="dk-column" data-indexed={indexItems.length > 1 ? "true" : undefined}>
+        <ReadIndex label="Groups in this ledger" items={indexItems} />
+
         {myWork.groups.map((group) => {
           if (group.rows.length === 0) return null;
           const id = `dk-group-${group.id}`;
           return (
-            <section className="dk-section" key={group.id} aria-labelledby={`${id}-heading`}>
+            <section className="dk-section" id={id} key={group.id} aria-labelledby={`${id}-heading`}>
               <h2 className="dk-h2" id={`${id}-heading`}>
                 {group.heading}
               </h2>
@@ -130,6 +174,11 @@ export function MyWorkMode(props: HomeCandidateProps) {
                         <p className="dk-said dk-said-quiet">{row.coAssigneeLine}</p>
                       ) : null}
 
+                      {/* What this responsibility offers, on the row, at
+                          arrival. A seat that cannot finish work in a project
+                          says so here rather than after an interaction. */}
+                      {open ? null : <RowActions actions={row.actions} />}
+
                       {open ? (
                         <div className="dk-open">
                           <dl>
@@ -152,7 +201,11 @@ export function MyWorkMode(props: HomeCandidateProps) {
           );
         })}
 
-        <section className="dk-section" aria-labelledby="dk-mywork-reading-heading">
+        <section
+          className="dk-section"
+          id="dk-mywork-reading"
+          aria-labelledby="dk-mywork-reading-heading"
+        >
           <h2 className="dk-h2" id="dk-mywork-reading-heading">
             About this list
           </h2>
@@ -180,7 +233,12 @@ export function MyWorkMode(props: HomeCandidateProps) {
         </section>
       </div>
 
-      <Foot copy={copy} disclosures={myWork.disclosures} extra={[kindLine]} />
+      <Foot
+        copy={copy}
+        disclosures={myWork.disclosures}
+        marks={marks}
+        extra={[kindLine, myWork.rowsShown > 0 ? LAB_WRITES_NOTHING : null]}
+      />
     </>
   );
 }

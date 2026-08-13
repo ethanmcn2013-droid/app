@@ -24,8 +24,13 @@
  */
 
 import type { HomeCandidateProps, InboxGroup, InboxRow } from "@/lib/home-layer/lab-shell";
-import { DetailHeading, EventActions, EventState, type RowStatus } from "./interaction";
-import { Limits, Provenance, type LimitEntry } from "./shell";
+import {
+  DetailHeading,
+  EventActions,
+  EventRow,
+  EventState,
+  type RowStatus,
+} from "./interaction";
 
 /**
  * The row as the read found it, in the vocabulary the client keeps it in. A
@@ -68,26 +73,16 @@ function EventBody({
   refusesFirst: boolean;
 }>) {
   return (
-    <>
-      <ul className="ed-meta">
-        <li>
-          <Provenance provenance={row.provenance} />
-        </li>
-        <EventState eventId={row.eventId} initial={initialStatus(row)} as="items" />
-      </ul>
-
-      {row.revisionLine === null ? null : <p className="ed-why">{row.revisionLine}</p>}
-
-      <EventActions
-        eventId={row.eventId}
-        title={row.title ?? row.titleFallback}
-        initial={initialStatus(row)}
-        actions={row.actions}
-        snoozeOptions={snoozeOptions}
-        sourceRefusesFirst={refusesFirst}
-        variant="row"
-      />
-    </>
+    <EventRow
+      eventId={row.eventId}
+      title={row.title ?? row.titleFallback}
+      provenance={row.provenance.text}
+      revisionLine={row.revisionLine}
+      initial={initialStatus(row)}
+      actions={row.actions}
+      snoozeOptions={snoozeOptions}
+      sourceRefusesFirst={refusesFirst}
+    />
   );
 }
 
@@ -191,10 +186,43 @@ function Thread({
   );
 }
 
-export function InboxMode({
-  props,
-  limits,
-}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
+/**
+ * THE COUNT, AND WHETHER IT IS A TOTAL.
+ *
+ * Round 2, the most serious single finding against this mode: "'In your Inbox —
+ * 5 OPEN' is the largest numeral on the page, set as a definite total, on the
+ * same screen whose ledger admits '1 item could not be checked against the
+ * source, so it is counted but not named.' An incomplete count rendered as the
+ * page's headline figure is the exact failure the governing rule exists to
+ * prevent, and it is committed in the biggest type available." A second ballot
+ * added that it is "the closest thing in the lab to a KPI numeral, and it is
+ * doing no work that the badge in the mode row does not already do."
+ *
+ * Both are right, so the numeral is gone. `--text-heading` in mono was giving a
+ * count the rank of a headline on a page whose headline is a sentence. What
+ * replaces it is a section note in the spine, at the size every other section
+ * definition uses — and it carries its own coverage, in the same type, in
+ * words. Three states, and none of them can be misread as a total:
+ *
+ *   complete     "5 open."
+ *   partial      "5 open, and at least one more that could not be counted."
+ *   unavailable  the shell's own unreadable-count word. Never a zero.
+ *
+ * The mode row keeps the badge, which is the affordance that was always doing
+ * this job, and it already carries the coverage mark beside it.
+ */
+function countLine(inbox: HomeCandidateProps["inbox"], unreadable: string): string | null {
+  if (!inbox.badge.rendered) return null;
+  if (inbox.badge.glyph === null || inbox.badge.coverage === "unavailable") {
+    return `Open items ${unreadable}.`;
+  }
+  if (inbox.badge.coverage === "partial") {
+    return `${inbox.badge.glyph} open, and at least one more that could not be counted.`;
+  }
+  return `${inbox.badge.glyph} open.`;
+}
+
+export function InboxMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
   const { inbox, copy, world, hrefFor } = props;
   const selection = inbox.selection;
   const backHref = hrefFor({ mode: "inbox", event: null });
@@ -205,10 +233,10 @@ export function InboxMode({
     resurfaceLine: option.resurfaceLine,
   }));
 
+  const count = countLine(inbox, copy.unreadableCount);
+
   return (
     <>
-      <Limits entries={limits} />
-
       {inbox.selectionMissingLine === null ? null : (
         <p className="ed-refused">{inbox.selectionMissingLine}</p>
       )}
@@ -221,12 +249,7 @@ export function InboxMode({
         <section className="ed-queue" aria-labelledby="ed-queue-heading">
           <div className="ed-section-head">
             <h2 id="ed-queue-heading">In your Inbox</h2>
-            {inbox.badge.rendered ? (
-              <p className="ed-count">
-                <b>{inbox.badge.glyph ?? copy.unreadableCount}</b>
-                <span>open</span>
-              </p>
-            ) : null}
+            {count === null ? null : <p className="ed-section-note">{count}</p>}
           </div>
 
           {inbox.emptyLine === null ? null : <p className="ed-lede">{inbox.emptyLine}</p>}

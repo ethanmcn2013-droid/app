@@ -85,6 +85,7 @@ import type {
   AnalyticsView,
   BriefingView,
   Disclosure,
+  FirstRunView,
   HomeCandidateProps,
   HomeChrome,
   HomeModeLink,
@@ -110,6 +111,10 @@ import {
   CLAIMED_ABOVE,
   COMING_UP_WINDOW,
   DOCUMENT_TITLES,
+  FIRST_RUN,
+  FIRST_RUN_ACCOUNTING_LINE,
+  FIRST_RUN_DISCLOSURE,
+  FIRST_RUN_QUIET_LINE,
   HOME_LAB_COPY,
   INBOX_KIND_LABELS,
   MODE_HEADLINES,
@@ -372,10 +377,27 @@ function inboxDataFor(world: Scenario): Readonly<{
 
 // ── States and disclosures ──────────────────────────────────────────────────
 
+/**
+ * THE FIRST-RUN TEST, and why it is the reader's Project set rather than the
+ * scope's.
+ *
+ * A reader with no Project has not started. A reader who narrowed Read Scope
+ * onto a Project that could not be read has started and hit a failure. Both
+ * resolve to zero Projects in scope, and the two are not the same fact, so the
+ * test has to be the one that can tell them apart: does this reader have a
+ * Project at all.
+ */
+function readerHasNoProjects(world: Scenario): boolean {
+  return world.projects.length === 0;
+}
+
 function coverageState(world: Scenario, scope: ResolvedScope): HomeStateName {
   const statuses = world.projectStates
     .filter((entry) => scope.projectIds.includes(entry.projectId))
     .map((entry) => entry.sourceStatus);
+  // Before every other test. Nothing was attempted, so nothing can have
+  // failed, and `unavailable` would be a claim about a read that never ran.
+  if (readerHasNoProjects(world)) return "first-run";
   if (scope.projectIds.length === 0) return "unavailable";
   if (statuses.length === 0) return "unavailable";
   if (statuses.every((status) => status === "unavailable")) return "unavailable";
@@ -401,7 +423,14 @@ function coverageDisclosures(world: Scenario, scope: ResolvedScope): readonly Di
     (entry) => entry.routeState !== "unavailable" && entry.sourceStatus === "unavailable",
   );
 
-  if (scope.projectIds.length === 0) {
+  if (readerHasNoProjects(world)) {
+    out.push({
+      id: "first-run",
+      tone: "setup",
+      state: "first-run",
+      text: FIRST_RUN_DISCLOSURE,
+    });
+  } else if (scope.projectIds.length === 0) {
     out.push({
       id: "scope-empty",
       tone: "scope",
@@ -563,6 +592,7 @@ const PLATFORM_LIMIT_CODES: ReadonlySet<string> = new Set(["Q7", "Q8"]);
 
 function quietState(
   result: TodayResult,
+  firstRun: boolean,
 ): Readonly<{
   allowed: boolean;
   readIsQuiet: boolean;
@@ -574,6 +604,25 @@ function quietState(
     codes
       .map((code) => QUIET_REASONS[code])
       .filter((text): text is string => Boolean(text));
+
+  /**
+   * A first screen, before the ordinary wording gets to it.
+   *
+   * The codes are still published whole, so nothing is hidden: Q9 fired
+   * because there is no project in scope, and a direction that discloses the
+   * codes one at a time still gets all of them. What changes is the sentence.
+   * `readIsQuiet` stays false because this read was not quiet, it did not
+   * happen, and a direction keying its calm-day composition off that flag must
+   * not be handed a new reader by mistake.
+   */
+  if (firstRun) {
+    return Object.freeze({
+      allowed: false,
+      readIsQuiet: false,
+      blockedBy,
+      line: FIRST_RUN_QUIET_LINE,
+    });
+  }
 
   // The unqualified all clear. §9.2 permits it only with Q1 to Q9 all false,
   // which v1 cannot reach, so this branch exists to be correct rather than to
@@ -733,6 +782,14 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
 
   const state0 = coverageState(world, scope);
   const shared = coverageDisclosures(world, scope);
+  /**
+   * One reader-level fact, read once and used by every mode below. It is
+   * deliberately not derived from `state0`: a mode that decided it was in a
+   * first run because its own state said so would be re-deriving the reader
+   * from the read, which is the inversion that produced the defect.
+   */
+  const firstRun = readerHasNoProjects(world);
+  const firstRunView: FirstRunView | null = firstRun ? FIRST_RUN : null;
 
   const todaySelectionKey = state.item;
   const todayViewSections = todaySections(todayResult, today, unreadable, href, false);
@@ -749,8 +806,10 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
     accountingLine: accountingLineOf(todayResult),
     accountingWithheldLine: todayResult.accounting
       ? null
-      : "The read cannot be accounted for exactly, because at least one source did not answer in full. No total is shown rather than a total that would be wrong.",
-    quiet: quietState(todayResult),
+      : firstRun
+        ? FIRST_RUN_ACCOUNTING_LINE
+        : "The read cannot be accounted for exactly, because at least one source did not answer in full. No total is shown rather than a total that would be wrong.",
+    quiet: quietState(todayResult, firstRun),
     unsupported: UNSUPPORTED_DISCLOSURES,
     disclosures: shared,
     briefingHref: href({ mode: "briefing", item: null }),
@@ -927,7 +986,15 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
       : (inboxRows.find((row) => row.eventId === state.event) ?? null);
 
   const inbox: InboxView = Object.freeze({
-    state: badge.coverage === "unavailable" ? "unavailable" : inboxRows.length === 0 ? "empty" : state0,
+    // `first-run` outranks both. A queue with no Project behind it is not an
+    // empty queue and not a failed read: there is no queue yet.
+    state: firstRun
+      ? "first-run"
+      : badge.coverage === "unavailable"
+        ? "unavailable"
+        : inboxRows.length === 0
+          ? "empty"
+          : state0,
     headline: MODE_HEADLINES.inbox,
     badge: Object.freeze({
       count: badge.count,
@@ -965,7 +1032,7 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
             {
               id: "inbox-no-projects",
               tone: "setup" as const,
-              state: "unavailable" as HomeStateName,
+              state: "first-run" as HomeStateName,
               text: "There is no project yet, so there is nothing for a count to be a count of.",
             },
           ]),
@@ -1022,9 +1089,12 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
           .find((row) => row.key.endsWith(state.item ?? "")) ?? null);
 
   const myWork: MyWorkView = Object.freeze({
+    // `no-projects` was resolving to `empty`, which said the reader had been
+    // read and was carrying nothing. They have not been read. `kind` keeps the
+    // fixture's own word for the same fact, so the two stay in step.
     state:
       projection.kind === "no-projects"
-        ? "empty"
+        ? "first-run"
         : projection.kind === "unavailable"
           ? "unavailable"
           : state0,
@@ -1239,7 +1309,9 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
     accountingLine: accountingLineOf(briefingResult),
     accountingWithheldLine: briefingResult.accounting
       ? null
-      : "The read cannot be accounted for exactly, because at least one source did not answer in full.",
+      : firstRun
+        ? FIRST_RUN_ACCOUNTING_LINE
+        : "The read cannot be accounted for exactly, because at least one source did not answer in full.",
     disclosures: shared,
     returnHref: href({ mode: "today", item: null }),
     returnLabel: HOME_LAB_COPY.actions.backToToday,
@@ -1358,6 +1430,7 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
     // not there.
     state: labViewState(state),
     world: Object.freeze({ id: world.id, label: world.label, proves: world.proves }),
+    firstRun: firstRunView,
     chrome,
     today: today_,
     inbox,

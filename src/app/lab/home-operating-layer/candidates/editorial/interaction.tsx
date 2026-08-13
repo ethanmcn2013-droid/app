@@ -18,6 +18,46 @@
  *
  * `useSyncExternalStore` rather than an effect that seeds state: state written
  * from an effect is state that renders wrong once first.
+ *
+ * ── THE ISLAND BOUNDARY, WRITTEN DOWN ──────────────────────────────────────
+ *
+ * Round 2, from the only ballot that passed this direction outright: "The only
+ * direction that spends client JavaScript... the spend is legitimate, but it is
+ * a spend against a programme with 0.9 KB of headroom, and it is entirely
+ * unquantified. At the scale fixture (50 grouped events) that island hydrates
+ * roughly 100 buttons." And: "Inline row actions on Inbox are precisely where
+ * Home would be tempted to reach for useTaskPanel/useTasks. Hard constraint 2
+ * says Home may not inherit the Tasks runtime; this is the direction most
+ * exposed to that drift and it needs an explicit boundary before any production
+ * code."
+ *
+ * The boundary, and it is a hard one:
+ *
+ *   MAY IMPORT   react, and the shell's published types. Nothing else.
+ *   MAY NOT      useTaskPanel · useTasks · useDomain · useColumnConfig ·
+ *                usePersonalization · useCalendarFrame, or anything that
+ *                reaches them transitively. Those six are what make the four
+ *                Tasks routes hold an open connection and never reach network
+ *                idle, and they carry a first-run redirect to /welcome. Home
+ *                settles; Home must keep settling.
+ *   NO CONTEXT   no provider, no context, no store outside this file. The row
+ *                store is a Map in this module and it stays that way, so the
+ *                whole client surface of this direction is one file that can be
+ *                read in five minutes and deleted in one.
+ *
+ * THE CEILING. One island per event row, not two: `EventState` and
+ * `EventActions` were separate components subscribing to the same key, which
+ * doubled the component instances for no behaviour. They are one component now,
+ * so the scale fixture instantiates 50, not 100. The declared ceiling for this
+ * module is 4 KB gzip of route-local JavaScript, hydrating at most one
+ * component per visible row and zero on Today, My work's list, Analytics and
+ * the whole of the shell.
+ *
+ * WHAT IS STILL OPEN, and it is not fixable here: nobody has MEASURED the
+ * number. Confirming 4 KB needs `perf:budgets` against a real build, and the
+ * capture harness runs no client JS at all. The ceiling above is a commitment,
+ * not a receipt, and it should be treated as unverified until a build says
+ * otherwise.
  */
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -291,6 +331,9 @@ export function EventActions({
       entry.id !== "open" && (variant === "detail" || ROW_ACTIONS.includes(entry.id)),
   );
   const refused = status.outcome === "refused";
+  const reasoned = live.filter(
+    (entry) => !entry.available && entry.unavailableReason !== null,
+  );
 
   return (
     <>
@@ -301,18 +344,38 @@ export function EventActions({
             (entry.id === "clear" && status.disposition === "cleared") ||
             (entry.id === "snooze" && status.disposition !== "open") ||
             (entry.id === "approve" && status.outcome === "committed");
-          const disabled = !entry.available || spent || status.outcome === "pending";
+          const off = !entry.available || spent || status.outcome === "pending";
+          const because =
+            !entry.available && entry.unavailableReason !== null
+              ? `ed-why-${eventId}-${entry.id}`
+              : undefined;
           return (
             <li key={entry.id}>
+              {/*
+                ROUND 2: "the disabled actions state their reason as adjacent
+                prose rather than an associated description, so a screen-reader
+                user hears a disabled button with no explanation."
+
+                Two changes, and the second is why the first works. The reason
+                is now bound to the control with aria-describedby. And the
+                control uses aria-disabled rather than the disabled attribute,
+                because `disabled` takes a button out of the tab order and a
+                control nobody can reach is a control whose description nobody
+                ever hears. Disabled-with-a-reason was already this direction's
+                best interaction detail visually; now it reaches everyone. The
+                handler is guarded instead, so the control is inert in fact as
+                well as in name.
+              */}
               <button
                 type="button"
                 className={variant === "row" ? "ed-act" : "ed-btn"}
                 data-weight={
                   variant === "detail" && entry.id === "approve" ? "primary" : undefined
                 }
-                disabled={disabled}
+                aria-disabled={off ? true : undefined}
+                aria-describedby={because}
                 aria-expanded={entry.id === "snooze" ? menuOpen : undefined}
-                onClick={() => act(entry.id)}
+                onClick={off ? undefined : () => act(entry.id)}
               >
                 {entry.label}
               </button>
@@ -350,15 +413,68 @@ export function EventActions({
         </div>
       ) : null}
 
-      <ul className="ed-why">
-        {live
-          .filter((entry) => !entry.available && entry.unavailableReason !== null)
-          .map((entry) => (
-            <li key={entry.id}>
+      {reasoned.length === 0 ? null : (
+        <ul className="ed-why">
+          {reasoned.map((entry) => (
+            <li key={entry.id} id={`ed-why-${eventId}-${entry.id}`}>
               {entry.label}: {entry.unavailableReason}
             </li>
           ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+/**
+ * ONE ISLAND PER QUEUE ROW.
+ *
+ * The state words and the two dispositions were two client components
+ * subscribing to the same key, which doubled the instances for no behaviour.
+ * They are one component now: the scale fixture hydrates 50 of these, not 100.
+ * The opened detail keeps `EventState` and `EventActions` separately because
+ * its state words sit inside a definition list a long way from its controls,
+ * and there is only ever one open detail on a page.
+ */
+export function EventRow({
+  eventId,
+  title,
+  provenance,
+  revisionLine,
+  initial,
+  actions,
+  snoozeOptions,
+  sourceRefusesFirst,
+}: Readonly<{
+  eventId: string;
+  title: string;
+  provenance: string;
+  revisionLine: string | null;
+  initial: RowStatus;
+  actions: readonly RowAction[];
+  snoozeOptions: readonly SnoozeChoice[];
+  sourceRefusesFirst: boolean;
+}>) {
+  return (
+    <>
+      <ul className="ed-meta">
+        <li>
+          <span className="ed-prov">{provenance}</span>
+        </li>
+        <EventState eventId={eventId} initial={initial} as="items" />
       </ul>
+
+      {revisionLine === null ? null : <p className="ed-why">{revisionLine}</p>}
+
+      <EventActions
+        eventId={eventId}
+        title={title}
+        initial={initial}
+        actions={actions}
+        snoozeOptions={snoozeOptions}
+        sourceRefusesFirst={sourceRefusesFirst}
+        variant="row"
+      />
     </>
   );
 }
@@ -409,6 +525,10 @@ export function TaskActions({
     });
   }, [afterSource, sourceRefusesFirst, title, tried, update]);
 
+  const reasoned = actions.filter(
+    (entry) => !entry.available && entry.unavailableReason !== null,
+  );
+
   const explainReassign = useCallback(() => {
     update({
       note: "This read does not carry the people you could hand work to, so handing it over stops here.",
@@ -421,15 +541,20 @@ export function TaskActions({
       <ul className="ed-actions">
         {actions.map((entry) => {
           const isComplete = entry.id === "complete";
-          const disabled =
+          const off =
             !entry.available || status.outcome === "pending" || (isComplete && status.done);
+          const because =
+            !entry.available && entry.unavailableReason !== null
+              ? `ed-why-${taskKey}-${entry.id}`
+              : undefined;
           return (
             <li key={entry.id}>
               <button
                 type="button"
                 className="ed-btn"
-                disabled={disabled}
-                onClick={isComplete ? complete : explainReassign}
+                aria-disabled={off ? true : undefined}
+                aria-describedby={because}
+                onClick={off ? undefined : isComplete ? complete : explainReassign}
               >
                 {entry.label}
               </button>
@@ -455,20 +580,28 @@ export function TaskActions({
 
       {status.note === null ? null : <p className="ed-why">{status.note}</p>}
 
-      <ul className="ed-why">
-        {actions
-          .filter((entry) => !entry.available && entry.unavailableReason !== null)
-          .map((entry) => (
-            <li key={entry.id}>
+      {reasoned.length === 0 ? null : (
+        <ul className="ed-why">
+          {reasoned.map((entry) => (
+            <li key={entry.id} id={`ed-why-${taskKey}-${entry.id}`}>
               {entry.label}: {entry.unavailableReason}
             </li>
           ))}
-      </ul>
+        </ul>
+      )}
     </>
   );
 }
 
-/** Marks a My work row as struck through once the source has confirmed it. */
+/**
+ * The My work row itself, so that a confirmed completion can strike its title.
+ *
+ * It owns the `<li>` rather than a wrapper inside it because the title now sits
+ * above the ledger field as a direct grid child of the row (round 2: "put the
+ * row title above its lateness at 390"), and no CSS combinator reaches back up
+ * from a later sibling to an earlier one. One island per row either way; this
+ * one just starts an element higher.
+ */
 export function TaskRowState({
   taskKey,
   children,
@@ -483,7 +616,7 @@ export function TaskRowState({
     note: null,
   };
   const [status] = useRowStatus(taskKey, initial);
-  return <div className={status.done ? "ed-work-body ed-done" : "ed-work-body"}>{children}</div>;
+  return <li className={status.done ? "ed-work-row ed-done" : "ed-work-row"}>{children}</li>;
 }
 
 /**

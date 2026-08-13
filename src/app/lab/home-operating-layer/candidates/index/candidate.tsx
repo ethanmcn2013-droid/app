@@ -54,19 +54,25 @@ import { AnalyticsMode } from "./analytics";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
 import { BriefingMode, TodayMode } from "./read";
-import { ScopeControl } from "./parts";
+import { Imprint } from "./parts";
 import "./reading-index.css";
 
 const INDEX_ID = "ri-index";
 const INDEX_LABEL_ID = "ri-index-label";
 
 /**
- * The masthead. The suite line, when the read was taken, and which issue of it
- * you are holding.
+ * The masthead: the wordmark and the suite, on one rule.
  *
  * Home, Notes, Tasks and Timeline stay visible and text labelled at every
  * width, including 320, which is the responsive rule this direction is most at
  * risk of failing and therefore the one it puts first.
+ *
+ * WHY THE SUITE AND THE INDEX NO LONGER LOOK ALIKE. A director found the two
+ * bands unresolved — mono capitals two lines above mono capitals — and could
+ * not tell which row was the suite and which was Home. So the suite is now a
+ * single ruled line with the wordmark, set in mono capitals and marked with a
+ * rule under the product you are in; the index below it is sentence case at
+ * heading size with numbers and leaders. Two bands, two registers, one glance.
  *
  * The Home entry exposes section state with `aria-current="true"` and never
  * claims `page`: the mode index below owns the exact-match claim
@@ -105,10 +111,6 @@ function Masthead({ props }: { props: HomeCandidateProps }) {
           </li>
         </ul>
       </nav>
-      <p className="ri-mast-read">{chrome.asOf.line}</p>
-      <div className="ri-mast-scope">
-        <ScopeControl props={props} />
-      </div>
     </div>
   );
 }
@@ -124,21 +126,27 @@ function Masthead({ props }: { props: HomeCandidateProps }) {
  * The leader is drawn rather than slid: the dot field is stationary and a
  * paper-coloured cover travels off it to the right, staggered down the four
  * rows, so the contents page writes itself in. Under reduced motion the motion
- * tokens are 0 ms, the stagger is 0 ms with them, and every row is simply
- * already drawn.
+ * tokens are 0 ms, the stagger is 0 ms with them, every row is simply already
+ * drawn, and an explicit reduced-motion block takes the animations off
+ * entirely rather than relying on the token collapse alone.
  *
- * The leader run is capped rather than allowed to grow with the window. A
- * 1,120 px traverse from a mode's name to its condition is a real problem for
- * a reader on a screen magnifier, who never has both in view at once; at every
- * width above 1080 the name and its condition now stay inside one 400 px
- * span.
+ * WHAT THE ROW DOES WHEN THE DOTS RUN OUT, which is the question two directors
+ * asked and round 2 had no answer to. The row is a wrapping flex line with a
+ * floor under the leader: the dots may never be shorter than 4.5 rem, and the
+ * condition may never be narrower than 11 rem. When those two cannot both hold
+ * on one line — at 390, at 320, and at 200 % text-only enlargement on a
+ * 1440 screen alike — the condition drops to a second line and takes the full
+ * row width, right aligned, inside the page's own gutter. Nothing is
+ * truncated, nothing is crushed, and the device the direction is named after
+ * gets MORE dots on a small screen rather than fewer. One mechanism, every
+ * width, every zoom, no viewport-conditional document.
  */
 function ModeIndex({ props }: { props: HomeCandidateProps }) {
   const { chrome, copy, inbox, state, hrefFor } = props;
   const atDepth = state.mode === "briefing";
   return (
     <nav className="ri-index" id={INDEX_ID} aria-labelledby={INDEX_LABEL_ID} tabIndex={-1}>
-      <p className="ri-label ri-index-label" id={INDEX_LABEL_ID}>
+      <p className="ri-index-label" id={INDEX_LABEL_ID}>
         {chrome.navLabel}
       </p>
       <ol className="ri-index-list">
@@ -163,21 +171,27 @@ function ModeIndex({ props }: { props: HomeCandidateProps }) {
                 href={mode.href}
                 aria-current={mode.ariaCurrent ?? undefined}
               >
-                <span className="ri-num" aria-hidden="true">
-                  {ordinal(position + 1)}
-                </span>
-                <span className="ri-index-name">{mode.label}</span>
-                <span className="ri-leader" aria-hidden="true" />
-                <span className="ri-index-state">
+                <span className="ri-index-head">
+                  <span className="ri-num ri-index-num" aria-hidden="true">
+                    {ordinal(position + 1)}
+                  </span>
+                  <span className="ri-index-name">{mode.label}</span>
                   {mode.badge ? (
                     <>
                       {/*
-                        A count of nothing is still a count and still renders,
-                        but it does not get the weight of something waiting. The
-                        accessible name beside it is the shell's, unchanged.
+                        A COUNT THAT IS NOT A TOTAL IS NOT DRAWN AS ONE.
+                        A director found a closed indigo pill reading 5 on the
+                        same screen whose ledger said one of those five could
+                        not be checked. So the pill only closes when the count
+                        is complete: a partial count is drawn open, with a
+                        broken outline and no fill, and the condition beside it
+                        says "Partly read" in words. A count of nothing renders
+                        too, and gets neither. The accessible name is the
+                        shell's full sentence, unchanged.
                       */}
                       <span
                         className="ri-index-badge"
+                        data-coverage={inbox.badge.coverage}
                         data-zero={inbox.badge.count === 0 ? "" : undefined}
                         aria-hidden="true"
                       >
@@ -186,6 +200,9 @@ function ModeIndex({ props }: { props: HomeCandidateProps }) {
                       <span className="ri-sr">{inbox.badge.accessibleName}</span>
                     </>
                   ) : null}
+                </span>
+                <span className="ri-leader" aria-hidden="true" />
+                <span className="ri-index-state">
                   <span className="ri-cond" data-mark={condition.mark}>
                     <span className="ri-cond-mark" aria-hidden="true" />
                     <span className="ri-cond-word">{condition.word}</span>
@@ -268,9 +285,22 @@ const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
         {`${chrome.modeEyebrow}. ${current.word}${current.cause ? `. ${current.cause}` : ""}.`}
       </p>
 
-      <div className="ri-plate">
-        <Masthead props={props} />
-        <ModeIndex props={props} />
+      {/*
+        THE FRONT MATTER, IN THE SAME TWO COLUMNS AS THE READ. The masthead and
+        the index sit in the reading column; the imprint sits in the standing
+        column, level with the masthead, so column two is occupied from the
+        first pixel of the page rather than from wherever the headline happens
+        to end. It is also what reconciles the two right edges a director
+        measured: the dateline and the scope control used to align to the
+        measure while the rail aligned to the plate, and the dateline and the
+        scope control have now moved into the column they were aligning to.
+      */}
+      <div className="ri-plate ri-front">
+        <div className="ri-front-read">
+          <Masthead props={props} />
+          <ModeIndex props={props} />
+        </div>
+        <Imprint props={props} />
       </div>
 
       <main id="app-main-content" tabIndex={-1}>
@@ -279,11 +309,20 @@ const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
         </div>
       </main>
 
-      <div className="ri-plate">
-        <div className="ri-foot">
-          <a href={`#${INDEX_ID}`}>Back to the index</a>
+      {/*
+        A contents page closes by offering the way back to the contents, and it
+        does not do it on a page with nothing in it. A first screen has one
+        move on it, and a return to the top of a screen the reader has not
+        scrolled is furniture, which is what a director was objecting to when
+        they found this closing a dead end.
+      */}
+      {props.firstRun ? null : (
+        <div className="ri-plate">
+          <div className="ri-foot">
+            <a href={`#${INDEX_ID}`}>Back to the top</a>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

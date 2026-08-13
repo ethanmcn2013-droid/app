@@ -1,90 +1,106 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * CONTEXT RAIL
+ * MERIDIAN
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * THE THESIS. Home is four modes a founder switches between many times a day,
- * and switching is the operation the interface should be best at. So the
- * navigation is a labelled column that never leaves: four text links, always
- * in the same place, always in the same order. You never have to look for
- * where you are. The content beside it is free to be a document rather than a
- * dashboard, because none of the orientation is its job.
+ * THE THESIS. Home already knows what time everything is. "Due today", "2 days
+ * late", "Quiet for 9 days", "Yesterday at 14:20", "Comes back at 18:00 on
+ * Thursday 16 July", "Looking fourteen days ahead", "The earliest this can show
+ * a trend is 24 July 2026" — every one of those is a temporal fact, and every
+ * other composition renders them as text inside a list and then orders the list
+ * by something else. This direction makes time the structure instead:
  *
- * ── THE SIGNATURE MOMENT: THE STATE SPINE ──────────────────────────────────
+ *     the page is ordered by when each thing next wants you,
+ *     and it is bracketed by the two instants that bound the read.
  *
- * A rule runs down the left edge of the navigation, one segment per mode, and
- * each segment is drawn in that mode's own read state:
+ * Nothing is ranked into position by an invisible score. An entry sits where
+ * its own time puts it, its time is printed in a column you can run your eye
+ * down without reading a single title, and an entry with no time is not placed
+ * on the clock at all.
  *
- *     │  Today       Read              a continuous hairline
- *     ┆  Inbox       Partly read       a heavier dashed rule
- *     ┆  My work     Nothing in it     a dashed hairline
- *     ╷
- *     ╵  Analytics   Could not be read a heavy rule, severed above and below
+ * ── THE SIGNATURE MOMENT: TWO RULES, AND THE SPACE BETWEEN THEM ────────────
  *
- * On a fully answered day the spine is one unbroken line down the column. When
- * a provider goes down the line thickens and breaks into dashes. When a read
- * fails outright the line is CUT: there is a gap in the spine beside the mode
- * that could not be read. The governing rule asks that a quiet day and a
- * broken provider differ at a glance without reading a word, and this is that
- * difference drawn rather than described. A horizontal accent tick crosses the
- * spine at the mode you are standing in, so position and health are read in
- * the same look.
+ * Two full-bleed horizontal rules, and they are the only full-bleed elements in
+ * the direction.
  *
- * It only exists here. A direction that navigates from the top of the page, or
- * from a contents table, or from a tab row, is looking at one mode at a time;
- * only a persistent column is looking at all four at once. It costs four rules
- * and four short lines of type, no chrome, no container, and no JavaScript.
+ *   THE MERIDIAN, at the top, is now. It carries the instant the read was
+ *   taken. Everything below it is the read.
  *
- * At 1023px and below the instrument ROTATES rather than stacking: the spine
- * becomes a horizontal rule under a single row of four text-labelled modes,
- * with the same four weights and the same break, and the tick becomes
- * vertical. The transformation is the same instrument in the other axis, which
- * is why the phone keeps the direction's whole argument in about 130px.
+ *   THE HORIZON, at the bottom, is the far edge of what this read reached —
+ *   fourteen days on Today, seven on My work, four weeks of records on
+ *   Analytics, the last thing that arrived on Inbox. It carries the shell's own
+ *   window sentence, so the two rules can never drift from the read they
+ *   bracket.
  *
- * ── WHAT THE SHELL DELIBERATELY IS NOT ─────────────────────────────────────
+ * Everything between them is inside the read. Everything below the horizon is
+ * outside it: further out than the window looked, off the clock altogether, or
+ * not yet answerable. A founder at 07:00 sees the shape of the next fortnight
+ * before reading a word, and on a quiet day the space between the rules is
+ * genuinely open. That emptiness is the direction's answer to what a wide
+ * screen is for: it is the amount of time nothing is asking for, and it is
+ * captioned in words so it can never be mistaken for a page that failed to
+ * finish loading.
  *
- * There is no tint behind the rail and no filled active row. Both were here,
- * and both are the default SaaS sidebar: a pale slab with a highlighted pill
- * says nothing about this product and competes with the work. The rail is now
- * type on the same paper as the page, held by one hairline and one instrument.
- * The shell is quieter than the content, which is the rule.
+ * AND WHEN THE READ BREAKS, THE PAPER CHANGES. A source that was asked and did
+ * not answer means the time between the two rules is still there and Home could
+ * not see into it. So the field between them is RULED — a lined ground under
+ * the whole read — and the shell's own failure sentence is set at heading size
+ * hard against the meridian. A partly-read day keeps open paper and gets the
+ * sentence. A finished read gets neither. Three silhouettes, told apart from
+ * across a room, before a word is read, and still told apart with every colour
+ * removed. The previous occupant of this folder was vetoed for expressing that
+ * difference as one hairline; this is the whole material of the page.
  *
- * The suite is a colophon, not a banner. Products, the reader, Account and the
- * wordmark sit at the FOOT of the column, pinned to the bottom of the window
- * on wide screens and after the content on a phone. A founder opening Today on
- * a phone reaches the headline first and the decision second; the suite is
- * still one screen away and still four plain text links.
+ * ── WHY IT IS NOT A NEAR NEIGHBOUR OF THE OTHER THREE ──────────────────────
  *
- * ── Engineering ────────────────────────────────────────────────────────────
+ * The other three directions are all composed on a vertical: a measure, a
+ * spine, a contents column. This one is composed on a horizontal, and its
+ * ordering principle is not rank, not the document, and not the index. It is
+ * the clock. It is also the only direction in which the page's structure can be
+ * wrong — put an undated item at a time and the composition has lied — which is
+ * why `parts.tsx` refuses to place anything it was not given a time for.
  *
- * Zero client JavaScript. Every control is a link, a `details` element or a
- * native focus target. The programme has 0.9 KB of shared-runtime headroom and
- * this direction asks for none of it. All of the expression is in CSS, type,
- * rhythm and composition, which are free.
+ * ── WHAT IT COSTS, SAID PLAINLY ────────────────────────────────────────────
+ *
+ * Two rules and their labels are about 96px of vertical furniture on every
+ * mode, spent before the first entry. The time gutter is 10rem of width the
+ * measure never gets back at any size above 640px. And ordering by time rather
+ * than by rank means the three ranked decisions are not automatically the first
+ * three things on the page: they are first because Today's own section order
+ * puts them first, and on a day where something is two days late that late
+ * thing leads. That is the right answer, and it is a real loss of control over
+ * the fold.
+ *
+ * ── WHAT IT SPENDS AT RUNTIME ──────────────────────────────────────────────
+ *
+ * Nothing. Every file in this folder is a Server Component, depth is
+ * `<details>`, selection is the URL, motion is two CSS animations on transform
+ * alone. The programme has 0.9 KB of shared-runtime headroom and this direction
+ * asks for none of it.
  */
 
-import type { CSSProperties } from "react";
 import type {
   HomeCandidate,
   HomeCandidateProps,
-  HomeMode,
   HomeModeLink,
-  HomeStateName,
 } from "@/lib/home-layer/lab-shell";
-import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
+import { HOME_APP_PATH, PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { AnalyticsMode } from "./analytics";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
-import { bandOf, coverageByMode } from "./state";
+import { Masthead } from "./parts";
+import { readingsFor, type Reading } from "./reading";
 import { BriefingMode, TodayMode } from "./today";
 import "./rail.css";
 
 /**
- * The three products, in the order the suite states them. Paths come from the
- * repository's typed constants so this file never invents a destination; the
- * names are the products' own.
+ * The suite, at the top, in the order the suite states it. Home is one of four
+ * destinations rather than the parent of the other three, which is the
+ * hierarchy the product actually has. Paths come from the repository's typed
+ * constants so this file never invents a destination.
  */
-const PRODUCTS: readonly (readonly [string, string])[] = [
+const SUITE: readonly (readonly [string, string])[] = [
+  ["Home", HOME_APP_PATH],
   ["Notes", PRODUCT_APP_PATHS.notes],
   ["Tasks", PRODUCT_APP_PATHS.tasks],
   ["Timeline", PRODUCT_APP_PATHS.timeline],
@@ -93,228 +109,237 @@ const PRODUCTS: readonly (readonly [string, string])[] = [
 /** Where the account lives. Identity and administration, nothing else. */
 const ACCOUNT_PATH = "/app/settings";
 
-function ModeLink({
-  link,
-  props,
-  index,
-  state,
-}: {
-  link: HomeModeLink;
-  props: HomeCandidateProps;
-  index: number;
-  state: HomeStateName;
-}) {
-  const isBriefing = props.state.mode === "briefing";
-  return (
-    <li
-      className="rl-mode"
-      data-band={bandOf(state)}
-      data-here={link.ariaCurrent ? "yes" : undefined}
-      style={{ "--rl-i": index } as CSSProperties}
-    >
-      <a
-        className="rl-nav-link"
-        href={link.href}
-        aria-current={link.ariaCurrent ?? undefined}
-      >
-        <span className="rl-nav-label">
-          <span className="rl-nav-name">{link.label}</span>
-          {link.badge ? (
-            <span className="rl-badge" data-coverage={props.inbox.badge.coverage}>
-              <span aria-hidden="true">{link.badge.glyph}</span>
-              {link.badge.announce ? (
-                <span className="rl-sr">{props.inbox.badge.accessibleName}</span>
-              ) : null}
-            </span>
-          ) : null}
-        </span>
-        {/* Printed in every world, including the good one. Silence used to
-            stand for "read", and a reader could not tell a mode that was read
-            from a mode that was never evaluated. */}
-        <span className="rl-mode-state">{props.copy.states[state]}</span>
-      </a>
-      {link.mode === "today" && isBriefing ? (
-        /* The briefing is depth from Today, not a fifth mode, so it appears as
-           Today's child and only while the reader is in it. It is also the
-           most specific Home-local link on that page, so it is the one that
-           carries `page` while Today keeps the subtree match. */
-        <ul className="rl-subnav">
-          <li>
-            <a
-              className="rl-nav-link rl-nav-sub"
-              href={props.hrefFor({ mode: "briefing", item: null })}
-              aria-current="page"
-            >
-              {props.copy.modeNames.briefing}
-            </a>
-          </li>
-        </ul>
-      ) : null}
-    </li>
-  );
-}
-
-function Rail({
-  props,
-  coverage,
-}: {
-  props: HomeCandidateProps;
-  coverage: Readonly<Record<HomeMode, HomeStateName>>;
-}) {
-  const { chrome, copy } = props;
-  const readScope = chrome.scope.options.filter((option) => option.group === "read-scope");
-  const projects = chrome.scope.options.filter((option) => option.group === "project");
-  const here = coverage[props.state.mode];
-
-  return (
-    <header className="rl-rail" aria-label="Signal Studio">
-      <nav className="rl-group rl-group-home" aria-labelledby="rl-nav-home-label">
-        <p className="rl-label" id="rl-nav-home-label">
-          {chrome.navLabel}
-        </p>
-        <ul className="rl-nav-list rl-spine">
-          {chrome.modes.map((link, index) => (
-            <ModeLink
-              key={link.mode}
-              link={link}
-              props={props}
-              index={index}
-              state={coverage[link.mode]}
-            />
-          ))}
-        </ul>
-      </nav>
-
-      <div className="rl-group rl-group-scope">
-        <details className="rl-scope">
-          <summary className="rl-scope-summary">
-            <span className="rl-label">{copy.actions.changeScope}</span>
-            <span className="rl-scope-value">{chrome.scope.label}</span>
-          </summary>
-          <div className="rl-scope-body">
-            <p className="rl-scope-help">{chrome.scope.helpLine}</p>
-            {chrome.scope.coverageLine ? (
-              <p className="rl-scope-coverage">{chrome.scope.coverageLine}</p>
-            ) : null}
-            <ul className="rl-scope-list">
-              {readScope.map((option) => (
-                <li key={option.id}>
-                  <a
-                    className="rl-scope-option"
-                    href={option.href}
-                    aria-current={option.current ? "true" : undefined}
-                  >
-                    {option.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-            {projects.length > 0 ? (
-              <>
-                <p className="rl-label">One project</p>
-                <ul className="rl-scope-list rl-scope-projects">
-                  {projects.map((option) => (
-                    <li key={option.id}>
-                      <a
-                        className="rl-scope-option"
-                        href={option.href}
-                        aria-current={option.current ? "true" : undefined}
-                      >
-                        {option.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : null}
-            {chrome.scope.resetHref ? (
-              <a className="rl-scope-reset" href={chrome.scope.resetHref}>
-                {chrome.scope.resetLabel}
-              </a>
-            ) : null}
-          </div>
-        </details>
-        <p className="rl-active">{chrome.activeProject.line}</p>
-      </div>
-
-      {/* One polite status region, in one place, on every mode. It carries the
-          state of the mode you are standing in and when it was read, and it
-          stays on screen at every scroll position. */}
-      <div
-        className="rl-status"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        aria-label={chrome.statusRegionLabel}
-        data-band={bandOf(here)}
-      >
-        <span className="rl-status-state">{copy.states[here]}</span>
-        <span className="rl-status-when">{chrome.asOf.line}</span>
-      </div>
-    </header>
-  );
-}
-
 /**
- * The suite, as a colophon. Products, the reader and the wordmark are real
- * orientation and they are never hidden, abbreviated or put behind a control;
- * they are simply not the first thing a founder needs at 07:00. On a wide
- * screen this rides the bottom of the window in the same column as the rail.
- * On a phone it is the foot of the page.
+ * The suite line. One row, quieter than everything under it, and it never
+ * collapses: at 320px it wraps to two rows of full-text links rather than
+ * hiding a destination behind an icon, an avatar or a More.
  */
 function Suite({ props }: { props: HomeCandidateProps }) {
   const { chrome } = props;
   return (
-    <footer className="rl-suite">
-      <nav className="rl-group" aria-labelledby="rl-nav-products-label">
-        <p className="rl-label" id="rl-nav-products-label">
-          Products
-        </p>
-        <ul className="rl-nav-list rl-product-list">
-          {PRODUCTS.map(([name, path]) => (
+    <header className="mr-suite">
+      <p className="mr-wordmark">Signal Studio</p>
+      <nav className="mr-suite-nav" aria-label="Products">
+        <ul className="mr-suite-list">
+          {SUITE.map(([name, path]) => (
             <li key={name}>
-              <a className="rl-nav-link rl-nav-product" href={path}>
-                <span className="rl-nav-name">{name}</span>
+              <a
+                className="mr-suite-link"
+                href={path}
+                /* A subtree match, never `page`: the one `page` in this
+                   document belongs to the Home-local mode you are standing in
+                   (D-HX04). */
+                aria-current={name === "Home" ? "true" : undefined}
+              >
+                {name}
               </a>
             </li>
           ))}
         </ul>
       </nav>
-      <div className="rl-actor">
-        <p className="rl-actor-name">{chrome.actor.name}</p>
-        <p className="rl-actor-role">{chrome.actor.roleLabel}</p>
-        <a className="rl-account" href={ACCOUNT_PATH}>
+      <p className="mr-actor">
+        <span className="mr-actor-name">{chrome.actor.name}</span>
+        <span className="mr-actor-role">{chrome.actor.roleLabel}</span>
+        <a className="mr-account-link" href={ACCOUNT_PATH}>
           Account
         </a>
-      </div>
-      <p className="rl-wordmark">Signal Studio</p>
-    </footer>
+      </p>
+    </header>
   );
 }
 
-const ContextRail: HomeCandidate = (props: HomeCandidateProps) => {
-  const mode = props.state.mode;
-  const coverage = coverageByMode(props);
+/**
+ * The four modes, with the read state of each one printed underneath.
+ *
+ * Two blind rounds found every direction independently arriving at this, so it
+ * is table stakes rather than anybody's signature: a founder about to switch
+ * modes should know before the click whether the mode they are switching to
+ * came back. The word is the shell's own and it is resolved to the WORST state
+ * the mode can be shown to be in, so a mode publishing an incomplete disclosure
+ * can never advertise itself as read.
+ */
+function Modes({
+  props,
+  readings,
+}: {
+  props: HomeCandidateProps;
+  readings: Readonly<Record<string, Reading>>;
+}) {
+  const { chrome, copy } = props;
+  const inBriefing = props.state.mode === "briefing";
   return (
-    <div className="rl-root">
-      <a className="rl-skip" href="#app-main-content">
+    <nav className="mr-modes" aria-label={chrome.navLabel}>
+      <ul className="mr-mode-list">
+        {chrome.modes.map((link: HomeModeLink) => {
+          const reading = readings[link.mode] as Reading;
+          return (
+            <li className="mr-mode" data-band={reading.material} key={link.mode}>
+              <a
+                className="mr-mode-link"
+                href={link.href}
+                aria-current={link.ariaCurrent ?? undefined}
+              >
+                <span className="mr-mode-name">
+                  {link.label}
+                  {link.badge ? (
+                    <span className="mr-badge">
+                      <span aria-hidden="true">{link.badge.glyph}</span>
+                      {link.badge.announce ? (
+                        <span className="mr-sr">{props.inbox.badge.accessibleName}</span>
+                      ) : null}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="mr-mode-state">{reading.label}</span>
+              </a>
+              {link.mode === "today" && inBriefing ? (
+                /* The briefing is depth from Today, not a fifth mode, so it
+                   appears as Today's child and only while the reader is in it.
+                   It is the most specific Home-local link on that page, so it
+                   carries `page` while Today keeps the subtree match. */
+                <ul className="mr-submode">
+                  <li>
+                    <a
+                      className="mr-mode-link mr-mode-sub"
+                      href={props.hrefFor({ mode: "briefing", item: null })}
+                      aria-current="page"
+                    >
+                      <span className="mr-mode-name">{copy.modeNames.briefing}</span>
+                    </a>
+                  </li>
+                </ul>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+/**
+ * The one control that changes what Home reads, and the one polite status
+ * region in the document.
+ *
+ * The control is a `<details>` because the lab hydrates nothing, and every
+ * option inside it is a real route that survives reload and the Back button.
+ */
+function Controls({ props, here }: { props: HomeCandidateProps; here: Reading }) {
+  const { chrome, copy } = props;
+  const readScope = chrome.scope.options.filter((option) => option.group === "read-scope");
+  const projects = chrome.scope.options.filter((option) => option.group === "project");
+  return (
+    <div className="mr-controls">
+      <details className="mr-scope">
+        <summary className="mr-scope-summary">
+          <span className="mr-scope-verb">{copy.actions.changeScope}</span>
+          <span className="mr-scope-value">{chrome.scope.label}</span>
+        </summary>
+        <div className="mr-scope-body">
+          <p className="mr-scope-help">{chrome.scope.helpLine}</p>
+          {chrome.scope.coverageLine ? (
+            <p className="mr-scope-coverage">{chrome.scope.coverageLine}</p>
+          ) : null}
+          <ul className="mr-scope-list">
+            {readScope.map((option) => (
+              <li key={option.id}>
+                <a
+                  className="mr-scope-option"
+                  href={option.href}
+                  aria-current={option.current ? "true" : undefined}
+                >
+                  {option.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          {projects.length > 0 ? (
+            <>
+              <p className="mr-label">One project</p>
+              <ul className="mr-scope-list">
+                {projects.map((option) => (
+                  <li key={option.id}>
+                    <a
+                      className="mr-scope-option"
+                      href={option.href}
+                      aria-current={option.current ? "true" : undefined}
+                    >
+                      {option.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {chrome.scope.resetHref ? (
+            <a className="mr-scope-reset" href={chrome.scope.resetHref}>
+              {chrome.scope.resetLabel}
+            </a>
+          ) : null}
+        </div>
+      </details>
+      <p
+        className="mr-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label={chrome.statusRegionLabel}
+        data-band={here.material}
+      >
+        {here.label}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The heading, the navigation and the controls are composed ONCE here rather
+ * than five times in the mode files. Each mode file therefore contains only its
+ * chronology, which is the part that is actually a design decision, and the
+ * five surfaces cannot drift apart in the frame they share.
+ */
+const Meridian: HomeCandidate = (props: HomeCandidateProps) => {
+  const mode = props.state.mode;
+  const readings = readingsFor(props);
+  const here = readings[mode] as Reading;
+  const headline =
+    mode === "inbox"
+      ? props.inbox.headline
+      : mode === "my-work"
+        ? props.myWork.headline
+        : mode === "analytics"
+          ? props.analytics.headline
+          : mode === "briefing"
+            ? props.briefing.headline
+            : props.today.headline;
+
+  return (
+    <div className="mr-root">
+      <a className="mr-skip" href="#app-main-content">
         {props.chrome.skipLinkLabel}
       </a>
-      <div className="rl-shell">
-        <Rail props={props} coverage={coverage} />
-        <main className="rl-main" id="app-main-content" tabIndex={-1}>
-          <div className="rl-page" data-mode={mode}>
-            {mode === "today" ? <TodayMode {...props} /> : null}
-            {mode === "inbox" ? <InboxMode {...props} /> : null}
-            {mode === "my-work" ? <MyWorkMode {...props} /> : null}
-            {mode === "analytics" ? <AnalyticsMode {...props} /> : null}
-            {mode === "briefing" ? <BriefingMode {...props} /> : null}
-          </div>
-        </main>
+      <div className="mr-page">
         <Suite props={props} />
+        <main className="mr-main" id="app-main-content" tabIndex={-1}>
+          <Masthead
+            eyebrow={props.chrome.modeEyebrow}
+            line={headline}
+            lead={mode === "analytics" ? props.analytics.leadLine : null}
+          />
+          {/* The Home-local navigation belongs to the Home document, so it sits
+              inside it, under the heading that says where you are. A reader who
+              takes the skip link lands on "Today", not on four links. */}
+          <Modes props={props} readings={readings} />
+          <Controls props={props} here={here} />
+          {mode === "today" ? <TodayMode props={props} here={here} /> : null}
+          {mode === "inbox" ? <InboxMode props={props} here={here} /> : null}
+          {mode === "my-work" ? <MyWorkMode props={props} here={here} /> : null}
+          {mode === "analytics" ? <AnalyticsMode props={props} here={here} /> : null}
+          {mode === "briefing" ? <BriefingMode props={props} here={here} /> : null}
+        </main>
       </div>
     </div>
   );
 };
 
-export default ContextRail;
+export default Meridian;

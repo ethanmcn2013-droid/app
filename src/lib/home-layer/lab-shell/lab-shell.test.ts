@@ -463,6 +463,153 @@ test("exactly one mode link claims the current page, and the briefing claims non
   }
 });
 
+/**
+ * THE FIRST SCREEN, and the three absences it has to stay apart from.
+ *
+ * Two blind panels found every direction rendering a person's first ever
+ * screen as a failed read, in red, with no action on it. None of the four got
+ * it wrong: the shell resolved a reader with no Project to `unavailable`,
+ * because scope resolution found nothing and reported absence as error.
+ *
+ * These three tests are what stops it coming back. The first pins the
+ * separation itself, the second pins the copy a first screen owes its reader,
+ * and the third pins the boundary in both directions so `first-run` can
+ * neither be collapsed into its neighbours nor leak into a world that has
+ * actually been read.
+ */
+
+/** A reader who does have Projects, looking at a scope that resolves to none. */
+function unreadableScope(): LabUrlState {
+  return {
+    ...stateFor("owner_signature"),
+    homeScope: "project",
+    workspaceId: "home-ws-not-a-project",
+    planningPeriodId: null,
+    scopeFromScenario: false,
+  };
+}
+
+test("nothing set up, nothing readable and nothing in it are three states", () => {
+  const started = assembleCandidateProps({ state: stateFor("new_user") });
+  const broken = assembleCandidateProps({ state: unreadableScope() });
+  const quiet = assembleCandidateProps({ state: stateFor("owner_quiet") });
+
+  // 1. No Project at all. Nothing was attempted, so nothing failed.
+  assert.equal(started.today.state, "first-run");
+  assert.equal(started.inbox.state, "first-run");
+  assert.equal(started.myWork.state, "first-run");
+  assert.equal(started.analytics.state, "first-run");
+  assert.equal(started.briefing.state, "first-run");
+
+  // 2. A read that was attempted at a scope holding nothing readable. This is
+  //    the state the first screen was wearing, and it must keep wearing it
+  //    here or the fix has moved the lie rather than removed it.
+  assert.equal(broken.today.state, "unavailable");
+  assert.equal(broken.firstRun, null, "a reader with projects is not in a first run");
+  assert.ok(
+    broken.today.disclosures.some((entry) => entry.id === "scope-empty"),
+    "a scope that could not be read still says so",
+  );
+
+  // 3. Read, authorized, and genuinely holding nothing.
+  assert.equal(quiet.inbox.state, "empty");
+  assert.equal(quiet.firstRun, null);
+
+  // And the three carry three different words, so a reader is never told one
+  // of them in the vocabulary of another.
+  const words = new Set([
+    started.copy.states["first-run"],
+    broken.copy.states.unavailable,
+    quiet.copy.states.empty,
+  ]);
+  assert.equal(words.size, 3, "two of the three absences share one word");
+});
+
+test("a first screen says what is missing and offers something to do", () => {
+  for (const mode of HOME_MODES) {
+    const props = assembleCandidateProps({ state: stateFor("new_user", mode) });
+    const first = props.firstRun;
+    assert.notEqual(first, null, `${mode}: a first run must reach every mode`);
+    if (first === null) return;
+
+    assert.ok(first.heading.length > 0, `${mode}: the section has no heading`);
+    assert.ok(first.line.length > 0, `${mode}: nothing says what is missing`);
+    assert.ok(first.nextLine.length > 0, `${mode}: nothing says what to do`);
+    assert.ok(
+      first.actions.length > 0,
+      `${mode}: a first screen with no action on it is a dead end`,
+    );
+    for (const action of first.actions) {
+      assert.ok(action.label.length > 0, `${mode}: an action with no label`);
+      assert.ok(
+        action.href.startsWith("/"),
+        `${mode}: an action a reader cannot follow is a caption, not an action`,
+      );
+    }
+
+    // Nothing on the first screen may claim a read failed. The whole finding
+    // was that these sentences were the ones a new reader met.
+    const said = [
+      first.line,
+      first.nextLine,
+      props.today.quiet.line,
+      props.today.accountingWithheldLine ?? "",
+      ...props.today.disclosures.map((entry) => entry.text),
+      ...props.inbox.disclosures.map((entry) => entry.text),
+    ].join(" ");
+    for (const phrase of [
+      "could not be read",
+      "did not answer",
+      "could not read any project",
+    ]) {
+      assert.ok(
+        !said.toLowerCase().includes(phrase),
+        `${mode}: a first screen said "${phrase}"`,
+      );
+    }
+  }
+});
+
+test("first-run is exactly one world, and it never borrows a neighbour's state", () => {
+  for (const id of SCENARIO_IDS) {
+    const props = assembleCandidateProps({ state: stateFor(id) });
+    const isFirstRun = id === "new_user";
+
+    assert.equal(
+      props.firstRun !== null,
+      isFirstRun,
+      `${id}: the first-run block is present in the wrong world`,
+    );
+
+    const states = [
+      props.today.state,
+      props.inbox.state,
+      props.myWork.state,
+      props.analytics.state,
+      props.briefing.state,
+    ];
+    for (const state of states) {
+      assert.equal(
+        state === "first-run",
+        isFirstRun,
+        `${id}: a mode named first-run in a world that has projects, or failed to`,
+      );
+      if (isFirstRun) {
+        assert.notEqual(state, "unavailable", `${id}: first run collapsed into a failed read`);
+        assert.notEqual(state, "empty", `${id}: first run collapsed into an empty read`);
+      }
+    }
+
+    // My work carries the fixture's own word for the same fact. The two names
+    // are allowed to differ; disagreeing about which world it is, is not.
+    assert.equal(
+      props.myWork.kind === "no-projects",
+      isFirstRun,
+      `${id}: My work and the shell disagree about whether anything is set up`,
+    );
+  }
+});
+
 test("every rendered string avoids the one rule that never bends", () => {
   for (const id of SCENARIO_IDS) {
     for (const mode of HOME_MODES) {

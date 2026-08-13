@@ -20,12 +20,10 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import {
   Flag,
-  Limits,
   Ordinal,
-  PageHead,
+  Page,
   Perms,
   Section,
-  ThisRead,
   When,
   entryAnchor,
   sectionAnchor,
@@ -132,7 +130,7 @@ function Row({
 }
 
 export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
-  const { myWork, copy, hrefFor } = props;
+  const { myWork, copy, firstRun, hrefFor } = props;
   const groups = myWork.groups.filter((group) => group.rows.length > 0);
   const openKey = myWork.selection?.key ?? null;
   /**
@@ -144,64 +142,57 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
     groups.slice(0, index).reduce((total, group) => total + group.rows.length, 0);
 
   return (
-    <div className="ri-page">
-      <PageHead props={props}>
-        {myWork.selectionMissingLine ? <Flag>{myWork.selectionMissingLine}</Flag> : null}
-        <Limits disclosures={myWork.disclosures} />
-      </PageHead>
+    <Page
+      props={props}
+      disclosures={myWork.disclosures}
+      head={
+        myWork.selectionMissingLine ? <Flag>{myWork.selectionMissingLine}</Flag> : null
+      }
+    >
+      {/*
+        A read that could not be made is not an empty list. `kind` separates
+        "you have nothing" from "there is no project", "we could not tell who
+        you are" and "the read failed", and each one says so in the shell's own
+        state vocabulary rather than showing a clean, false zero. A reader who
+        has not started gets the first screen above and no state name at all,
+        because "Nothing set up yet" printed under a heading that already says
+        it is a fact repeated, not a fact told.
+      */}
+      {myWork.kind === "ready" || firstRun ? null : (
+        <p className="ri-claim-withheld">{copy.states[myWork.state]}</p>
+      )}
 
-      <div className="ri-body">
-        {/*
-          A read that could not be made is not an empty list. `kind` separates
-          "you have nothing" from "there is no project", "we could not tell who
-          you are" and "the read failed", and each one says so in the shell's
-          own state vocabulary rather than showing a clean, false zero.
-        */}
-        {myWork.kind === "ready" ? null : (
-          <p className="ri-claim-withheld">{copy.states[myWork.state]}</p>
-        )}
+      {myWork.kind === "ready" && myWork.rowsShown === 0 && myWork.emptyLine ? (
+        <p className="ri-lead">{myWork.emptyLine}</p>
+      ) : null}
 
-        {myWork.kind === "ready" && myWork.rowsShown === 0 && myWork.emptyLine ? (
-          <p className="ri-lead">{myWork.emptyLine}</p>
-        ) : null}
+      {groups.map((group, position) => (
+        <Section
+          key={group.id}
+          id={sectionAnchor(group.id)}
+          heading={group.heading}
+          note={group.note}
+        >
+          <ul className="ri-ledger">
+            {group.rows.map((row, rowIndex) => (
+              <Row
+                key={row.key}
+                row={row}
+                position={offsetOf(position) + rowIndex + 1}
+                open={openKey !== null && row.key === openKey}
+                closeHref={hrefFor({ item: null })}
+                groupNote={group.note}
+              />
+            ))}
+          </ul>
+        </Section>
+      ))}
 
-        {groups.map((group, position) => (
-          <Section
-            key={group.id}
-            id={sectionAnchor(group.id)}
-            heading={group.heading}
-            note={group.note}
-          >
-            <ul className="ri-ledger">
-              {group.rows.map((row, rowIndex) => (
-                <Row
-                  key={row.key}
-                  row={row}
-                  position={offsetOf(position) + rowIndex + 1}
-                  open={openKey !== null && row.key === openKey}
-                  closeHref={hrefFor({ item: null })}
-                  groupNote={group.note}
-                />
-              ))}
-            </ul>
-          </Section>
-        ))}
-
-        {myWork.moreHref && myWork.moreLabel ? (
-          <p className="ri-onward">
-            <a href={myWork.moreHref}>{myWork.moreLabel}</a>
-          </p>
-        ) : null}
-      </div>
-
-      <ThisRead
-        props={props}
-        lines={[
-          myWork.coverageLine,
-          myWork.doneExcludedLine,
-          myWork.timeZoneLine,
-        ]}
-      />
-    </div>
+      {myWork.moreHref && myWork.moreLabel ? (
+        <p className="ri-onward">
+          <a href={myWork.moreHref}>{myWork.moreLabel}</a>
+        </p>
+      ) : null}
+    </Page>
   );
 }

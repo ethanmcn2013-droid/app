@@ -10,11 +10,16 @@
 import type { ReactNode } from "react";
 import type {
   Disclosure,
+  FirstRunView,
   HomeCandidateProps,
   RowAction,
   WhenLabel,
 } from "@/lib/home-layer/lab-shell";
-import { anchorId, toneLabel } from "@/lib/home-layer/candidates/index/labels";
+import {
+  anchorId,
+  recordLines,
+  toneLabel,
+} from "@/lib/home-layer/candidates/index/labels";
 
 // ── What limited this read ──────────────────────────────────────────────────
 
@@ -47,6 +52,19 @@ function severityOf(note: Disclosure): number {
   return found === -1 ? TONE_ORDER.length : found;
 }
 
+/**
+ * A read that a source refused, or that a seat cannot complete, is loud. Loud
+ * is not a bigger label: it is a different composition. The block leaves the
+ * reading column, becomes a red-ruled band across the whole sheet above the
+ * headline, and takes a wash of the same red with it, so a failed read and a
+ * signature day are two different pictures before a word of either is read.
+ */
+export function isLoud(disclosures: readonly Disclosure[]): boolean {
+  return disclosures.some(
+    (note) => note.tone === "failure" || note.tone === "permission",
+  );
+}
+
 export function Limits({
   disclosures,
   extra = [],
@@ -57,9 +75,7 @@ export function Limits({
 }) {
   if (disclosures.length === 0 && extra.length === 0) return null;
   const ordered = [...disclosures].sort((a, b) => severityOf(a) - severityOf(b));
-  const loud = ordered.some(
-    (note) => note.tone === "failure" || note.tone === "permission",
-  );
+  const loud = isLoud(ordered);
   return (
     <div className="ri-limits" data-loud={loud ? "" : undefined}>
       <p className="ri-label ri-limits-label">What limited this read</p>
@@ -86,44 +102,199 @@ export function Flag({ children }: { children: ReactNode }) {
   return <p className="ri-flag">{children}</p>;
 }
 
-// ── The margin ──────────────────────────────────────────────────────────────
+// ── The standing column ─────────────────────────────────────────────────────
 
 /**
- * THE RIGHT COLUMN, AND THE ONE THING IT IS.
+ * WHAT THE FULL WIDTH IS FOR, SAID OUT LOUD (LAB_BRIEF Amendment 1).
  *
- * It is the record of this read: who it was read for, what the read did, what
- * it left out, what Home cannot see at all, and where new work would go. Not
- * navigation, not caveats that change whether to believe the page — those are
- * above the read, in the reading path, where they belong.
+ * The measure carries the read. The column carries the imprint of the read.
  *
- * It is the same block in all five modes, so the reader learns one place, and
- * it is never empty: the actor and the Active Project are facts about every
- * read there is. At 1080 and above it sits in the margin beside the read; below
- * that it is a colophon at the foot, which is where a colophon belongs and is
- * safe precisely because nothing in it qualifies what is above it.
+ * Round 2 hung one short block in the right third with five hundred pixels of
+ * nothing above it, and eight of ten directors called the arrival screen
+ * unfinished. They were right, and the fault was not that the block existed —
+ * it was that the block was flow-positioned against a full-width heading, so
+ * its top edge landed wherever the headline happened to end.
+ *
+ * So the page is now two columns from the top rule of the masthead to the
+ * foot, and the second one is continuously occupied:
+ *
+ *   `Imprint`   level with the masthead. Which issue this is: when it was
+ *               read, what Read Scope it was read at, and where new work
+ *               would go if you started some.
+ *   `ThisRead`  level with the `h1`. What this read did: who it was read for,
+ *               what it accounted for, and what Home cannot see at all.
+ *
+ * Both are ruled blocks on one right edge, so the column reads as a column
+ * rather than as two orphans. Neither is sticky and neither is fixed: a rail
+ * that follows the reader is a layout-thrash surface and it eats the viewport
+ * at 400% zoom, which a director measured against this direction and was
+ * right about.
+ *
+ * Below 1080 the column unstacks in place: the imprint stays in the front
+ * matter where the dateline belongs, and the record becomes a colophon at the
+ * foot, which is safe precisely because nothing in it qualifies what is above
+ * it. Everything that DOES qualify the read is in the reading column at every
+ * width.
  */
-export function ThisRead({
-  props,
-  lines = [],
-}: {
-  props: HomeCandidateProps;
-  lines?: readonly (string | null)[];
-}) {
+export function Imprint({ props }: { props: HomeCandidateProps }) {
   const { chrome } = props;
-  const shown = lines.filter(
-    (line): line is string => typeof line === "string" && line.length > 0,
-  );
   return (
-    <div className="ri-record" id="ri-this-read">
-      <p className="ri-label">This read</p>
+    <div className="ri-imprint">
+      <p className="ri-label">What Home read</p>
+      <p className="ri-imprint-line">{chrome.asOf.line}</p>
+      <ScopeControl props={props} />
+      <p className="ri-imprint-line">{chrome.scope.helpLine}</p>
+      {chrome.scope.coverageLine ? (
+        <p className="ri-imprint-line">{chrome.scope.coverageLine}</p>
+      ) : null}
+      <p className="ri-imprint-line">{chrome.activeProject.line}</p>
+    </div>
+  );
+}
+
+export function ThisRead({ props }: { props: HomeCandidateProps }) {
+  const { chrome } = props;
+  const lines = recordLines(props);
+  return (
+    <aside className="ri-record" id="ri-this-read" aria-labelledby="ri-this-read-h">
+      <p className="ri-label" id="ri-this-read-h">
+        This read
+      </p>
       <ul className="ri-record-list">
         <li>{`${chrome.actor.name}. ${chrome.actor.roleLabel}`}</li>
-        {shown.map((line) => (
+        {lines.map((line) => (
           <li key={line}>{line}</li>
         ))}
-        <li>{chrome.activeProject.line}</li>
       </ul>
-    </div>
+    </aside>
+  );
+}
+
+// ── A first screen ──────────────────────────────────────────────────────────
+
+/**
+ * NOT YET IS NOT BROKEN (LAB_BRIEF Amendment 2).
+ *
+ * Six of ten directors called round 2's first screen the worst arrival in the
+ * lab: four rows reading "Could not be read", and the only constructive
+ * sentence demoted to the foot of a rail with no control on it. The shell now
+ * publishes the state and the words, and this is where they land — at the head
+ * of the read, in the reading column, at the size of a lead story, with the
+ * one real move set as the loudest thing on the page.
+ *
+ * It is the only place in this direction where a link is drawn as a control,
+ * and it earns that: everywhere else a reader is choosing between things they
+ * can already see, and here there is exactly one thing to do.
+ */
+export function FirstScreen({ view }: { view: FirstRunView }) {
+  return (
+    <section className="ri-start" aria-labelledby="ri-start-h">
+      <h2 className="ri-h2" id="ri-start-h">
+        {view.heading}
+      </h2>
+      <p className="ri-start-line">{view.line}</p>
+      <p className="ri-start-next">{view.nextLine}</p>
+      <p className="ri-start-do">
+        {view.actions.map((action) => (
+          <a className="ri-start-action" href={action.href} key={action.id}>
+            {action.label}
+          </a>
+        ))}
+      </p>
+    </section>
+  );
+}
+
+// ── The page ────────────────────────────────────────────────────────────────
+
+/**
+ * ONE COMPOSITION, FIVE MODES, BY CONSTRUCTION.
+ *
+ * A director's sharpest note on round 2 was that the right-hand slot had no
+ * fixed identity across modes. It could not have one while five files each
+ * assembled the page themselves, so they no longer do: every mode hands its
+ * head, its read and at most one widening to this, and the headline, the
+ * limits, the first screen and the standing column are placed here.
+ *
+ * Placement is explicit rather than flowed, and the row gap is zero with the
+ * rhythm carried on the children, so a mode with no limits and a mode with
+ * three sit on the same vertical.
+ */
+export function Page({
+  props,
+  disclosures,
+  extra = [],
+  head,
+  children,
+  wide,
+}: {
+  props: HomeCandidateProps;
+  disclosures: readonly Disclosure[];
+  extra?: readonly string[];
+  /** Everything under the `h1`: the standfirst, and anything that stops the reader. */
+  head?: ReactNode;
+  children: ReactNode;
+  /** The one thing per mode allowed to break the measure. */
+  wide?: ReactNode;
+}) {
+  const { chrome, firstRun } = props;
+  const loud = isLoud(disclosures);
+  const limits = <Limits disclosures={disclosures} extra={extra} />;
+  return (
+    <>
+      {loud ? <div className="ri-band">{limits}</div> : null}
+      <div className="ri-page">
+        <div className="ri-page-head">
+          <h1 className="ri-h1">
+            <span className="ri-h1-eyebrow">{chrome.modeEyebrow}</span>
+            <span className="ri-h1-line">{chrome.h1Line}</span>
+          </h1>
+          {head}
+          {/*
+            A first screen goes ahead of the limits, not after them. "What
+            limited this read" is the right heading for a read that happened
+            and the wrong one for a reader who has not started, so the move
+            they can make arrives first and the note that nothing failed
+            arrives under it.
+          */}
+          {firstRun ? <FirstScreen view={firstRun} /> : null}
+        </div>
+        {loud ? null : limits}
+        <div className="ri-body">{children}</div>
+        {wide ? <div className="ri-wide">{wide}</div> : null}
+        <ThisRead props={props} />
+      </div>
+    </>
+  );
+}
+
+// ── Labelled fields ─────────────────────────────────────────────────────────
+
+/**
+ * A CAVEAT NAMED AS A CAVEAT.
+ *
+ * Round 2 set the records under an Analytics claim as an unlabelled run of
+ * sentences in two prose columns. One director scored the lost labels at 8.4
+ * and named the cost — "Same facts, weaker trust" — and another marked the two
+ * side-by-side measures as the one place in the direction where reflow does
+ * work the rest of the page does not. Both are answered by the same move: a
+ * fielded list, label left, fact right, one column of prose.
+ */
+export function Fields({
+  fields,
+}: {
+  fields: readonly Readonly<{ label: string; value: string }>[];
+}) {
+  if (fields.length === 0) return null;
+  return (
+    <dl className="ri-fields">
+      {fields.map((field) => (
+        <div className="ri-field" key={field.label}>
+          <dt className="ri-label">{field.label}</dt>
+          <dd className="ri-field-value">{field.value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -278,10 +449,6 @@ export function ScopeControl({ props }: { props: HomeCandidateProps }) {
         <span className="ri-scope-change">{copy.actions.changeScope}</span>
       </summary>
       <div className="ri-scope-panel">
-        <p className="ri-record-text">{chrome.scope.helpLine}</p>
-        {chrome.scope.coverageLine ? (
-          <p className="ri-record-text">{chrome.scope.coverageLine}</p>
-        ) : null}
         <div>
           <p className="ri-label">What Home reads</p>
           <ul className="ri-scope-options">
@@ -327,27 +494,6 @@ export function ScopeControl({ props }: { props: HomeCandidateProps }) {
         ) : null}
       </div>
     </details>
-  );
-}
-
-// ── The heading block ───────────────────────────────────────────────────────
-
-export function PageHead({
-  props,
-  children,
-}: {
-  props: HomeCandidateProps;
-  children?: ReactNode;
-}) {
-  const { chrome } = props;
-  return (
-    <div className="ri-page-head">
-      <h1 className="ri-h1">
-        <span className="ri-h1-eyebrow">{chrome.modeEyebrow}</span>
-        <span className="ri-h1-line">{chrome.h1Line}</span>
-      </h1>
-      {children}
-    </div>
   );
 }
 

@@ -25,7 +25,7 @@ import type {
   MyWorkRowView,
 } from "@/lib/home-layer/lab-shell";
 import { TaskActions, TaskRowState } from "./interaction";
-import { Limits, Provenance, When, type LimitEntry } from "./shell";
+import { Provenance, When } from "./shell";
 
 function OpenedWork({
   row,
@@ -55,7 +55,14 @@ function WorkRow({
   refusesFirst,
 }: Readonly<{ row: MyWorkRowView; selected: boolean; refusesFirst: boolean }>) {
   return (
-    <li className="ed-work-row">
+    <TaskRowState taskKey={row.key}>
+      {/* Round 2: "Put the row title above its lateness at 390." The title is
+          first in the source at every width now; the ledger field follows it
+          at 390 and moves to the shoulder above 70rem. */}
+      <h3 className="ed-work-title">
+        <a href={row.href}>{row.title}</a>
+      </h3>
+
       {row.due === null ? (
         <p className="ed-work-when ed-when">
           <b>No date</b>
@@ -64,10 +71,7 @@ function WorkRow({
         <When when={row.due} className="ed-work-when" />
       )}
 
-      <TaskRowState taskKey={row.key}>
-        <h3 className="ed-work-title">
-          <a href={row.href}>{row.title}</a>
-        </h3>
+      <div className="ed-work-body">
         <ul className="ed-meta">
           <li>
             <Provenance provenance={row.provenance} />
@@ -80,10 +84,10 @@ function WorkRow({
         {row.dueUnparsedLine === null ? null : (
           <p className="ed-why">The date on this reads {row.dueUnparsedLine}.</p>
         )}
-      </TaskRowState>
+      </div>
 
       {selected ? <OpenedWork row={row} refusesFirst={refusesFirst} /> : null}
-    </li>
+    </TaskRowState>
   );
 }
 
@@ -117,40 +121,16 @@ function Group({
   );
 }
 
-export function MyWorkMode({
-  props,
-  limits,
-}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
-  const { myWork, chrome, world } = props;
+export function MyWorkMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
+  const { myWork, world } = props;
   const refusesFirst = world.id === "action_failure";
   const selectedKey = myWork.selection?.key ?? null;
 
   return (
     <>
-      {myWork.kind === "no-projects" ? (
-        <p className="ed-lede">{chrome.activeProject.line}</p>
-      ) : null}
-      {myWork.kind === "identity-unresolved" ? (
-        <p className="ed-lede">
-          Home could not work out which of these people you are, so it is not showing a list of
-          work rather than showing you an empty one.
-        </p>
-      ) : null}
-      {myWork.kind === "unavailable" ? (
-        <p className="ed-lede">
-          Your work could not be read. Nothing here counts that as nothing to do.
-        </p>
-      ) : null}
-
-      {myWork.coverageLine === null ? null : (
-        <p className="ed-standing">{myWork.coverageLine}</p>
-      )}
-
       {myWork.selectionMissingLine === null ? null : (
         <p className="ed-refused">{myWork.selectionMissingLine}</p>
       )}
-
-      <Limits entries={limits} />
 
       {myWork.kind === "ready" && myWork.rowsShown === 0 && myWork.emptyLine !== null ? (
         <p className="ed-lede">{myWork.emptyLine}</p>

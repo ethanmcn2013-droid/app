@@ -80,6 +80,11 @@ const RANK: Readonly<Record<HomeStateName, number>> = Object.freeze({
   refreshing: 0,
   archived: 0,
   empty: 1,
+  // Nothing was attempted, so nothing failed. It ranks beside `empty` because
+  // both are reads that came back without a hole in them, and it never
+  // reaches this table anyway: `modeCondition` answers a first run before it
+  // weighs anything.
+  "first-run": 1,
   "insufficient-history": 2,
   stale: 3,
   partial: 4,
@@ -160,22 +165,40 @@ function conditionOf(
   base: HomeStateName,
   extras: readonly Signal[],
   notes: readonly Disclosure[],
+  /**
+   * STANDING LIMITS, WHICH QUALIFY A READ WITHOUT DOWNGRADING IT.
+   *
+   * Round 2 fed these through `notes`, so a kind of work with no producer at
+   * all — permanent in v1, identical in every world — pushed Today to "Partly
+   * read" on a day where every source answered. A director scored that at 8.2
+   * and named the cost exactly: when "Partly read" is the resting state, its
+   * appearance on a real partial read carries no information.
+   *
+   * So a standing limit no longer moves the word. It spends the mark and the
+   * cause instead: a complete read with a permanent hole beside it reads
+   * "Read · Not connected" with an outlined mark, and "Partly read" is kept
+   * for reads that were actually partial.
+   */
+  limits: readonly Disclosure[] = [],
 ): ReadCondition {
   const winner = worst([{ state: base, tone: null }, ...extras, ...notes.map(signalOf)]);
   const rank = RANK[winner.state];
-  const cause =
-    winner.tone !== null && SPELLED_CAUSES.has(winner.tone) && rank > RANK.empty
+  const complete = rank <= RANK.empty;
+  const standing = limits.length > 0;
+  const spelled =
+    winner.tone !== null && SPELLED_CAUSES.has(winner.tone) && !complete
       ? toneLabel(winner.tone)
       : null;
   return {
     word: copy.states[winner.state],
-    cause,
-    mark:
-      rank <= RANK.empty
-        ? "none"
-        : rank >= RANK["permission-limited"] || winner.tone === "failure"
-          ? "solid"
-          : "open",
+    cause: spelled ?? (complete && standing ? toneLabel("setup") : null),
+    mark: complete
+      ? standing
+        ? "open"
+        : "none"
+      : rank >= RANK["permission-limited"] || winner.tone === "failure"
+        ? "solid"
+        : "open",
   };
 }
 
@@ -199,6 +222,18 @@ export function modeCondition(
   mode: HomeCandidateProps["chrome"]["modes"][number]["mode"],
 ): ReadCondition {
   const { copy, today, inbox, myWork, analytics } = props;
+
+  /**
+   * A FIRST RUN IS ANSWERED BEFORE ANYTHING IS WEIGHED.
+   *
+   * Every mode is in `first-run` in that world, and weighing the modes
+   * separately let Analytics report "Not enough history" to somebody who has
+   * no project to have a history of. One reader-level fact, four identical
+   * rows, and not one of them says a read failed.
+   */
+  if (props.firstRun !== null) {
+    return { word: copy.states["first-run"], cause: null, mark: "none" };
+  }
 
   if (mode === "inbox") {
     const genuinelyEmpty = inbox.state === "empty" && inbox.emptyLine !== null;
@@ -241,12 +276,59 @@ export function modeCondition(
 
   /**
    * Today counts the kinds of work that have no producer at all. In v1 that is
-   * always at least one, so Today never reports a complete read, and that is
-   * the honest answer rather than a defect: a surface that cannot see a whole
-   * kind of work has not seen the day.
+   * always at least one, so Today never reports an unqualified complete read.
+   * What changed after round 2 is which field carries it: the standing limit
+   * is the cause and the mark, never the word, so "Partly read" still means
+   * that this read came back with a hole in it.
    */
-  return conditionOf(copy, today.state, [], [
-    ...today.disclosures,
-    ...today.unsupported,
-  ]);
+  return conditionOf(copy, today.state, [], today.disclosures, today.unsupported);
+}
+
+/**
+ * WHAT THE RECORD COLUMN SAYS ABOUT THIS MODE'S READ.
+ *
+ * One list per mode, composed from sentences the shell already published, so
+ * the standing column is the same block in all five modes and no mode has to
+ * remember to fill it. Nothing here writes a sentence.
+ */
+export function recordLines(props: HomeCandidateProps): readonly string[] {
+  const { state, today, inbox, myWork, analytics, briefing } = props;
+  const lines: (string | null)[] = [];
+  switch (state.mode) {
+    case "inbox":
+      /**
+       * The badge's accessible name is a whole sentence — "Inbox. 42 open. 1
+       * could not be verified. 0 projects could not be read." — and round 2
+       * only ever announced it. Announcing a count's caveats to one reader and
+       * withholding them from another is the same asymmetry this programme
+       * exists to remove, so it is written down where every reader can see it.
+       */
+      lines.push(inbox.badge.accessibleName);
+      break;
+    case "my-work":
+      lines.push(myWork.coverageLine, myWork.doneExcludedLine, myWork.timeZoneLine);
+      break;
+    case "analytics":
+      lines.push(analytics.windowLine);
+      break;
+    case "briefing":
+      lines.push(briefing.accountingLine ?? briefing.accountingWithheldLine);
+      break;
+    default:
+      lines.push(today.accountingLine ?? today.accountingWithheldLine);
+      break;
+  }
+  /**
+   * WHAT HOME CANNOT SEE AT ALL IS TRUE IN EVERY MODE.
+   *
+   * A kind of work with no producer is a fact about the platform, not about
+   * Today, and round 2 printed it only on Today — which left the standing
+   * column on Inbox holding a single line, and a director counted it. It is
+   * the same sentence in the same place on all five modes now, which is both
+   * more honest and what makes the column one block rather than five.
+   */
+  for (const note of today.unsupported) lines.push(note.text);
+  return Object.freeze(
+    lines.filter((line): line is string => typeof line === "string" && line.length > 0),
+  );
 }

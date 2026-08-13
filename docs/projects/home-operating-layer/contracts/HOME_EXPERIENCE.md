@@ -4,8 +4,13 @@
 **Base:** `origin/main` @ `78021c5` · branch `feat/home-operating-layer` · worktree `_wt-home-layer`
 **Consumes:** `contracts/PROJECT_SCOPE.md`, `contracts/HOME_ROUTE_AND_RETURN_CONTEXT.md`
 **Live evidence:** `design/current-product-evidence/` — 30 captures, 10 routes × 3 viewports
-**Decisions:** `D-HX01 … D-HX10` (§19)
+**Decisions:** `D-HX01 … D-HX11` (§19)
 **Tests:** `src/lib/home-layer/experience/` (§18)
+**Amended:** 2026-08-13, after two blind panel rounds. One state added to the
+closed set in §10.1 — `first-run`, governed by the new §10.3 and `D-HX11` — plus
+its capture rule in §17.1 and its open items at §20.10 and §20.11. Nothing else
+in this contract was reopened; the amendment adds a state the vocabulary was
+missing rather than changing one it already had.
 
 This contract is sealed **before** any polished UI exists, deliberately. It says what every
 Home surface must be true of, in a form a lab direction can be measured against and a
@@ -456,6 +461,7 @@ telemetry and in test fixtures. No surface invents a synonym.
 | `unavailable` | could not be resolved; reason withheld | empty, zero, all clear |
 | `archived` | resolved, read-only, labelled | ready |
 | `empty` | resolved, authorized, genuinely nothing in it | unavailable |
+| `first-run` | there is nothing to read yet, because the reader has no Project | unavailable, failed, empty, zero, all clear |
 | `failed` | the read errored | empty |
 | `offline` | the network read could not be attempted | current |
 | `all-clear` | resolved, complete, and nothing needs the reader | any of the above |
@@ -465,6 +471,9 @@ every source resolved. Home already gets this right today: `allClear` is set onl
 `signalRows.length === 0` and the quiet state *names* what shipped rather than claiming nothing
 happened, with the honest arithmetic in `readLine`
 (`src/app/app/home/home-data.ts:177-192`). That guard is inherited, not re-derived.
+
+`first-run` was added 2026-08-13 and §10.3 governs it. It exists because three
+different facts were sharing two names.
 
 The vocabulary **extends** the existing coverage model rather than competing with it:
 `providerCoverage` already carries `status`, `capabilities`, `historyStartAt`, `historyEndAt`,
@@ -490,6 +499,70 @@ already resolves `complete | partial | stale | unavailable` (`:32-44`).
    document busy hides everything that is still true.
 8. **No status is carried only by colour or only by motion** (`audit/C-design-interaction.md`
    §5.3 forbidden patterns).
+
+### 10.3 `first-run` — a new reader is not a failed read
+
+**What happened.** Two blind panel rounds, ten sealed directors each, found all
+four lab directions rendering a person's first ever screen as a **failed read**:
+"Could not be read", "Home could not read any project at this scope", in red,
+with no action on it. Twenty-one mentions across four directions out of four.
+None of the four got it wrong. `assembleCandidateProps` resolved the `new_user`
+world to `unavailable`, because scope resolution found no Project and reported
+absence as error. Recorded at
+`verification/panel/SYSTEMIC_FINDINGS.md` §1 and sealed as a permanent principle
+at `design/LAB_BRIEF.md` Amendment 2.
+
+**Why it is a contract defect and not a copy defect.** Rendering *not yet* as
+*broken* is this document's own governing rule pointed the wrong way. §10.1
+exists to stop a failed read being dressed as a calm day; a first screen dressed
+as an outage is the identical error running the other direction, and it lands on
+the one screen where a reader has no prior experience of the product to correct
+it with.
+
+**Three absences, three states.** They may never be collapsed:
+
+| The fact | The state | What it must never be rendered as |
+|---|---|---|
+| The reader has no Project. Nothing was asked. | `first-run` | `unavailable`, `failed`, `empty`, `0`, all clear |
+| A read was attempted and did not come back | `unavailable` | `empty`, `0`, all clear |
+| A read came back, the reader is authorized, and it holds nothing | `empty` | `unavailable` |
+
+**When `first-run` applies.** Exactly when the reader holds **no Project at
+all**. It is resolved from the reader's Project set, never from the resolved
+Read Scope: a reader with no Project and a reader who narrowed Read Scope onto a
+Project that could not be read both resolve to zero Projects in scope, and they
+are not the same fact. A scope that resolves to nothing for a reader who does
+have Projects stays `unavailable`.
+
+**It applies to every mode, not only Today.** Inbox, My work and Analytics are
+each as unstarted as Today is, and a first screen that names itself correctly on
+Today and calls itself empty on My work has moved the lie rather than removed
+it.
+
+**What the state must carry.** Three things, and none of them is optional:
+
+1. **One plain sentence naming what is missing.** Not an apology, not a
+   reassurance, and never a sentence that says or implies a read failed.
+2. **What to do about it, in one sentence.**
+3. **At least one action the reader can actually take.** A first screen with no
+   action on it is a dead end, however accurately the dead end is labelled. The
+   action is a real link, not a shown path: a route a reader cannot follow is a
+   caption.
+
+**Who owns which half.** The **shell** owns the state and the words, so that
+four directions receive them already written and none has to improvise a welcome
+around a shell that told it the read had failed. A **direction** owns everything
+about the presentation: where it sits, how much of the page it takes, whether it
+is the whole screen or a section inside one, and what the rest of the mode does
+around it. What a direction may not do is drop it.
+
+**Where it is asserted today.** `src/lib/home-layer/lab-shell/lab-shell.test.ts`
+— three tests: the three absences resolve to three states, a first screen carries
+a sentence and a move, and `first-run` is reachable in exactly one world and
+never borrows a neighbour's state. Two of them fail if the state is collapsed
+back into `unavailable` or into `empty`, which was verified by mutation rather
+than assumed. The rendered-product assertion is Wave 4's and is recorded open at
+§20.10.
 
 ---
 
@@ -760,8 +833,11 @@ acceptance. Home does not report a per-route number it cannot measure.
 
 States: `default` · `empty` · `all-clear` · `loading` · `refreshing` · `partial` · `stale` ·
 `insufficient-history` · `permission-limited` · `unavailable` · `archived` · `failed` ·
-`offline`. Plus `new-user` on `/app/home` only (`HomeNewUser`,
-`src/components/app/home/home-view.tsx:212-262`).
+`offline`. Plus `first-run` (§10.3), which is captured on **every** Home mode
+rather than on `/app/home` only: a reader with no Project meets all four
+unstarted, and the capture that proves Today names it correctly proves nothing
+about My work. The shipped precedent is `HomeNewUser`
+(`src/components/app/home/home-view.tsx:212-262`), which exists on Today alone.
 
 Viewports: **320 · 390 · 768 · 1440**. Themes: **light · dark**.
 
@@ -910,6 +986,21 @@ disagree most often on exactly the landmark and `aria-current` behaviour §5 gov
 §16 rule 2. With 0.9 KB of shared-runtime headroom, chrome that renders on every Home route
 cannot be a client island. It also makes X5's DOM-level assertion checkable without a browser.
 
+**D-HX11 · `first-run` is a state of its own, resolved from the reader's Project
+set rather than from the resolved Read Scope.**
+§10.3, added 2026-08-13. Two alternatives were available and both are worse.
+Reusing `unavailable` is what shipped, and ten directors reading four
+independent candidates all called it a defect. Reusing `empty` moves the lie
+rather than removing it: `empty` means the read came back holding nothing, and
+telling a person who has not started that they have been read and are carrying
+nothing is a claim about them that nobody checked. Resolving it from the scope
+would fold in a reader who narrowed onto a Project that could not be read, which
+is a genuine failure and must keep saying so. The cost is real and accepted:
+`HomeStateName` gains a fourteenth member, so every exhaustive map over the
+vocabulary has to name it, and any surface that ranks states by severity has to
+decide where a first run sits. That decision belongs to the surface, and the
+contract does not make it for them.
+
 ---
 
 ## 20. Open, and owned elsewhere
@@ -935,3 +1026,20 @@ cannot be a client island. It also makes X5's DOM-level assertion checkable with
 9. **`/app/your-work` returns 200 with no `main` and no `h1`**, and is the redirect target of
    `/api/suite-context` in both branches. Not this programme's file; recorded so it is not
    inherited.
+10. **`first-run` is asserted against the assembled data, not yet against a rendered page**
+    (§10.3). The lab shell resolves it, publishes its copy and refuses to collapse it, and
+    `lab-shell.test.ts` holds all three. Nothing yet asserts that a Home surface *renders* it,
+    for the same reason X1 to X4 are only partly measurable: three of the five routes do not
+    exist. Owner: Wave 4, with a new `X15` written at the same time.
+11. **Two things the candidates still owe `first-run`, both owned by the lead.** The four lab
+    directions still render the failed-read copy, because they were told to adopt the state in a
+    later phase and this change deliberately did not edit them. Consequently: (a) two exhaustive
+    severity maps over `HomeStateName` no longer compile —
+    `src/app/lab/home-operating-layer/candidates/rail/state.ts:44` and
+    `src/lib/home-layer/candidates/index/labels.ts:75` — each needing one key; and (b)
+    `new_user`'s `mustNeverRender` should gain "could not be read" and "could not read any
+    project", which is enforced against the rendered page by
+    `experience/home-layer/home-lab-invariants.spec.ts` and emitted into
+    `experience/home-operating-layer/fixtures/manifest.json`, so it turns all four red until
+    they adopt and it requires a manifest regeneration and a receipt rebind. Both belong with
+    the adoption phase, not with the shell fix.

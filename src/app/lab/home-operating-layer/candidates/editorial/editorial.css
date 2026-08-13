@@ -5,7 +5,7 @@
  * carries 1,208 arbitrary-px type utilities against 126 uses of the nine named
  * steps, and the Tailwind spacing namespace lies at indices 7 to 12 (h-7 is
  * 32px). Every size here is a named step, every gap a --space-* token, and the
- * one local custom-property family carries the reserved --x- prefix.
+ * one local custom-property family carries the reserved --ed- prefix.
  *
  * WHAT ROUND 1 CHANGED HERE.
  * 1. Contrast. No word is set in a status colour. Every state word is --ink
@@ -16,23 +16,47 @@
  * 3. A second axis. At 70rem the page is margin, measure and field column.
  *    Prose never widens; tabular things take the whole grid. Below 70rem it
  *    transforms into records with a hanging label line.
+ *
+ * WHAT ROUND 2 CHANGED HERE.
+ * 1. THE THIRD COLUMN GOT A NAME AND A JOB. It was carrying dates and figures
+ *    and nothing else, so at the top of the page it was simply empty and ten
+ *    directors read that as an unmade decision. It is the SHOULDER now, and it
+ *    carries the state of the read beside the headline. LAB_BRIEF Amendment 1
+ *    asked every direction to name what the width is for; this is the answer,
+ *    and the ordering fault the panel called blocking is fixed by the same
+ *    move — the honesty went sideways instead of down, so the decisions own the
+ *    top of the measure at 1440 and the ledger loses no rank.
+ * 2. THE FAILURE BECAME A RULE. A 10px mark could not be seen from a metre
+ *    away. `.ed-weather` is a page-wide band, absent on a complete read, 2px of
+ *    amber when something answered in part, 4px of red when a source did not
+ *    answer at all. That also gives amber the structural job round 2 said it
+ *    was missing.
+ * 3. 44px, EVERYWHERE IT OPERATES. Row titles, event links and row actions were
+ *    17 to 19px tall. One rule now sets the floor for every control that opens
+ *    or changes something, without changing how any of them look.
+ * 4. THE ROW ORDER TURNED OVER AT 390. Title, then lateness. The hanging-label
+ *    transformation is kept; it just hangs below the thing it qualifies.
+ * 5. The custom-property family is `--ed-*`. `--x-*` was a collision waiting to
+ *    happen with any other consumer on the page.
  */
 
 .ed {
   /* The measure prose and rows run in. 40rem holds 70 to 76 characters at the
      body size with the reason lines capped tighter beneath it. */
-  --x-text: 40rem;
-  /* The margin. Numerals, terms, definitions and the imprint's standing head. */
-  --x-margin: 10rem;
+  --ed-text: 40rem;
+  /* The spine. Numerals, terms, definitions, the dateline, the standing heads. */
+  --ed-margin: 10rem;
   /* The page. 74rem at 1440 uses 82% of the canvas rather than 64%. */
-  --x-page: 74rem;
+  --ed-page: 74rem;
   /* Prose inside the measure is capped tighter still: a paragraph is not a row. */
-  --x-measure: 34rem;
-  --x-gap: var(--space-7);
-  --x-gutter: clamp(var(--space-4), 4vw, var(--space-9));
-  --x-cols: minmax(0, 1fr) auto;
-  --x-rule: 1px solid var(--hairline);
-  --x-rule-soft: 1px solid var(--hairline-soft);
+  --ed-measure: 34rem;
+  --ed-gap: var(--space-7);
+  --ed-gutter: clamp(var(--space-4), 4vw, var(--space-9));
+  --ed-cols: minmax(0, 1fr) auto;
+  --ed-rule: 1px solid var(--hairline);
+  --ed-rule-soft: 1px solid var(--hairline-soft);
+  /* The hit floor for anything operational. Named once so it cannot drift. */
+  --ed-target: 44px;
 
   min-height: 100svh;
   background: var(--paper);
@@ -120,40 +144,160 @@
    Every mark is enclosed by an ink stroke, so its boundary is 18.9:1 whatever
    the fill does. */
 
-/* ── The flag · one fixed reading position for the state of the read ──────── */
+/* ── The weather band · the state of the read, at page scale ──────────────── */
 
-.ed-flag {
-  display: inline-flex;
+/* Round 2, three ballots: a quiet day and a broken provider differed only in
+   the fill of a 10px mark, "which is not an at-a-glance difference, it is a
+   reading task". So the flag became the page's own top edge. The words come
+   first in the source, then the mark, so the failure is named before any glyph
+   is reached — which is the one thing about the old flag round 2 asked to keep.
+
+   read     nothing is drawn. Presence is the signal.
+   limited  2px of amber.
+   failed   4px of red, and the words at reading size instead of label size. */
+.ed-weather {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  padding-top: var(--space-3);
+}
+
+.ed-weather-words {
   font-family: var(--font-mono);
   font-size: var(--text-label);
   line-height: 1.4;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   font-weight: var(--weight-medium);
-  /* 18.9:1. The word is never the colour. */
+  /* 18.9:1. No word in this direction is ever set in a status colour. */
   color: var(--ink);
 }
 
-.ed-flag-mark {
-  flex: none;
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 1px solid var(--ink);
-  background: var(--paper);
-}
-
-.ed-flag[data-register="limited"] .ed-flag-mark {
+.ed-weather-mark {
+  flex: 1 1 auto;
+  height: 2px;
+  min-width: var(--space-8);
   background: var(--status-flight);
 }
 
-.ed-flag[data-register="failed"] .ed-flag-mark {
+.ed-weather[data-register="setup"] .ed-weather-mark {
+  height: 1px;
+  background: var(--ink-ghost);
+}
+
+.ed-weather[data-register="failed"] {
+  padding-top: var(--space-4);
+  border-top: 4px solid var(--status-blocked);
+}
+
+.ed-weather[data-register="failed"] .ed-weather-words {
+  font-size: var(--text-body-lg);
+  letter-spacing: 0.02em;
+  font-weight: var(--weight-semibold);
+}
+
+.ed-weather[data-register="failed"] .ed-weather-mark {
+  height: 4px;
   background: var(--status-blocked);
-  border-radius: var(--radius-pill);
-  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink);
-  margin-right: 3px;
+}
+
+/* ── The shoulder · what qualifies this read ──────────────────────────────── */
+
+/* The direction's answer to LAB_BRIEF Amendment 1. Above 70rem this is the
+   third column, level with the headline: the read's own condition sits BESIDE
+   the answer rather than on top of it, which is what let the three ranked
+   decisions come back onto the arrival screen without demoting a single caveat.
+   Below 70rem there is no shoulder, so it is a term, a sentence and a
+   disclosure — about 90px where the ledger used to spend 350. */
+.ed-read {
+  margin: var(--space-5) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--ink);
+}
+
+.ed-read-term {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+.ed-read-more {
+  margin-top: var(--space-2);
+}
+
+.ed-read-more summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--ed-target);
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-body-sm);
+  color: var(--ink);
+}
+
+.ed-read-more summary::-webkit-details-marker {
+  display: none;
+}
+
+.ed-read-more summary span {
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 3px;
+}
+
+.ed-read-more summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.ed-read-more[open] summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+/* Inside the shoulder there is no spine to hang a term in, so the run stacks:
+   kind over sentence, and the rules between entries do the separating. */
+.ed-read .ed-limits {
+  margin: 0;
+  border-top: 0;
+}
+
+.ed-read .ed-limits > li {
+  padding: 0 0 var(--space-2);
+  border-bottom: 0;
+}
+
+.ed-read-more .ed-limits > li {
+  padding-top: var(--space-3);
+  border-top: var(--ed-rule-soft);
+}
+
+.ed-read .ed-limit-text {
+  max-width: none;
+}
+
+/* One mark per keyed line, so the run reads as a key to the marks in the
+   navigation rather than as a paragraph that happens to mention modes. */
+.ed-limit-keyed {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.ed-limit-keyed .ed-limit-mark {
+  flex: none;
+  align-self: center;
+  margin-right: 0;
 }
 
 /* ── Masthead · quieter than the content, never dominant ──────────────────── */
@@ -176,14 +320,14 @@
 .ed-homeband::after {
   content: "";
   position: absolute;
-  left: var(--x-gutter);
-  right: var(--x-gutter);
-  border-top: var(--x-rule);
+  left: var(--ed-gutter);
+  right: var(--ed-gutter);
+  border-top: var(--ed-rule);
 }
 
 .ed-homeband::before {
   top: 0;
-  border-top: var(--x-rule-soft);
+  border-top: var(--ed-rule-soft);
 }
 
 .ed-homeband::after {
@@ -191,9 +335,9 @@
 }
 
 .ed-band {
-  max-width: var(--x-page);
+  max-width: var(--ed-page);
   margin: 0 auto;
-  padding: 0 var(--x-gutter);
+  padding: 0 var(--ed-gutter);
 }
 
 .ed-suiteband {
@@ -362,10 +506,10 @@
 }
 
 .ed-scope-panel {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: var(--space-2) 0 var(--space-4);
   padding: var(--space-4);
-  border: var(--x-rule);
+  border: var(--ed-rule);
   border-radius: var(--radius-lg);
   background: var(--paper);
 }
@@ -389,7 +533,7 @@
 }
 
 .ed-scope-panel li + li {
-  border-top: var(--x-rule-soft);
+  border-top: var(--ed-rule-soft);
 }
 
 .ed-scope-panel a {
@@ -418,9 +562,9 @@
 /* ── The page ─────────────────────────────────────────────────────────────── */
 
 .ed-main {
-  max-width: var(--x-page);
+  max-width: var(--ed-page);
   margin: 0 auto;
-  padding: var(--space-8) var(--x-gutter) var(--space-10);
+  padding: var(--space-8) var(--ed-gutter) var(--space-10);
 }
 
 .ed-main:focus {
@@ -428,79 +572,70 @@
 }
 
 .ed-measure {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
 }
 
 .ed-head {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-7);
 }
 
+.ed-lead {
+  margin: 0;
+}
+
+/* The standfirst carries its own trailing space for the case where it ends the
+   head. When the shoulder follows it below 70rem, that space is the shoulder's
+   to set, not the sentence's. */
+.ed-lead > :last-child {
+  margin-bottom: 0;
+}
+
+/* THE FOLIO. Round 2 called the mono dateline stacked over the "TODAY" kicker
+   "a small hierarchy muddle at the most-looked-at point on the page". The
+   kicker cannot move — D-HX02 requires the mode name inside the h1 — so the
+   dateline did. Below 70rem it drops under the headline and reads as a byline,
+   which is where a broadsheet puts a date anyway. Above 70rem it hangs in the
+   spine. Either way there is exactly one eyebrow above the title now. */
 .ed-folio {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 var(--space-5);
   margin: 0 0 var(--space-4);
 }
 
-.ed-dateline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-  margin: 0;
+/* A NAMED WAY BACK. Round 2: the dotted underline on the Today tab is "the most
+   sophisticated single detail in the whole lab" and also "the least
+   discoverable" return in the set. Both are true, so the mark is kept and a
+   control is added rather than either being traded for the other. */
+.ed-return {
+  margin: 0 0 var(--space-2);
 }
 
-/* Depth, said as a trail, on the folio line above the title it qualifies. */
-.ed-crumbs {
-  margin: 0;
-}
-
-.ed-crumbs ul {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ed-crumbs a {
+.ed-return a {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  min-width: 44px;
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--ink-soft);
+  gap: var(--space-2);
+  min-height: var(--ed-target);
+  font-size: var(--text-body-sm);
+  color: var(--ink);
   text-decoration: underline;
   text-decoration-color: var(--ink-faint);
-  text-underline-offset: 4px;
+  text-underline-offset: 3px;
 }
 
-.ed-crumbs a[aria-current="page"] {
-  color: var(--ink);
-  font-weight: var(--weight-medium);
-  text-decoration: none;
+.ed-return a::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-left: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg);
 }
 
-.ed-crumbs li + li::before {
-  content: "/";
-  margin-right: var(--space-3);
-  color: var(--ink-faint);
-}
-
-.ed-crumbs li {
-  display: flex;
-  align-items: center;
+.ed-return a:hover {
+  text-decoration-color: var(--ink);
 }
 
 .ed-h1 {
-  max-width: var(--x-measure);
-  margin: 0 0 var(--space-5);
+  max-width: var(--ed-measure);
+  margin: 0 0 var(--space-3);
   font-size: var(--text-section);
   line-height: var(--leading-section);
   letter-spacing: var(--tracking-section);
@@ -520,9 +655,15 @@
   color: var(--ink-soft);
 }
 
+/* Depth said inside the one eyebrow rather than as a second row of chrome:
+   the mode you are inside, quieter, then the depth you are at, at full ink. */
+.ed-h1 .ed-eyebrow-up {
+  color: var(--ink-faint);
+}
+
 /* The lede. The one sentence that says what kind of read this is. */
 .ed-lede {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0 0 var(--space-5);
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
@@ -531,7 +672,7 @@
 }
 
 .ed-status {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   min-height: var(--space-5);
   margin: var(--space-4) 0 0;
   font-size: var(--text-body-sm);
@@ -553,7 +694,7 @@
 /* The standing note: the sentence about what kind of read this is, on a day
    that has rows to show. On a day that has none it becomes the lede instead. */
 .ed-standing {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0 0 var(--space-6);
   color: var(--ink-soft);
 }
@@ -568,12 +709,12 @@
   margin: 0 0 var(--space-7);
   padding: 0;
   list-style: none;
-  border-top: var(--x-rule);
+  border-top: var(--ed-rule);
 }
 
 .ed-limits > li {
   padding: var(--space-3) 0;
-  border-bottom: var(--x-rule-soft);
+  border-bottom: var(--ed-rule-soft);
 }
 
 /* A limit that names a failure is struck with the heavier rule. Weight of rule
@@ -618,7 +759,7 @@
 }
 
 .ed-limit-text {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0;
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
@@ -631,7 +772,7 @@
 /* ── The first screen · a state, then a way forward ───────────────────────── */
 
 .ed-firstrun {
-  max-width: var(--x-page);
+  max-width: var(--ed-page);
   margin: 0 0 var(--space-9);
   padding-top: var(--space-5);
   border-top: 2px solid var(--ink);
@@ -646,7 +787,7 @@
 }
 
 .ed-firstrun p {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0 0 var(--space-3);
   color: var(--ink-soft);
 }
@@ -683,7 +824,7 @@
 }
 
 .ed-list {
-  margin: var(--space-4) 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -695,50 +836,64 @@
 /* ── Rows · one anatomy, two layouts ──────────────────────────────────────── */
 
 /* Below 70rem this is the transformation, not a squeeze. A row is a record: a
-   hanging label line carrying the ordinal and the date, then the subject, then
-   the reason and the provenance. */
+   hanging ordinal, then the subject, then the ledger field it is qualified by,
+   then the reason and the provenance.
+
+   ROUND 2 turned the middle two over. "'4 days late, Sunday 12 July' prints
+   above 'Wait for the Ballyhoura venue confirmation'. The reader meets the
+   lateness before the thing that is late, which is the wrong order for a
+   scanning eye." Another ballot asked for the same transformation to be
+   protected as the best row-level responsive craft in the lab. Both hold: the
+   ledger field still leaves the third column and becomes a hanging line at 390,
+   it just hangs below the title instead of above it. Narrow reading order is
+   now rank, thing, lateness — which is also the wide layout's left-to-right
+   order, so the two widths finally tell the same story in the same sequence. */
 .ed-entry,
 .ed-row,
-.ed-work-row,
+.ed-work-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-4);
+}
+
 .ed-claim {
   display: grid;
-  grid-template-columns: var(--x-cols);
+  grid-template-columns: var(--ed-cols);
   column-gap: var(--space-4);
 }
 
 .ed-entry {
   padding: var(--space-4) 0 var(--space-5);
-  border-top: var(--x-rule);
+  border-top: var(--ed-rule);
 }
 
 .ed-entries > li:first-child {
   border-top: 2px solid var(--accent);
 }
 
-.ed-entry-index {
+.ed-entry-index,
+.ed-row-index {
   grid-column: 1;
   grid-row: 1;
-  margin: 0 0 var(--space-2);
+  margin: 0;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
 }
 
-.ed-entry-when {
-  grid-column: 2;
-  grid-row: 1;
-  margin: 0 0 var(--space-2);
+.ed-entry-index {
+  padding-top: 12px;
 }
 
-.ed-entry-body {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  min-width: 0;
+.ed-row-index {
+  padding-top: 10px;
 }
 
 .ed-entry-title {
-  margin: 0 0 var(--space-2);
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
   font-size: var(--text-heading);
   line-height: var(--leading-heading);
   letter-spacing: var(--tracking-heading);
@@ -746,20 +901,20 @@
   overflow-wrap: anywhere;
 }
 
-.ed-entry-title a {
-  color: inherit;
-  text-decoration: underline;
-  text-decoration-color: var(--ink-ghost);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 4px;
+.ed-entry-when {
+  grid-column: 2;
+  grid-row: 2;
+  margin: var(--space-1) 0 var(--space-2);
 }
 
-.ed-entry-title a:hover {
-  text-decoration-color: var(--ink);
+.ed-entry-body {
+  grid-column: 2;
+  grid-row: 3;
+  min-width: 0;
 }
 
 .ed-reason {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0 0 var(--space-3);
   color: var(--ink-soft);
   text-wrap: pretty;
@@ -833,59 +988,76 @@
   background: var(--ink);
 }
 
-/* The quieter sections under the signal: strong row rhythm, one rule each. */
-.ed-rows > li,
-.ed-works > li {
-  border-top: var(--x-rule-soft);
+/* The quieter sections under the signal: strong row rhythm, one rule each.
+   The first row draws none, because the section head above it already struck a
+   full-ink rule across the page and two rules 15px apart read as a mistake
+   rather than as a heavier opening. The ranked list is the exception: its
+   indigo rule is the direction's one mark of rank and it is meant to be seen
+   under the black one. */
+.ed-rows > li + li,
+.ed-works > li + li,
+.ed-threads > li + li {
+  border-top: var(--ed-rule-soft);
 }
 
-.ed-rows > li:first-child,
-.ed-works > li:first-child {
-  border-top: var(--x-rule);
-}
 
 .ed-row,
 .ed-work-row {
-  padding: var(--space-3) 0;
-  min-height: 44px;
+  padding: var(--space-2) 0 var(--space-3);
+}
+
+.ed-row-title,
+.ed-work-title {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ed-row-title {
+  font-weight: var(--weight-regular);
+}
+
+.ed-work-title {
+  font-weight: var(--weight-medium);
 }
 
 .ed-row-when,
 .ed-work-when {
-  grid-column: 1 / -1;
-  grid-row: 1;
+  grid-column: 2;
+  grid-row: 2;
   margin: 0 0 var(--space-1);
 }
 
 .ed-row-body,
 .ed-work-body {
-  grid-column: 1 / -1;
-  grid-row: 2;
+  grid-column: 2;
+  grid-row: 3;
   min-width: 0;
-}
-
-.ed-row-title {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: var(--weight-regular);
-  line-height: var(--leading-body);
-  overflow-wrap: anywhere;
-}
-
-.ed-work-title {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-body);
-  overflow-wrap: anywhere;
 }
 
 /* Every row title is a link and every link says so. Round 1: "Rows are links
    but carry no underline, no chevron, no open control, so the queue reads as a
-   static digest." */
+   static digest."
+
+   ROUND 2, the whole of one ballot's required list: "6 row-title links at 19px
+   on Today at 390; 10 controls at 17-19px on Inbox at 390. These are the
+   operational targets. The brief asks for 44x44 on primary controls and the
+   other three directions deliver it on the same rows."
+
+   One rule, applied to every link that opens something. The padding is
+   symmetrical so nothing shifts optically, and the rows lost an equivalent
+   amount of their own padding, so the page did not grow to buy it. */
+.ed-entry-title a,
 .ed-row-title a,
 .ed-work-title a,
-.ed-event-title a {
+.ed-event-title a,
+.ed-table td a {
+  display: inline-block;
+  min-height: var(--ed-target);
+  padding-block: 10px;
   color: var(--ink);
   text-decoration: underline;
   text-decoration-color: var(--ink-faint);
@@ -893,9 +1065,17 @@
   text-underline-offset: 3px;
 }
 
+.ed-entry-title a {
+  color: inherit;
+  text-decoration-color: var(--ink-ghost);
+  text-underline-offset: 4px;
+  padding-block: 8px;
+}
+
 .ed-row-title a:hover,
 .ed-work-title a:hover,
-.ed-event-title a:hover {
+.ed-event-title a:hover,
+.ed-table td a:hover {
   text-decoration-color: var(--ink);
   text-decoration-thickness: 2px;
 }
@@ -921,7 +1101,7 @@
 }
 
 .ed-section-foot {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: var(--space-3) 0 0;
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
@@ -972,42 +1152,15 @@
   }
 }
 
-.ed-count {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-  margin: var(--space-2) 0 0;
-}
-
-/* Round 1: "the 5 OPEN count and the 'partly read' coverage caveat directly
-   beneath it are set at near-equal weight; a count and the caveat that
-   qualifies it should not read as peers." The caveat now lives in the limits
-   run above the section, and the count is a figure. */
-.ed-count b {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--text-heading);
-  font-weight: var(--weight-medium);
-  color: var(--ink);
-}
-
-.ed-count span {
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  font-weight: var(--weight-medium);
-  color: var(--ink-soft);
-}
+/* The Inbox count has no rule of its own any more. Round 2: it was "the closest
+   thing in the lab to a KPI numeral", set as a definite total on a screen that
+   admitted one item could not be checked. It is a section note now, in the
+   spine, at the size every other section definition uses, and it carries its
+   own coverage in words. See `countLine` in inbox.tsx. */
 
 /* One conversation, one heading. */
 .ed-threads > li {
-  padding: var(--space-3) 0 var(--space-4);
-  border-top: var(--x-rule);
-}
-
-.ed-threads > li:first-child {
-  border-top: 1px solid var(--ink);
+  padding: var(--space-4) 0;
 }
 
 .ed-thread-head {
@@ -1035,7 +1188,7 @@
   margin: 0;
   padding: 0 0 0 var(--space-4);
   list-style: none;
-  border-left: var(--x-rule);
+  border-left: var(--ed-rule);
 }
 
 .ed-event {
@@ -1044,7 +1197,7 @@
 }
 
 .ed-dispatches > .ed-event + .ed-event {
-  border-top: var(--x-rule-soft);
+  border-top: var(--ed-rule-soft);
 }
 
 .ed-event[data-selected="true"] {
@@ -1181,7 +1334,7 @@
   min-height: 44px;
   min-width: 44px;
   padding: 0 var(--space-4);
-  border: var(--x-rule);
+  border: var(--ed-rule);
   border-radius: var(--radius-md);
   background: var(--paper);
   color: var(--ink);
@@ -1252,7 +1405,7 @@
 }
 
 .ed-why {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: var(--space-2) 0 0;
   padding: 0;
   list-style: none;
@@ -1263,9 +1416,9 @@
 .ed-menu {
   margin: var(--space-3) 0 0;
   padding: var(--space-3);
-  border: var(--x-rule);
+  border: var(--ed-rule);
   border-radius: var(--radius-md);
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
 }
 
 .ed-menu ul {
@@ -1275,7 +1428,7 @@
 }
 
 .ed-menu li + li {
-  border-top: var(--x-rule-soft);
+  border-top: var(--ed-rule-soft);
 }
 
 .ed-menu button {
@@ -1303,7 +1456,7 @@
 
 .ed-claim {
   padding: var(--space-5) 0;
-  border-top: var(--x-rule);
+  border-top: var(--ed-rule);
 }
 
 .ed-claims > li:first-child {
@@ -1313,7 +1466,7 @@
 .ed-claim-q {
   grid-column: 1 / -1;
   grid-row: 1;
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0 0 var(--space-3);
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
@@ -1338,7 +1491,7 @@
 
 .ed-claim-status {
   grid-column: 1 / -1;
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0 0 var(--space-3);
   font-size: var(--text-body-sm);
   color: var(--ink);
@@ -1372,7 +1525,7 @@
 
 .ed-fields dd {
   display: inline;
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0;
   color: var(--ink-soft);
 }
@@ -1448,7 +1601,7 @@
   padding: var(--space-3) var(--space-4) var(--space-3) 0;
   text-align: left;
   vertical-align: baseline;
-  border-bottom: var(--x-rule-soft);
+  border-bottom: var(--ed-rule-soft);
 }
 
 .ed-table thead th {
@@ -1485,7 +1638,7 @@
 
   .ed-table tr {
     padding: var(--space-3) 0;
-    border-bottom: var(--x-rule-soft);
+    border-bottom: var(--ed-rule-soft);
   }
 
   .ed-table td {
@@ -1509,7 +1662,7 @@
 
 .ed-chart {
   margin: 0;
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
 }
 
 .ed-chart svg {
@@ -1525,7 +1678,7 @@
 }
 
 .ed-lens {
-  max-width: var(--x-measure);
+  max-width: var(--ed-measure);
   margin: 0 0 var(--space-6);
   padding: var(--space-3) 0 var(--space-3) var(--space-4);
   border-left: 2px solid var(--accent);
@@ -1590,13 +1743,13 @@
    down without a subgrid. */
 @media (min-width: 70rem) {
   .ed {
-    --x-cols: var(--x-margin) var(--x-text) minmax(0, 1fr);
+    --ed-cols: var(--ed-margin) var(--ed-text) minmax(0, 1fr);
   }
 
   .ed-main {
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
     align-content: start;
   }
 
@@ -1605,36 +1758,69 @@
   }
 
   .ed-main > .ed-section,
-  .ed-main > .ed-limits,
   .ed-main > .ed-imprint,
   .ed-main > .ed-inbox {
     grid-column: 1 / -1;
   }
 
-  /* Limits: the term hangs in the margin, the sentence sits in the measure. */
-  .ed-limits > li {
-    display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+  .ed-main > .ed-weather {
+    grid-column: 1 / -1;
   }
 
-  .ed-limit-head {
+  /* THE MASTHEAD BLOCK. Spine, measure and shoulder, on the page's own tracks,
+     inside one grid item — so the composition holds whether or not the weather
+     band is drawn and whatever the sections below it do. */
+  .ed-main > .ed-head {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
+    align-items: start;
+  }
+
+  .ed-head > .ed-return {
     grid-column: 1;
     grid-row: 1;
+    justify-self: end;
+    margin: 0 0 var(--space-2);
+  }
+
+  .ed-head > .ed-h1 {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  /* The instant hangs in the spine, right-aligned against the standfirst it
+     dates, so exactly one eyebrow sits above the title. */
+  .ed-head > .ed-folio {
+    grid-column: 1;
+    grid-row: 2;
     text-align: right;
     margin: 0;
   }
 
-  .ed-limit-text {
+  .ed-head > .ed-lead {
     grid-column: 2;
+    grid-row: 2;
+  }
+
+  .ed-head > .ed-status {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .ed-head > .ed-read {
+    grid-column: 3;
+    grid-row: 1 / 4;
+    margin: 0;
   }
 
   /* Sections: the head is a grid so its rule runs the page and its definition
      sits in the margin beside the heading. */
   .ed-section {
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
   }
 
   .ed-section > * {
@@ -1649,8 +1835,8 @@
 
   .ed-section-head {
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
     align-items: baseline;
   }
 
@@ -1666,35 +1852,43 @@
     text-align: right;
   }
 
-  .ed-count {
-    grid-column: 3;
-    grid-row: 1;
-    justify-content: flex-end;
-    margin: 0;
-  }
-
-  /* Rows: numeral in the margin, subject in the measure, date in the field. */
+  /* Rows: numeral in the spine, subject in the measure, date in the shoulder. */
   .ed-entry,
   .ed-row,
   .ed-work-row,
   .ed-claim {
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
   }
 
-  .ed-entry-index {
+  .ed-entry-index,
+  .ed-row-index {
     grid-column: 1;
     grid-row: 1;
     justify-self: end;
     margin: 0;
-    padding-top: 4px;
+  }
+
+  .ed-entry-index {
+    padding-top: 12px;
+  }
+
+  .ed-row-index {
+    padding-top: 14px;
+  }
+
+  .ed-entry-title,
+  .ed-row-title,
+  .ed-work-title {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .ed-entry-body,
   .ed-row-body,
   .ed-work-body {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 2;
   }
 
   .ed-entry-when,
@@ -1705,6 +1899,7 @@
     justify-content: flex-end;
     text-align: right;
     margin: 0;
+    padding-top: 12px;
   }
 
   .ed-when {
@@ -1738,8 +1933,8 @@
   .ed-fields {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
     row-gap: var(--space-2);
   }
 
@@ -1763,8 +1958,8 @@
   /* The imprint's standing head hangs in the margin like everything else. */
   .ed-imprint {
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
   }
 
   .ed-imprint h2 {
@@ -1788,15 +1983,15 @@
      its own at the page edge. */
   .ed-threads > li {
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
   }
 
   .ed-thread-head {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
     align-items: baseline;
   }
 
@@ -1819,8 +2014,8 @@
   .ed-event-sole {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: var(--x-cols);
-    column-gap: var(--x-gap);
+    grid-template-columns: var(--ed-cols);
+    column-gap: var(--ed-gap);
   }
 
   .ed-event-sole > * {
@@ -1849,8 +2044,7 @@
 
   .ed-inbox[data-split="true"] .ed-section-note,
   .ed-inbox[data-split="true"] .ed-thread-sub,
-  .ed-inbox[data-split="true"] .ed-kindline,
-  .ed-inbox[data-split="true"] .ed-count {
+  .ed-inbox[data-split="true"] .ed-kindline {
     text-align: left;
     justify-content: flex-start;
   }
@@ -1979,24 +2173,34 @@
 
   /* The marks keep their three shapes and gain a fill difference that survives
      the loss of every hue: open, filled, filled-and-ringed. */
-  .ed-flag-mark,
   .ed-limit-mark,
-  .ed-mode-mark {
+  .ed-mode-mark,
+  .ed-read-kind::before {
     border-color: CanvasText;
     background: Canvas;
   }
 
-  .ed-flag[data-register="limited"] .ed-flag-mark,
   .ed-limit-mark[data-register="limited"],
-  .ed-mode-mark[data-register="limited"] {
+  .ed-mode-mark[data-register="limited"],
+  .ed-read[data-register="limited"] .ed-read-kind::before {
     background: CanvasText;
   }
 
-  .ed-flag[data-register="failed"] .ed-flag-mark,
   .ed-limit-mark[data-register="failed"],
-  .ed-mode-mark[data-register="failed"] {
+  .ed-mode-mark[data-register="failed"],
+  .ed-read[data-register="failed"] .ed-read-kind::before {
     background: CanvasText;
     box-shadow: 0 0 0 2px Canvas, 0 0 0 3px CanvasText;
+  }
+
+  /* The weather band is the page-level signal, so it must survive the loss of
+     red and amber. Weight already carries it; forced colours get the fill. */
+  .ed-weather-mark {
+    background: CanvasText;
+  }
+
+  .ed-weather[data-register="failed"] {
+    border-top-color: CanvasText;
   }
 
   .ed-when[data-overdue="true"] b::before {

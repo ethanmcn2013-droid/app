@@ -1,31 +1,28 @@
 /**
  * Reading Index · Inbox.
  *
- * A queue and a correspondence, in that order on the page and in that order in
- * the reader's head. The correspondence column appears when there is a
- * correspondence to put in it, and the margin holds the record of the read in
- * every state, so the widest mode in this direction no longer has the emptiest
- * right-hand side.
+ * A correspondence and a queue, in that order on the page and in that order in
+ * the reader's head.
  *
- * WHY THE OPEN EVENT COMES FIRST IN THE DOCUMENT. A viewport cannot change
- * what is in the document — HOME_EXPERIENCE §3.1 rule 4 makes the heading tree
- * identical at every width, and §12 rule 6 does the same for `aria-current`.
- * So the detail is not hidden at one width and shown at another: it is always
- * there, always in the same place in the document, and grid placement alone
- * moves it beside the queue when there is room. At 390 that means the reader
- * lands on the event they opened with the queue below it, which is what a
- * full-screen detail buys, without a viewport-conditional document.
+ * WHY THERE IS NO SPLIT COLUMN ANY MORE. Round 2 put the queue beside the open
+ * event at 1120 and above, which meant Inbox alone had a third column, a
+ * different measure and a right-hand block holding two lines in a 355 px
+ * space. Three directors marked it, one of them as the weakest composition in
+ * the candidate. The standing column now carries the record of the read in
+ * every mode including this one, so the correspondence goes where every other
+ * piece of reading in this direction goes: the reading column, at the top,
+ * ahead of the list it came from.
+ *
+ * The document is therefore identical at every width — HOME_EXPERIENCE §3.1
+ * rule 4 makes the heading tree identical at every width and §12 rule 6 does
+ * the same for `aria-current`, and this is now true by construction rather
+ * than by grid placement. At 390 and at 1440 alike the reader lands on the
+ * event they opened with the queue below it, which is what a full-screen
+ * detail buys, without a viewport-conditional document.
  */
 
 import type { HomeCandidateProps, InboxRow } from "@/lib/home-layer/lab-shell";
-import {
-  Flag,
-  Limits,
-  PageHead,
-  Perms,
-  ThisRead,
-  entryAnchor,
-} from "./parts";
+import { Flag, Page, Perms, entryAnchor } from "./parts";
 
 const DETAIL_ID = "ri-open-event";
 
@@ -33,10 +30,13 @@ function QueueRow({
   row,
   selected,
   groupHeading,
+  openLabel,
 }: {
   row: InboxRow;
   selected: boolean;
   groupHeading: string;
+  /** The shell's own word for opening an event. Never one this file writes. */
+  openLabel: string;
 }) {
   /**
    * A thread is named once, by its heading. Inside it the rows are events
@@ -78,10 +78,32 @@ function QueueRow({
           <span>{row.occurredLine}</span>
           {row.actorName ? <span>{row.actorName}</span> : null}
         </span>
-        <span className="ri-facts">
-          <span>{row.visibilityLabel}</span>
-          <span>{row.dispositionLabel}</span>
-          {row.snoozeLine ? <span>{row.snoozeLine}</span> : null}
+        {/*
+          THE DISPOSITION IS A FIELD, NOT PROSE. Three directors read "Not read
+          yet" and "Still open" as flat sentences and concluded the queue had
+          no state on it at all. They are the two facts that decide whether a
+          row still wants something, so they are set the way this direction
+          sets a record: a named field with its value, marked when the value is
+          one that is still asking.
+        */}
+        <span className="ri-marks">
+          <span className="ri-mark" data-live={row.visibility === "new" ? "" : undefined}>
+            <span className="ri-mark-name">Read</span>
+            <span className="ri-mark-value">{row.visibilityLabel}</span>
+          </span>
+          <span className="ri-mark" data-live={row.disposition === "open" ? "" : undefined}>
+            <span className="ri-mark-name">State</span>
+            <span className="ri-mark-value">{row.dispositionLabel}</span>
+          </span>
+          {row.snoozeLine ? (
+            <span className="ri-mark">
+              <span className="ri-mark-name">Comes back</span>
+              <span className="ri-mark-value">{row.snoozeLine}</span>
+            </span>
+          ) : null}
+          <span className="ri-open-mark" aria-hidden="true">
+            {openLabel}
+          </span>
         </span>
         {row.attempt ? (
           <span className="ri-facts">
@@ -176,77 +198,64 @@ function Detail({ props }: { props: HomeCandidateProps }) {
 }
 
 export function InboxMode({ props }: { props: HomeCandidateProps }) {
-  const { inbox } = props;
+  const { inbox, copy, firstRun } = props;
   const selectedId = inbox.selection?.eventId ?? null;
 
   return (
-    <div className="ri-page ri-page--queue" data-open={selectedId ? "" : undefined}>
-      <PageHead props={props}>
-        {inbox.selectionMissingLine ? <Flag>{inbox.selectionMissingLine}</Flag> : null}
-        {/*
-          THE QUEUE OBEYS THE INDEX IT PUBLISHES. If one of five items could
-          not be checked against its source, the reader is told here, at the
-          head, at both viewports — not two and a half thousand pixels below
-          the row that counted it.
-        */}
-        <Limits disclosures={inbox.disclosures} />
-      </PageHead>
+    <Page
+      props={props}
+      /*
+        THE QUEUE OBEYS THE INDEX IT PUBLISHES. If one of five items could not
+        be checked against its source, the reader is told at the head, at both
+        viewports — not two and a half thousand pixels below the row that
+        counted it.
+      */
+      disclosures={inbox.disclosures}
+      head={
+        inbox.selectionMissingLine ? <Flag>{inbox.selectionMissingLine}</Flag> : null
+      }
+    >
+      {selectedId ? <Detail props={props} /> : null}
 
-      <div className="ri-body">
-        <div className="ri-split">
-          <div className="ri-split-queue">
-            {/*
-              `emptyLine` is populated by the shell only when the queue is
-              genuinely, completely empty and every project answered. When it
-              is null and the list is still empty, something was not read, so
-              the state is stated instead of a calm sentence about nothing
-              waiting.
-            */}
-            {inbox.groups.length === 0 ? (
-              inbox.emptyLine ? (
-                <p className="ri-lead">{inbox.emptyLine}</p>
-              ) : (
-                <p className="ri-claim-withheld">{props.copy.states[inbox.state]}</p>
-              )
+      {/*
+        `emptyLine` is populated by the shell only when the queue is genuinely,
+        completely empty and every project answered. When it is null and the
+        list is still empty, something was not read, so the state is stated
+        instead of a calm sentence about nothing waiting. A reader who has not
+        started gets the first screen instead of either.
+      */}
+      {inbox.groups.length === 0 && !firstRun ? (
+        inbox.emptyLine ? (
+          <p className="ri-lead">{inbox.emptyLine}</p>
+        ) : (
+          <p className="ri-claim-withheld">{copy.states[inbox.state]}</p>
+        )
+      ) : null}
+
+      {inbox.groups.map((group) => {
+        const headingId = `ri-group-${group.key.replace(/[^A-Za-z0-9_-]+/g, "-")}`;
+        return (
+          <section className="ri-section" key={group.key} aria-labelledby={headingId}>
+            <h2 className="ri-h2" id={headingId}>
+              {group.heading}
+            </h2>
+            {group.subheading ? (
+              <p className="ri-h2-window">{group.subheading}</p>
             ) : null}
-            {inbox.groups.map((group) => {
-              const headingId = `ri-group-${group.key.replace(/[^A-Za-z0-9_-]+/g, "-")}`;
-              return (
-                <section
-                  className="ri-section"
-                  key={group.key}
-                  aria-labelledby={headingId}
-                >
-                  <h2 className="ri-h2" id={headingId}>
-                    {group.heading}
-                  </h2>
-                  {group.subheading ? (
-                    <p className="ri-h2-window">{group.subheading}</p>
-                  ) : null}
-                  <ul className="ri-entries">
-                    {group.rows.map((row) => (
-                      <QueueRow
-                        key={row.eventId}
-                        row={row}
-                        selected={row.eventId === selectedId}
-                        groupHeading={group.heading}
-                      />
-                    ))}
-                  </ul>
-                </section>
-              );
-            })}
-          </div>
-
-          {selectedId ? (
-            <div className="ri-split-detail">
-              <Detail props={props} />
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      <ThisRead props={props} />
-    </div>
+            <ul className="ri-entries">
+              {group.rows.map((row) => (
+                <QueueRow
+                  key={row.eventId}
+                  row={row}
+                  selected={row.eventId === selectedId}
+                  groupHeading={group.heading}
+                  openLabel={copy.actions.openEvent}
+                />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+    </Page>
   );
 }

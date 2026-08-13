@@ -1,323 +1,265 @@
 /**
- * Context Rail · Inbox.
+ * Meridian · Inbox.
  *
- * ── What was here, and why it is gone ──────────────────────────────────────
+ * AN INBOX IS ALREADY A CHRONOLOGY and no other composition in this lab treats
+ * it as one. Every event carries the instant it arrived, and a snoozed event
+ * carries the exact instant it comes back. So the queue divides at the same
+ * rule the rest of the direction divides at:
  *
- * The arrival screen used to carry a rounded, bordered, tinted panel headed
- * THIS READ, holding the open count, the scope, the state of the read and a
- * table of snooze return times. It was a dashboard widget in a house whose
- * first rule is rules, alignment, type and whitespace before containers, and
- * three of its four facts were already printed in the rail six inches to the
- * left. It has not been restyled. It has been deleted.
+ *   above the horizon   everything still waiting on you, most recent first,
+ *                       each hung on the moment it arrived
+ *   below the horizon   everything that is not waiting on you now — snoozed,
+ *                       with the instant it returns printed on it, and handled
+ *                       or cleared, which are off the clock altogether
  *
- * Its one fact that was NOT already somewhere else is the exact instant a
- * snoozed item comes back. That is a fact about the snooze control, so it now
- * lives with the snooze control, inside the action on an opened event, set as
- * ruled fielded metadata. And the state of the read, which used to say "Read"
- * directly beneath a band saying an item could not be checked, is now derived
- * from the disclosures the mode actually published, so the rail says "Partly
- * read" and the contradiction is gone.
+ * That is the one thing a time-structured Home can show that a list cannot: a
+ * snooze is not a status word, it is a position. The reader can see that they
+ * moved something past the line, and see exactly where it lands.
  *
- * ── The split, and when it is earned ───────────────────────────────────────
+ * THREADS STAY WHOLE. Grouping is the shell's, by thread, and a thread with any
+ * open ask in it stays above the line entire rather than being torn in half by
+ * disposition. A single-row group prints no group heading, because the shell
+ * composes that heading from the row's own title and printing it twice is
+ * furniture, not structure.
  *
- * A persistent left rail plus a queue plus a detail is three columns, and the
- * brief named the three-column Inbox as this direction's trap in advance. The
- * old answer split the page at 1280 whether or not there was anything to put
- * in the second column, so the arrival state was a 335px queue beside a static
- * summary, and a title wrapped to two lines at a 1440 viewport.
- *
- * The new answer: THERE IS NO SECOND COLUMN UNTIL THERE IS SOMETHING IN IT. On
- * arrival the queue runs at the page's full measure, which is 736px at 1440,
- * wider than the same content gets anywhere else in this direction. Opening an
- * event splits the page, and only then, and only at 1280 and up where the
- * split can carry a queue and a detail without either wrapping. Below 1280 an
- * opened event replaces the queue with a full-measure detail carrying its own
- * way back. Same DOM, same order, same links, three behaviours.
- *
- * ── Threads ────────────────────────────────────────────────────────────────
- *
- * The shell groups by thread and names each group with its first row's title.
- * A row repeats its own title only when it differs from the group's, which it
- * does in the guest world where two asks in one thread point at two different
- * items. That check is why the queue reads as correspondence rather than as
- * the same sentence printed twice.
- *
- * Every event carries the same way in, named the same word, in the same place.
- * It used to be that a thread of one made its heading the link and showed no
- * Open, so the affordance appeared on two rows out of nine. The visible word
- * is still the shell's ("Open"), and the accessible name names the ask it
- * opens, so a reader moving by link hears "Open. Replied to you. Send the
- * Orchard seating plan to the venue." rather than nine identical links.
+ * EVERY DISPOSITION IS ON THE ROW AT ARRIVAL. Mark as read, snooze with its
+ * full schedule of exact resurfacing instants, approve at the source, clear,
+ * and recovery after a refusal — none of them is behind an Open link. The lab
+ * cannot mutate anything, so each one opens and states precisely what it would
+ * do and where; what it may not do is hide that the vocabulary exists.
  */
 
-import type {
-  HomeCandidateProps,
-  InboxGroup,
-  InboxRow,
-} from "@/lib/home-layer/lab-shell";
+import type { InboxGroup, InboxRow } from "@/lib/home-layer/lab-shell";
 import {
   Actions,
+  Chronology,
+  EmptyField,
+  Entries,
+  Entry,
+  EntryTitle,
   Fields,
+  FirstRun,
+  HORIZON_MARK,
   Label,
-  Masthead,
   Meta,
   Notice,
   Notices,
   Prov,
+  ReadNotice,
+  ScopeAccount,
+  SourcePath,
+  TheRead,
+  type ModeArgs,
 } from "./parts";
+import { accountOf, bySeverity } from "./reading";
 
-/** The detail panel's anchor. Opening an event moves focus and view to it. */
-const DETAIL_ID = "rl-detail";
-
-/**
- * The shell builds every lab URL; this only names the place in the page the
- * link lands on, which the shell has no opinion about because it is not part
- * of the lab's view state.
- */
-const toDetail = (href: string) => `${href}#${DETAIL_ID}`;
-
-function shownTitle(row: InboxRow): string {
-  return row.title ?? row.titleFallback;
+/** Where an event sits on the clock. The shell's sentence, never composed. */
+function timeOf(row: InboxRow): string {
+  return row.disposition === "snoozed" ? row.dispositionLabel : row.occurredLine;
 }
 
-function EventRow({
+function Event({
   row,
-  group,
-  current,
-  openLabel,
+  selectedId,
+  closeHref,
+  snooze,
+  /**
+   * True when the thread above this row already carries its subject. The row
+   * then leads with WHAT IT IS - mentioned you, asked you to approve - instead
+   * of printing the same sentence twice on one screen. Outside a thread the
+   * subject leads and the kind is the eyebrow above it.
+   */
+  underSubject = false,
 }: {
   row: InboxRow;
-  group: InboxGroup;
-  current: boolean;
-  openLabel: string;
+  selectedId: string | null;
+  closeHref: string;
+  snooze: ModeArgs["props"]["inbox"]["snoozeOptions"];
+  underSubject?: boolean;
 }) {
-  const title = shownTitle(row);
+  const open = selectedId === row.eventId;
+  const openAction = row.actions.find((action) => action.id === "open") ?? null;
+  const rest = row.actions.filter((action) => action.id !== "open");
   return (
-    <li className="rl-event" data-current={current ? "yes" : undefined}>
-      <h3 className="rl-event-kind">{row.kindLabel}</h3>
-      {title === group.heading ? null : (
-        <p className="rl-event-title" data-state={row.titleState}>
-          {title}
-        </p>
-      )}
+    <Entry time={timeOf(row)} selected={open}>
+      {underSubject ? null : <p className="mr-kind">{row.kindLabel}</p>}
+      <EntryTitle href={openAction?.href ?? row.href}>
+        {underSubject ? row.kindLabel : (row.title ?? row.titleFallback)}
+      </EntryTitle>
       <Meta
         items={[
           <Prov key="prov" provenance={row.provenance} />,
-          row.occurredLine,
-          row.actorName,
+          row.actorName ? <span key="actor">{row.actorName}</span> : null,
+          <span key="vis">{row.visibilityLabel}</span>,
+          <span key="disp">{row.dispositionLabel}</span>,
         ]}
       />
-      <p className="rl-event-state">
-        <span className="rl-vis" data-vis={row.visibility}>
-          {row.visibilityLabel}
-        </span>
-        <span className="rl-sep" aria-hidden="true">
-          ·
-        </span>
-        <span className="rl-disp" data-disp={row.disposition}>
-          {row.dispositionLabel}
-        </span>
-      </p>
-      {row.snoozeLine ? <p className="rl-event-note">{row.snoozeLine}</p> : null}
+      {/* The exact instant it comes back. This is the fact the direction is
+          built to be able to place, so it is never abbreviated. */}
+      {row.snoozeLine ? <p className="mr-return">{row.snoozeLine}</p> : null}
       {row.revisionLine ? (
-        <p className="rl-event-note" data-band="limited">
+        <p className="mr-warn" data-band="partial">
           {row.revisionLine}
         </p>
       ) : null}
       {row.attempt ? (
-        <p className="rl-event-note" data-outcome={row.attempt.outcome}>
+        <p className="mr-warn" data-band={row.attempt.outcome === "committed" ? "read" : "broken"}>
           {row.attempt.line}
+          {row.attempt.recoveryLabel ? (
+            <span className="mr-recovery">{row.attempt.recoveryLabel}</span>
+          ) : null}
         </p>
       ) : null}
-      <a className="rl-event-open" href={toDetail(row.href)}>
-        {openLabel}
-        <span className="rl-sr">
-          {". "}
-          {row.kindLabel}
-          {". "}
-          {title}
-        </span>
-      </a>
-    </li>
+      <Actions actions={rest} snooze={snooze} />
+      {open ? (
+        <div className="mr-detail">
+          <SourcePath path={row.sourcePath} close={closeHref} />
+          <Fields
+            rows={[
+              ["What it is", row.kindLabel],
+              ["Arrived", row.occurredLine],
+              ["You have", row.visibilityLabel],
+              ["It is", row.dispositionLabel],
+            ]}
+          />
+        </div>
+      ) : null}
+    </Entry>
   );
 }
 
 function Thread({
   group,
   selectedId,
-  openLabel,
+  closeHref,
+  snooze,
 }: {
   group: InboxGroup;
   selectedId: string | null;
-  openLabel: string;
+  closeHref: string;
+  snooze: ModeArgs["props"]["inbox"]["snoozeOptions"];
 }) {
-  /**
-   * A thread of five is where a queue turns into a wall. At scale there are
-   * ten of them, fifty rows, and reading the tenth thread means scrolling past
-   * forty asks that all point at work the reader has already seen named. So a
-   * thread longer than two shows its most recent ask and folds the rest behind
-   * the sentence the shell already wrote for it. Nothing is dropped, the count
-   * is the shell's own, and a folded thread opens itself when the reader has
-   * one of its asks open.
-   */
-  const single = group.rows.length === 1;
-  const rest = single ? [] : group.rows.slice(1);
-  const folded = rest.length > 1;
-  const first = group.rows[0];
-
+  if (group.rows.length === 1) {
+    const row = group.rows[0] as InboxRow;
+    return (
+      <Event row={row} selectedId={selectedId} closeHref={closeHref} snooze={snooze} />
+    );
+  }
   return (
-    <li className="rl-thread" data-multi={single ? undefined : "yes"}>
-      <h2 className="rl-thread-title">{group.heading}</h2>
-      {group.subheading && !folded ? (
-        <p className="rl-thread-sub">{group.subheading}</p>
-      ) : null}
-      <ul className="rl-event-list">
-        {(folded ? [first] : group.rows).map((row) =>
-          row ? (
-            <EventRow
-              key={row.eventId}
-              row={row}
-              group={group}
-              current={row.eventId === selectedId}
-              openLabel={openLabel}
-            />
-          ) : null,
-        )}
+    <li className="mr-thread">
+      <p className="mr-thread-head">{group.heading}</p>
+      {group.subheading ? <p className="mr-thread-sub">{group.subheading}</p> : null}
+      <ul className="mr-entries mr-entries-nested">
+        {group.rows.map((row) => (
+          <Event
+            key={row.eventId}
+            row={row}
+            selectedId={selectedId}
+            closeHref={closeHref}
+            snooze={snooze}
+            underSubject={(row.title ?? row.titleFallback) === group.heading}
+          />
+        ))}
       </ul>
-      {folded ? (
-        <details
-          className="rl-thread-more"
-          open={rest.some((row) => row.eventId === selectedId)}
-        >
-          <summary className="rl-read-summary">{group.subheading}</summary>
-          <ul className="rl-event-list">
-            {rest.map((row) => (
-              <EventRow
-                key={row.eventId}
-                row={row}
-                group={group}
-                current={row.eventId === selectedId}
-                openLabel={openLabel}
-              />
-            ))}
-          </ul>
-        </details>
-      ) : null}
     </li>
   );
 }
 
-function Detail({
-  row,
-  props,
-  backHref,
-}: {
-  row: InboxRow;
-  props: HomeCandidateProps;
-  backHref: string;
-}) {
-  return (
-    <>
-      <a className="rl-back" href={backHref}>
-        Back to the list
-      </a>
-      <p className="rl-detail-kind">{row.kindLabel}</p>
-      <p className="rl-detail-title" data-state={row.titleState}>
-        {shownTitle(row)}
-      </p>
-      <Meta
-        items={[
-          <Prov key="prov" provenance={row.provenance} />,
-          row.occurredLine,
-          row.actorName,
-        ]}
-      />
-      {row.revisionLine ? <Notice state="stale">{row.revisionLine}</Notice> : null}
-      {row.snoozeLine ? <Notice state="stale">{row.snoozeLine}</Notice> : null}
-      {row.attempt ? (
-        <div className="rl-attempt" data-outcome={row.attempt.outcome}>
-          <Label>What the source said</Label>
-          <p className="rl-attempt-line">{row.attempt.line}</p>
-          {row.attempt.recoveryLabel ? (
-            <p className="rl-attempt-recovery">{row.attempt.recoveryLabel}</p>
-          ) : null}
-        </div>
-      ) : null}
-      <Fields
-        rows={[
-          ["Read state", row.visibilityLabel],
-          ["Where it stands", row.dispositionLabel],
-          ["Where this lives", row.sourcePath],
-        ]}
-      />
-      {/* `Open` is how the reader got here, so it is not offered again. */}
-      <Actions
-        actions={row.actions.filter((action) => action.id !== "open")}
-        snooze={props.inbox.snoozeOptions}
-        heading="What you can do"
-      />
-    </>
+export function InboxMode({ props, here }: ModeArgs) {
+  const { inbox, chrome, copy, firstRun } = props;
+  const worst = firstRun ? null : (bySeverity(inbox.disclosures)[0] ?? null);
+  const selectedId = inbox.selection?.eventId ?? null;
+  const closeHref = props.hrefFor({ event: null });
+
+  const waiting = inbox.groups.filter((group) =>
+    group.rows.some((row) => row.disposition === "open"),
   );
-}
-
-export function InboxMode(props: HomeCandidateProps) {
-  const { inbox, chrome, hrefFor } = props;
-  const selection = inbox.selection;
-  const backHref = hrefFor({ event: null });
+  const settled = inbox.groups.filter(
+    (group) => !group.rows.some((row) => row.disposition === "open"),
+  );
 
   return (
-    <>
-      <Masthead eyebrow={chrome.modeEyebrow} line={inbox.headline} />
-
-      <Notices items={inbox.disclosures} heading="What Home could not read" />
-      {inbox.selectionMissingLine ? (
-        <Notice state="unavailable">{inbox.selectionMissingLine}</Notice>
-      ) : null}
-
-      <div className="rl-inbox" data-selected={selection ? "yes" : undefined}>
-        <section className="rl-queue" aria-label="Everything that arrived">
-          {inbox.groups.length > 0 ? (
-            <ol className="rl-thread-list">
-              {inbox.groups.map((group) => (
+    <Chronology
+      when={chrome.asOf.line}
+      material={here.material}
+      notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
+      horizonMark={HORIZON_MARK}
+      horizonLine={null}
+      stream={
+        firstRun ? (
+          <FirstRun view={firstRun} />
+        ) : (
+          <>
+            {inbox.selectionMissingLine ? (
+              <Notice state="partial">{inbox.selectionMissingLine}</Notice>
+            ) : null}
+            {inbox.emptyLine ? <p className="mr-day">{inbox.emptyLine}</p> : null}
+            {waiting.length === 0 && !inbox.emptyLine ? (
+              <EmptyField>Nothing is waiting on you between now and this line.</EmptyField>
+            ) : null}
+            {waiting.length > 0 ? (
+              <Entries>
+                {waiting.map((group) => (
+                  <Thread
+                    key={group.key}
+                    group={group}
+                    selectedId={selectedId}
+                    closeHref={closeHref}
+                    snooze={inbox.snoozeOptions}
+                  />
+                ))}
+              </Entries>
+            ) : null}
+          </>
+        )
+      }
+      record={
+        <TheRead>
+          <Notices items={accountOf(inbox.disclosures, worst)} />
+          {inbox.badge.rendered ? (
+            <p className="mr-account">
+              {inbox.badge.glyph === null ? copy.unreadableCount : inbox.badge.accessibleName}
+            </p>
+          ) : null}
+          <ScopeAccount
+            scopeLabel={chrome.scope.label}
+            coverageLine={chrome.scope.coverageLine}
+          />
+          <div className="mr-schedule">
+            <Label>When a snooze comes back</Label>
+            <Fields
+              rows={inbox.snoozeOptions.map(
+                (option) => [option.label, option.resurfaceLine] as const,
+              )}
+            />
+          </div>
+          <p className="mr-active">{chrome.activeProject.line}</p>
+        </TheRead>
+      }
+      beyond={
+        <>
+          <p className="mr-beyond-caption">
+            Nothing below this line is waiting on you now.
+          </p>
+          {settled.length > 0 ? (
+            <Entries>
+              {settled.map((group) => (
                 <Thread
                   key={group.key}
                   group={group}
-                  selectedId={selection?.eventId ?? null}
-                  openLabel={props.copy.actions.openEvent}
+                  selectedId={selectedId}
+                  closeHref={closeHref}
+                  snooze={inbox.snoozeOptions}
                 />
               ))}
-            </ol>
-          ) : inbox.emptyLine ? (
-            <p className="rl-empty">{inbox.emptyLine}</p>
-          ) : null}
-
-          {/* Ruled metadata, not a panel. Three snooze choices and the exact
-              instant each one comes back, two of which land on a daylight
-              saving boundary and are stated to the minute rather than rounded
-              to "in three months". */}
-          {inbox.snoozeOptions.length > 0 ? (
-            <div className="rl-queue-foot">
-              <Label>When a snooze comes back</Label>
-              <Fields
-                rows={inbox.snoozeOptions.map(
-                  (option) => [option.label, option.resurfaceLine] as const,
-                )}
-              />
-            </div>
-          ) : null}
-        </section>
-
-        {selection ? (
-          <section
-            className="rl-detail"
-            id={DETAIL_ID}
-            tabIndex={-1}
-            aria-label="The item you opened"
-          >
-            <Detail row={selection} props={props} backHref={backHref} />
-          </section>
-        ) : null}
-      </div>
-    </>
+            </Entries>
+          ) : (
+            <p className="mr-beyond-empty">
+              Nothing here has been snoozed, handled or cleared.
+            </p>
+          )}
+        </>
+      }
+    />
   );
 }

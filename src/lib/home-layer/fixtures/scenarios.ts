@@ -196,6 +196,18 @@ export const HOME_FIXTURE_SCENARIOS: readonly Scenario[] = Object.freeze([
   {
     id: "new_user",
     label: "New, nothing yet",
+    /**
+     * THE EMPTY `projects` ARRAY IS THE WHOLE WORLD, and what reads it matters.
+     *
+     * `projectStates: []` means no source was ever asked, so there is no read
+     * to have failed. Two blind panels found all four directions rendering
+     * this world as a failed read, because the shell resolved it to
+     * `unavailable`: scope resolution found nothing and reported absence as
+     * error. The shell now resolves it to `first-run` instead, off this array
+     * rather than off the resolved scope, because a reader with no Project and
+     * a reader who narrowed onto an unreadable one both resolve to zero and
+     * are not the same fact.
+     */
     proves:
       "No Project, no history, and genuine setup and unsupported states rather than four empty boxes.",
     actor: HOME_FIXTURE_OWNER,
@@ -208,6 +220,21 @@ export const HOME_FIXTURE_SCENARIOS: readonly Scenario[] = Object.freeze([
     todayCandidates: TODAY_NEW_USER_CANDIDATES,
     comparableSnapshots: SNAPSHOTS_AT_BASE,
     asOfIso: HOME_FIXTURE_NOW_ISO,
+    /**
+     * OPEN, AND OWNED BY THE LEAD. This list should also forbid "could not be
+     * read" and "could not read any project", which is the panel finding
+     * turned into a rendered-page gate: nothing on a person's first ever
+     * screen may say a read failed, because none was attempted.
+     *
+     * It is not added here because `mustNeverRender` is emitted into
+     * `experience/home-operating-layer/fixtures/manifest.json`, which is
+     * outside this change's write boundary and whose regeneration invalidates
+     * the materiality receipts bound to it. It is also enforced against the
+     * RENDERED page by `experience/home-layer/home-lab-invariants.spec.ts`, so
+     * adding it turns all four candidates red until they adopt the first-run
+     * state. Both are the lead's calls, and both belong with the candidate
+     * adoption phase rather than with the shell fix.
+     */
     mustNeverRender: ["0 open", "all clear", "you're all caught up"],
   },
   {

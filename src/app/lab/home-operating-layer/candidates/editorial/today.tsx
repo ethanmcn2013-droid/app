@@ -19,11 +19,31 @@
  * never prints a sentence that only repeats the ledger field beside it. And the
  * three ranked decisions are a real `<ol>`, so their order reaches assistive
  * technology rather than living in an `aria-hidden` numeral.
+ *
+ * ROUND 2 left two marks on this file.
+ *
+ * The row order at 390 inverted: "'4 days late, Sunday 12 July' prints above
+ * 'Wait for the Ballyhoura venue confirmation'. The reader meets the lateness
+ * before the thing that is late." True, and it is a straight conflict with
+ * another ballot that named the same transformation the best row-level
+ * responsive craft in the lab and asked for it to be protected. Both are
+ * satisfied rather than one traded for the other: the transformation stays —
+ * the ledger field still leaves the third column and becomes a hanging line at
+ * 390 — but it now hangs BELOW the title instead of above it. The narrow
+ * reading order is rank, then thing, then lateness, which is the order a
+ * scanning eye wants and the order the wide layout already had left to right.
+ *
+ * And the full briefing lost the ranking's own notation: "the numbered margin
+ * disappears entirely on the Full briefing, at exactly the moment the page
+ * announces itself as 'Every row the ranking kept, in the order it ranked
+ * them'." The briefing is numbered now, section by section, because each
+ * section is one ordered output of the ranking and continuous numbering across
+ * four of them would assert a single sequence the ranking never produced.
  */
 
+import type { FirstRunView } from "@/lib/home-layer/lab-shell";
 import type { HomeCandidateProps, TodayRow, TodaySection } from "@/lib/home-layer/lab-shell";
-import { nothingConnectedYet } from "./read-state";
-import { FirstRun, Limits, Provenance, When, type LimitEntry } from "./shell";
+import { FirstRun, Provenance, When } from "./shell";
 
 function OpenedRow({ row }: Readonly<{ row: TodayRow }>) {
   return (
@@ -62,12 +82,13 @@ function SignalEntry({
         {String(index + 1).padStart(2, "0")}
       </p>
 
+      <h3 className="ed-entry-title">
+        <a href={row.href}>{row.title}</a>
+      </h3>
+
       {row.due === null ? null : <When when={row.due} className="ed-entry-when" />}
 
       <div className="ed-entry-body">
-        <h3 className="ed-entry-title">
-          <a href={row.href}>{row.title}</a>
-        </h3>
         <p className="ed-reason">{row.reason}</p>
         <ul className="ed-meta">
           <li>
@@ -82,9 +103,23 @@ function SignalEntry({
   );
 }
 
-function LedgerRow({ row, selected }: Readonly<{ row: TodayRow; selected: boolean }>) {
+function LedgerRow({
+  row,
+  selected,
+  index,
+}: Readonly<{ row: TodayRow; selected: boolean; index: number | null }>) {
   return (
     <li className="ed-row">
+      {index === null ? null : (
+        <p className="ed-row-index" aria-hidden="true">
+          {String(index + 1).padStart(2, "0")}
+        </p>
+      )}
+
+      <h3 className="ed-row-title">
+        <a href={row.href}>{row.title}</a>
+      </h3>
+
       {row.due === null ? (
         <p className="ed-row-when ed-when">
           <b>No date</b>
@@ -94,9 +129,6 @@ function LedgerRow({ row, selected }: Readonly<{ row: TodayRow; selected: boolea
       )}
 
       <div className="ed-row-body">
-        <h3 className="ed-row-title">
-          <a href={row.href}>{row.title}</a>
-        </h3>
         {reasonIsTheField(row) ? null : <p className="ed-why">{row.reason}</p>}
         <ul className="ed-meta">
           <li>
@@ -114,11 +146,18 @@ function LedgerRow({ row, selected }: Readonly<{ row: TodayRow; selected: boolea
 function Section({
   section,
   selectedKey,
-  numbered,
+  shape,
 }: Readonly<{
   section: TodaySection;
   selectedKey: string | null;
-  numbered: boolean;
+  /**
+   * `entries` is the authored read at the top of Today: three decisions with
+   * hanging numerals and room around them. `ranked` is the briefing's ledger
+   * rhythm with the numeral kept, because the briefing announces itself as the
+   * ranking's own order and has to show it. `ledger` is everything below the
+   * cap, which is a list and not a ranking.
+   */
+  shape: "entries" | "ranked" | "ledger";
 }>) {
   if (section.rows.length === 0 && section.suppressedLine === null) return null;
 
@@ -131,7 +170,7 @@ function Section({
         )}
       </div>
 
-      {section.rows.length === 0 ? null : numbered ? (
+      {section.rows.length === 0 ? null : shape === "entries" ? (
         <ol className="ed-list ed-entries">
           {section.rows.map((row, index) => (
             <SignalEntry
@@ -142,10 +181,21 @@ function Section({
             />
           ))}
         </ol>
+      ) : shape === "ranked" ? (
+        <ol className="ed-list ed-rows ed-rows-ranked">
+          {section.rows.map((row, index) => (
+            <LedgerRow
+              key={row.key}
+              row={row}
+              index={index}
+              selected={selectedKey === row.key}
+            />
+          ))}
+        </ol>
       ) : (
         <ul className="ed-list ed-rows">
           {section.rows.map((row) => (
-            <LedgerRow key={row.key} row={row} selected={selectedKey === row.key} />
+            <LedgerRow key={row.key} row={row} index={null} selected={selectedKey === row.key} />
           ))}
         </ul>
       )}
@@ -169,72 +219,46 @@ function Section({
 
 export function TodayMode({
   props,
-  limits,
-}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
-  const { today, chrome } = props;
-  const rowCount = today.sections.reduce((total, section) => total + section.rows.length, 0);
+  firstRun,
+}: Readonly<{ props: HomeCandidateProps; firstRun: FirstRunView | null }>) {
+  const { today } = props;
   const selectedKey = today.selection?.key ?? null;
-  const firstRun = nothingConnectedYet(chrome);
 
   return (
     <>
-      {/* One sentence, one place. Round 1 caught the quiet day printing the
-          same fact twice, once as this sentence and once as a standalone line
-          90px below it. The standalone line is gone; this sentence contains
-          it. */}
-      {rowCount === 0 ? (
-        <p className="ed-lede">{today.quiet.line}</p>
-      ) : (
-        <p className="ed-standing">{today.quiet.line}</p>
-      )}
-
       {today.selectionMissingLine === null ? null : (
         <p className="ed-refused">{today.selectionMissingLine}</p>
       )}
 
-      <Limits entries={limits} />
-
-      {firstRun ? <FirstRun line={chrome.activeProject.line} /> : null}
+      {firstRun === null ? null : <FirstRun view={firstRun} />}
 
       {today.sections.map((section, index) => (
         <Section
           key={section.id}
           section={section}
           selectedKey={selectedKey}
-          numbered={index === 0}
+          shape={index === 0 ? "entries" : "ledger"}
         />
       ))}
 
-      {firstRun ? null : (
+      {firstRun === null ? (
         <p className="ed-tail">
           <a className="ed-more" href={today.briefingHref}>
             {today.briefingLabel}
           </a>
         </p>
-      )}
+      ) : null}
     </>
   );
 }
 
-export function BriefingMode({
-  props,
-  limits,
-}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
+export function BriefingMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
   const { briefing } = props;
-  const rowCount = briefing.sections.reduce((total, section) => total + section.rows.length, 0);
 
   return (
     <>
-      {rowCount === 0 ? (
-        <p className="ed-lede">{props.today.quiet.line}</p>
-      ) : (
-        <p className="ed-standing">Every row the ranking kept, in the order it ranked them.</p>
-      )}
-
-      <Limits entries={limits} />
-
       {briefing.sections.map((section) => (
-        <Section key={section.id} section={section} selectedKey={null} numbered={false} />
+        <Section key={section.id} section={section} selectedKey={null} shape="ranked" />
       ))}
     </>
   );

@@ -15,35 +15,58 @@
  *      JavaScript, so it spends none of the programme's 0.9 KB of shared
  *      runtime headroom.
  *
- * COLOUR. The wildcard's licence is spent on two things, and only two. The paper
- * is warm. And there is now exactly ONE semantic ink in the whole direction —
- * `--dk-alarm` — spent in exactly three places: a rule that stops because a
- * source refused, an overdue date, and a mode tab whose read did not come back.
- * Everything else is the estate's own tokens, and every value is mixed FROM a
- * theme token rather than typed, so light and dark both follow without a second
- * palette.
+ * COLOUR, AND WHAT ROUND 3 CHANGED ABOUT IT.
  *
- * That one ink is never the only channel. The refused rule is also a different
- * SHAPE from the partial rule and from the complete one; an overdue date also
- * reads "4 days late" in words; a limited tab also carries its state in its
- * accessible name. Remove every colour from this page and the three read states
- * are still three different silhouettes, which is the point of drawing state
- * rather than tinting it.
+ * Round 2 warmed the whole canvas, so every sentence in Home sat on a paper the
+ * other three products do not use. Four directors raised the same cost: Home is
+ * explicitly not a fourth product, and its own paper is the one cue that argues
+ * it is, so a founder leaving Home for Tasks crossed a visible seam in a suite
+ * meant to read as one operating system. One director defended the warmth as a
+ * real pro-attention move at 7am, and was also right.
  *
- * Contrast, measured against the mixes below rather than assumed:
- *   --dk-quiet #52525b on --dk-paper #fcfaf7      7.29:1   (floor 7:1, ≤13px)
- *   --dk-quiet on --dk-band #faf7f2               7.16:1
- *   --dk-alarm #963030 on --dk-paper              7.30:1
- *   --dk-spine (50% ink)                          3.42:1   (floor 3:1, 1.4.11)
- *   --dk-mark = --accent on --dk-paper            6.05:1
- *   dark: quiet ink on #171513 9.58:1 · alarm 7.58:1 · mark (indigo-400) 6.2:1
+ * Both are satisfied by putting the warmth where there is no text. There is a
+ * DESK and there is a SHEET. The desk is the full-bleed canvas and it is warm;
+ * the sheet is the reading frame, and it is `--paper`, the estate's own white,
+ * whose token comment reads "locked by operator decision". Every word a reader
+ * reads in Home is therefore on exactly the paper it would be on in Notes, Tasks
+ * and Timeline, and there is no seam under any sentence. At 1440 roughly two
+ * thirds of the screen is still the warm desk, so the 7am quality survives the
+ * change; at 390 the sheet fills the window and the warmth is the chrome band,
+ * which is the same answer read at a different width.
+ *
+ * It also settles the hardcoded-colour finding. There is now exactly ONE literal
+ * colour in this stylesheet — `--dk-warm`, the hue this direction invents — and
+ * the desk is mixed from it against `--paper`. Because `--paper` is itself
+ * theme-aware, the dark desk is derived rather than typed: no second literal, no
+ * second palette, no dark-mode build still ahead of the direction.
+ *
+ * There is one semantic ink, `--dk-alarm`, spent in exactly two places: a rule
+ * that stops because a source refused, and an overdue date. It is never the only
+ * channel. The refused rule is also a different SHAPE from the partial rule,
+ * from the complete one and from the first-run one; an overdue date also reads
+ * "4 days late" in words. Remove every colour and the four read states are still
+ * four different silhouettes, which is the point of drawing state rather than
+ * tinting it.
+ *
+ * Contrast, measured against the values below rather than assumed:
+ *   --ink #111 on the sheet #ffffff                18.1:1
+ *   --dk-quiet #3f3f46 on the sheet                10.4:1
+ *   --dk-quiet on the desk #faf7f1                  9.6:1   (floor 7:1, ≤13px)
+ *   --dk-alarm on the sheet                         7.6:1
+ *   --dk-spine (50% ink) on the sheet               3.6:1   (floor 3:1, 1.4.11)
+ *   --dk-mark = --accent on the sheet               6.3:1
+ *   dark: sheet #0f0f10, desk #1b1813, quiet ink 11.2:1, mark (indigo-400) 6.2:1
  */
 
 .dk {
-  /* The one expressive licence: warm paper, mixed from the theme's own. */
-  --dk-warm: #e8dac2;
-  --dk-paper: color-mix(in srgb, var(--paper) 87%, var(--dk-warm));
-  --dk-band: color-mix(in srgb, var(--paper) 78%, var(--dk-warm));
+  /* The one literal colour in the direction, and the only thing the wildcard's
+     palette licence is spent on. Everything else is mixed from a theme token,
+     so both themes follow from this single declaration. */
+  --dk-warm: #b98a3c;
+
+  /* THE SHEET is the estate's own paper. THE DESK is the warm surround. */
+  --dk-paper: var(--paper);
+  --dk-desk: color-mix(in srgb, var(--paper) 93%, var(--dk-warm));
 
   --dk-rule: color-mix(in srgb, var(--dk-paper) 86%, var(--ink));
   /* Meaning-bearing: the spine breaks where a read broke, so it is held at the
@@ -56,8 +79,8 @@
      ever missing, this direction fails to a DARKER ink, never a lighter one. */
   --dk-quiet: var(--x-ink-quiet, var(--ink-soft));
 
-  /* The one semantic ink. Mixed toward --ink until it clears 7:1 on the warm
-     paper, because the raw status token is 3.76:1 there and this is text. */
+  /* The one semantic ink. Mixed toward --ink until it clears 7:1 on the sheet,
+     because the raw status token is 4.0:1 there and this is text. */
   --dk-alarm: color-mix(in srgb, var(--status-blocked) 60%, var(--ink));
 
   /*
@@ -68,13 +91,21 @@
    * when you change mode reads as unresolved, and a house style built on
    * alignment cannot afford it.
    *
-   * `--dk-frame` is now the sheet, at 46rem, in all five modes and in the desk
-   * head as well: `.dk-frame` is one grid, used by the head and by the page, so
-   * the two share one left edge and one right edge at every width.
-   * `--dk-wide` is 62rem and is claimed by exactly two things — the Project
-   * ledger, and an Inbox with an event open — by taking the `wide` column of
-   * that same grid. Nothing else moves, so the widening reads as an event
-   * rather than as a default.
+   * `--dk-frame` is the reading frame, at 46rem, in all five modes and in the
+   * desk head as well: `.dk-frame` is one grid, used by the head and by the
+   * page, so the two share one left edge and one right edge at every width.
+   * `--dk-wide` is claimed by exactly two things — the Project ledger, and an
+   * Inbox with an event open — by taking the `wide` column of that same grid.
+   * Nothing else moves, so the widening reads as an event rather than a default.
+   *
+   * ROUND 3 SIZED `--dk-wide` AGAINST THE SHEET RATHER THAN AGAINST THE WINDOW.
+   * At 62rem the Project ledger was wider than the paper it was printed on: the
+   * full-page capture showed its spine and every row hanging off both edges of
+   * the sheet and sitting on the desk, which reads as a rendering fault rather
+   * than as a widening. It is 54rem now, and the sheet is drawn at exactly
+   * `--dk-wide` plus one edge on each side, so the widest thing on any page has
+   * 24px of paper beside it and the reading frame has 88px. The widening is
+   * still a real compositional event; it just happens on the page.
    *
    * `--dk-measure` is prose: 34rem, the width a sentence is read at.
    * `--dk-row` is a ledger row: 44rem, wide enough for a title and its
@@ -83,16 +114,31 @@
   --dk-measure: 34rem;
   --dk-row: 44rem;
   --dk-frame: 46rem;
-  --dk-wide: 62rem;
+  --dk-wide: 54rem;
   --dk-flank: calc((var(--dk-wide) - var(--dk-frame)) / 2);
   --dk-edge: var(--space-6);
   --dk-gutter: 2.25rem;
-  --dk-draw: 340ms;
+  /* The index column in the left desk, and the air between it and the frame.
+     The gap is large because it has to clear the sheet's own left edge as well
+     as the measure: the index is on the desk, not on the paper. */
+  --dk-index: 11rem;
+  --dk-index-gap: 7.5rem;
+  /* 260ms, inside the brief's 300ms ceiling for routine transitions. It was
+     340ms, which was over it, and no reviewer should have to find that. */
+  --dk-draw: 260ms;
 
   /* 100% of an auto-height parent is auto, which left a band of the stage's own
-     paper under a short read. Caught in a full-page screenshot. */
+     paper under a short read. Caught in a full-page screenshot.
+
+     The column is what makes the SHEET run to the bottom of the window as well.
+     Without it `.dk-main` is only as tall as its content, and the quiet day and
+     the first morning both ended in a horizontal edge two thirds down the
+     screen, so the sheet read as a card rather than as paper running off the
+     bottom. Caught in a screenshot, not in a review. */
+  display: flex;
+  flex-direction: column;
   min-height: 100svh;
-  background: var(--dk-paper);
+  background: var(--dk-desk);
   color: var(--ink);
   font-family: var(--font-sans);
   font-size: var(--text-body);
@@ -101,10 +147,23 @@
 }
 
 [data-theme="dark"] .dk {
-  --dk-warm: #4a3a26;
-  /* indigo-600 measures 2.93:1 on the dark paper, under the 3:1 floor. The
-     estate already ratified indigo-400 for the accent-as-a-colour role. */
+  /* The desk needs no second literal: `--paper` is theme-aware, so the same mix
+     yields a warm near-black. indigo-600 measures 2.93:1 on the dark paper,
+     under the 3:1 floor, and the estate already ratified indigo-400 for the
+     accent-as-a-colour role. */
   --dk-mark: var(--indigo-400);
+}
+
+/*
+ * REDUCED MOTION. The spine draws itself once on arrival and nothing else on any
+ * page moves, so honouring the preference is one rule: the line is present
+ * immediately rather than absent and then drawn. Comprehension is untouched,
+ * because the resting state and the drawn state are the same state.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .dk-column::before {
+    animation: none;
+  }
 }
 
 .dk *,
@@ -139,6 +198,47 @@
 
 .dk-frame > .dk-wide {
   grid-column: wide;
+}
+
+/*
+ * ── THE SHEET ────────────────────────────────────────────────────────────────
+ *
+ * LAB_BRIEF Amendment 1 asks what the full width is for and refuses "nothing" as
+ * an answer. This direction's answer is that the width is the DESK and the
+ * measure is a SHEET of paper lying on it, so the margin is a material rather
+ * than a leftover, and the reader can see where the read ends.
+ *
+ * It is one grid item spanning every row of the page, painted in `--paper` and
+ * pushed out to the flank on each side, with a hairline down its two long edges
+ * and nothing across its top or bottom. That is deliberate: a rectangle closed
+ * on four sides is a card, and this system puts rules and alignment before
+ * containers. Open at the ends, it reads as a column of paper running off the
+ * screen, which is what it is.
+ *
+ * At the narrow end the negative margin lands exactly on the window edge, so the
+ * sheet becomes full bleed rather than overflowing, and the edges are dropped
+ * because a hairline pinned to the glass is a scratch rather than an edge.
+ */
+.dk-main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: min(calc(var(--dk-wide) + var(--dk-edge) * 2), 100%);
+  margin-inline: auto;
+  background: var(--dk-paper);
+}
+
+/* Sized against the WIDEST track rather than the reading one, so the Project
+   ledger and an opened Inbox event step out onto more paper rather than off it.
+   At the narrow end the expression saturates at 100% and the sheet is full
+   bleed, which is why the two edges are only drawn once there is a desk for
+   them to sit on: a hairline pinned to the glass is a scratch, not an edge. */
+@media (min-width: 48rem) {
+  .dk-main::before {
+    border-left: 1px solid var(--dk-rule);
+    border-right: 1px solid var(--dk-rule);
+  }
 }
 
 /* ── Focus ────────────────────────────────────────────────────────────────── */
@@ -214,7 +314,7 @@
   align-items: center;
   min-height: 44px;
   padding: 0 var(--space-4);
-  background: var(--dk-band);
+  background: var(--dk-desk);
   color: var(--ink);
   border: 1px solid var(--dk-spine);
   border-radius: var(--radius-md);
@@ -247,7 +347,7 @@
  * there — the as-of moved to the readline, where it is a fact about the read.
  */
 .dk-head {
-  background: var(--dk-band);
+  background: var(--dk-desk);
   border-bottom: 1px solid var(--dk-rule);
 }
 
@@ -422,8 +522,17 @@
   font-weight: var(--weight-medium);
 }
 
+/*
+ * A DEFINED WRAP, rather than one left to chance.
+ *
+ * With the per-mode glyphs deleted the row is shorter than it was, but the
+ * requirement stands at 320px and at 200% text enlargement with a two-digit
+ * count present: the four modes stay text-labelled, none of them hides under a
+ * More, and when the row runs out of width it wraps onto a second line with its
+ * own row gap rather than compressing or scrolling sideways.
+ */
 .dk-modes ul {
-  gap: 0 var(--space-6);
+  gap: var(--space-2) var(--space-6);
 }
 
 .dk-modes a {
@@ -470,40 +579,58 @@
 }
 
 /*
- * PER-MODE READ HEALTH, in the same three-state grammar as the readline and at a
- * twelfth of the size. A mode whose read finished carries nothing at all, so the
- * presence of a mark is itself the signal — the same rule the old strip broke.
- * The state is also in the link's accessible name, so this is never the only
- * channel.
+ * PER-MODE READ HEALTH, IN WORDS.
+ *
+ * Round 2 put a 6px upright tick after each mode name and keyed it at the foot
+ * of the page. Four directors independently said the same thing: the marks are
+ * barely perceptible, they mean nothing without the key, and the direction's own
+ * answer to that was the key, which concedes the point. A morning page must not
+ * need a decoder ring, so the mark is gone and this line replaces it.
+ *
+ * It uses the same fielded grammar as every metadata run in the direction —
+ * hairline separators, quiet ink — and it names only the modes you are not
+ * standing in, each with its own state word. It is absent when every other mode
+ * read in full, so presence is the signal, and it wraps as a sentence wraps
+ * instead of overflowing as a tab row does. At 200% text and at 320px it takes
+ * more lines and stays legible, which a 6px glyph could not do at any size.
  */
-/* Drawn UPRIGHT, as a hand's-width of the spine itself. A horizontal version of
-   the same mark sat on the text baseline and read as a stray hyphen after the
-   mode name, which is what the capture showed rather than what the CSS said. */
-.dk-tabstate {
+.dk-elsewhere {
   position: relative;
-  flex: none;
-  width: 2px;
-  height: 13px;
-  background: var(--dk-spine);
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--space-3);
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-body-sm);
+  color: var(--dk-quiet);
 }
 
-.dk-tabstate::after {
+.dk-elsewhere .dk-key {
+  flex: none;
+}
+
+.dk-elsewhere-part + .dk-elsewhere-part {
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--dk-rule);
+}
+
+/* The state word leads and takes the ink, the modes it applies to follow. */
+.dk-elsewhere b {
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+/* Same move as `.dk-meta`: a separator that wraps lands at the start of the
+   next line and reads as a stray tick, so column zero is painted back over. */
+.dk-elsewhere::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 5px;
-  width: 2px;
-  height: 4px;
-  background: var(--dk-band);
-}
-
-.dk-tabstate[data-read="refused"] {
-  height: 6px;
-  background: var(--dk-alarm);
-}
-
-.dk-tabstate[data-read="refused"]::after {
-  display: none;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--dk-desk);
 }
 
 /* Depth, and only on the route that has any: Today, then where you are now. */
@@ -577,7 +704,8 @@
   padding: 0 5px;
   border: 1px solid var(--dk-mark);
   border-radius: var(--radius-sm);
-  background: var(--dk-paper);
+  /* The numeral sits on the desk, not on a chip of paper laid over it. */
+  background: transparent;
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: var(--text-label);
@@ -595,8 +723,17 @@
 /* ── The read ─────────────────────────────────────────────────────────────── */
 
 .dk-main {
+  position: relative;
+  flex: 1 1 auto;
   display: block;
   padding: var(--space-8) 0 var(--space-11);
+}
+
+/* The read sits ON the sheet, so it takes the layer above it. Without this the
+   positioned pseudo would paint over every non-positioned line of the page. */
+.dk-page {
+  position: relative;
+  z-index: 1;
 }
 
 .dk-h1 {
@@ -615,6 +752,29 @@
   color: var(--dk-quiet);
 }
 
+/*
+ * MODE RHYTHM, SAID IN THE HEADLINE.
+ *
+ * All five modes used to open at the same size and weight, so Today, Inbox, My
+ * work and Analytics arrived with identical visual force and the brief's "mode
+ * rhythm" was answered only by the words. They are two registers now, and the
+ * split is by what the mode IS rather than by variety for its own sake.
+ *
+ *   EDITORIAL — Today and Analytics. Both are authored: a read of the day, and a
+ *   reading of the records. They open at section scale and the page below them
+ *   is prose-led.
+ *
+ *   WORKING — Inbox, My work and the full briefing. A queue, a ledger and a
+ *   complete listing are things you work down, not things that open on you, so
+ *   they open at heading scale and hand the weight to the rows. On those three
+ *   the section heads step down with the headline, so the hierarchy is intact
+ *   rather than flattened: 20px over 17px over 15px, a ledger's proportions.
+ *
+ * Today is deliberately not enlarged past where it is. Its arrival screen puts
+ * all three ranked decisions above the fold at 1440, which two directors named
+ * as the best time-to-first-decision in the lab, and a bigger headline is paid
+ * for out of exactly that.
+ */
 .dk-h1-line {
   display: block;
   font-size: var(--text-section);
@@ -622,6 +782,20 @@
   line-height: var(--leading-section);
   letter-spacing: var(--tracking-section);
   text-wrap: balance;
+}
+
+.dk[data-mode="inbox"] .dk-h1-line,
+.dk[data-mode="my-work"] .dk-h1-line,
+.dk[data-mode="briefing"] .dk-h1-line {
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+}
+
+.dk[data-mode="inbox"] .dk-h2,
+.dk[data-mode="my-work"] .dk-h2 {
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
 }
 
 /*
@@ -632,6 +806,13 @@
  *   complete   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  *   partial    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━      ━━━━━━━━━━━━━━━━━━━━━━
  *   refused    ━━━━━━━━━━━━━━━━━━
+ *   notyet     ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ *
+ * The fourth was the whole lab's mistake. A reader with no Project used to get
+ * the refusal's short red rule and the refusal's words on their first morning,
+ * which is the governing rule inverted: it renders NOT YET as BROKEN. It takes
+ * the quiet ink and a dashed rule now — a line that has not been drawn, because
+ * there is nothing yet to draw it for. Nothing about that screen is red.
  *
  * There is no tint, no box and no container. The break is cut by painting the
  * paper back over the rule, which is exactly how the spine's own break is drawn
@@ -671,6 +852,15 @@
 .dk-readline[data-read="refused"]::before {
   left: 38%;
   right: 0;
+}
+
+.dk-readline[data-read="notyet"] {
+  border-top-style: dashed;
+  border-top-color: var(--dk-spine);
+}
+
+.dk-readline[data-read="notyet"] .dk-readword {
+  color: var(--ink-soft);
 }
 
 .dk-readstate {
@@ -767,6 +957,110 @@
    section above it. Caught in a screenshot, not in a review. */
 .dk-column > * + * {
   margin-top: var(--space-9);
+}
+
+/* The index is a sibling of the sections but not one of them, so the first
+   section keeps its own top margin rather than inheriting the gap between two
+   sections. It is written at the specificity it has to beat. */
+.dk-column > .dk-index + * {
+  margin-top: 0;
+}
+
+/*
+ * ── THE INDEX IN THE LEFT DESK ───────────────────────────────────────────────
+ *
+ * The other answer to Amendment 1, and the one that does work rather than
+ * declaring a material. Below 88rem it does not exist at all: it is hidden in
+ * CSS rather than composed at narrow, because a contents table on a phone is the
+ * definition of furniture, and the page it indexes is three screens long there.
+ * 88rem is the width at which it clears both the sheet's left edge and the
+ * window's, with air on each side rather than a squeeze.
+ *
+ * Above 88rem the ruled column steps left into the desk by exactly the width of
+ * the index plus its gap, so the BODY stays on the same two lines as every other
+ * mode and every other width. Nothing in the read moves to make room for it.
+ * The spine moves with the body, which is the one thing that has to be said in a
+ * second declaration, because it is drawn on the container rather than in it.
+ *
+ * What it carries is the shape of the read: every section, with its count, the
+ * ranked one set a weight above the rest. That is Today's cap of three defended
+ * by the composition instead of announced by a number — 3 against 2, 4 and 4, in
+ * one column, before a row is scrolled.
+ */
+.dk-index {
+  display: none;
+}
+
+@media (min-width: 88rem) {
+  .dk-column[data-indexed] {
+    display: grid;
+    grid-template-columns: var(--dk-index) minmax(0, 1fr);
+    column-gap: var(--dk-index-gap);
+    margin-left: calc((var(--dk-index) + var(--dk-index-gap)) * -1);
+  }
+
+  .dk-column[data-indexed] > * {
+    grid-column: 2;
+  }
+
+  .dk-column[data-indexed]::before {
+    left: calc(var(--dk-index) + var(--dk-index-gap));
+  }
+
+  /* Spanned rather than `1 / -1`: the row grid here is implicit, and `-1` names
+     the last line of the EXPLICIT grid, which is line 1. A read has at most ten
+     sections, the span costs nothing because row-gap is zero, and the sticky
+     column then has the whole read to travel down. */
+  .dk-column[data-indexed] > .dk-index {
+    display: block;
+    grid-column: 1;
+    grid-row: 1 / span 20;
+    align-self: start;
+    position: sticky;
+    top: var(--space-6);
+    margin-top: 0.35rem;
+  }
+}
+
+.dk-index ul {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dk-index li + li {
+  border-top: 1px solid var(--dk-rule);
+}
+
+.dk-index a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  font-size: var(--text-body-sm);
+  color: var(--dk-quiet);
+  text-decoration: none;
+}
+
+.dk-index a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* The ranked section, said the same way the page says it: one weight step and
+   full ink, so the index has a lead item exactly as the read has a lead row. */
+.dk-index li[data-lead] a {
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.dk-index-count {
+  flex: none;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .dk-h2 {
@@ -1045,7 +1339,7 @@
 
 .dk-detail-card .dk-meta::before,
 .dk-open .dk-meta::before {
-  background: var(--dk-band);
+  background: var(--dk-desk);
 }
 
 .dk-meta-part {
@@ -1093,12 +1387,190 @@
   font-size: var(--text-body-sm);
 }
 
+/*
+ * ── THE DRAWER ───────────────────────────────────────────────────────────────
+ *
+ * Coming up and Moving well, on Today only.
+ *
+ * The three-item cap used to be announced and then contradicted by the shape of
+ * the page: ten more rows followed under headings of identical weight, and Today
+ * at 390 was the longest page in the lab at 3,390px. Nothing in the composition
+ * said the three mattered more than the ten, so the cap read as an arbitrary
+ * section limit rather than as editorial judgement.
+ *
+ * A drawer says it. The heading keeps its size and its cross-rule on the spine,
+ * so it is still a section of the same document, and the count sits beside it in
+ * the mono figure the rest of the direction counts in — a shut drawer states a
+ * fact rather than promising one. Nothing is removed, nothing is summarised, and
+ * one click is the whole of the cost.
+ *
+ * The full briefing never folds. That is what makes it a different document
+ * rather than the same one twice.
+ */
+.dk-drawer > summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.dk-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dk-drawer > summary::after {
+  content: "";
+  flex: none;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid var(--dk-quiet);
+  border-bottom: 1.5px solid var(--dk-quiet);
+  transform: rotate(-45deg) translate(-2px, 2px);
+}
+
+.dk-drawer[open] > summary::after {
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+
+.dk-drawer > summary:hover .dk-drawer-count,
+.dk-drawer > summary:hover .dk-h2 {
+  color: var(--ink);
+}
+
+.dk-drawer-count {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--dk-quiet);
+}
+
+.dk-drawer > summary:focus-visible {
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* ── The first screen ─────────────────────────────────────────────────────── */
+
+/*
+ * The one drawn control in the whole direction, and the reason it is drawn.
+ *
+ * Everything else here is a link in running text, because every other page is a
+ * read and a read has no primary action. A first morning has exactly one thing
+ * to do, so it gets the one affordance the system ever renders as an affordance,
+ * and the fact that there is nothing else on the page competing with it is the
+ * emphasis. Round 2 gave this reader a red rule, a seven-mark key and no way
+ * forward at all.
+ */
+.dk-first {
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--dk-rule);
+}
+
+.dk-first-line {
+  margin: var(--space-2) 0 0;
+  max-width: var(--dk-measure);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.dk-first-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 0;
+}
+
+.dk-act {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border: 1px solid var(--dk-mark);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--dk-mark);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.dk-act:hover {
+  background: var(--dk-desk);
+}
+
+/* ── What a row offers ────────────────────────────────────────────────────── */
+
+/*
+ * On the row, at arrival, in words. A link is a real control; an offer with no
+ * href is named rather than drawn as a button that would write nothing; an offer
+ * closed to you keeps its label and carries its reason on the same line, because
+ * a control that vanishes tells the reader nothing about why.
+ */
+.dk-rowacts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-4);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: var(--dk-row);
+  font-size: var(--text-body-sm);
+}
+
+.dk-rowacts li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.dk-rowacts li[data-available="true"] a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  text-decoration-color: var(--dk-spine);
+}
+
+.dk-rowacts li[data-available="true"] a:hover {
+  color: var(--ink);
+}
+
+.dk-rowacts li[data-available="true"] b {
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+/* A closed offer keeps its label at the same size and drops one ink step, then
+   states the reason beside it at caption scale. It is legible and it is quiet,
+   which is the correct order for something you cannot do. */
+.dk-rowacts li[data-available="false"] {
+  color: var(--dk-quiet);
+}
+
+.dk-rowacts li[data-available="false"] b {
+  font-weight: var(--weight-regular);
+  text-decoration: line-through;
+  text-decoration-color: var(--dk-spine);
+}
+
+.dk-rowacts li[data-available="false"] span {
+  font-size: var(--text-caption);
+}
+
 /* ── The opened row ───────────────────────────────────────────────────────── */
 
 .dk-open {
   margin: var(--space-3) 0 0;
   padding: var(--space-4);
-  background: var(--dk-band);
+  background: var(--dk-desk);
   border-radius: var(--radius-lg);
 }
 
@@ -1245,7 +1717,7 @@
 
 @media (min-width: 76rem) {
   .dk-split[data-open="true"] {
-    grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
     gap: var(--space-8);
   }
 
@@ -1263,7 +1735,7 @@
 
 .dk-detail-card {
   padding: var(--space-6);
-  background: var(--dk-band);
+  background: var(--dk-desk);
   border: 1px solid var(--dk-rule);
   border-radius: var(--radius-lg);
 }
@@ -1456,7 +1928,24 @@
 }
 
 .dk-back-top {
-  margin: var(--space-2) 0 0;
+  margin: var(--space-8) 0 0;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--dk-rule);
+}
+
+/* The standing limits are folded, so the fold is the last thing in the notes
+   rather than a control inside a paragraph. It takes the section's own edge. */
+.dk-fold-standing {
+  margin-top: var(--space-5);
+}
+
+/* When the standing fold is ALL the foot holds — a quiet day, a first morning —
+   its own rule and the section's rule land 40px apart and read as a mistake.
+   The section's rule is the one that stays, because it is the one that has been
+   there on every other page. */
+.dk-limits > .dk-fold-standing:first-child {
+  margin-top: 0;
+  border-top: 0;
 }
 
 .dk-glyph {
@@ -1537,8 +2026,7 @@
   .dk-suite a[aria-current]::after,
   .dk-modes a[aria-current="page"]::after,
   .dk-modes a[aria-current="true"]::after,
-  .dk-depth li + li::before,
-  .dk-tabstate {
+  .dk-depth li + li::before {
     background: CanvasText;
   }
 
@@ -1547,9 +2035,16 @@
   .dk-glyph::before,
   .dk-readline::before,
   .dk-meta::before,
+  .dk-elsewhere::before,
   .dk-detail-card .dk-meta::before,
-  .dk-open .dk-meta::before,
-  .dk-tabstate::after {
+  .dk-open .dk-meta::before {
+    background: Canvas;
+  }
+
+  /* Forced colours replaces both the desk and the paper with Canvas, so the
+     sheet's two edges are what is left to say where the read is. Their colour
+     is forced to CanvasText by the setting itself and needs no restatement. */
+  .dk-main::before {
     background: Canvas;
   }
 
@@ -1640,6 +2135,14 @@
 
   .dk-detail-card {
     padding: var(--space-4);
+  }
+
+  /* The strip is the one thing round 3 adds to the chrome, and the chrome at
+     390 is already the tallest in the lab. It drops a step here and gives back
+     part of what it costs, without becoming a glyph again. */
+  .dk-elsewhere {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-caption);
   }
 
   /* The break has to stay legible when the rule is 288px long. */

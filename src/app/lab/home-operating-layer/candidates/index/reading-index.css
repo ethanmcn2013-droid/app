@@ -7,37 +7,72 @@
  * shadow in this file (none), one radius family (the token's), and no
  * container that is not a rule.
  *
- * THE PAGE, TOP TO BOTTOM, AND WHAT EACH BAND IS FOR. One band, one job, in
- * every mode:
+ * THE PAGE IS TWO COLUMNS AND EVERY BAND KNOWS WHICH ONE IT IS IN.
  *
- *   masthead   the suite, when the read was taken, which issue it is
- *   index      the four modes, and the condition each mode's read is in
- *   head       the mode, the headline, one true sentence, then what limited it
+ * The measure carries the read. The column carries the imprint of the read.
+ * That is this direction's answer to LAB_BRIEF Amendment 1, and it runs from
+ * the top rule of the masthead to the foot so that neither column ever opens
+ * with a hole in it.
+ *
+ *   READING COLUMN (42rem)          STANDING COLUMN (24rem, 28rem at 1440)
+ *   masthead   the suite            imprint   when it was read, at what
+ *   index      the four modes,                scope, and where new work goes
+ *              and each one's       ─────────────────────────────────────────
+ *              condition            this read who it was read for, what it
+ *   head       mode, headline,                accounted for, what Home
+ *              one true sentence              cannot see at all
+ *   limits     what limited it
  *   body       the read
- *   margin     the record of the read: what it did, what it left out
- *   foot       back to the index
+ *   ─────────────────────────────────────────────────────────────────────────
+ *   wide       the one thing per mode allowed to break the measure
+ *   foot       back to the top
  *
  * Nothing about the limits of a read is viewport-dependent: they are in the
- * main column above the read at 390 and at 1440 alike. The margin holds only
- * material that does not change whether to believe what is above it, which is
- * why it is safe for it to become a colophon on a phone.
+ * reading column above the read at 390 and at 1440 alike. The standing column
+ * holds only material that does not change whether to believe what is beside
+ * it, which is why it is safe for it to unstack into a dateline and a colophon
+ * on a phone.
+ *
+ * When a source refused or a seat is limited, the limits block leaves the
+ * reading column and becomes a red-ruled, red-washed band across both columns
+ * above the headline. A failed read is then a different picture, not the same
+ * picture with different words in it.
+ *
+ * EVERY LAYOUT BREAKPOINT IS IN EM, NOT PX, and that is the difference between
+ * surviving 200% text enlargement and breaking under it. Browser zoom changes
+ * the CSS viewport, so a px query catches it; text-only enlargement changes the
+ * root font size and nothing else, so a px query does not, and a two-column
+ * grid with a rem-sized second column would have gone on claiming 28rem of a
+ * window that no longer had it. In em, the same enlargement unstacks the page
+ * into one column, which is what the reflow rule asks for. 67.5em is 1080 at
+ * the default size and 2160 at twice it.
  *
  * Every colour is a token. Every duration and curve is a token, which is also
  * how reduced motion is honoured: tokens.css collapses --motion-* to 0ms under
- * prefers-reduced-motion, and every animation below takes both its duration
- * and its stagger from those tokens, so the whole entrance resolves to its
- * final frame with no second mechanism.
+ * prefers-reduced-motion, every animation below takes both its duration and
+ * its stagger from those tokens, and an explicit reduced-motion block at the
+ * foot states it rather than leaving it to arithmetic.
  *
  * Local extension tokens use the --x- prefix, per the design-system contract.
  */
 
 .ri-root {
-  --x-ri-plate: 1120px;
   --x-ri-measure: 42rem;
+  --x-ri-column: 24rem;
+  --x-ri-split: var(--space-10);
+  /*
+   * The plate is derived, never typed. Round 2 set a 1120px plate and then a
+   * 672px measure inside it and left whatever was over as margin, which a
+   * director measured at roughly 190px of unexplained right edge. Now the
+   * sheet is exactly as wide as the two columns and the gutter between them,
+   * so there is no width in the composition that nothing is doing.
+   */
+  --x-ri-plate: calc(var(--x-ri-measure) + var(--x-ri-split) + var(--x-ri-column));
   --x-ri-gutter: var(--space-4);
   /* 44ms at full motion, 0ms under prefers-reduced-motion. */
   --x-ri-step: calc(var(--motion-base) / 5);
   --x-ri-tint: color-mix(in srgb, var(--accent) 6%, transparent);
+  --x-ri-alarm: color-mix(in srgb, var(--status-blocked) 7%, transparent);
 
   min-height: 100svh;
   padding-bottom: var(--space-11);
@@ -50,11 +85,22 @@
   text-rendering: optimizeLegibility;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-root { --x-ri-gutter: var(--space-7); }
 }
-@media (min-width: 1280px) {
+@media (min-width: 80em) {
   .ri-root { --x-ri-gutter: var(--space-9); }
+}
+
+/*
+ * At 1440 the standing column widens and the reading measure does not. The
+ * measure is a decision about text and 42rem is already at the top of a
+ * comfortable line; the column is a decision about the page, and it is the
+ * thing that should take the extra width. The sheet goes from 1120 to 1184,
+ * so ink runs 128 to 1312 in a 1440 window.
+ */
+@media (min-width: 90em) {
+  .ri-root { --x-ri-column: 28rem; }
 }
 
 .ri-plate {
@@ -137,44 +183,56 @@
   transform: translateY(0);
 }
 
-/* ── Masthead ────────────────────────────────────────────────────────────── */
+/* ── The front matter, in the same two columns as the read ───────────────── */
 
 /*
- * The masthead holds the dateline, and Read Scope is part of it: which issue
- * of this paper you are holding. It used to sit below the headline drawn as a
- * select, which put a form control between the reader and the day's first
- * decision on every mode of every visit. The masthead is capped to the reading
- * measure so the whole of the front matter hangs on one left edge and one
- * right edge with the read below it.
+ * The masthead and the index sit in the reading column; the imprint sits in
+ * the standing column level with them. That is what fills the top-right of the
+ * arrival screen — eight of ten directors found roughly 600x520 of nothing
+ * there in round 2 — and it is also what reconciles the two right edges one of
+ * them measured, because the dateline and the scope control have moved into
+ * the column they used to be aligning against.
  */
-.ri-mast {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
-  align-items: start;
-  column-gap: var(--space-5);
-  row-gap: var(--space-1);
-  max-width: var(--x-ri-measure);
-  padding-block: var(--space-2);
+.ri-front { padding-bottom: var(--space-2); }
+
+@media (min-width: 67.5em) {
+  .ri-front {
+    display: grid;
+    grid-template-columns: minmax(0, var(--x-ri-measure)) minmax(0, var(--x-ri-column));
+    column-gap: var(--x-ri-split);
+    align-items: stretch;
+  }
+  /*
+   * The imprint holds the top of its cell and rules the bottom of it, so the
+   * standing column reads as a run of ruled blocks down one right edge rather
+   * than as two things that happen to be stacked. The front matter is taller
+   * than the imprint's words and always will be; the rule is what makes that
+   * a margin rather than a gap.
+   */
+  .ri-imprint {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    border-bottom: 1px solid var(--hairline);
+    padding-bottom: var(--space-4);
+  }
+  .ri-imprint > :last-child { margin-bottom: auto; }
 }
 
-.ri-mast-word { grid-column: 1; grid-row: 1; }
-.ri-mast-read { grid-column: 2; grid-row: 1; text-align: right; }
-.ri-mast-nav { grid-column: 1; grid-row: 2; margin-left: calc(var(--space-2) * -1); }
-.ri-mast-scope { grid-column: 2; grid-row: 2; justify-self: end; min-width: 0; }
-
-@media (max-width: 559px) {
-  .ri-mast {
-    grid-template-columns: minmax(0, 1fr);
-    padding-block: 0;
-  }
-  .ri-mast-word,
-  .ri-mast-read { padding-top: 0; }
-  .ri-mast > * {
-    grid-column: 1;
-    grid-row: auto;
-    text-align: left;
-    justify-self: stretch;
-  }
+/*
+ * The suite is one ruled line: wordmark, then the four products. It used to
+ * stack two lines of mono capitals two rows above another line of mono
+ * capitals, and a director could not tell from that which band was the suite
+ * and which was Home. The index below is sentence case at heading size with
+ * ordinals and leaders, so the two bands no longer resemble each other at all.
+ */
+.ri-mast {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-4);
+  padding-block: var(--space-2) 0;
+  border-bottom: 1px solid var(--hairline);
 }
 
 .ri-mast-word {
@@ -185,8 +243,9 @@
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  padding-top: var(--space-2);
 }
+
+.ri-mast-nav { margin-left: calc(var(--space-2) * -1); }
 
 .ri-suite {
   display: flex;
@@ -217,14 +276,34 @@
 .ri-suite-link[aria-current] {
   color: var(--ink);
   font-weight: var(--weight-semibold);
+  box-shadow: inset 0 -2px 0 0 var(--accent);
 }
 
-.ri-mast-read {
-  margin: 0;
-  padding-top: var(--space-2);
-  text-wrap: pretty;
+/* ── The imprint · which issue of this you are holding ───────────────────── */
+
+.ri-imprint {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--ink);
+}
+
+@media (min-width: 67.5em) {
+  .ri-imprint { margin-top: var(--space-2); }
+}
+
+.ri-imprint-line {
+  margin: var(--space-2) 0 0;
   color: var(--ink-soft);
   font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.ri-imprint .ri-scope {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--hairline);
 }
 
 /* ── THE INDEX · the contents page, and the navigation ───────────────────── */
@@ -240,20 +319,27 @@
   scroll-margin-top: var(--space-4);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-index { margin-block: var(--space-4) var(--space-6); }
 }
 
 .ri-index:focus { outline: none; }
 
+/*
+ * The index names itself in sentence case at reading size, so it does not look
+ * like another line of the mono-capital suite two rows above it.
+ */
 .ri-index-label {
   max-width: var(--x-ri-measure);
-  margin-bottom: var(--space-2);
+  margin: 0 0 var(--space-2);
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-medium);
 }
 
 /*
  * Capped to the reading measure, which is what keeps a mode's name and its
- * condition inside one 400 px span. A row that ran the full width of a 1440
+ * condition inside one 672 px span. A row that ran the full width of a 1440
  * window put 1,120 px between the two, and a reader on a screen magnifier
  * never had both in view at once.
  */
@@ -294,27 +380,64 @@
    marks exactly where in it you are. */
 .ri-index-item[data-current="ancestor"]::after { height: 1px; }
 
+/*
+ * THE ROW, AND WHAT IT DOES WHEN THE DOTS RUN OUT.
+ *
+ * A wrapping flex line with two floors: the leader may never be shorter than
+ * 4.5rem of dots, and the condition may never be narrower than 11rem. When
+ * those cannot both hold — 390, 320, or 200% text-only enlargement on a 1440
+ * screen — the condition takes a second line at the full row width, right
+ * aligned, inside the page gutter. Round 2 had no floor at all: the dots
+ * crushed to four or five glyphs and the longest state string ate the page
+ * margin, which two directors caught on the one component this direction is
+ * named after.
+ */
 .ri-index-link {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
   min-height: 44px;
   padding-block: var(--space-2);
   color: var(--ink-soft);
   text-decoration: none;
 }
 
-@media (min-width: 480px) {
-  .ri-index-link { gap: var(--space-3); }
-}
-
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-index-link {
     min-height: 48px;
-    gap: var(--space-4);
+    column-gap: var(--space-4);
   }
 }
+
+/*
+ * ONE HEAD WIDTH FOR ALL FOUR ROWS, so all four leaders start on the same
+ * vertical and all four rows make the same wrapping decision. Sized to the
+ * head, the four rows wrapped one at a time as the mode names got longer:
+ * Today held its line at 390 while My work and Analytics dropped theirs, and
+ * an index with three heights and no reason for them is worse than one with
+ * two. Now the row either fits or it does not, and all four agree.
+ */
+.ri-index-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 9rem;
+}
+
+@media (min-width: 48em) {
+  .ri-index-head { min-width: 11rem; }
+}
+
+/*
+ * The index ordinal is set one step larger than an entry ordinal and sits on
+ * the row's own optical centre, so the four numbers that count destinations
+ * and the three that count ranked decisions are not the same mark in the same
+ * margin. Same series, different scale, different job.
+ */
+.ri-index-num { font-size: var(--text-body-sm); }
 
 .ri-index-name {
   font-size: var(--text-body);
@@ -323,11 +446,11 @@
   color: var(--ink-soft);
 }
 
-@media (min-width: 400px) {
+@media (min-width: 25em) {
   .ri-index-name { font-size: var(--text-body-lg); }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-index-name {
     font-size: var(--text-heading);
     line-height: var(--leading-heading);
@@ -356,9 +479,9 @@
  */
 .ri-leader {
   position: relative;
+  flex: 1 1 4.5rem;
+  min-width: 4.5rem;
   height: 1em;
-  min-width: 0;
-  width: 100%;
   overflow: hidden;
 }
 
@@ -385,15 +508,32 @@
   animation-delay: calc(var(--x-ri-step) * var(--ri-n) + var(--x-ri-step));
 }
 
+/*
+ * The condition is sized to its own words and never shrinks, so the leader
+ * always runs right up to it — dots that stop sixty pixels short of the status
+ * are not a leader, they are a gap — and so a row that cannot hold both on one
+ * line has no option but to wrap.
+ */
 .ri-index-state {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
-  min-width: 0;
+  flex: 0 0 auto;
+  max-width: 100%;
+  margin-left: auto;
   color: var(--ink-soft);
   font-size: var(--text-body-sm);
   text-align: right;
+}
+
+/*
+ * Below 560 every row takes the two-line form, all four together. Letting the
+ * arithmetic decide row by row gave an index of three different heights whose
+ * pattern was the length of the mode names, which is not a reason a reader can
+ * see. The leader takes the whole of the first line and the condition takes
+ * the whole of the second, so the dots get MORE room on a small screen rather
+ * than fewer, and the status sits inside the page's own gutter instead of
+ * against the viewport edge.
+ */
+@media (max-width: 34.999em) {
+  .ri-index-state { flex: 1 0 100%; }
 }
 
 /*
@@ -443,6 +583,14 @@
   margin-right: 0.5ch;
 }
 
+/*
+ * A CLOSED PILL IS A CLAIM THAT THE COUNT IS A TOTAL.
+ *
+ * So it only closes when it is one. A count that admits it could not check
+ * everything is drawn open, with a broken outline and no fill, and the
+ * condition beside it says "Partly read" in words; a count of nothing keeps
+ * its ghost outline. Three drawings, three facts, none of them carried by hue.
+ */
 .ri-index-badge {
   display: inline-flex;
   align-items: center;
@@ -450,6 +598,7 @@
   min-width: 22px;
   height: 20px;
   padding-inline: 6px;
+  border: 1px solid transparent;
   border-radius: var(--radius-pill);
   background: var(--accent);
   color: var(--paper);
@@ -462,9 +611,17 @@
 
 [data-theme="dark"] .ri-index-badge { color: var(--zinc-50); }
 
+.ri-index-badge[data-coverage="partial"] {
+  background: transparent;
+  border: 1px dashed var(--ink);
+  color: var(--ink);
+}
+
+[data-theme="dark"] .ri-index-badge[data-coverage="partial"] { color: var(--ink); }
+
 .ri-index-badge[data-zero] {
   background: transparent;
-  box-shadow: inset 0 0 0 1px var(--ink-ghost);
+  border: 1px solid var(--ink-ghost);
   color: var(--ink-soft);
   font-weight: var(--weight-medium);
 }
@@ -478,7 +635,7 @@
   list-style: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-index-depth { padding-left: var(--space-9); }
 }
 
@@ -511,34 +668,54 @@
 
 /* ── The page ────────────────────────────────────────────────────────────── */
 
+/*
+ * THE ROW GAP IS ZERO AND THE RHYTHM IS ON THE CHILDREN.
+ *
+ * Placement is explicit rather than flowed, so a mode with no limits block and
+ * a mode with three sit on the same vertical; a grid gap would have charged
+ * every clean day for a row that is not there.
+ */
 .ri-page {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-7);
+  row-gap: 0;
 }
 
 .ri-page-head { min-width: 0; }
 .ri-record { min-width: 0; }
-.ri-body { min-width: 0; max-width: var(--x-ri-measure); }
-.ri-wide { min-width: 0; }
+.ri-body { min-width: 0; max-width: var(--x-ri-measure); margin-top: var(--space-7); }
+.ri-wide { min-width: 0; margin-top: var(--space-8); }
 
-@media (min-width: 1080px) {
+@media (min-width: 67.5em) {
   .ri-page {
-    grid-template-columns: minmax(0, var(--x-ri-measure)) minmax(0, 1fr);
-    column-gap: var(--space-10);
-    row-gap: var(--space-7);
+    grid-template-columns: minmax(0, var(--x-ri-measure)) minmax(0, var(--x-ri-column));
+    column-gap: var(--x-ri-split);
   }
-  .ri-page-head { grid-column: 1 / -1; grid-row: 1; }
-  .ri-body { grid-column: 1; grid-row: 2; }
-  .ri-record { grid-column: 2; grid-row: 2; margin-top: 0; }
-  .ri-wide { grid-column: 1 / -1; grid-row: 3; }
 
-  /* Inbox with an event open: queue, correspondence, margin. The margin keeps
-     its place and its job; what appears is the correspondence, and only when
-     there is one. */
-  .ri-page--queue[data-open] { grid-template-columns: minmax(0, 1fr) minmax(0, 17rem); }
-  .ri-page--queue[data-open] .ri-body { max-width: none; }
+  /*
+   * The record starts level with the `h1` it annotates. In round 2 the head
+   * spanned both columns and the record was flow-placed after it, so its top
+   * edge landed at y=520, y=575, y=620 or y=693 depending on how long the
+   * headline ran, and eight directors read the result as an unfinished grid.
+   * It is now anchored, not flowed, and it is not sticky: a rail that follows
+   * the reader eats the viewport at 400% zoom.
+   */
+  .ri-page-head { grid-column: 1; grid-row: 1; }
+  .ri-page > .ri-limits { grid-column: 1; grid-row: 2; }
+  .ri-body { grid-column: 1; grid-row: 3; }
+  .ri-record { grid-column: 2; grid-row: 1 / span 3; align-self: start; }
+  .ri-wide { grid-column: 1 / -1; grid-row: 4; }
 }
+
+/*
+ * The alarm band is not in the page grid, it is above it. Keeping it inside as
+ * a spanning first row pushed the record down a row and reopened the very hole
+ * this round exists to close: the failure capture had the imprint at the top of
+ * the standing column, the record 300px lower, and nothing between them. Out
+ * here the band crosses BOTH columns on its way past, which is what a band is
+ * for, and the record stays level with the headline it belongs to.
+ */
+.ri-band { margin-top: var(--space-2); }
 
 /* ── Heading block ───────────────────────────────────────────────────────── */
 
@@ -571,7 +748,7 @@
   text-wrap: balance;
 }
 
-@media (min-width: 1080px) {
+@media (min-width: 67.5em) {
   .ri-h1-line { max-width: 26ch; }
 }
 
@@ -590,6 +767,16 @@
   text-wrap: pretty;
 }
 
+/* The one sentence that is the whole of a quiet issue, set as the whole of a
+   quiet issue. */
+.ri-standfirst--sole {
+  max-width: 34ch;
+  font-size: var(--text-heading);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+}
+
 .ri-lead {
   max-width: var(--x-ri-measure);
   margin: var(--space-5) 0 0;
@@ -605,6 +792,26 @@
   margin-top: var(--space-5);
   padding-top: var(--space-3);
   border-top: 1px solid var(--ink);
+}
+
+/*
+ * LOUD IS A DIFFERENT PICTURE, NOT A LOUDER SENTENCE.
+ *
+ * A director put two 1440 captures side by side and reported that a signature
+ * day and a provider failure were the same screen at a glance, because the
+ * only difference was a 2px rule and some words. So a read a source refused
+ * now opens the page: the block leaves the reading column, takes the full
+ * sheet above the headline, and carries a 3px red rule and a wash of the same
+ * red. The words, the marks in the index and the named kind are all still
+ * there, so nothing is riding on the colour; the colour is what makes it
+ * arrive before the reading does.
+ */
+.ri-limits[data-loud] {
+  max-width: none;
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-top: 3px solid var(--status-blocked);
+  background: var(--x-ri-alarm);
 }
 
 .ri-limits[data-loud] .ri-limits-label { color: var(--ink); }
@@ -666,10 +873,16 @@
 /* ── The margin · the record of this read ────────────────────────────────── */
 
 .ri-record {
-  max-width: 22rem;
   margin-top: var(--space-8);
   padding-top: var(--space-3);
   border-top: 1px solid var(--ink);
+}
+
+/* After the base rule, not before it: the grid block above sets the placement
+   and this sets the rhythm, and a later declaration of the same specificity
+   was quietly winning and leaving the record 40px below the headline. */
+@media (min-width: 67.5em) {
+  .ri-record { margin-top: 0; }
 }
 
 .ri-record-list {
@@ -708,10 +921,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 0 var(--space-3);
   min-height: 44px;
-  padding-top: var(--space-2);
   color: var(--ink);
   cursor: pointer;
   list-style: none;
@@ -795,7 +1007,7 @@
 
 /* At 768 and up the panel behaves as an anchored drop, so the page beneath
    does not jump when a reviewer opens it. */
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-scope[open] .ri-scope-panel {
     position: absolute;
     z-index: 20;
@@ -812,14 +1024,13 @@
 /* Below 768 the summary is a full-width row with its value above the control
    word, and an open panel is a labelled sheet whose own summary is its header
    and its dismiss control. */
-@media (max-width: 767px) {
+@media (max-width: 47.999em) {
   .ri-scope-summary {
     justify-content: center;
     align-items: flex-start;
     flex-direction: column;
     gap: 2px;
     padding-block: var(--space-1);
-    border-top: 1px solid var(--hairline);
   }
   .ri-scope[open] {
     position: fixed;
@@ -861,7 +1072,7 @@
 /* ── Sections and entries ────────────────────────────────────────────────── */
 
 .ri-section {
-  padding-top: var(--space-6);
+  padding-top: var(--space-5);
   scroll-margin-top: var(--space-6);
 }
 
@@ -870,7 +1081,7 @@
 .ri-body > .ri-section:first-child,
 .ri-split-queue > .ri-section:first-child { padding-top: 0; }
 
-.ri-section + .ri-section { margin-top: var(--space-6); }
+.ri-section + .ri-section { margin-top: var(--space-5); }
 
 .ri-h2 {
   margin: 0;
@@ -908,7 +1119,7 @@
   transition: background-color var(--motion-fast) var(--ease-out);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-entry-link { grid-template-columns: 3rem minmax(0, 1fr); }
 }
 
@@ -1023,7 +1234,7 @@
   background: var(--x-ri-tint);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 48em) {
   .ri-entry-open { grid-template-columns: 3rem minmax(0, 1fr); }
 }
 
@@ -1130,24 +1341,6 @@
 
 /* ── Inbox ───────────────────────────────────────────────────────────────── */
 
-.ri-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-7);
-}
-
-@media (min-width: 1120px) {
-  .ri-page--queue[data-open] .ri-split {
-    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
-    column-gap: var(--space-9);
-    align-items: start;
-  }
-  .ri-page--queue[data-open] .ri-split-detail {
-    padding-left: var(--space-9);
-    border-left: 1px solid var(--hairline);
-  }
-}
-
 .ri-queue-row {
   border-bottom: 1px solid var(--hairline);
 }
@@ -1185,7 +1378,16 @@
   font-style: normal;
 }
 
+/*
+ * The correspondence opens at the head of the reading column, ahead of the
+ * queue it came from, at every width. A ruled band and an accent edge mark it
+ * as the thing the reader asked for rather than as another section.
+ */
 .ri-detail {
+  margin-bottom: var(--space-8);
+  padding: var(--space-4) 0 var(--space-5) var(--space-4);
+  border-left: 2px solid var(--accent);
+  border-bottom: 1px solid var(--ink);
   scroll-margin-top: var(--space-6);
 }
 
@@ -1211,7 +1413,7 @@
   margin: var(--space-5) 0 0;
 }
 
-@media (min-width: 560px) {
+@media (min-width: 35em) {
   .ri-detail dl { grid-template-columns: 10rem minmax(0, 1fr); }
 }
 
@@ -1234,7 +1436,7 @@
   overflow-wrap: anywhere;
 }
 
-@media (min-width: 560px) {
+@media (min-width: 35em) {
   .ri-detail dd {
     padding-top: var(--space-3);
     border-top: 1px solid var(--hairline);
@@ -1325,7 +1527,7 @@ details[open] > .ri-summary::after { content: "\2212"; }
 
 .ri-led-link:hover { background: var(--x-ri-tint); }
 
-@media (min-width: 640px) {
+@media (min-width: 40em) {
   .ri-led-link {
     grid-template-columns: 2.75rem minmax(0, 1fr) 9rem;
     align-items: baseline;
@@ -1340,7 +1542,7 @@ details[open] > .ri-summary::after { content: "\2212"; }
   font-size: var(--text-body-sm);
 }
 
-@media (min-width: 640px) {
+@media (min-width: 40em) {
   .ri-led-due {
     grid-column: 3;
     grid-row: 1;
@@ -1377,7 +1579,7 @@ details[open] > .ri-summary::after { content: "\2212"; }
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
-  margin: var(--space-4) 0 0;
+  margin: var(--space-3) 0 0;
 }
 
 .ri-claim-number {
@@ -1411,20 +1613,59 @@ details[open] > .ri-summary::after { content: "\2212"; }
 }
 
 /*
- * Once there is room for two columns of records, the facts under a claim take
- * two. It is what a records page does with a wide window, and it is where
- * several hundred pixels of the tallest document in the lab came back from.
+ * FIELDED RECORDS. Label left, fact right, one column of prose. Round 2 set
+ * these as unlabelled sentences in two side-by-side measures, which cost the
+ * caveat its name on one ballot and made this the only place in the direction
+ * where reflow did work the rest of the page does not on another. One change
+ * answers both.
  */
-@media (min-width: 1080px) {
-  .ri-facts-list {
-    columns: 2;
-    column-gap: var(--space-7);
+.ri-fields {
+  margin: var(--space-3) 0 0;
+}
+
+/*
+ * Narrow, the field name runs into its own sentence; wide, it takes a column.
+ * Stacking the label above the value at 390 cost roughly 160px per claim and
+ * eleven hundred across Analytics, which would have traded a director's
+ * labelled-caveat correction for another director's page-length one. The label
+ * is present either way; only where it sits changes.
+ */
+.ri-field {
+  padding-block: var(--space-1);
+  border-top: 1px solid var(--hairline-soft);
+}
+
+.ri-field .ri-label {
+  display: inline;
+  margin-right: 0.75ch;
+}
+
+.ri-field-value {
+  display: inline;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 35em) {
+  .ri-field {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: var(--space-1) var(--space-4);
+    padding-block: var(--space-2);
   }
-  .ri-facts-list li { break-inside: avoid; }
+  .ri-field .ri-label {
+    display: block;
+    margin-right: 0;
+    padding-top: 3px;
+  }
+  .ri-field-value { display: block; }
 }
 
 .ri-receipt {
-  margin-top: var(--space-4);
+  margin-top: var(--space-3);
   border-top: 1px solid var(--hairline);
 }
 
@@ -1542,6 +1783,170 @@ details[open] > .ri-summary::after { content: "\2212"; }
   text-underline-offset: 3px;
 }
 
+/* ── A first screen ──────────────────────────────────────────────────────── */
+
+/*
+ * NOT YET IS NOT BROKEN. The first thing in the reading column, at the size of
+ * a lead story, with the one real move drawn as a control. It is the only
+ * control-shaped link in the direction and it earns that: everywhere else the
+ * reader is choosing between things they can already see, and here there is
+ * exactly one thing to do.
+ */
+.ri-start {
+  margin-top: var(--space-6);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--accent);
+}
+
+.ri-body > .ri-start { margin-top: 0; margin-bottom: var(--space-8); }
+
+.ri-start .ri-h2 { border-bottom: 0; padding-bottom: 0; }
+
+.ri-start-line {
+  max-width: var(--x-ri-measure);
+  margin: var(--space-3) 0 0;
+  color: var(--ink);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  text-wrap: pretty;
+}
+
+.ri-start-next {
+  max-width: var(--x-ri-measure);
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  text-wrap: pretty;
+}
+
+.ri-start-do {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 0;
+}
+
+.ri-start-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: var(--space-5);
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--paper);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  transition: background-color var(--motion-fast) var(--ease-out);
+}
+
+.ri-start-action:hover { background: var(--accent-hover); }
+
+[data-theme="dark"] .ri-start-action { color: var(--zinc-50); }
+
+/* ── Open affordance and marked fields ───────────────────────────────────── */
+
+/*
+ * A ROW THAT OPENS SAYS SO, AND IT SAYS SO IN THE TITLE.
+ *
+ * Three directors found no visible open affordance anywhere in the direction,
+ * one of them calling it the weakest detail-open story of the four. The first
+ * answer was a line of type under every row, which cost roughly 28px sixty
+ * times over on a ledger. So the title carries the affordance the way a title
+ * always has — an underline, hairline weight, offset so it does not touch the
+ * descenders — and the explicit word is kept for the Inbox, where the same
+ * directors said there was no Open, no mark-read and no snooze to be seen.
+ */
+.ri-entry-link .ri-entry-title,
+.ri-led-link .ri-led-title,
+.ri-queue-link .ri-h3 {
+  text-decoration: underline;
+  text-decoration-color: var(--ink-ghost);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.ri-entry-link:hover .ri-entry-title,
+.ri-led-link:hover .ri-led-title,
+.ri-queue-link:hover .ri-h3 { text-decoration-color: var(--accent); }
+
+.ri-open-mark {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ri-open-mark::after {
+  content: "\2192";
+  margin-left: 0.5ch;
+  text-decoration: none;
+}
+
+.ri-queue-link:hover .ri-open-mark { color: var(--ink); }
+
+/*
+ * The two facts that decide whether an Inbox row still wants something, set as
+ * named fields rather than as prose. A value that is still asking takes the
+ * ink and a mark; a settled one stays quiet.
+ */
+.ri-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  margin-top: var(--space-2);
+}
+
+.ri-mark {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--text-body-sm);
+}
+
+.ri-mark-name {
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.ri-mark-value {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.ri-mark[data-live] .ri-mark-value {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.ri-mark[data-live] .ri-mark-value::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: var(--space-2);
+  border-radius: 1px;
+  background: var(--ink);
+  vertical-align: 1px;
+}
+
+/* A context row runs its reason inline with the rest of its facts. */
+.ri-facts-lead {
+  color: var(--ink);
+}
+
 /* ── Foot ────────────────────────────────────────────────────────────────── */
 
 .ri-foot {
@@ -1577,6 +1982,7 @@ details[open] > .ri-summary::after { content: "\2212"; }
  */
 @media (forced-colors: active) {
   .ri-fact-late::before,
+  .ri-mark[data-live] .ri-mark-value::before,
   .ri-scope-option[aria-current]::before,
   .ri-index-depth-link[aria-current]::before,
   .ri-index-item[data-current]::after {
@@ -1590,11 +1996,51 @@ details[open] > .ri-summary::after { content: "\2212"; }
   .ri-index-badge {
     background: Canvas;
     color: CanvasText;
-    box-shadow: inset 0 0 0 1px CanvasText;
+    border: 1px solid CanvasText;
+  }
+  .ri-index-badge[data-coverage="partial"] { border-style: dashed; }
+  .ri-suite-link[aria-current] {
+    box-shadow: none;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .ri-limits[data-loud] { border-top: 3px solid CanvasText; }
+  .ri-start-action {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
   }
   .ri-entry-open,
+  .ri-detail,
+  .ri-start,
   .ri-queue-row[data-selected] {
     outline: 1px solid CanvasText;
+  }
+}
+
+/*
+ * REDUCED MOTION, SAID EXPLICITLY.
+ *
+ * The motion tokens already collapse to 0ms under this query, so every
+ * animation below resolves to its final frame on its own. A director looked
+ * for the declaration anyway and was right to: a stylesheet that honours the
+ * preference only by arithmetic elsewhere is one token change away from not
+ * honouring it. This states it, and the leader's cover is removed outright
+ * rather than animated to zero.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ri-index-item,
+  .ri-index-item[data-current]::after,
+  .ri-h1 {
+    animation: none;
+  }
+  .ri-index-item[data-current]::after { transform: none; }
+  .ri-leader::after { display: none; }
+  .ri-entry-link,
+  .ri-queue-link,
+  .ri-led-link,
+  .ri-start-action {
+    transition: none;
   }
 }
 
@@ -1609,4 +2055,13 @@ details[open] > .ri-summary::after { content: "\2212"; }
 
 @keyframes ri-underline {
   to { transform: scaleX(1); }
+}
+
+/* The window every claim was read over, stated once above them. */
+.ri-window {
+  max-width: var(--x-ri-measure);
+  margin: var(--space-3) 0 0;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
 }

@@ -1,167 +1,103 @@
 /**
- * Context Rail · Today, and the Full briefing.
+ * Meridian · Today, and the full briefing.
  *
- * ONE COMPOSITION, TWO DEPTHS, because there is one ranking engine and it
- * would be a lie to make them look like different reads. Today caps the day at
- * the three decisions the engine ranked first and puts everything else at a
- * lower weight or one interaction away. The briefing takes the same sections
- * uncapped and opens all of them.
+ * TIME IS ALREADY THE SECTION ORDER, which is the discovery that made this
+ * direction possible. `todaysSignal`, `needsReview`, `comingUp`, `movingWell`
+ * is a ranking order in the contract and it is also, exactly, an order by when
+ * each thing wants you: now, still waiting on you, inside the fortnight, not
+ * asking at all. So nothing here re-sorts anything. The composition adopts the
+ * shell's order and draws the two instants that bound it.
  *
- * THE CAP IS NOW VISIBLE AS A JUDGEMENT. The three used to be set at 17px and
- * the Needs review rows beneath them at 15px, which is a difference nobody
- * reads: the cap looked like the first three rows of a list. The three now
- * carry the page's heading step, a reason at reading weight, and a graded rule
- * at their left edge that steps 3px, 2px, 1px, so the ranking is drawn. They
- * are not numbered: two other directions in this lab number their rows in a
- * monospaced margin, and a rank is a weight before it is a numeral.
+ * WHAT SITS WHERE.
  *
- * WHY TODAY IS NOT A LIST OF TWELVE ROWS. The signature world hands over
- * twelve rows across four sections. Rendering all twelve at one weight is a
- * task wall, and a task wall is the thing Today exists instead of. So the
- * weights are: three decisions in full, Needs review as a tight ledger because
- * it still wants the reader, and Coming up and Moving well as disclosures
- * because they want nothing today. Each disclosure states its own count before
- * it is opened, and the full ledger is one link away.
+ *   Between the rules   Today's signal · Needs review · Coming up
+ *   Below the horizon   Moving well · how the read was accounted for · the
+ *                       whole day in order
  *
- * THE QUIET DAY. `quiet.readIsQuiet` is the only thing that entitles Today to
- * say the day was quiet, and the sentence that says it is the standfirst,
- * which is already on the page. So a quiet day gets NO section heading and no
- * second sentence repeating the first: the heading and the row list simply do
- * not exist, and what fills the page instead is the two things the read could
- * not see. A world with no rows and no entitlement (the new reader, the failed
- * provider) gets the same absence and a different page again: the refusal
- * sentence at the top, in red.
+ * Moving well is below the line because nothing in it is asking for the reader
+ * inside this read. That is the honest reading of the section and it is also
+ * what keeps Today short: the three ranked decisions are the first thing under
+ * the meridian at every width, and the material that needs nothing is past the
+ * fold by construction rather than by a cap.
+ *
+ * THE QUIET DAY. `quiet.line` is printed on every Today, in every world, at
+ * reading size. It is the sentence that refuses the all clear and names what
+ * stopped it, and it is the difference between a short page and an abandoned
+ * one. On the one world in thirteen where the read genuinely was quiet, it says
+ * so plainly and still refuses the all clear, because two platform limits are
+ * still true.
  */
 
-import type {
-  HomeCandidateProps,
-  TodayRow,
-  TodaySection,
-  TodaySectionId,
-} from "@/lib/home-layer/lab-shell";
+import type { TodaySection, TodayRow } from "@/lib/home-layer/lab-shell";
 import {
+  Absolute,
+  Actions,
+  Band_,
+  Chronology,
+  EmptyField,
+  Entries,
+  Entry,
+  EntryTitle,
+  Fields,
+  FirstRun,
+  HORIZON_MARK,
   Label,
-  Masthead,
   Meta,
   Notice,
   Notices,
   Prov,
+  ReadNotice,
+  ScopeAccount,
+  SourcePath,
+  takenFrom,
+  TheRead,
   Unsupported,
-  When,
+  type ModeArgs,
 } from "./parts";
+import { accountOf, bySeverity } from "./reading";
 
-/**
- * The place an opened row lands. The link carries the fragment, the opened row
- * carries the id, and the browser moves focus and view there on arrival with
- * no script at all. Back returns to the URL without it.
- */
-const DETAIL_ID = "rl-detail";
+/** The one section that is not asking for the reader inside this read. */
+const BELOW_THE_LINE = "movingWell";
 
-function sectionOf(
-  sections: readonly TodaySection[],
-  id: TodaySectionId,
-): TodaySection | null {
-  return sections.find((section) => section.id === id) ?? null;
+/** Where an entry sits on the clock, taken from the shell and never composed. */
+function timeOf(row: TodayRow): string | null {
+  if (row.due) return row.due.relative;
+  return row.idleLine;
 }
 
-/** What an opened row says about itself, wherever the row was rendered. */
-function Opened({ row, closeHref }: { row: TodayRow; closeHref: string }) {
-  return (
-    <div className="rl-selected" id={DETAIL_ID} tabIndex={-1}>
-      <Label>Where this lives</Label>
-      <p className="rl-path">{row.sourcePath}</p>
-      <a className="rl-close" href={closeHref}>
-        Close this item
-      </a>
-    </div>
-  );
-}
-
-/** The row as a decision: title, the rule that fired, then its provenance. */
-function Decision({
+function TodayEntry({
   row,
-  rank,
-  selected,
+  selectedKey,
   closeHref,
 }: {
   row: TodayRow;
-  rank: number;
-  selected: boolean;
+  selectedKey: string | null;
   closeHref: string;
 }) {
+  const open = selectedKey !== null && selectedKey === row.key;
   return (
-    <li
-      className="rl-decision"
-      data-rank={rank}
-      data-selected={selected ? "yes" : undefined}
-    >
-      <h3 className="rl-decision-title">
-        <a className="rl-decision-link" href={`${row.href}#${DETAIL_ID}`}>
-          {row.title}
-        </a>
-      </h3>
-      <p className="rl-decision-reason">{row.reason}</p>
+    <Entry time={timeOf(row)} overdue={row.due?.overdue ?? false} selected={open}>
+      <EntryTitle href={row.href}>{row.title}</EntryTitle>
+      <p className="mr-why">{row.reason}</p>
       <Meta
         items={[
           <Prov key="prov" provenance={row.provenance} />,
-          row.due ? <When key="due" when={row.due} /> : null,
-          row.idleLine,
+          row.due ? <Absolute key="abs" when={row.due} /> : null,
+          row.due && row.idleLine ? <span key="idle">{row.idleLine}</span> : null,
+          row.isReading ? <span key="members">{takenFrom(row.memberCount)}</span> : null,
         ]}
       />
-      {selected ? <Opened row={row} closeHref={closeHref} /> : null}
-    </li>
-  );
-}
-
-/** The same row at ledger weight: one line, still complete, still openable. */
-function LedgerRow({
-  row,
-  selected = false,
-  closeHref,
-}: {
-  row: TodayRow;
-  selected?: boolean;
-  closeHref?: string;
-}) {
-  return (
-    <li className="rl-tled" data-selected={selected ? "yes" : undefined}>
-      <h3 className="rl-tled-title">
-        <a className="rl-tled-link" href={`${row.href}#${DETAIL_ID}`}>
-          {row.title}
-        </a>
-      </h3>
-      <Meta
-        items={[
-          <Prov key="prov" provenance={row.provenance} />,
-          row.due ? <When key="due" when={row.due} /> : null,
-          row.idleLine,
-        ]}
-      />
-      <p className="rl-tled-reason">{row.reason}</p>
-      {selected && closeHref ? <Opened row={row} closeHref={closeHref} /> : null}
-    </li>
-  );
-}
-
-function Suppressed({ section }: { section: TodaySection }) {
-  if (!section.suppressedLine) return null;
-  return (
-    <p className="rl-suppressed">
-      {section.suppressedLine}
-      {section.moreHref && section.moreLabel ? (
-        <>
-          {" "}
-          <a className="rl-inline-link" href={section.moreHref}>
-            {section.moreLabel}
-          </a>
-        </>
+      {open ? (
+        <div className="mr-detail">
+          <SourcePath path={row.sourcePath} close={closeHref} />
+          <Actions actions={row.actions} />
+        </div>
       ) : null}
-    </p>
+    </Entry>
   );
 }
 
-/** A section the reader has not asked for yet. Open by keyboard, no script. */
-function FoldedSection({
+function Section({
   section,
   selectedKey,
   closeHref,
@@ -170,191 +106,203 @@ function FoldedSection({
   selectedKey: string | null;
   closeHref: string;
 }) {
-  if (section.rows.length === 0 && !section.suppressedLine) return null;
+  if (section.rows.length === 0 && section.suppressedLine === null) return null;
   return (
-    <details
-      className="rl-fold"
-      /* A fold that holds the row the reader opened arrives open. */
-      open={section.rows.some((row) => row.key === selectedKey)}
+    <Band_
+      id={`mr-h-${section.id}`}
+      heading={section.heading}
+      note={section.windowLine}
     >
-      <summary className="rl-fold-summary">
-        <span className="rl-fold-heading">{section.heading}</span>
-        <span className="rl-fold-count">{section.rows.length}</span>
-        {section.windowLine ? (
-          <span className="rl-fold-window">{section.windowLine}</span>
-        ) : null}
-      </summary>
-      <ul className="rl-tled-list">
-        {section.rows.map((row) => (
-          <LedgerRow
-            key={row.key}
-            row={row}
-            selected={row.key === selectedKey}
-            closeHref={closeHref}
-          />
-        ))}
-      </ul>
-      <Suppressed section={section} />
-    </details>
-  );
-}
-
-export function TodayMode(props: HomeCandidateProps) {
-  const { today, chrome, hrefFor } = props;
-  const signal = sectionOf(today.sections, "todaysSignal");
-  const review = sectionOf(today.sections, "needsReview");
-  const coming = sectionOf(today.sections, "comingUp");
-  const moving = sectionOf(today.sections, "movingWell");
-  const closeHref = hrefFor({ item: null });
-  const selectedKey = today.selection?.key ?? null;
-  const folds = [coming, moving].filter(
-    (section): section is TodaySection =>
-      section !== null && (section.rows.length > 0 || section.suppressedLine !== null),
-  );
-  /* The heading exists when there is something under it. A day with no rows
-     has already been described by the standfirst, so there is no heading and
-     no second sentence saying the same thing in fewer words. */
-  const hasSignal = signal !== null && (signal.rows.length > 0 || signal.suppressedLine !== null);
-
-  return (
-    <>
-      <Masthead eyebrow={chrome.modeEyebrow} line={today.headline} lead={today.quiet.line} />
-
-      <Notices items={today.disclosures} heading="What Home could not read" />
-      {today.selectionMissingLine ? (
-        <Notice state="unavailable">{today.selectionMissingLine}</Notice>
-      ) : null}
-      <Unsupported items={today.unsupported} />
-
-      {hasSignal && signal ? (
-        <section className="rl-block rl-block-signal" aria-labelledby="rl-h-signal">
-          <h2 className="rl-h2" id="rl-h-signal">
-            {signal.heading}
-          </h2>
-          {signal.rows.length > 0 ? (
-            <ol className="rl-decisions">
-              {signal.rows.map((row, index) => (
-                <Decision
-                  key={row.key}
-                  row={row}
-                  rank={index}
-                  selected={row.key === selectedKey}
-                  closeHref={closeHref}
-                />
-              ))}
-            </ol>
-          ) : null}
-          <Suppressed section={signal} />
-        </section>
-      ) : null}
-
-      {review && review.rows.length > 0 ? (
-        <section className="rl-block" aria-labelledby="rl-h-review">
-          <h2 className="rl-h2" id="rl-h-review">
-            {review.heading}
-          </h2>
-          <ul className="rl-tled-list">
-            {review.rows.map((row) => (
-              <LedgerRow
-                key={row.key}
-                row={row}
-                selected={row.key === selectedKey}
-                closeHref={closeHref}
-              />
-            ))}
-          </ul>
-          <Suppressed section={review} />
-        </section>
-      ) : null}
-
-      {/* A quiet day gets a short page, not a short page with two empty
-          drawers on it. The section only exists when a fold does. */}
-      {folds.length > 0 ? (
-        <section className="rl-block rl-block-folds" aria-label="The rest of the day">
-          {folds.map((section) => (
-            <FoldedSection
-              key={section.id}
-              section={section}
+      {section.rows.length > 0 ? (
+        <Entries>
+          {section.rows.map((row) => (
+            <TodayEntry
+              key={row.key}
+              row={row}
               selectedKey={selectedKey}
               closeHref={closeHref}
             />
           ))}
-        </section>
+        </Entries>
       ) : null}
-
-      {/* THE ACCOUNTING IS PRINTED, NOT FILED. It used to sit behind a control
-          labelled "How this read was taken", which on a quiet day meant the
-          only substance on the page was one click away. Nothing about this
-          read is now behind a disclosure at any width. */}
-      <div className="rl-block rl-block-foot">
-        <Label>How this read was taken</Label>
-        {today.accountingLine ? (
-          <p className="rl-read-line">{today.accountingLine}</p>
-        ) : null}
-        {today.accountingWithheldLine ? (
-          <p className="rl-read-line rl-read-withheld">{today.accountingWithheldLine}</p>
-        ) : null}
-        <p className="rl-read-line">{chrome.asOf.line}</p>
-
-        <p className="rl-briefing">
-          <a className="rl-briefing-link" href={today.briefingHref}>
-            {today.briefingLabel}
-          </a>
+      {section.suppressedLine ? (
+        <p className="mr-suppressed">
+          {section.suppressedLine}
+          {section.moreHref && section.moreLabel ? (
+            <a className="mr-inline-link" href={section.moreHref}>
+              {section.moreLabel}
+            </a>
+          ) : null}
         </p>
-      </div>
-    </>
+      ) : null}
+    </Band_>
   );
 }
 
-export function BriefingMode(props: HomeCandidateProps) {
-  const { briefing, chrome } = props;
-  const filled = briefing.sections.filter((section) => section.rows.length > 0);
+export function TodayMode({ props, here }: ModeArgs) {
+  const { today, chrome, firstRun } = props;
+  /* The one sentence that becomes the page's headline when the read did not
+     finish. A first screen never takes one: nothing went wrong on it. */
+  const worst = firstRun ? null : (bySeverity(today.disclosures)[0] ?? null);
+  const selectedKey = today.selection?.key ?? null;
+  const closeHref = props.hrefFor({ item: null });
+  const inside = today.sections.filter((section) => section.id !== BELOW_THE_LINE);
+  const beyondSection = today.sections.find((section) => section.id === BELOW_THE_LINE);
+  const window_ =
+    today.sections.find((section) => section.windowLine !== null)?.windowLine ?? null;
+  const shown = inside.reduce((total, section) => total + section.rows.length, 0);
 
   return (
-    <>
-      <Masthead eyebrow={chrome.modeEyebrow} line={briefing.headline}>
-        <a className="rl-return" href={briefing.returnHref}>
-          {briefing.returnLabel}
-        </a>
-      </Masthead>
-
-      <Notices items={briefing.disclosures} heading="What Home could not read" />
-      <Unsupported items={props.today.unsupported} />
-
-      {filled.length === 0 ? (
-        <p className="rl-empty">{briefing.accountingWithheldLine ?? briefing.accountingLine}</p>
-      ) : (
-        filled.map((section) => (
-          <section className="rl-block" key={section.id} aria-labelledby={`rl-h-${section.id}`}>
-            <h2 className="rl-h2" id={`rl-h-${section.id}`}>
-              {section.heading}
-              <span className="rl-h2-count">{section.rows.length}</span>
-            </h2>
-            {section.windowLine ? <p className="rl-window">{section.windowLine}</p> : null}
-            <ul className="rl-tled-list">
-              {section.rows.map((row) => (
-                <LedgerRow key={row.key} row={row} />
-              ))}
-            </ul>
-            <Suppressed section={section} />
-          </section>
-        ))
-      )}
-
-      {filled.length > 0 ? (
-        <div className="rl-block rl-block-foot">
-          <Label>How this read was taken</Label>
-          {briefing.accountingLine ? (
-            <p className="rl-read-line">{briefing.accountingLine}</p>
-          ) : null}
-          {briefing.accountingWithheldLine ? (
-            <p className="rl-read-line rl-read-withheld">
-              {briefing.accountingWithheldLine}
+    <Chronology
+      when={chrome.asOf.line}
+      /* The material of the page. A refusal rules the ground under the whole
+         read; a partial read leaves it open and takes the sentence only. */
+      material={here.material}
+      notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
+      horizonMark={HORIZON_MARK}
+      horizonLine={window_}
+      stream={
+        firstRun ? (
+          <FirstRun view={firstRun} />
+        ) : (
+          <>
+            <p className="mr-day">{today.quiet.line}</p>
+            {today.selectionMissingLine ? (
+              <Notice state="partial">{today.selectionMissingLine}</Notice>
+            ) : null}
+            {shown === 0 ? (
+              <EmptyField>
+                Nothing stands between now and the edge of this read.
+              </EmptyField>
+            ) : null}
+            {inside.map((section) => (
+              <Section
+                key={section.id}
+                section={section}
+                selectedKey={selectedKey}
+                closeHref={closeHref}
+              />
+            ))}
+          </>
+        )
+      }
+      record={
+        <TheRead>
+          <Notices items={accountOf(today.disclosures, worst)} />
+          <p className="mr-account">
+            {today.accountingLine ?? today.accountingWithheldLine}
+          </p>
+          <ScopeAccount
+            scopeLabel={chrome.scope.label}
+            coverageLine={chrome.scope.coverageLine}
+          />
+          <Unsupported items={today.unsupported} />
+          <p className="mr-active">{chrome.activeProject.line}</p>
+        </TheRead>
+      }
+      beyond={
+        firstRun ? (
+          /* A reader with no Project has nothing past the line either, and a
+             link to a briefing with nothing in it is a dead end dressed as a
+             move. The one real move is in the first screen above. */
+          <p className="mr-beyond-caption">
+            Nothing has been set up yet, so there is nothing past this line.
+          </p>
+        ) : (
+          <>
+            <p className="mr-beyond-caption">
+              Nothing below this line is asking for you inside this read.
             </p>
-          ) : null}
-          <p className="rl-read-line">{chrome.asOf.line}</p>
-        </div>
-      ) : null}
-    </>
+            {beyondSection ? (
+              <Section
+                section={beyondSection}
+                selectedKey={selectedKey}
+                closeHref={closeHref}
+              />
+            ) : null}
+            <p className="mr-onward">
+              <a className="mr-onward-link" href={today.briefingHref}>
+                {today.briefingLabel}
+              </a>
+            </p>
+          </>
+        )
+      }
+    />
+  );
+}
+
+/**
+ * The full briefing. The same ranking at its full depth, so the two rules mean
+ * the same thing and the reader is standing in the same day, uncapped.
+ *
+ * Nothing is held back here, so no section carries a cap sentence and the whole
+ * of Moving well comes back above the horizon: at this depth the page is not
+ * trying to protect a fold, it is trying to be complete.
+ */
+export function BriefingMode({ props, here }: ModeArgs) {
+  const { briefing, chrome, firstRun } = props;
+  const worst = firstRun ? null : (bySeverity(briefing.disclosures)[0] ?? null);
+  const closeHref = props.hrefFor({ item: null });
+  const window_ =
+    briefing.sections.find((section) => section.windowLine !== null)?.windowLine ?? null;
+  const shown = briefing.sections.reduce((total, section) => total + section.rows.length, 0);
+
+  return (
+    <Chronology
+      when={chrome.asOf.line}
+      material={here.material}
+      notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
+      horizonMark={HORIZON_MARK}
+      horizonLine={window_}
+      stream={
+        firstRun ? (
+          <FirstRun view={firstRun} />
+        ) : (
+          <>
+            {shown === 0 ? (
+              <EmptyField>
+                Nothing stands between now and the edge of this read.
+              </EmptyField>
+            ) : null}
+            {briefing.sections.map((section) => (
+              <Section
+                key={section.id}
+                section={section}
+                selectedKey={null}
+                closeHref={closeHref}
+              />
+            ))}
+          </>
+        )
+      }
+      record={
+        <TheRead>
+          <Notices items={accountOf(briefing.disclosures, worst)} />
+          <p className="mr-account">
+            {briefing.accountingLine ?? briefing.accountingWithheldLine}
+          </p>
+          <ScopeAccount
+            scopeLabel={chrome.scope.label}
+            coverageLine={chrome.scope.coverageLine}
+          />
+          <p className="mr-active">{chrome.activeProject.line}</p>
+        </TheRead>
+      }
+      beyond={
+        <>
+          <p className="mr-beyond-caption">
+            This is the whole read. Nothing was held back from it.
+          </p>
+          <Label>Where you were</Label>
+          <p className="mr-onward">
+            <a className="mr-onward-link" href={briefing.returnHref}>
+              {briefing.returnLabel}
+            </a>
+          </p>
+          <Fields rows={[["Read at", chrome.asOf.line]]} />
+        </>
+      }
+    />
   );
 }

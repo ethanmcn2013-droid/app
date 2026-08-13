@@ -18,7 +18,7 @@ import type {
   AnalyticsClaimView,
   HomeCandidateProps,
 } from "@/lib/home-layer/lab-shell";
-import { Limits, PageHead, Section, ThisRead } from "./parts";
+import { Fields, Page, Section } from "./parts";
 
 /**
  * The shell drops a Project's name when its route did not resolve, and this is
@@ -56,33 +56,88 @@ function Sparkline({ points }: { points: readonly { value: number }[] }) {
   );
 }
 
-function Claim({ claim, id }: { claim: AnalyticsClaimView; id: string }) {
+/**
+ * The window most of the claims were read over, stated once above them.
+ *
+ * Seven claims repeating "Over four weeks, in Europe/Dublin." is seven times
+ * the height and no extra information, and it is roughly 280px of the tallest
+ * document in the lab. So the shared window becomes a line under the standfirst
+ * and a claim only carries its own WINDOW field when it read a different one,
+ * which is exactly when the reader needs to be told.
+ */
+function sharedWindow(claims: readonly AnalyticsClaimView[]): string | null {
+  const counts = new Map<string, number>();
+  for (const claim of claims) {
+    counts.set(claim.windowLine, (counts.get(claim.windowLine) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 1;
+  for (const [line, count] of counts) {
+    if (count > bestCount) {
+      best = line;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+function Claim({
+  claim,
+  id,
+  window: sharedWindowLine,
+}: {
+  claim: AnalyticsClaimView;
+  id: string;
+  /** Stated above the claims. A claim repeats it only when it differs. */
+  window: string | null;
+}) {
   /**
-   * What the number counted, when it read, and what it cannot say. Those three
-   * change with the claim and decide whether the reader trusts it, so they are
-   * on the surface. Coverage and permission join them only when there is
-   * something wrong to report.
+   * EVERY FACT UNDER A CLAIM IS NAMED AS THE KIND OF FACT IT IS.
    *
-   * The baseline, the truth class and the correction route are identical on
-   * every claim in a window, so seven claims repeating them is seven times the
-   * height and no extra information. They sit in the receipt with the counts,
-   * one interaction away and never optional.
+   * Round 2 set these as an unlabelled grey run, and a director put the cost
+   * exactly: the sentence "Done means the column named Done in this Project"
+   * sat beside the number 19 with no word saying it was the claim's limit
+   * rather than more description. Same facts, weaker trust. So each one takes
+   * its field name, and the two that round 2 buried come back to the surface:
+   *
+   *   LEFT OUT   a count is not visible together with what was excluded from
+   *              it if the exclusion lives behind a control. The total and the
+   *              fact that there IS a total left out are here; the reason for
+   *              each exclusion is in the receipt.
+   *   BASELINE   "No accepted baseline" is not decoration. It says the number
+   *              has no reference point, and it belongs on every claim that
+   *              has none, not on none of them.
+   *
+   * The truth class and the correction route are identical on every claim in a
+   * window, so seven claims repeating them is seven times the height and no
+   * extra information. They stay in the receipt.
    */
-  const facts = [
-    claim.populationLine,
-    claim.windowLine,
-    claim.limitationLine,
-    claim.coverageLine,
-    claim.permissionLine,
-  ].filter((line): line is string => typeof line === "string" && line.length > 0);
+  const fields = [
+    { label: "Counted", value: claim.populationLine },
+    claim.receipt.excludedCount > 0
+      ? {
+          label: "Left out",
+          value: `${claim.receipt.excludedCount} of ${
+            claim.receipt.includedCount + claim.receipt.excludedCount
+          } records were left out of this.`,
+        }
+      : null,
+    claim.windowLine === sharedWindowLine
+      ? null
+      : { label: "Window", value: claim.windowLine },
+    { label: "Cannot say", value: claim.limitationLine },
+    { label: "Baseline", value: claim.baselineLine },
+    claim.coverageLine ? { label: "Coverage", value: claim.coverageLine } : null,
+    claim.permissionLine ? { label: "Access", value: claim.permissionLine } : null,
+  ].filter(
+    (field): field is Readonly<{ label: string; value: string }> => field !== null,
+  );
 
   const receiptFacts = [
-    `Counted ${claim.receipt.includedCount} records. Left out ${claim.receipt.excludedCount}.`,
     ...claim.receipt.exclusionLines,
     claim.receipt.ingestionLine,
     claim.receipt.versionLine,
     claim.truthClassLabel,
-    claim.baselineLine,
     claim.correctionLine,
   ];
 
@@ -100,11 +155,7 @@ function Claim({ claim, id }: { claim: AnalyticsClaimView; id: string }) {
         <p className="ri-claim-withheld">{claim.statusLine}</p>
       ) : null}
 
-      <ul className="ri-facts-list">
-        {facts.map((line) => (
-          <li key={line}>{line}</li>
-        ))}
-      </ul>
+      <Fields fields={fields} />
 
       <details className="ri-receipt">
         <summary className="ri-summary">{claim.evidenceLabel}</summary>
@@ -127,94 +178,37 @@ function Claim({ claim, id }: { claim: AnalyticsClaimView; id: string }) {
 
 export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
   const { analytics, copy } = props;
+  const window = sharedWindow(analytics.claims);
 
   return (
-    <div className="ri-page">
-      <PageHead props={props}>
-        <p className="ri-standfirst">{analytics.leadLine}</p>
-        {analytics.lens.line ? (
-          <p className="ri-lens">
-            {analytics.lens.projectName
-              ? `${analytics.lens.projectName}. ${analytics.lens.line}`
-              : analytics.lens.line}
-            {analytics.lens.closeHref ? (
-              <a href={analytics.lens.closeHref}>{analytics.lens.closeLabel}</a>
-            ) : null}
-          </p>
-        ) : null}
-        <Limits
-          disclosures={analytics.disclosures}
-          extra={analytics.windowMismatchLine ? [analytics.windowMismatchLine] : []}
-        />
-      </PageHead>
-
-      <div className="ri-body">
-        {analytics.claims.length === 0 ? (
-          <p className="ri-lead">{copy.empty.analytics}</p>
-        ) : null}
-
-        {analytics.claims.map((claim, index) => (
-          <Claim key={claim.id} id={`ri-claim-${index + 1}`} claim={claim} />
-        ))}
-
-        {analytics.exceptions.length > 0 ? (
-          <Section id="ri-exceptions" heading={analytics.exceptionsHeading}>
-            <ul className="ri-entries">
-              {analytics.exceptions.map((exception) => (
-                <li className="ri-entry" key={exception.id}>
-                  <a className="ri-entry-link" href={exception.evidenceHref}>
-                    <span aria-hidden="true" />
-                    <div>
-                      <h3 className="ri-entry-title">{exception.headline}</h3>
-                      <span className="ri-entry-reason">
-                        {exception.suggestion}
-                      </span>
-                      <span className="ri-facts">
-                        <span className="ri-prov">
-                          {exception.provenance.text}
-                        </span>
-                        <span>{exception.evidenceLabel}</span>
-                      </span>
-                    </div>
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        ) : null}
-
-        <Section id="ri-trend" heading={analytics.trend.heading}>
-          {analytics.trend.renderChart &&
-          analytics.trend.source.kind === "trend" ? (
-            <div className="ri-trend">
-              <figure className="ri-trend-figure">
-                <div className="ri-trend-scale" aria-hidden="true">
-                  <span>
-                    {Math.max(
-                      ...analytics.trend.source.points.map((p) => p.value),
-                    )}
-                  </span>
-                  <span>
-                    {Math.min(
-                      ...analytics.trend.source.points.map((p) => p.value),
-                    )}
-                  </span>
-                </div>
-                <Sparkline points={analytics.trend.source.points} />
-                <figcaption>{analytics.trend.line}</figcaption>
-              </figure>
-            </div>
-          ) : (
-            <p className="ri-claim-withheld">{analytics.trend.line}</p>
-          )}
-        </Section>
-      </div>
-
-      {/*
-        THE ONE WIDENING. Everything above sits in one reading measure; the
-        ledger breaks it, and it is the only thing in the direction that does.
-      */}
-      <div className="ri-wide">
+    <Page
+      props={props}
+      disclosures={analytics.disclosures}
+      extra={analytics.windowMismatchLine ? [analytics.windowMismatchLine] : []}
+      head={
+        <>
+          <p className="ri-standfirst">{analytics.leadLine}</p>
+          {window ? <p className="ri-window">{window}</p> : null}
+          {analytics.lens.line ? (
+            <p className="ri-lens">
+              {analytics.lens.projectName
+                ? `${analytics.lens.projectName}. ${analytics.lens.line}`
+                : analytics.lens.line}
+              {analytics.lens.closeHref ? (
+                <a href={analytics.lens.closeHref}>{analytics.lens.closeLabel}</a>
+              ) : null}
+            </p>
+          ) : null}
+        </>
+      }
+      wide={
+        /*
+          THE ONE WIDENING. Everything above sits in one reading measure; the
+          ledger breaks it and runs the whole sheet, and it is the only thing
+          in the direction that does. LAB_BRIEF Amendment 1 names this as a
+          legitimate use of the width, and it is the one place where a
+          Project-by-Project account genuinely wants columns.
+        */
         <Section
           id="ri-ledger"
           heading={analytics.ledgerHeading}
@@ -235,9 +229,7 @@ export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
                   <tr key={row.projectId}>
                     <th scope="row">
                       {row.href ? (
-                        <a href={row.href}>
-                          {row.projectName ?? NAME_UNREADABLE}
-                        </a>
+                        <a href={row.href}>{row.projectName ?? NAME_UNREADABLE}</a>
                       ) : (
                         (row.projectName ?? NAME_UNREADABLE)
                       )}
@@ -267,9 +259,63 @@ export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
             </table>
           </div>
         </Section>
-      </div>
+      }
+    >
+      {analytics.claims.length === 0 && !props.firstRun ? (
+        <p className="ri-lead">{copy.empty.analytics}</p>
+      ) : null}
 
-      <ThisRead props={props} lines={[analytics.windowLine]} />
-    </div>
+      {analytics.claims.map((claim, index) => (
+        <Claim
+          key={claim.id}
+          id={`ri-claim-${index + 1}`}
+          claim={claim}
+          window={window}
+        />
+      ))}
+
+      {analytics.exceptions.length > 0 ? (
+        <Section id="ri-exceptions" heading={analytics.exceptionsHeading}>
+          <ul className="ri-entries">
+            {analytics.exceptions.map((exception) => (
+              <li className="ri-entry" key={exception.id}>
+                <a className="ri-entry-link" href={exception.evidenceHref}>
+                  <span aria-hidden="true" />
+                  <div>
+                    <h3 className="ri-entry-title">{exception.headline}</h3>
+                    <span className="ri-entry-reason">{exception.suggestion}</span>
+                    <span className="ri-facts">
+                      <span className="ri-prov">{exception.provenance.text}</span>
+                      <span>{exception.evidenceLabel}</span>
+                    </span>
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
+
+      <Section id="ri-trend" heading={analytics.trend.heading}>
+        {analytics.trend.renderChart && analytics.trend.source.kind === "trend" ? (
+          <div className="ri-trend">
+            <figure className="ri-trend-figure">
+              <div className="ri-trend-scale" aria-hidden="true">
+                <span>
+                  {Math.max(...analytics.trend.source.points.map((p) => p.value))}
+                </span>
+                <span>
+                  {Math.min(...analytics.trend.source.points.map((p) => p.value))}
+                </span>
+              </div>
+              <Sparkline points={analytics.trend.source.points} />
+              <figcaption>{analytics.trend.line}</figcaption>
+            </figure>
+          </div>
+        ) : (
+          <p className="ri-claim-withheld">{analytics.trend.line}</p>
+        )}
+      </Section>
+    </Page>
   );
 }

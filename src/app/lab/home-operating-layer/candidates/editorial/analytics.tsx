@@ -24,7 +24,7 @@ import type {
   AnalyticsView,
   HomeCandidateProps,
 } from "@/lib/home-layer/lab-shell";
-import { Limits, Provenance, type LimitEntry } from "./shell";
+import { Provenance } from "./shell";
 
 function Claim({ claim }: Readonly<{ claim: AnalyticsClaimView }>) {
   return (
@@ -159,20 +159,11 @@ function Trend({ analytics }: Readonly<{ analytics: AnalyticsView }>) {
   );
 }
 
-export function AnalyticsMode({
-  props,
-  limits,
-}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
+export function AnalyticsMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
   const { analytics, copy } = props;
 
   return (
     <>
-      <p className="ed-lede">{analytics.leadLine}</p>
-      <p className="ed-standing">
-        {analytics.windowLine}
-        {analytics.windowMismatchLine === null ? null : ` ${analytics.windowMismatchLine}`}
-      </p>
-
       {analytics.lens.line === null ? null : (
         <p className="ed-lens">
           {analytics.lens.projectName === null ? null : (
@@ -187,8 +178,6 @@ export function AnalyticsMode({
           )}
         </p>
       )}
-
-      <Limits entries={limits} />
 
       <section className="ed-section" aria-labelledby="ed-claims">
         <div className="ed-section-head">

@@ -25,20 +25,41 @@ import type {
 import { sectionSpeaks } from "@/lib/home-layer/candidates/index/labels";
 import {
   Flag,
-  Limits,
   Ordinal,
-  PageHead,
+  Page,
   Perms,
   Section,
-  ThisRead,
   When,
   entryAnchor,
   sectionAnchor,
 } from "./parts";
 
-function Facts({ row }: { row: TodayRow }) {
+/**
+ * THE TAIL ROWS RUN ON ONE META LINE, AND WHY THAT IS AN EDIT RATHER THAN A
+ * LOSS.
+ *
+ * Today's three ranked decisions get a rule of their own on the reason: it is
+ * the rule that fired, and on a decision the reader is about to make, why it is
+ * here is the content. The sections below the cap are context, so the same
+ * facts run inline on one wrapping line instead of taking a paragraph each.
+ * Nothing is dropped and nothing changes with the viewport — this is a
+ * disclosure decision about ranked and unranked rows, not about width. It is
+ * worth roughly a fifth of Today's height at 390, on the direction two
+ * directors called the tallest in the lab.
+ *
+ * A reason that only restates the date is dropped, because the date is already
+ * on the row. That is the exact redundancy a director found in Coming up:
+ * "Due in 5 days." as a sentence and "Due in 5 days" again beneath it.
+ */
+function restated(row: TodayRow): boolean {
+  if (!row.due) return false;
+  return row.reason.replace(/\.$/, "").toLowerCase() === row.due.relative.toLowerCase();
+}
+
+function Facts({ row, reason }: { row: TodayRow; reason: string | null }) {
   return (
     <span className="ri-facts">
+      {reason ? <span className="ri-facts-lead">{reason}</span> : null}
       <span className="ri-prov">{row.provenance.text}</span>
       {row.due ? <When due={row.due} /> : null}
       {row.idleLine ? <span>{row.idleLine}</span> : null}
@@ -65,13 +86,17 @@ function Entry({
   position,
   open,
   closeHref,
+  ranked,
 }: {
   row: TodayRow;
   position: number | null;
   open: boolean;
   closeHref: string;
+  /** Ranked rows argue their case in full. Context rows run on one line. */
+  ranked: boolean;
 }) {
   const id = entryAnchor(row.key);
+  const reason = restated(row) ? null : row.reason;
   if (open) {
     return (
       <li className="ri-entry" id={id} data-selected="">
@@ -79,8 +104,8 @@ function Entry({
           {position === null ? <span aria-hidden="true" /> : <Ordinal position={position} />}
           <div>
             <h3 className="ri-entry-title">{row.title}</h3>
-            <span className="ri-entry-reason">{row.reason}</span>
-            <Facts row={row} />
+            {reason ? <span className="ri-entry-reason">{reason}</span> : null}
+            <Facts row={row} reason={null} />
             <span className="ri-path">
               <span className="ri-label">In the product</span>
               {row.sourcePath}
@@ -100,8 +125,10 @@ function Entry({
         {position === null ? <span aria-hidden="true" /> : <Ordinal position={position} />}
         <div>
           <h3 className="ri-entry-title">{row.title}</h3>
-          <span className="ri-entry-reason">{row.reason}</span>
-          <Facts row={row} />
+          {ranked && reason ? (
+            <span className="ri-entry-reason">{reason}</span>
+          ) : null}
+          <Facts row={row} reason={ranked ? null : reason} />
         </div>
       </a>
     </li>
@@ -147,6 +174,7 @@ function Sections({
                 <Entry
                   key={row.key}
                   row={row}
+                  ranked={numbers}
                   position={
                     numbers
                       ? (numbering === "ranked" ? offsetOf(position) : 0) + rowIndex + 1
@@ -175,67 +203,79 @@ function Sections({
 // ── Today ───────────────────────────────────────────────────────────────────
 
 export function TodayMode({ props }: { props: HomeCandidateProps }) {
-  const { today, copy, hrefFor } = props;
+  const { today, copy, firstRun, hrefFor } = props;
   const shown = today.sections.filter(sectionSpeaks);
   const nothingShown = shown.length === 0;
 
   return (
-    <div className="ri-page">
-      <PageHead props={props}>
-        {/*
-          THE STANDFIRST, IN EVERY WORLD. The shell writes one sentence about
-          what this read can and cannot claim, and it is the first thing under
-          the headline whatever world is on screen — a quiet day, a signature
-          day, a day where a source refused. An arrival screen that goes from
-          headline straight into a list has told the reader nothing true before
-          asking them to act.
-        */}
-        <p className="ri-standfirst">{today.quiet.line}</p>
-        {today.selectionMissingLine ? <Flag>{today.selectionMissingLine}</Flag> : null}
-        <Limits disclosures={today.disclosures} />
-      </PageHead>
+    <Page
+      props={props}
+      disclosures={today.disclosures}
+      head={
+        <>
+          {/*
+            THE STANDFIRST, IN EVERY WORLD. The shell writes one sentence about
+            what this read can and cannot claim, and it is the first thing
+            under the headline whatever world is on screen — a quiet day, a
+            signature day, a day where a source refused, a first morning. An
+            arrival screen that goes from headline straight into a list has
+            told the reader nothing true before asking them to act.
+          */}
+          {/*
+            On a day with nothing in it the standfirst IS the issue, so it is
+            set as one. A quiet day is a short document and this direction
+            refuses to pad it, but a short document still has to look composed
+            rather than truncated, and the one true sentence carrying the whole
+            page should be sized like it.
+          */}
+          <p
+            className={
+              nothingShown && !firstRun
+                ? "ri-standfirst ri-standfirst--sole"
+                : "ri-standfirst"
+            }
+          >
+            {today.quiet.line}
+          </p>
+          {today.selectionMissingLine ? <Flag>{today.selectionMissingLine}</Flag> : null}
+        </>
+      }
+    >
+      {/*
+        A READ WITH NOTHING IN IT IS NOT THE SAME AS A READ THAT DID NOT
+        HAPPEN, and this is where a direction most easily tells the lie the
+        charter exists to prevent. "Nothing crossed a rule today" is only true
+        when the read completed. A reader whose sources did not answer arrives
+        here with an empty list and gets the state they are actually in. A
+        reader who has not started gets the first screen above instead, and
+        never a state name at all.
+      */}
+      {nothingShown && !today.quiet.readIsQuiet && !firstRun ? (
+        today.state === "ready" ? (
+          <p className="ri-lead">{copy.empty.today}</p>
+        ) : today.disclosures.length === 0 ? (
+          <p className="ri-claim-withheld">{copy.states[today.state]}</p>
+        ) : null
+      ) : null}
+      <Sections
+        sections={shown}
+        numbering="capped"
+        openKey={today.selection?.key ?? null}
+        closeHref={hrefFor({ item: null })}
+      />
 
-      <div className="ri-body">
-        {/*
-          A READ WITH NOTHING IN IT IS NOT THE SAME AS A READ THAT DID NOT
-          HAPPEN, and this is where a direction most easily tells the lie the
-          charter exists to prevent. "Nothing crossed a rule today" is only
-          true when the read completed. A new reader with no project, and a
-          reader whose sources did not answer, both arrive here with an empty
-          list, and both get the state they are actually in instead.
-        */}
-        {nothingShown && !today.quiet.readIsQuiet ? (
-          today.state === "ready" ? (
-            <p className="ri-lead">{copy.empty.today}</p>
-          ) : today.disclosures.length === 0 ? (
-            <p className="ri-claim-withheld">{copy.states[today.state]}</p>
-          ) : null
-        ) : null}
-        <Sections
-          sections={shown}
-          numbering="capped"
-          openKey={today.selection?.key ?? null}
-          closeHref={hrefFor({ item: null })}
-        />
-
-        {/*
-          The closing move. A read ends by offering the read behind it, and it
-          is a ruled invitation across the measure rather than a stub of
-          underlined text left hanging in white space.
-        */}
+      {/*
+        The closing move. A read ends by offering the read behind it, and it is
+        a ruled invitation across the measure rather than a stub of underlined
+        text left hanging in white space. A first screen has no read behind it,
+        so it does not offer one.
+      */}
+      {firstRun ? null : (
         <p className="ri-onward">
           <a href={today.briefingHref}>{today.briefingLabel}</a>
         </p>
-      </div>
-
-      <ThisRead
-        props={props}
-        lines={[
-          today.accountingLine ?? today.accountingWithheldLine,
-          ...today.unsupported.map((note) => note.text),
-        ]}
-      />
-    </div>
+      )}
+    </Page>
   );
 }
 
@@ -246,37 +286,31 @@ export function BriefingMode({ props }: { props: HomeCandidateProps }) {
   const shown = briefing.sections.filter(sectionSpeaks);
 
   return (
-    <div className="ri-page">
-      <PageHead props={props}>
-        {/*
+    <Page
+      props={props}
+      disclosures={briefing.disclosures}
+      head={
+        /*
           The way back sits at the top as well as the foot, because the reader
           arrived here from a position in Today and is owed it before they
           start reading rather than after. The index above says where they are;
           this says how to get back.
-        */}
+        */
         <p className="ri-onward ri-onward--back">
           <a href={briefing.returnHref}>{briefing.returnLabel}</a>
         </p>
-        <Limits disclosures={briefing.disclosures} />
-      </PageHead>
-
-      <div className="ri-body">
-        <Sections
-          sections={shown}
-          numbering="ranked"
-          openKey={null}
-          closeHref={hrefFor({ item: null })}
-        />
-
-        <p className="ri-onward">
-          <a href={briefing.returnHref}>{briefing.returnLabel}</a>
-        </p>
-      </div>
-
-      <ThisRead
-        props={props}
-        lines={[briefing.accountingLine ?? briefing.accountingWithheldLine]}
+      }
+    >
+      <Sections
+        sections={shown}
+        numbering="ranked"
+        openKey={null}
+        closeHref={hrefFor({ item: null })}
       />
-    </div>
+
+      <p className="ri-onward">
+        <a href={briefing.returnHref}>{briefing.returnLabel}</a>
+      </p>
+    </Page>
   );
 }
