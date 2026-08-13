@@ -11,9 +11,18 @@ import { SectionHeader } from "../settings-app";
 export function DangerSection({
   myRole,
   workspaceName,
+  projectId,
 }: {
   myRole: "owner" | "member" | "none";
   workspaceName: string;
+  /**
+   * The Project this panel was rendered for — the same one `workspaceName`
+   * came from, and therefore the same one the confirm-by-typing modal asks the
+   * operator to name. Passed to the destructive actions so they cannot land in
+   * whichever Project the ambient cookie has drifted to since this page
+   * rendered (ADR 0001 §9).
+   */
+  projectId: string | null;
 }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -28,7 +37,7 @@ export function DangerSection({
     setWeddingOpen(false);
     startTransition(async () => {
       try {
-        await seedDomainAction("wedding");
+        await seedDomainAction("wedding", projectId ?? undefined);
         toast("Wedding demo loaded", {
           tone: "success",
           body: "This workspace now holds the wedding sample tasks.",
@@ -47,7 +56,7 @@ export function DangerSection({
     setClearOpen(false);
     startTransition(async () => {
       try {
-        await clearAllTasksAction();
+        await clearAllTasksAction(projectId ?? undefined);
         toast("Tasks cleared", {
           tone: "success",
           body: "Workspace is back to empty. Members and billing untouched.",
@@ -67,7 +76,7 @@ export function DangerSection({
     setConfirmText("");
     startTransition(async () => {
       try {
-        await deleteWorkspaceAction();
+        await deleteWorkspaceAction(projectId ?? undefined);
         toast("Workspace deleted", { tone: "success" });
         // Bounce to /app, the layout will re-resolve the active
         // workspace (or punt to /welcome for fresh users).

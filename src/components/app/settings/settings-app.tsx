@@ -236,6 +236,7 @@ export function SettingsApp({
               memberCapacity={memberCapacity}
               pendingInvites={pendingInvites}
               recentActivity={recentActivity}
+              projectId={workspace?.id ?? null}
             />
           ) : null}
           {tab === "notifications" ? (
@@ -263,6 +264,7 @@ export function SettingsApp({
             <DangerSection
               myRole={myRole}
               workspaceName={workspace?.name ?? "this workspace"}
+              projectId={workspace?.id ?? null}
             />
           ) : null}
           </div>
