@@ -16,10 +16,6 @@ export function ContextSidebar({ scopes, activeScope }: ContextSidebarProps) {
   const workspace =
     scopes.find((scope) => scope.kind === "workspace" && scope.id === activeScope.workspaceId) ??
     scopes.find((scope) => scope.kind === "workspace");
-  const projects = scopes.filter(
-    (scope) => scope.kind === "project" && scope.workspaceId === activeScope.workspaceId,
-  );
-
   function scopeHref(scopeType: string, scopeId: string, workspaceId: string) {
     return signalHref(pathname, searchParams, {
       scope_type: scopeType,
@@ -61,34 +57,6 @@ export function ContextSidebar({ scopes, activeScope }: ContextSidebarProps) {
           </li>
         ) : null}
       </ul>
-
-      {projects.length > 0 ? (
-        <>
-          <span className="signal-sidebar-label" style={{ display: "block", marginTop: "var(--space-7)" }}>
-            Projects
-          </span>
-          <ul className="signal-project-list">
-            {projects.map((project) => (
-              <li key={project.id}>
-                <Link
-                  className="signal-context-link"
-                  href={scopeHref("project", project.id, project.workspaceId)}
-                  aria-current={
-                    activeScope.type === "project" && activeScope.id === project.id
-                      ? "page"
-                      : undefined
-                  }
-                >
-                  <span>{project.label}</span>
-                  {project.count !== undefined ? (
-                    <span className="signal-context-count">{project.count}</span>
-                  ) : null}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : null}
     </aside>
   );
 }

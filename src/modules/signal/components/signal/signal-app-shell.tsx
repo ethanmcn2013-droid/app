@@ -90,7 +90,7 @@ export function SignalAppShell({
           evidence={evidence.response}
           closeHref={evidence.closeHref}
           ownerNames={evidence.ownerNames}
-          projectNames={evidence.projectNames}
+          labelNames={evidence.labelNames}
         />
       ) : null}
     </div>

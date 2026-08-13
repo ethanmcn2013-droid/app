@@ -8,7 +8,7 @@ import { ActionQueue } from "./action-queue";
 import { CustomizeMode } from "./customize-mode";
 import { DataCoverageNotice } from "./data-coverage-notice";
 import { ObservationCard } from "./observation-card";
-import { ProjectStatusTable } from "./project-status-table";
+import { LabelStatusTable } from "./label-status-table";
 import { SummaryRow } from "./summary-row";
 import { TrendChart } from "./trend-chart";
 
@@ -23,7 +23,7 @@ interface OverviewViewProps {
 
 const OVERVIEW_CARDS = [
   { id: "summary", label: "Scope summary" },
-  { id: "projects", label: "Projects" },
+  { id: "labels", label: "Labels" },
   { id: "primary_trend", label: "Primary change" },
   { id: "action_queue", label: "Actionable queue" },
   { id: "connected_context", label: "Connected context" },
@@ -60,22 +60,22 @@ export function OverviewView({
       </section>,
     ],
     [
-      "projects",
+      "labels",
       <section
-        key="projects"
+        key="labels"
         className="signal-overview-card"
-        data-card-id="projects"
-        aria-labelledby="overview-projects-heading"
+        data-card-id="labels"
+        aria-labelledby="overview-labels-heading"
       >
         <div className="signal-section-heading">
           <div>
             <p className="signal-eyebrow">Comparable work</p>
-            <h2 id="overview-projects-heading">Projects and their reasons</h2>
+            <h2 id="overview-labels-heading">Labels and their reasons</h2>
           </div>
         </div>
-        <ProjectStatusTable
-          projects={overview.projects}
-          availability={overview.availability.projects}
+        <LabelStatusTable
+          labels={overview.labels}
+          availability={overview.availability.labels}
           evidenceHref={evidenceHref}
           ownerNames={ownerNames}
           timezone={overview.meta.period.timezone}

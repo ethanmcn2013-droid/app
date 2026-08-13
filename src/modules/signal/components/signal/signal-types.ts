@@ -4,7 +4,7 @@ export type SignalView = "briefing" | "overview" | "trends";
 
 export interface ScopeOption extends AnalyticsScope {
   label: string;
-  kind: "workspace" | "project" | "user";
+  kind: "workspace" | "user";
   count?: number;
 }
 
@@ -17,5 +17,5 @@ export interface EvidenceState {
   response: EvidenceResponse;
   closeHref: string;
   ownerNames: Readonly<Record<string, string>>;
-  projectNames: Readonly<Record<string, string>>;
+  labelNames: Readonly<Record<string, string>>;
 }

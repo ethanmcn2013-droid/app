@@ -8,14 +8,103 @@
 export type ISOInstant = string;
 export type LocalDate = string;
 
-export type ScopeType = "workspace" | "project" | "user";
+/**
+ * The identity spaces, named separately so they cannot be confused (ADR 0001 §1).
+ *
+ * Analytics used to hold three id spaces in fields all called `projectId(s)`:
+ * a slugified Tasks tag, a Timeline `projects.slug`, and — nowhere — the
+ * canonical Project. `service.ts` then joined a Timeline slug against a tag
+ * slug as if they were the same key, so "the next milestone for this project"
+ * was a coincidence rather than a fact. These brands make that a compile error.
+ */
+declare const IDENTITY_SPACE: unique symbol;
+type Identity<Space extends string> = string & { readonly [IDENTITY_SPACE]: Space };
 
-/** Every scope carries its workspace boundary, including project and user scopes. */
+/**
+ * A Project. Exactly one thing is a Project in Signal Studio: a Tasks
+ * `workspaces.id` (ADR 0001 §1). Analytics authorizes on this and nothing else.
+ */
+export type ProjectId = Identity<"TasksWorkspaceId">;
+
+/**
+ * A Label (Workstream): a slugified Tasks tag. A classification of work
+ * *inside* one Project. Never an identity, never an authorization boundary,
+ * and never presented as a Project (D-010, ADR 0001 §1).
+ */
+export type LabelId = Identity<"AnalyticsLabel">;
+
+/**
+ * A Timeline `projects.slug`: a subordinate artifact key inside a Project
+ * (ADR 0001 §1). It shares no namespace with either of the above.
+ */
+export type TimelineProjectSlug = Identity<"TimelineProjectSlug">;
+
+/**
+ * A Program: a planning-period id. A *grouping* of Projects that may widen a
+ * local read scope. Never a Project, never an authorization boundary
+ * (ADR 0001 §1, §7).
+ */
+export type ProgramId = Identity<"PlanningPeriodId">;
+
+/** Assert a value is a canonical Project id. Every conversion is deliberate. */
+export function asProjectId(value: string): ProjectId {
+  return value as ProjectId;
+}
+
+/** Assert a value is a tag-derived Label id. */
+export function asLabelId(value: string): LabelId {
+  return value as LabelId;
+}
+
+/** Assert a value is a Timeline project slug. */
+export function asTimelineProjectSlug(value: string): TimelineProjectSlug {
+  return value as TimelineProjectSlug;
+}
+
+/** Assert a value is a planning-period (Program) id. */
+export function asProgramId(value: string): ProgramId {
+  return value as ProgramId;
+}
+
+/**
+ * `"project"` is deliberately absent (D-010).
+ *
+ * The old `"project"` scope authorized on a slugified tag, which is not an
+ * authorization boundary and never was. It now collapses into `"workspace"`,
+ * and the tag arrives as `AnalyticsFilters.labelIds` — a filter, which is what
+ * it always was.
+ */
+export type ScopeType = "workspace" | "user";
+
+/** Every scope carries its Project boundary, including the user scope. */
 export interface AnalyticsScope {
   type: ScopeType;
+  /** For `workspace` this equals `workspaceId`; for `user`, a Tasks user id. */
   id: string;
-  workspaceId: string;
+  /** The canonical Project. The only authorization boundary in this domain. */
+  workspaceId: ProjectId;
 }
+
+/**
+ * The Program (planning-period) axis, stated explicitly rather than omitted.
+ *
+ * Analytics does not carry one today and must say so rather than imply an
+ * unscoped read: every provider query is bound to exactly one Project
+ * (`eq(tasks.workspaceId, …)`, `source_tasks_workspace_id = ?`), so a Program —
+ * which spans Projects — cannot be honoured without a per-Project membership
+ * proof this domain does not yet perform. Carrying the axis as a typed
+ * `not_carried` keeps the absence visible in every response instead of leaving
+ * a reader to assume the period was applied.
+ */
+export type AnalyticsProgramAxis =
+  | { kind: "not_carried"; reason: "analytics_reads_a_single_project" }
+  | { kind: "program"; programId: ProgramId; label: string | null };
+
+/** The only Program value analytics can honestly produce today. */
+export const PROGRAM_AXIS_NOT_CARRIED: AnalyticsProgramAxis = {
+  kind: "not_carried",
+  reason: "analytics_reads_a_single_project",
+};
 
 /** `end` is exclusive. Both boundaries are normalized UTC instants. */
 export interface AnalyticsPeriod {
@@ -47,11 +136,13 @@ export type MetricKey =
   | "workload_distribution"
   | "cross_product_milestone_risk";
 
-export type BreakdownKey = "project" | "owner" | "status" | "work_type";
+export type BreakdownKey = "label" | "owner" | "status" | "work_type";
 
 export interface AnalyticsFilters {
   ownerIds?: string[];
   statuses?: string[];
+  /** Tag-derived Labels to narrow the read to. A filter, never a boundary. */
+  labelIds?: LabelId[];
 }
 
 export interface AnalyticsPagination {
@@ -63,6 +154,8 @@ export interface AnalyticsPagination {
 export interface AnalyticsQuery {
   scope: AnalyticsScope;
   period: AnalyticsPeriod;
+  /** Declared explicitly so an absent Program can never read as an applied one. */
+  program: AnalyticsProgramAxis;
   filters?: AnalyticsFilters;
   metric?: MetricKey;
   breakdown?: BreakdownKey;
@@ -83,9 +176,16 @@ export interface PersonRef {
   displayName: string | null;
 }
 
-export interface ProjectRecord {
-  id: string;
-  workspaceId: string;
+/**
+ * A tag-derived Label (Workstream) inside one Project.
+ *
+ * This was `ProjectRecord`, and it was nested inside a workspace — a shape
+ * D-010 makes impossible, because a Project *is* the workspace. It is a
+ * breakdown of work within the Project, and must never be labelled "Project".
+ */
+export interface LabelRecord {
+  id: LabelId;
+  workspaceId: ProjectId;
   name: string;
   ownerIds: string[];
   state: "on_track" | "watch" | "needs_attention" | "unknown";
@@ -96,8 +196,8 @@ export interface ProjectRecord {
 
 export interface TaskRecord {
   id: string;
-  workspaceId: string;
-  projectIds: string[];
+  workspaceId: ProjectId;
+  labelIds: LabelId[];
   title: string;
   status: string;
   terminal: boolean;
@@ -122,8 +222,8 @@ export interface TaskRecord {
 /** Only structured, approved extracts enter this record. Never a raw Note body. */
 export interface NoteRecord {
   id: string;
-  workspaceId: string;
-  projectIds: string[];
+  workspaceId: ProjectId;
+  labelIds: LabelId[];
   kind: "decision" | "follow_up" | "question";
   title: string;
   state: "open" | "resolved" | "completed" | "cancelled";
@@ -146,8 +246,9 @@ export interface MilestoneDateChange {
 
 export interface MilestoneRecord {
   id: string;
-  workspaceId: string;
-  projectId: string;
+  workspaceId: ProjectId;
+  /** Timeline's own slug. Not a Project id and not a Label id (ADR 0001 §1). */
+  timelineProjectSlug: TimelineProjectSlug;
   title: string;
   state: "upcoming" | "in_flight" | "completed" | "paused" | "cancelled";
   currentDate: AnalyticsDate | null;
@@ -165,8 +266,8 @@ export interface MilestoneRecord {
 /** A permitted Timeline task referenced as a milestone dependency. */
 export interface TimelineDependencyRecord {
   id: string;
-  workspaceId: string;
-  projectId: string;
+  workspaceId: ProjectId;
+  timelineProjectSlug: TimelineProjectSlug;
   title: string;
   state: string;
   resolved: boolean;
@@ -195,9 +296,9 @@ export type AnalyticsEventKind =
 
 export interface AnalyticsEvent {
   id: string;
-  workspaceId: string;
-  projectIds: string[];
-  entityType: "task" | "note" | "milestone" | "project";
+  workspaceId: ProjectId;
+  labelIds: LabelId[];
+  entityType: "task" | "note" | "milestone" | "label";
   entityId: string;
   kind: AnalyticsEventKind;
   at: ISOInstant;
@@ -208,7 +309,7 @@ export interface AnalyticsEvent {
   toValue?: string | null;
 }
 
-export type ProviderKey = "tasks" | "notes" | "timeline" | "projects";
+export type ProviderKey = "tasks" | "notes" | "timeline" | "labels";
 
 export type ProviderCapability =
   | "task_read"
@@ -222,7 +323,7 @@ export type ProviderCapability =
   | "milestone_read"
   | "milestone_date_history"
   | "cross_product_links"
-  | "project_read";
+  | "label_read";
 
 export type ProviderCoverageStatus =
   | "ready"
@@ -253,7 +354,7 @@ export interface DataCoverage {
 export interface AnalyticsSnapshot {
   scope: AnalyticsScope;
   capturedAt: ISOInstant;
-  projects: ProjectRecord[];
+  labels: LabelRecord[];
   tasks: TaskRecord[];
   notes: NoteRecord[];
   milestones: MilestoneRecord[];
@@ -270,9 +371,9 @@ export interface ProviderResult<T> {
 export interface TasksProviderResult {
   tasks: TaskRecord[];
   events: AnalyticsEvent[];
-  /** Bounded workspace-wide options used by the persistent application shell. */
+  /** Bounded Project-wide options used by the persistent application shell. */
   navigation?: {
-    projects: Array<{ id: string; name: string }>;
+    labels: Array<{ id: LabelId; name: string }>;
     owners: PersonRef[];
     statuses: string[];
   };
@@ -298,25 +399,25 @@ export interface TimelineProvider {
   read(query: AnalyticsQuery, signal?: AbortSignal): Promise<TimelineProviderResult>;
 }
 
-export interface ProjectsProvider {
-  read(query: AnalyticsQuery, signal?: AbortSignal): Promise<ProviderResult<ProjectRecord>>;
+export interface LabelsProvider {
+  read(query: AnalyticsQuery, signal?: AbortSignal): Promise<ProviderResult<LabelRecord>>;
 }
 
 export interface ProviderBundle {
   tasks: TasksProvider;
   notes?: NotesProvider;
   timeline?: TimelineProvider;
-  projects?: ProjectsProvider;
+  labels?: LabelsProvider;
 }
 
 export interface SourceReference {
-  type: "task" | "note" | "milestone" | "project";
+  type: "task" | "note" | "milestone" | "label";
   id: string;
   title: string;
   state: string;
   ownerIds: string[];
   date: ISOInstant | LocalDate | null;
-  projectIds: string[];
+  labelIds: LabelId[];
   deepLink: string;
   reason: string;
 }
@@ -347,7 +448,7 @@ export interface MetricResult<TValue> {
     notes: number;
     tasks: number;
     milestones: number;
-    projects: number;
+    labels: number;
   };
   sources: SourceReference[];
   calculatedAt: ISOInstant;
@@ -485,6 +586,8 @@ export interface SignalObservation {
 export interface AnalyticsResponseMeta {
   scope: AnalyticsScope;
   period: AnalyticsPeriod;
+  /** Travels with every view so the declared axis is never assumed. */
+  program: AnalyticsProgramAxis;
   calculatedAt: ISOInstant;
   coverage: DataCoverage;
   freshness: "fresh" | "stale" | "partial" | "unavailable";
@@ -509,15 +612,18 @@ export interface OverviewSummaryItem {
   evidenceId: string | null;
 }
 
-export interface OverviewProjectRow {
-  id: string;
+/**
+ * One tag-derived Label row. `nextMilestone*` is deliberately absent: it used
+ * to be filled by matching a Timeline slug against a tag slug, which is not a
+ * relationship that exists. Timeline milestones belong to the Project, not to
+ * a Label, so a per-Label next milestone cannot be derived from current data.
+ */
+export interface OverviewLabelRow {
+  id: LabelId;
   name: string;
   state: ObservationState | "unknown";
   reasons: string[];
   progress: number | null;
-  nextMilestone: string | null;
-  nextMilestoneDate: AnalyticsDate | null;
-  nextMilestoneDeepLink: string | null;
   ownerIds: string[];
   evidenceId: string | null;
   deepLink: string;
@@ -544,10 +650,10 @@ export interface TrendPoint {
 
 export interface OverviewResponse {
   summary: OverviewSummaryItem[];
-  projects: OverviewProjectRow[];
+  labels: OverviewLabelRow[];
   availability: {
-    /** Whether project state can be derived from the connected project/task sources. */
-    projects: MetricStatus;
+    /** Whether Label state can be derived from the connected task source. */
+    labels: MetricStatus;
     /** Whether the queue includes every source it depends on. */
     actionQueue: MetricStatus;
     /** Distinguishes missing history from a currently unavailable metric source. */

@@ -2,6 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { BriefingResponse } from "./contracts";
 import {
+  asLabelId,
+  asProjectId,
+  PROGRAM_AXIS_NOT_CARRIED,
+} from "./contracts";
+import {
   groupLegacyBriefItems,
   ledgerFromLegacyBriefing,
   ledgerFromProgressiveBriefing,
@@ -575,7 +580,7 @@ function progressiveBriefing(): BriefingResponse {
         scope: {
           type: "workspace",
           id: "workspace-private-one",
-          workspaceId: "workspace-private-one",
+          workspaceId: asProjectId("workspace-private-one"),
         },
         period: {
           start,
@@ -602,7 +607,7 @@ function progressiveBriefing(): BriefingResponse {
             ownerIds: [],
             state: "in_progress",
             date: null,
-            projectIds: ["project-private-one"],
+            labelIds: [asLabelId("label-private-one")],
             deepLink:
               "https://app.signalstudio.ie/app/tasks?task=raw-task-private-one",
             reason: "Source record crossed the reviewed threshold.",
@@ -626,7 +631,7 @@ function progressiveBriefing(): BriefingResponse {
       scope: {
         type: "workspace",
         id: "workspace-private-one",
-        workspaceId: "workspace-private-one",
+        workspaceId: asProjectId("workspace-private-one"),
       },
       period: {
         start,
@@ -634,6 +639,7 @@ function progressiveBriefing(): BriefingResponse {
         timezone: "Europe/Dublin",
         preset: "twelve_weeks",
       },
+      program: PROGRAM_AXIS_NOT_CARRIED,
       calculatedAt,
       coverage: {
         status: "complete",

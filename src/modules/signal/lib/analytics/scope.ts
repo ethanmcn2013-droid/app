@@ -2,9 +2,9 @@ import type {
   AnalyticsQuery,
   AnalyticsScope,
   AnalyticsSnapshot,
+  LabelRecord,
   MilestoneRecord,
   NoteRecord,
-  ProjectRecord,
   TaskRecord,
   TimelineDependencyRecord,
 } from "./contracts";
@@ -22,13 +22,11 @@ function hasOwner(ownerIds: string[], scope: AnalyticsScope): boolean {
 
 export function taskInScope(task: TaskRecord, scope: AnalyticsScope): boolean {
   if (task.workspaceId !== scope.workspaceId) return false;
-  if (scope.type === "project" && !task.projectIds.includes(scope.id)) return false;
   return hasOwner(task.ownerIds, scope);
 }
 
 export function noteInScope(note: NoteRecord, scope: AnalyticsScope): boolean {
   if (note.workspaceId !== scope.workspaceId) return false;
-  if (scope.type === "project" && !note.projectIds.includes(scope.id)) return false;
   return hasOwner(note.ownerIds, scope);
 }
 
@@ -37,14 +35,12 @@ export function milestoneInScope(
   scope: AnalyticsScope,
 ): boolean {
   if (milestone.workspaceId !== scope.workspaceId) return false;
-  if (scope.type === "project" && milestone.projectId !== scope.id) return false;
   return hasOwner(milestone.ownerIds, scope);
 }
 
-export function projectInScope(project: ProjectRecord, scope: AnalyticsScope): boolean {
-  if (project.workspaceId !== scope.workspaceId) return false;
-  if (scope.type === "project" && project.id !== scope.id) return false;
-  return hasOwner(project.ownerIds, scope);
+export function labelInScope(label: LabelRecord, scope: AnalyticsScope): boolean {
+  if (label.workspaceId !== scope.workspaceId) return false;
+  return hasOwner(label.ownerIds, scope);
 }
 
 export function timelineDependencyInScope(
@@ -52,7 +48,6 @@ export function timelineDependencyInScope(
   scope: AnalyticsScope,
 ): boolean {
   if (dependency.workspaceId !== scope.workspaceId) return false;
-  if (scope.type === "project" && dependency.projectId !== scope.id) return false;
   return hasOwner(dependency.ownerIds, scope);
 }
 
@@ -74,13 +69,17 @@ export function scopeSnapshot(
 
   const ownerFilter = new Set(query.filters?.ownerIds ?? []);
   const statusFilter = new Set(query.filters?.statuses ?? []);
+  const labelFilter = new Set<string>(query.filters?.labelIds ?? []);
   const matchesOwnerFilter = (ids: string[]) =>
     ownerFilter.size === 0 || ids.some((id) => ownerFilter.has(id));
+  const matchesLabelFilter = (ids: string[]) =>
+    labelFilter.size === 0 || ids.some((id) => labelFilter.has(id));
 
   const tasks = snapshot.tasks.filter(
     (task) =>
       taskInScope(task, query.scope) &&
       matchesOwnerFilter(task.ownerIds) &&
+      matchesLabelFilter(task.labelIds) &&
       (statusFilter.size === 0 || statusFilter.has(task.status)),
   );
   const taskIds = new Set(tasks.map((task) => task.id));
@@ -90,8 +89,12 @@ export function scopeSnapshot(
     (note) =>
       noteInScope(note, query.scope) &&
       matchesOwnerFilter(note.ownerIds) &&
+      matchesLabelFilter(note.labelIds) &&
       matchesLinkedTaskStatus(note.linkedTaskIds),
   );
+  // Milestones and Timeline dependencies carry no tag, so a Label filter
+  // cannot include or exclude them. They stay in scope and the caller
+  // discloses the partial overlap rather than dropping them silently.
   const milestones = snapshot.milestones.filter(
     (milestone) =>
       milestoneInScope(milestone, query.scope) &&
@@ -104,39 +107,44 @@ export function scopeSnapshot(
       matchesOwnerFilter(dependency.ownerIds) &&
       (statusFilter.size === 0 || statusFilter.has(dependency.state)),
   );
-  const filteredProjectIds = new Set([
-    ...tasks.flatMap((task) => task.projectIds),
-    ...notes.flatMap((note) => note.projectIds),
-    ...milestones.map((milestone) => milestone.projectId),
-    ...timelineDependencies.map((dependency) => dependency.projectId),
+  // Only records that actually carry a Label contribute to the Label set.
+  // The old union added Timeline `project_slug` values here as if they were
+  // tag slugs, which silently widened the surviving Label rows.
+  const filteredLabelIds = new Set<string>([
+    ...tasks.flatMap((task) => task.labelIds),
+    ...notes.flatMap((note) => note.labelIds),
   ]);
-  const hasRecordFilter = ownerFilter.size > 0 || statusFilter.size > 0;
-  const projects = snapshot.projects.filter(
-    (project) =>
-      projectInScope(project, query.scope) &&
-      (!hasRecordFilter || filteredProjectIds.has(project.id)),
+  const hasRecordFilter =
+    ownerFilter.size > 0 || statusFilter.size > 0 || labelFilter.size > 0;
+  const labels = snapshot.labels.filter(
+    (label) =>
+      labelInScope(label, query.scope) &&
+      (!hasRecordFilter || filteredLabelIds.has(label.id)),
   );
 
   const entityKeys = new Set([
     ...tasks.map((record) => `task:${record.id}`),
     ...notes.map((record) => `note:${record.id}`),
     ...milestones.map((record) => `milestone:${record.id}`),
-    ...projects.map((record) => `project:${record.id}`),
+    ...labels.map((record) => `label:${record.id}`),
   ]);
 
   return {
     ...snapshot,
     scope: query.scope,
-    projects,
+    labels,
     tasks,
     notes,
     milestones,
     timelineDependencies,
+    // An event survives exactly when its entity did. Filtering events on their
+    // own `labelIds` as well would drop every milestone event under any Label
+    // filter, because a milestone carries no tag — an exclusion the reader
+    // would have no way to see.
     events: snapshot.events.filter(
       (event) =>
         event.workspaceId === query.scope.workspaceId &&
-        entityKeys.has(`${event.entityType}:${event.entityId}`) &&
-        (query.scope.type !== "project" || event.projectIds.includes(query.scope.id)),
+        entityKeys.has(`${event.entityType}:${event.entityId}`),
     ),
   };
 }

@@ -7,16 +7,15 @@ import { getAccessMode, type AccessMode } from "@/lib/access-mode";
 import { getAnalyticsFixture } from "../../lib/analytics/fixtures";
 import { signalAnalyticsDb as signalDb } from "../db/signal-analytics-client";
 import { analyticsUsers } from "../db/signal-analytics-schema";
-import { getTasksClient, getTasksDb } from "../tasks-db/signal-tasks-db-client";
+import { getTasksDb } from "../tasks-db/signal-tasks-db-client";
 import {
   users,
   workspaceMembers,
   workspaces,
 } from "../tasks-db/signal-tasks-db-schema";
 import { AnalyticsApiError } from "./errors";
-import { isSignalAnalyticsEnabled } from "./feature-flag";
+import { isAnalyticsDomainEnabled } from "./feature-flag";
 import type { ParsedAnalyticsQuery } from "./query";
-import { projectIdFromTag } from "./providers/tasks";
 import { normalizeAnalyticsQueryTimezone } from "./timezone";
 import { authorizeFixtureQuery, FixtureAccessDeniedError } from "./fixture-access";
 
@@ -41,7 +40,7 @@ export interface AuthorizedAnalyticsContext {
 export async function authorizeAnalyticsRequest(
   query: ParsedAnalyticsQuery,
 ): Promise<AuthorizedAnalyticsContext> {
-  if (!isSignalAnalyticsEnabled()) {
+  if (!isAnalyticsDomainEnabled()) {
     throw new AnalyticsApiError(404, "analytics_disabled", "Signal analytics is not enabled.");
   }
 
@@ -100,13 +99,11 @@ export async function authorizeAnalyticsRequest(
       scope: { ...timezoneQuery.scope, id: membership.tasksUserId },
     };
   }
-  if (timezoneQuery.scope.type === "project") {
-    const projectExists = await workspaceHasProject(timezoneQuery.scope.workspaceId, timezoneQuery.scope.id);
-    if (!projectExists) {
-      throw new AnalyticsApiError(404, "scope_not_found", "This project is not available in the selected workspace.");
-    }
-  }
-
+  // A Label is not a scope and never needed an existence check: it can only
+  // narrow a read the caller is already authorized for, and an unknown Label
+  // narrows it to nothing. The old `workspaceHasProject` lookup existed to
+  // 404 an unknown tag, which leaked "this tag does not exist here" and gave
+  // a slugified tag the standing of an authorization boundary (D-010).
   return { principal, query: authorizedQuery, membership };
 }
 
@@ -201,22 +198,4 @@ export async function revalidateWorkspaceMembership(
     role: membership.role === "owner" ? "owner" : "member",
     tasksUserId: identity.id,
   };
-}
-
-async function workspaceHasProject(workspaceId: string, projectId: string): Promise<boolean> {
-  const client = getTasksClient();
-  if (!client) return false;
-  // Projects are canonical Tasks tags. Ask SQLite for distinct tag values so
-  // validity does not depend on which 2,000 task rows happen to be returned.
-  // The 2,000 distinct-project cap bounds the response, not the task scan.
-  const result = await client.execute({
-    sql: `SELECT DISTINCT json_each.value AS tag
-          FROM tasks, json_each(tasks.tags)
-          WHERE tasks.workspace_id = ? AND json_each.type = 'text'
-          LIMIT 2000`,
-    args: [workspaceId],
-  });
-  return result.rows.some((row) =>
-    typeof row.tag === "string" && projectIdFromTag(row.tag) === projectId,
-  );
 }

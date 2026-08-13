@@ -14,7 +14,7 @@ import { activities, tasks } from "../../tasks-db/signal-tasks-db-schema";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { getNotesClient } from "./optional-clients";
 import { providerCoverage } from "./coverage";
-import { projectIdFromTag } from "./tasks";
+import { labelIdFromTag } from "./tasks";
 
 const MAX_LINKED_TASKS = 500;
 const MAX_COMPLETION_EVENTS = 2_000;
@@ -60,9 +60,12 @@ export class NotesAnalyticsProvider implements NotesProvider {
       .limit(MAX_LINKED_TASKS + 1);
     signal?.throwIfAborted();
 
+    // Labels narrow; they never authorize. The Project boundary is the
+    // `workspaceId` predicate above.
+    const labelFilter = new Set<string>(query.filters?.labelIds ?? []);
     const scopedTasks = taskRows.slice(0, MAX_LINKED_TASKS).filter((task) => {
-      const projects = stringArray(task.tags).map(projectIdFromTag);
-      if (query.scope.type === "project" && !projects.includes(query.scope.id)) return false;
+      const labels = stringArray(task.tags).map(labelIdFromTag);
+      if (labelFilter.size > 0 && !labels.some((label) => labelFilter.has(label))) return false;
       if (query.scope.type === "user" && !stringArray(task.assignees).includes(query.scope.id)) return false;
       return true;
     });
@@ -148,7 +151,7 @@ export class NotesAnalyticsProvider implements NotesProvider {
       return [{
         id,
         workspaceId: query.scope.workspaceId,
-        projectIds: stringArray(task.tags).map(projectIdFromTag),
+        labelIds: stringArray(task.tags).map(labelIdFromTag),
         kind: "follow_up",
         title,
         state: isTaskDone(task, null) ? "completed" : "open",

@@ -704,6 +704,7 @@ function responseMeta(
   return {
     scope: query.scope,
     period: query.period,
+    program: query.program,
     calculatedAt: snapshot.capturedAt,
     coverage: snapshot.coverage,
     freshness: coverageFreshness(snapshot.coverage),

@@ -89,7 +89,7 @@ function taskSource(task: TaskRecord, reason: string): SourceReference {
     state: task.status,
     ownerIds: task.ownerIds,
     date: task.due?.value ?? null,
-    projectIds: task.projectIds,
+    labelIds: task.labelIds,
     deepLink: task.deepLink,
     reason,
   };
@@ -103,7 +103,7 @@ function noteSource(note: NoteRecord, reason: string): SourceReference {
     state: note.state,
     ownerIds: note.ownerIds,
     date: note.due?.value ?? null,
-    projectIds: note.projectIds,
+    labelIds: note.labelIds,
     deepLink: note.deepLink,
     reason,
   };
@@ -120,7 +120,8 @@ function milestoneSource(
     state: milestone.state,
     ownerIds: milestone.ownerIds,
     date: milestone.currentDate?.value ?? null,
-    projectIds: [milestone.projectId],
+    // A milestone carries no tag, so it belongs to no Label.
+    labelIds: [],
     deepLink: milestone.deepLink,
     reason,
   };
@@ -137,7 +138,7 @@ function timelineDependencySource(
     state: dependency.state,
     ownerIds: dependency.ownerIds,
     date: dependency.date?.value ?? null,
-    projectIds: [dependency.projectId],
+    labelIds: [],
     deepLink: dependency.deepLink,
     reason,
   };
@@ -151,7 +152,7 @@ function sourceCounts(sources: SourceReference[]): MetricResult<unknown>["source
     notes: [...unique.values()].filter((source) => source.type === "note").length,
     tasks: [...unique.values()].filter((source) => source.type === "task").length,
     milestones: [...unique.values()].filter((source) => source.type === "milestone").length,
-    projects: [...unique.values()].filter((source) => source.type === "project").length,
+    labels: [...unique.values()].filter((source) => source.type === "label").length,
   };
 }
 
@@ -187,7 +188,7 @@ function result<K extends MetricKey>(
     unit: input.unit,
     summary: input.summary,
     comparison: input.comparison ?? null,
-    evidenceCount: counts.notes + counts.tasks + counts.milestones + counts.projects,
+    evidenceCount: counts.notes + counts.tasks + counts.milestones + counts.labels,
     sourceCounts: counts,
     sources,
     calculatedAt: snapshot.capturedAt,

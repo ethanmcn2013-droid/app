@@ -6,13 +6,15 @@ import type {
   AnalyticsEvent,
   AnalyticsEventKind,
   AnalyticsQuery,
+  LabelId,
+  LabelRecord,
   PersonRef,
-  ProjectRecord,
   ProviderResult,
   TaskRecord,
   TasksProvider,
   TasksProviderResult,
 } from "../../../lib/analytics/contracts";
+import { asLabelId } from "../../../lib/analytics/contracts";
 import { APP_ORIGIN } from "@/lib/product-urls";
 import { isTaskDone } from "@/lib/board-columns";
 import { getTasksDb } from "../../tasks-db/signal-tasks-db-client";
@@ -26,7 +28,7 @@ import { queriedHistoryWindow } from "./history-window";
 
 const MAX_TASKS = 2_000;
 const MAX_ACTIVITIES = 5_000;
-const MAX_NAVIGATION_PROJECTS = 500;
+const MAX_NAVIGATION_LABELS = 500;
 const MAX_NAVIGATION_OWNERS = 500;
 const MAX_NAVIGATION_STATUSES = 100;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -40,7 +42,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
       return {
         tasks: [],
         events: [],
-        navigation: { projects: [], owners: [], statuses: [] },
+        navigation: { labels: [], owners: [], statuses: [] },
         coverage: providerCoverage({
           provider: "tasks",
           status: "unavailable",
@@ -64,10 +66,13 @@ export class TasksAnalyticsProvider implements TasksProvider {
 
     const isTruncated = taskRows.length > MAX_TASKS;
     const boundedRows = taskRows.slice(0, MAX_TASKS);
+    // Labels narrow the read; they never authorize it. The Project boundary is
+    // the `workspaceId` predicate above, proved by the policy before we get here.
+    const labelFilter = new Set<string>(query.filters?.labelIds ?? []);
     const scopedRows = boundedRows.filter((row) => {
-      const tags = stringArray(row.tags).map(projectIdFromTag);
+      const labels = stringArray(row.tags).map(labelIdFromTag);
       const assignees = stringArray(row.assignees);
-      if (query.scope.type === "project" && !tags.includes(query.scope.id)) return false;
+      if (labelFilter.size > 0 && !labels.some((label) => labelFilter.has(label))) return false;
       if (query.scope.type === "user" && !assignees.includes(query.scope.id)) return false;
       return true;
     });
@@ -116,11 +121,11 @@ export class TasksAnalyticsProvider implements TasksProvider {
     const terminalTaskIds = new Set(
       boundedRows.filter((row) => isTaskDone(row, null)).map((row) => row.id),
     );
-    const projectIdsByTask = new Map(
-      scopedRows.map((row) => [row.id, stringArray(row.tags).map(projectIdFromTag)]),
+    const labelIdsByTask = new Map(
+      scopedRows.map((row) => [row.id, stringArray(row.tags).map(labelIdFromTag)]),
     );
     const events = boundedActivities.flatMap((row) =>
-      mapActivity(row, projectIdsByTask.get(row.taskId) ?? []),
+      mapActivity(row, labelIdsByTask.get(row.taskId) ?? [], query.scope.workspaceId),
     );
     const taskRecords = scopedRows.map((row): TaskRecord => {
       const assigneeIds = stringArray(row.assignees);
@@ -142,7 +147,7 @@ export class TasksAnalyticsProvider implements TasksProvider {
       return {
         id: row.id,
         workspaceId: query.scope.workspaceId,
-        projectIds: stringArray(row.tags).map(projectIdFromTag),
+        labelIds: stringArray(row.tags).map(labelIdFromTag),
         title: row.title,
         status: row.lane,
         terminal: isTaskDone(row, null),
@@ -180,11 +185,11 @@ export class TasksAnalyticsProvider implements TasksProvider {
     if (workspaceOwnerIds.length > MAX_NAVIGATION_OWNERS) {
       issues.push("tasks_navigation_owner_limit_reached");
     }
-    const workspaceProjectIds = Array.from(new Set(
-      boundedRows.flatMap((row) => stringArray(row.tags).map(projectIdFromTag)),
+    const workspaceLabelIds = Array.from(new Set(
+      boundedRows.flatMap((row) => stringArray(row.tags).map(labelIdFromTag)),
     ));
-    if (workspaceProjectIds.length > MAX_NAVIGATION_PROJECTS) {
-      issues.push("tasks_navigation_project_limit_reached");
+    if (workspaceLabelIds.length > MAX_NAVIGATION_LABELS) {
+      issues.push("tasks_navigation_label_limit_reached");
     }
     const workspaceStatuses = Array.from(new Set(boundedRows.map((row) => row.lane))).sort();
     if (workspaceStatuses.length > MAX_NAVIGATION_STATUSES) {
@@ -197,8 +202,8 @@ export class TasksAnalyticsProvider implements TasksProvider {
       tasks: taskRecords,
       events,
       navigation: {
-        projects: workspaceProjectIds
-          .slice(0, MAX_NAVIGATION_PROJECTS)
+        labels: workspaceLabelIds
+          .slice(0, MAX_NAVIGATION_LABELS)
           .map((id) => ({ id, name: titleCase(id) })),
         owners: ownerIds.map((id) => people.get(id) ?? { id, displayName: null }),
         statuses: workspaceStatuses.slice(0, MAX_NAVIGATION_STATUSES),
@@ -225,18 +230,18 @@ export class TasksAnalyticsProvider implements TasksProvider {
   }
 }
 
-export class TasksProjectsProvider {
+export class TasksLabelsProvider {
   constructor(private readonly tasksProvider: TasksProvider = new TasksAnalyticsProvider()) {}
 
-  async read(query: AnalyticsQuery, signal?: AbortSignal): Promise<ProviderResult<ProjectRecord>> {
+  async read(query: AnalyticsQuery, signal?: AbortSignal): Promise<ProviderResult<LabelRecord>> {
     const result = await this.tasksProvider.read(query, signal);
-    const records = projectsFromTasks(result.tasks, query);
+    const records = labelsFromTasks(result.tasks, query);
     return {
       records,
       coverage: providerCoverage({
-        provider: "projects",
+        provider: "labels",
         status: result.coverage.status,
-        capabilities: ["project_read"],
+        capabilities: ["label_read"],
         count: records.length,
         calculatedAt: result.coverage.calculatedAt,
         historyStartAt: result.coverage.historyStartAt,
@@ -247,26 +252,26 @@ export class TasksProjectsProvider {
   }
 }
 
-export function projectsFromTasks(
+export function labelsFromTasks(
   taskRecords: TaskRecord[],
   query: AnalyticsQuery,
-): ProjectRecord[] {
-    const buckets = new Map<string, TaskRecord[]>();
+): LabelRecord[] {
+    const buckets = new Map<LabelId, TaskRecord[]>();
     for (const task of taskRecords) {
-      for (const projectId of task.projectIds) {
-        const bucket = buckets.get(projectId);
+      for (const labelId of task.labelIds) {
+        const bucket = buckets.get(labelId);
         if (bucket) bucket.push(task);
-        else buckets.set(projectId, [task]);
+        else buckets.set(labelId, [task]);
       }
     }
-    return Array.from(buckets, ([id, projectTasks]): ProjectRecord => {
-      const sorted = [...projectTasks].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-      const updated = [...projectTasks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return Array.from(buckets, ([id, labelTasks]): LabelRecord => {
+      const sorted = [...labelTasks].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      const updated = [...labelTasks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
       return {
         id,
         workspaceId: query.scope.workspaceId,
         name: titleCase(id),
-        ownerIds: Array.from(new Set(projectTasks.flatMap((task) => task.ownerIds))),
+        ownerIds: Array.from(new Set(labelTasks.flatMap((task) => task.ownerIds))),
         state: "unknown",
         deepLink: `${APP_ORIGIN}/app/tasks`,
         createdAt: sorted[0]?.createdAt ?? new Date().toISOString(),
@@ -277,14 +282,15 @@ export function projectsFromTasks(
 
 function mapActivity(
   row: typeof activities.$inferSelect,
-  projectIds: string[],
+  labelIds: LabelId[],
+  workspaceId: TaskRecord["workspaceId"],
 ): AnalyticsEvent[] {
   const payload = objectValue(row.payload);
   const mapped = activityKind(row.kind, payload);
   return [{
     id: row.id,
-    workspaceId: row.workspaceId ?? "",
-    projectIds,
+    workspaceId,
+    labelIds,
     entityType: "task",
     entityId: row.taskId,
     kind: mapped.kind,
@@ -361,8 +367,14 @@ function titleCase(value: string): string {
   return value.replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-/** Stable project identity derived from Tasks' canonical tag value. */
-export function projectIdFromTag(tag: string): string {
+/**
+ * Stable Label (Workstream) identity derived from a Tasks tag.
+ *
+ * This is NOT a Project id. A Project is a Tasks `workspaces.id` (ADR 0001 §1);
+ * a tag is a classification of work inside one. Renamed from `projectIdFromTag`
+ * so the distinction survives a reader who only sees the call site.
+ */
+export function labelIdFromTag(tag: string): LabelId {
   const slug = tag
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
@@ -370,5 +382,5 @@ export function projectIdFromTag(tag: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 96);
-  return slug || "untagged";
+  return asLabelId(slug || "untagged");
 }

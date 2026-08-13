@@ -1,4 +1,12 @@
 import { normalizeSuiteContextForSignal } from "@/lib/suite-context";
+import {
+  asLabelId,
+  asProjectId,
+  PROGRAM_AXIS_NOT_CARRIED,
+  type AnalyticsProgramAxis,
+  type LabelId,
+  type ProjectId,
+} from "../../lib/analytics/contracts";
 import { AnalyticsApiError } from "./api-error";
 
 export const ANALYTICS_PERIODS = [
@@ -24,11 +32,20 @@ export const ANALYTICS_METRICS = [
   "cross_product_milestone_risk",
 ] as const;
 export const ANALYTICS_BREAKDOWNS = [
-  "project",
+  "label",
   "owner",
   "status",
   "work_type",
 ] as const;
+
+/**
+ * Inbound compatibility only (ADR 0001 sec 8): links minted before D-010 carry
+ * `scope_type=project&scope_id=<tag slug>`. That was never an authorization
+ * boundary — the workspace predicate was — so the value is accepted and
+ * re-expressed as the Label filter it always was. It is never treated as a
+ * Project, and the response records the collapse.
+ */
+const LEGACY_PROJECT_SCOPE = "project";
 
 type AnalyticsPeriod = (typeof ANALYTICS_PERIODS)[number];
 type AnalyticsMetric = (typeof ANALYTICS_METRICS)[number];
@@ -36,11 +53,12 @@ type AnalyticsBreakdown = (typeof ANALYTICS_BREAKDOWNS)[number];
 
 export interface ParsedAnalyticsQuery {
   scope: {
-    type: "workspace" | "project" | "user";
+    type: "workspace" | "user";
     id: string;
-    workspaceId: string;
+    workspaceId: ProjectId;
   };
   period: AnalyticsPeriod;
+  program: AnalyticsProgramAxis;
   start: Date;
   end: Date;
   timezone: string;
@@ -48,6 +66,10 @@ export interface ParsedAnalyticsQuery {
   customEnd: string | null;
   ownerIds: string[];
   statuses: string[];
+  /** Tag-derived Labels narrowing the read. Never an authorization boundary. */
+  labelIds: LabelId[];
+  /** Set when a pre-D-010 `scope_type=project` link was re-expressed as a filter. */
+  legacyProjectScopeCollapsed: boolean;
   metric: AnalyticsMetric;
   breakdown: AnalyticsBreakdown;
   page: number;
@@ -67,16 +89,24 @@ export function parseAnalyticsQuery(
   const params = normalizeSuiteContextForSignal(
     new URL(request.url).searchParams,
   );
-  const scopeType = enumParam(
+  const requestedScopeType = enumParam(
     params.get("scope_type") ?? "workspace",
-    ["workspace", "project", "user"] as const,
+    ["workspace", LEGACY_PROJECT_SCOPE, "user"] as const,
     "scope_type",
   );
-  const scopeId = identifierParam(params.get("scope_id"), "scope_id");
-  const workspaceId =
-    scopeType === "workspace"
-      ? scopeId
-      : identifierParam(params.get("workspace_id"), "workspace_id");
+  const requestedScopeId = identifierParam(params.get("scope_id"), "scope_id");
+  const legacyProjectScopeCollapsed = requestedScopeType === LEGACY_PROJECT_SCOPE;
+  const scopeType = legacyProjectScopeCollapsed ? "workspace" : requestedScopeType;
+  const workspaceId = asProjectId(
+    requestedScopeType === "workspace"
+      ? requestedScopeId
+      : identifierParam(params.get("workspace_id"), "workspace_id"),
+  );
+  const scopeId = legacyProjectScopeCollapsed ? workspaceId : requestedScopeId;
+  const labelIds = [
+    ...listParam(params, "label", IDENTIFIER),
+    ...(legacyProjectScopeCollapsed ? [requestedScopeId] : []),
+  ].map(asLabelId);
   const period = enumParam(
     params.get("period") ?? "four_weeks",
     ANALYTICS_PERIODS,
@@ -92,7 +122,11 @@ export function parseAnalyticsQuery(
     "metric",
   );
   const breakdown = enumParam(
-    params.get("breakdown") ?? "project",
+    // `project` is accepted so a pre-D-010 link does not 400; it means the
+    // tag-derived Label breakdown, which is what it always computed.
+    (params.get("breakdown") ?? "label") === LEGACY_PROJECT_SCOPE
+      ? "label"
+      : params.get("breakdown") ?? "label",
     ANALYTICS_BREAKDOWNS,
     "breakdown",
   );
@@ -100,6 +134,7 @@ export function parseAnalyticsQuery(
   return {
     scope: { type: scopeType, id: scopeId, workspaceId },
     period,
+    program: PROGRAM_AXIS_NOT_CARRIED,
     start,
     end,
     timezone,
@@ -107,6 +142,8 @@ export function parseAnalyticsQuery(
     customEnd: period === "custom" ? params.get("end") : null,
     ownerIds,
     statuses,
+    labelIds,
+    legacyProjectScopeCollapsed,
     metric,
     breakdown,
     page: integerParam(params.get("page"), "page", 1, 1, 10_000),

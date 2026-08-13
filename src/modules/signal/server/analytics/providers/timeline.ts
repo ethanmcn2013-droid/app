@@ -7,9 +7,11 @@ import type {
   MilestoneDateChange,
   MilestoneRecord,
   TimelineDependencyRecord,
+  TimelineProjectSlug,
   TimelineProvider,
   TimelineProviderResult,
 } from "../../../lib/analytics/contracts";
+import { asTimelineProjectSlug } from "../../../lib/analytics/contracts";
 import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 import {
   timelineDependencyResolved,
@@ -54,7 +56,7 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
       const workspaceSlug = textValue(row.workspace_slug);
       const projectSlug = textValue(row.slug);
       return workspaceSlug && projectSlug ? [{ workspaceSlug, projectSlug }] : [];
-    }).filter((project) => query.scope.type !== "project" || project.projectSlug === query.scope.id);
+    });
 
     if (!projects.length) {
       return {
@@ -120,12 +122,12 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
       .flatMap((row): TimelineDependencyRecord[] => {
         const id = textValue(row.id);
         const workspaceSlug = textValue(row.workspace_slug);
-        const projectId = textValue(row.project_slug);
+        const timelineProjectSlug = slugValue(row.project_slug);
         const title = textValue(row.title);
         const state = textValue(row.status);
         const createdAt = timestampSeconds(row.created_at);
         const updatedAt = timestampSeconds(row.updated_at);
-        if (!id || !workspaceSlug || !projectId || !title || !state || !createdAt || !updatedAt) {
+        if (!id || !workspaceSlug || !timelineProjectSlug || !title || !state || !createdAt || !updatedAt) {
           return [];
         }
         const completedAt = timestampSeconds(row.completed_at);
@@ -133,25 +135,19 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
         return [{
           id,
           workspaceId: query.scope.workspaceId,
-          projectId,
+          timelineProjectSlug,
           title,
           state,
           resolved: timelineDependencyResolved(state, completedAt),
           ownerIds: assignee ? [assignee] : [],
           date: analyticsDateValue(row.target_date),
           blockedMilestoneIds: blockedMilestonesByDependency.get(id) ?? [],
-          deepLink: timelineProjectLink(projectId, query.scope.workspaceId),
+          deepLink: timelineProjectLink(timelineProjectSlug, query.scope.workspaceId),
           createdAt,
           updatedAt,
         }];
       });
-    const projectByMilestone = new Map(
-      rawMilestones.flatMap((row) => {
-        const id = textValue(row.id);
-        const projectId = textValue(row.project_slug);
-        return id && projectId ? [[id, projectId]] as const : [];
-      }),
-    );
+
     const workspaceSlugs = Array.from(new Set(projects.map((project) => project.workspaceSlug)));
     const eventsResult = ids.length
       ? await client.execute({
@@ -188,7 +184,9 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
       events.push({
         id,
         workspaceId: query.scope.workspaceId,
-        projectIds: projectByMilestone.get(entityId) ? [projectByMilestone.get(entityId)!] : [],
+        // Timeline slugs are not Labels, and a milestone carries no tag, so
+        // there is no honest Label to attribute this event to.
+        labelIds: [],
         entityType: "milestone",
         entityId,
         kind: dateChanged ? "date_changed" : action.includes("status") ? "status_changed" : "updated",
@@ -202,11 +200,11 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
     const milestones = rawMilestones.flatMap((row): MilestoneRecord[] => {
       const id = textValue(row.id);
       const workspaceSlug = textValue(row.workspace_slug);
-      const projectId = textValue(row.project_slug);
+      const timelineProjectSlug = slugValue(row.project_slug);
       const title = textValue(row.title);
       const createdAt = timestampSeconds(row.created_at);
       const updatedAt = timestampSeconds(row.updated_at);
-      if (!id || !workspaceSlug || !projectId || !title || !createdAt || !updatedAt) return [];
+      if (!id || !workspaceSlug || !timelineProjectSlug || !title || !createdAt || !updatedAt) return [];
       const blockerId = textValue(row.blocker_id);
       const assignee = textValue(row.assignee);
       const linkedTaskId = syncedTaskId(id, query.scope.workspaceId);
@@ -214,7 +212,7 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
       return [{
         id,
         workspaceId: query.scope.workspaceId,
-        projectId,
+        timelineProjectSlug,
         title,
         state: milestoneState(textValue(row.status)),
         currentDate: analyticsDateValue(row.target_date),
@@ -224,7 +222,7 @@ export class TimelineAnalyticsProvider implements TimelineProvider {
         linkedTaskIds: linkedTaskId ? [linkedTaskId] : [],
         linkedDecisionIds: [],
         ownerIds: assignee ? [assignee] : [],
-        deepLink: timelineProjectLink(projectId, query.scope.workspaceId),
+        deepLink: timelineProjectLink(timelineProjectSlug, query.scope.workspaceId),
         createdAt,
         updatedAt,
       }];
@@ -268,6 +266,11 @@ function syncedTaskId(milestoneId: string, tasksWorkspaceId: string): string | n
   return milestoneId.startsWith(prefix) && milestoneId.length > prefix.length
     ? milestoneId.slice(prefix.length)
     : null;
+}
+
+function slugValue(value: unknown): TimelineProjectSlug | null {
+  const text = textValue(value);
+  return text ? asTimelineProjectSlug(text) : null;
 }
 
 function timelineProjectLink(projectSlug: string, workspaceId: string): string {
