@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
 import { requireUser } from "@/modules/timeline/server/auth";
+import { db } from "@/modules/timeline/server/db/timeline-client";
 import {
   createWorkspace,
   createProject,
@@ -244,6 +245,21 @@ export type SyncMilestonesResult =
       complete: boolean;
       /** Present when the source was truncated. */
       totalCount?: number;
+      /**
+       * When this refresh actually landed, so a surface can say "Last
+       * refreshed …" from the value it was given rather than from the moment
+       * it happened to render (WP4, plan §6.5).
+       */
+      refreshedAt?: number;
+      /**
+       * True when a NEWER refresh committed while this one was reading, so
+       * this result was deliberately not written.
+       *
+       * It is `ok` because nothing failed and nothing is stale — the newer
+       * snapshot is already on screen. Reporting it as an error would send the
+       * user to Retry to fix something that is already correct.
+       */
+      superseded?: boolean;
     }
   | {
       error: string;
@@ -380,6 +396,35 @@ export async function syncMilestonesAction(
     };
   }
 
+  // ── THE GENERATION, TAKEN BEFORE THE READ ────────────────────────────────
+  // Plan §6.5: "a reconcile commits only when its generation/lease is still
+  // current". Taking it here — not at commit time — is what lets a later
+  // refresh invalidate this one while it is still in flight. Open A, switch to
+  // B, come back to A: three overlapping reads, and before this the one that
+  // finished LAST won regardless of which had read Tasks most recently.
+  //
+  // The binding is established first because the state table is keyed to it.
+  // A Timeline whose legacy mirrors do not yet prove an exact binding gets no
+  // lease and syncs exactly as it did before — that is a reconciliation case
+  // (plan §6.3), and refusing to sync it here would break real couples for a
+  // safety property that only applies once the binding exists.
+  const { acquireSyncLease, commitSyncGeneration, ensureSuiteProjectBinding } =
+    await import("@/modules/timeline/server/sync/sync-state");
+  const bound = await ensureSuiteProjectBinding({
+    tasksWorkspaceId: canonicalWorkspaceId,
+    timelineWorkspaceSlug: workspaceSlug,
+    primaryTimelineSlug: targetProject.slug,
+    authority: { kind: "inherits-workspace-binding" },
+  });
+  const lease =
+    bound.kind === "bound"
+      ? await acquireSyncLease({
+          tasksWorkspaceId: canonicalWorkspaceId,
+          timelineWorkspaceSlug: workspaceSlug,
+          timelineSlug: targetProject.slug,
+        })
+      : null;
+
   const snapshot = await source.getMilestonesForClerkId(
     userId,
     canonicalWorkspaceId,
@@ -394,6 +439,16 @@ export async function syncMilestonesAction(
     // Nothing is written and nothing is deleted. The existing timeline stands
     // and the owner is told, rather than being shown a successful sync of a
     // Project that was never read.
+    //
+    // The lease is released with the failure recorded, so the next refresh is
+    // not blocked behind a lease this one will never use, and "Last refreshed"
+    // keeps naming the last time the read actually SUCCEEDED.
+    if (lease) {
+      await commitSyncGeneration(db, lease, {
+        status: plan.reason === "unauthorized" ? "unauthorized" : "error",
+        errorCode: plan.code,
+      });
+    }
     return {
       error:
         plan.reason === "unauthorized"
@@ -432,21 +487,65 @@ export async function syncMilestonesAction(
     workspaceSlug,
     projectSlug: targetProject.slug,
   }));
-  await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
-    reconcile: plan.reconcile,
-  });
+
+  const refreshedAt = Date.now();
+  const outcome = {
+    status:
+      plan.reconcile === "destructive"
+        ? milestones.length === 0
+          ? ("empty" as const)
+          : ("complete" as const)
+        : ("partial" as const),
+    sourceCount:
+      snapshot.kind === "complete" || snapshot.kind === "partial"
+        ? snapshot.totalCount
+        : null,
+    importedCount: milestones.length,
+    snapshotDigest: snapshot.kind === "complete" ? snapshot.digest : null,
+  };
+
+  if (lease) {
+    // ── COMPARE-AND-SET, THEN WRITE, IN ONE TRANSACTION ──────────────────
+    // The order is the correctness. A CAS after the node write would report
+    // the race accurately and have already lost it.
+    const committed = await db.transaction(async (tx) => {
+      const current = await commitSyncGeneration(tx, lease, outcome, refreshedAt);
+      if (!current) return false;
+      await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
+        reconcile: plan.reconcile,
+        executor: tx,
+      });
+      return true;
+    });
+    if (!committed) {
+      // A newer refresh already committed. Nothing was written and nothing is
+      // stale: the newer snapshot is on screen. This is not an error and must
+      // not offer Retry.
+      return {
+        ok: true,
+        count: milestones.length,
+        complete: plan.reconcile === "destructive",
+        superseded: true,
+      };
+    }
+  } else {
+    await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
+      reconcile: plan.reconcile,
+    });
+  }
 
   // Revalidate private draft only, NOT the public URL (D6 two-gate)
   revalidatePath("/app/timeline");
   revalidatePath(`/app/timeline/${targetProject.slug}`);
 
   return plan.reconcile === "destructive"
-    ? { ok: true, count: milestones.length, complete: true }
+    ? { ok: true, count: milestones.length, complete: true, refreshedAt }
     : {
         ok: true,
         count: milestones.length,
         complete: false,
         totalCount: snapshot.kind === "partial" ? snapshot.totalCount : undefined,
+        refreshedAt,
       };
 }
 

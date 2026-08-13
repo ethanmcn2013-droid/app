@@ -70,25 +70,45 @@ async function load() {
   return modules;
 }
 
-/** The Timeline baseline schema, reset per test. */
-async function resetTimeline(client: Client): Promise<void> {
+/**
+ * The Timeline schema, reset per test.
+ *
+ * `migrated: false` reproduces the state every deployment passes through: the
+ * code is live and 0001 has not been applied yet. Provisioning must work
+ * exactly the same there, because the alternative is the production dead end
+ * this whole path exists to prevent (WP4).
+ */
+async function resetTimeline(
+  client: Client,
+  options: Readonly<{ migrated?: boolean }> = {},
+): Promise<void> {
   await client.executeMultiple(`
+    DROP TABLE IF EXISTS timeline_source_sync_state;
+    DROP TABLE IF EXISTS suite_project_bindings;
     DROP TABLE IF EXISTS tasks;
     DROP TABLE IF EXISTS projects;
     DROP TABLE IF EXISTS workspaces;
     DROP TABLE IF EXISTS node_overlays;
   `);
-  const baseline = readFileSync(
-    "drizzle-timeline/0000_timeline_baseline.sql",
-    "utf8",
-  );
-  const wanted = /^CREATE (TABLE|UNIQUE INDEX|INDEX) `?(tasks|projects|workspaces|node_overlays|uq_workspaces_suite_workspace_id|idx_workspaces_owner)`?/;
-  await client.executeMultiple(
-    baseline
+  const statements = (file: string, wanted: RegExp) =>
+    readFileSync(file, "utf8")
       .split("--> statement-breakpoint")
       .map((statement) => statement.trim())
-      .filter((statement) => wanted.test(statement))
-      .join(";\n") + ";",
+      .filter((statement) => wanted.test(statement));
+
+  await client.executeMultiple(
+    [
+      ...statements(
+        "drizzle-timeline/0000_timeline_baseline.sql",
+        /^CREATE (TABLE|UNIQUE INDEX|INDEX) `?(tasks|projects|workspaces|node_overlays|uq_workspaces_suite_workspace_id|idx_workspaces_owner)`?/,
+      ),
+      ...(options.migrated === false
+        ? []
+        : statements(
+            "drizzle-timeline/0001_suite_project_bindings.sql",
+            /^CREATE (TABLE|UNIQUE INDEX)/,
+          )),
+    ].join(";\n") + ";",
   );
 }
 
@@ -193,14 +213,17 @@ async function proveMembership(
   return membership.kind === "member" ? membership.context : null;
 }
 
-async function harness(t: { after: (fn: () => void) => void }) {
+async function harness(
+  t: { after: (fn: () => void) => void },
+  options: Readonly<{ migrated?: boolean }> = {},
+) {
   const timeline = createClient({ url: TIMELINE_URL });
   const tasks = createClient({ url: TASKS_URL });
   t.after(() => {
     timeline.close();
     tasks.close();
   });
-  await resetTimeline(timeline);
+  await resetTimeline(timeline, options);
   await resetTasks(tasks);
   await seedSharedProject(tasks);
   return { timeline, tasks, ...(await load()) };
@@ -394,4 +417,55 @@ test("a member reads the Project's already-bound Timeline", async (t) => {
     "provisioned",
     "a member must not provision a second Timeline for a Project that has one",
   );
+});
+
+test("provisioning records the normalized binding beside the legacy mirrors", async (t) => {
+  // WP4, plan §6.2. The binding table becomes the authoritative row, and both
+  // mirrors are still dual-written so a rollback dual-read resolves the same
+  // exact rows. Neither is cleared in this wave.
+  const h = await harness(t);
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    OWNER_CLERK,
+    PROJECT,
+  );
+  assert.ok(proved);
+  const resolution = await h.resolveCanonicalTimeline(OWNER_CLERK, PROJECT, proved);
+  assert.equal(resolution.kind, "provisioned");
+
+  const binding = await h.timeline.execute("SELECT * FROM suite_project_bindings");
+  assert.equal(binding.rows.length, 1);
+  assert.equal(binding.rows[0]!.tasks_workspace_id, PROJECT);
+  assert.equal(binding.rows[0]!.primary_timeline_slug, "plan");
+  assert.equal(binding.rows[0]!.state, "active");
+  assert.equal(binding.rows[0]!.provenance, "provisioned");
+
+  const created = resolution.kind === "provisioned" ? resolution.workspace : null;
+  assert.equal(await suiteIdOf(h.timeline, created!.slug), PROJECT);
+  const child = await h.timeline.execute({
+    sql: "SELECT source_tasks_workspace_id FROM projects WHERE workspace_slug = ?",
+    args: [created!.slug],
+  });
+  assert.equal(child.rows[0]!.source_tasks_workspace_id, PROJECT);
+});
+
+test("provisioning still works on a database where 0001 has not been applied", async (t) => {
+  // Code ships before migrations run, always. If the binding write could throw
+  // here, the deployment window would reopen the production dead end that
+  // provisioning exists to close: a couple reaching Timeline and finding
+  // nothing. The normalized binding is additive, so its absence degrades to
+  // "not recorded" and never to "provisioning failed".
+  const h = await harness(t, { migrated: false });
+  const proved = await proveMembership(
+    h.getCurrentTasksWorkspaceContext,
+    OWNER_CLERK,
+    PROJECT,
+  );
+  assert.ok(proved);
+  const resolution = await h.resolveCanonicalTimeline(OWNER_CLERK, PROJECT, proved);
+
+  assert.equal(resolution.kind, "provisioned");
+  assert.equal(await timelineCount(h.timeline), 1);
+  const created = resolution.kind === "provisioned" ? resolution.workspace : null;
+  assert.equal(await suiteIdOf(h.timeline, created!.slug), PROJECT);
 });

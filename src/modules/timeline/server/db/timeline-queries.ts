@@ -50,6 +50,14 @@ import {
 // Re-export for callers (workspaces.ts action layer)
 export type { NodeOverlay };
 
+/**
+ * A drizzle handle that can write: the module client, or a transaction from it.
+ *
+ * Narrowed to the three verbs `writeRoadmapNodes` uses so a transaction object
+ * satisfies it structurally without importing drizzle's transaction types.
+ */
+export type TimelineWriteExecutor = Pick<typeof db, "insert" | "delete" | "update">;
+
 /** Input shape for writeRoadmapNodes, one synced milestone from Tasks DB. */
 export type SyncedMilestone = {
   /** Deterministic id: `ms-{tasksWorkspaceId}-{tasksTaskId}` */
@@ -698,12 +706,25 @@ export async function writeRoadmapNodes(
   workspaceSlug: string,
   projectSlug: string,
   milestones: SyncedMilestone[],
-  options: Readonly<{ reconcile?: "destructive" | "preserve" }> = {},
+  options: Readonly<{
+    reconcile?: "destructive" | "preserve";
+    /**
+     * The transaction this write belongs to (WP4, plan §6.5).
+     *
+     * A refresh commits its generation and writes its nodes in ONE
+     * transaction, compare-and-set first. Without a shared executor the CAS
+     * could refuse a stale refresh and the node write would already have
+     * happened — a race reported correctly and lost anyway. Defaults to the
+     * module client, so every existing caller is unchanged.
+     */
+    executor?: TimelineWriteExecutor;
+  }> = {},
 ): Promise<void> {
   const reconcile = options.reconcile ?? "preserve";
+  const executor = options.executor ?? db;
   // Step 1, upsert incoming synced nodes (skip when empty, but still run step 2).
   if (milestones.length > 0) {
-    await db
+    await executor
       .insert(tasks)
       .values(
         milestones.map((m) => ({
@@ -746,7 +767,7 @@ export async function writeRoadmapNodes(
   const incomingIds = milestones.map((m) => m.id);
   if (incomingIds.length === 0) {
     // All milestones un-promoted, delete every synced node for this project.
-    await db
+    await executor
       .delete(tasks)
       .where(
         and(
@@ -761,7 +782,7 @@ export async function writeRoadmapNodes(
     // sql.join builds a safely-parameterised NOT IN list without notInArray
     // (which is present in drizzle-orm internals but not the top-level export).
     const idList = sql.join(incomingIds.map((id) => sql`${id}`), sql`, `);
-    await db
+    await executor
       .delete(tasks)
       .where(
         and(
