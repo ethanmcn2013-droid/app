@@ -6,7 +6,7 @@ import {
   type AnalyticsUrlState,
 } from "../lib/analytics";
 import type { EvidenceResponse } from "../lib/analytics/contracts";
-import type { AnalyticsScope, LabelId } from "../lib/analytics/contracts";
+import type { AnalyticsScope } from "../lib/analytics/contracts";
 import { asProjectId } from "../lib/analytics/contracts";
 import {
   resolveAnalyticsPageContext,
