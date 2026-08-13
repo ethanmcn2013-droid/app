@@ -130,29 +130,23 @@ function candidateId(rule: string, issueKey: string, sources: SourceReference[])
   return `${rule}-${stableHash(`${issueKey}|${sourceKey}`)}`;
 }
 
-function trendHref(query: AnalyticsQuery, metric: MetricKey): string {
-  const params = new URLSearchParams({
-    view: "trends",
-    scope_type: query.scope.type,
-    scope_id: query.scope.id,
-    workspace_id: query.scope.workspaceId,
-    timezone: query.period.timezone,
-    metric,
-  });
-  const preset = query.period.preset ?? "custom";
-  params.set("period", preset);
-  if (preset === "custom") {
-    params.set("start", query.period.start);
-    params.set("end", query.period.end);
-  }
-  for (const ownerId of query.filters?.ownerIds ?? []) {
-    params.append("owner", ownerId);
-  }
-  for (const status of query.filters?.statuses ?? []) {
-    params.append("status", status);
-  }
-  return `/app/trends?${params.toString()}`;
-}
+/**
+ * R6 · `trendHref()` lived here and built `/app/trends?…`, a route this
+ * application has never served. Seven rules linked to it, one of them
+ * (`completion_pace_change`) as its only, primary action.
+ *
+ * It survived because the ledger boundary silently dropped it — `safeAction`
+ * rejects any href with a query string — so nobody saw a broken link there.
+ * The evidence drawer has no such filter: `service.ts` returns
+ * `observation.actions` unfiltered and `action-link.tsx` renders whatever it
+ * is given. Opening evidence showed a "See trend" button that 404s.
+ *
+ * No replacement destination is minted. Trends are not a route today, and
+ * pointing these at a plausible-looking one would restate the same defect. A
+ * rule that has nothing to link to now links to nothing, and the ledger
+ * adapter's canonical product fallback ("Review in Tasks") does the work it
+ * was already doing for this case.
+ */
 
 function action(
   id: string,
@@ -310,17 +304,9 @@ export function buildRuleCandidates(
             tasks: taskCount + dependencyCount,
             milestones: 1,
           },
-          actions: [
-            ...(primary
-              ? [action("review-connected-work", "Review connected work", primary.deepLink, true)]
-              : []),
-            action(
-              "open-milestone-trend",
-              "Open trend",
-              trendHref(query, "milestone_movement"),
-              false,
-            ),
-          ],
+          actions: primary
+            ? [action("review-connected-work", "Review connected work", primary.deepLink, true)]
+            : [],
           updatedAt,
           ranking: {
             severity: 3,
@@ -356,12 +342,9 @@ export function buildRuleCandidates(
           tasks: overdue.sourceCounts.tasks,
           milestones: overdue.sourceCounts.milestones,
         },
-        actions: [
-          ...(overdue.sources[0]
-            ? [action("review-overdue", "Review delayed work", overdue.sources[0].deepLink, true)]
-            : []),
-          action("open-overdue-trend", "See trend", trendHref(query, "open_overdue_work"), false),
-        ],
+        actions: overdue.sources[0]
+          ? [action("review-overdue", "Review delayed work", overdue.sources[0].deepLink, true)]
+          : [],
         updatedAt,
         ranking: {
           severity: overdue.value.count >= 5 ? 3 : 2,
@@ -396,12 +379,9 @@ export function buildRuleCandidates(
           tasks: blocked.sourceCounts.tasks,
           milestones: blocked.sourceCounts.milestones,
         },
-        actions: [
-          ...(blocked.sources[0]
-            ? [action("review-blocked", "Review waiting work", blocked.sources[0].deepLink, true)]
-            : []),
-          action("open-blocked-trend", "See trend", trendHref(query, "blocked_work"), false),
-        ],
+        actions: blocked.sources[0]
+          ? [action("review-blocked", "Review waiting work", blocked.sources[0].deepLink, true)]
+          : [],
         updatedAt,
         ranking: {
           severity: blocked.value.count >= 4 ? 3 : 2,
@@ -436,12 +416,9 @@ export function buildRuleCandidates(
           tasks: unowned.sourceCounts.tasks,
           milestones: unowned.sourceCounts.milestones,
         },
-        actions: [
-          ...(unowned.sources[0]
-            ? [action("assign-unowned", "Assign unowned work", unowned.sources[0].deepLink, true)]
-            : []),
-          action("open-ownership", "See distribution", trendHref(query, "workload_distribution"), false),
-        ],
+        actions: unowned.sources[0]
+          ? [action("assign-unowned", "Assign unowned work", unowned.sources[0].deepLink, true)]
+          : [],
         updatedAt,
         ranking: {
           severity: unowned.value.count >= 5 ? 3 : 2,
@@ -482,7 +459,12 @@ export function buildRuleCandidates(
           tasks: pace.sourceCounts.tasks,
           milestones: pace.sourceCounts.milestones,
         },
-        actions: [action("open-completion-trend", "Open trend", trendHref(query, "work_completed"), true)],
+        // The only rule whose sole action was the dead trend link. Its own
+        // evidence is the completed work behind the comparison, so it links
+        // there instead of nowhere.
+        actions: pace.sources[0]
+          ? [action("review-completed-work", "Review completed work", pace.sources[0].deepLink, true)]
+          : [],
         updatedAt,
         ranking: {
           severity: pace.value.percentChange <= -50 ? 3 : 2,
@@ -517,12 +499,9 @@ export function buildRuleCandidates(
           tasks: stalled.sourceCounts.tasks,
           milestones: stalled.sourceCounts.milestones,
         },
-        actions: [
-          ...(stalled.sources[0]
-            ? [action("review-stalled", "Review waiting work", stalled.sources[0].deepLink, true)]
-            : []),
-          action("open-age-trend", "See trend", trendHref(query, "open_work_age"), false),
-        ],
+        actions: stalled.sources[0]
+          ? [action("review-stalled", "Review waiting work", stalled.sources[0].deepLink, true)]
+          : [],
         updatedAt,
         ranking: {
           severity: stalled.value.count >= 5 ? 3 : 2,
@@ -557,12 +536,9 @@ export function buildRuleCandidates(
           tasks: movement.sourceCounts.tasks,
           milestones: movement.sourceCounts.milestones,
         },
-        actions: [
-          ...(movement.sources[0]
-            ? [action("open-milestone", "Open milestone", movement.sources[0].deepLink, true)]
-            : []),
-          action("open-movement-trend", "See trend", trendHref(query, "milestone_movement"), false),
-        ],
+        actions: movement.sources[0]
+          ? [action("open-milestone", "Open milestone", movement.sources[0].deepLink, true)]
+          : [],
         updatedAt,
         ranking: {
           severity: Math.abs(movement.value.netDays) >= 7 ? 3 : 2,

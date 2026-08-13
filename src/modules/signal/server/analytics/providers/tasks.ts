@@ -16,13 +16,18 @@ import type {
 } from "../../../lib/analytics/contracts";
 import { asLabelId } from "../../../lib/analytics/contracts";
 import { APP_ORIGIN } from "@/lib/product-urls";
-import { isTaskDone } from "@/lib/board-columns";
+import {
+  effectiveColumnKey,
+  isTaskDone,
+  WAITING_COLUMN_KEY,
+} from "@/lib/board-columns";
 import { getTasksDb } from "../../tasks-db/signal-tasks-db-client";
 import {
   activities,
   tasks,
   users,
 } from "../../tasks-db/signal-tasks-db-schema";
+import { readWorkspaceColumnConfig } from "./column-config";
 import { providerCoverage } from "./coverage";
 import { queriedHistoryWindow } from "./history-window";
 
@@ -57,11 +62,20 @@ export class TasksAnalyticsProvider implements TasksProvider {
     const duration = periodEnd.getTime() - periodStart.getTime();
     const historyStart = new Date(periodStart.getTime() - Math.max(duration * 3, 1));
 
-    const taskRows = await db
-      .select()
-      .from(tasks)
-      .where(eq(tasks.workspaceId, query.scope.workspaceId))
-      .limit(MAX_TASKS + 1);
+    // R10 · `LIMIT 2001` with no ORDER BY leaves both the sequence AND the
+    // truncated set to the storage engine, so two reads of the same
+    // workspace could report different totals and the truncation issue
+    // could not say which rows it dropped. `id` is the primary key, so it
+    // is a total order and needs no extra index.
+    const [taskRows, columnConfig] = await Promise.all([
+      db
+        .select()
+        .from(tasks)
+        .where(eq(tasks.workspaceId, query.scope.workspaceId))
+        .orderBy(asc(tasks.id))
+        .limit(MAX_TASKS + 1),
+      readWorkspaceColumnConfig(db, query.scope.workspaceId),
+    ]);
     signal?.throwIfAborted();
 
     const isTruncated = taskRows.length > MAX_TASKS;
@@ -115,11 +129,13 @@ export class TasksAnalyticsProvider implements TasksProvider {
       if (bucket) bucket.push(row);
       else rawByTask.set(row.taskId, [row]);
     }
-    // This read-only mirror has no meta table / boardColumnKey column, so
-    // there is no per-workspace column config to read; null resolves to the
-    // default ["done"] doneKeys, identical to the literal check it replaces.
+    // R3 · resolve Done through the workspace's own ColumnConfig, so a
+    // renamed Done column reads identically here and on the board. Passing
+    // null pinned analytics to doneKeys = ["done"] regardless.
     const terminalTaskIds = new Set(
-      boundedRows.filter((row) => isTaskDone(row, null)).map((row) => row.id),
+      boundedRows
+        .filter((row) => isTaskDone(row, columnConfig.config))
+        .map((row) => row.id),
     );
     const labelIdsByTask = new Map(
       scopedRows.map((row) => [row.id, stringArray(row.tags).map(labelIdFromTag)]),
@@ -130,7 +146,13 @@ export class TasksAnalyticsProvider implements TasksProvider {
     const taskRecords = scopedRows.map((row): TaskRecord => {
       const assigneeIds = stringArray(row.assignees);
       const dependencies = stringArray(row.blockedBy);
-      const explicitBlocking = row.lane === "blocked" || row.lane === "waiting";
+      // R2 · `lane === "blocked"` was never a lane, and migration 0024
+      // rewrote every `lane='waiting'` row to `lane='doing'` +
+      // `board_column_key='waiting'`, so this test could not match a live
+      // row and explicit blocking counted zero. `effectiveColumnKey` is the
+      // board's own resolution and answers identically for pre- and
+      // post-0024 rows.
+      const explicitBlocking = effectiveColumnKey(row) === WAITING_COLUMN_KEY;
       const taskActivities = rawByTask.get(row.id) ?? [];
       const meaningful = taskActivities.filter((entry) => isMeaningfulActivity(entry.kind, entry.payload));
       // T·122: tasks.completedAt is the durable completion moment; the
@@ -149,8 +171,8 @@ export class TasksAnalyticsProvider implements TasksProvider {
         workspaceId: query.scope.workspaceId,
         labelIds: stringArray(row.tags).map(labelIdFromTag),
         title: row.title,
-        status: row.lane,
-        terminal: isTaskDone(row, null),
+        status: effectiveColumnKey(row),
+        terminal: terminalTaskIds.has(row.id),
         ownerIds: assigneeIds,
         owners: assigneeIds.map((id) => people.get(id) ?? { id, displayName: null }),
         due: analyticsDate(row.dueAt, row.due),
@@ -191,12 +213,20 @@ export class TasksAnalyticsProvider implements TasksProvider {
     if (workspaceLabelIds.length > MAX_NAVIGATION_LABELS) {
       issues.push("tasks_navigation_label_limit_reached");
     }
-    const workspaceStatuses = Array.from(new Set(boundedRows.map((row) => row.lane))).sort();
+    const workspaceStatuses = Array.from(
+      new Set(boundedRows.map((row) => effectiveColumnKey(row))),
+    ).sort();
     if (workspaceStatuses.length > MAX_NAVIGATION_STATUSES) {
       issues.push("tasks_navigation_status_limit_reached");
     }
     if (taskRecords.some((task) => task.terminal && !task.completedAt)) {
       issues.push("completion_timestamp_missing_for_terminal_tasks");
+    }
+    if (columnConfig.unreadable) {
+      // Disclosed, not absorbed: the default doneKeys were applied because
+      // the workspace's config could not be read, which is a coverage gap
+      // and not a fact about the workspace.
+      issues.push("board_column_config_unreadable");
     }
     return {
       tasks: taskRecords,
