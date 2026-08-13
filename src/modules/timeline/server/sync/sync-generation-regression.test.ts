@@ -456,3 +456,72 @@ process.on("exit", () => {
     /* the OS can have it */
   }
 });
+
+test("an unchanged digest updates freshness without rewriting nodes", async (t) => {
+  // Plan §6.5. A Timeline whose source has not moved should cost a freshness
+  // update and nothing else: no upsert of every row, no delete pass, and no
+  // cache invalidation of a page that is already correct.
+  const client = createClient({ url: TIMELINE_URL });
+  t.after(() => client.close());
+  await resetTimelineDatabase(client);
+  const { syncState: state } = await modules();
+  const { db } = await import("@/modules/timeline/server/db/timeline-client");
+  await state.ensureSuiteProjectBinding({
+    tasksWorkspaceId: TASKS_PROJECT,
+    timelineWorkspaceSlug: TIMELINE_SLUG,
+    primaryTimelineSlug: TIMELINE_PROJECT,
+    authority: { kind: "inherits-workspace-binding" },
+  });
+
+  const first = await state.acquireSyncLease({
+    tasksWorkspaceId: TASKS_PROJECT,
+    timelineWorkspaceSlug: TIMELINE_SLUG,
+    timelineSlug: TIMELINE_PROJECT,
+  });
+  assert.ok(first);
+  assert.equal(first.previousDigest, null, "a first refresh has nothing to compare to");
+  await state.commitSyncGeneration(db, first, {
+    status: "complete",
+    sourceCount: 2,
+    importedCount: 2,
+    snapshotDigest: "digest-1",
+  });
+
+  const second = await state.acquireSyncLease({
+    tasksWorkspaceId: TASKS_PROJECT,
+    timelineWorkspaceSlug: TIMELINE_SLUG,
+    timelineSlug: TIMELINE_PROJECT,
+  });
+  assert.ok(second);
+  assert.equal(
+    second.previousDigest,
+    "digest-1",
+    "the next refresh can tell whether the source moved before it writes anything",
+  );
+});
+
+test("the action skips the node write and the revalidation on an unchanged digest", () => {
+  const action = readFileSync(
+    "src/modules/timeline/server/actions/workspaces.ts",
+    "utf8",
+  );
+  const start = action.indexOf("export async function syncMilestonesAction(");
+  const body = action.slice(start, action.indexOf("\nexport ", start + 1));
+
+  assert.match(
+    body,
+    /lease\.previousDigest === snapshot\.digest/,
+    "the comparison must be against the last COMMITTED digest",
+  );
+  assert.match(
+    body,
+    /plan\.reconcile === "destructive" &&\s*\n\s*snapshot\.kind === "complete"/,
+    "only a whole snapshot may claim nothing changed; a partial one has not seen everything",
+  );
+  assert.match(body, /if \(unchanged\) return true;/, "the node write is skipped");
+  assert.match(
+    body,
+    /if \(!unchanged\) \{\s*\n\s*revalidatePath\("\/app\/timeline"\);/,
+    "and so is the cache invalidation of a page that is already correct",
+  );
+});

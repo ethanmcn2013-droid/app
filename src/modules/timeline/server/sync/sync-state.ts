@@ -45,6 +45,16 @@ export type SyncLease = Readonly<{
   timelineSlug: string;
   generation: number;
   leaseToken: string;
+  /**
+   * The digest of the last snapshot that committed, read before this lease
+   * took the generation.
+   *
+   * Plan §6.5: "unchanged digest updates freshness without rewriting nodes".
+   * A Timeline whose source has not moved should cost a freshness update and
+   * nothing else — no upsert of every row, no delete pass, and no cache
+   * invalidation on a page that is already correct.
+   */
+  previousDigest: string | null;
 }>;
 
 export type SyncOutcome = Readonly<{
@@ -259,6 +269,16 @@ async function acquireSyncLeaseUnguarded(input: {
   leaseToken: string;
 }): Promise<SyncLease | null> {
   const { now, expiresAt, leaseToken } = input;
+  // Read the digest BEFORE the upsert overwrites nothing and the generation
+  // moves. `RETURNING` gives post-update values, so the previous one has to be
+  // read on its own statement; it is one indexed primary-key lookup, and it
+  // buys skipping a full node rewrite on every unchanged refresh.
+  const [previous] = await db
+    .select({ snapshotDigest: timelineSourceSyncState.snapshotDigest })
+    .from(timelineSourceSyncState)
+    .where(eq(timelineSourceSyncState.tasksWorkspaceId, input.tasksWorkspaceId))
+    .limit(1);
+
   const rows = await db
     .insert(timelineSourceSyncState)
     .values({
@@ -296,6 +316,7 @@ async function acquireSyncLeaseUnguarded(input: {
     timelineSlug: input.timelineSlug,
     generation: row.generation,
     leaseToken,
+    previousDigest: previous?.snapshotDigest ?? null,
   };
 }
 

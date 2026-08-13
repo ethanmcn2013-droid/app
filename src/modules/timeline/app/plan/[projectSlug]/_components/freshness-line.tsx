@@ -77,9 +77,11 @@ export function FreshnessLine({
       } else {
         setState({ kind: "idle" });
       }
-      // `superseded` means a newer refresh already landed; the page is being
-      // refreshed either way, and there is nothing to tell the reader.
-      router.refresh();
+      // Only re-fetch the page when something actually moved. An unchanged
+      // digest updates freshness without rewriting nodes (plan §6.5), and a
+      // refresh of a page that is already correct is pure cost. `superseded`
+      // means a newer refresh already landed and its own refresh is in flight.
+      if (result.changed !== false && result.superseded !== true) router.refresh();
     } catch {
       setState({
         kind: "failed",

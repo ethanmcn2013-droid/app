@@ -260,6 +260,12 @@ export type SyncMilestonesResult =
        * user to Retry to fix something that is already correct.
        */
       superseded?: boolean;
+      /**
+       * False when the source digest was identical to the last committed one,
+       * so no node was rewritten (plan §6.5). The surface uses it to skip a
+       * full router refresh of a page that is already correct.
+       */
+      changed?: boolean;
     }
   | {
       error: string;
@@ -504,6 +510,20 @@ export async function syncMilestonesAction(
     snapshotDigest: snapshot.kind === "complete" ? snapshot.digest : null,
   };
 
+  // Plan §6.5: "unchanged digest updates freshness without rewriting nodes".
+  // A whole snapshot identical to the last committed one means every row this
+  // write would make is already there, so the refresh costs a freshness update
+  // and nothing else — no upsert of every node, no delete pass, and no cache
+  // invalidation of a page that is already correct. Only a `complete` snapshot
+  // carries a digest, and only a destructive plan can claim to have seen
+  // everything, so both are required.
+  const unchanged =
+    plan.reconcile === "destructive" &&
+    snapshot.kind === "complete" &&
+    lease !== null &&
+    lease.previousDigest !== null &&
+    lease.previousDigest === snapshot.digest;
+
   if (lease) {
     // ── COMPARE-AND-SET, THEN WRITE, IN ONE TRANSACTION ──────────────────
     // The order is the correctness. A CAS after the node write would report
@@ -511,6 +531,7 @@ export async function syncMilestonesAction(
     const committed = await db.transaction(async (tx) => {
       const current = await commitSyncGeneration(tx, lease, outcome, refreshedAt);
       if (!current) return false;
+      if (unchanged) return true;
       await writeRoadmapNodes(workspaceSlug, targetProject.slug, milestones, {
         reconcile: plan.reconcile,
         executor: tx,
@@ -534,18 +555,29 @@ export async function syncMilestonesAction(
     });
   }
 
-  // Revalidate private draft only, NOT the public URL (D6 two-gate)
-  revalidatePath("/app/timeline");
-  revalidatePath(`/app/timeline/${targetProject.slug}`);
+  // Revalidate private draft only, NOT the public URL (D6 two-gate).
+  // Skipped when the digest did not move: nothing was rewritten, so there is
+  // nothing to invalidate.
+  if (!unchanged) {
+    revalidatePath("/app/timeline");
+    revalidatePath(`/app/timeline/${targetProject.slug}`);
+  }
 
   return plan.reconcile === "destructive"
-    ? { ok: true, count: milestones.length, complete: true, refreshedAt }
+    ? {
+        ok: true,
+        count: milestones.length,
+        complete: true,
+        refreshedAt,
+        changed: !unchanged,
+      }
     : {
         ok: true,
         count: milestones.length,
         complete: false,
         totalCount: snapshot.kind === "partial" ? snapshot.totalCount : undefined,
         refreshedAt,
+        changed: true,
       };
 }
 
