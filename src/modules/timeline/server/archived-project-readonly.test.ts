@@ -19,10 +19,10 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createClient, type Client } from "@libsql/client";
 
 const OWNER_CLERK = "user_couple";
@@ -31,6 +31,22 @@ const ACTIVE_PROJECT = "ws_active";
 const ARCHIVED_PROJECT = "ws_archived";
 
 const SCRATCH_DIR = mkdtempSync(join(tmpdir(), "wp4-archived-"));
+/**
+ * Repository files are read against the repository root, never the process
+ * cwd. A relative read is one `cd` away from asserting nothing at all, and a
+ * CI checkout does not necessarily run from where a developer runs.
+ *
+ * The marker check is not ceremony: an off-by-one in the `../` walk resolves
+ * to a directory that exists, so without it a wrong root fails later as a
+ * confusing ENOENT inside a test rather than here, as a wrong root.
+ */
+const REPO_ROOT = fileURLToPath(new URL("../../../../", import.meta.url));
+if (!existsSync(join(REPO_ROOT, "package.json"))) {
+  throw new Error(`test root does not look like the repository: ${REPO_ROOT}`);
+}
+const readRepositoryFile = (relativePath: string) =>
+  readFileSync(join(REPO_ROOT, relativePath), "utf8");
+
 const TIMELINE_URL = pathToFileURL(join(SCRATCH_DIR, "timeline.db")).href;
 const TASKS_URL = pathToFileURL(join(SCRATCH_DIR, "tasks.db")).href;
 process.env.TIMELINE_DATABASE_URL = TIMELINE_URL;
@@ -65,7 +81,7 @@ async function resetTimeline(client: Client) {
   `);
   const wanted = /^CREATE (TABLE|UNIQUE INDEX|INDEX) `?(projects|workspaces|uq_workspaces_suite_workspace_id|idx_workspaces_owner)`?/;
   await client.executeMultiple(
-    readFileSync("drizzle-timeline/0000_timeline_baseline.sql", "utf8")
+    readRepositoryFile("drizzle-timeline/0000_timeline_baseline.sql")
       .split("--> statement-breakpoint")
       .map((statement) => statement.trim())
       .filter((statement) => wanted.test(statement))
@@ -209,10 +225,7 @@ test("publishing is refused on an archived Project, and revoke does not come thr
   // And the refusal reaches exactly the three minting actions. Revoke and
   // unpublish must not route through this function — an owner has to be able
   // to switch a leaked link off whatever state the Project is in.
-  const actions = readFileSync(
-    "src/modules/timeline/server/actions/audience-timeline.ts",
-    "utf8",
-  );
+  const actions = readRepositoryFile("src/modules/timeline/server/actions/audience-timeline.ts");
   const bodyOf = (name: string) => {
     const start = actions.indexOf(`export async function ${name}(`);
     assert.notEqual(start, -1, `${name} must exist`);
@@ -246,10 +259,7 @@ test("the curation actions refuse a proved archive and the page stops offering e
   // asserted, because a page that hides a control while the action still
   // accepts it is not read-only, and an action that refuses while the page
   // still offers the control is a broken surface.
-  const actions = readFileSync(
-    "src/modules/timeline/server/actions/workspaces.ts",
-    "utf8",
-  );
+  const actions = readRepositoryFile("src/modules/timeline/server/actions/workspaces.ts");
   for (const name of [
     "upsertNodeOverlayAction",
     "createManualMilestoneAction",
@@ -270,10 +280,7 @@ test("the curation actions refuse a proved archive and the page stops offering e
     "only a PROVED archive refuses; an unreachable Tasks database does not",
   );
 
-  const page = readFileSync(
-    "src/modules/timeline/app/plan/[projectSlug]/page.tsx",
-    "utf8",
-  );
+  const page = readRepositoryFile("src/modules/timeline/app/plan/[projectSlug]/page.tsx");
   assert.match(
     page,
     /const mode: OwnerMode = archived \? "view" : requestedMode;/,

@@ -20,13 +20,29 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createClient } from "@libsql/client";
 
 const SCRATCH_DIR = mkdtempSync(join(tmpdir(), "wp4-sync-generation-"));
+/**
+ * Repository files are read against the repository root, never the process
+ * cwd. A relative read is one `cd` away from asserting nothing at all, and a
+ * CI checkout does not necessarily run from where a developer runs.
+ *
+ * The marker check is not ceremony: an off-by-one in the `../` walk resolves
+ * to a directory that exists, so without it a wrong root fails later as a
+ * confusing ENOENT inside a test rather than here, as a wrong root.
+ */
+const REPO_ROOT = fileURLToPath(new URL("../../../../../", import.meta.url));
+if (!existsSync(join(REPO_ROOT, "package.json"))) {
+  throw new Error(`test root does not look like the repository: ${REPO_ROOT}`);
+}
+const readRepositoryFile = (relativePath: string) =>
+  readFileSync(join(REPO_ROOT, relativePath), "utf8");
+
 const TIMELINE_URL = pathToFileURL(join(SCRATCH_DIR, "timeline.db")).href;
 process.env.TIMELINE_DATABASE_URL = TIMELINE_URL;
 delete process.env.TIMELINE_AUTH_TOKEN;
@@ -58,7 +74,7 @@ async function resetTimelineDatabase(client: ReturnType<typeof createClient>) {
     DROP TABLE IF EXISTS workspaces;
   `);
   const statements = (file: string, wanted: RegExp) =>
-    readFileSync(file, "utf8")
+    readRepositoryFile(file)
       .split("--> statement-breakpoint")
       .map((statement) => statement.trim())
       .filter((statement) => wanted.test(statement));
@@ -427,10 +443,7 @@ test("the action commits the generation before it writes nodes", () => {
   // The ordering is the whole property, and it lives in one function. A future
   // edit that moves the write above the compare-and-set would still pass every
   // behavioural test above while reintroducing the defect.
-  const action = readFileSync(
-    "src/modules/timeline/server/actions/workspaces.ts",
-    "utf8",
-  );
+  const action = readRepositoryFile("src/modules/timeline/server/actions/workspaces.ts");
   const start = action.indexOf("export async function syncMilestonesAction(");
   const body = action.slice(start, action.indexOf("\nexport ", start + 1));
 
@@ -503,10 +516,7 @@ test("an unchanged digest updates freshness without rewriting nodes", async (t) 
 });
 
 test("the action skips the node write and the revalidation on an unchanged digest", () => {
-  const action = readFileSync(
-    "src/modules/timeline/server/actions/workspaces.ts",
-    "utf8",
-  );
+  const action = readRepositoryFile("src/modules/timeline/server/actions/workspaces.ts");
   const start = action.indexOf("export async function syncMilestonesAction(");
   const body = action.slice(start, action.indexOf("\nexport ", start + 1));
 

@@ -14,6 +14,7 @@ import path from "node:path";
 import test from "node:test";
 import { createClient } from "@libsql/client";
 import { defaultRoot } from "./migration-ledger.mjs";
+import { testDatabaseUrl } from "./test-temp-database.mjs";
 import { loadTimelineLedger, runTimelineMigrations } from "./timeline-migrate.mjs";
 import { backfillBindings } from "./timeline-backfill-bindings.mjs";
 
@@ -76,8 +77,12 @@ async function seedTasks(url) {
 
 async function harness() {
   const dir = tempDir();
-  const timelineUrl = `file:${path.join(dir, "timeline.db").replace(/\\/g, "/")}`;
-  const tasksUrl = `file:${path.join(dir, "tasks.db").replace(/\\/g, "/")}`;
+  // `testDatabaseUrl` asserts absolute, outside the repository, and that the
+  // directory is still there — and builds the URL with `pathToFileURL`.
+  // Hand-assembling a `file:` URL yields `file:C:/…` on Windows and
+  // `file:/tmp/…` on Linux: two shapes that work for two different reasons.
+  const timelineUrl = testDatabaseUrl(dir, "timeline.db");
+  const tasksUrl = testDatabaseUrl(dir, "tasks.db");
   await seedTimeline(timelineUrl);
   await seedTasks(tasksUrl);
   return {
@@ -257,7 +262,8 @@ test("an unreadable Tasks database aborts rather than orphaning live couples", a
   await assert.rejects(
     () => backfillBindings({
       timelineUrl: fixture.timelineUrl,
-      tasksUrl: `file:${path.join(fixture.dir, "no-such-tasks.db").replace(/\\/g, "/")}`,
+      // The directory exists; the database deliberately does not.
+      tasksUrl: testDatabaseUrl(fixture.dir, "no-such-tasks.db"),
     }),
     /Tasks export is incomplete or unavailable/,
   );

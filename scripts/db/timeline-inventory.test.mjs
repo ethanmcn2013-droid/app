@@ -10,6 +10,7 @@ import fs from "node:fs";
 import test from "node:test";
 import { createClient } from "@libsql/client";
 import { loadTimelineLedger, runTimelineMigrations } from "./timeline-migrate.mjs";
+import { readRepositoryFile } from "./test-temp-database.mjs";
 import {
   assertReadOnly,
   crossCheckTasksProjects,
@@ -18,7 +19,9 @@ import {
 } from "./timeline-inventory.mjs";
 
 const context = loadTimelineLedger();
-const SOURCE = fs.readFileSync("scripts/db/timeline-inventory.mjs", "utf8");
+// Read against the repository root, not the process cwd: a relative read is
+// one `cd` away from asserting nothing at all.
+const SOURCE = readRepositoryFile("scripts/db/timeline-inventory.mjs");
 
 async function timelineFixture() {
   const client = createClient({ url: ":memory:" });

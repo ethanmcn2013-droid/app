@@ -10,12 +10,11 @@
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { pathToFileURL } from "node:url";
 import { createClient } from "@libsql/client";
 import { canonicalFileSha256, defaultRoot, sha256 } from "./migration-ledger.mjs";
+import { testDatabaseUrl, withTempDatabaseDir } from "./test-temp-database.mjs";
 import {
   adoptTimelineDatabase,
   databaseIdentitySha256,
@@ -38,18 +37,18 @@ async function withClient(operation) {
   }
 }
 
-function withTempDir(operation) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "timeline-migrate-test-"));
-  try {
-    return operation(dir);
-  } finally {
-    try {
-      fs.rmSync(dir, { recursive: true, force: true });
-    } catch {
-      /* the OS can have it; a stale temp file is not a test failure */
-    }
-  }
-}
+/**
+ * Scratch directories and their `file:` URLs come from `test-temp-database`,
+ * which awaits the operation before cleaning up and asserts the path is
+ * absolute, outside the repository, and still there when the client opens it.
+ *
+ * The previous local helper did none of those things: it was synchronous, so
+ * its `finally` deleted the directory before the async body ran. Windows threw
+ * EPERM on the open file and swallowed it; Linux unlinked it happily and the
+ * next write failed with SQLITE_READONLY. The four adoption and dry-run tests
+ * below passed here and failed in CI for that one reason.
+ */
+const withTempDir = withTempDatabaseDir;
 
 /**
  * A stand-in for production: the schema as it exists today, plus the foreign
@@ -162,8 +161,7 @@ test("a database carrying the foreign 0000-0007 chain refuses baseline replay", 
 }));
 
 test("adoption registers the observed fingerprint, is idempotent, and unlocks forward migration", async () => withTempDir(async (dir) => {
-  const dbPath = path.join(dir, "timeline.db");
-  const databaseUrl = pathToFileURL(dbPath).href;
+  const databaseUrl = testDatabaseUrl(dir, "timeline.db");
   const client = createClient({ url: databaseUrl });
   try {
     await seedLegacyProductionDatabase(client);
@@ -222,8 +220,7 @@ test("adoption registers the observed fingerprint, is idempotent, and unlocks fo
 }));
 
 test("adoption refuses a receipt whose legacy chain fingerprint has moved", async () => withTempDir(async (dir) => {
-  const dbPath = path.join(dir, "timeline.db");
-  const databaseUrl = pathToFileURL(dbPath).href;
+  const databaseUrl = testDatabaseUrl(dir, "timeline.db");
   const client = createClient({ url: databaseUrl });
   try {
     await seedLegacyProductionDatabase(client);
@@ -247,8 +244,7 @@ test("adoption refuses a receipt whose legacy chain fingerprint has moved", asyn
 }));
 
 test("adoption refuses a receipt written against a different database or a drifted schema", async () => withTempDir(async (dir) => {
-  const dbPath = path.join(dir, "timeline.db");
-  const databaseUrl = pathToFileURL(dbPath).href;
+  const databaseUrl = testDatabaseUrl(dir, "timeline.db");
   const client = createClient({ url: databaseUrl });
   try {
     await seedLegacyProductionDatabase(client);
@@ -338,8 +334,7 @@ test("a failed postcondition rolls back the schema and the ledger row together",
 }));
 
 test("dry run writes nothing to the target and rehearses on a copy", async () => withTempDir(async (dir) => {
-  const dbPath = path.join(dir, "timeline.db");
-  const databaseUrl = pathToFileURL(dbPath).href;
+  const databaseUrl = testDatabaseUrl(dir, "timeline.db");
   const client = createClient({ url: databaseUrl });
   try {
     await seedLegacyProductionDatabase(client);
