@@ -160,14 +160,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "742f6da52fc2ae6e",
       "materialityReview": {
         "materialityHash": "742f6da52fc2ae6e",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-tasks-calendar-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -317,14 +317,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "cc5db7e841cafabc",
       "materialityReview": {
         "materialityHash": "cc5db7e841cafabc",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-tasks-list-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -424,7 +424,7 @@
       "materialityReview": {
         "materialityHash": "469e1e207c18c6e1",
         "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-13-wp3c-settings.json"
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -466,14 +466,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "0d372879eb4d3aef",
       "materialityReview": {
         "materialityHash": "0d372879eb4d3aef",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-tasks-timeline-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -522,14 +522,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d94465a3f791a266",
       "materialityReview": {
         "materialityHash": "d94465a3f791a266",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-your-work-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-your-work-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -573,14 +573,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "aa996db360d03ed1",
       "materialityReview": {
         "materialityHash": "aa996db360d03ed1",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-archived-2026-08-12-wp3-route-authz.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-archived-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -623,14 +623,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d226ac71e96df95f",
       "materialityReview": {
         "materialityHash": "d226ac71e96df95f",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.embed-by-slug-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.embed-by-slug-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -767,14 +767,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "d1e0b9b359012e20",
       "materialityReview": {
         "materialityHash": "d1e0b9b359012e20",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-board-2026-08-12-wp3-route-authz.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.print-board-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -815,14 +815,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "3b3fa77295c447eb",
       "materialityReview": {
         "materialityHash": "3b3fa77295c447eb",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-calendar-2026-08-12-wp3-route-authz.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.print-calendar-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -870,14 +870,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "4eadbfb50010b0b7",
       "materialityReview": {
         "materialityHash": "4eadbfb50010b0b7",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-list-2026-08-12-wp3-route-authz.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.print-list-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -918,14 +918,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "2a81a33e08771fe3",
       "materialityReview": {
         "materialityHash": "2a81a33e08771fe3",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.print-timeline-2026-08-12-wp3-route-authz.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.print-timeline-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -1099,14 +1099,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "ee2b4660f7b40532",
       "materialityReview": {
         "materialityHash": "ee2b4660f7b40532",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.settings-notifications-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -1148,14 +1148,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "0b8e551245bd1e38",
       "materialityReview": {
         "materialityHash": "0b8e551245bd1e38",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.settings-plan-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.settings-plan-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -1197,14 +1197,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "a24a1b85fe91dad0",
       "materialityReview": {
         "materialityHash": "a24a1b85fe91dad0",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.settings-profile-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.settings-profile-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -1478,14 +1478,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "11d00f9a07f33588",
       "materialityReview": {
         "materialityHash": "11d00f9a07f33588",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.welcome-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.welcome-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -1529,14 +1529,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "f532c7ecbb8ab980",
       "materialityReview": {
         "materialityHash": "f532c7ecbb8ab980",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-08-12-estate.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.welcome-plan-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -1976,14 +1976,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "9e6de65e555cce66",
       "materialityReview": {
         "materialityHash": "9e6de65e555cce66",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-08-12-wp3-route-authz.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-task-by-id-2026-08-13-wp4-analytics.json"
       }
     },
     {
@@ -2202,14 +2202,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "c02acaad31073ce2",
       "materialityReview": {
         "materialityHash": "c02acaad31073ce2",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-project-2026-08-12-wp3-route-authz.json"
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-project-2026-08-13-wp4-analytics.json"
       }
     },
     {

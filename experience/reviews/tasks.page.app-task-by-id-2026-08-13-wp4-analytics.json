@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-task-by-id",
+  "source": "tasks/src/app/app/task/[id]/page.tsx",
+  "materialityHash": "9e6de65e555cce66",
+  "reviewedAt": "2026-08-13",
+  "reviewer": "Claude Opus 5, WP4-A analytics data-contract lane (evidence run executed in this session)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-45b0a6c89756d6eb76c5daf5-bf320114ccdc7f46.json",
+    "attestationSha256": "6dc31003d5864b69a9adc445535bb08880a3e35f2e48553b2578f7e9d2957886",
+    "runId": "tasks-playwright-45b0a6c89756d6eb76c5daf5",
+    "canonicalEvidenceSha256": "45b0a6c89756d6eb76c5daf59a768e981cbe7f313c39b323e48dd2ce509aca57",
+    "rawArtifactSha256": "bf320114ccdc7f4695b02dd1a4cddd5c3465ad9bde12e2b084483cd1514a198a",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.surface.task-detail-panel",
+    "caseName": "populated task",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "Source unchanged and materiality hash unchanged. This receipt was invalidated because experience/playwright.config.ts changed: WP4-A pins SIGNAL_HOME_ANALYTICS_ENABLED=false in the browser matrix web-server environment, alongside the SIGNAL_ANALYTICS_V1_ENABLED pin already there, because Playwright merges webServer.env over the ambient environment and D-011 split one analytics flag into two. Every receipt binds playwrightConfigSha256 to the exact evidence contract, so all eighteen required a real re-run rather than a hash refresh. Relevant to this surface: the task detail panel shows the same done-state and column claim that R3 and R2 corrected in analytics. Bound to the task-detail-panel fixture, so it was exercised by the populated-task case rather than the front-door case.",
+  "decision": "Accepted. Re-run passed 132/132 across mobile, tablet, desktop and wide. This surface resolves its columns through effectiveColumnKey and isTaskDone and was not modified; WP4-A moved analytics onto the same two functions, so the change closed a divergence rather than introducing one here."
+}
