@@ -20,7 +20,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -449,13 +449,15 @@ test("the action commits the generation before it writes nodes", () => {
   );
 });
 
-process.on("exit", () => {
-  try {
-    rmSync(SCRATCH_DIR, { recursive: true, force: true });
-  } catch {
-    /* the OS can have it */
-  }
-});
+// No teardown, deliberately, for the reason `milestone-safety-regression`
+// already records beside this file: libSQL keeps the scratch file's handle
+// past `close()` on Windows, so removing the directory is a coin flip and a
+// stale temp file is not a test failure. The OS reclaims it.
+//
+// (Measured, not assumed: removing the teardown did NOT change how often this
+// file's CHILD PROCESS exits non-zero with every assertion in it passing. That
+// flake reproduces at the same rate on the untouched WP1 harness next door, so
+// it belongs to this machine's libSQL/tsx runtime, not to either file.)
 
 test("an unchanged digest updates freshness without rewriting nodes", async (t) => {
   // Plan §6.5. A Timeline whose source has not moved should cost a freshness
