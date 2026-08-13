@@ -89,3 +89,53 @@ find out.
 **Next:** render the four to static HTML with faithful CSS and screenshot them (the guard refuses
 review-mode servers by design, so live local HTTP is not available), then run the ten-director
 admission panel at 8.5, then present to Ethan for selection.
+
+---
+
+## Wave 3, round 3 complete — 2026-08-13
+
+**HEAD `fa2cc66`** · base `origin/main` @ `0b112ab`, now **6 behind** (rebase due after the panel).
+
+### Panel history — the gate has never moved
+
+| Round | Editorial | Desk | Index | Rail / replacement | Admitted |
+|---|---|---|---|---|---|
+| 1 | 6.4 / 8.17 | 6.8 / 7.97 | 7.7 / 8.37 | 5.0 / 6.81 · **VETO** | none |
+| 2 | 7.6 / 8.41 | 7.4 / 8.46 | 6.9 / 8.12 | 6.1 / 7.71 · **VETO** | none |
+| 3 | — scoring — | | | *(Rail replaced)* | |
+
+Floor / mean. Gate: every director ≥ 8.5 overall **and** ≥ 8.5 on their own lens, zero vetoes.
+
+### What round 3 changed, and why it was not more remediation
+
+Two panels raised four concerns against **all four** directions. A fault found independently in
+every candidate is in the shared material, not in four teams. Both were fixed at source:
+
+- **The shell** now separates *nothing set up yet* from *nothing readable* from *nothing in it*.
+  A reader with no Project was being reported as a read that failed. Proved by breaking the fix
+  twice and watching the new tests fail.
+- **The lab brief** gained two amendments, recorded in it rather than quietly applied.
+  Amendment 1: a narrow measure is a decision about text, not about the page — 44 complaints
+  about unused width were the brief's fault. Amendment 2: a new reader is not a failed read.
+
+**Context Rail was replaced, not repaired.** Vetoed twice, zero passes in twenty ballots, and the
+criticism was about what it was rather than defects it could fix — which is exactly the case the
+master brief §12.9 says to replace. The new direction puts read-state under each mode name, time
+in a left margin, and the read's own provenance in a right column.
+
+### External dependency now recorded
+
+`R-H08` (the 9.5 council cannot certify) was independently confirmed by the Project Truth
+programme as their **D-024**. They own the repair; it is their Wave 8. Home's Wave 10 waits on it.
+Until then no 9.5 claim may be made by anyone, and `registry-and-drift` reporting green is **not**
+evidence — the council fails inside it while the check reports pass.
+
+### Green at this commit
+
+24 shell · 338 fixture · 70 oracle · typecheck exit 0 · 40/40 pages rendered, 160 screenshots.
+
+### Next
+
+Round-4 ballots → if admitted, present to Ethan for selection; if not, report honestly whether the
+remaining gap is fixable or whether 8.5-on-every-lens is the wrong instrument for a four-way
+comparison. That judgment goes to Ethan rather than being iterated on indefinitely.
