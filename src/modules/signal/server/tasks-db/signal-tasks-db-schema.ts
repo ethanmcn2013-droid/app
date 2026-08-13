@@ -18,6 +18,17 @@ export const tasks = sqliteTable("tasks", {
   description: text("description"),
   /** Tasks's lane field, Analytics maps to Status. */
   lane: text("lane").notNull(),
+  /**
+   * T·121 / migration 0024: a task's claim on a custom board column, with
+   * `lane` kept canonical. The effective column is
+   * COALESCE(board_column_key, lane).
+   *
+   * Analytics did not mirror this column, so it could not see the Waiting
+   * column at all after 0024 rewrote every `lane='waiting'` row to
+   * `lane='doing'` + `board_column_key='waiting'` — which is why explicitly
+   * blocked work counted zero against live data.
+   */
+  boardColumnKey: text("board_column_key"),
   priority: text("priority").notNull(),
   /** JSON-encoded array of user ids. First entry treated as the
    *  primary assignee in Analytics's TaskRead. */
@@ -76,6 +87,20 @@ export const users = sqliteTable("users", {
   email: text("email"),
   name: text("name"),
   initials: text("initials").notNull(),
+});
+
+/**
+ * Key/value store. Analytics reads exactly one key shape from it:
+ * `board:{workspaceId}:columns`, the workspace's ColumnConfig, so that "is
+ * this task done" resolves through the same config the board, digest, export
+ * and print resolve it through (`isTaskDone`). Reading a null config here
+ * silently pinned analytics to `doneKeys = ["done"]` while the rest of the
+ * app honoured a renamed Done column.
+ */
+export const meta = sqliteTable("meta", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
 
 export const workspaceMembers = sqliteTable("workspace_members", {

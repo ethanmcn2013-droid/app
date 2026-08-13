@@ -163,10 +163,9 @@ export function ledgerFromProgressiveBriefing(
     generatedAt: briefing.meta.calculatedAt,
     generatedAtLabel: options.generatedAtLabel,
     scopeLabel: options.scopeLabel,
-    scopeKind:
-      briefing.meta.scope.type === "project"
-        ? "project"
-        : "workspace",
+    // Every analytics read is bound to exactly one Project, so there is no
+    // narrower scope kind left to report (D-010).
+    scopeKind: "workspace",
     freshness: briefing.meta.freshness,
     coverageStatus: briefing.meta.coverage.status,
     candidates,

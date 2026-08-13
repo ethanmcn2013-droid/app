@@ -2,13 +2,21 @@ import type {
   AnalyticsEvent,
   AnalyticsQuery,
   AnalyticsSnapshot,
+  LabelId,
+  LabelRecord,
   MilestoneRecord,
   NoteRecord,
-  ProjectRecord,
+  ProjectId,
   ProviderCapability,
   ProviderCoverage,
   ProviderKey,
   TaskRecord,
+} from "./contracts";
+import {
+  asLabelId,
+  asProjectId,
+  asTimelineProjectSlug,
+  PROGRAM_AXIS_NOT_CARRIED,
 } from "./contracts";
 import { resolvePeriod } from "./time";
 import { PRODUCT_APP_URLS } from "@/lib/product-urls";
@@ -18,7 +26,11 @@ import { PRODUCT_APP_URLS } from "@/lib/product-urls";
 
 export const FIXTURE_NOW = "2026-07-13T09:00:00.000Z";
 export const FIXTURE_TIMEZONE = "Europe/London";
-export const FIXTURE_WORKSPACE_ID = "ws-signal-fixture";
+export const FIXTURE_WORKSPACE_ID: ProjectId = asProjectId("ws-signal-fixture");
+/** The Timeline slug the fixture milestones belong to. Not a Label. */
+export const FIXTURE_TIMELINE_SLUG = asTimelineProjectSlug("launch-plan");
+/** A Project the fixture viewer is not a member of. */
+export const OTHER_PROJECT_ID: ProjectId = asProjectId("ws-signal-fixture-other");
 
 export type AnalyticsFixtureScenario =
   | "signature"
@@ -33,9 +45,9 @@ export type AnalyticsFixtureScenario =
 export interface FixtureAccess {
   userId: string;
   authorized: boolean;
-  allowedWorkspaceIds: string[];
-  allowedProjectIds: string[];
-  deniedProjectIds: string[];
+  allowedWorkspaceIds: ProjectId[];
+  /** Labels are a filter, not a boundary; kept only to shape fixture data. */
+  presentLabelIds: LabelId[];
 }
 
 export interface AnalyticsFixture {
@@ -45,7 +57,19 @@ export interface AnalyticsFixture {
   access: FixtureAccess;
 }
 
-const ALL_CAPABILITIES: Record<ProviderKey, ProviderCapability[]> = {
+/**
+ * Exactly the capabilities a live provider can declare today (D-012).
+ *
+ * These used to include `decision_read` and `milestone_date_history`, which
+ * NO live provider declares: the Notes adapter offers
+ * `[follow_up_read, cross_product_links]` and never reads decisions, and
+ * Timeline only declares date history when `activity` rows exist, which
+ * nothing in this repository writes. Every green fixture test therefore
+ * certified a world production does not have. Declaring less here is the
+ * point: `open_decisions` and `milestone_movement` must resolve
+ * `unsupported` in fixtures exactly as they do live.
+ */
+const LIVE_CAPABILITIES: Record<ProviderKey, ProviderCapability[]> = {
   tasks: [
     "task_read",
     "task_completion_timestamps",
@@ -55,9 +79,9 @@ const ALL_CAPABILITIES: Record<ProviderKey, ProviderCapability[]> = {
     "task_owners",
     "cross_product_links",
   ],
-  notes: ["decision_read", "follow_up_read", "cross_product_links"],
-  timeline: ["milestone_read", "milestone_date_history", "cross_product_links"],
-  projects: ["project_read"],
+  notes: ["follow_up_read", "cross_product_links"],
+  timeline: ["milestone_read", "cross_product_links"],
+  labels: ["label_read"],
 };
 
 function coverage(
@@ -68,7 +92,7 @@ function coverage(
   return {
     provider,
     status: "ready",
-    capabilities: ALL_CAPABILITIES[provider],
+    capabilities: LIVE_CAPABILITIES[provider],
     historyStartAt: "2025-01-01T00:00:00.000Z",
     historyEndAt: FIXTURE_NOW,
     calculatedAt: FIXTURE_NOW,
@@ -79,33 +103,39 @@ function coverage(
   };
 }
 
-function query(scope: AnalyticsQuery["scope"] = {
-  type: "workspace",
-  id: FIXTURE_WORKSPACE_ID,
-  workspaceId: FIXTURE_WORKSPACE_ID,
-}): AnalyticsQuery {
+function query(
+  scope: AnalyticsQuery["scope"] = {
+    type: "workspace",
+    id: FIXTURE_WORKSPACE_ID,
+    workspaceId: FIXTURE_WORKSPACE_ID,
+  },
+  filters: AnalyticsQuery["filters"] = {},
+): AnalyticsQuery {
   return {
     scope,
     period: resolvePeriod("four_weeks", FIXTURE_NOW, FIXTURE_TIMEZONE),
-    filters: {},
+    program: PROGRAM_AXIS_NOT_CARRIED,
+    filters,
     metric: "work_completed",
-    breakdown: "project",
+    breakdown: "label",
     pagination: { page: 1, perPage: 25 },
   };
 }
 
-function project(
+function label(
   id: string,
   name: string,
   ownerIds: string[] = ["user-owner"],
-): ProjectRecord {
+): LabelRecord {
   return {
-    id,
+    id: asLabelId(id),
     workspaceId: FIXTURE_WORKSPACE_ID,
     name,
     ownerIds,
     state: "unknown",
-    deepLink: `${PRODUCT_APP_URLS.timeline}/${id}?workspaceId=${FIXTURE_WORKSPACE_ID}`,
+    // A Label lives in Tasks, not Timeline. The old fixture pointed these
+    // rows at a Timeline URL built from a tag slug, which is not a route.
+    deepLink: `${PRODUCT_APP_URLS.tasks}?workspaceId=${FIXTURE_WORKSPACE_ID}`,
     createdAt: "2026-01-01T09:00:00.000Z",
     updatedAt: FIXTURE_NOW,
   };
@@ -118,7 +148,7 @@ function task(
   return {
     id,
     workspaceId: FIXTURE_WORKSPACE_ID,
-    projectIds: ["launch"],
+    labelIds: [asLabelId("launch")],
     title: `Work ${id}`,
     status: "in-flight",
     terminal: false,
@@ -157,7 +187,7 @@ function completedEvent(taskRecord: TaskRecord): AnalyticsEvent {
   return {
     id: `event-completed-${taskRecord.id}`,
     workspaceId: FIXTURE_WORKSPACE_ID,
-    projectIds: taskRecord.projectIds,
+    labelIds: taskRecord.labelIds,
     entityType: "task",
     entityId: taskRecord.id,
     kind: "status_changed",
@@ -173,7 +203,7 @@ function decision(id: string, title: string): NoteRecord {
   return {
     id,
     workspaceId: FIXTURE_WORKSPACE_ID,
-    projectIds: ["launch"],
+    labelIds: [asLabelId("launch")],
     kind: "decision",
     title,
     state: "open",
@@ -190,10 +220,10 @@ function decision(id: string, title: string): NoteRecord {
 }
 
 function signatureFixture(): AnalyticsFixture {
-  const projects = [
-    project("launch", "Launch"),
-    project("venue", "Venue rollout"),
-    project("private-client", "Private client", ["user-owner", "user-private"]),
+  const labels = [
+    label("launch", "Launch"),
+    label("venue", "Venue rollout"),
+    label("private-client", "Private client", ["user-owner", "user-private"]),
   ];
   const decisions = [
     decision("decision-copy", "Approve final launch copy"),
@@ -231,14 +261,14 @@ function signatureFixture(): AnalyticsFixture {
   });
   const unowned = task("unowned-1", {
     title: "Collect launch screenshots",
-    projectIds: ["venue"],
+    labelIds: [asLabelId("venue")],
     ownerIds: [],
     owners: [],
     due: { kind: "date", value: "2026-07-20" },
   });
   const normal = [
-    task("normal-1", { title: "Review accessibility notes", projectIds: ["venue"] }),
-    task("normal-2", { title: "Confirm support coverage", projectIds: ["private-client"] }),
+    task("normal-1", { title: "Review accessibility notes", labelIds: [asLabelId("venue")] }),
+    task("normal-2", { title: "Confirm support coverage", labelIds: [asLabelId("private-client")] }),
   ];
 
   // Four current completions against prior comparable counts of 8, 7 and 9.
@@ -264,7 +294,7 @@ function signatureFixture(): AnalyticsFixture {
   const milestone: MilestoneRecord = {
     id: "milestone-friday",
     workspaceId: FIXTURE_WORKSPACE_ID,
-    projectId: "launch",
+    timelineProjectSlug: FIXTURE_TIMELINE_SLUG,
     title: "Friday delivery",
     state: "upcoming",
     currentDate: { kind: "date", value: "2026-07-17" },
@@ -285,7 +315,7 @@ function signatureFixture(): AnalyticsFixture {
     linkedTaskIds: blocked.map((record) => record.id),
     linkedDecisionIds: decisions.map((record) => record.id),
     ownerIds: ["user-owner"],
-    deepLink: `${PRODUCT_APP_URLS.timeline}/launch?workspaceId=${FIXTURE_WORKSPACE_ID}&milestone=milestone-friday`,
+    deepLink: `${PRODUCT_APP_URLS.timeline}/${FIXTURE_TIMELINE_SLUG}?workspaceId=${FIXTURE_WORKSPACE_ID}`,
     createdAt: "2026-04-01T09:00:00.000Z",
     updatedAt: "2026-07-11T12:00:00.000Z",
   };
@@ -295,7 +325,8 @@ function signatureFixture(): AnalyticsFixture {
     ...milestone.dateChanges.map<AnalyticsEvent>((change, index) => ({
       id: `event-date-${index + 1}`,
       workspaceId: FIXTURE_WORKSPACE_ID,
-      projectIds: ["launch"],
+      // A milestone carries no tag, so it belongs to no Label.
+      labelIds: [],
       entityType: "milestone",
       entityId: milestone.id,
       kind: "date_changed",
@@ -308,7 +339,7 @@ function signatureFixture(): AnalyticsFixture {
   const snapshot: AnalyticsSnapshot = {
     scope: query().scope,
     capturedAt: FIXTURE_NOW,
-    projects,
+    labels,
     tasks,
     notes: decisions,
     milestones: [milestone],
@@ -319,7 +350,7 @@ function signatureFixture(): AnalyticsFixture {
         tasks: coverage("tasks", tasks.length),
         notes: coverage("notes", decisions.length),
         timeline: coverage("timeline", 1),
-        projects: coverage("projects", projects.length),
+        labels: coverage("labels", labels.length),
       },
       calculatedAt: FIXTURE_NOW,
     },
@@ -332,8 +363,7 @@ function signatureFixture(): AnalyticsFixture {
       userId: "user-owner",
       authorized: true,
       allowedWorkspaceIds: [FIXTURE_WORKSPACE_ID],
-      allowedProjectIds: ["launch", "venue", "private-client"],
-      deniedProjectIds: [],
+      presentLabelIds: labels.map((record) => record.id),
     },
   };
 }
@@ -393,7 +423,7 @@ function healthyFixture(): AnalyticsFixture {
           tasks: coverage("tasks", tasks.length),
           notes: coverage("notes", 0),
           timeline: coverage("timeline", 1),
-          projects: coverage("projects", base.snapshot.projects.length),
+          labels: coverage("labels", base.snapshot.labels.length),
         },
       },
     },
@@ -432,7 +462,7 @@ function emptyFixture(): AnalyticsFixture {
     scenario: "empty",
     snapshot: {
       ...base.snapshot,
-      projects: [],
+      labels: [],
       tasks: [],
       notes: [],
       milestones: [],
@@ -443,7 +473,7 @@ function emptyFixture(): AnalyticsFixture {
           tasks: coverage("tasks", 0),
           notes: coverage("notes", 0),
           timeline: coverage("timeline", 0),
-          projects: coverage("projects", 0),
+          labels: coverage("labels", 0),
         },
       },
     },
@@ -500,12 +530,12 @@ function providerFailureFixture(): AnalyticsFixture {
             historyEndAt: null,
             issues: ["tasks_provider_unavailable"],
           }),
-          projects: coverage("projects", 0, {
+          labels: coverage("labels", 0, {
             status: "unavailable",
             capabilities: [],
             historyStartAt: null,
             historyEndAt: null,
-            issues: ["projects_provider_unavailable"],
+            issues: ["labels_provider_unavailable"],
           }),
         },
       },
@@ -520,42 +550,47 @@ function largeEvidenceFixture(): AnalyticsFixture {
       title: `Unowned fixture work ${index + 1}`,
       ownerIds: [],
       owners: [],
-      projectIds: ["launch"],
+      labelIds: [asLabelId("launch")],
       createdAt: "2026-07-12T09:00:00.000Z",
       lastMeaningfulActivityAt: "2026-07-13T08:00:00.000Z",
       updatedAt: "2026-07-13T08:00:00.000Z",
     }),
   );
-  const projects = [project("launch", "Launch")];
+  const labels = [label("launch", "Launch")];
   return {
     ...base,
     scenario: "large_evidence",
     snapshot: {
       ...base.snapshot,
-      projects,
+      labels,
       tasks,
       coverage: {
         ...base.snapshot.coverage,
         providers: {
           ...base.snapshot.coverage.providers,
           tasks: coverage("tasks", tasks.length),
-          projects: coverage("projects", projects.length),
+          labels: coverage("labels", labels.length),
         },
       },
     },
     access: {
       ...base.access,
-      allowedProjectIds: ["launch"],
+      presentLabelIds: labels.map((record) => record.id),
     },
   };
 }
 
+/**
+ * A denied read. The refusal is now on the Project, which is the only
+ * authorization boundary: the old fixture denied a *tag*, which implied a
+ * per-tag permission model that has never existed anywhere in the product.
+ */
 function unauthorizedFixture(): AnalyticsFixture {
   const base = emptyFixture();
   const unauthorizedScope = {
-    type: "project" as const,
-    id: "private-client",
-    workspaceId: FIXTURE_WORKSPACE_ID,
+    type: "workspace" as const,
+    id: OTHER_PROJECT_ID,
+    workspaceId: OTHER_PROJECT_ID,
   };
   return {
     ...base,
@@ -566,8 +601,7 @@ function unauthorizedFixture(): AnalyticsFixture {
       userId: "user-restricted",
       authorized: false,
       allowedWorkspaceIds: [FIXTURE_WORKSPACE_ID],
-      allowedProjectIds: ["launch", "venue"],
-      deniedProjectIds: ["private-client"],
+      presentLabelIds: [],
     },
   };
 }

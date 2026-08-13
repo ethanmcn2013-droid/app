@@ -7,6 +7,7 @@ import {
 } from "../lib/analytics";
 import type { EvidenceResponse } from "../lib/analytics/contracts";
 import type { AnalyticsScope } from "../lib/analytics/contracts";
+import { asProjectId } from "../lib/analytics/contracts";
 import {
   resolveAnalyticsPageContext,
   type AnalyticsPageContext,
@@ -38,7 +39,7 @@ export interface SignalPageChrome {
   statusOptions: FilterOption[];
   scopeLabel: string;
   ownerNames: Readonly<Record<string, string>>;
-  projectNames: Readonly<Record<string, string>>;
+  labelNames: Readonly<Record<string, string>>;
 }
 
 export async function requireAnalyticsPageContext(
@@ -62,7 +63,7 @@ export function buildSignalPageChrome(
       type: "workspace",
       kind: "workspace" as const,
       id: workspace.id,
-      workspaceId: workspace.id,
+      workspaceId: asProjectId(workspace.id),
       label: workspace.name,
     }),
   );
@@ -76,14 +77,10 @@ export function buildSignalPageChrome(
     workspaceId: context.state.query.scope.workspaceId,
     label: "My work",
   };
-  const projectScopes: ScopeOption[] = navigation.projects.map((project) => ({
-    type: "project",
-    kind: "project" as const,
-    id: project.id,
-    workspaceId: context.state.query.scope.workspaceId,
-    label: project.name,
-  }));
-  const scopes = [...workspaceScopes, personalScope, ...projectScopes];
+  // Labels are not scopes. They were listed here as switchable scopes, which
+  // is what made a tag look like a Project in the chrome (D-010). They reach
+  // the UI as `labelNames` and the `label` filter instead.
+  const scopes = [...workspaceScopes, personalScope];
   const active = scopes.find(
     (scope) =>
       scope.type === context.state.query.scope.type &&
@@ -108,8 +105,8 @@ export function buildSignalPageChrome(
         owner.displayName ?? "Team member",
       ]),
     ),
-    projectNames: Object.fromEntries(
-      navigation.projects.map((project) => [project.id, project.name]),
+    labelNames: Object.fromEntries(
+      navigation.labels.map((label) => [label.id, label.name]),
     ),
   };
 }
@@ -154,7 +151,7 @@ export function evidenceState(
   params: URLSearchParams,
   response: EvidenceResponse | null,
   ownerNames: Readonly<Record<string, string>>,
-  projectNames: Readonly<Record<string, string>>,
+  labelNames: Readonly<Record<string, string>>,
   displayScope: AnalyticsScope,
 ): EvidenceState | null {
   if (!response) return null;
@@ -169,7 +166,7 @@ export function evidenceState(
       evidence_page: null,
     }),
     ownerNames,
-    projectNames,
+    labelNames,
   };
 }
 

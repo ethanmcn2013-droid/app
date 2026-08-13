@@ -71,6 +71,10 @@ export default defineConfig({
       NEXT_PUBLIC_SIGNAL_ACCESS_MODE: browserContract.determinism.accessMode,
       NEXT_PUBLIC_TASKS_FIRST_COMPLETION: "off",
       SIGNAL_ANALYTICS_V1_ENABLED: "false",
+      // D-011 split the one analytics flag into an engine switch and a Home
+      // view switch. Both must be pinned off here, or the browser matrix would
+      // silently start covering a surface the release keeps disabled.
+      SIGNAL_HOME_ANALYTICS_ENABLED: "false",
       NEXT_TELEMETRY_DISABLED: "1",
     },
   },

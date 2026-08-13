@@ -14,7 +14,7 @@ import type {
   MetricStatus,
   NoteRecord,
   OverviewQueueItem,
-  OverviewProjectRow,
+  OverviewLabelRow,
   OverviewResponse,
   ProviderKey,
   SignalAction,
@@ -27,11 +27,11 @@ import type {
 } from "../../lib/analytics/contracts";
 import { calculateMetric, calculateMetrics, coverageFreshness } from "../../lib/analytics/metrics";
 import {
-  attentionProjectsEvidenceObservation,
+  attentionLabelsEvidenceObservation,
+  labelEvidenceDetails,
+  labelEvidenceObservation,
+  labelsNeedingAttentionCount,
   milestoneEvidenceObservation,
-  projectEvidenceDetails,
-  projectEvidenceObservation,
-  projectsNeedingAttentionCount,
 } from "../../lib/analytics/evidence";
 import { getAnalyticsFixture } from "../../lib/analytics/fixtures";
 import { buildBriefing, SIGNAL_RULE_VERSION } from "../../lib/analytics/rules";
@@ -43,11 +43,12 @@ import type { ParsedAnalyticsQuery } from "./query";
 import { combineCoverage, providerCoverage } from "./providers/coverage";
 import { NotesAnalyticsProvider } from "./providers/notes";
 import { TimelineAnalyticsProvider } from "./providers/timeline";
-import { projectsFromTasks, TasksAnalyticsProvider } from "./providers/tasks";
+import { asLabelId } from "../../lib/analytics/contracts";
+import { labelsFromTasks, TasksAnalyticsProvider } from "./providers/tasks";
 import { paginateSources, withEvidencePagination } from "./pagination";
 import { readMetricSnapshotHistory, readSnapshotEvidence } from "./snapshots";
 
-const OVERVIEW_PROJECT_LIMIT = 100;
+const OVERVIEW_LABEL_LIMIT = 100;
 const BREAKDOWN_ITEM_LIMIT = 100;
 
 export interface AnalyticsCalculation<T> {
@@ -86,7 +87,7 @@ export async function calculateEvidence(
 export type SignalViewName = "briefing" | "overview" | "trends";
 export type SignalViewResponse = BriefingResponse | OverviewResponse | TrendsResponse;
 export interface SignalNavigationData {
-  projects: Array<{ id: string; name: string }>;
+  labels: Array<{ id: string; name: string }>;
   owners: Array<{ id: string; displayName: string | null }>;
   statuses: string[];
 }
@@ -163,7 +164,7 @@ function navigationData(snapshot: ServiceAnalyticsSnapshot): SignalNavigationDat
     }
   }
   return {
-    projects: snapshot.projects.map((project) => ({ id: project.id, name: project.name })),
+    labels: snapshot.labels.map((label) => ({ id: label.id, name: label.name })),
     owners: Array.from(people.values()),
     statuses: Array.from(new Set(snapshot.tasks.map((task) => task.status))).sort(),
   };
@@ -198,9 +199,11 @@ export function toAnalyticsQuery(query: ParsedAnalyticsQuery): AnalyticsQuery {
       timezone: query.timezone,
       preset: query.period,
     },
+    program: query.program,
     filters: {
       ...(query.ownerIds.length ? { ownerIds: query.ownerIds } : {}),
       ...(query.statuses.length ? { statuses: query.statuses } : {}),
+      ...(query.labelIds.length ? { labelIds: query.labelIds } : {}),
     },
     metric: query.metric as MetricKey,
     breakdown: query.breakdown,
@@ -219,7 +222,7 @@ async function loadSnapshot(
     {
       tasks: [],
       events: [],
-      navigation: { projects: [], owners: [], statuses: [] },
+      navigation: { labels: [], owners: [], statuses: [] },
       coverage: providerCoverage({ provider: "tasks", status: "unavailable" }),
     },
   );
@@ -243,12 +246,12 @@ async function loadSnapshot(
     notesPromise,
     timelinePromise,
   ]);
-  const projects = projectsFromTasks(taskResult.tasks, query);
-  const projectCoverage = providerCoverage({
-    provider: "projects",
+  const labels = labelsFromTasks(taskResult.tasks, query);
+  const labelCoverage = providerCoverage({
+    provider: "labels",
     status: taskResult.coverage.status,
-    capabilities: ["project_read"],
-    count: projects.length,
+    capabilities: ["label_read"],
+    count: labels.length,
     calculatedAt: capturedAt,
     issues: taskResult.coverage.issues,
   });
@@ -256,7 +259,7 @@ async function loadSnapshot(
     scope: query.scope,
     capturedAt,
     navigation: taskResult.navigation,
-    projects,
+    labels,
     tasks: taskResult.tasks,
     notes: noteResult.records,
     milestones: timelineResult.milestones,
@@ -267,7 +270,7 @@ async function loadSnapshot(
         tasks: taskResult.coverage,
         notes: noteResult.coverage,
         timeline: timelineResult.coverage,
-        projects: projectCoverage,
+        labels: labelCoverage,
       },
       capturedAt,
     ),
@@ -304,19 +307,19 @@ function buildOverview(snapshot: AnalyticsSnapshot, query: AnalyticsQuery): Over
   const blocked = metrics.blocked_work;
   const unowned = metrics.unowned_work;
   const tasksAvailability = providerMetricStatus(snapshot, "tasks");
-  const projectsAvailability = requiredSectionStatus([
+  const labelsAvailability = requiredSectionStatus([
     tasksAvailability,
-    providerMetricStatus(snapshot, "projects"),
+    providerMetricStatus(snapshot, "labels"),
   ]);
   const timelineAvailability = providerMetricStatus(snapshot, "timeline");
   const actionQueueAvailability = optionalSectionStatus([
     tasksAvailability,
     providerMetricStatus(snapshot, "notes"),
   ]);
-  const projects = projectRows(snapshot, query, tasksAvailability);
-  const projectsNeedingAttention = projectsAvailability === "unsupported"
+  const labels = labelRows(snapshot, query, tasksAvailability);
+  const labelsNeedingAttention = labelsAvailability === "unsupported"
     ? null
-    : projectsNeedingAttentionCount(snapshot, query);
+    : labelsNeedingAttentionCount(snapshot, query);
   const nextMilestone = timelineAvailability === "unsupported"
     ? null
     : [...snapshot.milestones]
@@ -333,14 +336,14 @@ function buildOverview(snapshot: AnalyticsSnapshot, query: AnalyticsQuery): Over
   return {
     summary: [
       {
-        id: "projects_needing_attention",
-        label: "Projects needing attention",
-        value: projectsNeedingAttention,
-        supportingText: projectsNeedingAttention === null
-          ? "Project state is unavailable while the connected task source cannot be read."
-          : "Projects with overdue or blocked work.",
-        evidenceId: projectsNeedingAttention !== null && projectsNeedingAttention > 0
-          ? "summary:projects_needing_attention"
+        id: "labels_needing_attention",
+        label: "Labels needing attention",
+        value: labelsNeedingAttention,
+        supportingText: labelsNeedingAttention === null
+          ? "Label state is unavailable while the connected task source cannot be read."
+          : "Labels with overdue or blocked work.",
+        evidenceId: labelsNeedingAttention !== null && labelsNeedingAttention > 0
+          ? "summary:labels_needing_attention"
           : null,
       },
       {
@@ -376,11 +379,11 @@ function buildOverview(snapshot: AnalyticsSnapshot, query: AnalyticsQuery): Over
         : []),
     ],
     availability: {
-      projects: projectsAvailability,
+      labels: labelsAvailability,
       actionQueue: actionQueueAvailability,
       primaryTrend: primaryTrendStatus,
     },
-    projects,
+    labels,
     primaryTrend: primaryTrendStatus !== "unsupported" && points.length >= 2
       ? {
           metric: "work_completed",
@@ -399,7 +402,7 @@ function buildOverview(snapshot: AnalyticsSnapshot, query: AnalyticsQuery): Over
     meta: responseMeta(
       snapshot,
       query,
-      snapshot.projects.length > OVERVIEW_PROJECT_LIMIT ? "overview_project_limit_reached" : null,
+      snapshot.labels.length > OVERVIEW_LABEL_LIMIT ? "overview_label_limit_reached" : null,
     ),
   };
 }
@@ -428,7 +431,7 @@ async function buildTrends(snapshot: AnalyticsSnapshot, query: AnalyticsQuery): 
         : trendInterpretation(points, metricLabel(metricKey)),
     status,
     points,
-    breakdown: buildBreakdown(snapshot, metric, query.breakdown ?? "project"),
+    breakdown: buildBreakdown(snapshot, metric, query.breakdown ?? "label"),
     comparison: metric.comparison,
     records,
     pagination: { ...pagination, total },
@@ -466,7 +469,7 @@ async function buildEvidence(
       comparison: null,
       sources: [],
       evidenceCount: 0,
-      sourceCounts: { notes: 0, tasks: 0, milestones: 0, projects: 0 },
+      sourceCounts: { notes: 0, tasks: 0, milestones: 0, labels: 0 },
       calculatedAt: saved.snapshotAt,
     };
     observation = {
@@ -482,19 +485,19 @@ async function buildEvidence(
   }
 
   if (!observation) {
-    if (evidenceId === "summary:projects_needing_attention") {
-      observation = attentionProjectsEvidenceObservation(snapshot, query);
+    if (evidenceId === "summary:labels_needing_attention") {
+      observation = attentionLabelsEvidenceObservation(snapshot, query);
     } else if (evidenceId.startsWith("milestone:")) {
       observation = milestoneEvidenceObservation(
         snapshot,
         query,
         evidenceId.slice("milestone:".length),
       );
-    } else if (evidenceId.startsWith("project:")) {
-      observation = projectEvidenceObservation(
+    } else if (evidenceId.startsWith("label:")) {
+      observation = labelEvidenceObservation(
         snapshot,
         query,
-        evidenceId.slice("project:".length),
+        asLabelId(evidenceId.slice("label:".length)),
       );
     }
   }
@@ -512,7 +515,7 @@ async function buildEvidence(
       } else if (evidenceId.startsWith("breakdown:")) {
         const parts = evidenceId.split(":");
         const breakdownKey = parts[2] as BreakdownKey | undefined;
-        if (!breakdownKey || !["project", "owner", "status", "work_type"].includes(breakdownKey)) {
+        if (!breakdownKey || !["label", "owner", "status", "work_type"].includes(breakdownKey)) {
           throw new AnalyticsApiError(400, "invalid_request", "Evidence breakdown is invalid.");
         }
         const breakdown = buildBreakdown(snapshot, metric, breakdownKey);
@@ -551,44 +554,39 @@ async function buildEvidence(
   };
 }
 
-function projectRows(
+/**
+ * One row per tag-derived Label.
+ *
+ * The removed `nextMilestone` columns matched `milestone.projectId` against
+ * `project.id` — a Timeline `projects.slug` against a slugified Tasks tag.
+ * Those two are different id spaces (ADR 0001 sec 1), so any row that ever
+ * showed a next milestone did so because a tag happened to be spelled like a
+ * Timeline slug. Milestones belong to the Project, and the Project-level next
+ * milestone is still reported in `summary`.
+ */
+function labelRows(
   snapshot: AnalyticsSnapshot,
   query: AnalyticsQuery,
   tasksAvailability: MetricStatus,
-): OverviewProjectRow[] {
-  return snapshot.projects.flatMap((project): OverviewProjectRow[] => {
-    const details = projectEvidenceDetails(snapshot, query, project.id);
+): OverviewLabelRow[] {
+  return snapshot.labels.flatMap((label): OverviewLabelRow[] => {
+    const details = labelEvidenceDetails(snapshot, query, label.id);
     if (!details) return [];
     const taskDataAvailable = tasksAvailability !== "unsupported";
-    const timelineAvailable = providerMetricStatus(snapshot, "timeline") !== "unsupported";
-    const next = timelineAvailable
-      ? [...snapshot.milestones]
-          .filter(
-            (milestone) =>
-              milestone.projectId === project.id &&
-              milestone.currentDate &&
-              milestone.state !== "completed" &&
-              milestone.state !== "cancelled",
-          )
-          .sort((a, b) => dateValue(a.currentDate).localeCompare(dateValue(b.currentDate)))[0]
-      : null;
     return [{
-      id: project.id,
-      name: project.name,
+      id: label.id,
+      name: label.name,
       state: taskDataAvailable ? details.state : "unknown",
       reasons: taskDataAvailable
         ? details.reasons
-        : ["Task context is unavailable, so this project state is not known."],
+        : ["Task context is unavailable, so this label state is not known."],
       progress: taskDataAvailable ? details.progress : null,
-      nextMilestone: next?.title ?? null,
-      nextMilestoneDate: next?.currentDate ?? null,
-      nextMilestoneDeepLink: next?.deepLink ?? null,
-      ownerIds: project.ownerIds,
-      evidenceId: taskDataAvailable ? `project:${project.id}` : null,
-      deepLink: project.deepLink,
+      ownerIds: label.ownerIds,
+      evidenceId: taskDataAvailable ? `label:${label.id}` : null,
+      deepLink: label.deepLink,
     }];
   }).sort((a, b) => stateOrder(b.state) - stateOrder(a.state) || a.name.localeCompare(b.name))
-    .slice(0, OVERVIEW_PROJECT_LIMIT);
+    .slice(0, OVERVIEW_LABEL_LIMIT);
 }
 
 function trendPointUnit(key: MetricKey): TrendsResponse["pointUnit"] {
@@ -629,7 +627,7 @@ function breakdownValues(
   source: SourceReference,
   key: BreakdownKey,
 ): Array<[string, string]> {
-  if (key === "project") return source.projectIds.map((id) => [id, snapshot.projects.find((project) => project.id === id)?.name ?? id]);
+  if (key === "label") return source.labelIds.map((id) => [id, snapshot.labels.find((label) => label.id === id)?.name ?? id]);
   if (key === "owner") return source.ownerIds.length ? source.ownerIds.map((id) => [id, id]) : [["unowned", "Unowned"]];
   const task = source.type === "task" ? snapshot.tasks.find((item) => item.id === source.id) : null;
   if (key === "status") return [[task?.status ?? source.state, task?.status ?? source.state]];
@@ -717,25 +715,26 @@ function queue(
 function responseMeta(
   snapshot: AnalyticsSnapshot,
   query: AnalyticsQuery,
-  projectIssue: string | null = null,
+  labelIssue: string | null = null,
 ): AnalyticsResponseMeta {
-  const coverage = !projectIssue || !snapshot.coverage.providers.projects
+  const coverage = !labelIssue || !snapshot.coverage.providers.labels
     ? snapshot.coverage
     : {
         ...snapshot.coverage,
         status: "partial" as const,
         providers: {
           ...snapshot.coverage.providers,
-          projects: {
-            ...snapshot.coverage.providers.projects,
+          labels: {
+            ...snapshot.coverage.providers.labels,
             status: "partial" as const,
-            issues: [...snapshot.coverage.providers.projects.issues, projectIssue],
+            issues: [...snapshot.coverage.providers.labels.issues, labelIssue],
           },
         },
       };
   return {
     scope: query.scope,
     period: query.period,
+    program: query.program,
     calculatedAt: snapshot.capturedAt,
     coverage,
     freshness: coverageFreshness(coverage),
@@ -743,7 +742,7 @@ function responseMeta(
   };
 }
 
-function stateOrder(state: OverviewProjectRow["state"]): number {
+function stateOrder(state: OverviewLabelRow["state"]): number {
   if (state === "needs_attention") return 3;
   if (state === "watch") return 2;
   if (state === "on_track") return 1;
@@ -769,7 +768,7 @@ function metricSubset(
       notes: sources.filter((source) => source.type === "note").length,
       tasks: sources.filter((source) => source.type === "task").length,
       milestones: sources.filter((source) => source.type === "milestone").length,
-      projects: sources.filter((source) => source.type === "project").length,
+      labels: sources.filter((source) => source.type === "label").length,
     },
   };
 }

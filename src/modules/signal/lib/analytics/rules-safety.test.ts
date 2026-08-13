@@ -140,3 +140,68 @@ describe("progressive Signal safety invariants", () => {
     );
   });
 });
+
+/**
+ * R6 · every action the rules mint must resolve to a route that exists.
+ *
+ * `trendHref()` built `/app/trends?…`, a route this application has never
+ * served. The ledger boundary happened to strip it — `safeAction` rejects any
+ * href carrying a query string — so nothing failed there. The evidence drawer
+ * does not strip: `service.ts` returns `observation.actions` unfiltered,
+ * `evidence-drawer.tsx` renders each through `action-link.tsx`, and that
+ * component has no allowlist. A reader opening evidence was shown a
+ * "See trend" button that 404s.
+ *
+ * This asserts against the real route surface rather than a hand-listed set,
+ * so a rule that invents another destination fails here rather than in a
+ * reader's hands.
+ */
+describe("rule actions point only at routes that exist", () => {
+  const SERVED_APP_ROUTES = [
+    "/app/tasks",
+    "/app/notes",
+    "/app/timeline",
+    "/app/home",
+    "/app/home/briefing",
+    "/app/your-work",
+  ];
+
+  function actionPaths(scenario: "signature" | "healthy"): string[] {
+    const fixture = getAnalyticsFixture(scenario);
+    const candidates = buildRuleCandidates(
+      fixture.snapshot,
+      fixture.query,
+      calculateMetrics(fixture.snapshot, fixture.query),
+    );
+    return candidates
+      .flatMap((candidate) => candidate.actions)
+      .map((action) => new URL(action.href, "https://app.signalstudio.ie").pathname);
+  }
+
+  it("mints no action to an unserved route", () => {
+    for (const path of actionPaths("signature")) {
+      assert.ok(
+        SERVED_APP_ROUTES.some(
+          (route) => path === route || path.startsWith(`${route}/`),
+        ),
+        `rule action points at ${path}, which this app does not serve`,
+      );
+    }
+  });
+
+  it("never mints /app/trends, which does not exist", () => {
+    assert.deepEqual(
+      actionPaths("signature").filter((path) => path.startsWith("/app/trends")),
+      [],
+    );
+  });
+
+  it("leaves every surviving candidate a working primary action", () => {
+    const fixture = getAnalyticsFixture("signature");
+    const briefing = buildBriefing(fixture.snapshot, fixture.query);
+    for (const observation of briefing.observations) {
+      const primary = observation.actions.find((action) => action.primary);
+      assert.ok(primary, `${observation.type} lost its primary action`);
+    }
+  });
+});

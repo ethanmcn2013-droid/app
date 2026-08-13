@@ -56,8 +56,8 @@ export function sourceTypeLabel(type: SourceReference["type"]): string {
       return "Note";
     case "milestone":
       return "Milestone";
-    case "project":
-      return "Project";
+    case "label":
+      return "Label";
   }
 }
 

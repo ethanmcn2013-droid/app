@@ -19,14 +19,14 @@ interface EvidenceDrawerProps {
   evidence: EvidenceResponse;
   closeHref: string;
   ownerNames: Readonly<Record<string, string>>;
-  projectNames: Readonly<Record<string, string>>;
+  labelNames: Readonly<Record<string, string>>;
 }
 
 export function EvidenceDrawer({
   evidence,
   closeHref,
   ownerNames,
-  projectNames,
+  labelNames,
 }: EvidenceDrawerProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
@@ -214,7 +214,7 @@ export function EvidenceDrawer({
               records={evidence.records}
               timezone={evidence.meta.period.timezone}
               ownerNames={ownerNames}
-              projectNames={projectNames}
+              labelNames={labelNames}
             />
           </div>
           {totalPages > 1 ? (

@@ -1,10 +1,13 @@
 import type {
   AnalyticsQuery,
   BreakdownKey,
+  LabelId,
   MetricKey,
   PeriodPreset,
+  ProjectId,
   ScopeType,
 } from "./contracts";
+import { asLabelId, asProjectId, PROGRAM_AXIS_NOT_CARRIED } from "./contracts";
 import {
   DAY_MS,
   isValidTimezone,
@@ -23,7 +26,7 @@ export interface AnalyticsUrlState {
 }
 
 export interface AnalyticsUrlDefaults {
-  workspaceId: string;
+  workspaceId: ProjectId;
   scopeType?: ScopeType;
   scopeId?: string;
   timezone?: string;
@@ -34,7 +37,9 @@ export interface AnalyticsUrlDefaults {
 type QueryInput = URLSearchParams | Record<string, string | string[] | undefined>;
 
 const VIEWS = new Set<SignalView>(["briefing", "overview", "trends"]);
-const SCOPES = new Set<ScopeType>(["workspace", "project", "user"]);
+const SCOPES = new Set<ScopeType>(["workspace", "user"]);
+/** Pre-D-010 links carried a tag slug here. It is read as a Label filter. */
+const LEGACY_PROJECT_SCOPE = "project";
 const PERIODS = new Set<Exclude<PeriodPreset, "custom">>([
   "four_weeks",
   "twelve_weeks",
@@ -57,7 +62,7 @@ const METRICS = new Set<MetricKey>([
   "cross_product_milestone_risk",
 ]);
 const BREAKDOWNS = new Set<BreakdownKey>([
-  "project",
+  "label",
   "owner",
   "status",
   "work_type",
@@ -153,17 +158,25 @@ export function parseAnalyticsUrlState(
     ? { ...explicitPeriod, preset: PERIODS.has(periodInput as Exclude<PeriodPreset, "custom">) ? preset : "custom" as const }
     : resolvePeriod(preset, now, timezone);
 
-  const workspaceId = safeIdentifier(
-    first(input, "workspace_id"),
-    defaults.workspaceId,
+  const workspaceId = asProjectId(
+    safeIdentifier(
+      first(input, "workspace_id"),
+      defaults.workspaceId,
+    ),
   );
-  const rawScope = first(input, "scope_type") as ScopeType | undefined;
+  const rawScope = first(input, "scope_type");
+  const legacyProjectScope = rawScope === LEGACY_PROJECT_SCOPE;
   const scopeType = SCOPES.has(rawScope as ScopeType)
     ? (rawScope as ScopeType)
-    : (defaults.scopeType ?? "workspace");
-  const fallbackScopeId =
-    defaults.scopeId ?? (scopeType === "workspace" ? workspaceId : workspaceId);
-  const scopeId = safeIdentifier(first(input, "scope_id"), fallbackScopeId);
+    : (legacyProjectScope ? "workspace" : defaults.scopeType ?? "workspace");
+  const rawScopeId = first(input, "scope_id");
+  const scopeId = legacyProjectScope
+    ? workspaceId
+    : safeIdentifier(rawScopeId, defaults.scopeId ?? workspaceId);
+  const labelIds = [
+    ...(safeList(input, "label") ?? []),
+    ...(legacyProjectScope && rawScopeId ? [rawScopeId] : []),
+  ].map(asLabelId);
 
   const rawView = first(input, "view") as SignalView | undefined;
   const rawMetric = first(input, "metric") as MetricKey | undefined;
@@ -175,14 +188,16 @@ export function parseAnalyticsUrlState(
     query: {
       scope: { type: scopeType, id: scopeId, workspaceId },
       period,
+      program: PROGRAM_AXIS_NOT_CARRIED,
       filters: {
         ownerIds: safeList(input, "owner"),
         statuses: safeList(input, "status"),
+        ...(labelIds.length ? { labelIds } : {}),
       },
       metric: METRICS.has(rawMetric as MetricKey) ? (rawMetric as MetricKey) : "work_completed",
       breakdown: BREAKDOWNS.has(rawBreakdown as BreakdownKey)
         ? (rawBreakdown as BreakdownKey)
-        : "project",
+        : "label",
       pagination: {
         page: integer(first(input, "page"), 1, 1, 10_000),
         perPage: integer(first(input, "per_page"), 25, 1, 100),
@@ -202,7 +217,7 @@ export function serializeAnalyticsUrlState(state: AnalyticsUrlState): URLSearchP
     timezone: state.query.period.timezone,
     period: state.query.period.preset ?? "custom",
     metric: state.query.metric ?? "work_completed",
-    breakdown: state.query.breakdown ?? "project",
+    breakdown: state.query.breakdown ?? "label",
     page: String(state.query.pagination?.page ?? 1),
     per_page: String(state.query.pagination?.perPage ?? 25),
   });
@@ -212,6 +227,7 @@ export function serializeAnalyticsUrlState(state: AnalyticsUrlState): URLSearchP
   }
   for (const owner of state.query.filters?.ownerIds ?? []) params.append("owner", owner);
   for (const status of state.query.filters?.statuses ?? []) params.append("status", status);
+  for (const label of state.query.filters?.labelIds ?? []) params.append("label", label);
   if (state.evidenceId) params.set("evidence", state.evidenceId);
   if (state.evidenceId && state.evidencePage > 1) {
     params.set("evidence_page", String(state.evidencePage));

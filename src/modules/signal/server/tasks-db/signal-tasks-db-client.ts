@@ -16,7 +16,7 @@ import * as schema from "./signal-tasks-db-schema";
 
 export const tasksDbConfigured = Boolean(process.env.TASKS_DATABASE_URL);
 
-type TasksDb = LibSQLDatabase<typeof schema>;
+export type TasksDb = LibSQLDatabase<typeof schema>;
 
 let database: TasksDb | null | undefined;
 let rawClient: Client | null | undefined;

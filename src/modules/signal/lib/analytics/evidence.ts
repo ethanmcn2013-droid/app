@@ -2,8 +2,9 @@ import type {
   AnalyticsQuery,
   AnalyticsSnapshot,
   MilestoneRecord,
+  LabelId,
+  LabelRecord,
   ObservationState,
-  ProjectRecord,
   SignalAction,
   SignalObservation,
   SourceReference,
@@ -13,32 +14,32 @@ import type {
 import { SIGNAL_RULE_VERSION } from "./rules";
 import { dueExpiry } from "./time";
 
-export interface ProjectEvidenceDetails {
-  project: ProjectRecord;
+export interface LabelEvidenceDetails {
+  label: LabelRecord;
   state: ObservationState;
   reasons: string[];
   progress: number | null;
   sources: SourceReference[];
 }
 
-/** Use the same deterministic project-state derivation for cards and drawers. */
-export function projectsNeedingAttentionCount(
+/** Use the same deterministic Label-state derivation for cards and drawers. */
+export function labelsNeedingAttentionCount(
   snapshot: AnalyticsSnapshot,
   query: AnalyticsQuery,
 ): number {
-  return snapshot.projects.reduce((count, project) => {
-    return count + (projectEvidenceDetails(snapshot, query, project.id)?.state === "needs_attention" ? 1 : 0);
+  return snapshot.labels.reduce((count, label) => {
+    return count + (labelEvidenceDetails(snapshot, query, label.id)?.state === "needs_attention" ? 1 : 0);
   }, 0);
 }
 
-export function projectEvidenceDetails(
+export function labelEvidenceDetails(
   snapshot: AnalyticsSnapshot,
   query: AnalyticsQuery,
-  projectId: string,
-): ProjectEvidenceDetails | null {
-  const project = snapshot.projects.find((item) => item.id === projectId);
-  if (!project) return null;
-  const tasks = snapshot.tasks.filter((task) => task.projectIds.includes(projectId));
+  labelId: LabelId,
+): LabelEvidenceDetails | null {
+  const label = snapshot.labels.find((item) => item.id === labelId);
+  if (!label) return null;
+  const tasks = snapshot.tasks.filter((task) => task.labelIds.includes(labelId));
   const overdue = tasks.filter((task) => taskIsOverdue(task, query));
   const blocked = tasks.filter(taskIsBlocked);
   const unowned = tasks.filter((task) => !task.terminal && task.ownerIds.length === 0);
@@ -53,16 +54,16 @@ export function projectEvidenceDetails(
       ? "watch"
       : "on_track";
   const issueReasons = new Map<string, string[]>();
-  addTaskReasons(issueReasons, overdue, "Overdue work in this project.");
-  addTaskReasons(issueReasons, blocked, "Work waiting on a dependency in this project.");
-  addTaskReasons(issueReasons, unowned, "Active work without an owner in this project.");
+  addTaskReasons(issueReasons, overdue, "Overdue work carrying this label.");
+  addTaskReasons(issueReasons, blocked, "Work waiting on a dependency carrying this label.");
+  addTaskReasons(issueReasons, unowned, "Active work without an owner carrying this label.");
   const sources = tasks.flatMap((task) => {
     const taskReasons = issueReasons.get(task.id);
     return taskReasons ? [taskSource(task, taskReasons.join(" "))] : [];
   });
   const terminal = tasks.filter((task) => task.terminal).length;
   return {
-    project,
+    label,
     state,
     reasons: reasons.length ? reasons : ["Work is moving normally."],
     progress: tasks.length ? Math.round((terminal / tasks.length) * 100) : null,
@@ -70,63 +71,63 @@ export function projectEvidenceDetails(
   };
 }
 
-export function projectEvidenceObservation(
+export function labelEvidenceObservation(
   snapshot: AnalyticsSnapshot,
   query: AnalyticsQuery,
-  projectId: string,
+  labelId: LabelId,
 ): SignalObservation | null {
-  const details = projectEvidenceDetails(snapshot, query, projectId);
+  const details = labelEvidenceDetails(snapshot, query, labelId);
   if (!details) return null;
   const title = details.state === "needs_attention"
-    ? `${details.project.name} needs attention.`
+    ? `${details.label.name} needs attention.`
     : details.state === "watch"
-      ? `${details.project.name} is worth watching.`
-      : `${details.project.name} is on track.`;
+      ? `${details.label.name} is worth watching.`
+      : `${details.label.name} is on track.`;
   return observation({
-    id: `project:${projectId}`,
-    type: "project_state",
+    id: `label:${labelId}`,
+    type: "label_state",
     title,
     summary: details.reasons.join(" "),
-    whyItMatters: "This state is derived from the project's overdue, blocked, and unowned work.",
+    whyItMatters: "This state is derived from the overdue, blocked and unowned work carrying this label.",
     state: details.state,
     query,
     snapshot,
     metricKey: "open_work",
     metricValue: details.sources.length,
     unit: "items",
-    comparisonBasis: "Current project records in the selected scope and filters.",
+    comparisonBasis: "Current records carrying this label in the selected scope and filters.",
     reasons: details.reasons,
     sources: details.sources,
-    actions: actionFor(details.project.deepLink, "Open project", "open-project"),
+    actions: actionFor(details.label.deepLink, "Open Tasks", "open-tasks"),
   });
 }
 
-export function attentionProjectsEvidenceObservation(
+export function attentionLabelsEvidenceObservation(
   snapshot: AnalyticsSnapshot,
   query: AnalyticsQuery,
 ): SignalObservation | null {
-  const details = snapshot.projects
-    .map((project) => projectEvidenceDetails(snapshot, query, project.id))
-    .filter((item): item is ProjectEvidenceDetails => item?.state === "needs_attention");
+  const details = snapshot.labels
+    .map((label) => labelEvidenceDetails(snapshot, query, label.id))
+    .filter((item): item is LabelEvidenceDetails => item?.state === "needs_attention");
   if (!details.length) return null;
   const sources = uniqueSources(details.flatMap((item) => item.sources));
   const count = details.length;
   return observation({
-    id: "summary:projects_needing_attention",
-    type: "projects_needing_attention",
-    title: `${count} ${count === 1 ? "project needs" : "projects need"} attention.`,
-    summary: "These projects contain overdue or materially blocked work.",
-    whyItMatters: "The summary is grounded in the exact work that set each project state.",
+    id: "summary:labels_needing_attention",
+    type: "labels_needing_attention",
+    title: `${count} ${count === 1 ? "label needs" : "labels need"} attention.`,
+    summary: "Work carrying these labels is overdue or materially blocked.",
+    whyItMatters: "The summary is grounded in the exact work that set each label state.",
     state: "needs_attention",
     query,
     snapshot,
     metricKey: "open_work",
     metricValue: count,
-    unit: "projects",
-    comparisonBasis: "Current project states in the selected scope and filters.",
-    reasons: details.map((item) => `${item.project.name}: ${item.reasons.join(" ")}`),
+    unit: "labels",
+    comparisonBasis: "Current label states in the selected scope and filters.",
+    reasons: details.map((item) => `${item.label.name}: ${item.reasons.join(" ")}`),
     sources,
-    actions: actionFor(details[0].project.deepLink, "Open project", "open-project"),
+    actions: actionFor(details[0].label.deepLink, "Open Tasks", "open-tasks"),
   });
 }
 
@@ -186,7 +187,7 @@ export function milestoneEvidenceObservation(
       state: note.state,
       ownerIds: note.ownerIds,
       date: note.due?.value ?? null,
-      projectIds: note.projectIds,
+      labelIds: note.labelIds,
       deepLink: note.deepLink,
       reason: note.state === "open" ? "Open decision linked to this milestone." : "Note linked to this milestone.",
     })),
@@ -285,7 +286,7 @@ function taskSource(task: TaskRecord, reason: string): SourceReference {
     state: task.status,
     ownerIds: task.ownerIds,
     date: task.due?.value ?? null,
-    projectIds: task.projectIds,
+    labelIds: task.labelIds,
     deepLink: task.deepLink,
     reason,
   };
@@ -299,7 +300,7 @@ function milestoneSource(milestone: MilestoneRecord, reason: string): SourceRefe
     state: milestone.state,
     ownerIds: milestone.ownerIds,
     date: milestone.currentDate?.value ?? null,
-    projectIds: [milestone.projectId],
+    labelIds: [],
     deepLink: milestone.deepLink,
     reason,
   };
@@ -313,7 +314,7 @@ function dependencySource(dependency: TimelineDependencyRecord): SourceReference
     state: dependency.state,
     ownerIds: dependency.ownerIds,
     date: dependency.date?.value ?? null,
-    projectIds: [dependency.projectId],
+    labelIds: [],
     deepLink: dependency.deepLink,
     reason: dependency.resolved
       ? "Resolved Timeline dependency for this milestone."

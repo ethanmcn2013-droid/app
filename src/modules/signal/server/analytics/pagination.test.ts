@@ -4,16 +4,22 @@ import type {
   AnalyticsQuery,
   SourceReference,
 } from "../../lib/analytics/contracts";
+import { asLabelId, asProjectId, PROGRAM_AXIS_NOT_CARRIED } from "../../lib/analytics/contracts";
 import { paginateSources, withEvidencePagination } from "./pagination";
 
 const viewQuery: AnalyticsQuery = {
-  scope: { type: "workspace", id: "workspace-1", workspaceId: "workspace-1" },
+  scope: {
+    type: "workspace",
+    id: "workspace-1",
+    workspaceId: asProjectId("workspace-1"),
+  },
   period: {
     start: "2026-06-15T00:00:00.000Z",
     end: "2026-07-13T00:00:00.000Z",
     timezone: "Europe/London",
     preset: "four_weeks",
   },
+  program: PROGRAM_AXIS_NOT_CARRIED,
   pagination: { page: 7, perPage: 25 },
 };
 
@@ -41,7 +47,7 @@ test("evidence pagination retrieves records beyond the first 100", () => {
       state: "open",
       ownerIds: [],
       date: null,
-      projectIds: ["project-1"],
+      labelIds: [asLabelId("label-1")],
       deepLink: `/app/tasks?task=task-${index + 1}`,
       reason: "Included in the deterministic metric.",
     }),

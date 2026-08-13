@@ -111,6 +111,13 @@ const ALLOWED = Object.freeze({
   "src/lib/ops/ping-studio.ts": 1,
   "src/lib/analytics/posthog.ts": 3,
   "src/modules/signal/server/analytics/errors.ts": 1,
+  // 1 as of WP4-A. Analytics now reads the workspace's board ColumnConfig so
+  // "done" resolves identically here and on the board; this logs only the
+  // error's constructor name when that read fails, and the failure is also
+  // disclosed to the reader as coverage rather than absorbed as a default.
+  // Same shape as its three siblings: a static prefix plus `error.name`, no
+  // workspace id, no key, no planning content.
+  "src/modules/signal/server/analytics/providers/column-config.ts": 1,
   "src/modules/signal/server/analytics/policy.ts": 1,
   "src/modules/signal/server/analytics/service.ts": 1,
   "src/modules/signal/server/analytics/snapshots.ts": 1,

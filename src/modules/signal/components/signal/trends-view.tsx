@@ -15,7 +15,7 @@ interface TrendsViewProps {
   evidenceHref: (evidenceId: string) => string;
   pageHref: (page: number) => string;
   ownerNames: Readonly<Record<string, string>>;
-  projectNames: Readonly<Record<string, string>>;
+  labelNames: Readonly<Record<string, string>>;
 }
 
 const METRICS: ReadonlyArray<{ key: MetricKey; label: string }> = [
@@ -31,7 +31,7 @@ const METRICS: ReadonlyArray<{ key: MetricKey; label: string }> = [
 ];
 
 const BREAKDOWNS: ReadonlyArray<{ key: BreakdownKey; label: string }> = [
-  { key: "project", label: "Project" },
+  { key: "label", label: "Label" },
   { key: "owner", label: "Owner" },
   { key: "status", label: "Status" },
   { key: "work_type", label: "Work type" },
@@ -44,7 +44,7 @@ export function TrendsView({
   evidenceHref,
   pageHref,
   ownerNames,
-  projectNames,
+  labelNames,
 }: TrendsViewProps) {
   const totalPages = Math.max(
     1,
@@ -195,7 +195,7 @@ export function TrendsView({
           records={trends.records}
           timezone={trends.meta.period.timezone}
           ownerNames={ownerNames}
-          projectNames={projectNames}
+          labelNames={labelNames}
           emptyMessage={
             trends.status === "unsupported"
               ? "The required connected source is unavailable. Signal has not treated missing records as an empty result."

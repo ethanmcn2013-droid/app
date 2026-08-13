@@ -8,6 +8,7 @@ import type {
   MetricKey,
   TrendPoint,
 } from "../../lib/analytics/contracts";
+import { asProjectId, PROGRAM_AXIS_NOT_CARRIED } from "../../lib/analytics/contracts";
 import { calculateMetrics, SIGNAL_METRIC_VERSION } from "../../lib/analytics/metrics";
 import { signalAnalyticsDb as db } from "../db/signal-analytics-client";
 import {
@@ -17,7 +18,7 @@ import {
 } from "../db/signal-analytics-schema";
 import { combineCoverage, providerCoverage } from "./providers/coverage";
 import { TimelineAnalyticsProvider } from "./providers/timeline";
-import { projectsFromTasks, TasksAnalyticsProvider } from "./providers/tasks";
+import { labelsFromTasks, TasksAnalyticsProvider } from "./providers/tasks";
 import {
   scalarSnapshotAggregate,
   SNAPSHOT_RUN_STALE_MS,
@@ -27,6 +28,35 @@ import {
   stableSnapshotId,
   type SnapshotWorkspaceCandidate,
 } from "./snapshot-utils";
+
+/**
+ * `analytics_metric_snapshots.project_id` is misnamed (D-010).
+ *
+ * It never held a Project. It held a slugified Tasks tag, written by the
+ * removed per-tag capture fan-out, so a row keyed `project_id` described a
+ * Label. Nothing writes it any more: `captureWorkspaceSnapshots` — the only
+ * writer — captures exactly one scope per Project and passes null.
+ *
+ * The column is NOT dropped or renamed here, because the blast radius is
+ * unmeasured and cannot be measured from this repository. Run this against
+ * the Signal analytics database before any migration:
+ *
+ *   SELECT count(*) AS total,
+ *          count(project_id) AS tag_keyed_rows,
+ *          count(DISTINCT workspace_id) AS workspaces,
+ *          min(snapshot_at) AS oldest,
+ *          max(snapshot_at) AS newest
+ *   FROM analytics_metric_snapshots;
+ *
+ * `captureWorkspaceSnapshots` has zero callers and no cron declares it
+ * (`vercel.json` schedules only the digest), so `tag_keyed_rows` is expected
+ * to be 0 and the migration is expected to be schema-only. That is a
+ * prediction, not a measurement: if it returns non-zero, those rows are
+ * Label-keyed history and the rename must carry them across rather than a
+ * DROP. Every read below pins the column to NULL so a stale tag-keyed row
+ * can never be served as if it were Project history.
+ */
+const LEGACY_PROJECT_COLUMN_IS_NULL = isNull(analyticsMetricSnapshots.projectId);
 
 const DAY_MS = 86_400_000;
 const MAX_HISTORY_ROWS = 400;
@@ -155,9 +185,6 @@ export async function readMetricSnapshotHistory(
     };
   }
   try {
-    const scopePredicate = query.scope.type === "project"
-      ? eq(analyticsMetricSnapshots.projectId, query.scope.id)
-      : isNull(analyticsMetricSnapshots.projectId);
     const rows = await db
       .select({
         id: analyticsMetricSnapshots.id,
@@ -168,7 +195,7 @@ export async function readMetricSnapshotHistory(
       .where(
         and(
           eq(analyticsMetricSnapshots.workspaceId, query.scope.workspaceId),
-          scopePredicate,
+          LEGACY_PROJECT_COLUMN_IS_NULL,
           eq(analyticsMetricSnapshots.metricKey, metricKey),
           gte(analyticsMetricSnapshots.snapshotAt, new Date(query.period.start)),
           lt(analyticsMetricSnapshots.snapshotAt, new Date(query.period.end)),
@@ -210,9 +237,6 @@ export async function readSnapshotEvidence(
   metricKey: MetricKey,
   id: string,
 ): Promise<{ value: number; snapshotAt: string } | null> {
-  const scopePredicate = query.scope.type === "project"
-    ? eq(analyticsMetricSnapshots.projectId, query.scope.id)
-    : isNull(analyticsMetricSnapshots.projectId);
   try {
     const [row] = await db
       .select({
@@ -225,7 +249,7 @@ export async function readSnapshotEvidence(
         and(
           eq(analyticsMetricSnapshots.id, id),
           eq(analyticsMetricSnapshots.workspaceId, query.scope.workspaceId),
-          scopePredicate,
+          LEGACY_PROJECT_COLUMN_IS_NULL,
           eq(analyticsMetricSnapshots.metricKey, metricKey),
           gte(analyticsMetricSnapshots.snapshotAt, new Date(query.period.start)),
           lt(analyticsMetricSnapshots.snapshotAt, new Date(query.period.end)),
@@ -286,7 +310,12 @@ export async function captureWorkspaceSnapshots(input: {
   try {
     const periodEnd = now.toISOString();
     const query: AnalyticsQuery = {
-      scope: { type: "workspace", id: input.workspaceId, workspaceId: input.workspaceId },
+      scope: {
+        type: "workspace",
+        id: input.workspaceId,
+        workspaceId: asProjectId(input.workspaceId),
+      },
+      program: PROGRAM_AXIS_NOT_CARRIED,
       period: {
         start: new Date(now.getTime() - 28 * DAY_MS).toISOString(),
         end: periodEnd,
@@ -298,12 +327,12 @@ export async function captureWorkspaceSnapshots(input: {
       new TasksAnalyticsProvider().read(query),
       new TimelineAnalyticsProvider().read(query),
     ]);
-    const projects = projectsFromTasks(tasks.tasks, query);
-    const projectsCoverage = providerCoverage({
-      provider: "projects",
+    const labels = labelsFromTasks(tasks.tasks, query);
+    const labelsCoverage = providerCoverage({
+      provider: "labels",
       status: tasks.coverage.status,
-      capabilities: ["project_read"],
-      count: projects.length,
+      capabilities: ["label_read"],
+      count: labels.length,
       calculatedAt: periodEnd,
       issues: tasks.coverage.issues,
     });
@@ -316,27 +345,23 @@ export async function captureWorkspaceSnapshots(input: {
     const snapshot: AnalyticsSnapshot = {
       scope: query.scope,
       capturedAt: periodEnd,
-      projects,
+      labels,
       tasks: tasks.tasks,
       notes: [],
       milestones: timeline.milestones,
       timelineDependencies: timeline.dependencies ?? [],
       events: [...tasks.events, ...timeline.events],
       coverage: combineCoverage(
-        { tasks: tasks.coverage, timeline: timeline.coverage, notes: notesCoverage, projects: projectsCoverage },
+        { tasks: tasks.coverage, timeline: timeline.coverage, notes: notesCoverage, labels: labelsCoverage },
         periodEnd,
       ),
     };
-    const scopes: AnalyticsQuery[] = [
-      query,
-      ...projects.slice(0, 50).map((project): AnalyticsQuery => ({
-        ...query,
-        scope: { type: "project", id: project.id, workspaceId: input.workspaceId },
-      })),
-    ];
-    const rows = scopes.flatMap((scopeQuery) =>
-      snapshotRows(snapshot, scopeQuery, calculateMetrics(snapshot, scopeQuery), now),
-    );
+    // One capture per Project. The previous fan-out also captured a scope
+    // per slugified tag and stored it in `project_id`, so a row named for a
+    // Project was keyed by a Label. Per-Label history is deferred until that
+    // column is renamed (see LEGACY_PROJECT_COLUMN_IS_NULL) rather than
+    // continuing to accumulate under a name that misdescribes it.
+    const rows = snapshotRows(snapshot, query, calculateMetrics(snapshot, query), now);
     if (rows.length) {
       await db
         .insert(analyticsMetricSnapshots)
@@ -429,7 +454,6 @@ function snapshotRows(
   metrics: AnalyticsMetricBundle,
   now: Date,
 ) {
-  const projectId = query.scope.type === "project" ? query.scope.id : null;
   const coverage = safeCoverage(snapshot);
   return SNAPSHOT_METRICS.flatMap((metricKey) => {
     const metric = metrics[metricKey];
@@ -437,9 +461,10 @@ function snapshotRows(
     const numericValue = snapshotMetricNumber(metricKey, metric.value);
     if (numericValue === null) return [];
     return [{
-      id: stableSnapshotId("metric", query.scope.workspaceId, projectId ?? "workspace", metricKey, now.toISOString().slice(0, 10), metric.metricVersion),
+      id: stableSnapshotId("metric", query.scope.workspaceId, "workspace", metricKey, now.toISOString().slice(0, 10), metric.metricVersion),
       workspaceId: query.scope.workspaceId,
-      projectId,
+      // Always null now. See LEGACY_PROJECT_COLUMN_IS_NULL.
+      projectId: null,
       metricKey,
       snapshotAt: now,
       numericValue,

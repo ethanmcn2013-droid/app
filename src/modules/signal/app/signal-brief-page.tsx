@@ -63,7 +63,7 @@ export async function SignalBriefPage({
     params,
     result.evidence,
     chrome.ownerNames,
-    chrome.projectNames,
+    chrome.labelNames,
     context.state.query.scope,
   );
 
@@ -77,7 +77,7 @@ export async function SignalBriefPage({
           evidence={selectedEvidence.response}
           closeHref={selectedEvidence.closeHref}
           ownerNames={selectedEvidence.ownerNames}
-          projectNames={selectedEvidence.projectNames}
+          labelNames={selectedEvidence.labelNames}
         />
       ) : null}
     </div>

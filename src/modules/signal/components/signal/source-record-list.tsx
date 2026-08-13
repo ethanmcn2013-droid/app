@@ -5,7 +5,7 @@ interface SourceRecordListProps {
   records: SourceReference[];
   timezone: string;
   ownerNames?: Readonly<Record<string, string>>;
-  projectNames?: Readonly<Record<string, string>>;
+  labelNames?: Readonly<Record<string, string>>;
   emptyMessage?: string;
 }
 
@@ -24,7 +24,7 @@ export function SourceRecordList({
   records,
   timezone,
   ownerNames = {},
-  projectNames = {},
+  labelNames = {},
   emptyMessage = "No contributing records are available in this scope.",
 }: SourceRecordListProps) {
   if (records.length === 0) {
@@ -38,8 +38,8 @@ export function SourceRecordList({
         const owners = record.ownerIds.map(
           (id) => ownerNames[id] ?? "Team member",
         );
-        const projects = record.projectIds.map(
-          (id) => projectNames[id] ?? id,
+        const labels = record.labelIds.map(
+          (id) => labelNames[id] ?? id,
         );
         return (
           <li className="signal-record" key={`${record.type}-${record.id}`}>
@@ -56,9 +56,9 @@ export function SourceRecordList({
             )}
             <p className="signal-record-reason">{record.reason}</p>
             <p className="signal-record-context">
-              {projects.length > 0
-                ? `Project: ${projects.join(", ")}`
-                : "Workspace-wide"}
+              {labels.length > 0
+                ? `Labels: ${labels.join(", ")}`
+                : "No label"}
               {" · "}
               {owners.length > 0
                 ? `Owner: ${owners.join(", ")}`

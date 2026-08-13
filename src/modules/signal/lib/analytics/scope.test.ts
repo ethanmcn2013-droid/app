@@ -4,7 +4,7 @@ import { getAnalyticsFixture } from "./fixtures";
 import { scopeSnapshot } from "./scope";
 import { signalScopeHintFromReferer } from "../planning-periods/scope-hint";
 
-test("status filters consistently constrain linked records, projects, and events", () => {
+test("status filters consistently constrain linked records, labels, and events", () => {
   const fixture = getAnalyticsFixture("signature");
   const filtered = scopeSnapshot(fixture.snapshot, {
     ...fixture.query,
@@ -25,12 +25,12 @@ test("status filters consistently constrain linked records, projects, and events
   );
   assert.ok(filtered.events.every((event) => event.entityType === "task"));
   assert.deepEqual(
-    filtered.projects.map((project) => project.id).sort(),
+    filtered.labels.map((label) => label.id).sort(),
     ["launch", "private-client", "venue"],
   );
 });
 
-test("owner filters remove unrelated project rows and contributing events", () => {
+test("owner filters remove unrelated label rows and contributing events", () => {
   const fixture = getAnalyticsFixture("signature");
   const filtered = scopeSnapshot(fixture.snapshot, {
     ...fixture.query,
@@ -40,7 +40,7 @@ test("owner filters remove unrelated project rows and contributing events", () =
   assert.deepEqual(filtered.tasks, []);
   assert.deepEqual(filtered.notes, []);
   assert.deepEqual(filtered.milestones, []);
-  assert.deepEqual(filtered.projects, []);
+  assert.deepEqual(filtered.labels, []);
   assert.deepEqual(filtered.events, []);
 });
 

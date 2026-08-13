@@ -9,12 +9,13 @@ import type {
 } from "../../../lib/analytics/contracts";
 import { isTerminalTaskTransition } from "../../../lib/analytics/task-events";
 import { isTaskDone } from "@/lib/board-columns";
+import { readWorkspaceColumnConfig } from "./column-config";
 import { getTasksDb } from "../../tasks-db/signal-tasks-db-client";
 import { activities, tasks } from "../../tasks-db/signal-tasks-db-schema";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { getNotesClient } from "./optional-clients";
 import { providerCoverage } from "./coverage";
-import { projectIdFromTag } from "./tasks";
+import { labelIdFromTag } from "./tasks";
 
 const MAX_LINKED_TASKS = 500;
 const MAX_COMPLETION_EVENTS = 2_000;
@@ -45,24 +46,32 @@ export class NotesAnalyticsProvider implements NotesProvider {
       };
     }
 
-    const taskRows = await tasksDb
-      .select({
-        id: tasks.id,
-        tags: tasks.tags,
-        assignees: tasks.assignees,
-        lane: tasks.lane,
-        completedAt: tasks.completedAt,
-        due: tasks.due,
-        dueAt: tasks.dueAt,
-      })
-      .from(tasks)
-      .where(eq(tasks.workspaceId, query.scope.workspaceId))
-      .limit(MAX_LINKED_TASKS + 1);
+    const [taskRows, columnConfig] = await Promise.all([
+      tasksDb
+        .select({
+          id: tasks.id,
+          tags: tasks.tags,
+          assignees: tasks.assignees,
+          lane: tasks.lane,
+          boardColumnKey: tasks.boardColumnKey,
+          completedAt: tasks.completedAt,
+          due: tasks.due,
+          dueAt: tasks.dueAt,
+        })
+        .from(tasks)
+        .where(eq(tasks.workspaceId, query.scope.workspaceId))
+        .orderBy(asc(tasks.id))
+        .limit(MAX_LINKED_TASKS + 1),
+      readWorkspaceColumnConfig(tasksDb, query.scope.workspaceId),
+    ]);
     signal?.throwIfAborted();
 
+    // Labels narrow; they never authorize. The Project boundary is the
+    // `workspaceId` predicate above.
+    const labelFilter = new Set<string>(query.filters?.labelIds ?? []);
     const scopedTasks = taskRows.slice(0, MAX_LINKED_TASKS).filter((task) => {
-      const projects = stringArray(task.tags).map(projectIdFromTag);
-      if (query.scope.type === "project" && !projects.includes(query.scope.id)) return false;
+      const labels = stringArray(task.tags).map(labelIdFromTag);
+      if (labelFilter.size > 0 && !labels.some((label) => labelFilter.has(label))) return false;
       if (query.scope.type === "user" && !stringArray(task.assignees).includes(query.scope.id)) return false;
       return true;
     });
@@ -98,11 +107,11 @@ export class NotesAnalyticsProvider implements NotesProvider {
         .map((row) => textValue(row.promoted_task_id))
         .filter((id): id is string => Boolean(id)),
     );
-    // This read-only mirror has no meta table / boardColumnKey column (see
-    // tasks.ts provider), so null resolves to the default ["done"] doneKeys,
-    // identical to the literal check it replaces.
+    // R3 · the same Done predicate the board uses, resolved from the same
+    // stored config as the Tasks provider. Follow-up completion inherited
+    // the divergence when this read `null`.
     const completedTasks = scopedTasks.filter(
-      (task) => isTaskDone(task, null) && promotedTaskIds.has(task.id),
+      (task) => isTaskDone(task, columnConfig.config) && promotedTaskIds.has(task.id),
     );
     const completedTaskIds = completedTasks.map((task) => task.id);
     // T·122: tasks.completedAt is the durable stamp; only rows completed
@@ -148,10 +157,10 @@ export class NotesAnalyticsProvider implements NotesProvider {
       return [{
         id,
         workspaceId: query.scope.workspaceId,
-        projectIds: stringArray(task.tags).map(projectIdFromTag),
+        labelIds: stringArray(task.tags).map(labelIdFromTag),
         kind: "follow_up",
         title,
-        state: isTaskDone(task, null) ? "completed" : "open",
+        state: isTaskDone(task, columnConfig.config) ? "completed" : "open",
         ownerIds: stringArray(task.assignees),
         due: taskDate(task.dueAt, task.due),
         createdAt,
@@ -186,6 +195,7 @@ export class NotesAnalyticsProvider implements NotesProvider {
             ? ["follow_up_completion_event_limit_reached"]
             : []),
           ...(taskRows.length > MAX_LINKED_TASKS ? ["notes_task_link_limit_reached"] : []),
+          ...(columnConfig.unreadable ? ["board_column_config_unreadable"] : []),
         ],
       }),
     };

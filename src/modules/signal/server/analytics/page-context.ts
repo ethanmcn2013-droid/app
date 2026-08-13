@@ -8,6 +8,7 @@ import {
   type AnalyticsPreferences,
   type AnalyticsUrlState,
 } from "../../lib/analytics";
+import { asProjectId } from "../../lib/analytics/contracts";
 import { getAccessMode } from "@/lib/access-mode";
 import { normalizeSuiteContextForSignal } from "@/lib/suite-context";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
@@ -102,7 +103,7 @@ export async function resolveAnalyticsPageContext(
   if (!workspaceId) return null;
 
   const stateInput = parseAnalyticsUrlState(normalizedParams, {
-    workspaceId,
+    workspaceId: asProjectId(workspaceId),
     timezone: "UTC",
   });
   const parsed = parsedFromState(stateInput, null);
@@ -144,8 +145,11 @@ function parsedFromState(
     customEnd: preset === "custom" ? state.query.period.end : null,
     ownerIds: state.query.filters?.ownerIds ?? [],
     statuses: state.query.filters?.statuses ?? [],
+    labelIds: state.query.filters?.labelIds ?? [],
+    legacyProjectScopeCollapsed: false,
+    program: state.query.program,
     metric: state.query.metric ?? "work_completed",
-    breakdown: state.query.breakdown ?? "project",
+    breakdown: state.query.breakdown ?? "label",
     page: state.query.pagination?.page ?? 1,
     perPage: state.query.pagination?.perPage ?? 25,
     fixtureScenario,
