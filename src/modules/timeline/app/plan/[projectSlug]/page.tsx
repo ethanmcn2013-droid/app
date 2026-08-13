@@ -219,8 +219,14 @@ export default async function TimelineProjectPage({
                 Retry and the truncation sentence nothing used to say. An
                 archived Project does not refresh from Tasks at all, so it gets
                 the read-only line below instead of a freshness one that would
-                never move. */}
-            {archived ? null : (
+                never move.
+
+                Demo/review is excluded for the same reason: it is a read-only
+                fixture boundary with no Tasks source behind it, so "Last
+                refreshed …" has nothing true to say there, and running the
+                refresh lifecycle would add an RSC navigation to every capture
+                of a surface whose whole job is to be deterministic. */}
+            {archived || isDemoMode() ? null : (
               <FreshnessLine
                 workspaceSlug={workspace.slug}
                 projectSlug={project.slug}
