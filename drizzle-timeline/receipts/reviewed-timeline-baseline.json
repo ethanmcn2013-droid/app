@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "timeline-migration-receipt/1",
+  "id": "reviewed-timeline-baseline",
+  "authorizedBy": "NOT YET AUTHORIZED FOR PRODUCTION. This receipt registers the consolidated Timeline baseline as reviewable state so the receipt-backed runner has something content-addressed to adopt against. It authorizes application to a FRESH local or CI database only. Production carries a standalone 0000-0007 chain from timeline.git; that database is adopted (timeline-production-adoption/1), never replayed. Applying this file to production would attempt CREATE TABLE over live couple data.",
+  "reviewedBy": "Claude Code, Project Truth wave WP4 (Timeline binding, reconciliation, provisioning and freshness)",
+  "authorizationSource": "docs/wave/DECISIONS.md D-009: 'No receipt-backed Timeline migration runner exists. drizzle-timeline/ holds one consolidated 0000 baseline and the only write paths are timeline:db:push:unsafe / timeline:db:generate. drizzle.timeline.config.ts:5-10 confirms production runs a standalone 0000-0007 chain. WP4 deliverable 1 is a runner build PLUS a ledger-adoption operation - two tasks, not one.' Plan section 12 step 3 permits exactly this shape: 'receipt-adopt the exact production fingerprint into a namespaced Timeline ledger. Never replay the consolidated baseline.'",
+  "migrations": [
+    {
+      "id": "0000_timeline_baseline",
+      "sha256": "6c5d8239891ebdda0cb8901946316785d8edf5003370b8a43ffb71c8bcec1b81",
+      "reviewedAt": "2026-08-13T00:00:00.000Z",
+      "risk": "high if replayed, zero if adopted. Every statement is a CREATE, so against a populated database this file fails loudly rather than corrupting quietly - but a partial application would leave the schema half-built. The runner refuses it on any database that already has application objects, which is why the risk that matters is procedural rather than structural: an operator reaching for drizzle-kit push instead of this path is the real hazard, and it is the hazard the runner exists to remove.",
+      "rollbackPlan": "Fresh databases only: drop the database file (local) or the branch (CI). There is no in-place rollback for a baseline, and none is needed - a baseline is only ever applied where there was nothing before. For production the rollback is 'do not run this at all'; the adoption path writes one metadata row and nothing else, and its rollback is DELETE FROM signal_timeline_schema_migrations WHERE id = '0000_timeline_baseline'.",
+      "postconditions": [
+        "workspaces, projects, tasks, subtasks, comments, activity, project_sources and node_overlays tables exist",
+        "timeline_publications, timeline_publication_items, audience_shares and audience_view_receipts tables exist",
+        "workspaces carries suite_workspace_id and projects carries source_tasks_workspace_id",
+        "the unique index uq_workspaces_suite_workspace_id exists",
+        "integrity check passes",
+        "no foreign key violations"
+      ],
+      "proofs": [
+        {
+          "id": "workspaces-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'workspaces'",
+          "expected": 1
+        },
+        {
+          "id": "projects-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'projects'",
+          "expected": 1
+        },
+        {
+          "id": "node-overlays-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'node_overlays'",
+          "expected": 1
+        },
+        {
+          "id": "publications-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'timeline_publications'",
+          "expected": 1
+        },
+        {
+          "id": "audience-shares-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'audience_shares'",
+          "expected": 1
+        },
+        {
+          "id": "workspaces-carry-suite-workspace-id",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspaces') WHERE name = 'suite_workspace_id'",
+          "expected": 1
+        },
+        {
+          "id": "projects-carry-source-tasks-workspace-id",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('projects') WHERE name = 'source_tasks_workspace_id'",
+          "expected": 1
+        },
+        {
+          "id": "suite-workspace-id-is-unique",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('workspaces') WHERE name = 'uq_workspaces_suite_workspace_id' AND \"unique\" = 1",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

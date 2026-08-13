@@ -8,6 +8,9 @@ const bootstrap = String(scripts["db:bootstrap"] ?? "");
 const migrate = String(scripts["db:migrate"] ?? "");
 const adopt = String(scripts["db:adopt"] ?? "");
 const contract = String(scripts["db:contract"] ?? "");
+const timelineMigrate = String(scripts["timeline:db:migrate"] ?? "");
+const timelineAdopt = String(scripts["timeline:db:adopt"] ?? "");
+const timelineDryRun = String(scripts["timeline:db:dry-run"] ?? "");
 
 if (/drizzle-kit\s+push/i.test(dev)) {
   console.error("migration-contract: dev must not run drizzle-kit push");
@@ -30,5 +33,34 @@ if (!contract.includes("scripts/db/migration-ledger.test.mjs")) {
   process.exit(1);
 }
 
+// ── The Timeline runner (WP4) ────────────────────────────────────────────────
+// Timeline is a second database with a second ledger, and it needs the same
+// three properties as Tasks: one receipt-backed way in, one receipt-backed way
+// to adopt an existing database, and a dry run that writes nothing. A
+// `drizzle-kit push` hiding inside any of them is the failure this catches.
+if (timelineMigrate !== "node scripts/db/timeline-migrate.mjs migrate") {
+  console.error("migration-contract: timeline:db:migrate must use the receipt-backed Timeline runner");
+  process.exit(1);
+}
+if (timelineAdopt !== "node scripts/db/timeline-migrate.mjs adopt") {
+  console.error("migration-contract: timeline:db:adopt must use the receipt-backed adoption path");
+  process.exit(1);
+}
+if (timelineDryRun !== "node scripts/db/timeline-migrate.mjs migrate --dry-run") {
+  console.error("migration-contract: timeline:db:dry-run must be the runner's own dry run");
+  process.exit(1);
+}
+for (const [name, command] of Object.entries(scripts)) {
+  if (/^timeline:db:(migrate|adopt|status|dry-run)$/.test(name) && /drizzle-kit/.test(String(command))) {
+    console.error(`migration-contract: ${name} must not shell out to drizzle-kit`);
+    process.exit(1);
+  }
+}
+if (!contract.includes("scripts/db/timeline-migrate.test.mjs")) {
+  console.error("migration-contract: db:contract must run the Timeline migration tests");
+  process.exit(1);
+}
+
 const context = loadAndValidateLedger();
-console.log(`migration-contract: ok (${context.entries.length} SQL files, ${context.entries.length} receipts, baseline ${context.baseline.id})`);
+const timeline = loadAndValidateLedger({ module: "timeline" });
+console.log(`migration-contract: ok (tasks: ${context.entries.length} SQL files, baseline ${context.baseline.id}; timeline: ${timeline.entries.length} SQL files, baseline ${timeline.baseline.id})`);

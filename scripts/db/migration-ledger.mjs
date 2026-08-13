@@ -10,6 +10,55 @@ function invariant(condition, message) {
   if (!condition) throw new Error(`migration-ledger: ${message}`);
 }
 
+/**
+ * The two ledgers this repository keeps, and what makes them different.
+ *
+ * Everything about the discipline is shared — content-addressed SQL, a review
+ * receipt per migration with machine-verifiable proofs, journal parity, LF
+ * pinning — so it lives once, here. Only the names differ, and they are data.
+ *
+ * ── WHY THE TIMELINE LEDGER TABLE IS NAMESPACED ────────────────────────────
+ * Timeline is a SEPARATE libSQL database whose production schema was migrated
+ * from another repository (`timeline.git`) as a standalone `0000–0007` chain,
+ * while this repository carries a single consolidated `0000` baseline
+ * (drizzle.timeline.config.ts:5-10). Those two histories cannot be reconciled
+ * by replay — running the consolidated baseline against production would try
+ * to CREATE TABLE over live couple data.
+ *
+ * So the Timeline runner writes its own `signal_timeline_schema_migrations`
+ * and NEVER writes the `__drizzle_migrations` high-water table the foreign
+ * chain left behind. That table is read as observed legacy state, recorded in
+ * the adoption receipt, and otherwise left exactly as it is. Adopting a
+ * fingerprint is honest; rewriting somebody else's history is not.
+ */
+const MODULES = {
+  tasks: {
+    dir: "drizzle",
+    ledgerSchemaVersion: "tasks-migration-ledger/1",
+    receiptSchemaVersion: "tasks-migration-receipt/1",
+    requiredLedgerFields: {
+      databaseLedgerTable: "signal_schema_migrations",
+      drizzleHighWaterTable: "__drizzle_migrations",
+    },
+  },
+  timeline: {
+    dir: "drizzle-timeline",
+    ledgerSchemaVersion: "timeline-migration-ledger/1",
+    receiptSchemaVersion: "timeline-migration-receipt/1",
+    requiredLedgerFields: {
+      databaseLedgerTable: "signal_timeline_schema_migrations",
+      // Read-only. Never written by this repository's runner.
+      legacyDrizzleTable: "__drizzle_migrations",
+    },
+  },
+};
+
+export function migrationModule(name) {
+  const config = MODULES[name];
+  invariant(config, `unknown migration module ${name}`);
+  return config;
+}
+
 export function canonicalText(value) {
   return String(value).replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
 }
@@ -34,7 +83,7 @@ function readJson(file, label) {
   }
 }
 
-function validateReceipt(root, entry, receiptCache) {
+function validateReceipt(root, entry, receiptCache, config) {
   const receiptPath = path.resolve(root, entry.receipt);
   invariant(receiptPath.startsWith(`${root}${path.sep}`), `${entry.id} receipt escapes repository root`);
   invariant(fs.existsSync(receiptPath), `${entry.id} receipt is missing: ${entry.receipt}`);
@@ -45,7 +94,7 @@ function validateReceipt(root, entry, receiptCache) {
   let document = receiptCache.get(receiptPath);
   if (!document) {
     document = readJson(receiptPath, "migration receipt");
-    invariant(document.schemaVersion === "tasks-migration-receipt/1", `${entry.receipt} has an unsupported schemaVersion`);
+    invariant(document.schemaVersion === config.receiptSchemaVersion, `${entry.receipt} has an unsupported schemaVersion`);
     invariant(typeof document.id === "string" && document.id.length > 0, `${entry.receipt} is missing id`);
     invariant(typeof document.authorizedBy === "string" && document.authorizedBy.length > 0, `${entry.receipt} is missing authorizedBy`);
     invariant(typeof document.reviewedBy === "string" && document.reviewedBy.length > 0, `${entry.receipt} is missing reviewedBy`);
@@ -85,24 +134,27 @@ function validateReceipt(root, entry, receiptCache) {
   };
 }
 
-export function loadAndValidateLedger({ root = defaultRoot } = {}) {
+export function loadAndValidateLedger({ root = defaultRoot, module = "tasks" } = {}) {
+  const config = migrationModule(module);
   root = path.resolve(root);
-  const ledgerPath = path.join(root, "drizzle", "migration-ledger.json");
+  const ledgerPath = path.join(root, config.dir, "migration-ledger.json");
   const ledger = readJson(ledgerPath, "migration ledger");
-  invariant(ledger.schemaVersion === "tasks-migration-ledger/1", "unsupported migration ledger schemaVersion");
+  invariant(ledger.schemaVersion === config.ledgerSchemaVersion, "unsupported migration ledger schemaVersion");
   invariant(ledger.dialect === "sqlite", "dialect must be sqlite");
-  invariant(ledger.databaseLedgerTable === "signal_schema_migrations", "unexpected database ledger table");
-  invariant(ledger.drizzleHighWaterTable === "__drizzle_migrations", "unexpected Drizzle high-water table");
+  for (const [field, expected] of Object.entries(config.requiredLedgerFields)) {
+    invariant(ledger[field] === expected, `unexpected ${field}`);
+  }
   invariant(Array.isArray(ledger.entries) && ledger.entries.length > 0, "ledger has no entries");
 
   const attributesPath = path.join(root, ".gitattributes");
   invariant(fs.existsSync(attributesPath), ".gitattributes is required to pin migration line endings");
-  invariant(/(^|\n)drizzle\/\*\.sql text eol=lf(\n|$)/.test(canonicalText(fs.readFileSync(attributesPath, "utf8"))), "drizzle/*.sql must be pinned to LF in .gitattributes");
+  const attributePin = new RegExp(`(^|\\n)${config.dir}/\\*\\.sql text eol=lf(\\n|$)`);
+  invariant(attributePin.test(canonicalText(fs.readFileSync(attributesPath, "utf8"))), `${config.dir}/*.sql must be pinned to LF in .gitattributes`);
 
-  const drizzleDir = path.join(root, "drizzle");
+  const drizzleDir = path.join(root, config.dir);
   const sqlFiles = fs.readdirSync(drizzleDir)
     .filter((name) => name.endsWith(".sql"))
-    .map((name) => `drizzle/${name}`)
+    .map((name) => `${config.dir}/${name}`)
     .sort();
 
   const ids = new Set();
@@ -115,7 +167,7 @@ export function loadAndValidateLedger({ root = defaultRoot } = {}) {
     invariant(typeof entry.id === "string" && /^[0-9]{4}[a-z]?_[a-z0-9_]+$/.test(entry.id), `entry ${ordinal} has invalid id`);
     invariant(!ids.has(entry.id), `duplicate migration id ${entry.id}`);
     ids.add(entry.id);
-    invariant(entry.file === `drizzle/${entry.id}.sql`, `${entry.id} file must match its id`);
+    invariant(entry.file === `${config.dir}/${entry.id}.sql`, `${entry.id} file must match its id`);
     invariant(!files.has(entry.file), `duplicate migration file ${entry.file}`);
     files.add(entry.file);
     invariant(Number.isSafeInteger(entry.when) && entry.when > previousWhen, `${entry.id} timestamp must be strictly increasing`);
@@ -143,7 +195,7 @@ export function loadAndValidateLedger({ root = defaultRoot } = {}) {
       invariant(entry.snapshotSha256 === undefined, `${entry.id} has snapshotSha256 without a snapshot`);
     }
 
-    const receipt = validateReceipt(root, entry, receiptCache);
+    const receipt = validateReceipt(root, entry, receiptCache, config);
     if (entry.continuousProofIds !== undefined) {
       invariant(Array.isArray(entry.continuousProofIds), `${entry.id} continuousProofIds must be an array`);
       invariant(new Set(entry.continuousProofIds).size === entry.continuousProofIds.length, `${entry.id} has duplicate continuousProofIds`);
@@ -179,6 +231,8 @@ export function loadAndValidateLedger({ root = defaultRoot } = {}) {
 
   return {
     root,
+    module,
+    config,
     ledger,
     ledgerPath,
     ledgerSha256: canonicalFileSha256(ledgerPath),
