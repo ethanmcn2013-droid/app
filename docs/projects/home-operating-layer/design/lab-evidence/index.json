@@ -1,0 +1,676 @@
+{
+  "generatedAt": "2026-08-13T02:25:55.123Z",
+  "generator": "scripts/home-layer/render-directions.mjs",
+  "note": "Rendered offline with react-dom/server. No HTTP request, no guard bypass, no fixture edited.",
+  "matrix": {
+    "modes": [
+      "today",
+      "inbox",
+      "my-work",
+      "analytics",
+      "briefing"
+    ],
+    "signatureScenario": "owner_signature",
+    "scenarios": [
+      "owner_quiet",
+      "partial_coverage",
+      "provider_failure",
+      "new_user",
+      "scale"
+    ],
+    "viewports": [
+      {
+        "name": "1440x960",
+        "width": 1440,
+        "height": 960
+      },
+      {
+        "name": "390x844",
+        "width": 390,
+        "height": 844
+      }
+    ]
+  },
+  "captures": [
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "today",
+      "scenario": "owner_signature",
+      "html": "editorial__today__owner_signature.html",
+      "htmlBytes": 391855,
+      "markupBytes": 13450,
+      "shots": [
+        "editorial__today__owner_signature__1440x960.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844.png",
+        "editorial__today__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "inbox",
+      "scenario": "owner_signature",
+      "html": "editorial__inbox__owner_signature.html",
+      "htmlBytes": 390328,
+      "markupBytes": 11923,
+      "shots": [
+        "editorial__inbox__owner_signature__1440x960.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__inbox__owner_signature__390x844.png",
+        "editorial__inbox__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "my-work",
+      "scenario": "owner_signature",
+      "html": "editorial__my-work__owner_signature.html",
+      "htmlBytes": 390616,
+      "markupBytes": 12209,
+      "shots": [
+        "editorial__my-work__owner_signature__1440x960.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "editorial__my-work__owner_signature__390x844.png",
+        "editorial__my-work__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "analytics",
+      "scenario": "owner_signature",
+      "html": "editorial__analytics__owner_signature.html",
+      "htmlBytes": 393775,
+      "markupBytes": 15366,
+      "shots": [
+        "editorial__analytics__owner_signature__1440x960.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__390x844.png",
+        "editorial__analytics__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "briefing",
+      "scenario": "owner_signature",
+      "html": "editorial__briefing__owner_signature.html",
+      "htmlBytes": 394326,
+      "markupBytes": 15918,
+      "shots": [
+        "editorial__briefing__owner_signature__1440x960.png",
+        "editorial__briefing__owner_signature__1440x960__fold.png",
+        "editorial__briefing__owner_signature__390x844.png",
+        "editorial__briefing__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "today",
+      "scenario": "owner_quiet",
+      "html": "editorial__today__owner_quiet.html",
+      "htmlBytes": 383324,
+      "markupBytes": 4923,
+      "shots": [
+        "editorial__today__owner_quiet__1440x960.png",
+        "editorial__today__owner_quiet__1440x960__fold.png",
+        "editorial__today__owner_quiet__390x844.png",
+        "editorial__today__owner_quiet__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "today",
+      "scenario": "partial_coverage",
+      "html": "editorial__today__partial_coverage.html",
+      "htmlBytes": 392191,
+      "markupBytes": 13785,
+      "shots": [
+        "editorial__today__partial_coverage__1440x960.png",
+        "editorial__today__partial_coverage__1440x960__fold.png",
+        "editorial__today__partial_coverage__390x844.png",
+        "editorial__today__partial_coverage__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "today",
+      "scenario": "provider_failure",
+      "html": "editorial__today__provider_failure.html",
+      "htmlBytes": 390504,
+      "markupBytes": 12098,
+      "shots": [
+        "editorial__today__provider_failure__1440x960.png",
+        "editorial__today__provider_failure__1440x960__fold.png",
+        "editorial__today__provider_failure__390x844.png",
+        "editorial__today__provider_failure__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "today",
+      "scenario": "new_user",
+      "html": "editorial__today__new_user.html",
+      "htmlBytes": 382054,
+      "markupBytes": 3656,
+      "shots": [
+        "editorial__today__new_user__1440x960.png",
+        "editorial__today__new_user__1440x960__fold.png",
+        "editorial__today__new_user__390x844.png",
+        "editorial__today__new_user__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "editorial",
+      "label": "Editorial",
+      "mode": "today",
+      "scenario": "scale",
+      "html": "editorial__today__scale.html",
+      "htmlBytes": 391578,
+      "markupBytes": 13183,
+      "shots": [
+        "editorial__today__scale__1440x960.png",
+        "editorial__today__scale__1440x960__fold.png",
+        "editorial__today__scale__390x844.png",
+        "editorial__today__scale__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "today",
+      "scenario": "owner_signature",
+      "html": "rail__today__owner_signature.html",
+      "htmlBytes": 402418,
+      "markupBytes": 16060,
+      "shots": [
+        "rail__today__owner_signature__1440x960.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844.png",
+        "rail__today__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "inbox",
+      "scenario": "owner_signature",
+      "html": "rail__inbox__owner_signature.html",
+      "htmlBytes": 401816,
+      "markupBytes": 15458,
+      "shots": [
+        "rail__inbox__owner_signature__1440x960.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__inbox__owner_signature__390x844.png",
+        "rail__inbox__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "my-work",
+      "scenario": "owner_signature",
+      "html": "rail__my-work__owner_signature.html",
+      "htmlBytes": 401512,
+      "markupBytes": 15152,
+      "shots": [
+        "rail__my-work__owner_signature__1440x960.png",
+        "rail__my-work__owner_signature__1440x960__fold.png",
+        "rail__my-work__owner_signature__390x844.png",
+        "rail__my-work__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "analytics",
+      "scenario": "owner_signature",
+      "html": "rail__analytics__owner_signature.html",
+      "htmlBytes": 405493,
+      "markupBytes": 19131,
+      "shots": [
+        "rail__analytics__owner_signature__1440x960.png",
+        "rail__analytics__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__390x844.png",
+        "rail__analytics__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "briefing",
+      "scenario": "owner_signature",
+      "html": "rail__briefing__owner_signature.html",
+      "htmlBytes": 404560,
+      "markupBytes": 18199,
+      "shots": [
+        "rail__briefing__owner_signature__1440x960.png",
+        "rail__briefing__owner_signature__1440x960__fold.png",
+        "rail__briefing__owner_signature__390x844.png",
+        "rail__briefing__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "today",
+      "scenario": "owner_quiet",
+      "html": "rail__today__owner_quiet.html",
+      "htmlBytes": 392750,
+      "markupBytes": 6396,
+      "shots": [
+        "rail__today__owner_quiet__1440x960.png",
+        "rail__today__owner_quiet__1440x960__fold.png",
+        "rail__today__owner_quiet__390x844.png",
+        "rail__today__owner_quiet__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "today",
+      "scenario": "partial_coverage",
+      "html": "rail__today__partial_coverage.html",
+      "htmlBytes": 402991,
+      "markupBytes": 16632,
+      "shots": [
+        "rail__today__partial_coverage__1440x960.png",
+        "rail__today__partial_coverage__1440x960__fold.png",
+        "rail__today__partial_coverage__390x844.png",
+        "rail__today__partial_coverage__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "today",
+      "scenario": "provider_failure",
+      "html": "rail__today__provider_failure.html",
+      "htmlBytes": 400832,
+      "markupBytes": 14473,
+      "shots": [
+        "rail__today__provider_failure__1440x960.png",
+        "rail__today__provider_failure__1440x960__fold.png",
+        "rail__today__provider_failure__390x844.png",
+        "rail__today__provider_failure__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "today",
+      "scenario": "new_user",
+      "html": "rail__today__new_user.html",
+      "htmlBytes": 391517,
+      "markupBytes": 5166,
+      "shots": [
+        "rail__today__new_user__1440x960.png",
+        "rail__today__new_user__1440x960__fold.png",
+        "rail__today__new_user__390x844.png",
+        "rail__today__new_user__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "rail",
+      "label": "Rail",
+      "mode": "today",
+      "scenario": "scale",
+      "html": "rail__today__scale.html",
+      "htmlBytes": 402508,
+      "markupBytes": 16160,
+      "shots": [
+        "rail__today__scale__1440x960.png",
+        "rail__today__scale__1440x960__fold.png",
+        "rail__today__scale__390x844.png",
+        "rail__today__scale__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "today",
+      "scenario": "owner_signature",
+      "html": "index__today__owner_signature.html",
+      "htmlBytes": 398504,
+      "markupBytes": 17298,
+      "shots": [
+        "index__today__owner_signature__1440x960.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844.png",
+        "index__today__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "inbox",
+      "scenario": "owner_signature",
+      "html": "index__inbox__owner_signature.html",
+      "htmlBytes": 395636,
+      "markupBytes": 14430,
+      "shots": [
+        "index__inbox__owner_signature__1440x960.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__inbox__owner_signature__390x844.png",
+        "index__inbox__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "my-work",
+      "scenario": "owner_signature",
+      "html": "index__my-work__owner_signature.html",
+      "htmlBytes": 397097,
+      "markupBytes": 15889,
+      "shots": [
+        "index__my-work__owner_signature__1440x960.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__390x844.png",
+        "index__my-work__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "analytics",
+      "scenario": "owner_signature",
+      "html": "index__analytics__owner_signature.html",
+      "htmlBytes": 402561,
+      "markupBytes": 21351,
+      "shots": [
+        "index__analytics__owner_signature__1440x960.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__390x844.png",
+        "index__analytics__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "briefing",
+      "scenario": "owner_signature",
+      "html": "index__briefing__owner_signature.html",
+      "htmlBytes": 401436,
+      "markupBytes": 20227,
+      "shots": [
+        "index__briefing__owner_signature__1440x960.png",
+        "index__briefing__owner_signature__1440x960__fold.png",
+        "index__briefing__owner_signature__390x844.png",
+        "index__briefing__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "today",
+      "scenario": "owner_quiet",
+      "html": "index__today__owner_quiet.html",
+      "htmlBytes": 387539,
+      "markupBytes": 6337,
+      "shots": [
+        "index__today__owner_quiet__1440x960.png",
+        "index__today__owner_quiet__1440x960__fold.png",
+        "index__today__owner_quiet__390x844.png",
+        "index__today__owner_quiet__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "today",
+      "scenario": "partial_coverage",
+      "html": "index__today__partial_coverage.html",
+      "htmlBytes": 398935,
+      "markupBytes": 17728,
+      "shots": [
+        "index__today__partial_coverage__1440x960.png",
+        "index__today__partial_coverage__1440x960__fold.png",
+        "index__today__partial_coverage__390x844.png",
+        "index__today__partial_coverage__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "today",
+      "scenario": "provider_failure",
+      "html": "index__today__provider_failure.html",
+      "htmlBytes": 396998,
+      "markupBytes": 15791,
+      "shots": [
+        "index__today__provider_failure__1440x960.png",
+        "index__today__provider_failure__1440x960__fold.png",
+        "index__today__provider_failure__390x844.png",
+        "index__today__provider_failure__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "today",
+      "scenario": "new_user",
+      "html": "index__today__new_user.html",
+      "htmlBytes": 386492,
+      "markupBytes": 5293,
+      "shots": [
+        "index__today__new_user__1440x960.png",
+        "index__today__new_user__1440x960__fold.png",
+        "index__today__new_user__390x844.png",
+        "index__today__new_user__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "index",
+      "label": "Index",
+      "mode": "today",
+      "scenario": "scale",
+      "html": "index__today__scale.html",
+      "htmlBytes": 398209,
+      "markupBytes": 17013,
+      "shots": [
+        "index__today__scale__1440x960.png",
+        "index__today__scale__1440x960__fold.png",
+        "index__today__scale__390x844.png",
+        "index__today__scale__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "today",
+      "scenario": "owner_signature",
+      "html": "desk__today__owner_signature.html",
+      "htmlBytes": 393944,
+      "markupBytes": 14334,
+      "shots": [
+        "desk__today__owner_signature__1440x960.png",
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__390x844.png",
+        "desk__today__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "inbox",
+      "scenario": "owner_signature",
+      "html": "desk__inbox__owner_signature.html",
+      "htmlBytes": 394469,
+      "markupBytes": 14859,
+      "shots": [
+        "desk__inbox__owner_signature__1440x960.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__inbox__owner_signature__390x844.png",
+        "desk__inbox__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "my-work",
+      "scenario": "owner_signature",
+      "html": "desk__my-work__owner_signature.html",
+      "htmlBytes": 392848,
+      "markupBytes": 13236,
+      "shots": [
+        "desk__my-work__owner_signature__1440x960.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__390x844.png",
+        "desk__my-work__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "analytics",
+      "scenario": "owner_signature",
+      "html": "desk__analytics__owner_signature.html",
+      "htmlBytes": 397342,
+      "markupBytes": 17728,
+      "shots": [
+        "desk__analytics__owner_signature__1440x960.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__390x844.png",
+        "desk__analytics__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "briefing",
+      "scenario": "owner_signature",
+      "html": "desk__briefing__owner_signature.html",
+      "htmlBytes": 396355,
+      "markupBytes": 16742,
+      "shots": [
+        "desk__briefing__owner_signature__1440x960.png",
+        "desk__briefing__owner_signature__1440x960__fold.png",
+        "desk__briefing__owner_signature__390x844.png",
+        "desk__briefing__owner_signature__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "today",
+      "scenario": "owner_quiet",
+      "html": "desk__today__owner_quiet.html",
+      "htmlBytes": 386054,
+      "markupBytes": 6448,
+      "shots": [
+        "desk__today__owner_quiet__1440x960.png",
+        "desk__today__owner_quiet__1440x960__fold.png",
+        "desk__today__owner_quiet__390x844.png",
+        "desk__today__owner_quiet__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "today",
+      "scenario": "partial_coverage",
+      "html": "desk__today__partial_coverage.html",
+      "htmlBytes": 394220,
+      "markupBytes": 14609,
+      "shots": [
+        "desk__today__partial_coverage__1440x960.png",
+        "desk__today__partial_coverage__1440x960__fold.png",
+        "desk__today__partial_coverage__390x844.png",
+        "desk__today__partial_coverage__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "today",
+      "scenario": "provider_failure",
+      "html": "desk__today__provider_failure.html",
+      "htmlBytes": 392722,
+      "markupBytes": 13111,
+      "shots": [
+        "desk__today__provider_failure__1440x960.png",
+        "desk__today__provider_failure__1440x960__fold.png",
+        "desk__today__provider_failure__390x844.png",
+        "desk__today__provider_failure__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "today",
+      "scenario": "new_user",
+      "html": "desk__today__new_user.html",
+      "htmlBytes": 384885,
+      "markupBytes": 5282,
+      "shots": [
+        "desk__today__new_user__1440x960.png",
+        "desk__today__new_user__1440x960__fold.png",
+        "desk__today__new_user__390x844.png",
+        "desk__today__new_user__390x844__fold.png"
+      ],
+      "error": null
+    },
+    {
+      "candidate": "desk",
+      "label": "Desk",
+      "mode": "today",
+      "scenario": "scale",
+      "html": "desk__today__scale.html",
+      "htmlBytes": 394005,
+      "markupBytes": 14405,
+      "shots": [
+        "desk__today__scale__1440x960.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__today__scale__390x844.png",
+        "desk__today__scale__390x844__fold.png"
+      ],
+      "error": null
+    }
+  ]
+}

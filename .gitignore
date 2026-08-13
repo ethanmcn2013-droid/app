@@ -75,3 +75,8 @@ prefs.db*
 # commit before this rule existed.
 *.tmp.mjs
 /experience/home-layer/output/
+
+# Offline direction captures: the PNGs are the evidence and are committed; the
+# HTML sources inline their own stylesheet and two embedded fonts, so the set
+# runs to ~16 MB. Rebuild with scripts/home-layer/render-directions.mjs.
+/docs/projects/home-operating-layer/design/lab-evidence/*.html
