@@ -83,10 +83,39 @@ test("the progressive path renders one Quiet Ledger without the analytics shell"
   assert.doesNotMatch(briefingPage, /SignalAppShell/);
 });
 
+/**
+ * Renegotiated at WP4-A, not weakened (DECISIONS.md D-007).
+ *
+ * This used to pin one function's literal shape: a `"true"` branch, a
+ * `"false"` branch, and a trailing bare `return false;`. D-011 split that
+ * function in two — `SIGNAL_ANALYTICS_V1_ENABLED` is a briefing-engine switch
+ * and could not open the analytics domain without replacing the shipped Full
+ * Briefing, so `SIGNAL_HOME_ANALYTICS_ENABLED` now gates the view — and the
+ * shared parsing moved into `readFlag`, which the old regexes cannot see.
+ *
+ * The invariant is unchanged and is now asserted on BOTH flags: closed unless
+ * a recognised true is set, an explicit false always wins, and no gate is
+ * derived from the deployment mode. `feature-flag.test.ts` proves the same
+ * invariant behaviourally rather than by source text; this guard remains as
+ * the thing that fails if a third flag appears without one.
+ */
 test("progressive analytics remains explicitly off by default", () => {
-  assert.match(featureFlag, /if \(configured === "true"[\s\S]*return true;/);
-  assert.match(featureFlag, /if \(configured === "false"[\s\S]*return false;/);
-  assert.match(featureFlag, /return false;\s*\n}/);
+  assert.match(featureFlag, /if \(configured === "true" \|\| configured === "1"\) return true;/);
+  assert.match(featureFlag, /if \(configured === "false" \|\| configured === "0"\) return false;/);
+  assert.match(featureFlag, /return null;\s*\n}/);
+
+  // Every exported gate must fall closed on an absent or unrecognised value.
+  const gates = featureFlag.match(/export function is\w+\(\): boolean \{[\s\S]*?\n}/g) ?? [];
+  assert.equal(gates.length, 3, "the engine gate, the Home gate, and the domain gate");
+  for (const gate of gates) {
+    assert.ok(
+      /\?\? false;/.test(gate) || /isSignalAnalyticsEnabled\(\) \|\| isHomeAnalyticsEnabled\(\)/.test(gate),
+      `a gate that does not default to false: ${gate.slice(0, 80)}`,
+    );
+  }
+
+  assert.match(featureFlag, /process\.env\.SIGNAL_ANALYTICS_V1_ENABLED/);
+  assert.match(featureFlag, /process\.env\.SIGNAL_HOME_ANALYTICS_ENABLED/);
   assert.doesNotMatch(featureFlag, /isProductionMode/);
 });
 
