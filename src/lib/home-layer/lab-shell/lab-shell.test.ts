@@ -34,10 +34,12 @@ import { assembleCandidateProps, scenarioScopeOf } from "./assemble";
 import {
   buildLabUrl,
   DEFAULT_SCENARIO,
+  LAB_ROUTE_PATH,
   LAB_VARIANTS,
   parseLabUrl,
   type LabUrlState,
 } from "./lab-url";
+import { withCandidateVariant } from "./variant";
 
 const parse = (search: string) => parseLabUrl(search, scenarioScopeOf);
 
@@ -207,21 +209,59 @@ test("the assembly is deterministic: two calls produce the same screen", () => {
     const a = assembleCandidateProps({ state: stateFor(id) });
     const b = assembleCandidateProps({ state: stateFor(id) });
     assert.deepEqual(
-      JSON.parse(JSON.stringify({ ...a, hrefFor: undefined })),
-      JSON.parse(JSON.stringify({ ...b, hrefFor: undefined })),
+      wholeProps(a),
+      wholeProps(b),
       `${id}: two assemblies of one world disagree`,
     );
   }
 });
 
-test("all four variants receive an identical object apart from their own label", () => {
+/**
+ * THE FAIRNESS ASSERTION, and why it names nothing.
+ *
+ * The old version of this test compared the props with `meta`, `state` and
+ * `hrefFor` set aside, and it passed while the four candidates were being
+ * handed different `briefingHref` and `returnHref` values — one carrying
+ * `v=1`, another `v=2`. An exclusion list is an admission that the data is not
+ * actually identical, so this version has none: it walks the WHOLE object.
+ *
+ * The one member that cannot be compared by value is `hrefFor`, because a
+ * closure is only ever equal to itself. It is not skipped either. It is
+ * replaced by what it PRODUCES over a battery of patches, which is the thing
+ * that would differ if the assembly could see the candidate.
+ */
+const HREF_PROBES: readonly Partial<LabUrlState>[] = Object.freeze([
+  {},
+  { mode: "inbox" },
+  { mode: "briefing" },
+  { mode: "analytics" },
+  { homeScope: "all" },
+  { homeScope: "project", workspaceId: "home-ws-mara-finn" },
+  { item: "home-task-mf-corkage" },
+  { event: "home-evt-01" },
+  { lensProjectId: "home-ws-nora-cian" },
+  { theme: "dark" },
+  { capture: true },
+]);
+
+function wholeProps(props: ReturnType<typeof assembleCandidateProps>): unknown {
+  return JSON.parse(
+    JSON.stringify(props, (_key, value: unknown) =>
+      typeof value === "function"
+        ? HREF_PROBES.map((patch) =>
+            (value as (p: Partial<LabUrlState>) => string)(patch),
+          )
+        : value,
+    ),
+  );
+}
+
+test("all four candidates are handed one object, compared whole", () => {
   for (const id of SCENARIO_IDS) {
     const base = stateFor(id);
     const rendered = LAB_VARIANTS.map((variant) => {
-      const props = assembleCandidateProps({ state: { ...base, v: variant.v } });
-      return JSON.parse(
-        JSON.stringify({ ...props, meta: undefined, state: undefined, hrefFor: undefined }),
-      );
+      const state: LabUrlState = { ...base, v: variant.v };
+      return wholeProps(assembleCandidateProps({ state }));
     });
     for (const other of rendered.slice(1)) {
       assert.deepEqual(
@@ -230,6 +270,46 @@ test("all four variants receive an identical object apart from their own label",
         `${id}: two directions would be handed different data`,
       );
     }
+  }
+});
+
+test("no assembled link names a candidate, and the shell puts one back", () => {
+  const base = stateFor("owner_signature");
+  const props = assembleCandidateProps({ state: base });
+
+  // Nothing the assembly wrote may carry a variant. If it did, the object above
+  // could not be identical across the four.
+  const serialised = JSON.stringify(wholeProps(props));
+  assert.ok(!serialised.includes("v=1"), "an assembled link named a candidate");
+  assert.ok(!serialised.includes("v%3D1"), "an assembled link named a candidate");
+
+  for (const variant of LAB_VARIANTS) {
+    const decorated = withCandidateVariant(props, variant.v);
+    assert.equal(
+      decorated.today.briefingHref,
+      `${LAB_ROUTE_PATH}?v=${variant.v}&${props.today.briefingHref.split("?")[1] ?? ""}`,
+      "the shell must put the candidate back at the front of the link",
+    );
+    assert.equal(
+      parse(decorated.today.briefingHref.slice(decorated.today.briefingHref.indexOf("?")))
+        .state.v,
+      variant.v,
+      "a decorated link must parse back to the candidate it names",
+    );
+    // The rest of the state has to survive the decoration untouched.
+    const back = parse(
+      decorated.briefing.returnHref.slice(decorated.briefing.returnHref.indexOf("?")),
+    ).state;
+    assert.equal(back.mode, "today");
+    assert.equal(back.scenario, "owner_signature");
+    assert.equal(back.homeScope, base.homeScope);
+    assert.equal(back.planningPeriodId, base.planningPeriodId);
+    assert.equal(back.workspaceId, base.workspaceId);
+    // And the built link is byte-identical to the one the builder writes.
+    assert.equal(
+      decorated.today.briefingHref,
+      buildLabUrl({ ...base, v: variant.v, mode: "briefing", item: null }),
+    );
   }
 });
 
@@ -257,34 +337,111 @@ test("a narrowed Read Scope narrows the read rather than relabelling it", () => 
   );
 });
 
+/**
+ * TWO FAILURES, TWO TREATMENTS, and the test keeps them apart.
+ *
+ * `unresolved` is a Project whose route did not resolve: revoked, missing or
+ * deleted. It carries no metadata at all, not even its name.
+ *
+ * `unavailable` here is a Project the reader is still a member of whose SOURCE
+ * did not answer. Its counts are unknown and must never render as numbers; its
+ * name is not a disclosure and withholding it would tell the reader less than
+ * the truth. `deriveLedger` reads `routeState` alone and returns this row as
+ * `ready` with a count on it, so the shell is what refuses to pass that on.
+ */
 test("no view model renders an unreadable count as a number", () => {
-  const props = assembleCandidateProps({ state: stateFor("provider_failure", "analytics") });
-  const unreadable = props.analytics.ledger.filter(
-    (row) => row.state === "unavailable" || row.state === "unresolved",
+  const failed = assembleCandidateProps({ state: stateFor("provider_failure", "analytics") });
+  const silent = failed.analytics.ledger.filter((row) => row.state === "unavailable");
+  assert.ok(silent.length > 0, "the provider-failure world holds a source that did not answer");
+  for (const row of silent) {
+    assert.equal(row.openWorkLabel, failed.copy.unreadableCount);
+    assert.equal(row.overdueLabel, failed.copy.unreadableCount);
+    assert.equal(row.href, null, "a project that did not answer opens nothing");
+    assert.notEqual(row.projectName, null, "a member's project keeps its name");
+  }
+  assert.ok(
+    failed.today.disclosures.some((entry) => entry.id === "coverage-source-failed"),
+    "a source that did not answer has to be said on the page, not only in the ledger",
   );
-  assert.ok(unreadable.length > 0, "the provider-failure world should hold an unread project");
-  for (const row of unreadable) {
-    assert.equal(row.projectName, null, "an unread project must carry no name");
-    assert.equal(row.openWorkLabel, props.copy.unreadableCount);
-    assert.equal(row.overdueLabel, props.copy.unreadableCount);
+
+  const revoked = assembleCandidateProps({
+    state: stateFor("permission_changed", "analytics"),
+  });
+  const gone = revoked.analytics.ledger.filter((row) => row.state === "unresolved");
+  assert.ok(gone.length > 0, "the permission world holds a project that did not resolve");
+  for (const row of gone) {
+    assert.equal(row.projectName, null, "an unresolved project must carry no name");
+    assert.equal(row.openWorkLabel, revoked.copy.unreadableCount);
+    assert.equal(row.overdueLabel, revoked.copy.unreadableCount);
+    assert.equal(row.href, null);
   }
 });
 
-test("only the quiet world is allowed to say nothing crossed a rule", () => {
-  const allowed = SCENARIO_IDS.filter(
-    (id) => assembleCandidateProps({ state: stateFor(id) }).today.quiet.allowed,
-  );
-  assert.deepEqual(allowed, ["owner_quiet"]);
+/**
+ * WHAT THE FIXTURES ACTUALLY SAY, established before this test was written.
+ *
+ * Every one of the thirteen worlds fires Q7, because `calendar-event` is an
+ * eligible kind with no producer in v1 and TODAY_RANKING TR-7 seals that as the
+ * correct outcome rather than a bug. So the unqualified all clear is
+ * unreachable, in every world, and a test expecting a world to reach it was
+ * asking the shell to break §9.2.
+ *
+ * The distinction that IS real, read off the fixtures: `owner_quiet` is the
+ * only world whose blockers are all platform limits. Its `blockedBy` is
+ * exactly Q7 and Q8. Every other world fires at least one condition about its
+ * own read — something crossed a rule, something was held back, something was
+ * silenced, a project or a source did not answer. That is the difference the
+ * lab brief requires a direction to render: a quiet day and a broken provider
+ * must not look the same.
+ */
+test("no world may say the unqualified all clear, because v1 cannot see a whole day", () => {
+  for (const id of SCENARIO_IDS) {
+    const props = assembleCandidateProps({ state: stateFor(id) });
+    assert.equal(
+      props.today.quiet.allowed,
+      false,
+      `${id}: Q7 fires for every v1 reader, so no world may claim an all clear`,
+    );
+    assert.ok(
+      props.today.quiet.blockedBy.includes("Q7"),
+      `${id}: Q7 must be named, not silently dropped`,
+    );
+  }
 });
 
-test("a revoked project leaks nothing into the rows a candidate is handed", () => {
-  const props = assembleCandidateProps({ state: stateFor("permission_changed", "inbox") });
-  const serialised = JSON.stringify({ ...props, hrefFor: undefined });
-  for (const leak of ["Sinéad & Ruairí", "Dromoland", "forbidden", "deleted"]) {
-    assert.ok(
-      !serialised.includes(leak),
-      `the revoked project leaked "${leak}" into the candidate props`,
-    );
+test("exactly one world reports a quiet read, and it says what it could not see", () => {
+  const quiet = SCENARIO_IDS.filter(
+    (id) => assembleCandidateProps({ state: stateFor(id) }).today.quiet.readIsQuiet,
+  );
+  assert.deepEqual(quiet, ["owner_quiet"]);
+
+  const props = assembleCandidateProps({ state: stateFor("owner_quiet") });
+  assert.deepEqual([...props.today.quiet.blockedBy], ["Q7", "Q8"]);
+  assert.ok(
+    props.today.quiet.line.includes("not an all clear"),
+    "a quiet read still refuses the all clear",
+  );
+  assert.ok(
+    props.today.quiet.line.includes("no source connected"),
+    "and it names the limit that refuses it",
+  );
+
+  // The broken world must not be able to borrow that language.
+  const broken = assembleCandidateProps({ state: stateFor("provider_failure") });
+  assert.equal(broken.today.quiet.readIsQuiet, false);
+  assert.notEqual(broken.today.quiet.line, props.today.quiet.line);
+});
+
+test("a revoked project leaks nothing into anything a candidate is handed", () => {
+  for (const mode of HOME_MODES) {
+    const props = assembleCandidateProps({ state: stateFor("permission_changed", mode) });
+    const serialised = JSON.stringify(wholeProps(props));
+    for (const leak of ["Sinéad & Ruairí", "Dromoland", "forbidden", "deleted"]) {
+      assert.ok(
+        !serialised.includes(leak),
+        `${mode}: the revoked project leaked "${leak}" into the candidate props`,
+      );
+    }
   }
 });
 

@@ -121,11 +121,11 @@ import {
   SUPPRESSED_BY_CAP,
 } from "./copy";
 import {
-  buildLabUrl,
-  labVariant,
+  buildLabHref,
+  labViewState,
   LAB_MODE_TO_HOME_ROUTE,
   type LabScope,
-  type LabUrlState,
+  type LabViewState,
 } from "./lab-url";
 
 // ── Formatting, in the world's own zone ─────────────────────────────────────
@@ -262,9 +262,19 @@ function projectsForScope(
   return world.projects;
 }
 
-function scopeLabel(kind: LabScope, projectIds: readonly string[]): string {
+/**
+ * `unreadable` is not optional politeness. A Project that did not resolve
+ * carries no metadata to a candidate, and its name reaching a scope label is
+ * the same leak as its name reaching a row.
+ */
+function scopeLabel(
+  kind: LabScope,
+  projectIds: readonly string[],
+  unreadable: ReadonlySet<string>,
+): string {
   if (kind === "project") {
-    const name = projectName(projectIds[0] ?? null);
+    const id = projectIds[0] ?? null;
+    const name = id === null || unreadable.has(id) ? null : projectName(id);
     return name ?? "One project, and it could not be read";
   }
   if (kind === "planning-period") return HOME_FIXTURE_PERIOD_ORCHARD.name;
@@ -277,7 +287,7 @@ const SCOPE_HELP: Readonly<Record<LabScope, string>> = Object.freeze({
   all: "Home is reading every project you can see. Changing this changes what you see, not where your work goes.",
 });
 
-export function resolveScope(state: LabUrlState, world: Scenario): ResolvedScope {
+export function resolveScope(state: LabViewState, world: Scenario): ResolvedScope {
   const unresolvedIds = world.projectStates
     .filter((entry) => entry.routeState === "unavailable")
     .map((entry) => entry.projectId);
@@ -286,6 +296,7 @@ export function resolveScope(state: LabUrlState, world: Scenario): ResolvedScope
       (entry) => entry.sourceStatus === "unavailable" && entry.routeState !== "unavailable",
     )
     .map((entry) => entry.projectId);
+  const allUnreadable = new Set(unresolvedIds);
   const projectIds = projectsForScope(state.homeScope, world, state.workspaceId);
   const authored = scenarioScopeOf(world.id);
   const authoredIds = projectsForScope(authored.homeScope, world, authored.workspaceId);
@@ -298,7 +309,7 @@ export function resolveScope(state: LabUrlState, world: Scenario): ResolvedScope
     projectIds: Object.freeze(projectIds),
     unresolvedIds: Object.freeze(unresolvedIds.filter((id) => projectIds.includes(id))),
     sourceFailedIds: Object.freeze(sourceFailedIds.filter((id) => projectIds.includes(id))),
-    label: scopeLabel(state.homeScope, projectIds),
+    label: scopeLabel(state.homeScope, projectIds, allUnreadable),
     helpLine: SCOPE_HELP[state.homeScope],
     narrowed,
   });
@@ -383,6 +394,12 @@ function coverageDisclosures(world: Scenario, scope: ResolvedScope): readonly Di
   const unresolved = states.filter((entry) => entry.routeState === "unavailable");
   const partial = states.filter((entry) => entry.sourceStatus === "partial");
   const stale = states.filter((entry) => entry.sourceStatus === "stale");
+  // Resolved, in scope, and its source did not come back. Without this the
+  // provider-failure world renders `partial` with nothing on the page saying
+  // so, and a broken provider looks like a quiet day.
+  const silent = states.filter(
+    (entry) => entry.routeState !== "unavailable" && entry.sourceStatus === "unavailable",
+  );
 
   if (scope.projectIds.length === 0) {
     out.push({
@@ -398,6 +415,14 @@ function coverageDisclosures(world: Scenario, scope: ResolvedScope): readonly Di
       tone: "coverage",
       state: "partial",
       text: `${plural(scope.projectIds.length - unresolved.length, "project", "projects")} of ${scope.projectIds.length} answered. The rest could not be read, so nothing here counts them.`,
+    });
+  }
+  if (silent.length > 0) {
+    out.push({
+      id: "coverage-source-failed",
+      tone: "failure",
+      state: "partial",
+      text: `${plural(silent.length, "project", "projects")} did not answer at all. Nothing here counts ${silent.length === 1 ? "it" : "them"} as zero, and no total includes ${silent.length === 1 ? "it" : "them"}.`,
     });
   }
   if (partial.length > 0) {
@@ -450,7 +475,7 @@ function todayRow(
   row: RankedRow,
   today: CalendarDate,
   unreadable: ReadonlySet<string>,
-  href: (patch: Partial<LabUrlState>) => string,
+  href: (patch: Partial<LabViewState>) => string,
 ): TodayRow {
   const projectId = row.ref?.projectId ?? null;
   const key = row.ref ? `${row.ref.product}:${row.ref.kind}:${row.ref.id}` : `reading:${row.origin}`;
@@ -475,7 +500,7 @@ function todaySections(
   result: TodayResult,
   today: CalendarDate,
   unreadable: ReadonlySet<string>,
-  href: (patch: Partial<LabUrlState>) => string,
+  href: (patch: Partial<LabViewState>) => string,
   uncapped: boolean,
 ): readonly TodaySection[] {
   return Object.freeze(
@@ -520,24 +545,103 @@ const QUIET_REASONS: Readonly<Record<string, string>> = Object.freeze({
   Q9: "there is no project in scope",
 });
 
-function quietLine(result: TodayResult): Readonly<{ allowed: boolean; line: string }> {
+/**
+ * The two conditions that are facts about the PLATFORM in v1, not about this
+ * reader's day.
+ *
+ * Q7: `calendar-event` is an eligible kind with no producer, so it fires for
+ * every reader in every world (TODAY_RANKING TR-7, which calls that the correct
+ * outcome rather than a bug). Q8: nothing writes analytics snapshots yet
+ * (finding F7), so a world with no comparable history fires it whatever the
+ * reader did today.
+ *
+ * Every other code is a fact about the read itself: something crossed a rule,
+ * something was held back, something was silenced, a project or a source did
+ * not answer.
+ */
+const PLATFORM_LIMIT_CODES: ReadonlySet<string> = new Set(["Q7", "Q8"]);
+
+function quietState(
+  result: TodayResult,
+): Readonly<{
+  allowed: boolean;
+  readIsQuiet: boolean;
+  blockedBy: readonly string[];
+  line: string;
+}> {
+  const blockedBy = Object.freeze([...result.quiet.blockedBy]);
+  const worded = (codes: readonly string[]) =>
+    codes
+      .map((code) => QUIET_REASONS[code])
+      .filter((text): text is string => Boolean(text));
+
+  // The unqualified all clear. §9.2 permits it only with Q1 to Q9 all false,
+  // which v1 cannot reach, so this branch exists to be correct rather than to
+  // be taken.
   if (result.quiet.allowed) {
     return Object.freeze({
       allowed: true,
+      readIsQuiet: true,
+      blockedBy,
       line: "Nothing crossed a rule today, every source answered, and every project was read.",
     });
   }
-  const reasons = result.quiet.blockedBy
-    .map((code) => QUIET_REASONS[code])
-    .filter((text): text is string => Boolean(text));
+
+  const limits = blockedBy.filter((code) => PLATFORM_LIMIT_CODES.has(code));
+  const readIsQuiet = limits.length === blockedBy.length;
+
+  // §9.2 part 3, the specific true statement, followed by part 2, what was not
+  // read. Nothing about this reader's own work is unresolved, so the sentence
+  // says so plainly and then refuses the all clear by naming what is missing.
+  if (readIsQuiet) {
+    const missing = worded(limits);
+    return Object.freeze({
+      allowed: false,
+      readIsQuiet: true,
+      blockedBy,
+      line: `Nothing you are carrying crossed a rule today, and every project answered. This is still not an all clear, because ${joinPlainly(missing)}.`,
+    });
+  }
+
+  const reasons = worded(blockedBy.filter((code) => !PLATFORM_LIMIT_CODES.has(code)));
   const first = reasons[0] ?? "the read is not complete";
+  const rest = reasons.length - 1;
   return Object.freeze({
     allowed: false,
+    readIsQuiet: false,
+    blockedBy,
     line:
-      reasons.length > 1
-        ? `This is not an all clear: ${first}, and ${reasons.length - 1} other things are unresolved.`
+      rest > 0
+        ? `This is not an all clear: ${first}, and ${plural(rest, "other thing is", "other things are")} unresolved.`
         : `This is not an all clear: ${first}.`,
   });
+}
+
+/**
+ * The ledger accounts for every Project it could not read, and it separates the
+ * two reasons. A Project whose route did not resolve and a Project whose source
+ * did not answer are different facts, and a reader who is deciding whether to
+ * trust the numbers needs to know which one happened.
+ */
+function ledgerCoverageLine(unresolved: number, sourceFailed: number): string | null {
+  const parts: string[] = [];
+  if (unresolved > 0) {
+    parts.push(
+      `${plural(unresolved, "project", "projects")} could not be read at all`,
+    );
+  }
+  if (sourceFailed > 0) {
+    parts.push(`${plural(sourceFailed, "project", "projects")} did not answer`);
+  }
+  if (parts.length === 0) return null;
+  return `${joinPlainly(parts)}. ${unresolved + sourceFailed === 1 ? "It is" : "They are"} listed with that state rather than left out, and no count is shown for ${unresolved + sourceFailed === 1 ? "it" : "them"}.`;
+}
+
+/** "a, b and c". Used only for sentences the shell composes itself. */
+function joinPlainly(parts: readonly string[]): string {
+  if (parts.length === 0) return "the read is not complete";
+  if (parts.length === 1) return parts[0] as string;
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1] as string}`;
 }
 
 const UNSUPPORTED_DISCLOSURES: readonly Disclosure[] = Object.freeze(
@@ -553,7 +657,13 @@ const UNSUPPORTED_DISCLOSURES: readonly Disclosure[] = Object.freeze(
 
 // ── The assembly ────────────────────────────────────────────────────────────
 
-export type AssembleInput = Readonly<{ state: LabUrlState }>;
+/**
+ * `state` is a `LabViewState`, so it does not carry `v`. The assembly cannot
+ * see which candidate is on screen and therefore cannot vary by it: that is the
+ * fairness rule, enforced by the type rather than by discipline. The shell puts
+ * the candidate back into the links afterwards (`withCandidateVariant`).
+ */
+export type AssembleInput = Readonly<{ state: LabViewState }>;
 
 const MOTION: MotionContext = Object.freeze({
   replaysOnRemount: true,
@@ -566,14 +676,24 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
   const world = scenarioOf(state.scenario);
   const fixture: HomeFixtureWorld = homeFixtureWorld(state.scenario);
   const scope = resolveScope(state, world);
-  const variant = labVariant(state.v);
   const today = fixtureCalendarDate(world.asOfIso);
   const unreadable = new Set(scope.unresolvedIds);
+  const sourceFailed = new Set(scope.sourceFailedIds);
+  /**
+   * A Project that did not resolve is IN the ledger and OUT of the content. It
+   * is named as unread in the one place that has to account for every Project,
+   * and it contributes no row, no title and no name anywhere else — a revoked
+   * Project's work is not the reader's to see, and its titles are its work.
+   */
   const inScope = (projectId: string | null) =>
-    projectId === null ? scope.kind === "all" : scope.projectIds.includes(projectId);
+    projectId === null
+      ? scope.kind === "all"
+      : scope.projectIds.includes(projectId) && !unreadable.has(projectId);
+  const readableName = (id: string | null): string | null =>
+    id === null || unreadable.has(id) ? null : projectName(id);
 
-  const href = (patch: Partial<LabUrlState>): string =>
-    buildLabUrl({ ...state, ...patch });
+  const href = (patch: Partial<LabViewState>): string =>
+    buildLabHref({ ...state, ...patch });
 
   // — Today, and the full briefing, from one ranking ————————————————
   const scopedCandidates = world.todayCandidates.filter((signal) =>
@@ -630,7 +750,7 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
     accountingWithheldLine: todayResult.accounting
       ? null
       : "The read cannot be accounted for exactly, because at least one source did not answer in full. No total is shown rather than a total that would be wrong.",
-    quiet: quietLine(todayResult),
+    quiet: quietState(todayResult),
     unsupported: UNSUPPORTED_DISCLOSURES,
     disclosures: shared,
     briefingHref: href({ mode: "briefing", item: null }),
@@ -1025,42 +1145,63 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
     ) as readonly AnalyticsExceptionView[],
     exceptionsHeading: "Worth a look",
     ledger: Object.freeze(
-      ledger.map(
-        (row): AnalyticsLedgerRowView =>
-          Object.freeze({
-            projectId: row.workspaceId,
-            projectName: row.projectName,
-            state: row.state,
-            stateLabel:
-              row.state === "ready"
-                ? "Read"
-                : row.state === "empty"
-                  ? "Nothing in it"
-                  : row.state === "archived"
-                    ? "Archived"
-                    : row.state === "unresolved"
-                      ? "Did not answer"
-                      : "Could not be read",
-            openWorkLabel:
-              row.openWork === null
-                ? HOME_LAB_COPY.unreadableCount
-                : plural(row.openWork, "item open", "items open"),
-            overdueLabel:
-              row.overdue === null
-                ? HOME_LAB_COPY.unreadableCount
-                : plural(row.overdue, "item late", "items late"),
-            href:
-              row.state === "unavailable" || row.state === "unresolved"
-                ? null
-                : href({ mode: "analytics", lensProjectId: row.workspaceId }),
-          }),
-      ),
+      ledger.map((row): AnalyticsLedgerRowView => {
+        /**
+         * THE ONE PLACE THE SHELL OVERRULES THE FIXTURE, and it overrules it
+         * downward, never upward.
+         *
+         * `deriveLedger` reads `routeState` alone, so a Project whose route
+         * resolved but whose SOURCE did not answer comes back `ready` with a
+         * number on it. `provider_failure` is exactly that: Nora & Cian,
+         * `routeState: "ready"`, `sourceStatus: "unavailable"`. Passing that
+         * count on would be the charter's flagship lie, a failed read rendered
+         * as a fact. So the state becomes `unavailable` and both counts are
+         * withheld.
+         *
+         * The NAME stays. This is not a permission failure and there is no
+         * existence to leak: the reader is a member, the Project is in their
+         * scope control, and an anonymous "could not be read" row would tell
+         * them less than the truth. Only an unresolved Project loses its name,
+         * and `deriveLedger` has already dropped it.
+         */
+        const answered = !sourceFailed.has(row.workspaceId);
+        const state_ = answered ? row.state : ("unavailable" as const);
+        const openWork = answered ? row.openWork : null;
+        const overdue = answered ? row.overdue : null;
+        return Object.freeze({
+          projectId: row.workspaceId,
+          projectName: row.projectName,
+          state: state_,
+          stateLabel:
+            state_ === "ready"
+              ? "Read"
+              : state_ === "empty"
+                ? "Nothing in it"
+                : state_ === "archived"
+                  ? "Archived"
+                  : state_ === "unresolved"
+                    ? "Did not answer"
+                    : "Could not be read",
+          openWorkLabel:
+            openWork === null
+              ? HOME_LAB_COPY.unreadableCount
+              : plural(openWork, "item open", "items open"),
+          overdueLabel:
+            overdue === null
+              ? HOME_LAB_COPY.unreadableCount
+              : plural(overdue, "item late", "items late"),
+          href:
+            state_ === "unavailable" || state_ === "unresolved"
+              ? null
+              : href({ mode: "analytics", lensProjectId: row.workspaceId }),
+        });
+      }),
     ),
     ledgerHeading: "Every project you can read",
-    ledgerCoverageLine:
-      scope.unresolvedIds.length > 0
-        ? `${plural(scope.unresolvedIds.length, "project", "projects")} did not answer. ${scope.unresolvedIds.length === 1 ? "It is" : "They are"} listed with that state rather than left out.`
-        : null,
+    ledgerCoverageLine: ledgerCoverageLine(
+      scope.unresolvedIds.length,
+      scope.sourceFailedIds.length,
+    ),
     trend: Object.freeze({
       renderChart: trend.renderChart,
       line:
@@ -1079,7 +1220,7 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
     lens: Object.freeze({
       open: fixture.lens.opens,
       projectId: state.lensProjectId,
-      projectName: fixture.lens.opens ? projectName(state.lensProjectId) : null,
+      projectName: fixture.lens.opens ? readableName(state.lensProjectId) : null,
       line: fixture.lens.opens
         ? "You are looking at one project. What Home reads and where your work goes are both unchanged."
         : state.lensProjectId !== null
@@ -1129,18 +1270,32 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
     ...(["project", "planning-period", "all"] as LabScope[]).map((kind) =>
       Object.freeze({
         id: `scope-${kind}`,
-        label: scopeLabel(kind, projectsForScope(kind, world, state.workspaceId)),
+        label: scopeLabel(
+          kind,
+          projectsForScope(kind, world, state.workspaceId),
+          unreadable,
+        ),
         group: "read-scope" as const,
-        href: href({ homeScope: kind }),
+        href: href({
+          homeScope: kind,
+          // The Planning Period id is the operand of the scope, so a link that
+          // asks for the season has to carry the season it means.
+          planningPeriodId:
+            kind === "planning-period"
+              ? (state.planningPeriodId ?? scenarioScopeOf(world.id).planningPeriodId)
+              : null,
+        }),
         current: kind === scope.kind,
       }),
     ),
     ...world.projects.map((projectId) =>
       Object.freeze({
         id: `project-${projectId}`,
-        label: projectName(projectId) ?? "A project that could not be read",
+        // A Project that did not resolve is still offered, because the reader
+        // asking for it is how they find out. It is offered without its name.
+        label: readableName(projectId) ?? "A project that could not be read",
         group: "project" as const,
-        href: href({ homeScope: "project", workspaceId: projectId }),
+        href: href({ homeScope: "project", workspaceId: projectId, planningPeriodId: null }),
         current: scope.kind === "project" && scope.projectIds[0] === projectId,
       }),
     ),
@@ -1160,7 +1315,9 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
       helpLine: scope.helpLine,
       options: scopeOptions,
       resetHref:
-        scope.kind === "project" ? null : href({ homeScope: "project", planningPeriodId: null }),
+        scope.kind === "project"
+          ? null
+          : href({ homeScope: "project", planningPeriodId: null }),
       resetLabel: HOME_LAB_COPY.actions.resetScope,
       coverageLine:
         scope.unresolvedIds.length > 0
@@ -1177,11 +1334,16 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
             : "You have a limited seat here",
     }),
     activeProject: Object.freeze({
+      // The id is what the reader is already holding in their URL, so it is not
+      // a disclosure. The NAME is metadata and a Project that did not resolve
+      // has none to give, whatever the fixture's project table still knows.
       id: state.workspaceId,
-      name: projectName(state.workspaceId),
-      line: state.workspaceId
-        ? `Work you start from here goes to ${projectName(state.workspaceId) ?? "a project that could not be read"}.`
-        : "There is no project for new work to go to yet.",
+      name: readableName(state.workspaceId),
+      line: !state.workspaceId
+        ? "There is no project for new work to go to yet."
+        : readableName(state.workspaceId)
+          ? `Work you start from here goes to ${readableName(state.workspaceId) as string}.`
+          : "The project new work would go to could not be read.",
     }),
     asOf: Object.freeze({
       iso: world.asOfIso,
@@ -1190,13 +1352,11 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
   });
 
   return Object.freeze({
-    meta: Object.freeze({
-      v: variant.v,
-      slug: variant.slug,
-      label: variant.label,
-      capture: state.capture,
-    }),
-    state,
+    // Rebuilt field by field rather than passed through. A caller handing in a
+    // full `LabUrlState` is structurally allowed to, and passing it on would
+    // put `v` back into the props at runtime while the type still said it was
+    // not there.
+    state: labViewState(state),
     world: Object.freeze({ id: world.id, label: world.label, proves: world.proves }),
     chrome,
     today: today_,
@@ -1237,7 +1397,7 @@ function myWorkRow(
   entry: GroupedRow,
   today: CalendarDate,
   unreadable: ReadonlySet<string>,
-  href: (patch: Partial<LabUrlState>) => string,
+  href: (patch: Partial<LabViewState>) => string,
 ): MyWorkRowView {
   const row = entry.row;
   return Object.freeze({
@@ -1307,7 +1467,7 @@ const EXCLUSION_WORDS: Readonly<Record<string, string>> = Object.freeze({
 
 function claimView(
   claim: AnalyticsClaim,
-  href: (patch: Partial<LabUrlState>) => string,
+  href: (patch: Partial<LabViewState>) => string,
 ): AnalyticsClaimView {
   const denominator = claim.population.denominator;
   const populationLine =

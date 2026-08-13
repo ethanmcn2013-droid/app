@@ -101,8 +101,18 @@ export const CONTEXT_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
 
 // ── The state ───────────────────────────────────────────────────────────────
 
-export type LabUrlState = Readonly<{
-  v: LabVariantNumber;
+/**
+ * THE CANDIDATE-VISIBLE STATE — everything in the URL except which candidate is
+ * on screen.
+ *
+ * `v` is deliberately absent, and the absence is the fairness rule made
+ * structural. The assembly takes this type, so it cannot read the variant, so
+ * it cannot vary by it: the four directions are handed one object built from
+ * one input. Navigation still stays on the chosen candidate, because the shell
+ * appends `v` to every lab link at render time (`withCandidateVariant`), after
+ * the data is assembled and outside anything a candidate can influence.
+ */
+export type LabViewState = Readonly<{
   mode: HomeMode;
   scenario: ScenarioId;
   /** Home Read Scope: what the modes may read together. */
@@ -137,6 +147,38 @@ export type LabUrlState = Readonly<{
    */
   scopeFromScenario: boolean;
 }>;
+
+/** The whole URL: the view state plus the candidate the reviewer is looking at. */
+export type LabUrlState = LabViewState & Readonly<{ v: LabVariantNumber }>;
+
+/**
+ * The view state, built field by field.
+ *
+ * A `LabUrlState` is assignable to a `LabViewState`, so the type system is
+ * happy to let a whole URL state through — and then `v` is still on the object
+ * at runtime, and the props a candidate receives name the candidate after all.
+ * That is not a hypothetical: it is what the first attempt at this shipped.
+ *
+ * Naming every field is the point. Adding one to `LabViewState` and forgetting
+ * it here is a compile error, which is the failure direction that can be
+ * caught, rather than a value quietly travelling that should not.
+ */
+export function labViewState(state: LabViewState): LabViewState {
+  return Object.freeze({
+    mode: state.mode,
+    scenario: state.scenario,
+    homeScope: state.homeScope,
+    workspaceId: state.workspaceId,
+    planningPeriodId: state.planningPeriodId,
+    period: state.period,
+    lensProjectId: state.lensProjectId,
+    event: state.event,
+    item: state.item,
+    theme: state.theme,
+    capture: state.capture,
+    scopeFromScenario: state.scopeFromScenario,
+  });
+}
 
 export type LabUrlNotice = Readonly<{
   parameter: string;
@@ -413,6 +455,24 @@ export function parseLabUrl(
   const scopeNamed = SCOPE_KEYS.some((key) => reader.keys.includes(key));
 
   let homeScope: LabScope = authored.homeScope;
+  /**
+   * True once the URL has NAMED a scope the lab accepted. It decides one thing
+   * only, and it is the subject of HOME_ROUTE_AND_RETURN_CONTEXT §4.3: whether
+   * the world's own `planningPeriodId` may still travel.
+   *
+   * The Planning Period id is the OPERAND of `homeScope`, meaningless without
+   * it. It belongs to the scope the world was authored at, not to a scope the
+   * reader has just asked for. So when the reader names the scope, the operand
+   * has to come from the URL as well, and `?homeScope=planning-period` with no
+   * id is a genuine missing operand: the notice fires and Read Scope falls
+   * inward to `project`, never outward to `all` (§4.3, §9.6).
+   *
+   * Backfilling it here is what made that rule unreachable: every world with an
+   * authored period silently supplied one, so the fallback could not be
+   * observed and a reader who asked for a season they had not named was shown
+   * the world's own season instead.
+   */
+  let scopeNamedInUrl = false;
   const rawScope = take("homeScope");
   if (rawScope !== null) {
     const found = LAB_SCOPES.find((candidate) => candidate === rawScope);
@@ -424,6 +484,7 @@ export function parseLabUrl(
       });
     } else {
       homeScope = found;
+      scopeNamedInUrl = true;
     }
   }
 
@@ -441,8 +502,16 @@ export function parseLabUrl(
     return raw;
   };
 
+  // `workspaceId` and `lensProjectId` DO still fall back to the world's own.
+  // They are not operands of `homeScope`: the Active Project is the other axis
+  // entirely (§3.1) and the Lens is on neither (§3.2), so naming a Read Scope
+  // says nothing about either, and a world always has an Active Project the way
+  // a real reader always resolves one (§9.2).
   const workspaceId = readId("workspaceId", authored.workspaceId);
-  let planningPeriodId = readId("planningPeriodId", authored.planningPeriodId);
+  let planningPeriodId = readId(
+    "planningPeriodId",
+    scopeNamedInUrl ? null : authored.planningPeriodId,
+  );
   const lensProjectId = readId("lensProjectId", authored.lensProjectId);
 
   // Selection is per mode. `event` on Inbox, `item` on Today, the briefing
@@ -570,20 +639,23 @@ export function parseLabUrl(
 // ── The builder ─────────────────────────────────────────────────────────────
 
 /**
- * The ONLY way a lab URL is written. Fixed parameter order, so the same state
- * always produces the same string and a capture filename is stable across
- * runs and across machines.
+ * A lab URL with no candidate in it.
  *
- * `v`, `mode` and `scenario` are always emitted even at their defaults: a lab
- * link is quoted in a ballot, a bug report and a capture manifest, and an
- * implicit variant in any of those is a link that means something different
- * after the default changes. Everything else is omitted at its default.
+ * This is what the assembly writes. It has to be candidate-free, because a
+ * link built from the variant is a per-candidate difference in the props, and
+ * the whole point of the scaffold is that the four candidates are handed the
+ * same object. `withCandidateVariant` puts `v` back at render time, so a
+ * director clicking a link inside candidate 3 stays in candidate 3.
+ *
+ * `mode` and `scenario` are always emitted even at their defaults: a lab link
+ * is quoted in a ballot, a bug report and a capture manifest, and an implicit
+ * value in any of those is a link that means something different after the
+ * default changes. Everything else is omitted at its default.
  */
-export function buildLabUrl(
-  state: Partial<LabUrlState> & Readonly<{ v: LabVariantNumber; mode: HomeMode; scenario: ScenarioId }>,
+export function buildLabHref(
+  state: Partial<LabViewState> & Readonly<{ mode: HomeMode; scenario: ScenarioId }>,
 ): string {
   const params = new URLSearchParams();
-  params.set("v", String(state.v));
   params.set("mode", state.mode);
   params.set("scenario", state.scenario);
   if (state.homeScope) params.set("homeScope", state.homeScope);
@@ -596,6 +668,32 @@ export function buildLabUrl(
   if (state.theme && state.theme !== DEFAULT_THEME) params.set("theme", state.theme);
   if (state.capture) params.set("capture", "1");
   return `${LAB_ROUTE_PATH}?${params.toString()}`;
+}
+
+/**
+ * Put a candidate back into a lab href. Total, and a no-op on anything that is
+ * not a lab link, so the shell can run it over the whole props tree without
+ * having to know which strings are hrefs.
+ *
+ * `v` goes first, which is the order `buildLabHref` leaves room for, so the
+ * decorated string is byte-identical to what `buildLabUrl` would have written
+ * for the same state. Two URLs for one state stay comparable in a test, a diff
+ * and a capture filename.
+ */
+export function labHrefWithVariant(href: string, v: LabVariantNumber): string {
+  if (href === LAB_ROUTE_PATH) return `${LAB_ROUTE_PATH}?v=${String(v)}`;
+  if (!href.startsWith(`${LAB_ROUTE_PATH}?`)) return href;
+  return `${LAB_ROUTE_PATH}?v=${String(v)}&${href.slice(LAB_ROUTE_PATH.length + 1)}`;
+}
+
+/**
+ * The ONLY way a complete lab URL is written: a href with its candidate named.
+ * The picker, the review drawer and every test use it.
+ */
+export function buildLabUrl(
+  state: Partial<LabUrlState> & Readonly<{ v: LabVariantNumber; mode: HomeMode; scenario: ScenarioId }>,
+): string {
+  return labHrefWithVariant(buildLabHref(state), state.v);
 }
 
 /** The same URL with one field replaced. Every control in the lab uses this. */

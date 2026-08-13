@@ -40,7 +40,7 @@ import type {
   TrendResult,
 } from "../fixtures";
 import type { Disposition, InboxKind, Visibility } from "../inbox/contract";
-import type { LabScope, LabUrlState, LabVariantNumber, LabVariantSlug } from "./lab-url";
+import type { LabScope, LabViewState } from "./lab-url";
 
 // ── The state vocabulary ────────────────────────────────────────────────────
 
@@ -172,11 +172,32 @@ export type TodayView = Readonly<{
   /** Present exactly when `accountingLine` is null. Says why, never a number. */
   accountingWithheldLine: string | null;
   /**
-   * `allowed` is true in exactly one world. Everywhere else `line` names what
-   * forbids the quiet reading, so a quiet day and a broken provider are
-   * visibly different.
+   * THE QUIET DAY, and why it takes two flags rather than one.
+   *
+   * `allowed` is TODAY_RANKING §9.2 read literally: the unqualified all clear,
+   * permitted only when Q1 to Q9 are all false. In v1 it is false in every
+   * world and that is correct, not a defect — TR-7 sealed it. `calendar-event`
+   * is an eligible kind with no producer, so Q7 fires for every reader, and
+   * Today may not tell anyone it saw a whole day.
+   *
+   * `readIsQuiet` is the fact the lab brief needs and §9.2 part 3 provides:
+   * every condition that fired is a v1 platform limit Today already names, and
+   * nothing about THIS reader's own work is unresolved. Nothing crossed a rule,
+   * nothing was held back, nothing was silenced, every project answered. One
+   * world in thirteen is like this, which is what makes a quiet day and a
+   * broken provider visibly different — the requirement a direction is judged
+   * on.
+   *
+   * `line` is the sentence, written for whichever of the two is true, and it
+   * never says more than the flags allow. `blockedBy` is the raw §9.2 codes for
+   * a direction that wants to disclose them one at a time.
    */
-  quiet: Readonly<{ allowed: boolean; line: string }>;
+  quiet: Readonly<{
+    allowed: boolean;
+    readIsQuiet: boolean;
+    blockedBy: readonly string[];
+    line: string;
+  }>;
   /** Kinds that are eligible and have no producer. Never an empty section. */
   unsupported: readonly Disclosure[];
   disclosures: readonly Disclosure[];
@@ -521,19 +542,27 @@ export type MotionContext = Readonly<{
 
 // ── The props, and the component ────────────────────────────────────────────
 
-export type LabCandidateMeta = Readonly<{
-  v: LabVariantNumber;
-  slug: LabVariantSlug;
-  /** The neutral review label. A direction never renders its own name. */
-  label: string;
-  /** True while a capture is running: no review chrome exists in the document. */
-  capture: boolean;
-}>;
-
+/**
+ * THE FAIRNESS RULE, AS A TYPE.
+ *
+ * There is no `meta`, and `state` is a `LabViewState` rather than a
+ * `LabUrlState`, so nothing here names the candidate: not the variant number,
+ * not the slug, not the label. A direction cannot read which of the four it is,
+ * so it cannot render differently because of it, and the four are provably
+ * handed one object built from one input. `lab-shell.test.ts` asserts that
+ * object whole, with nothing set aside.
+ *
+ * Links still stay on the candidate the director is looking at. The shell
+ * appends `v` to every lab href after assembly (`withCandidateVariant`), which
+ * is navigation rather than data, and is the one thing a candidate has no hand
+ * in.
+ *
+ * A direction that needs to know whether a capture is running reads
+ * `state.capture`, which is a fact about the URL and true for all four at once.
+ */
 export type HomeCandidateProps = Readonly<{
-  meta: LabCandidateMeta;
-  /** The parsed URL. Read-only; every link is already built for you. */
-  state: LabUrlState;
+  /** The parsed URL, minus the candidate. Read-only; every link is built. */
+  state: LabViewState;
   /** Which world is on screen, and what it exists to prove. */
   world: Readonly<{ id: ScenarioId; label: string; proves: string }>;
   chrome: HomeChrome;
@@ -546,7 +575,7 @@ export type HomeCandidateProps = Readonly<{
   copy: HomeCopy;
   motion: MotionContext;
   /** Build a link to another lab state. The only way a lab URL is written. */
-  hrefFor: (patch: Partial<LabUrlState>) => string;
+  hrefFor: (patch: Partial<LabViewState>) => string;
 }>;
 
 export type HomeCandidate = (props: HomeCandidateProps) => ReactNode;

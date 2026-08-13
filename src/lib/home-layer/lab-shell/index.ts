@@ -21,3 +21,4 @@ export * from "./copy";
 export * from "./lab-url";
 export { assembleCandidateProps, resolveScope, scenarioScopeOf } from "./assemble";
 export type { AssembleInput, ResolvedScope } from "./assemble";
+export { withCandidateVariant } from "./variant";

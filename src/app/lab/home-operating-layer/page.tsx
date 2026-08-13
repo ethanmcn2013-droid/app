@@ -3,12 +3,14 @@ import { HOME_FIXTURE_SCENARIOS, HOME_MODES } from "@/lib/home-layer/fixtures";
 import {
   assembleCandidateProps,
   buildLabUrl,
+  labVariant,
   LAB_SCOPES,
   LAB_THEMES,
   LAB_VARIANTS,
   MODE_NAMES,
   parseLabUrl,
   scenarioScopeOf,
+  withCandidateVariant,
   type LabUrlState,
 } from "@/lib/home-layer/lab-shell";
 import { loadCandidate } from "./candidates/registry";
@@ -59,8 +61,19 @@ export default async function HomeOperatingLayerLab({
 
   const parsed = parseLabUrl(await searchParams, scenarioScopeOf);
   const state: LabUrlState = parsed.state;
-  const props = assembleCandidateProps({ state });
-  const candidate = await loadCandidate(props.meta.slug);
+  const variant = labVariant(state.v);
+
+  /**
+   * Assemble once, candidate-blind, then name the candidate in the links.
+   *
+   * `assembleCandidateProps` takes a state with no `v` in it, so the four
+   * directions are provably handed one object built from one input.
+   * `withCandidateVariant` then appends the chosen variant to every lab href,
+   * which is what keeps a director inside candidate 3 when they open the full
+   * briefing from candidate 3. Data first, navigation second, never mixed.
+   */
+  const props = withCandidateVariant(assembleCandidateProps({ state }), variant.v);
+  const candidate = await loadCandidate(variant.slug);
 
   const stage = (
     <div
@@ -72,10 +85,10 @@ export default async function HomeOperatingLayerLab({
         candidate.render(props)
       ) : (
         <main className="lab-missing" id="app-main-content" tabIndex={-1}>
-          <h1>{props.meta.label} is not built yet</h1>
+          <h1>{variant.label} is not built yet</h1>
           <p>
             The shell, the data and the controls are ready. This direction has
-            no folder under <code>candidates/{props.meta.slug}/</code> yet, so
+            no folder under <code>candidates/{variant.slug}/</code> yet, so
             there is nothing to render here.
           </p>
           <p>
@@ -137,7 +150,17 @@ export default async function HomeOperatingLayerLab({
             : scope === "planning-period"
               ? "This season"
               : "Every project",
-        href: linkTo({ homeScope: scope }),
+        // The Planning Period id is the operand of the scope, so the link that
+        // asks for the season carries the season. Without it the parser reads a
+        // scope with no operand and falls inward to one project, and the
+        // control looks broken rather than refused.
+        href: linkTo({
+          homeScope: scope,
+          planningPeriodId:
+            scope === "planning-period"
+              ? (state.planningPeriodId ?? scenarioScopeOf(state.scenario).planningPeriodId)
+              : null,
+        }),
         current: scope === state.homeScope,
       })),
       note: props.chrome.scope.helpLine,

@@ -1,0 +1,1416 @@
+/*
+ * EDITORIAL LINE — the whole direction's type, rhythm and layout.
+ *
+ * Hand-written CSS against the vendored semantic tokens rather than utilities,
+ * for two measured reasons. The estate carries 1,208 arbitrary-px type
+ * utilities against 126 uses of the nine named steps, and a direction built out
+ * of `text-[15px]` adds to the pile it was told not to add to. And the Tailwind
+ * spacing namespace lies at indices 7 to 12 (`h-7` is 32px), which is a trap a
+ * rhythm this tight cannot afford. Every size below is a named step; every gap
+ * is a --space-* token; nothing is redefined, and the one local custom property
+ * family carries the --x- extension prefix the design system reserves for it.
+ *
+ * The direction in one line: a narrow authored measure, hairlines instead of
+ * containers, one indigo mark per view, and a colophon that tells you how the
+ * page was read.
+ */
+
+.ed {
+  /* Measure. 33rem holds 62 to 68 characters at the body size, which is the
+     range a reader's eye returns to a new line without losing it. */
+  --x-measure: 33rem;
+  /* The column a ledger runs in. Wider than prose, still one eye-span. */
+  --x-column: 46rem;
+  /* The one earned widening, for the Project ledger and nothing else. */
+  --x-wide: 58rem;
+  --x-gutter: clamp(var(--space-4), 4vw, var(--space-9));
+  --x-rule: 1px solid var(--hairline);
+  --x-rule-soft: 1px solid var(--hairline-soft);
+
+  min-height: 100svh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ed *,
+.ed *::before,
+.ed *::after {
+  box-sizing: border-box;
+}
+
+/* ── Shared marks ─────────────────────────────────────────────────────────── */
+
+.ed-vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ed :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.ed-label {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-faint);
+}
+
+.ed-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A number that could not be read. Never a zero, never a dash on its own. */
+.ed-withheld {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.ed-skip {
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-4);
+  z-index: 10;
+  transform: translateY(-200%);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+
+.ed-skip:focus {
+  transform: translateY(0);
+}
+
+/* ── Masthead · quieter than the content, never dominant ──────────────────── */
+
+.ed-masthead {
+  border-bottom: var(--x-rule);
+}
+
+.ed-band {
+  max-width: var(--x-wide);
+  margin: 0 auto;
+  padding: 0 var(--x-gutter);
+}
+
+.ed-suiteband {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-6);
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+}
+
+.ed-wordmark {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+.ed-suite ul,
+.ed-modes ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-suite a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+}
+
+.ed-suite a:hover {
+  color: var(--ink);
+}
+
+.ed-suite a[aria-current] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.ed-homeband {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  border-top: var(--x-rule-soft);
+}
+
+.ed-modes a {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  min-width: 44px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-faint);
+  font-size: var(--text-body);
+  text-decoration: none;
+}
+
+.ed-modes a:hover {
+  color: var(--ink);
+}
+
+/* The current mode is named in three ways at once: weight, ink and a rule.
+   None of them is colour alone. */
+.ed-modes a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+  border-bottom-color: var(--ink);
+}
+
+.ed-modes a[aria-current="true"] {
+  color: var(--ink-soft);
+  border-bottom-color: var(--ink-ghost);
+}
+
+.ed-badge {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-caption);
+  color: var(--ink);
+  background: var(--paper-deep);
+  border-radius: var(--radius-pill);
+  padding: 2px var(--space-2);
+}
+
+/* ── Read Scope · a disclosure that needs no script ───────────────────────── */
+
+.ed-scope {
+  padding-bottom: var(--space-2);
+}
+
+.ed-scope summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+}
+
+.ed-scope summary::-webkit-details-marker {
+  display: none;
+}
+
+.ed-scope summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.ed-scope[open] summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.ed-scope-name {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.ed-scope-panel {
+  max-width: var(--x-measure);
+  margin: var(--space-2) 0 var(--space-4);
+  padding: var(--space-4);
+  border: var(--x-rule);
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+}
+
+.ed-scope-panel h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-body-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.ed-scope-panel p {
+  margin: 0 0 var(--space-3);
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+}
+
+.ed-scope-panel ul {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.ed-scope-panel li + li {
+  border-top: var(--x-rule-soft);
+}
+
+.ed-scope-panel a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+}
+
+.ed-scope-panel a[aria-current] {
+  font-weight: var(--weight-medium);
+}
+
+.ed-scope-panel a[aria-current]::before {
+  content: "Reading";
+  margin-right: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ── The page ─────────────────────────────────────────────────────────────── */
+
+.ed-main {
+  max-width: var(--x-wide);
+  margin: 0 auto;
+  padding: var(--space-8) var(--x-gutter) var(--space-10);
+}
+
+.ed-main:focus {
+  outline: none;
+}
+
+.ed-measure {
+  max-width: var(--x-measure);
+}
+
+.ed-dateline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-4);
+}
+
+/* Depth, said as a trail. The full briefing is not a fifth mode, so it takes
+   no place in the mode nav; this is where it says where it sits. */
+.ed-crumbs {
+  margin: 0 0 var(--space-4);
+}
+
+.ed-crumbs ul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-crumbs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-decoration: none;
+}
+
+.ed-crumbs a[aria-current="page"] {
+  color: var(--ink);
+}
+
+.ed-crumbs li + li::before {
+  content: "/";
+  margin-right: var(--space-3);
+  color: var(--ink-ghost);
+}
+
+.ed-crumbs li {
+  display: flex;
+  align-items: center;
+}
+
+.ed-h1 {
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-section);
+  line-height: var(--leading-section);
+  letter-spacing: var(--tracking-section);
+  font-weight: var(--weight-semibold);
+  text-wrap: balance;
+}
+
+.ed-h1 .ed-eyebrow {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-faint);
+}
+
+/* The lede. The one sentence that says what kind of read this is. */
+.ed-lede {
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.ed-status {
+  max-width: var(--x-measure);
+  min-height: var(--space-5);
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-body-sm);
+  color: var(--ink);
+}
+
+/* Present in the document from the first paint, taking no space until it has
+   something to say. A live region that appears on demand announces nothing. */
+.ed-status:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+/* The standing note: the sentence about what kind of read this is, on a day
+   that has rows to show. On a day that has none it becomes the lede instead. */
+.ed-standing {
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-7);
+  color: var(--ink-soft);
+}
+
+.ed-status:not(:empty) {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--accent);
+}
+
+/* State, said in words, with a mark that survives forced colours. */
+.ed-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-faint);
+}
+
+.ed-state::before {
+  content: "";
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+}
+
+.ed-state[data-tone="warn"] {
+  color: var(--status-flight);
+}
+
+.ed-state[data-tone="stop"] {
+  color: var(--status-blocked);
+}
+
+/* ── Disclosures · never optional, never a colour on its own ──────────────── */
+
+.ed-disclosures {
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-7);
+  padding: 0;
+  list-style: none;
+  border-top: var(--x-rule);
+}
+
+.ed-disclosures li {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  border-bottom: var(--x-rule-soft);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+
+.ed-section {
+  max-width: var(--x-column);
+  margin: 0 0 var(--space-9);
+}
+
+.ed-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--ink);
+}
+
+.ed-section-head h2 {
+  margin: 0;
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.ed-section-note {
+  max-width: var(--x-measure);
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.ed-list {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ── Today · the authored read ────────────────────────────────────────────── */
+
+/* The three ranked decisions. Hanging numerals in the margin, a rule over each
+   entry, and the first entry's rule is the view's one indigo mark. */
+.ed-entry {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  column-gap: var(--space-5);
+  padding: var(--space-5) 0 var(--space-6);
+  border-top: var(--x-rule);
+}
+
+.ed-entries > li:first-child .ed-entry {
+  border-top: 2px solid var(--accent);
+}
+
+.ed-entry-index {
+  grid-column: 1;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+  padding-top: 3px;
+}
+
+.ed-entry-body {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.ed-entry-title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.ed-entry-title a {
+  color: inherit;
+  text-decoration: none;
+  background-image: linear-gradient(var(--ink-ghost), var(--ink-ghost));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 100% 1px;
+}
+
+.ed-entry-title a:hover {
+  background-image: linear-gradient(var(--ink), var(--ink));
+}
+
+.ed-reason {
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-3);
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.ed-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.ed-meta li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.ed-meta .ed-late {
+  color: var(--status-blocked);
+  font-weight: var(--weight-medium);
+}
+
+.ed-prov {
+  color: var(--ink-soft);
+}
+
+/* Under 30rem the numeral cannot afford a margin of its own, so it becomes a
+   line above the entry rather than eating a fifth of the measure. */
+@media (max-width: 30rem) {
+  .ed-entry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ed-entry-index {
+    grid-column: 1;
+    padding-top: 0;
+    margin-bottom: var(--space-2);
+  }
+
+  .ed-entry-body {
+    grid-column: 1;
+  }
+}
+
+/* The quieter sections under the signal: one line each, strong row rhythm. */
+.ed-rows > li {
+  border-top: var(--x-rule-soft);
+}
+
+.ed-rows > li:first-child {
+  border-top: var(--x-rule);
+}
+
+.ed-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-5);
+  padding: var(--space-3) 0;
+  min-height: 44px;
+}
+
+.ed-row-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ed-row-title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.ed-row-title a:hover {
+  text-decoration: underline;
+}
+
+.ed-row-when {
+  grid-column: 2;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.ed-row-when[data-overdue="true"] {
+  color: var(--status-blocked);
+}
+
+.ed-row-meta {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.ed-row-meta .ed-why {
+  margin-top: 0;
+}
+
+@media (max-width: 30rem) {
+  .ed-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ed-row-when {
+    grid-column: 1;
+    text-align: left;
+  }
+}
+
+.ed-more {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--text-body-sm);
+  color: var(--ink);
+}
+
+.ed-section-foot {
+  max-width: var(--x-measure);
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+/* The opened row, disclosed under the entry it belongs to. */
+.ed-open {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4) 0 var(--space-4) var(--space-4);
+  border-left: 2px solid var(--ink);
+}
+
+.ed-open h3 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-body);
+  font-weight: var(--weight-semibold);
+}
+
+.ed-open p {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+/* ── Inbox ────────────────────────────────────────────────────────────────── */
+
+.ed-inbox {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+}
+
+/* With nothing open the queue is the page, and a queue is still reading. */
+.ed-inbox:not([data-split="true"]) .ed-queue {
+  max-width: var(--x-column);
+}
+
+/* The split is earned, not assumed: two columns only where both hold their
+   own measure at a comfortable size. */
+@media (min-width: 68rem) {
+  .ed-inbox[data-split="true"] {
+    grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+    gap: var(--space-9);
+    align-items: start;
+  }
+
+  .ed-inbox[data-split="true"] .ed-detail {
+    position: sticky;
+    top: var(--space-5);
+  }
+}
+
+.ed-thread {
+  padding: var(--space-4) 0;
+  border-top: var(--x-rule);
+}
+
+.ed-threads > li:first-child .ed-thread {
+  border-top: 1px solid var(--ink);
+}
+
+.ed-thread-sub {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.ed-event {
+  display: block;
+  padding: var(--space-3) 0;
+  border-top: var(--x-rule-soft);
+}
+
+.ed-event:first-child {
+  border-top: 0;
+}
+
+.ed-event[data-selected="true"] {
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--accent);
+}
+
+.ed-event-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-1);
+}
+
+.ed-event-title {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ed-event-title a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--ink);
+}
+
+.ed-unnamed {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.ed-detail {
+  min-width: 0;
+  padding: var(--space-5) 0 0;
+  border-top: 2px solid var(--ink);
+}
+
+.ed-detail h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.ed-detail h2:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.ed-detail dl {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-body-sm);
+}
+
+.ed-detail dt {
+  color: var(--ink-faint);
+}
+
+.ed-detail dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 30rem) {
+  .ed-detail dl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0 0;
+  }
+
+  .ed-detail dd {
+    margin-bottom: var(--space-3);
+  }
+}
+
+.ed-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+/* At narrow widths an opened event is the page, not a panel beside it. */
+@media (max-width: 67.999rem) {
+  .ed-inbox[data-detail="true"] .ed-queue {
+    display: none;
+  }
+}
+
+@media (min-width: 68rem) {
+  .ed-back {
+    display: none;
+  }
+}
+
+/* ── Actions ──────────────────────────────────────────────────────────────── */
+
+.ed-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border: var(--x-rule);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--ease-out);
+}
+
+.ed-btn:hover {
+  border-color: var(--ink);
+}
+
+.ed-btn[data-weight="primary"] {
+  border-color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.ed-btn[disabled],
+.ed-btn[aria-disabled="true"] {
+  color: var(--ink-faint);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+.ed-refused {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--status-blocked);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+.ed-pending {
+  margin: var(--space-3) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--ink-ghost);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+.ed-why {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.ed-menu {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3);
+  border: var(--x-rule);
+  border-radius: var(--radius-md);
+  max-width: var(--x-measure);
+}
+
+.ed-menu ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ed-menu li + li {
+  border-top: var(--x-rule-soft);
+}
+
+.ed-menu button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ed-menu button span {
+  color: var(--ink-faint);
+}
+
+/* ── My work · the responsibility ledger ──────────────────────────────────── */
+
+.ed-work-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 9.5rem;
+  gap: var(--space-1) var(--space-5);
+  padding: var(--space-4) 0;
+  border-top: var(--x-rule-soft);
+  min-height: 44px;
+}
+
+.ed-works > li:first-child .ed-work-row {
+  border-top: var(--x-rule);
+}
+
+.ed-work-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ed-work-title a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.ed-work-title a:hover {
+  text-decoration: underline;
+}
+
+.ed-work-when {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.ed-work-when b {
+  display: block;
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+.ed-work-when[data-overdue="true"] b {
+  color: var(--status-blocked);
+}
+
+.ed-work-body {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.ed-done .ed-work-title a {
+  text-decoration: line-through;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 34rem) {
+  .ed-work-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ed-work-when {
+    grid-row: auto;
+    grid-column: 1;
+    text-align: left;
+  }
+
+  .ed-work-when b {
+    display: inline;
+  }
+}
+
+/* ── Analytics ────────────────────────────────────────────────────────────── */
+
+.ed-claim {
+  padding: var(--space-5) 0;
+  border-top: var(--x-rule);
+  max-width: var(--x-measure);
+}
+
+.ed-claims > li:first-child .ed-claim {
+  border-top: 2px solid var(--accent);
+}
+
+.ed-claim h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  font-weight: var(--weight-medium);
+}
+
+.ed-figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.ed-figure-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-heading);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.ed-claim-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+.ed-claim-lines li {
+  margin-bottom: var(--space-1);
+}
+
+.ed-receipt {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-body-sm);
+}
+
+.ed-receipt summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--ink);
+  list-style: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--ink-ghost);
+}
+
+.ed-receipt summary::-webkit-details-marker {
+  display: none;
+}
+
+.ed-receipt summary::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+}
+
+.ed-receipt[open] summary::after {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+.ed-receipt ul {
+  margin: 0 0 var(--space-2);
+  padding: 0 0 0 var(--space-4);
+  color: var(--ink-soft);
+}
+
+.ed-receipt p {
+  margin: 0 0 var(--space-1);
+  color: var(--ink-faint);
+}
+
+/* The one earned widening. */
+.ed-ledger {
+  max-width: var(--x-wide);
+}
+
+.ed-ledger .ed-table {
+  margin-top: var(--space-4);
+}
+
+.ed-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-body-sm);
+}
+
+.ed-table caption {
+  text-align: left;
+  padding-bottom: var(--space-3);
+  color: var(--ink-faint);
+  font-size: var(--text-body-sm);
+}
+
+.ed-table th,
+.ed-table td {
+  padding: var(--space-3) var(--space-4) var(--space-3) 0;
+  text-align: left;
+  vertical-align: baseline;
+  border-bottom: var(--x-rule-soft);
+}
+
+.ed-table thead th {
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-faint);
+}
+
+.ed-table td.ed-figures {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* At narrow widths the table becomes a stack of records. Same content, same
+   order, no sideways scroll. */
+@media (max-width: 44rem) {
+  .ed-table,
+  .ed-table tbody,
+  .ed-table tr,
+  .ed-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .ed-table thead {
+    display: none;
+  }
+
+  .ed-table tr {
+    padding: var(--space-3) 0;
+    border-bottom: var(--x-rule-soft);
+  }
+
+  .ed-table td {
+    padding: 0 0 var(--space-1);
+    border: 0;
+  }
+
+  .ed-table td::before {
+    content: attr(data-head) " ";
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .ed-table td:first-child::before {
+    content: "";
+  }
+}
+
+.ed-chart {
+  margin: 0;
+  max-width: var(--x-measure);
+}
+
+.ed-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ed-chart figcaption {
+  margin-top: var(--space-2);
+  font-size: var(--text-body-sm);
+  color: var(--ink-faint);
+}
+
+.ed-lens {
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-6);
+  padding: var(--space-3) 0 var(--space-3) var(--space-4);
+  border-left: 2px solid var(--accent);
+  font-size: var(--text-body-sm);
+}
+
+/* ── The colophon · how this page was read ────────────────────────────────── */
+
+.ed-colophon {
+  margin-top: var(--space-10);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--ink);
+}
+
+.ed-colophon h2 {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-faint);
+}
+
+.ed-colophon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--space-5) var(--space-8);
+}
+
+.ed-colophon dl {
+  margin: 0;
+}
+
+.ed-colophon dt {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: var(--space-1);
+}
+
+.ed-colophon dd {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.ed-colophon dd:last-child {
+  margin-bottom: 0;
+}
+
+/* ── Motion · the page sets like type, then stops ─────────────────────────── */
+
+@keyframes ed-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ed-draw {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.ed-main > * {
+  animation: ed-rise 220ms var(--ease-out) both;
+}
+
+.ed-main > *:nth-child(2) {
+  animation-delay: 30ms;
+}
+
+.ed-main > *:nth-child(3) {
+  animation-delay: 60ms;
+}
+
+.ed-main > *:nth-child(4) {
+  animation-delay: 90ms;
+}
+
+.ed-main > *:nth-child(n + 5) {
+  animation-delay: 120ms;
+}
+
+.ed-section-head {
+  transform-origin: left center;
+}
+
+.ed-section-head {
+  animation: ed-draw 260ms var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ed-main > *,
+  .ed-section-head {
+    animation: none;
+  }
+}
+
+/* ── Forced colours · meaning must survive losing every colour ────────────── */
+
+@media (forced-colors: active) {
+  /* A transparent border is not transparent in forced colours: every mode link
+     would grow the rule that means "you are here". The rule has to be hidden
+     deliberately, and the current one drawn deliberately. */
+  .ed-modes a {
+    border-bottom-color: Canvas;
+  }
+
+  .ed-modes a[aria-current="page"] {
+    border-bottom-color: Highlight;
+  }
+
+  .ed-modes a[aria-current="true"] {
+    border-bottom-color: GrayText;
+  }
+
+  .ed-entries > li:first-child .ed-entry,
+  .ed-claims > li:first-child .ed-claim {
+    border-top-color: Highlight;
+  }
+
+  .ed-btn {
+    border-color: ButtonText;
+  }
+
+  .ed-state::before {
+    background: CanvasText;
+  }
+}
