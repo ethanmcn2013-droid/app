@@ -20,6 +20,9 @@ export type AudienceSourceAuthority = Readonly<
 const CURRENT_MEMBERSHIP_ERROR =
   "Timeline could not confirm your current membership in the connected Signal Tasks workspace.";
 
+export const ARCHIVED_PUBLISH_ERROR =
+  "This project is archived, so no new shared link can be made. Existing links can still be switched off. Restore the project in Tasks to publish again.";
+
 /**
  * A suite workspace id is a routing hint, not durable authority. Connected
  * workspaces must prove current Tasks membership immediately before a
@@ -52,6 +55,12 @@ export async function requireFreshAudienceMutationAuthority(
   if (!current || current.workspaceId !== workspace.suiteWorkspaceId) {
     throw new TypeError(CURRENT_MEMBERSHIP_ERROR);
   }
+  // F6 / ADR 0001 §5. This function gates exactly the three acts that MINT a
+  // bearer link — create, publish, rotate — and an archived Project accepts no
+  // new association. Revoke and unpublish do not come through here and must
+  // not: switching a link off is the security move, and it stays reachable
+  // whatever state the Project is in.
+  if (current.archivedAt !== null) throw new TypeError(ARCHIVED_PUBLISH_ERROR);
   return { kind: "tasks", sourceWorkspaceId: current.workspaceId };
 }
 

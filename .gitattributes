@@ -1,1 +1,2 @@
 drizzle/*.sql text eol=lf
+drizzle-timeline/*.sql text eol=lf

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AnchorChip } from "@/modules/timeline/app/_components/anchor-countdown";
 import { latestPublicationForProject } from "@/modules/timeline/app/audience/project-publications";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
+import { FreshnessLine } from "@/modules/timeline/app/plan/[projectSlug]/_components/freshness-line";
 import { LocalViewTabs } from "@/modules/timeline/app/plan/[projectSlug]/_components/local-view-tabs";
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
 import {
@@ -23,6 +24,8 @@ import {
   requireUser,
   resolveTimelineContext,
 } from "@/modules/timeline/server/auth";
+import { readBoundProjectArchiveState } from "@/modules/timeline/server/archived-project-policy";
+import { readSyncFreshness } from "@/modules/timeline/server/sync/sync-state";
 import { getOwnerAudiencePublications } from "@/modules/timeline/server/audience-timeline";
 import {
   getEffectiveNodesForWorkspace,
@@ -73,7 +76,7 @@ export default async function TimelineProjectPage({
   const { projectSlug } = await params;
   const userId = await requireUser();
   const requested = await searchParams;
-  const mode: OwnerMode = requested.mode === "edit" ? "edit" : "view";
+  const requestedMode: OwnerMode = requested.mode === "edit" ? "edit" : "view";
   const requestedWorkspaceId = requested.workspaceId?.trim();
   const context = requestedWorkspaceId
     ? await resolveTimelineContext(
@@ -85,6 +88,20 @@ export default async function TimelineProjectPage({
   if (requestedWorkspaceId && !context) notFound();
   const workspace = context?.workspace ?? (await getCurrentWorkspace(userId));
   if (!workspace) notFound();
+
+  // ── F6 · AN ARCHIVED PROJECT'S TIMELINE IS READ-ONLY (ADR 0001 §5) ───────
+  // The resolver has always been able to say `archived`; this page used to
+  // render that case as the full edit surface — rename, reorder, hide, add,
+  // publish — because the word never reached it. A bare entry carries no
+  // requested Project, so the archive state is read from the binding instead
+  // of assumed to be false.
+  const archived = context
+    ? context.archived
+    : (await readBoundProjectArchiveState(userId, workspace)).kind === "archived";
+  // `?mode=edit` is not a permission. Forcing view here is the presentation
+  // half; the refusal that matters lives in the actions, because a Server
+  // Action is addressable whatever this page renders.
+  const mode: OwnerMode = archived ? "view" : requestedMode;
 
   const projects = await getProjectsForWorkspace(workspace.slug);
   const project = projects.find((candidate) => candidate.slug === projectSlug);
@@ -111,9 +128,18 @@ export default async function TimelineProjectPage({
   const now = isDemoMode()
     ? new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso)
     : new Date();
-  const [effectiveNodes, publications] = await Promise.all([
+  const [effectiveNodes, publications, syncFreshness] = await Promise.all([
     getEffectiveNodesForWorkspace(workspace.slug),
     getOwnerAudiencePublications(workspace.slug),
+    // Read-through freshness, on View as well as Edit (plan §6.5). The loader
+    // READS the persisted state; the refresh itself is a client act, because a
+    // Server Component render must not perform a mutation or call
+    // revalidatePath. What changes is that View now runs one at all, and that
+    // both modes can say how old what they are showing is.
+    readSyncFreshness({
+      timelineWorkspaceSlug: workspace.slug,
+      timelineSlug: project.slug,
+    }),
   ]);
   const projectNodes = effectiveNodes.filter(
     (node) => node.projectSlug === project.slug,
@@ -189,14 +215,67 @@ export default async function TimelineProjectPage({
             {/* Who can see this page, before the owner types a word into it.
                 Preview and Share stood in this header explaining neither. */}
             <VisibilityLine publication={visibility} />
+            {/* How old what you are reading is, on both View and Edit, plus
+                Retry and the truncation sentence nothing used to say. An
+                archived Project does not refresh from Tasks at all, so it gets
+                the read-only line below instead of a freshness one that would
+                never move.
+
+                Demo/review is excluded for the same reason: it is a read-only
+                fixture boundary with no Tasks source behind it, so "Last
+                refreshed …" has nothing true to say there, and running the
+                refresh lifecycle would add an RSC navigation to every capture
+                of a surface whose whole job is to be deterministic. */}
+            {archived || isDemoMode() ? null : (
+              <FreshnessLine
+                workspaceSlug={workspace.slug}
+                projectSlug={project.slug}
+                freshness={
+                  syncFreshness
+                    ? {
+                        status: syncFreshness.status,
+                        lastSuccessAtMs: syncFreshness.lastSuccessAt?.getTime() ?? null,
+                        sourceCount: syncFreshness.sourceCount,
+                        importedCount: syncFreshness.importedCount,
+                        truncated: syncFreshness.truncated,
+                        errorCode: syncFreshness.errorCode,
+                      }
+                    : null
+                }
+                serverNowMs={now.getTime()}
+                // Edit already refreshes on mount inside CurationSurface. A
+                // second refresh here would double every Tasks read and race
+                // the first for the same generation.
+                autoRefresh={mode === "view"}
+              />
+            )}
+            {/* Read-only is stated once, in plain words, with the one action
+                that changes it. Not an alert: nothing has gone wrong and
+                nothing is waiting on the reader. */}
+            {archived ? (
+              <p
+                role="status"
+                className="mt-1 text-[13px] leading-5 text-ink-quiet"
+              >
+                This project is archived, so its timeline is read-only. Existing
+                shared links still work and can still be switched off. Restore
+                the project in Tasks to make changes.
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <LocalViewTabs
-              projectSlug={project.slug}
-              current={mode === "edit" ? "milestones" : "timeline"}
-              context={queryContext}
-            />
+            {/* No Milestones tab on an archived Project: it opens the editing
+                surface, and there is nothing to edit here. The tabs are
+                removed rather than disabled — a control that cannot act is
+                worse than an absent one, and the line below says why. */}
+            {archived ? null : (
+              <LocalViewTabs
+                projectSlug={project.slug}
+                current={mode === "edit" ? "milestones" : "timeline"}
+                context={queryContext}
+              />
+            )}
             <span aria-hidden className="hidden h-5 w-px bg-line-soft sm:block" />
             {/* Two acts, two controls. Preview opens the frozen page a guest
                 receives; Share opens the link itself. One button could only
@@ -213,6 +292,10 @@ export default async function TimelineProjectPage({
               publication={shareSummary}
               manageHref={manageHref}
               canManage={workspace.ownerUserId === userId}
+              // ADR 0001 §5, exactly: existing bearer links remain manageable
+              // and revocable; new publishing is disabled. Revoke is the
+              // security control and it stays reachable.
+              canPublish={!archived}
             />
           </div>
         </div>

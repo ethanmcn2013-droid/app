@@ -31,6 +31,8 @@
 
 import { sql } from "drizzle-orm";
 import {
+  check,
+  foreignKey,
   index,
   integer,
   primaryKey,
@@ -85,6 +87,11 @@ export const projects = sqliteTable(
   },
   (t) => [
     primaryKey({ columns: [t.workspaceSlug, t.slug] }),
+    /** Plan §6.2: the legacy mirror is read by every reconciliation pass and
+     *  by the inventory, both of which scan by Tasks Project id. Unindexed it
+     *  was a full table scan; it is kept and dual-written for at least two
+     *  stable releases, so it is worth indexing rather than tolerating. */
+    index("idx_projects_source_tasks_workspace").on(t.sourceTasksWorkspaceId),
   ],
 );
 
@@ -605,6 +612,177 @@ export const audienceViewReceipts = sqliteTable(
   ],
 );
 
+/**
+ * The normalized Tasks Project ↔ Timeline binding (plan §6.2).
+ *
+ * ── WHY A TABLE AND NOT TWO COLUMNS ────────────────────────────────────────
+ * The binding lived in two nullable mirrors — `workspaces.suite_workspace_id`
+ * and `projects.source_tasks_workspace_id` — which can disagree with each
+ * other, carry no state, no provenance, and no way to say "this row is
+ * ambiguous, do not act on it". Every question the reconciliation has to
+ * answer ("is this binding confirmed?", "was it proved or guessed?", "is its
+ * Tasks Project gone?") had no column to answer from.
+ *
+ * ── WHAT IT MAY CONTAIN ────────────────────────────────────────────────────
+ * CONFIRMED BINDINGS ONLY. Ambiguous legacy candidates never land here: they
+ * would consume the Tasks-id primary key or the Timeline-workspace unique
+ * index, which is exactly the one-way door the reconciliation refuses to walk
+ * through on a guess. They live in the operator manifest instead, and the
+ * owner chooses (plan §6.3).
+ *
+ * ── THE MIRRORS STAY ───────────────────────────────────────────────────────
+ * Both legacy columns are kept and dual-written for at least two stable
+ * releases, so a rollback resolves the same exact rows. This wave does not
+ * clear or drop either of them.
+ */
+export const suiteProjectBindings = sqliteTable(
+  "suite_project_bindings",
+  {
+    /** Tasks `workspaces.id`. The only suite Project join key (ADR 0001 §1). */
+    tasksWorkspaceId: text("tasks_workspace_id").primaryKey(),
+    /** The hidden Timeline workspace this Project owns. */
+    timelineWorkspaceSlug: text("timeline_workspace_slug").notNull(),
+    /** The one primary Timeline inside it that may synchronize from Tasks. */
+    primaryTimelineSlug: text("primary_timeline_slug").notNull(),
+    /** `orphaned` = the Tasks Project is gone; content and publications are
+     *  preserved and sync is disabled. `retired` = deliberately superseded
+     *  under the reviewed lifecycle. Neither is a delete. */
+    state: text("state")
+      .$type<"active" | "orphaned" | "retired">()
+      .notNull()
+      .default("active"),
+    /** How this row came to exist. `legacy_exact` is the only value the
+     *  backfill may write without a human: exact, non-ambiguous evidence.
+     *  `operator_confirmed` is a reviewed decision, never an inference. */
+    provenance: text("provenance")
+      .$type<"provisioned" | "legacy_exact" | "operator_confirmed">()
+      .notNull(),
+    mappingVersion: integer("mapping_version").notNull().default(1),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (t) => [
+    /** One Timeline workspace may back at most one Project. Without this the
+     *  same hidden workspace could be claimed by two Projects and every sync
+     *  would fight over its children. */
+    uniqueIndex("uq_suite_binding_timeline_workspace").on(
+      t.timelineWorkspaceSlug,
+    ),
+    foreignKey({
+      name: "fk_suite_binding_workspace",
+      columns: [t.timelineWorkspaceSlug],
+      foreignColumns: [workspaces.slug],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    /** RESTRICT, not CASCADE: a bound primary Timeline cannot be deleted out
+     *  from under its Project. Retiring the binding first is the only route,
+     *  and that is a reviewed act. */
+    foreignKey({
+      name: "fk_suite_binding_primary_timeline",
+      columns: [t.timelineWorkspaceSlug, t.primaryTimelineSlug],
+      foreignColumns: [projects.workspaceSlug, projects.slug],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check("ck_suite_binding_state", sql`${t.state} IN ('active', 'orphaned', 'retired')`),
+    check(
+      "ck_suite_binding_provenance",
+      sql`${t.provenance} IN ('provisioned', 'legacy_exact', 'operator_confirmed')`,
+    ),
+    check("ck_suite_binding_mapping_version", sql`${t.mappingVersion} > 0`),
+  ],
+);
+
+/**
+ * Volatile synchronization state for one binding's primary Timeline
+ * (plan §6.2 / §6.5). Nothing here is user content; losing the whole table
+ * costs one refresh.
+ *
+ * ── THE GENERATION / LEASE PAIR ────────────────────────────────────────────
+ * Every refresh takes a new generation and a lease, and may commit only with a
+ * compare-and-set proving it is still the current one. Without it, two
+ * refreshes racing (a slow A1, then B, then a fast A2) let the SLOWER, OLDER
+ * result land last and overwrite the newer snapshot — the TOCTOU window WP1
+ * left open, and the reason a stale Timeline could reappear after a correct
+ * sync had already fixed it.
+ *
+ * `status` distinguishes the outcomes the source can prove; `empty` is a
+ * complete authorized zero and is the only one of them that may have removed
+ * every synchronized node.
+ */
+export const timelineSourceSyncState = sqliteTable(
+  "timeline_source_sync_state",
+  {
+    tasksWorkspaceId: text("tasks_workspace_id")
+      .primaryKey()
+      .references(() => suiteProjectBindings.tasksWorkspaceId, {
+        onUpdate: "cascade",
+        onDelete: "restrict",
+      }),
+    timelineWorkspaceSlug: text("timeline_workspace_slug").notNull(),
+    timelineSlug: text("timeline_slug").notNull(),
+    status: text("status")
+      .$type<
+        | "never"
+        | "syncing"
+        | "complete"
+        | "empty"
+        | "partial"
+        | "error"
+        | "unauthorized"
+      >()
+      .notNull()
+      .default("never"),
+    /** Monotonic. A commit whose generation is not the current one is refused. */
+    generation: integer("generation").notNull().default(0),
+    /** Nullable PAIR: a lease is either held with an expiry or not held. One
+     *  without the other is a lease that can never be released or never
+     *  expires, so the CHECK below refuses the half-state. */
+    leaseToken: text("lease_token"),
+    leaseExpiresAt: integer("lease_expires_at", { mode: "timestamp" }),
+    /** What the source said it had; `imported_count` is what actually landed.
+     *  They differ on a truncated read, and the difference is what the UI
+     *  needs in order to say "showing the first N" honestly. */
+    sourceCount: integer("source_count"),
+    importedCount: integer("imported_count"),
+    snapshotDigest: text("snapshot_digest"),
+    lastAttemptAt: integer("last_attempt_at", { mode: "timestamp" }),
+    lastSuccessAt: integer("last_success_at", { mode: "timestamp" }),
+    errorCode: text("error_code"),
+  },
+  (t) => [
+    uniqueIndex("uq_timeline_sync_state_timeline").on(
+      t.timelineWorkspaceSlug,
+      t.timelineSlug,
+    ),
+    foreignKey({
+      name: "fk_sync_state_primary_timeline",
+      columns: [t.timelineWorkspaceSlug, t.timelineSlug],
+      foreignColumns: [projects.workspaceSlug, projects.slug],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "ck_sync_state_status",
+      sql`${t.status} IN ('never', 'syncing', 'complete', 'empty', 'partial', 'error', 'unauthorized')`,
+    ),
+    check("ck_sync_state_generation", sql`${t.generation} >= 0`),
+    check(
+      "ck_sync_state_lease_pair",
+      sql`(${t.leaseToken} IS NULL) = (${t.leaseExpiresAt} IS NULL)`,
+    ),
+    check(
+      "ck_sync_state_counts",
+      sql`(${t.sourceCount} IS NULL OR ${t.sourceCount} >= 0) AND (${t.importedCount} IS NULL OR ${t.importedCount} >= 0)`,
+    ),
+  ],
+);
+
 export type Project = typeof projects.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
 export type Subtask = typeof subtasks.$inferSelect;
@@ -616,3 +794,6 @@ export type TimelinePublication = typeof timelinePublications.$inferSelect;
 export type TimelinePublicationItem = typeof timelinePublicationItems.$inferSelect;
 export type AudienceShare = typeof audienceShares.$inferSelect;
 export type AudienceViewReceipt = typeof audienceViewReceipts.$inferSelect;
+export type SuiteProjectBinding = typeof suiteProjectBindings.$inferSelect;
+export type TimelineSourceSyncState =
+  typeof timelineSourceSyncState.$inferSelect;

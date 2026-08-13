@@ -1,0 +1,56 @@
+{
+  "schemaVersion": "timeline-migration-ledger/1",
+  "dialect": "sqlite",
+  "journal": "drizzle-timeline/meta/_journal.json",
+  "databaseLedgerTable": "signal_timeline_schema_migrations",
+  "legacyDrizzleTable": "__drizzle_migrations",
+  "entries": [
+    {
+      "ordinal": 0,
+      "id": "0000_timeline_baseline",
+      "file": "drizzle-timeline/0000_timeline_baseline.sql",
+      "when": 1785485443388,
+      "sha256": "6c5d8239891ebdda0cb8901946316785d8edf5003370b8a43ffb71c8bcec1b81",
+      "policy": "baseline",
+      "snapshot": "drizzle-timeline/meta/0000_snapshot.json",
+      "snapshotSha256": "7fcd23f6c5ff8a6763ff95c70964471fb9b3b8f575b960b50c17c457d45bd8f1",
+      "receipt": "drizzle-timeline/receipts/reviewed-timeline-baseline.json",
+      "receiptSha256": "dfdaf1bc63521189787c3f543534eb693fe8d434bfc4dc5393da66e8e4ee225a"
+    },
+    {
+      "ordinal": 1,
+      "id": "0001_suite_project_bindings",
+      "file": "drizzle-timeline/0001_suite_project_bindings.sql",
+      "when": 1786583744922,
+      "sha256": "0a7bf328befda059731415428b7d75aa13d4e6816f472a750817422814f22bb9",
+      "policy": "forward",
+      "snapshot": "drizzle-timeline/meta/0001_snapshot.json",
+      "snapshotSha256": "c2ed20e537dd90cd09b00ae0865bbc0a39bff9b456b5044e965a812ff9078d33",
+      "receipt": "drizzle-timeline/receipts/suite-project-bindings-2026-08-13.json",
+      "receiptSha256": "f382ab1437b828eeacc873e76c7a77bd2aae3491927cceeda591550b23fe1cab",
+      "continuousProofIds": [
+        "bindings-table-exists",
+        "bindings-primary-key-is-tasks-workspace-id",
+        "bindings-state-check",
+        "bindings-provenance-check",
+        "bindings-mapping-version-check",
+        "bindings-timeline-workspace-unique",
+        "bindings-workspace-fk-restricts",
+        "bindings-primary-timeline-fk-restricts",
+        "sync-state-table-exists",
+        "sync-state-generation-not-null",
+        "sync-state-lease-pair-columns",
+        "sync-state-snapshot-digest-column",
+        "sync-state-status-check",
+        "sync-state-lease-pair-check",
+        "sync-state-binding-fk-restricts",
+        "sync-state-timeline-unique",
+        "legacy-source-index-exists",
+        "legacy-workspace-mirror-survives",
+        "legacy-project-mirror-survives",
+        "integrity",
+        "foreign-keys"
+      ]
+    }
+  ]
+}

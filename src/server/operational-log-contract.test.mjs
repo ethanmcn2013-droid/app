@@ -142,6 +142,15 @@ const ALLOWED = Object.freeze({
   // two: console.error with a STATIC string, no interpolation, no ids.
   "src/modules/timeline/server/sync/tasks-workspace-context.ts": 3,
   "src/modules/timeline/server/sync/tasks-workspace-prefs.ts": 1,
+  // 2 as of WP4. The normalized binding and the sync generation/lease are both
+  // ADDITIVE — the legacy mirrors stay authoritative for two stable releases —
+  // so neither may take a Timeline down when its table is not there yet, which
+  // is the state every deployment passes through before its migration runs.
+  // Both sites are the same shape as their neighbours: console.error with a
+  // static prefix plus String(error), no ids, no slugs, no planning content.
+  // An operator needs to see that a binding went unrecorded; a couple must not
+  // see a dead end because of it.
+  "src/modules/timeline/server/sync/sync-state.ts": 2,
 });
 
 /**

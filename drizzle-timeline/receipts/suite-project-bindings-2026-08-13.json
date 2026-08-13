@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "timeline-migration-receipt/1",
+  "id": "suite-project-bindings-2026-08-13",
+  "authorizedBy": "NOT YET AUTHORIZED FOR PRODUCTION. Reviewed and registered under the Project Truth wave, work package WP4. No founder approval has been given and no timeline-migration-execution/1 receipt exists, so this must not be applied to any remote database. This review receipt authorizes local, CI and isolated-copy application only.",
+  "reviewedBy": "Claude Code, Project Truth wave WP4 (Timeline binding, reconciliation, provisioning and freshness)",
+  "authorizationSource": "Active Project plan section 6.2 (additive binding migration): the suite_project_bindings shape with its CHECK constraints, the unique index on timeline_workspace_slug, both foreign keys ON UPDATE CASCADE ON DELETE RESTRICT, the timeline_source_sync_state generation/lease pair and snapshot_digest, and 'Also index legacy projects.source_tasks_workspace_id. Keep and dual-write workspaces.suite_workspace_id and projects.source_tasks_workspace_id for at least two stable releases. Do not clear or drop them in this wave.'",
+  "migrations": [
+    {
+      "id": "0001_suite_project_bindings",
+      "sha256": "0a7bf328befda059731415428b7d75aa13d4e6816f472a750817422814f22bb9",
+      "reviewedAt": "2026-08-13T00:00:00.000Z",
+      "risk": "low, and additive by construction. Two CREATE TABLEs and three indexes. No existing table is altered, no column is dropped or rewritten, no row is read or written, and both legacy mirror columns are deliberately left in place and still dual-written by the application. The new tables start empty, so the ON DELETE RESTRICT foreign keys cannot refuse any delete that succeeds today - a RESTRICT only bites once a binding row exists, and no binding row exists until the separately-authorized backfill runs. The residual risk is NOT in this migration: it is that the backfill which populates these tables could bind the wrong Project, which is why the backfill is exact-only, dry-run by default, and separately receipted.",
+      "rollbackPlan": "DROP INDEX idx_projects_source_tasks_workspace; DROP TABLE timeline_source_sync_state; DROP TABLE suite_project_bindings. Safe unconditionally while the tables are empty. Once the backfill has written binding rows, dropping suite_project_bindings discards the normalized bindings - but NOT the mapping itself, because workspaces.suite_workspace_id and projects.source_tasks_workspace_id are dual-written and unchanged, so a rollback dual-read resolves the same exact rows. Check with: SELECT COUNT(*) FROM suite_project_bindings; a non-zero result means re-run the backfill after rolling forward rather than treating the drop as free.",
+      "postconditions": [
+        "suite_project_bindings table exists with tasks_workspace_id as its primary key",
+        "suite_project_bindings enforces the state, provenance and mapping_version CHECK constraints",
+        "unique index uq_suite_binding_timeline_workspace exists on suite_project_bindings(timeline_workspace_slug)",
+        "suite_project_bindings references workspaces(slug) ON UPDATE CASCADE ON DELETE RESTRICT",
+        "suite_project_bindings references projects(workspace_slug, slug) ON UPDATE CASCADE ON DELETE RESTRICT",
+        "timeline_source_sync_state table exists with the generation column, the lease_token/lease_expires_at pair and snapshot_digest",
+        "timeline_source_sync_state enforces the status enum and the lease-pair CHECK",
+        "unique index uq_timeline_sync_state_timeline exists on (timeline_workspace_slug, timeline_slug)",
+        "index idx_projects_source_tasks_workspace exists on projects(source_tasks_workspace_id)",
+        "workspaces.suite_workspace_id and projects.source_tasks_workspace_id both still exist and were not cleared",
+        "both new tables are empty when the migration completes",
+        "integrity check passes",
+        "no foreign key violations"
+      ],
+      "proofs": [
+        {
+          "id": "bindings-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'suite_project_bindings'",
+          "expected": 1
+        },
+        {
+          "id": "bindings-primary-key-is-tasks-workspace-id",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('suite_project_bindings') WHERE name = 'tasks_workspace_id' AND pk = 1",
+          "expected": 1
+        },
+        {
+          "id": "bindings-state-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'suite_project_bindings' AND sql LIKE '%ck_suite_binding_state%'",
+          "expected": 1
+        },
+        {
+          "id": "bindings-provenance-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'suite_project_bindings' AND sql LIKE '%ck_suite_binding_provenance%'",
+          "expected": 1
+        },
+        {
+          "id": "bindings-mapping-version-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'suite_project_bindings' AND sql LIKE '%ck_suite_binding_mapping_version%'",
+          "expected": 1
+        },
+        {
+          "id": "bindings-timeline-workspace-unique",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('suite_project_bindings') WHERE name = 'uq_suite_binding_timeline_workspace' AND \"unique\" = 1",
+          "expected": 1
+        },
+        {
+          "id": "bindings-workspace-fk-restricts",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('suite_project_bindings') WHERE \"table\" = 'workspaces' AND on_update = 'CASCADE' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "bindings-primary-timeline-fk-restricts",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('suite_project_bindings') WHERE \"table\" = 'projects' AND on_update = 'CASCADE' AND on_delete = 'RESTRICT'",
+          "expected": 2
+        },
+        {
+          "id": "sync-state-table-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'timeline_source_sync_state'",
+          "expected": 1
+        },
+        {
+          "id": "sync-state-generation-not-null",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('timeline_source_sync_state') WHERE name = 'generation' AND \"notnull\" = 1",
+          "expected": 1
+        },
+        {
+          "id": "sync-state-lease-pair-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('timeline_source_sync_state') WHERE name IN ('lease_token', 'lease_expires_at') AND \"notnull\" = 0",
+          "expected": 2
+        },
+        {
+          "id": "sync-state-snapshot-digest-column",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('timeline_source_sync_state') WHERE name = 'snapshot_digest'",
+          "expected": 1
+        },
+        {
+          "id": "sync-state-status-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'timeline_source_sync_state' AND sql LIKE '%ck_sync_state_status%'",
+          "expected": 1
+        },
+        {
+          "id": "sync-state-lease-pair-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'table' AND name = 'timeline_source_sync_state' AND sql LIKE '%ck_sync_state_lease_pair%'",
+          "expected": 1
+        },
+        {
+          "id": "sync-state-binding-fk-restricts",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('timeline_source_sync_state') WHERE \"table\" = 'suite_project_bindings' AND on_update = 'CASCADE' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "sync-state-timeline-unique",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('timeline_source_sync_state') WHERE name = 'uq_timeline_sync_state_timeline' AND \"unique\" = 1",
+          "expected": 1
+        },
+        {
+          "id": "legacy-source-index-exists",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_master WHERE type = 'index' AND name = 'idx_projects_source_tasks_workspace' AND tbl_name = 'projects'",
+          "expected": 1
+        },
+        {
+          "id": "legacy-workspace-mirror-survives",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspaces') WHERE name = 'suite_workspace_id'",
+          "expected": 1
+        },
+        {
+          "id": "legacy-project-mirror-survives",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('projects') WHERE name = 'source_tasks_workspace_id'",
+          "expected": 1
+        },
+        {
+          "id": "migration-binds-nothing",
+          "sql": "SELECT COUNT(*) AS value FROM suite_project_bindings",
+          "expected": 0
+        },
+        {
+          "id": "migration-syncs-nothing",
+          "sql": "SELECT COUNT(*) AS value FROM timeline_source_sync_state",
+          "expected": 0
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

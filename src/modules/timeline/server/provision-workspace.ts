@@ -17,6 +17,7 @@ import {
   type ProjectBindingAuthority,
 } from "@/modules/timeline/server/db/timeline-queries";
 import { connectSuiteWorkspace } from "@/modules/timeline/server/audience-timeline";
+import { ensureSuiteProjectBinding } from "@/modules/timeline/server/sync/sync-state";
 import {
   getPrimaryTasksWorkspaceForUser,
   getSoleOwnedTasksWorkspaceIdForUser,
@@ -129,10 +130,19 @@ export async function provisionTimelineForTasksWorkspace(
     userId,
   );
   if (existing) {
-    await ensureBoundProject(existing.slug, tasksWorkspace.workspaceId, {
-      kind: "project-owner",
-      ownership,
-    });
+    const primary = await ensureBoundProject(
+      existing.slug,
+      tasksWorkspace.workspaceId,
+      { kind: "project-owner", ownership },
+    );
+    if (primary) {
+      await ensureSuiteProjectBinding({
+        tasksWorkspaceId: tasksWorkspace.workspaceId,
+        timelineWorkspaceSlug: existing.slug,
+        primaryTimelineSlug: primary,
+        authority: { kind: "project-owner", ownership },
+      });
+    }
     return existing;
   }
 
@@ -165,10 +175,24 @@ export async function provisionTimelineForTasksWorkspace(
     ownership,
   });
 
-  await ensureBoundProject(finalSlug, tasksWorkspace.workspaceId, {
+  const primary = await ensureBoundProject(finalSlug, tasksWorkspace.workspaceId, {
     kind: "project-owner",
     ownership,
   });
+
+  // The normalized binding, written from the same proof as the mirrors and in
+  // the same act (WP4, plan §6.2). Both mirrors stay — they are dual-written
+  // for at least two stable releases so a rollback dual-read resolves the same
+  // exact rows — but from here on the authoritative row exists from the
+  // Timeline's first moment rather than waiting for a backfill.
+  if (primary) {
+    await ensureSuiteProjectBinding({
+      tasksWorkspaceId: tasksWorkspace.workspaceId,
+      timelineWorkspaceSlug: finalSlug,
+      primaryTimelineSlug: primary,
+      authority: { kind: "project-owner", ownership },
+    });
+  }
 
   return created;
 }
@@ -437,10 +461,18 @@ export async function resolveCanonicalTimeline(
     };
   }
 
-  await ensureBoundProject(adoptable.slug, requested, {
+  const adoptedPrimary = await ensureBoundProject(adoptable.slug, requested, {
     kind: "project-owner",
     ownership,
   });
+  if (adoptedPrimary) {
+    await ensureSuiteProjectBinding({
+      tasksWorkspaceId: requested,
+      timelineWorkspaceSlug: adoptable.slug,
+      primaryTimelineSlug: adoptedPrimary,
+      authority: { kind: "project-owner", ownership },
+    });
+  }
   return {
     kind: "exact",
     workspace: { ...adoptable, suiteWorkspaceId: requested },
@@ -504,15 +536,23 @@ async function ensureBoundProject(
   workspaceSlug: string,
   sourceTasksWorkspaceId: string,
   authority: ProjectBindingAuthority,
-): Promise<void> {
+): Promise<string | null> {
   const projects = await getProjectsForWorkspace(workspaceSlug);
   if (projects.length > 0) {
     // Already has a primary for this Project. Nothing to do, and above all no
     // second one to create.
+    // Kept as `.some(` deliberately. `milestone-safety-regression.test.ts`
+    // pins this exact text as the F8 guard — one Tasks Project, at most one
+    // synchronizing child — and a guard is renegotiated explicitly or not at
+    // all (DECISIONS D-007). The slug is then read separately.
     const alreadyBound = projects.some(
       (project) => project.sourceTasksWorkspaceId === sourceTasksWorkspaceId,
     );
-    if (alreadyBound) return;
+    if (alreadyBound) {
+      return projects.find(
+        (project) => project.sourceTasksWorkspaceId === sourceTasksWorkspaceId,
+      )!.slug;
+    }
 
     // Otherwise the first child that names no Project at all may become the
     // primary. A child bound to a DIFFERENT Project is that Project's and is
@@ -528,8 +568,12 @@ async function ensureBoundProject(
         sourceTasksWorkspaceId,
         authority,
       );
+      return adoptable.slug;
     }
-    return;
+    // Every child is spoken for by another Project. Returning null rather than
+    // a slug matters: the caller uses this to write the normalized binding, and
+    // a binding needs a primary Timeline that genuinely is one.
+    return null;
   }
 
   await createProject({
@@ -545,4 +589,5 @@ async function ensureBoundProject(
     sourceTasksWorkspaceId,
     authority,
   );
+  return DEFAULT_PROJECT_SLUG;
 }

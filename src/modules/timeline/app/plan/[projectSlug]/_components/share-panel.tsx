@@ -81,12 +81,26 @@ export function SharePanel({
   publication,
   manageHref,
   canManage,
+  canPublish = true,
 }: {
   workspaceSlug: string;
   projectName: string;
   publication: SharePublicationSummary | null;
   manageHref: string;
   canManage: boolean;
+  /**
+   * False when the Tasks Project is archived (F6, ADR 0001 §5).
+   *
+   * It hides the two controls that MINT a link — publish and make-a-new-one —
+   * and leaves Switch every link off and Unpublish exactly where they are.
+   * That asymmetry is the point and is a security property, not a nicety: an
+   * owner who discovers a leaked link must be able to kill it whether or not
+   * the Project is archived, while an archived Project accepts no new
+   * association. The server refuses the mint independently
+   * (`requireFreshAudienceMutationAuthority`), so this is the honest label on
+   * a refusal rather than the refusal itself.
+   */
+  canPublish?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const headingId = useId();
@@ -253,26 +267,34 @@ export function SharePanel({
                     Link settings
                   </h3>
                   <div className="mt-3 space-y-3">
-                    <form
-                      action={publication.state === "published" ? rotateAction : publishAction}
-                      className="flex flex-wrap items-end gap-2"
-                    >
-                      <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-                      <input type="hidden" name="publicationId" value={publication.id} />
-                      <label className="text-xs font-medium text-ink-quiet">
-                        Stop the link working after
-                        <span className="font-normal"> (optional)</span>
-                        <input className={`${fieldClass} mt-1 w-40`} type="date" name="expiresOn" />
-                      </label>
-                      <button
-                        disabled={publication.state === "published" ? rotatePending : publishPending}
-                        className={quietButton}
+                    {canPublish ? (
+                      <form
+                        action={publication.state === "published" ? rotateAction : publishAction}
+                        className="flex flex-wrap items-end gap-2"
                       >
-                        {publication.state === "published"
-                          ? "Make a new link"
-                          : "Publish and make the link"}
-                      </button>
-                    </form>
+                        <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
+                        <input type="hidden" name="publicationId" value={publication.id} />
+                        <label className="text-xs font-medium text-ink-quiet">
+                          Stop the link working after
+                          <span className="font-normal"> (optional)</span>
+                          <input className={`${fieldClass} mt-1 w-40`} type="date" name="expiresOn" />
+                        </label>
+                        <button
+                          disabled={publication.state === "published" ? rotatePending : publishPending}
+                          className={quietButton}
+                        >
+                          {publication.state === "published"
+                            ? "Make a new link"
+                            : "Publish and make the link"}
+                        </button>
+                      </form>
+                    ) : (
+                      <p className="text-sm leading-6 text-ink-soft">
+                        This project is archived, so no new link can be made.
+                        Anything already shared still works, and you can switch
+                        it off below.
+                      </p>
+                    )}
                     {publication.state === "published" ? (
                       <div className="flex flex-wrap gap-2">
                         <form action={revokeAction}>
@@ -295,10 +317,12 @@ export function SharePanel({
                         </form>
                       </div>
                     ) : null}
-                    <p className="text-xs leading-5 text-ink-quiet">
-                      A new link switches every earlier link off. Dates end at the
-                      close of that day in {publication.timezone}.
-                    </p>
+                    {canPublish ? (
+                      <p className="text-xs leading-5 text-ink-quiet">
+                        A new link switches every earlier link off. Dates end at the
+                        close of that day in {publication.timezone}.
+                      </p>
+                    ) : null}
                     <p className="text-sm">
                       <Link
                         href={manageHref}
