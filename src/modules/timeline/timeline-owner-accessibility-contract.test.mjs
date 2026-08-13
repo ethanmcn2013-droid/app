@@ -197,3 +197,47 @@ test("manual milestone add restores focus to its initiating control", () => {
     2,
   );
 });
+
+test("both View and Edit say how old what they are showing is", () => {
+  // F7. Only Edit refreshed, and nothing on either surface said when the last
+  // refresh happened. `syncMilestonesAction` has returned `complete: false`
+  // and `totalCount` since WP1 and NO SURFACE READ EITHER, so a Project past
+  // the row cap showed the first 201 milestones and said nothing — a
+  // complete-looking plan quietly missing work.
+  const page = read("app/plan/[projectSlug]/page.tsx");
+  const line = read("app/plan/[projectSlug]/_components/freshness-line.tsx");
+
+  assert.match(page, /<FreshnessLine/, "the freshness line must be on the page itself, so both modes get it");
+  assert.match(
+    page,
+    /autoRefresh=\{mode === "view"\}/,
+    "View must run the safe freshness path; Edit already runs one in CurationSurface",
+  );
+  assert.match(
+    page,
+    /serverNowMs=\{now\.getTime\(\)\}/,
+    "the loader's clock is passed so the first client render cannot mismatch",
+  );
+
+  assert.match(line, /formatLastRefreshed/, "the line must say when it last refreshed");
+  assert.match(
+    line,
+    /result\.complete === false/,
+    "the truncation flag the action has always returned must actually be read",
+  );
+  assert.match(line, /result\.totalCount/, "and so must the total it carries");
+  assert.match(line, /truncationNotice/);
+});
+
+test("Retry is offered only where retrying could change the answer", () => {
+  const line = read("app/plan/[projectSlug]/_components/freshness-line.tsx");
+
+  assert.match(line, /state\.retryable \? \(/, "a settled refusal offers no Retry");
+  assert.match(line, />\s*Retry\s*</, "a retryable failure offers one");
+  assert.match(
+    line,
+    /min-h-\[44px\]/,
+    "Retry is a real control and meets the tap target",
+  );
+  assert.match(line, /role="status" aria-live="polite"/, "freshness is polite, never an alert");
+});

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AnchorChip } from "@/modules/timeline/app/_components/anchor-countdown";
 import { latestPublicationForProject } from "@/modules/timeline/app/audience/project-publications";
 import { CurationSurface } from "@/modules/timeline/app/plan/[projectSlug]/_components/curation-surface";
+import { FreshnessLine } from "@/modules/timeline/app/plan/[projectSlug]/_components/freshness-line";
 import { LocalViewTabs } from "@/modules/timeline/app/plan/[projectSlug]/_components/local-view-tabs";
 import { ProjectSwitcher } from "@/modules/timeline/app/plan/[projectSlug]/_components/project-switcher";
 import {
@@ -24,6 +25,7 @@ import {
   resolveTimelineContext,
 } from "@/modules/timeline/server/auth";
 import { readBoundProjectArchiveState } from "@/modules/timeline/server/archived-project-policy";
+import { readSyncFreshness } from "@/modules/timeline/server/sync/sync-state";
 import { getOwnerAudiencePublications } from "@/modules/timeline/server/audience-timeline";
 import {
   getEffectiveNodesForWorkspace,
@@ -126,9 +128,18 @@ export default async function TimelineProjectPage({
   const now = isDemoMode()
     ? new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso)
     : new Date();
-  const [effectiveNodes, publications] = await Promise.all([
+  const [effectiveNodes, publications, syncFreshness] = await Promise.all([
     getEffectiveNodesForWorkspace(workspace.slug),
     getOwnerAudiencePublications(workspace.slug),
+    // Read-through freshness, on View as well as Edit (plan §6.5). The loader
+    // READS the persisted state; the refresh itself is a client act, because a
+    // Server Component render must not perform a mutation or call
+    // revalidatePath. What changes is that View now runs one at all, and that
+    // both modes can say how old what they are showing is.
+    readSyncFreshness({
+      timelineWorkspaceSlug: workspace.slug,
+      timelineSlug: project.slug,
+    }),
   ]);
   const projectNodes = effectiveNodes.filter(
     (node) => node.projectSlug === project.slug,
@@ -204,6 +215,34 @@ export default async function TimelineProjectPage({
             {/* Who can see this page, before the owner types a word into it.
                 Preview and Share stood in this header explaining neither. */}
             <VisibilityLine publication={visibility} />
+            {/* How old what you are reading is, on both View and Edit, plus
+                Retry and the truncation sentence nothing used to say. An
+                archived Project does not refresh from Tasks at all, so it gets
+                the read-only line below instead of a freshness one that would
+                never move. */}
+            {archived ? null : (
+              <FreshnessLine
+                workspaceSlug={workspace.slug}
+                projectSlug={project.slug}
+                freshness={
+                  syncFreshness
+                    ? {
+                        status: syncFreshness.status,
+                        lastSuccessAtMs: syncFreshness.lastSuccessAt?.getTime() ?? null,
+                        sourceCount: syncFreshness.sourceCount,
+                        importedCount: syncFreshness.importedCount,
+                        truncated: syncFreshness.truncated,
+                        errorCode: syncFreshness.errorCode,
+                      }
+                    : null
+                }
+                serverNowMs={now.getTime()}
+                // Edit already refreshes on mount inside CurationSurface. A
+                // second refresh here would double every Tasks read and race
+                // the first for the same generation.
+                autoRefresh={mode === "view"}
+              />
+            )}
             {/* Read-only is stated once, in plain words, with the one action
                 that changes it. Not an alert: nothing has gone wrong and
                 nothing is waiting on the reader. */}

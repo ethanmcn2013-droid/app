@@ -367,6 +367,22 @@ export async function readSyncFreshness(input: {
   timelineWorkspaceSlug: string;
   timelineSlug: string;
 }): Promise<SyncFreshness | null> {
+  try {
+    return await readSyncFreshnessUnguarded(input);
+  } catch {
+    // This runs in a page loader. Before 0001 is applied the table is not
+    // there, and a Timeline must not fail to render because it cannot say how
+    // fresh it is. Null reads as "never refreshed", which is what the surface
+    // shows anyway when there is no row. No log line: this is a READ on a hot
+    // path, and one per page load would be noise, not signal.
+    return null;
+  }
+}
+
+async function readSyncFreshnessUnguarded(input: {
+  timelineWorkspaceSlug: string;
+  timelineSlug: string;
+}): Promise<SyncFreshness | null> {
   const [row] = await db
     .select()
     .from(timelineSourceSyncState)
