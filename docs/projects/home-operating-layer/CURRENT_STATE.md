@@ -2,17 +2,17 @@
 
 Short and current by design. A resumed session reads this first.
 
-**Updated:** 2026-08-12 22:4x BST
+**Updated:** 2026-08-13
 
 ## Where the programme is
 
 | | |
 |---|---|
-| **Integration SHA** | `11b60c7` on `feat/home-operating-layer`, 8 commits ahead |
-| **Base** | `c592e83` = `origin/main` (rebased through three drift checkpoints: `a849fc4` → `78021c5` → `c592e83`) |
+| **Integration SHA** | `53abcc0` on `feat/home-operating-layer` |
+| **Base** | `0b112ab` = `origin/main`. Rebased through five drift checkpoints. |
 | **Worktree** | `_wt-home-layer`, clean |
-| **Active wave** | 2 — fixture universe and harness, running in background |
-| **Waves done** | 0 (base, audits, baseline, evidence) · 1 (ten contracts, sealed and compiling) |
+| **Active wave** | 3 — four directions built; rendering evidence for the founder pause |
+| **Waves done** | 0, 1, 2. Wave 3 build complete, evidence and panel outstanding. |
 | **Preview** | local review-mode server, port 3212, `home-layer-review` in `.claude/launch.json` |
 | **Flags** | `HOME_REVIEW_LAB_ENABLED` only, default-off, fail-closed. The other five remain unwritten. |
 | **Founder pause** | not reached (Wave 3) |
@@ -67,3 +67,25 @@ git fetch origin && git log --oneline -1 origin/main   # has the base moved agai
 cat docs/projects/home-operating-layer/CURRENT_STATE.md
 cat docs/projects/home-operating-layer/COLLISION_REGISTER.md   # re-take before any write
 ```
+
+---
+
+## Wave 3 build complete — 2026-08-13
+
+Four directions built independently, each across all five surfaces and thirteen worlds. None could
+see another's folder. Typecheck exit 0; lab-shell 21/21.
+
+| | Direction | Thesis as built | Signature |
+|---|---|---|---|
+| v=1 | **Editorial Line** | Not one container, card, fill or shadow. Three-tier measure: 33rem prose, 46rem ledgers, one widening to 58rem for the Analytics table. Colour spent once per view. | An indigo rule over the first ranked entry. Current mode marked three ways, ink, weight and rule, so nothing rides on colour alone. |
+| v=2 | **Context Rail** | A labelled column that never leaves, so the content is free to be a document. Zero client JavaScript. | The rail prints each mode's own read-state under its name, and only when it is not ordinary. A quiet day shows "Inbox, nothing in it"; a broken provider shows "Partly read" under all four. |
+| v=3 | **Reading Index** | Home as a periodical, and the navigation is its contents page. Ordinal numbering recurses into every mode. Zero client JavaScript. | Dotted leaders run from each mode to its current condition, so the navigation doubles as the summary. My work numbers continuously, so the count is a fact about the page rather than a total someone asserted. |
+| v=4 | **Signal Desk** (wildcard) | Warm paper mixed from the theme token, and one 1px spine at the same x in all five modes. Changing mode changes the marks on the line, not the furniture. No status colours anywhere. | The spine shows where the read broke: a gap with a dashed diamond where a source did not answer. A quiet day is a short unbroken line; a failed provider is the same line with holes. |
+
+All four independently solved this programme's governing rule, that a quiet day and a broken
+provider must look different, and each solved it a different way. That is what the lab existed to
+find out.
+
+**Next:** render the four to static HTML with faithful CSS and screenshot them (the guard refuses
+review-mode servers by design, so live local HTTP is not available), then run the ten-director
+admission panel at 8.5, then present to Ethan for selection.
