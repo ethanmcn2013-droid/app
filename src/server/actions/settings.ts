@@ -19,9 +19,15 @@ import {
 } from "@/server/db/schema";
 import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
-  getActiveWorkspace,
+  getActiveWorkspaceOrNull,
   getCurrentUser,
 } from "@/server/auth";
+import {
+  authorizeProjectCandidate,
+  readableProjectOrNull,
+  type ProjectCapabilityKey,
+  type ProjectGrant,
+} from "@/server/actions/project-authz";
 import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server";
 import { canAddMember } from "@/server/db/membership";
 import { inviteEmailHtml, sendEmail } from "@/server/email";
@@ -31,12 +37,49 @@ import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
 
 /**
- * Settings-page mutations. Each action is workspace-scoped via
- * `getActiveWorkspace()`, never accepts a workspace id as input —
- * same per-tenant boundary as the rest of the app. Owner-gated
- * mutations (member role changes, deletion) check membership +
- * role server-side; the UI hides the controls but the server is
- * the only authority.
+ * Settings-page mutations — WP3-C, the last file of the mutation-safety wave.
+ *
+ * ── What this file used to do, and why it was the worst of them ────────────
+ *
+ * Every action here resolved its destination with the unguarded ambient
+ * accessor and then wrote by that id. Fourteen lookups, eleven of them sharing
+ * a body with a database write: the exact D-018 shape refused everywhere else
+ * in the codebase, on the actions that rename a Project, publish it to the open
+ * web, change who may enter it, and delete it outright.
+ *
+ * Three separate defects lived in that shape:
+ *
+ *  1. **No proof at all on four of them.** `updateWorkspaceAction`,
+ *     `setProjectDescriptionAction`, `setProjectCurrencyAction` and
+ *     `setProjectBudgetAction` had no server-side role check whatsoever. The
+ *     Workspace settings panel disables all four for a non-owner
+ *     (`sections/workspace.tsx` — `canEdit = myRole === "owner"`), so the
+ *     product claimed a gate it did not have. ADR 0001 §9 is explicit that
+ *     authorizing in the UI and trusting the action is not authorization.
+ *  2. **The gate and the target were resolved separately.** The owner-gated
+ *     actions asked `getMyRoleInActiveWorkspace()` for a role and the ambient
+ *     accessor for a destination — two independent lookups that a caller could
+ *     in principle see disagree. The proof now *is* the destination: one
+ *     operation returns both, so they cannot differ.
+ *  3. **D-005.** The unguarded accessor's third fallback is
+ *     `LEGACY_WORKSPACE_ID`, a real workspace holding real tasks for which the
+ *     caller has produced no membership proof. `getActiveWorkspaceOrNull()`
+ *     returns `null` there instead, and `null` stays a refusal.
+ *
+ * ── What it does now ───────────────────────────────────────────────────────
+ *
+ * Every action takes an **optional explicit `projectId`** and puts it — or,
+ * when absent, the fail-closed ambient value — through `provedSettingsProject`,
+ * which is the ADR 0001 §9 create/list pattern via the WP3-A seam. The cookie
+ * is a hint about *which* Project and never evidence that the caller may write
+ * to it. The settings page passes the id it actually rendered, so a mutation
+ * lands in the Project the operator was looking at or is refused; it can no
+ * longer land in whichever Project a cookie drifted to in another tab.
+ *
+ * Capabilities are named per action rather than flattened to bare membership —
+ * see each call site. Permanent deletion requires `deleteOrTransferOwnership`,
+ * which is primary-owner only (`capabilities.ts`: "permanent delete and
+ * ownership transfer stay primary-owner only").
  */
 
 const VALID_DOMAINS = new Set<DomainId>([
@@ -47,34 +90,117 @@ const VALID_DOMAINS = new Set<DomainId>([
   "trades",
 ]);
 
-/** Resolve the current user's role in the active workspace. Used by
- *  the settings page to gate owner-only sections. */
-export async function getMyRoleInActiveWorkspace(): Promise<
-  "owner" | "member" | "none"
-> {
-  const me = await getCurrentUser();
-  const ws = await getActiveWorkspace();
-  const [row] = await db
-    .select({ role: workspaceMembers.role })
-    .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, ws),
-        eq(workspaceMembers.userId, me),
-      ),
-    );
-  if (!row) return "none";
-  return row.role;
+/**
+ * The neutral refusal, for the actions the product never gave a role message
+ * of their own. "No such Project", "not a member" and "not the owner" must not
+ * be tellable apart by a caller probing an action — an existence leak is a
+ * privacy defect (ADR 0001 §4).
+ *
+ * The owner-gated actions keep the copy they already shipped ("Only the owner
+ * can …"). That is not a leak: those messages were already thrown for a
+ * non-member and a non-owner alike, so they distinguish nothing that was not
+ * already public — the settings UI says "Owner-only" on the control itself.
+ */
+const PROJECT_UNAVAILABLE = "That project isn’t available.";
+
+/**
+ * The Project a settings mutation acts on — ADR 0001 §9, create/list.
+ *
+ * Same shape as `resolveSeedProject` (`seed.ts`) and `provedBoardProject`
+ * (`board.ts`): an explicit id when the caller has one, the fail-closed ambient
+ * value when it does not, and the *same* membership-and-capability proof over
+ * either. The ambient read stays visible here in the action layer rather than
+ * hiding inside the seam, so every remaining dependence on the cookie is
+ * readable where a reviewer looks for it.
+ *
+ * Returns the whole grant, not just the id: the proved `role` is what replaced
+ * the second, independent `getMyRoleInActiveWorkspace()` lookup that used to
+ * gate these actions. One operation now yields both the permission and the
+ * destination, so the two cannot disagree.
+ */
+async function provedSettingsProject(
+  projectId: string | undefined,
+  capability: ProjectCapabilityKey,
+  refusal: string,
+): Promise<ProjectGrant> {
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: projectId ?? ambient,
+    capability,
+    actorUserId: me,
+  });
+  if (!grant.ok) throw new Error(refusal);
+  return grant;
 }
 
-/** Rename + (optionally) re-seed the active workspace. The domain
- *  field re-seeds via `seedDomainAction`, which wipes tasks and
- *  re-overlays the chosen pack, same flow as /welcome. */
+/**
+ * The Project a settings *read* may report on, or `null`.
+ *
+ * A refused read must return its own empty value **because it was refused**,
+ * never by running a query whose `WHERE` happens to match nothing — those two
+ * are indistinguishable downstream, and the second is how an unauthorized read
+ * becomes an authorized zero (D-018).
+ */
+async function readableSettingsProject(
+  projectId: string | undefined,
+): Promise<string | null> {
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  return readableProjectOrNull(projectId ?? ambient, me);
+}
+
+/**
+ * Resolve the caller's role in a named Project. Used by the settings page to
+ * gate owner-only sections.
+ *
+ * Takes the Project explicitly. It used to resolve one ambiently, which made
+ * it possible for the gate this returns and the target of the mutation it
+ * gates to be two different Projects. The page now proves one Project and
+ * gates on that same one.
+ *
+ * `primary-owner` and co-`owner` both report as `"owner"`, exactly as the
+ * `workspace_members.role` column this replaces did — the distinction between
+ * them is a capability question, and it is asked at the capability layer where
+ * it belongs (only `deleteOrTransferOwnership` separates them).
+ */
+export async function getMyRoleInProject(
+  projectId: string,
+  actorUserId?: string,
+): Promise<"owner" | "member" | "none"> {
+  const grant = await authorizeProjectCandidate({
+    candidateProjectId: projectId,
+    capability: "open",
+    actorUserId,
+  });
+  if (!grant.ok) return "none";
+  return grant.role === "member" ? "member" : "owner";
+}
+
+/** Rename + (optionally) re-seed a Project. The domain field re-seeds via
+ *  `seedDomainAction`, which wipes tasks and re-overlays the chosen pack, same
+ *  flow as /welcome.
+ *
+ *  `manageProject`, because both halves are owner work the product already
+ *  presents as owner work: the name field and every domain-pack card are
+ *  disabled for a non-owner in `sections/workspace.tsx`, and the re-seed path
+ *  wipes every task in the Project. `seedDomainAction` already proves
+ *  `manageProject` for itself — it is now told *which* Project to prove, so the
+ *  rename and the wipe cannot land in two different ones. */
 export async function updateWorkspaceAction(input: {
   name?: string;
   domain?: DomainId;
+  projectId?: string;
 }): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
+  const { projectId: ws } = await provedSettingsProject(
+    input.projectId,
+    "manageProject",
+    PROJECT_UNAVAILABLE,
+  );
   if (input.name !== undefined) {
     const trimmed = input.name.trim();
     if (!trimmed) {
@@ -91,7 +217,7 @@ export async function updateWorkspaceAction(input: {
     }
     // seedDomainAction wipes + re-overlays. It also emits its own
     // tasks-changed event and revalidates /app.
-    await seedDomainAction(input.domain);
+    await seedDomainAction(input.domain, ws);
   }
   revalidatePath("/app", "layout");
   return { ok: true };
@@ -115,8 +241,19 @@ const PROJECT_DESCRIPTION_MAX = 200;
  */
 export async function setProjectDescriptionAction(
   description: string,
+  projectId?: string,
 ): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
+  // `createOrEditTasks`, not `manageProject`. This is not a settings control:
+  // the only caller is the inline "+ Add description" field on the board brief
+  // (`hybrid/options/b/workspace-brief.tsx`), which every member may edit today
+  // exactly as they may rename a column. WP3 is not the place to introduce a
+  // role gate the product has never had — the same call board.ts made for
+  // `renameBoardAction`, which sits beside this one in the same brief.
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "createOrEditTasks",
+    PROJECT_UNAVAILABLE,
+  );
   const trimmed = description.replace(/\s+/g, " ").trim();
   if (trimmed.length > PROJECT_DESCRIPTION_MAX) {
     throw new Error(
@@ -138,8 +275,16 @@ export async function setProjectDescriptionAction(
  */
 export async function setProjectCurrencyAction(
   currency: string | null,
+  projectId?: string,
 ): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
+  // `manageProject`: the currency selector is disabled for a non-owner in
+  // `sections/workspace.tsx`, and it restates every money figure in the
+  // Project at once.
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "manageProject",
+    PROJECT_UNAVAILABLE,
+  );
   if (currency !== null && !isProjectCurrency(currency)) {
     throw new Error("Choose one of the supported currencies.");
   }
@@ -157,8 +302,15 @@ export async function setProjectCurrencyAction(
  */
 export async function setProjectBudgetAction(
   budgetCents: number | null,
+  projectId?: string,
 ): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
+  // `manageProject`: owner-gated in the UI beside the currency selector, and
+  // the figure every budget readout in the Project is measured against.
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "manageProject",
+    PROJECT_UNAVAILABLE,
+  );
   if (budgetCents !== null) {
     if (!Number.isInteger(budgetCents) || budgetCents < 0 || budgetCents > 9_999_999_999) {
       throw new Error("Budget must be a whole amount in range.");
@@ -172,17 +324,28 @@ export async function setProjectBudgetAction(
   return { ok: true };
 }
 
-/** Remove a member from the active workspace. Owner-only; refuses to
- *  remove the workspace's last owner (one-owner invariant). */
+/** Remove a member from a Project. Owner-only; refuses to remove the
+ *  Project's last owner (one-owner invariant).
+ *
+ *  `manageProject` replaces the old two-step gate — an ambient role lookup and
+ *  a separate ambient destination. One proof now yields both, so the role that
+ *  authorized the removal is by construction the role held in the Project the
+ *  row is deleted from. */
 export async function removeMemberAction(
   userId: string,
+  projectId?: string,
 ): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
-  const role = await getMyRoleInActiveWorkspace();
-  if (role !== "owner") {
-    throw new Error("Only the owner can remove members.");
-  }
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "manageProject",
+    "Only the owner can remove members.",
+  );
   // Refuse to remove the only owner. Counted on the role column.
+  //
+  // This count gates a delete, which is the D-018 shape — but it can no longer
+  // be empty for an authorization reason. `manageProject` is only granted to a
+  // caller whose own membership row reads `owner`, so a proved caller
+  // guarantees at least one row here. An empty result now means what it says.
   const owners = await db
     .select({ userId: workspaceMembers.userId })
     .from(workspaceMembers)
@@ -209,16 +372,22 @@ export async function removeMemberAction(
   return { ok: true };
 }
 
-/** Promote / demote a workspace member. Owner-only. */
+/** Promote / demote a member. Owner-only.
+ *
+ *  `manageProject`, not `deleteOrTransferOwnership`: promoting a member makes
+ *  them a **co-owner**, which is reversible Project management and leaves
+ *  `workspaces.ownerUserId` — the primary owner — untouched. Transferring
+ *  primary ownership is a different operation and this is not it. */
 export async function setMemberRoleAction(
   userId: string,
   role: "owner" | "member",
+  projectId?: string,
 ): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
-  const myRole = await getMyRoleInActiveWorkspace();
-  if (myRole !== "owner") {
-    throw new Error("Only the owner can change member roles.");
-  }
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "manageProject",
+    "Only the owner can change member roles.",
+  );
   if (role === "member") {
     // Demoting an owner, refuse if it would empty the owner list.
     const owners = await db
@@ -257,15 +426,25 @@ export async function setMemberRoleAction(
  * different name than the internal slug), add a nullable
  * `publicSlug` column then; for now this stays simple.
  */
-export async function publishWorkspaceAction(): Promise<{
+export async function publishWorkspaceAction(projectId?: string): Promise<{
   ok: true;
   slug: string;
 }> {
-  const ws = await getActiveWorkspace();
-  const role = await getMyRoleInActiveWorkspace();
-  if (role !== "owner") {
-    throw new Error("Only the owner can publish this workspace.");
-  }
+  // `publishTimeline`, not `manageProject`. The capability key is named for
+  // the Timeline because that was the first outward artifact modelled, but
+  // what it encodes is "may publish a new outward artifact of this Project",
+  // and `/p/{slug}` is exactly that. The distinction is not cosmetic: ADR 0001
+  // §5 says an archived Project may still be revoked but may NOT be newly
+  // published, and `projectCapabilities()` encodes precisely that difference
+  // between `publishTimeline` and `revokeTimeline`. Under today's default
+  // `archivePolicy: "defer"` the two are identical to `manageProject`, so this
+  // changes no behaviour now — it makes the right thing happen when archive
+  // enforcement is switched on, rather than quietly publishing an archive.
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "publishTimeline",
+    "Only the owner can publish this workspace.",
+  );
   await db
     .update(workspaces)
     .set({ publishedAt: new Date() })
@@ -282,14 +461,18 @@ export async function publishWorkspaceAction(): Promise<{
 
 /** Unpublish the active workspace. Owner-gated. The `/p/{slug}`
  *  route 404s after this fires. */
-export async function unpublishWorkspaceAction(): Promise<{
+export async function unpublishWorkspaceAction(projectId?: string): Promise<{
   ok: true;
 }> {
-  const ws = await getActiveWorkspace();
-  const role = await getMyRoleInActiveWorkspace();
-  if (role !== "owner") {
-    throw new Error("Only the owner can unpublish this workspace.");
-  }
+  // `revokeTimeline` — the counterpart to publish above. Plan §9.2 makes
+  // always-reachable revocation a security property: taking a live public page
+  // down must stay possible on an archived Project, which is exactly the pair
+  // of Projects most likely to have a link nobody is watching.
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "revokeTimeline",
+    "Only the owner can unpublish this workspace.",
+  );
   const [row] = await db
     .select({ slug: workspaces.slug })
     .from(workspaces)
@@ -333,6 +516,7 @@ function nowMs(): number {
 export async function inviteMemberByEmailAction(
   email: string,
   inviteRole?: "member" | "owner",
+  projectId?: string,
 ): Promise<{
   ok: true;
   email: string;
@@ -348,11 +532,14 @@ export async function inviteMemberByEmailAction(
   const role: "member" | "owner" =
     inviteRole === "owner" ? "owner" : "member";
 
-  const myRole = await getMyRoleInActiveWorkspace();
-  if (myRole !== "owner") {
-    throw new Error("Only the owner can invite new members.");
-  }
-  const ws = await getActiveWorkspace();
+  // `manageProject`. One proof replaces the role gate and the separate ambient
+  // destination that used to follow it — the Project whose door is being opened
+  // is now the same Project the caller was proved an owner of.
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "manageProject",
+    "Only the owner can invite new members.",
+  );
   if (!(await canAddMember(ws))) {
     throw new Error(
       "Free workspaces include three editing guests. Upgrade to Workspace to invite more.",
@@ -641,8 +828,15 @@ export type PendingInviteRead = {
   invitedByUserId: string;
 };
 
-export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
-  const ws = await getActiveWorkspace();
+export async function listPendingInvitesAction(
+  projectId?: string,
+): Promise<PendingInviteRead[]> {
+  // A refused read returns the empty list its own type already expresses, and
+  // returns it *because it was refused* rather than by running a query that
+  // matched nothing (D-018). Which of the two happened is never told apart to
+  // the caller — that would be an existence leak (ADR 0001 §4).
+  const ws = await readableSettingsProject(projectId);
+  if (ws === null) return [];
   const now = new Date();
   const rows = await db
     .select({
@@ -676,12 +870,19 @@ export async function listPendingInvitesAction(): Promise<PendingInviteRead[]> {
  */
 export async function revokePendingInviteAction(
   token: string,
+  projectId?: string,
 ): Promise<{ ok: true; token: string }> {
-  const ws = await getActiveWorkspace();
-  const myRole = await getMyRoleInActiveWorkspace();
-  if (myRole !== "owner") {
-    throw new Error("Only the workspace owner can revoke invites.");
-  }
+  // `manageProject`. The `.returning()` + zero-row throw below was already the
+  // right discipline (D-018) — but before the proof, a revocation aimed at a
+  // Project the cookie had drifted away from matched no rows and reported
+  // "already accepted or revoked" when the invite was in fact still live. A
+  // revocation that silently fails to revoke is the worst failure a revocation
+  // has, so the Project is proved before the `WHERE` is built.
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "manageProject",
+    "Only the workspace owner can revoke invites.",
+  );
   const result = await db
     .update(pendingInvites)
     .set({ expiresAt: new Date() })
@@ -778,18 +979,56 @@ export async function setNotificationPrefAction(
   return { ok: true };
 }
 
-/** Delete the active workspace. Owner-only. Cascades to tasks,
- *  comments, activities, members, notifications via FKs. Clears the
- *  active-workspace cookie so the next request resolves a fallback.
+/** Permanently delete a Project. Cascades to tasks, comments, activities,
+ *  members, notifications via FKs.
  *
- *  No-undo. The settings UI shows a confirm-by-typing modal before
- *  this fires. */
-export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
-  const ws = await getActiveWorkspace();
-  const role = await getMyRoleInActiveWorkspace();
-  if (role !== "owner") {
-    throw new Error("Only the owner can delete this workspace.");
-  }
+ *  No-undo. The settings UI shows a confirm-by-typing modal before this fires.
+ *
+ *  ── Why this one takes an explicit Project ────────────────────────────────
+ *
+ *  A capability proof cannot save this call site on its own. The confirm modal
+ *  asks the operator to type the name of the Project it is about to destroy,
+ *  and that name was rendered from the Project the *page* resolved. If the
+ *  ambient cookie moved between that render and the click — a second tab
+ *  switching Project is the ordinary way it happens — then the modal named one
+ *  Project and the delete landed in another, and a primary owner of both is
+ *  authorized for both, so every proof in this file would pass. The only thing
+ *  that closes it is naming the Project, which is what ADR 0001 §9 means by
+ *  comparing an expected Project ID to detect stale UI. The settings Danger
+ *  Zone now passes the id it rendered the name from.
+ *
+ *  ── Why `deleteOrTransferOwnership` and not `manageProject` ───────────────
+ *
+ *  This is the one capability the model reserves to the **primary owner**
+ *  (`capabilities.ts`: "permanent delete and ownership transfer stay
+ *  primary-owner only"). The old gate accepted any `workspace_members.role =
+ *  'owner'`, so a promoted co-owner could permanently destroy a Project they
+ *  were handed reversible management of. That is a genuine tightening and it
+ *  is the direction this wave is allowed to move.
+ *
+ *  Two consequences, both stated rather than discovered later:
+ *
+ *   - a co-owner still SEES the Danger Zone, because `getMyRoleInProject`
+ *     reports co-owner as `"owner"` exactly as the role column always did.
+ *     They now get an honest refusal instead of a deletion. Surfacing
+ *     `capabilities.deleteOrTransferOwnership` to the panel so the control is
+ *     disabled up front is the right follow-up and belongs with the chrome;
+ *   - `workspaces.owner_user_id` is still NULLABLE ("tightened to NOT NULL
+ *     after the user webhook lands real owners" — that tightening has not
+ *     landed). `resolveProjectRole` cannot return `primary-owner` for a NULL
+ *     owner, so a legacy row predating the webhook is deletable by nobody.
+ *     Every current creation path — the Clerk webhook, planning.ts,
+ *     templates.ts, timeline-queries.ts — writes a real owner, so this is
+ *     confined to pre-webhook rows. Sizing query:
+ *     `SELECT count(*) FROM workspaces WHERE owner_user_id IS NULL`. */
+export async function deleteWorkspaceAction(
+  projectId?: string,
+): Promise<{ ok: true }> {
+  const { projectId: ws } = await provedSettingsProject(
+    projectId,
+    "deleteOrTransferOwnership",
+    "Only the owner can delete this workspace.",
+  );
   // Read the slug BEFORE the row is gone. `/p/{slug}` is ISR with a 60s
   // window, so without an explicit revalidation a deleted published workspace
   // keeps serving its cached page — task titles, tags, and the guests' and
@@ -818,9 +1057,14 @@ export async function deleteWorkspaceAction(): Promise<{ ok: true }> {
     await tx.delete(tasks).where(eq(tasks.workspaceId, ws));
     await tx.delete(workspaces).where(eq(workspaces.id, ws));
   });
-  // Clear the cookie pointing at the now-dead workspace.
+  // Clear the cookie only when it is the one pointing at the now-dead
+  // Project. Unconditional deletion was correct while the cookie WAS the
+  // destination; now that the caller may name a different Project, clearing it
+  // regardless would sign the operator out of a Project they did not delete.
   const c = await cookies();
-  c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);
+  if (c.get(ACTIVE_WORKSPACE_COOKIE_NAME)?.value === ws) {
+    c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);
+  }
   // Drop the public page immediately rather than at the end of the ISR window.
   // Unconditional on publishedAt: a workspace published and unpublished
   // earlier may still hold a cached entry, and revalidating a path that was
@@ -857,10 +1101,13 @@ export type WorkspaceActivityLine = {
  * means "the invited person can see what changed", gating activity
  * to owner-only breaks the loop.
  */
-export async function listWorkspaceActivityAction(): Promise<
-  WorkspaceActivityLine[]
-> {
-  const ws = await getActiveWorkspace();
+export async function listWorkspaceActivityAction(
+  projectId?: string,
+): Promise<WorkspaceActivityLine[]> {
+  // `open`, and a refusal returns the empty feed rather than a query that
+  // matched nothing — same reasoning as listPendingInvitesAction above.
+  const ws = await readableSettingsProject(projectId);
+  if (ws === null) return [];
 
   // Pull a generous window, grouping collapses many rows into few
   // lines, so we over-fetch and cap the output post-grouping.

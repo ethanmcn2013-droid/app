@@ -234,12 +234,20 @@ test("the seam never authorizes against the Project catalog", () => {
 // ── 3. The lane holds the line ──────────────────────────────────────────────
 
 /**
- * `settings.ts` is excluded from WP3a by assignment, not by oversight: it holds
- * 12 of the 36 critical sites and a concurrent session owns it. This guard
- * pins the boundary of what was migrated, so the deferral stays visible and a
- * new file cannot quietly reintroduce the accessor.
+ * Files the lane guard below skips.
+ *
+ * **Empty since WP3-C, and that is the point.** `settings.ts` was the one
+ * entry: excluded from WP3a by assignment rather than oversight, because a
+ * concurrent session owned the file while it held the largest concentration of
+ * critical sites in the wave. WP3-C migrated it, so the exemption is gone and
+ * the lane guard now covers every action file without exception — which is
+ * strictly stronger than what this set described before.
+ *
+ * The mechanism is kept rather than deleted so a future deferral has to be
+ * written down here, with the decision that allows it, instead of being
+ * expressed as a quietly weakened regex.
  */
-const DEFERRED_TO_FOLLOW_UP = new Set(["settings.ts"]);
+const DEFERRED_TO_FOLLOW_UP = new Set([]);
 
 test("no action in this lane resolves a Project through the unguarded accessor", () => {
   const offenders = [];
@@ -274,13 +282,47 @@ test("no action in this lane resolves a Project through the unguarded accessor",
   );
 });
 
-test("the deferred file is still deferred, and still there", () => {
+/**
+ * WP3-C renegotiation, recorded rather than deleted.
+ *
+ * This test used to assert the *opposite*: that `settings.ts` still contained
+ * the unguarded accessor, so that the deferral could not be forgotten and the
+ * exemption above could not outlive its reason. That assertion did its job —
+ * it failed the moment the follow-up landed, and its own message said what to
+ * do about it ("remove it from DEFERRED_TO_FOLLOW_UP so the lane guard covers
+ * it"). Both halves of that instruction are now done.
+ *
+ * Inverting it rather than dropping it keeps a guard on the same file. The
+ * lane guard above proves the accessor is gone; this proves the file did not
+ * get there by simply deleting its Project resolution, which would pass a
+ * "does not contain" assertion perfectly while writing to whatever the seam
+ * was handed. So it pins the positive: settings.ts resolves Projects through
+ * the WP3 seam, and the destructive action in it proves the primary-owner
+ * capability rather than bare membership.
+ */
+test("the formerly deferred file now resolves Projects through the seam", () => {
   const settings = readFileSync(join(actionsDir, "settings.ts"), "utf8");
-  assert.ok(
-    /\bgetActiveWorkspace\s*\(/.test(settings),
-    "settings.ts no longer uses the unguarded accessor. If the follow-up " +
-      "landed, remove it from DEFERRED_TO_FOLLOW_UP above so the lane guard " +
-      "covers it — an exemption for a file that no longer needs one protects " +
-      "nothing.",
+
+  assert.match(
+    settings,
+    /from ["']@\/server\/actions\/project-authz["']/,
+    "settings.ts must authorize through the shared seam, not a second one",
+  );
+  assert.match(
+    settings,
+    /authorizeProjectCandidate\(\{/,
+    "settings.ts must put its Project candidate through the membership proof",
+  );
+
+  const deletion = settings.slice(
+    settings.indexOf("export async function deleteWorkspaceAction"),
+    settings.indexOf("Plain-English workspace activity feed"),
+  );
+  assert.match(
+    deletion,
+    /"deleteOrTransferOwnership"/,
+    "permanently deleting a Project must require the primary-owner capability " +
+      "(capabilities.ts: permanent delete and ownership transfer stay " +
+      "primary-owner only), not the co-owner-wide manageProject.",
   );
 });

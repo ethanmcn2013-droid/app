@@ -45,17 +45,13 @@ const BUDGET = {
   // The central resolver itself. This is the one place the cookie may be read.
   "src/server/auth.ts": { budget: 1, why: "the resolver — ADR 0001 §4, the one legitimate cookie read" },
 
-  // Deferred, not forgiven, and the debt is counted rather than hidden.
-  // 14 lookups, 11 of them sharing a body with a write — the exact D-018 shape
-  // this guard refuses everywhere else. Excluded from WP3 because another
-  // session held the file mid-wave. This is the largest remaining WP3 work, and
-  // `writeBodies` is the number that has to reach zero.
-  "src/server/actions/settings.ts": {
-    budget: 14,
-    writeBodies: 11,
-    why: "WP3 follow-up — owned by another lane during the wave; D-018 debt counted below",
-  },
-  "src/app/app/settings/page.tsx": { budget: 1, why: "pairs with settings.ts; migrates with it" },
+  // `src/server/actions/settings.ts` and `src/app/app/settings/page.tsx` were
+  // budgeted here at 14 lookups / 11 write bodies and 1 lookup respectively —
+  // the largest remaining WP3 debt, deferred only because another session held
+  // the file mid-wave. WP3-C paid it in full: both are at zero, so their
+  // entries are deleted rather than lowered. A budget for a file with nothing
+  // to budget is a guard that has stopped guarding, and this script fails on
+  // exactly that.
 
   // First-run provisioning: the user has just been provisioned and there is no
   // explicit Project to name. Genuinely ambient. Already guarded in-file.
