@@ -326,3 +326,40 @@ separate work so they are not silently absorbed. Detail in `REPOSITORY_TRUTH.md`
    membership-aware layout gate, bouncing invited and redeemed users to `/waitlist`.
 2. `compileDailyDigest`'s mentions query is unscoped by workspace and reachable from both the
    Inbox page and the digest email cron.
+
+---
+
+## R-H08 update — 2026-08-13: independently confirmed by the other programme
+
+The Project Truth programme reached the same conclusion from a different direction and recorded
+it as **D-024, "The Quality Council gate is structurally broken and must be repaired before it can
+certify anything"** (merged in #137, verified independently on `02e2206`).
+
+Their findings add three facts this register did not have:
+
+1. **`pnpm experience:council` exits 1, and has done since before either programme started.** It
+   is not a threshold that is hard to meet. It is an instrument that does not run.
+2. **`experience/council-reviews/journeys/` has never existed.** Only `baselines/` does.
+3. **`registry-and-drift` reports green while the council check fails inside it.** So CI has been
+   showing a passing signal over a gate that never ran. That is worse than a red gate: a red gate
+   is a problem, a green one over a broken instrument is a false assurance.
+
+Their decision, which this programme adopts rather than duplicating: repairing the instrument is
+their Wave 8 work and a precondition of certification, and **until it is repaired no 9.5 claim may
+be made by anyone**, including by citing a green required check.
+
+### What changes for this programme
+
+- **R-H08 is no longer a single-programme observation.** Two programmes, working separately,
+  found the same broken instrument. That removes any argument that it is a misreading.
+- **The repair now has an owner, and it is not this programme.** Home's Wave 10 depends on their
+  Wave 8 landing. Recorded as an external dependency rather than duplicated work — building a
+  second council would be the same mistake as building a second ProjectScope.
+- **The founder decision this register asked for is narrower than it looked.** It was framed as
+  "narrow the gate's scope". The real question is only whether Home's Wave 10 waits for the
+  repaired instrument or ships behind a flag with certification explicitly recorded as unavailable.
+- **Nothing in this programme may cite a green `registry-and-drift` as evidence of quality.** Any
+  such claim already in this repository's records is void.
+
+Their closing line is worth keeping: *the cheapest moment to discover a broken gate is several
+waves before you need it.* Both programmes found it early, and separately.
