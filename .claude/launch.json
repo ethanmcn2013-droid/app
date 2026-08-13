@@ -9,6 +9,20 @@
       "env": {
         "NEXT_PUBLIC_SIGNAL_ACCESS_MODE": "review"
       }
+    },
+    {
+      "name": "analytics-lab",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--config.verify-deps-before-run=false",
+        "dev",
+        "--port",
+        "3211"
+      ],
+      "port": 3211,
+      "env": {
+        "SIGNAL_ANALYTICS_LAB": "1"
+      }
     }
   ]
 }
