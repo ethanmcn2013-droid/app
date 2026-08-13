@@ -417,14 +417,14 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-13",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "6da4c7b4b47c7912",
+      "materialityHash": "469e1e207c18c6e1",
       "materialityReview": {
-        "materialityHash": "6da4c7b4b47c7912",
-        "reviewedAt": "2026-08-12",
-        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-12-close.json"
+        "materialityHash": "469e1e207c18c6e1",
+        "reviewedAt": "2026-08-13",
+        "evidence": "experience/reviews/tasks.page.app-settings-2026-08-13-wp3c-settings.json"
       }
     },
     {
