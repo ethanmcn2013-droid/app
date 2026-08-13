@@ -553,6 +553,34 @@ export async function syncMilestonesAction(
 // Curation overlay upsert
 // ---------------------------------------------------------------------------
 
+/**
+ * Refuse a curation write when the bound Tasks Project is PROVED archived
+ * (F6, ADR 0001 §5: archived is read-only for Project-scoped operations).
+ *
+ * The gate lives in the actions rather than in the page, because the page is
+ * not what protects anything: a Server Action is addressable by any
+ * authenticated user whatever the UI renders, and until now these three
+ * checked local Timeline ownership and nothing else — which is why an archived
+ * Project's Timeline rendered as full edit mode and every control in it worked.
+ *
+ * Only a proved archive refuses. An unreachable Tasks database leaves the
+ * behaviour exactly as it was: taking every owner's Timeline read-only for the
+ * length of an outage would be a much larger harm than the one being prevented
+ * here, which is a private edit to a Timeline the owner still owns. Publishing
+ * is the opposite trade and is gated the opposite way, in
+ * `requireFreshAudienceMutationAuthority`.
+ */
+async function refuseArchivedCuration(
+  userId: string,
+  workspace: Readonly<{ suiteWorkspaceId: string | null }>,
+): Promise<{ error: string } | null> {
+  const { readBoundProjectArchiveState, ARCHIVED_PROJECT_REFUSAL } = await import(
+    "@/modules/timeline/server/archived-project-policy"
+  );
+  const state = await readBoundProjectArchiveState(userId, workspace);
+  return state.kind === "archived" ? { error: ARCHIVED_PROJECT_REFUSAL } : null;
+}
+
 export type UpsertOverlayResult = { ok: true } | { error: string };
 
 const AUDIENCE_STATES: readonly AudienceItemState[] = [
@@ -638,6 +666,8 @@ export async function upsertNodeOverlayAction(
   if (!workspace || workspace.ownerUserId !== userId) {
     return { error: "Something went wrong. Reload the page and try again." };
   }
+  const archived = await refuseArchivedCuration(userId, workspace);
+  if (archived) return archived;
   const authorizedProjects = await getProjectsForWorkspace(workspaceSlug);
   if (!authorizedProjects.some((project) => project.slug === projectSlug)) {
     return { error: "That project is no longer available." };
@@ -704,6 +734,8 @@ export async function createManualMilestoneAction(
   if (!workspace || workspace.ownerUserId !== userId) {
     return { error: "Something went wrong. Reload the page and try again." };
   }
+  const archived = await refuseArchivedCuration(userId, workspace);
+  if (archived) return archived;
   const authorizedProjects = await getProjectsForWorkspace(workspaceSlug);
   if (!authorizedProjects.some((project) => project.slug === projectSlug)) {
     return { error: "That project is no longer available." };
@@ -766,6 +798,8 @@ export async function reorderNodesAction(
   if (!workspace || workspace.ownerUserId !== userId) {
     return { error: "Workspace not found." };
   }
+  const archived = await refuseArchivedCuration(userId, workspace);
+  if (archived) return archived;
   const authorizedProjects = await getProjectsForWorkspace(workspaceSlug);
   if (!authorizedProjects.some((project) => project.slug === projectSlug)) {
     return { error: "That project is no longer available." };

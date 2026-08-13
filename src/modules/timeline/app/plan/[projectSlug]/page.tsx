@@ -23,6 +23,7 @@ import {
   requireUser,
   resolveTimelineContext,
 } from "@/modules/timeline/server/auth";
+import { readBoundProjectArchiveState } from "@/modules/timeline/server/archived-project-policy";
 import { getOwnerAudiencePublications } from "@/modules/timeline/server/audience-timeline";
 import {
   getEffectiveNodesForWorkspace,
@@ -73,7 +74,7 @@ export default async function TimelineProjectPage({
   const { projectSlug } = await params;
   const userId = await requireUser();
   const requested = await searchParams;
-  const mode: OwnerMode = requested.mode === "edit" ? "edit" : "view";
+  const requestedMode: OwnerMode = requested.mode === "edit" ? "edit" : "view";
   const requestedWorkspaceId = requested.workspaceId?.trim();
   const context = requestedWorkspaceId
     ? await resolveTimelineContext(
@@ -85,6 +86,20 @@ export default async function TimelineProjectPage({
   if (requestedWorkspaceId && !context) notFound();
   const workspace = context?.workspace ?? (await getCurrentWorkspace(userId));
   if (!workspace) notFound();
+
+  // ── F6 · AN ARCHIVED PROJECT'S TIMELINE IS READ-ONLY (ADR 0001 §5) ───────
+  // The resolver has always been able to say `archived`; this page used to
+  // render that case as the full edit surface — rename, reorder, hide, add,
+  // publish — because the word never reached it. A bare entry carries no
+  // requested Project, so the archive state is read from the binding instead
+  // of assumed to be false.
+  const archived = context
+    ? context.archived
+    : (await readBoundProjectArchiveState(userId, workspace)).kind === "archived";
+  // `?mode=edit` is not a permission. Forcing view here is the presentation
+  // half; the refusal that matters lives in the actions, because a Server
+  // Action is addressable whatever this page renders.
+  const mode: OwnerMode = archived ? "view" : requestedMode;
 
   const projects = await getProjectsForWorkspace(workspace.slug);
   const project = projects.find((candidate) => candidate.slug === projectSlug);
@@ -189,14 +204,33 @@ export default async function TimelineProjectPage({
             {/* Who can see this page, before the owner types a word into it.
                 Preview and Share stood in this header explaining neither. */}
             <VisibilityLine publication={visibility} />
+            {/* Read-only is stated once, in plain words, with the one action
+                that changes it. Not an alert: nothing has gone wrong and
+                nothing is waiting on the reader. */}
+            {archived ? (
+              <p
+                role="status"
+                className="mt-1 text-[13px] leading-5 text-ink-quiet"
+              >
+                This project is archived, so its timeline is read-only. Existing
+                shared links still work and can still be switched off. Restore
+                the project in Tasks to make changes.
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <LocalViewTabs
-              projectSlug={project.slug}
-              current={mode === "edit" ? "milestones" : "timeline"}
-              context={queryContext}
-            />
+            {/* No Milestones tab on an archived Project: it opens the editing
+                surface, and there is nothing to edit here. The tabs are
+                removed rather than disabled — a control that cannot act is
+                worse than an absent one, and the line below says why. */}
+            {archived ? null : (
+              <LocalViewTabs
+                projectSlug={project.slug}
+                current={mode === "edit" ? "milestones" : "timeline"}
+                context={queryContext}
+              />
+            )}
             <span aria-hidden className="hidden h-5 w-px bg-line-soft sm:block" />
             {/* Two acts, two controls. Preview opens the frozen page a guest
                 receives; Share opens the link itself. One button could only
@@ -213,6 +247,10 @@ export default async function TimelineProjectPage({
               publication={shareSummary}
               manageHref={manageHref}
               canManage={workspace.ownerUserId === userId}
+              // ADR 0001 §5, exactly: existing bearer links remain manageable
+              // and revocable; new publishing is disabled. Revoke is the
+              // security control and it stays reachable.
+              canPublish={!archived}
             />
           </div>
         </div>

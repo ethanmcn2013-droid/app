@@ -99,6 +99,17 @@ export type ResolvedTimelineContext = Readonly<{
   workspace: Workspace;
   workspaceId: string;
   planningPeriodId: string | null;
+  /**
+   * The requested Tasks Project is archived, so this Timeline opens read-only
+   * (ADR 0001 §5).
+   *
+   * F6: the resolver has always been able to say this — `archived` is one of
+   * its six outcomes — and this type threw the word away, so the plan page
+   * rendered the archived case as full edit mode. Carrying the flag is the
+   * whole fix on the read side; the write side is gated in the actions, which
+   * is where it actually holds.
+   */
+  archived: boolean;
 }>;
 
 /**
@@ -188,6 +199,7 @@ export async function resolveTimelineContext(
         workspace: weddingDemoWorkspace,
         workspaceId: weddingDemoWorkspace.slug,
         planningPeriodId: null,
+        archived: false,
       };
     }
 
@@ -204,6 +216,7 @@ export async function resolveTimelineContext(
       workspace: demoWorkspace,
       workspaceId: REVIEW_SUITE_FIXTURE.workspace.id,
       planningPeriodId: planningPeriodId ?? null,
+      archived: false,
     };
   }
 
@@ -253,5 +266,6 @@ export async function resolveTimelineContext(
     workspace,
     workspaceId: current.workspaceId,
     planningPeriodId: current.planningPeriodId,
+    archived: resolved.kind === "archived",
   };
 }
