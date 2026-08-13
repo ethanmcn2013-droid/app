@@ -147,7 +147,18 @@ export const ANALYTICS_MIRROR_FACTS: Readonly<
   // The clock-change world keeps one unowned row, so A3 is exercised there
   // too rather than only in the signature world.
   "home-task-dst-quiet": Object.freeze({ unowned: true }),
-  "home-task-dst-monday": Object.freeze({ createdDaysAgo: 12 }),
+  "home-task-dst-guest-numbers": Object.freeze({ createdDaysAgo: 12 }),
+  // The scale world's tail: the eight records in that world that are not the
+  // reader's own open responsibilities. `home-task-scale-done-01` needs no
+  // entry — it carries its own `movedToDoneAtIso`, which the join reads in
+  // preference to anything the mirror could say about it.
+  "home-task-scale-done-02": Object.freeze({ createdDaysAgo: 55, completedDaysAgo: 9 }),
+  "home-task-scale-done-03": Object.freeze({ createdDaysAgo: 70, completedDaysAgo: 20 }),
+  "home-task-scale-unowned-01": Object.freeze({ createdDaysAgo: 26, unowned: true }),
+  "home-task-scale-unowned-02": Object.freeze({ createdDaysAgo: 31, unowned: true }),
+  "home-task-scale-unowned-03": Object.freeze({ createdDaysAgo: 17, unowned: true }),
+  "home-task-scale-stalled-01": Object.freeze({ createdDaysAgo: 88 }),
+  "home-task-scale-stalled-02": Object.freeze({ createdDaysAgo: 44 }),
 });
 
 const OWNER_ID = HOME_FIXTURE_OWNER.id;

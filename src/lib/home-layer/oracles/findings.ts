@@ -47,34 +47,14 @@ export const ORACLE_FINDINGS: readonly OracleFinding[] = Object.freeze([
     owner: "wave-2",
   }),
   Object.freeze({
-    id: "OR-7",
+    id: "OR-10",
     severity: "defect",
     clause:
-      "CHARTER rule 6 (one definition everywhere), MY_WORK_PROJECTION.md §6, TODAY_RANKING.md §3",
+      "TODAY_RANKING.md §7 (`unavailable`: render no rows from it, and say so) against PROJECT_SCOPE.md §8.1 and MY_WORK_PROJECTION.md §10",
     what:
-      "Found while closing OR-6, and NOT fixed by it. Four source records are read differently by Today and by My work: three carry a due date in one surface and not the other, and one is open in Today and done in My work. Now that Analytics reads the same records, the disagreement is visible in three places instead of two. Analytics resolves it by a stated rule — My work wins on `isDone` and on the due instant, because it resolves both through the Project's own column configuration — but a stated tie-break is not agreement, and the records themselves still contradict each other. Fixing it means editing either Today's ranking inputs or My work's grouping inputs, both of which are authored to exercise specific boundaries, so the lead picks which surface is wrong.",
+      "Found by the assertion that closed OR-8, and not fixable without a decision the lead owns. `provider_failure` fails one Project's SOURCE read while its ROUTE resolves normally. Today honours that and reads nothing from Nora & Cian. Nothing downstream of Today knows: `unresolved` is derived from `routeState` alone, so My work still renders three Nora & Cian responsibilities and reports reading 3 of 3 Projects, the Project ledger renders Nora & Cian as `ready` with a live count, and A1 counts its rows with `permission: complete`. Three modes disagree about whether the Project was read at all, in the one world whose entire purpose is to show a Project that could not be. Closing it means folding source failure into the unreadable set, and that forces a rendering decision this fixture may not take on its own: the `unresolved` ledger row deliberately carries NO name, because it was written for revocation, where the name is an existence leak. A Project that is authorized, visible and merely unreadable should almost certainly still be named beside the reason. Same state, two correct renderings, and only the lead can pick.",
     measured:
-      "home-task-nc-marquee-lighting: due null in Today, 2026-07-19 in My work. home-task-at-ceremony-time: due null in Today, 2026-07-21 in My work. home-task-at-running-order: 2026-07-25 in Today, 2026-07-24 in My work. home-task-nc-favours: lane `next` in Today, `signed-off` (done) in My work. 16 of 37 Today candidate ids are also My work ids; 4 of those 16 disagree.",
-    owner: "lead",
-  }),
-  Object.freeze({
-    id: "OR-8",
-    severity: "defect",
-    clause: "TODAY_RANKING.md §2.1 (the candidate set is EVERY eligible object in Read Scope)",
-    what:
-      "Two worlds give Today a candidate set narrower than the scope the same world's other modes read, so Today's `read` under-counts its own world. `scale` is the loud one: My work holds sixty responsibilities across four Projects and Today is handed the twenty signature candidates instead, so Today says it examined 20 objects while Analytics counts 78 open in the same Projects at the same instant. Both numbers are now derived from real records, so this is a fixture-composition defect and no longer a two-populations one, but a reviewer switching modes still meets two different totals.",
-    measured:
-      "scale: Today read 20 · My work 60 rows · Analytics included 81, open 78. owner_signature: Today read 20 · Analytics included 21, open 19, the difference being three responsibilities My work lists that Today's candidate set omits (home-task-nc-venue-confirmation, home-task-mf-cars, home-task-sr-cars) and one child task Analytics excludes by rule.",
-    owner: "lead",
-  }),
-  Object.freeze({
-    id: "OR-9",
-    severity: "defect",
-    clause: "CHARTER rule 6 (one definition everywhere)",
-    what:
-      "One record still exists twice under two ids. Today's `home-task-dst-monday` and My work's `home-task-dst-week` are both the Ballyhoura walk-through in Nora & Cian, with different due dates, so Analytics counts two objects where the world holds one. The other two duplicate pairs in this world were merged while closing OR-6 because every field agreed; this pair cannot be merged without choosing a due date, and each date is load-bearing for the surface that authored it: My work needs T+7 to prove the inclusive edge of its window, Today needs T+2 to prove the near horizon across the clock change.",
-    measured:
-      "dst_boundary: home-task-dst-monday due 2026-10-26 (Today, T+2) and home-task-dst-week due 2026-10-31 (My work, T+7), same Project, same title `Ballyhoura walk-through`. Analytics population 8 rows for a world holding 7 records. Merged in this pass: home-task-dst-eve into home-task-dst-keys, home-task-dst-later into home-task-dst-late, both exact matches on Project, title and due instant.",
+      "provider_failure: Today reads 15 records, 0 of them in Nora & Cian. My work renders 11 rows, 3 of them in Nora & Cian (home-task-nc-marquee-lighting, home-task-nc-musicians, home-task-nc-venue-confirmation), with coverage `projectsRead: 3, projectsAuthorized: 3, projectsUnresolved: 0`. Ledger: Nora & Cian `state: ready, openWork: 3, overdue: 1`. Claim A1: 16 open, `permission: { kind: complete, projects: 3 }`. The world does declare the failure once, on `providerStatuses`, which is why Q1 fires and the accounting is withheld. Every other world reads one population in every mode.",
     owner: "lead",
   }),
 ]);

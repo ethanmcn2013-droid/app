@@ -315,19 +315,22 @@ describe("Today oracle · internal consistency of the fixture", () => {
     );
     assert.deepEqual(
       result.sections.todaysSignal.map((row) => row.trigger),
-      ["due-soon", "due-soon", "crowded-week"],
+      ["due-soon", "due-soon", "due-soon"],
       "the three eligible items are not the three the ranking rules select",
     );
     assert.deepEqual(
       result.sections.todaysSignal.map((row) => row.key),
       [
+        // Four days past its date and eight days quiet, so it outranks
+        // everything else in the world. It reaches Today because Today reads
+        // every eligible object in Read Scope, not only the reader's own.
+        "tasks:task:home-task-nc-venue-confirmation",
         "tasks:task:home-task-mf-kitchen-numbers",
         "tasks:task:home-task-mf-seating-plan",
-        null,
       ],
-      "the third row is a synthetic reading, which carries no object id (§4.4)",
+      "the ranked three moved",
     );
-    assert.equal(result.accounting.flagged, 9);
+    assert.equal(result.accounting.flagged, 10);
     assert.equal(result.accounting.cappedOut, 2, "held back is not clear (§6)");
     assert.ok(
       result.accounting.cappedOut > 0,
@@ -977,7 +980,7 @@ describe("Analytics oracle · totals", () => {
       signature.scenario.todayCandidates.map((signal) => signal.ref.id),
     );
     const shared = signature.analyticsRows.filter((row) => todayIds.has(row.taskId));
-    assert.equal(shared.length, 20, "every Today candidate is an Analytics row");
+    assert.equal(shared.length, 22, "every Today candidate is an Analytics row");
     assert.equal(signature.exceptions.length, 3);
     assert.deepEqual(
       signature.exceptions.map((entry) => entry.sourceTaskId),
@@ -1395,8 +1398,14 @@ describe("Pinned findings", () => {
     assert.equal(runToday("partial_coverage").accounting.cappedOut, 2);
   });
 
-  it("OR-7 · Today and My work read four of the same records differently", () => {
-    assert.equal(findingById("OR-7").severity, "defect");
+  /**
+   * OR-7, CLOSED. The entry is deleted rather than marked resolved, and this
+   * is the positive assertion that replaces it: a source id may not carry two
+   * due instants or two done states, in any world. Where a surface had
+   * authored a contradictory value to exercise a boundary, the boundary now
+   * has its own record with its own id and its own title.
+   */
+  it("one record, one truth · no id carries two due instants or two done states", () => {
     const byId = new Map(
       [
         ...MY_WORK_SIGNATURE_ROWS,
@@ -1405,40 +1414,43 @@ describe("Pinned findings", () => {
         ...MY_WORK_SCALE_ROWS,
       ].map((row) => [row.taskId, row] as const),
     );
-    const shared = Object.values(TODAY_CANDIDATE_SETS)
-      .flat()
-      .filter((signal) => byId.has(signal.ref.id));
+    const todayById = new Map(
+      Object.values(TODAY_CANDIDATE_SETS)
+        .flat()
+        .map((signal) => [signal.ref.id, signal] as const),
+    );
     const disagreements: string[] = [];
-    for (const signal of shared) {
-      const row = byId.get(signal.ref.id);
-      if (!row) continue;
+    for (const [taskId, row] of byId) {
+      const signal = todayById.get(taskId);
+      if (!signal) {
+        // A responsibility no Today candidate set holds is a record only one
+        // mode can see, which is the same defect wearing a different hat.
+        disagreements.push(`${taskId}:absent-from-today`);
+        continue;
+      }
       const todayDue =
         signal.dueAtIso === null
           ? null
           : zonedCalendarDate(signal.dueAtIso, ORACLE_ZONE);
       if (todayDue !== row.dueDate) {
-        disagreements.push(`${signal.ref.id}:due:${todayDue}/${row.dueDate}`);
+        disagreements.push(`${taskId}:due:${todayDue}/${row.dueDate}`);
       }
       if ((signal.lane === "shipped") !== row.isDone) {
-        disagreements.push(`${signal.ref.id}:done:${signal.lane}/${row.isDone}`);
+        disagreements.push(`${taskId}:done:${signal.lane}/${row.isDone}`);
       }
       if (signal.projectId !== row.workspaceId) {
-        disagreements.push(`${signal.ref.id}:project`);
+        disagreements.push(`${taskId}:project`);
       }
     }
-    assert.equal(shared.length, 16, "the join between Today and My work moved");
+    assert.ok(byId.size >= 80, "the join is not vacuous");
     assert.deepEqual(
       disagreements.sort(),
-      [
-        "home-task-at-ceremony-time:due:null/2026-07-21",
-        "home-task-at-running-order:due:2026-07-25/2026-07-24",
-        "home-task-nc-favours:done:next/true",
-        "home-task-nc-marquee-lighting:due:null/2026-07-19",
-      ],
-      "OR-7 changed — either a record was reconciled (narrow it) or one drifted (widen it)",
+      [],
+      "a source id is read differently by two surfaces",
     );
-    // Analytics resolves each of these by the stated rule rather than by
-    // accident: My work wins on `isDone` and on the due instant.
+    // The projection rule is still the one the contract states, and it is
+    // still exercised: My work resolves done-ness and the due instant through
+    // the Project's own column configuration.
     const rows = new Map(
       oracleWorldInputs("owner_signature").analyticsRows.map(
         (row) => [row.taskId, row] as const,
@@ -1448,25 +1460,61 @@ describe("Pinned findings", () => {
     assert.equal(rows.get("home-task-at-running-order")?.dueDate, "2026-07-24");
   });
 
-  it("OR-8 · two worlds hand Today a candidate set narrower than their own scope", () => {
-    assert.equal(findingById("OR-8").severity, "defect");
+  /**
+   * OR-8, CLOSED for twelve of the thirteen worlds. Today reads the population
+   * its own world holds, so a reviewer switching modes meets one total rather
+   * than two. `provider_failure` is the exception and is pinned as OR-10.
+   */
+  it("one population per world · Today reads every record its other modes hold", () => {
+    for (const id of SCENARIO_IDS) {
+      if (id === "provider_failure") continue; // pinned below as OR-10
+      const inputs = oracleWorldInputs(id);
+      const read = new Set(
+        inputs.scenario.todayCandidates.map((signal) => signal.ref.id),
+      );
+      assert.deepEqual(
+        inputs.myWorkRows
+          // A row whose Project this world cannot read is not part of this
+          // world's population, and neither mode renders it.
+          .filter((row) => inputs.readable.includes(row.workspaceId))
+          .filter((row) => !read.has(row.taskId))
+          .map((row) => row.taskId)
+          .sort(),
+        [],
+        `${id}: My work holds a responsibility Today never read`,
+      );
+    }
+    // The numbers a reviewer would compare, in the world that used to publish
+    // three of them. They now reconcile by hand: Today examined 68 records,
+    // 60 of which are the reader's own open responsibilities and are exactly
+    // what My work holds; 3 of the other 8 are finished, so Analytics counts
+    // 65 open. Today still shows three, and says how many it held back.
     const scale = runToday("scale");
-    const scaleTotals = runTotals("scale");
-    assert.equal(scale.accounting.read, 20, "Today's read in the scale world");
-    assert.equal(
-      oracleWorldInputs("scale").myWorkRows.length,
-      60,
-      "and My work holds sixty responsibilities in the same world",
-    );
-    assert.equal(scaleTotals.openWork, 78, "and Analytics counts all of them");
-    const signature = runToday("owner_signature");
-    assert.equal(signature.accounting.read, 20);
-    assert.equal(runTotals("owner_signature").includedRows, 21);
-    assert.equal(runTotals("owner_signature").openWork, 19);
+    assert.equal(scale.accounting.read, 68, "Today's read in the scale world");
+    assert.equal(oracleWorldInputs("scale").myWorkRows.length, 60);
+    assert.equal(runTotals("scale").openWork, 65);
+    assert.equal(scale.sections.todaysSignal.length, 3);
+    assert.equal(scale.sectionAccounting.todaysSignal.cappedOut, 22);
+    // And in the signature world, where the two responsibilities Today used
+    // to omit are now records it reads.
+    assert.equal(runToday("owner_signature").accounting.read, 22);
+    for (const taskId of ["home-task-nc-venue-confirmation", "home-task-mf-cars"]) {
+      assert.ok(
+        oracleWorldInputs("owner_signature").scenario.todayCandidates.some(
+          (signal) => signal.ref.id === taskId,
+        ),
+        `${taskId} is listed by My work and unread by Today`,
+      );
+    }
   });
 
-  it("OR-9 · one record still exists twice, under two ids", () => {
-    assert.equal(findingById("OR-9").severity, "defect");
+  /**
+   * OR-9, CLOSED. The Ballyhoura walk-through is one record on one date. The
+   * near-horizon date it used to justify belongs to a different piece of work
+   * with its own id and its own title, which is what the ruling asked for
+   * instead of a second copy.
+   */
+  it("one record, one id · no Project holds the same title twice", () => {
     const titleKey = (workspaceId: string | null, title: string) =>
       `${workspaceId}|${title}`;
     const ids = new Map<string, Set<string>>();
@@ -1487,13 +1535,51 @@ describe("Pinned findings", () => {
       .filter(([, held]) => held.size > 1)
       .map(([key, held]) => `${key.split("|")[1]} → ${[...held].sort().join(", ")}`)
       .sort();
-    assert.deepEqual(
-      doubled,
-      ["Ballyhoura walk-through → home-task-dst-monday, home-task-dst-week"],
-      "OR-9 changed — a duplicate was merged (narrow it) or a new one appeared (widen it)",
+    assert.deepEqual(doubled, [], "one piece of work exists under two ids");
+    const dst = oracleWorldInputs("dst_boundary");
+    const walkThroughs = dst.scenario.todayCandidates.filter(
+      (signal) => signal.title === "Ballyhoura walk-through",
     );
-    // The visible cost: eight Analytics rows in a world holding seven records.
-    assert.equal(oracleWorldInputs("dst_boundary").analyticsRows.length, 8);
+    assert.equal(walkThroughs.length, 1);
+    assert.equal(walkThroughs[0].ref.id, "home-task-dst-week");
+    assert.equal(walkThroughs[0].dueAtIso, "2026-10-31T12:00:00.000Z");
+    // Seven records in Projects, plus the Unprojectable row every world's
+    // read carries and every Project-scoped count discloses.
+    assert.equal(dst.scenario.todayCandidates.length, 7);
+    assert.equal(dst.analyticsRows.length, 8);
+  });
+
+  it("OR-10 · one world's modes disagree about whether a Project was read", () => {
+    assert.equal(findingById("OR-10").severity, "defect");
+    const inputs = oracleWorldInputs("provider_failure");
+    const NC = HOME_FIXTURE_PROJECT_IDS.noraCian;
+    assert.equal(
+      inputs.scenario.todayCandidates.filter((signal) => signal.projectId === NC)
+        .length,
+      0,
+      "Today reads nothing from the Project whose source failed",
+    );
+    assert.deepEqual(
+      inputs.myWorkRows
+        .filter((row) => row.workspaceId === NC && !row.isDone)
+        .map((row) => row.taskId)
+        .sort(),
+      [
+        "home-task-nc-marquee-lighting",
+        "home-task-nc-musicians",
+        "home-task-nc-venue-confirmation",
+      ],
+      "OR-10 changed — either the world was reconciled (delete it) or it spread (widen it)",
+    );
+    // The source of the divergence: `unavailable` is a SOURCE status here and
+    // only a ROUTE state makes a Project unresolved, so nothing downstream of
+    // Today knows the read failed.
+    assert.deepEqual([...inputs.unresolved], []);
+    assert.deepEqual([...inputs.readable], [...inputs.scenario.projects]);
+    assert.ok(
+      inputs.coverage.providerStatuses.includes("unavailable"),
+      "the world does declare the failure, on the provider status",
+    );
   });
 
 
@@ -1526,11 +1612,15 @@ describe("Pinned findings", () => {
   it("the register holds exactly the findings the suite pins", () => {
     assert.deepEqual(
       ORACLE_FINDINGS.map((finding) => finding.id),
-      // OR-1, OR-3, OR-4 and OR-6 were closed in this pass. Their entries are
-      // deleted rather than marked resolved, and each is replaced by a
-      // positive assertion above: the world's own clock, the withholding
-      // rule, the section precedence, and the shared population.
-      ["OR-2", "OR-5", "OR-7", "OR-8", "OR-9"],
+      // OR-1, OR-3, OR-4 and OR-6 closed in an earlier pass; OR-7, OR-8 and
+      // OR-9 closed in this one. Their entries are deleted rather than marked
+      // resolved, and each is replaced by a positive assertion above: the
+      // world's own clock, the withholding rule, the section precedence, the
+      // shared population, one truth per record, one population per world and
+      // one id per piece of work. OR-10 is new and was found by the OR-8
+      // assertion: it is the same defect in the one world that fails a
+      // Project's source read rather than its route.
+      ["OR-2", "OR-5", "OR-10"],
     );
     for (const finding of ORACLE_FINDINGS) {
       assert.ok(finding.clause.length > 0, `${finding.id} names no contract clause`);

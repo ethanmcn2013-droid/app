@@ -18,6 +18,7 @@
  */
 
 import { fixtureInstantAt, HOME_FIXTURE_NOW_ISO } from "./clock";
+import { MY_WORK_SCALE_ROWS, type MyWorkRow } from "./my-work";
 import { HOME_FIXTURE_PROJECT_IDS } from "./projects";
 import { sourceKey, taskRef, type SourceRef } from "./source-ref";
 
@@ -124,9 +125,15 @@ export const TODAY_SIGNATURE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
     priority: 1,
     idleDays: 9,
   }),
+  // ONE RECORD, ONE TRUTH. The due instant is My work's, because My work
+  // resolves the due instant and done-ness through the Project's own column
+  // configuration and is therefore one step closer to the record. Three days
+  // out, so `due-soon` does not fire and `blocked-too-long` is still the rule
+  // this record exists to exercise.
   task("home-task-nc-marquee-lighting", NC, "Confirm the Ballyhoura marquee lighting", {
     lane: "in-flight",
     priority: 1,
+    dueAtIso: fixtureInstantAt(3, 12),
     idleDays: 7,
     blockedBy: [taskRef("home-task-nc-generator", NC)],
   }),
@@ -143,6 +150,16 @@ export const TODAY_SIGNATURE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
     priority: 1,
     movedToDoneAtIso: "2026-07-16T01:20:00.000Z",
     idleDays: 0,
+  }),
+  // Nora & Cian holds this in its Waiting column, which persists as
+  // `lane: doing, boardColumnKey: waiting` and reaches the ranking engine's
+  // four-value vocabulary as `in-flight`. Today reads it because Today reads
+  // every eligible object in Read Scope, not only the actor's own slice.
+  task("home-task-nc-venue-confirmation", NC, "Wait for the Ballyhoura venue confirmation", {
+    lane: "in-flight",
+    priority: 2,
+    dueAtIso: fixtureInstantAt(-4, 12),
+    idleDays: 8,
   }),
 
   // — in flight and in review, enough of them to cross `overload` ————
@@ -164,19 +181,30 @@ export const TODAY_SIGNATURE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
   task("home-task-at-ceremony-time", AT, "Fix the Adare ceremony start time", {
     lane: "in-flight",
     priority: 2,
+    dueAtIso: fixtureInstantAt(5, 12),
     idleDays: 2,
   }),
 
   // — dated, inside the 14-day horizon, crossed nothing ————————————
+  // T+8, My work's value. That is the first Later day in My work's window and
+  // it is still inside Today's fourteen-day horizon, so both boundaries hold
+  // on one record rather than on two copies with two dates.
   task("home-task-at-running-order", AT, "Draft the Adare running order", {
     lane: "next",
     priority: 2,
-    dueAtIso: fixtureInstantAt(9, 12),
+    dueAtIso: fixtureInstantAt(8, 12),
   }),
   task("home-task-at-hair-trial", AT, "Book the Adare hair trial", {
     lane: "next",
     priority: 3,
     dueAtIso: fixtureInstantAt(12, 10),
+  }),
+  // T+7 exactly. My work's inclusive Next edge, and Today reads the same
+  // record on the same day rather than being handed a narrower world.
+  task("home-task-mf-cars", MF, "Confirm the Orchard car arrivals", {
+    lane: "next",
+    priority: 2,
+    dueAtIso: fixtureInstantAt(7, 12),
   }),
 
   // — the reader silenced this one. Q5. ————————————————————————————
@@ -194,8 +222,14 @@ export const TODAY_SIGNATURE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
     priority: 3,
     assignedToActor: false,
   }),
+  // Signed off in Nora & Cian's own Done column. My work resolves done-ness
+  // through that Project's `doneKeys`, so this record is done in every mode.
+  // It carries no `movedToDoneAtIso` because `just-shipped` reads the last
+  // twenty-four hours and this was signed off six days ago; the completion
+  // instant lives on the Analytics mirror, which is the only surface that
+  // reads it.
   task("home-task-nc-favours", NC, "Decide on Ballyhoura favours", {
-    lane: "next",
+    lane: "shipped",
     priority: 3,
   }),
   task("home-task-at-confetti", AT, "Confirm the Adare confetti rule", {
@@ -282,6 +316,13 @@ export const TODAY_DOING_EMPTY_CANDIDATES: readonly WorkSignal[] = Object.freeze
  *
  * `home-task-dst-sunday` is the load-bearing one: 12:00 GMT on Sunday 25
  * October is 25 hours after 12:00 BST on Saturday 24 October.
+ *
+ * ONE WALK-THROUGH, ONE DATE. This world used to carry the Ballyhoura
+ * walk-through twice — once here at T+2 and once in My work at T+7 — which
+ * made a world holding one piece of work count as two. The walk-through is
+ * now the single record `home-task-dst-week`, on My work's date, and the
+ * near-horizon date it used to justify belongs to a genuinely different piece
+ * of work with its own id and its own title.
  */
 export const TODAY_DST_CANDIDATES: readonly WorkSignal[] = Object.freeze([
   task("home-task-dst-keys", MF, "Collect the Orchard keys", {
@@ -290,15 +331,29 @@ export const TODAY_DST_CANDIDATES: readonly WorkSignal[] = Object.freeze([
     dueAtIso: "2026-10-24T21:30:00.000Z", // 22:30 BST, still today
     idleDays: 4,
   }),
-  task("home-task-dst-sunday", MF, "Open up on Sunday morning", {
+  task("home-task-dst-sunday", MF, "Meet the Orchard florist at midday on Sunday", {
     lane: "next",
     priority: 0,
     dueAtIso: "2026-10-25T12:00:00.000Z", // 12:00 GMT, tomorrow, 25 h later
   }),
-  task("home-task-dst-monday", NC, "Ballyhoura walk-through", {
+  // The same record My work groups, on the same instant, under one id: 09:00
+  // GMT on the 25th is 12 h 45 m after this world reads, so millisecond
+  // arithmetic calls it today and calendar arithmetic calls it tomorrow.
+  task("home-task-dst-morning", MF, "Open up before the clocks change", {
+    lane: "next",
+    priority: 2,
+    dueAtIso: "2026-10-25T09:00:00.000Z",
+  }),
+  task("home-task-dst-guest-numbers", NC, "Send the Ballyhoura final guest numbers", {
     lane: "next",
     priority: 2,
     dueAtIso: "2026-10-26T12:00:00.000Z",
+  }),
+  // The walk-through itself. T+7, My work's inclusive Next edge.
+  task("home-task-dst-week", NC, "Ballyhoura walk-through", {
+    lane: "next",
+    priority: 2,
+    dueAtIso: "2026-10-31T12:00:00.000Z",
   }),
   task("home-task-dst-late", AT, "Adare final numbers", {
     lane: "next",
@@ -358,6 +413,138 @@ export const TODAY_UNPROJECTABLE_CANDIDATES: readonly WorkSignal[] =
     }),
   ]);
 
+// ── Scale: the same sixty records, read by Today ────────────────────────────
+
+/**
+ * ONE POPULATION PER WORLD.
+ *
+ * The `scale` world used to hand Today the twenty signature candidates while
+ * My work held sixty responsibilities in the same Projects, so Today reported
+ * examining 20 objects and Analytics counted 78 in the same world at the same
+ * instant. A reviewer switching modes met two totals for one world, which is
+ * the confusion this programme exists to remove. Today still shows at most
+ * three with a suppressed count — the cap is the point; a smaller private
+ * population is not.
+ *
+ * So Today reads the world's own sixty records. `MyWorkRow` is a projection of
+ * a source record (`MY_WORK_PROJECTION.md` §0) and `WorkSignal` is a second
+ * projection of the same record, so this function is a change of shape, never
+ * a change of value: the id, the Project, the title, the due instant and the
+ * blocking relation are carried across untouched.
+ *
+ * Two fields have no counterpart on a `MyWorkRow`, and each is stated rather
+ * than invented:
+ *
+ * - `priority`. The sixty generated responsibilities were never prioritised,
+ *   so they sit at the Tasks default. Authored priorities, including the P0
+ *   that feeds the severity bonus, live in the signature world.
+ * - `idleDays`. The scale population carries no authored activity history, so
+ *   the projection uses the same value the Analytics mirror uses for a record
+ *   with none (`ANALYTICS_DEFAULT_IDLE_DAYS`). One default, read by both, so
+ *   the two surfaces cannot disagree about how long a row has been quiet.
+ */
+function scaleSignal(row: MyWorkRow): WorkSignal {
+  return Object.freeze({
+    ref: taskRef(row.taskId, row.workspaceId),
+    title: row.title,
+    // The board column, in the ranking engine's four-value vocabulary. A task
+    // held in Waiting persists as `lane: doing, boardColumnKey: waiting`.
+    lane: row.isDone
+      ? ("shipped" as const)
+      : row.columnKey === "review"
+        ? ("review" as const)
+        : row.columnKey === "doing" || row.columnKey === "waiting"
+          ? ("in-flight" as const)
+          : ("next" as const),
+    priority: 2 as const,
+    dueAtIso: row.dueAtIso,
+    idleDays: 1,
+    blockedBy: Object.freeze(
+      row.blockedByIds.map((id) => taskRef(id, row.workspaceId)),
+    ),
+    movedToDoneAtIso: null,
+    sourceLabel: Object.freeze({
+      product: "Tasks" as const,
+      projectName: NAME[row.workspaceId as keyof typeof NAME] ?? "Unresolved",
+    }),
+    projectId: row.workspaceId,
+    // Every row in this projection is a responsibility of the reader's, which
+    // is what put it in My work in the first place.
+    assignedToActor: true,
+    dismissedByReader: false,
+  });
+}
+
+/**
+ * The rest of the scale world's population: eight records in the same four
+ * Projects that are NOT the reader's open responsibilities, so My work
+ * correctly lists none of them and Today correctly reads all of them.
+ *
+ * They exist because My work's sixty are, by definition, open and assigned to
+ * the reader — a population with no finished work, no unowned work and no
+ * work belonging to somebody else. Read alone it would make Analytics render
+ * `0` for three of its seven claims in the one world whose job is volume,
+ * and a director judging the Analytics mode would be judging three zeros.
+ *
+ * The world's arithmetic stays reconcilable by hand: 68 records read, of
+ * which 60 are the reader's own open responsibilities, 3 are finished, 3 have
+ * nobody assigned and 2 belong to a collaborator and have gone quiet.
+ */
+const TODAY_SCALE_TAIL: readonly WorkSignal[] = Object.freeze([
+  // Finished. One landed inside the last day, so Moving well has something
+  // true to say at scale rather than rendering as an empty section.
+  task("home-task-scale-done-01", MF, "Confirm the Orchard bar licence", {
+    lane: "shipped",
+    priority: 2,
+    movedToDoneAtIso: "2026-07-16T01:40:00.000Z",
+  }),
+  task("home-task-scale-done-02", NC, "Send the Ballyhoura menu tasting notes", {
+    lane: "shipped",
+    priority: 2,
+  }),
+  task("home-task-scale-done-03", AT, "Book the Adare rehearsal room", {
+    lane: "shipped",
+    priority: 3,
+  }),
+  // Nobody is assigned. `assignedToActor: false` is the reader's side of that
+  // fact and the mirror's `unowned` is the other; A3 counts the second, and
+  // the two may never disagree.
+  task("home-task-scale-unowned-01", MF, "Choose the Orchard table numbers", {
+    lane: "next",
+    priority: 3,
+    assignedToActor: false,
+  }),
+  task("home-task-scale-unowned-02", NC, "Pick the Ballyhoura ceremony music", {
+    lane: "next",
+    priority: 3,
+    assignedToActor: false,
+  }),
+  task("home-task-scale-unowned-03", SR, "Confirm the Dromoland arrival time", {
+    lane: "next",
+    priority: 2,
+    assignedToActor: false,
+  }),
+  // A collaborator's work, gone quiet past the seven-day threshold. The
+  // second is in review, so Needs review is exercised at scale too.
+  task("home-task-scale-stalled-01", AT, "Chase the Adare marquee quote", {
+    lane: "in-flight",
+    priority: 1,
+    idleDays: 12,
+    assignedToActor: false,
+  }),
+  task("home-task-scale-stalled-02", SR, "Agree the Dromoland corkage rate", {
+    lane: "review",
+    priority: 2,
+    idleDays: 9,
+    assignedToActor: false,
+  }),
+]);
+
+export const TODAY_SCALE_CANDIDATES: readonly WorkSignal[] = Object.freeze([
+  ...MY_WORK_SCALE_ROWS.map(scaleSignal),
+  ...TODAY_SCALE_TAIL,
+]);
+
 // ── The kinds with no producer ──────────────────────────────────────────────
 
 /**
@@ -402,6 +589,7 @@ export const TODAY_CANDIDATE_SETS = Object.freeze({
   doingEmpty: TODAY_DOING_EMPTY_CANDIDATES,
   dst: TODAY_DST_CANDIDATES,
   guest: TODAY_GUEST_CANDIDATES,
+  scale: TODAY_SCALE_CANDIDATES,
   unprojectable: TODAY_UNPROJECTABLE_CANDIDATES,
 });
 

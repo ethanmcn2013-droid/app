@@ -100,9 +100,9 @@ describe("nothing a section held is dropped without a number", () => {
   it("the three-cap is reported as held back, not as clear", () => {
     const held = homeFixtureWorld("owner_signature").today.sectionAccounting
       .todaysSignal;
-    assert.equal(held.eligible, 9);
+    assert.equal(held.eligible, 10);
     assert.equal(held.shown, 3);
-    assert.equal(held.cappedOut, 6);
+    assert.equal(held.cappedOut, 7);
     assert.equal(held.claimedAbove, 0);
   });
 });
@@ -124,6 +124,144 @@ const SHARED_SOURCE_IDS = new Set([
     ...MY_WORK_SCALE_ROWS,
   ].map((row) => row.taskId),
 ]);
+
+/**
+ * ONE RECORD, ONE TRUTH.
+ *
+ * The fixture may not contain a contradiction. A surface that needs a
+ * different value needs a DIFFERENT RECORD, with its own id and its own
+ * title — never the same record carrying two answers. Three of these used to
+ * be open findings: four records read differently by Today and My work, a
+ * scale world that handed Today a fifth of its own population, and one piece
+ * of work existing twice under two ids.
+ *
+ * The oracle suite asserts the same three things from its own independent
+ * derivation. They are asserted here as well because the oracle is deleted
+ * when the Wave 5 engine lands, and this is the property that has to outlive
+ * it.
+ */
+describe("one record, one truth", () => {
+  const MY_WORK_ROWS_EVERYWHERE = [
+    ...MY_WORK_SIGNATURE_ROWS,
+    ...MY_WORK_QUIET_ROWS,
+    ...MY_WORK_DST_ROWS,
+    ...MY_WORK_SCALE_ROWS,
+  ];
+
+  it("no source id carries two due instants or two done states", () => {
+    const todayById = new Map(
+      Object.values(TODAY_CANDIDATE_SETS)
+        .flat()
+        .map((signal) => [signal.ref.id, signal] as const),
+    );
+    const disagreements: string[] = [];
+    for (const row of MY_WORK_ROWS_EVERYWHERE) {
+      const signal = todayById.get(row.taskId);
+      if (!signal) {
+        disagreements.push(`${row.taskId}: no Today candidate set holds it`);
+        continue;
+      }
+      if (signal.dueAtIso !== row.dueAtIso) {
+        disagreements.push(
+          `${row.taskId}: due ${signal.dueAtIso} in Today, ${row.dueAtIso} in My work`,
+        );
+      }
+      if ((signal.lane === "shipped") !== row.isDone) {
+        disagreements.push(
+          `${row.taskId}: lane ${signal.lane} in Today, isDone ${row.isDone} in My work`,
+        );
+      }
+      if (signal.projectId !== row.workspaceId) {
+        disagreements.push(`${row.taskId}: two Projects`);
+      }
+      if (signal.title !== row.title) {
+        disagreements.push(`${row.taskId}: two titles`);
+      }
+    }
+    assert.ok(MY_WORK_ROWS_EVERYWHERE.length >= 80, "the join is not vacuous");
+    assert.deepEqual(disagreements, []);
+  });
+
+  it("no Project holds one piece of work under two ids", () => {
+    const ids = new Map<string, Set<string>>();
+    const note = (workspaceId: string | null, title: string, id: string) => {
+      const key = `${workspaceId}|${title}`;
+      ids.set(key, (ids.get(key) ?? new Set()).add(id));
+    };
+    for (const signal of Object.values(TODAY_CANDIDATE_SETS).flat()) {
+      note(signal.projectId, signal.title, signal.ref.id);
+    }
+    for (const row of MY_WORK_ROWS_EVERYWHERE) {
+      note(row.workspaceId, row.title, row.taskId);
+    }
+    assert.deepEqual(
+      [...ids.entries()]
+        .filter(([, held]) => held.size > 1)
+        .map(([key, held]) => `${key} → ${[...held].sort().join(", ")}`)
+        .sort(),
+      [],
+    );
+  });
+
+  it("every world reads one population, so two modes cannot publish two totals", () => {
+    for (const id of SCENARIO_IDS) {
+      // `provider_failure` is the one world where they can, and it is pinned
+      // as OR-10 in `oracles/findings.ts` rather than reconciled here: the
+      // fix needs a rendering decision the lead owns.
+      if (id === "provider_failure") continue;
+      const world = homeFixtureWorld(id);
+      const read = new Set(
+        world.scenario.todayCandidates.map((signal) => signal.ref.id),
+      );
+      const rendered =
+        world.myWork.kind === "ready"
+          ? Object.values(world.myWork.groups).flat().map((entry) => entry.row)
+          : [];
+      assert.deepEqual(
+        rendered.filter((row) => !read.has(row.taskId)).map((row) => row.taskId),
+        [],
+        `${id}: My work renders a responsibility Today never read`,
+      );
+    }
+  });
+
+  it("the scale world publishes one total, not three", () => {
+    const world = homeFixtureWorld("scale");
+    // 68 records read: the reader's sixty open responsibilities, which is
+    // exactly what My work holds, plus eight in the same Projects that are
+    // not theirs to do — three finished, three with nobody assigned, two a
+    // collaborator's and gone quiet.
+    assert.equal(world.today.accounting?.read, 68);
+    assert.equal(world.scenario.todayCandidates.length, 68);
+    assert.equal(MY_WORK_SCALE_ROWS.length, 60);
+    // Plus the Unprojectable row every world's read carries and every
+    // Project-scoped count discloses separately.
+    assert.equal(world.analyticsRows.length, 69);
+    // Every claim carries a value the population supports. Three of the seven
+    // read `0` while Today was handed a fifth of this world, which is the
+    // shape a two-population fixture takes on the Analytics mode.
+    assert.deepEqual(
+      world.claims.map((claim) => `${claim.metric}=${claim.value}`),
+      [
+        "open_work=65",
+        "open_overdue_work=12",
+        "unowned_work=3",
+        "work_completed=3",
+        "open_work_age=40",
+        "stalled_work=2",
+        "cross_product_milestone_risk=2",
+      ],
+    );
+    // The cap is still the point: three shown, and the rest counted.
+    assert.equal(world.today.sections.todaysSignal.length, 3);
+    assert.equal(world.today.sectionAccounting.todaysSignal.eligible, 25);
+    assert.equal(world.today.sectionAccounting.todaysSignal.cappedOut, 22);
+    // And all four sections have something true to render at volume.
+    for (const [section, rows] of Object.entries(world.today.sections)) {
+      assert.ok(rows.length > 0, `${section} renders nothing at scale`);
+    }
+  });
+});
 
 describe("an Analytics claim resolves to a row a reviewer can open", () => {
   for (const id of SCENARIO_IDS) {

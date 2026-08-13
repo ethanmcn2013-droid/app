@@ -143,16 +143,16 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 3,
+          "comingUp": 4,
           "needsReview": 3,
           "movingWell": 2
         },
         "accounting": {
-          "read": 20,
-          "shown": 7,
+          "read": 22,
+          "shown": 8,
           "cappedOut": 2,
           "dismissed": 1,
-          "cleared": 10
+          "cleared": 11
         },
         "quietAllowed": false,
         "quietBlockedBy": [
@@ -492,14 +492,14 @@
       "today": {
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
-          "todaysSignal": 2,
+          "todaysSignal": 3,
           "comingUp": 1,
           "needsReview": 0,
           "movingWell": 0
         },
         "accounting": {
-          "read": 6,
-          "shown": 2,
+          "read": 7,
+          "shown": 3,
           "cappedOut": 0,
           "dismissed": 1,
           "cleared": 3
@@ -734,7 +734,7 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 3,
+          "comingUp": 4,
           "needsReview": 3,
           "movingWell": 2
         },
@@ -851,16 +851,16 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 3,
+          "comingUp": 4,
           "needsReview": 3,
           "movingWell": 2
         },
         "accounting": {
-          "read": 20,
-          "shown": 7,
+          "read": 22,
+          "shown": 8,
           "cappedOut": 2,
           "dismissed": 1,
-          "cleared": 10
+          "cleared": 11
         },
         "quietAllowed": false,
         "quietBlockedBy": [
@@ -974,7 +974,7 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 3,
+          "comingUp": 4,
           "needsReview": 3,
           "movingWell": 2
         },
@@ -1094,7 +1094,7 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 2,
+          "comingUp": 4,
           "needsReview": 1,
           "movingWell": 2
         },
@@ -1210,16 +1210,16 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 3,
+          "comingUp": 4,
           "needsReview": 3,
           "movingWell": 2
         },
         "accounting": {
-          "read": 20,
-          "shown": 7,
+          "read": 22,
+          "shown": 8,
           "cappedOut": 2,
           "dismissed": 1,
-          "cleared": 10
+          "cleared": 11
         },
         "quietAllowed": false,
         "quietBlockedBy": [
@@ -1333,16 +1333,16 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 3,
+          "comingUp": 4,
           "needsReview": 3,
           "movingWell": 2
         },
         "accounting": {
-          "read": 20,
-          "shown": 7,
+          "read": 22,
+          "shown": 8,
           "cappedOut": 2,
           "dismissed": 1,
-          "cleared": 10
+          "cleared": 11
         },
         "quietAllowed": false,
         "quietBlockedBy": [
@@ -1455,22 +1455,21 @@
         "asOfIso": "2026-07-16T07:40:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 3,
-          "needsReview": 3,
-          "movingWell": 2
+          "comingUp": 4,
+          "needsReview": 1,
+          "movingWell": 1
         },
         "accounting": {
-          "read": 20,
-          "shown": 7,
-          "cappedOut": 2,
-          "dismissed": 1,
-          "cleared": 10
+          "read": 68,
+          "shown": 5,
+          "cappedOut": 19,
+          "dismissed": 0,
+          "cleared": 44
         },
         "quietAllowed": false,
         "quietBlockedBy": [
           "Q3",
           "Q4",
-          "Q5",
           "Q7"
         ]
       },
@@ -1494,13 +1493,13 @@
         "claims": [
           {
             "metric": "open_work",
-            "value": 78,
+            "value": 65,
             "status": "available",
             "truthClass": "reported"
           },
           {
             "metric": "open_overdue_work",
-            "value": 14,
+            "value": 12,
             "status": "available",
             "truthClass": "reported"
           },
@@ -1512,7 +1511,7 @@
           },
           {
             "metric": "work_completed",
-            "value": 1,
+            "value": 3,
             "status": "available",
             "truthClass": "observed"
           },
@@ -1575,20 +1574,21 @@
         "asOfIso": "2026-10-24T20:15:00.000Z",
         "sections": {
           "todaysSignal": 3,
-          "comingUp": 1,
+          "comingUp": 2,
           "needsReview": 0,
           "movingWell": 0
         },
         "accounting": {
-          "read": 5,
+          "read": 7,
           "shown": 3,
-          "cappedOut": 0,
+          "cappedOut": 1,
           "dismissed": 0,
-          "cleared": 2
+          "cleared": 3
         },
         "quietAllowed": false,
         "quietBlockedBy": [
           "Q3",
+          "Q4",
           "Q7",
           "Q8"
         ]

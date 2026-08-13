@@ -1,61 +1,178 @@
 import { requireLabReviewer } from "@/lib/home-layer/lab/guard";
+import { HOME_FIXTURE_SCENARIOS, HOME_MODES } from "@/lib/home-layer/fixtures";
+import {
+  assembleCandidateProps,
+  buildLabUrl,
+  LAB_SCOPES,
+  LAB_THEMES,
+  LAB_VARIANTS,
+  MODE_NAMES,
+  parseLabUrl,
+  scenarioScopeOf,
+  type LabUrlState,
+} from "@/lib/home-layer/lab-shell";
+import { loadCandidate } from "./candidates/registry";
+import { ReviewChrome, type DrawerGroup, type PickerEntry } from "./review-chrome";
+import "./lab-chrome.css";
 
 /**
- * Placeholder for the Home operating-layer design lab (Wave 3).
- *
- * It exists now so the guard above it is testable now: something has to be
- * behind the door before you can prove the door is shut. It renders no data,
- * fetches nothing, imports no client, and will be replaced by the four
- * directions once they are built.
+ * The protected Home operating-layer lab. One page, one candidate at a time.
  *
  * ── Why the guard is called here as well as in the layout ──────────────────
  *
- * Not defence in depth for its own sake. Measured, on this page, at this base:
- * with the guard ONLY in the layout, `GET /lab/home-operating-layer` returned
- * a correct 404 whose response body still contained the complete React Server
- * Component payload of this page — every heading and paragraph, serialised
- * into the flight data. The layout threw `notFound()`, and the page had
- * already been rendered alongside it. A layout guard withholds the rendered
- * screen, not the render.
+ * Measured on this route at this base: with `requireLabReviewer()` in the
+ * layout ONLY, `GET /lab/home-operating-layer` returned a correct 404 whose
+ * body still carried the complete React Server Component payload of the page
+ * beneath it. The layout threw; the page had already rendered beside it. A
+ * layout guard withholds the rendered screen, not the render. This page
+ * renders fixture worlds in permission-limited, revoked and partial states, so
+ * it awaits the guard itself and never produces a payload at all.
+ * `lab-isolation-contract.test.mjs` enforces it on every page added here.
  *
- * That is survivable for a placeholder. It is not survivable for the actual
- * lab, which will render fixture data in permission-limited, partial and
- * guest-limited states. So every page in this family awaits the guard itself
- * and therefore never produces a payload at all. The contract test enforces
- * it on every page added here later, because the next person will not know
- * this happened.
+ * ── Why there is one page and not five ─────────────────────────────────────
  *
- * The rule this page inherits, and every page added beside it keeps: fixture
- * data only. No database client, no provider credential, no server action, no
- * job, no export. That is enforced statically by
- * src/lib/home-layer/lab/lab-isolation-contract.test.mjs, which walks the
- * import graph of this whole route family and fails on any of them.
+ * `?v=` has to be the switch. A route segment per candidate would need a
+ * redirect from the canonical URL, and the isolation contract forbids a
+ * redirect anywhere in this family — the lab's only refusal is a 404, and a
+ * redirect confirms the route exists. One page also keeps
+ * `experience/registry.json` at one entry for this family, which matters
+ * because that file is not this programme's to write.
+ *
+ * ── Why the candidate is a Server Component ────────────────────────────────
+ *
+ * `total_client_js` counts lazy chunks, so a four-direction lab cannot be
+ * code-split out of the measurement, and the last multi-shell lab cost 19.1 KB
+ * and was deleted for it. Four candidate trees on the client would spend the
+ * programme's entire headroom on a surface that never ships. Switching costs a
+ * server round trip; on the review machine that is a few milliseconds, and the
+ * picker highlight moves at once either way.
  */
 
-export default async function HomeOperatingLayerLabPlaceholder() {
+export const dynamic = "force-dynamic";
+
+export default async function HomeOperatingLayerLab({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireLabReviewer();
 
+  const parsed = parseLabUrl(await searchParams, scenarioScopeOf);
+  const state: LabUrlState = parsed.state;
+  const props = assembleCandidateProps({ state });
+  const candidate = await loadCandidate(props.meta.slug);
+
+  const stage = (
+    <div
+      className="lab-stage"
+      data-theme={state.theme === "dark" ? "dark" : undefined}
+      style={{ colorScheme: state.theme }}
+    >
+      {candidate.found ? (
+        candidate.render(props)
+      ) : (
+        <main className="lab-missing" id="app-main-content" tabIndex={-1}>
+          <h1>{props.meta.label} is not built yet</h1>
+          <p>
+            The shell, the data and the controls are ready. This direction has
+            no folder under <code>candidates/{props.meta.slug}/</code> yet, so
+            there is nothing to render here.
+          </p>
+          <p>
+            The other three directions are unaffected. Use the picker, the
+            number keys or the arrow keys to move between them.
+          </p>
+        </main>
+      )}
+    </div>
+  );
+
+  // Capture mode removes every piece of review chrome from the document, not
+  // just from the screen: the picker, the drawer and the replay wrapper are
+  // never rendered, so a capture holds the candidate and nothing else.
+  if (state.capture) return stage;
+
+  const linkTo = (patch: Partial<LabUrlState>) => buildLabUrl({ ...state, ...patch });
+
+  const entries: readonly PickerEntry[] = LAB_VARIANTS.map((variant) => ({
+    v: variant.v,
+    label: variant.label,
+    href: linkTo({ v: variant.v }),
+    built: true,
+  }));
+
+  const groups: readonly DrawerGroup[] = [
+    {
+      legend: "Mode",
+      options: HOME_MODES.map((mode) => ({
+        label: MODE_NAMES[mode],
+        href: linkTo({ mode, item: null, event: null }),
+        current: mode === state.mode,
+      })),
+      note: "The full briefing is depth from Today, not a fifth mode.",
+    },
+    {
+      legend: "World",
+      options: HOME_FIXTURE_SCENARIOS.map((world) => ({
+        label: world.label,
+        href: linkTo({
+          scenario: world.id,
+          homeScope: scenarioScopeOf(world.id).homeScope,
+          workspaceId: scenarioScopeOf(world.id).workspaceId,
+          planningPeriodId: scenarioScopeOf(world.id).planningPeriodId,
+          lensProjectId: scenarioScopeOf(world.id).lensProjectId,
+          item: null,
+          event: null,
+        }),
+        current: world.id === state.scenario,
+      })),
+      note: props.world.proves,
+    },
+    {
+      legend: "What Home reads",
+      options: LAB_SCOPES.map((scope) => ({
+        label:
+          scope === "project"
+            ? "One project"
+            : scope === "planning-period"
+              ? "This season"
+              : "Every project",
+        href: linkTo({ homeScope: scope }),
+        current: scope === state.homeScope,
+      })),
+      note: props.chrome.scope.helpLine,
+    },
+    {
+      legend: "Theme",
+      options: LAB_THEMES.map((theme) => ({
+        label: theme === "light" ? "Light" : "Dark",
+        href: linkTo({ theme }),
+        current: theme === state.theme,
+      })),
+      note: null,
+    },
+    {
+      legend: "Capture",
+      options: [
+        {
+          label: "Open with no review chrome",
+          href: linkTo({ capture: true }),
+          current: false,
+        },
+      ],
+      note: "Every control here is in the URL, so a capture and a review look at the same screen.",
+    },
+  ];
+
   return (
-    <main className="mx-auto flex min-h-svh max-w-2xl flex-col justify-center gap-6 px-6 py-24">
-      <p className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">
-        Protected lab
-      </p>
-      <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-50">
-        Home operating layer
-      </h1>
-      <p className="text-base leading-relaxed text-neutral-600 dark:text-neutral-300">
-        The four design directions are not built yet. This page stands in for
-        them so the access guard around this route can be proven before there
-        is anything worth protecting.
-      </p>
-      <p className="text-base leading-relaxed text-neutral-600 dark:text-neutral-300">
-        Everything under this route shows made-up sample content. It never
-        reads a real account, and it is never part of the live product.
-      </p>
-      <p className="text-sm leading-relaxed text-neutral-500">
-        You are seeing this because the review flag is on and your account is on
-        the reviewer list. Everyone else gets a page not found.
-      </p>
-    </main>
+    <ReviewChrome
+      entries={entries}
+      activeV={state.v}
+      pickerPosition={candidate.found ? candidate.pickerPosition : "bottom"}
+      groups={groups}
+      notices={parsed.notices.map((notice) => notice.text)}
+    >
+      {stage}
+    </ReviewChrome>
   );
 }

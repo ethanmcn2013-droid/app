@@ -84,6 +84,7 @@ import {
   TODAY_GUEST_CANDIDATES,
   TODAY_NEW_USER_CANDIDATES,
   TODAY_QUIET_CANDIDATES,
+  TODAY_SCALE_CANDIDATES,
   TODAY_SIGNATURE_CANDIDATES,
   TODAY_UNSUPPORTED_KINDS,
   type WorkSignal,
@@ -371,7 +372,10 @@ export const HOME_FIXTURE_SCENARIOS: readonly Scenario[] = Object.freeze([
     planningPeriodId: null,
     lensProjectId: null,
     projectStates: HOME_PROJECT_STATES_HEALTHY,
-    todayCandidates: TODAY_SIGNATURE_CANDIDATES,
+    // The world's own sixty records, not the signature twenty. Today reads
+    // the population My work holds and Analytics counts, so a reviewer
+    // switching modes meets one total for one world.
+    todayCandidates: TODAY_SCALE_CANDIDATES,
     comparableSnapshots: SNAPSHOTS_EARNED,
     asOfIso: HOME_FIXTURE_NOW_ISO,
     mustNeverRender: ["and 43 more", "…"],
