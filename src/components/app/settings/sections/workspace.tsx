@@ -79,7 +79,7 @@ export function WorkspaceSection({
     setCurrencyValue(next);
     startMoneyTransition(async () => {
       try {
-        await setProjectCurrencyAction(next);
+        await setProjectCurrencyAction(next, workspace?.id);
       } catch {
         setCurrencyValue(previous);
       }
@@ -98,7 +98,7 @@ export function WorkspaceSection({
     setBudgetValue(cents);
     startMoneyTransition(async () => {
       try {
-        await setProjectBudgetAction(cents);
+        await setProjectBudgetAction(cents, workspace?.id);
       } catch {
         setBudgetValue(previous);
         setBudgetDraft(previous != null ? String(Math.round(previous / 100)) : "");
@@ -123,7 +123,7 @@ export function WorkspaceSection({
     if (!trimmed || trimmed === workspace.name) return;
     startTransition(async () => {
       try {
-        await updateWorkspaceAction({ name: trimmed });
+        await updateWorkspaceAction({ name: trimmed, projectId: workspace?.id });
         toast("Workspace renamed", { tone: "success" });
       } catch (e) {
         toast("Couldn’t save", { tone: "error", body: (e as Error).message });
@@ -169,7 +169,7 @@ export function WorkspaceSection({
     setReseedingDomain(next);
     startTransition(async () => {
       try {
-        await updateWorkspaceAction({ domain: next });
+        await updateWorkspaceAction({ domain: next, projectId: workspace?.id });
         toast(`Reseeded with ${DOMAINS[next].label}`, {
           tone: "success",
           body: "Board repopulated. Old tasks are gone.",
@@ -518,7 +518,7 @@ function PublishBlock({
   function publish() {
     startTransition(async () => {
       try {
-        await publishWorkspaceAction();
+        await publishWorkspaceAction(workspace.id);
         toast("Workspace published", {
           tone: "success",
           body: "Anyone with the link can read it. Search engines are asked not to list it.",
@@ -535,7 +535,7 @@ function PublishBlock({
   function unpublish() {
     startTransition(async () => {
       try {
-        await unpublishWorkspaceAction();
+        await unpublishWorkspaceAction(workspace.id);
         toast("Workspace unpublished", {
           tone: "info",
           body: "The public link returns 404 again.",

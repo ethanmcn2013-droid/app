@@ -1,11 +1,12 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db";
 import { users, workspaceMembers, workspaces } from "@/server/db/schema";
-import { getActiveWorkspace, getCurrentUser } from "@/server/auth";
+import { getCurrentUser } from "@/server/auth";
+import { requireRouteProjectId } from "@/server/projects/route-authz";
 import { getEffectiveTier } from "@/server/db/entitlements";
 import { getMemberCapacity } from "@/server/db/membership";
 import {
-  getMyRoleInActiveWorkspace,
+  getMyRoleInProject,
   getNotificationPrefs,
   listPendingInvitesAction,
   listWorkspaceActivityAction,
@@ -104,10 +105,17 @@ export default async function SettingsPage() {
     );
   }
 
-  const [me, ws, myRole] = await Promise.all([
+  // WP3-C: was `getActiveWorkspace()`, whose third fallback hands back
+  // LEGACY_WORKSPACE_ID — a workspace the caller has proved no membership of
+  // (DECISIONS D-005) — and would have rendered a stranger's members list and
+  // Danger Zone. `requireRouteProjectId` fails closed instead. No explicit
+  // `workspaceId` parameter here on purpose: this surface renders inside the
+  // shared app chrome, whose Project the page cannot influence, so accepting
+  // one would let the URL and the chrome disagree. Same call as /app/inbox,
+  // /app/archived and /app/import.
+  const [me, ws] = await Promise.all([
     getCurrentUser(),
-    getActiveWorkspace(),
-    getMyRoleInActiveWorkspace(),
+    requireRouteProjectId(),
   ]);
 
   const [workspaceRow] = await db
@@ -132,6 +140,7 @@ export default async function SettingsPage() {
 
   // All remaining fetches run in parallel — no serial reads after this point.
   const [
+    myRole,
     tier,
     prefs,
     memberCapacity,
@@ -142,11 +151,15 @@ export default async function SettingsPage() {
     storageUsageBytes,
     personalityPrefs,
   ] = await Promise.all([
+    // The gate and the surface it gates now name the same Project. This used
+    // to resolve one ambiently of its own accord, so the role shown could in
+    // principle have been held in a different Project from the one rendered.
+    getMyRoleInProject(ws, me),
     getEffectiveTier(me, ws),
     getNotificationPrefs(),
     getMemberCapacity(ws),
-    listPendingInvitesAction(),
-    listWorkspaceActivityAction(),
+    listPendingInvitesAction(ws),
+    listWorkspaceActivityAction(ws),
     getSecurityData(),
     getUserPreferences(me),
     getWorkspaceStorageUsage(ws),

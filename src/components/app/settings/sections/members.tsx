@@ -73,6 +73,7 @@ export function MembersSection({
   memberCapacity,
   pendingInvites,
   recentActivity,
+  projectId,
 }: {
   members: SettingsMember[];
   myRole: "owner" | "member" | "none";
@@ -80,6 +81,13 @@ export function MembersSection({
   memberCapacity: MemberCapacity;
   pendingInvites: PendingInvite[];
   recentActivity: ActivityLine[];
+  /**
+   * The Project this roster was rendered from. Every membership mutation names
+   * it, so a removal or a role change lands in the Project whose member list
+   * the operator is actually looking at rather than wherever the ambient
+   * cookie has since moved (ADR 0001 §9).
+   */
+  projectId: string | null;
 }) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
@@ -103,7 +111,7 @@ export function MembersSection({
     close();
     startTransition(async () => {
       try {
-        await setMemberRoleAction(target.userId, nextRole);
+        await setMemberRoleAction(target.userId, nextRole, projectId ?? undefined);
         toast(
           nextRole === "owner"
             ? `${displayName(target)} is now an owner`
@@ -123,7 +131,7 @@ export function MembersSection({
     setRemoveTarget(null);
     startTransition(async () => {
       try {
-        await removeMemberAction(target.userId);
+        await removeMemberAction(target.userId, projectId ?? undefined);
         toast(`${displayName(target)} removed`, { tone: "success" });
       } catch (e) {
         toast("Couldn’t remove", {
@@ -141,7 +149,11 @@ export function MembersSection({
     setInviteNotice(null);
     startTransition(async () => {
       try {
-        const result = await inviteMemberByEmailAction(email, inviteRole);
+        const result = await inviteMemberByEmailAction(
+          email,
+          inviteRole,
+          projectId ?? undefined,
+        );
         if (result.reason === "already-member") {
           setInviteNotice(`${email} is already a member of this workspace.`);
           return;
@@ -170,7 +182,7 @@ export function MembersSection({
   function handleRevoke(invite: PendingInvite) {
     startTransition(async () => {
       try {
-        await revokePendingInviteAction(invite.token);
+        await revokePendingInviteAction(invite.token, projectId ?? undefined);
         toast(`Invite to ${invite.email} revoked`, { tone: "success" });
       } catch (err) {
         toast("Couldn’t revoke", {
@@ -184,7 +196,11 @@ export function MembersSection({
   function handleResend(invite: PendingInvite) {
     startTransition(async () => {
       try {
-        const result = await inviteMemberByEmailAction(invite.email, invite.role);
+        const result = await inviteMemberByEmailAction(
+          invite.email,
+          invite.role,
+          projectId ?? undefined,
+        );
         if (result.reason === "cooldown") {
           toast("Resend skipped", {
             tone: "info",
