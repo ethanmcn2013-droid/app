@@ -1,12 +1,20 @@
 /**
  * Signal Desk · Today, and the full briefing.
  *
- * One ranking engine, two depths, and the composition says which one you are
- * in rather than repeating it in words. Today gives the lead section full
- * weight and everything under it a single quiet line each, so a reader meets at
- * most three decisions before the rhythm drops away. The full briefing gives
- * every section the same weight, headings on every item, and no cap — it reads
- * as the ledger it is.
+ * One ranking engine, two depths, and the COMPOSITION says which one you are in
+ * rather than repeating it in words.
+ *
+ * Today is edited. The three ranked decisions are an ordered list, the first of
+ * them is set a full type step above the other two, and everything under that
+ * section drops to a single quiet line each. So a reader meets one decision,
+ * then two, then a ledger — a shape you can read the priority off without
+ * counting anything. The rank is not a numeral in a margin; it is weight, which
+ * is what an editor actually spends when something matters more.
+ *
+ * The full briefing is complete. Every section takes the same weight, every row
+ * takes a heading, nothing is capped and nothing is ranked. Set beside Today its
+ * first screen is flat where Today's is stepped, which is the difference between
+ * depth and the same page twice.
  */
 
 import type {
@@ -16,11 +24,13 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import {
   Entry,
-  LimitFlag,
-  Limits,
+  Foot,
   markForProvenance,
   Meta,
-  whenText,
+  ReadLine,
+  readVerdict,
+  SectionCaveat,
+  whenPart,
   type MarkKind,
 } from "./parts";
 
@@ -38,7 +48,6 @@ function TodayEntry({
   row,
   section,
   weight,
-  heading,
   open,
   closeHref,
   copy,
@@ -46,25 +55,21 @@ function TodayEntry({
   row: TodayRow;
   section: TodaySection["id"];
   weight: "lead" | "quiet";
-  heading: boolean;
   open: boolean;
   closeHref: string;
   copy: HomeCandidateProps["copy"];
 }) {
-  const title = (
-    <a href={open ? closeHref : row.href}>
-      {row.title}
-      {open ? <span className="dk-sr">. Close this item</span> : null}
-    </a>
-  );
-
   return (
     <Entry mark={markForTodayRow(row, section)} id={open ? "dk-open-item" : undefined}>
-      {heading ? (
-        <h3 className={weight === "lead" ? "dk-title" : "dk-title dk-title-sm"}>{title}</h3>
-      ) : (
-        <p className={weight === "lead" ? "dk-title" : "dk-title dk-title-sm"}>{title}</p>
-      )}
+      {/* Every row is a heading now. Six h2 and no h3 meant heading navigation
+          stopped at the section and a reader moving by headings could not reach
+          a single decision. */}
+      <h3 className={weight === "lead" ? "dk-title" : "dk-title dk-title-sm"}>
+        <a href={open ? closeHref : row.href}>
+          {row.title}
+          {open ? <span className="dk-sr">. Close this item</span> : null}
+        </a>
+      </h3>
 
       {/* "Coming up" rows carry the reason "Due in 4 days." and a `due` label
           reading "Due in 4 days". Printing both puts the same sentence on the
@@ -78,11 +83,9 @@ function TodayEntry({
       <Meta
         parts={[
           row.provenance.text,
-          whenText(row.due),
+          whenPart(row.due),
           row.idleLine,
-          row.isReading && row.memberCount > 0
-            ? `Taken from ${row.memberCount} items`
-            : null,
+          row.isReading && row.memberCount > 0 ? `Taken from ${row.memberCount} items` : null,
         ]}
       />
 
@@ -109,20 +112,36 @@ function TodayEntry({
 function Section({
   section,
   weight,
-  heading,
+  rank,
+  limited,
   openKey,
   closeHref,
   copy,
 }: {
   section: TodaySection;
   weight: "lead" | "quiet";
-  heading: boolean;
+  /** Today's capped three. An ordered list, and the lead takes a type step. */
+  rank: boolean;
+  /** True when the read this section was drawn from did not finish. */
+  limited: boolean;
   openKey: string | null;
   closeHref: string;
   copy: HomeCandidateProps["copy"];
 }) {
   if (section.rows.length === 0 && !section.suppressedLine) return null;
   const id = `dk-section-${section.id}`;
+  const rows = section.rows.map((row) => (
+    <TodayEntry
+      key={row.key}
+      row={row}
+      section={section.id}
+      weight={weight}
+      open={openKey !== null && row.key === openKey}
+      closeHref={closeHref}
+      copy={copy}
+    />
+  ));
+
   return (
     <section className="dk-section" aria-labelledby={`${id}-heading`}>
       <h2 className="dk-h2" id={`${id}-heading`}>
@@ -131,20 +150,15 @@ function Section({
       {section.windowLine ? <p className="dk-note">{section.windowLine}</p> : null}
 
       {section.rows.length > 0 ? (
-        <ul className="dk-entries" data-weight={weight}>
-          {section.rows.map((row) => (
-            <TodayEntry
-              key={row.key}
-              row={row}
-              section={section.id}
-              weight={weight}
-              heading={heading}
-              open={openKey !== null && row.key === openKey}
-              closeHref={closeHref}
-              copy={copy}
-            />
-          ))}
-        </ul>
+        rank ? (
+          <ol className="dk-entries" data-weight={weight} data-rank="true">
+            {rows}
+          </ol>
+        ) : (
+          <ul className="dk-entries" data-weight={weight}>
+            {rows}
+          </ul>
+        )
       ) : null}
 
       {section.suppressedLine ? (
@@ -160,23 +174,32 @@ function Section({
           ) : null}
         </p>
       ) : null}
+
+      {section.rows.length > 0 ? <SectionCaveat limited={limited} /> : null}
     </section>
   );
 }
 
 export function TodayMode(props: HomeCandidateProps) {
-  const { today, copy } = props;
+  const { today, copy, chrome } = props;
   const openKey = today.selection?.key ?? null;
   const closeHref = props.hrefFor({ mode: "today", item: null });
-  const disclosures = [...today.disclosures, ...today.unsupported];
+
+  /* `unsupported` is held apart on purpose. A kind of work that has no source at
+     all is true of every read, every day, for every reader; raising it under the
+     headline every morning is what stopped the old strip from meaning anything
+     by the day a provider actually broke. It is named in the readline's metadata
+     and printed in full at the foot. */
+  const verdict = readVerdict(today.state, today.disclosures, copy);
+  const limited = verdict.klass !== "complete";
 
   return (
     <>
-      <LimitFlag
-        count={disclosures.length}
-        state={today.state}
-        copy={copy}
-        href="#dk-limits"
+      <ReadLine
+        verdict={verdict}
+        chrome={chrome}
+        standing={today.unsupported}
+        statusLabel={chrome.statusRegionLabel}
       />
 
       {/* The quiet read. It is not an all clear and it does not pretend to be:
@@ -193,7 +216,8 @@ export function TodayMode(props: HomeCandidateProps) {
             key={section.id}
             section={section}
             weight={section.id === "todaysSignal" ? "lead" : "quiet"}
-            heading={false}
+            rank={section.id === "todaysSignal"}
+            limited={limited}
             openKey={openKey}
             closeHref={closeHref}
             copy={copy}
@@ -204,9 +228,7 @@ export function TodayMode(props: HomeCandidateProps) {
           <h2 className="dk-h2" id="dk-today-depth-heading">
             The whole day
           </h2>
-          <p className="dk-note">
-            {today.accountingLine ?? today.accountingWithheldLine}
-          </p>
+          <p className="dk-note">{today.accountingLine ?? today.accountingWithheldLine}</p>
           <p className="dk-note">
             <a className="dk-more" href={today.briefingHref}>
               {today.briefingLabel}
@@ -215,10 +237,10 @@ export function TodayMode(props: HomeCandidateProps) {
         </section>
       </div>
 
-      <Limits
-        id="dk-limits"
+      <Foot
         copy={copy}
-        disclosures={disclosures}
+        disclosures={today.disclosures}
+        standing={today.unsupported}
         extra={[today.quiet.readIsQuiet ? null : today.quiet.line]}
       />
     </>
@@ -226,15 +248,16 @@ export function TodayMode(props: HomeCandidateProps) {
 }
 
 export function BriefingMode(props: HomeCandidateProps) {
-  const { briefing, copy } = props;
+  const { briefing, copy, chrome } = props;
+  const verdict = readVerdict(briefing.state, briefing.disclosures, copy);
 
   return (
     <>
-      <LimitFlag
-        count={briefing.disclosures.length}
-        state={briefing.state}
-        copy={copy}
-        href="#dk-limits"
+      <ReadLine
+        verdict={verdict}
+        chrome={chrome}
+        standing={[]}
+        statusLabel={chrome.statusRegionLabel}
       />
 
       <p className="dk-lead">
@@ -247,7 +270,8 @@ export function BriefingMode(props: HomeCandidateProps) {
             key={section.id}
             section={section}
             weight="lead"
-            heading
+            rank={false}
+            limited={verdict.klass !== "complete"}
             openKey={null}
             closeHref={briefing.returnHref}
             copy={copy}
@@ -261,7 +285,7 @@ export function BriefingMode(props: HomeCandidateProps) {
         </a>
       </p>
 
-      <Limits id="dk-limits" copy={copy} disclosures={briefing.disclosures} />
+      <Foot copy={copy} disclosures={briefing.disclosures} />
     </>
   );
 }

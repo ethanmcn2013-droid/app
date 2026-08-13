@@ -16,36 +16,112 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import { anchorId, toneLabel } from "@/lib/home-layer/candidates/index/labels";
 
+// ── What limited this read ──────────────────────────────────────────────────
+
+/**
+ * ONE MECHANISM, ONE PLACE, GRADED WEIGHT.
+ *
+ * Every note the shell hands this mode lands here: in the main column, under
+ * the headline, above the read, at 390 and at 1440 alike. Nothing about the
+ * limits of a read is viewport-dependent, because honesty that depends on
+ * having a wide window is a layout accident rather than a design.
+ *
+ * The severity ladder survives inside the block rather than by moving the
+ * note somewhere else. A source that did not answer takes a red rule and full
+ * ink; a read that covered part of what was asked takes a hairline and quiet
+ * ink. So the page still only shouts when shouting is warranted, and a reader
+ * still learns exactly one behaviour.
+ */
+const TONE_ORDER: readonly Disclosure["tone"][] = [
+  "failure",
+  "permission",
+  "coverage",
+  "freshness",
+  "scope",
+  "setup",
+  "scale",
+];
+
+function severityOf(note: Disclosure): number {
+  const found = TONE_ORDER.indexOf(note.tone);
+  return found === -1 ? TONE_ORDER.length : found;
+}
+
+export function Limits({
+  disclosures,
+  extra = [],
+}: {
+  disclosures: readonly Disclosure[];
+  /** Lines the shell publishes outside the disclosure list that limit this read. */
+  extra?: readonly string[];
+}) {
+  if (disclosures.length === 0 && extra.length === 0) return null;
+  const ordered = [...disclosures].sort((a, b) => severityOf(a) - severityOf(b));
+  const loud = ordered.some(
+    (note) => note.tone === "failure" || note.tone === "permission",
+  );
+  return (
+    <div className="ri-limits" data-loud={loud ? "" : undefined}>
+      <p className="ri-label ri-limits-label">What limited this read</p>
+      <ul className="ri-limits-list">
+        {ordered.map((note) => (
+          <li className="ri-limit" data-tone={note.tone} key={note.id}>
+            <span className="ri-limit-tone">{toneLabel(note.tone)}</span>
+            <p className="ri-limit-text">{note.text}</p>
+          </li>
+        ))}
+        {extra.map((line) => (
+          <li className="ri-limit" data-tone="coverage" key={line}>
+            <span className="ri-limit-tone">{toneLabel("coverage")}</span>
+            <p className="ri-limit-text">{line}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** A single fact that stops the reader, in the same voice as a loud limit. */
+export function Flag({ children }: { children: ReactNode }) {
+  return <p className="ri-flag">{children}</p>;
+}
+
 // ── The margin ──────────────────────────────────────────────────────────────
 
 /**
- * The notes on this read, set in the margin at 1080 and above and directly
- * under the heading below it.
+ * THE RIGHT COLUMN, AND THE ONE THING IT IS.
  *
- * Every disclosure the shell hands over is rendered. None is behind a control:
- * the direction's whole argument is that a document tells you what it could
- * not see before it tells you what it saw, and a note that has to be opened is
- * a note a reader at 7am does not open. The cost is real and it is paid in the
- * worlds that deserve it, because an ordinary day carries none of these.
+ * It is the record of this read: who it was read for, what the read did, what
+ * it left out, what Home cannot see at all, and where new work would go. Not
+ * navigation, not caveats that change whether to believe the page — those are
+ * above the read, in the reading path, where they belong.
+ *
+ * It is the same block in all five modes, so the reader learns one place, and
+ * it is never empty: the actor and the Active Project are facts about every
+ * read there is. At 1080 and above it sits in the margin beside the read; below
+ * that it is a colophon at the foot, which is where a colophon belongs and is
+ * safe precisely because nothing in it qualifies what is above it.
  */
-export function Notes({
-  disclosures,
-  heading,
+export function ThisRead({
+  props,
+  lines = [],
 }: {
-  disclosures: readonly Disclosure[];
-  heading: string;
+  props: HomeCandidateProps;
+  lines?: readonly (string | null)[];
 }) {
-  if (disclosures.length === 0) return null;
+  const { chrome } = props;
+  const shown = lines.filter(
+    (line): line is string => typeof line === "string" && line.length > 0,
+  );
   return (
-    <div className="ri-notes-block">
-      <p className="ri-label">{heading}</p>
-      <ul className="ri-notes-list">
-        {disclosures.map((note) => (
-          <li className="ri-note" data-tone={note.tone} key={note.id}>
-            <span className="ri-note-tone">{toneLabel(note.tone)}</span>
-            <p className="ri-note-text">{note.text}</p>
-          </li>
+    <div className="ri-record" id="ri-this-read">
+      <p className="ri-label">This read</p>
+      <ul className="ri-record-list">
+        <li>{`${chrome.actor.name}. ${chrome.actor.roleLabel}`}</li>
+        {shown.map((line) => (
+          <li key={line}>{line}</li>
         ))}
+        <li>{chrome.activeProject.line}</li>
       </ul>
     </div>
   );
@@ -124,104 +200,25 @@ export function Perms({
   );
 }
 
-// ── The section index ───────────────────────────────────────────────────────
-
-/**
- * The contents page, one level down. It renders only when the page has two or
- * more places to go, which is the same rule the mode index answers to: an
- * index of one entry is furniture.
- *
- * It lives in the margin, so at 1080 and above it is a vertical contents list
- * beside the read and at narrower widths it is a wrapped strip under the
- * heading. Same links, same words, same order, in both.
- */
-export function SectionIndex({
-  entries,
-  label,
-}: {
-  entries: readonly Readonly<{ id: string; heading: string }>[];
-  label: string;
-}) {
-  if (entries.length < 2) return null;
-  return (
-    <nav className="ri-sections" aria-label={label}>
-      <p className="ri-label ri-sections-label" aria-hidden="true">
-        On this page
-      </p>
-      <ul className="ri-sections-list">
-        {entries.map((entry, position) => (
-          <li key={entry.id}>
-            <a className="ri-sections-link" href={`#${entry.id}`}>
-              <span className="ri-num" aria-hidden="true">
-                {String(position + 1).padStart(2, "0")}
-              </span>
-              {entry.heading}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-
-/**
- * The margin. It carries the contents list and the notes on the read, and it
- * does not exist at all when it would carry neither — an empty grid cell
- * spends two gaps of vertical space at 390 and gives nothing back.
- */
-export function Margin({
-  show,
-  children,
-}: {
-  show: boolean;
-  children: ReactNode;
-}) {
-  if (!show) return null;
-  return (
-    <div className="ri-notes" id="ri-margin">
-      {children}
-    </div>
-  );
-}
-
-/**
- * WHICH NOTES ARE FRONT MATTER AND WHICH ARE MARGINALIA.
- *
- * Measured at 390: with every note above the read, My work's first
- * responsibility sat 1,078 px down the page. That is not honesty, it is a
- * reader who never reaches their work.
- *
- * So the split is by what the note is for. A note that says the read cannot be
- * trusted — a source that did not answer, a seat that cannot see everything —
- * changes whether you should believe the next screen, and stays above it at
- * every width. A note that says what the read left out is a margin note: beside
- * the text where there is a margin, after it where there is not. Neither is
- * ever behind a control, and the index leader lines carry the condition of all
- * four modes at the top of every viewport regardless.
- */
-export function splitNotes(disclosures: readonly Disclosure[]) {
-  const blocking = disclosures.filter(
-    (note) => note.tone === "failure" || note.tone === "permission",
-  );
-  const marginal = disclosures.filter(
-    (note) => note.tone !== "failure" && note.tone !== "permission",
-  );
-  return { blocking, marginal };
-}
-
 // ── Sections ────────────────────────────────────────────────────────────────
 
+/**
+ * A section is a rule and a heading. It carries no ordinal of its own.
+ *
+ * ONE NUMBERING SERIES, AND ONLY WHERE A NUMBER MEANS SOMETHING. A number in
+ * this direction marks a ranked position in a read, so a section heading may
+ * not carry one: a reader who meets "02 Now" above an item numbered "03"
+ * cannot tell what either number counts.
+ */
 export function Section({
   id,
   heading,
-  position,
   note,
   tier,
   children,
 }: {
   id: string;
   heading: string;
-  position: number;
   note?: string | null;
   /**
    * "lead" is the first section of a read, set at the size of a lead story;
@@ -240,9 +237,6 @@ export function Section({
       aria-labelledby={headingId}
     >
       <h2 className="ri-h2" id={headingId}>
-        <span className="ri-num" aria-hidden="true">
-          {String(position).padStart(2, "0")}
-        </span>
         {heading}
       </h2>
       {note ? <p className="ri-h2-window">{note}</p> : null}
@@ -254,7 +248,13 @@ export function Section({
 // ── The scope control ───────────────────────────────────────────────────────
 
 /**
- * One control, two axes, said apart.
+ * THE DATELINE. Not a form field, and not in the reading path.
+ *
+ * Read Scope is which issue of this paper you are holding, so it is set as a
+ * dateline in the masthead and opens from there. It used to sit between the
+ * headline and the first sentence, drawn as a select: administrative chrome
+ * placed ahead of the read, and the loudest thing on the page at the exact
+ * point where the day's first decision should be.
  *
  * Read Scope and Active Project are the two things a Home surface most easily
  * conflates, so the panel names each one and repeats the shell's own sentence
@@ -274,16 +274,13 @@ export function ScopeControl({ props }: { props: HomeCandidateProps }) {
   return (
     <details className="ri-scope">
       <summary className="ri-scope-summary">
-        <span className="ri-label">{copy.actions.changeScope}</span>
         <span className="ri-scope-current">{chrome.scope.label}</span>
-        <span className="ri-scope-mark" aria-hidden="true">
-          ▾
-        </span>
+        <span className="ri-scope-change">{copy.actions.changeScope}</span>
       </summary>
       <div className="ri-scope-panel">
-        <p className="ri-note-text">{chrome.scope.helpLine}</p>
+        <p className="ri-record-text">{chrome.scope.helpLine}</p>
         {chrome.scope.coverageLine ? (
-          <p className="ri-note-text">{chrome.scope.coverageLine}</p>
+          <p className="ri-record-text">{chrome.scope.coverageLine}</p>
         ) : null}
         <div>
           <p className="ri-label">What Home reads</p>
@@ -321,7 +318,7 @@ export function ScopeControl({ props }: { props: HomeCandidateProps }) {
         ) : null}
         <div>
           <p className="ri-label">Where new work goes</p>
-          <p className="ri-note-text">{chrome.activeProject.line}</p>
+          <p className="ri-record-text">{chrome.activeProject.line}</p>
         </div>
         {chrome.scope.resetHref ? (
           <a className="ri-scope-reset" href={chrome.scope.resetHref}>
@@ -349,7 +346,6 @@ export function PageHead({
         <span className="ri-h1-eyebrow">{chrome.modeEyebrow}</span>
         <span className="ri-h1-line">{chrome.h1Line}</span>
       </h1>
-      <ScopeControl props={props} />
       {children}
     </div>
   );

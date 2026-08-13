@@ -7,23 +7,18 @@
  * not see, and what to do if it is wrong. The receipt is one interaction away
  * because it is long, never because it is optional.
  *
- * The measure breaks exactly once, for the Project ledger, and that is the
- * whole argument for a measure: a widening means something because everything
- * else stayed narrow.
+ * The facts under a claim set in two columns once there is room for two, which
+ * is what a records page does with a wide window and is where several hundred
+ * pixels of scroll came back from. The measure itself breaks exactly once, for
+ * the Project ledger: a widening that happens twice is a layout, a widening
+ * that happens once is an argument about what matters.
  */
 
 import type {
   AnalyticsClaimView,
   HomeCandidateProps,
 } from "@/lib/home-layer/lab-shell";
-import {
-  Margin,
-  Notes,
-  PageHead,
-  Section,
-  SectionIndex,
-  splitNotes,
-} from "./parts";
+import { Limits, PageHead, Section, ThisRead } from "./parts";
 
 /**
  * The shell drops a Project's name when its route did not resolve, and this is
@@ -61,15 +56,7 @@ function Sparkline({ points }: { points: readonly { value: number }[] }) {
   );
 }
 
-function Claim({
-  claim,
-  position,
-  id,
-}: {
-  claim: AnalyticsClaimView;
-  position: number;
-  id: string;
-}) {
+function Claim({ claim, id }: { claim: AnalyticsClaimView; id: string }) {
   /**
    * What the number counted, when it read, and what it cannot say. Those three
    * change with the claim and decide whether the reader trusts it, so they are
@@ -100,7 +87,7 @@ function Claim({
   ];
 
   return (
-    <Section id={id} heading={claim.question} position={position}>
+    <Section id={id} heading={claim.question}>
       {claim.valueLabel === null ? (
         <p className="ri-claim-withheld">{claim.statusLine}</p>
       ) : (
@@ -140,32 +127,11 @@ function Claim({
 
 export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
   const { analytics, copy } = props;
-  const { blocking, marginal } = splitNotes(analytics.disclosures);
-
-  const claimEntries = analytics.claims.map((claim, index) => ({
-    id: `ri-claim-${index + 1}`,
-    heading: claim.question,
-    claim,
-  }));
-
-  const hasExceptions = analytics.exceptions.length > 0;
-  const exceptionsPosition = hasExceptions ? claimEntries.length + 1 : null;
-  const trendPosition = claimEntries.length + (hasExceptions ? 1 : 0) + 1;
-  const ledgerPosition = trendPosition + 1;
-
-  const indexEntries = [
-    ...claimEntries.map((entry) => ({ id: entry.id, heading: entry.heading })),
-    ...(exceptionsPosition
-      ? [{ id: "ri-exceptions", heading: analytics.exceptionsHeading }]
-      : []),
-    { id: "ri-trend", heading: analytics.trend.heading },
-    { id: "ri-ledger", heading: analytics.ledgerHeading },
-  ];
 
   return (
     <div className="ri-page">
       <PageHead props={props}>
-        <p className="ri-lead">{analytics.leadLine}</p>
+        <p className="ri-standfirst">{analytics.leadLine}</p>
         {analytics.lens.line ? (
           <p className="ri-lens">
             {analytics.lens.projectName
@@ -176,37 +142,28 @@ export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
             ) : null}
           </p>
         ) : null}
-        <Notes disclosures={blocking} heading="What limited this read" />
+        <Limits
+          disclosures={analytics.disclosures}
+          extra={analytics.windowMismatchLine ? [analytics.windowMismatchLine] : []}
+        />
       </PageHead>
 
-
       <div className="ri-body">
-        {claimEntries.length === 0 ? (
+        {analytics.claims.length === 0 ? (
           <p className="ri-lead">{copy.empty.analytics}</p>
         ) : null}
 
-        {claimEntries.map((entry, index) => (
-          <Claim
-            key={entry.id}
-            id={entry.id}
-            claim={entry.claim}
-            position={index + 1}
-          />
+        {analytics.claims.map((claim, index) => (
+          <Claim key={claim.id} id={`ri-claim-${index + 1}`} claim={claim} />
         ))}
 
-        {exceptionsPosition ? (
-          <Section
-            id="ri-exceptions"
-            heading={analytics.exceptionsHeading}
-            position={exceptionsPosition}
-          >
+        {analytics.exceptions.length > 0 ? (
+          <Section id="ri-exceptions" heading={analytics.exceptionsHeading}>
             <ul className="ri-entries">
-              {analytics.exceptions.map((exception, index) => (
+              {analytics.exceptions.map((exception) => (
                 <li className="ri-entry" key={exception.id}>
                   <a className="ri-entry-link" href={exception.evidenceHref}>
-                    <span className="ri-num ri-entry-num" aria-hidden="true">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
+                    <span aria-hidden="true" />
                     <div>
                       <h3 className="ri-entry-title">{exception.headline}</h3>
                       <span className="ri-entry-reason">
@@ -226,11 +183,7 @@ export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
           </Section>
         ) : null}
 
-        <Section
-          id="ri-trend"
-          heading={analytics.trend.heading}
-          position={trendPosition}
-        >
+        <Section id="ri-trend" heading={analytics.trend.heading}>
           {analytics.trend.renderChart &&
           analytics.trend.source.kind === "trend" ? (
             <div className="ri-trend">
@@ -260,14 +213,11 @@ export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
       {/*
         THE ONE WIDENING. Everything above sits in one reading measure; the
         ledger breaks it, and it is the only thing in the direction that does.
-        A widening that happens twice is a layout; a widening that happens once
-        is an argument about what matters.
       */}
       <div className="ri-wide">
         <Section
           id="ri-ledger"
           heading={analytics.ledgerHeading}
-          position={ledgerPosition}
           note={analytics.ledgerCoverageLine}
         >
           <div className="ri-scroller" tabIndex={0}>
@@ -319,24 +269,7 @@ export function AnalyticsMode({ props }: { props: HomeCandidateProps }) {
         </Section>
       </div>
 
-      <Margin show>
-        <SectionIndex entries={indexEntries} label="Sections on this page" />
-        <Notes disclosures={marginal} heading="Notes on this read" />
-        <div className="ri-notes-block">
-          <p className="ri-label">The window</p>
-          <ul className="ri-notes-list">
-            <li className="ri-note">
-              <p className="ri-note-text">{analytics.windowLine}</p>
-            </li>
-            {analytics.windowMismatchLine ? (
-              <li className="ri-note" data-tone="failure">
-                <span className="ri-note-tone">Not the window you asked for</span>
-                <p className="ri-note-text">{analytics.windowMismatchLine}</p>
-              </li>
-            ) : null}
-          </ul>
-        </div>
-      </Margin>
+      <ThisRead props={props} lines={[analytics.windowLine]} />
     </div>
   );
 }

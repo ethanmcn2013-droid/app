@@ -16,11 +16,13 @@
 import type { HomeCandidateProps, MyWorkRowView } from "@/lib/home-layer/lab-shell";
 import {
   Entry,
-  LimitFlag,
-  Limits,
+  Foot,
   Meta,
   Offers,
-  whenText,
+  ReadLine,
+  readVerdict,
+  SectionCaveat,
+  whenPart,
   type MarkKind,
 } from "./parts";
 
@@ -34,9 +36,11 @@ function markForRow(row: MyWorkRowView): MarkKind {
 }
 
 export function MyWorkMode(props: HomeCandidateProps) {
-  const { myWork, copy } = props;
+  const { myWork, copy, chrome } = props;
   const openKey = myWork.selection?.key ?? null;
   const closeHref = props.hrefFor({ mode: "my-work", item: null });
+  const verdict = readVerdict(myWork.state, myWork.disclosures, copy);
+  const limited = verdict.klass !== "complete";
 
   /**
    * A waiting line that is a fact about the PROJECT rather than about the row
@@ -75,11 +79,11 @@ export function MyWorkMode(props: HomeCandidateProps) {
 
   return (
     <>
-      <LimitFlag
-        count={myWork.disclosures.length}
-        state={myWork.state}
-        copy={copy}
-        href="#dk-limits"
+      <ReadLine
+        verdict={verdict}
+        chrome={chrome}
+        standing={[]}
+        statusLabel={chrome.statusRegionLabel}
       />
 
       {kindLine ? <p className="dk-lead">{kindLine}</p> : null}
@@ -115,7 +119,7 @@ export function MyWorkMode(props: HomeCandidateProps) {
                       <Meta
                         parts={[
                           row.provenance.text,
-                          whenText(row.due),
+                          whenPart(row.due),
                           row.dueUnparsedLine,
                           row.columnLabel,
                           row.isMilestone ? "A milestone" : null,
@@ -143,6 +147,7 @@ export function MyWorkMode(props: HomeCandidateProps) {
                   );
                 })}
               </ul>
+              <SectionCaveat limited={limited} />
             </section>
           );
         })}
@@ -175,7 +180,7 @@ export function MyWorkMode(props: HomeCandidateProps) {
         </section>
       </div>
 
-      <Limits id="dk-limits" copy={copy} disclosures={myWork.disclosures} extra={[kindLine]} />
+      <Foot copy={copy} disclosures={myWork.disclosures} extra={[kindLine]} />
     </>
   );
 }

@@ -9,15 +9,32 @@
  * it does not change the furniture around them. That is the whole of the
  * spatial continuity, and it costs one pixel of width.
  *
- * THE SIGNATURE, AND WHY IT IS EARNED. The spine carries one fact nothing else
- * on the page carries: where the read broke. An entry whose project did not
- * resolve, or whose source did not answer, paints a gap over the line and puts
- * a dashed diamond in the gap. So a quiet day is an unbroken line with two
- * marks on it, and a failed provider is the same line with holes in it, and the
- * two are told apart from across a room. That is the governing rule of this
- * whole programme — unknown stays unknown, a quiet day and a broken provider
- * must look different — drawn instead of written. It also draws itself once on
- * arrival: one element, one scaleY, 340ms, nothing else on the page moves.
+ * THE SIGNATURE, AND WHY IT IS EARNED. A line that breaks where the read broke.
+ * It is drawn twice on every page and it is the only device here that carries
+ * meaning without a word or a colour:
+ *
+ *   ACROSS, under the headline, as the readline. An unbroken rule is a read
+ *   that finished. A rule with a hole cut in it is a read that answered for
+ *   part of what was asked. A rule that runs a third of the way and stops is a
+ *   source that refused. Three silhouettes, told apart from across a room,
+ *   before a word is read, and still told apart with every colour removed.
+ *
+ *   DOWN, beside the entries, as the spine. An entry whose project did not
+ *   resolve paints a gap over the line and puts a dashed diamond in the gap.
+ *
+ * That is the governing rule of this whole programme — unknown stays unknown, a
+ * quiet day and a broken provider must look different — drawn instead of
+ * written. The line also draws itself once on arrival: one element, one scaleY,
+ * 340ms, nothing else on the page moves.
+ *
+ * WHAT ROUND 1 GOT WRONG, and what changed. The state used to be a tinted band
+ * that appeared in every world, including the healthy one, so its presence
+ * signalled nothing and partial coverage and total provider failure arrived as
+ * the same picture. The band is gone. A complete read now carries no strip at
+ * all, only an unbroken rule; a limited read carries the shell's own sentence
+ * for what happened, at the top, where the reader is standing. Limits that are
+ * true every single day are no longer raised as if they were news; they are
+ * named in the metadata line and printed in full at the foot.
  *
  * WHAT IT COSTS. Warm paper is a real departure from the estate's white, and it
  * pulls every contrast ratio with it; the mixes in desk.css are measured
@@ -32,34 +49,40 @@
 
 import type { HomeCandidate, HomeCandidateProps } from "@/lib/home-layer/lab-shell";
 import { AnalyticsMode } from "./analytics";
-import { DeskHead } from "./chrome";
+import { DeskHead, type ModeRead } from "./chrome";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
+import { readVerdict } from "./parts";
 import { BriefingMode, TodayMode } from "./today";
 import "./desk.css";
 
 const Desk: HomeCandidate = (props: HomeCandidateProps) => {
   const { chrome, copy, state } = props;
 
-  const modeState =
-    state.mode === "inbox"
-      ? props.inbox.state
-      : state.mode === "my-work"
-        ? props.myWork.state
-        : state.mode === "analytics"
-          ? props.analytics.state
-          : state.mode === "briefing"
-            ? props.briefing.state
-            : props.today.state;
+  /**
+   * How every mode's read went, not only this one.
+   *
+   * Read health used to be visible for the mode you were standing in and nowhere
+   * else, so a founder on Today could not tell that Inbox had not been read and
+   * took every mode change blind. Today's `unsupported` set is deliberately not
+   * folded in: a kind of work with no source at all is a standing fact about the
+   * product, not a fact about this morning, and treating the two the same is
+   * what made the old band furniture.
+   */
+  const modeRead: Record<string, ModeRead> = {
+    today: readVerdict(props.today.state, props.today.disclosures, copy),
+    inbox: readVerdict(props.inbox.state, props.inbox.disclosures, copy),
+    "my-work": readVerdict(props.myWork.state, props.myWork.disclosures, copy),
+    analytics: readVerdict(props.analytics.state, props.analytics.disclosures, copy),
+  };
 
-  /* The sheet widens for exactly two reasons, and both are on the element so
-     the desk head and the read stay the same width as each other. */
+  /* The sheet is ONE measure in every mode. Round 1 widened the whole page for
+     Analytics, which moved the masthead with it and made the frame look
+     unresolved between modes; the widening now belongs to the Project ledger
+     alone, which is the one thing on any of these pages that has to account for
+     every project rather than say something. */
   return (
-    <div
-      className="dk"
-      data-mode={state.mode}
-      data-open={state.mode === "inbox" && props.inbox.selection ? "true" : undefined}
-    >
+    <div className="dk" data-mode={state.mode}>
       <a className="dk-skip" href="#app-main-content">
         {chrome.skipLinkLabel}
       </a>
@@ -69,6 +92,8 @@ const Desk: HomeCandidate = (props: HomeCandidateProps) => {
         copy={copy}
         homeHref={props.hrefFor({ mode: "today", item: null, event: null })}
         badgeName={props.inbox.badge.accessibleName}
+        badgeCoverage={props.inbox.badge.coverage}
+        modeRead={modeRead}
         depth={
           state.mode === "briefing"
             ? {
@@ -81,7 +106,7 @@ const Desk: HomeCandidate = (props: HomeCandidateProps) => {
       />
 
       <main className="dk-main" id="app-main-content" tabIndex={-1}>
-        <div className="dk-page">
+        <div className="dk-page dk-frame">
           {/* Pattern (b) of D-HX02: the mode name is a VISIBLE eyebrow inside
               the h1, so the accessible text starts with the mode and the
               expressive line still leads the page for everybody else. */}
@@ -89,18 +114,6 @@ const Desk: HomeCandidate = (props: HomeCandidateProps) => {
             <span className="dk-eyebrow">{chrome.modeEyebrow}</span>
             <span className="dk-h1-line">{chrome.h1Line}</span>
           </h1>
-
-          {/* The one polite status region for this route. It states the read,
-              the scope and the time it was read, as three sentences the shell
-              composed. */}
-          <p
-            className="dk-status"
-            role="status"
-            aria-live="polite"
-            aria-label={chrome.statusRegionLabel}
-          >
-            {copy.states[modeState]}. {chrome.scope.label}. {chrome.asOf.line}
-          </p>
 
           {state.mode === "inbox" ? <InboxMode {...props} /> : null}
           {state.mode === "my-work" ? <MyWorkMode {...props} /> : null}

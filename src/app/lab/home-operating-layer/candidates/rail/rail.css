@@ -1,27 +1,26 @@
-/*
- * Context Rail · the whole of the direction's expression.
+﻿/*
+ * Context Rail · the direction's expression. Rationale lives in the TSX docs;
+ * this file records only what a reader of the CSS cannot infer.
  *
- * Every value below is a vendored design-system token or a value derived from
- * one. Nothing here redefines a token, and no arbitrary type size is
- * introduced: the nine named steps carry all of the hierarchy, which is what
- * the estate's 1,208-utility type problem asks of new work.
+ * THE STATE SPINE, one rule down the navigation, one segment per mode:
+ *   read     1px solid  ink-faint       continuous
+ *   empty    1px dotted ink-faint       looked at, holding nothing
+ *   limited  2px dashed status-flight   read in part
+ *   broken   3px solid  status-blocked  severed above and below
+ * Weight and pattern carry it, colour is redundant, and the word is printed
+ * under every mode in every world. The same four weights grade the notices in
+ * the page. Below 1024 the instrument rotates through 90 degrees.
  *
- * The three bands the rail lives in, and why they are where they are:
+ * No tint, no filled row, no bordered card, no button. Every token is
+ * vendored; nothing is redefined; no arbitrary type size is introduced.
  *
- *   1440 and up   rail 15rem   Inbox splits, detail ≈ 700px
- *   1280 to 1439  rail 13.5rem Inbox splits, detail ≈ 600px, the last width
- *                              at which a queue row and a detail can both
- *                              carry their provenance without wrapping
- *   1024 to 1279  rail 11.75rem  Inbox does NOT split; the queue takes the
- *                              measure and the detail is a route
- *   below 1024    rail becomes a labelled index across the top: the same
- *                              links, the same order, the same words, laid
- *                              out as the document's own opening index
+ * BANDS  1440+ rail 15rem measure 46rem, shell capped 80rem and centred ·
+ * 1280 rail 14rem measure 44rem, Inbox splits only with an event open ·
+ * 1024 rail 12.5rem measure 40rem, no split · below 1024 the rail is a
+ * four-mode bar and the suite moves to the foot of the page.
  *
- * Motion is transform and opacity only, under the 300ms ceiling, and lives
- * entirely inside a `prefers-reduced-motion: no-preference` block so that a
- * reader with motion off gets the finished screen rather than a screen that
- * forgot to animate in.
+ * Motion is transform and opacity only, under the 300ms ceiling, inside a
+ * `prefers-reduced-motion: no-preference` block.
  */
 
 /* ── Frame ───────────────────────────────────────────────────────────────── */
@@ -32,31 +31,43 @@
   line-height: var(--leading-body);
   color: var(--ink);
   overflow-wrap: break-word;
+  background: var(--paper);
 }
 
 .rl-shell {
   --rl-rail: 15rem;
-  --rl-pad-x: var(--space-9);
+  --rl-pad-x: var(--space-10);
   --rl-pad-y: var(--space-9);
-  --rl-measure: 40rem;
-  --rl-wide: 64rem;
+  --rl-measure: 46rem;
+  --rl-shell-max: 80rem;
 
   display: grid;
   grid-template-columns: var(--rl-rail) minmax(0, 1fr);
   min-height: 100svh;
-  /* The rail is sticky and one viewport tall, so its own background would
-     stop at the fold on a long page. The column is painted here instead, and
-     the rail itself stays transparent. */
+  max-width: var(--rl-shell-max);
+  margin-inline: auto;
+  /* One hairline down the column edge, painted on the shell so it runs the
+     full height of the page rather than stopping where the rail's own content
+     stops. There is no tint behind it. */
   background: linear-gradient(
     to right,
-    var(--paper-soft) 0 var(--rl-rail),
-    var(--paper) var(--rl-rail)
+    transparent 0 calc(var(--rl-rail) - 1px),
+    var(--hairline) calc(var(--rl-rail) - 1px) var(--rl-rail),
+    transparent var(--rl-rail)
   );
 }
 
 .rl-root :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.rl-root a:focus-visible,
+.rl-root summary:focus-visible,
+.rl-root [tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
 }
 
 .rl-sr {
@@ -77,7 +88,6 @@
   left: var(--space-3);
   z-index: 40;
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
   background: var(--accent);
   color: #ffffff;
   font-size: var(--text-body-sm);
@@ -93,33 +103,24 @@
 /* ── The rail ────────────────────────────────────────────────────────────── */
 
 .rl-rail {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: start;
   position: sticky;
   top: 0;
-  align-self: start;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
-  height: 100svh;
+  gap: var(--space-7);
+  /* Always leaves room for the suite, which rides the bottom of the same
+     column, so the two can never meet on a short window. */
+  max-height: calc(100svh - 13rem);
   overflow-y: auto;
-  padding: var(--space-7) var(--space-4) var(--space-6);
-  border-right: 1px solid var(--hairline);
+  padding: var(--space-8) var(--space-6) var(--space-6);
   font-size: var(--text-body-sm);
-}
-
-.rl-wordmark {
-  margin: 0 0 var(--space-1) var(--space-3);
-  font-size: var(--text-body-sm);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-heading);
-  color: var(--ink);
-}
-
-.rl-group {
-  display: block;
 }
 
 .rl-label {
-  margin: 0 0 var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
@@ -130,41 +131,92 @@
 
 .rl-nav-list,
 .rl-subnav,
-.rl-scope-list {
+.rl-scope-list,
+.rl-product-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
+/* The spine. One segment per mode, no gaps between segments, so on a fully
+   answered day it is a single unbroken line. */
+.rl-mode {
+  position: relative;
+  padding-left: var(--space-4);
+}
+
+.rl-mode::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--ink-faint);
+}
+
+/* THE LADDER, stated once and used by the spine, by the status line and by
+   every notice in the page, so the shell and the content grade a state in the
+   same vocabulary. */
+.rl-mode[data-band="empty"]::before,
+.rl-status[data-band="empty"],
+.rl-notice[data-band="empty"] {
+  border-left-style: dotted;
+}
+
+.rl-mode[data-band="limited"]::before,
+.rl-status[data-band="limited"],
+.rl-notice[data-band="limited"] {
+  border-left-width: 2px;
+  border-left-style: dashed;
+  border-left-color: var(--status-flight);
+}
+
+.rl-mode[data-band="broken"]::before,
+.rl-status[data-band="broken"],
+.rl-notice[data-band="broken"] {
+  border-left-width: 3px;
+  border-left-color: var(--status-blocked);
+}
+
+/* The one state that cuts the line. The gap is the signal. */
+.rl-mode[data-band="broken"]::before {
+  top: 7px;
+  bottom: 7px;
+}
+
 .rl-nav-link {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 2px;
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
-  border-left: 2px solid transparent;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   color: var(--ink-soft);
   text-decoration: none;
-  transition: background-color var(--motion-instant) var(--ease-out);
 }
 
-.rl-nav-link:hover {
-  background: var(--paper-deep);
+.rl-nav-link:hover .rl-nav-name {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+/* Where you are standing: a tick across the spine, and the label at full ink.
+   No fill, no pill, no tinted row. */
+.rl-mode[data-here] > .rl-nav-link::before {
+  content: "";
+  position: absolute;
+  left: calc((var(--space-4) + var(--space-3) + 7px) * -1);
+  top: calc(50% - 1px);
+  width: 16px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.rl-mode[data-here] > .rl-nav-link .rl-nav-name {
   color: var(--ink);
-}
-
-/* `true` is the subtree match Today keeps while the reader is in the
-   briefing: the rule marks the branch, the tint marks the exact page. */
-.rl-nav-link[aria-current] {
-  border-left-color: var(--accent);
-  color: var(--ink);
-}
-
-.rl-nav-link[aria-current="page"] {
-  background: var(--accent-tint);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
 }
 
 .rl-nav-label {
@@ -193,52 +245,72 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A count that could not be checked in full does not get to look settled. */
+.rl-badge[data-coverage="partial"],
+.rl-badge[data-coverage="unavailable"] {
+  background: transparent;
+  color: var(--ink);
+  border: 1px dashed var(--status-flight);
+}
+
 /*
- * The signature moment. One line, only when there is something out of the
- * ordinary to say, in the shell's own state vocabulary. Silence is the good
- * day.
+ * The state word, printed under every mode in every world, including the good
+ * one. Silence used to stand for "read", which meant a reader could not tell a
+ * mode that was read from a mode that was never evaluated.
  */
 .rl-mode-state {
   display: block;
   font-size: var(--text-caption);
   line-height: var(--leading-heading);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
+}
+
+.rl-mode[data-band="broken"] .rl-mode-state {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
 }
 
 .rl-subnav {
-  margin-left: var(--space-4);
+  margin-left: var(--space-5);
 }
 
 .rl-nav-sub {
-  min-height: 40px;
+  position: relative;
+  min-height: 44px;
   font-size: var(--text-caption);
+}
+
+/* Depth, drawn. Today keeps the subtree match and its tick; the briefing is
+   the exact page and gets a tick of its own, indented under its parent. Both
+   are marked at once, which is the two-level model rather than a description
+   of it. */
+.rl-nav-sub[aria-current="page"] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.rl-nav-sub[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: calc((var(--space-3) + 7px) * -1);
+  top: calc(50% - 1px);
+  width: 12px;
+  height: 2px;
+  background: var(--accent);
 }
 
 /* ── Read Scope ──────────────────────────────────────────────────────────── */
 
-.rl-scope {
-  border-top: 1px solid var(--hairline);
-  padding-top: var(--space-4);
-}
-
 .rl-scope-summary {
   display: block;
   list-style: none;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
+  min-height: 44px;
+  padding: var(--space-2) 0;
   cursor: pointer;
 }
 
 .rl-scope-summary::-webkit-details-marker {
   display: none;
-}
-
-.rl-scope-summary:hover {
-  background: var(--paper-deep);
-}
-
-.rl-scope-summary .rl-label {
-  margin-left: 0;
 }
 
 .rl-scope-value {
@@ -268,19 +340,20 @@
 }
 
 .rl-scope-help,
-.rl-scope-coverage {
-  margin: 0 var(--space-3) var(--space-3);
+.rl-scope-coverage,
+.rl-active {
+  margin: 0 0 var(--space-3);
   font-size: var(--text-caption);
   line-height: var(--leading-heading);
-  color: var(--ink-faint);
-}
-
-.rl-scope-coverage {
   color: var(--ink-soft);
 }
 
+.rl-active {
+  margin: var(--space-3) 0 0;
+}
+
 .rl-scope-projects {
-  max-height: 17rem;
+  max-height: 12rem;
   overflow-y: auto;
 }
 
@@ -289,75 +362,91 @@
   align-items: center;
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
-  border-left: 2px solid transparent;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-left: 1px solid var(--hairline);
   color: var(--ink-soft);
   text-decoration: none;
 }
 
 .rl-scope-option:hover {
-  background: var(--paper-deep);
   color: var(--ink);
+  text-decoration: underline;
 }
 
 .rl-scope-option[aria-current] {
-  border-left-color: var(--accent);
+  border-left: 2px solid var(--accent);
   color: var(--ink);
   font-weight: var(--weight-medium);
 }
 
 .rl-scope-reset {
-  display: inline-block;
-  margin: var(--space-2) var(--space-3) 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: var(--accent);
   font-size: var(--text-caption);
 }
 
-.rl-active {
-  margin: var(--space-3) var(--space-3) 0;
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-faint);
-}
-
-/* ── The rail's foot ─────────────────────────────────────────────────────── */
-
-.rl-rail-foot {
-  margin-top: auto;
-  padding: var(--space-4) var(--space-3) 0;
-  border-top: 1px solid var(--hairline);
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
-  color: var(--ink-faint);
-}
+/* ── The read status, always on screen ───────────────────────────────────── */
 
 .rl-status {
   display: block;
-  margin-bottom: var(--space-3);
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--ink-faint);
+  font-size: var(--text-caption);
+  line-height: var(--leading-heading);
+  color: var(--ink-soft);
 }
 
 .rl-status-state {
   display: block;
-  color: var(--ink-soft);
+  color: var(--ink);
   font-weight: var(--weight-medium);
+}
+
+.rl-status-when {
+  display: block;
+}
+
+/* ── The suite, as a colophon ────────────────────────────────────────────── */
+
+.rl-suite {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: end;
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-6);
+  border-top: 1px solid var(--hairline);
+  background: var(--paper);
+  font-size: var(--text-body-sm);
+}
+
+.rl-nav-product {
+  min-height: 44px;
+  padding: var(--space-1) 0;
+}
+
+.rl-actor {
+  margin-top: var(--space-4);
+  font-size: var(--text-caption);
+  line-height: var(--leading-heading);
+  color: var(--ink-soft);
 }
 
 .rl-actor-name {
   margin: 0;
-  color: var(--ink-soft);
+  color: var(--ink);
   font-weight: var(--weight-medium);
 }
 
-.rl-actor-role,
-.rl-status-when {
+.rl-actor-role {
   margin: 0;
 }
 
 .rl-account {
   display: inline-flex;
   align-items: center;
-  min-height: 32px;
-  margin-top: var(--space-1);
+  min-height: 44px;
   color: var(--accent);
   text-decoration: none;
 }
@@ -366,9 +455,22 @@
   text-decoration: underline;
 }
 
+.rl-wordmark {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--hairline-soft);
+  font-size: var(--text-label);
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
 /* ── The page ────────────────────────────────────────────────────────────── */
 
 .rl-main {
+  grid-column: 2;
+  grid-row: 1;
   min-width: 0;
   padding: var(--rl-pad-y) var(--rl-pad-x) var(--space-11);
 }
@@ -377,13 +479,17 @@
   max-width: var(--rl-measure);
 }
 
-.rl-page[data-mode="my-work"] .rl-block {
-  max-width: 46rem;
+/* The one place the measure widens, and it earns it by being tabular. */
+.rl-page .rl-block-wide,
+.rl-page .rl-inbox[data-selected] {
+  max-width: none;
 }
 
-.rl-page .rl-block-wide,
-.rl-page .rl-inbox {
-  max-width: var(--rl-wide);
+/* My work is set narrower than the other modes so the lateness and the title
+   it belongs to stay pairable by eye, and every element on the page shares the
+   one right edge. */
+.rl-page[data-mode="my-work"] > * {
+  max-width: 40rem;
 }
 
 /* ── Masthead ────────────────────────────────────────────────────────────── */
@@ -448,10 +554,10 @@
   text-decoration: underline;
 }
 
-/* ── Notices ─────────────────────────────────────────────────────────────── */
+/* ── Notices, graded by state and never by subject ───────────────────────── */
 
 .rl-notices {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-7);
 }
 
 .rl-notice-list {
@@ -459,36 +565,54 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .rl-notice {
   margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--ink-ghost);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: var(--paper-soft);
+  padding: 0 0 0 var(--space-4);
+  border-left: 1px solid var(--ink-faint);
   font-size: var(--text-body-sm);
   line-height: var(--leading-body);
   color: var(--ink-soft);
 }
 
+/* The worst state is also the loudest words on the page. It used to be the
+   calmest, because the rule in front of it was chosen by subject rather than
+   by severity. */
+.rl-notice[data-band="broken"] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
 .rl-notice-single {
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-6);
 }
 
-.rl-notice[data-tone="failure"] {
-  border-left-color: var(--status-blocked);
+/* A fact that qualifies the list without limiting it carries no rule, so the
+   count of real limits is legible without reading a sentence. */
+.rl-notice-plain {
+  padding-left: var(--space-4);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
 }
 
-.rl-notice[data-tone="permission"],
-.rl-notice[data-tone="freshness"] {
-  border-left-color: var(--status-flight);
+/* ── What was never connected ────────────────────────────────────────────── */
+
+.rl-unsupported {
+  margin-bottom: var(--space-7);
 }
 
-.rl-notice[data-tone="scope"],
-.rl-notice[data-tone="setup"] {
-  border-left-color: var(--accent);
+.rl-unsupported-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
 }
 
 /* ── Blocks and headings ─────────────────────────────────────────────────── */
@@ -505,7 +629,7 @@
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-5);
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--hairline);
   font-size: var(--text-heading);
@@ -524,24 +648,26 @@
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
-.rl-group-note {
-  margin: calc(var(--space-3) * -1) 0 var(--space-4);
-  font-size: var(--text-caption);
-  color: var(--ink-faint);
+.rl-group-note,
+.rl-window,
+.rl-ledger-coverage,
+.rl-cover-line {
+  margin: calc(var(--space-3) * -1) 0 var(--space-5);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  color: var(--ink-soft);
 }
 
 .rl-window {
   margin: 0 0 var(--space-6);
-  font-size: var(--text-caption);
-  color: var(--ink-faint);
 }
 
-.rl-block > .rl-window {
-  margin: calc(var(--space-3) * -1) 0 var(--space-4);
+.rl-cover-line {
+  margin: 0 0 var(--space-3);
 }
 
 .rl-empty {
@@ -566,7 +692,7 @@
   margin: var(--space-2) 0 0;
   font-size: var(--text-caption);
   line-height: var(--leading-heading);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .rl-sep {
@@ -574,22 +700,26 @@
   color: var(--ink-ghost);
 }
 
-.rl-prov {
-  color: var(--ink-soft);
-}
-
-.rl-when-rel {
-  color: var(--ink-soft);
+.rl-when-rel,
+.rl-when-abs {
   font-variant-numeric: tabular-nums;
 }
 
-.rl-when[data-overdue="yes"] .rl-when-rel {
-  color: var(--status-blocked);
+/* Lateness: the word at full ink, the hue on a mark in front of it. The word
+   used to be set in #ef4444, which is 3.76:1 on white. */
+.rl-when[data-overdue] .rl-when-rel {
+  color: var(--ink);
   font-weight: var(--weight-medium);
 }
 
-.rl-when-abs {
-  font-variant-numeric: tabular-nums;
+.rl-when[data-overdue] .rl-when-rel::before {
+  content: "";
+  display: inline-block;
+  width: 3px;
+  height: 0.85em;
+  margin-right: var(--space-2);
+  vertical-align: -1px;
+  background: var(--status-blocked);
 }
 
 /* ── Today ───────────────────────────────────────────────────────────────── */
@@ -600,45 +730,76 @@
   padding: 0;
 }
 
+/*
+ * The cap, drawn as a judgement. Three graded rules, 3px then 2px then 1px, so
+ * the ranking the engine performed is visible before a word is read, and the
+ * three are unmistakably not the first three rows of the ledger beneath them.
+ * They are not numbered: a rank is a weight before it is a numeral.
+ */
 .rl-decision {
-  padding: var(--space-5) 0;
+  position: relative;
+  margin-bottom: var(--space-6);
+  padding: 0 0 var(--space-6) var(--space-5);
   border-bottom: 1px solid var(--hairline-soft);
 }
 
-.rl-decision:first-child {
-  padding-top: var(--space-2);
+.rl-decision::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: var(--space-6);
+  border-left: 1px solid var(--accent);
 }
 
-/* 22px of text plus 11px above and below is a 44px target with no gap left
-   under it, which is why the reason line that follows carries no top margin. */
+.rl-decision[data-rank="0"]::before {
+  border-left-width: 3px;
+}
+
+.rl-decision[data-rank="1"]::before {
+  border-left-width: 2px;
+}
+
+.rl-decision:last-child {
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+.rl-decision-title {
+  margin: 0;
+}
+
 .rl-decision-link {
   display: inline-block;
-  padding: 11px 0;
-  font-size: var(--text-body-lg);
+  padding: 10px 0;
+  font-size: var(--text-heading);
   line-height: var(--leading-heading);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-heading);
   color: var(--ink);
   text-decoration: none;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 4px;
 }
 
 .rl-decision-link:hover {
   text-decoration: underline;
   text-decoration-color: var(--accent);
+  text-underline-offset: 4px;
 }
 
 .rl-decision-reason {
   margin: 0;
-  font-size: var(--text-body);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
   color: var(--ink-soft);
 }
 
-.rl-decision[data-selected="yes"] {
-  border-left: 2px solid var(--accent);
-  margin-left: calc(var(--space-4) * -1);
-  padding-left: calc(var(--space-4) - 2px);
+.rl-decision[data-selected] {
+  background: none;
+}
+
+.rl-decision[data-selected]::before {
+  border-left-color: var(--accent);
+  border-left-width: 3px;
 }
 
 .rl-tled-list {
@@ -652,37 +813,45 @@
   border-bottom: 1px solid var(--hairline-soft);
 }
 
-.rl-tled[data-selected="yes"] {
+.rl-tled[data-selected],
+.rl-work[data-selected] {
+  padding-left: var(--space-4);
   border-left: 2px solid var(--accent);
-  margin-left: calc(var(--space-4) * -1);
-  padding-left: calc(var(--space-4) - 2px);
 }
 
-.rl-tled-link {
+.rl-tled-title,
+.rl-work-title {
+  margin: 0;
+}
+
+.rl-tled-link,
+.rl-work-link {
   display: inline-block;
   padding: 12px 0;
   font-size: var(--text-body);
+  line-height: var(--leading-body);
   font-weight: var(--weight-medium);
   color: var(--ink);
   text-decoration: none;
 }
 
-.rl-tled-link:hover {
+.rl-tled-link:hover,
+.rl-work-link:hover {
   text-decoration: underline;
   text-decoration-color: var(--accent);
   text-underline-offset: 3px;
 }
 
-.rl-tled-reason {
+.rl-tled-reason,
+.rl-suppressed,
+.rl-work-note {
   margin: var(--space-1) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .rl-suppressed {
-  margin: var(--space-4) 0 0;
-  font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  margin-top: var(--space-4);
 }
 
 .rl-fold {
@@ -713,13 +882,13 @@
   font-family: var(--font-mono);
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
 .rl-fold-window {
   font-size: var(--text-caption);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 /* The chevron holds the right edge at every width, so a section with a window
@@ -744,32 +913,39 @@
   border-bottom: 1px solid var(--hairline-soft);
 }
 
+/* A link, not a button. It was the only button chrome in the lab. */
+.rl-briefing {
+  margin: var(--space-5) 0 0;
+}
+
 .rl-briefing-link {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  margin-top: var(--space-5);
-  padding: var(--space-2) var(--space-5);
-  border: 1px solid var(--accent);
-  border-radius: var(--radius-md);
   color: var(--accent);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
-  text-decoration: none;
-  transition: background-color var(--motion-instant) var(--ease-out);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
 }
 
-.rl-briefing-link:hover {
-  background: var(--accent-tint);
+.rl-briefing-link::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: var(--space-2);
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
 }
 
 /* ── Selection detail, shared by Today and My work ───────────────────────── */
 
 .rl-selected {
   margin-top: var(--space-4);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--paper-soft);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--accent);
 }
 
 .rl-path {
@@ -783,8 +959,7 @@
 .rl-close {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
-  margin-top: var(--space-2);
+  min-height: 44px;
   color: var(--accent);
   font-size: var(--text-body-sm);
   text-decoration: none;
@@ -796,7 +971,8 @@
 
 /* ── Disclosure panels ───────────────────────────────────────────────────── */
 
-.rl-read-panel {
+.rl-block-foot {
+  padding-top: var(--space-5);
   border-top: 1px solid var(--hairline);
 }
 
@@ -839,10 +1015,6 @@ details[open] > .rl-read-summary::after {
 .rl-read-line {
   margin: 0 0 var(--space-2);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
-}
-
-.rl-read-withheld {
   color: var(--ink-soft);
 }
 
@@ -855,19 +1027,26 @@ details[open] > .rl-read-summary::after {
   margin-bottom: var(--space-1);
 }
 
-.rl-facts {
-  margin: var(--space-3) 0;
+/* Ruled fielded metadata. This is what replaced the bordered panel. */
+.rl-fields {
+  margin: var(--space-4) 0;
   display: grid;
-  gap: var(--space-3);
 }
 
-.rl-fact {
+.rl-field {
   display: grid;
   grid-template-columns: 9rem minmax(0, 1fr);
   gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--hairline-soft);
 }
 
-.rl-fact dt {
+.rl-field:last-child {
+  border-bottom: 1px solid var(--hairline-soft);
+}
+
+.rl-field dt {
+  margin: 0;
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
@@ -877,7 +1056,7 @@ details[open] > .rl-read-summary::after {
   padding-top: 2px;
 }
 
-.rl-fact dd {
+.rl-field dd {
   margin: 0;
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
@@ -896,8 +1075,6 @@ details[open] > .rl-read-summary::after {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  gap: var(--space-1);
 }
 
 .rl-action-open,
@@ -906,8 +1083,6 @@ details[open] > .rl-read-summary::after {
   align-items: center;
   gap: var(--space-2);
   min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
   list-style: none;
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
@@ -922,7 +1097,9 @@ details[open] > .rl-read-summary::after {
 
 .rl-action-open:hover,
 .rl-action-summary:hover {
-  background: var(--paper-deep);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 3px;
 }
 
 .rl-action-summary::after {
@@ -940,17 +1117,18 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-action-body {
-  padding: 0 var(--space-3) var(--space-3);
+  padding: 0 0 var(--space-3) var(--space-4);
+  border-left: 1px solid var(--hairline);
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
 }
 
 .rl-action-body p {
-  margin: 0 0 var(--space-2);
+  margin: 0;
 }
 
 .rl-action-refused {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-2) 0 var(--space-2) var(--space-4);
   border-left: 2px solid var(--ink-ghost);
 }
 
@@ -958,39 +1136,18 @@ details[open] > .rl-read-summary::after {
   display: block;
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }
 
+/* Why an action is refused is honesty content, so it reads at the same
+   contrast as everything else that keeps the page honest. */
 .rl-action-why {
   display: block;
   font-size: var(--text-caption);
-  color: var(--ink-faint);
-}
-
-.rl-snooze-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-2);
-}
-
-.rl-snooze {
-  display: grid;
-  grid-template-columns: 9rem minmax(0, 1fr);
-  gap: var(--space-3);
-  font-size: var(--text-body-sm);
-}
-
-.rl-snooze-label {
-  font-weight: var(--weight-medium);
-  color: var(--ink);
-}
-
-.rl-snooze-when {
-  color: var(--ink-faint);
+  line-height: var(--leading-heading);
+  color: var(--ink-soft);
 }
 
 /* ── Inbox ───────────────────────────────────────────────────────────────── */
@@ -998,7 +1155,7 @@ details[open] > .rl-read-summary::after {
 .rl-inbox {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-7);
+  gap: var(--space-8);
 }
 
 .rl-queue,
@@ -1013,7 +1170,7 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-thread {
-  padding: var(--space-5) 0;
+  padding: var(--space-6) 0;
   border-bottom: 1px solid var(--hairline);
 }
 
@@ -1026,26 +1183,13 @@ details[open] > .rl-read-summary::after {
   font-size: var(--text-body-lg);
   line-height: var(--leading-heading);
   letter-spacing: var(--tracking-heading);
-  font-weight: var(--weight-medium);
-}
-
-.rl-thread-link {
-  display: inline-block;
-  padding: 10px 0;
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.rl-thread-link:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 4px;
+  font-weight: var(--weight-semibold);
 }
 
 .rl-thread-sub {
   margin: var(--space-1) 0 0;
   font-size: var(--text-caption);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .rl-event-list {
@@ -1053,17 +1197,17 @@ details[open] > .rl-read-summary::after {
   margin: var(--space-3) 0 0;
   padding: 0;
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-5);
 }
 
-.rl-thread[data-multi="yes"] .rl-event {
+.rl-thread[data-multi] .rl-event {
   padding-left: var(--space-4);
   border-left: 1px solid var(--hairline);
 }
 
-.rl-event[data-current="yes"] {
-  border-left: 2px solid var(--accent);
+.rl-event[data-current] {
   padding-left: var(--space-4);
+  border-left: 2px solid var(--accent);
 }
 
 .rl-event-kind {
@@ -1088,24 +1232,18 @@ details[open] > .rl-read-summary::after {
 .rl-detail-title[data-state="unavailable"] {
   font-weight: var(--weight-regular);
   font-style: italic;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .rl-event-state {
   margin: var(--space-2) 0 0;
   font-size: var(--text-caption);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .rl-vis[data-vis="new"] {
   color: var(--ink);
   font-weight: var(--weight-medium);
-}
-
-.rl-disp[data-disp="snoozed"],
-.rl-disp[data-disp="acknowledged"],
-.rl-disp[data-disp="cleared"] {
-  color: var(--ink-faint);
 }
 
 .rl-event-note {
@@ -1117,13 +1255,16 @@ details[open] > .rl-read-summary::after {
   color: var(--ink-soft);
 }
 
-.rl-event-note[data-tone="freshness"],
+.rl-event-note[data-band="limited"],
 .rl-event-note[data-outcome="undetermined"] {
+  border-left-style: dashed;
   border-left-color: var(--status-flight);
 }
 
 .rl-event-note[data-outcome="refused"] {
+  border-left-width: 3px;
   border-left-color: var(--status-blocked);
+  color: var(--ink);
 }
 
 .rl-event-note[data-outcome="committed"] {
@@ -1134,7 +1275,6 @@ details[open] > .rl-read-summary::after {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  margin-top: var(--space-1);
   color: var(--accent);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
@@ -1145,18 +1285,21 @@ details[open] > .rl-read-summary::after {
   text-decoration: underline;
 }
 
-.rl-detail-inner {
-  padding: var(--space-6);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-lg);
-  background: var(--paper-soft);
+.rl-queue-foot {
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--hairline);
+}
+
+/* The detail is a region, not a card. A rule and space set it apart. */
+.rl-detail {
+  padding-top: var(--space-2);
 }
 
 .rl-back {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  margin-bottom: var(--space-2);
   color: var(--accent);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
@@ -1178,7 +1321,7 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-detail-kind {
-  margin: 0;
+  margin: var(--space-2) 0 0;
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
@@ -1196,11 +1339,9 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-attempt {
-  margin-top: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--ink-ghost);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: var(--paper);
+  margin-top: var(--space-5);
+  padding-left: var(--space-4);
+  border-left: 2px solid var(--ink-ghost);
 }
 
 .rl-attempt[data-outcome="committed"] {
@@ -1208,10 +1349,12 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-attempt[data-outcome="refused"] {
+  border-left-width: 3px;
   border-left-color: var(--status-blocked);
 }
 
 .rl-attempt[data-outcome="undetermined"] {
+  border-left-style: dashed;
   border-left-color: var(--status-flight);
 }
 
@@ -1229,34 +1372,12 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-thread-more {
-  margin-top: var(--space-3);
+  margin-top: var(--space-4);
   padding-left: var(--space-4);
   border-left: 1px solid var(--hairline);
 }
 
-.rl-thread-more > .rl-event-list {
-  margin-top: var(--space-2);
-}
-
-.rl-ledger-block {
-  margin-top: var(--space-5);
-}
-
 /* ── My work ─────────────────────────────────────────────────────────────── */
-
-.rl-qualifiers {
-  margin-bottom: var(--space-7);
-}
-
-.rl-qualifier-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--space-1);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-}
 
 .rl-work-list {
   list-style: none;
@@ -1273,41 +1394,14 @@ details[open] > .rl-read-summary::after {
   border-bottom: 1px solid var(--hairline-soft);
 }
 
-.rl-work[data-selected="yes"] {
-  border-left: 2px solid var(--accent);
-  margin-left: calc(var(--space-4) * -1);
-  padding-left: calc(var(--space-4) - 2px);
-}
-
 .rl-work-main {
   min-width: 0;
-}
-
-.rl-work-link {
-  display: inline-block;
-  padding: 12px 0;
-  font-size: var(--text-body);
-  font-weight: var(--weight-medium);
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.rl-work-link:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 3px;
-}
-
-.rl-work-note {
-  margin: var(--space-1) 0 0;
-  font-size: var(--text-caption);
-  color: var(--ink-faint);
 }
 
 .rl-work-when {
   text-align: right;
   font-size: var(--text-caption);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .rl-work-when .rl-when {
@@ -1338,10 +1432,8 @@ details[open] > .rl-read-summary::after {
 
 .rl-lens {
   margin-bottom: var(--space-6);
-  padding: var(--space-4);
+  padding-left: var(--space-4);
   border-left: 3px solid var(--accent);
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  background: var(--accent-tint);
 }
 
 .rl-lens-line {
@@ -1357,23 +1449,35 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-claim {
-  padding: var(--space-5) 0;
+  padding: var(--space-6) 0;
   border-bottom: 1px solid var(--hairline-soft);
+}
+
+.rl-claim:first-child {
+  padding-top: 0;
+}
+
+/* The claim leads. The value is a figure inside a sentence, not a billboard. */
+.rl-claim-question {
+  margin: 0;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-heading);
+  font-weight: var(--weight-semibold);
 }
 
 .rl-claim-value {
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
-  margin: 0;
+  margin: var(--space-2) 0 0;
 }
 
 .rl-claim-number {
-  font-size: var(--text-heading);
+  font-size: var(--text-body-lg);
   line-height: var(--leading-heading);
-  font-weight: var(--weight-semibold);
+  font-weight: var(--weight-medium);
   font-variant-numeric: tabular-nums;
-  letter-spacing: var(--tracking-heading);
+  color: var(--ink);
 }
 
 .rl-claim-metric {
@@ -1386,21 +1490,16 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-claim-nonvalue {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: var(--weight-medium);
-  color: var(--ink-soft);
-}
-
-.rl-claim-question {
   margin: var(--space-2) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px dashed var(--status-flight);
   font-size: var(--text-body);
   font-weight: var(--weight-medium);
-  line-height: var(--leading-body);
+  color: var(--ink);
 }
 
 .rl-claim-population {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
 }
@@ -1408,7 +1507,7 @@ details[open] > .rl-read-summary::after {
 .rl-claim-status {
   margin: var(--space-2) 0 0;
   padding-left: var(--space-3);
-  border-left: 2px solid var(--status-flight);
+  border-left: 2px dashed var(--status-flight);
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
 }
@@ -1417,18 +1516,13 @@ details[open] > .rl-read-summary::after {
    same contrast as the claim rather than as a footnote. */
 .rl-claim-limit {
   margin: var(--space-2) 0 0;
-  font-size: var(--text-caption);
-  line-height: var(--leading-heading);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
   color: var(--ink-soft);
 }
 
 .rl-claim-more {
   margin-top: var(--space-2);
-}
-
-.rl-claim-more .rl-read-panel,
-.rl-claim-more {
-  border-top: 0;
 }
 
 .rl-exc-list {
@@ -1465,12 +1559,6 @@ details[open] > .rl-read-summary::after {
   color: var(--ink-faint);
 }
 
-.rl-ledger-coverage {
-  margin: calc(var(--space-3) * -1) 0 var(--space-4);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
-}
-
 .rl-ledger-wrap {
   overflow-x: auto;
 }
@@ -1484,6 +1572,7 @@ details[open] > .rl-read-summary::after {
 
 .rl-ledger th,
 .rl-ledger td {
+  height: 44px;
   padding: var(--space-3) var(--space-4) var(--space-3) 0;
   border-bottom: 1px solid var(--hairline-soft);
   text-align: left;
@@ -1491,6 +1580,7 @@ details[open] > .rl-read-summary::after {
 }
 
 .rl-ledger thead th {
+  height: auto;
   border-bottom: 1px solid var(--hairline);
   font-family: var(--font-mono);
   font-size: var(--text-label);
@@ -1513,11 +1603,11 @@ details[open] > .rl-read-summary::after {
   white-space: nowrap;
 }
 
-.rl-ledger tr[data-state="unavailable"] td,
-.rl-ledger tr[data-state="unresolved"] td,
+/* A project that could not be read is marked, not greyed into invisibility. */
 .rl-ledger tr[data-state="unavailable"] th,
 .rl-ledger tr[data-state="unresolved"] th {
-  color: var(--ink-faint);
+  border-left: 3px solid var(--status-blocked);
+  padding-left: var(--space-3);
 }
 
 .rl-ledger-link {
@@ -1560,163 +1650,220 @@ details[open] > .rl-read-summary::after {
   color: var(--ink-soft);
 }
 
-.rl-trend-ends {
-  margin-top: var(--space-4);
-}
-
 .rl-trend-refused {
   margin: 0;
   padding-left: var(--space-4);
-  border-left: 2px solid var(--ink-ghost);
+  border-left: 2px dashed var(--status-flight);
   font-size: var(--text-body);
   color: var(--ink-soft);
 }
 
-/* ── 1440 and down ───────────────────────────────────────────────────────── */
-
-@media (min-width: 1440px) {
-  .rl-shell {
-    --rl-pad-x: var(--space-11);
-    --rl-measure: 42rem;
-  }
-}
+/* ── 1439 and down ───────────────────────────────────────────────────────── */
 
 @media (max-width: 1439px) {
   .rl-shell {
-    --rl-rail: 13.5rem;
+    --rl-rail: 14rem;
     --rl-pad-x: var(--space-8);
     --rl-pad-y: var(--space-8);
+    --rl-measure: 44rem;
   }
 }
 
-/* The Inbox splits only where the split is earned. */
+/* The Inbox splits only when there is something to put in the second column,
+   and only where the split can carry both without wrapping. */
 @media (min-width: 1280px) {
-  .rl-inbox {
-    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  .rl-inbox[data-selected] {
+    grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
     align-items: start;
   }
 
-  .rl-detail {
+  .rl-inbox[data-selected] .rl-detail {
     position: sticky;
     top: var(--space-7);
+    padding-left: var(--space-7);
+    border-left: 1px solid var(--hairline);
   }
 }
 
 @media (max-width: 1279px) {
-  .rl-inbox[data-selected="yes"] .rl-queue {
+  .rl-shell {
+    --rl-rail: 12.5rem;
+    --rl-pad-x: var(--space-7);
+    --rl-measure: 40rem;
+  }
+
+  .rl-rail {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  .rl-suite {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  /* Below the split threshold an opened event replaces the queue with a
+     full-measure detail carrying its own way back. */
+  .rl-inbox[data-selected] .rl-queue {
     display: none;
   }
 }
 
-@media (max-width: 1279px) {
-  .rl-shell {
-    --rl-rail: 11.75rem;
-    --rl-pad-x: var(--space-7);
-  }
-
-  .rl-rail {
-    padding-left: var(--space-3);
-    padding-right: var(--space-3);
-  }
-}
-
-/* ── Below 1024: the rail becomes the document's opening index ───────────── */
+/* ── Below 1024: the instrument rotates ──────────────────────────────────── */
 
 @media (max-width: 1023px) {
   .rl-shell {
     display: block;
     --rl-pad-x: var(--space-6);
-    --rl-pad-y: var(--space-7);
-    /* There is no rail column to paint once the rail is a band across the
-       top, so the column gradient goes and the band carries its own tone. */
+    --rl-pad-y: var(--space-6);
+    --rl-measure: none;
+    max-width: none;
     background: var(--paper);
   }
 
+  /* A compact bar: four text-labelled modes, their state, and the scope. The
+     wordmark, the products, the reader and Account are at the foot of the
+     page, so the headline is the first thing on the screen. */
   .rl-rail {
     position: static;
-    height: auto;
+    max-height: none;
     overflow: visible;
-    gap: var(--space-5);
-    padding: var(--space-6) var(--rl-pad-x) var(--space-5);
-    background: var(--paper-soft);
-    border-right: 0;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--rl-pad-x) var(--space-3);
     border-bottom: 1px solid var(--hairline);
   }
 
-  .rl-wordmark,
-  .rl-label {
-    margin-left: 0;
-  }
-
-  /* The four modes become a compact index rather than four full-width bands:
-     five tracks at 768, two at 320, always text, never behind anything. */
-  .rl-group-home .rl-nav-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
-    gap: var(--space-1) var(--space-3);
-  }
-
-  .rl-group:not(.rl-group-home) .rl-nav-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-4);
-  }
-
-  .rl-nav-link {
-    border-left: 0;
-    border-bottom: 2px solid transparent;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
-  }
-
-  .rl-nav-link[aria-current] {
-    border-left-color: transparent;
-    border-bottom-color: var(--accent);
-  }
-
-  .rl-subnav {
-    margin-left: 0;
-  }
-
-  .rl-scope {
-    border-top: 1px solid var(--hairline);
-  }
-
-  .rl-scope-summary,
-  .rl-scope-help,
-  .rl-scope-coverage,
-  .rl-active,
-  .rl-rail-foot {
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  .rl-scope-option {
-    padding-left: var(--space-3);
-  }
-
-  .rl-rail-foot {
+  /* The scope names itself and states its value on one line, so the whole bar
+     costs about 200px and the headline is the first thing after it. */
+  .rl-scope-summary {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-2) var(--space-6);
-    margin-top: 0;
+    gap: 0 var(--space-3);
+  }
+
+  .rl-scope-summary .rl-label {
+    margin: 0;
+  }
+
+  .rl-masthead,
+  .rl-notices,
+  .rl-unsupported {
+    margin-bottom: var(--space-6);
+  }
+
+  .rl-group-home > .rl-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .rl-spine {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: var(--space-3);
+  }
+
+  /* The spine rotates: the same four weights, drawn across the top of the
+     four cells, still one continuous line on a fully answered day. */
+  .rl-mode {
+    padding: var(--space-3) 0 0;
+  }
+
+  .rl-mode::before {
+    left: calc(var(--space-3) * -0.5);
+    right: calc(var(--space-3) * -0.5);
+    top: 0;
+    bottom: auto;
+    border-left: 0;
+    border-top: 1px solid var(--ink-faint);
+  }
+
+  .rl-mode[data-band="empty"]::before {
+    border-top-style: dotted;
+  }
+
+  .rl-mode[data-band="limited"]::before {
+    border-top-width: 2px;
+    border-top-style: dashed;
+    border-top-color: var(--status-flight);
+  }
+
+  .rl-mode[data-band="broken"]::before {
+    top: 0;
+    bottom: auto;
+    left: var(--space-3);
+    right: var(--space-3);
+    border-top-width: 3px;
+    border-top-color: var(--status-blocked);
+  }
+
+  .rl-mode[data-here] > .rl-nav-link::before {
+    left: calc(50% - 1px);
+    top: calc((var(--space-3) + 7px) * -1);
+    width: 2px;
+    height: 16px;
+  }
+
+  .rl-nav-link {
+    min-height: 44px;
+    padding: var(--space-2) 0;
+  }
+
+  .rl-nav-name {
+    font-size: var(--text-body);
+  }
+
+  .rl-nav-label {
+    justify-content: flex-start;
+  }
+
+  .rl-subnav {
+    grid-column: 1 / -1;
+    margin-left: 0;
+  }
+
+  .rl-scope,
+  .rl-group-scope {
+    border-top: 1px solid var(--hairline-soft);
+    padding-top: var(--space-2);
+  }
+
+  .rl-scope-projects {
+    max-height: none;
   }
 
   .rl-status {
-    margin-bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-4);
+  }
+
+  .rl-main {
+    padding-bottom: var(--space-10);
+  }
+
+  .rl-suite {
+    position: static;
+    padding: var(--space-6) var(--rl-pad-x) var(--space-10);
+  }
+
+  .rl-product-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-6);
   }
 
   .rl-actor {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: var(--space-1) var(--space-3);
-  }
-
-  .rl-main {
-    padding-bottom: var(--space-12);
+    gap: var(--space-1) var(--space-4);
   }
 }
 
@@ -1725,8 +1872,6 @@ details[open] > .rl-read-summary::after {
 @media (max-width: 639px) {
   .rl-shell {
     --rl-pad-x: var(--space-4);
-    --rl-pad-y: var(--space-6);
-    --rl-measure: none;
   }
 
   .rl-page > *,
@@ -1750,14 +1895,9 @@ details[open] > .rl-read-summary::after {
     gap: var(--space-2);
   }
 
-  .rl-fact,
-  .rl-snooze {
+  .rl-field {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-1);
-  }
-
-  .rl-detail-inner {
-    padding: var(--space-4);
   }
 
   .rl-fold-summary {
@@ -1793,16 +1933,18 @@ details[open] > .rl-read-summary::after {
     animation-delay: 160ms;
   }
 
-  /* The rail's state spine settles a beat after the modes, which is the one
-     moment the navigation is allowed to draw the eye. */
-  .rl-mode {
-    animation: rl-rise-small 180ms var(--ease-out) both;
-    animation-delay: calc(var(--rl-i, 0) * 40ms + 60ms);
+  /* The spine draws itself in, one segment at a time, and the state words
+     settle a beat behind it. This is the one moment the navigation is allowed
+     to draw the eye, and it is over in 320ms. */
+  .rl-mode::before {
+    animation: rl-draw 200ms var(--ease-out) both;
+    animation-delay: calc(var(--rl-i, 0) * 40ms);
+    transform-origin: top;
   }
 
   .rl-mode-state {
     animation: rl-fade 200ms var(--ease-out) both;
-    animation-delay: calc(var(--rl-i, 0) * 40ms + 200ms);
+    animation-delay: calc(var(--rl-i, 0) * 40ms + 120ms);
   }
 }
 
@@ -1818,10 +1960,10 @@ details[open] > .rl-read-summary::after {
   }
 }
 
-@keyframes rl-rise-small {
+@keyframes rl-draw {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: scaleY(0.2);
   }
 
   to {
@@ -1843,13 +1985,18 @@ details[open] > .rl-read-summary::after {
 /* ── Forced colours ──────────────────────────────────────────────────────── */
 
 @media (forced-colors: active) {
-  .rl-nav-link[aria-current="page"],
-  .rl-decision[data-selected="yes"],
-  .rl-work[data-selected="yes"],
-  .rl-event[data-current="yes"] {
+  .rl-mode[data-here] > .rl-nav-link::before,
+  .rl-decision[data-selected]::before,
+  .rl-work[data-selected],
+  .rl-tled[data-selected],
+  .rl-event[data-current] {
     forced-color-adjust: none;
     outline: 2px solid Highlight;
     outline-offset: -2px;
+  }
+
+  .rl-when[data-overdue] .rl-when-rel::before {
+    background: CanvasText;
   }
 
   .rl-trend-line {

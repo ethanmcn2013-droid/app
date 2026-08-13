@@ -1,29 +1,36 @@
 /*
- * EDITORIAL LINE — the whole direction's type, rhythm and layout.
+ * EDITORIAL LINE — the direction's type, rhythm and layout.
  *
- * Hand-written CSS against the vendored semantic tokens rather than utilities,
- * for two measured reasons. The estate carries 1,208 arbitrary-px type
- * utilities against 126 uses of the nine named steps, and a direction built out
- * of `text-[15px]` adds to the pile it was told not to add to. And the Tailwind
- * spacing namespace lies at indices 7 to 12 (`h-7` is 32px), which is a trap a
- * rhythm this tight cannot afford. Every size below is a named step; every gap
- * is a --space-* token; nothing is redefined, and the one local custom property
- * family carries the --x- extension prefix the design system reserves for it.
+ * Hand-written against the vendored semantic tokens, not utilities: the estate
+ * carries 1,208 arbitrary-px type utilities against 126 uses of the nine named
+ * steps, and the Tailwind spacing namespace lies at indices 7 to 12 (h-7 is
+ * 32px). Every size here is a named step, every gap a --space-* token, and the
+ * one local custom-property family carries the reserved --x- prefix.
  *
- * The direction in one line: a narrow authored measure, hairlines instead of
- * containers, one indigo mark per view, and a colophon that tells you how the
- * page was read.
+ * WHAT ROUND 1 CHANGED HERE.
+ * 1. Contrast. No word is set in a status colour. Every state word is --ink
+ *    (18.9:1) and tone is carried by a mark that differs in fill, shape and
+ *    stroke count. The nine 11px/--ink-faint pairings are --ink-soft (10.9:1).
+ * 2. One grid. Five rule extents at 1440 became one: every rule in the document
+ *    runs the page column.
+ * 3. A second axis. At 70rem the page is margin, measure and field column.
+ *    Prose never widens; tabular things take the whole grid. Below 70rem it
+ *    transforms into records with a hanging label line.
  */
 
 .ed {
-  /* Measure. 33rem holds 62 to 68 characters at the body size, which is the
-     range a reader's eye returns to a new line without losing it. */
-  --x-measure: 33rem;
-  /* The column a ledger runs in. Wider than prose, still one eye-span. */
-  --x-column: 46rem;
-  /* The one earned widening, for the Project ledger and nothing else. */
-  --x-wide: 58rem;
+  /* The measure prose and rows run in. 40rem holds 70 to 76 characters at the
+     body size with the reason lines capped tighter beneath it. */
+  --x-text: 40rem;
+  /* The margin. Numerals, terms, definitions and the imprint's standing head. */
+  --x-margin: 10rem;
+  /* The page. 74rem at 1440 uses 82% of the canvas rather than 64%. */
+  --x-page: 74rem;
+  /* Prose inside the measure is capped tighter still: a paragraph is not a row. */
+  --x-measure: 34rem;
+  --x-gap: var(--space-7);
   --x-gutter: clamp(var(--space-4), 4vw, var(--space-9));
+  --x-cols: minmax(0, 1fr) auto;
   --x-rule: 1px solid var(--hairline);
   --x-rule-soft: 1px solid var(--hairline-soft);
 
@@ -62,14 +69,15 @@
   border-radius: 2px;
 }
 
+/* A true label: a term, not a sentence. Mono caps, and never faint. */
 .ed-label {
   font-family: var(--font-mono);
   font-size: var(--text-label);
-  line-height: 1;
+  line-height: 1.4;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   font-weight: var(--weight-medium);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ed-num {
@@ -81,7 +89,7 @@
 .ed-withheld {
   font-family: var(--font-mono);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ed-skip {
@@ -105,14 +113,85 @@
   transform: translateY(0);
 }
 
+/* ── The state marks ──────────────────────────────────────────────────────── */
+
+/* Four registers, three of them drawn. The word says it, the shape says it, the
+   strokes count it, and the fill is what makes it catchable at arm's length.
+   Every mark is enclosed by an ink stroke, so its boundary is 18.9:1 whatever
+   the fill does. */
+
+/* ── The flag · one fixed reading position for the state of the read ──────── */
+
+.ed-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  /* 18.9:1. The word is never the colour. */
+  color: var(--ink);
+}
+
+.ed-flag-mark {
+  flex: none;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+}
+
+.ed-flag[data-register="limited"] .ed-flag-mark {
+  background: var(--status-flight);
+}
+
+.ed-flag[data-register="failed"] .ed-flag-mark {
+  background: var(--status-blocked);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink);
+  margin-right: 3px;
+}
+
 /* ── Masthead · quieter than the content, never dominant ──────────────────── */
 
+/* Every chrome rule ends where the content column ends. Round 1: "The top
+   chrome is not aligned to the column it sits above. Three different extents in
+   the first 130px of the most disciplined design here." The band carries the
+   gutter as padding, so a border on the band would run past the column it sits
+   above; these are drawn inside it instead. */
 .ed-masthead {
-  border-bottom: var(--x-rule);
+  border-bottom: 0;
+}
+
+.ed-homeband {
+  position: relative;
+  padding-bottom: var(--space-1);
+}
+
+.ed-homeband::before,
+.ed-homeband::after {
+  content: "";
+  position: absolute;
+  left: var(--x-gutter);
+  right: var(--x-gutter);
+  border-top: var(--x-rule);
+}
+
+.ed-homeband::before {
+  top: 0;
+  border-top: var(--x-rule-soft);
+}
+
+.ed-homeband::after {
+  bottom: 0;
 }
 
 .ed-band {
-  max-width: var(--x-wide);
+  max-width: var(--x-page);
   margin: 0 auto;
   padding: 0 var(--x-gutter);
 }
@@ -151,7 +230,7 @@
   align-items: center;
   min-height: 44px;
   min-width: 44px;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-size: var(--text-body-sm);
   text-decoration: none;
 }
@@ -171,7 +250,6 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-2) var(--space-6);
-  border-top: var(--x-rule-soft);
 }
 
 .ed-modes a {
@@ -183,7 +261,7 @@
   min-width: 44px;
   padding-bottom: 2px;
   border-bottom: 2px solid transparent;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-size: var(--text-body);
   text-decoration: none;
 }
@@ -200,9 +278,15 @@
   border-bottom-color: var(--ink);
 }
 
+/* An ANCESTOR of the current page — Today while the full briefing is open.
+   Round 1: this dropped to faint grey, so going deeper made the shell say less
+   about where you were. It now keeps full ink and states its relationship with
+   a dotted rule instead of by fading. */
 .ed-modes a[aria-current="true"] {
-  color: var(--ink-soft);
-  border-bottom-color: var(--ink-ghost);
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+  border-bottom-style: dotted;
+  border-bottom-color: var(--ink);
 }
 
 .ed-badge {
@@ -213,6 +297,29 @@
   background: var(--paper-deep);
   border-radius: var(--radius-pill);
   padding: 2px var(--space-2);
+}
+
+/* What the other three modes know, at a glance from any one of them. Absent on
+   a mode read in full, so presence is the signal, and the state word rides in
+   the link's accessible name, so this is never colour alone. */
+.ed-mode-mark {
+  flex: none;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+}
+
+.ed-mode-mark[data-register="limited"] {
+  background: var(--status-flight);
+}
+
+.ed-mode-mark[data-register="failed"] {
+  background: var(--status-blocked);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 1px var(--paper), 0 0 0 2px var(--ink);
+  margin-right: 2px;
 }
 
 /* ── Read Scope · a disclosure that needs no script ───────────────────────── */
@@ -263,7 +370,7 @@
   background: var(--paper);
 }
 
-.ed-scope-panel h2 {
+.ed-scope-term {
   margin: 0 0 var(--space-2);
   font-size: var(--text-body-sm);
   font-weight: var(--weight-semibold);
@@ -311,7 +418,7 @@
 /* ── The page ─────────────────────────────────────────────────────────────── */
 
 .ed-main {
-  max-width: var(--x-wide);
+  max-width: var(--x-page);
   margin: 0 auto;
   padding: var(--space-8) var(--x-gutter) var(--space-10);
 }
@@ -324,17 +431,29 @@
   max-width: var(--x-measure);
 }
 
-.ed-dateline {
+.ed-head {
+  margin-bottom: var(--space-4);
+}
+
+.ed-folio {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  gap: 0 var(--space-5);
   margin: 0 0 var(--space-4);
 }
 
-/* Depth, said as a trail. The full briefing is not a fifth mode, so it takes
-   no place in the mode nav; this is where it says where it sits. */
+.ed-dateline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+/* Depth, said as a trail, on the folio line above the title it qualifies. */
 .ed-crumbs {
-  margin: 0 0 var(--space-4);
+  margin: 0;
 }
 
 .ed-crumbs ul {
@@ -356,18 +475,22 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
-  text-decoration: none;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 4px;
 }
 
 .ed-crumbs a[aria-current="page"] {
   color: var(--ink);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
 }
 
 .ed-crumbs li + li::before {
   content: "/";
   margin-right: var(--space-3);
-  color: var(--ink-ghost);
+  color: var(--ink-faint);
 }
 
 .ed-crumbs li {
@@ -390,11 +513,11 @@
   margin-bottom: var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-label);
-  line-height: 1;
+  line-height: 1.4;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   font-weight: var(--weight-medium);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 /* The lede. The one sentence that says what kind of read this is. */
@@ -410,7 +533,7 @@
 .ed-status {
   max-width: var(--x-measure);
   min-height: var(--space-5);
-  margin: 0 0 var(--space-5);
+  margin: var(--space-4) 0 0;
   font-size: var(--text-body-sm);
   color: var(--ink);
 }
@@ -422,79 +545,119 @@
   margin: 0;
 }
 
-/* The standing note: the sentence about what kind of read this is, on a day
-   that has rows to show. On a day that has none it becomes the lede instead. */
-.ed-standing {
-  max-width: var(--x-measure);
-  margin: 0 0 var(--space-7);
-  color: var(--ink-soft);
-}
-
 .ed-status:not(:empty) {
   padding-left: var(--space-3);
   border-left: 2px solid var(--accent);
 }
 
-/* State, said in words, with a mark that survives forced colours. */
-.ed-state {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  font-weight: var(--weight-medium);
-  color: var(--ink-faint);
-}
-
-.ed-state::before {
-  content: "";
-  width: 14px;
-  height: 2px;
-  background: currentColor;
-}
-
-.ed-state[data-tone="warn"] {
-  color: var(--status-flight);
-}
-
-.ed-state[data-tone="stop"] {
-  color: var(--status-blocked);
-}
-
-/* ── Disclosures · never optional, never a colour on its own ──────────────── */
-
-.ed-disclosures {
+/* The standing note: the sentence about what kind of read this is, on a day
+   that has rows to show. On a day that has none it becomes the lede instead. */
+.ed-standing {
   max-width: var(--x-measure);
+  margin: 0 0 var(--space-6);
+  color: var(--ink-soft);
+}
+
+/* ── The limits run · what qualifies everything below it ──────────────────── */
+
+/* Round 1, four ballots: the limits, the account and the kinds of work with no
+   source were all in the foot colophon, ~2,000px down on desktop and ~3,400px
+   down on a phone. They sit here now, under the standfirst and above the first
+   row, worst first. The term hangs in the margin, the sentence in the measure. */
+.ed-limits {
   margin: 0 0 var(--space-7);
   padding: 0;
   list-style: none;
   border-top: var(--x-rule);
 }
 
-.ed-disclosures li {
-  display: grid;
-  gap: var(--space-1);
+.ed-limits > li {
   padding: var(--space-3) 0;
   border-bottom: var(--x-rule-soft);
+}
+
+/* A limit that names a failure is struck with the heavier rule. Weight of rule
+   is the fourth channel, after word, shape and fill. */
+.ed-limits > li[data-register="failed"] {
+  border-bottom: 1px solid var(--ink);
+}
+
+.ed-limit-head {
+  margin: 0 0 var(--space-1);
+}
+
+.ed-limit-mark {
+  display: inline-block;
+  vertical-align: -1px;
+  margin-right: var(--space-2);
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+}
+
+.ed-limit-mark[data-register="limited"] {
+  background: var(--status-flight);
+}
+
+.ed-limit-mark[data-register="failed"] {
+  background: var(--status-blocked);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink);
+  margin-right: calc(var(--space-2) + 3px);
+}
+
+.ed-limit-kind {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.ed-limit-text {
+  max-width: var(--x-measure);
+  margin: 0;
   font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
+.ed-limit-text + .ed-limit-text {
+  margin-top: var(--space-1);
+}
+
+/* ── The first screen · a state, then a way forward ───────────────────────── */
+
+.ed-firstrun {
+  max-width: var(--x-page);
+  margin: 0 0 var(--space-9);
+  padding-top: var(--space-5);
+  border-top: 2px solid var(--ink);
+}
+
+.ed-firstrun h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-heading);
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  font-weight: var(--weight-semibold);
+}
+
+.ed-firstrun p {
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-3);
   color: var(--ink-soft);
 }
 
 /* ── Sections ─────────────────────────────────────────────────────────────── */
 
 .ed-section {
-  max-width: var(--x-column);
   margin: 0 0 var(--space-9);
 }
 
 .ed-section-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2) var(--space-4);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--ink);
 }
@@ -507,11 +670,16 @@
   font-weight: var(--weight-semibold);
 }
 
+/* Round 1: the group definitions were 11px, uppercase, letterspaced, faint and
+   right-aligned roughly 740px from the heading they explain. Four legibility
+   penalties in one label. They are sentences, so they are set as sentences,
+   beside the heading they explain. */
 .ed-section-note {
-  max-width: var(--x-measure);
-  margin: var(--space-3) 0 0;
-  font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+  color: var(--ink-soft);
 }
 
 .ed-list {
@@ -520,34 +688,52 @@
   list-style: none;
 }
 
-/* ── Today · the authored read ────────────────────────────────────────────── */
+.ed-tail {
+  margin: 0 0 var(--space-6);
+}
 
-/* The three ranked decisions. Hanging numerals in the margin, a rule over each
-   entry, and the first entry's rule is the view's one indigo mark. */
-.ed-entry {
+/* ── Rows · one anatomy, two layouts ──────────────────────────────────────── */
+
+/* Below 70rem this is the transformation, not a squeeze. A row is a record: a
+   hanging label line carrying the ordinal and the date, then the subject, then
+   the reason and the provenance. */
+.ed-entry,
+.ed-row,
+.ed-work-row,
+.ed-claim {
   display: grid;
-  grid-template-columns: 3rem minmax(0, 1fr);
-  column-gap: var(--space-5);
-  padding: var(--space-5) 0 var(--space-6);
+  grid-template-columns: var(--x-cols);
+  column-gap: var(--space-4);
+}
+
+.ed-entry {
+  padding: var(--space-4) 0 var(--space-5);
   border-top: var(--x-rule);
 }
 
-.ed-entries > li:first-child .ed-entry {
+.ed-entries > li:first-child {
   border-top: 2px solid var(--accent);
 }
 
 .ed-entry-index {
   grid-column: 1;
-  margin: 0;
+  grid-row: 1;
+  margin: 0 0 var(--space-2);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
-  padding-top: 3px;
+  color: var(--ink-soft);
+}
+
+.ed-entry-when {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 0 0 var(--space-2);
 }
 
 .ed-entry-body {
-  grid-column: 2;
+  grid-column: 1 / -1;
+  grid-row: 2;
   min-width: 0;
 }
 
@@ -562,15 +748,14 @@
 
 .ed-entry-title a {
   color: inherit;
-  text-decoration: none;
-  background-image: linear-gradient(var(--ink-ghost), var(--ink-ghost));
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  background-size: 100% 1px;
+  text-decoration: underline;
+  text-decoration-color: var(--ink-ghost);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
 }
 
 .ed-entry-title a:hover {
-  background-image: linear-gradient(var(--ink), var(--ink));
+  text-decoration-color: var(--ink);
 }
 
 .ed-reason {
@@ -588,7 +773,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ed-meta li {
@@ -597,49 +782,86 @@
   gap: var(--space-2);
 }
 
-.ed-meta .ed-late {
-  color: var(--status-blocked);
-  font-weight: var(--weight-medium);
+.ed-meta-note {
+  width: 100%;
+  color: var(--ink-faint);
 }
 
 .ed-prov {
   color: var(--ink-soft);
 }
 
-/* Under 30rem the numeral cannot afford a margin of its own, so it becomes a
-   line above the entry rather than eating a fifth of the measure. */
-@media (max-width: 30rem) {
-  .ed-entry {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* ── The ledger field · when, and whether it is late ──────────────────────── */
 
-  .ed-entry-index {
-    grid-column: 1;
-    padding-top: 0;
-    margin-bottom: var(--space-2);
-  }
-
-  .ed-entry-body {
-    grid-column: 1;
-  }
+/* Round 1, two defects. The lateness string collapsed at 390 into "4 days
+   lateSunday 12 July" with no separator. And it was --status-blocked, which
+   fails contrast AND spends the colour reserved for a source that could not be
+   read on a routine condition. It is now one flex object with its own gaps at
+   every width, and lateness is ink, weight and a struck rule. */
+.ed-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-body-sm);
+  /* The absolute date was the last text on the page under 10:1. The two steps
+     of this field are now weight and ink step, not legibility. */
+  color: var(--ink-soft);
 }
 
-/* The quieter sections under the signal: one line each, strong row rhythm. */
-.ed-rows > li {
+.ed-when b {
+  font-weight: var(--weight-medium);
+  color: var(--ink);
+}
+
+.ed-when[data-overdue="true"] b {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-weight: var(--weight-semibold);
+}
+
+.ed-when[data-overdue="true"] b::before {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 3px;
+  background: var(--ink);
+}
+
+/* The quieter sections under the signal: strong row rhythm, one rule each. */
+.ed-rows > li,
+.ed-works > li {
   border-top: var(--x-rule-soft);
 }
 
-.ed-rows > li:first-child {
+.ed-rows > li:first-child,
+.ed-works > li:first-child {
   border-top: var(--x-rule);
 }
 
-.ed-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-5);
+.ed-row,
+.ed-work-row {
   padding: var(--space-3) 0;
   min-height: 44px;
+}
+
+.ed-row-when,
+.ed-work-when {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  margin: 0 0 var(--space-1);
+}
+
+.ed-row-body,
+.ed-work-body {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  min-width: 0;
 }
 
 .ed-row-title {
@@ -650,47 +872,37 @@
   overflow-wrap: anywhere;
 }
 
-.ed-row-title a {
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.ed-row-title a:hover {
-  text-decoration: underline;
-}
-
-.ed-row-when {
-  grid-column: 2;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--text-body-sm);
-  color: var(--ink-faint);
-  white-space: nowrap;
-}
-
-.ed-row-when[data-overdue="true"] {
-  color: var(--status-blocked);
-}
-
-.ed-row-meta {
-  grid-column: 1 / -1;
+.ed-work-title {
   margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
 }
 
-.ed-row-meta .ed-why {
-  margin-top: 0;
+/* Every row title is a link and every link says so. Round 1: "Rows are links
+   but carry no underline, no chevron, no open control, so the queue reads as a
+   static digest." */
+.ed-row-title a,
+.ed-work-title a,
+.ed-event-title a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
-@media (max-width: 30rem) {
-  .ed-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.ed-row-title a:hover,
+.ed-work-title a:hover,
+.ed-event-title a:hover {
+  text-decoration-color: var(--ink);
+  text-decoration-thickness: 2px;
+}
 
-  .ed-row-when {
-    grid-column: 1;
-    text-align: left;
-  }
+.ed-done .ed-work-title a {
+  text-decoration-line: line-through underline;
+  color: var(--ink-faint);
 }
 
 .ed-more {
@@ -699,23 +911,32 @@
   min-height: 44px;
   font-size: var(--text-body-sm);
   color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 3px;
+}
+
+.ed-more:hover {
+  text-decoration-color: var(--ink);
 }
 
 .ed-section-foot {
   max-width: var(--x-measure);
   margin: var(--space-3) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 /* The opened row, disclosed under the entry it belongs to. */
 .ed-open {
+  grid-column: 1 / -1;
   margin: var(--space-4) 0 0;
   padding: var(--space-4) 0 var(--space-4) var(--space-4);
   border-left: 2px solid var(--ink);
 }
 
-.ed-open h3 {
+.ed-open h3,
+.ed-open h4 {
   margin: 0 0 var(--space-2);
   font-size: var(--text-body);
   font-weight: var(--weight-semibold);
@@ -736,13 +957,8 @@
   gap: var(--space-8);
 }
 
-/* With nothing open the queue is the page, and a queue is still reading. */
-.ed-inbox:not([data-split="true"]) .ed-queue {
-  max-width: var(--x-column);
-}
-
-/* The split is earned, not assumed: two columns only where both hold their
-   own measure at a comfortable size. */
+/* The split is earned, not assumed: two columns only where both hold their own
+   measure at a comfortable size. */
 @media (min-width: 68rem) {
   .ed-inbox[data-split="true"] {
     grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
@@ -756,32 +972,79 @@
   }
 }
 
-.ed-thread {
-  padding: var(--space-4) 0;
-  border-top: var(--x-rule);
+.ed-count {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
 }
 
-.ed-threads > li:first-child .ed-thread {
-  border-top: 1px solid var(--ink);
+/* Round 1: "the 5 OPEN count and the 'partly read' coverage caveat directly
+   beneath it are set at near-equal weight; a count and the caveat that
+   qualifies it should not read as peers." The caveat now lives in the limits
+   run above the section, and the count is a figure. */
+.ed-count b {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-heading);
+  font-weight: var(--weight-medium);
+  color: var(--ink);
 }
 
-.ed-thread-sub {
-  margin: 0 0 var(--space-2);
+.ed-count span {
   font-family: var(--font-mono);
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+/* One conversation, one heading. */
+.ed-threads > li {
+  padding: var(--space-3) 0 var(--space-4);
+  border-top: var(--x-rule);
+}
+
+.ed-threads > li:first-child {
+  border-top: 1px solid var(--ink);
+}
+
+.ed-thread-head {
+  margin-bottom: var(--space-2);
+}
+
+.ed-thread-title {
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ed-thread-sub {
+  margin: var(--space-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--ink-soft);
+}
+
+/* The events under a thread title, indented so the conversation reads as one
+   thing with parts rather than as repeated rows. */
+.ed-dispatches {
+  margin: 0;
+  padding: 0 0 0 var(--space-4);
+  list-style: none;
+  border-left: var(--x-rule);
 }
 
 .ed-event {
   display: block;
   padding: var(--space-3) 0;
-  border-top: var(--x-rule-soft);
 }
 
-.ed-event:first-child {
-  border-top: 0;
+.ed-dispatches > .ed-event + .ed-event {
+  border-top: var(--x-rule-soft);
 }
 
 .ed-event[data-selected="true"] {
@@ -789,31 +1052,32 @@
   border-left: 2px solid var(--accent);
 }
 
-.ed-event-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-3);
+.ed-kindline {
   margin: 0 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  color: var(--ink-soft);
 }
 
 .ed-event-title {
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2);
   font-size: var(--text-body);
   font-weight: var(--weight-regular);
   line-height: var(--leading-body);
   overflow-wrap: anywhere;
 }
 
-.ed-event-title a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  color: var(--ink);
+.ed-dispatches .ed-event-title {
+  font-family: var(--font-mono);
+  font-size: var(--text-body-sm);
+}
+
+.ed-event-sole .ed-event-title {
+  font-weight: var(--weight-medium);
 }
 
 .ed-unnamed {
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-style: italic;
 }
 
@@ -846,13 +1110,17 @@
 }
 
 .ed-detail dt {
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ed-detail dd {
   margin: 0;
   color: var(--ink);
   overflow-wrap: anywhere;
+}
+
+.ed-state-words {
+  margin: 0;
 }
 
 @media (max-width: 30rem) {
@@ -899,6 +1167,13 @@
   list-style: none;
 }
 
+/* On a queue row the actions are text on the rule, not a wall of boxes. The
+   quiet register is kept and the queue is still visibly operable. */
+.ed-actions-row {
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-2);
+}
+
 .ed-btn {
   display: inline-flex;
   align-items: center;
@@ -926,6 +1201,27 @@
   font-weight: var(--weight-medium);
 }
 
+.ed-act {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-body-sm);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-faint);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.ed-act:hover {
+  text-decoration-color: var(--ink);
+  text-decoration-thickness: 2px;
+}
+
 .ed-btn[disabled],
 .ed-btn[aria-disabled="true"] {
   color: var(--ink-faint);
@@ -933,10 +1229,16 @@
   cursor: not-allowed;
 }
 
+.ed-act[disabled] {
+  color: var(--ink-faint);
+  text-decoration-style: dotted;
+  cursor: not-allowed;
+}
+
 .ed-refused {
   margin: var(--space-3) 0 0;
   padding-left: var(--space-3);
-  border-left: 2px solid var(--status-blocked);
+  border-left: 3px solid var(--status-blocked);
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
 }
@@ -944,17 +1246,18 @@
 .ed-pending {
   margin: var(--space-3) 0 0;
   padding-left: var(--space-3);
-  border-left: 2px solid var(--ink-ghost);
+  border-left: 3px solid var(--ink-ghost);
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
 }
 
 .ed-why {
+  max-width: var(--x-measure);
   margin: var(--space-2) 0 0;
   padding: 0;
   list-style: none;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ed-menu {
@@ -993,85 +1296,7 @@
 }
 
 .ed-menu button span {
-  color: var(--ink-faint);
-}
-
-/* ── My work · the responsibility ledger ──────────────────────────────────── */
-
-.ed-work-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 9.5rem;
-  gap: var(--space-1) var(--space-5);
-  padding: var(--space-4) 0;
-  border-top: var(--x-rule-soft);
-  min-height: 44px;
-}
-
-.ed-works > li:first-child .ed-work-row {
-  border-top: var(--x-rule);
-}
-
-.ed-work-title {
-  margin: 0;
-  font-size: var(--text-body);
-  font-weight: var(--weight-medium);
-  line-height: var(--leading-body);
-  overflow-wrap: anywhere;
-}
-
-.ed-work-title a {
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.ed-work-title a:hover {
-  text-decoration: underline;
-}
-
-.ed-work-when {
-  grid-row: 1 / span 2;
-  grid-column: 2;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--text-body-sm);
-  color: var(--ink-faint);
-}
-
-.ed-work-when b {
-  display: block;
-  font-weight: var(--weight-medium);
   color: var(--ink-soft);
-}
-
-.ed-work-when[data-overdue="true"] b {
-  color: var(--status-blocked);
-}
-
-.ed-work-body {
-  grid-column: 1;
-  min-width: 0;
-}
-
-.ed-done .ed-work-title a {
-  text-decoration: line-through;
-  color: var(--ink-faint);
-}
-
-@media (max-width: 34rem) {
-  .ed-work-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .ed-work-when {
-    grid-row: auto;
-    grid-column: 1;
-    text-align: left;
-  }
-
-  .ed-work-when b {
-    display: inline;
-  }
 }
 
 /* ── Analytics ────────────────────────────────────────────────────────────── */
@@ -1079,14 +1304,16 @@
 .ed-claim {
   padding: var(--space-5) 0;
   border-top: var(--x-rule);
-  max-width: var(--x-measure);
 }
 
-.ed-claims > li:first-child .ed-claim {
+.ed-claims > li:first-child {
   border-top: 2px solid var(--accent);
 }
 
-.ed-claim h3 {
+.ed-claim-q {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  max-width: var(--x-measure);
   margin: 0 0 var(--space-3);
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
@@ -1094,6 +1321,7 @@
 }
 
 .ed-figure {
+  grid-column: 1 / -1;
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
@@ -1108,19 +1336,54 @@
   color: var(--ink);
 }
 
-.ed-claim-lines {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.ed-claim-status {
+  grid-column: 1 / -1;
+  max-width: var(--x-measure);
+  margin: 0 0 var(--space-3);
   font-size: var(--text-body-sm);
+  color: var(--ink);
+}
+
+/* Round 1: "four to five sentences of near-identical grey sit in an
+   undifferentiated stack with no fielding." Each sentence now carries the term
+   for what sort of fact it is. */
+.ed-fields {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--text-body-sm);
+  line-height: 1.65;
+}
+
+.ed-fields dt {
+  display: inline;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
   color: var(--ink-soft);
 }
 
-.ed-claim-lines li {
-  margin-bottom: var(--space-1);
+.ed-fields dt::after {
+  content: " ";
+}
+
+.ed-fields dd {
+  display: inline;
+  max-width: var(--x-measure);
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.ed-fields dd::after {
+  content: "\A";
+  white-space: pre;
 }
 
 .ed-receipt {
+  grid-column: 1 / -1;
   margin: var(--space-3) 0 0;
   font-size: var(--text-body-sm);
 }
@@ -1135,7 +1398,7 @@
   list-style: none;
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--ink-ghost);
+  text-decoration-color: var(--ink-faint);
 }
 
 .ed-receipt summary::-webkit-details-marker {
@@ -1163,28 +1426,20 @@
 
 .ed-receipt p {
   margin: 0 0 var(--space-1);
-  color: var(--ink-faint);
-}
-
-/* The one earned widening. */
-.ed-ledger {
-  max-width: var(--x-wide);
-}
-
-.ed-ledger .ed-table {
-  margin-top: var(--space-4);
+  color: var(--ink-soft);
 }
 
 .ed-table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-body-sm);
+  margin-top: var(--space-4);
 }
 
 .ed-table caption {
   text-align: left;
   padding-bottom: var(--space-3);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   font-size: var(--text-body-sm);
 }
 
@@ -1200,10 +1455,11 @@
   border-bottom: 1px solid var(--ink);
   font-family: var(--font-mono);
   font-size: var(--text-label);
+  line-height: 1.4;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   font-weight: var(--weight-medium);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ed-table td.ed-figures {
@@ -1243,7 +1499,7 @@
     font-size: var(--text-label);
     letter-spacing: var(--tracking-label);
     text-transform: uppercase;
-    color: var(--ink-faint);
+    color: var(--ink-soft);
   }
 
   .ed-table td:first-child::before {
@@ -1265,7 +1521,7 @@
 .ed-chart figcaption {
   margin-top: var(--space-2);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .ed-lens {
@@ -1276,52 +1532,366 @@
   font-size: var(--text-body-sm);
 }
 
-/* ── The colophon · how this page was read ────────────────────────────────── */
+/* ── The imprint · how this page was read ─────────────────────────────────── */
 
-.ed-colophon {
-  margin-top: var(--space-10);
+.ed-imprint {
+  margin-top: var(--space-8);
   padding-top: var(--space-5);
   border-top: 1px solid var(--ink);
 }
 
-.ed-colophon h2 {
+.ed-imprint h2 {
   margin: 0 0 var(--space-4);
   font-family: var(--font-mono);
   font-size: var(--text-label);
+  line-height: 1.4;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
   font-weight: var(--weight-medium);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
-.ed-colophon-grid {
+.ed-imprint-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
   gap: var(--space-5) var(--space-8);
 }
 
-.ed-colophon dl {
+.ed-imprint dl {
   margin: 0;
 }
 
-.ed-colophon dt {
+.ed-imprint dt {
   font-family: var(--font-mono);
   font-size: var(--text-label);
+  line-height: 1.4;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   margin-bottom: var(--space-1);
 }
 
-.ed-colophon dd {
-  margin: 0 0 var(--space-3);
+.ed-imprint dd {
+  margin: 0 0 var(--space-2);
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
   overflow-wrap: anywhere;
 }
 
-.ed-colophon dd:last-child {
+.ed-imprint dd:last-child {
   margin-bottom: 0;
+}
+
+/* ═══ THE BROADSHEET, at 70rem and above ═══════════════════════════════════ */
+
+/* The margin carries the apparatus, the measure carries the prose and never
+   widens, the field column carries the ledger. Every grid below declares the
+   same tracks, gap and width, so they land on the same x positions all the way
+   down without a subgrid. */
+@media (min-width: 70rem) {
+  .ed {
+    --x-cols: var(--x-margin) var(--x-text) minmax(0, 1fr);
+  }
+
+  .ed-main {
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+    align-content: start;
+  }
+
+  .ed-main > * {
+    grid-column: 2;
+  }
+
+  .ed-main > .ed-section,
+  .ed-main > .ed-limits,
+  .ed-main > .ed-imprint,
+  .ed-main > .ed-inbox {
+    grid-column: 1 / -1;
+  }
+
+  /* Limits: the term hangs in the margin, the sentence sits in the measure. */
+  .ed-limits > li {
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+  }
+
+  .ed-limit-head {
+    grid-column: 1;
+    grid-row: 1;
+    text-align: right;
+    margin: 0;
+  }
+
+  .ed-limit-text {
+    grid-column: 2;
+  }
+
+  /* Sections: the head is a grid so its rule runs the page and its definition
+     sits in the margin beside the heading. */
+  .ed-section {
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+  }
+
+  .ed-section > * {
+    grid-column: 2;
+  }
+
+  .ed-section > .ed-section-head,
+  .ed-section > .ed-list,
+  .ed-section > .ed-table {
+    grid-column: 1 / -1;
+  }
+
+  .ed-section-head {
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+    align-items: baseline;
+  }
+
+  .ed-section-head h2 {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .ed-section-note {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    text-align: right;
+  }
+
+  .ed-count {
+    grid-column: 3;
+    grid-row: 1;
+    justify-content: flex-end;
+    margin: 0;
+  }
+
+  /* Rows: numeral in the margin, subject in the measure, date in the field. */
+  .ed-entry,
+  .ed-row,
+  .ed-work-row,
+  .ed-claim {
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+  }
+
+  .ed-entry-index {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: end;
+    margin: 0;
+    padding-top: 4px;
+  }
+
+  .ed-entry-body,
+  .ed-row-body,
+  .ed-work-body {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .ed-entry-when,
+  .ed-row-when,
+  .ed-work-when {
+    grid-column: 3;
+    grid-row: 1;
+    justify-content: flex-end;
+    text-align: right;
+    margin: 0;
+  }
+
+  .ed-when {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: var(--space-1);
+  }
+
+  .ed-open {
+    grid-column: 2 / -1;
+  }
+
+  .ed-claim-q {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .ed-figure {
+    grid-column: 3;
+    grid-row: 1;
+    justify-content: flex-end;
+    margin: 0;
+  }
+
+  .ed-claim-status,
+  .ed-receipt {
+    grid-column: 2;
+  }
+
+  .ed-fields {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+    row-gap: var(--space-2);
+  }
+
+  .ed-fields dt {
+    grid-column: 1;
+    display: block;
+    margin: 0;
+    text-align: right;
+  }
+
+  .ed-fields dd {
+    grid-column: 2;
+    display: block;
+  }
+
+  .ed-fields dt::after,
+  .ed-fields dd::after {
+    content: none;
+  }
+
+  /* The imprint's standing head hangs in the margin like everything else. */
+  .ed-imprint {
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+  }
+
+  .ed-imprint h2 {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    text-align: right;
+  }
+
+  .ed-imprint-grid {
+    grid-column: 2 / -1;
+    grid-row: 1;
+  }
+
+  .ed-firstrun {
+    grid-column: 2 / -1;
+  }
+
+  /* A conversation sits in the measure with its count in the margin, so the
+     thread aligns with the section heading rather than starting a column of
+     its own at the page edge. */
+  .ed-threads > li {
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+  }
+
+  .ed-thread-head {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+    align-items: baseline;
+  }
+
+  .ed-thread-title {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .ed-thread-sub {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    text-align: right;
+  }
+
+  .ed-dispatches {
+    grid-column: 2 / -1;
+  }
+
+  .ed-event-sole {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: var(--x-cols);
+    column-gap: var(--x-gap);
+  }
+
+  .ed-event-sole > * {
+    grid-column: 2;
+  }
+
+  .ed-event-sole > .ed-kindline {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+    text-align: right;
+  }
+
+  .ed-event-sole > .ed-event-title {
+    grid-row: 1;
+  }
+
+  /* The one place the page grid stands down: with an event open the queue is a
+     21rem column, and a 10rem margin plus a 40rem measure does not fit in it. */
+  .ed-inbox[data-split="true"] .ed-section-head,
+  .ed-inbox[data-split="true"] .ed-threads > li,
+  .ed-inbox[data-split="true"] .ed-thread-head,
+  .ed-inbox[data-split="true"] .ed-event-sole {
+    display: block;
+  }
+
+  .ed-inbox[data-split="true"] .ed-section-note,
+  .ed-inbox[data-split="true"] .ed-thread-sub,
+  .ed-inbox[data-split="true"] .ed-kindline,
+  .ed-inbox[data-split="true"] .ed-count {
+    text-align: left;
+    justify-content: flex-start;
+  }
+}
+
+/* ── Narrow · a single file of records ────────────────────────────────────── */
+
+@media (max-width: 32rem) {
+  .ed-main {
+    padding-top: var(--space-6);
+  }
+
+  .ed-section,
+  .ed-firstrun,
+  .ed-tail {
+    margin-bottom: var(--space-7);
+  }
+
+  .ed-limits {
+    margin-bottom: var(--space-6);
+  }
+
+  .ed-entry {
+    padding: var(--space-3) 0 var(--space-4);
+  }
+
+  .ed-imprint {
+    margin-top: var(--space-8);
+  }
+
+  .ed-imprint-grid {
+    gap: var(--space-4);
+  }
+
+  .ed-dispatches {
+    padding-left: var(--space-3);
+  }
+
+  .ed-claim {
+    padding: var(--space-4) 0;
+  }
 }
 
 /* ── Motion · the page sets like type, then stops ─────────────────────────── */
@@ -1370,9 +1940,6 @@
 
 .ed-section-head {
   transform-origin: left center;
-}
-
-.ed-section-head {
   animation: ed-draw 260ms var(--ease-out) both;
 }
 
@@ -1401,8 +1968,8 @@
     border-bottom-color: GrayText;
   }
 
-  .ed-entries > li:first-child .ed-entry,
-  .ed-claims > li:first-child .ed-claim {
+  .ed-entries > li:first-child,
+  .ed-claims > li:first-child {
     border-top-color: Highlight;
   }
 
@@ -1410,7 +1977,29 @@
     border-color: ButtonText;
   }
 
-  .ed-state::before {
+  /* The marks keep their three shapes and gain a fill difference that survives
+     the loss of every hue: open, filled, filled-and-ringed. */
+  .ed-flag-mark,
+  .ed-limit-mark,
+  .ed-mode-mark {
+    border-color: CanvasText;
+    background: Canvas;
+  }
+
+  .ed-flag[data-register="limited"] .ed-flag-mark,
+  .ed-limit-mark[data-register="limited"],
+  .ed-mode-mark[data-register="limited"] {
+    background: CanvasText;
+  }
+
+  .ed-flag[data-register="failed"] .ed-flag-mark,
+  .ed-limit-mark[data-register="failed"],
+  .ed-mode-mark[data-register="failed"] {
+    background: CanvasText;
+    box-shadow: 0 0 0 2px Canvas, 0 0 0 3px CanvasText;
+  }
+
+  .ed-when[data-overdue="true"] b::before {
     background: CanvasText;
   }
 }

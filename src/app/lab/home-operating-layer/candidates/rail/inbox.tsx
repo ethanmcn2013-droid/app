@@ -1,25 +1,38 @@
 /**
  * Context Rail · Inbox.
  *
- * ── The trap this direction was handed, and the answer ─────────────────────
+ * ── What was here, and why it is gone ──────────────────────────────────────
  *
- * A persistent left rail plus a queue plus a detail is three columns, and
- * three columns is where a rail direction usually breaks: at 1024 the detail
- * gets 380 px and every row starts dropping the provenance that D-HX08 makes
- * a hard rule.
+ * The arrival screen used to carry a rounded, bordered, tinted panel headed
+ * THIS READ, holding the open count, the scope, the state of the read and a
+ * table of snooze return times. It was a dashboard widget in a house whose
+ * first rule is rules, alignment, type and whitespace before containers, and
+ * three of its four facts were already printed in the rail six inches to the
+ * left. It has not been restyled. It has been deleted.
  *
- * So the split is not a layout preference, it is a measured threshold. At
- * 1280 px the content area is 1280 − 208 rail − 64 page padding ≈ 1008, which
- * gives a 22 rem queue, a 2 rem gutter and roughly 600 px of detail: enough
- * for a title, its provenance and its outcome without wrapping into porridge.
- * Below 1280 the split is not earned, so THERE IS NO SPLIT. The queue takes
- * the full measure, and opening an event is a route that replaces it with a
- * full-width detail carrying its own way back.
+ * Its one fact that was NOT already somewhere else is the exact instant a
+ * snoozed item comes back. That is a fact about the snooze control, so it now
+ * lives with the snooze control, inside the action on an opened event, set as
+ * ruled fielded metadata. And the state of the read, which used to say "Read"
+ * directly beneath a band saying an item could not be checked, is now derived
+ * from the disclosures the mode actually published, so the rail says "Partly
+ * read" and the contradiction is gone.
  *
- * That is one composition and two behaviours, not two designs: the same DOM,
- * the same order, the same links. The narrow case is the wide case with the
- * queue stood down, which is why nothing is duplicated and nothing is hidden
- * from assistive technology that a sighted reader can see.
+ * ── The split, and when it is earned ───────────────────────────────────────
+ *
+ * A persistent left rail plus a queue plus a detail is three columns, and the
+ * brief named the three-column Inbox as this direction's trap in advance. The
+ * old answer split the page at 1280 whether or not there was anything to put
+ * in the second column, so the arrival state was a 335px queue beside a static
+ * summary, and a title wrapped to two lines at a 1440 viewport.
+ *
+ * The new answer: THERE IS NO SECOND COLUMN UNTIL THERE IS SOMETHING IN IT. On
+ * arrival the queue runs at the page's full measure, which is 736px at 1440,
+ * wider than the same content gets anywhere else in this direction. Opening an
+ * event splits the page, and only then, and only at 1280 and up where the
+ * split can carry a queue and a detail without either wrapping. Below 1280 an
+ * opened event replaces the queue with a full-measure detail carrying its own
+ * way back. Same DOM, same order, same links, three behaviours.
  *
  * ── Threads ────────────────────────────────────────────────────────────────
  *
@@ -28,6 +41,13 @@
  * does in the guest world where two asks in one thread point at two different
  * items. That check is why the queue reads as correspondence rather than as
  * the same sentence printed twice.
+ *
+ * Every event carries the same way in, named the same word, in the same place.
+ * It used to be that a thread of one made its heading the link and showed no
+ * Open, so the affordance appeared on two rows out of nine. The visible word
+ * is still the shell's ("Open"), and the accessible name names the ask it
+ * opens, so a reader moving by link hears "Open. Replied to you. Send the
+ * Orchard seating plan to the venue." rather than nine identical links.
  */
 
 import type {
@@ -37,7 +57,7 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import {
   Actions,
-  Facts,
+  Fields,
   Label,
   Masthead,
   Meta,
@@ -65,19 +85,16 @@ function EventRow({
   group,
   current,
   openLabel,
-  linked,
 }: {
   row: InboxRow;
   group: InboxGroup;
   current: boolean;
   openLabel: string;
-  /** True when the thread heading above is already the link to this row. */
-  linked: boolean;
 }) {
   const title = shownTitle(row);
   return (
     <li className="rl-event" data-current={current ? "yes" : undefined}>
-      <p className="rl-event-kind">{row.kindLabel}</p>
+      <h3 className="rl-event-kind">{row.kindLabel}</h3>
       {title === group.heading ? null : (
         <p className="rl-event-title" data-state={row.titleState}>
           {title}
@@ -103,7 +120,7 @@ function EventRow({
       </p>
       {row.snoozeLine ? <p className="rl-event-note">{row.snoozeLine}</p> : null}
       {row.revisionLine ? (
-        <p className="rl-event-note" data-tone="freshness">
+        <p className="rl-event-note" data-band="limited">
           {row.revisionLine}
         </p>
       ) : null}
@@ -112,11 +129,15 @@ function EventRow({
           {row.attempt.line}
         </p>
       ) : null}
-      {linked ? null : (
-        <a className="rl-event-open" href={toDetail(row.href)}>
-          {openLabel}
-        </a>
-      )}
+      <a className="rl-event-open" href={toDetail(row.href)}>
+        {openLabel}
+        <span className="rl-sr">
+          {". "}
+          {row.kindLabel}
+          {". "}
+          {title}
+        </span>
+      </a>
     </li>
   );
 }
@@ -131,14 +152,6 @@ function Thread({
   openLabel: string;
 }) {
   /**
-   * A thread of one is correspondence about a single item, so its heading is
-   * the way in and there is no second control repeating it. A thread of more
-   * than one names the item once and each ask carries its own way in, which is
-   * what keeps ten threads from rendering twenty identical links.
-   */
-  const single = group.rows.length === 1 ? group.rows[0] : null;
-
-  /**
    * A thread of five is where a queue turns into a wall. At scale there are
    * ten of them, fifty rows, and reading the tenth thread means scrolling past
    * forty asks that all point at work the reader has already seen named. So a
@@ -147,21 +160,14 @@ function Thread({
    * is the shell's own, and a folded thread opens itself when the reader has
    * one of its asks open.
    */
+  const single = group.rows.length === 1;
   const rest = single ? [] : group.rows.slice(1);
   const folded = rest.length > 1;
-  const first = single ?? group.rows[0];
+  const first = group.rows[0];
 
   return (
     <li className="rl-thread" data-multi={single ? undefined : "yes"}>
-      <h2 className="rl-thread-title">
-        {single ? (
-          <a className="rl-thread-link" href={toDetail(single.href)}>
-            {group.heading}
-          </a>
-        ) : (
-          group.heading
-        )}
-      </h2>
+      <h2 className="rl-thread-title">{group.heading}</h2>
       {group.subheading && !folded ? (
         <p className="rl-thread-sub">{group.subheading}</p>
       ) : null}
@@ -174,7 +180,6 @@ function Thread({
               group={group}
               current={row.eventId === selectedId}
               openLabel={openLabel}
-              linked={single !== null}
             />
           ) : null,
         )}
@@ -193,7 +198,6 @@ function Thread({
                 group={group}
                 current={row.eventId === selectedId}
                 openLabel={openLabel}
-                linked={false}
               />
             ))}
           </ul>
@@ -228,10 +232,8 @@ function Detail({
           row.actorName,
         ]}
       />
-      {row.revisionLine ? (
-        <Notice tone="freshness">{row.revisionLine}</Notice>
-      ) : null}
-      {row.snoozeLine ? <Notice tone="freshness">{row.snoozeLine}</Notice> : null}
+      {row.revisionLine ? <Notice state="stale">{row.revisionLine}</Notice> : null}
+      {row.snoozeLine ? <Notice state="stale">{row.snoozeLine}</Notice> : null}
       {row.attempt ? (
         <div className="rl-attempt" data-outcome={row.attempt.outcome}>
           <Label>What the source said</Label>
@@ -241,7 +243,7 @@ function Detail({
           ) : null}
         </div>
       ) : null}
-      <Facts
+      <Fields
         rows={[
           ["Read state", row.visibilityLabel],
           ["Where it stands", row.dispositionLabel],
@@ -258,43 +260,6 @@ function Detail({
   );
 }
 
-/**
- * With nothing selected, the second column carries the read rather than an
- * empty frame. Coverage, scope and the snooze windows this Inbox uses are
- * facts the reader is owed, and putting them here means the column is never
- * furniture waiting to be filled.
- */
-function QueueLedger({ props }: { props: HomeCandidateProps }) {
-  const { inbox, chrome, copy } = props;
-  const facts: (readonly [string, string])[] = [];
-  if (inbox.badge.rendered) {
-    facts.push(["Open now", inbox.badge.glyph ?? copy.unreadableCount]);
-  }
-  facts.push(["What Home is reading", chrome.scope.label]);
-  facts.push(["State of this read", copy.states[inbox.state]]);
-
-  return (
-    <>
-      <Label>This read</Label>
-      <Facts rows={facts} />
-      {inbox.snoozeOptions.length > 0 ? (
-        <div className="rl-ledger-block">
-          <Label>When a snooze comes back</Label>
-          <ul className="rl-snooze-list">
-            {inbox.snoozeOptions.map((option) => (
-              <li className="rl-snooze" key={option.id}>
-                <span className="rl-snooze-label">{option.label}</span>
-                <span className="rl-snooze-when">{option.resurfaceLine}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      <p className="rl-read-line">{chrome.asOf.line}</p>
-    </>
-  );
-}
-
 export function InboxMode(props: HomeCandidateProps) {
   const { inbox, chrome, hrefFor } = props;
   const selection = inbox.selection;
@@ -306,7 +271,7 @@ export function InboxMode(props: HomeCandidateProps) {
 
       <Notices items={inbox.disclosures} heading="What Home could not read" />
       {inbox.selectionMissingLine ? (
-        <Notice tone="scope">{inbox.selectionMissingLine}</Notice>
+        <Notice state="unavailable">{inbox.selectionMissingLine}</Notice>
       ) : null}
 
       <div className="rl-inbox" data-selected={selection ? "yes" : undefined}>
@@ -325,22 +290,33 @@ export function InboxMode(props: HomeCandidateProps) {
           ) : inbox.emptyLine ? (
             <p className="rl-empty">{inbox.emptyLine}</p>
           ) : null}
+
+          {/* Ruled metadata, not a panel. Three snooze choices and the exact
+              instant each one comes back, two of which land on a daylight
+              saving boundary and are stated to the minute rather than rounded
+              to "in three months". */}
+          {inbox.snoozeOptions.length > 0 ? (
+            <div className="rl-queue-foot">
+              <Label>When a snooze comes back</Label>
+              <Fields
+                rows={inbox.snoozeOptions.map(
+                  (option) => [option.label, option.resurfaceLine] as const,
+                )}
+              />
+            </div>
+          ) : null}
         </section>
 
-        <section
-          className="rl-detail"
-          id={DETAIL_ID}
-          tabIndex={-1}
-          aria-label={selection ? "The item you opened" : "About this read"}
-        >
-          <div className="rl-detail-inner">
-            {selection ? (
-              <Detail row={selection} props={props} backHref={backHref} />
-            ) : (
-              <QueueLedger props={props} />
-            )}
-          </div>
-        </section>
+        {selection ? (
+          <section
+            className="rl-detail"
+            id={DETAIL_ID}
+            tabIndex={-1}
+            aria-label="The item you opened"
+          >
+            <Detail row={selection} props={props} backHref={backHref} />
+          </section>
+        ) : null}
       </div>
     </>
   );

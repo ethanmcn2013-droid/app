@@ -6,10 +6,15 @@
  * promise, and it is why the briefing feels like the same document continued
  * rather than a second screen with more rows on it.
  *
- * Today is capped at what the ranking allows and reads as an authored page:
- * a measure, ordinals down the left, one fact line per entry, and an
- * accounting note at the foot that says what the read did. The briefing is the
- * same page uncapped, with its return path at the top and at the bottom.
+ * WHAT THE NUMBERS COUNT, AND WHY TODAY STOPS COUNTING.
+ *
+ * An ordinal in this direction marks a ranked position in the read. Today
+ * ranks three decisions and then stops, so exactly three entries are numbered
+ * and everything below Today's signal carries no number at all. The cap is
+ * then visible as a judgement — three things were ranked, the rest is context
+ * — rather than as a section boundary inside one long numbered document. The
+ * briefing is the same read uncapped, so it numbers all of it: that is the
+ * difference between the two screens, said in the margin.
  */
 
 import type {
@@ -19,17 +24,16 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import { sectionSpeaks } from "@/lib/home-layer/candidates/index/labels";
 import {
-  Margin,
-  Notes,
+  Flag,
+  Limits,
   Ordinal,
   PageHead,
   Perms,
   Section,
-  SectionIndex,
+  ThisRead,
   When,
   entryAnchor,
   sectionAnchor,
-  splitNotes,
 } from "./parts";
 
 function Facts({ row }: { row: TodayRow }) {
@@ -51,6 +55,10 @@ function Facts({ row }: { row: TodayRow }) {
  * how this direction keeps a 44 px target on every row and still never nests
  * an interactive control inside a wrapping link: the two states are different
  * elements, not one element with something bolted inside it.
+ *
+ * `position` is null on an entry the read did not rank. The gutter stays, so
+ * every title in the document still hangs on one vertical; what changes is
+ * whether there is a number in it.
  */
 function Entry({
   row,
@@ -59,7 +67,7 @@ function Entry({
   closeHref,
 }: {
   row: TodayRow;
-  position: number;
+  position: number | null;
   open: boolean;
   closeHref: string;
 }) {
@@ -68,7 +76,7 @@ function Entry({
     return (
       <li className="ri-entry" id={id} data-selected="">
         <div className="ri-entry-open">
-          <Ordinal position={position} />
+          {position === null ? <span aria-hidden="true" /> : <Ordinal position={position} />}
           <div>
             <h3 className="ri-entry-title">{row.title}</h3>
             <span className="ri-entry-reason">{row.reason}</span>
@@ -89,7 +97,7 @@ function Entry({
   return (
     <li className="ri-entry" id={id}>
       <a className="ri-entry-link" href={row.href}>
-        <Ordinal position={position} />
+        {position === null ? <span aria-hidden="true" /> : <Ordinal position={position} />}
         <div>
           <h3 className="ri-entry-title">{row.title}</h3>
           <span className="ri-entry-reason">{row.reason}</span>
@@ -102,19 +110,20 @@ function Entry({
 
 function Sections({
   sections,
+  numbering,
   openKey,
   closeHref,
 }: {
   sections: readonly TodaySection[];
+  /**
+   * "ranked" numbers the whole read, which is what the briefing is. "capped"
+   * numbers the ranked section and nothing after it, which is what Today is.
+   */
+  numbering: "ranked" | "capped";
   openKey: string | null;
   closeHref: string;
 }) {
-  /**
-   * Entries are numbered continuously down the whole read, not restarted per
-   * section, because the ordinal is the reader's place in the document rather
-   * than a rank inside a heading. Computed rather than counted, so nothing in
-   * this file mutates during a render.
-   */
+  /** Computed rather than counted, so nothing in this file mutates mid render. */
   const offsetOf = (index: number) =>
     sections
       .slice(0, index)
@@ -122,36 +131,43 @@ function Sections({
 
   return (
     <>
-      {sections.map((section, position) => (
-        <Section
-          key={section.id}
-          id={sectionAnchor(section.id)}
-          heading={section.heading}
-          position={position + 1}
-          note={section.windowLine}
-          tier={position === 0 ? "lead" : "tail"}
-        >
-          <ol className="ri-entries">
-            {section.rows.map((row, rowIndex) => (
-              <Entry
-                key={row.key}
-                row={row}
-                position={offsetOf(position) + rowIndex + 1}
-                open={openKey !== null && row.key === openKey}
-                closeHref={closeHref}
-              />
-            ))}
-          </ol>
-          {section.suppressedLine ? (
-            <p className="ri-more">
-              {section.suppressedLine}{" "}
-              {section.moreHref && section.moreLabel ? (
-                <a href={section.moreHref}>{section.moreLabel}</a>
-              ) : null}
-            </p>
-          ) : null}
-        </Section>
-      ))}
+      {sections.map((section, position) => {
+        const numbers =
+          numbering === "ranked" || section.id === "todaysSignal";
+        return (
+          <Section
+            key={section.id}
+            id={sectionAnchor(section.id)}
+            heading={section.heading}
+            note={section.windowLine}
+            tier={position === 0 ? "lead" : "tail"}
+          >
+            <ol className="ri-entries">
+              {section.rows.map((row, rowIndex) => (
+                <Entry
+                  key={row.key}
+                  row={row}
+                  position={
+                    numbers
+                      ? (numbering === "ranked" ? offsetOf(position) : 0) + rowIndex + 1
+                      : null
+                  }
+                  open={openKey !== null && row.key === openKey}
+                  closeHref={closeHref}
+                />
+              ))}
+            </ol>
+            {section.suppressedLine ? (
+              <p className="ri-more">
+                {section.suppressedLine}{" "}
+                {section.moreHref && section.moreLabel ? (
+                  <a href={section.moreHref}>{section.moreLabel}</a>
+                ) : null}
+              </p>
+            ) : null}
+          </Section>
+        );
+      })}
     </>
   );
 }
@@ -159,29 +175,24 @@ function Sections({
 // ── Today ───────────────────────────────────────────────────────────────────
 
 export function TodayMode({ props }: { props: HomeCandidateProps }) {
-  const { today, hrefFor } = props;
+  const { today, copy, hrefFor } = props;
   const shown = today.sections.filter(sectionSpeaks);
   const nothingShown = shown.length === 0;
-  const { blocking, marginal } = splitNotes(today.disclosures);
 
   return (
     <div className="ri-page">
       <PageHead props={props}>
         {/*
-          The quiet day, and only the quiet day. `readIsQuiet` is true in one
-          world of thirteen, and it is the one composition in this direction
-          that is allowed to be almost empty: a single sentence against a rule,
-          with no sections invented underneath it to make the page look busy.
-          Every other world lands its quiet sentence in the colophon, where a
-          footnote belongs.
+          THE STANDFIRST, IN EVERY WORLD. The shell writes one sentence about
+          what this read can and cannot claim, and it is the first thing under
+          the headline whatever world is on screen — a quiet day, a signature
+          day, a day where a source refused. An arrival screen that goes from
+          headline straight into a list has told the reader nothing true before
+          asking them to act.
         */}
-        {today.quiet.readIsQuiet ? (
-          <p className="ri-quiet">{today.quiet.line}</p>
-        ) : null}
-        {today.selectionMissingLine ? (
-          <p className="ri-note-strong">{today.selectionMissingLine}</p>
-        ) : null}
-        <Notes disclosures={blocking} heading="What limited this read" />
+        <p className="ri-standfirst">{today.quiet.line}</p>
+        {today.selectionMissingLine ? <Flag>{today.selectionMissingLine}</Flag> : null}
+        <Limits disclosures={today.disclosures} />
       </PageHead>
 
       <div className="ri-body">
@@ -195,50 +206,35 @@ export function TodayMode({ props }: { props: HomeCandidateProps }) {
         */}
         {nothingShown && !today.quiet.readIsQuiet ? (
           today.state === "ready" ? (
-            <p className="ri-lead">{props.copy.empty.today}</p>
-          ) : (
-            <div className="ri-claim-withheld">
-              <p className="ri-label">{props.copy.states[today.state]}</p>
-              <p>{today.quiet.line}</p>
-            </div>
-          )
+            <p className="ri-lead">{copy.empty.today}</p>
+          ) : today.disclosures.length === 0 ? (
+            <p className="ri-claim-withheld">{copy.states[today.state]}</p>
+          ) : null
         ) : null}
         <Sections
           sections={shown}
+          numbering="capped"
           openKey={today.selection?.key ?? null}
           closeHref={hrefFor({ item: null })}
         />
 
-        <p className="ri-more">
-          <a className="ri-jump ri-jump-strong" href={today.briefingHref}>
-            {today.briefingLabel}
-          </a>
+        {/*
+          The closing move. A read ends by offering the read behind it, and it
+          is a ruled invitation across the measure rather than a stub of
+          underlined text left hanging in white space.
+        */}
+        <p className="ri-onward">
+          <a href={today.briefingHref}>{today.briefingLabel}</a>
         </p>
-
-        <div className="ri-colophon">
-          <p className="ri-label">What this read did</p>
-          <p>{today.accountingLine ?? today.accountingWithheldLine}</p>
-          {today.quiet.readIsQuiet ? null : <p>{today.quiet.line}</p>}
-          {today.unsupported.length > 0 ? (
-            <ul>
-              {today.unsupported.map((note) => (
-                <li key={note.id}>{note.text}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
       </div>
 
-      <Margin show={shown.length >= 2 || marginal.length > 0}>
-        <SectionIndex
-          entries={shown.map((section) => ({
-            id: sectionAnchor(section.id),
-            heading: section.heading,
-          }))}
-          label="Sections on this page"
-        />
-        <Notes disclosures={marginal} heading="Notes on this read" />
-      </Margin>
+      <ThisRead
+        props={props}
+        lines={[
+          today.accountingLine ?? today.accountingWithheldLine,
+          ...today.unsupported.map((note) => note.text),
+        ]}
+      />
     </div>
   );
 }
@@ -248,47 +244,39 @@ export function TodayMode({ props }: { props: HomeCandidateProps }) {
 export function BriefingMode({ props }: { props: HomeCandidateProps }) {
   const { briefing, hrefFor } = props;
   const shown = briefing.sections.filter(sectionSpeaks);
-  const { blocking, marginal } = splitNotes(briefing.disclosures);
 
   return (
     <div className="ri-page">
       <PageHead props={props}>
-        <p className="ri-more">
-          <a className="ri-jump ri-jump-strong" href={briefing.returnHref}>
-            {briefing.returnLabel}
-          </a>
+        {/*
+          The way back sits at the top as well as the foot, because the reader
+          arrived here from a position in Today and is owed it before they
+          start reading rather than after. The index above says where they are;
+          this says how to get back.
+        */}
+        <p className="ri-onward ri-onward--back">
+          <a href={briefing.returnHref}>{briefing.returnLabel}</a>
         </p>
-        <Notes disclosures={blocking} heading="What limited this read" />
+        <Limits disclosures={briefing.disclosures} />
       </PageHead>
 
       <div className="ri-body">
         <Sections
           sections={shown}
+          numbering="ranked"
           openKey={null}
           closeHref={hrefFor({ item: null })}
         />
 
-        <div className="ri-colophon">
-          <p className="ri-label">What this read did</p>
-          <p>{briefing.accountingLine ?? briefing.accountingWithheldLine}</p>
-          <p className="ri-more">
-            <a className="ri-jump" href={briefing.returnHref}>
-              {briefing.returnLabel}
-            </a>
-          </p>
-        </div>
+        <p className="ri-onward">
+          <a href={briefing.returnHref}>{briefing.returnLabel}</a>
+        </p>
       </div>
 
-      <Margin show={shown.length >= 2 || marginal.length > 0}>
-        <SectionIndex
-          entries={shown.map((section) => ({
-            id: sectionAnchor(section.id),
-            heading: section.heading,
-          }))}
-          label="Sections on this page"
-        />
-        <Notes disclosures={marginal} heading="Notes on this read" />
-      </Margin>
+      <ThisRead
+        props={props}
+        lines={[briefing.accountingLine ?? briefing.accountingWithheldLine]}
+      />
     </div>
   );
 }

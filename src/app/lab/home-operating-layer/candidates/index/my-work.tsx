@@ -5,8 +5,9 @@
  * Waiting to the last row of Later, so a reader can see at a glance how much
  * they are carrying without a total being asserted anywhere — the ordinals are
  * the count, and they are a fact about the page rather than a claim about the
- * world. Groups are ruled bands inside that numbering; the rhythm is one row,
- * one rule, one date on the right.
+ * world. Groups are ruled bands inside that numbering, and they carry no
+ * number of their own: one series, one meaning, so an item numbered 03 can
+ * never sit under a heading numbered 02.
  *
  * Only refusals are written on a row. Sixty rows that all allow the same two
  * things say nothing by saying so; a row that cannot be finished has to say
@@ -18,17 +19,16 @@ import type {
   MyWorkRowView,
 } from "@/lib/home-layer/lab-shell";
 import {
-  Margin,
-  Notes,
+  Flag,
+  Limits,
   Ordinal,
   PageHead,
   Perms,
   Section,
-  SectionIndex,
+  ThisRead,
   When,
   entryAnchor,
   sectionAnchor,
-  splitNotes,
 } from "./parts";
 
 /**
@@ -132,10 +132,9 @@ function Row({
 }
 
 export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
-  const { myWork, chrome, copy, hrefFor } = props;
+  const { myWork, copy, hrefFor } = props;
   const groups = myWork.groups.filter((group) => group.rows.length > 0);
   const openKey = myWork.selection?.key ?? null;
-  const { blocking, marginal } = splitNotes(myWork.disclosures);
   /**
    * One numbering, from the first row of Waiting to the last row of Later. The
    * ordinal is the reader's place in the ledger, so it never restarts at a
@@ -147,10 +146,8 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
   return (
     <div className="ri-page">
       <PageHead props={props}>
-        {myWork.selectionMissingLine ? (
-          <p className="ri-note-strong">{myWork.selectionMissingLine}</p>
-        ) : null}
-        <Notes disclosures={blocking} heading="What limited this read" />
+        {myWork.selectionMissingLine ? <Flag>{myWork.selectionMissingLine}</Flag> : null}
+        <Limits disclosures={myWork.disclosures} />
       </PageHead>
 
       <div className="ri-body">
@@ -161,10 +158,7 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
           own state vocabulary rather than showing a clean, false zero.
         */}
         {myWork.kind === "ready" ? null : (
-          <div className="ri-claim-withheld">
-            <p className="ri-label">{copy.states[myWork.state]}</p>
-            <p>{chrome.activeProject.line}</p>
-          </div>
+          <p className="ri-claim-withheld">{copy.states[myWork.state]}</p>
         )}
 
         {myWork.kind === "ready" && myWork.rowsShown === 0 && myWork.emptyLine ? (
@@ -176,7 +170,6 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
             key={group.id}
             id={sectionAnchor(group.id)}
             heading={group.heading}
-            position={position + 1}
             note={group.note}
           >
             <ul className="ri-ledger">
@@ -195,48 +188,20 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
         ))}
 
         {myWork.moreHref && myWork.moreLabel ? (
-          <p className="ri-more">
-            <a className="ri-jump" href={myWork.moreHref}>
-              {myWork.moreLabel}
-            </a>
+          <p className="ri-onward">
+            <a href={myWork.moreHref}>{myWork.moreLabel}</a>
           </p>
         ) : null}
       </div>
 
-      <Margin
-        show={
-          groups.length >= 2 ||
-          marginal.length > 0 ||
-          Boolean(
-            myWork.coverageLine ??
-              myWork.timeZoneLine ??
-              myWork.doneExcludedLine,
-          )
-        }
-      >
-        <SectionIndex
-          entries={groups.map((group) => ({
-            id: sectionAnchor(group.id),
-            heading: group.heading,
-          }))}
-          label="Sections on this page"
-        />
-        <Notes disclosures={marginal} heading="Notes on this read" />
-        {myWork.coverageLine || myWork.timeZoneLine || myWork.doneExcludedLine ? (
-          <div className="ri-notes-block">
-            <p className="ri-label">What this list leaves out</p>
-            <ul className="ri-notes-list">
-              {[myWork.coverageLine, myWork.timeZoneLine, myWork.doneExcludedLine]
-                .filter((line): line is string => typeof line === "string")
-                .map((line) => (
-                  <li className="ri-note" key={line}>
-                    <p className="ri-note-text">{line}</p>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ) : null}
-      </Margin>
+      <ThisRead
+        props={props}
+        lines={[
+          myWork.coverageLine,
+          myWork.doneExcludedLine,
+          myWork.timeZoneLine,
+        ]}
+      />
     </div>
   );
 }

@@ -10,6 +10,13 @@
  * where it sits, keeps its position in the ledger, and shows the source route
  * it would return you to. That is a different detail behaviour from Inbox on
  * purpose — a queue you work through wants a panel, a ledger you scan does not.
+ *
+ * ROUND 1 called this the best-composed page in the lab and also found a hard
+ * defect in it: at 390 the lateness block collapsed into "4 days lateSunday 12
+ * July", one run with no separator. The date field is now one component with
+ * its own gaps at every width, and lateness is ink and a struck rule rather
+ * than red. The group definitions moved out of right-aligned letterspaced caps
+ * and into the margin beside the heading they explain.
  */
 
 import type {
@@ -18,7 +25,7 @@ import type {
   MyWorkRowView,
 } from "@/lib/home-layer/lab-shell";
 import { TaskActions, TaskRowState } from "./interaction";
-import { Disclosures, Provenance } from "./shell";
+import { Limits, Provenance, When, type LimitEntry } from "./shell";
 
 function OpenedWork({
   row,
@@ -48,37 +55,32 @@ function WorkRow({
   refusesFirst,
 }: Readonly<{ row: MyWorkRowView; selected: boolean; refusesFirst: boolean }>) {
   return (
-    <li>
-      <div className="ed-work-row">
-        <TaskRowState taskKey={row.key}>
-          <h3 className="ed-work-title">
-            <a href={row.href}>{row.title}</a>
-          </h3>
-          <ul className="ed-meta">
-            <li>
-              <Provenance provenance={row.provenance} />
-            </li>
-            <li>{row.columnLabel}</li>
-            {row.isMilestone ? <li>Milestone</li> : null}
-            {row.coAssigneeLine === null ? null : <li>{row.coAssigneeLine}</li>}
-          </ul>
-          {row.waitingLine === null ? null : <p className="ed-why">{row.waitingLine}</p>}
-          {row.dueUnparsedLine === null ? null : (
-            <p className="ed-why">The date on this reads {row.dueUnparsedLine}.</p>
-          )}
-        </TaskRowState>
+    <li className="ed-work-row">
+      {row.due === null ? (
+        <p className="ed-work-when ed-when">
+          <b>No date</b>
+        </p>
+      ) : (
+        <When when={row.due} className="ed-work-when" />
+      )}
 
-        {row.due === null ? (
-          <p className="ed-work-when">
-            <b>No date</b>
-          </p>
-        ) : (
-          <p className="ed-work-when" data-overdue={row.due.overdue ? "true" : undefined}>
-            <b>{row.due.relative}</b>
-            {row.due.absolute}
-          </p>
+      <TaskRowState taskKey={row.key}>
+        <h3 className="ed-work-title">
+          <a href={row.href}>{row.title}</a>
+        </h3>
+        <ul className="ed-meta">
+          <li>
+            <Provenance provenance={row.provenance} />
+          </li>
+          <li>{row.columnLabel}</li>
+          {row.isMilestone ? <li>Milestone</li> : null}
+          {row.coAssigneeLine === null ? null : <li>{row.coAssigneeLine}</li>}
+        </ul>
+        {row.waitingLine === null ? null : <p className="ed-why">{row.waitingLine}</p>}
+        {row.dueUnparsedLine === null ? null : (
+          <p className="ed-why">The date on this reads {row.dueUnparsedLine}.</p>
         )}
-      </div>
+      </TaskRowState>
 
       {selected ? <OpenedWork row={row} refusesFirst={refusesFirst} /> : null}
     </li>
@@ -99,7 +101,7 @@ function Group({
     <section className="ed-section" aria-labelledby={`ed-work-${group.id}`}>
       <div className="ed-section-head">
         <h2 id={`ed-work-${group.id}`}>{group.heading}</h2>
-        {group.note === null ? null : <span className="ed-label">{group.note}</span>}
+        {group.note === null ? null : <p className="ed-section-note">{group.note}</p>}
       </div>
       <ul className="ed-list ed-works">
         {group.rows.map((row) => (
@@ -115,8 +117,11 @@ function Group({
   );
 }
 
-export function MyWorkMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
-  const { myWork, chrome, copy, world } = props;
+export function MyWorkMode({
+  props,
+  limits,
+}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
+  const { myWork, chrome, world } = props;
   const refusesFirst = world.id === "action_failure";
   const selectedKey = myWork.selection?.key ?? null;
 
@@ -145,7 +150,7 @@ export function MyWorkMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
         <p className="ed-refused">{myWork.selectionMissingLine}</p>
       )}
 
-      <Disclosures entries={myWork.disclosures} copy={copy} />
+      <Limits entries={limits} />
 
       {myWork.kind === "ready" && myWork.rowsShown === 0 && myWork.emptyLine !== null ? (
         <p className="ed-lede">{myWork.emptyLine}</p>
@@ -161,7 +166,7 @@ export function MyWorkMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
       ))}
 
       {myWork.moreHref === null || myWork.moreLabel === null ? null : (
-        <p>
+        <p className="ed-tail">
           <a className="ed-more" href={myWork.moreHref}>
             {myWork.moreLabel}
           </a>

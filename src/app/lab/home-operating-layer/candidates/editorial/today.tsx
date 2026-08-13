@@ -11,19 +11,24 @@
  * softened. When the read has rows it sits under the headline as a standing
  * note; when it has none it BECOMES the lede, at reading size, because on a
  * quiet day the state of the read is the news.
+ *
+ * ROUND 1 changed three things here. Every entry and every ledger row now runs
+ * the page's three columns rather than one — the date and the lateness are a
+ * ledger field on the right instead of a run of coloured metadata in the middle
+ * — which is what earns the width the direction was told it never earned. A row
+ * never prints a sentence that only repeats the ledger field beside it. And the
+ * three ranked decisions are a real `<ol>`, so their order reaches assistive
+ * technology rather than living in an `aria-hidden` numeral.
  */
 
-import type {
-  HomeCandidateProps,
-  TodayRow,
-  TodaySection,
-} from "@/lib/home-layer/lab-shell";
-import { Disclosures, Provenance } from "./shell";
+import type { HomeCandidateProps, TodayRow, TodaySection } from "@/lib/home-layer/lab-shell";
+import { nothingConnectedYet } from "./read-state";
+import { FirstRun, Limits, Provenance, When, type LimitEntry } from "./shell";
 
 function OpenedRow({ row }: Readonly<{ row: TodayRow }>) {
   return (
     <div className="ed-open">
-      <h3>What this opens</h3>
+      <h4>What this opens</h4>
       <p>{row.reason}</p>
       <p>
         In the product this opens <span className="ed-num">{row.sourcePath}</span>. The lab does
@@ -33,77 +38,75 @@ function OpenedRow({ row }: Readonly<{ row: TodayRow }>) {
   );
 }
 
-function RowMeta({ row }: Readonly<{ row: TodayRow }>) {
-  return (
-    <ul className="ed-meta">
-      <li>
-        <Provenance provenance={row.provenance} />
-      </li>
-      {row.isReading && row.memberCount > 0 ? (
-        <li>Read from {row.memberCount} items</li>
-      ) : null}
-      {row.idleLine === null ? null : <li>{row.idleLine}</li>}
-    </ul>
-  );
+/**
+ * True when the reason sentence says only what the ledger field beside it
+ * already says. Round 1: "eyebrow 'Due in 5 days' over reason 'Due in 5 days.'
+ * on four consecutive rows. It reads as unedited output, not authored copy."
+ * The fact is not dropped — it is on the row once, in the field built for it.
+ */
+function reasonIsTheField(row: TodayRow): boolean {
+  if (row.due === null) return false;
+  return row.reason.replace(/\.$/, "") === row.due.relative;
 }
 
 function SignalEntry({
   row,
-  index,
   selected,
-}: Readonly<{ row: TodayRow; index: number; selected: boolean }>) {
+  index,
+}: Readonly<{ row: TodayRow; selected: boolean; index: number }>) {
   return (
-    <li>
-      <div className="ed-entry">
-        <p className="ed-entry-index" aria-hidden="true">
-          {String(index + 1).padStart(2, "0")}
-        </p>
-        <div className="ed-entry-body">
-          <h3 className="ed-entry-title">
-            <a href={row.href}>{row.title}</a>
-          </h3>
-          <p className="ed-reason">{row.reason}</p>
-          <ul className="ed-meta">
-            <li>
-              <Provenance provenance={row.provenance} />
-            </li>
-            {row.due === null ? null : (
-              <li className={row.due.overdue ? "ed-late" : undefined}>
-                {row.due.relative} · {row.due.absolute}
-              </li>
-            )}
-            {row.idleLine === null ? null : <li>{row.idleLine}</li>}
-          </ul>
-          {selected ? <OpenedRow row={row} /> : null}
-        </div>
+    <li className="ed-entry">
+      {/* The list carries the ordinal for assistive technology; this is the
+          printed numeral, which is a different thing and says so. */}
+      <p className="ed-entry-index" aria-hidden="true">
+        {String(index + 1).padStart(2, "0")}
+      </p>
+
+      {row.due === null ? null : <When when={row.due} className="ed-entry-when" />}
+
+      <div className="ed-entry-body">
+        <h3 className="ed-entry-title">
+          <a href={row.href}>{row.title}</a>
+        </h3>
+        <p className="ed-reason">{row.reason}</p>
+        <ul className="ed-meta">
+          <li>
+            <Provenance provenance={row.provenance} />
+          </li>
+          {row.isReading && row.memberCount > 0 ? <li>Read from {row.memberCount} items</li> : null}
+          {row.idleLine === null ? null : <li>{row.idleLine}</li>}
+        </ul>
+        {selected ? <OpenedRow row={row} /> : null}
       </div>
     </li>
   );
 }
 
-function LedgerRow({
-  row,
-  selected,
-}: Readonly<{ row: TodayRow; selected: boolean }>) {
+function LedgerRow({ row, selected }: Readonly<{ row: TodayRow; selected: boolean }>) {
   return (
-    <li>
-      <div className="ed-row">
+    <li className="ed-row">
+      {row.due === null ? (
+        <p className="ed-row-when ed-when">
+          <b>No date</b>
+        </p>
+      ) : (
+        <When when={row.due} className="ed-row-when" />
+      )}
+
+      <div className="ed-row-body">
         <h3 className="ed-row-title">
           <a href={row.href}>{row.title}</a>
         </h3>
-        {row.due === null ? (
-          <p className="ed-row-when">No date</p>
-        ) : (
-          <p className="ed-row-when" data-overdue={row.due.overdue ? "true" : undefined}>
-            {row.due.relative}
-          </p>
-        )}
-        <div className="ed-row-meta">
-          <p className="ed-why">{row.reason}</p>
-          <RowMeta row={row} />
-        </div>
+        {reasonIsTheField(row) ? null : <p className="ed-why">{row.reason}</p>}
+        <ul className="ed-meta">
+          <li>
+            <Provenance provenance={row.provenance} />
+          </li>
+          {row.isReading && row.memberCount > 0 ? <li>Read from {row.memberCount} items</li> : null}
+          {row.idleLine === null ? null : <li>{row.idleLine}</li>}
+        </ul>
+        {selected ? <OpenedRow row={row} /> : null}
       </div>
-      {selected ? <OpenedRow row={row} /> : null}
     </li>
   );
 }
@@ -124,12 +127,12 @@ function Section({
       <div className="ed-section-head">
         <h2 id={`ed-sec-${section.id}`}>{section.heading}</h2>
         {section.windowLine === null ? null : (
-          <span className="ed-label">{section.windowLine}</span>
+          <p className="ed-section-note">{section.windowLine}</p>
         )}
       </div>
 
       {section.rows.length === 0 ? null : numbered ? (
-        <ul className="ed-list ed-entries">
+        <ol className="ed-list ed-entries">
           {section.rows.map((row, index) => (
             <SignalEntry
               key={row.key}
@@ -138,7 +141,7 @@ function Section({
               selected={selectedKey === row.key}
             />
           ))}
-        </ul>
+        </ol>
       ) : (
         <ul className="ed-list ed-rows">
           {section.rows.map((row) => (
@@ -164,13 +167,21 @@ function Section({
   );
 }
 
-export function TodayMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
-  const { today, copy } = props;
+export function TodayMode({
+  props,
+  limits,
+}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
+  const { today, chrome } = props;
   const rowCount = today.sections.reduce((total, section) => total + section.rows.length, 0);
   const selectedKey = today.selection?.key ?? null;
+  const firstRun = nothingConnectedYet(chrome);
 
   return (
     <>
+      {/* One sentence, one place. Round 1 caught the quiet day printing the
+          same fact twice, once as this sentence and once as a standalone line
+          90px below it. The standalone line is gone; this sentence contains
+          it. */}
       {rowCount === 0 ? (
         <p className="ed-lede">{today.quiet.line}</p>
       ) : (
@@ -181,11 +192,9 @@ export function TodayMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
         <p className="ed-refused">{today.selectionMissingLine}</p>
       )}
 
-      <Disclosures entries={today.disclosures} copy={copy} />
+      <Limits entries={limits} />
 
-      {rowCount === 0 && today.quiet.readIsQuiet ? (
-        <p className="ed-measure">{copy.empty.today}</p>
-      ) : null}
+      {firstRun ? <FirstRun line={chrome.activeProject.line} /> : null}
 
       {today.sections.map((section, index) => (
         <Section
@@ -196,46 +205,33 @@ export function TodayMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
         />
       ))}
 
-      <p>
-        <a className="ed-more" href={today.briefingHref}>
-          {today.briefingLabel}
-        </a>
-      </p>
+      {firstRun ? null : (
+        <p className="ed-tail">
+          <a className="ed-more" href={today.briefingHref}>
+            {today.briefingLabel}
+          </a>
+        </p>
+      )}
     </>
   );
 }
 
-export function BriefingMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
-  const { briefing, copy, hrefFor } = props;
+export function BriefingMode({
+  props,
+  limits,
+}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
+  const { briefing } = props;
   const rowCount = briefing.sections.reduce((total, section) => total + section.rows.length, 0);
 
   return (
     <>
-      {/* The briefing is depth from Today, not a fifth mode, so the trail is
-          where it says so — and where the document's one aria-current="page"
-          lives while the mode nav is showing Today as an ancestor. */}
-      <nav className="ed-crumbs" aria-label="Where you are">
-        <ul>
-          <li>
-            <a href={briefing.returnHref} aria-label={briefing.returnLabel}>
-              {copy.modeNames.today}
-            </a>
-          </li>
-          <li>
-            <a href={hrefFor({})} aria-current="page">
-              {copy.modeNames.briefing}
-            </a>
-          </li>
-        </ul>
-      </nav>
-
-      <Disclosures entries={briefing.disclosures} copy={copy} />
-
       {rowCount === 0 ? (
         <p className="ed-lede">{props.today.quiet.line}</p>
       ) : (
         <p className="ed-standing">Every row the ranking kept, in the order it ranked them.</p>
       )}
+
+      <Limits entries={limits} />
 
       {briefing.sections.map((section) => (
         <Section key={section.id} section={section} selectedKey={null} numbered={false} />

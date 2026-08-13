@@ -15,19 +15,28 @@
  *      JavaScript, so it spends none of the programme's 0.9 KB of shared
  *      runtime headroom.
  *
- * COLOUR. The wildcard's licence is spent on one thing: the paper is warm.
+ * COLOUR. The wildcard's licence is spent on two things, and only two. The paper
+ * is warm. And there is now exactly ONE semantic ink in the whole direction —
+ * `--dk-alarm` — spent in exactly three places: a rule that stops because a
+ * source refused, an overdue date, and a mode tab whose read did not come back.
  * Everything else is the estate's own tokens, and every value is mixed FROM a
  * theme token rather than typed, so light and dark both follow without a second
- * palette. There are no status colours anywhere in this direction. State is
- * carried by shape, by weight and by words, which is why "no state by colour
- * alone" is true here by construction rather than by review.
+ * palette.
+ *
+ * That one ink is never the only channel. The refused rule is also a different
+ * SHAPE from the partial rule and from the complete one; an overdue date also
+ * reads "4 days late" in words; a limited tab also carries its state in its
+ * accessible name. Remove every colour from this page and the three read states
+ * are still three different silhouettes, which is the point of drawing state
+ * rather than tinting it.
  *
  * Contrast, measured against the mixes below rather than assumed:
- *   --x-ink-quiet #52525b on --dk-paper #fcfaf7   7.29:1   (floor 7:1, ≤13px)
- *   --x-ink-quiet on --dk-band #faf7f2            7.16:1
+ *   --dk-quiet #52525b on --dk-paper #fcfaf7      7.29:1   (floor 7:1, ≤13px)
+ *   --dk-quiet on --dk-band #faf7f2               7.16:1
+ *   --dk-alarm #963030 on --dk-paper              7.30:1
  *   --dk-spine (50% ink)                          3.42:1   (floor 3:1, 1.4.11)
  *   --dk-mark = --accent on --dk-paper            6.05:1
- *   dark: quiet ink on #171513                    9.58:1 · mark (indigo-400) 6.2:1
+ *   dark: quiet ink on #171513 9.58:1 · alarm 7.58:1 · mark (indigo-400) 6.2:1
  */
 
 .dk {
@@ -42,22 +51,41 @@
   --dk-spine: color-mix(in srgb, var(--dk-paper) 50%, var(--ink));
   --dk-mark: var(--accent);
 
+  /* The metadata ink, named once so 25 usages cannot drift. The fallback is
+     --ink-soft rather than --ink-faint on purpose: if the estate's quiet ink is
+     ever missing, this direction fails to a DARKER ink, never a lighter one. */
+  --dk-quiet: var(--x-ink-quiet, var(--ink-soft));
+
+  /* The one semantic ink. Mixed toward --ink until it clears 7:1 on the warm
+     paper, because the raw status token is 3.76:1 there and this is text. */
+  --dk-alarm: color-mix(in srgb, var(--status-blocked) 60%, var(--ink));
+
   /*
-   * THREE MEASURES, AND THE PAGE ONLY WIDENS ONCE.
+   * ONE FRAME, EVERY MODE, AND ONE THING THAT MAY LEAVE IT.
+   *
+   * Round 1 gave Today a 46rem sheet and Analytics a 56rem one, so the masthead
+   * rule ran 376–1064 in one mode and 296–1144 in another. Furniture that moves
+   * when you change mode reads as unresolved, and a house style built on
+   * alignment cannot afford it.
+   *
+   * `--dk-frame` is now the sheet, at 46rem, in all five modes and in the desk
+   * head as well: `.dk-frame` is one grid, used by the head and by the page, so
+   * the two share one left edge and one right edge at every width.
+   * `--dk-wide` is 62rem and is claimed by exactly two things — the Project
+   * ledger, and an Inbox with an event open — by taking the `wide` column of
+   * that same grid. Nothing else moves, so the widening reads as an event
+   * rather than as a default.
    *
    * `--dk-measure` is prose: 34rem, the width a sentence is read at.
    * `--dk-row` is a ledger row: 44rem, wide enough for a title and its
    * provenance, timing and state on one line.
-   * `--dk-page` is the sheet, and it is 46rem in four of the five modes. It
-   * widens to 62rem for Analytics, where the Project ledger has to account for
-   * eighteen projects, and to 68rem for an Inbox with an event open, where a
-   * queue and a detail both need room. Nothing else moves it, so the widening
-   * reads as an event rather than as a default.
    */
   --dk-measure: 34rem;
   --dk-row: 44rem;
-  --dk-page: 46rem;
+  --dk-frame: 46rem;
   --dk-wide: 62rem;
+  --dk-flank: calc((var(--dk-wide) - var(--dk-frame)) / 2);
+  --dk-edge: var(--space-6);
   --dk-gutter: 2.25rem;
   --dk-draw: 340ms;
 
@@ -70,14 +98,6 @@
   font-size: var(--text-body);
   line-height: var(--leading-body);
   -webkit-font-smoothing: antialiased;
-}
-
-.dk[data-mode="analytics"] {
-  --dk-page: 56rem;
-}
-
-.dk[data-mode="inbox"][data-open="true"] {
-  --dk-page: 68rem;
 }
 
 [data-theme="dark"] .dk {
@@ -93,12 +113,72 @@
   box-sizing: border-box;
 }
 
-/* The focus ring is the global one, restated scoped so the direction renders
-   correctly wherever it is mounted. 2px, offset 2, radius 6. */
+/* ── The frame ────────────────────────────────────────────────────────────── */
+
+/*
+ * The full-bleed grid. Five tracks: an outer gutter that never falls below
+ * --dk-edge, a flank on each side of the sheet, and the sheet itself, which is
+ * the reading frame and takes priority over both when there is not enough room.
+ * At 320px the sheet is the window minus its two gutters and the flanks are
+ * zero, so nothing overflows and nothing has to be written twice.
+ */
+.dk-frame {
+  display: grid;
+  grid-template-columns:
+    [full-start] minmax(var(--dk-edge), 1fr)
+    [wide-start] minmax(0, var(--dk-flank))
+    [main-start] min(var(--dk-frame), calc(100% - var(--dk-edge) - var(--dk-edge)))
+    [main-end] minmax(0, var(--dk-flank))
+    [wide-end] minmax(var(--dk-edge), 1fr) [full-end];
+}
+
+.dk-frame > * {
+  grid-column: main;
+  min-width: 0;
+}
+
+.dk-frame > .dk-wide {
+  grid-column: wide;
+}
+
+/* ── Focus ────────────────────────────────────────────────────────────────── */
+
+/*
+ * The focus story, which used to be one rule and one declaration.
+ *
+ * The base ring is the estate's own, restated scoped so the direction renders
+ * correctly wherever it is mounted. Everything after it exists because the ring
+ * alone lands badly on that element: the mode tabs carry a 2px underline the
+ * ring would collide with, the scope control is a summary whose ring would clip
+ * against the band edge, and a row in the ruled column can say something the
+ * ring cannot — the spine itself lights up beside the entry you are on.
+ */
 .dk :focus-visible {
   outline: 2px solid var(--x-accent-focus, var(--accent));
   outline-offset: 2px;
   border-radius: 6px;
+}
+
+.dk-title a:focus-visible,
+.dk-more:focus-visible,
+.dk-back:focus-visible {
+  outline-offset: 3px;
+}
+
+.dk-modes a:focus-visible {
+  outline-offset: -3px;
+  border-radius: 4px;
+}
+
+.dk-scope > summary:focus-visible,
+.dk-fold > summary:focus-visible {
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* The line acknowledges the row you are standing on. */
+.dk-entry:focus-within {
+  box-shadow: inset 2px 0 0 0 var(--dk-mark);
 }
 
 .dk a {
@@ -147,16 +227,6 @@
   top: var(--space-4);
 }
 
-.dk-page {
-  max-width: var(--dk-page);
-  margin: 0 auto;
-  padding: 0 var(--space-6);
-}
-
-.dk-read {
-  max-width: var(--dk-measure);
-}
-
 /* The 11px mono cap label. The one place letterspacing is spent. */
 .dk-key {
   margin: 0;
@@ -165,20 +235,32 @@
   line-height: 1.45;
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 /* ── The desk head ────────────────────────────────────────────────────────── */
 
+/*
+ * TWO BANDS. Products with the one control that changes what Home reads, then
+ * the modes with who is reading. Round 1 stacked three and put 190px above the
+ * first word of the read; this is about 105px, and nothing was removed to get
+ * there — the as-of moved to the readline, where it is a fact about the read.
+ */
 .dk-head {
   background: var(--dk-band);
   border-bottom: 1px solid var(--dk-rule);
 }
 
-.dk-head-inner {
-  max-width: var(--dk-page);
-  margin: 0 auto;
-  padding: 0 var(--space-6);
+.dk-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 var(--space-5);
+}
+
+.dk-row-modes {
+  border-top: 1px solid var(--dk-rule);
 }
 
 .dk-suite ul,
@@ -199,7 +281,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
   text-decoration: none;
 }
 
@@ -222,15 +304,6 @@
   background: var(--dk-mark);
 }
 
-.dk-deskline {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-2) var(--space-5);
-  padding: var(--space-2) 0 var(--space-4);
-  border-top: 1px solid var(--dk-rule);
-}
-
 .dk-actor {
   margin: 0;
   font-size: var(--text-body-sm);
@@ -242,18 +315,16 @@
   color: var(--ink);
 }
 
-.dk-asof {
-  margin: 0;
-  font-size: var(--text-body-sm);
-  color: var(--x-ink-quiet, var(--ink-faint));
-}
-
 /* The scope control. A native disclosure, so it needs no JavaScript, keeps its
    keyboard behaviour for free, and becomes a labelled sheet at 320 by doing
-   nothing at all. */
+   nothing at all. Opening it gives it the whole band rather than squeezing a
+   panel into the width of its own summary. */
 .dk-scope {
-  flex: 1 1 22rem;
   min-width: 0;
+}
+
+.dk-scope[open] {
+  flex: 1 1 100%;
 }
 
 .dk-scope > summary {
@@ -279,10 +350,11 @@
 
 .dk-scope > summary::after {
   content: "";
+  flex: none;
   width: 7px;
   height: 7px;
-  border-right: 1.5px solid var(--x-ink-quiet, var(--ink-faint));
-  border-bottom: 1.5px solid var(--x-ink-quiet, var(--ink-faint));
+  border-right: 1.5px solid var(--dk-quiet);
+  border-bottom: 1.5px solid var(--dk-quiet);
   transform: rotate(45deg) translate(-2px, -2px);
 }
 
@@ -291,8 +363,9 @@
 }
 
 .dk-scope-panel {
-  margin-top: var(--space-2);
+  margin: var(--space-2) 0 var(--space-4);
   padding: var(--space-4);
+  max-width: var(--dk-row);
   background: var(--dk-paper);
   border: 1px solid var(--dk-rule);
   border-radius: var(--radius-lg);
@@ -302,7 +375,7 @@
   margin: 0 0 var(--space-4);
   max-width: 34rem;
   font-size: var(--text-body-sm);
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 .dk-scope-group {
@@ -349,14 +422,6 @@
   font-weight: var(--weight-medium);
 }
 
-.dk-scope-group a[aria-current] .dk-scope-tick {
-  color: var(--dk-mark);
-}
-
-.dk-modes {
-  border-top: 1px solid var(--dk-rule);
-}
-
 .dk-modes ul {
   gap: 0 var(--space-6);
 }
@@ -369,7 +434,7 @@
   min-height: 48px;
   font-size: var(--text-body-lg);
   letter-spacing: var(--tracking-heading);
-  color: var(--x-ink-quiet-soft, var(--ink-faint));
+  color: var(--x-ink-quiet-soft, var(--ink-soft));
   text-decoration: none;
 }
 
@@ -404,6 +469,43 @@
   background: var(--dk-spine);
 }
 
+/*
+ * PER-MODE READ HEALTH, in the same three-state grammar as the readline and at a
+ * twelfth of the size. A mode whose read finished carries nothing at all, so the
+ * presence of a mark is itself the signal — the same rule the old strip broke.
+ * The state is also in the link's accessible name, so this is never the only
+ * channel.
+ */
+/* Drawn UPRIGHT, as a hand's-width of the spine itself. A horizontal version of
+   the same mark sat on the text baseline and read as a stray hyphen after the
+   mode name, which is what the capture showed rather than what the CSS said. */
+.dk-tabstate {
+  position: relative;
+  flex: none;
+  width: 2px;
+  height: 13px;
+  background: var(--dk-spine);
+}
+
+.dk-tabstate::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 2px;
+  height: 4px;
+  background: var(--dk-band);
+}
+
+.dk-tabstate[data-read="refused"] {
+  height: 6px;
+  background: var(--dk-alarm);
+}
+
+.dk-tabstate[data-read="refused"]::after {
+  display: none;
+}
+
 /* Depth, and only on the route that has any: Today, then where you are now. */
 .dk-depth {
   border-top: 1px solid var(--dk-rule);
@@ -427,7 +529,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 .dk-depth li + li::before {
@@ -458,11 +560,13 @@
  *
  * Measured: white on indigo-600 is 6.29:1 at 11px against a 7:1 floor, and in
  * dark the estate's `--x-on-accent` is written for an indigo-600 fill while the
- * mark ink here is indigo-400, which lands at 2.71:1. Both were caught by the
- * contrast probe rather than by eye. An outlined numeral puts the digit on the
- * paper at full ink (15:1+) and leaves the indigo where it belongs: on the
- * boundary, as a 6:1 non-text graphic. It also keeps the one pill out of a
- * direction that otherwise has none.
+ * mark ink here is indigo-400, which lands at 2.71:1. An outlined numeral puts
+ * the digit on the paper at full ink (15:1+) and leaves the indigo where it
+ * belongs: on the boundary, as a 6:1 non-text graphic.
+ *
+ * A count that could not be closed is DRAWN OPEN on its right rather than
+ * rounded down, so the numeral looks like what the foot says it is: what could
+ * be checked, not a total.
  */
 .dk-badge {
   display: inline-flex;
@@ -479,6 +583,13 @@
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
   line-height: 1;
+}
+
+.dk-badge[data-coverage="partial"],
+.dk-badge[data-coverage="unavailable"] {
+  border-right-color: transparent;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  padding-right: 9px;
 }
 
 /* ── The read ─────────────────────────────────────────────────────────────── */
@@ -501,7 +612,7 @@
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 .dk-h1-line {
@@ -513,45 +624,90 @@
   text-wrap: balance;
 }
 
-.dk-status {
-  margin: var(--space-4) 0 0;
-  max-width: var(--dk-measure);
-  font-size: var(--text-body-sm);
-  color: var(--x-ink-quiet, var(--ink-faint));
+/*
+ * ── THE READLINE ─────────────────────────────────────────────────────────────
+ *
+ * The whole state of the read, drawn as one rule across the sheet.
+ *
+ *   complete   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ *   partial    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━      ━━━━━━━━━━━━━━━━━━━━━━
+ *   refused    ━━━━━━━━━━━━━━━━━━
+ *
+ * There is no tint, no box and no container. The break is cut by painting the
+ * paper back over the rule, which is exactly how the spine's own break is drawn
+ * twenty rows further down, so the two are one gesture at two scales.
+ *
+ * Why this and not a coloured band: a band was present in every world including
+ * the healthy one, so its presence carried nothing and the entire ladder rested
+ * on reading 11px of monospace. A silhouette is legible before it is read, is
+ * still legible in greyscale, and survives forced colours because a border and a
+ * Canvas-filled block are both things forced colours honours.
+ */
+.dk-readline {
+  position: relative;
+  margin: var(--space-6) 0 0;
+  padding-top: var(--space-4);
+  border-top: 2px solid var(--ink);
 }
 
-/* The one strip at the top of a read that is not complete. It says so and
-   points at the notes; it never summarises what it has not read. */
-.dk-flag {
-  display: block;
+.dk-readline[data-read="partial"]::before,
+.dk-readline[data-read="refused"]::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  height: 2px;
+  background: var(--dk-paper);
+}
+
+.dk-readline[data-read="partial"]::before {
+  left: 58%;
+  width: 4.5rem;
+}
+
+.dk-readline[data-read="refused"] {
+  border-top-color: var(--dk-alarm);
+}
+
+.dk-readline[data-read="refused"]::before {
+  left: 38%;
+  right: 0;
+}
+
+.dk-readstate {
+  margin: 0;
   max-width: var(--dk-measure);
-  margin: var(--space-5) 0 0;
-  padding: var(--space-3) var(--space-4);
-  border-left: 2px solid var(--dk-spine);
-  background: var(--dk-band);
-  font-size: var(--text-body-sm);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
   color: var(--ink-soft);
-  text-decoration: none;
+  text-wrap: pretty;
 }
 
-.dk-flag .dk-key {
-  display: block;
-  margin-bottom: 2px;
+/* The state word, in a fixed slot at the head of every read, at weight and in
+   full ink. It used to be one grey word inside a grey standfirst. */
+.dk-readword {
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
 }
 
-/* A read that is not ordinary takes a heavier rule as well as the state word,
-   so the difference survives a greyscale print and a forced-colours palette. */
-.dk-flag[data-state="ready"] {
-  border-left-color: var(--dk-rule);
+.dk-readline[data-read="refused"] .dk-readword {
+  color: var(--dk-alarm);
 }
 
-.dk-flag:not([data-state="ready"]) {
-  border-left-width: 3px;
-  padding-left: calc(var(--space-4) - 1px);
+.dk-readnote {
+  margin: var(--space-2) 0 0;
+  max-width: var(--dk-measure);
+  font-size: var(--text-body);
+  color: var(--ink-soft);
+  text-wrap: pretty;
 }
 
-.dk-flag:hover {
-  border-left-color: var(--dk-mark);
+.dk-readstanding {
+  font-size: var(--text-body-sm);
+  color: var(--dk-quiet);
+}
+
+.dk-readmeta {
+  margin-top: var(--space-3);
 }
 
 .dk-lead {
@@ -566,16 +722,14 @@
 /* ── The spine ────────────────────────────────────────────────────────────── */
 
 /*
- * THE SIGNATURE. One 1px rule down the left of every mode, at the same x, from
- * the first entry to the last. It is the only thing that persists between
+ * THE SIGNATURE, DOWN. One 1px rule down the left of every mode, at the same x,
+ * from the first entry to the last. It is the only thing that persists between
  * Today, Inbox, My work and Analytics, so moving between modes changes the
  * marks on the line rather than the furniture around them.
  *
  * It carries one fact no other element carries: WHERE THE READ BROKE. An entry
  * whose project or source did not answer paints a gap over the spine and prints
- * a hollow diamond in it. A quiet day is an unbroken line with two marks on it.
- * A failed provider is the same line with holes in it. The difference is legible
- * from across a room, which is the exact requirement.
+ * a hollow diamond in it.
  *
  * It draws once on arrival: a single scaleY from the top, 340ms, one element,
  * transform only. Nothing else on the page moves, and no row is staggered.
@@ -647,12 +801,32 @@
   display: none;
 }
 
+.dk-h3 {
+  margin: var(--space-7) 0 0;
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-heading);
+}
+
 .dk-note {
   margin: var(--space-1) 0 0;
   padding-left: var(--dk-gutter);
   max-width: var(--dk-measure);
   font-size: var(--text-body-sm);
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
+}
+
+/*
+ * THE LOCAL CAVEAT. A section drawn from a read that did not finish says so on
+ * itself. The page-level line is a screen away by the time a reader is looking
+ * at row nine, and a short list and an empty list are not the same claim.
+ */
+.dk-caveat {
+  margin: var(--space-4) 0 0;
+  padding-left: var(--dk-gutter);
+  max-width: var(--dk-measure);
+  font-size: var(--text-caption);
+  color: var(--dk-quiet);
 }
 
 .dk-entries {
@@ -723,6 +897,22 @@
   grid-column: 1 / -1;
 }
 
+/*
+ * THE RANK, SAID IN TYPE.
+ *
+ * Today caps at three decisions and round 1 gave all three the same weight, so
+ * the cap read as a section that happens to hold three items rather than as an
+ * editorial judgement. The list is an `<ol>`, so the order reaches the
+ * accessibility tree, and the first decision is set a full step above the other
+ * two, so it reaches everyone else. No numeral, no margin index: weight is what
+ * an editor actually spends when one thing matters more than another.
+ */
+.dk-entries[data-rank] > .dk-entry:first-child > .dk-title {
+  font-size: var(--text-heading);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-heading);
+}
+
 /* The mark. Shape first, ink second, and a word beside it in every case. */
 .dk-entry::before {
   content: "";
@@ -744,7 +934,7 @@
 }
 
 .dk-entry[data-mark="waiting"]::before {
-  border: 1.5px solid var(--x-ink-quiet, var(--ink-faint));
+  border: 1.5px solid var(--dk-quiet);
   border-radius: 50%;
 }
 
@@ -762,7 +952,7 @@
   margin-left: -3px;
   top: calc(0.95em + 1px);
   border-radius: 50%;
-  background: var(--x-ink-quiet, var(--ink-faint));
+  background: var(--dk-quiet);
 }
 
 /* No mark at all. A row with nothing pressing about it leaves the line alone,
@@ -825,6 +1015,7 @@
 }
 
 .dk-meta {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -832,7 +1023,29 @@
   max-width: var(--dk-row);
   margin: var(--space-2) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
+}
+
+/*
+ * A rule-separated run that wraps puts its separator at the START of the next
+ * line, where it reads as a stray tick rather than as a separator. CSS has no
+ * "first on this line" selector, so the paper is painted back over column zero
+ * — the same move the spine's own break makes twenty rows further down. Seen in
+ * a capture of the Analytics claims, not in a review of the rule.
+ */
+.dk-meta::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--dk-paper);
+}
+
+.dk-detail-card .dk-meta::before,
+.dk-open .dk-meta::before {
+  background: var(--dk-band);
 }
 
 .dk-meta-part {
@@ -842,6 +1055,15 @@
 .dk-meta-part + .dk-meta-part {
   padding-left: var(--space-3);
   border-left: 1px solid var(--dk-rule);
+}
+
+/* Lateness, in the one alarm ink and one weight step. The field already reads
+   "4 days late" in words, so the colour is the second channel, never the only
+   one — and an overdue row now separates from an on-time one along the exact
+   line a reader scans. */
+.dk-meta-part[data-late] {
+  color: var(--dk-alarm);
+  font-weight: var(--weight-medium);
 }
 
 .dk-meta strong {
@@ -857,7 +1079,11 @@
 }
 
 .dk-said-quiet {
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
+}
+
+.dk-claim-class {
+  margin-top: var(--space-3);
 }
 
 .dk-more {
@@ -890,7 +1116,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 .dk-open dt:first-child {
@@ -907,7 +1133,7 @@
 .dk-path {
   font-family: var(--font-mono);
   font-size: var(--text-caption);
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
   overflow-wrap: anywhere;
 }
 
@@ -932,7 +1158,7 @@
 
 .dk-offers li[data-available="false"] span {
   display: block;
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 /* An offer that is a real link is a real control, so it takes the 44px. */
@@ -943,7 +1169,7 @@
 }
 
 .dk-offers li[data-available="false"] {
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 .dk-offers b {
@@ -953,6 +1179,13 @@
 
 /* ── Native disclosure, used everywhere depth is on demand ────────────────── */
 
+/*
+ * A `summary` set to `display: flex` drops its own marker, so every fold in
+ * round 1 printed as a bare mono label over empty space and read as an empty
+ * labelled slot rather than as a control. It carries its own chevron now, and
+ * every fold label carries the count of what is inside it, so the shut state
+ * states a fact instead of promising one.
+ */
 .dk-fold {
   margin: var(--space-3) 0 0;
   border-top: 1px solid var(--dk-rule);
@@ -961,13 +1194,33 @@
 .dk-fold > summary {
   display: flex;
   align-items: center;
+  gap: var(--space-3);
   min-height: 44px;
   cursor: pointer;
   font-family: var(--font-mono);
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
+  list-style: none;
+}
+
+.dk-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+.dk-fold > summary::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg) translate(-2px, 2px);
+}
+
+.dk-fold[open] > summary::before {
+  transform: rotate(45deg) translate(-2px, -2px);
 }
 
 .dk-fold > summary:hover {
@@ -990,9 +1243,9 @@
   align-items: start;
 }
 
-@media (min-width: 72rem) {
+@media (min-width: 76rem) {
   .dk-split[data-open="true"] {
-    grid-template-columns: minmax(0, 27rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
     gap: var(--space-8);
   }
 
@@ -1045,14 +1298,10 @@
 }
 
 .dk-snooze span {
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
 /* ── Analytics ────────────────────────────────────────────────────────────── */
-
-.dk-claim {
-  max-width: 38rem;
-}
 
 .dk-value {
   display: flex;
@@ -1070,21 +1319,10 @@
 
 .dk-value span {
   font-size: var(--text-body-sm);
-  color: var(--x-ink-quiet, var(--ink-faint));
+  color: var(--dk-quiet);
 }
 
-.dk-prose {
-  margin: var(--space-3) 0 0;
-  font-size: var(--text-body);
-  color: var(--ink-soft);
-}
-
-.dk-prose + .dk-prose {
-  margin-top: var(--space-2);
-}
-
-/* The one earned widening. The Project ledger leaves the reading measure and
-   lays out on three columns; nothing else in Analytics does. */
+/* The Project ledger, in its own wider column with its own spine. */
 .dk-ledger {
   margin: var(--space-4) 0 0;
   padding: 0;
@@ -1137,31 +1375,7 @@
   gap: var(--space-4);
   margin: var(--space-2) 0 0;
   font-size: var(--text-caption);
-  color: var(--x-ink-quiet, var(--ink-faint));
-}
-
-/* ── The notes at the foot ────────────────────────────────────────────────── */
-
-.dk-limits {
-  max-width: 44rem;
-  margin-top: var(--space-10);
-  padding-top: var(--space-6);
-  border-top: 1px solid var(--dk-spine);
-  scroll-margin-top: var(--space-6);
-}
-
-.dk-limits ul {
-  margin: var(--space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.dk-limits .dk-key {
-  display: block;
-}
-
-.dk-note-after {
-  margin-top: var(--space-4);
+  color: var(--dk-quiet);
 }
 
 .dk-lens {
@@ -1170,18 +1384,61 @@
   border-left: 2px solid var(--dk-mark);
 }
 
-.dk-limits li + li {
+/* ── The notes at the foot ────────────────────────────────────────────────── */
+
+/* The rules at the foot run to the same two edges as every other rule on the
+   sheet. They used to stop 32px short of them, which reads as a mistake rather
+   than as a measure. The PROSE is what stops, at the reading measure. */
+.dk-limits,
+.dk-legend {
+  scroll-margin-top: var(--space-6);
+}
+
+.dk-limits {
+  margin-top: var(--space-10);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--dk-spine);
+}
+
+.dk-legend {
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--dk-rule);
+}
+
+.dk-limits .dk-said,
+.dk-legend .dk-said,
+.dk-notes,
+.dk-legend-list {
+  max-width: var(--dk-measure);
+}
+
+.dk-notes {
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dk-notes .dk-key {
+  display: block;
+}
+
+.dk-notes li + li {
   margin-top: var(--space-4);
 }
 
-.dk-limits li p {
+.dk-notes li p {
   margin: 2px 0 0;
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
 }
 
+.dk-note-after {
+  margin-top: var(--space-4);
+}
+
 .dk-legend-list {
-  margin: 0;
+  margin: var(--space-4) 0 0;
   padding: 0;
   list-style: none;
   font-size: var(--text-body-sm);
@@ -1196,6 +1453,10 @@
 
 .dk-legend-list li + li {
   margin-top: var(--space-2);
+}
+
+.dk-back-top {
+  margin: var(--space-2) 0 0;
 }
 
 .dk-glyph {
@@ -1224,7 +1485,7 @@
 }
 
 .dk-glyph[data-mark="waiting"]::before {
-  border: 1.5px solid var(--x-ink-quiet, var(--ink-faint));
+  border: 1.5px solid var(--dk-quiet);
   border-radius: 50%;
 }
 
@@ -1239,7 +1500,7 @@
   left: 4px;
   top: calc(0.3em + 1px);
   border-radius: 50%;
-  background: var(--x-ink-quiet, var(--ink-faint));
+  background: var(--dk-quiet);
 }
 
 .dk-glyph[data-mark="plain"]::before {
@@ -1266,10 +1527,9 @@
  * readers who need a legible palette most.
  *
  * Every painted surface below is restated in system colour keywords, which
- * forced colours honours. The line, the marks, the section ticks, the current
- * mode's underline and the trend stroke all come back, and the paper-coloured
- * blocks that punch holes in the spine become Canvas so the hollow marks and
- * the break still read.
+ * forced colours honours. The readline and its break are in the same list: the
+ * rule is a border, which forced colours keeps, and the block that cuts it is
+ * restated as Canvas, so the three read states stay three silhouettes.
  */
 @media (forced-colors: active) {
   .dk-column::before,
@@ -1277,13 +1537,19 @@
   .dk-suite a[aria-current]::after,
   .dk-modes a[aria-current="page"]::after,
   .dk-modes a[aria-current="true"]::after,
-  .dk-depth li + li::before {
+  .dk-depth li + li::before,
+  .dk-tabstate {
     background: CanvasText;
   }
 
   .dk-entry::before,
   .dk-entry[data-mark="broken"]::after,
-  .dk-glyph::before {
+  .dk-glyph::before,
+  .dk-readline::before,
+  .dk-meta::before,
+  .dk-detail-card .dk-meta::before,
+  .dk-open .dk-meta::before,
+  .dk-tabstate::after {
     background: Canvas;
   }
 
@@ -1295,6 +1561,12 @@
     background: CanvasText;
   }
 
+  .dk-badge[data-coverage="partial"],
+  .dk-badge[data-coverage="unavailable"] {
+    border-right-style: dashed;
+    border-right-color: CanvasText;
+  }
+
   .dk-trend polyline {
     stroke: CanvasText;
   }
@@ -1302,14 +1574,56 @@
 
 /* ── 320px, and the narrow end generally ──────────────────────────────────── */
 
+/*
+ * MOBILE IS A PRIORITY DECISION, NOT A LINEARIZATION.
+ *
+ * Round 1 turned every rule-separated metadata field into its own line, so an
+ * Inbox row went from one line at 1440 to four at 390 and tripled in height on
+ * the exact device where scanning matters most. No field had been judged less
+ * important; they had all just been kept.
+ *
+ * Content parity is D-HX08, so nothing may be dropped. What happens instead is
+ * that ONE field leads: the first part keeps reading size and takes its own
+ * line, and every field after it runs together on one quieter line below,
+ * separated by space rather than by a hairline. The hairline is what forced the
+ * stacking in the first place — a vertical rule that wraps lands at the start of
+ * the next line and reads as a stray mark — and a space cannot do that.
+ */
+@media (max-width: 34rem) {
+  .dk-meta {
+    display: block;
+  }
+
+  .dk-meta-part {
+    display: inline;
+    font-size: var(--text-caption);
+  }
+
+  /* Written at the same specificity as the rule it has to beat. The single-class
+     form lost to `.dk-meta-part + .dk-meta-part` and every narrow capture kept
+     its stray leading hairline, which is the exact artefact this block exists to
+     remove. Caught in a screenshot, not in a review. */
+  .dk-meta-part + .dk-meta-part {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .dk-meta-part:first-child {
+    display: block;
+    font-size: var(--text-body-sm);
+  }
+
+  .dk-meta-part:nth-child(n + 3)::before {
+    content: "";
+    display: inline-block;
+    width: var(--space-3);
+  }
+}
+
 @media (max-width: 30rem) {
   .dk {
     --dk-gutter: 1.75rem;
-  }
-
-  .dk-page,
-  .dk-head-inner {
-    padding: 0 var(--space-4);
+    --dk-edge: var(--space-4);
   }
 
   .dk-modes ul {
@@ -1328,26 +1642,9 @@
     padding: var(--space-4);
   }
 
-  /*
-   * At 320 the facts stack instead of running in a rule-separated line.
-   *
-   * The rule between two facts is a vertical hairline, and when the line wraps
-   * it lands at the start of the next line where it reads as a stray mark
-   * rather than as a separator. Stacking removes the artefact, keeps every
-   * fact (content parity is D-HX08, so nothing may be dropped here), and is the
-   * transformation a narrow screen actually wants: one fact per line, read down.
-   */
-  .dk-meta {
-    display: block;
-  }
-
-  .dk-meta-part {
-    display: block;
-  }
-
-  .dk-meta-part + .dk-meta-part {
-    border-left: 0;
-    padding-left: 0;
-    margin-top: 1px;
+  /* The break has to stay legible when the rule is 288px long. */
+  .dk-readline[data-read="partial"]::before {
+    left: 55%;
+    width: 3rem;
   }
 }

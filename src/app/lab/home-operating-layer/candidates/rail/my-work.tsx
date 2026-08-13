@@ -8,22 +8,32 @@
  * a card grid turns sixty responsibilities into sixty objects to look at, and
  * this mode exists to be scanned rather than looked at.
  *
- * The right edge carries the date because the date is the only field that is
- * comparable between two rows. Everything else about a row is qualitative and
- * stays in the flow of the row, at reading weight.
+ * THE DATE COLUMN, AND HOW FAR IT MAY TRAVEL. The right edge carries the date
+ * because the date is the only field that is comparable between two rows, and
+ * the aligned column is what makes sixty rows scannable. But at a 46rem block
+ * the lateness sat about 700px from the title it belonged to, which is too far
+ * to pair by eye and too far to hold in one viewport at 400% zoom. The block
+ * is now 40rem, so the pairing is roughly 560px at most and the alignment
+ * survives. Below 640px the two stack, in the row's own order.
+ *
+ * LATENESS IS NOT RED TEXT any more. "4 days late" was set in #ef4444, which
+ * is 3.76:1 on white and fails AA for running text. The words are at full ink
+ * and a short red rule stands in front of them, so the mark carries the hue.
  *
  * WHAT IS ON THE SURFACE. Coverage, the time zone the day boundaries were
  * drawn in, and the finished items that were filtered out. All three qualify
  * every count on the page, so none of them sits behind a disclosure: a reader
  * who cannot see that one project did not answer is reading a list that looks
- * complete.
+ * complete. They used to sit in a third block under their own label, below two
+ * ruled notices, so about 190px of notice furniture came before any content.
+ * They are now the plain lines of the same list: limits carry a rule, facts
+ * carry none, and the whole preamble is one block.
  */
 
 import type { HomeCandidateProps, MyWorkRowView } from "@/lib/home-layer/lab-shell";
 import {
   Actions,
-  Facts,
-  Label,
+  Fields,
   Masthead,
   Meta,
   Notice,
@@ -46,9 +56,11 @@ function WorkRow({
   return (
     <li className="rl-work" data-selected={selected ? "yes" : undefined}>
       <div className="rl-work-main">
-        <a className="rl-work-link" href={`${row.href}#${DETAIL_ID}`}>
-          {row.title}
-        </a>
+        <h3 className="rl-work-title">
+          <a className="rl-work-link" href={`${row.href}#${DETAIL_ID}`}>
+            {row.title}
+          </a>
+        </h3>
         <Meta
           items={[
             <Prov key="prov" provenance={row.provenance} />,
@@ -67,7 +79,7 @@ function WorkRow({
       </div>
       {selected ? (
         <div className="rl-selected" id={DETAIL_ID} tabIndex={-1}>
-          <Facts
+          <Fields
             rows={[
               ["Why it is here", row.groupReasonLine],
               ["Where this lives", row.sourcePath],
@@ -95,20 +107,13 @@ export function MyWorkMode(props: HomeCandidateProps) {
     <>
       <Masthead eyebrow={chrome.modeEyebrow} line={myWork.headline} />
 
-      <Notices items={myWork.disclosures} heading="What Home could not read" />
+      <Notices
+        items={myWork.disclosures}
+        heading="What Home could not read"
+        plain={qualifiers}
+      />
       {myWork.selectionMissingLine ? (
-        <Notice tone="scope">{myWork.selectionMissingLine}</Notice>
-      ) : null}
-
-      {qualifiers.length > 0 ? (
-        <div className="rl-qualifiers">
-          <Label>About this list</Label>
-          <ul className="rl-qualifier-list">
-            {qualifiers.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </div>
+        <Notice state="unavailable">{myWork.selectionMissingLine}</Notice>
       ) : null}
 
       {filled.map((group) => (

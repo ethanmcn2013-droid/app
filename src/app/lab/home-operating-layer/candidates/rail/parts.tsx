@@ -5,11 +5,17 @@
  * WEIGHT and PLACEMENT: which fact sits on the surface, which sits one
  * interaction away, and what rhythm the facts fall into.
  *
- * The one rule that governs the whole file: a value that could not be read is
- * never allowed to occupy the slot a number would have occupied. Where the
- * shell hands back nothing, the sentence that explains it takes the slot
- * instead, at the same weight. That is why there is no fallback string, no
- * dash and no zero anywhere below.
+ * TWO RULES GOVERN THE WHOLE FILE.
+ *
+ * 1. A value that could not be read is never allowed to occupy the slot a
+ *    number would have occupied. Where the shell hands back nothing, the
+ *    sentence that explains it takes the slot instead, at the same weight.
+ *    That is why there is no fallback string, no dash and no zero below.
+ *
+ * 2. Rules, alignment, type and whitespace before containers. Nothing in this
+ *    file draws a box. Every band, notice, panel and detail region is set off
+ *    by a rule and by space, so no piece of this direction can be mistaken for
+ *    a dashboard widget.
  */
 
 import type { ReactNode } from "react";
@@ -21,6 +27,7 @@ import type {
   RowAction,
   WhenLabel,
 } from "@/lib/home-layer/lab-shell";
+import { bandOf, bandOfDisclosure, bySeverity } from "./state";
 
 /** A small caps label. The rail's own voice, used sparingly in the content. */
 export function Label({ children }: { children: ReactNode }) {
@@ -34,10 +41,6 @@ export function Label({ children }: { children: ReactNode }) {
  * permitted patterns work; this takes the eyebrow, because the rail already
  * carries the mode as a place and the heading should carry the day as a
  * statement. Read aloud it is "Today. What is asking for you now."
- *
- * `lead` is the mode's own opening sentence and it is always the shell's:
- * Today opens on whether this is an all clear, Analytics on what a number is
- * allowed to mean.
  */
 export function Masthead({
   eyebrow,
@@ -83,7 +86,13 @@ export function Prov({ provenance }: { provenance: Provenance }) {
 /**
  * A date the reader can act on. The relative form leads because that is what
  * decides anything; the absolute form follows so the relative one can be
- * checked. Lateness is carried by the words first and the colour second.
+ * checked.
+ *
+ * LATENESS IS NOT RED TEXT. It was, and #ef4444 on white is 3.76:1, which
+ * fails AA for running text and puts the loudest colour on the page into a
+ * word rather than into a mark. The words now sit at full ink and a short red
+ * rule stands in front of them, so the hue is a mark, the contrast is 16:1,
+ * and forced colours keep both.
  */
 export function When({ when }: { when: WhenLabel }) {
   return (
@@ -120,7 +129,7 @@ export function Meta({ items }: { items: readonly (ReactNode | null)[] }) {
 }
 
 /**
- * Disclosures, on the surface.
+ * Disclosures, on the surface, worst first.
  *
  * A direction chooses whether a disclosure is immediate or one interaction
  * away, never whether it exists. This one puts every disclosure the shell
@@ -128,23 +137,37 @@ export function Meta({ items }: { items: readonly (ReactNode | null)[] }) {
  * persistent orientation: a reader who has to open something to find out that
  * a project did not answer has already read the numbers.
  *
- * Tone drives the mark on the left, and the mark is never the only carrier.
- * The sentence itself always names the state.
+ * THE RULE IN FRONT OF EACH ONE IS SET BY `state`, NEVER BY `tone`. Tone is a
+ * subject; state is a severity. Two disclosures in the shell share the tone
+ * "scope": one says Home could not read any project at all, the other says the
+ * scope was changed. Grading by tone made the total failure the calmest band
+ * in the set, which is the exact inversion the governing rule forbids.
+ *
+ * `plain` lines are facts that qualify the list without limiting it. They
+ * carry no rule, so a reader can see at a glance how many real limits there
+ * are without counting sentences.
  */
 export function Notices({
   items,
   heading,
+  plain = [],
 }: {
   items: readonly Disclosure[];
   heading: string;
+  plain?: readonly string[];
 }) {
-  if (items.length === 0) return null;
+  if (items.length === 0 && plain.length === 0) return null;
   return (
     <aside className="rl-notices" aria-label={heading}>
       <ul className="rl-notice-list">
-        {items.map((item) => (
-          <li className="rl-notice" data-tone={item.tone} key={item.id}>
+        {bySeverity(items).map((item) => (
+          <li className="rl-notice" data-band={bandOfDisclosure(item)} key={item.id}>
             {item.text}
+          </li>
+        ))}
+        {plain.map((line) => (
+          <li className="rl-notice-plain" key={line}>
+            {line}
           </li>
         ))}
       </ul>
@@ -154,16 +177,42 @@ export function Notices({
 
 /** One sentence that is its own notice. Same weight, no list around it. */
 export function Notice({
-  tone,
+  state,
   children,
 }: {
-  tone: Disclosure["tone"];
+  state: Disclosure["state"];
   children: ReactNode;
 }) {
   return (
-    <p className="rl-notice rl-notice-single" data-tone={tone}>
+    <p className="rl-notice rl-notice-single" data-band={bandOf(state)}>
       {children}
     </p>
+  );
+}
+
+/**
+ * What could not be read, printed rather than filed.
+ *
+ * These are standing platform limits: a kind of work that has no producer at
+ * all. They used to sit inside the "How this read was taken" disclosure, which
+ * meant that on a quiet day the two things the day was not an all clear about
+ * were one click away behind a label that did not say it held them. A known
+ * unknown may not cost an interaction, so they are on the surface, above the
+ * decisions they qualify, in every world.
+ */
+export function Unsupported({ items }: { items: readonly Disclosure[] }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="rl-unsupported" aria-labelledby="rl-h-unsupported">
+      <p className="rl-label" id="rl-h-unsupported">
+        Not connected yet
+      </p>
+      <ul className="rl-unsupported-list">
+        {items.map((item) => (
+          <li key={item.id}>{item.text}</li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -175,12 +224,13 @@ const HOME_NOTE = "This changes what Home shows you. The work itself is untouche
  * What a row lets you do, and what it does not.
  *
  * AN HONEST LIMIT, STATED WHERE IT BITES. The lab is a pure function of the
- * URL: no store, no server action, no writeback, so no direction can make
- * "Mark as read" actually mark anything. The choice is between a control that
- * looks live and does nothing, and a control that opens and tells the reader
- * exactly what it would do and where. This takes the second: every action is a
- * real, keyboard-operable disclosure that names its destination and its
- * consequence.
+ * URL. `LabViewState` carries thirteen fields and not one of them is a
+ * disposition, there is no store and no server action, so no direction can
+ * make "Mark as read" actually mark anything. The choice is between a control
+ * that looks live and does nothing, and a control that opens and tells the
+ * reader exactly what it would do and where. This takes the second: every
+ * action is a real, keyboard-operable disclosure that names its destination
+ * and its consequence.
  *
  * An unavailable action still renders, with its reason. A control that
  * vanishes tells the reader nothing about why it went.
@@ -211,14 +261,11 @@ export function Actions({
                 <div className="rl-action-body">
                   <p>{action.needsSourceConfirmation ? SOURCE_NOTE : HOME_NOTE}</p>
                   {action.id === "snooze" && snooze && snooze.length > 0 ? (
-                    <ul className="rl-snooze-list">
-                      {snooze.map((option) => (
-                        <li className="rl-snooze" key={option.id}>
-                          <span className="rl-snooze-label">{option.label}</span>
-                          <span className="rl-snooze-when">{option.resurfaceLine}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <Fields
+                      rows={snooze.map(
+                        (option) => [option.label, option.resurfaceLine] as const,
+                      )}
+                    />
                   ) : null}
                 </div>
               </details>
@@ -236,35 +283,24 @@ export function Actions({
 }
 
 /**
- * The read itself, one interaction away.
+ * A term and its value, set in the page's own rules and type.
  *
- * Accounting, standing platform limits and the exact records belong to a
- * reader who asks for them. They do not belong above the three decisions of
- * the day, which is the whole argument for putting them here. Every one of
- * them is still in the document, still reachable by keyboard, and one click
- * deep rather than one page away.
+ * This replaced a bordered, rounded, tinted panel. The facts are the same; the
+ * container is gone, and a hairline under each row does the work the border
+ * was doing badly.
  */
-export function ReadPanel({
-  summary,
-  children,
+export function Fields({
+  rows,
 }: {
-  summary: string;
-  children: ReactNode;
+  rows: readonly (readonly [string, string])[];
 }) {
   return (
-    <details className="rl-read-panel">
-      <summary className="rl-read-summary">{summary}</summary>
-      <div className="rl-read-body">{children}</div>
-    </details>
-  );
-}
-
-/** A term and its value, for panels that are genuinely a list of facts. */
-export function Facts({ rows }: { rows: readonly (readonly [string, string])[] }) {
-  return (
-    <dl className="rl-facts">
-      {rows.map(([term, value]) => (
-        <div className="rl-fact" key={term}>
+    <dl className="rl-fields">
+      {/* Keyed by position: two snooze choices share the label "Pick a time"
+          and differ only in the instant they come back, so the term is not
+          unique and may not be the key. */}
+      {rows.map(([term, value], index) => (
+        <div className="rl-field" key={index}>
           <dt>{term}</dt>
           <dd>{value}</dd>
         </div>

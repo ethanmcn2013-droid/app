@@ -1,13 +1,27 @@
 /**
  * Context Rail · Analytics.
  *
- * PROSE FIRST, AND ONE WIDENING. The claims are sentences with a number set
- * into them, at reading measure, in one column: seven statements a reader can
- * go down in order. They are not seven tiles, and the numbers are set at
- * heading weight rather than at billboard weight, because a number this small
- * printed this large is the exact gesture the brief refuses.
+ * THE CLAIM LEADS, NOT THE NUMBER. Each block used to open with the numeral in
+ * heading weight and demote the sentence beneath it to body weight, which is a
+ * KPI list with the tiles taken off. The order is now the reading order: the
+ * question the claim answers, then the value that answers it, then the
+ * population it was drawn from, then the limit that keeps it honest. The value
+ * is set at reading weight with tabular figures and its metric named in small
+ * caps beside it, so it is a figure inside a sentence rather than a billboard.
  *
- * The Project ledger is the one place the measure widens, and it earns it by
+ * ONE HEADING, NOT TWO. The claims section used to be titled "What the records
+ * support" 180px below an `h1` reading "What the records support." It is now
+ * "What each number counts", which is what the section is.
+ *
+ * THE COVERAGE FOOTER. The mode opens by promising that every number names the
+ * records it counted, the window it read, and what it could not see, and it
+ * used to end on a timestamp and nothing else. It now ends on the third of
+ * those: the ledger's coverage, every claim that could not be fully computed
+ * with the shell's own sentence for why, and the window that was actually
+ * read. The mode densest in numbers is no longer the one that does not say
+ * what it missed.
+ *
+ * THE PROJECT LEDGER is the one place the measure widens, and it earns it by
  * being genuinely tabular: eighteen projects, four comparable fields, one
  * column the eye runs down. It is a real table, so a screen reader announces
  * the project a cell belongs to, and at narrow widths it scrolls inside its
@@ -26,7 +40,7 @@ import type {
   AnalyticsView,
   HomeCandidateProps,
 } from "@/lib/home-layer/lab-shell";
-import { Label, Masthead, Notice, Notices, Prov } from "./parts";
+import { Fields, Label, Masthead, Notice, Notices, Prov } from "./parts";
 
 /** The name a project that did not resolve is allowed to carry. No metadata. */
 const UNREADABLE_PROJECT = "A project that could not be read";
@@ -34,6 +48,7 @@ const UNREADABLE_PROJECT = "A project that could not be read";
 function Claim({ claim }: { claim: AnalyticsClaimView }) {
   return (
     <li className="rl-claim" data-status={claim.status}>
+      <h3 className="rl-claim-question">{claim.question}</h3>
       {claim.valueLabel !== null ? (
         <p className="rl-claim-value">
           <span className="rl-claim-number">{claim.valueLabel}</span>
@@ -44,7 +59,6 @@ function Claim({ claim }: { claim: AnalyticsClaimView }) {
            number would have taken. Nothing here renders an unknown as zero. */
         <p className="rl-claim-nonvalue">{claim.statusLine}</p>
       )}
-      <h3 className="rl-claim-question">{claim.question}</h3>
       <p className="rl-claim-population">{claim.populationLine}</p>
       {claim.valueLabel !== null && claim.statusLine ? (
         <p className="rl-claim-status">{claim.statusLine}</p>
@@ -53,40 +67,17 @@ function Claim({ claim }: { claim: AnalyticsClaimView }) {
       <details className="rl-claim-more">
         <summary className="rl-read-summary">{claim.evidenceLabel}</summary>
         <div className="rl-read-body">
-          <dl className="rl-facts">
-            <div className="rl-fact">
-              <dt>What it counts</dt>
-              <dd>{claim.definitionLine}</dd>
-            </div>
-            <div className="rl-fact">
-              <dt>Window</dt>
-              <dd>{claim.windowLine}</dd>
-            </div>
-            <div className="rl-fact">
-              <dt>Kind of truth</dt>
-              <dd>{claim.truthClassLabel}</dd>
-            </div>
-            <div className="rl-fact">
-              <dt>Baseline</dt>
-              <dd>{claim.baselineLine}</dd>
-            </div>
-            {claim.coverageLine ? (
-              <div className="rl-fact">
-                <dt>Coverage</dt>
-                <dd>{claim.coverageLine}</dd>
-              </div>
-            ) : null}
-            {claim.permissionLine ? (
-              <div className="rl-fact">
-                <dt>Your access</dt>
-                <dd>{claim.permissionLine}</dd>
-              </div>
-            ) : null}
-            <div className="rl-fact">
-              <dt>To change it</dt>
-              <dd>{claim.correctionLine}</dd>
-            </div>
-          </dl>
+          <Fields
+            rows={[
+              ["What it counts", claim.definitionLine],
+              ["Window", claim.windowLine],
+              ["Kind of truth", claim.truthClassLabel],
+              ["Baseline", claim.baselineLine],
+              ...(claim.coverageLine ? [["Coverage", claim.coverageLine] as const] : []),
+              ...(claim.permissionLine ? [["Your access", claim.permissionLine] as const] : []),
+              ["To change it", claim.correctionLine],
+            ]}
+          />
           <Label>The records behind it</Label>
           <ul className="rl-read-list">
             {claim.receipt.exclusionLines.map((line) => (
@@ -167,22 +158,32 @@ function Trend({ trend }: { trend: AnalyticsView["trend"] }) {
           {trend.line}
         </figcaption>
       </figure>
-      <dl className="rl-facts rl-trend-ends">
-        <div className="rl-fact">
-          <dt>First reading</dt>
-          <dd>{String(first)}</dd>
-        </div>
-        <div className="rl-fact">
-          <dt>Last reading</dt>
-          <dd>{String(last)}</dd>
-        </div>
-      </dl>
+      <Fields
+        rows={[
+          ["First reading", String(first)],
+          ["Last reading", String(last)],
+        ]}
+      />
     </section>
   );
 }
 
 export function AnalyticsMode(props: HomeCandidateProps) {
   const { analytics, chrome } = props;
+  /* Every claim that was not computed in full, in the shell's own words. A
+     claim can fall short in three ways and all three belong here: it could not
+     be computed, it was computed over incomplete coverage, or the reader's
+     access held part of it back. The page promised to say what it could not
+     see; this is the payment. */
+  const limits = analytics.claims
+    .map((claim) => {
+      const line =
+        (claim.status !== "available" ? claim.statusLine : null) ??
+        claim.coverageLine ??
+        claim.permissionLine;
+      return line === null ? null : ([claim.question, line] as const);
+    })
+    .filter((entry): entry is readonly [string, string] => entry !== null);
 
   return (
     <>
@@ -208,12 +209,12 @@ export function AnalyticsMode(props: HomeCandidateProps) {
 
       <p className="rl-window">{analytics.windowLine}</p>
       {analytics.windowMismatchLine ? (
-        <Notice tone="scope">{analytics.windowMismatchLine}</Notice>
+        <Notice state="partial">{analytics.windowMismatchLine}</Notice>
       ) : null}
 
       <section className="rl-block" aria-labelledby="rl-h-claims">
         <h2 className="rl-h2" id="rl-h-claims">
-          What the records support
+          What each number counts
         </h2>
         <ol className="rl-claims">
           {analytics.claims.map((claim) => (
@@ -298,7 +299,24 @@ export function AnalyticsMode(props: HomeCandidateProps) {
 
       <Trend trend={analytics.trend} />
 
-      <p className="rl-read-line rl-block-foot">{chrome.asOf.line}</p>
+      <section className="rl-block rl-block-foot" aria-labelledby="rl-h-cover">
+        <h2 className="rl-h2" id="rl-h-cover">
+          What these numbers do not cover
+        </h2>
+        {analytics.ledgerCoverageLine ? (
+          <p className="rl-cover-line">{analytics.ledgerCoverageLine}</p>
+        ) : null}
+        {limits.length > 0 ? (
+          <Fields rows={limits} />
+        ) : (
+          <p className="rl-cover-line">
+            Every claim above was computed from the records named under it, and each
+            one prints its own limit.
+          </p>
+        )}
+        <p className="rl-cover-line">{analytics.windowLine}</p>
+        <p className="rl-read-line">{chrome.asOf.line}</p>
+      </section>
     </>
   );
 }

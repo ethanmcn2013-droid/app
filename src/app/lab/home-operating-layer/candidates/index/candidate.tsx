@@ -7,14 +7,20 @@
  * modes are not tabs along an edge; they are a numbered index, ruled top and
  * bottom, with a dotted leader running from each mode's name to the condition
  * that mode's read is currently in. So the navigation is also the summary: a
- * reader at 7am learns, before choosing anything, that Inbox has eight waiting,
- * that My work was only partly read, and that Analytics could not be read at
- * all. That is the whole argument for the height it takes.
+ * reader at 7am learns, before choosing anything, that Inbox has five waiting
+ * and one of them could not be checked, that My work was only partly read, and
+ * that Analytics could not be read at all. That is the whole argument for the
+ * height it takes.
  *
- * The structure then recurses. Every mode opens with its own small contents
- * strip over its sections; every entry carries an ordinal down the left; the
- * Project ledger is the one place the reading measure breaks. Rules, ordinals,
- * a measure and a margin do the work that cards, panels and shadows do in a
+ * The condition on the right of each row is derived from that mode's own read
+ * and nothing else (`modeCondition`). It is the one thing in this direction
+ * that may never be approximate, so a mode may not be reported as read, or as
+ * empty, on evidence that does not support it.
+ *
+ * The structure then recurses. Every entry that was ranked carries an ordinal
+ * down the left, and nothing that was not ranked carries one. The Project
+ * ledger is the one place the reading measure breaks. Rules, ordinals, a
+ * measure and a margin do the work that cards, panels and shadows do in a
  * louder system, and there is not one container in the direction that is not a
  * rule.
  *
@@ -41,21 +47,26 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import {
-  modeStateLine,
+  modeCondition,
   ordinal,
 } from "@/lib/home-layer/candidates/index/labels";
 import { AnalyticsMode } from "./analytics";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
 import { BriefingMode, TodayMode } from "./read";
+import { ScopeControl } from "./parts";
 import "./reading-index.css";
 
 const INDEX_ID = "ri-index";
+const INDEX_LABEL_ID = "ri-index-label";
 
 /**
- * The suite line. Home, Notes, Tasks and Timeline stay visible and text
- * labelled at every width, including 320, which is the responsive rule this
- * direction is most at risk of failing and therefore the one it puts first.
+ * The masthead. The suite line, when the read was taken, and which issue of it
+ * you are holding.
+ *
+ * Home, Notes, Tasks and Timeline stay visible and text labelled at every
+ * width, including 320, which is the responsive rule this direction is most at
+ * risk of failing and therefore the one it puts first.
  *
  * The Home entry exposes section state with `aria-current="true"` and never
  * claims `page`: the mode index below owns the exact-match claim
@@ -95,11 +106,9 @@ function Masthead({ props }: { props: HomeCandidateProps }) {
         </ul>
       </nav>
       <p className="ri-mast-read">{chrome.asOf.line}</p>
-      <p className="ri-mast-actor">
-        {chrome.actor.name}
-        {". "}
-        {chrome.actor.roleLabel}
-      </p>
+      <div className="ri-mast-scope">
+        <ScopeControl props={props} />
+      </div>
     </div>
   );
 }
@@ -107,67 +116,109 @@ function Masthead({ props }: { props: HomeCandidateProps }) {
 /**
  * THE INDEX. The signature of the direction, and the one place indigo appears.
  *
+ * It carries its own visible name, because a leader-dot table is not yet a
+ * learned convention for primary navigation and a first-time reader is owed
+ * the fact that these four rows are places rather than a summary of the page
+ * they are already on.
+ *
  * The leader is drawn rather than slid: the dot field is stationary and a
  * paper-coloured cover travels off it to the right, staggered down the four
- * rows, so the contents page writes itself in. Under reduced motion the
- * motion tokens are 0 ms, the stagger is 0 ms with them, and every row is
- * simply already drawn.
+ * rows, so the contents page writes itself in. Under reduced motion the motion
+ * tokens are 0 ms, the stagger is 0 ms with them, and every row is simply
+ * already drawn.
  *
- * The state on the right is `copy.states[…]` for that mode's own view model,
- * so it is the shell's vocabulary, never a count this direction invented, and
- * a mode that could not be read says "Could not be read" where a quiet one
- * says "Read".
+ * The leader run is capped rather than allowed to grow with the window. A
+ * 1,120 px traverse from a mode's name to its condition is a real problem for
+ * a reader on a screen magnifier, who never has both in view at once; at every
+ * width above 1080 the name and its condition now stay inside one 400 px
+ * span.
  */
 function ModeIndex({ props }: { props: HomeCandidateProps }) {
-  const { chrome, inbox } = props;
+  const { chrome, copy, inbox, state, hrefFor } = props;
+  const atDepth = state.mode === "briefing";
   return (
-    <nav
-      className="ri-index"
-      id={INDEX_ID}
-      aria-label={chrome.navLabel}
-      tabIndex={-1}
-    >
+    <nav className="ri-index" id={INDEX_ID} aria-labelledby={INDEX_LABEL_ID} tabIndex={-1}>
+      <p className="ri-label ri-index-label" id={INDEX_LABEL_ID}>
+        {chrome.navLabel}
+      </p>
       <ol className="ri-index-list">
-        {chrome.modes.map((mode, position) => (
-          <li
-            className="ri-index-item"
-            key={mode.mode}
-            data-current={mode.ariaCurrent === "page" ? "" : undefined}
-            style={{ "--ri-n": position } as CSSProperties}
-          >
-            <a
-              className="ri-index-link"
-              href={mode.href}
-              aria-current={mode.ariaCurrent ?? undefined}
+        {chrome.modes.map((mode, position) => {
+          const condition = modeCondition(props, mode.mode);
+          const showsDepth = atDepth && mode.mode === "today";
+          return (
+            <li
+              className="ri-index-item"
+              key={mode.mode}
+              data-current={
+                mode.ariaCurrent === "page"
+                  ? ""
+                  : mode.ariaCurrent === "true"
+                    ? "ancestor"
+                    : undefined
+              }
+              style={{ "--ri-n": position } as CSSProperties}
             >
-              <span className="ri-num" aria-hidden="true">
-                {ordinal(position + 1)}
-              </span>
-              <span className="ri-index-name">{mode.label}</span>
-              <span className="ri-leader" aria-hidden="true" />
-              <span className="ri-index-state">
-                {mode.badge ? (
-                  <>
-                    {/*
-                      A count of nothing is still a count and still renders,
-                      but it does not get the weight of something waiting. The
-                      accessible name beside it is the shell's, unchanged.
-                    */}
-                    <span
-                      className="ri-index-badge"
-                      data-zero={inbox.badge.count === 0 ? "" : undefined}
-                      aria-hidden="true"
+              <a
+                className="ri-index-link"
+                href={mode.href}
+                aria-current={mode.ariaCurrent ?? undefined}
+              >
+                <span className="ri-num" aria-hidden="true">
+                  {ordinal(position + 1)}
+                </span>
+                <span className="ri-index-name">{mode.label}</span>
+                <span className="ri-leader" aria-hidden="true" />
+                <span className="ri-index-state">
+                  {mode.badge ? (
+                    <>
+                      {/*
+                        A count of nothing is still a count and still renders,
+                        but it does not get the weight of something waiting. The
+                        accessible name beside it is the shell's, unchanged.
+                      */}
+                      <span
+                        className="ri-index-badge"
+                        data-zero={inbox.badge.count === 0 ? "" : undefined}
+                        aria-hidden="true"
+                      >
+                        {mode.badge.glyph}
+                      </span>
+                      <span className="ri-sr">{inbox.badge.accessibleName}</span>
+                    </>
+                  ) : null}
+                  <span className="ri-cond" data-mark={condition.mark}>
+                    <span className="ri-cond-mark" aria-hidden="true" />
+                    <span className="ri-cond-word">{condition.word}</span>
+                    {condition.cause ? (
+                      <span className="ri-cond-cause">{condition.cause}</span>
+                    ) : null}
+                  </span>
+                </span>
+              </a>
+
+              {/*
+                DEPTH, STATED IN THE INDEX. Full briefing is not a fifth mode,
+                it is the uncapped read behind Today, so it is a sub-entry of
+                Today's row and it appears when the reader is inside it. Without
+                this the one screen that exists to express depth is the one
+                screen where the index cannot say where you are.
+              */}
+              {showsDepth ? (
+                <ol className="ri-index-depth">
+                  <li>
+                    <a
+                      className="ri-index-depth-link"
+                      href={hrefFor({ mode: "briefing", item: null })}
+                      aria-current="page"
                     >
-                      {mode.badge.glyph}
-                    </span>
-                    <span className="ri-sr">{inbox.badge.accessibleName}</span>
-                  </>
-                ) : null}
-                <span>{modeStateLine(props, mode.mode)}</span>
-              </span>
-            </a>
-          </li>
-        ))}
+                      {copy.modeNames.briefing}
+                    </a>
+                  </li>
+                </ol>
+              ) : null}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );
@@ -189,19 +240,17 @@ function ModeBody({ props }: { props: HomeCandidateProps }) {
 }
 
 const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
-  const { chrome, copy, today, inbox, myWork, analytics, briefing, state } =
-    props;
+  const { chrome, state } = props;
 
-  const currentState =
-    state.mode === "inbox"
-      ? inbox.state
-      : state.mode === "my-work"
-        ? myWork.state
-        : state.mode === "analytics"
-          ? analytics.state
-          : state.mode === "briefing"
-            ? briefing.state
-            : today.state;
+  /**
+   * The announcement is the same derivation the index publishes, so a reader
+   * using a screen reader and a reader looking at the contents page are told
+   * the same thing about the same read.
+   */
+  const current = modeCondition(
+    props,
+    state.mode === "briefing" ? "today" : state.mode,
+  );
 
   return (
     <div className="ri-root">
@@ -216,7 +265,7 @@ const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
         appearing.
       */}
       <p className="ri-sr" role="status" aria-label={chrome.statusRegionLabel}>
-        {`${chrome.modeEyebrow}. ${copy.states[currentState]}.`}
+        {`${chrome.modeEyebrow}. ${current.word}${current.cause ? `. ${current.cause}` : ""}.`}
       </p>
 
       <div className="ri-plate">

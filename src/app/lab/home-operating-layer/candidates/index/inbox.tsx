@@ -2,9 +2,10 @@
  * Reading Index · Inbox.
  *
  * A queue and a correspondence, in that order on the page and in that order in
- * the reader's head. The split only appears at 1120 and above, which is the
- * width where a 24 rem queue and a full reading measure both fit without
- * either being squeezed; below it the two stack, the open event first.
+ * the reader's head. The correspondence column appears when there is a
+ * correspondence to put in it, and the margin holds the record of the read in
+ * every state, so the widest mode in this direction no longer has the emptiest
+ * right-hand side.
  *
  * WHY THE OPEN EVENT COMES FIRST IN THE DOCUMENT. A viewport cannot change
  * what is in the document — HOME_EXPERIENCE §3.1 rule 4 makes the heading tree
@@ -18,12 +19,12 @@
 
 import type { HomeCandidateProps, InboxRow } from "@/lib/home-layer/lab-shell";
 import {
-  Margin,
-  Notes,
+  Flag,
+  Limits,
   PageHead,
   Perms,
+  ThisRead,
   entryAnchor,
-  splitNotes,
 } from "./parts";
 
 const DETAIL_ID = "ri-open-event";
@@ -115,9 +116,7 @@ function Detail({ props }: { props: HomeCandidateProps }) {
         {row.title ?? row.titleFallback}
       </h2>
 
-      {row.revisionLine ? (
-        <p className="ri-note-strong">{row.revisionLine}</p>
-      ) : null}
+      {row.revisionLine ? <Flag>{row.revisionLine}</Flag> : null}
       {row.attempt ? (
         <p
           className={
@@ -179,25 +178,22 @@ function Detail({ props }: { props: HomeCandidateProps }) {
 export function InboxMode({ props }: { props: HomeCandidateProps }) {
   const { inbox } = props;
   const selectedId = inbox.selection?.eventId ?? null;
-  const { blocking, marginal } = splitNotes(inbox.disclosures);
 
   return (
-    <div className="ri-page ri-page--flat">
+    <div className="ri-page ri-page--queue" data-open={selectedId ? "" : undefined}>
       <PageHead props={props}>
-        {inbox.selectionMissingLine ? (
-          <p className="ri-note-strong">{inbox.selectionMissingLine}</p>
-        ) : null}
-        <Notes disclosures={blocking} heading="What limited this read" />
+        {inbox.selectionMissingLine ? <Flag>{inbox.selectionMissingLine}</Flag> : null}
+        {/*
+          THE QUEUE OBEYS THE INDEX IT PUBLISHES. If one of five items could
+          not be checked against its source, the reader is told here, at the
+          head, at both viewports — not two and a half thousand pixels below
+          the row that counted it.
+        */}
+        <Limits disclosures={inbox.disclosures} />
       </PageHead>
 
       <div className="ri-body">
-        {/*
-          `data-open` is what earns the split. With nothing selected the queue
-          keeps the reading measure and the plate stays narrow; the second
-          column appears only when there is a correspondence to put in it, and
-          only at 1120 and up.
-        */}
-        <div className="ri-split" data-open={selectedId ? "" : undefined}>
+        <div className="ri-split">
           <div className="ri-split-queue">
             {/*
               `emptyLine` is populated by the shell only when the queue is
@@ -210,10 +206,7 @@ export function InboxMode({ props }: { props: HomeCandidateProps }) {
               inbox.emptyLine ? (
                 <p className="ri-lead">{inbox.emptyLine}</p>
               ) : (
-                <div className="ri-claim-withheld">
-                  <p className="ri-label">{props.copy.states[inbox.state]}</p>
-                  <p>{props.chrome.activeProject.line}</p>
-                </div>
+                <p className="ri-claim-withheld">{props.copy.states[inbox.state]}</p>
               )
             ) : null}
             {inbox.groups.map((group) => {
@@ -253,9 +246,7 @@ export function InboxMode({ props }: { props: HomeCandidateProps }) {
         </div>
       </div>
 
-      <Margin show={marginal.length > 0}>
-        <Notes disclosures={marginal} heading="Notes on this read" />
-      </Margin>
+      <ThisRead props={props} />
     </div>
   );
 }

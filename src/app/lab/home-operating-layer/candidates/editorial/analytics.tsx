@@ -5,14 +5,18 @@
  * limitation and its window in reading order, and the exact records behind it
  * one disclosure away. A number with no receipt is not a claim, it is a rumour.
  *
- * The page holds the reading measure the whole way down except once: the
- * Project ledger, which is a table of every project the reader can see and is
- * the one thing here that is genuinely tabular. At narrow widths it becomes a
- * stack of records rather than a sideways scroll.
- *
  * The trend renders as a chart only in the one world whose history earned it.
  * Everywhere else there is a sentence and no axis: a flat line drawn from two
  * readings is a picture of nothing that looks like a picture of something.
+ *
+ * ROUND 1 said two things about this page and both were right. The metadata
+ * "degrades into a slab — four to five sentences of near-identical grey in an
+ * undifferentiated stack with no fielding, no rules and no weight change." It
+ * is now a fielded ledger: each sentence has a term in the margin naming what
+ * sort of fact it is, so the eye can go straight to the limit or straight to
+ * the window. And the Project ledger, which is the one genuinely tabular thing
+ * in the mode, now takes the whole page grid instead of sitting in a reading
+ * measure with the canvas empty beside it.
  */
 
 import type {
@@ -20,54 +24,64 @@ import type {
   AnalyticsView,
   HomeCandidateProps,
 } from "@/lib/home-layer/lab-shell";
-import { Disclosures, Provenance } from "./shell";
+import { Limits, Provenance, type LimitEntry } from "./shell";
 
 function Claim({ claim }: Readonly<{ claim: AnalyticsClaimView }>) {
   return (
-    <li>
-      <div className="ed-claim">
-        <h3>{claim.question}</h3>
+    <li className="ed-claim">
+      <h3 className="ed-claim-q">{claim.question}</h3>
 
-        <p className="ed-figure">
-          {claim.valueLabel === null ? (
-            <span className="ed-withheld">No number</span>
-          ) : (
-            <span className="ed-figure-value">{claim.valueLabel}</span>
-          )}
-          <span className="ed-label">{claim.metricLabel}</span>
+      <p className="ed-figure">
+        {claim.valueLabel === null ? (
+          <span className="ed-withheld">No number</span>
+        ) : (
+          <span className="ed-figure-value">{claim.valueLabel}</span>
+        )}
+        <span className="ed-label">{claim.metricLabel}</span>
+      </p>
+
+      {claim.statusLine === null ? null : <p className="ed-claim-status">{claim.statusLine}</p>}
+
+      <dl className="ed-fields">
+        <dt>Counted</dt>
+        <dd>{claim.populationLine}</dd>
+        <dt>Cannot say</dt>
+        <dd>{claim.limitationLine}</dd>
+        <dt>Window</dt>
+        <dd>{claim.windowLine}</dd>
+        {claim.coverageLine === null ? null : (
+          <>
+            <dt>Coverage</dt>
+            <dd>{claim.coverageLine}</dd>
+          </>
+        )}
+        {claim.permissionLine === null ? null : (
+          <>
+            <dt>Access</dt>
+            <dd>{claim.permissionLine}</dd>
+          </>
+        )}
+        <dt>{claim.truthClassLabel}</dt>
+        <dd>{claim.baselineLine}</dd>
+      </dl>
+
+      <details className="ed-receipt">
+        <summary>{claim.evidenceLabel}</summary>
+        <p>
+          <span className="ed-num">{claim.receipt.includedCount}</span> records counted,{" "}
+          <span className="ed-num">{claim.receipt.excludedCount}</span> left out.
         </p>
-
-        {claim.statusLine === null ? null : <p className="ed-why">{claim.statusLine}</p>}
-
-        <ul className="ed-claim-lines">
-          <li>{claim.populationLine}</li>
-          <li>{claim.limitationLine}</li>
-          <li>{claim.windowLine}</li>
-          {claim.coverageLine === null ? null : <li>{claim.coverageLine}</li>}
-          {claim.permissionLine === null ? null : <li>{claim.permissionLine}</li>}
-          <li>
-            {claim.truthClassLabel} · {claim.baselineLine}
-          </li>
-        </ul>
-
-        <details className="ed-receipt">
-          <summary>{claim.evidenceLabel}</summary>
-          <p>
-            <span className="ed-num">{claim.receipt.includedCount}</span> records counted,{" "}
-            <span className="ed-num">{claim.receipt.excludedCount}</span> left out.
-          </p>
-          {claim.receipt.exclusionLines.length === 0 ? null : (
-            <ul>
-              {claim.receipt.exclusionLines.map((line) => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
-          )}
-          <p>{claim.receipt.ingestionLine}</p>
-          <p>{claim.receipt.versionLine}</p>
-          <p>{claim.correctionLine}</p>
-        </details>
-      </div>
+        {claim.receipt.exclusionLines.length === 0 ? null : (
+          <ul>
+            {claim.receipt.exclusionLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        )}
+        <p>{claim.receipt.ingestionLine}</p>
+        <p>{claim.receipt.versionLine}</p>
+        <p>{claim.correctionLine}</p>
+      </details>
     </li>
   );
 }
@@ -105,9 +119,9 @@ function Trend({ analytics }: Readonly<{ analytics: AnalyticsView }>) {
     <section className="ed-section" aria-labelledby="ed-trend">
       <div className="ed-section-head">
         <h2 id="ed-trend">{analytics.trend.heading}</h2>
-        <span className="ed-label">
+        <p className="ed-section-note">
           {low} to {high} open
-        </span>
+        </p>
       </div>
       <figure className="ed-chart">
         <svg viewBox={`0 -8 ${width} ${height + 16}`} aria-hidden="true" focusable="false">
@@ -145,7 +159,10 @@ function Trend({ analytics }: Readonly<{ analytics: AnalyticsView }>) {
   );
 }
 
-export function AnalyticsMode({ props }: Readonly<{ props: HomeCandidateProps }>) {
+export function AnalyticsMode({
+  props,
+  limits,
+}: Readonly<{ props: HomeCandidateProps; limits: readonly LimitEntry[] }>) {
   const { analytics, copy } = props;
 
   return (
@@ -171,7 +188,7 @@ export function AnalyticsMode({ props }: Readonly<{ props: HomeCandidateProps }>
         </p>
       )}
 
-      <Disclosures entries={analytics.disclosures} copy={copy} />
+      <Limits entries={limits} />
 
       <section className="ed-section" aria-labelledby="ed-claims">
         <div className="ed-section-head">
@@ -193,22 +210,20 @@ export function AnalyticsMode({ props }: Readonly<{ props: HomeCandidateProps }>
           </div>
           <ul className="ed-list ed-rows">
             {analytics.exceptions.map((exception) => (
-              <li key={exception.id}>
-                <div className="ed-row">
+              <li key={exception.id} className="ed-row">
+                <div className="ed-row-body">
                   <h3 className="ed-row-title">{exception.headline}</h3>
-                  <div className="ed-row-meta">
-                    <p className="ed-why">Suggested: {exception.suggestion}</p>
-                    <ul className="ed-meta">
-                      <li>
-                        <Provenance provenance={exception.provenance} />
-                      </li>
-                      <li>
-                        <a className="ed-more" href={exception.evidenceHref}>
-                          {exception.evidenceLabel}
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
+                  <p className="ed-why">Suggested: {exception.suggestion}</p>
+                  <ul className="ed-meta">
+                    <li>
+                      <Provenance provenance={exception.provenance} />
+                    </li>
+                    <li>
+                      <a className="ed-more" href={exception.evidenceHref}>
+                        {exception.evidenceLabel}
+                      </a>
+                    </li>
+                  </ul>
                 </div>
               </li>
             ))}
@@ -219,18 +234,16 @@ export function AnalyticsMode({ props }: Readonly<{ props: HomeCandidateProps }>
       <section className="ed-section ed-ledger" aria-labelledby="ed-ledger">
         <div className="ed-section-head">
           <h2 id="ed-ledger">{analytics.ledgerHeading}</h2>
-          <span className="ed-label">{analytics.ledger.length} projects</span>
+          <p className="ed-section-note">{analytics.ledger.length} projects</p>
         </div>
-
-        {analytics.ledgerCoverageLine === null ? null : (
-          <p className="ed-why ed-measure">{analytics.ledgerCoverageLine}</p>
-        )}
 
         {analytics.ledger.length === 0 ? (
           <p className="ed-why ed-measure">{copy.empty.analytics}</p>
         ) : (
           <table className="ed-table">
-            <caption>Every project in what Home is reading, including the ones it could not.</caption>
+            <caption>
+              Every project in what Home is reading, including the ones it could not.
+            </caption>
             <thead>
               <tr>
                 <th scope="col">Project</th>

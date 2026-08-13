@@ -7,6 +7,21 @@
  * shadow in this file (none), one radius family (the token's), and no
  * container that is not a rule.
  *
+ * THE PAGE, TOP TO BOTTOM, AND WHAT EACH BAND IS FOR. One band, one job, in
+ * every mode:
+ *
+ *   masthead   the suite, when the read was taken, which issue it is
+ *   index      the four modes, and the condition each mode's read is in
+ *   head       the mode, the headline, one true sentence, then what limited it
+ *   body       the read
+ *   margin     the record of the read: what it did, what it left out
+ *   foot       back to the index
+ *
+ * Nothing about the limits of a read is viewport-dependent: they are in the
+ * main column above the read at 390 and at 1440 alike. The margin holds only
+ * material that does not change whether to believe what is above it, which is
+ * why it is safe for it to become a colophon on a phone.
+ *
  * Every colour is a token. Every duration and curve is a token, which is also
  * how reduced motion is honoured: tokens.css collapses --motion-* to 0ms under
  * prefers-reduced-motion, and every animation below takes both its duration
@@ -68,13 +83,6 @@
   text-transform: uppercase;
 }
 
-.ri-meta {
-  color: var(--ink-soft);
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
-  overflow-wrap: anywhere;
-}
-
 .ri-num {
   font-family: var(--font-mono);
   font-size: var(--text-label);
@@ -131,25 +139,41 @@
 
 /* ── Masthead ────────────────────────────────────────────────────────────── */
 
+/*
+ * The masthead holds the dateline, and Read Scope is part of it: which issue
+ * of this paper you are holding. It used to sit below the headline drawn as a
+ * select, which put a form control between the reader and the day's first
+ * decision on every mode of every visit. The masthead is capped to the reading
+ * measure so the whole of the front matter hangs on one left edge and one
+ * right edge with the read below it.
+ */
 .ri-mast {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, auto);
-  align-items: center;
+  align-items: start;
   column-gap: var(--space-5);
+  row-gap: var(--space-1);
+  max-width: var(--x-ri-measure);
   padding-block: var(--space-2);
 }
 
 .ri-mast-word { grid-column: 1; grid-row: 1; }
 .ri-mast-read { grid-column: 2; grid-row: 1; text-align: right; }
 .ri-mast-nav { grid-column: 1; grid-row: 2; margin-left: calc(var(--space-2) * -1); }
-.ri-mast-actor { grid-column: 2; grid-row: 2; text-align: right; }
+.ri-mast-scope { grid-column: 2; grid-row: 2; justify-self: end; min-width: 0; }
 
 @media (max-width: 559px) {
-  .ri-mast { grid-template-columns: minmax(0, 1fr); row-gap: var(--space-1); }
+  .ri-mast {
+    grid-template-columns: minmax(0, 1fr);
+    padding-block: 0;
+  }
+  .ri-mast-word,
+  .ri-mast-read { padding-top: 0; }
   .ri-mast > * {
     grid-column: 1;
     grid-row: auto;
     text-align: left;
+    justify-self: stretch;
   }
 }
 
@@ -161,6 +185,7 @@
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
+  padding-top: var(--space-2);
 }
 
 .ri-suite {
@@ -196,26 +221,44 @@
 
 .ri-mast-read {
   margin: 0;
-  color: var(--ink-soft);
-  font-size: var(--text-body-sm);
-}
-
-.ri-mast-actor {
-  margin: 0;
+  padding-top: var(--space-2);
+  text-wrap: pretty;
   color: var(--ink-soft);
   font-size: var(--text-body-sm);
 }
 
 /* ── THE INDEX · the contents page, and the navigation ───────────────────── */
 
+/*
+ * The index carries its own visible name. A leader-dot table is not yet a
+ * learned convention for primary navigation, and a reader meeting it for the
+ * first time is owed the fact that these four rows are places rather than a
+ * summary of the page they are already standing on.
+ */
 .ri-index {
-  margin-block: var(--space-2) var(--space-7);
+  margin-block: var(--space-3) var(--space-5);
   scroll-margin-top: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .ri-index { margin-block: var(--space-4) var(--space-6); }
 }
 
 .ri-index:focus { outline: none; }
 
+.ri-index-label {
+  max-width: var(--x-ri-measure);
+  margin-bottom: var(--space-2);
+}
+
+/*
+ * Capped to the reading measure, which is what keeps a mode's name and its
+ * condition inside one 400 px span. A row that ran the full width of a 1440
+ * window put 1,120 px between the two, and a reader on a screen magnifier
+ * never had both in view at once.
+ */
 .ri-index-list {
+  max-width: var(--x-ri-measure);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -247,6 +290,10 @@
   animation-delay: calc(var(--x-ri-step) * 5);
 }
 
+/* At depth the rule still marks the mode you are inside; the sub-entry below
+   marks exactly where in it you are. */
+.ri-index-item[data-current="ancestor"]::after { height: 1px; }
+
 .ri-index-link {
   display: grid;
   grid-template-columns: auto auto minmax(0, 1fr) auto;
@@ -264,7 +311,7 @@
 
 @media (min-width: 768px) {
   .ri-index-link {
-    min-height: 52px;
+    min-height: 48px;
     gap: var(--space-4);
   }
 }
@@ -301,11 +348,17 @@
  * field is stationary and a paper-coloured cover travels off it to the right.
  * Transform only, so it costs nothing to composite, and at 0ms it simply
  * starts uncovered.
+ *
+ * The run is bounded by the index being bounded: capping the list at the
+ * reading measure took the row from 1,120 px to 672 px, so the dots never grow
+ * into a traverse and the name and its condition are inside one window at 200%
+ * on any screen. Capping the dots themselves instead only moved the gap.
  */
 .ri-leader {
   position: relative;
   height: 1em;
   min-width: 0;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -335,11 +388,59 @@
 .ri-index-state {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
   min-width: 0;
   color: var(--ink-soft);
   font-size: var(--text-body-sm);
   text-align: right;
+}
+
+/*
+ * THE CONDITION, AND HOW IT READS BEFORE IT IS READ.
+ *
+ * A read that finished carries no mark and stays quiet. A read with a known
+ * hole in it carries an outlined mark and steps up to full ink. A read that
+ * could not be made, or one whose source never answered, carries a solid mark.
+ * So a quiet day and a broken provider are two different pictures at a glance,
+ * and the word beside the mark says which without any of it riding on hue.
+ */
+.ri-cond {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0 var(--space-2);
+  min-width: 0;
+}
+
+.ri-cond-mark {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  transform: translateY(-1px);
+}
+
+.ri-cond[data-mark="none"] .ri-cond-mark { display: none; }
+.ri-cond[data-mark="open"] .ri-cond-mark { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.ri-cond[data-mark="solid"] .ri-cond-mark { background: var(--ink); }
+
+.ri-cond-word {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.ri-cond:not([data-mark="none"]) .ri-cond-word {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.ri-cond-cause { color: var(--ink-soft); }
+
+.ri-cond-cause::before {
+  content: "\00b7";
+  margin-right: 0.5ch;
 }
 
 .ri-index-badge {
@@ -370,6 +471,42 @@
 
 [data-theme="dark"] .ri-index-badge[data-zero] { color: var(--ink-soft); }
 
+/* Depth: the uncapped read behind Today, as a sub-entry of Today's row. */
+.ri-index-depth {
+  margin: calc(var(--space-2) * -1) 0 var(--space-1);
+  padding: 0 0 0 var(--space-7);
+  list-style: none;
+}
+
+@media (min-width: 768px) {
+  .ri-index-depth { padding-left: var(--space-9); }
+}
+
+.ri-index-depth-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  text-decoration: none;
+}
+
+.ri-index-depth-link:hover { color: var(--ink); }
+
+.ri-index-depth-link[aria-current] {
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+.ri-index-depth-link[aria-current]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+
 .ri-perms-label { margin-top: var(--space-5); }
 
 /* ── The page ────────────────────────────────────────────────────────────── */
@@ -381,7 +518,7 @@
 }
 
 .ri-page-head { min-width: 0; }
-.ri-notes { min-width: 0; }
+.ri-record { min-width: 0; }
 .ri-body { min-width: 0; max-width: var(--x-ri-measure); }
 .ri-wide { min-width: 0; }
 
@@ -389,16 +526,18 @@
   .ri-page {
     grid-template-columns: minmax(0, var(--x-ri-measure)) minmax(0, 1fr);
     column-gap: var(--space-10);
-    row-gap: var(--space-9);
+    row-gap: var(--space-7);
   }
   .ri-page-head { grid-column: 1 / -1; grid-row: 1; }
   .ri-body { grid-column: 1; grid-row: 2; }
-  .ri-notes { grid-column: 2; grid-row: 2; }
+  .ri-record { grid-column: 2; grid-row: 2; margin-top: 0; }
   .ri-wide { grid-column: 1 / -1; grid-row: 3; }
-  /* Inbox keeps one column: its split is its own grid, on the full plate. */
-  .ri-page--flat { grid-template-columns: minmax(0, 1fr); }
-  .ri-page--flat > * { grid-column: 1; grid-row: auto; }
-  .ri-page--flat .ri-body { max-width: none; }
+
+  /* Inbox with an event open: queue, correspondence, margin. The margin keeps
+     its place and its job; what appears is the correspondence, and only when
+     there is one. */
+  .ri-page--queue[data-open] { grid-template-columns: minmax(0, 1fr) minmax(0, 17rem); }
+  .ri-page--queue[data-open] .ri-body { max-width: none; }
 }
 
 /* ── Heading block ───────────────────────────────────────────────────────── */
@@ -436,6 +575,21 @@
   .ri-h1-line { max-width: 26ch; }
 }
 
+/*
+ * The standfirst. One true sentence about this read, under the headline, in
+ * every world: what it can claim and what it cannot. An arrival screen that
+ * goes from headline straight into a list has told the reader nothing true
+ * before asking them to act.
+ */
+.ri-standfirst {
+  max-width: var(--x-ri-measure);
+  margin: var(--space-5) 0 0;
+  color: var(--ink);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  text-wrap: pretty;
+}
+
 .ri-lead {
   max-width: var(--x-ri-measure);
   margin: var(--space-5) 0 0;
@@ -444,78 +598,120 @@
   line-height: var(--leading-body-lg);
 }
 
-/* The quiet day: one calm statement, set off by a rule, and nothing else. */
-.ri-quiet {
+/* ── What limited this read ──────────────────────────────────────────────── */
+
+.ri-limits {
   max-width: var(--x-ri-measure);
-  margin: var(--space-6) 0 0;
-  padding-left: var(--space-4);
-  border-left: 2px solid var(--accent);
-  color: var(--ink);
-  font-size: var(--text-body-lg);
-  line-height: var(--leading-body-lg);
-}
-
-/* ── Section index · the contents page, one level down ───────────────────── */
-
-.ri-sections {
+  margin-top: var(--space-5);
   padding-top: var(--space-3);
   border-top: 1px solid var(--ink);
 }
 
-.ri-sections + .ri-notes-block { margin-top: var(--space-7); }
+.ri-limits[data-loud] .ri-limits-label { color: var(--ink); }
 
-.ri-sections-label { margin-bottom: var(--space-1); }
-
-.ri-sections-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-4);
-  margin: 0;
+.ri-limits-list {
+  margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
 }
 
-.ri-sections-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
+.ri-limit {
+  padding: var(--space-3) 0 var(--space-3) var(--space-4);
+  border-left: 2px solid var(--ink-ghost);
+}
+
+.ri-limit + .ri-limit { margin-top: var(--space-2); }
+
+.ri-limit[data-tone="failure"],
+.ri-limit[data-tone="permission"] {
+  border-left: 3px solid var(--status-blocked);
+}
+
+.ri-limit-tone {
+  display: block;
+  margin-bottom: var(--space-1);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+}
+
+.ri-limit[data-tone="failure"] .ri-limit-tone,
+.ri-limit[data-tone="permission"] .ri-limit-tone { color: var(--ink); }
+
+.ri-limit-text {
+  margin: 0;
   color: var(--ink-soft);
   font-size: var(--text-body-sm);
-  text-decoration: none;
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
 }
 
-.ri-sections-link:hover { color: var(--ink); }
+.ri-limit[data-tone="failure"] .ri-limit-text,
+.ri-limit[data-tone="permission"] .ri-limit-text { color: var(--ink); }
 
-/* In the margin the contents list is vertical, ruled, and reads as a
-   contents page rather than a strip of chips. */
-@media (min-width: 1080px) {
-  .ri-sections-list { display: block; }
-  .ri-sections-list li { border-top: 1px solid var(--hairline); }
-  .ri-sections-list li:first-child { border-top: 0; }
-  .ri-sections-link { display: flex; width: 100%; }
+/* One fact that stops the reader, in the same voice as a loud limit. */
+.ri-flag {
+  max-width: var(--x-ri-measure);
+  margin: var(--space-5) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--status-blocked);
+  background: var(--paper-soft);
+  color: var(--ink);
+  font-size: var(--text-body-sm);
 }
 
-/* ── Scope control ───────────────────────────────────────────────────────── */
+/* ── The margin · the record of this read ────────────────────────────────── */
+
+.ri-record {
+  max-width: 22rem;
+  margin-top: var(--space-8);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--ink);
+}
+
+.ri-record-list {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ri-record-list li {
+  padding-block: var(--space-3);
+  border-top: 1px solid var(--hairline);
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+.ri-record-list li:first-child { border-top: 0; padding-top: 0; }
+
+.ri-record-text {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
+}
+
+/* ── Scope control · the dateline ────────────────────────────────────────── */
 
 .ri-scope {
   position: relative;
-  margin-top: var(--space-5);
-  max-width: var(--x-ri-measure);
+  min-width: 0;
 }
 
-/*
- * The dateline. It reads as the line under a masthead that says which issue
- * this is, because that is exactly what Read Scope is, and it opens into the
- * control that changes it.
- */
 .ri-scope-summary {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0 var(--space-3);
   min-height: 44px;
-  border-top: 1px solid var(--hairline);
-  border-bottom: 1px solid var(--hairline);
+  padding-top: var(--space-2);
   color: var(--ink);
   cursor: pointer;
   list-style: none;
@@ -523,25 +719,30 @@
 
 .ri-scope-summary::-webkit-details-marker { display: none; }
 
-.ri-scope-summary:hover { border-bottom-color: var(--ink); }
-
-.ri-scope[open] > .ri-scope-summary { border-bottom-color: var(--ink); }
-
 .ri-scope-current {
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
   overflow-wrap: anywhere;
 }
 
-.ri-scope-mark {
-  margin-left: auto;
+.ri-scope-change {
   color: var(--ink-soft);
-  font-size: var(--text-body-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
+
+.ri-scope-summary:hover .ri-scope-change,
+.ri-scope[open] .ri-scope-change { color: var(--ink); }
 
 .ri-scope-panel {
   padding: var(--space-4) 0;
   background: var(--paper);
+  text-align: left;
 }
 
 .ri-scope-panel > * + * { margin-top: var(--space-4); }
@@ -598,19 +799,28 @@
   .ri-scope[open] .ri-scope-panel {
     position: absolute;
     z-index: 20;
-    left: 0;
     right: 0;
     top: 100%;
+    width: 22rem;
+    max-width: 90vw;
     padding: var(--space-4);
     border: 1px solid var(--ink);
-    border-top: 0;
     box-shadow: var(--shadow-float);
   }
 }
 
-/* Below 768 an open scope control is a labelled sheet: its own summary is the
-   sheet's header and its dismiss control, and the page behind it is dimmed. */
+/* Below 768 the summary is a full-width row with its value above the control
+   word, and an open panel is a labelled sheet whose own summary is its header
+   and its dismiss control. */
 @media (max-width: 767px) {
+  .ri-scope-summary {
+    justify-content: center;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    padding-block: var(--space-1);
+    border-top: 1px solid var(--hairline);
+  }
   .ri-scope[open] {
     position: fixed;
     z-index: 40;
@@ -620,10 +830,10 @@
     max-height: 84svh;
     overflow-y: auto;
     margin: 0;
-    max-width: none;
     background: var(--paper);
     border-top: 1px solid var(--ink);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-inline: var(--space-4);
   }
   .ri-scope[open]::before {
     content: "";
@@ -648,60 +858,6 @@
   }
 }
 
-/* ── Margin notes ────────────────────────────────────────────────────────── */
-
-.ri-notes-block {
-  padding-top: var(--space-3);
-  border-top: 1px solid var(--ink);
-}
-
-.ri-notes-block + .ri-notes-block { margin-top: var(--space-7); }
-
-/* A blocking note sits in the head, under the dateline, at every width. */
-.ri-page-head .ri-notes-block { margin-top: var(--space-6); }
-
-.ri-notes-list {
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ri-note {
-  padding-block: var(--space-3);
-  border-top: 1px solid var(--hairline);
-}
-
-.ri-note:first-child { border-top: 0; padding-top: 0; }
-
-.ri-note-tone {
-  display: block;
-  margin-bottom: var(--space-1);
-  color: var(--ink-soft);
-  font-family: var(--font-mono);
-  font-size: var(--text-label);
-  font-weight: var(--weight-medium);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-}
-
-.ri-note[data-tone="failure"] .ri-note-tone,
-.ri-note[data-tone="permission"] .ri-note-tone {
-  color: var(--ink);
-}
-
-.ri-note[data-tone="failure"] {
-  padding-left: var(--space-3);
-  border-left: 2px solid var(--status-blocked);
-}
-
-.ri-note-text {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
-  overflow-wrap: anywhere;
-}
-
 /* ── Sections and entries ────────────────────────────────────────────────── */
 
 .ri-section {
@@ -709,12 +865,14 @@
   scroll-margin-top: var(--space-6);
 }
 
-.ri-section + .ri-section { margin-top: var(--space-8); }
+/* The read's first section takes its air from the page grid rather than
+   adding its own on top of it. */
+.ri-body > .ri-section:first-child,
+.ri-split-queue > .ri-section:first-child { padding-top: 0; }
+
+.ri-section + .ri-section { margin-top: var(--space-6); }
 
 .ri-h2 {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
   margin: 0;
   padding-bottom: var(--space-2);
   border-bottom: 1px solid var(--ink);
@@ -829,10 +987,18 @@
   vertical-align: 1px;
 }
 
+/*
+ * Provenance keeps the mono face, because a row that names its source in the
+ * face records are set in is the texture of this whole direction. What it does
+ * not keep is caption size: the product and the Project are among the most
+ * scanned words on the page, so they sit at the same size as the facts beside
+ * them.
+ */
 .ri-prov {
   color: var(--ink-soft);
   font-family: var(--font-mono);
-  font-size: var(--text-caption);
+  font-size: var(--text-body-sm);
+  letter-spacing: -0.01em;
 }
 
 .ri-path {
@@ -896,11 +1062,40 @@
   text-decoration-thickness: 1px;
 }
 
-.ri-jump-strong {
-  border-bottom: 2px solid var(--accent);
-  text-decoration: none;
-  padding-bottom: 2px;
+/*
+ * The closing move. A read ends by offering the read behind it, across the
+ * measure and over a rule, rather than as a stub of underlined text left
+ * hanging in white space.
+ */
+.ri-onward {
+  max-width: var(--x-ri-measure);
+  margin: var(--space-8) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--ink);
 }
+
+.ri-onward a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink);
+  font-size: var(--text-body-lg);
+  font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.ri-onward:first-child { margin-top: 0; }
+
+.ri-onward--back {
+  margin-top: var(--space-5);
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ri-onward--back a { font-size: var(--text-body); }
 
 /* ── Permissions on a row ────────────────────────────────────────────────── */
 
@@ -933,34 +1128,6 @@
 
 .ri-perm-why { overflow-wrap: anywhere; }
 
-/* ── Colophon ────────────────────────────────────────────────────────────── */
-
-.ri-colophon {
-  max-width: var(--x-ri-measure);
-  margin-top: var(--space-9);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--ink);
-}
-
-.ri-colophon p {
-  margin: var(--space-3) 0 0;
-  color: var(--ink-soft);
-  font-size: var(--text-body-sm);
-  line-height: var(--leading-body);
-}
-
-.ri-colophon ul {
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ri-colophon li {
-  margin-top: var(--space-2);
-  color: var(--ink-soft);
-  font-size: var(--text-body-sm);
-}
-
 /* ── Inbox ───────────────────────────────────────────────────────────────── */
 
 .ri-split {
@@ -969,15 +1136,13 @@
   gap: var(--space-7);
 }
 
-.ri-split:not([data-open]) .ri-split-queue { max-width: var(--x-ri-measure); }
-
 @media (min-width: 1120px) {
-  .ri-split[data-open] {
-    grid-template-columns: minmax(0, 24rem) minmax(0, 1fr);
+  .ri-page--queue[data-open] .ri-split {
+    grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
     column-gap: var(--space-9);
     align-items: start;
   }
-  .ri-split[data-open] .ri-split-detail {
+  .ri-page--queue[data-open] .ri-split-detail {
     padding-left: var(--space-9);
     border-left: 1px solid var(--hairline);
   }
@@ -1079,16 +1244,7 @@
 .ri-alert {
   margin: var(--space-5) 0 0;
   padding: var(--space-3) var(--space-4);
-  border-left: 2px solid var(--status-blocked);
-  background: var(--paper-soft);
-  color: var(--ink);
-  font-size: var(--text-body-sm);
-}
-
-.ri-note-strong {
-  margin: var(--space-5) 0 0;
-  padding: var(--space-3) var(--space-4);
-  border-left: 2px solid var(--status-flight);
+  border-left: 3px solid var(--status-blocked);
   background: var(--paper-soft);
   color: var(--ink);
   font-size: var(--text-body-sm);
@@ -1099,6 +1255,11 @@
   border-top: 1px solid var(--hairline);
 }
 
+/*
+ * The disclosure and its affordance stay together. The mark used to be pushed
+ * to the far right of the measure, which put roughly 670 px between the words
+ * a reader clicks and the sign that says they can.
+ */
 .ri-summary {
   display: flex;
   align-items: center;
@@ -1115,7 +1276,6 @@
 
 .ri-summary::after {
   content: "+";
-  margin-left: auto;
   color: var(--ink-soft);
   font-family: var(--font-mono);
 }
@@ -1213,9 +1373,6 @@ details[open] > .ri-summary::after { content: "\2212"; }
 
 /* ── Analytics ───────────────────────────────────────────────────────────── */
 
-.ri-claim { padding-block: var(--space-6); }
-.ri-claim + .ri-claim { border-top: 1px solid var(--hairline); }
-
 .ri-claim-value {
   display: flex;
   align-items: baseline;
@@ -1239,9 +1396,6 @@ details[open] > .ri-summary::after { content: "\2212"; }
   font-size: var(--text-body);
 }
 
-.ri-claim-withheld p { margin: 0; }
-.ri-claim-withheld p + p { margin-top: var(--space-2); }
-
 .ri-facts-list {
   margin: var(--space-4) 0 0;
   padding: 0;
@@ -1254,6 +1408,19 @@ details[open] > .ri-summary::after { content: "\2212"; }
   color: var(--ink-soft);
   font-size: var(--text-body-sm);
   overflow-wrap: anywhere;
+}
+
+/*
+ * Once there is room for two columns of records, the facts under a claim take
+ * two. It is what a records page does with a wide window, and it is where
+ * several hundred pixels of the tallest document in the lab came back from.
+ */
+@media (min-width: 1080px) {
+  .ri-facts-list {
+    columns: 2;
+    column-gap: var(--space-7);
+  }
+  .ri-facts-list li { break-inside: avoid; }
 }
 
 .ri-receipt {
@@ -1398,22 +1565,27 @@ details[open] > .ri-summary::after { content: "\2212"; }
 
 .ri-foot a:hover { color: var(--ink); }
 
-/* ── Motion ──────────────────────────────────────────────────────────────── */
-
 /* ── Forced colours ──────────────────────────────────────────────────────── */
 
 /*
- * Forced colours drops background-colour, which would take the late mark and
- * the current-mode rule with it. Neither carries meaning on its own — "4 days
- * late" is written on the row and `aria-current` is on the link — but both are
- * how a sighted reader finds the row at a glance, so they are redrawn in the
+ * Forced colours drops background-colour, which would take the late mark, the
+ * condition mark and the current-mode rule with it. None of them carries
+ * meaning on its own — "4 days late" is written on the row, "Partly read" is
+ * written beside the mark, and `aria-current` is on the link — but all three
+ * are how a sighted reader finds them at a glance, so they are redrawn in the
  * system's own ink rather than left to disappear.
  */
 @media (forced-colors: active) {
   .ri-fact-late::before,
   .ri-scope-option[aria-current]::before,
+  .ri-index-depth-link[aria-current]::before,
   .ri-index-item[data-current]::after {
     background: CanvasText;
+  }
+  .ri-cond[data-mark="solid"] .ri-cond-mark { background: CanvasText; }
+  .ri-cond[data-mark="open"] .ri-cond-mark {
+    box-shadow: none;
+    border: 1px solid CanvasText;
   }
   .ri-index-badge {
     background: Canvas;

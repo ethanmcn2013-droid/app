@@ -146,9 +146,17 @@ export function StatusRegion({ label }: Readonly<{ label: string }>) {
 export function EventState({
   eventId,
   initial,
+  as,
 }: Readonly<{
   eventId: string;
   initial: RowStatus;
+  /**
+   * `items` renders into an existing metadata list, so a queue row keeps ONE
+   * rhythm instead of stacking a second unaligned line under the first. Round 1
+   * caught exactly that: "Inbox row metadata stacks onto a second unaligned
+   * line, so the queue's rhythm is looser than My work's."
+   */
+  as: "items" | "prose";
 }>) {
   const [status] = useRowStatus(eventId, initial);
   // Both lines come from the row state and nowhere else. Falling back to the
@@ -156,14 +164,32 @@ export function EventState({
   // promising to come back at six o'clock.
   const snooze = status.snoozeLine;
   const attempt = status.outcomeLine;
+  const words = [status.read ? "Read" : "Not read yet", DISPOSITION_LABELS[status.disposition]];
+  const notes = [snooze, attempt].filter((line): line is string => line !== null);
+
+  if (as === "items") {
+    return (
+      <>
+        {words.map((word) => (
+          <li key={word}>{word}</li>
+        ))}
+        {notes.map((note) => (
+          <li key={note} className="ed-meta-note">
+            {note}
+          </li>
+        ))}
+      </>
+    );
+  }
+
   return (
     <>
-      <ul className="ed-meta">
-        <li>{status.read ? "Read" : "Not read yet"}</li>
-        <li>{DISPOSITION_LABELS[status.disposition]}</li>
-      </ul>
-      {snooze === null ? null : <p className="ed-why">{snooze}</p>}
-      {attempt === null ? null : <p className="ed-why">{attempt}</p>}
+      <p className="ed-state-words">{words.join(" · ")}</p>
+      {notes.map((note) => (
+        <p key={note} className="ed-why">
+          {note}
+        </p>
+      ))}
     </>
   );
 }
@@ -172,6 +198,19 @@ export function EventState({
 
 export type SnoozeChoice = Readonly<{ id: string; label: string; resurfaceLine: string }>;
 
+/**
+ * WHICH ACTIONS SIT ON A QUEUE ROW.
+ *
+ * The two dispositions that touch nothing at the source. Marking an event read
+ * and snoozing it are decisions about your own queue, they are reversible, and
+ * they are the reason a person opens an Inbox at all. Approving at the source
+ * and clearing an event both change something outside Home, so they wait until
+ * the reader has opened the event and can see the whole of it. That is an edit,
+ * not a hiding: every action is on the screen the moment the row is open, and
+ * an unavailable one still renders with its reason.
+ */
+const ROW_ACTIONS: readonly string[] = ["mark-read", "snooze"];
+
 export function EventActions({
   eventId,
   title,
@@ -179,6 +218,7 @@ export function EventActions({
   actions,
   snoozeOptions,
   sourceRefusesFirst,
+  variant,
 }: Readonly<{
   eventId: string;
   title: string;
@@ -186,6 +226,7 @@ export function EventActions({
   actions: readonly RowAction[];
   snoozeOptions: readonly SnoozeChoice[];
   sourceRefusesFirst: boolean;
+  variant: "row" | "detail";
 }>) {
   const [status, update] = useRowStatus(eventId, initial);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -245,12 +286,15 @@ export function EventActions({
     [update],
   );
 
-  const live = actions.filter((entry) => entry.id !== "open");
+  const live = actions.filter(
+    (entry) =>
+      entry.id !== "open" && (variant === "detail" || ROW_ACTIONS.includes(entry.id)),
+  );
   const refused = status.outcome === "refused";
 
   return (
     <>
-      <ul className="ed-actions">
+      <ul className={variant === "row" ? "ed-actions ed-actions-row" : "ed-actions"}>
         {live.map((entry) => {
           const spent =
             (entry.id === "mark-read" && status.read) ||
@@ -262,8 +306,10 @@ export function EventActions({
             <li key={entry.id}>
               <button
                 type="button"
-                className="ed-btn"
-                data-weight={entry.id === "approve" ? "primary" : undefined}
+                className={variant === "row" ? "ed-act" : "ed-btn"}
+                data-weight={
+                  variant === "detail" && entry.id === "approve" ? "primary" : undefined
+                }
                 disabled={disabled}
                 aria-expanded={entry.id === "snooze" ? menuOpen : undefined}
                 onClick={() => act(entry.id)}

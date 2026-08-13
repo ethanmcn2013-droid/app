@@ -2,10 +2,11 @@
  * Signal Desk · Inbox.
  *
  * A queue you can read down, and one opened item beside it. The split appears
- * only at 68rem, which is the width at which a 24rem queue and a 34rem detail
- * both fit without either being squeezed; below that the two stack and the row
- * links carry `#dk-detail`, so opening an event lands the reader on the detail
- * and the browser moves focus to it because the target takes `tabindex="-1"`.
+ * only where the sheet has stepped out to its wide measure and a 24rem queue and
+ * a 34rem detail both fit without either being squeezed; below that the two
+ * stack and the row links carry `#dk-detail`, so opening an event lands the
+ * reader on the detail and the browser moves focus to it because the target
+ * takes `tabindex="-1"`.
  *
  * WHY THE QUEUE IS NOT HIDDEN AT NARROW. A full-screen takeover would mean the
  * queue's group headings exist at 1440 and not at 375, and HOME_EXPERIENCE
@@ -18,11 +19,12 @@
 import type { HomeCandidateProps, InboxRow } from "@/lib/home-layer/lab-shell";
 import {
   Entry,
-  LimitFlag,
-  Limits,
+  Foot,
   markForProvenance,
   Meta,
   Offers,
+  ReadLine,
+  readVerdict,
   type MarkKind,
 } from "./parts";
 
@@ -43,9 +45,20 @@ function eventTitle(row: InboxRow): string {
 }
 
 export function InboxMode(props: HomeCandidateProps) {
-  const { inbox, copy } = props;
+  const { inbox, copy, chrome } = props;
   const selection = inbox.selection;
   const backHref = `${props.hrefFor({ mode: "inbox", event: null })}#dk-queue`;
+  const verdict = readVerdict(inbox.state, inbox.disclosures, copy);
+
+  /*
+   * NO PER-GROUP CAVEAT HERE, and that is a judgement rather than an omission.
+   *
+   * An Inbox group is one thread, not an account of everything that qualified,
+   * so it cannot be silently shortened the way a ranked Today section can. An
+   * event the source could not name says so on its own row, in its own words.
+   * Repeating a page-level caveat under six threads would be six copies of a
+   * sentence that is only true of the page.
+   */
 
   /**
    * An empty queue has to say WHICH empty it is. `emptyLine` is only ever
@@ -65,11 +78,11 @@ export function InboxMode(props: HomeCandidateProps) {
 
   return (
     <>
-      <LimitFlag
-        count={inbox.disclosures.length}
-        state={inbox.state}
-        copy={copy}
-        href="#dk-limits"
+      <ReadLine
+        verdict={verdict}
+        chrome={chrome}
+        standing={[]}
+        statusLabel={chrome.statusRegionLabel}
       />
 
       {inbox.selectionMissingLine ? (
@@ -78,7 +91,10 @@ export function InboxMode(props: HomeCandidateProps) {
 
       {nothingLine ? <p className="dk-lead">{nothingLine}</p> : null}
 
-      <div className="dk-split" data-open={selection ? "true" : "false"}>
+      <div
+        className={selection ? "dk-split dk-wide" : "dk-split"}
+        data-open={selection ? "true" : "false"}
+      >
         <div className="dk-column" id="dk-queue">
           {inbox.groups.map((group) => (
             <section
@@ -116,6 +132,9 @@ export function InboxMode(props: HomeCandidateProps) {
                           <span className="dk-sr">. {group.heading}</span>
                         </a>
                       </h3>
+                      {/* On a phone the first field takes its own line and the
+                          rest run quietly underneath. When an event happened is
+                          the field a queue is actually scanned by, so it leads. */}
                       <Meta
                         parts={[
                           row.occurredLine,
@@ -154,11 +173,14 @@ export function InboxMode(props: HomeCandidateProps) {
                 {eventTitle(selection)}
               </h2>
 
+              {/* Two short lines rather than one line of six fields. A metadata
+                  run that wraps drops its separating rule at the start of the
+                  next line, where it reads as a stray mark. */}
+              <Meta
+                parts={[selection.kindLabel, selection.actorName, selection.occurredLine]}
+              />
               <Meta
                 parts={[
-                  selection.kindLabel,
-                  selection.actorName,
-                  selection.occurredLine,
                   selection.provenance.text,
                   selection.visibilityLabel,
                   selection.dispositionLabel,
@@ -194,7 +216,9 @@ export function InboxMode(props: HomeCandidateProps) {
               <Offers actions={selection.actions} />
 
               <details className="dk-fold">
-                <summary>Snooze, and when it comes back</summary>
+                <summary>
+                  Snooze, and when it comes back ({inbox.snoozeOptions.length} choices)
+                </summary>
                 <div className="dk-fold-body">
                   <ul className="dk-snooze">
                     {inbox.snoozeOptions.map((option) => (
@@ -213,14 +237,13 @@ export function InboxMode(props: HomeCandidateProps) {
         ) : null}
       </div>
 
-      <Limits
-        id="dk-limits"
+      <Foot
         copy={copy}
         disclosures={inbox.disclosures}
         extra={[
           inbox.badge.coverage === "complete"
             ? null
-            : "The Inbox count is not complete, so it is shown with what it could not check rather than rounded down.",
+            : "The Inbox count is not complete, so the numeral in the mode row is drawn open on its right rather than closed. It is what could be checked, not a total.",
         ]}
       />
     </>

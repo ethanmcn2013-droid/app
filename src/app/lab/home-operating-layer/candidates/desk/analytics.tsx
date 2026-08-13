@@ -7,10 +7,14 @@
  * own value at 20px — the same size as a section heading, deliberately, because
  * a figure that outweighs its own definition is how a dashboard starts.
  *
- * The ledger is the one earned widening: it leaves the 34rem measure and lays
- * out on three columns at 56rem, because it is the only thing on the page that
- * is a list of every project rather than a piece of writing. The trend is one
- * chart, drawn only when history earned it.
+ * THE ONE EARNED WIDENING, and what changed about it. Round 1 widened the whole
+ * page for this mode, which moved the masthead with it: the header rule ran
+ * 296–1144 here and 376–1064 on Today, and page furniture that changes width
+ * depending on which mode you are in reads as unresolved rather than as
+ * responsive. The sheet is now one measure in all five modes and the widening
+ * belongs to the Project ledger alone. It steps out of the reading column into
+ * its own wider one, with its own spine, which is the only thing on this page
+ * that has to account for every project rather than say something.
  */
 
 import type {
@@ -19,7 +23,7 @@ import type {
   AnalyticsView,
   HomeCandidateProps,
 } from "@/lib/home-layer/lab-shell";
-import { Entry, LimitFlag, Limits, Meta, type MarkKind } from "./parts";
+import { Entry, Foot, Meta, ReadLine, readVerdict, type MarkKind } from "./parts";
 
 /**
  * The trend as the fixture derived it. Reached through the view model rather
@@ -101,7 +105,7 @@ function Trend({ trend }: { trend: TrendSource }) {
         <span>{last.value} open</span>
       </p>
       <details className="dk-fold">
-        <summary>Every reading behind this line</summary>
+        <summary>Every reading behind this line ({points.length} readings)</summary>
         <div className="dk-fold-body">
           <ul className="dk-offers">
             {points.map((point) => (
@@ -133,18 +137,33 @@ function Claim({ claim }: { claim: AnalyticsClaimView }) {
         <p className="dk-said">{claim.statusLine}</p>
       )}
 
-      <Meta parts={[claim.populationLine, claim.windowLine, claim.truthClassLabel]} />
+      {/* The truth class is a class, not a metadata field. It used to sit third
+          on the rule-separated line, where it wrapped and left its separating
+          hairline stranded at the start of the next line. It takes the label
+          slot it belongs in. */}
+      <p className="dk-key dk-claim-class">{claim.truthClassLabel}</p>
+
+      {/* The population is a sentence and it is set as one. It used to sit in
+          the rule-separated run beside the window, where the two together were
+          long enough to wrap on every claim. A field is a field; a sentence is
+          not made into one by putting a hairline next to it. */}
+      <p className="dk-said">{claim.populationLine}</p>
+      <Meta parts={[claim.windowLine]} />
 
       <p className="dk-said">{claim.limitationLine}</p>
       {claim.coverageLine ? <p className="dk-said">{claim.coverageLine}</p> : null}
       {claim.permissionLine ? <p className="dk-said">{claim.permissionLine}</p> : null}
 
+      {/* A closed fold used to print as a bare label over empty space, because a
+          flex `summary` drops its own marker. It carries a chevron now, and its
+          label carries the two numbers, so the shut state states a fact rather
+          than promising one. */}
       <details className="dk-fold">
-        <summary>The records behind this</summary>
+        <summary>
+          The records behind this ({claim.receipt.includedCount} counted,{" "}
+          {claim.receipt.excludedCount} left out)
+        </summary>
         <div className="dk-fold-body">
-          <p className="dk-said">
-            {claim.receipt.includedCount} counted, {claim.receipt.excludedCount} left out.
-          </p>
           {claim.receipt.exclusionLines.length > 0 ? (
             <ul className="dk-offers">
               {claim.receipt.exclusionLines.map((line) => (
@@ -163,24 +182,23 @@ function Claim({ claim }: { claim: AnalyticsClaimView }) {
 }
 
 export function AnalyticsMode(props: HomeCandidateProps) {
-  const { analytics, copy } = props;
+  const { analytics, copy, chrome } = props;
+  const verdict = readVerdict(analytics.state, analytics.disclosures, copy);
 
   return (
     <>
-      <LimitFlag
-        count={analytics.disclosures.length}
-        state={analytics.state}
-        copy={copy}
-        href="#dk-limits"
+      <ReadLine
+        verdict={verdict}
+        chrome={chrome}
+        standing={[]}
+        statusLabel={chrome.statusRegionLabel}
       />
 
       <p className="dk-lead">{analytics.leadLine}</p>
 
       {analytics.lens.line ? (
         <div className="dk-open dk-lens">
-          <p className="dk-key">
-            {analytics.lens.projectName ?? "One project"}
-          </p>
+          <p className="dk-key">{analytics.lens.projectName ?? "One project"}</p>
           <p className="dk-said">{analytics.lens.line}</p>
           {analytics.lens.closeHref ? (
             <p>
@@ -241,10 +259,13 @@ export function AnalyticsMode(props: HomeCandidateProps) {
           <p className="dk-note">{analytics.trend.line}</p>
           <Trend trend={analytics.trend.source} />
         </section>
+      </div>
 
-        {/* The widening. Everything above sits at the reading measure; the
-            ledger does not, because it is the one thing that has to account
-            for every project rather than say something. */}
+      {/* The widening, and the only one on any of these five pages. The ledger
+          leaves the reading column for a wider one of its own, spine and all,
+          because it is the one thing here that is a list of every project rather
+          than a piece of writing. */}
+      <div className="dk-column dk-wide">
         <section className="dk-section" aria-labelledby="dk-ledger-heading">
           <h2 className="dk-h2" id="dk-ledger-heading">
             {analytics.ledgerHeading}
@@ -258,7 +279,9 @@ export function AnalyticsMode(props: HomeCandidateProps) {
                 <div className="dk-ledger-row">
                   <p className="dk-title dk-title-sm">
                     {row.href ? (
-                      <a href={row.href}>{row.projectName ?? "A project that could not be read"}</a>
+                      <a href={row.href}>
+                        {row.projectName ?? "A project that could not be read"}
+                      </a>
                     ) : (
                       (row.projectName ?? "A project that could not be read")
                     )}
@@ -272,7 +295,7 @@ export function AnalyticsMode(props: HomeCandidateProps) {
         </section>
       </div>
 
-      <Limits id="dk-limits" copy={copy} disclosures={analytics.disclosures} />
+      <Foot copy={copy} disclosures={analytics.disclosures} />
     </>
   );
 }

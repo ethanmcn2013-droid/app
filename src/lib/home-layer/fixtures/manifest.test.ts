@@ -26,10 +26,15 @@ describe("the manifest", () => {
   });
 
   it("matches the fixture universe byte for byte", () => {
+    // Line endings are normalised on both sides before comparing. The emitter writes LF, git
+    // stores LF, but a Windows checkout hands this file back as CRLF — so a raw comparison
+    // fails on Windows and passes in CI for a reason that has nothing to do with the fixtures.
+    // Content is still compared exactly; only the newline convention is allowed to differ.
+    const lf = (s: string) => s.replace(/\r\n/g, "\n");
     const committed = readFileSync(MANIFEST_PATH, "utf8");
     assert.equal(
-      committed,
-      serialiseManifest(),
+      lf(committed),
+      lf(serialiseManifest()),
       "The fixture records changed and the manifest was not regenerated. Run: node --import tsx src/lib/home-layer/fixtures/emit-manifest.ts",
     );
   });
