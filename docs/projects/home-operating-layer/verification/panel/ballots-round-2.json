@@ -1,0 +1,1328 @@
+{
+  "map": {
+    "A": "desk",
+    "B": "editorial",
+    "C": "index",
+    "D": "rail"
+  },
+  "ballots": [
+    {
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__provider_failure__1440x960.png",
+        "desk__today__owner_quiet__1440x960.png",
+        "desk__today__new_user__1440x960.png",
+        "desk__today__partial_coverage__1440x960__fold.png",
+        "desk__today__owner_signature__390x844__fold.png",
+        "desk__today__provider_failure__390x844__fold.png",
+        "desk__inbox__owner_signature__1440x960.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__provider_failure__1440x960.png",
+        "editorial__today__owner_quiet__1440x960.png",
+        "editorial__today__new_user__1440x960.png",
+        "editorial__today__partial_coverage__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844__fold.png",
+        "editorial__today__provider_failure__390x844__fold.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__my-work__owner_signature__1440x960.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__provider_failure__1440x960.png",
+        "index__today__owner_quiet__1440x960.png",
+        "index__today__new_user__1440x960.png",
+        "index__today__partial_coverage__1440x960__fold.png",
+        "index__today__owner_signature__390x844__fold.png",
+        "index__today__provider_failure__390x844__fold.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__provider_failure__1440x960.png",
+        "rail__today__owner_quiet__1440x960.png",
+        "rail__today__new_user__1440x960.png",
+        "rail__today__partial_coverage__1440x960__fold.png",
+        "rail__today__owner_signature__390x844__fold.png",
+        "rail__today__provider_failure__390x844__fold.png",
+        "rail__my-work__owner_signature__1440x960.png",
+        "rail__analytics__owner_signature__1440x960.png"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 9,
+          "ownedLens": 9.2,
+          "strengths": [
+            "Four distinct read states are stamped at headline weight and colour, each with its own rule: a solid black rule with \"Read.\", a rule with a literal gap in it with \"Partly read.\", a red rule with \"Did not answer.\", a red rule with \"Could not be read.\" A quiet day and a broken provider are separable in under a second at 1440 and at 390 — the only candidate where that is unambiguously true.",
+            "It refuses to compute what it cannot know. \"The whole day\" on provider_failure reads \"The read cannot be accounted for exactly... No total is shown rather than a total that would be wrong,\" and every list group repeats \"Some sources did not answer, so this list can be short. Short is not empty.\" The refusal is per-section, not one banner at the top that the eye learns to skip.",
+            "It solves the incomplete-count problem no one else even attempts: on a partly-read Inbox the mode-row numeral is drawn open on its right rather than closed, and \"About this read\" says so in words — \"It is what could be checked, not a total.\" Analytics carries the denominator and the exclusion inline on every claim (\"21 COUNTED, 2 LEFT OUT\"), plus \"Not enough history yet. 6 of 14 comparable daily readings.\""
+          ],
+          "weakest": "desk__today__new_user__1440x960.png",
+          "concerns": [
+            "A person's first ever screen is dressed as the loudest alarm in the whole set: a red rule, \"Could not be read.\" in red at headline weight, and a \"COULD NOT BE READ\" stamp in the foot. The same red vocabulary that means \"your provider is broken\" is spent on \"you have not made anything yet.\" That devalues the alarm and reads as an accusation on day one.",
+            "Unlike Editorial, the new_user screen offers no way forward at all — no \"Where to start\", no route to Tasks. The reader is told the read failed and given a link to the full briefing of nothing.",
+            "The failure/partial marks in the mode row (a small superscript tick beside Today / Inbox / My work / Analytics) are the one place the direction leans on a glyph too small to carry its meaning; the words are elsewhere on the page, not in the row.",
+            "Warm off-white paper is a register deviation from the design system's default. Outside my lens, but it is the one thing that will make a truth-critical red read slightly less absolute against a tinted ground."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Give new_user its own vocabulary, separate from failure. A first-run empty account is not a broken read: drop the red rule and the \"Could not be read.\" stamp for a neutral state, and add a real first step (a labelled route into Tasks) on the page, as Editorial already does. Keep the failure red exclusively for reads that actually failed."
+        },
+        {
+          "label": "C",
+          "overall": 8.2,
+          "ownedLens": 8.4,
+          "strengths": [
+            "The leader-dot index is the best cross-mode truth instrument in the lab. Standing in Today you can read that Inbox is \"Partly read\", that Analytics has \"Not enough history\", that on a quiet day Inbox is \"Nothing in it\" and not \"Could not be read\". No other direction lets you see the health of a mode you are not standing in.",
+            "\"WHAT LIMITED THIS READ\" is a properly ranked disclosure: it sits above the content, is labelled by kind (NOT ANSWERING / COVERAGE / SCOPE), carries a red left rule only when a source actually failed, and states the consequence — \"Nothing here counts it as zero, and no total includes it.\"",
+            "It holds up on mobile. At 390 the index and the limitation block both survive above the fold on provider_failure, with the first decision still reachable on the same screen."
+          ],
+          "weakest": "index__today__new_user__1440x960.png",
+          "concerns": [
+            "The new_user screen is four rows of \"Could not be read\" and a SCOPE note, with no first step offered anywhere. It is the harshest arrival in the set — a person who has done nothing wrong is shown a page that says, four times, that reading them failed.",
+            "The discriminator is over-spent. On a genuinely quiet, fully-answered day Today still reads \"Partly read · Not connected\" in the index. When \"Partly read\" is the resting state, its appearance on a real partial read carries no information and the reader is forced to parse the second clause in small grey type.",
+            "The Inbox badge is a closed, confident indigo pill reading \"5\" on the same screen whose ledger says the Inbox read was partial and one item \"is counted but not named.\" A count that is admittedly incomplete is being drawn as a total.",
+            "Per-claim exclusions in Analytics are hidden behind \"See the records behind this\" rather than stated inline, so the count and what was left out of it are not visible together."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Stop labelling a fully-answered day \"Partly read\" — reserve that label for reads that were actually partial, so the word means something when it appears. Re-draw the Inbox numeral so an incomplete count cannot present as a total, and give new_user a non-failure state with a first step."
+        },
+        {
+          "label": "B",
+          "overall": 7.9,
+          "ownedLens": 7.6,
+          "strengths": [
+            "The best single truth sentence in the lab, on My work: \"Read 3 of 3 projects. 0 did not answer, and nothing here counts them as empty,\" followed by named exclusions — \"1 item belongs to no project, so it is left out of every project count here\" and \"1 finished item is filtered out. They are still there.\"",
+            "The only direction that treats a new user decently. \"Where to start — There is no project for new work to go to yet. Work lives in a project. Make one in Tasks, and Home reads it from the next read,\" with an actual Open Tasks control. The failure framing is demoted to a small-caps SCOPE note rather than an alarm.",
+            "The Analytics margin key — COUNTED / CANNOT SAY / WINDOW / WHAT THE RECORDS SAY, with \"No accepted baseline\" stated plainly — makes the epistemic status of every number explicit rather than implied."
+          ],
+          "weakest": "editorial__inbox__owner_signature__1440x960__fold.png",
+          "concerns": [
+            "\"In your Inbox — 5 OPEN\" is the largest numeral on the page, set as a definite total, on the same screen whose ledger admits \"1 item could not be checked against the source, so it is counted but not named.\" An incomplete count rendered as the page's headline figure is the exact failure the governing rule exists to prevent, and it is committed in the biggest type available.",
+            "A quiet day and a broken provider are the least separable of the four at a glance. The headline, the standfirst position, the rule weight and the ledger layout are identical; the entire difference is a ~10px amber square becoming a ~10px red bullseye and a small-caps label changing from ELSEWHERE IN HOME to FAILURE · PARTLY READ. That is not an at-a-glance difference, it is a reading task.",
+            "The two NOT CONNECTED rows render identically on every screen in every scenario, healthy included. A caveat block that is always present is a block the eye is trained to skip — which is precisely how a real failure ends up unread.",
+            "On mobile the entire first screen is caveat furniture. At 390, on a fully healthy day, the reader reaches the bottom of the viewport without seeing a single decision; the mode this direction is answering is \"what deserves attention now?\"."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Two things, both non-negotiable. First, the Inbox headline numeral must not present as a total when the read was partial — either qualify it in the same type or remove it. Second, raise the failure/quiet difference above glyph scale: the quiet day and the broken provider must differ in something a reader registers before reading, not in the fill of a 10px mark."
+        },
+        {
+          "label": "D",
+          "overall": 6.6,
+          "ownedLens": 6.4,
+          "strengths": [
+            "Putting the per-mode read state permanently under each mode name in the rail is the right instinct — \"Today / Read\", \"Inbox / Nothing in it\", \"My work / Partly read\" — and it survives the mobile transformation as a compact four-across row rather than a scroll-past block.",
+            "The claim-level honesty in Analytics is intact: \"Not enough history yet. 6 of 14 comparable daily readings. The earliest this can show a trend is 24 July 2026,\" a \"Every project you can read\" table that names the permission boundary in its heading, and a closing \"What these numbers do not cover\".",
+            "It is the shortest and calmest read of the four, and the quiet day is genuinely sparse rather than padded with furniture."
+          ],
+          "weakest": "rail__today__provider_failure__1440x960.png",
+          "concerns": [
+            "The direction's signature instrument cannot do the one job my lens cares about. On partial_coverage the rail reads \"Partly read\" under all four modes with amber dashed ticks; on provider_failure it reads \"Partly read\" under all four modes with amber dashed ticks. The persistent, always-visible element is identical whether a source answered incompletely or did not answer at all.",
+            "The failure itself is announced by one line of body text with a 2px red bar. The headline, the standfirst weight and the NOT CONNECTED YET block are otherwise unchanged from a healthy day. This is the weakest at-a-glance separation in the set once the rail is discounted.",
+            "Under provider_failure the page collapses sections to \"Coming up 4\" and \"Moving well 2\" — bare exact numerals on a read the same page says cannot be accounted for. My work does the same with \"Waiting 2 / Now 2 / Next 3 / Later 4\". Contrast Desk, which prints \"Short is not empty\" beside every such list and no count at all.",
+            "new_user paints all four rail rows red with \"Could not be read\" and offers no first step, only \"There is no project for new work to go to yet\" in the rail. A wall of red on a person's first screen, with nothing to do about it."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "The rail must distinguish did-not-answer from partly-read in its own labels and marks — as it stands the direction's central claim (persistent orientation) actively hides the most consequential state change in the product. Remove or qualify the bare section counts under any read the page itself calls incomplete. If a revision cannot make the rail carry the failure state, this direction should be vetoed rather than admitted, because everything else about it is built on that rail."
+        }
+      ],
+      "rankedOrder": [
+        "A",
+        "C",
+        "B",
+        "D"
+      ],
+      "overallNote": "Judged only on data truth, permission boundaries and human respect. All four get the vocabulary right — every direction says \\\"nothing here counts that as zero\\\" and none of them renders a missing source as an empty list. The lab has already cleared the low bar. The separation is in whether the truth is legible before it is read.\\n\\nOn the decisive test — a quiet day and a broken provider must look different at a glance — only A passes cleanly. It changes a rule (solid, broken, red), a lede word at headline weight (Read / Partly read / Did not answer / Could not be read) and a spine that visibly breaks where a source stopped answering, and it repeats the refusal beside each list rather than banking it in one block at the top. C passes at the level of its index, which is the best cross-mode instrument any of them built, but it spends the word \\\"Partly read\\\" on healthy days and so blunts it. B and D both fall below the 8.5 admission bar on my lens: B because its failure signal is a 10px glyph swap and because its Inbox prints an admittedly incomplete count as the page's largest numeral; D because its rail — the whole point of the direction — labels a failed read and a partial read identically.\\n\\nOne finding cuts across all four and is worth the programme lead's attention rather than any one team's. Three of the four dress a brand new user's first ever screen in the vocabulary of system failure — red rules, \\\"COULD NOT BE READ\\\", four rail rows of \\\"Could not be read\\\" — and only B (editorial) offers a way out of it. Whatever direction wins, the new_user state needs its own language. Spending the failure red on someone who has simply not started yet is both a human-respect failure and, worse for the governing rule, a way of teaching readers that red does not mean anything.\\n\\nNoted limits on this evidence: no detail state, no motion, no dark theme, no forced colours. A's legend explicitly claims \\\"nothing here is carried by a shape\\\", and C, B and D lean on small coloured marks whose behaviour under forced colours I could not test. That claim needs verifying before any of them is called safe."
+    },
+    {
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__390x844__fold.png",
+        "desk__today__provider_failure__1440x960__fold.png",
+        "desk__today__provider_failure__390x844__fold.png",
+        "desk__today__owner_quiet__1440x960__fold.png",
+        "desk__today__new_user__1440x960__fold.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "desk__briefing__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844__fold.png",
+        "editorial__today__provider_failure__1440x960__fold.png",
+        "editorial__today__owner_quiet__1440x960__fold.png",
+        "editorial__today__new_user__1440x960__fold.png",
+        "editorial__today__scale__1440x960__fold.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "editorial__briefing__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844__fold.png",
+        "index__today__provider_failure__1440x960__fold.png",
+        "index__today__provider_failure__390x844__fold.png",
+        "index__today__owner_quiet__1440x960__fold.png",
+        "index__today__new_user__1440x960__fold.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844__fold.png",
+        "rail__today__provider_failure__1440x960__fold.png",
+        "rail__today__owner_quiet__1440x960__fold.png",
+        "rail__today__new_user__1440x960__fold.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__my-work__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960__fold.png"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 8.6,
+          "ownedLens": 8.5,
+          "strengths": [
+            "The rule under the headline IS the coverage report: full black when the read is complete, short and red when a source did not answer, black-with-a-gap when partly read. A signature moment that is also the safety mechanism, which is the highest form of what the brief asked for.",
+            "The lede states the page's own reliability before it states any content — 'Read.' / 'Partly read.' / 'Did not answer.' / 'Could not be read.' — set bold and colour-shifted at the head of the measure. Quiet day and broken provider are unmistakably different at arrival, at 1440 and at 390.",
+            "The left spine with filled indigo squares, hollow squares and open crosses gives the list a docket rhythm, and the fielded metadata line (provenance | lateness | idle) separated by hairline dividers is exact without becoming chips."
+          ],
+          "weakest": "desk__analytics__owner_signature__1440x960__fold.png — the same ~735px column as every other mode, so the Project ledger never earns the widening the brief calls for and roughly 700px of the window is empty margin; the '19 open work' line (bold numeral, grey label) is the flattest piece of typography in the direction.",
+          "concerns": [
+            "Every mode is the identical centred single column at 1440 with ~350px margins each side. That is a measure decision, not a composition — the direction never uses the width for anything, so the page reads the same at 1024 and 1440 and Analytics gets no earned widening.",
+            "The coverage ticks that appear after Inbox / My work / Analytics in the mode row are cryptic floating glyphs that change shape between states (vertical ellipsis in one capture, apostrophe in another). They are the least resolved detail in an otherwise exact system.",
+            "The headline is set at the same size and weight on all four modes, so Today, Inbox, My work and Analytics all open with identical visual weight. Less editorial variation than the brief's 'mode rhythm' section asks for.",
+            "Full briefing adds a third stacked header band (products / modes / breadcrumb), so three horizontal rules precede the content — the shell starts to compete with what it frames."
+          ],
+          "decision": "Pass",
+          "requiredCorrection": "Let Analytics widen for the Project ledger instead of holding the Today measure, and vary the headline scale by mode so the four jobs do not open identically. Replace the mode-row coverage ticks with a single legible mark used consistently across all states."
+        },
+        {
+          "label": "B",
+          "overall": 8.9,
+          "ownedLens": 9.1,
+          "strengths": [
+            "The only genuine editorial grid in the lab: right-aligned mono labels in a left margin, a content measure, and right-aligned quantities against a rule system that spans the full width. The page has a spine, a shoulder and a foot, and the rules do all the containing — no card anywhere.",
+            "The marginalia are load-bearing, not decorative. 'Held up, or parked in a waiting column.' sits in the margin beside Waiting; COUNTED / CANNOT SAY / WINDOW sit against the exact lines they qualify on Analytics; '2 asks in this thread.' sits beside the thread it counts. Very few product teams attempt this and fewer land it.",
+            "Two earned signatures: the three-column colophon 'HOW THIS PAGE WAS READ', and the dotted underline that replaces Today's solid rule when you are inside Full briefing. That second one is the most sophisticated single detail in the whole lab — depth expressed as a change in the mark, not another band of chrome."
+          ],
+          "weakest": "editorial__today__provider_failure__1440x960__fold.png — the failure state is carried by 8px red rings and a mono 'FAILURE · PARTLY READ' chip. The type weight, the rule weight and the page colour are unchanged from the healthy screen, so at a glance across a desk this reads as a normal day with a small dot on it.",
+          "concerns": [
+            "At-a-glance failure signalling is the weakest part of an otherwise excellent system. Candidate A changes the headline rule and the lede colour; B changes markers only. Against a rule the brief says to weigh heavily, that is a real gap.",
+            "The coverage ledger can stack four consecutive rows before any content (see editorial__my-work__owner_signature__1440x960__fold.png), pushing the actual responsibility list well down the page. Honest, but it delays the job.",
+            "Two stacked eyebrows above the headline — the mono dateline, then 'TODAY' — is a small hierarchy muddle at the most-looked-at point on the page.",
+            "Amber introduces a third hue beyond indigo and red. It is meaning-bearing so it is permissible, but it is the least resolved colour decision on the page and it sits in the global nav where it is smallest."
+          ],
+          "decision": "Pass",
+          "requiredCorrection": "Make a broken provider change the page, not only its markers: carry the red into the rule system or the headline area so the failure has page-level weight, matching what A achieves. Then collapse the double eyebrow to one."
+        },
+        {
+          "label": "C",
+          "overall": 6.9,
+          "ownedLens": 6.8,
+          "strengths": [
+            "The leader-dot contents table is the best single idea in the lab: it is simultaneously the mode navigation and a per-mode coverage report, so the health of a mode you are not in is legible from the mode you are in. Nothing else here does that.",
+            "'WHAT LIMITED THIS READ' as a bordered block with a red left rule, placed above the content rather than at the foot, is a clear and honest disclosure device.",
+            "The two-column claim body on Analytics (the count, then what it counted beside what it cannot say) is well set and reads as a records page rather than a dashboard."
+          ],
+          "weakest": "index__today__owner_quiet__1440x960__fold.png — the content ends at roughly y=580, the 'THIS READ' rail floats at y=575 with nothing beside it, and two-thirds of the window is unresolved white. This is not intentional sparseness; the grid has simply not been composed.",
+          "concerns": [
+            "Every 1440 capture has a permanently empty top-right quadrant of roughly 600×520px, because the content column stops at 832 while the rail starts at 896 but does not begin until hundreds of pixels down the page. The rail's vertical origin moves between captures (y≈520, 575, 620, 693), so it is flow-positioned rather than anchored. The arrival screen looks unfinished.",
+            "Two competing right edges in the header: the dateline and scope control align to 832, the rail aligns to 1248. Nothing reconciles them.",
+            "At 390 the index table has no right margin — 'Not answering' runs into the viewport edge — and the leader dots collapse to two or three glyphs, destroying the device the direction is named for. Mobile is a compressed desktop, not a transformation, and this is close to the 320px overflow floor.",
+            "Failure is signalled by swapping hollow squares for filled black squares and adding a 2px red left rule. Compare index__today__owner_signature__1440x960__fold.png with index__today__provider_failure__1440x960__fold.png: at a glance they are the same screen. The governing rule is satisfied only by reading words.",
+            "Heavy monospace in row metadata ('Tasks · Nora & Cian') on top of mono nav and mono labels pushes the texture toward a terminal rather than a records page."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Rebuild the desktop grid so the rail is anchored to the top of the content and the top-right is not dead space, and reconcile the two right edges. Give the index table a right margin and a real mobile transformation that keeps the leader-dot device legible at 390 and 320. Make the failure state change the page's colour, not only its words."
+        },
+        {
+          "label": "D",
+          "overall": 6.1,
+          "ownedLens": 5.9,
+          "strengths": [
+            "My work is the direction's best mode: group headings with counts, a right-aligned lateness column and clean row rhythm.",
+            "The quiet day at 1440 is genuinely calm and honest — headline, one paragraph, 'NOT CONNECTED YET', 'HOW THIS READ WAS TAKEN', one link. No empty furniture.",
+            "New user is the one state where the signalling works: solid red rules against all four rail modes read instantly."
+          ],
+          "weakest": "rail__today__provider_failure__1440x960__fold.png — set beside rail__today__owner_signature__1440x960__fold.png the two screens are near-identical, because the signature state already shows orange dashes. The entire failure delta is one 3px red rule on a single sentence that is set smaller and quieter than the 'NOT CONNECTED YET' block below it. A broken provider is the least prominent thing on the page.",
+          "concerns": [
+            "No editorial identity and no signature moment. Stripped of the sidebar this is the default list view the brief names as a failed lab: no marginalia, no numbering, no mono texture, no spine, no rule system doing work.",
+            "The state language is a dashed orange vertical tick beside each rail item plus a dashed orange ring around the Inbox count. The ring is exactly the chip furniture the brief rejects, and the dashes read as construction tape rather than an editorial mark. At 390 it becomes a full-width dashed orange bar across the very top of the phone, unlabelled, as the first thing on screen.",
+            "The shell is louder than the content it frames. 320px of persistent chrome, more than half of it empty, with a dead gap between the scope block and PRODUCTS, and the hierarchy inverted — the three actual products sit below the four Home modes, and the wordmark is parked at the bottom of the page.",
+            "Measure is inconsistent between modes inside one direction: My work's rules end near x=1024 while Today, Inbox and Analytics end near x=1120. The grid is not held.",
+            "Inbox stacks four identical blue 'Open' links down the page, with indent rules that are grey on one entry and orange on another. Default web texture, ragged application."
+          ],
+          "decision": "Veto",
+          "requiredCorrection": "I would not admit this as a direction. To be reconsidered it needs a real typographic thesis in the content (the rail is a navigation decision, not an art direction), the dashed-orange tick and ring system replaced with a mark that is not warning tape, one consistent measure across all four modes, and a failure state that changes the page rather than adding a hairline. As it stands it is competent default and the least distinguishable of the four when a provider breaks."
+        }
+      ],
+      "rankedOrder": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "overallNote": "Two of these were made by a studio and two were made by a team. B and A are the studio work, and the gap below them is wide — this should not be read as four close candidates.\\n\\nB wins my lens outright. It is the only direction with a genuine editorial grid rather than a centred column: marginal labels that qualify the exact lines beside them, right-aligned quantities against a full-width rule system, numerals in the margin, one display face and one mono used with discipline, and not a single card. Its colophon and its dotted-underline treatment of Full briefing are earned signatures. A is close behind and beats it on the one criterion I was told to weigh most heavily: A's headline rule is the coverage report, and its lede names the read's reliability before it names any content, so a quiet day and a broken provider are different at a glance on a phone at arm's length. If the architect's priority is the governing rule above all, A is the pick; if it is art direction, B, with the failure state raised to page weight.\\n\\nC has the best idea and the worst page. The leader-dot index that reports every mode's coverage is the most original device in the lab, and it sits inside a grid that leaves a 600×520px hole in the top right of every desktop screen, floats its rail at a different height on every capture, and collapses to an edge-touching, dot-less table at 390. It is one composition pass away from being interesting and is not admissible as rendered.\\n\\nD I am vetoing. The rail is a navigation decision standing in for an art direction; the content behind it has no typographic thesis, the measure changes between modes inside the same direction, the state system is dashed orange warning tape and a dashed ring around a count badge, and the provider-failure screen is very nearly indistinguishable from the healthy one. It is the candidate the brief was warning about when it said four competent variations on a list view is a failed lab.\\n\\nOne note that belongs to the shell rather than to any candidate: all four phrase a brand-new user's very first screen as a read that failed. That is a product-copy decision someone should make deliberately; it is not a point of comparison between these four."
+    },
+    {
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__390x844__fold.png",
+        "desk__today__provider_failure__1440x960.png",
+        "desk__today__owner_quiet__1440x960.png",
+        "desk__today__new_user__1440x960.png",
+        "desk__today__partial_coverage__1440x960__fold.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__inbox__owner_signature__1440x960.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844__fold.png",
+        "editorial__today__provider_failure__1440x960.png",
+        "editorial__today__owner_quiet__1440x960.png",
+        "editorial__today__new_user__1440x960.png",
+        "editorial__today__partial_coverage__1440x960__fold.png",
+        "editorial__inbox__owner_signature__1440x960.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__1440x960.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844__fold.png",
+        "index__today__provider_failure__1440x960.png",
+        "index__today__owner_quiet__1440x960.png",
+        "index__today__new_user__1440x960.png",
+        "index__today__partial_coverage__1440x960__fold.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844__fold.png",
+        "rail__today__provider_failure__1440x960.png",
+        "rail__today__owner_quiet__1440x960.png",
+        "rail__today__new_user__1440x960.png",
+        "rail__today__partial_coverage__1440x960__fold.png",
+        "rail__today__scale__1440x960__fold.png",
+        "rail__inbox__owner_signature__1440x960.png",
+        "rail__my-work__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960.png"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 8.8,
+          "ownedLens": 8.9,
+          "strengths": [
+            "Wins the governing-rule test more decisively than any other candidate. A quiet day opens with a black rule and the word 'Read. Every project at this scope answered.'; a broken provider opens with a dark red rule and a bold red 'Did not answer. 1 project did not answer at all. Nothing here counts it as zero, and no total includes it.' Partial coverage gets its own third lead, 'Partly read.' Three states, three unmistakable openings, all in plain sentences rather than badges.",
+            "The only direction that tells the truth about its own navigation numeral. On Inbox: 'The Inbox count is not complete, so the numeral in the mode row is drawn open on its right rather than closed. It is what could be checked, not a total.' Every other candidate prints a bare count next to a page that says the count cannot be completed.",
+            "Analytics is the only one that surfaces the exclusion before you interact. Each claim's receipt is labelled 'THE RECORDS BEHIND THIS (21 COUNTED, 2 LEFT OUT)' while still closed, so the reader learns what was left out without opening anything. It also refuses a total honestly: 'The read cannot be accounted for exactly, because at least one source did not answer in full. No total is shown rather than a total that would be wrong.'"
+          ],
+          "weakest": "desk__today__new_user__1440x960.png",
+          "concerns": [
+            "new_user wears the identical red failure chrome as provider_failure: same dark red rule, same 'Could not be read.' lead, same 'COULD NOT BE READ' band. A person with nothing set up and a person whose provider is down see the same screen. That is the governing rule inverted, and A commits it harder than the other three because it dresses the shared shell string in alarm colour.",
+            "On that same new_user screen, 'About this read: This is not an all clear: one source did not answer in full, and 2 other things are unresolved.' There are no projects and therefore no source that answered in part. The sentence asserts a specific failure that the page's own state contradicts. It is the one place in A where a claim is made without anything behind it.",
+            "new_user offers no route out. Editorial's equivalent screen carries 'Where to start / Work lives in a project. Make one in Tasks, and Home reads it from the next read.' with a real control. A leaves a first-time reader with a red band, a legend, and nothing to do.",
+            "'Some sources did not answer, so this list can be short. Short is not empty.' is a good sentence, repeated verbatim five times on one provider_failure page. Repetition at that density stops reading as care and starts reading as boilerplate, which costs the sentence its weight.",
+            "The headline rule is a coverage meter (one segment when read, two split segments when partly read, short dark red when failed) and it is never explained. 'How to read the line' legends the spine marks meticulously and says nothing about the rule directly above the standfirst.",
+            "Analytics ledger is headed 'Every project you can read', which implies the unreadable ones are absent. B's equivalent adds 'including the ones it could not' and resolves the ambiguity."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Separate new_user from provider_failure in language and chrome. Drop the red rule and the 'COULD NOT BE READ' band for a scope that has nothing in it, suppress the 'one source did not answer in full, and 2 other things are unresolved' sentence when there are no sources, and give the screen a stated next step. Then vary or consolidate the repeated 'Short is not empty' line, and legend the headline rule."
+        },
+        {
+          "label": "B",
+          "overall": 9,
+          "ownedLens": 9.2,
+          "strengths": [
+            "The most complete truth machinery in the lab, and the only one that types every qualifier. Each limit is a labelled ledger row: 'COVERAGE · PARTLY READ', 'ELSEWHERE IN HOME', 'NOT CONNECTED', 'THE ACCOUNT'. The account reconciles arithmetically: 'Signal read 22 items, showed 8, held back 2, skipped 1 you silenced, and found 11 that crossed nothing' is 8 + 2 + 1 + 11 = 22.",
+            "Analytics makes the boundary of a claim a named field. Every number carries 'COUNTED', 'CANNOT SAY', 'WINDOW'. 'CANNOT SAY' is the best single piece of content design in the lab: it stops a caveat being grey text beside a number and makes it part of the claim's own structure. B is also the only direction that prints 'No accepted baseline' under each metric, which is a real absence the other three silently drop.",
+            "Coverage claims carry a denominator, not just an adjective. My work opens 'Read 3 of 3 projects. 0 did not answer, and nothing here counts them as empty', then declares its own exclusion in a labelled row: 'LEFT OUT OF THIS LIST · 1 finished item is filtered out. They are still there.' Its project ledger is the only one qualified honestly: 'Every project in what Home is reading, including the ones it could not.' Inbox explains why a control is unavailable in words rather than by greying it: 'Snooze: Only an open item can be snoozed.' A refused action states what did and did not happen: 'The source refused this. Nothing changed there, and this is still open.' And new_user is the only first-ever screen with a truthful route out."
+          ],
+          "weakest": "editorial__today__provider_failure__1440x960.png",
+          "concerns": [
+            "The failure marking is under-weighted for the loudest fact on the page. A dead provider is announced by a small monospace tag in the dateline, 'FAILURE · PARTLY READ', plus a gutter glyph. Read the sentences and it is impeccable. Glance at it from a metre away against editorial__today__owner_quiet__1440x960.png and the two pages have the same shape and the same weight. That is the one governing-rule test B answers more softly than A.",
+            "My work states 'Read 3 of 3 projects. 0 did not answer' and then, two lines below, two rows both labelled 'COVERAGE · PARTLY READ'. Both are true and reconcilable, but placed adjacently they read as the page contradicting itself on first pass. The standfirst should say which sense of 'partly' is meant.",
+            "The coloured glyphs beside Inbox, My work and Analytics in the mode row (amber square when partly read, red bullseye on failure) are never legended. Their meaning is recoverable only from the ledger further down the page. A carries an explicit legend for exactly this class of mark.",
+            "Shares the shell defect: new_user still asserts 'one source did not answer in full, and 2 other things are unresolved' on a screen with no projects. B mitigates it with 'Where to start' but does not correct the sentence."
+          ],
+          "decision": "Pass"
+        },
+        {
+          "label": "C",
+          "overall": 8.4,
+          "ownedLens": 8.5,
+          "strengths": [
+            "The single best structural truth idea in the lab. The leader-dot contents table reports coverage for the modes you are not in, from the mode you are in: '01 Today ……… Partly read · Not connected', '02 Inbox 5 Partly read', '04 Analytics ……… Not enough history'. Nobody else tells you at the fold that Analytics has insufficient history before you go there.",
+            "Its zeros are earned and its failures propagate. On a quiet day Inbox reads '0 · Nothing in it', which is a zero that was actually read. On provider failure all four rows change to 'Partly read · Not answering', so the damage is reported system-wide rather than only on the mode in front of you.",
+            "Limits are typed and placed above the content they qualify. 'WHAT LIMITED THIS READ' is a red-ruled block carrying a named kind, 'NOT ANSWERING', 'COVERAGE' or 'SCOPE', with the sentence beneath it. Placement before the claims is the right order."
+          ],
+          "weakest": "index__analytics__owner_signature__1440x960.png",
+          "concerns": [
+            "Analytics drops the labels its sibling directions keep. What B sets as 'COUNTED / CANNOT SAY / WINDOW' becomes two unlabelled grey columns, so 'Done means the column named Done in this Project. Another Project may define it differently.' sits beside the number 19 with no word telling the reader it is the claim's limit rather than more description. Same facts, weaker trust.",
+            "'No accepted baseline' disappears from every metric. That is not decoration, it is a real statement that the number has no reference point, and C is silent on it across all seven claims.",
+            "new_user is the worst first screen of the four. Four index rows all reading 'Could not be read', a 'SCOPE' block, and the only constructive sentence, 'There is no project for new work to go to yet.', demoted to the bottom of the right rail with no control attached. It tells a brand new person four times that the system failed.",
+            "The accounting sentence is spatially divorced from what it accounts for. 'Signal read 22 items, showed 8, held back 2...' lives in the right rail whose top edge starts roughly 520px down, well below the headline and standfirst it qualifies.",
+            "Project ledger heading is 'Every project you can read' with no clarifier that unreadable projects are included, the same ambiguity as A.",
+            "Row-level redundancy in Coming up: 'Due in 5 days.' as a body sentence and 'Due in 5 days' again in the metadata line directly beneath it."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Restore labelled limit fields to Analytics so the caveat is named as a caveat, and bring back the per-metric 'No accepted baseline' line. Rewrite new_user so it stops reading as four system failures and carries a stated next step in the main column, not the rail. Move the account sentence up beside the claims it accounts for."
+        },
+        {
+          "label": "D",
+          "overall": 7.6,
+          "ownedLens": 7.4,
+          "strengths": [
+            "Per-mode read state is persistently visible and never scrolls away. Every rail item carries its own coverage word beneath the label: 'Today / Read', 'Inbox / Partly read', 'Analytics / Not enough history'. In new_user all four read 'Could not be read'. It is the same virtue as C's contents table, always on screen.",
+            "The only direction that publishes the full snooze schedule as an explicit table. 'WHEN A SNOOZE COMES BACK / LATER TODAY — Comes back at 18:00 on Thursday 16 July.' Exact resurfacing times set out as a receipt rather than buried in one row.",
+            "Analytics closes with a genuine provenance statement: 'What these numbers do not cover / Every claim above was computed from the records named under it, and each one prints its own limit.'"
+          ],
+          "weakest": "rail__today__provider_failure__1440x960.png",
+          "concerns": [
+            "The page contradicts itself inside one screen. On provider_failure the foot says 'No total is shown rather than a total that would be wrong', while 'Coming up 4' and 'Moving well 2' are collapsed into disclosure summaries carrying bare closed counts. Incomplete data rendered as a settled number is exactly what the governing rule forbids, and D is the only candidate that does it. A, B and C all either list the rows or attach a per-section caveat such as 'Some sources did not answer, so this list can be short. Short is not empty.'",
+            "A derived claim loses the denominator it was derived from. D prints '4 dated items fall in the same week / Tasks · project could not be read' and stops there. A, B and C all carry 'Taken from 4 items' or 'Read from 4 items' beside the same claim. D keeps the conclusion and drops the count it came from.",
+            "The account is exiled to the page foot. 'HOW THIS READ WAS TAKEN' sits roughly 1,300px below the claims it accounts for, so a reader who does not reach the bottom never learns the read could not be totalled. Every other direction puts the account at or near the top.",
+            "Analytics drops the per-claim 'As read on Thursday 16 July.' that the other three print under every number, leaving seven numbers with no individual as-of and a single page-level timestamp at the very foot.",
+            "The failure notice is an unlabelled red-barred sentence with no typed kind. C says 'NOT ANSWERING', B says 'FAILURE · PARTLY READ', A says 'Did not answer.' in bold. D gives a bar and a sentence, so the class of problem is carried by a colour until you read the line.",
+            "The Inbox badge is a bare '5' (and '42' at scale) with a dashed ring and no words anywhere saying the count is incomplete, on pages that state exactly that. A explains its badge; D does not explain its ring.",
+            "new_user has no route out, and 'There is no project for new work to go to yet.' is small grey rail text."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Stop printing closed section counts on 'Coming up' and 'Moving well' whenever a source did not answer, or attach the short-not-empty caveat to each collapsed section. Restore 'Read from 4 items' to the derived claim, move 'HOW THIS READ WAS TAKEN' above the fold beside the claims, restore the per-claim as-of line in Analytics, and give the failure notice a named kind. As it stands D does not meet the truth-language bar and I cannot pass it."
+        }
+      ],
+      "rankedOrder": [
+        "B",
+        "A",
+        "C",
+        "D"
+      ],
+      "overallNote": "All four draw on the same fixture sentences, so the corpus is not what separates them. What separates them is which sentences each direction chooses to surface, where it puts them relative to the claim they qualify, whether it names the kind of statement it is making, and whether the page ever asserts a number it cannot stand behind. Judged that way the field spreads wider than the shared strings suggest.\\n\\nB wins my lens because it makes the limit of a claim a first-class, labelled part of the claim. 'COUNTED / CANNOT SAY / WINDOW' in Analytics, 'LEFT OUT OF THIS LIST' in My work, 'Read 3 of 3 projects. 0 did not answer' with a real denominator, 'Every project in what Home is reading, including the ones it could not', and disabled controls that say why they are unavailable rather than just greying out. It is also the only direction whose new_user screen gives an honest route forward instead of an unexplained failure. Its one genuine weakness is that its failure marking is typographically too quiet for how loud the fact is.\\n\\nA wins the governing-rule test outright, and I weighted that heavily. Read, Partly read and Did not answer each get a different rule colour, a different bold lead and a different sentence, so a quiet day and a broken provider are unmistakable from across a room. It is also the only direction honest about its own navigation numeral, and the only one showing what a receipt left out before you open it. What keeps it second is that it commits the mirror-image offence: it dresses a brand new user with nothing set up in the same red failure chrome as a dead provider, and asserts 'one source did not answer in full' on a screen that has no sources.\\n\\nC has the best single structural idea in the lab, a contents table that reports coverage for the modes you are not in, but it then throws away labelling discipline in Analytics and leaves a first-time user staring at four rows of 'Could not be read' with nothing to do.\\n\\nD I cannot pass. Its provider-failure screen refuses to give a total in one sentence and prints closed section counts as collapsed summaries in the next, which is the governing rule broken inside a single view. It also drops the denominator from a derived claim, exiles the account to the page foot, and strips the per-claim as-of date from Analytics. The rail thesis itself is sound and its persistent per-mode read state is a real asset, so this is a hard Revise rather than a veto, but as rendered it is below the bar and the gap to the other three is not close.\\n\\nOne defect belongs to the shell, not to any direction, and should be fixed before it is graded against anyone: the new_user world phrases a person's first ever screen as a read that failed, and carries the sentence 'one source did not answer in full, and 2 other things are unresolved' when there is no source and nothing to resolve. That is a claim with nothing behind it, and it appears in all four."
+    },
+    {
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__1440x960.png",
+        "desk__today__owner_signature__390x844__fold.png",
+        "desk__today__provider_failure__1440x960__fold.png",
+        "desk__today__owner_quiet__1440x960.png",
+        "desk__today__new_user__1440x960.png",
+        "desk__today__partial_coverage__1440x960__fold.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "desk__briefing__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844__fold.png",
+        "editorial__today__provider_failure__1440x960__fold.png",
+        "editorial__today__owner_quiet__1440x960.png",
+        "editorial__today__new_user__1440x960.png",
+        "editorial__today__partial_coverage__1440x960__fold.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "editorial__briefing__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844__fold.png",
+        "index__today__owner_signature__390x844.png",
+        "index__today__provider_failure__1440x960__fold.png",
+        "index__today__owner_quiet__1440x960.png",
+        "index__today__new_user__1440x960.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "index__briefing__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__1440x960.png",
+        "rail__today__owner_signature__390x844__fold.png",
+        "rail__today__owner_signature__390x844.png",
+        "rail__today__provider_failure__1440x960__fold.png",
+        "rail__today__owner_quiet__1440x960.png",
+        "rail__today__new_user__1440x960.png",
+        "rail__today__scale__1440x960__fold.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__my-work__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960.png",
+        "rail__briefing__owner_signature__1440x960__fold.png"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 8.1,
+          "ownedLens": 8.2,
+          "strengths": [
+            "The strongest at-a-glance state signal in the lab. The rule under the headline changes colour and the lead word changes with it: black rule + \"Read.\" on a quiet day, red rule + \"Did not answer.\" on provider failure, red rule + \"Could not be read.\" for a new user. A founder does not have to read a word to know which day this is.",
+            "The arrival screen puts all three ranked decisions above the fold at 1440 and two of three at 390, with the accounting compressed into one sentence rather than a block of caveats. Best time-to-first-decision at desktop of the four.",
+            "The spine with graded marks gives the whole page one continuous ledger rhythm, and it carries through Today, Inbox, My work and the briefing unchanged, so the four modes read as one document rather than four screens."
+          ],
+          "weakest": "desk__today__new_user__1440x960.png — a person's first ever screen reads \"Could not be read. Home could not read any project at this scope.\" in red, then a section headed \"What this read could not see\", then a seven-symbol key. There is no action anywhere on the page. The product's first impression is a failed read plus homework.",
+          "concerns": [
+            "Coverage state in the mode row is carried by tiny unlabelled tick glyphs beside Today / Inbox / My work / Analytics (visible in desk__today__provider_failure__1440x960__fold.png and desk__today__partial_coverage__1440x960__fold.png). At 100% they are barely perceptible and mean nothing without the legend at the foot. The direction's own answer to this is a key, which concedes the marks are not self-evident.",
+            "\"How to read the line\" appears on every page including the quiet day, where it is the largest block on the screen. That is close to empty furniture used to fill a quiet day, and it is the one thing the brief lists as rejected on sight.",
+            "It is the only direction that changes --paper. Home on warm off-white and Notes / Tasks / Timeline on white means the founder crosses a visible seam every time they leave Home. For a suite trying to read as one operating system that is a strategic cost, not a flourish.",
+            "Today at 1440 runs 2,778px with Needs review, Coming up and Moving well all fully expanded below the three decisions. The authored read becomes a task wall by the second screen."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Give the new-user world a first action and a human sentence — the founder outcome on that screen is currently zero. Then either label the mode-row coverage marks in words or delete them and retire the legend; a morning page must not need a key. Re-test the warm canvas against a live navigation into Tasks before the paper change is accepted."
+        },
+        {
+          "label": "B",
+          "overall": 7.8,
+          "ownedLens": 7.4,
+          "strengths": [
+            "The only direction that answers the new user. editorial__today__new_user__1440x960.png carries a \"Where to start\" section, one plain sentence explaining that work lives in a project, and an Open Tasks control. Every other candidate leaves that person on a dead end. On founder outcome that is the single best decision anyone made in this lab.",
+            "The only Inbox with direct actions visible on arrival — Mark as read and Snooze sit on each event in editorial__inbox__owner_signature__1440x960__fold.png, with the refusal reason (\"Mark as read: You have already read this.\") shown in place rather than hidden behind an opened row.",
+            "Coverage state is marked in the mode row itself with distinguishable tokens — amber square for partly read, red ring for failure, hollow square for not connected — so the honesty travels with the navigation and is legible from any mode."
+          ],
+          "weakest": "editorial__today__owner_signature__390x844__fold.png — the entire first phone screen is dateline, headline, standfirst and four rows of caveats. Not one decision is visible. The mode the product is named for shows the founder nothing to act on until they scroll.",
+          "concerns": [
+            "The caveat ledger is placed between the standfirst and the content on every mode. On editorial__today__partial_coverage__1440x960__fold.png the first decision does not appear until 811px down a 960px viewport, behind five grey rows of what could not be read. Honesty has been given the position that belongs to the decisions.",
+            "Consequence of the above: the answer to \"what deserves attention now\" arrives after the answer to \"what is missing\". That inverts the mode's job and it is the most consequential ordering error in the lab.",
+            "The suite identity reads as a well-set page rather than an operating layer. At 1440 it commits to a single centred measure with the gutters used only for labels, so the composition never signals that this is the front door to three products.",
+            "\"5 OPEN\" set large at the right of the Inbox heading is the closest thing in the lab to a KPI numeral, and it is doing no work that the badge in the mode row does not already do."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Move the coverage ledger below the ranked decisions, or reduce it above the fold to the one-line standfirst it already writes and park the detail at the foot. Today must open on what to do. Keep the new-user screen exactly as it is — it is the best thing in the lab and the other three should be made to match it."
+        },
+        {
+          "label": "C",
+          "overall": 7.2,
+          "ownedLens": 7,
+          "strengths": [
+            "The leader-dot contents table is the most original structural idea here and the best coverage report in the lab: from any mode you can read the state of every other mode in plain words — Partly read, Not enough history, Nothing in it, Could not be read. That is exactly what the governing rule asks for, expressed in words rather than colour.",
+            "Provider failure is unmistakable — index__today__provider_failure__1440x960__fold.png flips all four contents rows to \"Not answering\" and raises a red-ruled \"WHAT LIMITED THIS READ\" block above the content, and the quiet day carries neither.",
+            "The monospaced provenance and numbered margins give the page a records-first texture that suits Analytics better than any other direction's."
+          ],
+          "weakest": "index__inbox__owner_signature__1440x960__fold.png — the Inbox arrives with no visible way to act on anything. Threads, dispositions and a stale-source warning are all rendered as flat prose with no Open, no mark-read, no snooze. It reads as a report about the Inbox rather than an Inbox.",
+          "concerns": [
+            "The 1440 composition is broken. In index__today__owner_quiet__1440x960.png and index__analytics__owner_signature__1440x960__fold.png the content column stops around 830px while the \"THIS READ\" block floats in the right third with roughly 500px of nothing above it. It is the only candidate whose page has a visible hole in it.",
+            "The Home mode row and the Suite product row are set in near-identical small monospace caps stacked two lines apart, so \"which of these is the suite and which is Home\" is not visually resolved. Weakest suite legibility of the four.",
+            "Mobile is an uncollapsed dump. index__today__owner_signature__390x844.png runs 3,217px with Needs review, Coming up and Moving well all fully expanded — 13 rows below the three decisions on a phone. The direction that costs the most vertical space also edits the least.",
+            "New user gets \"Could not be read\" on all four contents rows and one link to the full briefing. No action, no explanation of what a project is."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Resolve the right column — either commit to the sticky on-this-page rail across the whole scroll or drop it and use the width for the ledger; the floating block over a hole is not shippable at the promotion gate. Put real controls on Inbox rows, and collapse the lower Today sections on small screens."
+        },
+        {
+          "label": "D",
+          "overall": 8.7,
+          "ownedLens": 9,
+          "strengths": [
+            "It is the only one of the four that reads as an operating system rather than a page. The rail holds Home's four modes with a plain-English coverage word under each, the Read Scope control, who the read belongs to, the three products and Account — so from any screen the founder can see the whole suite and the honesty state of every mode at once. That is the answer to \"open it at 7am and know what to do\".",
+            "The most disciplined Today in the lab. rail__today__owner_signature__1440x960.png gives three ranked decisions, then Needs review, then Coming up and Moving well collapsed behind counts, then the accounting line, then the briefing link. It is the shortest page here and the only one that actually edits rather than lists, and the same edit holds on the phone.",
+            "The best evidence surfaces. My work opens with \"Read 3 of 3 projects. 0 did not answer, and nothing here counts them as empty\" and counts each group; Analytics refuses the trend outright with \"Not enough history yet. 6 of 14 comparable daily readings\" instead of drawing a line, and earns its widening with a three-column project ledger carrying a HOW IT READ column."
+          ],
+          "weakest": "rail__analytics__owner_signature__1440x960.png — the page states \"Not enough history yet. 6 of 14 comparable daily readings\" while the rail three inches to its left labels that same mode \"Analytics · Read\". The direction's own honesty instrument contradicts the page it is describing.",
+          "concerns": [
+            "The governing rule is broken on the signature world, in the one place this direction cannot afford it. Analytics carries a known insufficiency and the persistent rail renders it as \"Read\" on every screen of every mode. Candidate C labels the identical fixture \"Not enough history\", so this is a mapping error, not a data limitation — but as shipped it is an unknown rendered as clean.",
+            "Width is spent poorly at 1440. The rail takes about 320px and the measure caps around 1,120px, leaving roughly 320px of dead window on the right, while the rail's own lower half is empty on the signature day.",
+            "New user is a dead end. rail__today__new_user__1440x960.png turns every rail entry red and repeats \"Could not be read\" five times with no action offered. Candidate B solves this on the same fixture, so it is a choice, not a constraint.",
+            "The rail is the widest persistent chrome in the lab and the brief asks the shell to be quieter than the content. It is quiet in tone but not in footprint, and the three-column Inbox trap the brief warns about is untested here because no capture shows a selected row."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Fix the rail's Analytics status to report the insufficiency it already prints on the page — the whole thesis of this direction is that the rail tells the truth about every mode, and today it does not. Then give the new-user world a first action, and reclaim the dead right margin at 1440."
+        }
+      ],
+      "rankedOrder": [
+        "D",
+        "A",
+        "B",
+        "C"
+      ],
+      "overallNote": "Judging on product strategy and founder outcome only. Two questions decided this ballot: does the thing read as one composed operating system rather than four screens, and at 7am does the founder learn what to do before they learn what is missing.\\n\\nD is the clear winner on both and is the only candidate I would build the suite around. It is the only direction where the whole system — four modes with their honesty state in words, the scope, the actor, the three products — is legible from every screen, and the only one that genuinely edits Today rather than listing it. Its defect is serious and specific rather than structural: the rail labels Analytics \\\"Read\\\" while the Analytics page itself says there is not enough history to show a trend. C proves on the identical fixture that this is a mapping error. It must be corrected before D can pass, and I am marking Revise rather than Pass precisely because the failure lands on this direction's own thesis.\\n\\nA is second and is the most memorable. Its colour-changing rule under the headline is the fastest at-a-glance answer to \\\"quiet day or broken provider\\\" in the lab. It is held back by a symbol key that appears on every page including the quiet one, by mode-row coverage carried in glyphs too small to read, and by warming the shared canvas on Home alone, which will read as a seam every time the founder walks into Tasks.\\n\\nB has the single best screen in the lab — it is the only direction that tells a brand-new person where to start and gives them a control to do it — and the single worst ordering decision, putting four to five rows of caveats above the first decision on every mode. On a phone its first screen contains no decisions at all. Fix the order and keep the new-user screen; the other three should be made to match it.\\n\\nC has the best idea and the weakest execution. The leader-dot contents table reporting every mode's coverage from inside any mode is the most elegant answer to the governing rule anyone found. But at 1440 the page has a literal hole in it, the Inbox offers nothing to act on, and mobile is 3,217px with nothing collapsed.\\n\\nNo vetoes. None of the four changes the fixed architecture and none commits a rejected-on-sight violation outright. But on my lens none of them clears 8.5 on both scores as captured, so the honest reading of this lab is that it is not yet ready for the founder pause: three of the four leave a new user with no way forward, and the one direction that best expresses the honesty rule currently breaks it. Two notes on the evidence itself, both of which limit how far any of these scores should be trusted: no capture shows a selected row, so detail behaviour — a real axis of difference — was not judged at all, and dark theme was never rendered."
+    },
+    {
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__390x844__fold.png",
+        "desk__today__provider_failure__1440x960__fold.png",
+        "desk__today__owner_quiet__1440x960__fold.png",
+        "desk__today__new_user__1440x960__fold.png",
+        "desk__today__new_user__390x844__fold.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "desk__briefing__owner_signature__1440x960__fold.png",
+        "desk__today__provider_failure.html (source, to verify how the mode-row state marks are encoded)",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844__fold.png",
+        "editorial__today__provider_failure__1440x960__fold.png",
+        "editorial__today__owner_quiet__1440x960__fold.png",
+        "editorial__today__new_user__1440x960__fold.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "editorial__briefing__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844__fold.png",
+        "index__today__provider_failure__1440x960__fold.png",
+        "index__today__owner_quiet__1440x960__fold.png",
+        "index__today__new_user__1440x960__fold.png",
+        "index__today__scale__1440x960__fold.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "index__briefing__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844__fold.png",
+        "rail__today__provider_failure__1440x960__fold.png",
+        "rail__today__owner_quiet__1440x960__fold.png",
+        "rail__today__partial_coverage__1440x960__fold.png",
+        "rail__today__new_user__1440x960__fold.png",
+        "rail__today__new_user__390x844.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__390x844.png",
+        "rail__briefing__owner_signature__1440x960__fold.png"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 8.9,
+          "ownedLens": 8.8,
+          "strengths": [
+            "The two levels are separated by typographic class, not by position alone: products sit in small mono capitals (HOME NOTES TASKS TIMELINE), Home's four modes sit below in larger sentence case with an indigo underline. Nobody has to be told which row is which. A mono eyebrow (TODAY / INBOX / MY WORK / ANALYTICS) then repeats the mode name directly above the h1, so the answer to 'where am I' is given twice on every screen.",
+            "Full briefing is the clearest in the set: a third tier appears under the mode row reading TODAY — FULL BRIEFING, with the underline moved down to FULL BRIEFING while Today stays marked above it. It is structurally impossible to read this as a fifth mode.",
+            "The state grammar for the mode you are in is the strongest of the four and it is carried in words, not colour: a bold lede reading Read. / Partly read. / Did not answer. / Could not be read., reinforced by a rule under the headline that is solid black when read, split with a gap when partly read, and red when a source refused. desk__today__owner_quiet and desk__today__provider_failure are unmistakable at a glance and at two metres."
+          ],
+          "weakest": "desk__today__new_user__1440x960__fold.png — a person's first ever screen is a red rule and a red 'Could not be read.', and the only forward link on the fold is 'Open the full briefing' of the read that just failed. desk__today__new_user__390x844__fold.png repeats it. Honest, but it puts a new user in an error state with no route out.",
+          "concerns": [
+            "Cross-mode state is the weakest of the four for sighted users. The marks beside Inbox, My work and Analytics in the mode row are tiny unlabelled ticks; I checked the source and the words are only in the aria-label (aria-label=\"Today. Did not answer.\") with the visible span aria-hidden. So a screen-reader user is told the state of every mode and a sighted user must learn a glyph. The words do exist, but at the foot of the page under 'What this read could not see', not next to the mark.",
+            "desk.css warms --paper away from the design system's default, so Home sits on a different canvas temperature from Notes, Tasks and Timeline. Home is explicitly not a fourth product; giving it its own paper is the one cue that argues it is.",
+            "In provider_failure the same tick appears on all four modes, so the row says 'something is wrong everywhere' but not what — the distinction between a refusal and partial coverage lives only in the body lede."
+          ],
+          "decision": "Pass"
+        },
+        {
+          "label": "B",
+          "overall": 8.8,
+          "ownedLens": 8.7,
+          "strengths": [
+            "The best-taught convention in the lab. Three marks (filled amber square = partly read, hollow square = not connected or unreadable, red ringed dot = a source refused) are used identically in the mode row, in the dateline and in the left margin — and a keyed legend sits on the same screen, immediately under the standfirst, spelling the marks out in words: ELSEWHERE IN HOME · Inbox · Partly read. The key teaches itself on first contact; no other candidate does that.",
+            "State of the modes you are not in is reported from wherever you are, in words, and it updates correctly: editorial__today__provider_failure puts red ringed dots on all four modes and a FAILURE · PARTLY READ row in the margin, while editorial__today__owner_quiet carries one amber square on My work and a calm colophon. A quiet day and a broken provider are not confusable.",
+            "The only candidate that gives a new user somewhere to go: editorial__today__new_user carries a 'Where to start' section and an Open Tasks control on the fold, instead of leaving them inside a failed read."
+          ],
+          "weakest": "editorial__today__owner_signature__1440x960__fold.png — the two navigation rows are set at near-identical size, case and weight, so 'Home Notes Tasks Timeline' and 'Today Inbox My work Analytics' read as eight peer links separated by a hairline. This is the weakest expression of the two-level model in the set, and it is the exact thing my lens exists to catch.",
+          "concerns": [
+            "Level separation depends almost entirely on the wordmark, one hairline and an active underline. A first-time user could reasonably read the second row as four more products, which is precisely the confusion the architecture is meant to prevent.",
+            "Full briefing is signalled by switching Today's underline from solid to dotted plus a TODAY / FULL BRIEFING breadcrumb in the dateline. Correct, and elegant, but it is the subtlest depth cue of the four and a dotted-versus-solid underline is a fine distinction to hang a route level on.",
+            "Three glyph shapes plus two colours is the largest symbol vocabulary here. It is coherent, but it is a vocabulary, and at 390 the marks sit in a cramped mode row where the amber square is very small."
+          ],
+          "decision": "Pass"
+        },
+        {
+          "label": "C",
+          "overall": 8.6,
+          "ownedLens": 9,
+          "strengths": [
+            "The clearest two-level model in the lab, and the clearest by some distance. Products are set in mono capitals; then a section label reading HOME; then the four modes as a numbered leader-dot index in large sentence case. The index literally says 'these four belong to Home', so the hierarchy is stated rather than implied.",
+            "The only candidate whose orientation surface reports every mode's coverage in words, from every mode, and the only one that names Analytics as 'Not enough history' at owner_signature. Rail calls that same mode 'Read' and desk and editorial leave it unmarked. Under 'unknown stays unknown', naming insufficient history in the navigation is the single most correct behaviour anyone showed me.",
+            "Full briefing nests as an indented child bullet under 01 Today inside the index, with the active rule spanning the Today group. Depth is drawn as depth. Failure states get their own consistent slot too — a bordered WHAT LIMITED THIS READ block with a red rule, in the same position on every mode."
+          ],
+          "weakest": "index__today__new_user__1440x960__fold.png — the index reports 'Could not be read' four times down a near-empty page, with no start affordance on the fold and only 'Open the full briefing' offered. The instrument that is this direction's greatest asset turns a first run into four repetitions of failure.",
+          "concerns": [
+            "Numbering collision. 01–04 number the modes and 01/02/03 number the signal entries, in the same view, in the same mono margin style. Two live numbered sequences on one screen is a genuine convention hazard and undermines an otherwise excellent index.",
+            "The shell is the loudest of the four. Roughly 210px of masthead in near-h2-scale sentence case sits above the h1 on every page, on every mode. The brief asks the shell to be quieter than the content; this one competes with it.",
+            "Composition at 1440 is unresolved: the right-hand THIS READ rail floats with a large empty region above it and no top anchor, and on owner_quiet and new_user the page is mostly white with that block hanging in space. A quiet day risks reading as an unfinished page rather than a composed one.",
+            "There is a real risk the index reads as a table of contents for the current document rather than as four destinations, especially where a sticky on-this-page rail also exists."
+          ],
+          "decision": "Pass"
+        },
+        {
+          "label": "D",
+          "overall": 7.4,
+          "ownedLens": 7.6,
+          "strengths": [
+            "Group labels are explicit and correct in principle: a HOME heading over the four modes, a PRODUCTS heading over Notes, Tasks and Timeline. Naming the groups is better than leaving the reader to infer them.",
+            "Persistent orientation is genuinely the best idea here — every mode carries a one-line state beneath its label (Read / Partly read / Nothing in it / Could not be read) and it is visible from every mode without scrolling.",
+            "Full briefing nests cleanly as an indented child under Today with its own indigo tick, so depth from Today is unambiguous."
+          ],
+          "weakest": "rail__today__partial_coverage__1440x960__fold.png is pixel-for-pixel indistinguishable from rail__today__provider_failure__1440x960__fold.png in the rail itself — every mode reads 'Partly read' with the same amber dashed ticks in both. The one surface this direction is built around cannot tell a source that refused from a source that answered in part; the difference survives only as a single body line whose left tick is red rather than amber.",
+          "concerns": [
+            "A false all clear at the orientation surface. rail__analytics__owner_signature__390x844.png shows Analytics carrying an amber 'Not enough history yet. 6 of 14 comparable daily readings' block, while the rail beside it says 'Analytics · Read' — on Today, on Inbox and on the briefing. That is insufficient history rendering as healthy in the most persistent element on the page, and it is the governing rule broken in the exact place the direction claims as its advantage.",
+            "The suite hierarchy is inverted. Notes, Tasks and Timeline sit roughly 650px down the rail, below the Home modes and below the scope control, in lighter type, with the SIGNAL STUDIO wordmark at the very bottom. Home's local modes read as the top level and the products as their children.",
+            "At 390 this becomes a spec problem, not a taste problem: rail__today__new_user__390x844.png opens with four mode links and no statement of where the reader is, and PRODUCTS lands in a page footer roughly 1,000px below the fold on a short page and much further on a tall one. 'Home, Notes, Tasks and Timeline stay visible primary destinations' is not met.",
+            "rail__today__owner_quiet__1440x960__fold.png ends its content around 490px with roughly 450px of dead right margin and a long white run below. A quiet day should look intentional; this looks like a page that failed to finish loading — the opposite of the distinction the rule asks for.",
+            "In rail__analytics__owner_signature__390x844.png the 'Every project you can read' ledger is clipped at the right edge ('8 items oper'), which reads as horizontal truncation rather than a scroll container."
+          ],
+          "requiredCorrection": "Three fixes before this can be re-scored on my lens. First, give the rail a state vocabulary that separates refusal from partial coverage and from insufficient history — 'Did not answer' must never collapse into 'Partly read', and a mode carrying an insufficient-history block must never be labelled 'Read'. Second, restore the suite hierarchy: put Notes, Tasks and Timeline (and the wordmark) above or level with the Home group at desktop, and give mobile a persistent product-level header rather than a footer. Third, compose the quiet day so it reads as an edited short page, not an abandoned one.",
+          "decision": "Revise"
+        }
+      ],
+      "rankedOrder": [
+        "A",
+        "C",
+        "B",
+        "D"
+      ],
+      "overallNote": "Judged only on information architecture and learned convention. All four keep the four modes text-labelled, route-marked and reachable, and all four treat Full briefing as depth from Today rather than a fifth mode, so the floor is met everywhere. They separate on three things. First, how hard the two levels work to look like two levels: C states the hierarchy outright (mono-caps products, then a HOME label, then a numbered index of the four modes) and A encodes it in typographic class plus a repeated mode eyebrow; B leaves both rows in the same size and case, so eight peer links is a fair misreading; D labels its groups but then inverts them, putting the products below the modes on desktop and in a footer on mobile. Second, whether the state of the modes you are not in is legible without being taught: C spells it out in words on every row from every mode and is the only one to name Analytics' insufficient history; B pairs its marks with a legend on the same screen, which is the best pedagogy in the lab; A hides the words in the aria-label and shows sighted users an unlabelled tick. Third, the governing rule at the orientation surface. A, B and C all keep a quiet day and a broken provider clearly apart, and never assert health they cannot support. D does not: its rail renders provider failure and partial coverage identically, and prints 'Analytics · Read' over a mode that is showing an insufficient-history block — unknown rendering as healthy in the most persistent element on the page. That is a Revise, not a veto; the vocabulary and the group order are fixable and the underlying idea of a persistently visible state ledger is the best idea in the set. One thing sits outside the comparison and should not be scored against any single direction, but somebody should own it: in all four, a brand-new user's first ever screen is phrased as a read that failed. Only B offers a way forward from it. Nothing here deserves outright rejection."
+    },
+    {
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 7.9,
+          "ownedLens": 7.6,
+          "strengths": [
+            "The fastest verdict device in the set: the first two words after the headline are the state of the read — \"Read.\" / \"Partly read.\" / \"Did not answer.\" / \"Could not be read.\" — set bold with a rule above it that turns from black to red. A quiet day and a broken provider are distinguishable in well under a second, which is the governing rule answered at a glance rather than in prose.",
+            "The accounting sentence is the best-worded in the lab and it changes shape honestly: \"Signal read 22 items, showed 8, held back 2, skipped 1 you silenced, and found 11 that crossed nothing\" on a good read, and on a failed one it refuses to total at all — \"No total is shown rather than a total that would be wrong.\"",
+            "The warm paper is a real pro-attention move, not decoration. At 7am a warm off-white is less punishing than the white of the other three, and it costs the reader nothing."
+          ],
+          "weakest": "desk__today__owner_signature__390x844.png — 3390px, thirteen fully expanded rows across four sections of equal typographic weight. The cap is announced and then immediately contradicted by the shape of the page.",
+          "concerns": [
+            "The three-item cap reads as an arbitrary section limit, not editorial judgement. \"Today's signal\" holds three, and then \"Needs review\", \"Coming up\" and \"Moving well\" follow at identical heading weight with ten more rows fully expanded. Nothing in the composition says the three matter more than the ten; only the count does. This is the longest page in the lab on mobile (3390px against Rail's 2546px) and it is a task wall by the brief's own definition.",
+            "The spine of indigo squares needs a nine-row legend, \"How to read the line\", which by its own admission carries no information: \"Every mark on it repeats something the row beside it already says in words.\" A symbol system that must be taught and adds nothing is a pure attention tax paid on every page.",
+            "That legend renders in full on desk__today__owner_quiet__1440x960.png, where not a single marked row exists. Nine rows of explanation for symbols that are not on the page is empty furniture on a quiet day, which the brief rejects on sight.",
+            "desk__today__new_user__1440x960.png is the harshest first-ever screen in the lab: red rule, \"Could not be read\", the full symbol legend, and no next action anywhere. The one user with no ability to interpret the failure is given the loudest one.",
+            "desk__inbox__owner_signature__1440x960__fold.png shows the rule under the headline broken into two segments with a gap. It reads as a rendering artifact rather than a device.",
+            "Desk's mode tabs mark Inbox and My work as degraded but leave Analytics unmarked, while Analytics has in fact withheld its trend for insufficient history. Silence in a row that names the other degraded modes implies a clean one."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Defend the cap with composition, not just a count: fold \"Coming up\" and \"Moving well\" to named rows carrying their counts, the way D does, so the page's shape states the ranking. Delete the symbol spine and its legend, or give the marks information the row text does not already carry — as written they are a taught system that says nothing. Give the new-user screen one action, as B does. Mark Analytics as limited in the mode row when its trend is withheld."
+        },
+        {
+          "label": "B",
+          "overall": 8.2,
+          "ownedLens": 8,
+          "strengths": [
+            "The only direction that gives a new user something to do. editorial__today__new_user__1440x960.png ends in \"Where to start\", one plain sentence about where work lives, and an Open Tasks button. Every other candidate reports the failure and stops. On a lens about protecting attention, this is the single most valuable behaviour in the lab.",
+            "Row actions live on the row. editorial__inbox__owner_signature__1440x960__fold.png shows Mark as read and Snooze inline, with the disabled state explained in words — \"Mark as read: You have already read this\" — rather than left as a dead control. Deciding without opening anything is the whole point of an Inbox mode.",
+            "The cap gets exclusive typographic rank: numbered 01/02/03 in a monospaced margin and an indigo rule under \"Today's signal\" alone. The three are visibly a ranked list; the sections below are visibly not."
+          ],
+          "weakest": "editorial__today__owner_signature__1440x960__fold.png — the arrival screen is five rows of the system talking about itself (Elsewhere in home, Not connected, Not connected, The account) before a single decision, and only 01 and 02 clear the fold. Decision 03 is below it on a page whose whole promise is three.",
+          "concerns": [
+            "Honesty is placed where the work should be. On every mode, a five-row caveat ledger sits between the standfirst and the first decision. The machine describes its own coverage before it tells you what to do, and the cost is that the third of three ranked decisions falls off the arrival screen at 1440.",
+            "The colophon at the foot, \"HOW THIS PAGE WAS READ\", largely restates what the top ledger already said. The same accounting is paid for twice on a page that already asks 2582px of scroll.",
+            "On editorial__today__owner_signature__390x844.png the row order inverts: \"4 days late, Sunday 12 July\" prints above \"Wait for the Ballyhoura venue confirmation\". The reader meets the lateness before the thing that is late, which is the wrong order for a scanning eye.",
+            "The \"ELSEWHERE IN HOME\" ledger names Inbox and My work as partly read and omits Analytics, while Analytics has withheld its trend for insufficient history. An omission from a list of degraded modes reads as a clean bill of health.",
+            "At 1440 the measure uses roughly the middle 840px and the amber square glyphs are small; the coverage state is legible only on close reading, not at a glance."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Move the caveat ledger below the three ranked decisions, or compress it to one line at the top with the detail at the foot — the decisions must own the arrival screen. Put the row title above its lateness at 390. Add Analytics to the coverage ledger whenever a claim inside it is withheld. Then carry the new-user \"Where to start\" pattern into the other three directions; it is the best behaviour in the lab."
+        },
+        {
+          "label": "C",
+          "overall": 8.5,
+          "ownedLens": 8.7,
+          "strengths": [
+            "The only direction that never claims health it does not have. The leader-dot index reports per-mode coverage from every mode — \"01 Today ……… Partly read · Not connected\", \"04 Analytics ……… Not enough history\" — and on index__today__provider_failure__1440x960.png every row flips to \"Not answering\". Analytics withheld its trend in all four candidates; C is the only one that tells you so from Today. That is the governing rule honoured across modes, not just within a page.",
+            "Best arrival screen in the lab. index__today__owner_signature__1440x960__fold.png fits the index, the headline, the standfirst and all three ranked decisions plus the withheld-count line above 960. Nothing you need on arrival is below the fold. Coverage failures also get their own red-ruled \"WHAT LIMITED THIS READ\" block placed above the content it limits, so the warning arrives before the trust does.",
+            "The cap reads as ranked judgement because the numbering is exclusive to it: 01/02/03 on the three, and no numbers at all on the Needs review, Coming up and Moving well rows below. The ranking is visibly a decision about three things, not a section that happened to stop."
+          ],
+          "weakest": "index__today__new_user__1440x960.png — four \"Could not be read\" rows, a SCOPE block, and the only link out is \"Open the full briefing\" into a briefing that will also be empty, closed by \"BACK TO THE INDEX\" on a page that is itself the index. A first-time user is handed a circular dead end.",
+          "concerns": [
+            "It is the tallest direction in the lab (Today 2685, Analytics 4054). The honesty is cheap because it lives in the navigation, but the body is not — it asks the most scrolling of any candidate once you are past the fold.",
+            "At 1440 the right-hand \"THIS READ\" rail does not start until roughly y=525, leaving a large empty top-right quadrant on arrival. On index__today__provider_failure__1440x960.png the rail ends around y=850 against a 2318px page, so most of the right column is void. The eye has to work out where the second column begins.",
+            "No next action for a new user, and \"BACK TO THE INDEX\" appears at the foot of the index itself.",
+            "Monospaced provenance, leader dots and numbered margins give a documentary texture that is handsome but raises per-row reading effort; on a 60-row day this is the direction that will tire a reader fastest.",
+            "The failure signal is carried largely by small text at the right edge of the index rows. The red rule on the limited-read block is the only strong visual cue, and it is modest in the overall composition."
+          ],
+          "decision": "Pass",
+          "requiredCorrection": "Give the new user one action, as B does, and stop \"BACK TO THE INDEX\" appearing on the index. Pull the right rail up to the top of the content column so the arrival screen has no empty quadrant, and take the vertical out of the body — Analytics at 4054px is not a prose-led opening, it is a document."
+        },
+        {
+          "label": "D",
+          "overall": 8.4,
+          "ownedLens": 8.5,
+          "strengths": [
+            "The only direction where the composition itself enforces the cap. Three ranked decisions, Needs review expanded, then \"Coming up 4\" and \"Moving well 2\" folded to named rows carrying their counts. Nothing is hidden and nothing is dumped. This is the clearest answer in the lab to whether the cap is editorial judgement: it is, because the page's shape says so, not because a number ran out. Today is 1565px against 2383–2685 for the other three.",
+            "The cleanest three-way severity system in the set, consistent across every element. Quiet reads \"Read\" with no callout; partial coverage raises an amber rule and turns the rail ticks amber-dashed with all four modes on \"Partly read\"; failure raises a red rule, and new user shows four solid red rail marks reading \"Could not be read\". Compare rail__today__owner_quiet__1440x960.png, rail__today__partial_coverage__1440x960__fold.png and rail__today__provider_failure__1440x960.png: three states, three unmistakable pages, severity carried by rule colour and by words together.",
+            "Best mobile transformation in the lab. rail__today__owner_signature__390x844.png keeps the four modes and their read states as a horizontal band in roughly 185px of chrome, moves products and account to the foot, and lands the headline at about y=200. Total page 2546px against 3217, 3320 and 3390 for the others. It asks least of the reader every single day, and the state ledger survives the transformation intact."
+          ],
+          "weakest": "rail__today__owner_signature__1440x960__fold.png — the rail asserts \"Analytics · Read\" while Analytics has in fact withheld its trend (\"Not enough history yet. 6 of 14 comparable daily readings\"). A clean label over a limited mode, printed in the one element that is on screen at all times.",
+          "concerns": [
+            "The Analytics label is a direct hit on the governing rule, and its placement makes it expensive: the rail is persistent, so a mode with insufficient history reads as healthy from every screen, all day. C proves a better standard is available from identical props. It is one word, but on a lens named attention integrity a permanently visible false-clean is the costliest kind of error.",
+            "No next action on rail__today__new_user__1440x960.png. The rail states \"There is no project for new work to go to yet\" and the body offers only \"Open the full briefing\". Same dead end as A and C.",
+            "At 1440 the 240px rail plus a capped measure leaves roughly the right 320px of the window empty, and the rail itself carries a large void between the as-of block (ending about y=490) and PRODUCTS (about y=647), then runs empty below y=930 for the length of the page. Not attention-competitive, but it is unearned chrome on the widest viewport.",
+            "The content is the plainest of the four. Row rhythm and metadata are correct but there is no moment in it — nothing a founder would remember from a year of mornings. That is a register cost rather than an attention one, but it is real.",
+            "Collapsing \"Coming up\" puts an item due in four days behind a click. The count is shown so it is honest, but the threshold deserves a second look before it ships."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Fix the rail label: any mode with a withheld claim must read as limited, not \"Read\". Adopt C's vocabulary — \"Not enough history\" — so the rail never asserts a clean state it cannot support. Give the new-user screen one action. Then reclaim the empty right margin at 1440 and the void inside the rail, and find the one moment the direction is currently missing."
+        }
+      ],
+      "rankedOrder": [
+        "C",
+        "D",
+        "B",
+        "A"
+      ],
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__390x844.png",
+        "desk__today__provider_failure__1440x960.png",
+        "desk__today__owner_quiet__1440x960.png",
+        "desk__today__new_user__1440x960.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__1440x960.png",
+        "editorial__today__owner_signature__390x844.png",
+        "editorial__today__provider_failure__1440x960.png",
+        "editorial__today__owner_quiet__1440x960.png",
+        "editorial__today__new_user__1440x960.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844.png",
+        "index__today__provider_failure__1440x960.png",
+        "index__today__owner_quiet__1440x960.png",
+        "index__today__new_user__1440x960.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844.png",
+        "rail__today__provider_failure__1440x960.png",
+        "rail__today__owner_quiet__1440x960.png",
+        "rail__today__partial_coverage__1440x960__fold.png",
+        "rail__today__new_user__1440x960.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960__fold.png"
+      ],
+      "overallNote": "All four clear the bar that a quiet day and a broken provider must look different. That is not the discriminator I expected it to be, and it is to the lab's credit. The discriminator turned out to be one level up: whether a direction keeps unknown unknown ACROSS modes, not just within the page you are on. Analytics withholds its trend for insufficient history in all four candidates — the string \\\"Not enough history yet. 6 of 14 comparable daily readings\\\" is present in every one of the four analytics captures. Only C carries that fact out to Today, where the index reads \\\"04 Analytics ……… Not enough history\\\". D actively contradicts it, labelling the rail row \\\"Analytics · Read\\\". A and B stay silent, which in a list that names the other degraded modes reads as a clean bill. Three of four let a founder open Home, see nothing wrong, click into Analytics and only then discover it cannot answer. That is the governing rule failing at the seam between modes, and it is the reason C takes the ballot.\n\nOn the cap: every direction declares its withholding in words, which is the floor and all four clear it. But only D defends the cap with composition — three ranked, one tier expanded, two tiers folded with their counts visible, and a Today that fits in 1565px. A does the opposite: three ranked, then ten more rows at identical heading weight, 3390px on a phone. The cap is a real editorial act in D, a typographic emphasis in B and C, and a number that ran out in A.\n\nTwo things worth pulling out of the losing ballots regardless of what Ethan picks. First, B's \\\"Where to start\\\" plus an Open Tasks button is the only new-user screen in the lab that offers an action; the other three greet a first-time user with a failure report and a dead end, and A's is the loudest of them. Whichever direction wins should inherit that pattern. Second, A's bold one-word verdict — \\\"Read.\\\" / \\\"Partly read.\\\" / \\\"Did not answer.\\\" / \\\"Could not be read.\\\" — is the fastest state signal any of the four produced, and it is portable. A itself then spends the advantage on a nine-row symbol legend that, by its own copy, repeats what the rows already say in words, and ships that legend on a quiet day where no marked row exists.\n\nNo vetoes. C is the only Pass on my lens. D is one word away from joining it and is the better daily instrument; if that rail label is fixed and it finds a moment worth remembering, my ranking of the top two would be close enough to call either way."
+    },
+    {
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 8.7,
+          "ownedLens": 8.6,
+          "strengths": [
+            "The left spine is a real state machine, not decoration: six distinct marks, a visible break in the rule where a source did not answer, and an in-product legend at the foot ('How to read the line') that names every mark in words and states the redundancy contract outright — 'Every mark on it repeats something the row beside it already says in words, so nothing here is carried by a shape.' The spine persists unchanged across Today, Inbox, My work and Full briefing, so a mode change never resets the reader's grammar. This is the strongest implied-continuity device in the lab.",
+            "The headline rule is a coverage meter that changes with the read: solid full-width on a complete read, split with a gap on partial coverage, short and red on a provider failure — and it is always paired with a worded lede ('Read.' / 'Partly read.' / 'Did not answer.' / 'Could not be read.'), so the graphic never carries the state alone. A quiet day and a broken provider are distinguishable from three metres away.",
+            "Depth is handled in the chrome: Full briefing gets a second-level strip below the mode tabs while Today's tab keeps its indigo underline, so the reader is visibly still inside Today, and 'Back to the top of this read' closes the loop at the foot. Evidence disclosure is the best-labelled of the four — 'THE RECORDS BEHIND THIS (21 COUNTED, 2 LEFT OUT)' tells you the size of what you are about to open before you open it."
+          ],
+          "weakest": "desk__today__new_user__1440x960__fold.png — a person's first ever screen is composed entirely of refusals ('Could not be read', 'The whole day' with an accounting refusal, 'What this read could not see', 'True of every read', 'About this read') and contains no control that leads anywhere. Candidate B proves from identical props that a 'Where to start' block with a real Open Tasks control was available.",
+          "concerns": [
+            "No per-row action is visible in any arrival state, anywhere. The Inbox carries dispositions and a resurfacing time ('Not read yet', 'Snoozed', 'Comes back at 18:00 on Thursday 16 July') but no Mark as read, Snooze or Clear control on the row. Mark-read-without-resolving, snooze, clear-without-mutating and recover-from-failure are all invisible in this evidence, deferred entirely to a detail state nobody can see. On a lens that is specifically about detail open and return, this is the hole.",
+            "The legend that decodes the spine sits roughly 2,400px down the page. Six unexplained glyphs precede their own key on every read.",
+            "The per-mode state ticks in the tab row are a ~3px mark with no label; their meaning is only recoverable from the foot legend, which makes the one piece of always-on chrome the least legible part of the state system.",
+            "desk__today__owner_quiet__1440x960__fold.png restates the same fact twice in two consecutive registers ('Read. Every project at this scope answered. 2 kinds of work have no source connected.' then 'Nothing you are carrying crossed a rule today, and every project answered. This is still not an all clear, because a kind of work has no source connected…'). The quiet day is where economy matters most.",
+            "The warmed paper is the only canvas in the lab that departs from the design system's default, which means every product route beside Home will read as colder. That is a register question for the architect, not a defect, but it is a standing cost."
+          ],
+          "decision": "Pass",
+          "requiredCorrection": "Put real row actions into the Inbox and My work arrival states, with disabled controls carrying their reason inline, and give new_user a forward control. The spine legend should be reachable from the top of the read, not only discoverable after 2,400px of scroll."
+        },
+        {
+          "label": "B",
+          "overall": 8.9,
+          "ownedLens": 8.8,
+          "strengths": [
+            "The only direction that shows working per-row controls in the arrival state, and the only one anywhere in the lab that shows a disabled control with its reason attached: 'Mark as read' greyed with 'Mark as read: You have already read this.' printed beneath it. That single row says more about interaction craft than any other pixel in this set, and it survives intact to 390 (editorial__inbox__owner_signature__390x844__fold.png).",
+            "The coverage ledger is one component whose shape never changes. The same left-labelled rows carry ELSEWHERE IN HOME, NOT CONNECTED, FAILURE, SCOPE, COVERAGE, LEFT OUT OF THIS LIST and THE ACCOUNT across every mode and every scenario, so a scope or mode change swaps content inside a fixed frame instead of relayouting the page. That is the cleanest transition any of these stills implies. THE ACCOUNT then refuses to total when it cannot: 'No total is shown rather than a total that would be wrong.'",
+            "State propagates into the navigation and matches the ledger glyph exactly — amber square for partly read, hollow square for not connected, red target for failure — so what you will find in a mode you are not standing in is legible before you go there. And it is the only direction with a forward path for a new user ('Where to start', 'There is no project for new work to go to yet', 'Open Tasks')."
+          ],
+          "weakest": "editorial__today__owner_signature__390x844__fold.png — the arrival screen of the entire product on the device the founder opens at 7am, containing zero ranked decisions. Five ledger rows and a section heading fill the first screen; 'Today's signal' appears at the very bottom edge and the first decision is below it. On a failure day that ordering is defensible. On the ordinary signature day it inverts Today's whole job.",
+          "concerns": [
+            "The new_user standfirst is factually wrong for its own state: 'This is not an all clear: one source did not answer in full, and 2 other things are unresolved' is shown to a person with no projects at all. The most prominent sentence on the most fragile screen is inherited from a different scenario. Every direction carries some version of this, but B is the one that puts it in the standfirst.",
+            "The return from Full briefing is a small monospaced dateline link ('TODAY / FULL BRIEFING') plus a dotted underline on the Today tab. The dotted underline is a lovely, exact detail, but as the only return affordance it is the least discoverable of the four — C and D both give a named 'Back to Today' control above the fold.",
+            "The numbered margin (01, 02, 03) that carries the ranking on Today disappears entirely on the Full briefing, at exactly the moment the page announces itself as 'Every row the ranking kept, in the order it ranked them'. The ranking loses its own notation where the ranking is the point.",
+            "At 1440 the header and the colophon run the full width but the article sits left with roughly a third of the window empty beside it. The device is deliberate and it does resolve at the foot, but the middle third of the signature screen reads as unclaimed.",
+            "The amber and hollow squares beside Inbox and My work in the mode row carry meaning with no adjacent label; they are only decoded by the ledger further down the page. The ledger makes them recoverable, but not at the point of use."
+          ],
+          "decision": "Pass",
+          "requiredCorrection": "Fix the mobile ordering so at least the first ranked decision is on the arrival screen at 390 with the coverage ledger following or collapsed behind a named disclosure. Correct the new_user standfirst so it describes the new_user state rather than inheriting the failure sentence."
+        },
+        {
+          "label": "C",
+          "overall": 7.5,
+          "ownedLens": 7.6,
+          "strengths": [
+            "The leader-dot contents table is the best orientation idea in the lab. It is simultaneously the mode navigation and a per-mode coverage report, so standing in Today you can read that Analytics has 'Not enough history' and Inbox is 'Partly read' without going there; on a failure day every row reads 'Partly read · Not answering'. Nothing else here tells you the state of a place you are not standing in this completely.",
+            "It is the only direction whose navigation caught the Analytics limitation on the signature day that the other three's navigation missed, and it is genuinely data-driven rather than a fixed string — at scale the same row correctly reads 'Read'. On the governing rule that is a real point in its favour.",
+            "Depth and return are marked most literally of the four: Full briefing nests as an indented child row under Today inside the index, the active rule moves to sit under it, and an explicit 'Back to Today' link sits directly beneath the headline. 'WHAT LIMITED THIS READ' is a consistently named, consistently positioned, red-ruled block above the content in every limited scenario, and 'BACK TO THE INDEX' closes the page."
+          ],
+          "weakest": "index__today__owner_quiet__1440x960__fold.png — the left column stops at roughly 590px, the right aside starts at roughly 575px and runs to 870px, and the entire top-right quadrant of a 1440 screen is empty. A quiet day is exactly where composition has nowhere to hide, and this is the clearest picture of a grid that was never resolved.",
+          "concerns": [
+            "The two-column grid is unresolved in every single capture I opened. The 'THIS READ' aside begins somewhere between 450px and 700px down with nothing above it and ends with hundreds of pixels of nothing below it; on the full-page Today at 1440 the right 40% of a 2,408px document carries about 250px of content. This is not generous margin, it is an alignment that relates to nothing, and it recurs on Today, Inbox, My work, Analytics, briefing, quiet, failure and new_user alike.",
+            "The 'ON THIS PAGE' rail that would justify a second column — the sticky list of the four Today sections — is not present in the rendered evidence. The column that costs a quarter of the screen carries four sentences. The in-page navigation aid the direction was built around does not appear.",
+            "No visible action and no visible open affordance on any row in any mode. index__inbox__owner_signature__1440x960__fold.png shows 'Mentioned you' and 'Replied to you' as plain headings with metadata beneath and nothing to press — no Open, no Mark as read, no Snooze, and no underline to indicate the row is even a link. On my lens this is the weakest detail-open story of the four by a clear margin.",
+            "At 390 the direction's own signature component is at the edge of failure: 'Partly read · Not answering' and 'Not enough history' run to within about 16px of the viewport edge and the leader dots crush to two or three. The 320px floor and 400% reflow are live risks for the one component the direction is named after.",
+            "new_user dead-ends with no forward control, and carries the same wrong inherited standfirst ('one source did not answer in full') for a person with no projects."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Resolve the two-column grid — either land the aside against something real and top-aligned, or drop the second column and let the index own the full measure. Then give rows a visible open affordance and Inbox rows real dispositions, and prove the leader-dot table at 320px and 400% zoom before this direction is judged again."
+        },
+        {
+          "label": "D",
+          "overall": 7.9,
+          "ownedLens": 8,
+          "strengths": [
+            "The only persistently visible navigation, and it carries per-mode state in words directly beneath each label — 'Read', 'Partly read', 'Nothing in it', 'Could not be read'. For a reader who switches modes often this is the strongest continuous orientation in the lab, and the state is text rather than glyph.",
+            "The only direction with an explicit named control on every Inbox event in the arrival state ('Open'), and the dashed-ring Inbox badge for a count that may be wrong against a solid badge for a count that is known is a precise, quiet idea. Full briefing nests under Today in the rail with '‹ Back to Today' above the fold, so depth and return are both explicit and both visible without scrolling.",
+            "Mobile is a genuine transformation rather than a compression: the rail unstacks into a horizontal mode row that keeps every state sub-label, and lower sections become collapsible with counts ('Coming up 4', 'Moving well 2'). My work headings carry group counts. It is also the shortest read of the four, so the desktop distance to a decision is the least."
+          ],
+          "weakest": "rail__today__provider_failure__390x844__fold.png — at mobile the entire failure signal inside the navigation is one dashed strip that has shifted from orange to red, above four mode labels that all still read 'Partly read'. The word 'failure' never reaches the chrome.",
+          "concerns": [
+            "The rail flattens failure into 'Partly read'. On rail__today__provider_failure__1440x960__fold.png all four mode labels read 'Partly read' and the only thing that changes in the navigation is the tick colour, orange to red. Against 'a quiet day and a broken provider must look different at a glance', the one piece of chrome that is always on screen reports them almost identically, and the difference it does carry is colour alone — which also exposes it under forced colours and to colour-blind readers. The body does say it plainly ('1 project did not answer at all'), so it clears the rule, but it clears it everywhere except in its own signature component.",
+            "Width. A 320px rail plus a capped measure leaves roughly 415px of dead window at 1440 on top of the rail itself; My work ends at x≈1024 in a 1440 frame. It asks for the most horizontal room and uses the least.",
+            "At 390 the three products drop below the entire read, so a founder on a phone scrolls past every decision, every disclosure and the whole accounting to reach Notes, Tasks and Timeline. They stay text-labelled and reachable, so it clears the floor, but it is a demotion of primary destinations.",
+            "The body beside the rail is the plainest of the four. There is no continuity device in the content at all — no state-bearing graphic, no coverage meter, no glyph system, nothing that carries across modes. The rail is the whole idea, and once learned there is nothing further to notice. Against a brief that asked for one moment the reader remembers, this is the least memorable direction in the lab.",
+            "A large vertical void sits inside the rail between the as-of block and PRODUCTS in most captures, which makes the one always-visible component look unfinished."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Give the rail a word for failure. 'Did not answer' or 'Could not be read' must appear as the mode sub-label when a source fails, so the failure state is never distinguished from a partly-read state by tick colour alone. Then either narrow the rail or widen the measure so 1440 is not a third empty, and find one continuity device for the content itself."
+        }
+      ],
+      "rankedOrder": [
+        "B",
+        "A",
+        "D",
+        "C"
+      ],
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__1440x960.png",
+        "desk__today__owner_signature__390x844__fold.png",
+        "desk__today__provider_failure__1440x960__fold.png",
+        "desk__today__provider_failure__390x844__fold.png",
+        "desk__today__owner_quiet__1440x960__fold.png",
+        "desk__today__owner_quiet__390x844__fold.png",
+        "desk__today__new_user__1440x960__fold.png",
+        "desk__today__partial_coverage__1440x960__fold.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "desk__briefing__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__1440x960.png",
+        "editorial__today__owner_signature__390x844__fold.png",
+        "editorial__today__provider_failure__1440x960__fold.png",
+        "editorial__today__provider_failure__390x844__fold.png",
+        "editorial__today__owner_quiet__1440x960__fold.png",
+        "editorial__today__new_user__1440x960__fold.png",
+        "editorial__today__scale__1440x960__fold.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__inbox__owner_signature__390x844__fold.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "editorial__briefing__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960.png",
+        "index__today__owner_signature__390x844__fold.png",
+        "index__today__provider_failure__1440x960__fold.png",
+        "index__today__provider_failure__390x844__fold.png",
+        "index__today__owner_quiet__1440x960__fold.png",
+        "index__today__owner_quiet__390x844__fold.png",
+        "index__today__new_user__1440x960__fold.png",
+        "index__today__scale__1440x960__fold.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "index__briefing__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844__fold.png",
+        "rail__today__owner_signature__390x844.png",
+        "rail__today__provider_failure__1440x960__fold.png",
+        "rail__today__provider_failure__390x844__fold.png",
+        "rail__today__owner_quiet__1440x960__fold.png",
+        "rail__today__new_user__1440x960__fold.png",
+        "rail__today__scale__1440x960__fold.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__my-work__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960__fold.png",
+        "rail__briefing__owner_signature__1440x960__fold.png"
+      ],
+      "overallNote": "Judged on interaction, motion and context preservation: detail open and return, scope change, evidence disclosure, and what the stills imply about movement and continuity. No vetoes. Two clear tiers.\n\nB and A are the only two that clear 8.5 on my lens. They fail in opposite directions, which is worth the architect's attention. B has the interaction evidence — real row controls, a disabled control that prints its own reason, a coverage ledger whose shape never changes so content swaps inside a fixed frame, state glyphs that propagate into the navigation, and the only forward path for a new user — but it loses the mobile arrival screen entirely: at 390 on the ordinary signature day, Today shows no decision above the fold. A has the continuity machinery — a spine that is a genuine state system with an in-product legend, a headline rule that meters coverage, a second-level briefing strip that keeps you visibly inside Today, and the only mobile fold in the lab with a decision on it — but shows no row action anywhere, so four of the sixteen journeys are simply invisible in the evidence. If those two defects were traded, either would be a 9.\n\nC and D fall below the bar for different, fixable reasons. C owns the single best orientation idea in the lab (a contents table that reports the coverage of modes you are not in, and the only navigation that caught the Analytics limitation the other three missed) and pairs it with a two-column grid that is unresolved in every capture — a permanently empty top-right quadrant, and the promised on-this-page rail absent from what rendered. It also has no open affordance on any row, in any mode. D owns the best persistent orientation and the only named Open control, and then lets its own signature component report a provider failure and a partly-read day with the same four words, distinguished by tick colour alone.\n\nTwo set-wide notes for the architect. First, three of four directions dead-end the new_user screen with no forward control; B proves from identical props that a real one was available, so this is a direction-level choice, not a shell constraint, and it should be fixed in whichever direction wins. Second, three of four print 'one source did not answer in full, and 2 other things are unresolved' to a person who has no projects at all — a sentence inherited from the failure scenario. It is a copy-state bug in the shared layer and it lands hardest on the screen least able to absorb it.\n\nFinally, on my own lens I have to record the limit of this evidence honestly: no candidate's detail state, no motion and no dark theme is captured here. Every judgement above about opening a row and coming back is inferred from arrival-state affordances alone. B is ahead partly because it is the only direction that made any of that inferable from a still, which is itself a design result — but the lab cannot resolve the detail-open axis properly until someone renders an opened event."
+    },
+    {
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__390x844.png",
+        "desk__today__provider_failure__1440x960__fold.png",
+        "desk__today__owner_quiet__1440x960.png",
+        "desk__today__new_user__1440x960.png",
+        "desk__today__scale__1440x960__fold.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844.png",
+        "editorial__today__provider_failure__1440x960__fold.png",
+        "editorial__today__owner_quiet__1440x960.png",
+        "editorial__today__new_user__1440x960.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__my-work__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844.png",
+        "index__today__provider_failure__1440x960__fold.png",
+        "index__today__partial_coverage__1440x960__fold.png",
+        "index__today__owner_quiet__1440x960.png",
+        "index__today__new_user__1440x960.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844.png",
+        "rail__today__provider_failure__1440x960__fold.png",
+        "rail__today__partial_coverage__1440x960__fold.png",
+        "rail__today__owner_quiet__1440x960.png",
+        "rail__today__new_user__1440x960.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__1440x960__fold.png",
+        "PLUS MEASURED (not visual): all 160 PNG IHDR dimensions swept for page height and horizontal overflow; desk/editorial/index/rail __today__owner_signature.html and __inbox__owner_signature.html parsed for CSS payload, motion durations, reduced-motion and forced-colors blocks, hardcoded hex, font-size units, token overrides, DOM node counts, landmark/aria markup and interactive elements"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 7.4,
+          "ownedLens": 6.9,
+          "strengths": [
+            "Correct token discipline where it counts: warms the canvas by deriving --dk-paper via color-mix from --paper/--ink/--accent into its own --dk-* namespace, never redefining a vendored DS token, so ds:check stays green. Zero font-size:Npx, so it adds nothing to the 1,208 arbitrary-px pile.",
+            "Zero client JavaScript. Detail routing is plain hrefs to ?event=…#dk-detail, so the whole interaction model costs 0 KB against the 0.9 KB shared-runtime headroom.",
+            "The unknown vocabulary is genuinely legible: the rule under the headline shortens and turns red, the standfirst moves Read. → Did not answer. → Could not be read., the spine physically breaks at an unread source, and the legend states outright that every mark repeats something the row already says in words."
+          ],
+          "weakest": "desk__today__owner_quiet__1440x960.png — the quiet day runs 1391px against Editorial's and Rail's 960, and roughly 700px of that is the colophon plus an eight-row How to read the line legend explaining marks that a quiet day barely uses. That is furniture on the emptiest screen in the product, which is the specific thing the brief rejects on sight.",
+          "concerns": [
+            "Measurable accessibility defect in shipped bytes: desk.css contains one @keyframes (dk-draw) and zero prefers-reduced-motion blocks. Every other candidate guards it (Editorial 1, Index 2, Rail 2). The brief requires reduced motion to remove movement while preserving comprehension; Desk does not implement it.",
+            "Its one animation is --dk-draw: 340ms, over the brief's own 300ms ceiling for routine transitions.",
+            "Heaviest stylesheet at 11.0 KB gzip, 36% above Index's 8.1 KB, and tallest page on 19 of the 20 measured mode/scenario/viewport rows.",
+            "Seven hardcoded hex values (#faf7f2, #fcfaf7, #e8dac2, #171513, #963030, #52525b, #4a3a26) carry the warm-paper identity that IS this direction. No candidate ships a prefers-color-scheme block, but Desk is the only one whose entire distinctiveness is hardcoded light-mode colour, so it has by far the largest dark-theme build still ahead of it.",
+            "Inbox at arrival ships zero buttons and zero action affordances on the row — only 10 title links to ?event=. Journeys 5 to 9 are unevidenced here."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Add a prefers-reduced-motion: reduce block that neutralises dk-draw, and bring the 340ms duration inside 300ms. Then either build and capture the dark theme or replace the seven hardcoded hex with token-derived values. Separately, suppress the How to read the line legend when the read used fewer than N mark types, so a quiet day stops carrying a full key it does not need."
+        },
+        {
+          "label": "B",
+          "overall": 8.6,
+          "ownedLens": 8.7,
+          "strengths": [
+            "The only direction that proves the Inbox journeys in shipped markup: 21 <button> elements with 9 disabled states, labels Mark as read, Snooze and Try again, and an explanatory line for a refused action. The other three ship zero buttons on Inbox. The capture README blames the missing detail behaviour on no ?event= being set; Editorial renders its actions in that same arrival state, which shows the omission elsewhere is a design choice, not a capture limit.",
+            "Cleanest engineering hygiene in the lab: zero hardcoded hex across 516 var(--) references, zero font-size:Npx, no DS token overridden, max motion duration 260ms inside the 300ms ceiling, prefers-reduced-motion and forced-colors both handled. Being fully token-driven means dark theme most likely arrives for free.",
+            "Best quiet day of the four: 960px at 1440, exactly one viewport, no scroll, nothing invented to fill it — headline, one honest sentence, four ledger rows, colophon. Against that, provider_failure escalates to red ring markers in the dateline and on three mode links plus a FAILURE · PARTLY READ ledger row. A quiet day and a broken provider are unmistakable at a glance, and the difference is carried in words as well as marks."
+          ],
+          "weakest": "editorial__today__owner_signature__1440x960__fold.png — the coverage ledger consumes roughly 350px between the standfirst and Today's signal, pushing the first ranked decision to y≈716. Only two of the three decisions fit a 1440×960 screen, and Today's entire job is at most three ranked decisions. It is the only candidate that cannot show its own thesis on one screen.",
+          "concerns": [
+            "The only direction that spends client JavaScript. Route-local islands are explicitly permitted and this one buys real behaviour, so the spend is legitimate, but it is a spend against a programme with 0.9 KB of headroom, and it is entirely unquantified in this evidence set — the captures ran no client JS, and there is no inbox-at-scale capture anywhere in the matrix. At the scale fixture (50 grouped events) that island hydrates roughly 100 buttons.",
+            "Inline row actions on Inbox are precisely where Home would be tempted to reach for useTaskPanel/useTasks. Hard constraint 2 says Home may not inherit the Tasks runtime; this is the direction most exposed to that drift and it needs an explicit boundary before any production code.",
+            "Composition puts caveats before content on the signature (good) day. Four ledger rows of what could not be read sit above the three decisions the mode exists to deliver, which inverts the priority on the most common screen.",
+            "Uses generic --x-cols, --x-gap, --x-measure, --x-page variable names rather than an --ed-* namespace, risking collision with any other --x- consumer."
+          ],
+          "decision": "Pass",
+          "requiredCorrection": "Before promotion, capture Inbox at the scale fixture and measure the island's hydration cost and route chunk in isolation, with a written ceiling for it. Then lift the first decision above the fold at 1440 — collapse the coverage ledger to a single summary row that expands, so the signature day leads with the three decisions and the caveats stay one interaction away rather than 350px of scroll."
+        },
+        {
+          "label": "C",
+          "overall": 8.4,
+          "ownedLens": 8.6,
+          "strengths": [
+            "The best structural answer to the governing rule in the lab. The leader-dot index doubles as navigation and as a per-mode coverage report, so the state of a mode you are not in is legible from the mode you are in. Filled square plus Not answering for failure, hollow square plus Partly read for partial, 0 · Nothing in it for a genuinely empty Inbox, Could not be read for a dead scope. Comparing index__today__partial_coverage and index__today__provider_failure side by side, the two are unambiguous, and the distinction survives without colour.",
+            "Cheapest and calmest to run: 8.1 KB gzip stylesheet, longest motion duration 44ms, two prefers-reduced-motion blocks, forced-colors handled, zero client JavaScript, zero hardcoded hex across 478 var(--) references, zero font-size:Npx. 22 @media queries is the most responsive work of the four and reads as care rather than bloat.",
+            "Every limitation is escalated into its own labelled, red-ruled WHAT LIMITED THIS READ block above the content, with the specific cause named (SCOPE, COVERAGE, NOT ANSWERING) rather than folded into prose."
+          ],
+          "weakest": "index__inbox__owner_signature__1440x960__fold.png — one thread is visible above the fold at 1440 while a roughly 420×580 block of white sits beside it, because the right rail begins level with the body rather than at the top. The same hole appears in all seven 1440 captures I opened for this candidate, and on quiet and new_user it is more than half the viewport. An empty rectangle that persistent is an invitation for someone to fill it with the dashboard widget furniture this brief rejects.",
+          "concerns": [
+            "new_user is a functional dead end: four modes reading Could not be read, a SCOPE block, and the only link out is Open the full briefing, which would fail for the same reason. Editorial ships an Open Tasks button in the same scenario. This is a first-ever screen phrased entirely as a failed read with no route forward.",
+            "Tallest mode in the lab at mobile — Analytics reaches 4619px at 390 — and the second tallest overall.",
+            "Inbox at arrival ships zero buttons and no action affordance on the row; dispositions (Not read yet, Still open) are plain text. Journeys 5 to 9 are unevidenced.",
+            "Two position:fixed rules plus one sticky is the second-largest layout-thrash surface, and untested at 200%/400% zoom where sticky rails habitually eat the viewport."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Close the top-right hole: either top-align the rail so the index and the rail start together, or narrow the page so there is no orphan column. Then give new_user a real next step in the body rather than a briefing link that cannot resolve — the scenario that has no data is the one that most needs an action, not another coverage report."
+        },
+        {
+          "label": "D",
+          "overall": 7.6,
+          "ownedLens": 8.5,
+          "strengths": [
+            "Comfortably the cheapest to actually run, by the measure that matters most for a 7am read. Shortest page on 19 of the 20 measured rows: Today at 1440 is 1756px against 2408–2778 for the others, at 390 it is 2546 against 3217–3390, and at the scale fixture it is 1518px, barely a screen and a half. That is a direct saving in DOM, layout and paint on every visit.",
+            "Best fold efficiency in the lab: all three ranked decisions land by y≈667 at 1440×960, with the first at y≈376. It is the only direction that shows Today's whole thesis on arrival with room left over.",
+            "Zero client JavaScript, three <details> elements for progressive disclosure at mobile, two prefers-reduced-motion blocks, forced-colors handled, zero font-size:Npx, no DS token overridden. The mobile transformation is genuinely a transformation, not a compressed desktop: the rail unstacks to a compact horizontal mode row carrying each mode's coverage word, and the products block moves to the foot."
+          ],
+          "weakest": "rail__today__partial_coverage__1440x960__fold.png set against rail__today__provider_failure__1440x960__fold.png — at the fold the two are nearly indistinguishable. Both render the identical rail (four modes, all Partly read, identical dashed amber stripes) and differ only by one callout bar changing from amber to red and one sentence changing. The persistent orientation device, which is this direction's entire structural thesis, reports the same thing for a source that answered incompletely and a source that did not answer at all.",
+          "concerns": [
+            "The governing rule miss above is the serious one. Quiet versus broken does separate (Read / Nothing in it and solid stripes versus Partly read and dashed amber plus a red bar), so it passes the stated headline test, but the adjacent distinction that the rail is uniquely positioned to make is the one it collapses.",
+            "Content is the plainest of the four and Inbox defers every disposition to an Open link, so mark-read, snooze, approve, fail-and-recover and clear all live off-screen. Zero buttons at arrival. Journeys 5 to 9 are unevidenced, and the direction has the least to show for the vertical space it saves.",
+            "Three hardcoded hex including #ffffff, which will be wrong in dark theme, and one 320ms duration over the 300ms ceiling.",
+            "Three position:sticky plus one position:fixed is the largest layout-thrash surface of the four, and a fixed 320px rail leaves roughly 320px of dead margin to the right of the content at 1440 — about 22% of the window carrying nothing."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Give the rail a distinct third state so a source that did not answer never renders in the same vocabulary as one that answered incompletely — Not answering as its own word and its own stripe, not Partly read reused. Then put at least the read/snooze dispositions on the row so the mode does something with the vertical space it is saving, and replace #ffffff with a token."
+        }
+      ],
+      "rankedOrder": [
+        "B",
+        "C",
+        "D",
+        "A"
+      ],
+      "overallNote": "Judged on engineering feasibility and measured evidence. Headline finding: the 0.9 KB headroom is a JS budget, and on that budget this lab is close to a non-event. Three of four directions (A, C, D) ship zero client JavaScript — their entire interaction model is hrefs to ?event= plus <details> — and all four route-local stylesheets land between 8.1 and 11.0 KB gzip, which does not touch shared_runtime at all. B is the only direction that spends anything, it spends it route-locally, and it is the only one that buys working behaviour with it. So the budget does not choose the winner; it only rules out a heavy always-loaded shell, and nobody proposed one. What separates them is discipline and remaining work. Measured floor, all four clear it: zero font-size:Npx anywhere (nothing added to the 1,208 arbitrary-px pile), zero DS token overridden (A's warm paper is correctly derived through color-mix into its own --dk-* namespace), exactly one main, one h1, two named nav landmarks, one aria-current=\"page\", one role=\"status\", a skip link, zero inline event handlers, and — swept across all 160 PNGs — zero horizontal overflow. Nobody regresses the baseline. Measured separation: A is the only candidate shipping an animation with no prefers-reduced-motion guard, at 340ms, over the brief's own 300ms ceiling. That is a stated accessibility requirement failing in shipped bytes, and it lands on the direction the brief already flagged as highest motion risk. A also carries 7 hardcoded hex that constitute its whole identity, against 0 for B and C, and no candidate ships a prefers-color-scheme block — so dark theme is unbuilt for everyone, but B and C being fully token-driven will likely inherit it free while A must build it. On the governing rule, C is the strongest: the leader-dot index reports every mode's coverage from every mode, and filled-versus-hollow separates a source that did not answer from one that answered partly, without relying on colour. B is next and has the best quiet day in the lab — exactly 960px, one viewport, nothing invented. D is the weakest: partial coverage and provider failure render an identical rail and differ only by one bar changing colour, which is the exact distinction its persistent-orientation thesis exists to make. A's quiet day is the opposite failure — 1391px, of which roughly 700 is colophon and a legend for marks the quiet day barely uses, which is close to the empty-furniture prohibition. One evidence-integrity note for the architect, since I own measured evidence: the capture README's page-height table is wrong on three of four rows and reverses the ranking it is used to argue. Measured from the PNGs, Today at 1440 is Desk 2778 (README 2383), Index 2408 (README 2685), Rail 1756 (README 1565), Editorial 2571 (README 2582). Desk is the tallest direction in the lab on 19 of 20 rows, not the middle one. Trust the pixels, not the prose beside them. Two gaps in the matrix itself: there is no Inbox-at-scale capture for any candidate, which is precisely where B's client island would have to be measured; and no capture carries theme=dark, so the one axis where A and D have real debt is the one nobody looked at. Only B clears the admission bar on my lens and overall. No vetoes — A's reduced-motion gap and D's state-vocabulary collapse are both real defects but both are small, specific fixes rather than structural refutations."
+    },
+    {
+      "evidenceExamined": [
+        "desk__today__owner_signature__1440x960__fold.png",
+        "desk__today__owner_signature__390x844__fold.png",
+        "desk__today__owner_signature__390x844.png",
+        "desk__today__provider_failure__1440x960__fold.png",
+        "desk__today__provider_failure__390x844__fold.png",
+        "desk__today__owner_quiet__1440x960__fold.png",
+        "desk__today__new_user__1440x960__fold.png",
+        "desk__today__scale__390x844__fold.png",
+        "desk__inbox__owner_signature__1440x960__fold.png",
+        "desk__inbox__owner_signature__390x844__fold.png",
+        "desk__my-work__owner_signature__1440x960__fold.png",
+        "desk__my-work__owner_signature__390x844__fold.png",
+        "desk__analytics__owner_signature__1440x960__fold.png",
+        "desk__analytics__owner_signature__390x844__fold.png",
+        "desk__analytics__owner_signature__390x844.png",
+        "editorial__today__owner_signature__1440x960__fold.png",
+        "editorial__today__owner_signature__390x844__fold.png",
+        "editorial__today__owner_signature__390x844.png",
+        "editorial__today__provider_failure__1440x960__fold.png",
+        "editorial__today__provider_failure__390x844__fold.png",
+        "editorial__today__owner_quiet__1440x960__fold.png",
+        "editorial__today__new_user__1440x960__fold.png",
+        "editorial__inbox__owner_signature__1440x960__fold.png",
+        "editorial__inbox__owner_signature__390x844__fold.png",
+        "editorial__my-work__owner_signature__390x844__fold.png",
+        "editorial__analytics__owner_signature__1440x960__fold.png",
+        "editorial__analytics__owner_signature__390x844__fold.png",
+        "index__today__owner_signature__1440x960__fold.png",
+        "index__today__owner_signature__390x844__fold.png",
+        "index__today__owner_signature__390x844.png",
+        "index__today__provider_failure__1440x960__fold.png",
+        "index__today__provider_failure__390x844__fold.png",
+        "index__today__owner_quiet__1440x960__fold.png",
+        "index__today__new_user__1440x960__fold.png",
+        "index__today__scale__390x844__fold.png",
+        "index__inbox__owner_signature__1440x960__fold.png",
+        "index__my-work__owner_signature__390x844__fold.png",
+        "index__analytics__owner_signature__1440x960__fold.png",
+        "index__analytics__owner_signature__390x844__fold.png",
+        "rail__today__owner_signature__1440x960__fold.png",
+        "rail__today__owner_signature__390x844__fold.png",
+        "rail__today__owner_signature__390x844.png",
+        "rail__today__provider_failure__1440x960__fold.png",
+        "rail__today__owner_quiet__1440x960__fold.png",
+        "rail__today__new_user__1440x960__fold.png",
+        "rail__today__scale__390x844__fold.png",
+        "rail__inbox__owner_signature__1440x960__fold.png",
+        "rail__inbox__owner_signature__390x844__fold.png",
+        "rail__analytics__owner_signature__1440x960__fold.png",
+        "rail__analytics__owner_signature__390x844__fold.png"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 8.1,
+          "ownedLens": 7.4,
+          "strengths": [
+            "Second-best fold economy at 390: the first ranked decision title lands at y≈486 of 844, so one whole decision plus its provenance is on screen on arrival, and the four modes stay text-labelled on a single row (desk__today__owner_signature__390x844__fold.png).",
+            "The failure signal is carried by structure, not colour, and survives the width change intact — a red rule plus 'Did not answer.' against a black rule plus 'Read.', legible in the first 300px at both widths (desk__today__provider_failure__1440x960__fold.png vs desk__today__owner_quiet__1440x960__fold.png vs desk__today__provider_failure__390x844__fold.png). The interrupted rule under 'Partly read' is a genuinely good device and it reflows without losing its gap.",
+            "The spine's shape vocabulary and its 'How to read the line' key both survive to 390 intact, so no state is carried by colour alone at the width where colour is hardest to read (desk__today__owner_signature__390x844.png)."
+          ],
+          "weakest": "desk__inbox__owner_signature__1440x960__fold.png — a 736px measure centred in a 1440 window with roughly 350px of dead margin on each side and no device occupying either. B earns its margins with a label gutter and a right-aligned lateness column; C puts a rail in one; D puts navigation in one. A puts nothing in either. This is the 390 layout in a bigger box, which is my lens's failure mode running backwards.",
+          "concerns": [
+            "Mobile here is a reflow, not a transformation. Between 1440 and 390 the document keeps the same order, the same sections and the same disclosure depth; only the header restacks from two tiers to four and the metadata rows drop their pipe separators. Nothing relocates, nothing collapses, nothing is deferred.",
+            "It asks for the most scrolling of the four on a phone: 3390px for Today at 390 (desk__today__owner_signature__390x844.png) against D's 2546px for the identical content.",
+            "The 390 mode row is at its limit. In desk__today__provider_failure__390x844__fold.png the per-mode tick marks push 'Analytics ·' to x≈344 of 390, and desk__today__scale__390x844__fold.png adds a two-digit '42' badge. At 320px, or at 200% text enlargement, this row wraps or overflows. Untested here, but visibly close.",
+            "Chrome at 390 is the tallest in the set at roughly 160px across four stacked bands before the kicker (desk__today__owner_signature__390x844__fold.png).",
+            "The three-tier header reads as deliberate chrome at 1440 and as accumulated bands at 390 — the identity does not survive the restack."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Give the 1440 composition something to do with its margins, or narrow the frame so the emptiness is intentional rather than residual — at present A's desktop is its phone layout enlarged. Separately, prove the 390 mode row at 320px and at 200% text with the two-digit badge and the per-mode tick marks both present, and give it a defined wrap behaviour rather than leaving it to chance."
+        },
+        {
+          "label": "B",
+          "overall": 7.6,
+          "ownedLens": 6.8,
+          "strengths": [
+            "The best row-level responsive craft in the lab. At 1440 an entry is a marginal '01', a title and reason in the measure, and a right-aligned lateness column; at 390 the number and the lateness collapse onto one line above the title and the title takes the full width. The layout changes shape rather than width (editorial__today__owner_signature__1440x960__fold.png vs editorial__today__owner_signature__390x844.png).",
+            "The same idea is applied again in Analytics: the hanging label gutter (COUNTED, CANNOT SAY, WINDOW) becomes an inline lead-in on the line it labels at 390, so the semantics survive the loss of the second track (editorial__analytics__owner_signature__1440x960__fold.png vs editorial__analytics__owner_signature__390x844__fold.png). The three-column colophon stacks correctly too.",
+            "Failure is unmistakable at both widths and propagates into the navigation: red target dots appear beside every mode in the mode row and a 'FAILURE · PARTLY READ' stamp joins the dateline, against a plain black-and-white ledger on a quiet day (editorial__today__provider_failure__390x844__fold.png vs editorial__today__owner_quiet__1440x960__fold.png)."
+          ],
+          "weakest": "editorial__today__owner_signature__390x844__fold.png — the entire arrival screen of Home on a phone, on which not one of the at-most-three ranked decisions appears. Wordmark, products, modes, scope, dateline, kicker, headline, standfirst, then five caveat rows (ELSEWHERE IN HOME, NOT CONNECTED, NOT CONNECTED, THE ACCOUNT), and 'Today's signal' arrives at y≈785 of 844 with the first entry below it.",
+          "concerns": [
+            "The composition answers 'what could I not see' before it answers 'what deserves attention now', and on a phone that ordering costs the page its job. This is the wall-of-navigation failure my lens exists to catch, with caveats standing in for the navigation; the effect on the reader is identical.",
+            "It is not confined to Today. editorial__my-work__owner_signature__390x844__fold.png puts four caveat rows above 'Waiting', so the first screen of 'What you are carrying' at 390 shows nothing the reader is carrying.",
+            "The cost is structural, not incidental: even at 1440, where the fold is 960 tall, B's first decision lands at y≈716 — the lowest of the four directions on the widest viewport (editorial__today__owner_signature__1440x960__fold.png).",
+            "Row actions fail the touch floor. 'Mark as read' and 'Snooze' at 390 are roughly 20px-high text links sitting side by side with about 24px between them (editorial__inbox__owner_signature__390x844__fold.png). The brief sets 44×44 CSS px for primary controls, and these are the primary controls of the Inbox.",
+            "The excellent transformation happens inside rows and never to the page's order or its disclosure depth, so at the section level mobile is still a reflow."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Move the caveat ledger below the ranked decisions at 390, or collapse it to a single summary line with the detail behind disclosure, so that at least one decision is on the arrival screen of Today and at least one responsibility is on the arrival screen of My work. The row-level craft is the best in the lab and does not need touching; the page order does. Also raise the Inbox row actions to a 44×44 target."
+        },
+        {
+          "label": "C",
+          "overall": 8.3,
+          "ownedLens": 7,
+          "strengths": [
+            "The strongest answer in the lab to the governing rule, and it is legible from any mode. The contents table doubles as a per-mode coverage report, so in provider_failure every row flips to 'Partly read · Not answering' with filled squares and a red-ruled 'WHAT LIMITED THIS READ' block appears, while a quiet day reads 'Nothing in it' and 'Not enough history' with hollow squares (index__today__provider_failure__1440x960__fold.png vs index__today__owner_quiet__1440x960__fold.png). Filled against hollow is shape, not colour alone, and it survives to 390 (index__today__provider_failure__390x844__fold.png).",
+            "The mobile relocation of the 'THIS READ' rail to the page foot, closed by a 'BACK TO THE INDEX' link, is a considered small-screen affordance rather than a leftover (index__today__owner_signature__390x844.png).",
+            "The two-column note grid inside each Analytics claim — an earned widening at 1440 — collapses cleanly to a stacked list at 390 with no loss of labelling (index__analytics__owner_signature__1440x960__fold.png vs index__analytics__owner_signature__390x844__fold.png)."
+          ],
+          "weakest": "index__today__scale__390x844__fold.png — the direction's signature device breaking. Row 01's status column ('· Not connected') runs flush to x≈390 with no gutter at all, while every other element on the page respects a 16px margin, and the leader dots between label and status have collapsed to a four-or-five dot stub. Row 04's shorter 'Read' still clears at x≈374, which proves the row is being squeezed by string length rather than styled that way. Reproduced independently in index__today__owner_signature__390x844.png and index__today__provider_failure__390x844__fold.png.",
+          "concerns": [
+            "The thing that makes C distinctive is the thing that fails first at width. A leader-dot contents table needs slack between label and status; at 390 there is none left and the longest status string is already eating the page margin. At 320px, or at 200% text enlargement, this row cannot hold, and the brief's floor is no horizontal page scroll at 320px. This is not a polish note — it is the direction's identity and its navigation in one element.",
+            "The right rail is vertically misplaced at 1440 in a way that reads as a rendering accident rather than a composition: it begins at y≈520 on Today and y≈550 on Analytics, leaving a large empty rectangle in the top-right above it (index__today__owner_signature__1440x960__fold.png, index__analytics__owner_signature__1440x960__fold.png). On Inbox the rail holds only two lines in a 355px column (index__inbox__owner_signature__1440x960__fold.png).",
+            "For 'the widest of the four', it uses a 672px content column and a 355px rail inside 1440, leaving roughly 190px of unused right margin — the width claim is not borne out by the pixels.",
+            "It is the second-tallest at 390 (3217px on Today) and the tallest of all at 1440 on Analytics, so a phone reader pays for the density twice."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Fix the contents row before anything else: give the status column a real right gutter, set a minimum leader-dot run, and define what the row does when the dots run out — wrap the status under the label, truncate with the full string still available, or drop to a two-line row. Then prove it at 320px and at 200% text enlargement with the longest status string ('Not enough history') and the two-digit badge both present. Separately, align the right rail's top with the content it annotates at 1440."
+        },
+        {
+          "label": "D",
+          "overall": 8.5,
+          "ownedLens": 8.6,
+          "strengths": [
+            "The only direction in the lab whose mobile is a transformation rather than a reflow, and it transforms the hardest thing it owns. The 240–320px vertical rail becomes a four-column horizontal mode strip at 390, each column carrying its own coverage word beneath the label — all four modes text-labelled, on one row, none behind a More menu, an avatar, an icon or horizontal-scroll discovery (rail__today__owner_signature__1440x960__fold.png vs rail__today__owner_signature__390x844__fold.png).",
+            "The coverage spine rotates with the axis. At 1440 it is a dashed amber vertical rule running down the rail beside the partly-read modes, and a solid red one when nothing could be read; at 390 the same rule lies down as a dashed amber horizontal segment sitting above exactly the affected columns (rail__today__provider_failure__1440x960__fold.png, rail__today__new_user__1440x960__fold.png, rail__analytics__owner_signature__390x844__fold.png). One semantic device, re-expressed for the orientation. It is the most intelligent responsive idea in the lab.",
+            "It is the only direction that changes disclosure depth by viewport rather than only stacking order: 'Coming up 4' and 'Moving well 2' are open sections at 1440 and labelled, counted accordions at 390. The result is the shortest phone page in the set by a wide margin — 2546px for Today at 390 against 3217 for C, 3320 for B and 3390 for A — carrying identical content (rail__today__owner_signature__390x844.png). Best fold economy too: the first decision and all of its metadata are complete on screen at arrival."
+          ],
+          "weakest": "rail__today__owner_signature__390x844.png — the full-page phone capture, in which Notes, Tasks and Timeline, plus the wordmark and Account, sit in a footer at roughly y=2380 of a 2546px page. At 1440 the rail holds Home modes and the three products in one visible column; at 390 the direction splits that rail by priority and sends the suite to the bottom.",
+          "concerns": [
+            "Reaching Tasks from Home on a phone is a full-page scroll. The products are text-labelled and reachable, so this is not the prohibited More-menu or icon-only failure, but the brief asks that Home, Notes, Tasks and Timeline stay visible primary destinations at narrow widths, and a destination 2,400px down is not visible. This is the weakest point in the strongest mobile story and the first thing I would fix.",
+            "The 390 active-mode marker is not yet crafted. It is a roughly 2px indigo tick above the label, and its orientation is inconsistent between modes — a short horizontal segment above 'Today' in rail__today__owner_signature__390x844__fold.png, a vertical bar above 'Analytics' in rail__analytics__owner_signature__390x844__fold.png. At that size the marker is doing real work and it is currently doing it two different ways.",
+            "On the governing rule the rail itself under-discriminates: in provider_failure all four modes read 'Partly read' with amber dashes, which is exactly what partial_coverage reads. A reader scanning only the rail cannot tell a source that failed from one that answered incompletely; the distinction lives solely in the red-barred sentence in the content column (rail__today__provider_failure__1440x960__fold.png).",
+            "The quiet-day Inbox badge is a filled indigo '0' (rail__today__owner_quiet__1440x960__fold.png) — the most affirmative rendering of zero in the set. 'Nothing in it' beneath it rescues the meaning, but a filled brand-coloured badge on a zero is the exact shape the governing rule warns about, and C renders the same state as a hollow grey 0.",
+            "The content is the plainest of the four. That is a fair trade for the clearest navigation, but it means the direction's memorability rests almost entirely on the rail — the part that leaves the top of the page on a phone.",
+            "At 1440 the capped measure leaves roughly 320px of empty right margin beside a 320px rail — less wasteful than A, more than B."
+          ],
+          "decision": "Revise",
+          "requiredCorrection": "Keep Notes, Tasks and Timeline reachable from the top of the page at 390 — a persistent or repeated product row above the mode strip, or the strip made sticky with the products in it. Then unify the active-mode marker at 390 to one orientation and one size across all four modes, and make the rail itself distinguish a source that did not answer from one that answered partly, so the at-a-glance difference the governing rule demands does not depend on reading the content column."
+        }
+      ],
+      "rankedOrder": [
+        "D",
+        "C",
+        "A",
+        "B"
+      ],
+      "overallNote": "Judged only on responsive and mobile composition, this lab has one clear winner and one clear problem, and they are not the same candidate.\\n\\nThe floor is met by everyone, and that is worth saying plainly: all four keep the four Home modes text-labelled on a single row at 390, with no More menu, no avatar, no unlabelled icon and no horizontal-scroll discovery. Nobody failed the obvious test.\\n\\nAbove that floor, only D actually transforms. Its rail becomes a four-up mode strip with per-mode coverage, its coverage spine rotates with the axis, and two sections become counted accordions — which is why it carries identical content in 2546px where the others need 3217, 3320 and 3390. It is the only direction where the phone layout was designed rather than derived, and the only one that changes what is disclosed rather than only how it stacks. B does the best row-level work in the lab (the marginal number and the right-aligned lateness collapsing onto one line above the title is genuinely fine craft) but never rethinks the page; A is a reflow at every scale.\\n\\nThree cross-cutting findings.\\n\\nFirst, the wide viewport is the neglected one. A is the plain case: a 736px measure centred in 1440 with 350px of dead margin either side and no device in either. It is a phone layout in a big window — my lens's failure mode running backwards — and it is why A cannot rank above C despite better fold economy at 390. C wastes width differently: its right rail starts 520px down the page, leaving an empty rectangle top-right that reads as an accident.\\n\\nSecond, the two directions with the most distinctive signature devices are the two whose devices break first at width. C's leader-dot contents table is its identity, its navigation and its coverage report in one row, and at 390 the longest status string has already eaten the page margin with the dots collapsed to a stub; it will not survive 320px or 200% text. B's caveat ledger is its editorial conscience, and placing it above the decisions means that at 390 the arrival screen of Today shows none of the three ranked decisions and the arrival screen of My work shows nothing the reader is carrying. B's fix is an ordering change and C's is a row-behaviour change — both cheap, neither a reason to veto — but both directions currently fail at the width where their idea matters most.\\n\\nThird, and this constrains every ballot in this lab equally: not one capture shows a detail or selection state. The brief requires that Inbox detail becomes a full-screen route or sheet at narrow widths and restores focus on return, and that is precisely the axis on which four directions should differ most on a phone. It is untested in all four, so it cannot break the tie — but nobody should read D's win here as a verdict on its mobile detail behaviour, which has not been shown. The same caveat applies to motion, to 320px, to 200% zoom and to dark theme.\\n\\nNo vetoes. Every one of these is fixable without changing its structural thesis, and I would rather the lab fix C's row and B's page order than replace either."
+    },
+    {
+      "evidenceExamined": [
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__today__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__today__owner_signature__390x844.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__today__provider_failure__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__today__provider_failure__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__today__owner_quiet__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__today__new_user__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__today__scale__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__inbox__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__my-work__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/desk__analytics__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__today__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__today__owner_signature__390x844.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__today__provider_failure__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__today__provider_failure__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__today__owner_quiet__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__today__new_user__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__today__scale__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__inbox__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/editorial__analytics__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__owner_signature__390x844.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__provider_failure__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__provider_failure__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__provider_failure__390x844.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__owner_quiet__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__owner_quiet__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__new_user__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__today__scale__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__inbox__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__my-work__owner_signature__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/index__analytics__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__today__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__today__owner_signature__390x844.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__today__provider_failure__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__today__provider_failure__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__today__owner_quiet__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__today__new_user__1440x960.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__today__scale__390x844__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__my-work__owner_signature__1440x960__fold.png",
+        "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/rail__analytics__owner_signature__1440x960__fold.png"
+      ],
+      "candidates": [
+        {
+          "label": "A",
+          "overall": 9.1,
+          "ownedLens": 9.2,
+          "decision": "Pass",
+          "strengths": [
+            "Measures cleanest of the four. On desk__analytics__owner_signature the lowest contrast ratio anywhere on the page is 6.32:1 and not one control is under 44px; on Today at 390 in the scale world there are zero contrast failures across 112 text runs and the only sub-44px control is an inline text link. Nav links are 44-48px tall with a 59px right gutter at 390.",
+            "It is the only direction that explains its own encoding to the reader. The foot of every page carries How to read the line, which states in plain words that every mark on the spine repeats something the row beside it already says, then keys all six marks. That is the anti-colour-alone rule made visible rather than buried in an attribute.",
+            "Quiet, limited and broken are three different sentences and three different rules, not three colours. Read. / Partly read. / Did not answer. / Could not be read. leads the standfirst in every scenario and the rule under the headline changes with it; the spine physically breaks where a source did not answer. Mode links also carry full-sentence accessible names such as Inbox. 42 open. 1 could not be verified."
+          ],
+          "weakest": "desk__today__provider_failure__1440x960.png — this is the one place Desk lets a shape carry state without a word beside it: each mode name in the tab row gains a small unlabelled mark. Index and Rail both print the state word next to the mode; Desk relies on the aria-label, which does nothing for a sighted low-vision reader.",
+          "concerns": [
+            "The tab-row state marks are roughly 6px and wordless. The meaning is in the accessible name only, so magnifier and low-vision users get a mark with no adjacent text.",
+            "It is the only direction that moves the canvas off the token paper (a warm color-mix on --paper). It still measures 6.32:1 here, but no capture carries theme=dark, so the direction with the most contrast surface area to lose is also the one whose ground has changed.",
+            "Its stylesheet declares a forced-colors block but no prefers-reduced-motion block. Reduced motion is untested and unstated for the direction with the most motion-sensitive spine.",
+            "Detail behaviour, focus return and the live-region announcements are absent from every capture, so the parts of the sixteen journeys that matter most to a keyboard user cannot be judged from this set."
+          ],
+          "requiredCorrection": "Put the state word beside each mode name in the tab row rather than a bare mark, and add a prefers-reduced-motion block before the promotion gate."
+        },
+        {
+          "label": "B",
+          "overall": 8.4,
+          "ownedLens": 8,
+          "decision": "Revise",
+          "strengths": [
+            "Contrast is deliberate and it holds. Zero failures on every page measured: 120 text runs on Today at 390, 222 on Analytics at 1440, 129 on Inbox at 390 with a floor of 4.83:1. It is also the only direction whose stylesheet declares both prefers-reduced-motion and forced-colors.",
+            "It is the only direction that shows row actions and the only one that explains a disabled control in words. editorial__inbox__owner_signature__1440x960__fold.png shows a greyed Mark as read followed by the sentence Mark as read: You have already read this. Disabled-with-a-reason is craft the other three never attempt.",
+            "State is never a colour on its own. Every mark sits inside an ink stroke and always beside a small-caps word: FAILURE · PARTLY READ, NOT CONNECTED, ELSEWHERE IN HOME, THE ACCOUNT. The provider-failure dateline names the failure before the reader reaches any glyph."
+          ],
+          "weakest": "editorial__inbox__owner_signature__1440x960__fold.png — the event links you tap to open an item measure 17px tall and the row titles 19px, ten sub-44px controls on one page, and in the server-rendered document all nine row actions carry aria-disabled=\"true\" with no aria-describedby tying the visible reason to the control.",
+          "concerns": [
+            "Primary target size fails systematically, not incidentally. 6 row-title links at 19px on Today at 390; 10 controls at 17-19px on Inbox at 390. These are the operational targets. The brief asks for 44x44 on primary controls and the other three directions deliver it on the same rows.",
+            "The disabled actions state their reason as adjacent prose rather than an associated description, so a screen-reader user hears a disabled button with no explanation. Before hydration the whole Inbox is inert.",
+            "The 11px all-caps mono label column carries the accounting (COUNTED, CANNOT SAY, WINDOW, WHAT THE RECORDS SAY). It is the smallest type in the lab and the first thing that will break at 200% text-only enlargement.",
+            "The amber square and red ring beside Inbox and My work in the mode row carry state with no adjacent word. It is repaid lower down by ELSEWHERE IN HOME, but the navigation itself is a shape."
+          ],
+          "requiredCorrection": "Raise every row title and event link to a 44px minimum target, and bind each disabled action's reason to the control with aria-describedby rather than adjacent prose. Both are mechanical; nothing structural needs to change."
+        },
+        {
+          "label": "C",
+          "overall": 9.2,
+          "ownedLens": 9.4,
+          "decision": "Pass",
+          "strengths": [
+            "The best structural answer in the lab to unknown stays unknown. Every mode's state is a word in the navigation itself: Partly read, Not connected, Not answering, Not enough history, Could not be read, Nothing in it. The mark is redundant to the word, and the state of a mode you are not in is legible from the mode you are in. Compare index__today__owner_quiet__1440x960.png against index__today__provider_failure__1440x960.png: the nav alone tells them apart.",
+            "Measured facts back the composition. Minimum contrast on Analytics at 1440 is 6.29:1; zero contrast failures across 125 text runs at 390; the index rows are exactly 44px tall with 16px gutters on both sides and no horizontal overflow at 390 in either the failure or the scale world. It also ships the most precise aria-current in the lab, page on the exact mode and true on subtree matches, plus two skip targets and one status region.",
+            "Counts are never bare. The Inbox badge's accessible name is a full sentence, Inbox. 42 open. 1 could not be verified. 0 projects could not be read, and the quiet world renders 0 beside the words Nothing in it rather than a lone zero."
+          ],
+          "weakest": "index__today__scale__390x844__fold.png — the four index rows carry a number, a label, leader dots, a badge, a mark and a two-part status phrase inside 44px, with the status text landing 16px from the right edge. It holds, but there is no headroom left for a longer state phrase or for text-only enlargement.",
+          "concerns": [
+            "The index row is the densest 44px in the lab. It survives 390 today, but a longer status phrase, a wider count or 200% text-only zoom all pressure the same line, and it is the navigation, so it is the worst place to lose room.",
+            "Analytics at 1440 sets two roughly 330px prose measures side by side inside a single claim. It is the only place in the direction where reading order and reflow are asked to do work the rest of the page does not.",
+            "Analytics runs to 4054px, the tallest page in the lab, which is a real traverse cost for anyone reading by magnifier or scroll.",
+            "The stylesheet declares forced-colors but no prefers-reduced-motion block."
+          ],
+          "requiredCorrection": "Give the index row a wrapping or truncation-with-full-name behaviour before 320px and 200% text, so the state phrase can never be the thing that is lost, and add a prefers-reduced-motion block."
+        },
+        {
+          "label": "D",
+          "overall": 8.3,
+          "ownedLens": 8.3,
+          "decision": "Revise",
+          "strengths": [
+            "The most generous targets in the lab and the strongest desktop orientation. Mode rows measure 176x53 at 1440 and 81x56 at 390, and each mode prints its own state as a word directly beneath its name (Today / Read, Inbox / Partly read), so orientation and coverage arrive together.",
+            "Correct landmark and live-region plumbing: both navs named via aria-labelledby, one main, one h1, aria-current=\"page\", a skip link, and a named polite status region (Home updates). It is also the only direction that gates its motion behind prefers-reduced-motion: no-preference as well as declaring forced-colors.",
+            "Progressive disclosure is used honestly. Coming up and Moving well collapse behind labelled rows with counts, which cuts the distance a keyboard or magnifier user must traverse without hiding the fact that there is more."
+          ],
+          "weakest": "rail__today__owner_signature__390x844.png — at 390 the rail unstacks and Notes, Tasks and Timeline end up at roughly y=2066 in a 2,546px document. Suite navigation becomes a footer on a phone, and the page opens mid-element with a dashed rule at y=0.",
+          "concerns": [
+            "Suite navigation is buried at 390. The brief requires Home, Notes, Tasks and Timeline to stay visible primary destinations; measured position puts the products link group about 2,000px down the document. This is the clearest inclusive-navigation regression in the lab.",
+            "22 metadata separators render at 1.48:1. They are decorative by classification, but at that ratio the provenance / lateness / idle-time line reads as one undifferentiated run for a low-vision reader.",
+            "The failure disclosure is the weakest labelled of the four. rail__today__provider_failure__1440x960.png raises a red-ruled line with no state word above it, where Desk says Did not answer. and Index says NOT ANSWERING. The sentence carries the meaning; the label does not.",
+            "The rail's status strips (indigo solid, orange dashed, grey) are a second encoding with no key anywhere on the page. Rail is the only direction that offers its reader no legend for its own marks."
+          ],
+          "requiredCorrection": "At 390, keep Notes, Tasks and Timeline reachable from the top of the document rather than the foot, and raise the metadata separator above 3:1 or replace it with spacing."
+        }
+      ],
+      "rankedOrder": [
+        "C",
+        "A",
+        "B",
+        "D"
+      ],
+      "overallNote": "All four respect the governing rule, and that is the headline. Not one of them renders missing, stale, unsupported or failed data as zero, empty or all clear; a quiet day and a broken provider are visibly and verbally different in every direction. That is a genuinely high floor and the lab deserves credit for it. There are no vetoes.\\n\\nWhere they separate is on how the state reaches the reader. C prints it as a word in the navigation, so the condition of a mode you are not in is legible from the mode you are in, and it is the only direction where the shape is strictly redundant to the text. A prints it as a word in the standfirst and then does something none of the others do: it keys its own marks on the page in plain English, telling the reader that no meaning is carried by a shape. Those two are the accessible directions and both clear the bar. B is the most careful about colour and the only one that explains a disabled control, but it puts its primary targets at 17-19px and leaves nine actions disabled with no programmatic reason, which is a barrier on the exact controls the product exists to operate. D has the biggest targets and the best desktop orientation and then throws suite navigation to the foot of the document on a phone.\\n\\nTwo caveats on the evidence itself. Every capture is light theme and pre-hydration, so dark theme, focus movement, detail return and the live-region announcements, the parts of the sixteen journeys that decide whether a keyboard user can actually work here, are not in this set and are not scored. And the new_user world reads as a read that failed in all four, which the README correctly attributes to the shell rather than to any direction; someone should decide whether a person's first ever screen ought to be phrased as a failure, but it is not a point of comparison between candidates.\\n\\nBeyond the PNGs I opened the server-rendered documents beside them and measured the same pages live at 390x844 and 1440x960: contrast against computed backgrounds, control bounding boxes, scrollWidth, landmark names, heading order and aria-current. Every number quoted above comes from those measurements, not from estimating pixels. One correction I made against myself along the way: the index rows at 390 look flush to the right edge in the PNGs and I suspected clipping, but measurement shows 16px gutters, 44px rows and scrollWidth exactly 390 with zero overflowing elements, so that suspicion was wrong and is not held against C. No file was written."
+    }
+  ]
+}
