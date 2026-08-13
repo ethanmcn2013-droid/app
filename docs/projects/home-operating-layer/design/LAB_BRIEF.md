@@ -60,6 +60,43 @@ calibration signal and triggers a register amendment, never a silent per-lab exc
 
 ---
 
+## Amendment 1 — what the width is for (added 2026-08-13, after two panel rounds)
+
+Two blind panels raised "never earns its width" **44 times across all four directions**. That is
+not four teams making the same mistake. It is this brief's fault, and it is corrected here.
+
+The original text asked for "a narrow authored read" and a "prose-led" Analytics, and then said
+nothing about what the remaining 600px of a 1440 screen is for. Four teams followed it and ten
+directors marked all four down for following it.
+
+**A narrow measure is a decision about text. It is not a decision about the page.** Reading
+measure governs the *prose*; it does not oblige the rest of the canvas to stay empty. A direction
+must make a deliberate decision about the full width and be able to name it. Any of these is a
+good answer; leaving it blank is not:
+
+- a second column that carries something genuinely different — provenance, receipts, an index,
+  read-state, a contents table;
+- asymmetry that positions the measure rather than centring it by default;
+- letting one thing per mode legitimately break the measure (a Project ledger, an open event);
+- a deliberate, defended margin — but then say *why* the emptiness is doing work, because a
+  reviewer will otherwise read it as an unmade decision.
+
+The three-item cap on Today still stands. It is a cap on **decisions**, never a cap on the page.
+
+## Amendment 2 — a new reader is not a failed read (added 2026-08-13)
+
+Every direction rendered a person's first ever screen as an error, because the shell resolved
+that world to `unavailable`. That was a shell defect and it has been fixed, but the principle
+belongs here permanently:
+
+> **Nothing configured yet is not the same as a read that failed.** Somebody with no Projects has
+> not suffered an outage; they have not started. Rendering *not yet* as *broken* is this
+> programme's own governing rule pointed the wrong way.
+
+A new reader's screen must carry one plain sentence explaining what is missing and **one thing
+they can actually do**. A first screen with no action on it is a failure of the direction,
+whatever the shell hands it.
+
 ## Mode rhythm — the composition each mode needs
 
 - **Today** — a narrow authored read. At most three ranked decisions. Not a task wall.
