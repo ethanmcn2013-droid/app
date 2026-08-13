@@ -524,3 +524,92 @@ either shape.
 **Consequence.** WP6 must not claim "one writer, one set of attributes" for the
 last-active preference until items 1–5 land. WP2's writer is single; the cookie
 the resolver reads is not.
+
+---
+
+## D-022 · The Tasks runtime must move from the layout into the pages
+
+**Surfaced by WP3-B as a blocker it correctly refused to work around.**
+
+`/app/tasks?workspaceId=B` **cannot render B's board** while `TasksRuntimeShell` is
+fetched in a layout. It is mounted from nine `layout.tsx` files, and Next 16 does not
+give layouts the URL:
+
+- Next's own type generator declares `PageProps` **with** `searchParams` and
+  `LayoutProps` **without** it (`next-types-plugin/index.js:128-136`).
+- The bundled docs state the intent — reading the current URL from a Server Component
+  is unsupported *"to support layout state being preserved across page navigations"*
+  (`use-pathname.md:38`).
+- `unstable_rootParams` was removed in 16.
+
+**A header workaround is worse than unavailable.** Layouts are not re-rendered when
+only the query string changes, so a header-derived Project would go stale on an A→B
+switch and label the board with the Project it no longer showed — precisely the
+inequality ADR §2 calls a release blocker.
+
+**Interim behaviour, deliberate.** Where the URL names an authorized Project that
+disagrees with what the layout resolved, `/app/tasks` **withholds the board and states
+the disagreement**. Showing A's data under a URL saying B is the failure this programme
+exists to eliminate; showing nothing is honest. Rendered and reviewed: the state is
+correct but a dead end — it names a switcher that is not on screen and its only link
+leads away from what the user asked for.
+
+**Decision.** Move the Tasks runtime out of `layout.tsx` into the page boundaries, as
+plan §3.4 already requires: *"load the membership-filtered Project Catalog and exact
+Project in each page/server route boundary."* The plan said pages; the code has layouts.
+Assigned to **WP6**, and it is a **precondition** for WP6's selector — a Project control
+that cannot change the board it sits above is not a Project control. The mismatch state
+disappears entirely when it lands.
+
+---
+
+## D-023 · `getActiveWorkspace()`'s ordering changed at WP3 integration, not in a lane
+
+**Done.** The WP2 follow-up made `getActiveWorkspaceOrNull()` deterministic through
+`firstMembershipByCatalogOrder`, shared with the catalog listing and the resolver's
+`first-active` default. `getActiveWorkspace()` was deliberately left alone by that lane:
+giving an arbitrary answer a *different* arbitrary answer moves which Project an existing
+multi-membership user lands on at bare entry — a live change outside the flag across ~30
+call sites.
+
+The `ORDER BY` therefore landed in the **WP3 integration commit**, made by the
+integration owner, where both lanes' migrations were visible together. Three accessors
+now answer "first" identically; a bare entry can no longer land in one Project while the
+chooser highlights another.
+
+**Determinism is not authorization.** `seed.ts`'s two destructive paths keep requiring
+`manageProject` rather than bare membership — a stable guess is still a guess — and that
+is now asserted in code rather than left to a future reader's judgement.
+
+---
+
+## D-024 · The Quality Council gate is structurally broken and must be repaired before it can certify anything
+
+**Found by the WP3-C lane; verified independently on `02e2206`.**
+
+`pnpm experience:council` exits **1**, and has since before this programme started. Two
+independent structural causes:
+
+1. **`experience/council-reviews/journeys/` has never existed.** Only `baselines/` is
+   present in the repo.
+2. **The baselines pin stale source commits** — `d1af9ae` (2026-08-09) and `084085f`,
+   both ancestors of current main. Their `sourceTreeSha256` was already stale before
+   WP3-A, WP3-B and the ratchet landed, and every commit since widens the gap.
+
+It is currently masked: the workflow marks the step `continue-on-error: true`, so
+`registry-and-drift` reports green while the council check fails inside it.
+
+**Why this matters more than it looks.** The plan's Definition of Done (§15) and WP11's
+gate both require a **fail-closed 9.5 Quality Council** — raw ≥50/52, no dimension below
+3, minimum not average, ≥3 independent reviews. That instrument cannot presently run. A
+gate that always fails is indistinguishable from one that is never consulted, and a gate
+marked `continue-on-error` is in practice the latter.
+
+**Decision.** Repairing the instrument is **Wave 8 work and a precondition of
+certification**, not a closing chore: create the missing journeys directory and its
+schema, rebaseline against the certified commit, then run the gate for real. Until then
+**no 9.5 claim may be made by anyone** — including by citing a green
+`registry-and-drift`, which does not mean what it appears to mean while that flag is set.
+
+Recorded several waves early, because the cheapest moment to discover a broken gate is
+long before the release that depends on it.
