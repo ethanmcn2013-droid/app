@@ -302,3 +302,48 @@ test("the provider declares only capabilities it can actually serve", async () =
     "the Tasks provider cannot read decisions and must not claim to",
   );
 });
+
+/**
+ * The privacy boundary the audit found already correct, now pinned.
+ *
+ * `providers/notes.ts` names its SELECT columns and deliberately does not name
+ * `body`. Only `extract_body` — an owner-approved structured extract — crosses
+ * into the analytics domain, and `NoteRecord.exposure` is typed
+ * `"approved_extract"` to say so at contract level. Nothing enforced it, so a
+ * future `SELECT *`, or one added column, would have quietly moved raw private
+ * prose into a metrics pipeline. This is a source-text guard because the harm
+ * is in what the query asks for, not in what a fixture happens to hold.
+ */
+test("private Note bodies never enter the analytics domain", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(
+    "src/modules/signal/server/analytics/providers/notes.ts",
+    "utf8",
+  );
+
+  // Strip comments first: the file's own docblock explains the rule and would
+  // otherwise be scanned as if it were a query.
+  const code = source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  const selects = code.match(/SELECT[\s\S]*?FROM/gi) ?? [];
+  assert.ok(selects.length > 0, "the Notes provider must issue a named-column SELECT");
+  for (const clause of selects) {
+    assert.ok(
+      !/\*/.test(clause),
+      "a wildcard SELECT would pull the private body column into analytics",
+    );
+    assert.ok(
+      !/(^|[\s,(])body([\s,)]|$)/i.test(clause),
+      "the raw `body` column must never be selected; only `extract_body` may cross",
+    );
+  }
+  assert.ok(
+    source.includes("extract_body"),
+    "the approved extract is the only Note text this domain may read",
+  );
+  assert.ok(
+    source.includes('exposure: "approved_extract"'),
+    "every NoteRecord must declare itself an approved extract",
+  );
+});
