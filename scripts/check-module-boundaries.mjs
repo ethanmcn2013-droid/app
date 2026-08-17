@@ -197,6 +197,16 @@ for (const mod of MODULES) {
   if (mod === "timeline") {
     allowedDirs.push(path.join(srcDir, "app", "s") + path.sep);
   }
+  // The Signal analytics snapshot cron (T·146). Vercel invokes crons over
+  // HTTP, so the entry point must live under /api — it cannot sit inside the
+  // module's route segment. This one directory is the module's only
+  // scheduled entry point; it composes the snapshot module's own exported
+  // helpers and holds no logic of its own beyond auth and the flag.
+  if (mod === "signal") {
+    allowedDirs.push(
+      path.join(srcDir, "app", "api", "cron", "analytics-snapshots") + path.sep,
+    );
+  }
 
   for (const file of allSrcFiles) {
     // Skip files that live inside this module itself (already covered by rule 1).

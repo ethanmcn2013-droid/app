@@ -9,9 +9,14 @@
  */
 
 import { cache } from "react";
-import { eq, and, asc, desc, lte, gte, ne, sql, like } from "drizzle-orm";
+import { eq, and, asc, desc, lte, gte, ne, sql, like, inArray } from "drizzle-orm";
 import { applyTemplateAnchor } from "../../lib/template-anchor";
 import { db } from "./timeline-client";
+import {
+  diffMilestoneDates,
+  milestoneDateHistoryEnabled,
+  recordMilestoneDateChanges,
+} from "./milestone-date-history";
 import {
   workspaces,
   projects,
@@ -722,6 +727,29 @@ export async function writeRoadmapNodes(
 ): Promise<void> {
   const reconcile = options.reconcile ?? "preserve";
   const executor = options.executor ?? db;
+  // Step 0, milestone date history (D-026 / R4). Read the dates this upsert
+  // is about to overwrite, so the change can be recorded after it lands.
+  // The read goes through the module client: the executor may be a bare
+  // write transaction, and the rows being read are committed state.
+  const previousDates =
+    milestoneDateHistoryEnabled() && milestones.length > 0
+      ? new Map(
+          (
+            await db
+              .select({ id: tasks.id, targetDate: tasks.targetDate })
+              .from(tasks)
+              .where(
+                and(
+                  eq(tasks.workspaceSlug, workspaceSlug),
+                  inArray(
+                    tasks.id,
+                    milestones.map((m) => m.id),
+                  ),
+                ),
+              )
+          ).map((row) => [row.id, row.targetDate ?? null]),
+        )
+      : new Map<string, string | null>();
   // Step 1, upsert incoming synced nodes (skip when empty, but still run step 2).
   if (milestones.length > 0) {
     await executor
@@ -751,6 +779,14 @@ export async function writeRoadmapNodes(
           updatedAt: sql`(unixepoch())`,
         },
       });
+    // Step 1b, record the date changes the upsert just made, through the
+    // same executor so history commits atomically with the dates it
+    // describes. Flag-gated and empty-safe inside the helper.
+    await recordMilestoneDateChanges(
+      executor,
+      workspaceSlug,
+      diffMilestoneDates(previousDates, milestones),
+    );
   }
 
   // Step 2, G2 reconcile: delete synced nodes not in the incoming set.
@@ -820,6 +856,53 @@ export async function upsertNodeOverlay(
     input.audienceStateOverride !== undefined
       ? encodePersistedAudienceState(input.audienceStateOverride)
       : input.laneOverride ?? null;
+  // Milestone date history (D-026 / R4): this upsert is the gesture an owner
+  // performs to move a date, so the EFFECTIVE date change is recorded — the
+  // date the owner saw before against the one they see now, where effective
+  // means override ?? synced target. Only synced nodes (a `tasks` row exists)
+  // are recorded: manual nodes have no tasks row, and the analytics provider
+  // seeds its milestone ids from `tasks`, so their history would be
+  // unreadable noise. Runs only when this call actually writes the date
+  // field; a label or lane edit records nothing.
+  const touchesDate =
+    input.dateOverrideMode !== undefined || input.dateOverride !== undefined;
+  const effectiveDateChange =
+    milestoneDateHistoryEnabled() && touchesDate
+      ? await (async () => {
+          const [taskRow] = await db
+            .select({ targetDate: tasks.targetDate })
+            .from(tasks)
+            .where(
+              and(
+                eq(tasks.workspaceSlug, workspaceSlug),
+                eq(tasks.id, input.nodeId),
+              ),
+            )
+            .limit(1);
+          if (!taskRow) return null;
+          const [overlayRow] = await db
+            .select({ dateOverride: nodeOverlays.dateOverride })
+            .from(nodeOverlays)
+            .where(
+              and(
+                eq(nodeOverlays.workspaceSlug, workspaceSlug),
+                eq(nodeOverlays.nodeId, input.nodeId),
+              ),
+            )
+            .limit(1);
+          const resolveEffective = (persisted: string | null): string | null => {
+            const decoded = decodePersistedDateOverride(persisted);
+            if (decoded.mode === "undated") return null;
+            if (decoded.mode === "date") return decoded.date;
+            return taskRow.targetDate ?? null;
+          };
+          const from = resolveEffective(overlayRow?.dateOverride ?? null);
+          const to = resolveEffective(persistedDateOverride);
+          return from && to && from !== to
+            ? { entityId: input.nodeId, from, to }
+            : null;
+        })()
+      : null;
   await db
     .insert(nodeOverlays)
     .values({
@@ -858,6 +941,9 @@ export async function upsertNodeOverlay(
         updatedAt: now,
       },
     });
+  if (effectiveDateChange) {
+    await recordMilestoneDateChanges(db, workspaceSlug, [effectiveDateChange]);
+  }
 }
 
 /**

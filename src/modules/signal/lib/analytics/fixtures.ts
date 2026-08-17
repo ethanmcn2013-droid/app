@@ -63,11 +63,17 @@ export interface AnalyticsFixture {
  * These used to include `decision_read` and `milestone_date_history`, which
  * NO live provider declares: the Notes adapter offers
  * `[follow_up_read, cross_product_links]` and never reads decisions, and
- * Timeline only declares date history when `activity` rows exist, which
- * nothing in this repository writes. Every green fixture test therefore
- * certified a world production does not have. Declaring less here is the
- * point: `open_decisions` and `milestone_movement` must resolve
- * `unsupported` in fixtures exactly as they do live.
+ * Timeline only declares date history when `activity` rows exist. Every
+ * green fixture test therefore certified a world production does not have.
+ * Declaring less here is the point: `open_decisions` and
+ * `milestone_movement` must resolve `unsupported` in fixtures exactly as
+ * they do live.
+ *
+ * 2026-08-17: a date-history writer now exists
+ * (timeline/server/db/milestone-date-history.ts) behind
+ * SIGNAL_MILESTONE_DATE_HISTORY_ENABLED. These fixtures keep modelling the
+ * flag-off world; a history-bearing scenario is added only when the flag is
+ * live in production and WP9 needs to render real movement.
  */
 const LIVE_CAPABILITIES: Record<ProviderKey, ProviderCapability[]> = {
   tasks: [

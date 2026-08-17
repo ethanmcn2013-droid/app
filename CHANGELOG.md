@@ -4,6 +4,40 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-17 · T·146 · ships · the app starts remembering how plans move
+
+**Nothing looks different today. What changed is that two kinds of history the
+product could never show — because nothing recorded them — start being
+recorded: when a milestone's date moves, and what each project's numbers were
+at the end of each day. The analytics view the founder selected this week
+draws on both, and neither can be reconstructed later. A reading not taken is
+gone.**
+
+The first recorder sits where dates actually change. When the Tasks sync
+rewrites a milestone's date, and when an owner moves a date by hand on the
+Timeline plan, the old date and the new one are written down together, in the
+same breath as the change itself. Only a real move is recorded: a date
+appearing on an undated milestone is creation, and a date being removed
+leaves nothing to compare, so neither writes a row.
+
+The second recorder is a nightly reading. The snapshot machinery — tables,
+receipts, fairness ordering, retention — shipped complete in last week's
+analytics foundation and then sat unused, because nothing ever called it.
+It now runs every night at 02:30 UTC, oldest-first so no workspace is
+starved, once per day per workspace, with a durable receipt for every run
+including the failed ones.
+
+Both recorders are off until their switches are turned on, and the metric
+registry says exactly that: the movement metric's entry now names the
+switch, and states that movement before enablement is permanently
+unrecorded. The fixtures keep modelling the flag-off world, so a green test
+still certifies the world that exists.
+
+Proven by six new history tests against a real database — including that the
+recorded rows parse under the analytics provider's own predicates — and four
+gate tests on the nightly route's secret and switch. The pinned sync-safety
+and generation suites run unchanged: 40 of 40.
+
 ## 2026-08-12 · T·145 · corrects · the front door lets in the people it invited
 
 **An invited collaborator or a sponsored couple can now reach Home, the Full
