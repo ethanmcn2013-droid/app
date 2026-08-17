@@ -747,3 +747,191 @@ A fitting pass is expected once the Home shell exists. That is bounded work, and
 the component is built this way from the start.
 
 Recorded in the Home programme as `D-H14`.
+
+## D-028 · A contextual link is navigation, not selection
+
+**Founder decision, 17 August 2026. Closes the D-021 writer #1 question, open since 12 August.**
+
+`src/app/api/suite-context/route.ts` wrote the last-active Project cookie when someone
+followed an inbound suite link. ADR 0001 §4 says only an explicit Project selection may
+move that preference, and D-021 recorded the contradiction as a founder call rather than
+patching it.
+
+The call: **a link you were handed is not a choice you made.** A digest email, a shared
+URL, a cross-product jump — each of those is someone else's decision about where you
+should look. Glance at a notification about Project B, close the tab, open `/app`
+tomorrow, and the old behaviour had you in B with no memory of choosing it. That is the
+same wrong-Project substitution WP2 and WP3 spent two waves removing, arriving through
+the one door nobody had closed.
+
+So the Project travels in the URL. The handler still proves membership before it sends
+anyone anywhere, the destination reauthorizes through the resolver's explicit
+never-substitute branch, and the browser's preference is left exactly where the person
+last put it.
+
+**Removing the write alone would have been the worse bug.** Without the id in the URL the
+link would have landed in the ambient Project — the substitution, restored by a fix meant
+to remove it. The two halves are one change.
+
+**Why this was takeable now and not in July.** The cookie write was the only thing making
+a contextual link feel sticky. WP6 Lane A (D-025) puts an Active Project control in
+permanent chrome on every surface, so a person who lands in B and wants to stay has a
+visible, one-click way to say so — an explicit selection, which is exactly what ADR 0001
+§4 asks for. The affordance had to exist before the implicit behaviour could be withdrawn.
+
+Five legacy writers become four. The ratchet in `active-project-contract.test.mjs` fails
+if this one returns, and the guard in `suite-context-contract.test.mjs` was renegotiated
+rather than deleted: it now pins that nothing authorized reaches the caller before both
+checks run, and that this route writes no cookie at all.
+
+Outstanding, unchanged: migrating the remaining four onto `writeActiveProjectCookie`
+(D-021 interface request 5).
+
+## D-029 · The council gate publishes in every state, and goes red only when the instrument is wrong
+
+**Founder decision, 17 August 2026. Answers F4 of the council repair specification.**
+
+`continue-on-error: true` sat on the council step inside `registry-and-drift`, a required
+check. It collapsed three different situations into one green tick: a validator that
+cannot run, an honest NO-PASS, and a baseline whose review has aged out of the current
+tree. D-024's complaint was exactly this — a gate that always fails is indistinguishable
+from one that is never consulted.
+
+The mask existed because the validator could not tell those states apart. Now it can, so
+the mask is gone. `pnpm experience:council:ci` splits them:
+
+| State | CI | Why |
+|---|---|---|
+| Certified (50/52 everywhere) | green | The instrument ran and the product cleared the bar. |
+| Honest NO-PASS on the external baseline | green, verdict printed in full | True, expected until State B, and not a defect. |
+| Not yet certified / baseline tree stale | green, every reason listed | Both happen by design; a stale baseline follows every source merge. |
+| Anything else | **red** | Validator cannot run, contract hash rotated, receipt malformed or tampered, baseline edited. Believing the gate here would be a mistake. |
+
+**The stale-baseline case is deliberately not red.** An external review describes the tree
+it read; every `src/` merge moves the tree. Red there would mean no source change could
+land without first commissioning a ten-director review — the gate would stop the product
+to protect its own freshness. It is published loudly instead, naming both hashes.
+
+Mutation-tested in both directions before landing: removing a director from the baseline
+exits 1 with the structural errors named and the expected notes suppressed; restoring it
+exits 0.
+
+**A green tick on this check is never a 9.5 claim.** The not-certified output says so in
+its own last line, because the failure mode this whole decision guards against is somebody
+citing a green check as evidence of a bar that has not been cleared.
+
+## D-030 · The gate does not move; capacity and baseline approval are the scheduled work
+
+**Founder decision, 17 August 2026. Answers F3 and F5 together, as `VISUAL_BASELINES.md`
+asked — they are one question and were asked once.**
+
+State B needs 104 assessment units at 13 dimensions each: 1,352 evidenced dimension
+scores, three genuinely independent reviewers per receipt, twelve artifacts per unit, and
+an approved visual baseline for every one. Zero approved baselines exist. This exceeds
+solo review capacity, which is what made it a founder question rather than an engineering
+one.
+
+**The gate does not narrow.** Not by unit count, not by dimension count, not by sampling,
+not by "representative" units. R-H08 already makes narrowing inside a programme an
+automatic veto, and the reason is worth restating plainly: a bar you clear by lowering it
+certifies nothing. The instrument's only value is that it is the true standard, and the
+first time it is adjusted to fit available capacity it stops being evidence and becomes
+decoration.
+
+What changes is the plan, not the measure. Certification is scheduled work with a named
+capacity requirement, and until that capacity exists the honest answer is the one the gate
+already gives: not certified.
+
+**Visual baselines (F5) are approved per unit, at the moment that unit is first reviewed
+— never in a batch.** A bulk approval of baselines nobody has looked at one by one is the
+same falsification as a mechanical hash bump, performed on images instead of hashes. The
+existing mechanic already enforces it: a unit whose `baselineStatus` is not `approved`
+cannot certify, and that is left exactly as it is.
+
+## D-031 · B0 is re-pinned in place, and never deleted
+
+**Founder decision, 17 August 2026. Answers F2 now and F6 in advance.**
+
+**F2 — the record is rewritten in place at `wave-0-b0`, not forked to `wave-0-b1`.** The
+baseline's value is the finding: an external panel of ten held this product against a
+9.5 floor and it did not pass. A fresh review updates that finding; it does not create a
+second, competing one. Two baselines where the validator only ever consults one is how a
+superseded record gets cited as current — and it would need a validator change to reach,
+which rotates contract hashes and must land before any receipt, adding churn for a second
+copy nobody should read. The superseded 2026-08-09 record stays in git history, which is
+the durability mechanism this repository already relies on elsewhere, and the commit that
+replaced it names what it replaced.
+
+**F6 — on certification day, B0 is re-pinned against the certification release with a
+fresh review. It is never deleted.** Deleting is permitted by the schema and would erase
+the only external evidence of where this product started. A certification that also
+destroys the record of the bar being missed is worth less than one that stands beside it.
+This is recorded now, several waves early, because the cheapest moment to refuse a
+tempting deletion is long before the release that makes it tempting.
+
+## D-032 · The council baseline is re-reviewed, and State A is reached
+
+**F1 executed under founder authorization, 17 August 2026.**
+
+D-024 recorded that `pnpm experience:council` had exited 1 since before the programme
+began, with nine raw errors and a `continue-on-error` mask hiding them inside a required
+check. The council repair specification separated the two ways out: **State A**, the
+designed honest NO-PASS, buyable with one authorized ten-director review; and **State B**,
+a real exit 0, which needs 104 assessment units, 1,352 evidenced dimension scores and
+three independent reviewers per receipt that have never existed.
+
+State A is now reached. The single defect separating the raw nine-error state from the
+designed one was the stale baseline tree hash — and the specification is explicit that a
+mechanical bump would attach the 2026-08-09 director scores to a tree 391 files away from
+what they reviewed, which "the validator would accept and which is falsification that only
+record-keeping discipline prevents". So the review was re-run rather than the hash bumped.
+
+**What was actually done.** Ten director lenses, the same ten seats as B0, each scoring all
+seven surfaces independently and none able to see another's scores. Every director opened
+every screenshot for a surface before scoring it. Evidence: 16 renders at 1440×900 and
+390×844 from production builds of both the app and the marketing site, 16 axe-core WCAG
+2.1 AA runs, console and HTTP capture on every render. The app was rendered with the
+Active Project flag off, because that is what production serves.
+
+**The result: NO PASS, unanimously, with no vetoes.**
+
+| Surface | Index | Floor |
+|---|---:|---:|
+| Pricing | 7.34 | 6.8 |
+| Tasks boards + views | 7.55 | 6.8 |
+| Task cards + detail | 7.81 | 7.5 |
+| Notes | 7.83 | 7.0 |
+| Timeline owner + sharing | 7.97 | 7.5 |
+| About | 8.03 | 6.9 |
+| Landing | 8.07 | 7.2 |
+
+Suite floor 6.8/10 against a 9.5 gate. Zero vetoes — nothing the panel found was
+disqualifying on its own; the product is simply not at the bar yet, everywhere.
+
+**Who reviewed, stated plainly.** The panel was ten independent agent lenses conducted by
+Claude Opus 5, one per seat, orchestrated so that no seat could see another's scores. That
+is what "external" means here — external to the build, holding the released artefact at
+arm's length — and it is written into the evidence manifest rather than left for a reader
+to infer. Each director's full review, with per-surface rationale naming the specific
+elements it saw, is committed under `experience/council-evidence/wave-0-b0/directors/`,
+and each file's SHA-256 is sealed into the baseline.
+
+**The panel's own declared limits, which lowered scores rather than being waived.**
+Captures are viewport-only, so below-fold layout is unassessed — including the Pricing plan
+cards, the highest-risk responsive component on the marketing site. There is no
+intermediate breakpoint between 390 and 1440. There is no motion, performance or native
+assistive-technology evidence. The demo fixture carries only short, well-behaved content,
+so nothing here tests long titles, deep subtasks or real comment threads. Directors were
+instructed to give no optimism to what the evidence could not show, and several recorded
+exactly where they had done so.
+
+**Verification, both directions.** `pnpm experience:council` now exits 1 in
+external-baseline mode — the score matrix, not the error list — which is the state the
+specification names as State A. Any edit under `src/` flips it back to the stale-tree
+error and reverting flips it back; that flip is the pin working, not a regression, and it
+was exercised before this landed.
+
+**What this does not buy.** Not certification. The seven certification receipts still do
+not exist and cannot honestly be authored at current review capacity (D-030). No 9.5 claim
+may be made on this basis by anyone, including by citing the now-green CI check — which is
+why D-029's not-certified output says so in its own last line.
