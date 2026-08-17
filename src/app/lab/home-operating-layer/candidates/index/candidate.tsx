@@ -15,23 +15,33 @@
  * that may never be approximate, so a mode may not be reported as read, or as
  * empty, on evidence that does not support it.
  *
- * ── WHAT CHANGED IN ROUND 5, AND WHY THE THESIS SURVIVED IT ────────────────
+ * ── THE ROUND-4 FORK, AND WHICH SIDE THIS FILE TOOK ────────────────────────
  *
- * Round 4 printed the contents page as the masthead, and two directors put the
- * same charge: Today asks what deserves attention now, and this page answered
- * with a table of contents about itself first. Roughly 330 px of index before
- * the headline at 1440. On a phone, on the worst morning of the month, a reader
- * passed about 590 px before being told a source had not answered.
+ * Round 4 did not offer a fifth round of tuning. It put a fork: move the index
+ * below the headline, or say honestly that the thesis cannot survive it and be
+ * replaced. This is the record of the decision: THE INDEX MOVED BELOW THE
+ * HEADLINE, AND THE THESIS SURVIVED, because the charge was against the
+ * index's position and never against its device.
  *
- * That is a fair charge against the position and no charge at all against the
- * device, and the two were never the same argument. A periodical does not open
- * on its contents page — it opens on the front page, and the contents lives
- * inside the issue as a report on what each section came back with. So the
- * order is now the order a paper has always used:
+ * Two directors put the same measurement behind the charge: Today asks what
+ * deserves attention now, and this page answered with a table of contents
+ * about itself first — roughly 330 px of index before the headline at 1440,
+ * and on a phone, on the worst morning of the month, about 590 px before the
+ * reader was told a source had not answered. That is fatal to the index AS
+ * MASTHEAD. It says nothing against the index as the document's structure,
+ * because a periodical does not open on its contents page: it opens on the
+ * front page, and the contents lives inside the issue as a report on what each
+ * section came back with. Moving it is what makes the metaphor literal rather
+ * than decorative. Replacement was the other side of the fork, and it would
+ * have been the wrong side: the per-mode coverage report was scored at 9 and
+ * above by all three passing ballots, and a direction is not replaced for
+ * having its strongest device in the wrong place. So the order is now the
+ * order a paper has always used:
  *
  *   `Masthead`  the wordmark, the suite, and Read Scope as a real control.
  *   `ModeBar`   the four sections as a folio line, each with the state of its
- *               own read in words. One line at 768 and up.
+ *               own read in words — the "single line, four status words, no
+ *               numbered leader-dot rows" one Required ballot line asked for.
  *   the read    headline, one true sentence, then the decisions.
  *   `Contents`  the numbered leader-dot table, with the cause behind each
  *               condition and Full briefing as a child of Today. In the
@@ -45,20 +55,31 @@
  *
  * ── What it costs, said plainly ────────────────────────────────────────────
  *
- * The folio line is 44 px at 768 and up and two lines at 390, against 176 px of
- * index rows before. It scrolls away and it is not sticky at phone widths: a
- * bar that follows the reader costs a tenth of a phone screen forever, which is
- * the cost this direction refuses. On a tall wide window the whole standing
+ * The folio line is 44 px at 768 and up. Below 560 it stops being a line and
+ * becomes four ruled 44 px rows, name left and condition right — about 178 px,
+ * roughly what the round-4 index rows alone cost, but the whole of the front
+ * matter is now about 270 px where round 4 stacked 590 to 750 px of chrome
+ * before the headline. It scrolls away and it is not sticky at phone widths: a
+ * bar that follows the reader costs a tenth of a phone screen forever, which
+ * is the cost this direction refuses. On a tall wide window the whole standing
  * column follows instead, so the contents is in view from any scroll position
- * without taking a pixel from the read.
+ * without taking a pixel from the read; on a phone the contents closes the
+ * document, so the modes are one flick from either end.
  *
- * ── What it spends on the client ───────────────────────────────────────────
+ * ── What it spends on the client, measured ─────────────────────────────────
  *
- * Nothing. Every file in this folder is a Server Component. The scope control
- * and the evidence receipts are `<details>`, the selections are routes, the
- * entrance is CSS keyed off the motion tokens. With 0.9 KB of shared-runtime
- * headroom for the programme, a direction that hydrates is a direction that
- * cannot ship.
+ * One file: `dispositions.tsx`, 1.86 KB gzip, route-local, hydrating one
+ * component per Inbox or My work row and zero on Today, the briefing,
+ * Analytics and the whole of the shell. Round 5 retired the zero-JavaScript
+ * claim deliberately: a Required ballot line reads "build them as real
+ * controls", six of the sixteen journeys are state transitions, and a run of
+ * names that cannot transition is a dead control however honestly it is
+ * drawn. Everything else in this folder is still a Server Component — the
+ * scope control and the receipts are `<details>`, the selections are routes,
+ * the entrance is CSS keyed off the motion tokens — and the island adds
+ * nothing to the shared runtime, which is where the programme's 0.9 KB of
+ * headroom lives. The measurement and the ceilings are in the island's own
+ * header.
  */
 
 import { Fragment, type CSSProperties } from "react";
@@ -69,6 +90,7 @@ import type {
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { modeCondition } from "@/lib/home-layer/candidates/index/labels";
 import { AnalyticsMode } from "./analytics";
+import { IndexSay } from "./dispositions";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
 import { BriefingMode, TodayMode } from "./read";
@@ -286,6 +308,13 @@ const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
         implied by it: a director scanning for the region did not find one, and
         a contract that is only satisfied by a default is one browser change
         away from not being satisfied at all.
+
+        `IndexSay` is the island's voice INSIDE this same region: what just
+        happened to a row — marked as read, snoozed to an exact instant, sent
+        to the source, refused by it — is a fact of the same kind about the
+        same page, announced from the one region the brief allows rather than
+        from a second one it does not. It renders nothing until something has
+        happened.
       */}
       <p
         className="ri-sr"
@@ -294,6 +323,7 @@ const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
         aria-label={chrome.statusRegionLabel}
       >
         {`${chrome.modeEyebrow}. ${current.word}${current.cause ? `. ${current.cause}` : ""}.`}
+        <IndexSay />
       </p>
 
       {/*

@@ -51,6 +51,87 @@
  *
  * Everything here is a Server Component except `interaction.tsx`, which is the
  * only client module in the direction.
+ *
+ * ── ROUND 5 — how each round-4 blocking concern was answered ───────────────
+ *
+ * Six ballots blocked. Every answer below is typographic — no container, no
+ * card, no fill, no shadow, no second accent was added anywhere in this round.
+ *
+ * AMBER UNDER 3:1. The amber mark and the amber weather rule measured ~2:1 on
+ * paper. Both now draw in `--ed-amber`, the token amber carried toward ink
+ * until it clears 3:1 with margin (~4.4:1 in the light theme; the same mix
+ * lightens correctly against dark paper). Same hue family, one shade older —
+ * an editorial correction, not a new colour. (editorial.css)
+ *
+ * ONE GLYPH, TWO MEANINGS. The nav mark for a limited mode now prints its
+ * state words beside it, inside the link: "Partly read" and "Not enough
+ * history" are separable in the nav itself, no marker anywhere carries meaning
+ * without a label, and the legend-at-a-distance is retired with the
+ * "Elsewhere in Home" ledger line — which also settles the three-simultaneous-
+ * declarations count: page-scale band, reading-scale qualifiers, and nothing
+ * said a third time. (shell.tsx)
+ *
+ * THE 400PX SACCADE, AND THE FIGURE 800PX FROM ITS CLAIM. One ballot required
+ * lateness brought inboard; another protects the figures column on the shared
+ * right edge as "the classic editorial ledger done properly". Both hold: the
+ * figures keep the right edge, and every row now strikes a dotted leader from
+ * its title to its figure — the device a contents page has always used to bind
+ * a title to a right-aligned figure. The white the eye crossed is now a
+ * printed line that makes row and figure one object; below 70rem the two stack
+ * adjacently as before. The same leader binds each Analytics claim to its
+ * numeral on one baseline. (today.tsx, my-work.tsx, inbox.tsx, analytics.tsx)
+ *
+ * LABELS THAT LIED WHEN READ ALOUD. "WHAT THE RECORDS SAY" was the term over
+ * the value "No accepted baseline" — a false pair. The truth class is now the
+ * VALUE of "Where this comes from", the baseline is the value of "Baseline",
+ * and the exclusions surface under their own "Left out" term instead of
+ * hiding unlabelled in the receipt. Every dt/dd pair now states a true
+ * relationship verbatim; the fixed-slot ledger the passing ballots protect is
+ * intact and one slot richer. (analytics.tsx)
+ *
+ * A READ, NOT AN OPERATING LAYER. Inbox rows carried two dispositions and My
+ * work rows none. Every disposition the opened event offers now sits on the
+ * row in the arrival state — mark read, snooze, clear, approve at the source —
+ * and My work rows carry their two direct actions. Journeys 7, 8, 9 and 11
+ * now have a surface without opening anything. Source-reaching actions keep
+ * their confirm-then-resolve contract on the row. (interaction.tsx)
+ *
+ * REFUSAL AS A FOOTNOTE. An action that cannot be taken rendered as a live
+ * link with its reason paragraphs below. The reason now sits on the control's
+ * own line and the control renders struck and inert — visibly inoperable,
+ * `aria-disabled`, described by the reason beside it. (interaction.tsx)
+ *
+ * THE TIERS, AND THE MARGIN'S JOB. The suite row is now the nameplate — mono
+ * caps at label size, the wordmark's own voice — so the mode row below it is
+ * visibly the working tier, by case, size and family rather than a hairline.
+ * The reader is printed at the nameplate's right end, so identity reaches the
+ * chrome. And the left margin's one job is settled and named: THE SPINE NAMES
+ * LINES — the dateline, the ordinals, the section definitions, the field
+ * terms, the thread counts, the event kinds, and now each My work row's source
+ * column. Where a line needs no name the spine stays empty; that is the rule,
+ * not a leftover. (shell.tsx, my-work.tsx, editorial.css)
+ *
+ * META BEFORE MATTER AT 390. The shoulder now discloses by viewport: open in
+ * full above 70rem, one summary line with one disclosure below it — the exact
+ * option the ballot offered. On new_user the fold budget is protected three
+ * ways: the shoulder is one line instead of a ledger, the per-mode nav marks
+ * stand down on the one world where they would say the same words three
+ * times, and the first screen's narrow spacing is trimmed — while the quiet
+ * line a passing ballot protects stays exactly where round 4 scored it. The
+ * desktop three-zone composition is untouched. (shell.tsx, editorial.css)
+ *
+ * KEPT AGAINST ONE BALLOT, for two that protect it: the mono-caps FAILURE
+ * slug. One ballot heard system-log register; two passing ballots name the
+ * worded band ladder as the thing to protect, and the plain-English sentence
+ * ("One source did not answer") already sits first in the qualifiers beside
+ * it. The slug stays.
+ *
+ * NOT DONE, ON PURPOSE: no actions on Today rows — Today is the authored
+ * read, its three decisions link into the day and the operating surfaces are
+ * Inbox and My work, one link away; no relocation of the figures column
+ * inboard — see the saccade note; no account CONTROL — the lab URL scheme has
+ * no account state to link, so the chrome states identity rather than faking
+ * an affordance.
  */
 
 import type { HomeCandidateProps, HomeCandidate } from "@/lib/home-layer/lab-shell";
@@ -68,12 +149,11 @@ import {
   Return,
   Weather,
   limitsFrom,
-  otherModesEntry,
   readingOf,
   type ImprintEntry,
   type LimitEntry,
 } from "./shell";
-import { readAcrossModes, type ModeReading } from "./read-state";
+import { readAcrossModes } from "./read-state";
 
 function stateOf(props: HomeCandidateProps) {
   const { state, today, inbox, myWork, analytics, briefing } = props;
@@ -96,16 +176,15 @@ function disclosuresOf(props: HomeCandidateProps) {
 /**
  * WHAT QUALIFIES THIS READ — the news, and only the news.
  *
- * Everything derived from the mode's own `disclosures`, plus the state of the
- * three modes the reader is not standing in. Every one of these can be true on
- * one morning and false on the next, which is the whole test for being here.
- * The conditions that hold every morning went to the imprint; see
- * `standingFor` below and the note on `Imprint` in shell.tsx.
+ * Everything derived from the mode's own `disclosures`. Every one of these can
+ * be true on one morning and false on the next, which is the whole test for
+ * being here. The conditions that hold every morning went to the imprint; see
+ * `standingFor` below and the note on `Imprint` in shell.tsx. The other three
+ * modes' states left this run in round 5: they are printed in the navigation
+ * beside their own marks, in words, so restating them here was the third
+ * declaration of one fact that round 4 counted as noise.
  */
-function qualifiersFor(
-  props: HomeCandidateProps,
-  readings: readonly ModeReading[],
-): readonly LimitEntry[] {
+function qualifiersFor(props: HomeCandidateProps): readonly LimitEntry[] {
   const { chrome, copy, state, analytics } = props;
   const out: LimitEntry[] = [...limitsFrom(disclosuresOf(props), chrome, copy)];
 
@@ -118,9 +197,6 @@ function qualifiersFor(
       lines: [analytics.ledgerCoverageLine],
     });
   }
-
-  const elsewhere = otherModesEntry(readings, state.mode);
-  if (elsewhere !== null) out.push(elsewhere);
 
   return out;
 }
@@ -197,6 +273,9 @@ function Standfirst({ props }: Readonly<{ props: HomeCandidateProps }>) {
     const rows = today.sections.reduce((total, section) => total + section.rows.length, 0);
     // One sentence, one place. On a day with nothing to show, the state of the
     // read IS the news, so it is set at reading size rather than as a note.
+    // On the first-run world this is the sentence a passing ballot named the
+    // best new-reader line in the lab; round 5 deliberately left it exactly
+    // where round 4 scored it.
     return <p className={rows === 0 ? "ed-lede" : "ed-standing"}>{today.quiet.line}</p>;
   }
 
@@ -251,7 +330,7 @@ function Standfirst({ props }: Readonly<{ props: HomeCandidateProps }>) {
 const Editorial: HomeCandidate = (props: HomeCandidateProps) => {
   const { chrome, state, copy, inbox, briefing, firstRun, hrefFor } = props;
   const readings = readAcrossModes(props);
-  const qualifiers = qualifiersFor(props, readings);
+  const qualifiers = qualifiersFor(props);
   const reading = readingOf(stateOf(props), disclosuresOf(props), chrome, copy);
   const shoulder = qualifiers.some((entry) => entry.lines.some((line) => line.length > 0));
 
@@ -268,6 +347,7 @@ const Editorial: HomeCandidate = (props: HomeCandidateProps) => {
         homeHref={hrefFor({ mode: "today", item: null, event: null })}
         inboxAccessibleName={inbox.badge.rendered ? inbox.badge.accessibleName : null}
         readings={readings}
+        firstRun={firstRun !== null}
       />
 
       <main

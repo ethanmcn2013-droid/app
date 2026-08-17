@@ -45,13 +45,15 @@
  *                whole client surface of this direction is one file that can be
  *                read in five minutes and deleted in one.
  *
- * THE CEILING. One island per event row, not two: `EventState` and
- * `EventActions` were separate components subscribing to the same key, which
- * doubled the component instances for no behaviour. They are one component now,
- * so the scale fixture instantiates 50, not 100. The declared ceiling for this
- * module is 4 KB gzip of route-local JavaScript, hydrating at most one
- * component per visible row and zero on Today, My work's list, Analytics and
- * the whole of the shell.
+ * THE CEILING. One island per row, in both operating modes: `EventRow` on
+ * Inbox, `TaskRowState` on My work (which absorbed the separate actions
+ * component in round 5 rather than adding a second subscription beside it).
+ * The scale fixture hydrates one component per visible row and zero on Today,
+ * Analytics and the whole of the shell. Round 5 widened WHAT each row island
+ * renders — the full disposition set, demanded by four ballots — which grows
+ * server-rendered HTML per row, not this module's behaviour: the same four
+ * handlers serve row and detail. The declared ceiling for this module stays
+ * 4 KB gzip of route-local JavaScript.
  *
  * WHAT IS STILL OPEN, and it is not fixable here: nobody has MEASURED the
  * number. Confirming 4 KB needs `perf:budgets` against a real build, and the
@@ -239,18 +241,20 @@ export function EventState({
 export type SnoozeChoice = Readonly<{ id: string; label: string; resurfaceLine: string }>;
 
 /**
- * WHICH ACTIONS SIT ON A QUEUE ROW.
+ * EVERY DISPOSITION, ON THE ROW, IN THE ARRIVAL STATE.
  *
- * The two dispositions that touch nothing at the source. Marking an event read
- * and snoozing it are decisions about your own queue, they are reversible, and
- * they are the reason a person opens an Inbox at all. Approving at the source
- * and clearing an event both change something outside Home, so they wait until
- * the reader has opened the event and can see the whole of it. That is an edit,
- * not a hiding: every action is on the screen the moment the row is open, and
- * an unavailable one still renders with its reason.
+ * Round 3 kept the source-reaching actions in the opened event, as an edit.
+ * Round 4 priced the edit, on four ballots: "a founder at 7am can understand
+ * their day here but cannot act on it without leaving — that is the difference
+ * between a briefing and a front door", and journeys 7, 8 and 9 had no surface
+ * until an event was opened. So the row now offers the same actions the opened
+ * event offers. The contract that made the deferral feel necessary is kept by
+ * the actions themselves: approving reaches the source and resolves only after
+ * the source confirms, a refusal renders on the row with its recovery, and
+ * clearing says in its announcement that the work at the source is untouched.
+ * Seeing the whole event before committing is still one click away; it is no
+ * longer a toll on every routine disposition.
  */
-const ROW_ACTIONS: readonly string[] = ["mark-read", "snooze"];
-
 export function EventActions({
   eventId,
   title,
@@ -326,14 +330,8 @@ export function EventActions({
     [update],
   );
 
-  const live = actions.filter(
-    (entry) =>
-      entry.id !== "open" && (variant === "detail" || ROW_ACTIONS.includes(entry.id)),
-  );
+  const live = actions.filter((entry) => entry.id !== "open");
   const refused = status.outcome === "refused";
-  const reasoned = live.filter(
-    (entry) => !entry.available && entry.unavailableReason !== null,
-  );
 
   return (
     <>
@@ -361,10 +359,16 @@ export function EventActions({
                 control uses aria-disabled rather than the disabled attribute,
                 because `disabled` takes a button out of the tab order and a
                 control nobody can reach is a control whose description nobody
-                ever hears. Disabled-with-a-reason was already this direction's
-                best interaction detail visually; now it reaches everyone. The
-                handler is guarded instead, so the control is inert in fact as
-                well as in name.
+                ever hears. The handler is guarded instead, so the control is
+                inert in fact as well as in name.
+
+                ROUND 4 finished the job for sighted readers: "an action that
+                cannot be taken must render as struck or otherwise plainly
+                inoperable with its reason on the same line, never as a live
+                link with a note underneath." The reason now renders beside the
+                control on its own line — the same element aria-describedby
+                points at — and the control draws struck. The footnote list at
+                the foot of the group is gone.
               */}
               <button
                 type="button"
@@ -379,6 +383,11 @@ export function EventActions({
               >
                 {entry.label}
               </button>
+              {because === undefined ? null : (
+                <span className="ed-act-why" id={because}>
+                  {entry.unavailableReason}
+                </span>
+              )}
             </li>
           );
         })}
@@ -412,16 +421,6 @@ export function EventActions({
           </button>
         </div>
       ) : null}
-
-      {reasoned.length === 0 ? null : (
-        <ul className="ed-why">
-          {reasoned.map((entry) => (
-            <li key={entry.id} id={`ed-why-${eventId}-${entry.id}`}>
-              {entry.label}: {entry.unavailableReason}
-            </li>
-          ))}
-        </ul>
-      )}
     </>
   );
 }
@@ -458,7 +457,10 @@ export function EventRow({
   return (
     <>
       <ul className="ed-meta">
-        <li>
+        {/* At 70rem and above, outside the split, provenance leaves this run
+            for the row's figure at the page edge (see inbox.tsx); this item is
+            what renders it everywhere else, so the fact is never dropped. */}
+        <li className="ed-prov-item">
           <span className="ed-prov">{provenance}</span>
         </li>
         <EventState eventId={eventId} initial={initial} as="items" />
@@ -479,18 +481,38 @@ export function EventRow({
   );
 }
 
-// ── My work actions · one safe writeback ────────────────────────────────────
+// ── The My work row · state, and its two direct actions ─────────────────────
 
-export function TaskActions({
+/**
+ * ONE ISLAND PER RESPONSIBILITY ROW, and it now carries the actions.
+ *
+ * It owns the `<li>` rather than a wrapper inside it because the title sits
+ * above the ledger field as a direct grid child of the row (round 2: "put the
+ * row title above its lateness at 390"), and no CSS combinator reaches back up
+ * from a later sibling to an earlier one.
+ *
+ * ROUND 4, on three ballots: "My work rows are links and nothing else; no
+ * direct action, so journey 11 has no expression" in the arrival state. The
+ * two actions the opened row offered — the safe writeback and the handover —
+ * now render on the row itself, in the queue's quiet text register. They
+ * moved INTO this component rather than beside it: a separate actions island
+ * subscribing to the same key would have doubled the instances per row for no
+ * behaviour, which is the exact mistake round 3 removed from the Inbox rows.
+ * The opened disclosure keeps the group's reason and the source path; the
+ * controls no longer wait behind it.
+ */
+export function TaskRowState({
   taskKey,
   title,
   actions,
   sourceRefusesFirst,
+  children,
 }: Readonly<{
   taskKey: string;
   title: string;
   actions: readonly RowAction[];
   sourceRefusesFirst: boolean;
+  children: React.ReactNode;
 }>) {
   const initial: RowStatus = {
     read: true,
@@ -525,10 +547,6 @@ export function TaskActions({
     });
   }, [afterSource, sourceRefusesFirst, title, tried, update]);
 
-  const reasoned = actions.filter(
-    (entry) => !entry.available && entry.unavailableReason !== null,
-  );
-
   const explainReassign = useCallback(() => {
     update({
       note: "This read does not carry the people you could hand work to, so handing it over stops here.",
@@ -537,86 +555,61 @@ export function TaskActions({
   }, [update]);
 
   return (
-    <>
-      <ul className="ed-actions">
-        {actions.map((entry) => {
-          const isComplete = entry.id === "complete";
-          const off =
-            !entry.available || status.outcome === "pending" || (isComplete && status.done);
-          const because =
-            !entry.available && entry.unavailableReason !== null
-              ? `ed-why-${taskKey}-${entry.id}`
-              : undefined;
-          return (
-            <li key={entry.id}>
-              <button
-                type="button"
-                className="ed-btn"
-                aria-disabled={off ? true : undefined}
-                aria-describedby={because}
-                onClick={off ? undefined : isComplete ? complete : explainReassign}
-              >
-                {entry.label}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-
-      {status.outcome === "pending" ? <p className="ed-pending">{SENDING}</p> : null}
-
-      {status.outcome === "refused" ? (
-        <div className="ed-refused">
-          <p>{REFUSED}</p>
-          <button type="button" className="ed-btn" onClick={complete}>
-            Try again
-          </button>
-        </div>
-      ) : null}
-
-      {status.outcome === "committed" && status.outcomeLine !== null ? (
-        <p className="ed-why">{status.outcomeLine}</p>
-      ) : null}
-
-      {status.note === null ? null : <p className="ed-why">{status.note}</p>}
-
-      {reasoned.length === 0 ? null : (
-        <ul className="ed-why">
-          {reasoned.map((entry) => (
-            <li key={entry.id} id={`ed-why-${taskKey}-${entry.id}`}>
-              {entry.label}: {entry.unavailableReason}
-            </li>
-          ))}
+    <li className={status.done ? "ed-work-row ed-done" : "ed-work-row"}>
+      {children}
+      <div className="ed-work-acts">
+        <ul className="ed-actions ed-actions-row">
+          {actions.map((entry) => {
+            const isComplete = entry.id === "complete";
+            const off =
+              !entry.available || status.outcome === "pending" || (isComplete && status.done);
+            const because =
+              !entry.available && entry.unavailableReason !== null
+                ? `ed-why-${taskKey}-${entry.id}`
+                : undefined;
+            return (
+              <li key={entry.id}>
+                {/* The refusal rides on the control's own line, struck and
+                    inert, exactly as on the Inbox rows. One pattern for "this
+                    cannot be taken", everywhere it cannot be taken. */}
+                <button
+                  type="button"
+                  className="ed-act"
+                  aria-disabled={off ? true : undefined}
+                  aria-describedby={because}
+                  onClick={off ? undefined : isComplete ? complete : explainReassign}
+                >
+                  {entry.label}
+                </button>
+                {because === undefined ? null : (
+                  <span className="ed-act-why" id={because}>
+                    {entry.unavailableReason}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
-      )}
-    </>
-  );
-}
 
-/**
- * The My work row itself, so that a confirmed completion can strike its title.
- *
- * It owns the `<li>` rather than a wrapper inside it because the title now sits
- * above the ledger field as a direct grid child of the row (round 2: "put the
- * row title above its lateness at 390"), and no CSS combinator reaches back up
- * from a later sibling to an earlier one. One island per row either way; this
- * one just starts an element higher.
- */
-export function TaskRowState({
-  taskKey,
-  children,
-}: Readonly<{ taskKey: string; children: React.ReactNode }>) {
-  const initial: RowStatus = {
-    read: true,
-    disposition: "open",
-    snoozeLine: null,
-    outcome: "none",
-    outcomeLine: null,
-    done: false,
-    note: null,
-  };
-  const [status] = useRowStatus(taskKey, initial);
-  return <li className={status.done ? "ed-work-row ed-done" : "ed-work-row"}>{children}</li>;
+        {status.outcome === "pending" ? <p className="ed-pending">{SENDING}</p> : null}
+
+        {status.outcome === "refused" ? (
+          <div className="ed-refused">
+            <p>{REFUSED}</p>
+            <button type="button" className="ed-btn" onClick={complete}>
+              Try again
+            </button>
+          </div>
+        ) : null}
+
+        {status.outcome === "committed" && status.outcomeLine !== null ? (
+          <p className="ed-why">{status.outcomeLine}</p>
+        ) : null}
+
+        {status.note === null ? null : <p className="ed-why">{status.note}</p>}
+      </div>
+    </li>
+  );
 }
 
 /**

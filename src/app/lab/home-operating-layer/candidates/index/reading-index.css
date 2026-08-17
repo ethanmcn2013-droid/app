@@ -4,8 +4,9 @@
  * The thesis, in one line: Home is a periodical, and its navigation is the
  * contents page. Rules, ordinals, a reading measure and a margin do the work
  * that panels, cards and shadows would do in a louder system. There is one
- * shadow in this file (none), one radius family (the token's), and no
- * container that is not a rule.
+ * shadow in this file — the scope drop at 768 and up, on the estate's own
+ * token, because a floated panel that casts nothing reads as a misprint — one
+ * radius family (the token's), and no container that is not a rule.
  *
  * THE DOCUMENT RUNS IN THE ORDER A DOCUMENT RUNS.
  *
@@ -1500,13 +1501,51 @@ a.ri-contents-depth-row:hover { color: var(--ink); }
   font-weight: var(--weight-medium);
 }
 
-a.ri-act-name {
+/*
+ * THE CONTROL IS THE NAME. A disposition is a text control in the run, drawn
+ * exactly as the inert names were drawn in round 4 — underlined, medium
+ * weight, no box — and sized to a real target: a director asked for 44 px
+ * dispositions rather than one small OPEN link, so every live name is a 44 px
+ * tall press area even though the ink it carries is one line of body-small.
+ * The button reset states every property a UA stylesheet would otherwise
+ * decide, because a control that inherits its face from the browser is not in
+ * the direction's register.
+ */
+button.ri-act-name {
+  appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+a.ri-act-name,
+button.ri-act-name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   text-decoration: underline;
   text-decoration-color: var(--ink-ghost);
   text-underline-offset: 3px;
 }
 
-a.ri-act-name:hover { text-decoration-color: var(--accent); }
+a.ri-act-name:hover,
+button.ri-act-name:hover { text-decoration-color: var(--accent); }
+
+/* While the source is being waited on, the run goes quiet without being
+   redrawn: same names, no press. */
+button.ri-act-name[aria-disabled="true"] {
+  color: var(--ink-soft);
+  cursor: default;
+}
+button.ri-act-name[aria-disabled="true"]:hover {
+  text-decoration-color: var(--ink-ghost);
+}
 
 /*
  * A refusal is struck through and keeps its reason. The strike is the picture
@@ -1551,16 +1590,33 @@ a.ri-act-name:hover { text-decoration-color: var(--accent); }
   border-bottom: 1px solid var(--hairline);
 }
 
+/*
+ * The link carries the record the controls cannot change — kind, title,
+ * provenance, when, who — and its open affordance. The live fields and the
+ * run of dispositions sit under it, outside it, owned by the island that
+ * changes them, so the row keeps one whole-row target and a marked-as-read
+ * row can never go on saying "Not read yet" inside the link beside the
+ * control that changed it.
+ */
 .ri-queue-link {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-2);
-  padding-block: var(--space-4);
+  padding-block: var(--space-4) var(--space-2);
   text-decoration: none;
   transition: background-color var(--motion-fast) var(--ease-out);
 }
 
 .ri-queue-link:hover { background: var(--x-ri-tint); }
+
+.ri-queue-row > .ri-marks { margin-top: 0; }
+
+.ri-queue-row > .ri-acts { margin-top: 0; }
+
+.ri-detail > .ri-marks { margin-top: var(--space-4); }
+
+/* The open affordance ends the facts line, on the link it belongs to. */
+.ri-facts .ri-open-mark { margin-left: auto; }
 
 .ri-queue-row[data-selected] {
   border-left: 2px solid var(--accent);
@@ -1649,18 +1705,40 @@ a.ri-act-name:hover { text-decoration-color: var(--accent); }
   }
 }
 
-.ri-alert {
-  margin: var(--space-5) 0 0;
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--status-blocked);
-  background: var(--paper-soft);
-  color: var(--ink);
+/*
+ * WHAT A PRESS CAME BACK WITH. The line under the run that says the source is
+ * being waited on, refused, or accepted. A refusal is the loud one — red rule,
+ * full ink, the recovery control on the same line — and it is rules and ink
+ * rather than a tinted box, for the same reason the failure band is.
+ */
+.ri-outcome {
+  max-width: var(--x-ri-measure);
+  margin: var(--space-2) 0 0;
+  color: var(--ink-soft);
   font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  overflow-wrap: anywhere;
 }
 
+.ri-outcome[data-tone="committed"] { color: var(--ink); }
+
+.ri-outcome[data-tone="refused"] {
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--status-blocked);
+  color: var(--ink);
+}
+
+/*
+ * THE SNOOZE CHOICES, WHEN THE READER ASKS FOR THEM. A ruled sublist under the
+ * run, each choice a real control naming the exact instant it resurfaces
+ * before it is chosen. An accent rule rather than a floated panel: the choices
+ * are part of the row's record while they are open, not chrome above it.
+ */
 .ri-snooze {
-  margin-top: var(--space-5);
-  border-top: 1px solid var(--hairline);
+  max-width: var(--x-ri-measure);
+  margin-top: var(--space-2);
+  padding: var(--space-2) 0 var(--space-1) var(--space-4);
+  border-left: 2px solid var(--accent);
 }
 
 /*
@@ -1691,23 +1769,46 @@ a.ri-act-name:hover { text-decoration-color: var(--accent); }
 details[open] > .ri-summary::after { content: "\2212"; }
 
 .ri-snooze-list {
-  margin: 0 0 var(--space-4);
+  margin: var(--space-1) 0 0;
   padding: 0;
   list-style: none;
 }
 
 .ri-snooze-item {
-  padding-block: var(--space-2);
   border-top: 1px solid var(--hairline-soft);
-  font-size: var(--text-body-sm);
-  color: var(--ink-soft);
 }
 
-.ri-snooze-item strong {
-  display: block;
+.ri-snooze-item:first-child { border-top: 0; }
+
+.ri-snooze-choice {
+  appearance: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-sm);
+  line-height: var(--leading-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.ri-snooze-choice strong {
   color: var(--ink);
   font-weight: var(--weight-medium);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-ghost);
+  text-underline-offset: 3px;
 }
+
+.ri-snooze-choice:hover strong { text-decoration-color: var(--accent); }
 
 /* ── Ledger (My work) ────────────────────────────────────────────────────── */
 

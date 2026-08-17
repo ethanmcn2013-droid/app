@@ -1031,15 +1031,22 @@ contract does not make it for them.
     `lab-shell.test.ts` holds all three. Nothing yet asserts that a Home surface *renders* it,
     for the same reason X1 to X4 are only partly measurable: three of the five routes do not
     exist. Owner: Wave 4, with a new `X15` written at the same time.
-11. **Two things the candidates still owe `first-run`, both owned by the lead.** The four lab
-    directions still render the failed-read copy, because they were told to adopt the state in a
-    later phase and this change deliberately did not edit them. Consequently: (a) two exhaustive
-    severity maps over `HomeStateName` no longer compile —
-    `src/app/lab/home-operating-layer/candidates/rail/state.ts:44` and
-    `src/lib/home-layer/candidates/index/labels.ts:75` — each needing one key; and (b)
-    `new_user`'s `mustNeverRender` should gain "could not be read" and "could not read any
-    project", which is enforced against the rendered page by
-    `experience/home-layer/home-lab-invariants.spec.ts` and emitted into
-    `experience/home-operating-layer/fixtures/manifest.json`, so it turns all four red until
-    they adopt and it requires a manifest regeneration and a receipt rebind. Both belong with
-    the adoption phase, not with the shell fix.
+11. **Two things the candidates still owe `first-run` — item (a) RESOLVED 2026-08-17,
+    item (b) still open with a calibration prerequisite.**
+    (a) The exhaustive severity maps compile in all four directions. The rail slot's map now
+    lives in `src/app/lab/home-operating-layer/candidates/rail/reading.ts` (Meridian; the
+    cited `state.ts` no longer exists) and carries the exhaustive `first-run` key;
+    `src/lib/home-layer/candidates/index/labels.ts` compiles likewise. Verified by the
+    round-5 lane typechecks.
+    (b) Still open, and now with a recorded prerequisite: before `mustNeverRender` is
+    enforced against RENDERED pages, the matcher needs calibration. Two known substring
+    collisions, found 2026-08-17: "all clear" matches the shell's own deliberate negation
+    ("This is not an all clear…"), and "Done" matches Meridian's "It is done there." A
+    render-level gate must be word-boundary-aware and must not count an explicit negation
+    of a forbidden claim as the claim. The fixture-copy gate in
+    `src/lib/home-layer/fixtures/truthfulness.test.ts:549-566` is unaffected (it scans
+    fixture JSON, not renders). Adding "could not be read" to `new_user`'s
+    `mustNeverRender` remains adoption-phase work: the scope-option leak that would have
+    tripped it was fixed at source in `assemble.ts` (`scopeLabel`, 2026-08-17), but
+    enforcement still requires the manifest regeneration and receipt rebind described
+    above.

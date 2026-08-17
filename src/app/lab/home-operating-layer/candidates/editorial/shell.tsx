@@ -32,6 +32,44 @@ import {
   type Register,
 } from "./read-state";
 
+/*
+ * ── ROUND 4, ANSWERED IN THIS FILE ──────────────────────────────────────────
+ *
+ * 1. THE TWO TIERS SEPARATED MATERIALLY. The suite row and the mode row were
+ *    "set at near-identical size, weight and case, separated only by a
+ *    hairline". The suite row is now the nameplate line: mono, caps, label
+ *    size, letterspaced — the same voice as the wordmark beside it, so the top
+ *    of the page reads as one imprint line. The mode row keeps reading size and
+ *    the sans. Case, size and family now all say the second row is the working
+ *    tier nested inside the first; no ground or fill was spent to say it.
+ *
+ * 2. THE MARKS CARRY THEIR OWN WORDS. Four ballots, one finding: an amber
+ *    square in the navigation whose meaning lived in a rail across the page.
+ *    The legend is gone as a separate block; each marked mode now prints its
+ *    state beside its mark, in the shell's own state words, inside the link.
+ *    "Partly read" and "Not enough history" are separable in the nav itself,
+ *    the marker is never colour-and-shape without a label, and the pairing
+ *    survives 390 because it is one flex item that cannot be separated.
+ *
+ * 3. THE READER REACHED THE CHROME. "The actor is buried in the footer
+ *    colophon; there is no account or identity affordance in the chrome at
+ *    all." On the broadsheet the reader is now printed at the right end of
+ *    the nameplate line, where a broadsheet puts its edition statement; below
+ *    70rem it stands down rather than wrap every phone masthead, and the
+ *    imprint keeps the identity there. It is a statement, not a control: the
+ *    lab URL scheme has no account state, and a control that goes nowhere
+ *    would be furniture.
+ *
+ * 4. THE SHOULDER DISCLOSES BY VIEWPORT, NOT BY CONTENT. "The rail's collapse
+ *    is content-driven, not viewport-driven." Above 70rem the shoulder now
+ *    prints every qualifier in the open — it has a column to itself and hiding
+ *    honesty behind a click there bought nothing. Below 70rem it is one
+ *    summary line and one disclosure, so the first decision comes back above
+ *    the fold. The one-line summary does not repeat the weather band's words:
+ *    the band already names the worst state at page scale two lines up, and
+ *    saying it twice in 80px was the noise three ballots counted.
+ */
+
 /** Signed-in product routes, per docs/SUITE_URL_AND_NAMING_CONTRACT.md. */
 const PRODUCTS: readonly Readonly<{ label: string; href: string }>[] = [
   { label: "Notes", href: "/app/notes" },
@@ -83,11 +121,22 @@ export function Masthead({
   homeHref,
   inboxAccessibleName,
   readings,
+  firstRun,
 }: Readonly<{
   chrome: HomeChrome;
   homeHref: string;
   inboxAccessibleName: string | null;
   readings: readonly ModeReading[];
+  /**
+   * On a reader's first ever screen every mode is identically "Nothing set up
+   * yet", the weather band says so at page scale, and the first-run section
+   * says what to do about it. Repeating the same words beside all three other
+   * modes in the nav would be the three-restatements noise round 4 counted —
+   * and it would spend the exact 390px fold budget the new-user ballot
+   * requires for "Open Tasks". So on that one world the per-mode marks stand
+   * down; everywhere else a non-read mode carries its mark and its words.
+   */
+  firstRun: boolean;
 }>) {
   const readScope = chrome.scope.options.filter((option) => option.group === "read-scope");
   const projects = chrome.scope.options.filter((option) => option.group === "project");
@@ -111,6 +160,11 @@ export function Masthead({
             ))}
           </ul>
         </nav>
+        {/* The edition statement: who this page was read for. The chrome-level
+            identity round 4 found missing; the imprint keeps the record. */}
+        <p className="ed-actor">
+          {chrome.actor.name} · {chrome.actor.roleLabel}
+        </p>
       </div>
 
       <div className="ed-band ed-homeband">
@@ -123,11 +177,14 @@ export function Masthead({
               // the row into a rash of identical marks on the morning one
               // failure reaches every mode.
               const limited =
-                reading !== null && reading.register !== "read" && mode.ariaCurrent === null;
+                reading !== null &&
+                reading.register !== "read" &&
+                mode.ariaCurrent === null &&
+                !firstRun;
               // The Inbox link's name is composed by the shell so that one
               // affordance announces the count. When that mode was not read in
-              // full the state has to reach the same name, or the mark below is
-              // the only place it exists and a screen reader loses it.
+              // full the state has to reach the same name, or the visible words
+              // below are outside it and a screen reader loses the count.
               const label =
                 mode.badge && inboxAccessibleName !== null
                   ? limited
@@ -143,17 +200,24 @@ export function Masthead({
                         {mode.badge.glyph}
                       </span>
                     ) : null}
+                    {/* ROUND 4, four ballots: the mark carried meaning with no
+                        text of its own, and one amber square stood for both
+                        "Partly read" and "Not enough history". The state is now
+                        printed beside the mark in the shell's own words, inside
+                        the link, so the marker and its meaning are one object
+                        at every width and the two ambers are separable by
+                        reading them. The mark stays for the shape channel —
+                        hollow, filled, ringed — which is what survives losing
+                        every colour. */}
                     {limited ? (
-                      <>
+                      <span className="ed-mode-state" data-register={reading.register}>
                         <span
                           className="ed-mode-mark"
                           data-register={reading.register}
                           aria-hidden="true"
                         />
-                        {label === undefined ? (
-                          <span className="ed-vh">. {reading.stateLabel}.</span>
-                        ) : null}
-                      </>
+                        {reading.stateLabel}
+                      </span>
                     ) : null}
                   </a>
                 </li>
@@ -276,10 +340,26 @@ export function Return({ href, label }: Readonly<{ href: string; label: string }
  * shoulder, so this becomes one line under the standfirst — about 60px, where
  * the ledger used to spend 350.
  *
- * Two things are always on the surface at every width: the mark, and the worst
- * limit written out in the shell's own words. The LIST is behind the summary.
- * A failed read opens itself: `open` is set on the server when a source did not
- * answer, so the one register that must not be a click away never is.
+ * ROUND 4 changed how it discloses, on the finding that the collapse was
+ * "content-driven, not viewport-driven — the same collapse fires at 1440 and
+ * the same four-line list renders at 390". The disclosure is now the
+ * viewport's, not the list's:
+ *
+ *   above 70rem   every qualifier, in the open, worst first. The shoulder has
+ *                 a column to itself; a click hid honesty there and bought no
+ *                 height back.
+ *   below 70rem   one summary line and one disclosure, so the first decision
+ *                 returns to the arrival screen. The line counts the facts and
+ *                 wears the worst register's mark; it does not repeat the
+ *                 weather band's words, which already name the worst state at
+ *                 page scale two lines above it. The count is taken from the
+ *                 sentences, not the blocks: two modes read in part is two
+ *                 facts, and "1" because they share a heading would be the
+ *                 kind of convenient arithmetic this programme exists to
+ *                 remove.
+ *
+ * Both renderings are in the document and CSS shows exactly one, so this stays
+ * a Server Component and the fold costs no script.
  */
 export function ReadState({ entries }: Readonly<{ entries: readonly LimitEntry[] }>) {
   const kept = sortLimits(entries);
@@ -287,43 +367,27 @@ export function ReadState({ entries }: Readonly<{ entries: readonly LimitEntry[]
 
   const first = kept[0];
   if (first === undefined) return null;
-  const rest = kept.slice(1);
-  // Counted from the sentences, not from the blocks. Two modes read in part is
-  // two facts, and saying "1" because they share a heading would be the kind of
-  // convenient arithmetic this programme exists to remove.
-  const more = rest.reduce((total, entry) => total + entry.lines.length, 0);
+  const total = kept.reduce((sum, entry) => sum + entry.lines.length, 0);
 
   return (
     <aside className="ed-read" data-register={first.register} aria-labelledby="ed-read-heading">
       <p className="ed-read-term" id="ed-read-heading">
         What qualifies this read
       </p>
-      {/* The worst thing about this read, whole. Not a précis of it, not the
-          first line of it: the entry as the ledger holds it, marks and all. The
-          disclosure below carries what is left, and says how much that is. */}
-      <Limits entries={[first]} />
-      {more === 0 ? null : (
-        // MEASURED, NOT ASSUMED. This opened itself on a failed read, on the
-        // theory that the one register that must not be a click away never
-        // should be. The capture said otherwise: at 390 the expanded list put
-        // the first ranked decision at y=831 of 844 on the provider-failure
-        // day, which is the exact fault this round exists to fix, reintroduced
-        // by a well-meant exception. It costs nothing to close, because the
-        // failure's own sentence is on the surface either way and the page
-        // already carries a 4px red rule across the top of it. What was behind
-        // the disclosure was never the failure — it was the three modes the
-        // failure reached, which are the consequence and not the news.
-        <details className="ed-read-more">
-          <summary>
-            <span>
-              {more === 1
-                ? "1 more thing qualifies this read"
-                : `${more} more things qualify this read`}
-            </span>
-          </summary>
-          <Limits entries={rest} />
-        </details>
-      )}
+
+      <div className="ed-read-open">
+        <Limits entries={kept} />
+      </div>
+
+      <details className="ed-read-fold">
+        <summary>
+          <span className="ed-limit-mark" data-register={first.register} aria-hidden="true" />
+          <span>
+            {total === 1 ? "1 thing qualifies this read" : `${total} things qualify this read`}
+          </span>
+        </summary>
+        <Limits entries={kept} />
+      </details>
     </aside>
   );
 }
@@ -358,14 +422,6 @@ export type LimitEntry = Readonly<{
   stateLabel: string | null;
   register: Register;
   lines: readonly string[];
-  /**
-   * One register per line, when the lines are themselves keyed things — the
-   * modes you are not standing in. Each line then draws ITS OWN mark, which is
-   * what turns this run into a legend for the marks in the navigation above it.
-   * A shared mark would be a lie the moment one mode failed and another was
-   * merely partly read.
-   */
-  lineRegisters?: readonly Register[];
 }>;
 
 const ORDER: Readonly<Record<Register, number>> = { failed: 0, limited: 1, setup: 2, read: 3 };
@@ -425,59 +481,34 @@ export function Limits({ entries }: Readonly<{ entries: readonly LimitEntry[] }>
               {entry.stateLabel === null ? entry.kind : `${entry.kind} · ${entry.stateLabel}`}
             </span>
           </p>
-          {entry.lines.map((line, index) => {
-            const keyed = entry.lineRegisters?.[index];
-            // THE KEY, at the point of use. Round 2, three ballots: "the
-            // coloured glyphs beside Inbox, My work and Analytics in the mode
-            // row are never legended", "the navigation itself is a shape", "A
-            // carries an explicit legend for exactly this class of mark."
-            // Printing each mode's own mark against its own name, in the same
-            // words the link's accessible name uses, makes this run teach the
-            // navigation above it on first contact.
-            return keyed === undefined ? (
-              <p key={line} className="ed-limit-text">
-                {line}
-              </p>
-            ) : (
-              <p key={line} className="ed-limit-text ed-limit-keyed">
-                <span className="ed-limit-mark" data-register={keyed} aria-hidden="true" />
-                {line}
-              </p>
-            );
-          })}
+          {/* Round 2 asked this run to double as a legend for the marks in the
+              navigation. Round 4 retired that job: each marked mode now prints
+              its own state words beside its own mark, inside its own link, so
+              the key lives at the point of use and this run carries only what
+              qualifies the mode the reader is standing in. One fact, one
+              place. */}
+          {entry.lines.map((line) => (
+            <p key={line} className="ed-limit-text">
+              {line}
+            </p>
+          ))}
         </li>
       ))}
     </ul>
   );
 }
 
-/**
- * The read of the three modes the reader is not standing in. Rendered as one
- * ledger line inside the limits run, so a founder in Today learns that the
- * Inbox was only partly read without visiting it.
+/*
+ * "ELSEWHERE IN HOME" IS GONE, AND WHERE IT WENT. Round 2 added a ledger line
+ * repeating the other modes' states so the nav marks had a legend. Round 4
+ * counted the cost: "the same coverage state is declared three times
+ * simultaneously — nav glyphs, the banner rule, and the qualifiers column.
+ * Three restatements of one fact is noise, not emphasis." The nav marks now
+ * carry their own words, so the legend's one job is done at the marks
+ * themselves and the restatement is cut. The current mode keeps exactly two
+ * declarations with two ranks: the weather band at page scale, and the
+ * qualifiers in the shoulder at reading scale.
  */
-export function otherModesEntry(
-  readings: readonly ModeReading[],
-  current: string,
-): LimitEntry | null {
-  const limited = readings.filter(
-    (reading) =>
-      reading.mode !== current &&
-      (reading.register === "limited" || reading.register === "failed"),
-  );
-  if (limited.length === 0) return null;
-  const worst = limited.reduce((held, reading) =>
-    ORDER[reading.register] < ORDER[held.register] ? reading : held,
-  );
-  return {
-    id: "ed-other-modes",
-    kind: "Elsewhere in Home",
-    stateLabel: null,
-    register: worst.register,
-    lines: limited.map((reading) => `${reading.label} · ${reading.stateLabel}`),
-    lineRegisters: limited.map((reading) => reading.register),
-  };
-}
 
 export function Provenance({ provenance }: Readonly<{ provenance: Provenance }>) {
   return <span className="ed-prov">{provenance.text}</span>;

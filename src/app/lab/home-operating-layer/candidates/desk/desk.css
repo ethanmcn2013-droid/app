@@ -12,7 +12,7 @@
  *      utility at index 11. A 44px target written as `min-height: 44px` cannot
  *      be misread by a person or a script.
  *   3. Almost every rule below renders on the server. One file in this direction
- *      ships client JavaScript — `dispositions.tsx`, 1.91 KB gzip, route-local
+ *      ships client JavaScript — `dispositions.tsx`, 1.93 KB gzip, route-local
  *      — and it spends none of the programme's 0.9 KB of SHARED runtime
  *      headroom, because a route-local island never enters the shared chunk.
  *
@@ -23,14 +23,16 @@
  * render-blocking bytes shipped on every Home route." The worry is the right
  * worry. The number is of the source file, comments included, and comments do
  * not ship: Next 16 minifies CSS with Lightning CSS, which strips them. Run
- * through that same minifier at the same browser targets, all four directions as
- * they stand today:
+ * through that same minifier — Lightning CSS 1.32.0 from this repository's own
+ * store, targets chrome111/edge111/firefox111/safari16.4 — then gzipped at zlib
+ * level 9, the accounting `scripts/check-performance-budgets.mjs` uses, all
+ * four directions as they stand today:
  *
  *              source     minified     gzip
  *   rail       36.9 KB      22.1 KB   3.71 KB
- *   desk       69.6 KB      25.9 KB   4.74 KB     ← this file
+ *   desk       70.0 KB      25.9 KB   4.74 KB     ← this file
  *   editorial  53.8 KB      28.8 KB   4.78 KB
- *   index      62.9 KB      31.8 KB   5.13 KB
+ *   index      63.7 KB      31.9 KB   5.16 KB
  *
  * So the shipped figure is 4.74 KB gzip: 1.28x the leanest direction rather than
  * 2.6x, and below two of the other three. This file is comment-heavy on purpose

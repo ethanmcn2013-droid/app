@@ -24,7 +24,6 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import { sectionSpeaks } from "@/lib/home-layer/candidates/index/labels";
 import {
-  Dispositions,
   Flag,
   Ordinal,
   Page,
@@ -110,7 +109,6 @@ function Entry({
               <span className="ri-label">In the product</span>
               {row.sourcePath}
             </span>
-            <Dispositions actions={row.actions} label="What you can do here" />
             <a className="ri-close" href={closeHref}>
               Close this entry
             </a>

@@ -24,13 +24,15 @@ import type {
   MyWorkGroupView,
   MyWorkRowView,
 } from "@/lib/home-layer/lab-shell";
-import { TaskActions, TaskRowState } from "./interaction";
+import { TaskRowState } from "./interaction";
 import { Provenance, When } from "./shell";
 
-function OpenedWork({
-  row,
-  refusesFirst,
-}: Readonly<{ row: MyWorkRowView; refusesFirst: boolean }>) {
+/**
+ * The opened row keeps the group's reason and the return path. Its actions
+ * left in round 5 — they sit on the row itself now, in the arrival state, so
+ * the disclosure explains and the row operates.
+ */
+function OpenedWork({ row }: Readonly<{ row: MyWorkRowView }>) {
   return (
     <div className="ed-open">
       <h4>{row.groupReasonLine}</h4>
@@ -39,12 +41,6 @@ function OpenedWork({
         the project with it. The lab does not leave the lab, so the path is shown rather than
         followed.
       </p>
-      <TaskActions
-        taskKey={row.key}
-        title={row.title}
-        actions={row.actions}
-        sourceRefusesFirst={refusesFirst}
-      />
     </div>
   );
 }
@@ -55,28 +51,47 @@ function WorkRow({
   refusesFirst,
 }: Readonly<{ row: MyWorkRowView; selected: boolean; refusesFirst: boolean }>) {
   return (
-    <TaskRowState taskKey={row.key}>
-      {/* Round 2: "Put the row title above its lateness at 390." The title is
-          first in the source at every width now; the ledger field follows it
-          at 390 and moves to the shoulder above 70rem. */}
-      <h3 className="ed-work-title">
-        <a href={row.href}>{row.title}</a>
-      </h3>
+    <TaskRowState
+      taskKey={row.key}
+      title={row.title}
+      actions={row.actions}
+      sourceRefusesFirst={refusesFirst}
+    >
+      {/* THE SPINE NAMES LINES — round 4's one-consistent-job for the margin.
+          Every other mode already names its lines there (ordinals, thread
+          counts, event kinds, field terms); a responsibility's name in the
+          source product is `columnLabel`, so above 70rem it hangs in the spine
+          beside the row it names. Below 70rem the same fact stays in the meta
+          run; the two renderings swap by viewport so it is never dropped and
+          never said twice. */}
+      <p className="ed-work-col ed-label">{row.columnLabel}</p>
 
-      {row.due === null ? (
-        <p className="ed-work-when ed-when">
-          <b>No date</b>
-        </p>
-      ) : (
-        <When when={row.due} className="ed-work-when" />
-      )}
+      {/* Round 2: "Put the row title above its lateness at 390." The title is
+          first in the source at every width. Round 4: "bind lateness to its
+          row" — above 70rem the row line strikes a dotted leader from the
+          title to the ledger field at the page edge, so the figure keeps the
+          shared right edge the panel protects and the eye rides a printed
+          line instead of crossing open white. */}
+      <div className="ed-rowline">
+        <h3 className="ed-work-title">
+          <a href={row.href}>{row.title}</a>
+        </h3>
+        <span className="ed-leader" aria-hidden="true" />
+        {row.due === null ? (
+          <p className="ed-work-when ed-when">
+            <b>No date</b>
+          </p>
+        ) : (
+          <When when={row.due} className="ed-work-when" />
+        )}
+      </div>
 
       <div className="ed-work-body">
         <ul className="ed-meta">
           <li>
             <Provenance provenance={row.provenance} />
           </li>
-          <li>{row.columnLabel}</li>
+          <li className="ed-work-col-inline">{row.columnLabel}</li>
           {row.isMilestone ? <li>Milestone</li> : null}
           {row.coAssigneeLine === null ? null : <li>{row.coAssigneeLine}</li>}
         </ul>
@@ -86,7 +101,7 @@ function WorkRow({
         )}
       </div>
 
-      {selected ? <OpenedWork row={row} refusesFirst={refusesFirst} /> : null}
+      {selected ? <OpenedWork row={row} /> : null}
     </TaskRowState>
   );
 }

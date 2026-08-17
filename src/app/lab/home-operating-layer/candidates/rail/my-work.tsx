@@ -39,10 +39,12 @@ import {
   Entries,
   Entry,
   EntryTitle,
+  FIRST_RUN_RECORD_LABEL,
   FirstRun,
   HORIZON_MARK,
   LAB_LIMIT_NOTE,
   Meta,
+  NO_TIME,
   Notice,
   Notices,
   Prov,
@@ -82,16 +84,35 @@ function WorkEntry({
   const open = selectedKey !== null && selectedKey === row.key;
   const time = timeOf(row);
   /*
-   * ONE FACT, ONE PLACE. Round 4 caught this row printing "Parked in this
-   * project's waiting column" inline and "Parked in the waiting column."
-   * immediately beneath it. The waiting line is the more precise of the two —
-   * it names how many other items are in the way, or that the project has no
-   * waiting column at all — so it wins and the group reason stands down.
+   * ONE FACT, ONE PLACE — decided by facts, not by string luck. Round 4 caught
+   * this row printing "Parked in this project's waiting column" inline and
+   * "Parked in the waiting column." immediately beneath it, and the first
+   * repair reached for a string comparison that misses exactly that pair (the
+   * two sentences share no containment). So the group reason now stands down
+   * on structural grounds:
+   *
+   *   a waiting row with a waiting line   the line is strictly more precise —
+   *                                       it names what is in the way, or that
+   *                                       the project has no waiting column
+   *   a dated row in a dated group        the gutter already IS the reason:
+   *                                       "Due in 8 days" under a group whose
+   *                                       own note names the boundary
+   *   an unparsed date in the gutter      the source's own words are the date
+   *                                       fact; "No date on it." beside them
+   *                                       is the axis arguing with the row
+   *
+   * The string test stays only as the last net, compared against what the
+   * gutter actually DISPLAYS — the fallback included, so "No date on it."
+   * cannot print beside a gutter reading "No date".
    */
   const waiting = row.group === "waiting" ? row.waitingLine : null;
+  const shownTime = time ?? NO_TIME;
   const reason =
+    (row.group === "waiting" && waiting !== null) ||
+    (row.group !== "waiting" && row.due !== null) ||
+    row.dueUnparsedLine !== null ||
     sameFact(row.groupReasonLine, groupNote) ||
-    sameFact(row.groupReasonLine, time) ||
+    sameFact(row.groupReasonLine, shownTime) ||
     sameFact(row.groupReasonLine, waiting)
       ? null
       : row.groupReasonLine;
@@ -125,13 +146,11 @@ function WorkEntry({
 
 function Group({
   group,
-  caveat,
   selectedKey,
   closeHref,
   showNote = true,
 }: {
   group: MyWorkGroupView;
-  caveat: string | null;
   selectedKey: string | null;
   closeHref: string;
   /** False below the horizon, where the rule itself already carries the note. */
@@ -143,7 +162,6 @@ function Group({
       id={`mr-h-${group.id}`}
       heading={group.heading}
       note={showNote ? group.note : null}
-      caveat={caveat}
     >
       <Entries>
         {group.rows.map((row) => (
@@ -168,11 +186,7 @@ export function MyWorkMode({ props, here }: ModeArgs) {
   const inside = myWork.groups.filter((group) => group.id !== BELOW_THE_LINE);
   const later = myWork.groups.find((group) => group.id === BELOW_THE_LINE) ?? null;
   const shown = inside.reduce((total, group) => total + group.rows.length, 0);
-  const setup = firstRun
-    ? (myWork.disclosures.find((item) => item.tone === "setup") ?? null)
-    : null;
-  const rest = accountOf(myWork.disclosures, worst ?? setup);
-  const caveat = here.refused ? myWork.coverageLine : null;
+  const rest = accountOf(myWork.disclosures, worst);
   const hasLater = (later?.rows.length ?? 0) > 0;
 
   return (
@@ -182,10 +196,12 @@ export function MyWorkMode({ props, here }: ModeArgs) {
       material={here.material}
       notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
       horizonMark={HORIZON_MARK}
-      horizonLine={later?.note ?? null}
+      /* On a first screen no seven-day window was drawn, so the horizon
+         carries no note about what lies past one. */
+      horizonLine={firstRun ? null : (later?.note ?? null)}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} lead={setup?.text ?? null} />
+          <FirstRun view={firstRun} />
         ) : (
           <>
             {myWork.selectionMissingLine ? (
@@ -199,7 +215,6 @@ export function MyWorkMode({ props, here }: ModeArgs) {
               <Group
                 key={group.id}
                 group={group}
-                caveat={caveat}
                 selectedKey={selectedKey}
                 closeHref={closeHref}
               />
@@ -209,7 +224,7 @@ export function MyWorkMode({ props, here }: ModeArgs) {
       }
       record={
         firstRun && rest.length === 0 ? null : (
-          <TheRead>
+          <TheRead label={firstRun ? FIRST_RUN_RECORD_LABEL : undefined}>
             <Notices items={rest} />
             {myWork.timeZoneLine ? <p className="mr-account">{myWork.timeZoneLine}</p> : null}
             {myWork.doneExcludedLine ? (
@@ -230,7 +245,6 @@ export function MyWorkMode({ props, here }: ModeArgs) {
             {later ? (
               <Group
                 group={later}
-                caveat={caveat}
                 selectedKey={selectedKey}
                 closeHref={closeHref}
                 showNote={false}

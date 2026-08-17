@@ -18,9 +18,12 @@
  *
  * Round 1 also found the queue inert: rows were links with no underline and no
  * control, so the mode whose job is "what needs my response" read as something
- * to be looked at. The two dispositions that touch nothing at the source now
- * sit on the row itself. The ones that reach a source stay in the opened event,
- * where the reader can see the whole thing before committing to it.
+ * to be looked at. Round 3 put the two queue-only dispositions on the row and
+ * held the source-reaching ones back for the opened event; ROUND 4 priced that
+ * hold-back — journeys 7, 8 and 9 had no surface on arrival — so the row now
+ * offers every disposition the opened event offers. The caution the hold-back
+ * encoded lives in the actions themselves: a source action resolves only after
+ * the source confirms, and a refusal renders on the row with its recovery.
  */
 
 import type { HomeCandidateProps, InboxGroup, InboxRow } from "@/lib/home-layer/lab-shell";
@@ -86,6 +89,30 @@ function EventBody({
   );
 }
 
+/**
+ * THE ROW'S FIGURE — where the event lives, set at the page edge.
+ *
+ * Round 4: "the thread rows sit in a nested indented box that stops roughly
+ * 560px short of the right edge, leaving the largest unexplained dead zone in
+ * the lab... give Inbox's thread block a reason to use the width it occupies —
+ * provenance, read-state, or the correspondence it currently withholds."
+ * Provenance is the one of the three that is a server string, so it costs the
+ * island nothing: above 70rem, outside the split, every event strikes the same
+ * dotted leader the other modes' rows strike, out to its provenance on the
+ * shared right edge. The queue now has the exact anatomy of Today and My work
+ * — name in the measure, leader, figure at the edge — and the width carries a
+ * fact instead of white. Everywhere else this figure is hidden and the same
+ * fact renders in the meta run (`ed-prov-item` in interaction.tsx), so it is
+ * never dropped and never said twice.
+ */
+function EventFigure({ row }: Readonly<{ row: InboxRow }>) {
+  return (
+    <p className="ed-event-figure">
+      <span className="ed-prov">{row.provenance.text}</span>
+    </p>
+  );
+}
+
 /** One event inside a thread that has more than one. The subject is above it. */
 function Dispatch({
   row,
@@ -100,9 +127,13 @@ function Dispatch({
 }>) {
   return (
     <li className="ed-event" data-selected={selected ? "true" : undefined}>
-      <h4 className="ed-event-title">
-        <a href={row.href}>{dispatchName(row)}</a>
-      </h4>
+      <div className="ed-rowline">
+        <h4 className="ed-event-title">
+          <a href={row.href}>{dispatchName(row)}</a>
+        </h4>
+        <span className="ed-leader" aria-hidden="true" />
+        <EventFigure row={row} />
+      </div>
       <EventBody row={row} snoozeOptions={snoozeOptions} refusesFirst={refusesFirst} />
     </li>
   );
@@ -123,9 +154,13 @@ function SoleEvent({
   return (
     <div className="ed-event ed-event-sole" data-selected={selected ? "true" : undefined}>
       <p className="ed-kindline">{dispatchName(row)}</p>
-      <h3 className={row.title === null ? "ed-event-title ed-unnamed" : "ed-event-title"}>
-        <a href={row.href}>{row.title ?? row.titleFallback}</a>
-      </h3>
+      <div className="ed-rowline">
+        <h3 className={row.title === null ? "ed-event-title ed-unnamed" : "ed-event-title"}>
+          <a href={row.href}>{row.title ?? row.titleFallback}</a>
+        </h3>
+        <span className="ed-leader" aria-hidden="true" />
+        <EventFigure row={row} />
+      </div>
       <EventBody row={row} snoozeOptions={snoozeOptions} refusesFirst={refusesFirst} />
     </div>
   );

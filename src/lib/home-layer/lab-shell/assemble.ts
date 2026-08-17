@@ -196,7 +196,21 @@ function provenanceFor(
   projectId: string | null,
   unreadable: ReadonlySet<string>,
 ): Provenance {
-  const readable = projectId !== null && !unreadable.has(projectId);
+  // A null projectId is a row that spans the read — a reading, an aggregate —
+  // not a failure. Only a Project that exists and did not resolve is
+  // "could not be read". Before round 5 the two were conflated, and every
+  // healthy reading row carried failure text (found by the Meridian lane,
+  // 2026-08-17; the round-3 rule applies — a fault in shared material is
+  // fixed at source, once).
+  if (projectId === null) {
+    return Object.freeze({
+      product,
+      projectId,
+      projectName: null,
+      text: `${product} · across this read`,
+    });
+  }
+  const readable = !unreadable.has(projectId);
   const name = readable ? projectName(projectId) : null;
   return Object.freeze({
     product,
@@ -279,10 +293,21 @@ function scopeLabel(
 ): string {
   if (kind === "project") {
     const id = projectIds[0] ?? null;
-    const name = id === null || unreadable.has(id) ? null : projectName(id);
+    // No id at all is a first run, not a failure. "Could not be read" is
+    // reserved for a Project that exists and did not resolve — before round 5
+    // the two shared one phrase, and the failure text leaked into the
+    // new-user world's scope options (found by the Meridian lane, 2026-08-17).
+    if (id === null) return "No project yet";
+    const name = unreadable.has(id) ? null : projectName(id);
     return name ?? "One project, and it could not be read";
   }
-  if (kind === "planning-period") return HOME_FIXTURE_PERIOD_ORCHARD.name;
+  if (kind === "planning-period") {
+    // A first-run world has no season to name; naming the fixture season
+    // there was the same leak in season form.
+    return projectIds.length === 0
+      ? "No season set up yet"
+      : HOME_FIXTURE_PERIOD_ORCHARD.name;
+  }
   return "Across all projects";
 }
 
@@ -1123,11 +1148,26 @@ export function assembleCandidateProps(input: AssembleInput): HomeCandidateProps
         : scope.narrowed
           ? "The finished-item count is held back at this scope, because it was not read at this scope."
           : null,
-    moreHref: projection.kind === "ready" && projection.cursor ? href({}) : null,
-    moreLabel: projection.kind === "ready" && projection.cursor ? HOME_LAB_COPY.actions.showMore : null,
+    // A cursor means the list genuinely continues — but LabViewState carries
+    // no cursor, so href({}) was a self-link: a published dead control
+    // (found by the Meridian lane, 2026-08-17). The lab does not paginate,
+    // so it does not render a control pretending to; the continuation is
+    // declared as a disclosure below instead.
+    moreHref: null,
+    moreLabel: null,
     emptyLine: myWorkRowsShown === 0 && projection.kind === "ready" ? HOME_LAB_COPY.empty.myWork : null,
     disclosures: Object.freeze([
       ...shared,
+      ...(projection.kind === "ready" && projection.cursor
+        ? [
+            {
+              id: "my-work-continues",
+              tone: "coverage" as const,
+              state: "partial" as HomeStateName,
+              text: "The list continues past this page. Nothing past it is lost; it is just not shown here.",
+            },
+          ]
+        : []),
       ...(projection.kind === "ready" && projection.coverage.unprojectableExcluded > 0
         ? [
             {
@@ -1560,7 +1600,9 @@ function claimView(
         : claim.status === "insufficient_history"
           ? `Not enough history to say. ${claim.history.comparableSnapshots} of ${claim.history.required} readings so far.`
           : claim.status === "partial"
-            ? "Part of this could not be read, so no total is shown."
+            ? claim.value === null
+              ? "Part of this could not be read, so no total is shown."
+              : "Part of this could not be read, so this can only under-count."
             : "Nothing produces this yet, so there is nothing to show.",
     definitionLine: claim.definition,
     populationLine,

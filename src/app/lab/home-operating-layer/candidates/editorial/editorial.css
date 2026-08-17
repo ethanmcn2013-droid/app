@@ -38,6 +38,25 @@
  *    transformation is kept; it just hangs below the thing it qualifies.
  * 5. The custom-property family is `--ed-*`. `--x-*` was a collision waiting to
  *    happen with any other consumer on the page.
+ *
+ * WHAT ROUND 5 CHANGED HERE — all of it typographic; no container, card, fill,
+ * shadow or second accent entered the direction.
+ * 1. AMBER CLEARS 3:1. Every meaning-bearing amber — the weather rule, the
+ *    nav marks, the limit marks — draws in `--ed-amber`: the token amber
+ *    carried 35% toward ink (~4.4:1 on paper; the same mix lightens against
+ *    dark paper). The hue is the token's; the shade is one step older.
+ * 2. THE LEADER. Rows bind their title to their right-edge figure with a
+ *    dotted rule — `.ed-rowline` + `.ed-leader` — so the figures column keeps
+ *    the shared right edge one director protects while the 400px of open
+ *    white another director priced becomes a printed line. One anatomy for
+ *    Today, My work, Inbox and the Analytics claims.
+ * 3. TWO NAV TIERS, MATERIALLY APART. The suite row joined the wordmark's
+ *    voice — mono caps at label size — so the mode row below is visibly the
+ *    working tier by case, size and family, not by a hairline.
+ * 4. THE SHOULDER DISCLOSES BY VIEWPORT. Open in full at 70rem+, one summary
+ *    line and one disclosure below it.
+ * 5. INOPERABLE MEANS STRUCK. `aria-disabled` text actions render struck with
+ *    their reason on the same line.
  */
 
 .ed {
@@ -57,6 +76,13 @@
   --ed-rule-soft: 1px solid var(--hairline-soft);
   /* The hit floor for anything operational. Named once so it cannot drift. */
   --ed-target: 44px;
+  /* The amber that carries meaning. Round 4 measured the token amber at ~2:1
+     on paper, under the 3:1 non-text floor. The fallback below is the raw
+     token; the @supports block after this rule darkens it toward ink to
+     ~4.4:1 wherever color-mix exists, which is every browser the estate
+     supports. Derived from the token, not retyped, so a token change flows
+     through, and the same mix lightens correctly on the dark theme's paper. */
+  --ed-amber: var(--status-flight);
 
   min-height: 100svh;
   background: var(--paper);
@@ -73,19 +99,13 @@
   box-sizing: border-box;
 }
 
-/* ── Shared marks ─────────────────────────────────────────────────────────── */
-
-.ed-vh {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
+@supports (color: color-mix(in srgb, red 50%, white)) {
+  .ed {
+    --ed-amber: color-mix(in srgb, var(--status-flight) 65%, var(--ink));
+  }
 }
+
+/* ── Shared marks ─────────────────────────────────────────────────────────── */
 
 .ed :focus-visible {
   outline: 2px solid var(--accent);
@@ -178,7 +198,7 @@
   flex: 1 1 auto;
   height: 2px;
   min-width: var(--space-8);
-  background: var(--status-flight);
+  background: var(--ed-amber);
 }
 
 .ed-weather[data-register="setup"] .ed-weather-mark {
@@ -207,16 +227,30 @@
 /* The direction's answer to LAB_BRIEF Amendment 1. Above 70rem this is the
    third column, level with the headline: the read's own condition sits BESIDE
    the answer rather than on top of it, which is what let the three ranked
-   decisions come back onto the arrival screen without demoting a single caveat.
-   Below 70rem there is no shoulder, so it is a term, a sentence and a
-   disclosure — about 90px where the ledger used to spend 350. */
+   decisions come back onto the arrival screen without demoting a single
+   caveat. Below 70rem there is no shoulder, so it is one summary line and one
+   disclosure — about 50px where the ledger used to spend 350. */
 .ed-read {
   margin: var(--space-5) 0 0;
   padding-top: var(--space-3);
   border-top: 1px solid var(--ink);
 }
 
+/* THE FOLD IS THE VIEWPORT'S, NOT THE CONTENT'S. Round 4: "the rail's
+   collapse is content-driven, not viewport-driven — the same collapse fires at
+   1440 and the same four-line list renders at 390." Two renderings are in the
+   document; each width shows exactly one, so this costs no script:
+
+   at 70rem+   `.ed-read-open` — every qualifier, in the open, worst first.
+               The shoulder has a column to itself; a disclosure there hid
+               honesty and bought no height back.
+   below       `.ed-read-fold` — one summary line wearing the worst register's
+               mark, the list one interaction away. The line counts the facts
+               rather than repeating the weather band's words, which already
+               name the worst state at page scale directly above. This is what
+               put the first decision back on the 390 arrival screen. */
 .ed-read-term {
+  display: none;
   margin: 0 0 var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-label);
@@ -227,11 +261,11 @@
   color: var(--ink-soft);
 }
 
-.ed-read-more {
-  margin-top: var(--space-2);
+.ed-read-open {
+  display: none;
 }
 
-.ed-read-more summary {
+.ed-read-fold summary {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -242,17 +276,17 @@
   color: var(--ink);
 }
 
-.ed-read-more summary::-webkit-details-marker {
+.ed-read-fold summary::-webkit-details-marker {
   display: none;
 }
 
-.ed-read-more summary span {
+.ed-read-fold summary > span + span {
   text-decoration: underline;
   text-decoration-color: var(--ink-faint);
   text-underline-offset: 3px;
 }
 
-.ed-read-more summary::after {
+.ed-read-fold summary::after {
   content: "";
   width: 6px;
   height: 6px;
@@ -261,8 +295,12 @@
   transform: translateY(-2px) rotate(45deg);
 }
 
-.ed-read-more[open] summary::after {
+.ed-read-fold[open] summary::after {
   transform: translateY(1px) rotate(-135deg);
+}
+
+.ed-read-fold summary .ed-limit-mark {
+  margin-right: 0;
 }
 
 /* Inside the shoulder there is no spine to hang a term in, so the run stacks:
@@ -277,27 +315,31 @@
   border-bottom: 0;
 }
 
-.ed-read-more .ed-limits > li {
+.ed-read .ed-limits > li + li {
   padding-top: var(--space-3);
   border-top: var(--ed-rule-soft);
+}
+
+.ed-read-fold .ed-limits {
+  margin-top: var(--space-2);
 }
 
 .ed-read .ed-limit-text {
   max-width: none;
 }
 
-/* One mark per keyed line, so the run reads as a key to the marks in the
-   navigation rather than as a paragraph that happens to mention modes. */
-.ed-limit-keyed {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-2);
-}
+@media (min-width: 70rem) {
+  .ed-read-term {
+    display: block;
+  }
 
-.ed-limit-keyed .ed-limit-mark {
-  flex: none;
-  align-self: center;
-  margin-right: 0;
+  .ed-read-open {
+    display: block;
+  }
+
+  .ed-read-fold {
+    display: none;
+  }
 }
 
 /* ── Masthead · quieter than the content, never dominant ──────────────────── */
@@ -369,13 +411,26 @@
   list-style: none;
 }
 
+/* THE NAMEPLATE TIER. Round 4: level 1 and level 2 were "set at near-identical
+   size, weight and case, separated only by a hairline", so nothing said the
+   mode row was nested inside Home. The suite links now speak the wordmark's
+   own voice — mono, caps, label size, letterspaced — and the whole first band
+   reads as one imprint line. The mode row below keeps the sans at reading
+   size: case, size and family now separate the tiers, and no ground or fill
+   was spent to do it. The 44px floor holds; the label is small, the target is
+   not. */
 .ed-suite a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
   min-width: 44px;
   color: var(--ink-soft);
-  font-size: var(--text-body-sm);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
   text-decoration: none;
 }
 
@@ -383,9 +438,37 @@
   color: var(--ink);
 }
 
+/* You-are-here at suite level is never colour alone: full ink plus a solid
+   underline, the same convention the mode row uses one tier down. */
 .ed-suite a[aria-current] {
   color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+/* The edition statement: who this page was read for, at the nameplate's right
+   end. Round 4 found identity confined to the foot colophon; the broadsheet
+   chrome now states it. A statement, not a control — the lab URL scheme has
+   no account state to link to, and a control that goes nowhere is furniture.
+   Below 70rem it stands down: it would wrap the nameplate to a second row on
+   every phone screen, and the imprint keeps the identity there. */
+.ed-actor {
+  display: none;
+  margin: 0 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
   font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
+@media (min-width: 70rem) {
+  .ed-actor {
+    display: block;
+  }
 }
 
 .ed-homeband {
@@ -444,8 +527,25 @@
 }
 
 /* What the other three modes know, at a glance from any one of them. Absent on
-   a mode read in full, so presence is the signal, and the state word rides in
-   the link's accessible name, so this is never colour alone. */
+   a mode read in full, so presence is the signal. ROUND 4, four ballots: the
+   mark carried meaning with no label of its own, and one amber square stood
+   for both "Partly read" and "Not enough history". The mark now travels with
+   its state words inside the link — one flex object, so the pairing cannot be
+   separated at any width — and the run of marks reads as annotations on a
+   contents line rather than as a chip row. */
+.ed-mode-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  line-height: 1.4;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: var(--weight-medium);
+  color: var(--ink-soft);
+}
+
 .ed-mode-mark {
   flex: none;
   display: inline-block;
@@ -456,7 +556,7 @@
 }
 
 .ed-mode-mark[data-register="limited"] {
-  background: var(--status-flight);
+  background: var(--ed-amber);
 }
 
 .ed-mode-mark[data-register="failed"] {
@@ -738,7 +838,7 @@
 }
 
 .ed-limit-mark[data-register="limited"] {
-  background: var(--status-flight);
+  background: var(--ed-amber);
 }
 
 .ed-limit-mark[data-register="failed"] {
@@ -890,9 +990,31 @@
   padding-top: 10px;
 }
 
-.ed-entry-title {
+/* THE ROW LINE — round 4's binding fix, one anatomy for every mode.
+
+   The title and its figure (the due date on Today and My work, the provenance
+   on Inbox, the numeral on an Analytics claim) are one element. Below 70rem it
+   is a block: title, then figure directly beneath — the adjacency the narrow
+   ballots asked to keep. At 70rem+ it becomes one flex line: title at the
+   measure's left edge, figure on the shared right edge, and a dotted leader
+   struck between them, so the figures column the panel protects keeps its
+   edge while the open white the eye had to cross becomes a printed line. The
+   leader is drawn, not meaningful: it is aria-hidden and carries nothing that
+   the order of the two texts does not already say. */
+.ed-rowline {
   grid-column: 2;
-  grid-row: 1;
+  min-width: 0;
+}
+
+.ed-claim > .ed-rowline {
+  grid-column: 1 / -1;
+}
+
+.ed-leader {
+  display: none;
+}
+
+.ed-entry-title {
   margin: 0;
   font-size: var(--text-heading);
   line-height: var(--leading-heading);
@@ -902,14 +1024,11 @@
 }
 
 .ed-entry-when {
-  grid-column: 2;
-  grid-row: 2;
   margin: var(--space-1) 0 var(--space-2);
 }
 
 .ed-entry-body {
   grid-column: 2;
-  grid-row: 3;
   min-width: 0;
 }
 
@@ -1008,8 +1127,6 @@
 
 .ed-row-title,
 .ed-work-title {
-  grid-column: 2;
-  grid-row: 1;
   margin: 0;
   font-size: var(--text-body);
   line-height: var(--leading-body);
@@ -1026,16 +1143,28 @@
 
 .ed-row-when,
 .ed-work-when {
-  grid-column: 2;
-  grid-row: 2;
   margin: 0 0 var(--space-1);
 }
 
 .ed-row-body,
 .ed-work-body {
   grid-column: 2;
-  grid-row: 3;
   min-width: 0;
+}
+
+/* The row's actions and their outcome lines, on My work. In the measure, under
+   the meta run, above the opened disclosure when there is one. */
+.ed-work-acts {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* THE SPINE NAMES LINES. A responsibility's name in the source product hangs
+   in the margin at 70rem+ (`.ed-work-col`); below that the same fact stays in
+   the meta run (`.ed-work-col-inline`). Exactly one of the two renders at any
+   width, so nothing is dropped and nothing is said twice. */
+.ed-work-col {
+  display: none;
 }
 
 /* Every row title is a link and every link says so. Round 1: "Rows are links
@@ -1212,6 +1341,20 @@
   color: var(--ink-soft);
 }
 
+/* The event's figure: where it lives, on the shared right edge at 70rem+
+   outside the split. Hidden everywhere else — the same fact renders in the
+   meta run there (`.ed-prov-item`), so exactly one of the two is ever shown. */
+.ed-event-figure {
+  display: none;
+  margin: 0;
+  font-size: var(--text-body-sm);
+  /* Long project names (the scale world) wrap inside the figure instead of
+     pushing the row line; the first line keeps the shared baseline. */
+  max-width: 16rem;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
 .ed-event-title {
   margin: 0 0 var(--space-2);
   font-size: var(--text-body);
@@ -1320,6 +1463,23 @@
   list-style: none;
 }
 
+/* A control and its refusal are one line. Round 4: "an action that cannot be
+   taken must render as struck or otherwise plainly inoperable with its reason
+   on the same line, never as a live link with a note underneath." The reason
+   sits beside the control it describes — the same element aria-describedby
+   points at — and wraps under it on narrow screens without ever detaching. */
+.ed-actions > li {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.ed-act-why {
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+}
+
 /* On a queue row the actions are text on the rule, not a wall of boxes. The
    quiet register is kept and the queue is still visibly operable. */
 .ed-actions-row {
@@ -1375,17 +1535,29 @@
   text-decoration-thickness: 2px;
 }
 
-.ed-btn[disabled],
+/* Inoperable is visible, not just announced. Boxed controls go dashed and
+   faint; text controls trade their operable underline for a strike, so a
+   control that cannot be taken can never be mistaken for a live link. The
+   controls carry aria-disabled rather than disabled (they must stay reachable
+   so their reason is hearable) and their handlers are guarded in
+   interaction.tsx, so they are inert in fact as well as in appearance. */
 .ed-btn[aria-disabled="true"] {
   color: var(--ink-faint);
   border-style: dashed;
   cursor: not-allowed;
 }
 
-.ed-act[disabled] {
+.ed-act[aria-disabled="true"] {
   color: var(--ink-faint);
-  text-decoration-style: dotted;
+  text-decoration-line: line-through;
+  text-decoration-style: solid;
+  text-decoration-color: currentColor;
   cursor: not-allowed;
+}
+
+.ed-act[aria-disabled="true"]:hover {
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
 }
 
 .ed-refused {
@@ -1464,21 +1636,22 @@
 }
 
 .ed-claim-q {
-  grid-column: 1 / -1;
-  grid-row: 1;
   max-width: var(--ed-measure);
-  margin: 0 0 var(--space-3);
+  margin: 0;
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
   font-weight: var(--weight-medium);
 }
 
 .ed-figure {
-  grid-column: 1 / -1;
   display: flex;
   align-items: baseline;
   gap: var(--space-3);
-  margin: 0 0 var(--space-3);
+  margin: var(--space-2) 0 0;
+}
+
+.ed-claim > .ed-rowline {
+  margin-bottom: var(--space-3);
 }
 
 .ed-figure-value {
@@ -1498,8 +1671,11 @@
 }
 
 /* Round 1: "four to five sentences of near-identical grey sit in an
-   undifferentiated stack with no fielding." Each sentence now carries the term
-   for what sort of fact it is. */
+   undifferentiated stack with no fielding." Each sentence carries the term for
+   what sort of fact it is. Round 4 wrapped each term with its values, so the
+   pairing that is true in the markup stays true in the grid: a term with two
+   values (Left out, with two exclusion reasons) keeps both beside it, and the
+   next term starts its own row instead of drifting up beside a stray value. */
 .ed-fields {
   grid-column: 1 / -1;
   margin: 0;
@@ -1530,9 +1706,8 @@
   color: var(--ink-soft);
 }
 
-.ed-fields dd::after {
-  content: "\A";
-  white-space: pre;
+.ed-fields dd + dd::before {
+  content: " ";
 }
 
 .ed-receipt {
@@ -1852,7 +2027,10 @@
     text-align: right;
   }
 
-  /* Rows: numeral in the spine, subject in the measure, date in the shoulder. */
+  /* Rows: numeral in the spine, subject in the measure, figure on the shared
+     right edge — and now a struck leader between subject and figure, so the
+     ledger's right edge holds while the association is printed rather than
+     inferred. */
   .ed-entry,
   .ed-row,
   .ed-work-row,
@@ -1877,51 +2055,81 @@
     padding-top: 14px;
   }
 
-  .ed-entry-title,
-  .ed-row-title,
-  .ed-work-title {
-    grid-column: 2;
+  /* THE ROW LINE OPENS OUT. One flex line from the measure's left edge to the
+     page's right edge: title, dotted leader, figure. Baseline-aligned, so the
+     figure sits on the title's own line the way a contents page sets its page
+     numbers. Titles keep the measure — prose never widens — and the leader
+     absorbs whatever width the title does not use. */
+  .ed-rowline {
+    grid-column: 2 / -1;
     grid-row: 1;
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
   }
 
+  .ed-rowline .ed-entry-title,
+  .ed-rowline .ed-row-title,
+  .ed-rowline .ed-work-title,
+  .ed-rowline .ed-event-title,
+  .ed-rowline .ed-claim-q {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: var(--ed-text);
+  }
+
+  .ed-leader {
+    display: block;
+    flex: 1 1 var(--space-8);
+    min-width: var(--space-8);
+    height: 2px;
+    align-self: baseline;
+    border-bottom: 1px dotted var(--ink-ghost);
+  }
+
+  .ed-rowline .ed-when {
+    flex: none;
+    margin: 0;
+  }
+
+  /* Body, opened disclosure and actions flow in source order below the row
+     line — auto rows on purpose, so the visual order can never disagree with
+     the DOM order a keyboard user travels. */
   .ed-entry-body,
   .ed-row-body,
   .ed-work-body {
     grid-column: 2;
-    grid-row: 2;
   }
 
-  .ed-entry-when,
-  .ed-row-when,
-  .ed-work-when {
-    grid-column: 3;
+  .ed-work-acts {
+    grid-column: 2;
+  }
+
+  /* THE SPINE NAMES LINES: the responsibility's source column hangs in the
+     margin beside the row it names, and leaves the meta run. */
+  .ed-work-col {
+    display: block;
+    grid-column: 1;
     grid-row: 1;
-    justify-content: flex-end;
-    text-align: right;
+    justify-self: end;
     margin: 0;
-    padding-top: 12px;
+    padding-top: 15px;
+    text-align: right;
   }
 
-  .ed-when {
-    flex-direction: column;
-    align-items: flex-end;
-    justify-content: flex-start;
-    gap: var(--space-1);
+  .ed-work-col-inline {
+    display: none;
   }
 
   .ed-open {
     grid-column: 2 / -1;
   }
 
-  .ed-claim-q {
-    grid-column: 2;
-    grid-row: 1;
+  .ed-claim > .ed-rowline {
+    grid-column: 2 / -1;
   }
 
   .ed-figure {
-    grid-column: 3;
-    grid-row: 1;
-    justify-content: flex-end;
     margin: 0;
   }
 
@@ -1930,12 +2138,20 @@
     grid-column: 2;
   }
 
+  /* Each term/value pair is its own grid on the page's tracks, so a term with
+     two values keeps both beside it and the next term starts its own line. */
   .ed-fields {
     grid-column: 1 / -1;
+  }
+
+  .ed-fields > div {
     display: grid;
     grid-template-columns: var(--ed-cols);
     column-gap: var(--ed-gap);
-    row-gap: var(--space-2);
+  }
+
+  .ed-fields > div + div {
+    margin-top: var(--space-2);
   }
 
   .ed-fields dt {
@@ -1950,9 +2166,22 @@
     display: block;
   }
 
-  .ed-fields dt::after,
-  .ed-fields dd::after {
+  .ed-fields dt::after {
     content: none;
+  }
+
+  .ed-fields dd + dd::before {
+    content: none;
+  }
+
+  /* The queue's figures: provenance leaves the meta run for the page edge,
+     except inside the split, where a 21rem column has no edge to spend. */
+  .ed-inbox:not([data-split="true"]) .ed-event-figure {
+    display: block;
+  }
+
+  .ed-inbox:not([data-split="true"]) .ed-prov-item {
+    display: none;
   }
 
   /* The imprint's standing head hangs in the margin like everything else. */
@@ -2029,7 +2258,8 @@
     text-align: right;
   }
 
-  .ed-event-sole > .ed-event-title {
+  .ed-event-sole > .ed-rowline {
+    grid-column: 2 / -1;
     grid-row: 1;
   }
 
@@ -2048,6 +2278,16 @@
     text-align: left;
     justify-content: flex-start;
   }
+
+  /* No leaders in a 21rem queue column: the row line folds back to the narrow
+     stack while an event is open beside it. */
+  .ed-inbox[data-split="true"] .ed-rowline {
+    display: block;
+  }
+
+  .ed-inbox[data-split="true"] .ed-leader {
+    display: none;
+  }
 }
 
 /* ── Narrow · a single file of records ────────────────────────────────────── */
@@ -2061,6 +2301,17 @@
   .ed-firstrun,
   .ed-tail {
     margin-bottom: var(--space-7);
+  }
+
+  /* The first screen's one action must clear an 844 fold behind a masthead,
+     a headline, a standfirst and the shoulder line. Every one of those earns
+     its place; the slack does not. */
+  .ed-firstrun {
+    padding-top: var(--space-4);
+  }
+
+  .ed-read {
+    margin-top: var(--space-4);
   }
 
   .ed-limits {
@@ -2172,23 +2423,21 @@
   }
 
   /* The marks keep their three shapes and gain a fill difference that survives
-     the loss of every hue: open, filled, filled-and-ringed. */
+     the loss of every hue: open, filled, filled-and-ringed. The words beside
+     the nav marks need nothing here; they are text and remap with the text. */
   .ed-limit-mark,
-  .ed-mode-mark,
-  .ed-read-kind::before {
+  .ed-mode-mark {
     border-color: CanvasText;
     background: Canvas;
   }
 
   .ed-limit-mark[data-register="limited"],
-  .ed-mode-mark[data-register="limited"],
-  .ed-read[data-register="limited"] .ed-read-kind::before {
+  .ed-mode-mark[data-register="limited"] {
     background: CanvasText;
   }
 
   .ed-limit-mark[data-register="failed"],
-  .ed-mode-mark[data-register="failed"],
-  .ed-read[data-register="failed"] .ed-read-kind::before {
+  .ed-mode-mark[data-register="failed"] {
     background: CanvasText;
     box-shadow: 0 0 0 2px Canvas, 0 0 0 3px CanvasText;
   }

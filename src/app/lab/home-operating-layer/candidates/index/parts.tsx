@@ -12,7 +12,6 @@ import type {
   Disclosure,
   FirstRunView,
   HomeCandidateProps,
-  RowAction,
   WhenLabel,
 } from "@/lib/home-layer/lab-shell";
 import {
@@ -472,85 +471,27 @@ export function When({ due }: { due: WhenLabel }) {
   );
 }
 
-// ── Dispositions ────────────────────────────────────────────────────────────
+// ── The terms of the moves ──────────────────────────────────────────────────
 
 /**
- * WHAT THE ROW LETS YOU DO, ON THE ROW, IN THE ARRIVAL STATE.
- *
- * Round 4's Inbox offered one thing per event: OPEN. Four directors marked it
- * and one put the cost exactly — every mark as read, snooze and clear cost a
- * full navigation, which made it the slowest daily triage of the four. A mode
- * whose job is "what needs my response" has to offer something to respond with.
- *
- * So every disposition the shell publishes for a row is on the row: Mark as
- * read, Snooze, Approve at the source, Clear from Inbox on an event; Mark as
- * done and Change who owns it on a responsibility. Nothing is hidden, and that
- * includes the ones that are shut to you: a refusal is struck through and
- * carries its reason on the same line, because a control that disappears tells
- * the reader nothing about why.
- *
- * WHAT IS STILL REFUSED, and why that is the honest half of this. This surface
- * reads fixtures and writes nothing. A button that claimed an outcome no
- * source ever confirmed is D-HX06, and it is the exact lie this whole programme
- * exists to remove. So a disposition the shell gave a real route is a real
- * link, and a disposition that would have to write is named, placed and costed
- * in the composition rather than drawn as a control that lies. Each mode that
- * offers any says so once, above its list, rather than once per row.
- *
- * The set sits outside the row's own link, so a 44 px row target and a run of
- * named dispositions can both exist without a control nested inside a wrapping
- * link.
+ * THE DISPOSITIONS THEMSELVES LIVE IN `dispositions.tsx`, the direction's one
+ * client file, because round 5's Required ballot lines asked for real controls
+ * and a run of names that cannot transition is a dead control however honestly
+ * it is drawn. What stays on the server is the sentence stating the terms:
+ * which moves are Inbox-side and never touch the source, and which reach the
+ * source and wait for its answer. Said once per mode that offers any, above
+ * its list — sixty rows repeating it would be sixty times the height and no
+ * extra fact.
  */
-export function Dispositions({
-  actions,
-  exclude,
-  label,
-}: {
-  actions: readonly RowAction[];
-  /** Ids already carried by the row's own link. */
-  exclude?: readonly string[];
-  /** Only where the run could otherwise be mistaken for part of the record. */
-  label?: string;
-}) {
-  const shown = actions.filter((action) => !exclude?.includes(action.id));
-  if (shown.length === 0) return null;
-  return (
-    <div className="ri-acts">
-      {label ? <p className="ri-label ri-acts-label">{label}</p> : null}
-      <ul className="ri-acts-list">
-        {shown.map((action) => (
-          <li
-            className="ri-act"
-            data-open={action.available ? "yes" : "no"}
-            key={action.id}
-          >
-            {action.available && action.href !== null ? (
-              <a className="ri-act-name" href={action.href}>
-                {action.label}
-              </a>
-            ) : (
-              <span className="ri-act-name">{action.label}</span>
-            )}
-            {action.unavailableReason === null ? null : (
-              <span className="ri-act-why">{action.unavailableReason}</span>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/**
- * Said once per mode that offers a disposition, rather than once per row.
- * Sixty rows repeating it would be sixty times the height and no extra fact.
- */
-export function WritesNothing({ children }: { children: string }) {
+export function MovesNote({ children }: { children: string }) {
   return <p className="ri-writes">{children}</p>;
 }
 
-export const LAB_WRITES_NOTHING =
-  "Every disposition a row offers is named here, including the ones shut to you. This surface reads and does not write, so nothing is settled until the source says it is.";
+export const INBOX_MOVES_LINE =
+  "Mark as read, Snooze and Clear are moves in your Inbox. They change how this list reads and never touch the work at its source. Approve reaches the source, and nothing here is called done until the source answers.";
+
+export const MY_WORK_MOVES_LINE =
+  "Mark as done reaches the source and waits for its answer. A row leaves this ledger only when the source confirms it, at the next read.";
 
 // ── Sections ────────────────────────────────────────────────────────────────
 

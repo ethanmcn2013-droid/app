@@ -26,12 +26,15 @@
  * editor's top three. The rank is printed on the body rather than in the gutter,
  * because the gutter is the clock and a rank is not a time.
  *
- * THE QUIET DAY. `quiet.line` is printed on every Today, in every world, at
- * reading size. It is the sentence that refuses the all clear and names what
- * stopped it, and it is the difference between a short page and an abandoned
- * one. On the one world in thirteen where the read genuinely was quiet, it says
- * so plainly, still refuses the all clear, and the page then ends — the two
- * rules close up around one sentence instead of holding open a screen and a half
+ * THE QUIET DAY. `quiet.line` is the day's verdict, at reading size, and it
+ * opens the read on every Today where no notice stands — it refuses the all
+ * clear and names what stopped it. When the read itself broke, the notice
+ * under the meridian is the verdict and the quiet line stands down, because
+ * its first reason is the same refusal the notice just stated and the page
+ * does not say one fact twice on its two loudest lines. On the one world in
+ * thirteen where the read genuinely was quiet, the line says so plainly,
+ * still refuses the all clear, and the page then ends — the two rules close
+ * up around that single sentence instead of holding open a screen and a half
  * of reserved canvas.
  */
 
@@ -44,7 +47,7 @@ import {
   Entries,
   Entry,
   EntryTitle,
-  Fields,
+  FIRST_RUN_RECORD_LABEL,
   FirstRun,
   HORIZON_MARK,
   Label,
@@ -80,11 +83,14 @@ function timeOf(row: TodayRow): string | null {
 function TodayEntry({
   row,
   rank,
+  timeFallback,
   selectedKey,
   closeHref,
 }: {
   row: TodayRow;
   rank: string | null;
+  /** What an absent time prints. Below the horizon it is nothing at all. */
+  timeFallback?: string | null;
   selectedKey: string | null;
   closeHref: string;
 }) {
@@ -98,6 +104,7 @@ function TodayEntry({
   return (
     <Entry
       time={time}
+      fallback={timeFallback}
       overdue={row.due?.overdue ?? false}
       selected={open}
       rank={rank}
@@ -124,7 +131,7 @@ function TodayEntry({
 function Section({
   section,
   ranked,
-  caveat,
+  belowTheLine = false,
   selectedKey,
   closeHref,
 }: {
@@ -132,13 +139,13 @@ function Section({
   /** True only on Today's three decisions. The briefing is uncapped. */
   ranked: boolean;
   /**
-   * WHAT THIS LIST WAS DRAWN FROM WHEN SOMETHING REFUSED. Round 4 found the
-   * failure screen printing ranked lists with no caveat anywhere near them, so
-   * a reader who scrolled past the notice met a short list presented as a whole
-   * one. On a refused read every section carries the shell's own coverage
-   * sentence directly under its heading.
+   * True where the section sits past the horizon, or is the not-asking section
+   * inside the briefing. An entry there with no time gets an empty gutter, not
+   * "No date": a finished item's body already says why it is here, and a
+   * dateless claim printed beside "Finished in the last day" reads as the axis
+   * arguing with the row. Off the clock, the gutter goes quiet.
    */
-  caveat: string | null;
+  belowTheLine?: boolean;
   selectedKey: string | null;
   closeHref: string;
 }) {
@@ -148,7 +155,6 @@ function Section({
       id={`mr-h-${section.id}`}
       heading={section.heading}
       note={ranked ? RANK_NOTE : section.windowLine}
-      caveat={caveat}
     >
       {section.rows.length > 0 ? (
         <Entries>
@@ -157,6 +163,7 @@ function Section({
               key={row.key}
               row={row}
               rank={ranked ? String(index + 1).padStart(2, "0") : null}
+              timeFallback={belowTheLine ? null : undefined}
               selectedKey={selectedKey}
               closeHref={closeHref}
             />
@@ -189,14 +196,8 @@ export function TodayMode({ props, here }: ModeArgs) {
   const window_ =
     today.sections.find((section) => section.windowLine !== null)?.windowLine ?? null;
   const shown = inside.reduce((total, section) => total + section.rows.length, 0);
-  /* On a first screen the honest sentence leads the main column rather than
-     sitting in the account nobody reads first. */
-  const setup = firstRun
-    ? (today.disclosures.find((item) => item.tone === "setup") ?? null)
-    : null;
-  const rest = accountOf(today.disclosures, worst ?? setup);
+  const rest = accountOf(today.disclosures, worst);
   const hasBelow = (beyondSection?.rows.length ?? 0) > 0;
-  const caveat = here.refused ? chrome.scope.coverageLine : null;
 
   return (
     <Chronology
@@ -205,17 +206,28 @@ export function TodayMode({ props, here }: ModeArgs) {
       material={here.material}
       notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
       horizonMark={HORIZON_MARK}
-      horizonLine={window_}
+      /* A first screen claims no window: nothing looked fourteen days ahead,
+         because nothing looked. */
+      horizonLine={firstRun ? null : window_}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} lead={setup?.text ?? null} />
+          <FirstRun view={firstRun} />
         ) : (
           <>
-            <p className="mr-day">{today.quiet.line}</p>
+            {/* The day's verdict — printed only while no notice is standing
+                above it. When a read breaks, the notice under the meridian is
+                the verdict, and a second sentence restating the same refusal
+                ("one source did not answer in full") one line beneath it was
+                the same fact twice on the page's two loudest lines. */}
+            {worst === null ? <p className="mr-day">{today.quiet.line}</p> : null}
             {today.selectionMissingLine ? (
               <Notice state="partial">{today.selectionMissingLine}</Notice>
             ) : null}
-            {shown === 0 ? (
+            {/* On the one genuinely quiet world the verdict sentence IS the
+                day, and the rules close up around it alone. The generic empty
+                caption is for every other empty read — a narrowed scope, a
+                filtered morning — where no quiet sentence stands. */}
+            {shown === 0 && !today.quiet.readIsQuiet ? (
               <EmptyField>Nothing is asking for you inside this read.</EmptyField>
             ) : null}
             {inside.map((section) => (
@@ -223,7 +235,6 @@ export function TodayMode({ props, here }: ModeArgs) {
                 key={section.id}
                 section={section}
                 ranked={section.id === RANKED}
-                caveat={caveat}
                 selectedKey={selectedKey}
                 closeHref={closeHref}
               />
@@ -233,7 +244,7 @@ export function TodayMode({ props, here }: ModeArgs) {
       }
       record={
         rest.length > 0 ? (
-          <TheRead>
+          <TheRead label={firstRun ? FIRST_RUN_RECORD_LABEL : undefined}>
             <Notices items={rest} />
           </TheRead>
         ) : null
@@ -250,7 +261,7 @@ export function TodayMode({ props, here }: ModeArgs) {
               <Section
                 section={beyondSection}
                 ranked={false}
-                caveat={caveat}
+                belowTheLine
                 selectedKey={selectedKey}
                 closeHref={closeHref}
               />
@@ -284,11 +295,7 @@ export function BriefingMode({ props, here }: ModeArgs) {
   const window_ =
     briefing.sections.find((section) => section.windowLine !== null)?.windowLine ?? null;
   const shown = briefing.sections.reduce((total, section) => total + section.rows.length, 0);
-  const setup = firstRun
-    ? (briefing.disclosures.find((item) => item.tone === "setup") ?? null)
-    : null;
-  const rest = accountOf(briefing.disclosures, worst ?? setup);
-  const caveat = here.refused ? chrome.scope.coverageLine : null;
+  const rest = accountOf(briefing.disclosures, worst);
 
   return (
     <Chronology
@@ -297,10 +304,10 @@ export function BriefingMode({ props, here }: ModeArgs) {
       material={here.material}
       notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
       horizonMark={HORIZON_MARK}
-      horizonLine={window_}
+      horizonLine={firstRun ? null : window_}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} lead={setup?.text ?? null} />
+          <FirstRun view={firstRun} />
         ) : (
           <>
             {shown === 0 ? (
@@ -311,7 +318,7 @@ export function BriefingMode({ props, here }: ModeArgs) {
                 key={section.id}
                 section={section}
                 ranked={false}
-                caveat={caveat}
+                belowTheLine={section.id === BELOW_THE_LINE}
                 selectedKey={null}
                 closeHref={closeHref}
               />
@@ -321,7 +328,7 @@ export function BriefingMode({ props, here }: ModeArgs) {
       }
       record={
         rest.length > 0 ? (
-          <TheRead>
+          <TheRead label={firstRun ? FIRST_RUN_RECORD_LABEL : undefined}>
             <Notices items={rest} />
           </TheRead>
         ) : null
@@ -332,13 +339,15 @@ export function BriefingMode({ props, here }: ModeArgs) {
             <p className="mr-beyond-caption">
               This is the whole read. Nothing was held back from it.
             </p>
+            {/* The instant of the read is on the meridian, where it always is.
+                An earlier draft restated it here as a labelled field, which was
+                the same sentence at both ends of one page. */}
             <Label>Where you were</Label>
             <p className="mr-onward">
               <a className="mr-onward-link" href={briefing.returnHref}>
                 {briefing.returnLabel}
               </a>
             </p>
-            <Fields rows={[["Read at", chrome.asOf.line]]} />
           </>
         )
       }

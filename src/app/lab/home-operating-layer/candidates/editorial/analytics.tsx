@@ -26,43 +26,88 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import { Provenance } from "./shell";
 
+/**
+ * ROUND 4 corrected two things about how a claim is set, one compositional and
+ * one semantic.
+ *
+ * THE FIGURE IS BOUND TO ITS CLAIM. The question began at the left of the
+ * measure and the numeral sat hard against the page edge, ~800px away, and at
+ * high zoom the association was lost. Another ballot protects exactly that
+ * right-edge numeral as part of the three-axis ledger. Both hold: question and
+ * figure are one flex line, and above 70rem a dotted leader is struck between
+ * them — the contents-page device that has always bound a title to its
+ * right-aligned figure. Below 70rem the figure stacks directly under its
+ * question.
+ *
+ * THE FIELD LEDGER NOW READS TRUE ALOUD. "WHAT THE RECORDS SAY" was the term
+ * over the value "No accepted baseline" — a description list stating a false
+ * relationship verbatim. The truth class is now the VALUE of "Where this comes
+ * from"; the baseline is the value of "Baseline"; and what a count excluded
+ * surfaces under its own term, "Left out", instead of sitting unlabelled
+ * inside the receipt. The fixed-slot ledger the passing ballots protect is
+ * intact and gained a slot: a claim that leaves records out is now visibly
+ * incomplete without them. Each term/value pair is wrapped so the pairing
+ * holds in the grid as well as in the markup.
+ */
 function Claim({ claim }: Readonly<{ claim: AnalyticsClaimView }>) {
   return (
     <li className="ed-claim">
-      <h3 className="ed-claim-q">{claim.question}</h3>
-
-      <p className="ed-figure">
-        {claim.valueLabel === null ? (
-          <span className="ed-withheld">No number</span>
-        ) : (
-          <span className="ed-figure-value">{claim.valueLabel}</span>
-        )}
-        <span className="ed-label">{claim.metricLabel}</span>
-      </p>
+      <div className="ed-rowline">
+        <h3 className="ed-claim-q">{claim.question}</h3>
+        <span className="ed-leader" aria-hidden="true" />
+        <p className="ed-figure">
+          {claim.valueLabel === null ? (
+            <span className="ed-withheld">No number</span>
+          ) : (
+            <span className="ed-figure-value">{claim.valueLabel}</span>
+          )}
+          <span className="ed-label">{claim.metricLabel}</span>
+        </p>
+      </div>
 
       {claim.statusLine === null ? null : <p className="ed-claim-status">{claim.statusLine}</p>}
 
       <dl className="ed-fields">
-        <dt>Counted</dt>
-        <dd>{claim.populationLine}</dd>
-        <dt>Cannot say</dt>
-        <dd>{claim.limitationLine}</dd>
-        <dt>Window</dt>
-        <dd>{claim.windowLine}</dd>
+        <div>
+          <dt>Counted</dt>
+          <dd>{claim.populationLine}</dd>
+        </div>
+        <div>
+          <dt>Cannot say</dt>
+          <dd>{claim.limitationLine}</dd>
+        </div>
+        <div>
+          <dt>Window</dt>
+          <dd>{claim.windowLine}</dd>
+        </div>
         {claim.coverageLine === null ? null : (
-          <>
+          <div>
             <dt>Coverage</dt>
             <dd>{claim.coverageLine}</dd>
-          </>
+          </div>
         )}
         {claim.permissionLine === null ? null : (
-          <>
+          <div>
             <dt>Access</dt>
             <dd>{claim.permissionLine}</dd>
-          </>
+          </div>
         )}
-        <dt>{claim.truthClassLabel}</dt>
-        <dd>{claim.baselineLine}</dd>
+        {claim.receipt.exclusionLines.length === 0 ? null : (
+          <div>
+            <dt>Left out</dt>
+            {claim.receipt.exclusionLines.map((line) => (
+              <dd key={line}>{line}</dd>
+            ))}
+          </div>
+        )}
+        <div>
+          <dt>Where this comes from</dt>
+          <dd>{claim.truthClassLabel}</dd>
+        </div>
+        <div>
+          <dt>Baseline</dt>
+          <dd>{claim.baselineLine}</dd>
+        </div>
       </dl>
 
       <details className="ed-receipt">
@@ -71,13 +116,6 @@ function Claim({ claim }: Readonly<{ claim: AnalyticsClaimView }>) {
           <span className="ed-num">{claim.receipt.includedCount}</span> records counted,{" "}
           <span className="ed-num">{claim.receipt.excludedCount}</span> left out.
         </p>
-        {claim.receipt.exclusionLines.length === 0 ? null : (
-          <ul>
-            {claim.receipt.exclusionLines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        )}
         <p>{claim.receipt.ingestionLine}</p>
         <p>{claim.receipt.versionLine}</p>
         <p>{claim.correctionLine}</p>

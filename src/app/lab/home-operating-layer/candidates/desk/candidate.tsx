@@ -111,11 +111,16 @@
  * and the bill is now itemised rather than denied.
  *
  * ONE client module, `dispositions.tsx`, which carries every row disposition on
- * Inbox and My work. Bundled with esbuild at the app's own browser targets,
- * minified, `react` external because the shared runtime already carries it:
+ * Inbox and My work. Bundled with esbuild 0.27.7 from this repository's own
+ * store — minify, esm, jsx automatic, chrome111/edge111/firefox111/safari16.4,
+ * `react` and `react/jsx-runtime` external because the shared runtime already
+ * carries both — and gzipped at zlib level 9, the same accounting
+ * `scripts/check-performance-budgets.mjs` applies to every client chunk. The
+ * build's metafile lists exactly one input, this file, which is the import ban
+ * proven at the bundler: nothing is reachable from the island transitively.
  *
- *   minified          5,056 bytes   4.94 KB
- *   minified + gzip   1,952 bytes   1.91 KB
+ *   minified          5,105 bytes   4.99 KB
+ *   minified + gzip   1,978 bytes   1.93 KB
  *
  * against the three ceilings the programme actually has:
  *
@@ -123,15 +128,15 @@
  *                                     enters the shared chunk, so the 0.9 KB of
  *                                     programme headroom is untouched.
  *   largest_chunk    62.5 / 63 KB    + 0 bytes, same reason.
- *   total_client_js 898.8 / 940 KB   + 1.91 KB, which is 4.6% of the 41.2 KB of
+ *   total_client_js 898.8 / 940 KB   + 1.93 KB, which is 4.7% of the 41.2 KB of
  *                                     remaining slack.
  *
  * And the stylesheet, which round 4 measured as a source file rather than as
- * shipped bytes. Run through Lightning CSS, the minifier Next 16 uses, at the
- * same targets: 69.6 KB of source becomes 25.9 KB minified and 4.74 KB gzip.
- * Round 4 recorded 16.4 KB gzip and 2.6x the leanest direction; the shipped
- * figure is 4.74 KB and 1.28x, below two of the other three. Comments are the
- * difference, and comments do not ship.
+ * shipped bytes. Run through Lightning CSS 1.32.0, the minifier Next 16 uses,
+ * at the same targets and the same gzip level: 70.0 KB of source becomes
+ * 25.9 KB minified and 4.74 KB gzip. Round 4 recorded 16.4 KB gzip and 2.6x
+ * the leanest direction; the shipped figure is 4.74 KB and 1.28x, below two of
+ * the other three. Comments are the difference, and comments do not ship.
  *
  * Everything else in this folder is a server component: five modes, thirteen
  * worlds, every disclosure, the whole chrome, the index, the legend and the foot

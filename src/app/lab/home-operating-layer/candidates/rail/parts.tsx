@@ -148,8 +148,10 @@ export function Horizon({ line, mark }: { line: string | null; mark: string }) {
  * cannot be mistaken for an absence: nothing else on any of the five surfaces is
  * reversed, it survives forced colours as a real border and a real fill, and it
  * is legible as a black slab from across a room before a word is read. A partly
- * read day keeps clean paper and takes a heavy leading rule instead. Three
- * silhouettes, still told apart with every colour removed.
+ * read day keeps clean paper and takes a heavy leading rule at reading size —
+ * not heading size, because a standing coverage note rendered as a shout every
+ * ordinary morning is how the shout stops meaning anything. Three silhouettes,
+ * still told apart with every colour removed.
  */
 export function ReadNotice({
   band,
@@ -301,19 +303,23 @@ export function Entries({ children }: { children: ReactNode }) {
 /**
  * A named stretch of the page, with its heading and, where the shell publishes
  * one, the window it covers.
+ *
+ * WHAT IS DELIBERATELY NOT HERE: a per-band coverage caveat. An earlier draft
+ * repeated the read's shortfall sentence under every heading, and it repeated
+ * it from the wrong ledger — the sentence counted routes, so on the one world
+ * where a SOURCE refused it printed "0 did not answer" three times under a
+ * notice saying one did. One failure, one carrier: the notice under the
+ * meridian, at the top of the same column, in the read's own material.
  */
 export function Band_({
   id,
   heading,
   note,
-  caveat,
   children,
 }: {
   id: string;
   heading: string;
   note?: string | null;
-  /** What the list was drawn from, where the read did not cover everything. */
-  caveat?: string | null;
   children: ReactNode;
 }) {
   return (
@@ -322,9 +328,6 @@ export function Band_({
         {heading}
       </h2>
       {note ? <p className="mr-band-note">{note}</p> : null}
-      {caveat && !sameFact(caveat, note ?? null) ? (
-        <p className="mr-band-caveat">{caveat}</p>
-      ) : null}
       {children}
     </section>
   );
@@ -371,10 +374,23 @@ export function Ledger({
  * What is never absent is the account itself, which now lives above the meridian
  * in `Ledger` and is rendered in every mode in every world.
  */
-export function TheRead({ children }: { children: ReactNode }) {
+/**
+ * The label bends once: on a first screen nothing was read, so "what this read
+ * could not see" would claim a read that never ran, and the column is titled
+ * for what it actually holds there — the facts that stand before the first one.
+ */
+export const FIRST_RUN_RECORD_LABEL = "Before the first read";
+
+export function TheRead({
+  children,
+  label = "What this read could not see",
+}: {
+  children: ReactNode;
+  label?: string;
+}) {
   return (
     <aside className="mr-record" aria-labelledby="mr-record-label">
-      <Label id="mr-record-label">What this read could not see</Label>
+      <Label id="mr-record-label">{label}</Label>
       {children}
     </aside>
   );
@@ -567,25 +583,27 @@ export function Fields({ rows }: { rows: readonly (readonly [string, string])[] 
  * A PERSON'S FIRST EVER SCREEN.
  *
  * It sits between the two rules, where the day would be, because that is the
- * truthful place for it: the fourteen days are there, they are simply empty,
- * and the reason is that nothing has been made yet. Nothing about this screen
- * says a read failed, and it carries a real move rather than a caption.
+ * truthful place for it: the day is there, it is simply empty, and the reason
+ * is that nothing has been made yet. Nothing about this screen says a read
+ * failed, and it carries a real move rather than a caption.
  *
- * THE EXPLANATION LEADS THE ACTION. Round 4 found a first screen that went
- * straight from the mode row into "Where to start" with the honest sentence
- * about what happened stranded in the right column. On somebody's first morning
- * that is the wrong way round, so the two sentences that say what is missing and
- * refuse both wrong readings of it now open the screen, and the heading and the
- * one real move follow them.
+ * THE EXPLANATION LEADS THE ACTION — and it leads it exactly once. Round 4
+ * found a first screen whose only honest sentence was stranded in the right
+ * column; the first repair over-corrected and opened the screen with the
+ * shell's first-run line AND its first-run disclosure, two consecutive
+ * sentences that both begin "There is no project yet". The shell's sentences
+ * are verbatim or nowhere, so the cure for the stutter is placement, not
+ * editing: the line opens the screen, and the disclosure reaches the reader
+ * through the record column beside it, under `FIRST_RUN_RECORD_LABEL`, where
+ * every other account of a read already lives.
  *
  * The link leaves the lab on purpose. A reader with no Project has nowhere to
  * go inside Home, and work lives in a Project.
  */
-export function FirstRun({ view, lead }: { view: FirstRunView; lead: string | null }) {
+export function FirstRun({ view }: { view: FirstRunView }) {
   return (
     <section className="mr-first" aria-labelledby="mr-first-h">
       <p className="mr-first-line">{view.line}</p>
-      {lead ? <p className="mr-first-honest">{lead}</p> : null}
       <h2 className="mr-h2" id="mr-first-h">
         {view.heading}
       </h2>

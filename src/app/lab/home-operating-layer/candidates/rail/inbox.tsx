@@ -48,6 +48,7 @@ import {
   Entry,
   EntryTitle,
   Fields,
+  FIRST_RUN_RECORD_LABEL,
   FirstRun,
   HORIZON_MARK,
   Label,
@@ -63,9 +64,21 @@ import {
 } from "./parts";
 import { accountOf, bySeverity } from "./reading";
 
-/** Where an event sits on the clock. The shell's sentence, never composed. */
+/**
+ * Where an event sits on the clock. The shell's sentence, never composed.
+ *
+ * A SNOOZED EVENT'S POSITION IS ITS RETURN. "A snooze is not a status word, it
+ * is a position" is this mode's whole argument, and an earlier draft then put
+ * the status word in the gutter — "Snoozed", which is not a time, while the
+ * exact instant it comes back sat in the body, and the same word printed again
+ * in the row's metadata. The gutter now carries the return instant itself; the
+ * word "Snoozed" stays where status words live, in the metadata run. A snoozed
+ * row whose instant the shell could not give falls back to the status word,
+ * because inventing a position is the one thing this axis may never do.
+ */
 function timeOf(row: InboxRow): string {
-  return row.disposition === "snoozed" ? row.dispositionLabel : row.occurredLine;
+  if (row.disposition === "snoozed") return row.snoozeLine ?? row.dispositionLabel;
+  return row.occurredLine;
 }
 
 function Event({
@@ -108,9 +121,9 @@ function Event({
           <span key="disp">{row.dispositionLabel}</span>,
         ]}
       />
-      {/* The exact instant it comes back. This is the fact the direction is
-          built to be able to place, so it is never abbreviated. */}
-      {row.snoozeLine ? <p className="mr-return">{row.snoozeLine}</p> : null}
+      {/* The exact return instant lives in the gutter — it is this row's
+          position on the clock, which is the fact the direction is built to be
+          able to place. Nothing repeats it here. */}
       {row.revisionLine ? (
         <p className="mr-warn" data-band="partial">
           {row.revisionLine}
@@ -200,10 +213,7 @@ export function InboxMode({ props, here }: ModeArgs) {
     .filter((row) => row.disposition === "snoozed" && row.snoozeLine !== null)
     .map((row) => [row.title ?? row.titleFallback, row.snoozeLine as string] as const);
 
-  const setup = firstRun
-    ? (inbox.disclosures.find((item) => item.tone === "setup") ?? null)
-    : null;
-  const rest = accountOf(inbox.disclosures, worst ?? setup);
+  const rest = accountOf(inbox.disclosures, worst);
   const hasRecord = rest.length > 0 || !firstRun;
 
   return (
@@ -216,7 +226,7 @@ export function InboxMode({ props, here }: ModeArgs) {
       horizonLine={null}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} lead={setup?.text ?? null} />
+          <FirstRun view={firstRun} />
         ) : (
           <>
             {inbox.selectionMissingLine ? (
@@ -244,7 +254,7 @@ export function InboxMode({ props, here }: ModeArgs) {
       }
       record={
         hasRecord ? (
-          <TheRead>
+          <TheRead label={firstRun ? FIRST_RUN_RECORD_LABEL : undefined}>
             <Notices items={rest} />
             {firstRun ? null : (
               <div className="mr-schedule">

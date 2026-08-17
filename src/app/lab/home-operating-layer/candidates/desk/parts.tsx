@@ -593,10 +593,18 @@ const safeId = (value: string): string => value.replace(/[^A-Za-z0-9_-]/g, "-");
  * row carrying this reason" is a question about a document, and a client
  * component can only see itself. Deciding it here also keeps the decision out
  * of the bundle.
+ *
+ * `idPrefix` exists because a document may hold TWO plans at once: the Inbox
+ * queue plans the whole page, and an opened event plans itself again so its
+ * reasons always print in full. Both number their rows from zero, so without a
+ * distinct prefix the detail's printed reason and queue row zero's printed
+ * reason could claim the same id, and an id that exists twice points every
+ * `aria-describedby` aimed at it to whichever copy the browser found first.
  */
 export function planPage(
   rows: readonly ActionRow[],
   exclude: readonly string[] = [],
+  idPrefix = "dk-why",
 ): ReadonlyMap<string, readonly ActionPlan[]> {
   const dense = rows.length >= DENSE_FROM;
 
@@ -653,8 +661,8 @@ export function planPage(
                points at it. When it is not, each row owns its own copy, so two
                rows never claim the same id. */
             domId: dense
-              ? `dk-why-r${order.indexOf(reason)}`
-              : `dk-why-${index}-${safeId(action.id)}`,
+              ? `${idPrefix}-r${order.indexOf(reason)}`
+              : `${idPrefix}-${index}-${safeId(action.id)}`,
             sharedWith: dense ? (shared.get(reason) ?? 1) : 1,
           };
         }),

@@ -10,10 +10,12 @@
  * THE WINDOW IS PRINTED WHERE IT VARIES, NOT WHERE IT REPEATS. Round 4 counted
  * "As read on Thursday 16 July." three times in a single fold, once per claim,
  * in a gutter whose whole argument is that a reader can run their eye down it.
- * A column of one repeated sentence is not an axis. The window that every claim
- * shares is now stated once, under the heading; the gutter carries a claim's own
- * window only where that claim was taken over a different stretch of time, which
- * is exactly the fact the gutter exists to make visible.
+ * A column of one repeated sentence is not an axis. The DOMINANT window — the
+ * one most of the claims were read at, not one they must unanimously share,
+ * because they never unanimously share one — is stated once, under the heading;
+ * the gutter carries a claim's own window only where that claim was taken over
+ * a different stretch of time, which is exactly the fact the gutter exists to
+ * make visible.
  *
  * EVERY CLAIM SHOWS ITS ARITHMETIC ON ITS FACE. What was counted, what was left
  * out, and what it is measured against are on the page beside the numeral rather
@@ -50,6 +52,7 @@ import {
   Entries,
   Entry,
   Fields,
+  FIRST_RUN_RECORD_LABEL,
   FirstRun,
   HORIZON_MARK,
   Label,
@@ -108,9 +111,11 @@ function Claim({ claim, sharedWindow }: { claim: AnalyticsClaimView; sharedWindo
       <details className="mr-act mr-act-wide">
         <summary className="mr-act-summary">{claim.evidenceLabel}</summary>
         <div className="mr-act-body">
+          {/* No "what it counts" row: the claim's own question, ten lines up,
+              is that sentence verbatim, and a receipt that restates the thing
+              it is a receipt for is padding, not proof. */}
           <Fields
             rows={[
-              ["What it counts", claim.definitionLine],
               ["Window", claim.windowLine],
               ...(claim.coverageLine ? [["Coverage", claim.coverageLine] as const] : []),
               ...(claim.permissionLine ? [["Your access", claim.permissionLine] as const] : []),
@@ -204,30 +209,54 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
   const { analytics, chrome, firstRun } = props;
   const worst = firstRun ? null : (bySeverity(analytics.disclosures)[0] ?? null);
 
-  /* The window every claim shares, if they share one. Stated once under the
-     heading rather than once per claim in a column that then says nothing. */
-  const windows = new Set(analytics.claims.map((claim) => claim.windowLine));
-  const sharedWindow = windows.size === 1 ? ([...windows][0] as string) : null;
+  /* THE DOMINANT WINDOW, stated once under the heading. The first draft only
+     deduplicated when every claim shared one window, and the claims never do:
+     six read as-of the instant and one over four weeks, so the set had two
+     members, the dedupe never fired, and "As read on Thursday 16 July." was
+     back in the gutter six times — the exact column of one repeated sentence
+     round 4 said is not an axis. The gutter now carries a window only where a
+     claim DIFFERS from the stated one, which is the fact it exists to show. */
+  const windowCounts = new Map<string, number>();
+  for (const claim of analytics.claims) {
+    windowCounts.set(claim.windowLine, (windowCounts.get(claim.windowLine) ?? 0) + 1);
+  }
+  let sharedWindow: string | null = null;
+  for (const [line, count] of windowCounts) {
+    if (sharedWindow === null || count > (windowCounts.get(sharedWindow) ?? 0)) {
+      sharedWindow = line;
+    }
+  }
 
   /* Every claim that fell short, in the shell's own words. A claim can fall
      short in three ways and all three belong together: it could not be
      computed, it was computed over incomplete coverage, or the reader's access
-     held part of it back. */
-  const limits = analytics.claims
-    .map((claim) => {
-      const line =
-        (claim.status !== "available" ? claim.statusLine : null) ??
-        claim.coverageLine ??
-        claim.permissionLine;
-      return line === null ? null : ([claim.question, line] as const);
-    })
-    .filter((entry): entry is readonly [string, string] => entry !== null);
+     held part of it back. Not on a first screen — seven ways of saying
+     "nothing produces this yet" under a page already saying nothing is set up
+     would be the same absence stated eight times. */
+  const limits = firstRun
+    ? []
+    : analytics.claims
+        .map((claim) => {
+          const line =
+            (claim.status !== "available" ? claim.statusLine : null) ??
+            claim.coverageLine ??
+            claim.permissionLine;
+          return line === null ? null : ([claim.question, line] as const);
+        })
+        .filter((entry): entry is readonly [string, string] => entry !== null);
 
-  const setup = firstRun
-    ? (analytics.disclosures.find((item) => item.tone === "setup") ?? null)
-    : null;
-  const rest = accountOf(analytics.disclosures, worst ?? setup);
-  const hasRecord = rest.length > 0 || limits.length > 0 || !analytics.trend.renderChart;
+  /* When every claim fell short in the same words, the words print once. A
+     failure that reaches everything is one fact about the read, not seven
+     facts about seven claims. */
+  const uniformLimit =
+    limits.length > 1 &&
+    limits.length === analytics.claims.length &&
+    new Set(limits.map(([, line]) => line)).size === 1
+      ? (limits[0] as readonly [string, string])[1]
+      : null;
+
+  const rest = accountOf(analytics.disclosures, worst);
+  const hasRecord = rest.length > 0 || limits.length > 0;
 
   return (
     <Chronology
@@ -236,10 +265,12 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
       material={here.material}
       notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
       horizonMark={HORIZON_MARK}
-      horizonLine={analytics.windowLine}
+      /* No window on a first screen: the records were not read over four
+         weeks, because there are no records. */
+      horizonLine={firstRun ? null : analytics.windowLine}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} lead={setup?.text ?? null} />
+          <FirstRun view={firstRun} />
         ) : (
           <>
             {analytics.lens.line ? (
@@ -299,22 +330,21 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
       }
       record={
         hasRecord ? (
-          <TheRead>
+          <TheRead label={firstRun ? FIRST_RUN_RECORD_LABEL : undefined}>
             <Notices items={rest} />
-            {/* The mode's own headline limitation, at the top rather than only at
-                the bottom. Every claim can be computable and Analytics still be
-                unable to say anything about change, and the word under the mode
-                name says so; this is where the page says why. */}
-            {analytics.trend.renderChart ? null : (
-              <div className="mr-schedule">
-                <Label>{props.copy.states["insufficient-history"]}</Label>
-                <p className="mr-account">{analytics.trend.line}</p>
-              </div>
-            )}
+            {/* The unearned trend is NOT restated here. It has two carriers
+                already — the word under the mode name, and the sentence below
+                the horizon where a fact about a future date belongs — and an
+                earlier draft printed the identical sentence a second time in
+                this column, ten lines from the first. */}
             {limits.length > 0 ? (
               <div className="mr-schedule">
                 <Label>What fell short</Label>
-                <Fields rows={limits} />
+                {uniformLimit !== null ? (
+                  <p className="mr-account">{uniformLimit}</p>
+                ) : (
+                  <Fields rows={limits} />
+                )}
               </div>
             ) : null}
           </TheRead>

@@ -9,27 +9,43 @@
  * number of their own: one series, one meaning, so an item numbered 03 can
  * never sit under a heading numbered 02.
  *
- * Only refusals are written on a row. Sixty rows that all allow the same two
- * things say nothing by saying so; a row that cannot be finished has to say
- * why, and does.
+ * The dispositions on a row are real controls (`RowDispositions`), and a
+ * confirmed completion does not strike the row or renumber the ledger: the
+ * ordinals are a fact about this read of the page, and the source's answer is
+ * printed under the row — done at the source, leaves this list at the next
+ * read. A ledger that re-counted itself on every press would be asserting a
+ * new total nobody has read.
  */
 
 import type {
   HomeCandidateProps,
   MyWorkRowView,
 } from "@/lib/home-layer/lab-shell";
+import { RowDispositions, type RowSeed } from "./dispositions";
 import {
-  Dispositions,
   Flag,
-  LAB_WRITES_NOTHING,
+  MY_WORK_MOVES_LINE,
+  MovesNote,
   Ordinal,
   Page,
   Section,
   When,
-  WritesNothing,
   entryAnchor,
   sectionAnchor,
 } from "./parts";
+
+/**
+ * Every field on a My work row is a server truth — provenance, dates, column,
+ * grouping — so the island owns only the run of moves and their outcomes, and
+ * the seed is the same for every row: nothing read, nothing pending.
+ */
+const WORK_SEED: RowSeed = {
+  read: true,
+  disposition: "open",
+  snoozeLine: null,
+  outcome: "none",
+  outcomeLine: null,
+};
 
 /**
  * ONE SENTENCE PER FACT, and the shell hands over more sentences than there
@@ -73,18 +89,45 @@ function Row({
   open,
   closeHref,
   groupNote,
+  refusesFirst,
 }: {
   row: MyWorkRowView;
   position: number;
   open: boolean;
   closeHref: string;
   groupNote: string | null;
+  /** True in the world where the source refuses the first attempt. */
+  refusesFirst: boolean;
 }) {
   const title = (
     <h3 className="ri-led-title">
       {row.title}
       {row.isMilestone ? <span className="ri-mile">Milestone</span> : null}
     </h3>
+  );
+
+  /*
+    WHAT A RESPONSIBILITY LETS YOU DO, ON THE ROW, AND REAL.
+    Round 4 printed only the refusals here, and a director found a ledger with
+    no dispositions at all. Round 5 named both moves and left them inert, and
+    a Required ballot line answered that: build them as real controls. Mark as
+    done reaches the simulated source and resolves only after it answers;
+    Change who owns it states honestly that this read does not carry the
+    people work could go to. The shut ones are struck through with their
+    reason, in the ledger's own quiet register rather than as a run of
+    buttons.
+  */
+  const moves = (
+    <RowDispositions
+      rowKey={row.key}
+      title={row.title}
+      seed={WORK_SEED}
+      actions={row.actions}
+      snoozeOptions={[]}
+      refusesFirst={refusesFirst}
+      marks={false}
+      label={open ? "What you can do here" : null}
+    />
   );
 
   if (open) {
@@ -104,7 +147,7 @@ function Row({
               <span className="ri-label">In the product</span>
               {row.sourcePath}
             </span>
-            <Dispositions actions={row.actions} label="What you can do here" />
+            {moves}
             <a className="ri-close" href={closeHref}>
               Close this entry
             </a>
@@ -126,18 +169,7 @@ function Row({
           {row.due ? <When due={row.due} /> : null}
         </span>
       </a>
-
-      {/*
-        WHAT A RESPONSIBILITY LETS YOU DO, ON THE ROW.
-        Round 4 printed only the refusals here, on the reasoning that sixty
-        rows allowing the same two things say nothing by saying so. A director
-        read the same rows and found a ledger with no dispositions at all, and
-        on an operating surface they were right: Mark as done and Change who
-        owns it are what this mode is for. Both are named on every row now, the
-        shut ones struck through with their reason, in the ledger's own quiet
-        register rather than as a run of buttons.
-      */}
-      <Dispositions actions={row.actions} />
+      {moves}
     </li>
   );
 }
@@ -146,6 +178,7 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
   const { myWork, copy, firstRun, hrefFor } = props;
   const groups = myWork.groups.filter((group) => group.rows.length > 0);
   const openKey = myWork.selection?.key ?? null;
+  const refusesFirst = props.world.id === "action_failure";
   /**
    * One numbering, from the first row of Waiting to the last row of Later. The
    * ordinal is the reader's place in the ledger, so it never restarts at a
@@ -162,10 +195,8 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
         myWork.selectionMissingLine ? <Flag>{myWork.selectionMissingLine}</Flag> : null
       }
     >
-      {/* Said once for the whole ledger, not once on each of sixty rows. */}
-      {myWork.rowsShown > 0 ? (
-        <WritesNothing>{LAB_WRITES_NOTHING}</WritesNothing>
-      ) : null}
+      {/* The terms of the moves, said once for the whole ledger. */}
+      {myWork.rowsShown > 0 ? <MovesNote>{MY_WORK_MOVES_LINE}</MovesNote> : null}
 
       {/*
         A read that could not be made is not an empty list. `kind` separates
@@ -200,6 +231,7 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
                 open={openKey !== null && row.key === openKey}
                 closeHref={hrefFor({ item: null })}
                 groupNote={group.note}
+                refusesFirst={refusesFirst}
               />
             ))}
           </ul>

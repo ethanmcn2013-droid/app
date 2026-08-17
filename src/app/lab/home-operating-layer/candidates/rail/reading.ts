@@ -67,12 +67,20 @@ const RANK: Readonly<Record<HomeStateName, number>> = Object.freeze({
  *   `waiting`  there is nothing to read yet, or nothing came back in it
  *   `partial`  part of what was asked for came back
  *   `broken`   something was asked and did not answer
+ *
+ * `permission-limited` is graded `partial`, on purpose and at a cost that was
+ * measured: it ranks 5 so it outranks every coverage shortfall, but a limited
+ * seat is a standing fact about the reader, not a read that broke. Grading it
+ * `broken` put the direction's loudest device, the reversed slab, on every
+ * mode of a guest's ordinary morning, and a slab a guest sees every day is a
+ * slab nobody reads on the day a source actually refuses. Broken is reserved
+ * for reads that were attempted and did not come back.
  */
 export type Band = "read" | "waiting" | "partial" | "broken";
 
 export function bandOf(state: HomeStateName): Band {
   const rank = RANK[state];
-  if (rank >= 5) return "broken";
+  if (rank >= 6) return "broken";
   if (rank >= 3) return "partial";
   if (rank >= 1) return "waiting";
   return "read";

@@ -19,31 +19,57 @@
  * than by grid placement. At 390 and at 1440 alike the reader lands on the
  * event they opened with the queue below it, which is what a full-screen
  * detail buys, without a viewport-conditional document.
+ *
+ * WHERE THE LIVE FIELDS LIVE. Read, State and Comes back are the fields the
+ * dispositions change, so they are owned by the island that changes them
+ * (`RowDispositions`) and sit outside the row's own link. The row keeps one
+ * 44 px whole-row target, nothing interactive is nested inside a wrapping
+ * link, and a row that has just been marked as read can never go on printing
+ * "Not read yet" beside the control that changed it.
  */
 
-import type { HomeCandidateProps, InboxRow } from "@/lib/home-layer/lab-shell";
-import {
-  Dispositions,
-  Flag,
-  LAB_WRITES_NOTHING,
-  Page,
-  WritesNothing,
-  entryAnchor,
-} from "./parts";
+import type {
+  HomeCandidateProps,
+  InboxRow,
+  InboxView,
+} from "@/lib/home-layer/lab-shell";
+import { RowDispositions, type RowSeed } from "./dispositions";
+import { Flag, INBOX_MOVES_LINE, MovesNote, Page, entryAnchor } from "./parts";
 
 const DETAIL_ID = "ri-open-event";
+
+/**
+ * The arrival state the shell composed, restated as the fields the island
+ * owns. Derived in one place so the queue row and the correspondence for the
+ * same event are seeded from the same reading of the same row.
+ */
+function seedOf(row: InboxRow): RowSeed {
+  return {
+    read: row.visibility !== "new",
+    disposition: row.disposition,
+    snoozeLine: row.snoozeLine,
+    outcome: row.attempt?.outcome ?? "none",
+    outcomeLine: row.attempt?.line ?? null,
+  };
+}
 
 function QueueRow({
   row,
   selected,
   groupHeading,
   openLabel,
+  refusesFirst,
+  snoozeOptions,
 }: {
   row: InboxRow;
   selected: boolean;
   groupHeading: string;
   /** The shell's own word for opening an event. Never one this file writes. */
   openLabel: string;
+  /** True in the world where the source refuses the first attempt. */
+  refusesFirst: boolean;
+  /** The shell's snooze choices, so the row's Snooze is as real as the detail's. */
+  snoozeOptions: InboxView["snoozeOptions"];
 }) {
   /**
    * A thread is named once, by its heading. Inside it the rows are events
@@ -84,41 +110,10 @@ function QueueRow({
           <span className="ri-prov">{row.provenance.text}</span>
           <span>{row.occurredLine}</span>
           {row.actorName ? <span>{row.actorName}</span> : null}
-        </span>
-        {/*
-          THE DISPOSITION IS A FIELD, NOT PROSE. Three directors read "Not read
-          yet" and "Still open" as flat sentences and concluded the queue had
-          no state on it at all. They are the two facts that decide whether a
-          row still wants something, so they are set the way this direction
-          sets a record: a named field with its value, marked when the value is
-          one that is still asking.
-        */}
-        <span className="ri-marks">
-          <span className="ri-mark" data-live={row.visibility === "new" ? "" : undefined}>
-            <span className="ri-mark-name">Read</span>
-            <span className="ri-mark-value">{row.visibilityLabel}</span>
-          </span>
-          <span className="ri-mark" data-live={row.disposition === "open" ? "" : undefined}>
-            <span className="ri-mark-name">State</span>
-            <span className="ri-mark-value">{row.dispositionLabel}</span>
-          </span>
-          {row.snoozeLine ? (
-            <span className="ri-mark">
-              <span className="ri-mark-name">Comes back</span>
-              <span className="ri-mark-value">{row.snoozeLine}</span>
-            </span>
-          ) : null}
           <span className="ri-open-mark" aria-hidden="true">
             {openLabel}
           </span>
         </span>
-        {row.attempt ? (
-          <span className="ri-facts">
-            <span className={row.attempt.outcome === "committed" ? undefined : "ri-fact-late"}>
-              {row.attempt.line}
-            </span>
-          </span>
-        ) : null}
         {row.revisionLine ? (
           <span className="ri-facts">
             <span className="ri-fact-late">{row.revisionLine}</span>
@@ -127,21 +122,38 @@ function QueueRow({
       </a>
 
       {/*
-        THE DISPOSITIONS, ON THE ROW, OUTSIDE ITS LINK.
+        THE DISPOSITIONS, ON THE ROW, OUTSIDE ITS LINK, AND REAL.
         Mark as read, Snooze, Approve at the source and Clear from Inbox are
         the four things a reader arrives at this queue to do, and in round 4
         every one of them cost a navigation because the row offered only OPEN.
-        They are named here, in the arrival state, with the shut ones struck
-        through and carrying their reason. Outside the link rather than inside
-        it, so the row keeps one 44 px target and nothing interactive is ever
-        nested in a wrapping link.
+        Round 5 first named them and left them inert, and a Required ballot
+        line answered that too: build them as real controls. They are controls
+        now — the same run of underlined names, each one doing the thing its
+        name says, the shut ones struck through with their reason on the same
+        line. Outside the link, so the row keeps one 44 px target and nothing
+        interactive is ever nested in a wrapping link.
       */}
-      <Dispositions actions={row.actions} exclude={["open"]} />
+      <RowDispositions
+        rowKey={row.eventId}
+        title={named}
+        seed={seedOf(row)}
+        actions={row.actions.filter((action) => action.id !== "open")}
+        snoozeOptions={snoozeOptions}
+        refusesFirst={refusesFirst}
+        marks
+        label={null}
+      />
     </li>
   );
 }
 
-function Detail({ props }: { props: HomeCandidateProps }) {
+function Detail({
+  props,
+  refusesFirst,
+}: {
+  props: HomeCandidateProps;
+  refusesFirst: boolean;
+}) {
   const { inbox, hrefFor } = props;
   const row = inbox.selection;
   if (!row) return null;
@@ -158,17 +170,13 @@ function Detail({ props }: { props: HomeCandidateProps }) {
       </h2>
 
       {row.revisionLine ? <Flag>{row.revisionLine}</Flag> : null}
-      {row.attempt ? (
-        <p
-          className={
-            row.attempt.outcome === "committed" ? "ri-lead" : "ri-alert"
-          }
-        >
-          {row.attempt.line}
-          {row.attempt.recoveryLabel ? ` ${row.attempt.recoveryLabel}.` : ""}
-        </p>
-      ) : null}
 
+      {/*
+        The record carries the facts the controls cannot change. The two they
+        can — Read and State — are on the island below, which is the same
+        state the queue row reads, so the correspondence and the queue can
+        never disagree about one event.
+      */}
       <dl>
         <dt>Arrived</dt>
         <dd>{row.occurredLine}</dd>
@@ -180,32 +188,20 @@ function Detail({ props }: { props: HomeCandidateProps }) {
         ) : null}
         <dt>Where it lives</dt>
         <dd>{row.provenance.text}</dd>
-        <dt>Read</dt>
-        <dd>{row.visibilityLabel}</dd>
-        <dt>State</dt>
-        <dd>
-          {row.dispositionLabel}
-          {row.snoozeLine ? ` ${row.snoozeLine}` : ""}
-        </dd>
         <dt>In the product</dt>
         <dd>{row.sourcePath}</dd>
       </dl>
 
-      <Dispositions actions={row.actions} exclude={["open"]} label="What you can do here" />
-
-      <details className="ri-snooze">
-        <summary className="ri-summary">
-          {props.copy.actions.snooze}, and when it comes back
-        </summary>
-        <ul className="ri-snooze-list">
-          {inbox.snoozeOptions.map((option) => (
-            <li className="ri-snooze-item" key={option.id}>
-              <strong>{option.label}</strong>
-              {option.resurfaceLine}
-            </li>
-          ))}
-        </ul>
-      </details>
+      <RowDispositions
+        rowKey={row.eventId}
+        title={row.title ?? row.titleFallback}
+        seed={seedOf(row)}
+        actions={row.actions.filter((action) => action.id !== "open")}
+        snoozeOptions={inbox.snoozeOptions}
+        refusesFirst={refusesFirst}
+        marks
+        label="What you can do here"
+      />
 
       <p className="ri-more">
         <a className="ri-jump" href={hrefFor({ event: null })}>
@@ -219,6 +215,7 @@ function Detail({ props }: { props: HomeCandidateProps }) {
 export function InboxMode({ props }: { props: HomeCandidateProps }) {
   const { inbox, copy, firstRun } = props;
   const selectedId = inbox.selection?.eventId ?? null;
+  const refusesFirst = props.world.id === "action_failure";
 
   return (
     <Page
@@ -235,16 +232,14 @@ export function InboxMode({ props }: { props: HomeCandidateProps }) {
       }
     >
       {/*
-        Said once for the whole queue, not once on each of fifty rows, and after
-        what limited the read rather than before it: a note about what this
-        surface can write is a note about the dispositions below, not a
-        qualification of the read above.
+        The terms of the moves, said once for the whole queue rather than once
+        on each of fifty rows, and after what limited the read rather than
+        before it: a note about what the dispositions reach is a note about the
+        rows below, not a qualification of the read above.
       */}
-      {inbox.groups.length > 0 ? (
-        <WritesNothing>{LAB_WRITES_NOTHING}</WritesNothing>
-      ) : null}
+      {inbox.groups.length > 0 ? <MovesNote>{INBOX_MOVES_LINE}</MovesNote> : null}
 
-      {selectedId ? <Detail props={props} /> : null}
+      {selectedId ? <Detail props={props} refusesFirst={refusesFirst} /> : null}
 
       {/*
         `emptyLine` is populated by the shell only when the queue is genuinely,
@@ -279,6 +274,8 @@ export function InboxMode({ props }: { props: HomeCandidateProps }) {
                   selected={row.eventId === selectedId}
                   groupHeading={group.heading}
                   openLabel={copy.actions.openEvent}
+                  refusesFirst={refusesFirst}
+                  snoozeOptions={inbox.snoozeOptions}
                 />
               ))}
             </ul>

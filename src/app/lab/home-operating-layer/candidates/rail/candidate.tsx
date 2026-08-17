@@ -30,9 +30,13 @@
  *
  *   THE HORIZON, at the bottom, is the far edge of what this read reached —
  *   fourteen days on Today, seven on My work, four weeks of records on
- *   Analytics, the last thing that arrived on Inbox. It carries the shell's own
- *   window sentence, so the two rules can never drift from the read they
- *   bracket.
+ *   Analytics. Where the shell publishes a window sentence the horizon carries
+ *   it, so the two rules can never drift from the read they bracket. Inbox is
+ *   the one mode where the edge is a state rather than a date: everything above
+ *   the line is waiting on you, everything below it has been snoozed past it or
+ *   settled, and the caption under the rule says exactly that. On a first
+ *   screen the horizon carries no window at all, because no read ran and a
+ *   claimed window would be the page's first lie.
  *
  * THE DISTANCE BETWEEN THEM IS THE WORK. That is the whole composition, and it
  * is what changed most in round 5. The previous version reserved 21rem of empty
@@ -80,12 +84,23 @@
  * things on the page: they are first because Today's own section order puts them
  * first, and on a day where something is two days late that late thing leads.
  *
- * ── WHAT IT SPENDS AT RUNTIME ──────────────────────────────────────────────
+ * ── WHAT IT SPENDS AT RUNTIME: THE CLIENT-JS POSITION, CLAIMED ─────────────
  *
- * Nothing. Every file in this folder is a Server Component, depth is
- * `<details>`, selection is the URL, motion is two CSS animations on transform
- * alone. The programme has 0.9 KB of shared-runtime headroom and this direction
- * asks for none of it.
+ * Zero bytes of client JavaScript. Not "small" — zero: there is no
+ * `"use client"` directive anywhere in this folder, so no file in it enters
+ * any client bundle, and there is no island to measure a gzip figure for.
+ * Every file is a Server Component; depth and dispositions are `<details>`,
+ * selection and navigation are the URL, motion is two CSS animations on
+ * transform alone, and the two entrances replay on the picker's R re-mount
+ * because they live in the markup, not in a store.
+ *
+ * The standard import ban — no useTaskPanel, useTasks, useDomain,
+ * useColumnConfig, usePersonalization or useCalendarFrame, directly or
+ * transitively — is satisfied by construction rather than by discipline: this
+ * folder imports from exactly two modules, `@/lib/home-layer/lab-shell` and
+ * `@/lib/product-urls`, and neither reaches the Tasks runtime. The programme
+ * has 0.9 KB of shared-runtime headroom and this direction asks for none of
+ * it: shared_runtime +0, largest_chunk +0, total_client_js +0.
  */
 
 import type {
@@ -214,12 +229,18 @@ function Modes({
                   {link.label}
                   {link.badge ? (
                     <span className="mr-badge">
-                      {/* A COUNT MAY NOT SIT UNQUALIFIED BESIDE A BROKEN READ.
-                          Where the badge's own coverage is not complete the
-                          number is the floor rather than the total, and it says
-                          so in words a line above the state caption that
-                          explains why. */}
-                      {props.inbox.badge.coverage !== "complete" ? (
+                      {/* A COUNT MAY NOT SIT UNQUALIFIED BESIDE A BROKEN READ —
+                          and a qualifier may not point the wrong way. "At least"
+                          claims under-counting, which is only true when whole
+                          projects were missing from the read; the shell's scope
+                          coverage line exists exactly then. The other partial
+                          cause, an item counted but unverifiable at the source,
+                          leaves the count exact, and "at least" there would
+                          manufacture doubt in the direction the data does not
+                          have. That caveat is carried by the accessible name and
+                          the mode's own state caption instead. */}
+                      {props.inbox.badge.coverage !== "complete" &&
+                      props.chrome.scope.coverageLine !== null ? (
                         <span className="mr-badge-floor" aria-hidden="true">
                           at least
                         </span>
@@ -332,21 +353,31 @@ function Scope({ props }: { props: HomeCandidateProps }) {
  *
  * Composed here rather than in the five mode files so the top of the page has
  * one shape in all of them and cannot drift. Every sentence is the shell's own.
+ *
+ * TWO REFUSALS AND ONE ABSTENTION, all three learned from the failure worlds.
+ * The Inbox and My work account sentences count PROJECTS THAT RESOLVED, so on
+ * the one world where a resolved project's source refused they read "0 did not
+ * answer" and "0 projects could not be read" directly under a notice saying one
+ * did. A true sentence from the wrong ledger is still a contradiction on the
+ * page, so when this mode's read carries a refusal those two lines stand down
+ * and the notice is the single account of the failure. Analytics abstains
+ * always: its window sentence is the horizon's own line, and printing it here
+ * as well was the same sentence at both edges of one page.
  */
-function coveredLine(props: HomeCandidateProps): string | null {
+function coveredLine(props: HomeCandidateProps, here: Reading): string | null {
   const mode = props.state.mode;
   if (mode === "today") return props.today.accountingLine ?? props.today.accountingWithheldLine;
   if (mode === "briefing") {
     return props.briefing.accountingLine ?? props.briefing.accountingWithheldLine;
   }
   if (mode === "inbox") {
-    if (!props.inbox.badge.rendered) return null;
+    if (!props.inbox.badge.rendered || here.refused) return null;
     return props.inbox.badge.glyph === null
       ? props.copy.unreadableCount
       : props.inbox.badge.accessibleName;
   }
-  if (mode === "my-work") return props.myWork.coverageLine;
-  return props.analytics.windowLine;
+  if (mode === "my-work") return here.refused ? null : props.myWork.coverageLine;
+  return null;
 }
 
 /**
@@ -387,20 +418,30 @@ const Meridian: HomeCandidate = (props: HomeCandidateProps) => {
             </h1>
             {/* The standfirst belongs to the heading, so it sits under it. Above
                 it, it moved the mode row and made every switch into Analytics a
-                visible jump. */}
-            {mode === "analytics" ? (
+                visible jump. It also stands down on a first screen: a sentence
+                promising that every number names its records, on a page whose
+                whole point is that there are no records yet, is a promise made
+                to nobody. */}
+            {mode === "analytics" && !props.firstRun ? (
               <p className="mr-lead">{props.analytics.leadLine}</p>
             ) : null}
             <Scope props={props} />
           </div>
           <Ledger
-            covered={coveredLine(props)}
+            covered={coveredLine(props, here)}
             rows={[
               ["What was read", props.chrome.scope.label],
               ...(props.chrome.scope.coverageLine
                 ? ([["How much", props.chrome.scope.coverageLine]] as const)
                 : []),
-              ["Work starts in", props.chrome.activeProject.line],
+              [
+                "Work starts in",
+                /* The name where the shell resolved one — a term wants a value,
+                   not a second sentence saying "work starts in". The line still
+                   speaks whenever there is no name to give, because both of its
+                   remaining cases are sentences a bare term cannot carry. */
+                props.chrome.activeProject.name ?? props.chrome.activeProject.line,
+              ],
             ]}
           />
           {mode === "today" ? <TodayMode props={props} here={here} /> : null}

@@ -82,11 +82,23 @@ function SignalEntry({
         {String(index + 1).padStart(2, "0")}
       </p>
 
-      <h3 className="ed-entry-title">
-        <a href={row.href}>{row.title}</a>
-      </h3>
-
-      {row.due === null ? null : <When when={row.due} className="ed-entry-when" />}
+      {/* ROUND 4: "the single most decision-relevant datum on the row is a
+          400px saccade from the thing it describes." The title and its date
+          are one flex line now; above 70rem a dotted leader runs between them,
+          so the figure keeps the shared right edge the panel protects and the
+          binding is printed rather than inferred. Below 70rem the line stacks
+          and the two are adjacent, as before. */}
+      <div className="ed-rowline">
+        <h3 className="ed-entry-title">
+          <a href={row.href}>{row.title}</a>
+        </h3>
+        {row.due === null ? null : (
+          <>
+            <span className="ed-leader" aria-hidden="true" />
+            <When when={row.due} className="ed-entry-when" />
+          </>
+        )}
+      </div>
 
       <div className="ed-entry-body">
         <p className="ed-reason">{row.reason}</p>
@@ -116,17 +128,20 @@ function LedgerRow({
         </p>
       )}
 
-      <h3 className="ed-row-title">
-        <a href={row.href}>{row.title}</a>
-      </h3>
-
-      {row.due === null ? (
-        <p className="ed-row-when ed-when">
-          <b>No date</b>
-        </p>
-      ) : (
-        <When when={row.due} className="ed-row-when" />
-      )}
+      {/* Title, leader, ledger field: one printed line. See SignalEntry. */}
+      <div className="ed-rowline">
+        <h3 className="ed-row-title">
+          <a href={row.href}>{row.title}</a>
+        </h3>
+        <span className="ed-leader" aria-hidden="true" />
+        {row.due === null ? (
+          <p className="ed-row-when ed-when">
+            <b>No date</b>
+          </p>
+        ) : (
+          <When when={row.due} className="ed-row-when" />
+        )}
+      </div>
 
       <div className="ed-row-body">
         {reasonIsTheField(row) ? null : <p className="ed-why">{row.reason}</p>}

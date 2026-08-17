@@ -321,9 +321,15 @@ export function InboxMode(props: HomeCandidateProps) {
                 title={eventTitle(selection)}
                 seed={seedFor(selection)}
                 plans={
-                  planPage([{ key: selection.eventId, actions: selection.actions }], ["open"]).get(
-                    selection.eventId,
-                  ) ?? []
+                  /* Its own id namespace: this second plan numbers from zero
+                     like the queue's does, and the same event is on the page
+                     twice, so without the prefix the detail's printed reason
+                     could carry the same id as queue row zero's. */
+                  planPage(
+                    [{ key: selection.eventId, actions: selection.actions }],
+                    ["open"],
+                    "dk-why-open",
+                  ).get(selection.eventId) ?? []
                 }
                 snoozeOptions={snoozeOptions}
                 refusesFirst={refusesFirst}

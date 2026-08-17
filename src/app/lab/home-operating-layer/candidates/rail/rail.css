@@ -29,8 +29,8 @@
  * THE MATERIAL OF THE READ. `[data-band]` is the direction's state language:
  *   read     nothing is drawn at all
  *   waiting  nothing is drawn at all
- *   partial  the sentence at heading size behind a heavy leading rule
- *   broken   the sentence REVERSED, knocked out of solid ink
+ *   partial  the sentence at reading size behind a heavy leading rule
+ *   broken   the sentence at heading size, REVERSED, knocked out of solid ink
  * Nothing else in the direction is reversed, so a refused read is legible as a
  * black slab from across a room. The previous device — a ruled ground of grey
  * hairlines — was read by two directors as a skeleton loader and is gone. The
@@ -573,10 +573,19 @@
   font-size: var(--text-body-sm);
 }
 
-/* Part of the read came back. Clean paper, one heavy leading rule. */
+/* Part of the read came back. Clean paper, one heavy leading rule, and the
+   sentence at reading size rather than heading size: a standing coverage note
+   shouted every ordinary morning is a shout that stops meaning anything, and
+   the heading voice belongs to the one state that earns it below. */
 .mr-read-notice[data-band="partial"] {
   padding: var(--space-4) 0 var(--space-4) var(--space-5);
   border-inline-start: 4px solid var(--mr-flight);
+}
+
+.mr-read-notice[data-band="partial"] .mr-read-notice-text {
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  letter-spacing: normal;
 }
 
 /*
@@ -626,15 +635,6 @@
   margin: 0 0 var(--space-5);
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
-}
-
-/* What a list was drawn from, when the read did not cover everything. */
-.mr-band-caveat {
-  margin: calc(-1 * var(--space-3)) 0 var(--space-5);
-  padding-inline-start: var(--space-3);
-  border-inline-start: 3px solid var(--status-blocked);
-  font-size: var(--text-body-sm);
-  color: var(--ink);
 }
 
 .mr-entries {
@@ -1342,8 +1342,10 @@
   margin: 0 0 var(--space-6);
 }
 
-.mr-stream .mr-trend,
-.mr-stream .mr-trend-refused {
+/* The earned chart sits inside the read, after the claims, and takes a
+   breath's separation from them. `.mr-field` is the stream's wrapper. */
+.mr-field .mr-trend,
+.mr-field .mr-trend-refused {
   margin-block-start: var(--space-7);
 }
 

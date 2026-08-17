@@ -50,12 +50,21 @@
  * WHAT IT COSTS, MEASURED RATHER THAN PROMISED. Round 4: "Desk's apparent zero
  * client cost is a false measurement, and it is the direction with the largest
  * hidden bill... Until that number exists, Desk's budget claim is unevidenced."
- * The number exists now. Built with esbuild at the app's own browser targets,
- * bundled, minified, with `react` external because the shared runtime already
- * carries it:
+ * The number exists now, and the recipe is stated so it can be re-run: esbuild
+ * 0.27.7 from this repository's own store — bundle, minify, format esm, jsx
+ * automatic, target chrome111/edge111/firefox111/safari16.4, `react` and
+ * `react/jsx-runtime` external because the shared runtime already carries both.
+ * Gzip is zlib level 9, which is the exact accounting
+ * `scripts/check-performance-budgets.mjs` applies to every client chunk, so the
+ * number below and the `total_client_js` ceiling are in the same units:
  *
- *   this module, minified          5,056 bytes   4.94 KB
- *   this module, minified + gzip   1,952 bytes   1.91 KB
+ *   this module, minified          5,105 bytes   4.99 KB
+ *   this module, minified + gzip   1,978 bytes   1.93 KB
+ *
+ * The build's metafile lists exactly ONE input: this file. That is the import
+ * ban above proven at the bundler rather than promised in a comment — nothing
+ * else in the repository is reachable from this module at runtime, so nothing
+ * banned can be reached transitively either.
  *
  * against the three ceilings the programme actually has:
  *
@@ -63,7 +72,7 @@
  *                                     enters the shared chunk, so the 0.9 KB of
  *                                     programme headroom is untouched.
  *   largest_chunk    62.5 / 63 KB    + 0 bytes, same reason.
- *   total_client_js 898.8 / 940 KB   + 1.91 KB, which is 4.6% of the 41.2 KB
+ *   total_client_js 898.8 / 940 KB   + 1.93 KB, which is 4.7% of the 41.2 KB
  *                                     of remaining slack.
  *
  * For scale: the only other direction that spends client JavaScript builds to
@@ -444,7 +453,16 @@ export function RowDispositions({
     (id === "approve" && status.outcome === "committed") ||
     (id === "complete" && status.done);
 
-  const printed = plans.filter((plan) => plan.reasonMode === "print" && plan.reason !== null);
+  /* Deduped by id: on a dense page the id is keyed by the reason, so if two
+     actions on one row are ever closed for the same sentence, one copy prints
+     and owns the id rather than two copies claiming it. */
+  const printed = [
+    ...new Map(
+      plans
+        .filter((plan) => plan.reasonMode === "print" && plan.reason !== null)
+        .map((plan) => [plan.domId ?? plan.id, plan] as const),
+    ).values(),
+  ];
 
   return (
     <>
