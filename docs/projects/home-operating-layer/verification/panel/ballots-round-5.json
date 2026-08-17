@@ -1,0 +1,1370 @@
+{
+ "map": {
+  "A": "editorial",
+  "B": "rail",
+  "C": "desk",
+  "D": "index"
+ },
+ "ballots": [
+  {
+   "lens": "product-taste-and-founder-outcome",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.4,
+     "ownedLens": 8.4,
+     "strengths": [
+      "The colophon 'HOW THIS PAGE WAS READ' — the accounting sentence, actor, and no-source notes institutionalised as a standing section on every surface. Do not sand this off; it is the direction's signature honesty furniture.",
+      "The quiet day compressing to one serene screen (headline, one honest sentence, colophon) while the failure day raises a red rule, a 'WHAT QUALIFIES THIS READ' qualifier, and refuses to show a total 'rather than a total that would be wrong' — the cleanest quiet-vs-broken separation in the field and it must survive any remediation verbatim.",
+      "The broadsheet grammar itself: numbered mono margin, dateline, one indigo rule spent once per view, struck-through refused actions with their reasons in the Inbox.",
+      "New-user copy: 'This is not a failed read, and it is not an all clear either' plus a single Open Tasks action — the best-phrased first screen of the four."
+     ],
+     "weakest": "editorial__analytics__owner_signature__1440x960.png — the COUNTED / CANNOT SAY / WINDOW / LEFT OUT / BASELINE dossier scaffold repeats identically seven times down 3808px; the editor's voice becomes a form being filled in, which is exactly what a months-iterated broadsheet would never ship.",
+     "concerns": [
+      "Verbatim liturgy: 'Signal flags anything past its due date…' appears twice in adjacent rows at arrival; my-work repeats the no-waiting-column note four times; the daily reader will stop seeing the words, which is fatal for copy that carries honesty.",
+      "The receipt lives only at the foot — a founder must scroll ~2500px to reach the account of the read, where Rail hands it over at arrival.",
+      "Analytics is a 3808px grind of identical stacks; daily living cost is the highest of the four after Index."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Deduplicate the liturgy: state each rule sentence once per section (first occurrence, or as a section note) instead of verbatim under every row — including my-work's no-waiting-column note and analytics' repeated dossier labels — and pull a one-line THE ACCOUNT up under the Today standfirst so the receipt is met before the fold, keeping the full colophon at the foot."
+    },
+    {
+     "label": "B",
+     "overall": 8.6,
+     "ownedLens": 8.8,
+     "strengths": [
+      "The two meridians — NOW and THE EDGE OF THIS READ — recur on all five surfaces with a surface-specific true sentence each time ('Nothing below this line is asking for you inside this read' / '…is waiting on you now' / '…is due inside the read above' / 'Below this line is what these records cannot reach yet'). This is the only direction whose thesis is an operating principle rather than a page style; the meridians and their sentences are untouchable in any remediation.",
+      "The accounting sentence at arrival, top-right (THIS READ / WHAT WAS READ / WORK STARTS IN) — the founder's receipt is handed over before a single row is read. Keep it at arrival.",
+      "Per-mode read-state captions permanently under the mode names (READ / PARTLY READ / NOTHING IN IT / NOT ENOUGH HISTORY), and the time-gutter with red bars for lateness — state is legible at a glance without opening anything.",
+      "The quiet day retains the full two-meridian structure around one honest paragraph — the empty page still looks like the product, not like a template that lost its data."
+     ],
+     "weakest": "rail__today__provider_failure__1440x960.png — the most important alarm screen is the least composed: all four modes repeat the identical caption 'PARTLY READ · ONE SOURCE DID NOT ANSWER', forcing the mode row into a 2x2 wrap, and the inverted black slab is the one tonally blunt element in an otherwise hairline system.",
+     "concerns": [
+      "Provider-failure mode captions repeat the same long text four times and break the header into a 2x2 grid — the caption system needs a shared-condition treatment before this ships.",
+      "At 1440 the right half of the page below the annotation block is dead white on Today; the annotation track earns its keep on my-work and Inbox but reads left-weighted on the signature world.",
+      "The 390 fold spends itself on furniture (mode grid, scope control, accounting) and stops at the standfirst — the first signal item is below the mobile fold, where Editorial and Index get item 01 on screen."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "C",
+     "overall": 8.2,
+     "ownedLens": 8.3,
+     "strengths": [
+      "The spine that breaks where a source did not answer, with the legend gaining 'The line breaks here. This could not be read.' — the single most elegant translation of the governing rule in the field; the break, the mark legend, and the principle 'nothing here is carried by a shape' must survive every future pass.",
+      "The verdict-word standfirst with the rule-as-instrument under the headline — solid black 'Read.', red 'Did not answer.', dashed 'Nothing set up yet.' — a genuinely composed status language.",
+      "'Some sources did not answer, so this list can be short. Short is not empty.' — the best sentence in the programme (when it is true; see correction).",
+      "Warm paper canvas, sheet-on-desk chrome, IN THIS READ contents with counts, and native details/summary for the below-the-line sections (verified in the HTML — reachable without JS)."
+     ],
+     "weakest": "desk__my-work__owner_signature__1440x960.png — the page contradicts its own ledger: 'Some sources did not answer…' renders four times while About this list states 'Read 3 of 3 projects. 0 did not answer', a claim that lies on a healthy page, in the exact grammar the direction is proudest of.",
+     "concerns": [
+      "Confirmed in desk__my-work__owner_signature.html: the non-answering-source disclosure renders in the all-answered state — a direct governing-rule violation, and the reason this cannot pass as shipped regardless of polish.",
+      "The day's true state ('This is not an all clear…') is demoted to About this read at the foot; on the signature world the arrival verdict reads 'Read. Every project at this scope answered', answering coverage when the founder is asking 'am I OK'.",
+      "The break-style dotted mark also decorates healthy across-this-read composite rows in the briefing, while the legend defines it as 'this could not be read' — a mark-semantics smudge in a system whose whole premise is that marks never carry unstated meaning.",
+      "The 'How to read the line' legend recurs at the foot of every page; a daily resident reads the manual every day."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Gate 'Some sources did not answer, so this list can be short. Short is not empty.' on an actually non-answering source — it currently renders four times in my-work owner_signature against the page's own 'Read 3 of 3 projects. 0 did not answer' — then re-verify every conditional disclosure against its own page's accounting across all ten states, and move the not-an-all-clear sentence up beside the verdict word on Today."
+    },
+    {
+     "label": "D",
+     "overall": 8.1,
+     "ownedLens": 8,
+     "strengths": [
+      "The contents-as-condition-report — leader dots running from each mode to the condition its own read is in — is a genuinely novel navigation idea and the direction's spine; it must not be sanded off, only deduplicated.",
+      "Continuous entry numbering through the whole day (01–17 across sections in the briefing) — the periodical thesis honestly carried into structure.",
+      "The fielded COUNTED / LEFT OUT / CANNOT SAY / BASELINE record blocks on analytics — the most documentary receipt grammar of the four.",
+      "The best mobile arrival in the field: the mode list stacks as full-width rows with conditions right-aligned and still delivers the headline, standfirst, and item 01 with its red late marker inside the 390 fold."
+     ],
+     "weakest": "index__today__owner_quiet__1440x960.png — on a quiet day the main column is a headline, one paragraph, and a long void while the right rail keeps talking; the composition only balances when the day is full, which is the tell of a direction that needs volume to look composed.",
+     "concerns": [
+      "The condition report is stated twice on one arrival screen (inline mode strip plus CONTENTS rail); in provider_failure 'Partly read · Not answering' appears eight times — documentary texture turned drone.",
+      "'Today · Read · Not connected' hangs a source's condition directly on a mode name at the most prominent position on the page; a founder reads 'Today — not connected' every single day.",
+      "Tallest pages of the four (analytics 4054px); the most furniture per fact, the highest daily reading tax."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Collapse the doubled condition report — let the mode strip carry marks only and the CONTENTS table carry the words, so no condition is stated twice on one screen — and stop binding source conditions to mode names: 'Not connected' moves off 'Today' and onto its source note in THIS READ."
+    }
+   ],
+   "rankedOrder": [
+    "B",
+    "A",
+    "C",
+    "D"
+   ],
+   "evidenceExamined": [
+    "README.md",
+    "editorial__today__owner_signature__1440x960__fold.png",
+    "editorial__today__owner_signature__1440x960.png",
+    "editorial__today__owner_quiet__1440x960.png",
+    "editorial__today__provider_failure__1440x960.png",
+    "editorial__today__new_user__1440x960.png",
+    "editorial__briefing__owner_signature__1440x960.png",
+    "editorial__my-work__owner_signature__1440x960.png",
+    "editorial__today__owner_signature__390x844__fold.png",
+    "editorial__analytics__owner_signature__1440x960.png",
+    "editorial__inbox__owner_signature__1440x960.png",
+    "rail__today__owner_signature__1440x960__fold.png",
+    "rail__today__owner_signature__1440x960.png",
+    "rail__today__owner_quiet__1440x960.png",
+    "rail__today__provider_failure__1440x960.png",
+    "rail__today__new_user__1440x960.png",
+    "rail__briefing__owner_signature__1440x960.png",
+    "rail__my-work__owner_signature__1440x960.png",
+    "rail__today__owner_signature__390x844__fold.png",
+    "rail__analytics__owner_signature__1440x960.png",
+    "rail__inbox__owner_signature__1440x960.png",
+    "desk__today__owner_signature__1440x960__fold.png",
+    "desk__today__owner_signature__1440x960.png",
+    "desk__today__owner_quiet__1440x960.png",
+    "desk__today__provider_failure__1440x960.png",
+    "desk__today__new_user__1440x960.png",
+    "desk__briefing__owner_signature__1440x960.png",
+    "desk__my-work__owner_signature__1440x960.png",
+    "desk__today__owner_signature__390x844__fold.png",
+    "desk__analytics__owner_signature__1440x960.png",
+    "desk__my-work__owner_signature.html",
+    "desk__today__owner_signature.html",
+    "index__today__owner_signature__1440x960__fold.png",
+    "index__today__owner_signature__1440x960.png",
+    "index__today__owner_quiet__1440x960.png",
+    "index__today__provider_failure__1440x960.png",
+    "index__today__new_user__1440x960.png",
+    "index__briefing__owner_signature__1440x960.png",
+    "index__my-work__owner_signature__1440x960.png",
+    "index__today__owner_signature__390x844__fold.png",
+    "index__analytics__owner_signature__1440x960.png"
+   ],
+   "overallNote": "This seat asked which of the four is an operating system a discerning sole founder would live in daily rather than a template with taste, and only Meridian (B) clears the admission gate: its two meridians stay true on all five surfaces and it hands over the receipt at arrival, while Editorial falls just short on repeated liturgy and a foot-parked account, Desk is held back by a page that contradicts its own ledger, and Index says every true thing twice."
+  },
+  {
+   "lens": "data-truth-permissions-and-human-respect",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.1,
+     "ownedLens": 7.8,
+     "strengths": [
+      "The 'How this page was read' colophon is a standing accounting institution on every page — account, total-refusal, no-source notes, actor and destination, all fielded; on the quiet day the whole colophon sits above the fold, so a quiet page proves itself unasked. Do not sand this off.",
+      "Failure is unmistakable and reasoned at eye level: full-width red double rule 'FAILURE · PARTLY READ' plus the margin note '1 project did not answer at all. Nothing here counts it as zero, and no total includes it.' Quiet and broken cannot be confused at any distance.",
+      "Day one is explicitly not a failure: 'This is not a failed read, and it is not an all clear either' with a neutral grey chip and a Where-to-start action.",
+      "The analytics affidavit margins (COUNTED / CANNOT SAY / WINDOW / LEFT OUT / BASELINE / provenance with counter version) are the fullest, most dignified per-number truth apparatus of the four."
+     ],
+     "weakest": "editorial__inbox__owner_signature.html — the direction-authored deck line 'In your Inbox: 5 open, and at least one more that could not be counted' contradicts its own qualifier one block above ('1 item could not be checked against the source, so it is counted but not named') and the badge aria ('5 open. 1 could not be verified'). The unverified item is counted; the 'one more that could not be counted' is a phantom.",
+     "concerns": [
+      "The inbox deck line invents an uncounted extra item the ledger says does not exist — it errs toward over-caution and never claims all-clear, but under the governing rule it is still a count that lies, on the mode whose subject is counts.",
+      "On the 390 failure fold the reasoned qualifier collapses to '1 thing qualifies this read ⌄' — the chip survives but the reason sentence is one tap away, where rail and index keep it in the mobile fold.",
+      "Exposure, not a charge: the shared accounting sentence ('showed 5, held back 19') and the shared cap notes ('22 more qualified…') never visibly reconcile; identical in all four directions, so it belongs to the fixture/shell plane."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Replace the editorial-authored 'In your Inbox' deck line with one consistent with the ledger — e.g. '5 open. 1 of them could not be checked against the source, so it is counted but not named.' — and surface the full qualifier sentence (not just the collapsed chip) in the 390 failure fold."
+    },
+    {
+     "label": "B",
+     "overall": 8.7,
+     "ownedLens": 8.8,
+     "strengths": [
+      "Read-state is furniture, not commentary: every mode carries its condition in the persistent rail with the reason in words — 'Partly read · one source did not answer' (failure) vs bare 'Partly read' (coverage) vs 'Nothing in it' vs 'Not enough history' — at 1440 and, first thing on screen, at 390. Do not sand this off.",
+      "The always-visible 'This read' panel swaps the accounting sentence for the total-refusal sentence ('No total is shown rather than a total that would be wrong') the moment a source fails — the refusal is at arrival, above the fold, plus the black banner '1 project did not answer at all. Nothing here counts it as zero, and no total includes it.' — the strongest single failure moment of the round.",
+      "Epistemic boundaries as architecture: 'The edge of this read — Nothing below this line is asking for you inside this read' and analytics' 'Below this line is what these records cannot reach yet', with the trend refusal placed beyond the edge. The time thesis is used to express the limits of knowledge, not just schedule.",
+      "'Before the first read. Nothing failed, and nothing here counts as zero' is the most humane day-one framing of the four, and the snooze menu prints exact return instants with DST honesty ('a clock change between now and then is already counted')."
+     ],
+     "weakest": "rail__today__owner_quiet__1440x960__fold.png — My work shows an amber 'PARTLY READ' with no reason clause on the quiet day; it is the one condition label in rail's own furniture that refuses without saying why, and the quiet/failure distinction there leans on colour plus the absent clause rather than a stated reason.",
+     "concerns": [
+      "Give the quiet-day 'Partly read' its reason in words in the rail, as the failure states already get.",
+      "'THE EDGE OF THIS READ' renders as a header with nothing beneath it on new_user — vestigial furniture on the most sensitive screen.",
+      "Because rail gives the shared accounting sentence its biggest, most persistent stage, the unreconciled shell-plane seam between 'held back 19' and '22 more qualified' is most visible here — not rail's defect, but rail inherits it loudest."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "C",
+     "overall": 8.4,
+     "ownedLens": 8.4,
+     "strengths": [
+      "'True of every read, not of today' is the only formal separation of chronic gaps from today's incident in the round — it stops standing no-source notes from masquerading as news and stops today's failure from hiding among boilerplate. This is the single best epistemic structure of the four; do not sand it off.",
+      "The spine that breaks where a source did not answer, with the legend 'Every mark on it repeats something the row beside it already says in words, so nothing here is carried by a shape' — declared and practiced encoding honesty.",
+      "Every list in a limited read carries its own caveat — 'Some sources did not answer, so this list can be short. Short is not empty.' — so no section ever pretends completeness.",
+      "Analytics leads with its refusal as the standfirst ('Not enough history. 6 of 14 comparable daily readings. The earliest this can show a trend is 24 July 2026.') before any number is allowed to speak."
+     ],
+     "weakest": "desk__today__scale__1440x960__fold.png — the 'IN THIS READ' TOC says 'Today's signal · 3' while the read holds 25 signal-qualifiers (3 shown, '22 more qualified' confessed only inside the section); a count labelled 'in this read' that actually counts the render is the closest thing to a lying count in the round.",
+     "concerns": [
+      "The TOC count wobble repeats in every state (3 vs 10 in signature/partial, 3 vs 25 at scale); the heading scopes it to the read, the number scopes to the page.",
+      "new_user is the only day-one without an explicit 'nothing failed' sentence, and the two chronic notes a new user can expand are each titled 'Could not be read' — calm pixels (dashed rule, no red), least reassuring words of the four."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Make the TOC counts truthful about the read, not the render — 'Today's signal · 3 shown of 25' or retitle the block 'On this page' — and add desk's own explicit 'Nothing failed' / 'not a failed read' sentence to the new_user standfirst."
+    },
+    {
+     "label": "D",
+     "overall": 8.5,
+     "ownedLens": 8.6,
+     "strengths": [
+      "The contents table doubles as a coverage ledger — 'Every mode, and the condition its own read is in', with worded reasons ('Partly read · Not answering', 'Coverage', 'Not enough history', 'Nothing set up yet') and leader dots to each; the navigation itself is a truth instrument, legible from every mode and intact in the 390 fold. Do not sand this off.",
+      "'What limited this read' scales its alarm honestly: red-ruled with the named limitation on failure, de-escalated to neutral on day one — the limitation grammar never cries wolf.",
+      "Denominators are explicit and safe: analytics says '2 of 23 records were left out of this' per metric, the scale Inbox badge draws a dashed border around 42 while one item is unverified, and unreadable projects are disclosed as counts ('0 projects could not be read') without naming anything hidden.",
+      "The skip-region aria announces the condition before anything else ('Today. Partly read. Not answering.') — assistive readers get the truth first, not last."
+     ],
+     "weakest": "index__today__new_user__1440x960__fold.png — a person's first-ever screen is filed under the heading 'WHAT LIMITED THIS READ'; the body repairs it ('Nothing failed, and nothing here counts as zero') and the red is withheld, but the furniture still frames day one as a limitation report.",
+     "concerns": [
+      "Retitle or suppress the limitation block on new_user (rail's 'Before the first read' shows the shape of the fix).",
+      "Chronic and incident share one slot in the nav: quiet shows 'Read · Not connected' where failure shows 'Partly read · Not answering' — worded differently and colour-differentiated, but the reader must infer that 'Not connected' is chronic; desk's every-read/today split solves what index leaves to inference.",
+      "The mode conditions are stated three times per page (top nav, contents table, THIS READ rail) — honest redundancy, but on 4000px pages it is a lot of instrument for one fact."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    }
+   ],
+   "rankedOrder": [
+    "B",
+    "D",
+    "C",
+    "A"
+   ],
+   "evidenceExamined": [
+    "README.md (fixture map, capture limits, shell caveats)",
+    "editorial__today__provider_failure.html · editorial__today__owner_quiet.html · editorial__today__partial_coverage.html · editorial__today__new_user.html · editorial__today__scale.html · editorial__today__owner_signature.html · editorial__analytics__owner_signature.html · editorial__inbox__owner_signature.html (HTML read as tag-stripped verbatim text with aria-labels preserved)",
+    "rail__today__provider_failure.html · rail__today__owner_quiet.html · rail__today__partial_coverage.html · rail__today__new_user.html · rail__today__scale.html · rail__today__owner_signature.html · rail__analytics__owner_signature.html · rail__inbox__owner_signature.html (same extraction method)",
+    "index__today__provider_failure.html · index__today__owner_quiet.html · index__today__partial_coverage.html · index__today__new_user.html · index__today__scale.html · index__today__owner_signature.html · index__analytics__owner_signature.html · index__inbox__owner_signature.html (same extraction method)",
+    "desk__today__provider_failure.html · desk__today__owner_quiet.html · desk__today__partial_coverage.html · desk__today__new_user.html · desk__today__scale.html · desk__today__owner_signature.html · desk__analytics__owner_signature.html · desk__inbox__owner_signature.html (same extraction method)",
+    "Cross-direction greps of all four scale/inbox/signature HTML texts to separate shared fixture strings (accounting sentence, cap notes, refused-attempt copy, unnamed-item copy) from direction-authored copy",
+    "PNGs read as images — editorial: owner_quiet + provider_failure + new_user + scale 1440 folds, analytics 1440 full, provider_failure 390 fold",
+    "PNGs — rail: owner_quiet + provider_failure + new_user + scale 1440 folds, analytics 1440 full, provider_failure 390 fold",
+    "PNGs — index: owner_quiet + provider_failure + new_user + scale 1440 folds, analytics 1440 full, provider_failure 390 fold",
+    "PNGs — desk: owner_quiet + provider_failure + new_user + scale + partial_coverage 1440 folds, analytics 1440 full"
+   ],
+   "overallNote": "This lens judged whether any count, badge or all-clear lies under failure, partial knowledge, scale or a first run: all four directions keep quiet and broken unmistakably different in words and pixels, none ever claims an all-clear, and — contrary to the README's shell caveat — none of these renders treats a new reader as a failure; rail makes truth structural and passes cleanly, index passes on its coverage-ledger navigation, while editorial (a self-contradicting inbox count line) and desk (TOC counts that count the render, not the read) each own one small, exactly repairable count-truth seam. Programme-level, charged to no candidate: the shared accounting sentence ('showed 5, held back 19') and the shared cap notes ('22 more qualified') never visibly reconcile on any page, and no capture exercises a permission-limited actor, so denominator-safety under delegation remains untested by this matrix."
+  },
+  {
+   "lens": "ui-composition",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.6,
+     "ownedLens": 8.6,
+     "strengths": [
+      "The marginalia grid — dateline, section notes, sender/time and field labels living in the margins — is the direction's compositional signature and must not be sanded off; it is what makes the centred column read as a considered broadsheet rather than a floating card.",
+      "Colour discipline as structure: one indigo rule under Today's signal, red only for lateness/failure; the failure state is composed (red band plus right-margin qualifier block), not decorated.",
+      "The quiet day compresses to a single honest screen with the colophon raised — quiet and broken are compositionally unmistakable at a glance, which is the governing rule delivered by layout alone.",
+      "The three-column HOW THIS PAGE WAS READ colophon and the stanza-stacked project table at 390 (which keeps the LATE figure) are grid work at studio grade."
+     ],
+     "weakest": "editorial__inbox__owner_signature__390x844.png — the furniture-to-content ratio collapses: every entry becomes ~10 stacked lines of underlined, struck-through and explanatory link text, ballooning nine items to a 4421px page where titles drown in repeated action rows.",
+     "concerns": [
+      "Inbox action rows repeat the struck-link-plus-reason pattern on every entry at both viewports; honest, but the repetition is compositional noise a months-iterated studio would have systematised.",
+      "Analytics repeats six near-identical field labels per claim seven times (5014px at 390) — the fielded honesty needs a compressed grammar.",
+      "At 390 the analytics margin note reflows into a narrow ragged hyphenating column instead of going full-width; small but visible grid artifact.",
+      "Trailing 'Open the full briefing' links sit orphaned at section bottoms."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 8.3,
+     "ownedLens": 8.2,
+     "strengths": [
+      "THE EDGE OF THIS READ — a full-width rule stating nothing below it is asking — is a genuine compositional invention: the page's spatial structure carries the claim boundary. It must survive any remediation.",
+      "The time/lateness gutter (right-aligned mono labels, red tick bars only on late items) makes severity scannable down the whole page and is the thesis 'time is the structure' actually delivered.",
+      "The black failure banner, distinct from red lateness ticks, makes provider failure unmissable without spending the accent colour twice.",
+      "Capped lists with 'N more qualified' lines hold the composition at scale (2395px with 42 in the Inbox) better than any other direction."
+     ],
+     "weakest": "rail__today__owner_signature__390x844__fold.png — the mobile arrival spends its fold on the metadata stack: THIS READ, WHAT WAS READ and WORK STARTS IN interpose between headline and the state sentence, and item 01 sits ~1080px deep; accounting before content on the signature arrival.",
+     "concerns": [
+      "At 1440 the right ~45% of the canvas is dead through every long body section — full-bleed rules and corner annotations claim the width, then the content forgets it; the page reads left-heavy for 1000px stretches on all five modes.",
+      "In the failure state the per-mode annotation 'ONE SOURCE DID NOT ANSWER' repeats four times and wraps the mode band into a 2x2 grid, swelling chrome at the exact moment content matters most.",
+      "Analytics runs two competing left edges: claims indent to the number gutter while Worth a look and the project table return to the page margin.",
+      "Desktop inbox's right-margin annotations (WHEN A SNOOZE COMES BACK) float detached from the rows they describe."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Resolve the 1440 field: give the dead right half a persistent job (move the read-accounting/annotation rail there on every mode, as inbox already gestures at) or widen the content measure; and at 390 demote the THIS READ / WHAT WAS READ / WORK STARTS IN stack below the first content section so the state sentence and item 01 sit inside the arrival fold."
+    },
+    {
+     "label": "C",
+     "overall": 8.2,
+     "ownedLens": 8.1,
+     "strengths": [
+      "The spine — one vertical axis with a real mark grammar (filled square asking, hollow square dated, circle waiting, dot closed) that physically BREAKS where a source did not answer — is the strongest structural idea in the round and must not be sanded off.",
+      "Warm-paper chrome against the white content sheet is the cleanest chrome-to-content separation of the four; the three-tier header with the THE OTHER MODES coverage line is compact, informative chrome at studio grade.",
+      "The rule-under-headline state grammar (solid = read, red = did not answer, dashed = nothing set up, split = partly read) is a quiet system worth keeping.",
+      "The humility legend — 'nothing here is carried by a shape' — plus per-state differentiation of quiet/failure/new-user is exactly how this canvas should behave."
+     ],
+     "weakest": "desk__inbox__owner_signature__1440x960.png — the inbox is a narrow small-type ribbon lost in the wide sheet (roughly half the sheet width unused), with event fields, struck actions and refusal footnotes at near-uniform size and weight; the internal hierarchy goes mushy exactly where dispositions need to be scannable.",
+     "concerns": [
+      "On the signature arrival the governing sentence — 'This is not an all clear' — is composed into About this read ~1500px down while the standfirst leads with 'Read.'; the page's most important sentence is below the fold.",
+      "Coming up and Moving well collapse to count-only headers, leaving the arrival's lower half hollow at 1440 — reads as missing content rather than composed restraint.",
+      "The analytics Every project you can read table slips off the sheet's alignment grammar (different left edge than every other section).",
+      "Needs review rows use a different row anatomy (meta right-aligned on the title line) than Today's signal rows (meta below) — two grammars on one page."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Move the not-an-all-clear state sentence into the arrival standfirst (swap it with the 'Read.' opener; About this read keeps the long form), and recompose Inbox to the sheet's full measure with a real event hierarchy — larger event titles, one aligned action row, refusals grouped rather than footnoted per event."
+    },
+    {
+     "label": "D",
+     "overall": 8.3,
+     "ownedLens": 8.3,
+     "strengths": [
+      "The CONTENTS block with dotted leaders to each mode's condition — and the mode band carrying those conditions inline — is chrome as an honest coverage report; at 390 the stacked mode rows put the whole estate's condition above the fold, the best mobile chrome trade in the round. This is the thesis and must not be sanded off.",
+      "The only direction that fully resolves 1440: main column plus working right rail, both margins engaged, no dead field anywhere.",
+      "Today's main-column hierarchy is exactly right — honest state sentence directly under the headline, failure block composed above it when a source did not answer.",
+      "Per-claim fielded analytics tables (COUNTED / LEFT OUT / CANNOT SAY / BASELINE at fixed label and value edges) are disciplined documentary composition."
+     ],
+     "weakest": "index__inbox__owner_signature__390x844.png — 5097px, the tallest render in the matrix: event rows collapse into ragged stacks of fielded pairs, wrapped struck links and orphaned actions ('Snooze' and 'Clear from Inbox' floating mid-line), the least composed page of the whole round.",
+     "concerns": [
+      "At 390 the Every project you can read table silently drops the LATE column that 1440 shows — a composition decision that omits a count on mobile, which this programme's governing rule cannot tolerate; editorial and desk both keep it by stanza-stacking.",
+      "Inbox event-row anatomy breaks the grid at 1440 too: action rows wrap raggedly with struck text and reasons at inconsistent x positions.",
+      "Row grammar swaps field order between Today's signal and Needs review (provenance appended inline to the reason sentence in one, its own line in the other).",
+      "When one cause hits every mode, the failure chrome repeats '· Not answering' eight times (band plus contents) instead of composing the shared cause once.",
+      "The right rail orders two blocks of accounting prose above CONTENTS, burying the navigation the thesis is named for at the bottom of the aside."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Rebuild the inbox event-row anatomy on a fixed grid — one aligned action row per event, refusals grouped, no mid-line wraps — and restore the LATE figure to the 390 project table by stanza-stacking all four fields per project as the 1440 view's data requires."
+    }
+   ],
+   "rankedOrder": [
+    "A",
+    "D",
+    "B",
+    "C"
+   ],
+   "evidenceExamined": [
+    "docs/projects/home-operating-layer/design/lab-evidence/README.md",
+    "editorial__today__owner_signature__1440x960.png",
+    "editorial__today__owner_signature__1440x960__fold.png",
+    "editorial__today__owner_signature__390x844.png",
+    "editorial__today__owner_signature__390x844__fold.png",
+    "editorial__today__owner_quiet__1440x960.png",
+    "editorial__today__provider_failure__1440x960.png",
+    "editorial__today__provider_failure__390x844__fold.png",
+    "editorial__today__new_user__1440x960.png",
+    "editorial__inbox__owner_signature__1440x960.png",
+    "editorial__inbox__owner_signature__390x844.png",
+    "editorial__analytics__owner_signature__1440x960.png",
+    "editorial__analytics__owner_signature__390x844.png",
+    "editorial__today__scale__1440x960.png",
+    "rail__today__owner_signature__1440x960.png",
+    "rail__today__owner_signature__1440x960__fold.png",
+    "rail__today__owner_signature__390x844.png",
+    "rail__today__owner_signature__390x844__fold.png",
+    "rail__today__owner_quiet__1440x960.png",
+    "rail__today__provider_failure__1440x960.png",
+    "rail__today__new_user__1440x960.png",
+    "rail__inbox__owner_signature__1440x960.png",
+    "rail__inbox__owner_signature__390x844.png",
+    "rail__analytics__owner_signature__1440x960.png",
+    "rail__analytics__owner_signature__390x844.png",
+    "rail__today__scale__1440x960.png",
+    "desk__today__owner_signature__1440x960.png",
+    "desk__today__owner_signature__1440x960__fold.png",
+    "desk__today__owner_signature__390x844.png",
+    "desk__today__owner_signature__390x844__fold.png",
+    "desk__today__owner_quiet__1440x960.png",
+    "desk__today__provider_failure__1440x960.png",
+    "desk__today__new_user__1440x960.png",
+    "desk__inbox__owner_signature__1440x960.png",
+    "desk__inbox__owner_signature__390x844.png",
+    "desk__analytics__owner_signature__1440x960.png",
+    "desk__analytics__owner_signature__390x844.png",
+    "index__today__owner_signature__1440x960.png",
+    "index__today__owner_signature__1440x960__fold.png",
+    "index__today__owner_signature__390x844.png",
+    "index__today__owner_signature__390x844__fold.png",
+    "index__today__owner_quiet__1440x960.png",
+    "index__today__provider_failure__1440x960.png",
+    "index__today__new_user__1440x960.png",
+    "index__inbox__owner_signature__1440x960.png",
+    "index__inbox__owner_signature__390x844.png",
+    "index__analytics__owner_signature__1440x960.png",
+    "index__analytics__owner_signature__390x844.png",
+    "index__analytics__owner_signature__390x844.png (pixel crops y3820-4320 and y4300-4800, verifying the mobile project table drops the LATE column)",
+    "index__today__scale__1440x960.png"
+   ],
+   "overallNote": "The composition seat admits one direction: Editorial's hierarchy, marginalia grid and quiet-versus-broken differentiation hold at both viewports to an 8.6, while Index, Rail and Desk each carry one repairable compositional fault at the centre of my lens — a dropped mobile data column and ragged inbox rows, a dead desktop field with a metadata-first mobile fold, and a buried state sentence over a hollow arrival. Every direction composes Today better than its Inbox; that is where all remediation money should go."
+  },
+  {
+   "lens": "typography",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.6,
+     "ownedLens": 8.7,
+     "strengths": [
+      "Hierarchy carried entirely by type — kicker / tight display headline / standfirst / ruled section heads / mono ordinals — with no containers; the broadsheet grammar is executed with conviction and must not be boxed or carded in remediation",
+      "The margin apparatus: right-aligned mono dateline (READ AT 08:40…), 'Looking fourteen days ahead.' margin note, and the three-column colophon with letterspaced caps field labels — furniture that carries the honesty accounting, not decoration",
+      "Numeric discipline at the right edge: mono tabular dates (Sunday 12 July / Tuesday 14 July) column up flush right with 'No date' set in the same column so the column never lies by omission; analytics figures 19/3/40 flush right with caps units and dictionary-style right-aligned margin field labels (COUNTED / CANNOT SAY / WINDOW / LEFT OUT)",
+      "Quiet and failure are typographically unmistakable inside one system: quiet compresses to a designed single screen (headline, one sentence, colophon); failure escalates with the red rule, caps FAILURE · PARTLY READ, and the bordered WHAT QUALIFIES THIS READ sidenote"
+     ],
+     "weakest": "editorial__today__owner_signature__390x844.png — the mode strip wraps to three ragged lines of mixed sentence-case nav and letterspaced caps statuses; the masthead loses its broadsheet composure exactly where a phone reader arrives",
+     "concerns": [
+      "Every possessive renders with a straight typewriter apostrophe — Today&#x27;s signal, zero U+2019 anywhere in the render; the string is fixture-owned and identical across all four candidates, but the front door cannot ship it",
+      "Underline as the row-title link affordance ~14 times per screen: each is Butterick-subtle (1px, offset, faint decoration colour), yet at signature density the underlines add a horizontal texture that competes with the hairline section rules",
+      "The right-edge cluster butts a bold mono late-mark against a regular mono date with no fixed gutter, so three type voices meet at one edge and shimmer slightly",
+      "Mobile drops the margin apparatus (dateline moves inline, ordinals keep hanging indent) — acceptable, but the direction's signature furniture survives 390 only partially"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 7.8,
+     "ownedLens": 7.9,
+     "strengths": [
+      "The meridian apparatus — full-width horizon rules named in mono caps with right-aligned counterparts ('NOW … Read at 08:40 on Thursday 16 July.' / 'THE EDGE OF THIS READ … Looking fourteen days ahead.') — is the most original single typographic idea in the round and must survive any remediation untouched",
+      "The right-aligned time gutter ('4 days late', 'Due today', 'Quiet for 6 days') columning against the entry spine with red severity ticks: marginalia doing structural work, urgency scannable down one x-line",
+      "The black inverted did-not-answer panel is the only inverted moment on any page — failure gets the loudest typography while quiet is bare meridians; the two worlds cannot be confused",
+      "Restraint elsewhere: unadorned titles on Today, colour spent only on lateness and links, mode grid statuses columning on a shared baseline with left border ticks"
+     ],
+     "weakest": "rail__today__provider_failure__1440x960.png — the header sets the identical letterspaced caps string 'PARTLY READ · ONE SOURCE DID NOT ANSWER' four times in a row; at the exact moment of stress the type system stops being designed and reads as a rendering fault",
+     "concerns": [
+      "Stressed-state status repetition: the same caps status is set four times across the mode grid in provider_failure and new_user (Desk's single consolidated 'THE OTHER MODES' line proves the fix exists)",
+      "The Full briefing drops the mono ordinals Today establishes — the one page whose thesis is rank order loses its rank column — and row titles gain underlines there while carrying none on Today, so the link affordance flips between sibling pages",
+      "Gutter marks change case between viewports: lowercase mono at 1440 becomes letterspaced caps overlines at 390 — the direction's own annotation voice is not viewport-stable",
+      "For a time-is-the-structure thesis, absolute dates are buried mid-line in the metadata ('Tasks · Mara & Finn · Tuesday 14 July · Quiet for 2 days') with no structural position, and analytics figures sit left-set and undistinguished",
+      "Shared fixture defect: straight apostrophe in Today's signal"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Consolidate stressed-state mode statuses into one line — never set the same caps status four times in the header; restore ordinals on the Full briefing; make the title link affordance consistent between Today and the briefing; hold the gutter-mark case constant across viewports"
+    },
+    {
+     "label": "C",
+     "overall": 8.7,
+     "ownedLens": 8.8,
+     "strengths": [
+      "The readline: the rule under the headline is a typographic instrument — unbroken black for a full read, a short red stub for did-not-answer, dashed for nothing-set-up, split for partial — paired with the bold run-in verdict ('Read.' / 'Did not answer.' / 'Nothing set up yet.'); the single best marriage of type and the governing rule in the round, and the first thing no remediation may sand off",
+      "Two-level separator grammar: interpuncts inside provenance, thin pipes between fields, lateness set red as a prose fragment with its date ('4 days late, Sunday 12 July') — metadata parses at a glance with commas doing honest work",
+      "The consolidated 'THE OTHER MODES' line — one caps label, one sentence-case report — is the round's only correct answer to per-mode status under stress",
+      "Voice discipline: mono caps reserved exclusively for apparatus (IN THIS READ, WHAT THE RECORDS SAY, TRUE OF EVERY READ…), never content; contents counts column right; the 390 render is the most composed mobile page of the four"
+     ],
+     "weakest": "desk__analytics__owner_signature__1440x960__fold.png — the split readline needs its legend to be read correctly, figure units go lowercase ('19 open work') against an otherwise caps apparatus voice, and three body voices stack between headline and first claim; the apparatus is densest and least self-evident here",
+     "concerns": [
+      "Figure units are lowercase where every other apparatus label is letterspaced caps — one voice must win",
+      "No rank ordinals anywhere, including 'The whole day, in order' — order is carried by position alone where a numeral column is typographic information the page promises",
+      "One-line review rows let right-set metadata float against titles that wrap to two lines, loosening the row baseline relationship",
+      "The learned 14px drawn dash after HOME reads as a stray em dash on first contact",
+      "Shared fixture defect: straight apostrophe in Today's signal"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "D",
+     "overall": 8.2,
+     "ownedLens": 8.3,
+     "strengths": [
+      "The leader-dot contents is real typography doing navigation: mono ordinals, CSS-drawn leaders (correctly not glyph ellipses), per-mode conditions columning ragged-left at a shared x, the active mode's 'Full briefing' sub-row indented with a true ↳ — the thesis device, never to be flattened into buttons",
+      "The hardest-pushed mono/sans role split: provenance and read-facts in mono as the records voice, judgments in sans, red spent only on the late mark — a documentary register the other directions do not own",
+      "Analytics is the best fielded ledger of the four: left-column mono caps field labels (COUNTED / LEFT OUT / CANNOT SAY / BASELINE) with hairline rows against right-set values — impeccable definition-list rhythm",
+      "Quiet is distinguished by promotion, not absence: the honest sentence gains size in an emptied column while the contents rail keeps reporting; failure gets the red rule + red-bordered NOT ANSWERING block, new_user the same header with NOT CONNECTED and a black rule — three states, three typographic signatures"
+     ],
+     "weakest": "index__today__provider_failure__1440x960__fold.png — under stress the contents' status column breaks its set ('Partly read / · Not answering' runover wraps ragged) and the mode strip repeats the same status words four times; the thesis apparatus falters at the exact moment it must perform",
+     "concerns": [
+      "The row metadata line runs three voices in ~500px — letterspaced small mono names, red bold late mark, regular sans quiet-duration — and the added tracking on 12px mono names is precious and slightly hard to read",
+      "Rule accumulation at 1440: content-column section rules plus the right rail's hairline stack put five-plus rule weights in one viewport; space should carry more of what lines currently do",
+      "Contents statuses have no fixed two-line grid, so lengthened conditions wrap unpredictably and the leader table's right column loses alignment",
+      "On 390 the CONTENTS sinks to the page foot — the direction's central typographic object is absent from mobile arrival",
+      "Shared fixture defect: straight apostrophe in Today's signal"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Give the contents status column a fixed two-line grid — status and condition each on its own line at a shared x, no '· Not answering' runover; calm row metadata to two voices by dropping the added letterspacing on small mono names and folding quiet-duration into the provenance voice; thin the simultaneous hairline systems at 1440"
+    }
+   ],
+   "rankedOrder": [
+    "C",
+    "A",
+    "D",
+    "B"
+   ],
+   "evidenceExamined": [
+    "editorial__today__owner_signature__1440x960.png",
+    "editorial__today__owner_signature__1440x960__fold.png",
+    "editorial__today__owner_signature__390x844.png",
+    "editorial__today__owner_quiet__1440x960.png",
+    "editorial__today__provider_failure__1440x960.png",
+    "editorial__today__new_user__1440x960.png",
+    "editorial__analytics__owner_signature__1440x960.png",
+    "editorial__analytics__owner_signature__1440x960__fold.png",
+    "editorial__briefing__owner_signature__1440x960__fold.png",
+    "rail__today__owner_signature__1440x960.png",
+    "rail__today__owner_signature__390x844.png",
+    "rail__today__owner_quiet__1440x960.png",
+    "rail__today__provider_failure__1440x960.png",
+    "rail__today__new_user__1440x960.png",
+    "rail__analytics__owner_signature__1440x960__fold.png",
+    "rail__briefing__owner_signature__1440x960__fold.png",
+    "index__today__owner_signature__1440x960.png",
+    "index__today__owner_signature__1440x960__fold.png",
+    "index__today__owner_signature__390x844.png",
+    "index__today__owner_quiet__1440x960.png",
+    "index__today__provider_failure__1440x960__fold.png",
+    "index__today__new_user__1440x960.png",
+    "index__analytics__owner_signature__1440x960__fold.png",
+    "index__briefing__owner_signature__1440x960__fold.png",
+    "desk__today__owner_signature__1440x960.png",
+    "desk__today__owner_signature__1440x960__fold.png",
+    "desk__today__owner_signature__390x844.png",
+    "desk__today__owner_quiet__1440x960.png",
+    "desk__today__provider_failure__1440x960__fold.png",
+    "desk__today__new_user__1440x960.png",
+    "desk__analytics__owner_signature__1440x960__fold.png",
+    "desk__briefing__owner_signature__1440x960__fold.png",
+    "editorial__today__owner_signature.html (glyph grep: apostrophes, dashes, generated content, CSS type rules)",
+    "rail__today__owner_signature.html (glyph grep)",
+    "index__today__owner_signature.html (glyph grep)",
+    "desk__today__owner_signature.html (glyph grep)",
+    "editorial__briefing__owner_signature.html + editorial__analytics__owner_signature.html (apostrophe/quote grep)",
+    "rail__briefing__owner_signature.html + rail__analytics__owner_signature.html (apostrophe/quote grep)",
+    "index__briefing__owner_signature.html + index__analytics__owner_signature.html (apostrophe/quote grep)",
+    "desk__briefing__owner_signature.html + desk__analytics__owner_signature.html (apostrophe/quote grep)",
+    "src/app/lab/home-operating-layer/candidates/editorial/editorial.css (full type-rule survey)",
+    "src/app/lab/home-operating-layer/candidates/rail/rail.css (full type-rule survey)",
+    "src/app/lab/home-operating-layer/candidates/index/reading-index.css (full type-rule survey)",
+    "src/app/lab/home-operating-layer/candidates/desk/desk.css (full type-rule survey incl. readline and suite-mark rules)",
+    "src/ds/tokens.css lines 90-129 (shared nine-step scale, paired leading/tracking, label caps spec)",
+    "docs/projects/home-operating-layer/design/lab-evidence/README.md"
+   ],
+   "overallNote": "Judged on scale and measure, baseline and columning discipline, family/weight/case as structure, numeric alignment, letterspacing, and glyph correctness: Desk and Editorial clear the gate — Desk for the readline-plus-run-in-verdict instrument and the cleanest voice separation, Editorial for margin apparatus and right-edge numeric columns — while Index falls just short on stressed-state alignment and voice count, and Rail's meridian idea, the round's most original, is let down by a repetition wall, dropped ordinals, and viewport-unstable case; one shared fixture defect (straight apostrophes, zero U+2019 in any render) dents all four equally and must be fixed shell-side before ship."
+  },
+  {
+   "lens": "ux-comprehension-first-contact",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.9,
+     "ownedLens": 9,
+     "strengths": [
+      "The inline rule sentence on every flagged row (\"Signal flags anything past its due date. This is 4 days past.\") — the direction teaches the system by showing its reasoning; this is the comprehension engine and must never be compressed into icons or tooltips.",
+      "Inbox refusals as copy: struck-through actions with their reason beside them (\"Only an open item can be snoozed.\", \"The source did not answer, so nothing can be sent to it.\") — a newcomer learns the action model from the disabled states themselves.",
+      "The one-screen quiet page and the new_user sentence \"This is not a failed read, and it is not an all clear either\" + Where to start + Open Tasks — the calmest, most correctly-framed empty and quiet states in the round.",
+      "The \"How this page was read\" colophon: the account in reader's arithmetic (\"read 22, showed 8, held back 2, skipped 1 you silenced\") and the no-total-rather-than-a-wrong-total sentence under failure."
+     ],
+     "weakest": "editorial__inbox__owner_signature__1440x960.png — open, snoozed, handled and cleared items interleave in one flat list under \"5 open\", so a newcomer must sort states from per-row labels; the page also leads with \"Coverage · Partly read\", the closest this direction comes to jargon.",
+     "concerns": [
+      "\"What qualifies this read\" — \"qualifies\" is the one word a first-contact walk would trip on; it heads the qualifier panel in failure and new_user states.",
+      "On Today the full account lives only in the foot colophon; arrival answers \"is this everything?\" only through the small \"7 more qualified…\" lines.",
+      "Inbox does not structurally separate what needs you from what is settled (rail proves the same fixture can).",
+      "At 390px the mode row wraps to three lines of chips before the headline — minor but the costliest of its states on a phone."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 8.6,
+     "ownedLens": 8.7,
+     "strengths": [
+      "THE EDGE OF THIS READ with \"Nothing below this line is waiting on you now.\" — the only direction that answers the Inbox question structurally (open above the line, settled below); do not flatten this into one list in any remediation.",
+      "Per-mode condition captions under each mode name — READ / PARTLY READ / NOTHING SET UP YET — and their failure form \"PARTLY READ · ONE SOURCE DID NOT ANSWER\" on every mode at once: the most glanceable cross-mode honesty in the round.",
+      "The black inverted banner on provider failure (\"1 project did not answer at all. Nothing here counts it as zero, and no total includes it.\") — the strongest quiet-vs-broken contrast any direction produced; a quiet day and this screen cannot be confused at any distance.",
+      "\"BEFORE THE FIRST READ\" framing plus the single filled Open Tasks button — the best-named empty state of the four, and the account sentence on arrival at top right answers \"is this everything?\" immediately."
+     ],
+     "weakest": "rail__today__owner_signature__390x844__fold.png — the only arrival screen in the round showing zero work items: wordmark, mode grid, scope control, account, what-was-read and work-starts-in panels fill the fold, and the first item sits more than a screen below; a phone-first newcomer's five seconds get navigation and metadata, not the day.",
+     "concerns": [
+      "Mobile arrival fold contains no item; the metadata panels interpose between headline and content.",
+      "\"The edge of this read\" is an invented phrase that needs its explainer sentence wherever it appears — on the quiet page the band stands with nothing above or below to separate.",
+      "At 1440 the right half of the window below the header band is empty; it does not confuse, but it reads as spare rather than composed.",
+      "Open items in the Inbox are not in time order despite the time-led margins (thread grouping wins); the timestamps keep it legible."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "C",
+     "overall": 8.3,
+     "ownedLens": 8.2,
+     "strengths": [
+      "\"How to read the line\" — a legend that promises every mark repeats something the row says in words; the self-teaching contract itself is the thing to protect, which is exactly why the places it is currently broken must be fixed rather than the legend cut.",
+      "\"Some sources did not answer, so this list can be short. Short is not empty.\" repeated under every section on failure days — the best in-context incompleteness explanation in the round.",
+      "Verdict-first standfirsts (\"Read.\" / \"Did not answer.\" / \"Nothing set up yet.\") plus the IN THIS READ table of contents with honest counts — the page announces its own structure and condition before you scroll.",
+      "The open-sided Inbox numeral with its written explanation (\"It is what could be checked, not a total\") — a genuinely novel honest-count device, kept honest by its sentence."
+     ],
+     "weakest": "desk__today__owner_signature__1440x960.png — the signature front door drops the reason sentences from all three Needs review rows (the other three directions keep them), leaves the ○ waiting mark's meaning stated nowhere in words on the row despite the legend's promise, and parks the not-all-clear sentence at the foot behind the riddle toggle \"TRUE OF EVERY READ, NOT OF TODAY (2)\".",
+     "concerns": [
+      "\"TRUE OF EVERY READ, NOT OF TODAY (2)\" is the worst single label in the round, and on new_user it is one of only four elements on the page.",
+      "\"Could not be read\" labels a source that does not exist as if it failed — it collides with \"Did not answer\" (a real failure) in the same vocabulary, the exact quiet-vs-broken confusion the programme forbids, in miniature.",
+      "Needs review rows answer \"why is this here?\" with nothing beyond \"Quiet for N days\"; a newcomer on desk cannot state the rule that flagged the row, while on A, B and D they can.",
+      "Coming up and Moving well arrive collapsed to counts — honest, but the mode's content is one interaction away on first contact.",
+      "Inbox reason lines detach below the four-button row, so a newcomer must match each reason back to its struck control."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Restore the per-row reason sentence on every Needs review row (and write \"waiting on…\" in words wherever the ○ mark appears, so the legend's every-mark-repeats-words promise is true), and rename the two standing-note labels into the plain register the direction already speaks: \"Could not be read\" for absent sources becomes no-source language (e.g. \"No source connected\"), reserving \"Did not answer\" for real failures, and \"TRUE OF EVERY READ, NOT OF TODAY (2)\" becomes a plain heading (e.g. \"Always true, not just today\")."
+    },
+    {
+     "label": "D",
+     "overall": 8.4,
+     "ownedLens": 8.4,
+     "strengths": [
+      "The Contents leader-dot table carrying each mode's condition (\"02 Inbox ……… Partly read\") — navigation that doubles as a coverage report is this direction's genuine invention and must survive any cleanup.",
+      "The Inbox primer block — \"Mark as read, Snooze and Clear are moves in your Inbox… Approve reaches the source, and nothing here is called done until the source answers.\" — the single best teaching block in the round: the action model stated once, up front, in two sentences.",
+      "\"WHAT LIMITED THIS READ\" as a red-ruled block above the content on failure days, echoed in every tab and contents row — the limitation is announced before anything it limits.",
+      "The 390px stacked mode list with right-aligned conditions — the cleanest mobile arrival of the four."
+     ],
+     "weakest": "index__today__owner_signature__1440x960.png — on the healthy signature day the active tab reads \"Today □ Read · Not connected\": an unexplained negative fragment in the highest-attention slot, whose referent (an unconnected calendar) is only discoverable in the right rail; it is the one place in the round where a quiet, healthy read wears a broken-looking badge.",
+     "concerns": [
+      "Status conditions render as bare fragments without connectives (\"Today. Read. Not connected.\") in the title strip, tab row and Contents — clear in failure states, misleading on healthy ones.",
+      "Double navigation (tab row plus Contents table) repeats the same fragments two to three times per page.",
+      "Inbox action rows interleave enabled links, struck controls and dot-separated reasons on wrapping lines — the hardest action grammar of the four to parse — and the \"READ ■ Not read yet / STATE Still open\" field labels are database-y where editorial's plain pair is not.",
+      "The Inbox mixes open, snoozed, handled and cleared in one flat list under a \"5 open\" count, with open items scattered through it."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Bind every status fragment to its referent with a connective — the healthy-day pairing becomes e.g. \"Read · no calendar connected\" (or a desk-style sentence, \"Read. 2 kinds of work have no source connected.\") in the title strip, the tab row and the Contents table, so a healthy read never leads with an unexplained negative; and fix the Inbox action grammar to a fixed order (enabled controls first, each struck control with its own reason on its own line) so reasons cannot wrap away from the control they explain."
+    }
+   ],
+   "rankedOrder": [
+    "A",
+    "B",
+    "D",
+    "C"
+   ],
+   "evidenceExamined": [
+    "Evidence directory: C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/projects/home-operating-layer/design/lab-evidence/ (filenames below are within it)",
+    "README.md (render provenance, shared-shell caveats incl. new_user shell framing)",
+    "C:/Users/ethan/signal-studio-workspace/_wt-home-layer/docs/FIRST_CONTACT_TEST.md (the codified house instrument for this lens)",
+    "editorial__today__owner_signature.html (full text extraction)",
+    "editorial__today__new_user.html (full text extraction)",
+    "editorial__today__owner_quiet.html (full text extraction)",
+    "editorial__today__provider_failure.html (full text extraction)",
+    "editorial__inbox__owner_signature.html (full text extraction)",
+    "rail__today__owner_signature.html (full text extraction)",
+    "rail__today__new_user.html (full text extraction)",
+    "rail__today__owner_quiet.html (full text extraction)",
+    "rail__today__provider_failure.html (full text extraction)",
+    "rail__inbox__owner_signature.html (full text extraction)",
+    "index__today__owner_signature.html (full text extraction)",
+    "index__today__new_user.html (full text extraction)",
+    "index__today__owner_quiet.html (full text extraction)",
+    "index__today__provider_failure.html (full text extraction)",
+    "index__inbox__owner_signature.html (full text extraction)",
+    "desk__today__owner_signature.html (full text extraction)",
+    "desk__today__new_user.html (full text extraction)",
+    "desk__today__owner_quiet.html (full text extraction)",
+    "desk__today__provider_failure.html (full text extraction)",
+    "desk__inbox__owner_signature.html (full text extraction)",
+    "editorial__my-work__owner_signature.html (headline/standfirst check)",
+    "editorial__analytics__owner_signature.html (headline/standfirst check)",
+    "editorial__briefing__owner_signature.html (headline/standfirst check)",
+    "rail__my-work__owner_signature.html (headline/standfirst check)",
+    "rail__analytics__owner_signature.html (headline/standfirst check)",
+    "rail__briefing__owner_signature.html (headline/standfirst check)",
+    "index__my-work__owner_signature.html (headline/standfirst check)",
+    "index__analytics__owner_signature.html (headline/standfirst check)",
+    "index__briefing__owner_signature.html (headline/standfirst check)",
+    "desk__my-work__owner_signature.html (headline/standfirst check)",
+    "desk__analytics__owner_signature.html (headline/standfirst check)",
+    "desk__briefing__owner_signature.html (headline/standfirst check)",
+    "editorial__today__owner_signature__1440x960__fold.png (read as image)",
+    "editorial__today__owner_signature__1440x960.png (read as image)",
+    "editorial__today__new_user__1440x960.png (read as image)",
+    "editorial__today__owner_quiet__1440x960.png (read as image)",
+    "editorial__today__provider_failure__1440x960.png (read as image)",
+    "editorial__inbox__owner_signature__1440x960.png (read as image)",
+    "editorial__today__owner_signature__390x844__fold.png (read as image)",
+    "rail__today__owner_signature__1440x960__fold.png (read as image)",
+    "rail__today__owner_signature__390x844__fold.png (read as image)",
+    "rail__today__owner_signature__1440x960.png (read as image)",
+    "rail__today__new_user__1440x960.png (read as image)",
+    "rail__today__owner_quiet__1440x960.png (read as image)",
+    "rail__today__provider_failure__1440x960.png (read as image)",
+    "rail__inbox__owner_signature__1440x960.png (read as image)",
+    "desk__today__owner_signature__1440x960__fold.png (read as image)",
+    "desk__today__owner_signature__1440x960.png (read as image)",
+    "desk__today__new_user__1440x960.png (read as image)",
+    "desk__today__owner_quiet__1440x960.png (read as image)",
+    "desk__today__provider_failure__1440x960.png (read as image)",
+    "desk__inbox__owner_signature__1440x960.png (read as image)",
+    "desk__today__owner_signature__390x844__fold.png (read as image)",
+    "index__today__owner_signature__1440x960__fold.png (read as image)",
+    "index__today__owner_signature__1440x960.png (read as image)",
+    "index__today__provider_failure__1440x960.png (read as image)",
+    "index__today__new_user__1440x960.png (read as image)",
+    "index__inbox__owner_signature__1440x960.png (read as image)",
+    "index__today__owner_signature__390x844__fold.png (read as image)"
+   ],
+   "overallNote": "This seat judged whether someone who has never used a project tool understands each page in five seconds and acts correctly in thirty — labels over jargon, each mode answering its own question, new_user as a primary state. The shared shell sets an unusually high plain-language floor; on the deltas, Editorial and Rail clear the 8.5 gate (Editorial by teaching every rule inline, Rail by making structure itself the explanation, docked for a phone arrival that shows no work), while Index stumbles on unconnected status fragments that dress a healthy day as a broken one and Desk drops the very reason sentences its own legend promises — both repairable with the named corrections, neither category-unfit."
+  },
+  {
+   "lens": "accessibility",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.8,
+     "ownedLens": 8.8,
+     "strengths": [
+      "Refusal grammar: aria-disabled buttons that stay focusable with aria-describedby resolved reason text (13/14 wired) — do not replace with display:none omission or bare disabled",
+      "Heading topology is flawless in every state read: one h1, zero level skips, items as h3 and inbox events as h4 with actor and time — the typographic thesis IS the accessible structure",
+      "State words ride in the controls themselves: nav aria-labels carry the full account ('Inbox. 5 open. 1 could not be verified…'), failure ledger is a labelled aside, quiet vs failure distinct in the tree not just the paint",
+      "No SVG anywhere — every claim, qualifier and refusal is text by construction, so colour-alone state is impossible; keep the no-chart analytics refusal ('Not enough history yet. 6 of 14…') as text"
+     ],
+     "weakest": "editorial__analytics__owner_signature.html — ten controls named identically ('See the records behind this' ×3 links, ×7 summaries): a link-list or speech user gets a wall of indistinguishable names on the mode page most dependent on per-claim navigation",
+     "concerns": [
+      "Identical accessible names repeated across analytics disclosures/links and 'Open the full briefing' ×3 on today — context disambiguates for AA, but it is below the named bar",
+      "role=status live region is empty at SSR — announces nothing on load where C proves the populated pattern",
+      "Shared shell string typo doubles the period in aria-labels ('…could not be read.. Partly read.') — audible artifact in speech",
+      "evt-05 'Approve at the source' is aria-disabled with no describedby reason (shared milestone fixture edge, also in C)"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 6.8,
+     "ownedLens": 5.8,
+     "strengths": [
+      "Every mode wears its condition as visible words under the name ('PARTLY READ · ONE SOURCE DID NOT ANSWER') and failure is a black worded banner — the loudest colour-independent state signalling in the field; never dilute this to dots",
+      "The analytics ledger table wrapper is role=region with tabindex=0 and an accessible name — the keyboard-scrollable-overflow pattern almost every studio forgets",
+      "Time is duplicated into text at every mark ('2 days late', 'Due today', exact snooze return instants with the clock-change caveat) — position on the meridian is never the sole carrier",
+      "Honest unsupported-slot section ('Nothing produces this yet') and the 'This read' accounting aside"
+     ],
+     "weakest": "rail__inbox__owner_signature.html — the triage page has exactly one heading, its actions ('Mark as read', 'Snooze', 'Clear from Inbox') are details/summary disclosures that open explanatory prose with no actionable control in the shipped bytes, and 9 of 14 refusal reasons simply do not exist in the DOM",
+     "concerns": [
+      "Control semantics category miss: inbox actions are summary elements announced as collapsed disclosures, not buttons — an AT user cannot act, and cannot tell action from explanation",
+      "Refusals silently omitted: only 5 of the 14 refusal reasons the other three directions surface are present; an absent action with no reason brushes the governing rule on what may not lie",
+      "Skip link is structurally defeated: mode nav, scope switcher and read ledger are the first children INSIDE main (the skip target), so every keyboard pass re-walks ~13 stops with no secondary skip",
+      "Item and thread titles are not headings (today: 6 headings, inbox: 1) and event links are ambiguous bare names ('Mentioned you', 'Replied to you') repeated across items",
+      "Badge markup double-announces ('Inbox Inbox. 5 open…') and only 5 component selectors claim the 44px floor — item links are not floored"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Rebuild inbox actions as real buttons with aria-disabled + aria-describedby reasons at full parity (all 14 refusals, matching A/C/D); move the mode rail, scope switcher and read ledger out of the skip target (landmarks before main, or a working second skip past the rail); give every thread and event a heading (h2 thread, h3 event) with unambiguous names and floor item links at 44px"
+    },
+    {
+     "label": "C",
+     "overall": 8.9,
+     "ownedLens": 9,
+     "strengths": [
+      "The populated role=status region speaks the read verdict on load in every state ('1 project did not answer at all. Nothing here counts it as zero, and no total includes it.') — the governing rule delivered to AT verbatim; never let this regress to an empty announcer",
+      "Accessible names change while the furniture does not: 'Today. Did not answer.', 'Analytics. Not enough history.' as aria-label suffixes with the visible label as prefix — the direction's thesis implemented inside the accessibility tree, label-in-name preserved",
+      "Richest structure in the field: 23 headings on inbox with actor-bearing event h3s, an in-page index with item counts, legend section explaining the spine's break marks as shape-plus-words, back-to-top link",
+      "Fullest 44px floor: 16 component selectors including .dk-title a and .dk-actbtn; refusal reasons are action-prefixed ('Approve at the source: This one is not an approval.') — the clearest describedby text of the four"
+     ],
+     "weakest": "desk__analytics__owner_signature.html — six summaries named 'The records behind this (21 counted, 2 left out)' plus three identical 'See the records behind this' links: the counts help, but it is the one surface where C coasts on repeated names",
+     "concerns": [
+      "Repeated accessible names on analytics disclosures and exception links (counts differentiate only partially)",
+      "Shared shell aria-label typo ('…could not be read.. Partly read.') audible in speech",
+      "dk-why-4 'Approve at the source' aria-disabled without describedby (same shared milestone fixture edge as A)",
+      "Spine break marks depend on the legend being discovered — held safe only because every fact is also in running text; keep that duplication"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "D",
+     "overall": 8,
+     "ownedLens": 7.8,
+     "strengths": [
+      "Analytics is the most claim-navigable of the four: every claim is its own aria-labelledby section with an h2 — keep one-heading-per-claim",
+      "Item state reaches AT as explicit text pairs ('Read: Not read yet', 'State: Still open') with the visual 'Open' chip correctly aria-hidden as dedup; index numerals aria-hidden — the ornament layer is cleanly separated",
+      "Conditions are words everywhere the leaders point: header nav, Contents rows and marks all pair glyph with 'Partly read · Not answering'; failure ledger is first in reading order before the h1",
+      "17 component selectors claim the 44px floor including contents rows, act names and the skip link; permitted actions are real buttons"
+     ],
+     "weakest": "index__today__provider_failure.html — the loud 'What limited this read' block that is the direction's whole answer to the governing rule is a bare div with no landmark, no heading and no role: rotor and landmark navigation skip the one element the thesis says must rule the sheet",
+     "concerns": [
+      "Loud failure block invisible to structure navigation (div + p + ul, saved only by DOM-first position for linear readers) — weakest semantic binding of the critical trust element in the field",
+      "Item anchors swallow h3 + why-sentence + meta: paragraph-length accessible names on every entry on today and inbox (heading-inside-link), taxing speech, link-list and voice-control users at every stop",
+      "Refused actions are non-focusable text spans — all 14 reasons present but zero control semantics and no describedby, below the programme's wired convention",
+      "SSR status announcements are telegraphic to ambiguity: 'Today. Read. Not connected.' does not name what is not connected, and 'Not connected' vs 'Not answering' is a subtle distinction in speech",
+      "Contents nav carries tabindex=-1 with no visible jump link to it found"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Give the loud limit block real semantics (aside or section with aria-labelledby + h2 'What limited this read', matching its visual rank); cut the entry link boundary to the title (why-sentence and meta outside the anchor, or aria-label the link to its title) so control names stop being paragraphs; wire refusals as aria-disabled buttons with aria-describedby reasons, and give the status announcements their referent ('No calendar is connected', 'One project is not answering')"
+    }
+   ],
+   "rankedOrder": [
+    "C",
+    "A",
+    "D",
+    "B"
+   ],
+   "evidenceExamined": [
+    "editorial__today__owner_signature.html",
+    "editorial__today__owner_quiet.html",
+    "editorial__today__provider_failure.html",
+    "editorial__today__new_user.html",
+    "editorial__inbox__owner_signature.html",
+    "editorial__analytics__owner_signature.html",
+    "desk__today__owner_signature.html",
+    "desk__today__owner_quiet.html",
+    "desk__today__provider_failure.html",
+    "desk__today__new_user.html",
+    "desk__inbox__owner_signature.html",
+    "desk__analytics__owner_signature.html",
+    "rail__today__owner_signature.html",
+    "rail__today__owner_quiet.html",
+    "rail__today__provider_failure.html",
+    "rail__today__new_user.html",
+    "rail__inbox__owner_signature.html",
+    "rail__analytics__owner_signature.html",
+    "index__today__owner_signature.html",
+    "index__today__owner_quiet.html",
+    "index__today__provider_failure.html",
+    "index__today__new_user.html",
+    "index__inbox__owner_signature.html",
+    "index__analytics__owner_signature.html",
+    "editorial__today__provider_failure__1440x960__fold.png",
+    "editorial__today__owner_quiet__1440x960__fold.png",
+    "rail__today__provider_failure__1440x960__fold.png",
+    "rail__today__owner_quiet__1440x960__fold.png",
+    "desk__today__provider_failure__1440x960__fold.png",
+    "desk__today__owner_quiet__1440x960__fold.png",
+    "index__today__provider_failure__1440x960__fold.png",
+    "index__today__owner_quiet__1440x960__fold.png",
+    "rail__today__owner_signature__390x844__fold.png",
+    "rail__inbox__owner_signature__390x844__fold.png"
+   ],
+   "overallNote": "Accessibility judged the rendered tree, not the paint: desk and editorial ship the a11y contract essentially whole (wired refusals, honest live announcements, clean heading topology) and both clear the admission gate; index has strong bones undermined by an unlandmarked failure block and paragraph-length link names; rail's inbox — summary-elements-as-actions, silenced refusals, a defeated skip link — is the round's one genuinely broken surface, though every fault is a repair, not a category sentence."
+  },
+  {
+   "lens": "engineering-quality",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.7,
+     "ownedLens": 8.8,
+     "strengths": [
+      "The single-file island (interaction.tsx) with its written import ban, module-Map store, useSyncExternalStore seeding, and the one-component-per-row consolidation (TaskRowState absorbing actions rather than doubling subscriptions) — keep this exact shape in any remediation",
+      "read-state.ts as the one pure derivation both the nav marks and the page share, so register and state word can never disagree — the word always travels with whatever produced the register",
+      "The only direction that honours the published contract type on the analytics ledger: openWorkLabel === null renders copy.unreadableCount by explicit guard, true by construction rather than by the assembler's current behaviour",
+      "Self-account with zero false claims: the 4 KB island ceiling is explicitly declared 'a commitment, not a receipt... unverified until a build says otherwise' — the candour itself is the asset"
+     ],
+     "weakest": "editorial__inbox__owner_signature.html — 41 SSR'd action buttons with 17 per-row aria-describedby reason singletons and no dense-page plan; at the 50-row scale world every closed action reprints its own reason, the wall Desk engineered planPage against, and Editorial has no answer on file",
+     "concerns": [
+      "The only island-carrying direction with no first-party bundle measurement, in the round where ballots demanded published gzip against total_client_js (a neighbour measured it at 2.29 KB, inside the declared 4 KB ceiling, but Editorial's own number does not exist)",
+      "Product suite paths retyped as string literals in shell.tsx against the repo contract's 'use the typed constants in src/lib/product-urls.ts — never invent'; Rail and Index import PRODUCT_APP_PATHS",
+      "--ed- custom-property prefix deliberately rejects the vendored tokens.css convention ('Product-local tokens use the --x- extension prefix'); argued in a comment, but it is off the documented contract Index alone follows",
+      "No reason-dedupe strategy at volume: correct instance count per row, but repeated unavailable-reason prose scales linearly with the queue"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 8.1,
+     "ownedLens": 8.1,
+     "strengths": [
+      "Zero client JavaScript by construction, not discipline: no 'use client' anywhere in the folder, a two-module import surface (lab-shell + product-urls), every disposition a <details>, every selection a URL — verified in SSR (0 buttons, 15 details); if picked, this budget position must survive",
+      "The only direction using the repo's typed PRODUCT_APP_PATHS constants for the suite line, per the URL contract",
+      "reading.ts is a genuinely careful severity model — the empty-promotion rule, tone-never-grades-severity reasoning, and the produced/refused split that stops over-reporting outages — all pure, documented, and shared by every mode",
+      "Self-account fully consistent: every header claim about runtime cost and import surface is true as published"
+     ],
+     "weakest": "rail__analytics__owner_signature.html — the ledger renders {row.openWorkLabel} and {row.overdueLabel} raw into table cells; the cells are filled in this world only because the assembler folds null to 'Could not be counted' upstream, while the published type is string | null and the README instructs the candidate to make that substitution — the direction's own rule 3 ('a value that could not be read never occupies the slot') is true today by someone else's code",
+     "concerns": [
+      "Latent contract-type violation at the exact point the governing rule lives: a shell refactor exercising the typed null arm renders an empty cell where 'Could not be counted' belongs, and React accepts the null silently",
+      "A pattern of as-casts where narrowing belongs: readings[link.mode] as Reading, group.rows[0] as InboxRow, row.snoozeLine as string, values[0] as number — noUncheckedIndexedAccess dodged rather than satisfied",
+      "px media queries (639/1023/1199) under a header claiming full token discipline, while Index documents em queries as the difference between surviving text-only enlargement and breaking under it",
+      "/app/settings invented as a hand-typed string for the Account link; no typed constant exports it",
+      "Zero-JS means the six transition journeys exist as explanations, not controls, and the meridian status region can never announce an outcome — the perfect budget is partly bought by not building the hardest part"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "In rail/analytics.tsx, render the ledger's openWorkLabel and overdueLabel through the null guard the published AnalyticsLedgerRowView type requires (null → copy.unreadableCount, exactly as the candidates README specifies), and replace the folder's as-casts with real type narrowing, so the direction's 'a value that could not be read never occupies the slot a number would have occupied' holds by its own construction rather than by the assembler's current behaviour."
+    },
+    {
+     "label": "C",
+     "overall": 8.7,
+     "ownedLens": 8.6,
+     "strengths": [
+      "planPage: the server-side, whole-page pass that dedupes unavailable-reason prose above DENSE_FROM with collision-aware id namespaces (queue vs opened-detail prefixes) so every silent row's aria-describedby resolves — the strongest single piece of a11y-at-scale engineering in the lab; must not be lost in any remediation",
+      "The best budget accounting of the four: island measured with the full recipe (esbuild 0.27.7, targets, react external, zlib level 9 — the same units as check-performance-budgets), the metafile's single input cited as the import ban proven at the bundler, CSS remeasured through Lightning CSS to correct round 4's source-file mismeasure, and an explicit 'still unproven without pnpm build' caveat",
+      "readVerdict/analyticsRead as one derivation feeding both the tab row and the readline, with the refusal-vs-partial split taken from disclosure tone rather than the ambiguous state name",
+      "Failure-direction discipline in CSS: --dk-quiet falls back to a darker ink if the estate token is ever missing, the over-ceiling 340ms motion was self-caught and fixed to 260ms, and the dropped warm hue leaves zero literal colours declared"
+     ],
+     "weakest": "desk__my-work__owner_signature.html — every ledger row hydrates two client instances (WorkRow wrapper plus RowDispositions strip, two subscriptions to one key) under a header claiming 'one island per row, never two'; Editorial removed exactly this doubling and named it a mistake, so the claim is generous accounting on the sixty-row scale ledger",
+     "concerns": [
+      "Stale header in parts.tsx: 'Every component here is a server component. The direction ships no client JavaScript at all' — false since this round and contradicted by the same file's ActionPlan import comment forty lines later",
+      "False cross-candidate claim as published: 'the only other direction that spends client JavaScript builds to 2.29 KB' — Index also ships an island (1.86 KB), so Desk's is not the smaller of two but the middle of three",
+      "Product suite paths retyped as literals in chrome.tsx against the product-urls contract",
+      "Meta drops null/empty parts silently, so if the shell ever exercised the ledger labels' typed null arm the fact would vanish from the row rather than surface as 'Could not be counted'"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "D",
+     "overall": 8.4,
+     "ownedLens": 8.3,
+     "strengths": [
+      "The CSS architecture is the most contract-faithful in the lab: em breakpoints with the best-argued zoom/text-enlargement rationale, a derived plate width (--x-ri-plate is calc'd, never typed), and the only direction using the vendored tokens.css's documented --x- extension prefix",
+      "A first-party measured island: 1.86 KB gzip with the recipe stated and the honest 'bundle measurement, not a perf:budgets run' caveat, plus a runtime import list of exactly react",
+      "One merged polite region: IndexSay renders inside the same readline status region the server composes, so disposition outcomes and read condition share one announcement channel instead of a second region — keep this in any remediation",
+      "modeCondition/conditionOf in labels.ts: the standing-limit demotion (cause and mark move, the word does not) is a precise answer to 'Partly read as resting state carries no information', and the first-run short-circuit is placed before anything is weighed"
+     ],
+     "weakest": "index__inbox__owner_signature.html — shut moves render as plain spans (18 of them) rather than the focusable aria-disabled controls its two island peers use, so a keyboard user cannot reach a closed move to have its reason announced; defensible as 'a statement, not a control', but it is the weakest arrival-state engineering among the three directions that built real dispositions",
+     "concerns": [
+      "Folder-discipline violation: candidate-private logic lives at src/lib/home-layer/candidates/index/labels.ts, outside the one folder the contract grants ('One folder each. Nothing outside it'), imported by three of its files, and neither header declares nor justifies the location — the isolation walker scans it, but the boundary rule is broken silently",
+      "Two stale zero-JS claims in parts.tsx ('The direction ships no client JavaScript at all', and ScopeControl's 'this direction spends none') contradicting candidate.tsx's own round-5 island account — a reviewer reading parts.tsx alone is misinformed about the direction's runtime cost",
+      "Ledger cells render {row.openWorkLabel} raw with a string-equality check against copy.unreadableCount for styling only — same latent typed-null hole as Rail, plus brittleness against any copy change",
+      "Fragment-suffixed hrefs (`${row.href}#ri-open-event`) are declared and reasonable, but they are the closest any direction comes to composing a lab URL by hand"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Move src/lib/home-layer/candidates/index/labels.ts into src/app/lab/home-operating-layer/candidates/index/ beside the files that import it (restoring 'one folder each, nothing outside it'), update the three imports, and correct the two stale 'ships no client JavaScript' claims in parts.tsx to match the measured island account in candidate.tsx and dispositions.tsx."
+    }
+   ],
+   "rankedOrder": [
+    "A",
+    "C",
+    "D",
+    "B"
+   ],
+   "evidenceExamined": [
+    "src/app/lab/home-operating-layer/candidates/README.md",
+    "src/app/lab/home-operating-layer/candidates/registry.ts",
+    "src/app/lab/home-operating-layer/candidates/editorial/candidate.tsx",
+    "src/app/lab/home-operating-layer/candidates/editorial/shell.tsx",
+    "src/app/lab/home-operating-layer/candidates/editorial/interaction.tsx",
+    "src/app/lab/home-operating-layer/candidates/editorial/read-state.ts",
+    "src/app/lab/home-operating-layer/candidates/editorial/today.tsx",
+    "src/app/lab/home-operating-layer/candidates/editorial/inbox.tsx",
+    "src/app/lab/home-operating-layer/candidates/editorial/my-work.tsx",
+    "src/app/lab/home-operating-layer/candidates/editorial/analytics.tsx",
+    "src/app/lab/home-operating-layer/candidates/editorial/editorial.css",
+    "src/app/lab/home-operating-layer/candidates/rail/candidate.tsx",
+    "src/app/lab/home-operating-layer/candidates/rail/reading.ts",
+    "src/app/lab/home-operating-layer/candidates/rail/parts.tsx",
+    "src/app/lab/home-operating-layer/candidates/rail/today.tsx",
+    "src/app/lab/home-operating-layer/candidates/rail/inbox.tsx",
+    "src/app/lab/home-operating-layer/candidates/rail/my-work.tsx",
+    "src/app/lab/home-operating-layer/candidates/rail/analytics.tsx",
+    "src/app/lab/home-operating-layer/candidates/rail/rail.css",
+    "src/app/lab/home-operating-layer/candidates/index/candidate.tsx",
+    "src/lib/home-layer/candidates/index/labels.ts",
+    "src/app/lab/home-operating-layer/candidates/index/dispositions.tsx",
+    "src/app/lab/home-operating-layer/candidates/index/parts.tsx",
+    "src/app/lab/home-operating-layer/candidates/index/read.tsx",
+    "src/app/lab/home-operating-layer/candidates/index/inbox.tsx",
+    "src/app/lab/home-operating-layer/candidates/index/my-work.tsx",
+    "src/app/lab/home-operating-layer/candidates/index/analytics.tsx",
+    "src/app/lab/home-operating-layer/candidates/index/reading-index.css",
+    "src/app/lab/home-operating-layer/candidates/desk/candidate.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/chrome.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/parts.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/dispositions.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/today.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/inbox.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/my-work.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/analytics.tsx",
+    "src/app/lab/home-operating-layer/candidates/desk/desk.css",
+    "src/lib/home-layer/lab/lab-isolation-contract.test.mjs",
+    "src/lib/home-layer/lab-shell/contract.ts (AnalyticsLedgerRowView, unreadableCount)",
+    "src/lib/home-layer/lab-shell/assemble.ts (ledger label folding)",
+    "src/lib/home-layer/lab-shell/lab-shell.test.ts (unreadable-count assertions)",
+    "src/lib/product-urls.ts (typed path constants, /app/settings note)",
+    "src/ds/tokens.css (the --x- extension-prefix convention line)",
+    "docs/projects/home-operating-layer/design/lab-evidence/editorial__today__owner_signature__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/editorial__today__owner_quiet__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/editorial__today__provider_failure__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/editorial__today__new_user__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/rail__today__owner_signature__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/rail__today__owner_quiet__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/rail__today__provider_failure__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/rail__today__new_user__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/index__today__owner_signature__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/index__today__owner_quiet__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/index__today__provider_failure__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/index__today__new_user__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/desk__today__owner_signature__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/desk__today__owner_quiet__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/desk__today__provider_failure__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/desk__today__new_user__1440x960.png",
+    "docs/projects/home-operating-layer/design/lab-evidence/editorial__inbox__owner_signature.html (structural: buttons, aria-disabled, aria-describedby)",
+    "docs/projects/home-operating-layer/design/lab-evidence/rail__inbox__owner_signature.html (structural: 0 buttons, 15 details, struck refusals)",
+    "docs/projects/home-operating-layer/design/lab-evidence/index__inbox__owner_signature.html (structural: 23 buttons, 18 shut spans, live marks)",
+    "docs/projects/home-operating-layer/design/lab-evidence/desk__inbox__owner_signature.html (structural: 41 buttons, 17 why-ids 1:1 with aria-describedby)",
+    "docs/projects/home-operating-layer/design/lab-evidence/editorial__analytics__owner_signature.html (ledger cells, unreadable-count absence)",
+    "docs/projects/home-operating-layer/design/lab-evidence/rail__analytics__owner_signature.html (ledger row states and cell contents)",
+    "docs/projects/home-operating-layer/design/lab-evidence/index__analytics__owner_signature.html (ledger cells, receipt structure)",
+    "docs/projects/home-operating-layer/design/lab-evidence/desk__analytics__owner_signature.html (ledger list rendering, fold structure)",
+    "all 16 today HTML files probed for aria-current uniqueness, single h1/main, script-tag absence, and quiet-vs-failure structural markers across the four worlds"
+   ],
+   "overallNote": "This lens judged the code behind the renders: island discipline, server-component correctness, CSS architecture against the vendored tokens, and whether each direction's self-account tells the truth. Two directions clear the engineering gate — Editorial on the cleanest and most honest construction, Desk on the strongest engineering artifact (planPage dedupe, first-party measurement) despite three self-account nicks — while Index is one folder-move and two stale claims from the bar, and Rail's zero-byte purity conceals a latent contract-type hole at the exact point the governing rule lives; nothing here is category-unfit."
+  },
+  {
+   "lens": "content-copy-brand-voice",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.7,
+     "ownedLens": 8.6,
+     "strengths": [
+      "The 'How this page was read' ledger register (This read / The account / No source at all / Where new work goes) — the most literate honest-accounting prose in the field; do not sand off",
+      "Margin-annotation grammar: facts in the margin ('2 asks in this thread.'), prose in the column — a real editorial voice, keep it",
+      "Failure-account line placement: 'No total is shown rather than a total that would be wrong.' under 'The account' is the governing rule spoken like a person",
+      "New-user lede 'This is not a failed read, and it is not an all clear either.' — the three-way empty/broken/quiet distinction in one sentence; must survive any remediation"
+     ],
+     "weakest": "editorial__inbox__owner_signature.html — the margin note '5 open, and at least one more that could not be counted.' and the qualifying panel '…so it is counted but not named.' state opposite polarities of 'counted' about the same unverifiable item on one screen",
+     "concerns": [
+      "The counted/not-counted polarity collision on the Inbox screen is exactly the claim-conflict class the programme bans; fix in any next round",
+      "'What qualifies this read' — 'qualifies' is process jargon; the register everywhere else is plainer than this header",
+      "'The date on this reads before the rehearsal.' garbles without quotes around the human date literal; rail and index handle the same fixture string better",
+      "Nav aria label assembly produces a double full stop ('…could not be read.. Partly read.') on every page — assistive copy is copy",
+      "Zero-case template 'Read 3 of 3 projects. 0 did not answer, and nothing here counts them as empty.' reads machine-assembled; a person writes 'All 3 projects answered.'"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 9,
+     "ownedLens": 9,
+     "strengths": [
+      "The edge-sentence family — 'The edge of this read' with a true, per-mode re-derived sentence ('Nothing below this line is asking for you inside this read.' / '…is waiting on you now.' / 'Below this line is what these records cannot reach yet.' / 'Before the first read') — the best original copy system in the field; do not sand off",
+      "The two action blast-radius sentences ('This changes what Home shows you. The work itself is untouched.' / 'This is sent to the product that owns the item. Nothing here is settled until that product answers.') state the whole action contract honestly and reusably",
+      "Nav status carries its reason ('Partly read · one source did not answer') — the only direction whose mode row explains itself; keep",
+      "'These are exact instants, so a clock change between now and then is already counted.' and 'This is the whole read. Nothing was held back from it.' — the time thesis turned into user-facing guarantees"
+     ],
+     "weakest": "rail__my-work__owner_signature.html — 'Nothing below this line is due inside the read above.' is the one edge sentence that collapses grammatically, and the blast-radius line repeats verbatim under all twenty expandable actions",
+     "concerns": [
+      "Snooze menu offers two options both labelled 'Pick a time' that resolve to different concrete instants — a label duplication inside its best disclosure",
+      "'due inside the read above' needs rewriting in the edge grammar it belongs to",
+      "Blast-radius sentences are collapsed by default (acceptable) but expanded reading is thudding; vary or state once per card",
+      "Analytics edge headline inherits the substrate 'in Europe, London' comma rendering of the timezone into rail's own furniture"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "C",
+     "overall": 8,
+     "ownedLens": 7.8,
+     "strengths": [
+      "'Short is not empty.' — the governing rule in five words, the single best sentence in the field; fix its gating, never the sentence",
+      "The open-numeral explanation: 'The Inbox count is not complete, so the numeral… is drawn open on its right rather than closed. It is what could be checked, not a total.' — the most inventive honest-count copy anywhere in this round",
+      "'True of every read, not of today' — separates standing conditions from today's news; a genuinely new disclosure idea",
+      "State-fronted chip grammar ('Read.' / 'Did not answer.' / 'Nothing set up yet.') and the legend contract 'nothing here is carried by a shape' — keep both"
+     ],
+     "weakest": "desk__my-work__owner_signature.html — 'Some sources did not answer, so this list can be short. Short is not empty.' printed four times on a page whose own About-this-list ledger says 'Read 3 of 3 projects. 0 did not answer.' — a false claim, repeated, in the exact register the programme exists to protect",
+     "concerns": [
+      "The ×4 false source-failure line on a healthy page directly breaks 'no claim may lie'",
+      "The same line says 'did not answer' in partial_coverage states where the truth its own chip states is 'answered for part of what was asked' — flattens the two failure kinds",
+      "'Could not be read' labels the two not-connected sources on every page including quiet days — failure vocabulary for absence, the quiet-vs-broken blur in words",
+      "Briefing legend lists 'The line breaks here. This could not be read.' on owner_signature where nothing broke, contradicting its own 'These are the marks on this page.'",
+      "'at this scope' is tool-speak inside the house 'Home is reading' grammar"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Gate the 'Some sources did not answer… Short is not empty.' line on the page's own source ledger (suppress when 0 did not answer; say 'answered for part of what was asked' in partial states), relabel the not-connected sources from 'Could not be read' to absence words ('No source connected'), and drop the break-mark legend row from pages whose read had no break"
+    },
+    {
+     "label": "D",
+     "overall": 8.3,
+     "ownedLens": 8.3,
+     "strengths": [
+      "The two action-model paragraphs ('Mark as read, Snooze and Clear are moves in your Inbox. They change how this list reads and never touch the work at its source…' / 'Mark as done reaches the source and waits for its answer. A row leaves this ledger only when the source confirms it, at the next read.') — the best-compressed action semantics in the field, stated once, completely; do not sand off",
+      "Condition vocabulary as navigation: 'Not answering', 'Nothing in it', 'Nothing set up yet' — the most human status labels anywhere, and quiet vs broken never share a word on the contents",
+      "'What limited this read' — the clearest of the four disclosure headers",
+      "'2 of 23 records were left out of this.' — the cleanest rewrite of the shared exclusion arithmetic; and 'Every mode, and the condition its own read is in.' names the thesis in nine words"
+     ],
+     "weakest": "index__today__owner_signature.html — the thesis surface itself reads 'Today · Read · Not connected' in the mode row, the contents and the screen-reader announcement; 'Not connected' misattributes the missing calendar/decisions sources to Today, and the referent is only recoverable two panels away",
+     "concerns": [
+      "'Not connected' without a referent is the most-repeated pair of words in the direction and the one ambiguous label on an otherwise honest contents",
+      "'Read scope' switcher label is tool-speak where every other direction keeps the house 'Home is reading' grammar",
+      "'No date on it.' chip sits beside the literal 'before the rehearsal' — self-contradiction on first read",
+      "Inbox row label runs ('Open / Read: Not read yet / State: Still open') read as word-salad in sequence; the dt vocabulary needs one more pass",
+      "Thinnest body of owned prose in the field — the thesis rests almost entirely on labels, so each label word carries outsized risk"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Give the Today limitation its referent everywhere the leaders point at it — 'Calendar not connected' or 'No calendar · no decisions source' instead of the bare 'Not connected' (including the skip-region announcement) — and replace the 'Read scope' label with the house 'Home is reading' grammar"
+    }
+   ],
+   "rankedOrder": [
+    "B",
+    "A",
+    "D",
+    "C"
+   ],
+   "evidenceExamined": [
+    "editorial__today__owner_signature.html",
+    "editorial__today__owner_quiet.html",
+    "editorial__today__provider_failure.html",
+    "editorial__today__partial_coverage.html",
+    "editorial__today__new_user.html",
+    "editorial__today__scale.html",
+    "editorial__inbox__owner_signature.html",
+    "editorial__my-work__owner_signature.html",
+    "editorial__analytics__owner_signature.html",
+    "editorial__briefing__owner_signature.html",
+    "rail__today__owner_signature.html",
+    "rail__today__owner_quiet.html",
+    "rail__today__provider_failure.html",
+    "rail__today__partial_coverage.html",
+    "rail__today__new_user.html",
+    "rail__today__scale.html",
+    "rail__inbox__owner_signature.html",
+    "rail__my-work__owner_signature.html",
+    "rail__analytics__owner_signature.html",
+    "rail__briefing__owner_signature.html",
+    "desk__today__owner_signature.html",
+    "desk__today__owner_quiet.html",
+    "desk__today__provider_failure.html",
+    "desk__today__partial_coverage.html",
+    "desk__today__new_user.html",
+    "desk__today__scale.html",
+    "desk__inbox__owner_signature.html",
+    "desk__my-work__owner_signature.html",
+    "desk__analytics__owner_signature.html",
+    "desk__briefing__owner_signature.html",
+    "index__today__owner_signature.html",
+    "index__today__owner_quiet.html",
+    "index__today__provider_failure.html",
+    "index__today__partial_coverage.html",
+    "index__today__new_user.html",
+    "index__today__scale.html",
+    "index__inbox__owner_signature.html",
+    "index__my-work__owner_signature.html",
+    "index__analytics__owner_signature.html",
+    "index__briefing__owner_signature.html",
+    "desk__my-work__owner_signature__1440x960.png",
+    "index__today__owner_signature__1440x960__fold.png",
+    "rail__inbox__owner_signature__1440x960.png",
+    "editorial__inbox__owner_signature__1440x960.png"
+   ],
+   "overallNote": "Judged only the words — every caption, refusal, ledger line and label across all forty states, against the house register and the no-lying rule: rail's owned copy is the only system that never lies and reads like months of iteration; editorial passes with one counted/not-counted collision to repair; index and desk sit below the gate on named, surgical fixes, desk because its best honesty sentence is currently false four times on a healthy page. One substrate flag chargeable to no direction: the shared account sentence ('held back 2') does not reconcile with the shared 'N more qualified and are not shown here' lines under any single reading of 'held back', and the fixture should settle that term before the next round."
+  },
+  {
+   "lens": "emotional-resonance",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 8.6,
+     "ownedLens": 8.7,
+     "strengths": [
+      "The arrival ritual — address-you headline over the small-caps margin dateline (READ AT 08:40 ON THURSDAY 16 JULY.) — feels like a private paper prepared for one reader; do not sand off the dateline or the direct address.",
+      "The quiet day compresses the entire page to a single serene screen (headline, one honest sentence, colophon receipt) — the page itself becomes quiet; this compression is the direction's emotional core and must survive any remediation.",
+      "The colophon 'HOW THIS PAGE WAS READ' stages the accounting as a printed receipt of candour — trust delivered as typography, and the failure-day colophon line refusing a wrong total lands with real gravity there.",
+      "Colour spent as truth only — one indigo rule, red reserved for lateness and failure — keeps the red top rule on provider_failure genuinely felt rather than decorative."
+     ],
+     "weakest": "editorial__briefing__owner_signature__1440x960.png — seventeen rows of identical typographic temperature; 'Moving well' is indistinguishable in feeling from 'Needs review', so the reader's emotional register flattens the further they read from the headline.",
+     "concerns": [
+      "Feeling lives only at the page's extremes: the headline greets and the colophon reassures, but the long grey middle of every list page is emotionally inert.",
+      "One note played extremely well — respect and gravitas without warmth; the austerity risks reading as clinical over months of daily use.",
+      "Sections that should feel good (Moving well) carry no textural difference from sections that should prick (Needs review)."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 8.2,
+     "ownedLens": 8.4,
+     "strengths": [
+      "'THE EDGE OF THIS READ — Nothing below this line is asking for you inside this read.' is the most emotionally generous device in the round: engineered permission to stop reading; it must never be sanded off.",
+      "Quiet vs failure as space vs stone: the quiet day is an open span between the NOW meridian and the edge, the failure day a black slab set into the same stream — the governing rule delivered as physical feeling, not words.",
+      "The first-run framing — 'BEFORE THE FIRST READ … Nothing failed, and nothing here counts as zero' with the only filled action button in the set — is the warmest new_user moment of the four.",
+      "The briefing's closing assurance 'This is the whole read. Nothing was held back from it.' and the 'WHERE YOU WERE' return link are trust rendered as wayfinding."
+     ],
+     "weakest": "rail__today__owner_signature__390x844__fold.png — on the founder's phone the first screen is masthead, mode grid, then three ledger blocks (THIS READ, WHAT WAS READ, WORK STARTS IN) before the NOW line; the verdict of the day is below the fold, so the morning-glance feeling fails on the most-lived device.",
+     "concerns": [
+      "Receipts before greeting: on both viewports the accounting stack shares or precedes the arrival moment, so the daily first feeling is 'instrument' rather than 'briefing'.",
+      "The per-mode caption drumbeat (PARTLY READ · ONE SOURCE DID NOT ANSWER repeated four times across the nav) reads mechanical, a system log rather than a voice.",
+      "At 1440 the lower page's hard left-set content against full-width rules leaves the right half hollow, which reads unfinished rather than serene."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Re-sequence the arrival so the day's verdict is the first thing felt on every viewport: on 390, move the THIS READ / WHAT WAS READ / WORK STARTS IN blocks below the NOW meridian and first signal items so the fold shows headline, meridian, verdict sentence, first item; on 1440, let the headline and meridian own the top before any accounting block; and collapse the four repeated mode-caption qualifiers into one summarising line so the drumbeat becomes a sentence."
+    },
+    {
+     "label": "C",
+     "overall": 8.9,
+     "ownedLens": 9,
+     "strengths": [
+      "The warm paper is the only changed canvas in the set and it changes the feeling of arrival — a kept desk rather than a terminal; the colour temperature must not be normalised away.",
+      "The verdict-word grammar with the four-state headline rule (solid 'Read.', split 'Partly read.', red 'Did not answer.', dashed 'Nothing set up yet.') gives the founder a somatic cue: the day's nature is felt before a word is read — this sign system is the direction's soul.",
+      "The spine that physically breaks where the source did not answer, paired with 'Some sources did not answer, so this list can be short. Short is not empty.' — the governing rule made into an object plus a protective sentence; neither half may be sanded off.",
+      "The legend's promise 'nothing here is carried by a shape' and controls struck through with their reason ('nothing here is marked done until the source confirms it') build trust as a felt daily texture."
+     ],
+     "weakest": "desk__today__owner_quiet__1440x960.png — still strong, but the cryptic collapsed mono label 'TRUE OF EVERY READ, NOT OF TODAY (2)' is most exposed on the near-empty quiet page, one cold bureaucratic note on the direction's calmest surface.",
+     "concerns": [
+      "The break-diamond does double duty: on clean days it also marks cross-read composite rows ('6 dated items fall in the same week'), while the legend's failure-day words define it as 'the line breaks here, this could not be read' — one glyph, two meanings muddies a learned somatic cue on the day both appear.",
+      "'Coming up 4 >' collapsed on Today withholds the fortnight's feel from the arrival; the founder must click to feel what is approaching.",
+      "'TRUE OF EVERY READ, NOT OF TODAY' is the lone jargon-toned furniture on an otherwise plain-spoken page."
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "D",
+     "overall": 7.8,
+     "ownedLens": 7.7,
+     "strengths": [
+      "The contents-with-conditions table — 'Every mode, and the condition its own read is in.' with leader dots — is a real reassurance: the whole estate legible from anywhere; keep it in any remediation.",
+      "Continuous entry numbering (01–17 across the whole briefing) gives the day a felt size — the reader knows how big today is, which is its own kind of calm.",
+      "The my-work trust sentence — 'Mark as done reaches the source and waits for its answer. A row leaves this ledger only when the source confirms it, at the next read.' — is candour of the highest order and must survive."
+     ],
+     "weakest": "index__today__new_user__1440x960.png — a person's first-ever screen is framed under 'WHAT LIMITED THIS READ' with roughly a dozen statements of nothing/zero/not-set-up across nav, banner and rail; the feeling is being processed by an intake clerk, not welcomed to a product.",
+     "concerns": [
+      "The quiet day never exhales: the full accounting apparatus keeps equal visual weight beside a hollow content column, so calm reads as a column that failed to load rather than rest.",
+      "The failure wound is restated roughly nine times on one screen (nav ×4, banner, rail paragraph, contents ×4) — honesty repeated until it becomes anxiety.",
+      "'Not connected' is promoted into the nav beside Today on the signature day, so the qualifier shouts louder than the 'Read' verdict it qualifies.",
+      "Mono-and-badge density everywhere makes every surface feel like working papers; the direction functions admirably and moves least."
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Let the calm worlds breathe and the wound speak once: on owner_quiet and new_user, collapse the right-rail apparatus to a single receipt line with the rest behind a disclosure and re-frame new_user under a welcome heading ('Where to start') rather than 'WHAT LIMITED THIS READ'; demote the 'Not connected' qualifier from the Today nav badge into the account where it explains itself; and on provider_failure state the wound once in the banner and once in the contents instead of nine times."
+    }
+   ],
+   "rankedOrder": [
+    "C",
+    "A",
+    "B",
+    "D"
+   ],
+   "evidenceExamined": [
+    "README.md",
+    "editorial__today__owner_signature__1440x960.png",
+    "editorial__today__owner_signature__1440x960__fold.png",
+    "editorial__today__owner_quiet__1440x960.png",
+    "editorial__today__provider_failure__1440x960.png",
+    "editorial__today__new_user__1440x960.png",
+    "editorial__briefing__owner_signature__1440x960.png",
+    "editorial__my-work__owner_signature__1440x960.png",
+    "editorial__today__owner_signature__390x844__fold.png",
+    "rail__today__owner_signature__1440x960.png",
+    "rail__today__owner_signature__1440x960__fold.png",
+    "rail__today__owner_quiet__1440x960.png",
+    "rail__today__provider_failure__1440x960.png",
+    "rail__today__new_user__1440x960.png",
+    "rail__briefing__owner_signature__1440x960.png",
+    "rail__my-work__owner_signature__1440x960.png",
+    "rail__today__owner_signature__390x844__fold.png",
+    "desk__today__owner_signature__1440x960.png",
+    "desk__today__owner_signature__1440x960__fold.png",
+    "desk__today__owner_quiet__1440x960.png",
+    "desk__today__provider_failure__1440x960.png",
+    "desk__today__new_user__1440x960.png",
+    "desk__my-work__owner_signature__1440x960.png",
+    "desk__briefing__owner_signature__1440x960.png",
+    "desk__today__owner_signature__390x844__fold.png",
+    "index__today__owner_signature__1440x960.png",
+    "index__today__owner_quiet__1440x960.png",
+    "index__today__provider_failure__1440x960.png",
+    "index__today__new_user__1440x960.png",
+    "index__my-work__owner_signature__1440x960.png",
+    "index__briefing__owner_signature__1440x960.png",
+    "index__today__owner_signature__390x844__fold.png",
+    "desk__today__provider_failure.html (text extraction)",
+    "rail__today__provider_failure.html (text extraction)",
+    "editorial__today__provider_failure.html (text extraction)",
+    "index__today__provider_failure.html (text extraction)"
+   ],
+   "overallNote": "This seat judged whether the founder feels anything worth keeping at arrival, on the quiet day, and on the broken day. Two directions clear the gate — Desk, which turns candour into warm, physical feeling (a verdict word, a rule with four honest states, a spine that breaks where the read broke), and Editorial, whose arrival and single-screen quiet are the finest exhale in the round; Rail hides its two most generous sentences behind a receipts-first arrival, and Index functions thoroughly while moving me least."
+  },
+  {
+   "lens": "measured-evidence",
+   "candidates": [
+    {
+     "label": "A",
+     "overall": 9,
+     "ownedLens": 9.1,
+     "strengths": [
+      "Real controls everywhere an action is shown: 41/22 <button> elements in inbox/my-work, refused actions struck through WITH the reason inline ('This one is not an approval.') — the strike-plus-reason grammar must not be sanded off",
+      "Arithmetic-closed accounting sentences: 'read 22 items, showed 8, held back 2, skipped 1, found 11 that crossed nothing' sums exactly, quiet world's 'read 4, showed 0, found 4' likewise — keep colophons numeric, never prose-only",
+      "Perfect instrument hygiene on all 10 states: 1 main, 1 h1, 0 heading skips, named navs (Products/Home), zero role/tabindex misuse, zero pointer-cursor classes on non-controls",
+      "The habit of labelling unmeasured numbers: its interaction island was published as an estimate pending perf:budgets and measures 2.23 KB gzip against the flagged ~4 KB — conservative and honest; keep flagging what was not run"
+     ],
+     "weakest": "editorial__inbox__owner_signature.html — the whole client surface (41 buttons) is dead until hydration with no pre-hydration fallback, and its island cost was the one candidate number its author never actually ran; nearest-to-gate moment, though never a falsehood",
+     "concerns": [
+      "render-directions README claims editorial's inbox is action-free in these captures — stale; the rendered HTML carries 41 inline action buttons",
+      "the '4 KB gzip' figure should be replaced with the measured 2.23 KB now that the recipe has been run"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "B",
+     "overall": 7.8,
+     "ownedLens": 7.6,
+     "strengths": [
+      "Leanest verified payload of the four — 3.70 KB min+gzip CSS, genuinely zero client JS (no island file exists) — the frugality is real and must survive any repair of the actions",
+      "Strongest quiet-vs-failure separation at 1440: reversed black band plus per-mode 'ONE SOURCE DID NOT ANSWER' red-edged conditions against clean READ states — keep the band",
+      "Time-as-structure is measurably present: snoozes surface as exact instants ('Comes back at 18:00 on Thursday 16 July') with DST honesty ('a clock change between now and then is already counted') — do not flatten this back into list text",
+      "Motion claims verify: 200ms/260ms draws inside a prefers-reduced-motion: no-preference block exactly as published, and the refused attempt is a non-control with its reason (mr-refusals)"
+     ],
+     "weakest": "rail__inbox__owner_signature.html — a list headed 'WHAT YOU CAN DO' whose four entries contain no button, no form, and no link: nothing can actually be done in the shipped bytes, confessed only by a margin note ('Nothing here is sent')",
+     "concerns": [
+      "the details/summary dispositions describe actions they cannot perform, so the fixture's staged dispositions are unactionable — the zero-JS boast is bought with an inert action surface",
+      "the CSS header claims .mr-record is written last so the account follows the document on phones; no rendered element carries mr-record, the account aside (mr-ledger) precedes the body in DOM, and the 390 fold shows THIS READ before 'This is not an all clear' — a self-published structural claim contradicted by the render",
+      "third occupant of the slot, never scored before: no prior round exists to have caught either fault"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Make every entry under 'What you can do' a real control that performs its action — server-action forms or a route-local island both preserve the thesis — and reconcile the account's placement with the published claim (mr-ledger after the document at one-column widths, or rewrite the rail.css header to describe what ships); then re-render and re-measure."
+    },
+    {
+     "label": "C",
+     "overall": 8.7,
+     "ownedLens": 8.8,
+     "strengths": [
+      "Action grammar proven at the selector level: cursor pointer scoped to button.ri-act-name only, in-flight buttons drop to aria-disabled + cursor default, refused actions render as spans with the reason — the data-open yes/no split must not be sanded off",
+      "Byte-verified self-published numbers: dispositions island 5,170 bytes minified exact, 1.86 KB gzip exact at KB precision (1,903 vs 1,901 claimed — zlib noise)",
+      "Navigation-as-coverage-report is measurably true: every mode's condition propagates to the folio and contents ('Partly read · Not answering' reaches all four modes on the failure world), so the state of an unvisited mode is legible — the direction's thesis, verified",
+      "Correct scroll accessibility on the ledger: tabindex=0 on ri-scroller with scope=col/row table headers; three named navs (Signal Studio / Home / Contents)"
+     ],
+     "weakest": "index__today__owner_signature__390x844__fold.png — roughly 250px of stacked folio (four modes with conditions) before the headline on a phone; the round-4 front-matter cost was halved, not eliminated",
+     "concerns": [
+      "the failure world repeats 'Partly read · Not answering' eight times on one 1440 screen — honest but verbose",
+      "heaviest CSS of the four as measured (5.35 KB min+gzip, 33.28 KB minified) and the only direction with no self-published payload total to hold it to"
+     ],
+     "decision": "pass",
+     "requiredCorrection": ""
+    },
+    {
+     "label": "D",
+     "overall": 8.4,
+     "ownedLens": 8.3,
+     "strengths": [
+      "The best measurement discipline on the panel: CSS 70.0/25.9 KB/4.74 KB and island 5,105/1,978 bytes reproduce EXACTLY under its own documented recipe (lightningcss 1.32.0, esbuild 0.27.7, gzip -9), and its correction of round 4's raw-file accounting is validated by this round's instrument — publishing recipes beside numbers must not be sanded off",
+      "State drawn as shape, verified in pixels: solid/red/dashed head rules and a spine that breaks at the unread source, with a printed legend stating every mark repeats words — the redundant-channel system is real, keep all of it",
+      "Disciplined action rows: real buttons, struck non-actions with their reasons printed beneath the row ('Mark as read: You have already read this.')",
+      "The round-5 colour settlement is verified: desk sits on ratified --paper-deep, the stylesheet declares no literal colour, and the two-plane read survives in the renders"
+     ],
+     "weakest": "desk__my-work__owner_signature.html — 'Some sources did not answer, so this list can be short' printed four times on the world where every source answered (rail and editorial account the same fixture as 'Read 3 of 3 projects. 0 did not answer') — the only rendered falsehood found across all 40 instrumented pages",
+     "concerns": [
+      "the caveat contradicts desk's own vocabulary, which elsewhere separates 'did not answer' from 'no source connected'",
+      "gating is mode-inverted: inbox, which HAS a coverage limit, prints no caveat, while my-work, which has none, prints four — an unconditional stamp, not a data-driven disclosure",
+      "published contrast row '--ink on the sheet 18.1:1' does not reproduce — measures 18.88:1 (error in the safe direction, but a wrong instrument reading in a header that stakes its authority on measurement)"
+     ],
+     "decision": "revise",
+     "requiredCorrection": "Gate .dk-caveat on the per-list coverage fact the shell already hands over — it must render only under a group whose source did not answer (zero occurrences on my-work owner_signature, keep the four on provider_failure) — and correct the 18.1:1 row to the measured 18.88:1; both fixes are verifiable by re-running this round's instrument, after which the direction re-measures at pass."
+    }
+   ],
+   "rankedOrder": [
+    "A",
+    "C",
+    "D",
+    "B"
+   ],
+   "evidenceExamined": [
+    "RUN: pnpm exec node --import tsx --test src/lib/home-layer/lab-shell/lab-shell.test.ts — 24/24 pass",
+    "RUN: node --test src/lib/home-layer/lab/lab-isolation-contract.test.mjs — 19/19 pass",
+    "RUN: node scripts/check-first-contact-language.mjs — clean, 368 files scanned (glob src/**/*.tsx includes all four candidates)",
+    "RUN: pnpm exec tsc --noEmit — exit 0",
+    "INSTRUMENTED: all 40 lab-evidence HTML files (4 directions x 10 states) for nav landmarks + accessible names, main/h1 counts, heading order (0 skips, 1 h1 on every page; owner_signature and provider_failure cited as the two named states), button/anchor counts, role/tabindex misuse, pointer-class-on-non-control audit in inbox and my-work — script at scratchpad/instrument-renders.mjs, output instrument-out.json",
+    "MEASURED: src/app/lab/home-operating-layer/candidates/{editorial/editorial.css, rail/rail.css, index/reading-index.css, desk/desk.css} via lightningcss 1.32.0 (chrome111/edge111/firefox111/safari16.4) + gzip -9: editorial 64.28/30.56/5.01 KB, rail 37.14/22.02/3.70, index 67.13/33.28/5.35, desk 69.99/25.87/4.74 — desk's published table exact for desk and rail, drifted for editorial/index exactly as its as-of-this-round caveat states",
+    "MEASURED: candidates/{desk,index}/dispositions.tsx and editorial/interaction.tsx via esbuild 0.27.7 (bundle/minify/esm/jsx-automatic, react+jsx-runtime external, gzip -9): desk 5,105/1,978 bytes (claim exact), index 5,170/1,903 (min exact, gzip +2B), editorial 6,281/2,281 (2.23 KB vs flagged ~4 KB estimate); rail has no client file (zero-JS claim true)",
+    "MEASURED: WCAG contrast of claimed pairs from src/ds/tokens.css — #111 on #fff = 18.88:1 (editorial's 18.9 correct, desk's 18.1 wrong), #3f3f46 on #fff = 10.44 (desk 10.4 correct), on #f4f4f5 = 9.50 (desk 9.3 conservative)",
+    "GREPPED HTML: rail__inbox + rail__my-work (details/summary action bodies: 0 forms, 0 buttons, 0 links; mr-refusals; summaries inventory), index__inbox (button.ri-act-name vs refused span, data-open), index__analytics (ri-scroller tabindex=0 table), desk__{my-work,inbox,today,today_provider_failure} (dk-caveat occurrence counts: 4/0/0/4), rail__today (mr-ledger DOM position 4872 vs body 5779; no mr-record element exists)",
+    "READ SOURCE: candidates/desk/candidate.tsx + dispositions.tsx headers (claims + recipe), index/dispositions.tsx header, rail/candidate.tsx (zero-JS claims), editorial/interaction.tsx claim lines, all four CSS headers, src/ds/tokens.css, docs/.../lab-evidence/README.md, scripts/check-first-contact-language.mjs (scan scope), rail.css lines 1509-1518 (motion claims verified)",
+    "PNG (visual): editorial__today__owner_signature__1440x960__fold.png",
+    "PNG: editorial__today__owner_quiet__1440x960.png",
+    "PNG: editorial__today__provider_failure__1440x960.png",
+    "PNG: editorial__today__new_user__1440x960__fold.png",
+    "PNG: editorial__inbox__owner_signature__1440x960__fold.png",
+    "PNG: editorial__my-work__owner_signature__1440x960__fold.png",
+    "PNG: rail__today__owner_signature__1440x960__fold.png",
+    "PNG: rail__today__owner_quiet__1440x960.png",
+    "PNG: rail__today__provider_failure__1440x960.png",
+    "PNG: rail__today__new_user__1440x960__fold.png",
+    "PNG: rail__inbox__owner_signature__1440x960__fold.png",
+    "PNG: rail__my-work__owner_signature__1440x960__fold.png",
+    "PNG: rail__today__owner_signature__390x844__fold.png",
+    "PNG: index__today__owner_signature__1440x960__fold.png",
+    "PNG: index__today__owner_quiet__1440x960.png",
+    "PNG: index__today__provider_failure__1440x960.png",
+    "PNG: index__today__new_user__1440x960__fold.png",
+    "PNG: index__inbox__owner_signature__1440x960__fold.png",
+    "PNG: index__my-work__owner_signature__1440x960__fold.png",
+    "PNG: index__today__owner_signature__390x844__fold.png",
+    "PNG: desk__today__owner_signature__1440x960__fold.png",
+    "PNG: desk__today__owner_quiet__1440x960.png",
+    "PNG: desk__today__provider_failure__1440x960.png",
+    "PNG: desk__today__new_user__1440x960__fold.png",
+    "PNG: desk__inbox__owner_signature__1440x960__fold.png",
+    "PNG: desk__my-work__owner_signature__1440x960__fold.png"
+   ],
+   "overallNote": "The measured seat ran everything that runs — 24/24 shell, 19/19 isolation, language gate clean, tsc clean, 40 pages instrumented, every self-published number re-derived — and the round separates on two axes the instruments can see: whether published claims reproduce, and whether things presented as actions can act. Editorial and Index clear the gate on evidence; Desk's byte-exact measurement culture is undermined by the one rendered falsehood found all round (a coverage caveat asserting non-answers on a fully-answered world); Rail's inert 'What you can do' list and its render-contradicted placement claim leave the strongest-looking honesty system furthest from the gate."
+  }
+ ]
+}

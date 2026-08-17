@@ -139,3 +139,44 @@ evidence — the council fails inside it while the check reports pass.
 Round-4 ballots → if admitted, present to Ethan for selection; if not, report honestly whether the
 remaining gap is fixable or whether 8.5-on-every-lens is the wrong instrument for a four-way
 comparison. That judgment goes to Ethan rather than being iterated on indefinitely.
+
+---
+
+## Wave 3, round 5 complete — 2026-08-17
+
+Four lanes remediated in parallel (fairness held: only the lead touched shared
+material, fixing five shell defects the Meridian audit caught at source). All
+40 pages re-rendered from the final code, then a fresh ten-seat blind panel —
+the ten lenses: product taste, data truth, UI composition, typography, UX
+first-contact, accessibility, engineering, copy/voice, emotional resonance,
+and measured evidence.
+
+### The result: zero vetoes again, and nothing admitted
+
+| Direction | Floor overall | Floor owned | Mean | Pass | Blocking |
+|---|---|---|---|---|---|
+| **Editorial Line** | **8.1** | 7.8 | **8.64** | **8 of 10** | 2 |
+| Signal Desk | 8.0 | 7.8 | 8.50 | 5 of 10 | 5 |
+| Reading Index | 7.8 | 7.7 | 8.24 | 1 of 10 | 9 |
+| Meridian (first panel) | 6.8 | 5.8 | 8.19 | 4 of 10 | 6 |
+
+Gate: 8.5 overall AND owned lens, every director, zero vetoes.
+
+**Editorial Line is now the closest a direction has ever been**: eight passes,
+two revisable ballots (a deck line inconsistent with its own ledger; liturgy
+deduplication). **Signal Desk regressed on its own signature** — the round-5
+remediation over-applied "Short is not empty" so it renders on healthy pages
+against the page's own "0 did not answer" ledger: a governing-rule violation
+in the direction's proudest grammar. **Meridian's** zero-client-JS purity cost
+it exactly where the other three spent their islands: its actions are not real
+controls (a11y floor 5.8, its only structural fault class). **Reading Index**
+composes only when the day is full — nine directors said versions of the same
+thing.
+
+The panel has now run five rounds without an admission, with zero vetoes in
+the last two. The gate is measuring polish distance, not category fitness.
+Per the round-4 note, that judgment goes to Ethan rather than being iterated
+indefinitely: the founder's selection is the authority; the panel advises.
+
+Full record: `verification/panel/ballots-round-5.json`, per-direction
+work-orders in `verification/panel/round-5-*.md`.
