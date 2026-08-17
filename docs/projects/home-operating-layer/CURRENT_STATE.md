@@ -180,3 +180,22 @@ indefinitely: the founder's selection is the authority; the panel advises.
 
 Full record: `verification/panel/ballots-round-5.json`, per-direction
 work-orders in `verification/panel/round-5-*.md`.
+
+---
+
+## W3 CLOSED — the founder selected Editorial Line, 2026-08-17
+
+Ethan chose **Editorial Line** from the four directions with the round-5 ballots as
+advice (D-H15). The panel's five-round arc ended without a formal admission and with
+zero vetoes in the last two rounds; the charter's authority order puts the selection
+above the panel, and the selection is made.
+
+Kill records for Signal Desk, Reading Index and Meridian — each naming what it proved
+and what the programme keeps from it — live in D-H15. The winner inherits round 5's two
+revisable Editorial ballots as the first adoption work items.
+
+**Next: W4** — the shared Home boundary: routes, context, flags, primitives, in
+Editorial Line's grammar. Per the charter, the programme now continues autonomously
+through implementation, verification, PR, preview, merge and disabled production
+deployment; staged enablement waits on the live gates, and the 9.5 council (W10)
+remains blocked on the D-024 repair (F1, with the founder).

@@ -339,3 +339,73 @@ file:line that makes it fail today. The lead schedules the test commit once
 | Retiring the V2 suite-context emitter | `scripts/check-suite-switcher-contract.mjs:126` still pins `sourceProduct`; ADR 0001 §8 mandates renegotiation, not deletion | `feat/project-truth-wave` |
 | What happens to tasks assigned to non-members | Product answer required before My work ships | This programme, Wave 7 |
 | Whether the analytics domain gains a Program (planning-period) axis | `docs/wave/DECISIONS.md` D-010 consequence, left open there | `feat/project-truth-wave` |
+
+
+---
+
+## D-H14 · The two programmes split Home by read and shell
+
+**Ratified by Ethan's approval of the completion plan, 17 August 2026.** The Project
+Truth programme records the same decision as `D-027`; this entry is the Home-side
+mirror that `D-027` announced.
+
+| Owns | Programme |
+|---|---|
+| The analytics **read** — providers, metric registry, truth classes, Plan Trace as a content component | Project Truth |
+| The Home **shell** — routes, modes, navigation, chrome, the boundary contract | This programme |
+
+Binding consequence here: this programme does not author an analytics view. W8 consumes
+Plan Trace as a shell-agnostic content component that inherits the host's tokens, and a
+bounded fitting pass is expected when the shell exists. The component being built as a
+page anywhere is a violation of both records.
+
+---
+
+## D-H15 · The visual direction is Editorial Line — the founder's selection
+
+**Selected by Ethan, 17 August 2026**, from the four-direction W3 lab after five panel
+rounds, with the round-5 ballots as advice: Editorial Line 8.64 mean, eight of ten
+directors passing, floor 8.1 — the closest any direction came to the 8.5-every-lens
+admission gate in the programme's history. No direction was formally admitted; the
+charter's authority order puts the founder's selection above the panel, and the panel's
+own round-4 note said this judgment goes to Ethan rather than being iterated
+indefinitely.
+
+**What this settles.** The authenticated Home shell is built in Editorial Line's
+grammar: a quiet broadsheet — not one container, card, fill or shadow; hierarchy
+carried by type and rhythm; a three-tier measure; colour spent once per view; the
+numbered mono margin; the standing colophon ("HOW THIS PAGE WAS READ") as the
+direction's honesty furniture; struck-through refused actions with reasons on the
+control. W4 (shell and boundary contracts) is unblocked and proceeds autonomously per
+the charter's one-expected-pause clause.
+
+**The winner inherits two open ballots.** Round 5's two revisable ballots are the first
+work items of adoption, not forgotten by the win: (1) the Inbox deck line must be made
+consistent with its own ledger (data-truth seat, 8.1/7.8); (2) the liturgy must be
+deduplicated — each rule sentence once per section, and a one-line account pulled up
+under the Today standfirst so the receipt is met before the fold (product-taste seat,
+8.4/8.4). Both carry their full text in `verification/panel/round-5-editorial.md`.
+
+### Killed with the selection: what the other three proved
+
+**Signal Desk — KILLED.** The spine-that-breaks is the single most elegant translation
+of the governing rule in the field, and its verdict-word standfirst is a genuinely
+composed status language. It lost on trust: its round-5 remediation over-applied its own
+best sentence onto healthy pages, and a direction whose grammar can lie about a healthy
+day cannot be the front door. Kept from it: the four-state rule-as-instrument under the
+headline is recorded as the strongest single device any direction produced, and a future
+status surface should start there.
+
+**Reading Index — KILLED.** The contents-as-condition-report — leader dots from each
+mode to its current state — is a genuinely novel navigation idea. It lost on
+composition: nine of ten directors independently found it composes only when the day is
+full, and Home's most common day is quiet. Kept from it: the per-mode condition words in
+the navigation; Editorial's nav already carries state words beside its marks, and the
+leader-dot device is recorded for any future dense index surface.
+
+**Meridian — KILLED.** The slot's third occupant, scored once: 8.19 mean on its first
+panel, held down almost entirely by inert controls — the cost of its zero-client-JS
+purity. Its two meridians (NOW / THE EDGE OF THIS READ) with surface-specific true
+sentences are the best temporal grammar the lab produced. Kept from it: the
+edge-of-read sentence pattern ("below this line is what this read cannot reach") is
+recorded for the Full briefing's horizon treatment.
