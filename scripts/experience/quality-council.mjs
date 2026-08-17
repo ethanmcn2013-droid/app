@@ -1297,6 +1297,49 @@ function isMissingCertificationReceipt(error) {
   );
 }
 
+/**
+ * The external baseline was reviewed against an older source tree — D-029.
+ *
+ * This is neither a broken instrument nor a product verdict. It is a fact about
+ * the REVIEW: ten directors read a tree, and the tree has since moved. It
+ * happens by design on every source merge, so treating it as breakage would
+ * mean no `src/` change could land without commissioning a fresh ten-director
+ * review first. Published loudly, never silently, and never red.
+ */
+function isStaleBaselineTree(error) {
+  return /^quality council B0 baseline\.sources\.\w+\.sourceTreeSha256 must match/.test(error);
+}
+
+/**
+ * The two-state CI split — D-029, the F4 decision.
+ *
+ * `continue-on-error: true` used to sit on the council step inside a REQUIRED
+ * check, which collapsed three different things into one green tick: a broken
+ * validator, an honest NO-PASS, and a stale baseline. D-024's complaint was
+ * exactly that — "a gate that always fails is indistinguishable from one that
+ * is never consulted". The mask existed only because the validator could not
+ * tell those states apart. Now it can, so the mask goes.
+ *
+ * Red is reserved for the instrument being wrong: a validator that cannot run,
+ * a rotated contract hash, a malformed or tampered receipt, a baseline whose
+ * reviewer count, artifact hashes or no-pass decision have been edited. Those
+ * are the states where believing the gate would be a mistake.
+ *
+ * Green — with the verdict printed in full — covers the two states that are
+ * TRUE rather than broken: the product has not reached 9.5 (expected until
+ * State B), and the external review has aged out of the current tree (expected
+ * on every merge).
+ */
+function classifyCiErrors(errors) {
+  const expected = [];
+  const structural = [];
+  for (const error of errors) {
+    if (isMissingCertificationReceipt(error) || isStaleBaselineTree(error)) expected.push(error);
+    else structural.push(error);
+  }
+  return { expected, structural };
+}
+
 export function validateCouncil({ repoRoot = process.cwd(), skipGit = false } = {}) {
   const errors = [];
   const contract = validateContract(repoRoot, errors);
@@ -1855,6 +1898,47 @@ if (args.length === 0) {
       `${result.productScores.reduce((sum, product) => sum + product.unitCount, 0)} ` +
       "product assessment units and 4 journey viewports validated",
   );
+} else if (args.length === 1 && args[0] === "--ci") {
+  // D-029. Publishes in every state; red only when the instrument is wrong.
+  const result = validateCouncil();
+  if (result.achieved) {
+    console.log(
+      `experience:council [ci]: CERTIFIED - suite minimum ${result.suiteRawScore}/52 ` +
+        `(${result.suiteTenPointScore.toFixed(4)}/10)`,
+    );
+  } else if (result.mode === "external-baseline") {
+    console.log(
+      "experience:council [ci]: NO PASS - external Wave 0 B0 baseline, instrument healthy\n" +
+        result.baseline.surfaces
+          .map(
+            (surface) =>
+              `  - ${surface.name}: index ${surface.councilIndex.toFixed(2)}/10; ` +
+              `floor ${surface.lowestLens.toFixed(1)}/10; ` +
+              `vetoes ${surface.vetoes.length ? surface.vetoes.join(", ") : "none"}`,
+          )
+          .join("\n") +
+        "\n  Gate: every director and Council Index must be >=9.5 with zero vetoes. " +
+        "This is the reviewed truth, not a broken check.",
+    );
+  } else {
+    const { expected, structural } = classifyCiErrors(result.errors);
+    if (structural.length > 0) {
+      console.error(
+        `experience:council [ci]: INSTRUMENT FAILURE - ${structural.length} structural error(s). ` +
+          "The gate cannot be believed in this state.\n" +
+          structural.map((error) => `  x ${error}`).join("\n") +
+          (expected.length
+            ? `\n  (${expected.length} expected not-yet-certified/stale-baseline note(s) suppressed)`
+            : ""),
+      );
+      process.exit(1);
+    }
+    console.log(
+      "experience:council [ci]: NOT CERTIFIED - instrument healthy, certification not attained\n" +
+        expected.map((error) => `  - ${error}`).join("\n") +
+        "\n  No 9.5 claim may be made on this basis, by anyone, including by citing this green check.",
+    );
+  }
 } else if (args.length === 1 && args[0] === "--self-test") {
   runSelfTest();
 } else if (args.length === 1 && args[0] === "--prepare") {

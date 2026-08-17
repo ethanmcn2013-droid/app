@@ -103,9 +103,14 @@ jobs:
       - name: Prepare the current council review matrix
         run: pnpm experience:council:prepare
 
-      - name: Report the 50 of 52 council certification status
-        continue-on-error: true
-        run: pnpm experience:council
+      # D-029 (F4). The mask is gone: `continue-on-error` used to collapse a
+      # broken validator, an honest NO-PASS and a stale external baseline into
+      # one green tick, which is D-024's complaint exactly. The validator now
+      # tells those states apart itself — red only when the instrument is
+      # wrong, green with the verdict printed when the answer is simply "not
+      # 9.5 yet". A green tick here is never a 9.5 claim.
+      - name: Report the council certification status
+        run: pnpm experience:council:ci
 
       - name: Upload rendered evidence
         if: always()
