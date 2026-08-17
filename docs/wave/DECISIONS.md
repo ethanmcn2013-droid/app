@@ -868,3 +868,70 @@ the only external evidence of where this product started. A certification that a
 destroys the record of the bar being missed is worth less than one that stands beside it.
 This is recorded now, several waves early, because the cheapest moment to refuse a
 tempting deletion is long before the release that makes it tempting.
+
+## D-032 · The council baseline is re-reviewed, and State A is reached
+
+**F1 executed under founder authorization, 17 August 2026.**
+
+D-024 recorded that `pnpm experience:council` had exited 1 since before the programme
+began, with nine raw errors and a `continue-on-error` mask hiding them inside a required
+check. The council repair specification separated the two ways out: **State A**, the
+designed honest NO-PASS, buyable with one authorized ten-director review; and **State B**,
+a real exit 0, which needs 104 assessment units, 1,352 evidenced dimension scores and
+three independent reviewers per receipt that have never existed.
+
+State A is now reached. The single defect separating the raw nine-error state from the
+designed one was the stale baseline tree hash — and the specification is explicit that a
+mechanical bump would attach the 2026-08-09 director scores to a tree 391 files away from
+what they reviewed, which "the validator would accept and which is falsification that only
+record-keeping discipline prevents". So the review was re-run rather than the hash bumped.
+
+**What was actually done.** Ten director lenses, the same ten seats as B0, each scoring all
+seven surfaces independently and none able to see another's scores. Every director opened
+every screenshot for a surface before scoring it. Evidence: 16 renders at 1440×900 and
+390×844 from production builds of both the app and the marketing site, 16 axe-core WCAG
+2.1 AA runs, console and HTTP capture on every render. The app was rendered with the
+Active Project flag off, because that is what production serves.
+
+**The result: NO PASS, unanimously, with no vetoes.**
+
+| Surface | Index | Floor |
+|---|---:|---:|
+| Pricing | 7.34 | 6.8 |
+| Tasks boards + views | 7.55 | 6.8 |
+| Task cards + detail | 7.81 | 7.5 |
+| Notes | 7.83 | 7.0 |
+| Timeline owner + sharing | 7.97 | 7.5 |
+| About | 8.03 | 6.9 |
+| Landing | 8.07 | 7.2 |
+
+Suite floor 6.8/10 against a 9.5 gate. Zero vetoes — nothing the panel found was
+disqualifying on its own; the product is simply not at the bar yet, everywhere.
+
+**Who reviewed, stated plainly.** The panel was ten independent agent lenses conducted by
+Claude Opus 5, one per seat, orchestrated so that no seat could see another's scores. That
+is what "external" means here — external to the build, holding the released artefact at
+arm's length — and it is written into the evidence manifest rather than left for a reader
+to infer. Each director's full review, with per-surface rationale naming the specific
+elements it saw, is committed under `experience/council-evidence/wave-0-b0/directors/`,
+and each file's SHA-256 is sealed into the baseline.
+
+**The panel's own declared limits, which lowered scores rather than being waived.**
+Captures are viewport-only, so below-fold layout is unassessed — including the Pricing plan
+cards, the highest-risk responsive component on the marketing site. There is no
+intermediate breakpoint between 390 and 1440. There is no motion, performance or native
+assistive-technology evidence. The demo fixture carries only short, well-behaved content,
+so nothing here tests long titles, deep subtasks or real comment threads. Directors were
+instructed to give no optimism to what the evidence could not show, and several recorded
+exactly where they had done so.
+
+**Verification, both directions.** `pnpm experience:council` now exits 1 in
+external-baseline mode — the score matrix, not the error list — which is the state the
+specification names as State A. Any edit under `src/` flips it back to the stale-tree
+error and reverting flips it back; that flip is the pin working, not a regression, and it
+was exercised before this landed.
+
+**What this does not buy.** Not certification. The seven certification receipts still do
+not exist and cannot honestly be authored at current review capacity (D-030). No 9.5 claim
+may be made on this basis by anyone, including by citing the now-green CI check — which is
+why D-029's not-certified output says so in its own last line.
