@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/digest?send=1",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/analytics-snapshots",
+      "schedule": "30 2 * * *"
     }
   ]
 }

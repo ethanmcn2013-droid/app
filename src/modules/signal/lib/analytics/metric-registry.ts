@@ -189,10 +189,10 @@ export const SIGNAL_METRIC_REGISTRY: Readonly<Record<MetricKey, MetricRegistryEn
     liveReachability: {
       kind: "structurally_unreachable",
       reason:
-        "The Timeline provider declares `milestone_date_history` only when Timeline `activity` rows exist for the milestone, and nothing in this repository ever writes that table — `timeline-queries.ts` only reads it. So the capability is never declared live and the metric always resolves `unsupported`. Making it reachable requires Timeline to record date changes, which is a Timeline-lane change, not an analytics one.",
+        "The Timeline provider declares `milestone_date_history` only when Timeline `activity` rows exist for the milestone. The writer landed 2026-08-17 (timeline/server/db/milestone-date-history.ts, D-026/G2) behind SIGNAL_MILESTONE_DATE_HISTORY_ENABLED, default off. Until that flag is enabled in production AND a milestone date changes afterwards, no rows exist and the capability never declares. History accrues forward from enablement only — it cannot be backfilled — so this entry flips to `reachable` with the enablement change, not with the code.",
     },
     limitations: [
-      "Resolves `unsupported` against every live Project today. It is not zero movement; it is no readable history.",
+      "Resolves `unsupported` against every live Project until the date-history flag is enabled and a date moves; movement before enablement is permanently unrecorded.",
       "Bounded at 3,000 Timeline activity rows per read.",
     ],
   },

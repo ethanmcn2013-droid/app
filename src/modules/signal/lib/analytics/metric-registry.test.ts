@@ -103,7 +103,7 @@ describe("metric registry", () => {
     );
     assert.ok(
       !timeline.capabilities.includes("milestone_date_history"),
-      "Timeline declares date history only from activity rows nothing writes",
+      "fixtures model flag-off production; declare date history only when a history-bearing scenario exists and the writer flag is live",
     );
   });
 
