@@ -1,0 +1,889 @@
+<title>Connect Claude Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Signal Design System tokens (vendored values, v2.0.1) ──────── */
+  :root {
+    --paper:      #ffffff;
+    --paper-soft: #fafafa;
+    --paper-deep: #f4f4f5;
+
+    --ink:       #111111;
+    --ink-soft:  #3f3f46;
+    --ink-faint: #71717a;
+    --ink-ghost: #d4d4d8;
+
+    --accent:       #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-tint:  #eef2ff;
+    --accent-soft:  rgba(79, 70, 229, 0.12);
+
+    --hairline:      rgba(17, 17, 17, 0.10);
+    --hairline-soft: rgba(17, 17, 17, 0.06);
+
+    --status-done:    #10b981;
+    --status-flight:  #f59e0b;
+    --status-blocked: #ef4444;
+
+    /* Terminal surface — constant across themes; a terminal is a terminal. */
+    --term-bg:   #18181b;
+    --term-ink:  #f4f4f5;
+    --term-dim:  #a1a1aa;
+
+    --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --text-title:   clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
+    --text-section: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+    --text-heading: 1.25rem;
+    --text-body-lg: 1.0625rem;
+    --text-body:    0.9375rem;
+    --text-body-sm: 0.8125rem;
+    --text-caption: 0.75rem;
+    --text-label:   0.6875rem;
+
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+    --space-9: 48px; --space-10: 64px; --space-11: 80px;
+
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-pill: 999px;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --motion-instant: 80ms;
+    --motion-fast: 140ms;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0f0f10;
+      --paper-soft: #161618;
+      --paper-deep: #1d1d20;
+
+      --ink:       #f4f4f5;
+      --ink-soft:  #d4d4d8;
+      --ink-faint: #a1a1aa;
+      --ink-ghost: #3f3f46;
+
+      --accent:       #6366f1;
+      --accent-hover: #818cf8;
+      --accent-tint:  rgba(79, 70, 229, 0.16);
+      --accent-soft:  rgba(79, 70, 229, 0.20);
+
+      --hairline:      rgba(255, 255, 255, 0.10);
+      --hairline-soft: rgba(255, 255, 255, 0.06);
+
+      --term-bg:  #09090b;
+      --term-ink: #f4f4f5;
+      --term-dim: #71717a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0f0f10;
+    --paper-soft: #161618;
+    --paper-deep: #1d1d20;
+
+    --ink:       #f4f4f5;
+    --ink-soft:  #d4d4d8;
+    --ink-faint: #a1a1aa;
+    --ink-ghost: #3f3f46;
+
+    --accent:       #6366f1;
+    --accent-hover: #818cf8;
+    --accent-tint:  rgba(79, 70, 229, 0.16);
+    --accent-soft:  rgba(79, 70, 229, 0.20);
+
+    --hairline:      rgba(255, 255, 255, 0.10);
+    --hairline-soft: rgba(255, 255, 255, 0.06);
+
+    --term-bg:  #09090b;
+    --term-ink: #f4f4f5;
+    --term-dim: #71717a;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --motion-instant: 0ms; --motion-fast: 0ms; }
+    * { animation: none !important; transition: none !important; }
+  }
+
+  /* ── Base ───────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-lg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 47rem;
+    margin: 0 auto;
+    padding: var(--space-10) var(--space-5) var(--space-11);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  p { margin: 0; }
+  strong { font-weight: 600; color: var(--ink); }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* ── Masthead ───────────────────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .masthead h1 {
+    margin: 0;
+    font-size: var(--text-title);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    color: var(--ink-soft);
+    max-width: 34rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+  }
+  .meta span { display: flex; align-items: center; gap: var(--space-2); }
+  .meta b { font-weight: 500; color: var(--ink-soft); }
+
+  /* ── Panels ─────────────────────────────────────────────────────── */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background: var(--paper-soft);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+  }
+
+  .panel h2 {
+    margin: 0;
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .checklist li {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: var(--space-3);
+    align-items: start;
+    font-size: var(--text-body);
+    color: var(--ink-soft);
+  }
+
+  .tick {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Section headers ────────────────────────────────────────────── */
+  .section-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .section-head h2 {
+    margin: 0;
+    font-size: var(--text-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .section-head p { color: var(--ink-faint); font-size: var(--text-body); }
+
+  /* ── Steps ──────────────────────────────────────────────────────── */
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-9);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr;
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .step-num {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .step-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+    padding-top: 0.2rem;
+  }
+
+  .step-body h3 {
+    margin: 0;
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .step-body p { color: var(--ink-soft); font-size: var(--text-body); }
+
+  /* ── Command block (the thing you type) ─────────────────────────── */
+  .cmd {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--term-bg);
+  }
+
+  .cmd-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(255, 255, 255, 0.05);
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--term-dim);
+  }
+
+  .copy {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--term-dim);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
+    padding: 3px var(--space-2);
+    cursor: pointer;
+    transition: color var(--motion-instant) var(--ease-out),
+                border-color var(--motion-instant) var(--ease-out);
+  }
+  .copy:hover { color: var(--term-ink); border-color: rgba(255, 255, 255, 0.34); }
+  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .copy[data-done="1"] { color: var(--status-done); border-color: var(--status-done); }
+
+  .cmd-text {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    line-height: 1.7;
+    color: var(--term-ink);
+  }
+
+  /* ── Output block (what the computer says back) ─────────────────── */
+  .out {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--paper-deep);
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+  }
+
+  .out-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .out-text {
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+
+  .out em { font-style: normal; color: var(--ink-faint); }
+
+  /* ── Snag (if it goes wrong) ────────────────────────────────────── */
+  .snag {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-left: 2px solid var(--status-flight);
+    background: var(--paper-soft);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .snag-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--status-flight);
+  }
+
+  .snag p { font-size: var(--text-body-sm); color: var(--ink-soft); }
+  .snag code, .step-body code, .out code, li code, td code, p code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: var(--accent-tint);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Table ──────────────────────────────────────────────────────── */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-body-sm);
+    min-width: 30rem;
+  }
+
+  th {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    background: var(--paper-deep);
+    border-bottom: 1px solid var(--hairline);
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--hairline-soft);
+    color: var(--ink-soft);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--ink); font-weight: 500; }
+
+  /* ── Closing note ───────────────────────────────────────────────── */
+  .note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--accent-tint);
+  }
+  .note h2 { margin: 0; font-size: var(--text-heading); font-weight: 600; }
+  .note p { font-size: var(--text-body); color: var(--ink-soft); }
+
+  .colophon {
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--hairline);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 34rem) {
+    .wrap { padding: var(--space-8) var(--space-4) var(--space-9); gap: var(--space-9); }
+    .step { grid-template-columns: 1.75rem 1fr; gap: var(--space-4); }
+    .step-num { width: 1.75rem; height: 1.75rem; font-size: var(--text-body-sm); }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Windows setup · about 15 minutes</div>
+    <h1>Connect Claude Design</h1>
+    <p class="standfirst">
+      Right now your designs live in one app and your code lives in another.
+      These steps join them, so you can pull a design system into the Signal
+      Studio repo and push finished components back — without leaving your
+      terminal.
+    </p>
+    <div class="meta">
+      <span><b>You need</b> a paid Claude plan</span>
+      <span><b>You need</b> your own Windows PC</span>
+      <span><b>Not</b> this web session</span>
+    </div>
+  </header>
+
+  <section class="panel">
+    <h2>Before you start</h2>
+    <ul class="checklist">
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>A paid Claude plan.</strong> Pro or Max. A free plan cannot
+          authorise design access, and neither can an API key or a Bedrock or
+          Vertex login — it has to be a Claude subscription you sign into.
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>Your own computer.</strong> This one step genuinely cannot be
+          done from the web version of Claude Code. Signing in opens a browser
+          window, and a web session has no browser of its own to open.
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>A quarter of an hour.</strong> Most of it is waiting for one
+          installation to finish. Nothing here changes your project files.
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section-head">
+    <div class="eyebrow">The steps</div>
+    <h2>Nine steps, in order</h2>
+    <p>
+      Each step shows the exact words to type on a dark background, and what
+      you should see back on a light one. If the two ever look the same, you
+      are reading the wrong block.
+    </p>
+  </section>
+
+  <ol class="steps">
+
+    <li class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Open PowerShell</h3>
+        <p>
+          Press the Windows key, type <code>PowerShell</code>, and click
+          <strong>Windows PowerShell</strong> when it appears. A window opens
+          with a blinking cursor and some text ending in <code>&gt;</code>.
+        </p>
+        <p>
+          That window is where every remaining step happens. You type a line,
+          press Enter, and it answers. Nothing you type here can break your
+          computer.
+        </p>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Check you have Node</h3>
+        <p>
+          Node is the engine Claude Code runs on. You probably already have it,
+          since this project uses it. Type this and press Enter:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">node --version</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">v24.14.1    <em>← any number from v20 up is fine</em></pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If instead it says "not recognized"</div>
+          <p>
+            Node is not installed. Go to <strong>nodejs.org</strong>, click the
+            big green <strong>LTS</strong> button, run the file it downloads and
+            accept every default. Then close PowerShell, open it again, and
+            retry this step.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Install Claude Code</h3>
+        <p>
+          This puts Claude Code on your machine. It prints a lot of scrolling
+          text and takes a minute or two — that is normal, let it finish.
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">npm install -g @anthropic-ai/claude-code</pre>
+        </div>
+        <p>When the cursor comes back, check which version you got:</p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">claude --version</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">2.1.234 (Claude Code)</pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">This number matters</div>
+          <p>
+            It must be <strong>2.1.234 or higher</strong>. The design commands
+            only exist from that version. If you already had Claude Code and got
+            a lower number, the install command above has just updated it — run
+            the version check again.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Go to your Signal Studio folder</h3>
+        <p>
+          All your Signal Studio code lives in one workspace folder called
+          <strong>signal-studio-workspace</strong>. Go there and look inside:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">cd $HOME\signal-studio-workspace
+dir</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">a list of folders — the product code, <em>studio</em> (Signal HQ),
+and one or two working copies whose names start with <em>_wt-</em></pre>
+        </div>
+        <p>
+          The one you want is the <strong>main product folder</strong> — the one
+          that is not <code>studio</code> and does not start with
+          <code>_wt-</code>. If it is called <code>app</code>, go in:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">cd app</pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If it has an older name instead</div>
+          <p>
+            The folder was due a rename to <code>app</code> that may never have
+            finished. Just go into it under whatever it is called —
+            <code>cd</code> followed by its name — and carry on; everything
+            works regardless. When you want to tidy it up, close every window
+            using that folder, come back to <code>signal-studio-workspace</code>,
+            and run the repo's own rename helper, swapping in the folder's
+            current name:
+          </p>
+          <div class="cmd">
+            <div class="cmd-label"><span>Type this — replace FOLDER with the real name</span><button class="copy" type="button">Copy</button></div>
+            <pre class="cmd-text">powershell -ExecutionPolicy Bypass -File .\FOLDER\scripts\finish-local-dir-rename.ps1</pre>
+          </div>
+          <p>
+            It refuses to touch anything that is not this project, changes
+            nothing if it fails, and is safe to run twice.
+          </p>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If signal-studio-workspace itself is missing</div>
+          <p>
+            It lives somewhere unusual. Search for
+            <strong>signal-studio-workspace</strong> in File Explorer, note the
+            folder it sits in, and <code>cd</code> to that full path instead.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h3>Start Claude Code</h3>
+        <p>
+          One word, typed from inside the product folder you just entered. The
+          window changes to a welcome screen with a prompt.
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">claude</pre>
+        </div>
+        <p>
+          From here you are talking to Claude, not to Windows. Lines beginning
+          with a slash are commands; anything else is treated as a message.
+        </p>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h3>Sign in to your Claude account</h3>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">/login</pre>
+        </div>
+        <p>
+          Your browser opens. Sign in with the account that holds your paid
+          plan, approve the request, then switch back to PowerShell — it will
+          have moved on by itself.
+        </p>
+        <div class="snag">
+          <div class="snag-label">Use the subscription, not a key</div>
+          <p>
+            If you have ever set up an API key on this machine, Claude Code may
+            quietly prefer it, and design access will refuse to work. Signing in
+            here with your subscription is what unlocks the next step.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h3>Turn on design access</h3>
+        <p>This is the step everything else has been leading to.</p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">/design-login</pre>
+        </div>
+        <p>
+          A browser window opens and asks whether to allow access to your design
+          systems. Say yes. Then return to PowerShell.
+        </p>
+        <div class="snag">
+          <div class="snag-label">You have five minutes</div>
+          <p>
+            The window expires after five minutes and you will see a timeout
+            message. Nothing is broken — type <code>/design-login</code> again
+            and finish it more quickly. If no browser opens at all, run it again
+            and choose the manual option, which gives you a code to paste
+            instead.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <h3>Check that it worked</h3>
+        <p>
+          Do not skip this. It is the difference between being connected and
+          finding out you are not, halfway through some real work. Type this as
+          an ordinary sentence — no slash:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">List my Claude Design projects</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">a list of project names, with who owns each one</pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If the list comes back empty</div>
+          <p>
+            You are connected, but you have no design system to write to yet.
+            Ask Claude to create one — <em>"create a design system project
+            called Signal Studio"</em> — or make it in Claude Design first, then
+            try the check again.
+          </p>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If it mentions needing authorisation</div>
+          <p>
+            Step 7 did not finish. Go back and run <code>/design-login</code>
+            again, watching for the browser window.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">9</div>
+      <div class="step-body">
+        <h3>Start working on your designs</h3>
+        <p>
+          You are connected. From now on you can stay in this one window. The
+          sync command is:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">/design-sync</pre>
+        </div>
+        <p>
+          Claude compares your local components against the design project and
+          shows you a list of what it wants to change. <strong>Nothing is sent
+          until you approve that list.</strong> Read it before saying yes — the
+          list is the real record of what will happen, not the description
+          around it.
+        </p>
+        <p>
+          You can also just describe what you want in plain English, the same
+          way you would in a chat.
+        </p>
+      </div>
+    </li>
+
+  </ol>
+
+  <section class="section-head">
+    <div class="eyebrow">Reference</div>
+    <h2>When something goes wrong</h2>
+    <p>Every message below is one the tool actually produces, with its cause.</p>
+  </section>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">What you see</th>
+          <th scope="col">What it means</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>needs design-system authorization</td>
+          <td>Step 7 never completed — or you are in a web session, where it cannot.</td>
+        </tr>
+        <tr>
+          <td>Unknown command</td>
+          <td>Your Claude Code predates the feature. Redo step 3 and check the version.</td>
+        </tr>
+        <tr>
+          <td>only available with claude.ai authentication</td>
+          <td>You are signed in with an API key, Bedrock or Vertex. Redo step 6.</td>
+        </tr>
+        <tr>
+          <td>browser authorization timed out</td>
+          <td>The five minutes ran out. Run <code>/design-login</code> again.</td>
+        </tr>
+        <tr>
+          <td>HTTP 403</td>
+          <td>Your sign-in worked but the account lacks design access. This is a beta feature — check it is switched on for your plan.</td>
+        </tr>
+        <tr>
+          <td>An empty project list</td>
+          <td>Connected, but nothing exists yet that you have permission to write to.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="note">
+    <h2>One thing worth knowing first</h2>
+    <p>
+      This project has no Storybook, and the sync tool expects either that or a
+      published component package. The 184 files in <code>src/components/</code>
+      are application screens rather than a tidy library, so pushing all of them
+      would make a mess of your design system.
+    </p>
+    <p>
+      Start narrow instead: the design tokens in <code>src/ds/</code>, then the
+      basic building blocks in <code>components/primitives/</code> and
+      <code>components/ui/</code>. Add more once you can see how the first batch
+      lands.
+    </p>
+  </section>
+
+  <footer class="colophon">
+    Set in Geist and Geist Mono. Colour, spacing and radii taken from
+    signal-design-system v2.0.1 — the same tokens the product ships.
+    Source lives at docs/guides/connect-claude-design.html; new operator
+    guides start from this file.
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".cmd");
+      var text = block.querySelector(".cmd-text").textContent.trim();
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = "Copied";
+        btn.setAttribute("data-done", "1");
+        setTimeout(function () {
+          btn.textContent = "Copy";
+          btn.removeAttribute("data-done");
+        }, 1600);
+      }).catch(function () {
+        btn.textContent = "Select it";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+      });
+    });
+  });
+</script>

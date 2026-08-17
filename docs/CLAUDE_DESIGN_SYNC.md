@@ -53,18 +53,31 @@ error message, so a failure here is not subtle.
 
 ## 3 · Local setup
 
-Run these on your own machine, not in a web session.
+Run these on your own machine, not in a web session. A visual
+walkthrough of this section lives at
+`docs/guides/connect-claude-design.html` (published as an artifact).
 
-```bash
+```powershell
 # 1 · install or update the CLI (needs >= 2.1.234)
 npm install -g @anthropic-ai/claude-code
 claude --version
-
-# 2 · clone into a matching directory name
-git clone https://github.com/ethanmcn2013-droid/app.git app
-cd app
-pnpm install
 ```
+
+The clone already exists on the operator's machine: everything lives
+under `%USERPROFILE%\signal-studio-workspace\` (path recorded in
+`docs/wave/BASELINE.json`), which holds the product repo, the `studio`
+repo, and `_wt-*` worktrees. Go into the product folder:
+
+```powershell
+cd $HOME\signal-studio-workspace\app
+```
+
+If the product folder still carries its pre-rename name, work in it as
+is, or finish the rename with the bundled helper — run from the
+workspace folder, never from inside the clone
+(`scripts/finish-local-dir-rename.ps1`; safe to re-run, refuses
+foreign folders). Only a genuinely fresh machine needs
+`git clone https://github.com/ethanmcn2013-droid/app.git app`.
 
 Then start Claude Code and authorize:
 
