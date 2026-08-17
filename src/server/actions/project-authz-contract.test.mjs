@@ -314,12 +314,31 @@ test("the formerly deferred file now resolves Projects through the seam", () => 
     "settings.ts must put its Project candidate through the membership proof",
   );
 
+  // WP6 renegotiation, recorded rather than deleted: the capability string
+  // moved with the delete implementation into the consolidated service
+  // (src/server/projects/service.ts), which both entry points now call. The
+  // pin follows it — settings must delegate to the service delete, and the
+  // service delete must require the primary-owner capability. Asserting the
+  // string in settings.ts again would force a second delete implementation
+  // back into the action file, which is the exact divergence WP6 removed.
   const deletion = settings.slice(
     settings.indexOf("export async function deleteWorkspaceAction"),
     settings.indexOf("Plain-English workspace activity feed"),
   );
   assert.match(
     deletion,
+    /await deleteProject\(\{/,
+    "settings.ts's delete must route through the consolidated service delete",
+  );
+  const serviceSrc = readFileSync(
+    join(serverDir, "projects", "service.ts"),
+    "utf8",
+  );
+  const serviceDeletion = serviceSrc.slice(
+    serviceSrc.indexOf("export async function deleteProject"),
+  );
+  assert.match(
+    serviceDeletion,
     /"deleteOrTransferOwnership"/,
     "permanently deleting a Project must require the primary-owner capability " +
       "(capabilities.ts: permanent delete and ownership transfer stay " +

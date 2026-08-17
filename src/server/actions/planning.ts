@@ -8,25 +8,20 @@ import {
   desc,
   eq,
   gt,
-  inArray,
   sql,
 } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
-import { nextTaskSeq } from "@/server/db/task-seq";
 import {
   planningOnboardingSessions,
   planningPeriods,
-  shareLinkVisits,
-  shareLinks,
   tasks,
   workspaceMembers,
   workspaceSponsorships,
   workspaces,
   type PlanningOnboardingState,
 } from "@/server/db/schema";
-import { emitTasksChanged } from "@/server/events";
 import {
   ACTIVE_WORKSPACE_COOKIE_NAME,
   getCurrentUser,
@@ -36,10 +31,20 @@ import {
   requireWorkspaceOwner,
   requireWorkspaceOwnerInTransaction,
 } from "@/server/planning/authorization";
+import { listCurrentMemberWorkspaceNamesInPeriod } from "@/server/planning/security-boundary";
 import {
-  listCurrentMemberWorkspaceNamesInPeriod,
-  workspaceOwnerMembershipCondition,
-} from "@/server/planning/security-boundary";
+  PROJECT_ACTIVE_DOMAIN,
+  PROJECT_PRIMARY_USE_CASE,
+  createProject,
+  deleteProject,
+  duplicateProject,
+  duplicateProjectIntoPeriodTx,
+  moveProjectToPeriod,
+  reorderProject,
+  setProjectArchived,
+  slugifyProjectName,
+  type ProjectDuplicationChoices,
+} from "@/server/projects/service";
 import {
   cleanPlainText,
   normalizePeriodInput,
@@ -58,25 +63,9 @@ import { trackPlanningEvent } from "@/server/planning/analytics-server";
 import { detectVenueWelcome } from "@/server/db/venue-welcome";
 import { extendCoupleAccessForWeddingDate } from "@/server/db/couple-access-term";
 import { requirePlanningFeature } from "@/server/planning/flags";
-import { planDuplicatedTasks } from "@/lib/planning/duplication";
 import { isDemoMode } from "@/lib/access-mode";
-import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-const ACTIVE_DOMAIN: Readonly<Record<PlanningPeriodContext, string>> = {
-  school_year: "student",
-  semester: "student",
-  wedding_season: "wedding",
-  general: "marketing",
-};
-
-const PRIMARY_USE_CASE: Readonly<Record<PlanningPeriodContext, string>> = {
-  school_year: "teacher",
-  semester: "student",
-  wedding_season: "wedding",
-  general: "other",
-};
 
 export type PlanningPeriodMutationInput = {
   name: string;
@@ -218,20 +207,25 @@ export async function restorePlanningPeriodAction(
 }
 
 /**
- * Archive a project (workspace). Owner-only, non-destructive: it sets
- * `archivedAt` so the project drops out of the active projects tree while
- * its tasks, members, and history stay intact. Restore brings it back.
+ * Archive a project (workspace). Non-destructive: `archivedAt` set so the
+ * project drops out of the active projects tree while its tasks, members,
+ * and history stay intact. Restore brings it back.
+ *
+ * Thin adapter over the consolidated service (WP6): the service proves
+ * `manageProject` — the same owner/co-owner population the old flat
+ * owner-role check admitted — writes with a receipt, and revalidates.
  */
 export async function archiveProjectAction(
   workspaceId: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   const actorUserId = await getCurrentUser();
-  await requireWorkspaceOwner(actorUserId, workspaceId);
-  await db
-    .update(workspaces)
-    .set({ archivedAt: new Date(), updatedAt: new Date() })
-    .where(eq(workspaces.id, workspaceId));
+  await setProjectArchived({
+    actorUserId,
+    projectId: workspaceId,
+    archived: true,
+    refusal: "Workspace not found.",
+  });
   revalidatePlanningSurfaces();
   await trackPlanningEvent(actorUserId, "workspace_archived", {
     source: "lifecycle",
@@ -239,17 +233,18 @@ export async function archiveProjectAction(
   return { ok: true };
 }
 
-/** Restore an archived project (workspace). Owner-only; clears `archivedAt`. */
+/** Restore an archived project (workspace). Adapter over the service. */
 export async function restoreProjectAction(
   workspaceId: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   const actorUserId = await getCurrentUser();
-  await requireWorkspaceOwner(actorUserId, workspaceId);
-  await db
-    .update(workspaces)
-    .set({ archivedAt: null, updatedAt: new Date() })
-    .where(eq(workspaces.id, workspaceId));
+  await setProjectArchived({
+    actorUserId,
+    projectId: workspaceId,
+    archived: false,
+    refusal: "Workspace not found.",
+  });
   revalidatePlanningSurfaces();
   await trackPlanningEvent(actorUserId, "workspace_restored", {
     source: "lifecycle",
@@ -258,39 +253,34 @@ export async function restoreProjectAction(
 }
 
 /**
- * Delete a project (workspace) by id. Owner-only, no-undo. Cascades tasks
- * and public share links/visits explicitly (legacy rows didn't all carry a
- * workspace FK — mirror of deleteWorkspaceAction). If the deleted project
- * was the active one, the active-workspace cookie is cleared so the next
- * request resolves a surviving sibling.
+ * Delete a project (workspace) by id. No-undo. Thin adapter over the
+ * consolidated service delete — the ONE cascade, with the E06.12 `/p/{slug}`
+ * revalidation inside it, shared with Settings' deleteWorkspaceAction.
+ *
+ * Authorization is the service's `deleteOrTransferOwnership`: primary owner
+ * only. This is stricter than the flat owner-role check this action used to
+ * carry — a promoted co-owner is now refused here exactly as Settings has
+ * refused them since WP3-C (see the service header's comparison table).
+ *
+ * If the deleted project was the active one, the active-workspace cookie is
+ * cleared so the next request resolves a surviving sibling. The cookie write
+ * stays HERE (D-021 — cookie consolidation is lane C's).
  */
 export async function deleteProjectAction(
   workspaceId: string,
 ): Promise<{ ok: true }> {
   if (isDemoMode()) return { ok: true };
   const actorUserId = await getCurrentUser();
-  await requireWorkspaceOwner(actorUserId, workspaceId);
-  await db.transaction(async (tx) => {
-    const linkRows = await tx
-      .select({ token: shareLinks.token })
-      .from(shareLinks)
-      .where(eq(shareLinks.workspaceId, workspaceId));
-    const tokens = linkRows.map((row) => row.token);
-    if (tokens.length > 0) {
-      await tx
-        .delete(shareLinkVisits)
-        .where(inArray(shareLinkVisits.token, tokens));
-    }
-    await tx.delete(shareLinks).where(eq(shareLinks.workspaceId, workspaceId));
-    await tx.delete(tasks).where(eq(tasks.workspaceId, workspaceId));
-    await tx.delete(workspaces).where(eq(workspaces.id, workspaceId));
+  await deleteProject({
+    actorUserId,
+    projectId: workspaceId,
+    refusal: "Workspace not found.",
   });
   const c = await cookies();
   if (c.get(ACTIVE_WORKSPACE_COOKIE_NAME)?.value === workspaceId) {
     c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);
   }
   revalidatePlanningSurfaces();
-  emitTasksChanged({ kind: "seed" });
   return { ok: true };
 }
 
@@ -402,19 +392,17 @@ export async function bulkCreateWorkspacesAction(
  * Create a single workspace ("project") directly from the Projects
  * sidebar and return its id so the caller can switch to it.
  *
- * This mirrors the single-workspace path of `insertWorkspaces`
- * exactly (same columns, slug shape, ordering, owner membership row)
- * but supports a standalone/periodless project by allowing a null
- * `planningPeriodId`. When a period is passed we validate ownership
- * and inherit its context so the row shows under that period in the
- * tree; when null the workspace is a top-level periodless project
- * with the schema-default `"project"` context.
+ * Thin adapter over the consolidated service's `createProject`, which
+ * mirrors the single-workspace path of `insertWorkspaces` exactly (same
+ * columns, slug shape, ordering, owner membership row) but supports a
+ * standalone/periodless project by allowing a null `planningPeriodId`.
+ * The cookie write stays here (D-021).
  */
 export async function createProjectAction(
   name: string,
   planningPeriodId?: string | null,
 ): Promise<{ ok: true; id: string }> {
-  const cleanName = cleanPlainText(name, "Name", 80);
+  cleanPlainText(name, "Name", 80);
 
   // Demo/review: synthesize an id without writing so the preview can
   // optimistically show the new project. The real DB is never touched.
@@ -423,77 +411,26 @@ export async function createProjectAction(
   }
 
   const actorUserId = await getCurrentUser();
+  const created = await createProject({ actorUserId, name, planningPeriodId });
 
-  // Resolve the target period (if any). Owner-check mirrors the guard
-  // bulkCreateWorkspacesAction applies before inserting into a period.
-  let periodContext: PlanningPeriodContext = "general";
-  let contextType: WorkspaceContext = "project";
-  const targetPeriodId =
-    planningPeriodId == null || planningPeriodId === "" ? null : planningPeriodId;
-  if (targetPeriodId) {
-    const period = await requirePlanningPeriodOwner(actorUserId, targetPeriodId);
-    if (period.archivedAt) throw new Error("Restore this planning period first.");
-    periodContext = period.contextType;
-    contextType = normalizeWorkspaceContext(undefined, period.contextType);
-    if (!isCompatibleWorkspaceContext(period.contextType, contextType)) {
-      throw new Error("This workspace type does not match the planning period.");
-    }
-  }
-
-  const id = `ws-${randomUUID()}`;
-  const slug = `${slugify(cleanName)}-${randomUUID().slice(0, 8)}`;
-  const now = new Date();
-
-  await db.transaction(async (tx) => {
-    // Order the new project after the user's existing siblings in the
-    // same group (a specific period, or the periodless bucket).
-    const [last] = await tx
-      .select({ position: workspaces.position })
-      .from(workspaceMembers)
-      .innerJoin(workspaces, eq(workspaces.id, workspaceMembers.workspaceId))
-      .where(
-        and(
-          eq(workspaceMembers.userId, actorUserId),
-          targetPeriodId
-            ? eq(workspaces.planningPeriodId, targetPeriodId)
-            : sql`${workspaces.planningPeriodId} IS NULL`,
-        ),
-      )
-      .orderBy(desc(workspaces.position))
-      .limit(1);
-    const position = (last?.position ?? 0) + 1000;
-
-    await tx.insert(workspaces).values({
-      id,
-      slug,
-      name: cleanName,
-      ownerUserId: actorUserId,
-      planningPeriodId: targetPeriodId,
-      contextType,
-      position,
-      activeDomain: ACTIVE_DOMAIN[periodContext],
-      primaryUseCase: PRIMARY_USE_CASE[periodContext],
-      onboardingCompletedAt: now,
-      updatedAt: now,
-    });
-    await tx.insert(workspaceMembers).values({
-      workspaceId: id,
-      userId: actorUserId,
-      role: "owner",
-    });
-  });
-
-  await selectWorkspaceCookie(id);
+  await selectWorkspaceCookie(created.id);
   revalidatePath("/app", "layout");
   await trackPlanningEvent(actorUserId, "workspace_bulk_created", {
-    planning_period_context: periodContext,
-    workspace_context: contextType,
+    planning_period_context: created.periodContext,
+    workspace_context: created.contextType,
     workspace_count: 1,
     source: "your_work",
   });
-  return { ok: true, id };
+  return { ok: true, id: created.id };
 }
 
+/**
+ * Move a workspace into another planning period. Adapter over the service,
+ * which proves `moveIntoPlanningPeriod` on the workspace AND ownership of
+ * the target period — the stricter intersection of the old flat check and
+ * the WP2 capability model (see the service header for the named co-owner
+ * tightening).
+ */
 export async function moveWorkspaceAction(input: {
   workspaceId: string;
   targetPlanningPeriodId: string;
@@ -501,83 +438,83 @@ export async function moveWorkspaceAction(input: {
 }): Promise<{ ok: true }> {
   requirePlanningFeature("planningPeriods");
   const actorUserId = await getCurrentUser();
-  const [workspace, target] = await Promise.all([
-    requireWorkspaceOwner(actorUserId, input.workspaceId),
-    requirePlanningPeriodOwner(actorUserId, input.targetPlanningPeriodId),
-  ]);
-  if (target.archivedAt) throw new Error("Restore the target period first.");
-  if (!isCompatibleWorkspaceContext(target.contextType, workspace.contextType)) {
-    throw new Error("This workspace type does not match the target period.");
-  }
-  const updated = await db
-    .update(workspaces)
-    .set({
-      planningPeriodId: target.id,
-      position: safePosition(input.position),
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(workspaces.id, workspace.id),
-        workspaceOwnerMembershipCondition(actorUserId, workspace.id),
-      ),
-    )
-    .returning({ id: workspaces.id });
-  if (!updated[0]) throw new Error("Workspace not found.");
+  const moved = await moveProjectToPeriod({
+    actorUserId,
+    projectId: input.workspaceId,
+    targetPlanningPeriodId: input.targetPlanningPeriodId,
+    position: input.position,
+    refusal: "Workspace not found.",
+  });
   revalidatePlanningSurfaces();
   await trackPlanningEvent(actorUserId, "workspace_moved", {
-    workspace_context: workspace.contextType,
-    planning_period_context: target.contextType,
+    workspace_context: moved.contextType,
+    planning_period_context: moved.targetContextType,
     source: "lifecycle",
   });
   return { ok: true };
 }
 
+/** Reorder a workspace inside its group. Adapter over the service. */
 export async function reorderWorkspaceAction(
   workspaceId: string,
   position: number,
 ): Promise<{ ok: true }> {
   requirePlanningFeature("planningPeriods");
   const actorUserId = await getCurrentUser();
-  await requireWorkspaceOwner(actorUserId, workspaceId);
-  const updated = await db
-    .update(workspaces)
-    .set({
-      position: safePosition(position),
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(workspaces.id, workspaceId),
-        workspaceOwnerMembershipCondition(actorUserId, workspaceId),
-      ),
-    )
-    .returning({ id: workspaces.id });
-  if (!updated[0]) throw new Error("Workspace not found.");
+  await reorderProject({
+    actorUserId,
+    projectId: workspaceId,
+    position,
+    refusal: "Workspace not found.",
+  });
   revalidatePlanningSurfaces();
   return { ok: true };
 }
 
+/**
+ * The Your Work archive pair. Same service operation as the sidebar's
+ * `archiveProjectAction`/`restoreProjectAction` — one implementation, one
+ * capability check — behind this surface's feature flag and analytics.
+ */
 export async function archiveWorkspaceAction(
   workspaceId: string,
 ): Promise<{ ok: true }> {
-  return setWorkspaceArchived(workspaceId, true);
+  requirePlanningFeature("planningPeriods");
+  const actorUserId = await getCurrentUser();
+  const archived = await setProjectArchived({
+    actorUserId,
+    projectId: workspaceId,
+    archived: true,
+    refusal: "Workspace not found.",
+  });
+  revalidatePlanningSurfaces();
+  await trackPlanningEvent(actorUserId, "workspace_archived", {
+    workspace_context: archived.contextType,
+    source: "lifecycle",
+  });
+  return { ok: true };
 }
 
 export async function restoreWorkspaceAction(
   workspaceId: string,
 ): Promise<{ ok: true }> {
-  return setWorkspaceArchived(workspaceId, false);
+  requirePlanningFeature("planningPeriods");
+  const actorUserId = await getCurrentUser();
+  const restored = await setProjectArchived({
+    actorUserId,
+    projectId: workspaceId,
+    archived: false,
+    refusal: "Workspace not found.",
+  });
+  revalidatePlanningSurfaces();
+  await trackPlanningEvent(actorUserId, "workspace_restored", {
+    workspace_context: restored.contextType,
+    source: "lifecycle",
+  });
+  return { ok: true };
 }
 
-export type WorkspaceDuplicationChoices = Readonly<{
-  copyReusableTasks: boolean;
-  copyTimelineStructure: boolean;
-  copyCollaborators: boolean;
-  copyTemplate: boolean;
-}>;
+export type WorkspaceDuplicationChoices = ProjectDuplicationChoices;
 
 export async function getWorkspaceDuplicationReviewAction(
   workspaceId: string,
@@ -622,6 +559,13 @@ export async function getWorkspaceDuplicationReviewAction(
   };
 }
 
+/**
+ * Duplicate a workspace into a planning period. Adapter over the service,
+ * which proves `manageProject` on the source — re-proved inside the copying
+ * transaction, the same discipline `requireWorkspaceOwnerInTransaction`
+ * carried here — plus ownership of the target period. The cookie write
+ * stays here (D-021).
+ */
 export async function duplicateWorkspaceAction(input: {
   sourceWorkspaceId: string;
   targetPlanningPeriodId: string;
@@ -631,39 +575,22 @@ export async function duplicateWorkspaceAction(input: {
   requirePlanningFeature("planningPeriods");
   requirePlanningFeature("lifecycleDuplication");
   const actorUserId = await getCurrentUser();
-  const [source, target] = await Promise.all([
-    requireWorkspaceOwner(actorUserId, input.sourceWorkspaceId),
-    requirePlanningPeriodOwner(actorUserId, input.targetPlanningPeriodId),
-  ]);
-  if (target.archivedAt) throw new Error("Restore the target period first.");
-  if (!isCompatibleWorkspaceContext(target.contextType, source.contextType)) {
-    throw new Error("This workspace type does not match the target period.");
-  }
-  const result = await db.transaction(async (tx) => {
-    const currentSource = await requireWorkspaceOwnerInTransaction(
-      tx,
-      actorUserId,
-      source.id,
-    );
-    if (!isCompatibleWorkspaceContext(target.contextType, currentSource.contextType)) {
-      throw new Error("This workspace type does not match the target period.");
-    }
-    return duplicateWorkspaceIntoPeriod(tx, {
-      actorUserId,
-      source: currentSource,
-      targetPlanningPeriodId: target.id,
-      name: cleanPlainText(input.name, "Name", 100),
-      choices: input.choices,
-    });
+  const result = await duplicateProject({
+    actorUserId,
+    sourceProjectId: input.sourceWorkspaceId,
+    targetPlanningPeriodId: input.targetPlanningPeriodId,
+    name: input.name,
+    choices: input.choices,
+    refusal: "Workspace not found.",
   });
   await selectWorkspaceCookie(result.id);
   revalidatePlanningSurfaces();
   await trackPlanningEvent(actorUserId, "workspace_duplicated", {
-    workspace_context: source.contextType,
-    planning_period_context: target.contextType,
+    workspace_context: result.sourceContextType,
+    planning_period_context: result.targetContextType,
     source: "lifecycle",
   });
-  return result;
+  return { id: result.id, slug: result.slug };
 }
 
 export async function getPlanningPeriodDuplicationReviewAction(
@@ -766,7 +693,7 @@ export async function duplicatePlanningPeriodAction(input: {
     });
     const result: string[] = [];
     for (const source of currentSources) {
-      const workspace = await duplicateWorkspaceIntoPeriod(tx, {
+      const workspace = await duplicateProjectIntoPeriodTx(tx, {
         actorUserId,
         source,
         targetPlanningPeriodId: planningPeriodId,
@@ -986,37 +913,6 @@ export async function completeContextualOnboardingAction(
   };
 }
 
-async function setWorkspaceArchived(
-  workspaceId: string,
-  archived: boolean,
-): Promise<{ ok: true }> {
-  requirePlanningFeature("planningPeriods");
-  const actorUserId = await getCurrentUser();
-  const workspace = await requireWorkspaceOwner(actorUserId, workspaceId);
-  const updated = await db
-    .update(workspaces)
-    .set({
-      archivedAt: archived ? new Date() : null,
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(workspaces.id, workspace.id),
-        workspaceOwnerMembershipCondition(actorUserId, workspace.id),
-      ),
-    )
-    .returning({ id: workspaces.id });
-  if (!updated[0]) throw new Error("Workspace not found.");
-  revalidatePlanningSurfaces();
-  await trackPlanningEvent(
-    actorUserId,
-    archived ? "workspace_archived" : "workspace_restored",
-    { workspace_context: workspace.contextType, source: "lifecycle" },
-  );
-  return { ok: true };
-}
-
 async function insertWorkspaces(
   tx: DatabaseTransaction,
   input: {
@@ -1047,7 +943,7 @@ async function insertWorkspaces(
   const now = new Date();
   for (const name of input.names) {
     const id = `ws-${randomUUID()}`;
-    const slug = `${slugify(name)}-${randomUUID().slice(0, 8)}`;
+    const slug = `${slugifyProjectName(name)}-${randomUUID().slice(0, 8)}`;
     await tx.insert(workspaces).values({
       id,
       slug,
@@ -1058,8 +954,8 @@ async function insertWorkspaces(
       primaryDate: input.primaryDate,
       primaryDateLabel: input.primaryDateLabel,
       position,
-      activeDomain: ACTIVE_DOMAIN[input.periodContext],
-      primaryUseCase: PRIMARY_USE_CASE[input.periodContext],
+      activeDomain: PROJECT_ACTIVE_DOMAIN[input.periodContext],
+      primaryUseCase: PROJECT_PRIMARY_USE_CASE[input.periodContext],
       onboardingCompletedAt: now,
       updatedAt: now,
     });
@@ -1072,108 +968,6 @@ async function insertWorkspaces(
     position += 1000;
   }
   return created;
-}
-
-async function duplicateWorkspaceIntoPeriod(
-  tx: DatabaseTransaction,
-  input: {
-    actorUserId: string;
-    source: Awaited<ReturnType<typeof requireWorkspaceOwner>>;
-    targetPlanningPeriodId: string;
-    name: string;
-    choices: WorkspaceDuplicationChoices;
-  },
-): Promise<{ id: string; slug: string }> {
-  const id = `ws-${randomUUID()}`;
-  const slug = `${slugify(input.name)}-${randomUUID().slice(0, 8)}`;
-  const now = new Date();
-  await tx.insert(workspaces).values({
-    id,
-    slug,
-    name: input.name,
-    ownerUserId: input.actorUserId,
-    planningPeriodId: input.targetPlanningPeriodId,
-    contextType: input.source.contextType,
-    primaryDate: input.source.primaryDate,
-    primaryDateLabel: input.source.primaryDateLabel,
-    activeDomain: input.source.activeDomain,
-    templateId: input.choices.copyTemplate ? input.source.templateId : null,
-    position: 1000,
-    onboardingCompletedAt: now,
-    publishedAt: null,
-    updatedAt: now,
-  });
-  await tx.insert(workspaceMembers).values({
-    workspaceId: id,
-    userId: input.actorUserId,
-    role: "owner",
-  });
-
-  const copiedMemberIds = new Set<string>([input.actorUserId]);
-  if (input.choices.copyCollaborators) {
-    const members = await tx
-      .select({ userId: workspaceMembers.userId })
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, input.source.id),
-          eq(workspaceMembers.role, "member"),
-        ),
-      );
-    for (const member of members) {
-      await tx.insert(workspaceMembers).values({
-        workspaceId: id,
-        userId: member.userId,
-        role: "member",
-      });
-      copiedMemberIds.add(member.userId);
-    }
-  }
-
-  if (input.choices.copyReusableTasks || input.choices.copyTimelineStructure) {
-    const sourceTasks = await tx
-      .select()
-      .from(tasks)
-      .where(eq(tasks.workspaceId, input.source.id))
-      .orderBy(asc(tasks.createdAt));
-    // Source workspace's done semantics decide which copied tasks reset to
-    // todo (T·122).
-    const columnConfig = await readWorkspaceColumnConfig(input.source.id);
-    const copies = planDuplicatedTasks(
-      sourceTasks,
-      input.choices,
-      copiedMemberIds,
-      () => `t-${randomUUID()}`,
-      columnConfig,
-    );
-    for (const task of copies) {
-      await tx.insert(tasks).values({
-        id: task.id,
-        workspaceId: id,
-        seq: nextTaskSeq(id),
-        title: task.title,
-        description: task.description,
-        lane: task.lane,
-        priority: task.priority,
-        assignees: task.assignees,
-        due: task.due,
-        dueAt: task.dueAt,
-        estimate: task.estimate,
-        tags: task.tags,
-        recurrence: task.recurrence,
-        startDay: task.startDay,
-        durationDays: task.durationDays,
-        position: task.position,
-        parentTaskId: task.parentTaskId,
-        boardColumnKey: task.boardColumnKey,
-        isMilestone: task.isMilestone,
-        // Explicit omissions: history, source-note provenance, contacts,
-        // money, attachments, completion timestamps and public tokens.
-        updatedAt: now,
-      });
-    }
-  }
-  return { id, slug };
 }
 
 function normalizeOnboardingState(
@@ -1228,23 +1022,6 @@ async function normalizeSponsor(
       ? cleanPlainText(sponsor.activationLabel, "Activation label", 100)
       : null,
   };
-}
-
-function slugify(value: string): string {
-  return (
-    value
-      .normalize("NFKD")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 50) || "workspace"
-  );
-}
-
-function safePosition(value: number | undefined): number {
-  if (value === undefined) return 1000;
-  if (!Number.isFinite(value)) throw new Error("Position must be a number.");
-  return Math.max(-1_000_000, Math.min(1_000_000, value));
 }
 
 async function selectWorkspaceCookie(workspaceId: string): Promise<void> {
