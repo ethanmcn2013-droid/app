@@ -268,6 +268,48 @@ test("the /app shell mounts the provider only when the flag is on", () => {
 });
 
 /**
+ * D-022. The Tasks runtime's mount point is flag-selected in one module:
+ * layouts render it flag-off (the byte-identical production tree), pages
+ * render it flag-on (the tree where the board can follow `?workspaceId=`).
+ * Same discipline as the provider mount above — the off path must not merely
+ * behave the same, it must be the same elements.
+ */
+test("the Tasks runtime mounts from the layout flag-off and from the page flag-on", () => {
+  const mount = read("src/components/app/tasks-runtime-mount.tsx");
+
+  // Layout half: flag-off it renders the shell with no parameter — exactly
+  // the element the nine layouts always produced — and flag-on it steps
+  // aside entirely.
+  const layoutHalf = mount.slice(
+    mount.indexOf("export function TasksRuntimeLayoutMount"),
+    mount.indexOf("export async function TasksRuntimePageMount"),
+  );
+  assert.match(layoutHalf, /if \(isActiveProjectV3Enabled\(\)\) return children;/);
+  assert.match(layoutHalf, /<TasksRuntimeShell>\{children\}<\/TasksRuntimeShell>/);
+  assert.doesNotMatch(
+    layoutHalf,
+    /requestedProjectId/,
+    "a layout cannot read searchParams, so its mount must never claim a Project",
+  );
+
+  // Page half: flag-off it is inert — children returned before searchParams
+  // is even read, so the off path does no new work and consumes no new input.
+  const pageHalf = mount.slice(
+    mount.indexOf("export async function TasksRuntimePageMount"),
+  );
+  const gateAt = pageHalf.indexOf(
+    "if (!isActiveProjectV3Enabled()) return children;",
+  );
+  const awaitAt = pageHalf.indexOf("await searchParams");
+  assert.ok(gateAt > 0, "the page half must gate on the flag");
+  assert.ok(
+    awaitAt > gateAt,
+    "flag-off must return before searchParams is read; the requestedProjectId path only exists when the flag-on seam consumes it",
+  );
+  assert.match(pageHalf, /requestedProjectId=/);
+});
+
+/**
  * M5. `reason` was server-only by comment. It is now branded, so a client
  * component cannot receive one without a deliberate `resolutionReasonForLog`
  * call — but a brand is erased at runtime, so this pins the two structural
