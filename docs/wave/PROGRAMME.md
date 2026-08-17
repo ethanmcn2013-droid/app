@@ -1,6 +1,6 @@
 # Project Truth & Analytics — execution programme
 
-**Status:** executing · Wave 0
+**Status:** executing · Waves 0–4 merged · **Wave 5 gate CLOSED 17 Aug 2026** (D-025, D-026) · Wave 6 next
 **Integration owner:** Claude Code (single architecture owner, sole merger/deployer)
 **Integration worktree:** `_wt-project-truth` · branch `feat/project-truth-wave`
 **Base:** `origin/main` @ `3682bf75180ac6c575133cb2008f6d4ddf8e3aee` (merge of PR #123, 12 Aug 2026 17:13Z)

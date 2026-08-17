@@ -613,3 +613,137 @@ schema, rebaseline against the certified commit, then run the gate for real. Unt
 
 Recorded several waves early, because the cheapest moment to discover a broken gate is
 long before the release that depends on it.
+
+---
+
+## D-025 · The Active Project control is variant A, the Studio Bar anchor
+
+**Selected by Ethan, 17 August 2026**, from the four-variant lab at `/lab/active-project`,
+reviewed live rather than from screenshots.
+
+One control in the permanent Studio Bar, in the same place on every product. This is the
+direction the plan recommended, and the founder's selection is what makes it binding —
+the recommendation was not.
+
+**What this settles for WP6.** The selector is chrome, not content. It lives in the Studio
+Bar and the mobile context strip, it is present on every product surface, and its position
+does not move between Notes, Tasks and Timeline. The catalog, the guarded transition and
+the accessibility semantics were locked by the lab and are shared across all four
+variants, so nothing in those areas is reopened by this selection.
+
+Two implementation facts the lab established and WP6 inherits:
+
+- `globals.css` carries an unlayered `focus-visible` rule setting `border-radius: 6px`
+  that beats every Tailwind radius utility, because utilities live in a cascade layer and
+  that rule does not. WP6 will hit this.
+- Under 8 active Projects the chooser is a listbox with character typeahead; at 8 or more
+  it is a real combobox with debounced count announcements. That threshold is a lab
+  finding, not a guess.
+
+### Killed with A: what the other three proved
+
+WP11 requires an explicit keep/kill verdict on every lab variant. These are kills, and
+each one bought something.
+
+**B · Product canvas band — KILLED.** The thesis was that the Project belongs to the
+content rather than the frame, and that choosing one should open a room. It was built
+further than felt safe on purpose. It proved that treating the Project as content makes
+the Project ambiguous the moment a surface has no canvas of its own, which is most of
+Tasks. Kept from it: the idea that arriving in a Project should feel like arrival, which
+A can express in its transition without moving the control.
+
+**C · Command-led hybrid — KILLED.** A quiet receipt you never click, plus Cmd/Ctrl+K for
+everything else. The plan argued against it and it was built anyway to price the refusal
+honestly. It proved the refusal was correct: a control that is only reachable by keyboard
+fails the WP6 gate, which requires a newcomer to switch Project unaided. Kept from it: the
+command-palette path is a legitimate accelerator, and WP9's unified palette should carry
+Project switching as a secondary route.
+
+**W · The deck — KILLED.** The wildcard, where every Project owns a colour and a monogram
+so you recognise where you are before you read it. It proved that recognition-first works
+only with a designed palette, not a computed one: hashing the Project id gave 8 distinct
+colours across 13 Projects, and it took a designed twelve-colour palette assigned by
+stable catalog order to make the idea function at all. Kept from it: nothing in V1.
+Recorded because a future Project-identity treatment should start from that finding rather
+than rediscover it.
+
+---
+
+## D-026 · The Home Analytics composition is 03, Plan Trace
+
+**Selected by Ethan, 17 August 2026**, from the five-composition lab at
+`/lab/signal-analytics`.
+
+Dated commitments against the current state of the work behind them. All three truth
+classes appear in one device and are told apart by shape and by word, never by colour
+alone: REPORTED for the commitment date with its author, OBSERVED for each piece of linked
+work at its own recorded date, INFERRED for the gap between them with its rule stated.
+
+**This selection carries a known and material constraint, which the founder was shown
+before selecting.** Plan Trace was briefed as accepted-plan-versus-current-plan — how a
+commitment date moved. That device cannot be built today:
+
+- `milestone_movement` requires `milestone_date_history`, which requires Timeline
+  `activity` rows, and nothing in this repository writes that table (R4).
+- `captureWorkspaceSnapshots` has zero callers and the only declared cron is the digest,
+  so every trend resolves `insufficient_history` permanently (R7).
+
+The lab version is therefore re-founded on the comparison that is real without any history
+at all, and draws a dashed stub with a stated refusal where the movement line would go.
+**That honest form is what ships**, and it does not wait for anything.
+
+**Authorized alongside this selection (G2, Ethan, 17 August 2026):** both missing writers
+are built now, ahead of the interface that consumes them, because plan history cannot be
+backfilled and every day without them is a day that is gone. See the completion plan
+Stage 1. This closes R4, R7 and D-012 as a side effect.
+
+### Killed with 03: what the other four proved
+
+**01 · Editorial Briefing — KILLED.** Numbers set as receipts inside the sentence they
+support. It proved that a written read survives missing data more gracefully than any
+tabular form, because a sentence can decline to make a claim where a cell cannot decline
+to be empty. Kept from it: the refusal language. Plan Trace should state what it cannot
+compare in prose, not in an empty cell.
+
+**02 · Evidence Ledger — KILLED.** One table of every label with the three exceptions
+lifted inside it rather than repeated above it. It proved the exceptions-inside-the-table
+pattern is right and the whole-table form is wrong for one Project, where the row count is
+too low to justify the furniture. Kept from it: exceptions live inside the structure they
+qualify.
+
+**04 · Hybrid — KILLED.** The written read, the fused ledger, and a third section spent on
+what cannot be said. It scored well and lost on a narrow ground: it spends a full section
+on absence, which reads as apology at this data volume. Kept from it: naming the gap is
+mandatory, but it belongs inline where the reader would otherwise assume the opposite.
+
+**W · The Wire — KILLED.** The wildcard: mono, warm paper, no indigo, paced rather than
+scrolled. It proved that a paced reading changes what a reader takes away, and that the
+house indigo is not load-bearing for legibility. Kept from it: nothing in V1. Recorded
+because the paced form is the strongest candidate for a future digest or email surface,
+where the reader cannot scroll.
+
+---
+
+## D-027 · The two programmes split Home by read and shell
+
+**Ratified by Ethan's approval of the completion plan, 17 August 2026.**
+
+Project Truth Wave 6 builds Home Analytics using the selected composition. The Home
+operating layer's Analytics mode is that same surface, and its shell wave builds the frame
+all four modes sit inside. Left alone, two programmes write the same route.
+
+| Owns | Programme |
+|---|---|
+| The analytics **read** — providers, metric registry, truth classes, Plan Trace as a content component | Project Truth |
+| The Home **shell** — routes, modes, navigation, chrome, the boundary contract | Home operating layer |
+
+**The binding consequence:** Plan Trace is built as a shell-agnostic content component
+that inherits its host's tokens. It is not built as a page. This is the only arrangement
+that lets both programmes proceed without one waiting on the other, and it is the single
+constraint most likely to be dropped under time pressure — building it as a page is
+faster this week and costs a rewrite later.
+
+A fitting pass is expected once the Home shell exists. That is bounded work, and only if
+the component is built this way from the start.
+
+Recorded in the Home programme as `D-H14`.
