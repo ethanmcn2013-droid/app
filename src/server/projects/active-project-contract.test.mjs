@@ -373,6 +373,123 @@ test("the /app shell mounts the provider only when the flag is on", () => {
 });
 
 /**
+ * WP6 Lane A — the Active Project chrome (D-025 variant A).
+ *
+ * The control lives in the permanent Studio Bar, which renders on every
+ * signed-in surface. Three things therefore have to hold structurally rather
+ * than by inspection: it disappears completely with the flag off, it paints
+ * only what the provider's projection authorizes, and it does not put a
+ * membership query in front of every page view.
+ */
+test("the Active Project chrome renders nothing at all with the flag off", () => {
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  // The provider is not mounted flag-off, so the hook returns null and every
+  // entry point bails before it renders anything. Checked on all three: a
+  // guard on the inner component only would still mount the two wrappers.
+  assert.match(
+    control,
+    /const context = useActiveProject\(\);\s*\n\s*\/\/[^\n]*\n\s*if \(!context\) return null;/,
+    "the control returns null before rendering when there is no provider",
+  );
+  assert.match(
+    control,
+    /export function ActiveProjectMobileStrip\(\)[\s\S]*?if \(!phone \|\| !context\) return null;/,
+    "the phone strip bails on the same absent provider",
+  );
+  // The flag itself is never read in the client component: the server decides
+  // once and the client reads `enabled` off context (plan §2 gate pattern).
+  assert.doesNotMatch(control, /isActiveProjectV3Enabled|process\.env/);
+});
+
+test("the chrome paints only the provider's projection, never the cookie", () => {
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  // `verified` may be painted; `pending` is A held on screen and marked inert;
+  // `skeleton` is a fixed-width placeholder that names nothing. A name read
+  // from anywhere else is the wrong-Project substitution this wave removes.
+  assert.match(control, /chrome\.kind === "verified"\s*\n?\s*\? chrome\.project/);
+  assert.match(control, /chrome\.kind === "pending"\s*\n?\s*\? chrome\.showing/);
+  assert.match(
+    control,
+    /ACTIVE_PROJECT_TRIGGER_SKELETON_WIDTH/,
+    "the unverified trigger holds a fixed width so the chrome cannot collapse",
+  );
+  assert.doesNotMatch(
+    control,
+    /bootstrapProjectId/,
+    "the cookie bootstrap is not a Project name and must not reach the chrome",
+  );
+});
+
+test("the catalog is fetched on demand, never in the shared shell", () => {
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  const catalogAction = read("src/server/actions/project-catalog.ts");
+  // The membership query hangs off opening the chooser, not off rendering the
+  // bar — the bar renders on every signed-in page view.
+  assert.match(control, /if \(!open\) return;\s*\n\s*if \(state\.kind === "idle"\) load\(\);/);
+  // Reachable by direct POST like every Server Function: both gates run here.
+  assert.match(
+    catalogAction,
+    /if \(!isActiveProjectV3Enabled\(\)\) return \{ ok: false, reason: "disabled" \};/,
+  );
+  assert.match(
+    catalogAction,
+    /const actorUserId = await getCurrentUser\(\);/,
+    "the actor is the server's, never the payload's",
+  );
+  assert.match(
+    catalogAction,
+    /export async function loadProjectCatalogAction\(\): Promise<LoadProjectCatalogResult>/,
+    "the catalog action takes no caller input: the actor is the only input, and it is the server's",
+  );
+});
+
+test("archived and ambiguous Projects never travel through the guarded switch", () => {
+  const chooser = read("src/components/studio-bar/active-project/use-chooser.ts");
+  const chooseBody = chooser.slice(
+    chooser.indexOf("const choose = useCallback("),
+    chooser.indexOf("const move = useCallback("),
+  );
+  const blockedAt = chooseBody.indexOf("if (!row.selectable)");
+  const archivedAt = chooseBody.indexOf("if (row.archived)");
+  const chooseAt = chooseBody.indexOf("onChoose(row)");
+  assert(blockedAt >= 0 && blockedAt < archivedAt, "ambiguity refuses first");
+  assert(
+    archivedAt > 0 && archivedAt < chooseAt,
+    "ADR 0001 §5: an archived Project is a URL-only read-only flow, not a switch",
+  );
+  // And the archived route is built from the enum, not hand-assembled.
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  assert.match(control, /router\.push\(archivedProjectUrl\(row\.id\)\)/);
+});
+
+test("exactly one of the bar cell and the phone strip is mounted", () => {
+  const bar = read("src/components/studio-bar/studio-bar.tsx");
+  assert.match(bar, /<ActiveProjectBarCell \/>/);
+  assert.match(bar, /<ActiveProjectMobileStrip \/>/);
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  // Chosen by a media subscription rather than by CSS, so the catalog is
+  // fetched once and the chooser holds one piece of state.
+  assert.match(
+    control,
+    /export function ActiveProjectBarCell\(\)[\s\S]*?if \(phone\) return null;/,
+  );
+  assert.match(
+    control,
+    /export function ActiveProjectMobileStrip\(\)[\s\S]*?if \(!phone/,
+  );
+});
+
+/**
  * D-022. The Tasks runtime's mount point is flag-selected in one module:
  * layouts render it flag-off (the byte-identical production tree), pages
  * render it flag-on (the tree where the board can follow `?workspaceId=`).

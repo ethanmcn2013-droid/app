@@ -46,11 +46,18 @@ import {
   assertProjectId,
   parseProjectId,
   type ProjectId,
+  type ProjectSummary,
 } from "@/lib/projects/project-ref";
+import { projectCapabilities } from "@/server/projects/capabilities";
 import { getCurrentUser } from "@/server/auth";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
 import { resolveActiveProjectForRoute } from "@/server/projects/request-scope";
-import { DEMO_WORKSPACE_ID, DEMO_WORKSPACE_NAME } from "@/server/demo/tasks-demo";
+import {
+  DEMO_WORKSPACE_ID,
+  DEMO_WORKSPACE_NAME,
+  DEMO_WORKSPACE_SLUG,
+  demoTasks,
+} from "@/server/demo/tasks-demo";
 
 /**
  * What a route may know. `unavailable` deliberately collapses missing,
@@ -66,6 +73,15 @@ export type RouteProjectDecision =
        * cannot name a Project the caller has not been authorized for.
        */
       name: string;
+      /**
+       * The whole authorized summary, carried rather than discarded (WP6 Lane
+       * A). The resolver has always held this; only the id and the name were
+       * passed on, which left the chrome with nothing to publish as a verified
+       * snapshot and therefore permanently unable to leave its skeleton. Same
+       * proof as `name` — it exists only on a decision that already carries a
+       * fresh membership proof.
+       */
+      project: ProjectSummary;
       /** `url` when the route named it; `fallback` on genuine bare entry. */
       source: "url" | "fallback";
       /**
@@ -75,7 +91,12 @@ export type RouteProjectDecision =
        */
       canonicalRedirectTo: ProjectId | null;
     }>
-  | Readonly<{ kind: "archived"; workspaceId: ProjectId; name: string }>
+  | Readonly<{
+      kind: "archived";
+      workspaceId: ProjectId;
+      name: string;
+      project: ProjectSummary;
+    }>
   | Readonly<{ kind: "unavailable" }>
   | Readonly<{ kind: "empty" }>;
 
@@ -83,12 +104,45 @@ export type RouteProjectDecision =
  * Demo and Review never touch a database (`access-mode.ts` safety invariant),
  * so they cannot run a membership query. The demo workspace is the only
  * Project that exists in that mode, and it is fully authorized by definition.
+ *
+ * Stated here in full rather than half-supplied and half-inferred, because
+ * WP6's chrome needs a whole `ProjectSummary` to publish as a verified
+ * snapshot. Capabilities come from the real `projectCapabilities` rule rather
+ * than a hand-written object, so the demo cannot drift into offering an action
+ * the live rule withholds.
  */
+export function demoProjectSummary(): ProjectSummary {
+  const id = assertProjectId(DEMO_WORKSPACE_ID);
+  return Object.freeze({
+    id,
+    slug: DEMO_WORKSPACE_SLUG,
+    name: DEMO_WORKSPACE_NAME,
+    role: "primary-owner" as const,
+    capabilities: projectCapabilities({
+      role: "primary-owner",
+      archived: false,
+      ownsPlanningPeriod: true,
+    }),
+    planningPeriod: null,
+    position: 0,
+    revision: 1,
+    archivedAt: null,
+    // Counted from the fixture rather than written down, so the chooser's
+    // "8 open tasks" cannot drift away from the board's "5 of 13 complete"
+    // sitting a few pixels below it. Same definition the board column uses: a
+    // task is open until its lane is done. The demo fixture is flat — every
+    // task in it is a root task — so this is the root count by construction.
+    activeRootTaskCount: demoTasks().filter((task) => task.lane !== "done").length,
+    disambiguator: null,
+  });
+}
+
 function demoDecision(): RouteProjectDecision {
   return {
     kind: "ready",
     workspaceId: assertProjectId(DEMO_WORKSPACE_ID),
     name: DEMO_WORKSPACE_NAME,
+    project: demoProjectSummary(),
     source: "url",
     canonicalRedirectTo: null,
   };
@@ -103,6 +157,7 @@ function toDecision(
         kind: "ready",
         workspaceId: resolution.state.project.id,
         name: resolution.state.project.name,
+        project: resolution.state.project,
         source: resolution.state.source,
         canonicalRedirectTo: resolution.redirectTo,
       };
@@ -111,6 +166,7 @@ function toDecision(
         kind: "archived",
         workspaceId: resolution.state.project.id,
         name: resolution.state.project.name,
+        project: resolution.state.project,
       };
     case "unavailable":
       return { kind: "unavailable" };
