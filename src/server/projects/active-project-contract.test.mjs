@@ -120,17 +120,26 @@ test("the unified cookie name is spelled in exactly one module", () => {
  * full five-attribute set. That was the last writer missing either; all five
  * writers now carry identical attributes, though they remain five writers.
  *
- * Still outstanding, unchanged: `suite-context/route.ts` rewrites the
- * preference on a contextual link, which needs a ratification or a change
- * rather than a patch (D-021 interface request 4, a FOUNDER decision — the
- * write now carries a pointer comment saying so), and the migration of all
- * five onto `writeActiveProjectCookie` (request 5) has not begun.
+ * ── Decided, and the list shrank (2026-08-17, D-028) ──────────────────────
+ *
+ * `suite-context/route.ts` — the founder decision that had been open since
+ * D-021 was taken: a contextual link is navigation, not selection. The handler
+ * carries the Project in the URL and no longer writes the cookie, so it leaves
+ * this list entirely. Five writers became four, which is the direction the
+ * ratchet below permits and the only direction it permits.
+ *
+ * Still outstanding: the migration of the remaining four onto
+ * `writeActiveProjectCookie` (D-021 interface request 5) has not begun.
  */
 const LEGACY_COOKIE_WRITERS = {
-  // The inbound suite-link handler. `src/app/app/page.tsx` redirects into it,
-  // so FOLLOWING A CONTEXTUAL LINK REWRITES THE PREFERENCE — the direct
-  // contradiction of ADR 0001 §4 "only an explicit Project selection does".
-  "src/app/api/suite-context/route.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
+  // src/app/api/suite-context/route.ts is deliberately ABSENT (D-028,
+  // 2026-08-17). It was writer #1 — the inbound suite-link handler, whose write
+  // made following a contextual link rewrite the bare-entry preference, the
+  // direct contradiction of ADR 0001 §4. The founder decision came down on
+  // "navigation, not selection": the handler now carries the Project in the URL
+  // and writes no cookie at all. Four writers remain, and the count only ever
+  // falls — the test below fails if this one comes back.
+  //
   // Fixed by WP3: was `httpOnly: false` with no `secure`, so the workspace
   // preference was readable by any script on the page.
   "src/server/actions/cross-workspace.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],

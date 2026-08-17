@@ -4,6 +4,44 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-17 · T·148 · tightens · a link someone sends you stops deciding where you work
+
+**Open a link to a project someone shared, glance at it, close the tab. Until today,
+the next time you opened the app you were in their project, not yours — and nothing
+had told you it moved. Following a link is not the same as choosing a place to be,
+and the app now knows the difference.**
+
+The project a link points at still opens, exactly as it did. What changed is what
+happens afterwards: your own last-open project is left where you put it. The link
+carries the project it means, so it lands where it should without quietly rewriting
+your starting point.
+
+This one waited for the control that makes it safe. If a link takes you somewhere
+and you decide you want to stay, there now has to be a visible way to say so — and
+as of this pass there is.
+
+## 2026-08-17 · T·147 · ships · the project you are in moves into the frame
+
+**Nothing looks different today. Behind a switch that is still off, the project you
+are working in now has a permanent home in the top bar — the same place on every
+screen, on Notes and Tasks and Timeline alike — with the list of your projects one
+click away, and a switch that stops and asks before it can lose unsaved work.**
+
+Until now the only way to change project lived inside one product's sidebar. Someone
+working in Notes had no way to see which project they were in, let alone change it.
+The new control sits in the bar that is always there, says which project you are in,
+and opens a list of the rest. On a phone it moves to a strip under the bar and opens
+a sheet you can reach with a thumb.
+
+The switch itself is careful in ways the old one was not. It asks the surfaces you
+are working in whether anything would be lost, and holds the switch if the answer is
+yes — a note you have started writing is enough to stop it. Two projects with the
+same name stay in the list and say why they cannot be chosen, rather than quietly
+picking one. And a project you have archived opens read-only rather than pretending
+it can still be worked in.
+
+The switch is off. Everything above is built and tested and waiting behind it.
+
 ## 2026-08-17 · T·146 · ships · the app starts remembering how plans move
 
 **Nothing looks different today. What changed is that two kinds of history the

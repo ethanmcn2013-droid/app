@@ -26,6 +26,7 @@
     "experience:test:project-switch": "playwright test --config experience/project-switch.playwright.config.ts",
     "experience:attest": "node scripts/experience/attest-playwright.mjs",
     "experience:council": "node scripts/experience/quality-council.mjs",
+    "experience:council:ci": "node scripts/experience/quality-council.mjs --ci",
     "experience:council:prepare": "node scripts/experience/quality-council.mjs --prepare",
     "experience:quality": "pnpm experience:self-test && pnpm experience:fixtures && pnpm experience:validate && pnpm ds:check && pnpm experience:test && pnpm experience:council:prepare && pnpm experience:council",
     "db:migrate": "node scripts/db/migrate.mjs migrate",
