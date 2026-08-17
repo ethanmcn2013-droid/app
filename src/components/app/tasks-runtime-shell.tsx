@@ -11,6 +11,7 @@ import { PaletteRoot } from "@/components/app/palette/command-palette";
 import { ProductWorkspaceShell } from "@/components/app/product-workspace-shell";
 import { RoomBriefProvider } from "@/components/app/room/room-brief-context";
 import { SuiteContextPublisher } from "@/components/app/suite-context-publisher";
+import { ActiveProjectRouteSync } from "@/components/app/active-project-route-sync";
 import { TaskDetailPanel } from "@/components/app/detail-panel/task-detail-panel";
 import {
   StudioChromeBridge,
@@ -231,6 +232,19 @@ export async function TasksRuntimeShell({
                 <SuiteContextPublisher
                   planningPeriodId={workspace?.planningPeriodId ?? null}
                   workspaceId={workspaceId}
+                />
+                {/* WP6 Lane A. The chrome may paint a Project only from a
+                    server-verified snapshot, and this is the boundary that
+                    holds one: `resolveProjectForRoute` above authorized this
+                    exact Project for this exact route. Without a publisher the
+                    projection stays `skeleton` forever and the Studio Bar
+                    control can never leave its placeholder — the platform
+                    shipped this component in WP2 and nothing had mounted it.
+                    Inert with the flag off: the provider is not mounted, so
+                    the hook inside returns null and it publishes nothing. */}
+                <ActiveProjectRouteSync
+                  project={project.project}
+                  requestedProjectId={requestedProjectId ?? null}
                 />
                 <AddTaskRoot>
                   <PaletteRoot>
