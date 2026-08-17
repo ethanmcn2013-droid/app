@@ -49,6 +49,7 @@ import type {
   PendingApprovedTasksSendRead,
 } from "@/modules/notes/server/actions/notes";
 import { PRICING_URL, taskFocusPath } from "@/lib/product-urls";
+import { useUnsavedWork } from "@/components/app/unsaved-work-context";
 import {
   CONTEXT_TERMINOLOGY,
   PLANNING_PERIOD_CONTEXTS,
@@ -756,6 +757,61 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [notebook.detailBody, notebook.draft, notebook.hasUnsavedWork, selectedNote]);
+
+  // The suite's unsaved-work signal (WP6): the same three dirty truths the
+  // beforeunload guard above reads, published so a guarded Project switch is
+  // held while any of them stands. beforeunload cannot cover that case — it
+  // fires on tab close, never on a client-side navigation. The predicates
+  // here and in that guard must stay in agreement. The claims carry copy
+  // only; saving, retrying and discarding stay in this workspace, and a
+  // refusal rendered elsewhere sends the founder back here to resolve it.
+  // Flag off there is no provider, `unsavedWork` is null, and both effects
+  // do nothing — today's behaviour, unchanged.
+  const unsavedWork = useUnsavedWork();
+  const draftDirty = Boolean(notebook.draft.trim());
+  const captureDirty = notebook.hasUnsavedWork;
+  const editDirty = Boolean(
+    selectedNote && notebook.detailBody !== selectedNote.body,
+  );
+  useEffect(() => {
+    if (!unsavedWork) return;
+    if (draftDirty) {
+      unsavedWork.publish({
+        source: "notes-draft",
+        description: "A note you started in Notes hasn’t been saved.",
+      });
+    } else {
+      unsavedWork.clear("notes-draft");
+    }
+    if (editDirty) {
+      unsavedWork.publish({
+        source: "notes-edit",
+        description: "An edit to a note hasn’t been saved.",
+      });
+    } else {
+      unsavedWork.clear("notes-edit");
+    }
+    if (captureDirty) {
+      unsavedWork.publish({
+        source: "notes-capture",
+        description: "Notes are still saving.",
+      });
+    } else {
+      unsavedWork.clear("notes-capture");
+    }
+  }, [captureDirty, draftDirty, editDirty, unsavedWork]);
+
+  // Leaving Notes withdraws its claims. The words those claims guarded are
+  // already saved or already gone; a claim no mounted surface can resolve
+  // would hold every future switch with no way out.
+  useEffect(() => {
+    if (!unsavedWork) return;
+    return () => {
+      unsavedWork.clear("notes-draft");
+      unsavedWork.clear("notes-edit");
+      unsavedWork.clear("notes-capture");
+    };
+  }, [unsavedWork]);
 
   useEffect(() => {
     if (!privacyOpen && !menuOpen) return;

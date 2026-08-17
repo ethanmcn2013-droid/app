@@ -800,10 +800,21 @@ export async function acceptInviteAction(token: string): Promise<{
 
   // Flip the active-workspace cookie so /app/tasks lands the user
   // in the freshly-joined workspace.
+  //
+  // Attribute parity with the cookie's four sibling writers (D-021 writer #4,
+  // the last one WP3 left open). This was the only writer with neither
+  // `httpOnly` nor `secure`, so accepting an invite downgraded the last-active
+  // preference to a script-readable cookie sendable over plain HTTP until the
+  // next writer ran. Nothing on the client reads it — it exists so the *next*
+  // server request resolves into the joined workspace — so there was never a
+  // reason for it to be exposed. Pinned, with its siblings, by
+  // `src/server/projects/active-project-contract.test.mjs`.
   const c = await cookies();
   c.set(ACTIVE_WORKSPACE_COOKIE_NAME, invite.workspaceId, {
     path: "/",
     sameSite: "lax",
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 60 * 24 * 30,
   });
 

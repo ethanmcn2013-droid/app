@@ -37,6 +37,11 @@
  *     never painted: showing cookie-fallback A there is precisely the
  *     wrong-Project substitution this wave exists to remove.
  *
+ * Beside those it hosts the unsaved-work registry (WP6): surfaces register
+ * dirty-state claims through `unsaved-work-context`, and `selectProject`
+ * consults them before a switch may start. The registry is a plain store, not
+ * provider state — the guard reads it synchronously in the event handler.
+ *
  * State lives in one reducer rather than several `useState` pairs plus mirror
  * refs. That is not tidiness: the commit rule has to see the live transition
  * and the committed snapshot *together and atomically*, and reading a mirror
@@ -53,6 +58,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
   useTransition,
 } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -69,9 +75,17 @@ import {
   type LiveTransition,
   type RouteSnapshot,
 } from "@/lib/projects/route-snapshot";
+import {
+  createUnsavedWorkStore,
+  refuseForUnsavedWork,
+  type SelectProjectRefusal,
+  type SelectProjectResult,
+} from "@/lib/projects/unsaved-work";
+import { UnsavedWorkProvider } from "@/components/app/unsaved-work-context";
 import { switchActiveProjectAction } from "@/server/actions/active-project";
 
 export type { ActiveProjectPending };
+export type { SelectProjectRefusal, SelectProjectResult };
 
 export type ActiveProjectContextValue = Readonly<{
   /** False when `SIGNAL_ACTIVE_PROJECT_V3_ENABLED` is off. */
@@ -82,16 +96,28 @@ export type ActiveProjectContextValue = Readonly<{
   pending: ActiveProjectPending | null;
   /** Set after a failed switch: `Couldn't open B. You're still in A.` */
   lastError: string | null;
+  /**
+   * The last held switch (WP6): the unsaved-work signal objected, nothing
+   * started. Held in shared state because the surface that tripped it is not
+   * necessarily the one designed to render it — the Active Project chrome is
+   * (D-025). The claims inside carry the copy; the resolution semantics
+   * (save / retry / discard) stay with the surface that owns the work.
+   */
+  refusal: SelectProjectRefusal | null;
+  /** "Stay": take the refusal off screen. The claims themselves are untouched. */
+  dismissRefusal: () => void;
   /** Publish a server-verified snapshot. The reducer decides whether it commits. */
   publishSnapshot: (snapshot: RouteSnapshot) => void;
   /**
-   * Synchronous selection guard. Returns false when a switch is already
-   * pending — see the note on `pendingRef` below.
+   * Synchronous selection guard. `started` means the guarded transition is
+   * running and will redirect on success; a refusal means nothing started —
+   * `switch-pending` when a switch is already in flight (see the note on
+   * `pendingRef` below), `unsaved-work` when a registered claim held it.
    */
   selectProject: (
     project: Pick<ProjectSummary, "id" | "name">,
     destination: ProjectDestination,
-  ) => boolean;
+  ) => SelectProjectResult;
 }>;
 
 const ActiveProjectContext = createContext<ActiveProjectContextValue | null>(null);
@@ -155,6 +181,14 @@ export function ActiveProjectProvider({
     initialActiveProjectState,
   );
 
+  /**
+   * The unsaved-work registry (WP6). A plain store, not reducer state, because
+   * `selectProject` must read it synchronously in the event handler — the same
+   * reasoning as `pendingRef`. Created here and provided below, so the signal
+   * exists exactly when the guarded transition does.
+   */
+  const [unsavedWork] = useState(createUnsavedWorkStore);
+
   const [, startTransition] = useTransition();
 
   /**
@@ -183,9 +217,22 @@ export function ActiveProjectProvider({
     (
       project: Pick<ProjectSummary, "id" | "name">,
       destination: ProjectDestination,
-    ): boolean => {
+    ): SelectProjectResult => {
       // Synchronous. Everything below this line may be batched; this may not.
-      if (pendingRef.current) return false;
+      if (pendingRef.current) return { kind: "switch-pending" };
+
+      // The unsaved-work hold (WP6), consulted before the ref is claimed: a
+      // held switch never starts, so it must leave nothing pending. Read
+      // synchronously from the store — hook-carried claims would be one
+      // render stale, which is exactly the window a second click lives in.
+      // Only this refusal is dispatched into shared state: `switch-pending`
+      // stays a silent outright rejection, per the lab machine.
+      const refusal = refuseForUnsavedWork(unsavedWork.claims());
+      if (refusal) {
+        dispatch({ type: "select-refused", refusal });
+        return refusal;
+      }
+
       pendingRef.current = true;
 
       // Step 2: the trigger reads `Opening <B>…` while committed A stays
@@ -221,10 +268,14 @@ export function ActiveProjectProvider({
         })();
       });
 
-      return true;
+      return { kind: "started" };
     },
-    [],
+    [unsavedWork],
   );
+
+  const dismissRefusal = useCallback(() => {
+    dispatch({ type: "refusal-dismissed" });
+  }, []);
 
   const chrome = useMemo(
     () => chromeFor(state, bootstrap),
@@ -238,6 +289,8 @@ export function ActiveProjectProvider({
       chrome,
       pending: state.pending,
       lastError: state.lastError,
+      refusal: state.refusal,
+      dismissRefusal,
       publishSnapshot,
       selectProject,
     }),
@@ -246,7 +299,9 @@ export function ActiveProjectProvider({
       state.live,
       state.pending,
       state.lastError,
+      state.refusal,
       chrome,
+      dismissRefusal,
       publishSnapshot,
       selectProject,
     ],
@@ -254,10 +309,12 @@ export function ActiveProjectProvider({
 
   return (
     <ActiveProjectContext.Provider value={value}>
-      <Suspense fallback={null}>
-        <ActiveProjectUrlBridge onRoute={onRoute} />
-      </Suspense>
-      {children}
+      <UnsavedWorkProvider store={unsavedWork}>
+        <Suspense fallback={null}>
+          <ActiveProjectUrlBridge onRoute={onRoute} />
+        </Suspense>
+        {children}
+      </UnsavedWorkProvider>
     </ActiveProjectContext.Provider>
   );
 }

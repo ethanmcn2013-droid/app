@@ -24,6 +24,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTasksState } from "@/lib/tasks/tasks-context";
 import { openTaskCount } from "@/lib/tasks/selectors";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { useActiveProject } from "@/components/app/active-project-provider";
 import { selectWorkspaceAction } from "@/server/actions/cross-workspace";
 import {
   archiveProjectAction,
@@ -385,6 +387,9 @@ function SidebarBody({
   const onTasksSurface = pathname === "/app/tasks" || pathname.startsWith("/app/tasks/");
   const reduceMotion = useReducedMotion();
   const router = useRouter();
+  // Null with Active Project V3 off — the /app shell mounts no provider then,
+  // and this component must read `enabled` off context, never the env var.
+  const activeProject = useActiveProject();
   const tasks = useTasksState();
   const inboxCount = openTaskCount(tasks);
   const [, startTransition] = useTransition();
@@ -414,9 +419,24 @@ function SidebarBody({
     };
   }, [tree]);
 
-  function chooseWorkspace(id: string) {
+  function chooseWorkspace(id: string, name: string) {
     onNavigate?.();
     if (id === activeWorkspaceId) return;
+    // WP6 lane C: with Active Project V3 on, a leaf click is the guarded WP2
+    // transition — membership revalidated, the cookie written by its one
+    // sanctioned writer, a push redirect so Back returns here. The provider
+    // owns the transition's visible state (`Opening <B>…`, failures, and the
+    // unsaved-work hold), and the Active Project chrome renders it, so this
+    // sidebar stays plumbing and paints no verdict of its own. Flag off, the
+    // provider is not mounted, this branch is unreachable, and the legacy
+    // path below runs exactly as it always has.
+    if (activeProject?.enabled) {
+      const projectId = parseProjectId(id);
+      if (projectId) {
+        activeProject.selectProject({ id: projectId, name }, { surface: "tasks" });
+        return;
+      }
+    }
     startTransition(async () => {
       setShowSwitchPending(false);
       setSwitchPendingId(id);
@@ -492,7 +512,7 @@ function SidebarBody({
                   aria-current={onTasksSurface && w.id === activeWorkspaceId ? "page" : undefined}
                   className={styles.projectParent}
                   data-active={w.id === activeWorkspaceId || undefined}
-                  onClick={() => chooseWorkspace(w.id)}
+                  onClick={() => chooseWorkspace(w.id, w.name)}
                   type="button"
                 >
                   <span aria-hidden="true" className={styles.disclosureGhost} />
