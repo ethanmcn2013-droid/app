@@ -73,12 +73,11 @@ import {
  * `requestedProjectId`. That is the condition of its place on the WP3
  * allowlist.
  *
- * **What did not change, and cannot here.** The allowlist entry asks this
- * shell to prefer an explicit Project *from the route's search parameters*.
- * It cannot: this component is mounted from nine `layout.tsx` files, and a
- * Next.js layout does not receive `searchParams`. That is not a local
- * omission — it is the framework's data model. Next's own type generator
- * (`node_modules/next/dist/build/webpack/plugins/next-types-plugin/
+ * ── The searchParams half, resolved by WP6 (D-022) ─────────────────────────
+ *
+ * The allowlist entry asks this shell to prefer an explicit Project *from the
+ * route's search parameters*. A layout cannot supply one: Next's own type
+ * generator (`node_modules/next/dist/build/webpack/plugins/next-types-plugin/
  * index.js:128-136`) declares `PageProps` with `searchParams` and
  * `LayoutProps` without it, and the reason is stated in
  * `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/
@@ -86,19 +85,24 @@ import {
  * not supported. This design is intentional to support layout state being
  * preserved across page navigations."
  *
- * The same property makes a workaround wrong rather than merely unavailable:
- * a layout is *not re-rendered* when only the query string changes, so even a
- * value smuggled in through a header would go stale the moment the user
- * navigated from `?workspaceId=A` to `?workspaceId=B`, and the chrome would
- * confidently label the board with the Project it no longer showed.
+ * The same property makes a header workaround wrong rather than merely
+ * unavailable: a layout is *not re-rendered* when only the query string
+ * changes, so a smuggled value would go stale the moment the user navigated
+ * from `?workspaceId=A` to `?workspaceId=B`, and the chrome would confidently
+ * label the board with the Project it no longer showed.
  * `src/lib/projects/route-snapshot.ts:5-10` documents WP2 reaching the same
  * conclusion for the chrome, and solves it by having each *page* publish what
  * the server verified.
  *
- * So the parameter exists and is honoured, and the consequence is recorded:
- * while the Tasks runtime is fetched in a layout, `/app/tasks?workspaceId=B`
- * cannot render B's board. Closing that needs the runtime moved into the
- * pages — a WP-level change, not a local repair.
+ * D-022 therefore moved the mount into the page boundaries, which do receive
+ * `searchParams`. The move is flag-selected, one boundary per request, in
+ * `src/components/app/tasks-runtime-mount.tsx`: flag off, the nine segment
+ * `layout.tsx` files still render this shell with no parameter and the tree
+ * is byte-identical to before the move; flag on, each page mounts it and
+ * supplies its own `?workspaceId=` as `requestedProjectId`, so
+ * `/app/tasks?workspaceId=B` can render B's board. The mount module's
+ * docblock records which pages pass the parameter and why the rest
+ * deliberately do not.
  */
 export async function TasksRuntimeShell({
   children,
@@ -108,6 +112,8 @@ export async function TasksRuntimeShell({
   /**
    * An explicit, already-known Project. Preferred over the ambient fallback
    * whenever it is supplied; it is still authorized here, never trusted.
+   * Supplied by `TasksRuntimePageMount` from the page's `searchParams` when
+   * the V3 flag is on; the flag-off layout mount never passes one.
    */
   requestedProjectId?: string | null;
 }) {

@@ -297,9 +297,20 @@ test("the shell fails closed and prefers an explicit Project", () => {
   );
 });
 
-test("the shell records why the searchParams half of its allowlist condition is unmet", () => {
-  // The allowlist entry is conditional. If a later change claims to satisfy
-  // it, this test is where the claim has to be argued.
+test("the shell records how the searchParams half of its allowlist condition is met", () => {
+  // The allowlist entry was conditional, and this test used to pin the
+  // recorded reason it was unmet: layouts receive no searchParams. WP6
+  // (D-022) is the change that satisfies it, and this is the argument: the
+  // mount moved into the page boundaries, flag-selected in
+  // tasks-runtime-mount.tsx, so pages supply the URL's Project while the
+  // flag-off tree keeps the layout mount byte-identical. The framework
+  // constraint stays cited because it is why the layout half can never do
+  // this itself.
   assert.match(shell, /LayoutProps/, "the framework constraint must be cited, not asserted");
   assert.match(shell, /layout\.tsx/);
+  assert.match(
+    shell,
+    /tasks-runtime-mount\.tsx/,
+    "the shell must name the mount module that now supplies requestedProjectId",
+  );
 });
