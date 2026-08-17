@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProjectOverviewData } from "@/server/actions/project-overview";
 import { ProjectOverview } from "@/components/app/project/project-overview";
+import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { resolveProjectForRoute } from "@/server/projects/route-authz";
 import { PROJECT_APP_PATH } from "@/lib/product-urls";
 import { withActiveProject } from "@/lib/projects/project-url";
@@ -51,20 +52,27 @@ function canonicalProjectUrl(workspaceId: ProjectId): string {
   return withActiveProject(PROJECT_APP_PATH, workspaceId);
 }
 
+/**
+ * Renders inside the AMBIENT runtime mount — no `searchParams` — in both
+ * flag states: the chrome around a refusal shows the Project the caller
+ * actually has open, never the one the URL failed to name (D-022).
+ */
 function Unavailable() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
-      <div className="text-[16px] font-semibold text-ink">Project unavailable</div>
-      <div className="max-w-[34ch] text-[13px] text-ink-soft">
-        This project may have been deleted, or the link is stale.
+    <TasksRuntimePageMount>
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-8 text-center">
+        <div className="text-[16px] font-semibold text-ink">Project unavailable</div>
+        <div className="max-w-[34ch] text-[13px] text-ink-soft">
+          This project may have been deleted, or the link is stale.
+        </div>
+        <Link
+          href="/app/home"
+          className="mt-2 text-[12.5px] text-ink-quiet underline underline-offset-2 transition-colors hover:text-ink-soft"
+        >
+          Go to Home
+        </Link>
       </div>
-      <Link
-        href="/app/home"
-        className="mt-2 text-[12.5px] text-ink-quiet underline underline-offset-2 transition-colors hover:text-ink-soft"
-      >
-        Go to Home
-      </Link>
-    </div>
+    </TasksRuntimePageMount>
   );
 }
 
@@ -101,5 +109,12 @@ export default async function ProjectPage({
   // See the docblock. Refuse rather than render another Project's overview.
   if (data.workspaceId !== authorized) return <Unavailable />;
 
-  return <ProjectOverview data={data} />;
+  // The overview verified above that its data names the URL's Project, so
+  // chrome and content follow the URL together when the flag-on page mount
+  // consumes it (D-022).
+  return (
+    <TasksRuntimePageMount searchParams={searchParams}>
+      <ProjectOverview data={data} />
+    </TasksRuntimePageMount>
+  );
 }

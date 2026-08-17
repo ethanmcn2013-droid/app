@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/server/auth";
 import { requireRouteProjectId } from "@/server/projects/route-authz";
 import { InboxApp } from "@/components/app/inbox/inbox-app";
 import { AppPageHeader } from "@/components/app/page-header";
+import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { generateNudges } from "@/lib/nudges/generate-nudges";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { aiConfigured } from "@/server/ai";
@@ -41,7 +42,7 @@ export default async function InboxPage() {
     const open = tasks.filter((task) => !isTaskDone(task, null));
 
     return (
-      <>
+      <TasksRuntimePageMount>
         <AppPageHeader />
         <InboxApp
           notifications={[]}
@@ -79,16 +80,17 @@ export default async function InboxPage() {
             }).format(new Date(PINNED_REVIEW_CALENDAR_FRAME.nowIso)),
           )}
         />
-      </>
+      </TasksRuntimePageMount>
     );
   }
 
   // WP3: was `getActiveWorkspace`, whose third fallback hands back
   // LEGACY_WORKSPACE_ID — a workspace the caller has proved no membership of
-  // (DECISIONS D-005). `requireRouteProjectId` fails closed instead. No
-  // explicit `workspaceId` parameter here on purpose: this surface renders
-  // inside `TasksRuntimeShell`, whose Project the page cannot influence, so
-  // accepting one would let the URL and the chrome disagree.
+  // (DECISIONS D-005). `requireRouteProjectId` fails closed instead. The
+  // runtime mounts with no explicit `workspaceId` on purpose (D-022): this
+  // page's reads below are ambient, so handing the chrome an explicit Project
+  // would let the URL and the content disagree (ADR 0001 §2). Both halves
+  // stay ambient.
   const [me, ws] = await Promise.all([
     getCurrentUser(),
     requireRouteProjectId(),
@@ -127,7 +129,7 @@ export default async function InboxPage() {
     ]);
   const nudges = generateNudges(tasks, me, await readWorkspaceColumnConfig(ws));
   return (
-    <>
+    <TasksRuntimePageMount>
       <AppPageHeader />
       <InboxApp
         notifications={notifications}
@@ -142,6 +144,6 @@ export default async function InboxPage() {
         userName={userRow?.name ?? undefined}
         personalityPrefs={personalityPrefs}
       />
-    </>
+    </TasksRuntimePageMount>
   );
 }

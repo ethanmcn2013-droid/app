@@ -16,6 +16,7 @@ import { getUserPreferences } from "@/server/db/preferences";
 import { getWorkspaceStorageUsage } from "@/server/actions/attachments";
 import { SettingsApp } from "@/components/app/settings/settings-app";
 import { AppPageHeader } from "@/components/app/page-header";
+import { TasksRuntimePageMount } from "@/components/app/tasks-runtime-mount";
 import { isDemoMode } from "@/lib/access-mode";
 import {
   DEMO_USER_ID,
@@ -48,7 +49,7 @@ export default async function SettingsPage() {
   if (isDemoMode()) {
     const nowIso = new Date().toISOString();
     return (
-      <>
+      <TasksRuntimePageMount>
         <AppPageHeader />
         <p
           role="status"
@@ -101,17 +102,18 @@ export default async function SettingsPage() {
             storageUsageBytes={0}
             initialPersonalityPrefs={PERSONALITY_DEFAULTS}
           />
-      </>
+      </TasksRuntimePageMount>
     );
   }
 
   // WP3-C: was `getActiveWorkspace()`, whose third fallback hands back
   // LEGACY_WORKSPACE_ID — a workspace the caller has proved no membership of
   // (DECISIONS D-005) — and would have rendered a stranger's members list and
-  // Danger Zone. `requireRouteProjectId` fails closed instead. No explicit
-  // `workspaceId` parameter here on purpose: this surface renders inside the
-  // shared app chrome, whose Project the page cannot influence, so accepting
-  // one would let the URL and the chrome disagree. Same call as /app/inbox,
+  // Danger Zone. `requireRouteProjectId` fails closed instead. The runtime
+  // mounts with no explicit `workspaceId` on purpose (D-022): every read
+  // below — members, roles, the Danger Zone's target — is ambient, so handing
+  // the chrome an explicit Project would let the URL and the content disagree
+  // (ADR 0001 §2). Both halves stay ambient. Same policy as /app/inbox,
   // /app/archived and /app/import.
   const [me, ws] = await Promise.all([
     getCurrentUser(),
@@ -171,7 +173,7 @@ export default async function SettingsPage() {
   const currentUserEmail = myMember?.email ?? "";
 
   return (
-    <>
+    <TasksRuntimePageMount>
       <AppPageHeader />
       <SettingsApp
         currentUserId={me}
@@ -218,6 +220,6 @@ export default async function SettingsPage() {
         storageUsageBytes={storageUsageBytes}
         initialPersonalityPrefs={personalityPrefs}
       />
-    </>
+    </TasksRuntimePageMount>
   );
 }
