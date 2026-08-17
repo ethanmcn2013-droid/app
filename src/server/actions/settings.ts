@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { isProjectCurrency } from "@/lib/money";
 import { cookies } from "next/headers";
@@ -9,8 +9,6 @@ import {
   activities,
   notificationPrefs,
   pendingInvites,
-  shareLinks,
-  shareLinkVisits,
   tasks,
   users,
   workspaceEvents,
@@ -28,11 +26,11 @@ import {
   type ProjectCapabilityKey,
   type ProjectGrant,
 } from "@/server/actions/project-authz";
+import { deleteProject, renameProject } from "@/server/projects/service";
 import { currentUser as clerkCurrentUser } from "@clerk/nextjs/server";
 import { canAddMember } from "@/server/db/membership";
 import { inviteEmailHtml, sendEmail } from "@/server/email";
 import { seedDomainAction } from "@/server/actions/seed";
-import { emitTasksChanged } from "@/server/events";
 import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
 
@@ -190,26 +188,31 @@ export async function getMyRoleInProject(
  *  disabled for a non-owner in `sections/workspace.tsx`, and the re-seed path
  *  wipes every task in the Project. `seedDomainAction` already proves
  *  `manageProject` for itself — it is now told *which* Project to prove, so the
- *  rename and the wipe cannot land in two different ones. */
+ *  rename and the wipe cannot land in two different ones.
+ *
+ *  The rename itself is the consolidated service's `renameProject` (WP6) —
+ *  the same implementation the rest of the Project lifecycle uses, with a
+ *  write receipt. The service proves `manageProject` again over the id this
+ *  action already proved; one extra membership read is the price of the
+ *  service refusing to trust ANY caller, this one included. */
 export async function updateWorkspaceAction(input: {
   name?: string;
   domain?: DomainId;
   projectId?: string;
 }): Promise<{ ok: true }> {
+  const me = await getCurrentUser();
   const { projectId: ws } = await provedSettingsProject(
     input.projectId,
     "manageProject",
     PROJECT_UNAVAILABLE,
   );
   if (input.name !== undefined) {
-    const trimmed = input.name.trim();
-    if (!trimmed) {
-      throw new Error("Workspace name can’t be empty.");
-    }
-    await db
-      .update(workspaces)
-      .set({ name: trimmed })
-      .where(eq(workspaces.id, ws));
+    await renameProject({
+      actorUserId: me,
+      projectId: ws,
+      name: input.name,
+      refusal: PROJECT_UNAVAILABLE,
+    });
   }
   if (input.domain !== undefined) {
     if (!VALID_DOMAINS.has(input.domain)) {
@@ -1024,54 +1027,30 @@ export async function setNotificationPrefAction(
 export async function deleteWorkspaceAction(
   projectId?: string,
 ): Promise<{ ok: true }> {
-  const { projectId: ws } = await provedSettingsProject(
-    projectId,
-    "deleteOrTransferOwnership",
-    "Only the owner can delete this workspace.",
-  );
-  // Read the slug BEFORE the row is gone. `/p/{slug}` is ISR with a 60s
-  // window, so without an explicit revalidation a deleted published workspace
-  // keeps serving its cached page — task titles, tags, and the guests' and
-  // suppliers' names in them — for up to a minute after the owner deleted it.
-  // publish and unpublish both revalidate; delete did not. E06.12, 2026-08-03.
-  const [published] = await db
-    .select({ slug: workspaces.slug, publishedAt: workspaces.publishedAt })
-    .from(workspaces)
-    .where(eq(workspaces.id, ws));
-
-  // The physical legacy tasks/share tables did not consistently carry
-  // workspace FKs. Delete public capabilities and task roots explicitly so a
-  // Workspace deletion cannot leave a resolvable share or invisible orphan.
-  await db.transaction(async (tx) => {
-    const linkRows = await tx
-      .select({ token: shareLinks.token })
-      .from(shareLinks)
-      .where(eq(shareLinks.workspaceId, ws));
-    const tokens = linkRows.map((row) => row.token);
-    if (tokens.length > 0) {
-      await tx
-        .delete(shareLinkVisits)
-        .where(inArray(shareLinkVisits.token, tokens));
-    }
-    await tx.delete(shareLinks).where(eq(shareLinks.workspaceId, ws));
-    await tx.delete(tasks).where(eq(tasks.workspaceId, ws));
-    await tx.delete(workspaces).where(eq(workspaces.id, ws));
+  // WP6: the cascade, the receipt, and the E06.12 `/p/{slug}` revalidation
+  // all live in the consolidated service's `deleteProject` — the ONE delete
+  // path, shared with the sidebar's `deleteProjectAction`. This adapter only
+  // resolves the authorization context (explicit id, else the fail-closed
+  // ambient value; the service proves `deleteOrTransferOwnership` over it)
+  // and keeps the legacy cookie handling, which is lane C's to consolidate
+  // (D-021).
+  const [me, ambient] = await Promise.all([
+    getCurrentUser(),
+    getActiveWorkspaceOrNull(),
+  ]);
+  const removed = await deleteProject({
+    actorUserId: me,
+    projectId: projectId ?? ambient,
+    refusal: "Only the owner can delete this workspace.",
   });
   // Clear the cookie only when it is the one pointing at the now-dead
   // Project. Unconditional deletion was correct while the cookie WAS the
   // destination; now that the caller may name a different Project, clearing it
   // regardless would sign the operator out of a Project they did not delete.
   const c = await cookies();
-  if (c.get(ACTIVE_WORKSPACE_COOKIE_NAME)?.value === ws) {
+  if (c.get(ACTIVE_WORKSPACE_COOKIE_NAME)?.value === removed.id) {
     c.delete(ACTIVE_WORKSPACE_COOKIE_NAME);
   }
-  // Drop the public page immediately rather than at the end of the ISR window.
-  // Unconditional on publishedAt: a workspace published and unpublished
-  // earlier may still hold a cached entry, and revalidating a path that was
-  // never cached costs nothing.
-  if (published?.slug) revalidatePath(`/p/${published.slug}`);
-  revalidatePath("/app", "layout");
-  emitTasksChanged({ kind: "seed" });
   return { ok: true };
 }
 

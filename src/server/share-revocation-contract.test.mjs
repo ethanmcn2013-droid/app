@@ -5,7 +5,13 @@ import { readFileSync } from "node:fs";
 const page = readFileSync(new URL("../app/share/[token]/page.tsx", import.meta.url), "utf8");
 const actions = readFileSync(new URL("./actions/share.ts", import.meta.url), "utf8");
 const queries = readFileSync(new URL("./db/queries.ts", import.meta.url), "utf8");
-const settings = readFileSync(new URL("./actions/settings.ts", import.meta.url), "utf8");
+// WP6 consolidated the two workspace-delete implementations into the one
+// service; the explicit share/task cascade this file protects moved with it,
+// so this file follows it (same reasoning as the resolver move below).
+const service = readFileSync(
+  new URL("./projects/service.ts", import.meta.url),
+  "utf8",
+);
 // E08.06 / R-033 moved the share-link credential check out of queries.ts and
 // into its own database-injected module so it could be tested directly. The
 // workspace guard this file protects moved with it, so this file follows it
@@ -41,9 +47,8 @@ test("share resolution requires a current non-archived workspace", () => {
 });
 
 test("workspace deletion explicitly removes share capabilities and task roots first", () => {
-  const deletion = settings.slice(
-    settings.indexOf("export async function deleteWorkspaceAction"),
-    settings.indexOf("Plain-English workspace activity feed"),
+  const deletion = service.slice(
+    service.indexOf("export async function deleteProject("),
   );
   const shares = deletion.indexOf("delete(shareLinks)");
   const taskRoots = deletion.indexOf("delete(tasks)");

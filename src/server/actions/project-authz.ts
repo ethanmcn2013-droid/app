@@ -134,6 +134,15 @@ export type ProjectDenial = Readonly<{
 export type ProjectAuthorization = ProjectGrant | ProjectDenial;
 
 /**
+ * The executor a capability proof runs on. Defaults to the process db; the
+ * consolidated Project service (`src/server/projects/service.ts`) passes its
+ * open transaction so a multi-statement operation re-proves against the same
+ * snapshot it is about to write — the WP6 replacement for planning.ts's
+ * `requireWorkspaceOwnerInTransaction`.
+ */
+export type AuthzQueryExecutor = Pick<typeof db, "select">;
+
+/**
  * The proof. One membership row for one Project and one actor, joined only to
  * what the capability model needs, and evaluated as an authorization decision
  * rather than used as a filter on someone else's query.
@@ -150,8 +159,9 @@ export async function proveProjectCapability(
   projectId: ProjectId,
   capability: ProjectCapabilityKey,
   archivePolicy: ArchivePolicy = "defer",
+  executor: AuthzQueryExecutor = db,
 ): Promise<ProjectAuthorization> {
-  const [row] = await db
+  const [row] = await executor
     .select({
       membershipRole: workspaceMembers.role,
       workspaceOwnerUserId: workspaces.ownerUserId,
