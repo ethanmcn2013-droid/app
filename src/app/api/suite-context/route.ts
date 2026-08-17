@@ -57,6 +57,13 @@ export async function GET(request: NextRequest) {
   }
   const authorizedResponse = NextResponse.redirect(authorizedTarget, 303);
   authorizedResponse.headers.set("Cache-Control", "private, no-store, max-age=0");
+  // D-021 writer #1 (docs/wave/DECISIONS.md): this is the inbound
+  // contextual-link handler, and this write makes following a contextual link
+  // rewrite the bare-entry preference — the accepted, bounded contradiction
+  // with ADR 0001 §4, which says only an explicit Project selection may.
+  // Whether inbound suite links count as explicit selection is a FOUNDER
+  // decision, still open; record it there, do not patch it here. Attributes
+  // are pinned by `src/server/projects/active-project-contract.test.mjs`.
   authorizedResponse.cookies.set(ACTIVE_WORKSPACE_COOKIE_NAME, workspaceId, {
     path: "/",
     sameSite: "lax",

@@ -114,10 +114,17 @@ test("the unified cookie name is spelled in exactly one module", () => {
  *     silently downgrades the preference to a session cookie. DONE, and it
  *     gained `secure` too, which this note had listed as outstanding.
  *
- * Still outstanding, unchanged: `settings.ts` has neither `httpOnly` nor
- * `secure` (deferred — another session owned that file during WP3), and
- * `suite-context/route.ts` still rewrites the preference on a contextual link,
- * which needs a ratification or a change rather than a patch (D-021 item 4).
+ * ── Landed, from the WP6 transition lane (2026-08-17) ──────────────────────
+ *
+ * `settings.ts` — `httpOnly` and `secure` added and re-pinned below at the
+ * full five-attribute set. That was the last writer missing either; all five
+ * writers now carry identical attributes, though they remain five writers.
+ *
+ * Still outstanding, unchanged: `suite-context/route.ts` rewrites the
+ * preference on a contextual link, which needs a ratification or a change
+ * rather than a patch (D-021 interface request 4, a FOUNDER decision — the
+ * write now carries a pointer comment saying so), and the migration of all
+ * five onto `writeActiveProjectCookie` (request 5) has not begun.
  */
 const LEGACY_COOKIE_WRITERS = {
   // The inbound suite-link handler. `src/app/app/page.tsx` redirects into it,
@@ -128,8 +135,10 @@ const LEGACY_COOKIE_WRITERS = {
   // preference was readable by any script on the page.
   "src/server/actions/cross-workspace.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
   "src/server/actions/planning.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
-  // No httpOnly and no secure. Still outstanding.
-  "src/server/actions/settings.ts": ["maxAge", "path", "sameSite"],
+  // Fixed by WP6 lane C: had neither httpOnly nor secure, so accepting an
+  // invite downgraded the preference to a script-readable cookie until the
+  // next writer ran.
+  "src/server/actions/settings.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
   // Fixed by WP3, further than asked: the 30-day maxAge (it was a session
   // cookie where every sibling writes 30 days) AND `secure`.
   "src/server/actions/templates.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
@@ -241,12 +250,21 @@ test("useSearchParams is quarantined in the bridge, under its own Suspense", () 
   );
 });
 
+/**
+ * Renegotiated 2026-08-17 by the WP6 transition lane, not deleted: the guard
+ * used to pin `return false;`, and `selectProject` now answers with a
+ * structured result because a caller has to RENDER a refusal — a bare boolean
+ * cannot say what is unsaved or whose copy to show. What the old pin actually
+ * protected is unchanged and re-asserted here: the ref check is the first
+ * synchronous statement, the ref is claimed before anything dispatches, and
+ * the ref is never touched during render.
+ */
 test("the provider's one-selection guard is synchronous, not stateful", () => {
   const selectBody = provider.slice(provider.indexOf("const selectProject = useCallback"));
-  const guardAt = selectBody.indexOf("if (pendingRef.current) return false;");
+  const guardAt = selectBody.indexOf('if (pendingRef.current) return { kind: "switch-pending" };');
   const claimAt = selectBody.indexOf("pendingRef.current = true;");
   const dispatchAt = selectBody.indexOf('type: "select-started"');
-  assert(guardAt > 0 && claimAt > guardAt, "the ref is claimed immediately after the check");
+  assert(guardAt > 0 && claimAt > guardAt, "the ref check remains the first refusal");
   assert(
     claimAt < dispatchAt,
     "two clicks in one React batch would both read a pre-batch state value; the ref is what serializes them",
@@ -258,6 +276,93 @@ test("the provider's one-selection guard is synchronous, not stateful", () => {
     provider.indexOf("const onRoute = useCallback"),
   );
   assert.doesNotMatch(renderBody, /pendingRef\.current/);
+});
+
+/**
+ * WP6: the unsaved-work hold. The map (§6) is explicit that production had no
+ * host signal for unsaved work — the only dirty tracking was Notes-local
+ * behind a same-tab beforeunload, which never fires on a client navigation.
+ * These pin the wiring the pure tests cannot see:
+ * `src/lib/projects/unsaved-work.test.ts` proves the store and the hold rule;
+ * `src/lib/projects/active-project-machine.test.ts` proves the reducer.
+ */
+test("selectProject consults the unsaved-work signal before a switch may start", () => {
+  const selectBody = provider.slice(provider.indexOf("const selectProject = useCallback"));
+  const guardAt = selectBody.indexOf("if (pendingRef.current)");
+  const consultAt = selectBody.indexOf("refuseForUnsavedWork(unsavedWork.claims())");
+  const refuseDispatchAt = selectBody.indexOf('type: "select-refused"');
+  const claimAt = selectBody.indexOf("pendingRef.current = true;");
+  assert(consultAt > guardAt, "the pending guard stays first; the hold is consulted next");
+  assert(
+    consultAt < claimAt,
+    "the hold must be consulted BEFORE the ref is claimed: a held switch never starts, so it must leave nothing pending",
+  );
+  assert(
+    refuseDispatchAt > consultAt && refuseDispatchAt < claimAt,
+    "the refusal reaches shared state so the Active Project chrome can render it whoever tripped it",
+  );
+  // The store is read synchronously in the handler, never via a hook value: a
+  // hook-carried claims list is one render stale, which is exactly the window
+  // a second click lives in.
+  assert.doesNotMatch(provider, /useUnsavedWorkClaims/);
+});
+
+test("the unsaved-work signal is consumable by surfaces that know nothing about Notes", () => {
+  const signalLib = read("src/lib/projects/unsaved-work.ts");
+  const signalContext = read("src/components/app/unsaved-work-context.tsx");
+  // Sources are vocabulary, not imports: the seam must never reach into the
+  // publisher's module, or every renderer of a refusal inherits Notes. Match
+  // on comment-stripped code — the docblocks may (and do) name the path while
+  // saying exactly this.
+  for (const source of [signalLib, signalContext, provider]) {
+    const code = source
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    assert.doesNotMatch(code, /modules\/notes/);
+  }
+  // The claim carries state and copy, never behaviour: resolution stays with
+  // the owning surface, so the seam exposes no save/retry/discard callbacks.
+  assert.doesNotMatch(signalLib, /onSave|onRetry|onDiscard|resolve\s*:/);
+  // Notes publishes into the seam from the same dirty truths its beforeunload
+  // guard reads, and that guard survives untouched — the signal covers client
+  // navigations, beforeunload covers the tab.
+  const notes = read("src/modules/notes/app/workspace/NotesWorkspace.tsx");
+  assert.match(notes, /useUnsavedWork\(\)/);
+  for (const source of ['"notes-draft"', '"notes-edit"', '"notes-capture"']) {
+    assert.ok(notes.includes(source), `Notes publishes and clears ${source}`);
+  }
+  assert.match(notes, /beforeunload/);
+});
+
+/**
+ * WP6: the Tasks sidebar is repointed onto the guarded transition — flag on,
+ * a leaf click travels through the provider to `switchActiveProjectAction`;
+ * flag off, the legacy `selectWorkspaceAction` + `router.refresh()` pair runs
+ * exactly as it always has. Same discipline as every gate in this programme:
+ * the off path is not merely equivalent, it is the same statements.
+ */
+test("the Tasks sidebar switches through the provider flag-on and is unchanged flag-off", () => {
+  const sidebar = read("src/components/studio-bar/projects-sidebar.tsx");
+  const chooseBody = sidebar.slice(
+    sidebar.indexOf("function chooseWorkspace("),
+    sidebar.indexOf("const refreshTree"),
+  );
+  const enabledAt = chooseBody.indexOf("if (activeProject?.enabled)");
+  const providerCallAt = chooseBody.indexOf("activeProject.selectProject(");
+  const legacyAt = chooseBody.indexOf("await selectWorkspaceAction(id);");
+  assert(enabledAt > 0, "the client reads `enabled` off context, never the env var");
+  assert(
+    providerCallAt > enabledAt && providerCallAt < legacyAt,
+    "flag on, the switch is the guarded WP2 transition, decided before the legacy path",
+  );
+  // The WP2 path names its destination from the enum — no return URLs.
+  assert.match(chooseBody, /\{ surface: "tasks" \}/);
+  // The legacy pair survives byte-for-byte, inside the transition it always ran in.
+  assert.match(
+    chooseBody,
+    /await selectWorkspaceAction\(id\);\s*\n\s*router\.refresh\(\);/,
+    "flag off keeps today's behaviour exactly",
+  );
 });
 
 test("the /app shell mounts the provider only when the flag is on", () => {
