@@ -66,7 +66,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Full history, because this job is the only one that runs the council,
+      # and the council verifies that the commit its external baseline was
+      # reviewed against is genuinely reachable — a receipt pinned to a commit
+      # nobody can find is not a receipt. The default shallow checkout has one
+      # commit in it, so that check could never pass on a runner.
+      #
+      # This was latent long before it was visible: the previous baseline pinned
+      # a commit from 9 August and the same check failed on it every run,
+      # swallowed by the `continue-on-error` mask. Removing the mask (D-029) is
+      # what surfaced it, which is the mask's whole indictment — it was hiding a
+      # real integrity check that had never once been evaluated.
+      #
+      # The check is not relaxed to fit the runner. The runner is given the
+      # history the check needs.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
