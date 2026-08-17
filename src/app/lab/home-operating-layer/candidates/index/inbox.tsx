@@ -22,7 +22,14 @@
  */
 
 import type { HomeCandidateProps, InboxRow } from "@/lib/home-layer/lab-shell";
-import { Flag, Page, Perms, entryAnchor } from "./parts";
+import {
+  Dispositions,
+  Flag,
+  LAB_WRITES_NOTHING,
+  Page,
+  WritesNothing,
+  entryAnchor,
+} from "./parts";
 
 const DETAIL_ID = "ri-open-event";
 
@@ -118,6 +125,18 @@ function QueueRow({
           </span>
         ) : null}
       </a>
+
+      {/*
+        THE DISPOSITIONS, ON THE ROW, OUTSIDE ITS LINK.
+        Mark as read, Snooze, Approve at the source and Clear from Inbox are
+        the four things a reader arrives at this queue to do, and in round 4
+        every one of them cost a navigation because the row offered only OPEN.
+        They are named here, in the arrival state, with the shut ones struck
+        through and carrying their reason. Outside the link rather than inside
+        it, so the row keeps one 44 px target and nothing interactive is ever
+        nested in a wrapping link.
+      */}
+      <Dispositions actions={row.actions} exclude={["open"]} />
     </li>
   );
 }
@@ -172,7 +191,7 @@ function Detail({ props }: { props: HomeCandidateProps }) {
         <dd>{row.sourcePath}</dd>
       </dl>
 
-      <Perms actions={row.actions} show="all" label="What you can do here" />
+      <Dispositions actions={row.actions} exclude={["open"]} label="What you can do here" />
 
       <details className="ri-snooze">
         <summary className="ri-summary">
@@ -215,6 +234,16 @@ export function InboxMode({ props }: { props: HomeCandidateProps }) {
         inbox.selectionMissingLine ? <Flag>{inbox.selectionMissingLine}</Flag> : null
       }
     >
+      {/*
+        Said once for the whole queue, not once on each of fifty rows, and after
+        what limited the read rather than before it: a note about what this
+        surface can write is a note about the dispositions below, not a
+        qualification of the read above.
+      */}
+      {inbox.groups.length > 0 ? (
+        <WritesNothing>{LAB_WRITES_NOTHING}</WritesNothing>
+      ) : null}
+
       {selectedId ? <Detail props={props} /> : null}
 
       {/*

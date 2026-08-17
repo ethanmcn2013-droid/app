@@ -11,34 +11,53 @@
  *      80px, and `scripts/check-tap-target-scale.mjs` fails a build on a sizing
  *      utility at index 11. A 44px target written as `min-height: 44px` cannot
  *      be misread by a person or a script.
- *   3. Every rule below renders on the server. The direction ships zero client
- *      JavaScript, so it spends none of the programme's 0.9 KB of shared
- *      runtime headroom.
+ *   3. Almost every rule below renders on the server. One file in this direction
+ *      ships client JavaScript — `dispositions.tsx`, 1.91 KB gzip, route-local
+ *      — and it spends none of the programme's 0.9 KB of SHARED runtime
+ *      headroom, because a route-local island never enters the shared chunk.
  *
- * COLOUR, AND WHAT ROUND 3 CHANGED ABOUT IT.
+ * WHAT THIS STYLESHEET ACTUALLY SHIPS, because round 4 measured the wrong file.
+ *
+ * Round 4 recorded "largest CSS payload of the four: 62.4 KB raw / 16.4 KB gzip,
+ * against Rail's 34.4 / 6.3. That is 2.6x the leanest direction in
+ * render-blocking bytes shipped on every Home route." The worry is the right
+ * worry. The number is of the source file, comments included, and comments do
+ * not ship: Next 16 minifies CSS with Lightning CSS, which strips them. Run
+ * through that same minifier at the same browser targets, all four directions as
+ * they stand today:
+ *
+ *              source     minified     gzip
+ *   rail       36.9 KB      22.1 KB   3.71 KB
+ *   desk       69.6 KB      25.9 KB   4.74 KB     ← this file
+ *   editorial  53.8 KB      28.8 KB   4.78 KB
+ *   index      62.9 KB      31.8 KB   5.13 KB
+ *
+ * So the shipped figure is 4.74 KB gzip: 1.28x the leanest direction rather than
+ * 2.6x, and below two of the other three. This file is comment-heavy on purpose
+ * — the reasoning is what a reviewer is owed — and none of it reaches a browser.
+ * The three comparison rows are read from the other directions' live files and
+ * those are being edited in parallel, so treat them as of this round rather than
+ * as fixed.
+ *
+ * COLOUR, AND WHAT ROUND 5 SETTLED ABOUT IT.
  *
  * Round 2 warmed the whole canvas, so every sentence in Home sat on a paper the
- * other three products do not use. Four directors raised the same cost: Home is
- * explicitly not a fourth product, and its own paper is the one cue that argues
- * it is, so a founder leaving Home for Tasks crossed a visible seam in a suite
- * meant to read as one operating system. One director defended the warmth as a
- * real pro-attention move at 7am, and was also right.
+ * other three products do not use. Round 3 moved the warmth off the text and
+ * into the surround: a warm DESK, and a SHEET of the estate's own `--paper` on
+ * top of it, so no word was ever read on a Home-only material.
  *
- * Both are satisfied by putting the warmth where there is no text. There is a
- * DESK and there is a SHEET. The desk is the full-bleed canvas and it is warm;
- * the sheet is the reading frame, and it is `--paper`, the estate's own white,
- * whose token comment reads "locked by operator decision". Every word a reader
- * reads in Home is therefore on exactly the paper it would be on in Notes, Tasks
- * and Timeline, and there is no seam under any sentence. At 1440 roughly two
- * thirds of the screen is still the warm desk, so the 7am quality survives the
- * change; at 390 the sheet fills the window and the warmth is the chrome band,
- * which is the same answer read at a different width.
+ * That halved the objection and did not close it. Four directors still recorded
+ * the warm ground as a standing cost, because at 1440 two thirds of the screen
+ * was a colour no other product uses, and the round-5 brief made the choice
+ * explicit: ratify a warmed canvas as a register amendment, or drop it.
  *
- * It also settles the hardcoded-colour finding. There is now exactly ONE literal
- * colour in this stylesheet — `--dk-warm`, the hue this direction invents — and
- * the desk is mixed from it against `--paper`. Because `--paper` is itself
- * theme-aware, the dark desk is derived rather than typed: no second literal, no
- * second palette, no dark-mode build still ahead of the direction.
+ * IT IS DROPPED. The desk is `--paper-deep` now, a ratified theme-aware token
+ * the other three products already use for their own recessed surfaces. The
+ * two-plane thesis is untouched and in fact strengthened — #f4f4f5 against white
+ * is a wider step than #faf7f1 was — the suite seam closes, and this stylesheet
+ * declares no literal colour at all. There is nothing left here for a register
+ * amendment to be about. The full argument, including what is lost, is at the
+ * head of `candidate.tsx`.
  *
  * There is one semantic ink, `--dk-alarm`, spent in exactly two places: a rule
  * that stops because a source refused, and an overdue date. It is never the only
@@ -48,25 +67,54 @@
  * four different silhouettes, which is the point of drawing state rather than
  * tinting it.
  *
- * Contrast, measured against the values below rather than assumed:
+ * Contrast, remeasured after round 5 moved the desk onto `--paper-deep`:
  *   --ink #111 on the sheet #ffffff                18.1:1
  *   --dk-quiet #3f3f46 on the sheet                10.4:1
- *   --dk-quiet on the desk #faf7f1                  9.6:1   (floor 7:1, ≤13px)
+ *   --dk-quiet on the desk #f4f4f5                  9.3:1   (floor 7:1, ≤13px)
  *   --dk-alarm on the sheet                         7.6:1
  *   --dk-spine (50% ink) on the sheet               3.6:1   (floor 3:1, 1.4.11)
  *   --dk-mark = --accent on the sheet               6.3:1
- *   dark: sheet #0f0f10, desk #1b1813, quiet ink 11.2:1, mark (indigo-400) 6.2:1
+ *   --ink on a struck row action                    the label keeps --ink-soft
+ *                                                   at 10.4:1; the strike is
+ *                                                   drawn in --dk-spine, so the
+ *                                                   text never drops below the
+ *                                                   floor to say it is closed
+ *   dark: sheet #0f0f10, desk #1d1d20, quiet ink 11.2:1, mark (indigo-400) 6.2:1
  */
 
 .dk {
-  /* The one literal colour in the direction, and the only thing the wildcard's
-     palette licence is spent on. Everything else is mixed from a theme token,
-     so both themes follow from this single declaration. */
-  --dk-warm: #b98a3c;
-
-  /* THE SHEET is the estate's own paper. THE DESK is the warm surround. */
+  /*
+   * ROUND 5 · THE GROUND IS RATIFIED TOKENS NOW, AND THE HUE IS GONE.
+   *
+   * The desk was `color-mix(in srgb, var(--paper) 93%, #b98a3c)`, which resolves
+   * to #faf7f1: one invented hue, at seven percent, behind the sheet. Four
+   * directors named it as a standing cost and the round-5 brief put the choice
+   * plainly — ratify it as an explicit register amendment or drop it. The full
+   * argument is in `candidate.tsx`; the decision is here, and it is to drop it.
+   *
+   * The thesis was never the hue. It was the two planes: a ground that is not
+   * the paper, so "where I am in the app" and "what this page says" are
+   * materially different surfaces before a word is read. That thesis is free,
+   * because the estate already ships a ratified, theme-aware, recessed surface
+   * for exactly this job. `--paper-deep` IS the desk. It is #f4f4f5 in light and
+   * #1d1d20 in dark, both already in `src/ds/tokens.css`, both already used by
+   * Notes, Tasks and Timeline for their own recessed planes.
+   *
+   * What this buys, and it is three things rather than one.
+   *   1. There is no register amendment to file, and nothing for `ds:check` to
+   *      have an opinion about. The direction now declares zero literal colours.
+   *   2. The suite seam closes. A founder leaving Home for Tasks crosses no
+   *      material they have not already crossed inside Tasks.
+   *   3. The two planes get FURTHER apart, not closer. #f4f4f5 against white is
+   *      a wider step than #faf7f1 was, so the device two directors scored this
+   *      direction 9 for is stronger after the change than before it.
+   *
+   * What it costs, said plainly: the 7am warmth is gone. It was seven percent of
+   * a gold and most readers could not have named it, but it was real and it was
+   * mine, and this is a trade rather than a free win.
+   */
   --dk-paper: var(--paper);
-  --dk-desk: color-mix(in srgb, var(--paper) 93%, var(--dk-warm));
+  --dk-desk: var(--paper-deep);
 
   --dk-rule: color-mix(in srgb, var(--dk-paper) 86%, var(--ink));
   /* Meaning-bearing: the spine breaks where a read broke, so it is held at the
@@ -147,10 +195,10 @@
 }
 
 [data-theme="dark"] .dk {
-  /* The desk needs no second literal: `--paper` is theme-aware, so the same mix
-     yields a warm near-black. indigo-600 measures 2.93:1 on the dark paper,
-     under the 3:1 floor, and the estate already ratified indigo-400 for the
-     accent-as-a-colour role. */
+  /* The desk needs no second declaration: `--paper-deep` is theme-aware, so the
+     dark desk follows the estate rather than a second palette. indigo-600
+     measures 2.93:1 on the dark paper, under the 3:1 floor, and the estate
+     already ratified indigo-400 for the accent-as-a-colour role. */
   --dk-mark: var(--indigo-400);
 }
 
@@ -1508,16 +1556,40 @@
 /* ── What a row offers ────────────────────────────────────────────────────── */
 
 /*
- * On the row, at arrival, in words. A link is a real control; an offer with no
- * href is named rather than drawn as a button that would write nothing; an offer
- * closed to you keeps its label and carries its reason on the same line, because
- * a control that vanishes tells the reader nothing about why.
+ * ROUND 5 · THESE ARE BUTTONS NOW, AND THEY STILL DO NOT LOOK LIKE BUTTONS.
+ *
+ * Round 4 was right that the strip was inert: `<b>Mark as read</b>` inside an
+ * `<li>` is not a control, and six of the sixteen journeys were unbuilt because
+ * of it. Every entry is a real `<button>` now.
+ *
+ * What did NOT change is the look, and that is the whole point of the fix. The
+ * complaint was semantic, not visual. Four bordered pill buttons on every row of
+ * a fifty-row queue is exactly the "dashboard widget furniture" the brief
+ * rejects on sight, and it would have destroyed the one thing this direction is
+ * for: a page you read. So the buttons are set as text — no border, no fill, no
+ * radius, the same size and the same ink as the words above them — and they earn
+ * their affordance from a dotted underline, a real hover, a real focus ring and
+ * a 44px target. A row still reads as a sentence. It just answers now.
  */
 .dk-rowacts {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
+  /* Column gap wide enough that two labels never read as one phrase; row gap
+     zero because the 44px targets already carry the vertical rhythm. */
   gap: 0 var(--space-4);
+  /*
+   * THE STRIP IS A BAND, NOT A RAGGED LINE, and this is the second half of the
+   * volume answer.
+   *
+   * Cutting the repeated explanations removes most of the grey text at fifty
+   * rows. What remains is fifty strips starting at fifty different places,
+   * because each one began wherever the metadata line above it happened to end.
+   * Pinning every strip to the entry's own left edge turns them into one
+   * vertical band the eye can skip in a single movement, so a reader scanning
+   * titles is not also reading controls. Composition doing the work that
+   * deletion was being asked to do.
+   */
   margin: var(--space-1) 0 0;
   padding: 0;
   list-style: none;
@@ -1528,41 +1600,192 @@
 .dk-rowacts li {
   display: inline-flex;
   align-items: baseline;
-  gap: var(--space-2);
 }
 
-.dk-rowacts li[data-available="true"] a {
+/*
+ * A control set as text. `min-height: 44px` written in pixels rather than
+ * through a spacing utility, for the reason at the head of this file.
+ */
+.dk-actbtn {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: inherit;
   color: var(--ink-soft);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-style: dotted;
   text-decoration-color: var(--dk-spine);
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
-.dk-rowacts li[data-available="true"] a:hover {
+.dk-actbtn:hover {
   color: var(--ink);
+  text-decoration-style: solid;
+  text-decoration-color: var(--dk-mark);
 }
 
-.dk-rowacts li[data-available="true"] b {
-  font-weight: var(--weight-medium);
-  color: var(--ink-soft);
-}
-
-/* A closed offer keeps its label at the same size and drops one ink step, then
-   states the reason beside it at caption scale. It is legible and it is quiet,
-   which is the correct order for something you cannot do. */
-.dk-rowacts li[data-available="false"] {
+/*
+ * A closed action keeps its label at the same size and the same ink, and says it
+ * is closed by being struck through. It is NOT greyed to the point of illegible:
+ * the reason a reader cannot do something is worth reading, so the strike is
+ * drawn in the spine ink and the words stay at 10.4:1.
+ *
+ * `aria-disabled` rather than `disabled`, so the control keeps its place in the
+ * tab order and the reason bound to it with `aria-describedby` stays reachable.
+ * A control nobody can focus is a control whose explanation nobody ever hears.
+ */
+.dk-rowacts li[data-available="false"] .dk-actbtn {
   color: var(--dk-quiet);
+  text-decoration: line-through;
+  text-decoration-color: var(--dk-spine);
+  cursor: default;
 }
 
-.dk-rowacts li[data-available="false"] b {
-  font-weight: var(--weight-regular);
+.dk-rowacts li[data-available="false"] .dk-actbtn:hover {
+  color: var(--dk-quiet);
   text-decoration: line-through;
   text-decoration-color: var(--dk-spine);
 }
 
-.dk-rowacts li[data-available="false"] span {
+/* While the source is being waited on, nothing on the row is pressable and the
+   whole strip says so at once rather than one control at a time. */
+.dk-rowacts li[data-waiting="true"] .dk-actbtn {
+  cursor: progress;
+}
+
+/*
+ * THE REASONS, PRINTED ONCE PER PAGE RATHER THAN ONCE PER ROW.
+ *
+ * At twelve rows or more this list holds each distinct refusal exactly once,
+ * with the number of rows it covers attached, and every other row points at it
+ * with `aria-describedby`. Below twelve, each row prints its own and this list
+ * is one or two lines. Either way it is set at caption scale under the strip,
+ * because it explains the strip rather than competing with it.
+ */
+.dk-why {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  max-width: var(--dk-measure);
   font-size: var(--text-caption);
+  color: var(--dk-quiet);
+}
+
+.dk-why li + li {
+  margin-top: 2px;
+}
+
+/*
+ * A block that speaks for other rows says so by standing slightly apart from
+ * the row it happens to sit on. One hairline and 10px of indent, no label and no
+ * box: enough that a reader treats it as a key for the queue rather than as this
+ * one row's unusually long explanation, and not enough to become furniture.
+ */
+.dk-why[data-shared] {
+  margin-top: var(--space-2);
+  padding-left: var(--space-3);
+  border-left: 1px solid var(--dk-rule);
+}
+
+/* The count is what turns a repetition into a measurement, so it is set one
+   step firmer than the sentence it qualifies. */
+.dk-why-count {
+  color: var(--ink-soft);
+}
+
+/* ── The snooze menu, and the three lines a disposition can leave behind ───── */
+
+.dk-menu {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--dk-desk);
+  border-radius: var(--radius-lg);
+  max-width: var(--dk-measure);
+}
+
+.dk-menu ul {
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dk-menu button {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--text-body-sm);
+  color: var(--ink-soft);
+  text-align: left;
+  cursor: pointer;
+}
+
+.dk-menu button:hover {
+  color: var(--ink);
+}
+
+.dk-menu button b {
+  font-weight: var(--weight-medium);
+}
+
+.dk-menu button span {
+  font-size: var(--text-caption);
+  color: var(--dk-quiet);
+}
+
+/* Three outcomes, three treatments, and none of them a toast. They are lines on
+   the row, in the row's own ink, exactly where the control that caused them is. */
+.dk-pending,
+.dk-committed {
+  color: var(--dk-quiet);
+}
+
+.dk-refused {
+  color: var(--dk-alarm);
+}
+
+.dk-refused .dk-actbtn {
+  color: var(--dk-alarm);
+  text-decoration-color: var(--dk-alarm);
+}
+
+/* What just happened, announced inside the readline, which is this direction's
+   one polite region. It is set as a note rather than as an alert: it reports,
+   it does not interrupt. */
+.dk-say {
+  margin-top: var(--space-2);
+  color: var(--ink-soft);
+}
+
+/* A responsibility the source has confirmed as done strikes its own title and
+   stays in place until the next read, which is what the words beside it say. */
+.dk-entry[data-done="true"] .dk-title a {
+  text-decoration: line-through;
+  text-decoration-color: var(--dk-spine);
+}
+
+/*
+ * The opened detail stacks its strip rather than running it inline: there is one
+ * of them on the page, the reader asked for exactly this, and there is room.
+ */
+.dk-rowacts[data-variant="detail"] {
+  flex-direction: column;
+  gap: 0;
+  margin-top: var(--space-2);
 }
 
 /* ── The opened row ───────────────────────────────────────────────────────── */
@@ -1609,6 +1832,13 @@
   overflow-wrap: anywhere;
 }
 
+/*
+ * Analytics' plain list of what a claim does and does not cover. It kept the
+ * name when the row-action version of this component was replaced by real
+ * controls; the four rules that only served the old grouped Inbox offers went
+ * with the component, because a stylesheet that outlives its markup is how a
+ * 62 KB file gets to 62 KB.
+ */
 .dk-offers {
   margin: 0;
   padding: 0;
@@ -1616,32 +1846,8 @@
   font-size: var(--text-body-sm);
 }
 
-.dk-offer-set > * + * {
-  margin-top: var(--space-3);
-}
-
 .dk-offers li + li {
   margin-top: var(--space-2);
-}
-
-.dk-offers li[data-available="false"] b {
-  display: block;
-}
-
-.dk-offers li[data-available="false"] span {
-  display: block;
-  color: var(--dk-quiet);
-}
-
-/* An offer that is a real link is a real control, so it takes the 44px. */
-.dk-offers a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-
-.dk-offers li[data-available="false"] {
-  color: var(--dk-quiet);
 }
 
 .dk-offers b {
@@ -1751,27 +1957,10 @@
   font-size: var(--text-body-sm);
 }
 
-.dk-snooze {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: var(--text-body-sm);
-}
-
-.dk-snooze li + li {
-  margin-top: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--dk-rule);
-}
-
-.dk-snooze b {
-  display: block;
-  font-weight: var(--weight-medium);
-}
-
-.dk-snooze span {
-  color: var(--dk-quiet);
-}
+/* `.dk-snooze` lived here and is gone with its markup. It styled a `<details>`
+   that listed the snooze choices as prose, which was the best a direction with
+   no controls could do. The choices are a menu on a real button now, so the fold
+   and its four rules are furniture. */
 
 /* ── Analytics ────────────────────────────────────────────────────────────── */
 
@@ -2112,6 +2301,27 @@
     content: "";
     display: inline-block;
     width: var(--space-3);
+  }
+
+  /*
+   * THE STRIP IS A GRID ON A PHONE, and this came out of a capture rather than
+   * a principle.
+   *
+   * Wrapped, four actions at 390 broke three-and-one, and because every control
+   * holds its 44px target the orphan sat under a 44px band of air and read as a
+   * mistake. Two columns of two is the same height, aligned on both axes, and it
+   * reads as a set of things you can do rather than as a sentence that ran out
+   * of room. The targets are untouched: each cell is still at least 44px tall
+   * and now roughly half the sheet wide, which is more, not less.
+   */
+  .dk-rowacts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 var(--space-4);
+  }
+
+  .dk-rowacts[data-variant="detail"] {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -10,19 +10,60 @@
  * not change the furniture around them. That is the whole of the spatial
  * continuity, and it costs one pixel of width.
  *
- * ROUND 3 MOVED THE WARMTH OFF THE PAGE AND INTO THE ROOM, and that is the one
- * structural change this round makes. Four directors raised the warm canvas as a
- * standing cost: Home is explicitly not a fourth product, and giving it its own
- * paper is the single cue that argues it is, so a founder leaving Home for Tasks
- * crossed a visible seam in a suite that is meant to read as one system. One
- * director protected it as a real pro-attention move at 7am and was also right.
- * Both are satisfied by putting the warmth where there is no text: the words in
- * Home now sit on `--paper`, the same white as Notes, Tasks and Timeline, and
- * the warmth is the surround the sheet lies on. At 1440 two thirds of the screen
- * is still warm, so the 7am quality survives; under every sentence the reader
- * actually reads, the paper is the estate's, so the seam does not exist. The
- * token comment says it outright — "Paper — white, locked by operator decision"
- * — and a wildcard's licence covers expression, not a locked decision.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * ROUND 5 · THE WARM GROUND. THE CALL IS TO DROP IT, AND HERE IS THE ARGUMENT.
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * The brief put it as a choice with no third option: a warmed canvas is a
+ * genuine register deviation, the design tokens are vendored and `ds:check`
+ * forbids local overrides, so the warmth has to be ratified as an explicit
+ * register amendment or dropped. It also carried the seam note: Home on warm
+ * ground and the three products on white is a visible join in a suite meant to
+ * read as one system.
+ *
+ * WHAT THE WARMTH ACTUALLY WAS, because the argument turns on the number. Round
+ * 2 warmed the whole canvas including the text. Round 3 pulled it off the text
+ * and into the surround, leaving `color-mix(in srgb, var(--paper) 93%, #b98a3c)`
+ * behind the sheet. That resolves to #faf7f1. Against the estate's own recessed
+ * surface, `--paper-deep` at #f4f4f5, it is a difference of about four points of
+ * red and nine of blue: a tint most readers could not name if you showed them
+ * both and asked. It was warm in the way a room is warm, not in the way a colour
+ * is warm.
+ *
+ * SO WHAT WAS BEING BOUGHT, AND AT WHAT PRICE. What it bought was one director's
+ * "real pro-attention move at 7am", and I think that was true. What it cost was
+ * three things stacked on top of each other: a register amendment that a whole
+ * programme would have to carry for one lab variant, a hue that `ds:check` has
+ * an opinion about and that no other product shares, and a visible join every
+ * time a founder leaves Home for Tasks. Three standing costs for a tint that
+ * cannot be identified without a colour picker is a bad trade, and it stays a
+ * bad trade however much I liked it.
+ *
+ * SO IT IS DROPPED, AND THE THESIS IS NOT. The thesis was never the hue. It was
+ * the two planes: a desk that is not the paper, so "where I am in the app" and
+ * "what this page says" are materially different surfaces before a word is read.
+ * A director scored that 9 and named it: "the only direction that separates the
+ * two levels by ground rather than by a rule." That device does not need an
+ * invented colour. It needs a step, and the estate already ships a ratified,
+ * theme-aware one. The desk is `--paper-deep` now.
+ *
+ * THE THREE THINGS THAT CHANGE, and none of them is a retreat:
+ *   1. Nothing to ratify. The direction declares no literal colour at all, so
+ *      there is no register amendment, no `ds:check` exposure, and no local
+ *      override anywhere in it.
+ *   2. The seam closes. The ground under Home is the same recessed surface
+ *      Notes, Tasks and Timeline already use for their own recessed planes.
+ *   3. The two planes get FURTHER apart. #f4f4f5 against #ffffff is a wider step
+ *      than #faf7f1 was, so the thing being protected is stronger after the
+ *      change than before it.
+ *
+ * WHAT IS LOST, said rather than buried: the 7am warmth. I am not pretending it
+ * was nothing. If the register is ever amended to admit a warm neutral across
+ * the whole estate, this direction should be the first thing to use it, and the
+ * two-plane structure is already built to take it: one token, one line.
+ *
+ * The one sentence to hold on to: a register amendment is a thing a whole
+ * company carries. A tint nobody can name is not worth one.
  *
  * THE SIGNATURE, AND WHY IT IS EARNED. A line that breaks where the read broke.
  * It is drawn twice on every page and it is the only device here that carries
@@ -61,13 +102,53 @@
  *
  * WHAT IT COSTS. The spine wants a left gutter on every entry, which is 36px of
  * width this direction never gets back — at 320px it drops to 28px and the
- * measure is tight. And the desk tint is one declared hue, the only literal
- * colour in the direction; everything else is mixed from the theme's own tokens,
- * so dark follows without a second palette.
+ * measure is tight.
  *
- * WHAT IT SPENDS AT RUNTIME. Nothing. Every file in this folder is a server
- * component, depth is `<details>`, selection is the URL, motion is one CSS
- * animation. The direction adds zero bytes to `shared_runtime`.
+ * ═══════════════════════════════════════════════════════════════════════════
+ * WHAT IT SPENDS AT RUNTIME, MEASURED. Round 4: "Desk's apparent zero client
+ * cost is a false measurement, and it is the direction with the largest hidden
+ * bill... Until that number exists, Desk's budget claim is unevidenced." Fair,
+ * and the bill is now itemised rather than denied.
+ *
+ * ONE client module, `dispositions.tsx`, which carries every row disposition on
+ * Inbox and My work. Bundled with esbuild at the app's own browser targets,
+ * minified, `react` external because the shared runtime already carries it:
+ *
+ *   minified          5,056 bytes   4.94 KB
+ *   minified + gzip   1,952 bytes   1.91 KB
+ *
+ * against the three ceilings the programme actually has:
+ *
+ *   shared_runtime  246.1 / 247 KB   + 0 bytes. A route-local island never
+ *                                     enters the shared chunk, so the 0.9 KB of
+ *                                     programme headroom is untouched.
+ *   largest_chunk    62.5 / 63 KB    + 0 bytes, same reason.
+ *   total_client_js 898.8 / 940 KB   + 1.91 KB, which is 4.6% of the 41.2 KB of
+ *                                     remaining slack.
+ *
+ * And the stylesheet, which round 4 measured as a source file rather than as
+ * shipped bytes. Run through Lightning CSS, the minifier Next 16 uses, at the
+ * same targets: 69.6 KB of source becomes 25.9 KB minified and 4.74 KB gzip.
+ * Round 4 recorded 16.4 KB gzip and 2.6x the leanest direction; the shipped
+ * figure is 4.74 KB and 1.28x, below two of the other three. Comments are the
+ * difference, and comments do not ship.
+ *
+ * Everything else in this folder is a server component: five modes, thirteen
+ * worlds, every disclosure, the whole chrome, the index, the legend and the foot
+ * render with no JavaScript at all. Depth is still `<details>`, selection is
+ * still the URL, motion is still one CSS animation.
+ *
+ * THE HYDRATION CEILING, because bytes are only half of it. One island per row,
+ * never two: `RowDispositions` owns both the strip and the row's live state
+ * words, so the fifty-event scale queue instantiates fifty components rather
+ * than a hundred. Today, Analytics, the briefing and the whole of the shell
+ * instantiate zero.
+ *
+ * WHAT IS STILL UNPROVEN, and it is not fixable inside a lab: this is a bundle
+ * measurement, not a `perf:budgets` run against a production build. It proves
+ * the size of what this direction adds. It does not prove the whole programme
+ * still fits, and `pnpm build` is the only thing that can.
+ * ═══════════════════════════════════════════════════════════════════════════
  */
 
 import type { HomeCandidate, HomeCandidateProps } from "@/lib/home-layer/lab-shell";

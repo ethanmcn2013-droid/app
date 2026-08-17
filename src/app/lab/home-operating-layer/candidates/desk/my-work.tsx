@@ -14,24 +14,37 @@
  */
 
 import type { HomeCandidateProps, MyWorkRowView } from "@/lib/home-layer/lab-shell";
+import { DeskSay, RowDispositions, WorkRow, type RowSeed } from "./dispositions";
 import {
-  Entry,
+  DENSE_FROM,
   FirstRun,
   Foot,
-  LAB_WRITES_NOTHING,
+  HOW_A_ROW_ACTS,
   indexCount,
   legendEntries,
   Meta,
-  Offers,
+  planPage,
   ReadIndex,
   ReadLine,
   readVerdict,
-  RowActions,
   SectionCaveat,
   whenPart,
   type IndexItem,
   type MarkKind,
 } from "./parts";
+
+/**
+ * A responsibility has no read state and no disposition, so its seed is the
+ * quiet one. What the island tracks here is whether the source has confirmed a
+ * completion, which is the only thing on this mode that can change.
+ */
+const WORK_SEED: RowSeed = {
+  read: true,
+  disposition: "open",
+  snoozeLine: null,
+  outcome: "none",
+  outcomeLine: null,
+};
 
 function markForRow(row: MyWorkRowView): MarkKind {
   if (row.provenance.projectName === null) return "broken";
@@ -101,10 +114,22 @@ export function MyWorkMode(props: HomeCandidateProps) {
   }
 
   const marks = new Set<MarkKind>();
+  const everyRow: MyWorkRowView[] = [];
   for (const group of myWork.groups) {
-    for (const row of group.rows) marks.add(markForRow(row));
+    for (const row of group.rows) {
+      marks.add(markForRow(row));
+      everyRow.push(row);
+    }
   }
   const legendHref = legendEntries(marks).length > 0 ? "#dk-legend" : null;
+
+  /* Same rule as the Inbox, and it bites harder here: the scale world puts
+     sixty responsibilities in this ledger, and "Your seat cannot finish work in
+     this project" is one sentence about a seat, not sixty sentences about sixty
+     rows. Planned across the whole ledger, in reading order, before a row is
+     drawn. */
+  const plans = planPage(everyRow.map((row) => ({ key: row.key, actions: row.actions })));
+  const refusesFirst = props.world.id === "action_failure";
 
   const indexItems: readonly IndexItem[] = [
     ...myWork.groups
@@ -126,6 +151,7 @@ export function MyWorkMode(props: HomeCandidateProps) {
         standing={[]}
         statusLabel={chrome.statusRegionLabel}
         legendHref={legendHref}
+        say={<DeskSay />}
       />
 
       {kindLine ? <p className="dk-lead">{kindLine}</p> : null}
@@ -150,8 +176,13 @@ export function MyWorkMode(props: HomeCandidateProps) {
                   const open = openKey !== null && row.key === openKey;
                   const waiting = waitingLineFor(row.provenance.projectId, row.waitingLine);
                   return (
-                    <Entry
+                    /* The row owns its own `<li>` so a confirmed completion can
+                       strike its title: no CSS combinator reaches back up from a
+                       later sibling to an earlier one. Still one island per row,
+                       just starting an element higher. */
+                    <WorkRow
                       key={row.key}
+                      rowKey={row.key}
                       mark={markForRow(row)}
                       id={open ? "dk-open-item" : undefined}
                     >
@@ -174,11 +205,6 @@ export function MyWorkMode(props: HomeCandidateProps) {
                         <p className="dk-said dk-said-quiet">{row.coAssigneeLine}</p>
                       ) : null}
 
-                      {/* What this responsibility offers, on the row, at
-                          arrival. A seat that cannot finish work in a project
-                          says so here rather than after an interaction. */}
-                      {open ? null : <RowActions actions={row.actions} />}
-
                       {open ? (
                         <div className="dk-open">
                           <dl>
@@ -189,10 +215,35 @@ export function MyWorkMode(props: HomeCandidateProps) {
                             <dt>The route back to the source</dt>
                             <dd className="dk-path">{row.sourcePath}</dd>
                           </dl>
-                          <Offers actions={row.actions} />
                         </div>
                       ) : null}
-                    </Entry>
+
+                      {/*
+                        What this responsibility offers, on the row, at arrival,
+                        as controls. A seat that cannot finish work in a project
+                        says so here rather than after an interaction.
+
+                        An opened row uses the SAME page plan as a shut one, and
+                        that is deliberate. Unlike the Inbox, opening a
+                        responsibility here expands it in place rather than
+                        moving it into a panel, so it is still a row in the same
+                        ledger and the page's reason ledger still owns its
+                        explanations. Giving it a private plan would have printed
+                        a reason under a second id while other rows went on
+                        pointing at the first, which is how an `aria-describedby`
+                        ends up aimed at nothing.
+                      */}
+                      <RowDispositions
+                        rowKey={row.key}
+                        title={row.title}
+                        seed={WORK_SEED}
+                        plans={plans.get(row.key) ?? []}
+                        snoozeOptions={[]}
+                        refusesFirst={refusesFirst}
+                        variant={open ? "detail" : "row"}
+                        staticMeta={null}
+                      />
+                    </WorkRow>
                   );
                 })}
               </ul>
@@ -237,7 +288,13 @@ export function MyWorkMode(props: HomeCandidateProps) {
         copy={copy}
         disclosures={myWork.disclosures}
         marks={marks}
-        extra={[kindLine, myWork.rowsShown > 0 ? LAB_WRITES_NOTHING : null]}
+        extra={[
+          kindLine,
+          myWork.rowsShown > 0 ? HOW_A_ROW_ACTS : null,
+          everyRow.length >= DENSE_FROM
+            ? `This ledger holds ${everyRow.length} responsibilities, so a reason that closes an action is printed once with the number of rows it covers rather than repeated under every one of them. Every row still carries every action, and a screen reader still reads the reason on all of them.`
+            : null,
+        ]}
       />
     </>
   );

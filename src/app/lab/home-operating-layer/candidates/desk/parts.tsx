@@ -41,6 +41,14 @@ import type {
   RowAction,
   WhenLabel,
 } from "@/lib/home-layer/lab-shell";
+/*
+ * TYPE ONLY, AND THE KEYWORD IS LOAD-BEARING. `dispositions.tsx` is the
+ * direction's one client module. `import type` is erased by the compiler, so
+ * this file — which Today, Analytics and the briefing all import — gains no
+ * runtime edge to it and instantiates nothing. The two modes that actually
+ * dispose of work import the components themselves.
+ */
+import type { ActionPlan } from "./dispositions";
 
 /**
  * The mark vocabulary. Seven shapes, one ink, and `broken` is the only one that
@@ -215,6 +223,7 @@ export function ReadLine({
   statusLabel,
   lead,
   legendHref,
+  say,
 }: {
   verdict: ReadVerdict;
   chrome: HomeChrome;
@@ -234,6 +243,21 @@ export function ReadLine({
    * preceded their own explanation on every read.
    */
   legendHref?: string | null;
+  /**
+   * ONE POLITE REGION, AND THIS IS IT.
+   *
+   * The brief allows exactly one stable polite status region, and this element
+   * has been it since round 2: it already carries how the read went, at the top
+   * of every mode, with `role="status" aria-live="polite"`. Now that rows can be
+   * disposed of, what just happened to a row has to be announced somewhere, and
+   * a second region would be one more place a screen reader is told things about
+   * this page than the brief allows or a reader wants.
+   *
+   * So Inbox and My work pass the direction's `DeskSay` in here and outcomes are
+   * announced inside the region that already reports the read. Today, Analytics
+   * and the briefing pass nothing and stay free of client code.
+   */
+  say?: ReactNode;
 }) {
   const standingLine =
     standing.length === 0
@@ -276,6 +300,8 @@ export function ReadLine({
       {!lead && note && standingLine ? (
         <p className="dk-readnote dk-readstanding">{standingLine}</p>
       ) : null}
+
+      {say}
 
       <p className="dk-meta dk-readmeta">
         <span className="dk-meta-part">{chrome.scope.label}</span>
@@ -381,9 +407,29 @@ export const indexCount = (rows: number): number | null => (rows > 0 ? rows : nu
  *      sections renders no index at all, so the quiet day and the first screen
  *      keep their bare desk.
  *
- * It is a `nav` rather than an `aside` because it is navigation, and it carries
- * no heading, so the heading tree is identical at every viewport where the CSS
- * shows or hides it.
+ * ROUND 4 ASKED WHETHER AN IN-PAGE CONTENTS LIST SHOULD BE A `nav` AT ALL, and
+ * the answer is no. The decision, and it is a decision rather than a shrug.
+ *
+ * Round 4 counted three navigation landmarks on Today and Analytics against two
+ * for the other three directions, because this index was the third. The
+ * architecture's own landmarks are named and fixed — Suite, Products, Home — and
+ * a reader cycling landmarks with a screen reader is looking for the three that
+ * move them between destinations. This list moves nobody anywhere: every link in
+ * it is a fragment into the document already on screen. Adding it to the same
+ * cycle as the suite bar means a founder pressing the landmark key on the way to
+ * Tasks stops inside a table of contents, which is landmark inflation paying for
+ * nothing.
+ *
+ * So the element is a plain container and the LIST carries the name instead,
+ * through `aria-labelledby` on its own visible "In this read" label. Nothing is
+ * lost: the label is visible, the counts are unchanged, the links are unchanged,
+ * and the list is announced with its name the moment a reader reaches it. What
+ * changes is that Desk now renders exactly two navigation landmarks on every
+ * mode, the same as the other three directions, and the two it renders are the
+ * two the architecture asked for.
+ *
+ * It carries no heading, so the heading tree stays identical at every viewport
+ * where the CSS shows or hides it.
  */
 export function ReadIndex({
   label,
@@ -393,10 +439,15 @@ export function ReadIndex({
   items: readonly IndexItem[];
 }) {
   if (items.length < 2) return null;
+  const labelId = `dk-index-${safeId(label)}`;
   return (
-    <nav className="dk-index" aria-label={label}>
-      <p className="dk-key">In this read</p>
-      <ul>
+    <div className="dk-index">
+      <p className="dk-key" id={labelId}>
+        In this read
+      </p>
+      {/* Named by the label a reader can SEE, so the accessible name and the
+          printed one are the same three words and can never drift apart. */}
+      <ul aria-labelledby={labelId}>
         {items.map((item) => (
           <li data-lead={item.lead ? "true" : undefined} key={item.id}>
             <a href={`#${item.id}`}>
@@ -411,7 +462,7 @@ export function ReadIndex({
           </li>
         ))}
       </ul>
-    </nav>
+    </div>
   );
 }
 
@@ -493,98 +544,128 @@ export function whenPart(due: WhenLabel | null): MetaPart {
   return due?.overdue ? late(text) : text;
 }
 
-/**
- * WHAT A ROW OFFERS, ON THE ROW, AT ARRIVAL.
- *
- * Round 2 deferred every disposition to a detail state, so the Inbox and My work
- * arrival screens carried ten titles and not one affordance, and four of the
- * sixteen journeys were unevidenced anywhere a director could see them. They are
- * on the row now.
- *
- * What has NOT changed is the refusal to draw a button that writes nothing. A
- * control that claims an outcome the source never confirmed is D-HX06, and the
- * lab has no source. So an action with a real href is a real link, and an action
- * without one is stated as an offer in words. An action that is closed to you
- * carries its reason on the same line rather than vanishing, because a control
- * that disappears tells the reader nothing about why.
- */
-export function RowActions({
-  actions,
-  exclude,
-}: {
-  actions: readonly RowAction[];
-  /** Ids already carried by the row's own title link. */
-  exclude?: readonly string[];
-}) {
-  const shown = actions.filter((action) => !exclude?.includes(action.id));
-  if (shown.length === 0) return null;
-  return (
-    <ul className="dk-rowacts">
-      {shown.map((action) => (
-        <li data-available={action.available ? "true" : "false"} key={action.id}>
-          {action.available ? (
-            action.href ? (
-              <a href={action.href}>{action.label}</a>
-            ) : (
-              <b>{action.label}</b>
-            )
-          ) : (
-            <>
-              <b>{action.label}</b>
-              {action.unavailableReason ? <span>{action.unavailableReason}</span> : null}
-            </>
-          )}
-        </li>
-      ))}
-    </ul>
-  );
-}
+// ── The action plan · how a strip behaves at volume ─────────────────────────
 
 /**
- * The same set, opened out, for a detail state where there is room to group them
- * and where the reader has asked for exactly this one thing.
+ * HOW THE ACTION STRIP DEGRADES AT VOLUME, decided once, on the server.
+ *
+ * The note that recurs even in the ballots that pass this direction: the Inbox
+ * is the densest surface in the lab, every row carries four actions plus a
+ * struck-through explanatory clause, and at the scale world that becomes a wall
+ * of small grey text. It is a real note. On the scale queue the sentence "This
+ * one is not an approval" is true of most of the rows, and round 4 printed it on
+ * every one of them.
+ *
+ * THE RULE IS ONE SENTENCE: THE STRIP NEVER DEGRADES, THE PROSE DOES.
+ *
+ * Removing actions at volume would answer a density note by deleting the thing
+ * two directors named as this direction's reason to win — "the only direction
+ * where a founder can dispose of work without leaving the read", "no dead
+ * control, no mystery-disabled button". So every row keeps every action, and
+ * every closed action stays struck through and stays focusable.
+ *
+ * What stops repeating is the EXPLANATION, because a refusal reason is a fact
+ * about a KIND of row rather than about a row. Above `DENSE_FROM` rows on a
+ * page, each distinct reason is printed once — on the first row it applies to,
+ * with the number of rows it covers attached — and every later row points at
+ * that one copy with `aria-describedby`. Nothing is hidden: a screen reader
+ * still hears the reason on all forty-two rows, and the count turns a repetition
+ * into a measurement, which is what this direction does with everything else.
+ *
+ * WHY TWELVE. It is the point at which a reader stops reading a list and starts
+ * scanning one. Below it the reasons are a handful of quiet clauses and reading
+ * each one costs nothing; above it they are a texture, and a texture made of
+ * sentences is the wall. Twelve is also comfortably above every non-scale world
+ * in the fixture set, so the ordinary morning keeps the round-4 behaviour a
+ * director graded 9 exactly as it was, and only the fifty-event queue changes.
  */
-export function Offers({ actions }: { actions: readonly RowAction[] }) {
-  if (actions.length === 0) return null;
-  const open = actions.filter((action) => action.available);
-  const shut = actions.filter((action) => !action.available);
-  return (
-    <div className="dk-offer-set">
-      {open.length > 0 ? (
-        <div>
-          <p className="dk-key">Open to you here</p>
-          <ul className="dk-offers">
-            {open.map((action) => (
-              <li key={action.id} data-available="true">
-                {action.href ? <a href={action.href}>{action.label}</a> : <b>{action.label}</b>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      {shut.length > 0 ? (
-        <div>
-          <p className="dk-key">Not open to you here</p>
-          <ul className="dk-offers">
-            {shut.map((action) => (
-              <li key={action.id} data-available="false">
-                <b>{action.label}</b>
-                {action.unavailableReason ? <span>{action.unavailableReason}</span> : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-      <p className="dk-said dk-said-quiet">
-        The lab writes nothing. Nothing here is marked done until the source says it is.
-      </p>
-    </div>
-  );
+export const DENSE_FROM = 12;
+
+export type ActionRow = Readonly<{ key: string; actions: readonly RowAction[] }>;
+
+const safeId = (value: string): string => value.replace(/[^A-Za-z0-9_-]/g, "-");
+
+/**
+ * Plans every row on the page in one pass, in reading order, and hands back a
+ * lookup keyed by row.
+ *
+ * It has to be the whole page and it has to be the server: "is this the first
+ * row carrying this reason" is a question about a document, and a client
+ * component can only see itself. Deciding it here also keeps the decision out
+ * of the bundle.
+ */
+export function planPage(
+  rows: readonly ActionRow[],
+  exclude: readonly string[] = [],
+): ReadonlyMap<string, readonly ActionPlan[]> {
+  const dense = rows.length >= DENSE_FROM;
+
+  /* Pass one: how many rows each reason closes, and which row is its first. */
+  const owner = new Map<string, string>();
+  const shared = new Map<string, number>();
+  const order: string[] = [];
+  for (const row of rows) {
+    for (const action of row.actions) {
+      if (exclude.includes(action.id)) continue;
+      if (action.available || action.unavailableReason === null) continue;
+      const reason = action.unavailableReason;
+      shared.set(reason, (shared.get(reason) ?? 0) + 1);
+      if (!owner.has(reason)) {
+        owner.set(reason, row.key);
+        order.push(reason);
+      }
+    }
+  }
+
+  /* Pass two: the plan each row renders. */
+  const planned = new Map<string, readonly ActionPlan[]>();
+  rows.forEach((row, index) => {
+    planned.set(
+      row.key,
+      row.actions
+        .filter((action) => !exclude.includes(action.id))
+        .map((action) => {
+          const reason = action.available ? null : action.unavailableReason;
+          if (reason === null) {
+            return {
+              id: action.id,
+              label: action.label,
+              available: action.available,
+              href: action.href,
+              needsSourceConfirmation: action.needsSourceConfirmation,
+              reason: null,
+              reasonMode: "none" as const,
+              domId: null,
+              sharedWith: 0,
+            };
+          }
+          const first = owner.get(reason) === row.key;
+          const print = !dense || first;
+          return {
+            id: action.id,
+            label: action.label,
+            available: action.available,
+            href: action.href,
+            needsSourceConfirmation: action.needsSourceConfirmation,
+            reason,
+            reasonMode: (print ? "print" : "describe") as "print" | "describe",
+            /* When the page is dense the reason has ONE id and every silent row
+               points at it. When it is not, each row owns its own copy, so two
+               rows never claim the same id. */
+            domId: dense
+              ? `dk-why-r${order.indexOf(reason)}`
+              : `dk-why-${index}-${safeId(action.id)}`,
+            sharedWith: dense ? (shared.get(reason) ?? 1) : 1,
+          };
+        }),
+    );
+  });
+  return planned;
 }
 
 /** Said once per mode that offers anything, rather than once per row. */
-export const LAB_WRITES_NOTHING =
-  "Every offer on a row is named, including the ones closed to you. The lab writes nothing, so nothing here is marked done until the source says it is.";
+export const HOW_A_ROW_ACTS =
+  "Every action on a row is a control, including the ones closed to you, which stay struck through with their reason. Anything that has to reach a source waits for the source to answer, so nothing here is marked done until it has.";
 
 // ── The foot ────────────────────────────────────────────────────────────────
 

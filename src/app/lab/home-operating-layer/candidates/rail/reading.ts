@@ -110,18 +110,25 @@ export function bySeverity(items: readonly Disclosure[]): readonly Disclosure[] 
 export type Reading = Readonly<{
   state: HomeStateName;
   /**
-   * The word printed under the mode name.
+   * The words printed under the mode name.
    *
-   * It is the shell's own word for the resolved state, with one exception that
-   * two blind rounds made unavoidable: a source that was ASKED AND DID NOT
-   * ANSWER resolves to `partial` at mode level, because the mode genuinely did
-   * return most of its work. Printing "Partly read" there makes a refusal
-   * indistinguishable from a source that answered incompletely, which is the
-   * single most consequential state change in the product and the one a
-   * persistent read state exists to carry. So a refusal says "Did not answer",
-   * which is the shell's own vocabulary for the same fact in the Project
-   * ledger, and it is the only word in this direction that the shell did not
-   * hand over already written.
+   * Round 4 found the previous rule over-claiming: a mode that refused ONE
+   * source said "Did not answer" while rendering three ranked decisions
+   * underneath, and four directors marked it down for it. Over-reporting an
+   * outage is not the safe direction of error. A label a reader repeatedly
+   * sees on a mode that visibly answered is a label they stop reading, and
+   * that is how the next real outage gets ignored.
+   *
+   * So a refusal is now graded by whether the mode still produced anything:
+   *
+   *   produced something  "Partly read · not answering"
+   *   produced nothing    "Did not answer"
+   *
+   * The first half is the shell's own word for the resolved state. The second
+   * half is the only clause this direction writes, and it exists because
+   * "Partly read" alone cannot tell a source that answered incompletely apart
+   * from a source that refused, which is the most consequential state change
+   * in the product.
    */
   label: string;
   band: Band;
@@ -132,11 +139,18 @@ export type Reading = Readonly<{
    */
   material: Band;
   refused: boolean;
+  /**
+   * True when the mode rendered something a reader can act on. It is the fact
+   * that decides between the two refusal labels, and it is also what lets a
+   * count beside a refused mode be qualified rather than deleted.
+   */
+  produced: boolean;
   disclosures: readonly Disclosure[];
 }>;
 
-/** The one word this direction writes. See `Reading.label`. */
+/** The clause this direction writes, and the only one. See `Reading.label`. */
 export const DID_NOT_ANSWER = "Did not answer";
+export const REFUSED_CLAUSE = "one source did not answer";
 
 function worst(state: HomeStateName, items: readonly Disclosure[]): HomeStateName {
   // A reader with no Project is not a read that went wrong. Every mode in that
@@ -161,6 +175,27 @@ function viewOf(props: HomeCandidateProps, mode: HomeMode) {
 }
 
 /**
+ * Did this mode render anything a reader can act on?
+ *
+ * Counted from what is actually on the page rather than from a state name, so
+ * the label can never contradict the rows beneath it. That contradiction is
+ * the exact defect this function was added to close.
+ */
+function producedOf(props: HomeCandidateProps, mode: HomeMode): boolean {
+  if (mode === "inbox") {
+    return props.inbox.groups.some((group) => group.rows.length > 0);
+  }
+  if (mode === "my-work") {
+    return props.myWork.groups.some((group) => group.rows.length > 0);
+  }
+  if (mode === "analytics") {
+    return props.analytics.claims.length > 0 || props.analytics.ledger.length > 0;
+  }
+  const view = mode === "briefing" ? props.briefing : props.today;
+  return view.sections.some((section) => section.rows.length > 0);
+}
+
+/**
  * One mode's read, resolved once.
  *
  * Analytics carries a fifth possibility the other modes do not: every claim
@@ -178,12 +213,18 @@ export function readingFor(props: HomeCandidateProps, mode: HomeMode): Reading {
       : view.state;
   const state = worst(declared, view.disclosures);
   const refusedHere = refused(view.disclosures);
+  const produced = producedOf(props, mode);
   return Object.freeze({
     state,
-    label: refusedHere ? DID_NOT_ANSWER : props.copy.states[state],
+    label: refusedHere
+      ? produced
+        ? `${props.copy.states[state]} · ${REFUSED_CLAUSE}`
+        : DID_NOT_ANSWER
+      : props.copy.states[state],
     band: bandOf(state),
     material: refusedHere ? "broken" : bandOf(state),
     refused: refusedHere,
+    produced,
     disclosures: view.disclosures,
   });
 }

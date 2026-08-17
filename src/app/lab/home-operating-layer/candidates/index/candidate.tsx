@@ -3,33 +3,54 @@
  *
  * ── The thesis ─────────────────────────────────────────────────────────────
  *
- * Home is a periodical, and the navigation is its contents page. The four
- * modes are not tabs along an edge; they are a numbered index, ruled top and
- * bottom, with a dotted leader running from each mode's name to the condition
- * that mode's read is currently in. So the navigation is also the summary: a
- * reader at 7am learns, before choosing anything, that Inbox has five waiting
- * and one of them could not be checked, that My work was only partly read, and
- * that Analytics could not be read at all. That is the whole argument for the
- * height it takes.
+ * Home is a periodical, and the four modes are its sections. So the navigation
+ * is not a row of tabs, it is the document's own contents: a numbered index
+ * with a dotted leader running from each mode's name to the condition that
+ * mode's read is currently in. A reader learns, in words, that Inbox has five
+ * waiting and one of them could not be checked, that My work was only partly
+ * read, and that Analytics could not be read at all — without going to look.
  *
  * The condition on the right of each row is derived from that mode's own read
  * and nothing else (`modeCondition`). It is the one thing in this direction
  * that may never be approximate, so a mode may not be reported as read, or as
  * empty, on evidence that does not support it.
  *
- * The structure then recurses. Every entry that was ranked carries an ordinal
- * down the left, and nothing that was not ranked carries one. The Project
- * ledger is the one place the reading measure breaks. Rules, ordinals, a
- * measure and a margin do the work that cards, panels and shadows do in a
- * louder system, and there is not one container in the direction that is not a
- * rule.
+ * ── WHAT CHANGED IN ROUND 5, AND WHY THE THESIS SURVIVED IT ────────────────
+ *
+ * Round 4 printed the contents page as the masthead, and two directors put the
+ * same charge: Today asks what deserves attention now, and this page answered
+ * with a table of contents about itself first. Roughly 330 px of index before
+ * the headline at 1440. On a phone, on the worst morning of the month, a reader
+ * passed about 590 px before being told a source had not answered.
+ *
+ * That is a fair charge against the position and no charge at all against the
+ * device, and the two were never the same argument. A periodical does not open
+ * on its contents page — it opens on the front page, and the contents lives
+ * inside the issue as a report on what each section came back with. So the
+ * order is now the order a paper has always used:
+ *
+ *   `Masthead`  the wordmark, the suite, and Read Scope as a real control.
+ *   `ModeBar`   the four sections as a folio line, each with the state of its
+ *               own read in words. One line at 768 and up.
+ *   the read    headline, one true sentence, then the decisions.
+ *   `Contents`  the numbered leader-dot table, with the cause behind each
+ *               condition and Full briefing as a child of Today. In the
+ *               standing column beside the read at 1080 and up, closing the
+ *               document below that.
+ *
+ * The thesis is unchanged and better served: the navigation is still the
+ * document's structure, and the structure now runs in the order a document
+ * runs. What the reader loses at the top is the ordinal series and the leader;
+ * what they gain is the headline on the first screen in all thirteen worlds.
  *
  * ── What it costs, said plainly ────────────────────────────────────────────
  *
- * Four 44 px index rows are 176 px of front matter at 390. The trade is that
- * they scroll away and never come back: a tab bar costs 56 px of every screen
- * forever, this costs 176 px of the first screen once. A reader who wants the
- * index again scrolls up, or takes the link at the foot of the document.
+ * The folio line is 44 px at 768 and up and two lines at 390, against 176 px of
+ * index rows before. It scrolls away and it is not sticky at phone widths: a
+ * bar that follows the reader costs a tenth of a phone screen forever, which is
+ * the cost this direction refuses. On a tall wide window the whole standing
+ * column follows instead, so the contents is in view from any scroll position
+ * without taking a pixel from the read.
  *
  * ── What it spends on the client ───────────────────────────────────────────
  *
@@ -40,46 +61,38 @@
  * cannot ship.
  */
 
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties } from "react";
 import type {
   HomeCandidate,
   HomeCandidateProps,
 } from "@/lib/home-layer/lab-shell";
 import { PRODUCT_APP_PATHS } from "@/lib/product-urls";
-import {
-  modeCondition,
-  ordinal,
-} from "@/lib/home-layer/candidates/index/labels";
+import { modeCondition } from "@/lib/home-layer/candidates/index/labels";
 import { AnalyticsMode } from "./analytics";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
 import { BriefingMode, TodayMode } from "./read";
-import { Imprint } from "./parts";
+import { ScopeControl } from "./parts";
 import "./reading-index.css";
 
-const INDEX_ID = "ri-index";
-const INDEX_LABEL_ID = "ri-index-label";
-
 /**
- * The masthead: the wordmark and the suite, on one rule.
+ * The masthead: the wordmark, the suite, and the dateline, on one rule.
  *
  * Home, Notes, Tasks and Timeline stay visible and text labelled at every
  * width, including 320, which is the responsive rule this direction is most at
  * risk of failing and therefore the one it puts first.
  *
- * WHY THE SUITE AND THE INDEX NO LONGER LOOK ALIKE. A director found the two
- * bands unresolved — mono capitals two lines above mono capitals — and could
- * not tell which row was the suite and which was Home. So the suite is now a
- * single ruled line with the wordmark, set in mono capitals and marked with a
- * rule under the product you are in; the index below it is sentence case at
- * heading size with numbers and leaders. Two bands, two registers, one glance.
+ * READ SCOPE IS HERE NOW. A director could find no scope form control anywhere
+ * on the full page and named the 11 px link in the right column as the smallest
+ * quietest thing on the screen, which is the wrong size for the most frequently
+ * used global control in the product. It sits on the masthead line at every
+ * width, at reading size, with its own label and a 44 px target.
  *
  * The Home entry exposes section state with `aria-current="true"` and never
- * claims `page`: the mode index below owns the exact-match claim
- * (HOME_EXPERIENCE §5 R2, R3). The three product paths are the real ones from
- * `product-urls.ts` rather than invented strings, which does mean a reviewer
- * who follows one leaves the lab for the product. That is what those links
- * mean.
+ * claims `page`: the folio below owns the exact-match claim (HOME_EXPERIENCE §5
+ * R2, R3). The three product paths are the real ones from `product-urls.ts`
+ * rather than invented strings, which does mean a reviewer who follows one
+ * leaves the lab for the product. That is what those links mean.
  */
 function Masthead({ props }: { props: HomeCandidateProps }) {
   const { chrome } = props;
@@ -111,71 +124,60 @@ function Masthead({ props }: { props: HomeCandidateProps }) {
           </li>
         </ul>
       </nav>
+      <ScopeControl props={props} />
     </div>
   );
 }
 
 /**
- * THE INDEX. The signature of the direction, and the one place indigo appears.
+ * THE FOLIO LINE. The navigation, and the glance.
  *
- * It carries its own visible name, because a leader-dot table is not yet a
- * learned convention for primary navigation and a first-time reader is owed
- * the fact that these four rows are places rather than a summary of the page
- * they are already on.
+ * Four sections, each with the state of its own read beside it in words. This
+ * is the half of the contents table that has to be above the headline, and it
+ * is only that half: the name, the count where there is one, the mark, and the
+ * condition. The ordinal series, the leader, the cause behind the condition and
+ * Full briefing all belong to the contents proper and wait there.
  *
- * The leader is drawn rather than slid: the dot field is stationary and a
- * paper-coloured cover travels off it to the right, staggered down the four
- * rows, so the contents page writes itself in. Under reduced motion the motion
- * tokens are 0 ms, the stagger is 0 ms with them, every row is simply already
- * drawn, and an explicit reduced-motion block takes the animations off
- * entirely rather than relying on the token collapse alone.
+ * WHY THE WORDS STAYED. Three directors scored the per-mode coverage report at
+ * 9 and above and all three named the same property: the health of a mode you
+ * are not looking at is legible, in words, from the mode you are in. A bar of
+ * four names and four marks would have kept the navigation and thrown that
+ * away, and it would have handed a screen reader the states while withholding
+ * them from everybody else — the exact asymmetry this programme exists to
+ * remove. So the words are here, at every width, for every reader.
  *
- * WHAT THE ROW DOES WHEN THE DOTS RUN OUT, which is the question two directors
- * asked and round 2 had no answer to. The row is a wrapping flex line with a
- * floor under the leader: the dots may never be shorter than 4.5 rem, and the
- * condition may never be narrower than 11 rem. When those two cannot both hold
- * on one line — at 390, at 320, and at 200 % text-only enlargement on a
- * 1440 screen alike — the condition drops to a second line and takes the full
- * row width, right aligned, inside the page's own gutter. Nothing is
- * truncated, nothing is crushed, and the device the direction is named after
- * gets MORE dots on a small screen rather than fewer. One mechanism, every
- * width, every zoom, no viewport-conditional document.
+ * WHAT IT DOES AT 320. It wraps, one section per line, and stops being a line
+ * at all. That is a transformation rather than a compression: the states go
+ * under their own names instead of being squeezed beside them, nothing is
+ * truncated, and no mode is put behind More, an icon or a horizontal scroll.
  */
-function ModeIndex({ props }: { props: HomeCandidateProps }) {
+function ModeBar({ props }: { props: HomeCandidateProps }) {
   const { chrome, copy, inbox, state, hrefFor } = props;
   const atDepth = state.mode === "briefing";
   return (
-    <nav className="ri-index" id={INDEX_ID} aria-labelledby={INDEX_LABEL_ID} tabIndex={-1}>
-      <p className="ri-index-label" id={INDEX_LABEL_ID}>
-        {chrome.navLabel}
-      </p>
-      <ol className="ri-index-list">
+    <nav className="ri-bar" aria-label={chrome.navLabel}>
+      <ul className="ri-bar-list">
         {chrome.modes.map((mode, position) => {
           const condition = modeCondition(props, mode.mode);
-          const showsDepth = atDepth && mode.mode === "today";
           return (
-            <li
-              className="ri-index-item"
-              key={mode.mode}
-              data-current={
-                mode.ariaCurrent === "page"
-                  ? ""
-                  : mode.ariaCurrent === "true"
-                    ? "ancestor"
-                    : undefined
-              }
-              style={{ "--ri-n": position } as CSSProperties}
-            >
-              <a
-                className="ri-index-link"
-                href={mode.href}
-                aria-current={mode.ariaCurrent ?? undefined}
+            <Fragment key={mode.mode}>
+              <li
+                className="ri-bar-item"
+                data-current={
+                  mode.ariaCurrent === "page"
+                    ? ""
+                    : mode.ariaCurrent === "true"
+                      ? "ancestor"
+                      : undefined
+                }
+                style={{ "--ri-n": position } as CSSProperties}
               >
-                <span className="ri-index-head">
-                  <span className="ri-num ri-index-num" aria-hidden="true">
-                    {ordinal(position + 1)}
-                  </span>
-                  <span className="ri-index-name">{mode.label}</span>
+                <a
+                  className="ri-bar-link"
+                  href={mode.href}
+                  aria-current={mode.ariaCurrent ?? undefined}
+                >
+                  <span className="ri-bar-name">{mode.label}</span>
                   {mode.badge ? (
                     <>
                       {/*
@@ -200,9 +202,6 @@ function ModeIndex({ props }: { props: HomeCandidateProps }) {
                       <span className="ri-sr">{inbox.badge.accessibleName}</span>
                     </>
                   ) : null}
-                </span>
-                <span className="ri-leader" aria-hidden="true" />
-                <span className="ri-index-state">
                   <span className="ri-cond" data-mark={condition.mark}>
                     <span className="ri-cond-mark" aria-hidden="true" />
                     <span className="ri-cond-word">{condition.word}</span>
@@ -210,33 +209,37 @@ function ModeIndex({ props }: { props: HomeCandidateProps }) {
                       <span className="ri-cond-cause">{condition.cause}</span>
                     ) : null}
                   </span>
-                </span>
-              </a>
+                </a>
+              </li>
 
               {/*
-                DEPTH, STATED IN THE INDEX. Full briefing is not a fifth mode,
-                it is the uncapped read behind Today, so it is a sub-entry of
-                Today's row and it appears when the reader is inside it. Without
-                this the one screen that exists to express depth is the one
-                screen where the index cannot say where you are.
+                DEPTH, IN THE LINE THE READER IS LOOKING AT. Full briefing is
+                not a fifth mode, it is the uncapped read behind Today, so it
+                appears as a child of Today's entry while the reader is inside
+                it and carries the one exact-match claim in the document. The
+                contents below lists it from every mode; this states where you
+                are.
               */}
-              {showsDepth ? (
-                <ol className="ri-index-depth">
-                  <li>
-                    <a
-                      className="ri-index-depth-link"
-                      href={hrefFor({ mode: "briefing", item: null })}
-                      aria-current="page"
-                    >
-                      {copy.modeNames.briefing}
-                    </a>
-                  </li>
-                </ol>
+              {atDepth && mode.mode === "today" ? (
+                <li
+                  className="ri-bar-item"
+                  data-depth=""
+                  data-current=""
+                  style={{ "--ri-n": position } as CSSProperties}
+                >
+                  <a
+                    className="ri-bar-link"
+                    href={hrefFor({ mode: "briefing", item: null })}
+                    aria-current="page"
+                  >
+                    <span className="ri-bar-name">{copy.modeNames.briefing}</span>
+                  </a>
+                </li>
               ) : null}
-            </li>
+            </Fragment>
           );
         })}
-      </ol>
+      </ul>
     </nav>
   );
 }
@@ -260,7 +263,7 @@ const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
   const { chrome, state } = props;
 
   /**
-   * The announcement is the same derivation the index publishes, so a reader
+   * The announcement is the same derivation the folio publishes, so a reader
    * using a screen reader and a reader looking at the contents page are told
    * the same thing about the same read.
    */
@@ -279,50 +282,37 @@ const ReadingIndex: HomeCandidate = (props: HomeCandidateProps) => {
         One polite region, in one place, on every mode. It carries the mode and
         the condition of its read, so a change announced here is always the
         same sentence with different words in it rather than a new element
-        appearing.
+        appearing. `aria-live` is stated beside the role rather than left to be
+        implied by it: a director scanning for the region did not find one, and
+        a contract that is only satisfied by a default is one browser change
+        away from not being satisfied at all.
       */}
-      <p className="ri-sr" role="status" aria-label={chrome.statusRegionLabel}>
+      <p
+        className="ri-sr"
+        role="status"
+        aria-live="polite"
+        aria-label={chrome.statusRegionLabel}
+      >
         {`${chrome.modeEyebrow}. ${current.word}${current.cause ? `. ${current.cause}` : ""}.`}
       </p>
 
       {/*
-        THE FRONT MATTER, IN THE SAME TWO COLUMNS AS THE READ. The masthead and
-        the index sit in the reading column; the imprint sits in the standing
-        column, level with the masthead, so column two is occupied from the
-        first pixel of the page rather than from wherever the headline happens
-        to end. It is also what reconciles the two right edges a director
-        measured: the dateline and the scope control used to align to the
-        measure while the rail aligned to the plate, and the dateline and the
-        scope control have now moved into the column they were aligning to.
+        THE FRONT MATTER, AND ALL OF IT. Two ruled lines: who this is and what
+        it is reading, then the four sections and the state each one's read
+        came back in. Everything else that used to live up here — the ordinal
+        index, the leader, the accounting, what Home cannot see — is material
+        about the read rather than the read, and it now sits beside or after it.
       */}
-      <div className="ri-plate ri-front">
-        <div className="ri-front-read">
-          <Masthead props={props} />
-          <ModeIndex props={props} />
-        </div>
-        <Imprint props={props} />
-      </div>
+      <header className="ri-plate ri-front">
+        <Masthead props={props} />
+        <ModeBar props={props} />
+      </header>
 
       <main id="app-main-content" tabIndex={-1}>
         <div className="ri-plate">
           <ModeBody props={props} />
         </div>
       </main>
-
-      {/*
-        A contents page closes by offering the way back to the contents, and it
-        does not do it on a page with nothing in it. A first screen has one
-        move on it, and a return to the top of a screen the reader has not
-        scrolled is furniture, which is what a director was objecting to when
-        they found this closing a dead end.
-      */}
-      {props.firstRun ? null : (
-        <div className="ri-plate">
-          <div className="ri-foot">
-            <a href={`#${INDEX_ID}`}>Back to the top</a>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

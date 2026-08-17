@@ -5,9 +5,23 @@
  * other mode runs forward from the meridian into what is coming. Analytics runs
  * back from it into the records, and its horizon is the far edge of what those
  * records cover. Same two rules, same meaning — the edge of this read — pointed
- * the other way, and the gutter carries each claim's own window so a reader can
- * see, without opening anything, that seven numbers were not all taken over the
- * same stretch of time.
+ * the other way.
+ *
+ * THE WINDOW IS PRINTED WHERE IT VARIES, NOT WHERE IT REPEATS. Round 4 counted
+ * "As read on Thursday 16 July." three times in a single fold, once per claim,
+ * in a gutter whose whole argument is that a reader can run their eye down it.
+ * A column of one repeated sentence is not an axis. The window that every claim
+ * shares is now stated once, under the heading; the gutter carries a claim's own
+ * window only where that claim was taken over a different stretch of time, which
+ * is exactly the fact the gutter exists to make visible.
+ *
+ * EVERY CLAIM SHOWS ITS ARITHMETIC ON ITS FACE. What was counted, what was left
+ * out, and what it is measured against are on the page beside the numeral rather
+ * than behind a disclosure. Round 4 found this the weakest of the four on
+ * receipts: neither the left-out count nor the baseline was visible, and the page
+ * then closed with a sentence asserting its own honesty in place of the figures
+ * that would have proved it. The sentence is gone and the figures took its place,
+ * which is the trade this lens exists to enforce.
  *
  * BELOW THE HORIZON IS THE FUTURE, which is the moment this direction was built
  * for. When there is not enough history, the shell says so and names the date
@@ -44,7 +58,6 @@ import {
   Notices,
   Prov,
   ReadNotice,
-  ScopeAccount,
   TheRead,
   type ModeArgs,
 } from "./parts";
@@ -53,9 +66,18 @@ import { accountOf, bySeverity } from "./reading";
 /** The name a project that did not resolve is allowed to carry. No metadata. */
 const UNREADABLE_PROJECT = "A project that could not be read";
 
-function Claim({ claim }: { claim: AnalyticsClaimView }) {
+/** "22 counted · 2 left out" — the arithmetic, on the face, every time. */
+function countedLine(claim: AnalyticsClaimView): string {
+  const included = `${claim.receipt.includedCount} counted`;
+  return claim.receipt.excludedCount === 0
+    ? `${included}, none left out`
+    : `${included}, ${claim.receipt.excludedCount} left out`;
+}
+
+function Claim({ claim, sharedWindow }: { claim: AnalyticsClaimView; sharedWindow: string | null }) {
+  const ownWindow = claim.windowLine === sharedWindow ? null : claim.windowLine;
   return (
-    <Entry time={claim.windowLine}>
+    <Entry time={ownWindow} fallback={null}>
       <h3 className="mr-claim-q">{claim.question}</h3>
       {claim.valueLabel !== null ? (
         <p className="mr-claim-value">
@@ -67,22 +89,29 @@ function Claim({ claim }: { claim: AnalyticsClaimView }) {
            would have taken. Nothing here renders an unknown as zero. */
         <p className="mr-claim-none">{claim.statusLine}</p>
       )}
-      <p className="mr-claim-pop">{claim.populationLine}</p>
       {claim.valueLabel !== null && claim.statusLine ? (
         <p className="mr-warn" data-band="partial">
           {claim.statusLine}
         </p>
       ) : null}
+      <p className="mr-claim-pop">{claim.populationLine}</p>
+      {/* The arithmetic and the thing it is measured against, on the face. A
+          reader who never opens the receipt still meets both. */}
+      <Meta
+        items={[
+          <span key="counted">{countedLine(claim)}</span>,
+          <span key="baseline">{claim.baselineLine}</span>,
+          <span key="truth">{claim.truthClassLabel}</span>,
+        ]}
+      />
       <p className="mr-claim-limit">{claim.limitationLine}</p>
-      <details className="mr-act">
+      <details className="mr-act mr-act-wide">
         <summary className="mr-act-summary">{claim.evidenceLabel}</summary>
         <div className="mr-act-body">
           <Fields
             rows={[
               ["What it counts", claim.definitionLine],
               ["Window", claim.windowLine],
-              ["Kind of truth", claim.truthClassLabel],
-              ["Baseline", claim.baselineLine],
               ...(claim.coverageLine ? [["Coverage", claim.coverageLine] as const] : []),
               ...(claim.permissionLine ? [["Your access", claim.permissionLine] as const] : []),
               ["To change it", claim.correctionLine],
@@ -175,11 +204,15 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
   const { analytics, chrome, firstRun } = props;
   const worst = firstRun ? null : (bySeverity(analytics.disclosures)[0] ?? null);
 
+  /* The window every claim shares, if they share one. Stated once under the
+     heading rather than once per claim in a column that then says nothing. */
+  const windows = new Set(analytics.claims.map((claim) => claim.windowLine));
+  const sharedWindow = windows.size === 1 ? ([...windows][0] as string) : null;
+
   /* Every claim that fell short, in the shell's own words. A claim can fall
      short in three ways and all three belong together: it could not be
      computed, it was computed over incomplete coverage, or the reader's access
-     held part of it back. The mode opens by promising to say what it could not
-     see; this is the payment. */
+     held part of it back. */
   const limits = analytics.claims
     .map((claim) => {
       const line =
@@ -190,16 +223,23 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
     })
     .filter((entry): entry is readonly [string, string] => entry !== null);
 
+  const setup = firstRun
+    ? (analytics.disclosures.find((item) => item.tone === "setup") ?? null)
+    : null;
+  const rest = accountOf(analytics.disclosures, worst ?? setup);
+  const hasRecord = rest.length > 0 || limits.length > 0 || !analytics.trend.renderChart;
+
   return (
     <Chronology
       when={chrome.asOf.line}
+      statusLabel={chrome.statusRegionLabel}
       material={here.material}
       notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
       horizonMark={HORIZON_MARK}
       horizonLine={analytics.windowLine}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} />
+          <FirstRun view={firstRun} lead={setup?.text ?? null} />
         ) : (
           <>
             {analytics.lens.line ? (
@@ -223,9 +263,10 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
                 <h2 className="mr-h2" id="mr-h-claims">
                   What each number counts
                 </h2>
+                {sharedWindow ? <p className="mr-band-note">{sharedWindow}</p> : null}
                 <Entries>
                   {analytics.claims.map((claim) => (
-                    <Claim key={claim.id} claim={claim} />
+                    <Claim key={claim.id} claim={claim} sharedWindow={sharedWindow} />
                   ))}
                 </Entries>
               </section>
@@ -257,37 +298,27 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
         )
       }
       record={
-        <TheRead>
-          <Notices items={accountOf(analytics.disclosures, worst)} />
-          <p className="mr-account">{analytics.windowLine}</p>
-          {analytics.ledgerCoverageLine ? (
-            <p className="mr-account">{analytics.ledgerCoverageLine}</p>
-          ) : null}
-          <ScopeAccount
-            scopeLabel={chrome.scope.label}
-            coverageLine={chrome.scope.coverageLine}
-          />
-          {/* The mode's own headline limitation, at the top rather than only at
-              the bottom. Every claim can be computable and Analytics still be
-              unable to say anything about change, and the word under the mode
-              name says so; this is where the page says why. */}
-          {analytics.trend.renderChart ? null : (
-            <div className="mr-schedule">
-              <Label>{props.copy.states["insufficient-history"]}</Label>
-              <p className="mr-account">{analytics.trend.line}</p>
-            </div>
-          )}
-          {/* Every claim that fell short, beside the claims rather than 1,300px
-              under them. Two rounds asked for the account to sit at the top; on
-              the mode densest in numbers this is where it belongs. */}
-          {limits.length > 0 ? (
-            <div className="mr-schedule">
-              <Label>What fell short</Label>
-              <Fields rows={limits} />
-            </div>
-          ) : null}
-          <p className="mr-active">{chrome.activeProject.line}</p>
-        </TheRead>
+        hasRecord ? (
+          <TheRead>
+            <Notices items={rest} />
+            {/* The mode's own headline limitation, at the top rather than only at
+                the bottom. Every claim can be computable and Analytics still be
+                unable to say anything about change, and the word under the mode
+                name says so; this is where the page says why. */}
+            {analytics.trend.renderChart ? null : (
+              <div className="mr-schedule">
+                <Label>{props.copy.states["insufficient-history"]}</Label>
+                <p className="mr-account">{analytics.trend.line}</p>
+              </div>
+            )}
+            {limits.length > 0 ? (
+              <div className="mr-schedule">
+                <Label>What fell short</Label>
+                <Fields rows={limits} />
+              </div>
+            ) : null}
+          </TheRead>
+        ) : null
       }
       wide={
         analytics.ledger.length > 0 ? (
@@ -337,22 +368,14 @@ export function AnalyticsMode({ props, here }: ModeArgs) {
         ) : null
       }
       beyond={
-        <>
-          <p className="mr-beyond-caption">
-            Below this line is what these records cannot reach yet.
-          </p>
-          {analytics.trend.renderChart ? null : <Trend trend={analytics.trend} />}
-          <section className="mr-band" aria-labelledby="mr-h-cover">
-            <h2 className="mr-h2" id="mr-h-cover">
-              What these numbers do not cover
-            </h2>
-            <p className="mr-beyond-empty">
-              Every claim above was counted from the records named under it, prints its
-              own limit, and reaches its own records. What fell short is set out beside
-              the claims, above.
+        firstRun ? null : analytics.trend.renderChart ? null : (
+          <>
+            <p className="mr-beyond-caption">
+              Below this line is what these records cannot reach yet.
             </p>
-          </section>
-        </>
+            <Trend trend={analytics.trend} />
+          </>
+        )
       }
     />
   );

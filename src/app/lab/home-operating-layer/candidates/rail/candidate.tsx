@@ -13,18 +13,20 @@
  *     the page is ordered by when each thing next wants you,
  *     and it is bracketed by the two instants that bound the read.
  *
- * Nothing is ranked into position by an invisible score. An entry sits where
- * its own time puts it, its time is printed in a column you can run your eye
- * down without reading a single title, and an entry with no time is not placed
- * on the clock at all.
+ * An entry sits where its own time puts it, its time is printed in a column you
+ * can run your eye down without reading a single title, and an entry with no
+ * time is not placed on the clock at all. The one exception is Today's three
+ * decisions, which are ranked, and where a rank exists it is printed as a rank
+ * so it can never be read as a position on the clock.
  *
  * ── THE SIGNATURE MOMENT: TWO RULES, AND THE SPACE BETWEEN THEM ────────────
  *
  * Two full-bleed horizontal rules, and they are the only full-bleed elements in
  * the direction.
  *
- *   THE MERIDIAN, at the top, is now. It carries the instant the read was
- *   taken. Everything below it is the read.
+ *   THE MERIDIAN, at the top, is now. Everything above it describes the read:
+ *   where you are standing, what the read was taken over, and how much of it
+ *   came back. Everything below it is the read.
  *
  *   THE HORIZON, at the bottom, is the far edge of what this read reached —
  *   fourteen days on Today, seven on My work, four weeks of records on
@@ -32,24 +34,33 @@
  *   window sentence, so the two rules can never drift from the read they
  *   bracket.
  *
- * Everything between them is inside the read. Everything below the horizon is
- * outside it: further out than the window looked, off the clock altogether, or
- * not yet answerable. A founder at 07:00 sees the shape of the next fortnight
- * before reading a word, and on a quiet day the space between the rules is
- * genuinely open. That emptiness is the direction's answer to what a wide
- * screen is for: it is the amount of time nothing is asking for, and it is
- * captioned in words so it can never be mistaken for a page that failed to
- * finish loading.
+ * THE DISTANCE BETWEEN THEM IS THE WORK. That is the whole composition, and it
+ * is what changed most in round 5. The previous version reserved 21rem of empty
+ * canvas between the rules whether or not anything stood there, on the theory
+ * that the emptiness was the shape of the time nothing was asking for. Ten
+ * directors read it as an unmade decision, and the brief's own amendment says
+ * emptiness is only allowed where you can name the work it is doing. So the
+ * reservation is gone and the rules close up. A quiet day is now a genuinely
+ * short page, a busy day is a long one, and the gap between the two rules is a
+ * measure of the read rather than a caption about it.
  *
- * AND WHEN THE READ BREAKS, THE PAPER CHANGES. A source that was asked and did
- * not answer means the time between the two rules is still there and Home could
- * not see into it. So the field between them is RULED — a lined ground under
- * the whole read — and the shell's own failure sentence is set at heading size
- * hard against the meridian. A partly-read day keeps open paper and gets the
- * sentence. A finished read gets neither. Three silhouettes, told apart from
- * across a room, before a word is read, and still told apart with every colour
- * removed. The previous occupant of this folder was vetoed for expressing that
- * difference as one hairline; this is the whole material of the page.
+ * AND WHEN THE READ BREAKS, THE PAGE REVERSES. A source that was asked and did
+ * not answer is set knocked out of solid ink, hard against the meridian, at
+ * heading size. Nothing else on any of the five surfaces is reversed. It reads
+ * as a black slab from across a room before a word is read, it survives forced
+ * colours as a real fill and a real border, and it cannot be mistaken for a page
+ * that has not finished loading — which is precisely what the round-4 device, a
+ * ruled ground of grey hairlines, was mistaken for by two directors at once.
+ *
+ * ── WHAT THE WIDTH IS FOR ──────────────────────────────────────────────────
+ *
+ * Two columns and two right edges. The left column is the measure and ends where
+ * the measure ends; the right column is the account of the read and ends at the
+ * page. Above the meridian the right column carries what this read IS — how much
+ * came back, what it was taken over, where work started from here would land.
+ * Below the meridian it carries what the read COULD NOT SEE, and it is exactly
+ * as long as that mode's limits are, so on a clean day it is short or absent.
+ * Nothing on this page is wide because there was room.
  *
  * ── WHY IT IS NOT A NEAR NEIGHBOUR OF THE OTHER THREE ──────────────────────
  *
@@ -62,14 +73,12 @@
  *
  * ── WHAT IT COSTS, SAID PLAINLY ────────────────────────────────────────────
  *
- * Two rules and their labels are about 96px of vertical furniture on every
- * mode, spent before the first entry. The time gutter is 10rem of width the
- * measure never gets back at any size above 640px. And ordering by time rather
- * than by rank means the three ranked decisions are not automatically the first
- * three things on the page: they are first because Today's own section order
- * puts them first, and on a day where something is two days late that late
- * thing leads. That is the right answer, and it is a real loss of control over
- * the fold.
+ * Two rules and their labels are about 80px of vertical furniture on every mode,
+ * spent before the first entry. The time gutter is 10rem of width the measure
+ * never gets back at any size above 640px. And ordering by time rather than by
+ * rank means the three ranked decisions are not automatically the first three
+ * things on the page: they are first because Today's own section order puts them
+ * first, and on a day where something is two days late that late thing leads.
  *
  * ── WHAT IT SPENDS AT RUNTIME ──────────────────────────────────────────────
  *
@@ -88,7 +97,7 @@ import { HOME_APP_PATH, PRODUCT_APP_PATHS } from "@/lib/product-urls";
 import { AnalyticsMode } from "./analytics";
 import { InboxMode } from "./inbox";
 import { MyWorkMode } from "./my-work";
-import { Masthead } from "./parts";
+import { Ledger } from "./parts";
 import { readingsFor, type Reading } from "./reading";
 import { BriefingMode, TodayMode } from "./today";
 import "./rail.css";
@@ -149,14 +158,33 @@ function Suite({ props }: { props: HomeCandidateProps }) {
 }
 
 /**
- * The four modes, with the read state of each one printed underneath.
+ * THE FOUR MODES, ABOVE THE HEADING, IN ONE FIXED POSITION.
  *
- * Two blind rounds found every direction independently arriving at this, so it
- * is table stakes rather than anybody's signature: a founder about to switch
- * modes should know before the click whether the mode they are switching to
- * came back. The word is the shell's own and it is resolved to the WORST state
- * the mode can be shown to be in, so a mode publishing an incomplete disclosure
- * can never advertise itself as read.
+ * Three things changed here after round 4 and all three were named by more than
+ * one director.
+ *
+ * IT SITS ABOVE THE `h1`. Learned convention puts route-level navigation above
+ * the page title; under the headline the four modes read as filters on Today
+ * rather than as four peer routes, which is the two-level model this layer
+ * exists to protect.
+ *
+ * IT DOES NOT MOVE. It is the first thing inside `main` in every one of the five
+ * surfaces, so its offset is identical in all of them. The Analytics standfirst
+ * used to push it down 43px and every Today to Analytics switch was a visible
+ * jump; the standfirst now sits below the heading, where a standfirst belongs,
+ * and the row is anchored.
+ *
+ * IT IS NAMED. A visible "Home" binds the four into a group and names the
+ * accessible label of the navigation, so nothing has to be inferred about which
+ * four these are or what they belong to.
+ *
+ * THE STATE OF EACH MODE IS PRINTED UNDER IT. Two blind rounds found every
+ * direction independently arriving at this, so it is table stakes rather than
+ * anybody's signature: a founder about to switch modes should know before the
+ * click whether the mode they are switching to came back. The word is the
+ * shell's own, resolved to the WORST state the mode can be shown to be in, and a
+ * mode that refused a source while still producing a read says both facts rather
+ * than claiming a total outage it did not have.
  */
 function Modes({
   props,
@@ -168,7 +196,10 @@ function Modes({
   const { chrome, copy } = props;
   const inBriefing = props.state.mode === "briefing";
   return (
-    <nav className="mr-modes" aria-label={chrome.navLabel}>
+    <nav className="mr-modes" aria-labelledby="mr-home-label">
+      <p className="mr-home" id="mr-home-label">
+        {chrome.navLabel}
+      </p>
       <ul className="mr-mode-list">
         {chrome.modes.map((link: HomeModeLink) => {
           const reading = readings[link.mode] as Reading;
@@ -183,6 +214,16 @@ function Modes({
                   {link.label}
                   {link.badge ? (
                     <span className="mr-badge">
+                      {/* A COUNT MAY NOT SIT UNQUALIFIED BESIDE A BROKEN READ.
+                          Where the badge's own coverage is not complete the
+                          number is the floor rather than the total, and it says
+                          so in words a line above the state caption that
+                          explains why. */}
+                      {props.inbox.badge.coverage !== "complete" ? (
+                        <span className="mr-badge-floor" aria-hidden="true">
+                          at least
+                        </span>
+                      ) : null}
                       <span aria-hidden="true">{link.badge.glyph}</span>
                       {link.badge.announce ? (
                         <span className="mr-sr">{props.inbox.badge.accessibleName}</span>
@@ -218,85 +259,102 @@ function Modes({
 }
 
 /**
- * The one control that changes what Home reads, and the one polite status
- * region in the document.
+ * The one control that changes what Home reads.
  *
- * The control is a `<details>` because the lab hydrates nothing, and every
- * option inside it is a real route that survives reload and the Back button.
+ * It is a `<details>` because the lab hydrates nothing, and every option inside
+ * it is a real route that survives reload and the Back button. It carries a
+ * disclosure marker so it reads as opening in place rather than as navigating,
+ * which is the same mark every other disclosure in this direction uses.
+ *
+ * WHAT IS NO LONGER HERE. Round 4 found a second, unlabelled copy of the current
+ * mode's state word floating at the right end of this row, anchored to nothing,
+ * with two identical words in one header block and nothing saying which
+ * described the mode and which the scope. Four directors named it. The state of
+ * every mode is printed once, under that mode's own name, and the document's
+ * polite status region moved to the meridian, which is the one line that already
+ * changes when a reader moves scope.
  */
-function Controls({ props, here }: { props: HomeCandidateProps; here: Reading }) {
+function Scope({ props }: { props: HomeCandidateProps }) {
   const { chrome, copy } = props;
   const readScope = chrome.scope.options.filter((option) => option.group === "read-scope");
   const projects = chrome.scope.options.filter((option) => option.group === "project");
   return (
-    <div className="mr-controls">
-      <details className="mr-scope">
-        <summary className="mr-scope-summary">
-          <span className="mr-scope-verb">{copy.actions.changeScope}</span>
-          <span className="mr-scope-value">{chrome.scope.label}</span>
-        </summary>
-        <div className="mr-scope-body">
-          <p className="mr-scope-help">{chrome.scope.helpLine}</p>
-          {chrome.scope.coverageLine ? (
-            <p className="mr-scope-coverage">{chrome.scope.coverageLine}</p>
-          ) : null}
-          <ul className="mr-scope-list">
-            {readScope.map((option) => (
-              <li key={option.id}>
-                <a
-                  className="mr-scope-option"
-                  href={option.href}
-                  aria-current={option.current ? "true" : undefined}
-                >
-                  {option.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-          {projects.length > 0 ? (
-            <>
-              <p className="mr-label">One project</p>
-              <ul className="mr-scope-list">
-                {projects.map((option) => (
-                  <li key={option.id}>
-                    <a
-                      className="mr-scope-option"
-                      href={option.href}
-                      aria-current={option.current ? "true" : undefined}
-                    >
-                      {option.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-          {chrome.scope.resetHref ? (
-            <a className="mr-scope-reset" href={chrome.scope.resetHref}>
-              {chrome.scope.resetLabel}
-            </a>
-          ) : null}
-        </div>
-      </details>
-      <p
-        className="mr-status"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-        aria-label={chrome.statusRegionLabel}
-        data-band={here.material}
-      >
-        {here.label}
-      </p>
-    </div>
+    <details className="mr-scope">
+      <summary className="mr-scope-summary">
+        <span className="mr-scope-verb">{copy.actions.changeScope}</span>
+        <span className="mr-scope-value">{chrome.scope.label}</span>
+      </summary>
+      <div className="mr-scope-body">
+        <p className="mr-scope-help">{chrome.scope.helpLine}</p>
+        <ul className="mr-scope-list">
+          {readScope.map((option) => (
+            <li key={option.id}>
+              <a
+                className="mr-scope-option"
+                href={option.href}
+                aria-current={option.current ? "true" : undefined}
+              >
+                {option.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+        {projects.length > 0 ? (
+          <>
+            <p className="mr-label">One project</p>
+            <ul className="mr-scope-list">
+              {projects.map((option) => (
+                <li key={option.id}>
+                  <a
+                    className="mr-scope-option"
+                    href={option.href}
+                    aria-current={option.current ? "true" : undefined}
+                  >
+                    {option.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
+        {chrome.scope.resetHref ? (
+          <a className="mr-scope-reset" href={chrome.scope.resetHref}>
+            {chrome.scope.resetLabel}
+          </a>
+        ) : null}
+      </div>
+    </details>
   );
 }
 
 /**
- * The heading, the navigation and the controls are composed ONCE here rather
- * than five times in the mode files. Each mode file therefore contains only its
- * chronology, which is the part that is actually a design decision, and the
- * five surfaces cannot drift apart in the frame they share.
+ * How much of what was asked for came back, in one sentence, per mode.
+ *
+ * Composed here rather than in the five mode files so the top of the page has
+ * one shape in all of them and cannot drift. Every sentence is the shell's own.
+ */
+function coveredLine(props: HomeCandidateProps): string | null {
+  const mode = props.state.mode;
+  if (mode === "today") return props.today.accountingLine ?? props.today.accountingWithheldLine;
+  if (mode === "briefing") {
+    return props.briefing.accountingLine ?? props.briefing.accountingWithheldLine;
+  }
+  if (mode === "inbox") {
+    if (!props.inbox.badge.rendered) return null;
+    return props.inbox.badge.glyph === null
+      ? props.copy.unreadableCount
+      : props.inbox.badge.accessibleName;
+  }
+  if (mode === "my-work") return props.myWork.coverageLine;
+  return props.analytics.windowLine;
+}
+
+/**
+ * The heading, the navigation, the scope control and the account of the read are
+ * composed ONCE here rather than five times in the mode files. Each mode file
+ * therefore contains only its chronology, which is the part that is actually a
+ * design decision, and the five surfaces cannot drift apart in the frame they
+ * share.
  */
 const Meridian: HomeCandidate = (props: HomeCandidateProps) => {
   const mode = props.state.mode;
@@ -321,16 +379,30 @@ const Meridian: HomeCandidate = (props: HomeCandidateProps) => {
       <div className="mr-page">
         <Suite props={props} />
         <main className="mr-main" id="app-main-content" tabIndex={-1}>
-          <Masthead
-            eyebrow={props.chrome.modeEyebrow}
-            line={headline}
-            lead={mode === "analytics" ? props.analytics.leadLine : null}
+          <div className="mr-identity">
+            <Modes props={props} readings={readings} />
+            <h1 className="mr-h1">
+              <span className="mr-h1-eyebrow">{props.chrome.modeEyebrow}</span>
+              <span className="mr-h1-line">{headline}</span>
+            </h1>
+            {/* The standfirst belongs to the heading, so it sits under it. Above
+                it, it moved the mode row and made every switch into Analytics a
+                visible jump. */}
+            {mode === "analytics" ? (
+              <p className="mr-lead">{props.analytics.leadLine}</p>
+            ) : null}
+            <Scope props={props} />
+          </div>
+          <Ledger
+            covered={coveredLine(props)}
+            rows={[
+              ["What was read", props.chrome.scope.label],
+              ...(props.chrome.scope.coverageLine
+                ? ([["How much", props.chrome.scope.coverageLine]] as const)
+                : []),
+              ["Work starts in", props.chrome.activeProject.line],
+            ]}
           />
-          {/* The Home-local navigation belongs to the Home document, so it sits
-              inside it, under the heading that says where you are. A reader who
-              takes the skip link lands on "Today", not on four links. */}
-          <Modes props={props} readings={readings} />
-          <Controls props={props} here={here} />
           {mode === "today" ? <TodayMode props={props} here={here} /> : null}
           {mode === "inbox" ? <InboxMode props={props} here={here} /> : null}
           {mode === "my-work" ? <MyWorkMode props={props} here={here} /> : null}

@@ -142,7 +142,7 @@ function Claim({
   ];
 
   return (
-    <Section id={id} heading={claim.question}>
+    <Section id={id} heading={claim.question} tier="claim">
       {claim.valueLabel === null ? (
         <p className="ri-claim-withheld">{claim.statusLine}</p>
       ) : (

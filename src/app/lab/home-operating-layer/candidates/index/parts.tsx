@@ -7,7 +7,7 @@
  * its own sake, it is the 0.9 KB shared-runtime headroom read literally.
  */
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type {
   Disclosure,
   FirstRunView,
@@ -17,9 +17,14 @@ import type {
 } from "@/lib/home-layer/lab-shell";
 import {
   anchorId,
+  modeCondition,
+  ordinal,
   recordLines,
   toneLabel,
 } from "@/lib/home-layer/candidates/index/labels";
+
+export const CONTENTS_ID = "ri-contents";
+const CONTENTS_LABEL_ID = "ri-contents-label";
 
 // ── What limited this read ──────────────────────────────────────────────────
 
@@ -55,9 +60,9 @@ function severityOf(note: Disclosure): number {
 /**
  * A read that a source refused, or that a seat cannot complete, is loud. Loud
  * is not a bigger label: it is a different composition. The block leaves the
- * reading column, becomes a red-ruled band across the whole sheet above the
- * headline, and takes a wash of the same red with it, so a failed read and a
- * signature day are two different pictures before a word of either is read.
+ * reading column and becomes a red-ruled band across the whole sheet above the
+ * headline, so a failed read and a signature day are two different pictures
+ * before a word of either is read.
  */
 export function isLoud(disclosures: readonly Disclosure[]): boolean {
   return disclosures.some(
@@ -102,53 +107,192 @@ export function Flag({ children }: { children: ReactNode }) {
   return <p className="ri-flag">{children}</p>;
 }
 
+// ── The contents · the coverage report ──────────────────────────────────────
+
+/**
+ * THE CONTENTS TABLE, AND WHY IT IS NO LONGER THE MASTHEAD.
+ *
+ * Round 4 put this at the top of every page and two directors put the same
+ * charge: Today asks what deserves attention now, and the page answered with a
+ * table of contents about itself first — roughly 330 px of index before the
+ * headline at 1440, and most of a phone screen at 390.
+ *
+ * They were right about the position and wrong about nothing else, so the
+ * device is unchanged and the position is. A periodical does not open on its
+ * contents page. It opens on the front page, and the contents is a coverage
+ * report inside the issue: which sections were read, and what condition each
+ * one came back in. That is what this is now, and moving it is what makes the
+ * metaphor literal rather than decorative.
+ *
+ * WHERE IT SITS. At 1080 and up it is the last block of the standing column,
+ * so the second column runs contents down the right of the read and the reader
+ * can change mode without moving. Below that it closes the document. The four
+ * modes are still reachable from the first screen, in words, in the folio bar
+ * at the top; what is here that is not there is the ordinal series, the leader,
+ * the cause behind each condition, and Full briefing as a child of Today.
+ *
+ * WHAT IT DOES NOT CARRY. `aria-current`. The bar owns every claim about where
+ * the reader is, so exactly one element in the document says "page". The row
+ * you are on is therefore not a link at all, which is also how a contents page
+ * has always handled the page you are holding.
+ */
+export function Contents({ props }: { props: HomeCandidateProps }) {
+  const { chrome, copy, state, hrefFor } = props;
+  const atDepth = state.mode === "briefing";
+  const briefingHref = hrefFor({ mode: "briefing", item: null });
+
+  return (
+    <nav
+      className="ri-contents"
+      id={CONTENTS_ID}
+      aria-labelledby={CONTENTS_LABEL_ID}
+      tabIndex={-1}
+    >
+      <p className="ri-label" id={CONTENTS_LABEL_ID}>
+        Contents
+      </p>
+      <p className="ri-contents-note">
+        Every mode, and the condition its own read is in.
+      </p>
+      <ol className="ri-contents-list">
+        {chrome.modes.map((mode, position) => {
+          const condition = modeCondition(props, mode.mode);
+          const here = mode.ariaCurrent === "page";
+          const row = (
+            <>
+              <span className="ri-contents-head">
+                <span className="ri-num ri-contents-num" aria-hidden="true">
+                  {ordinal(position + 1)}
+                </span>
+                <span className="ri-contents-name">{mode.label}</span>
+              </span>
+              <span className="ri-leader" aria-hidden="true" />
+              {/*
+                THE STATE COLUMN HAS A TAB STOP, which is the one thing a
+                leader-dot table has to get right and the one thing round 4
+                got wrong. The four states used to size to their own words and
+                sit right against the page edge, so the four dot runs stopped
+                at four different verticals and the dots led nowhere. The
+                column is fixed now and the words set from its left edge, so
+                every leader terminates on the same line and every condition
+                starts on it.
+              */}
+              <span className="ri-contents-state">
+                <span className="ri-cond" data-mark={condition.mark}>
+                  <span className="ri-cond-mark" aria-hidden="true" />
+                  <span className="ri-cond-word">{condition.word}</span>
+                  {condition.cause ? (
+                    <span className="ri-cond-cause">{condition.cause}</span>
+                  ) : null}
+                </span>
+              </span>
+            </>
+          );
+          return (
+            <li
+              className="ri-contents-item"
+              key={mode.mode}
+              data-current={
+                here ? "" : mode.ariaCurrent === "true" ? "ancestor" : undefined
+              }
+              style={{ "--ri-n": position } as CSSProperties}
+            >
+              {here ? (
+                <span className="ri-contents-row" data-here="">
+                  {row}
+                </span>
+              ) : (
+                <a className="ri-contents-row" href={mode.href}>
+                  {row}
+                </a>
+              )}
+
+              {/*
+                DEPTH, STATED IN THE CONTENTS. Full briefing is not a fifth
+                mode, it is the uncapped read behind Today, so it is an
+                indented child of Today's entry and it is listed from every
+                mode rather than only from inside it. A contents page that
+                only admits a section exists once you are already in it is not
+                a contents page.
+              */}
+              {mode.mode === "today" ? (
+                <ol className="ri-contents-depth">
+                  <li>
+                    {atDepth ? (
+                      <span className="ri-contents-depth-row" data-here="">
+                        {copy.modeNames.briefing}
+                      </span>
+                    ) : (
+                      <a className="ri-contents-depth-row" href={briefingHref}>
+                        {copy.modeNames.briefing}
+                      </a>
+                    )}
+                  </li>
+                </ol>
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 // ── The standing column ─────────────────────────────────────────────────────
 
 /**
  * WHAT THE FULL WIDTH IS FOR, SAID OUT LOUD (LAB_BRIEF Amendment 1).
  *
- * The measure carries the read. The column carries the imprint of the read.
+ * The measure carries the read. The column carries the record of the read, and
+ * then the contents of the issue it belongs to.
  *
- * Round 2 hung one short block in the right third with five hundred pixels of
- * nothing above it, and eight of ten directors called the arrival screen
- * unfinished. They were right, and the fault was not that the block existed —
- * it was that the block was flow-positioned against a full-width heading, so
- * its top edge landed wherever the headline happened to end.
+ * Five directors in round 4 made the same measurement of round 4's version:
+ * two short blocks in the right third and roughly five hundred pixels of
+ * nothing under them, repeating on every mode. The blocks were not the problem;
+ * the column stopping was. So it now runs three blocks deep and the last of
+ * them is the contents, which is per-mode live material rather than more
+ * provenance:
  *
- * So the page is now two columns from the top rule of the masthead to the
- * foot, and the second one is continuously occupied:
- *
- *   `Imprint`   level with the masthead. Which issue this is: when it was
- *               read, what Read Scope it was read at, and where new work
- *               would go if you started some.
  *   `ThisRead`  level with the `h1`. What this read did: who it was read for,
  *               what it accounted for, and what Home cannot see at all.
+ *   `Imprint`   which issue this is: when it was read, at what Read Scope, and
+ *               where new work would go if you started some.
+ *   `Contents`  every mode and the condition its own read is in.
  *
- * Both are ruled blocks on one right edge, so the column reads as a column
- * rather than as two orphans. Neither is sticky and neither is fixed: a rail
- * that follows the reader is a layout-thrash surface and it eats the viewport
- * at 400% zoom, which a director measured against this direction and was
- * right about.
+ * On a tall wide window the whole column follows the scroll, which is what
+ * makes the four modes reachable from any position without a bar that eats the
+ * viewport. It is guarded on both axes in em, so text-only enlargement and
+ * browser zoom both unstick it before it can crowd anything.
  *
- * Below 1080 the column unstacks in place: the imprint stays in the front
- * matter where the dateline belongs, and the record becomes a colophon at the
- * foot, which is safe precisely because nothing in it qualifies what is above
- * it. Everything that DOES qualify the read is in the reading column at every
- * width.
+ * Below 1080 the column unstacks in place and becomes the colophon: the record,
+ * then the imprint, then the contents closing the document. That is safe
+ * precisely because nothing in it qualifies what is above it. Everything that
+ * DOES qualify the read is in the reading column at every width.
  */
+export function Margin({ props }: { props: HomeCandidateProps }) {
+  return (
+    <div className="ri-margin">
+      <ThisRead props={props} />
+      <Imprint props={props} />
+      <Contents props={props} />
+    </div>
+  );
+}
+
 export function Imprint({ props }: { props: HomeCandidateProps }) {
   const { chrome } = props;
   return (
-    <div className="ri-imprint">
-      <p className="ri-label">What Home read</p>
-      <p className="ri-imprint-line">{chrome.asOf.line}</p>
-      <ScopeControl props={props} />
-      <p className="ri-imprint-line">{chrome.scope.helpLine}</p>
-      {chrome.scope.coverageLine ? (
-        <p className="ri-imprint-line">{chrome.scope.coverageLine}</p>
-      ) : null}
-      <p className="ri-imprint-line">{chrome.activeProject.line}</p>
-    </div>
+    <aside className="ri-imprint" aria-labelledby="ri-imprint-h">
+      <p className="ri-label" id="ri-imprint-h">
+        What Home read
+      </p>
+      <ul className="ri-record-list">
+        <li>{chrome.asOf.line}</li>
+        <li>{chrome.scope.helpLine}</li>
+        {chrome.scope.coverageLine ? <li>{chrome.scope.coverageLine}</li> : null}
+        <li>{chrome.activeProject.line}</li>
+      </ul>
+    </aside>
   );
 }
 
@@ -219,6 +363,11 @@ export function FirstScreen({ view }: { view: FirstRunView }) {
  * Placement is explicit rather than flowed, and the row gap is zero with the
  * rhythm carried on the children, so a mode with no limits and a mode with
  * three sit on the same vertical.
+ *
+ * The headline is now the first thing under the masthead in every mode and in
+ * every world. Nothing about the page is between the reader and it except the
+ * band that says a source did not answer, which is the one thing that outranks
+ * a headline.
  */
 export function Page({
   props,
@@ -262,7 +411,7 @@ export function Page({
         {loud ? null : limits}
         <div className="ri-body">{children}</div>
         {wide ? <div className="ri-wide">{wide}</div> : null}
-        <ThisRead props={props} />
+        <Margin props={props} />
       </div>
     </>
   );
@@ -323,53 +472,85 @@ export function When({ due }: { due: WhenLabel }) {
   );
 }
 
+// ── Dispositions ────────────────────────────────────────────────────────────
+
 /**
- * What a row lets you do, and what it does not.
+ * WHAT THE ROW LETS YOU DO, ON THE ROW, IN THE ARRIVAL STATE.
  *
- * `restrictions` is the ledger rhythm: sixty rows that all allow the same two
- * things say nothing by saying so, while a row that refuses one has to say
- * why. `all` is the queue rhythm: on a decision you are about to make, the
- * shape of the decision is the content.
+ * Round 4's Inbox offered one thing per event: OPEN. Four directors marked it
+ * and one put the cost exactly — every mark as read, snooze and clear cost a
+ * full navigation, which made it the slowest daily triage of the four. A mode
+ * whose job is "what needs my response" has to offer something to respond with.
  *
- * Nothing here is a control. This surface reads fixtures and writes nothing,
- * so an affordance that looked like a button would be the exact dead control
- * the brief forbids. Names and reasons, in text, inside the row's own link.
+ * So every disposition the shell publishes for a row is on the row: Mark as
+ * read, Snooze, Approve at the source, Clear from Inbox on an event; Mark as
+ * done and Change who owns it on a responsibility. Nothing is hidden, and that
+ * includes the ones that are shut to you: a refusal is struck through and
+ * carries its reason on the same line, because a control that disappears tells
+ * the reader nothing about why.
+ *
+ * WHAT IS STILL REFUSED, and why that is the honest half of this. This surface
+ * reads fixtures and writes nothing. A button that claimed an outcome no
+ * source ever confirmed is D-HX06, and it is the exact lie this whole programme
+ * exists to remove. So a disposition the shell gave a real route is a real
+ * link, and a disposition that would have to write is named, placed and costed
+ * in the composition rather than drawn as a control that lies. Each mode that
+ * offers any says so once, above its list, rather than once per row.
+ *
+ * The set sits outside the row's own link, so a 44 px row target and a run of
+ * named dispositions can both exist without a control nested inside a wrapping
+ * link.
  */
-export function Perms({
+export function Dispositions({
   actions,
-  show,
+  exclude,
   label,
 }: {
   actions: readonly RowAction[];
-  show: "all" | "restrictions";
-  /** Only where the list could otherwise be mistaken for a row of controls. */
+  /** Ids already carried by the row's own link. */
+  exclude?: readonly string[];
+  /** Only where the run could otherwise be mistaken for part of the record. */
   label?: string;
 }) {
-  const shown = actions.filter(
-    (action) =>
-      action.href === null && (show === "all" || action.available === false),
-  );
+  const shown = actions.filter((action) => !exclude?.includes(action.id));
   if (shown.length === 0) return null;
   return (
-    <>
-      {label ? <p className="ri-label ri-perms-label">{label}</p> : null}
-      <ul className="ri-perms">
-      {shown.map((action) => (
-        <li
-          className="ri-perm"
-          data-open={action.available ? "yes" : "no"}
-          key={action.id}
-        >
-          <span className="ri-perm-name">{action.label}</span>
-          {action.unavailableReason === null ? null : (
-            <span className="ri-perm-why">{action.unavailableReason}</span>
-          )}
-        </li>
-      ))}
+    <div className="ri-acts">
+      {label ? <p className="ri-label ri-acts-label">{label}</p> : null}
+      <ul className="ri-acts-list">
+        {shown.map((action) => (
+          <li
+            className="ri-act"
+            data-open={action.available ? "yes" : "no"}
+            key={action.id}
+          >
+            {action.available && action.href !== null ? (
+              <a className="ri-act-name" href={action.href}>
+                {action.label}
+              </a>
+            ) : (
+              <span className="ri-act-name">{action.label}</span>
+            )}
+            {action.unavailableReason === null ? null : (
+              <span className="ri-act-why">{action.unavailableReason}</span>
+            )}
+          </li>
+        ))}
       </ul>
-    </>
+    </div>
   );
 }
+
+/**
+ * Said once per mode that offers a disposition, rather than once per row.
+ * Sixty rows repeating it would be sixty times the height and no extra fact.
+ */
+export function WritesNothing({ children }: { children: string }) {
+  return <p className="ri-writes">{children}</p>;
+}
+
+export const LAB_WRITES_NOTHING =
+  "Every disposition a row offers is named here, including the ones shut to you. This surface reads and does not write, so nothing is settled until the source says it is.";
 
 // ── Sections ────────────────────────────────────────────────────────────────
 
@@ -395,8 +576,16 @@ export function Section({
    * "lead" is the first section of a read, set at the size of a lead story;
    * everything after it runs at the ledger's size. A page where every section
    * shouts equally is the task wall this direction exists to avoid.
+   *
+   * "claim" is the Analytics register: seven sections in a row, each a question
+   * with an answer and its records. A director measured that page at 4054px and
+   * called it a chart wall made of type, and most of the height was rhythm
+   * rather than words — a lead-story gap between every claim and a full field
+   * row for every caveat. The claims keep every field they had, including the
+   * two that matter most (LEFT OUT and BASELINE); what they lose is the air
+   * between them.
    */
-  tier?: "lead" | "tail";
+  tier?: "lead" | "tail" | "claim";
   children: ReactNode;
 }) {
   const headingId = `${id}-h`;
@@ -419,20 +608,26 @@ export function Section({
 // ── The scope control ───────────────────────────────────────────────────────
 
 /**
- * THE DATELINE. Not a form field, and not in the reading path.
+ * THE DATELINE, PROMOTED TO A CONTROL.
  *
- * Read Scope is which issue of this paper you are holding, so it is set as a
- * dateline in the masthead and opens from there. It used to sit between the
- * headline and the first sentence, drawn as a select: administrative chrome
- * placed ahead of the read, and the loudest thing on the page at the exact
- * point where the day's first decision should be.
+ * Read Scope is which issue of this paper you are holding, so it belongs in the
+ * masthead, and in round 4 it was there in name only: a director found the
+ * most frequently used global control in the product set as an 11 px monospace
+ * underlined link at the foot of the right column, and could find no scope
+ * control anywhere else on the page.
+ *
+ * It is now on the masthead line at every width, above the fold in every world,
+ * labelled with what it changes and set at reading size with a 44 px target.
+ * The explanation of what Read Scope is and is not moved into the standing
+ * column with the rest of the record, because a control needs to be a control
+ * and its footnotes do not need to be beside it.
  *
  * Read Scope and Active Project are the two things a Home surface most easily
  * conflates, so the panel names each one and repeats the shell's own sentence
  * about which is which. Below 768 the open panel is a labelled sheet whose
- * header is also its dismiss control; above it, an anchored drop. A
- * `<details>` rather than a menu, because a menu would need JavaScript and
- * this direction spends none.
+ * header is also its dismiss control; above it, an anchored drop. A `<details>`
+ * rather than a menu, because a menu would need JavaScript and this direction
+ * spends none.
  */
 export function ScopeControl({ props }: { props: HomeCandidateProps }) {
   const { chrome, copy } = props;
@@ -445,12 +640,14 @@ export function ScopeControl({ props }: { props: HomeCandidateProps }) {
   return (
     <details className="ri-scope">
       <summary className="ri-scope-summary">
+        <span className="ri-label ri-scope-key">Read scope</span>
         <span className="ri-scope-current">{chrome.scope.label}</span>
         <span className="ri-scope-change">{copy.actions.changeScope}</span>
       </summary>
       <div className="ri-scope-panel">
         <div>
           <p className="ri-label">What Home reads</p>
+          <p className="ri-record-text">{chrome.scope.helpLine}</p>
           <ul className="ri-scope-options">
             {readScope.map((option) => (
               <li key={option.id}>

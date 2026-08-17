@@ -16,17 +16,27 @@
  * snooze is not a status word, it is a position. The reader can see that they
  * moved something past the line, and see exactly where it lands.
  *
+ * THE RETURN LEDGER IS A LEDGER OF ACTUAL RETURNS. Round 4 found the right
+ * column printing the full schedule of snooze CHOICES on arrival — two of them
+ * daylight-saving edge cases at 01:30 and 02:00 on distant dates — before
+ * anything had been snoozed, and called it a test fixture leaking onto the
+ * reading surface. It was right. The column now lists only events that are
+ * genuinely snoozed, each beside the instant it comes back, and says so plainly
+ * when none are. The schedule of choices moved to where a snooze is actually
+ * being set, which is inside the Snooze disclosure on the row, with one line
+ * saying why those instants are given to the minute.
+ *
  * THREADS STAY WHOLE. Grouping is the shell's, by thread, and a thread with any
  * open ask in it stays above the line entire rather than being torn in half by
  * disposition. A single-row group prints no group heading, because the shell
  * composes that heading from the row's own title and printing it twice is
  * furniture, not structure.
  *
- * EVERY DISPOSITION IS ON THE ROW AT ARRIVAL. Mark as read, snooze with its
- * full schedule of exact resurfacing instants, approve at the source, clear,
- * and recovery after a refusal — none of them is behind an Open link. The lab
- * cannot mutate anything, so each one opens and states precisely what it would
- * do and where; what it may not do is hide that the vocabulary exists.
+ * EVERY DISPOSITION IS ON THE ROW AT ARRIVAL, and only where it can be used. An
+ * open ask carries mark as read, snooze, approve at the source and clear, with
+ * every refusal struck through and its reason beside it. A settled event below
+ * the line carries none of them, because there is nothing there to dispose of,
+ * and that alone halves the number of operable regions on the page.
  */
 
 import type { InboxGroup, InboxRow } from "@/lib/home-layer/lab-shell";
@@ -41,12 +51,12 @@ import {
   FirstRun,
   HORIZON_MARK,
   Label,
+  LAB_LIMIT_NOTE,
   Meta,
   Notice,
   Notices,
   Prov,
   ReadNotice,
-  ScopeAccount,
   SourcePath,
   TheRead,
   type ModeArgs,
@@ -80,6 +90,10 @@ function Event({
   const open = selectedId === row.eventId;
   const openAction = row.actions.find((action) => action.id === "open") ?? null;
   const rest = row.actions.filter((action) => action.id !== "open");
+  /* Dispositions ride on what is still open. Nothing below the horizon has a
+     disposition left to offer, and printing four of them there was most of the
+     operable-region count round 4 objected to. */
+  const disposable = row.disposition === "open";
   return (
     <Entry time={timeOf(row)} selected={open}>
       {underSubject ? null : <p className="mr-kind">{row.kindLabel}</p>}
@@ -110,7 +124,7 @@ function Event({
           ) : null}
         </p>
       ) : null}
-      <Actions actions={rest} snooze={snooze} />
+      {disposable ? <Actions actions={rest} snooze={snooze} /> : null}
       {open ? (
         <div className="mr-detail">
           <SourcePath path={row.sourcePath} close={closeHref} />
@@ -166,7 +180,7 @@ function Thread({
 }
 
 export function InboxMode({ props, here }: ModeArgs) {
-  const { inbox, chrome, copy, firstRun } = props;
+  const { inbox, chrome, firstRun } = props;
   const worst = firstRun ? null : (bySeverity(inbox.disclosures)[0] ?? null);
   const selectedId = inbox.selection?.eventId ?? null;
   const closeHref = props.hrefFor({ event: null });
@@ -178,16 +192,31 @@ export function InboxMode({ props, here }: ModeArgs) {
     (group) => !group.rows.some((row) => row.disposition === "open"),
   );
 
+  /* Every event a reader has actually pushed past the line, with the instant it
+     returns. Composed from the rows on the page rather than from the schedule of
+     choices, so the column can only ever show returns that exist. */
+  const returning = inbox.groups
+    .flatMap((group) => group.rows)
+    .filter((row) => row.disposition === "snoozed" && row.snoozeLine !== null)
+    .map((row) => [row.title ?? row.titleFallback, row.snoozeLine as string] as const);
+
+  const setup = firstRun
+    ? (inbox.disclosures.find((item) => item.tone === "setup") ?? null)
+    : null;
+  const rest = accountOf(inbox.disclosures, worst ?? setup);
+  const hasRecord = rest.length > 0 || !firstRun;
+
   return (
     <Chronology
       when={chrome.asOf.line}
+      statusLabel={chrome.statusRegionLabel}
       material={here.material}
       notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
       horizonMark={HORIZON_MARK}
       horizonLine={null}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} />
+          <FirstRun view={firstRun} lead={setup?.text ?? null} />
         ) : (
           <>
             {inbox.selectionMissingLine ? (
@@ -195,7 +224,7 @@ export function InboxMode({ props, here }: ModeArgs) {
             ) : null}
             {inbox.emptyLine ? <p className="mr-day">{inbox.emptyLine}</p> : null}
             {waiting.length === 0 && !inbox.emptyLine ? (
-              <EmptyField>Nothing is waiting on you between now and this line.</EmptyField>
+              <EmptyField>Nothing is waiting on you inside this read.</EmptyField>
             ) : null}
             {waiting.length > 0 ? (
               <Entries>
@@ -214,51 +243,46 @@ export function InboxMode({ props, here }: ModeArgs) {
         )
       }
       record={
-        <TheRead>
-          <Notices items={accountOf(inbox.disclosures, worst)} />
-          {inbox.badge.rendered ? (
-            <p className="mr-account">
-              {inbox.badge.glyph === null ? copy.unreadableCount : inbox.badge.accessibleName}
-            </p>
-          ) : null}
-          <ScopeAccount
-            scopeLabel={chrome.scope.label}
-            coverageLine={chrome.scope.coverageLine}
-          />
-          <div className="mr-schedule">
-            <Label>When a snooze comes back</Label>
-            <Fields
-              rows={inbox.snoozeOptions.map(
-                (option) => [option.label, option.resurfaceLine] as const,
-              )}
-            />
-          </div>
-          <p className="mr-active">{chrome.activeProject.line}</p>
-        </TheRead>
+        hasRecord ? (
+          <TheRead>
+            <Notices items={rest} />
+            {firstRun ? null : (
+              <div className="mr-schedule">
+                <Label>When a snooze comes back</Label>
+                {returning.length > 0 ? (
+                  <Fields rows={returning} />
+                ) : (
+                  <p className="mr-account">Nothing here is snoozed, so nothing is due back.</p>
+                )}
+              </div>
+            )}
+            {firstRun ? null : <p className="mr-account">{LAB_LIMIT_NOTE}</p>}
+          </TheRead>
+        ) : null
       }
       beyond={
-        <>
-          <p className="mr-beyond-caption">
-            Nothing below this line is waiting on you now.
-          </p>
-          {settled.length > 0 ? (
-            <Entries>
-              {settled.map((group) => (
-                <Thread
-                  key={group.key}
-                  group={group}
-                  selectedId={selectedId}
-                  closeHref={closeHref}
-                  snooze={inbox.snoozeOptions}
-                />
-              ))}
-            </Entries>
-          ) : (
-            <p className="mr-beyond-empty">
-              Nothing here has been snoozed, handled or cleared.
-            </p>
-          )}
-        </>
+        firstRun ? null : (
+          <>
+            <p className="mr-beyond-caption">Nothing below this line is waiting on you now.</p>
+            {settled.length > 0 ? (
+              <Entries>
+                {settled.map((group) => (
+                  <Thread
+                    key={group.key}
+                    group={group}
+                    selectedId={selectedId}
+                    closeHref={closeHref}
+                    snooze={inbox.snoozeOptions}
+                  />
+                ))}
+              </Entries>
+            ) : (
+              <p className="mr-beyond-empty">
+                Nothing here has been snoozed, handled or cleared.
+              </p>
+            )}
+          </>
+        )
       }
     />
   );

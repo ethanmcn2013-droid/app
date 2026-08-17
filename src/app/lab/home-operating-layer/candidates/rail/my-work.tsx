@@ -15,6 +15,14 @@
  * group's own note. The horizon here is genuinely the edge of the read rather
  * than a fold: past it is work the seven-day window did not reach.
  *
+ * IT IS A LEDGER YOU ACT ON. Round 4 found these rows inert — no mark as done,
+ * no change of owner, no link affordance on the titles — on the one mode that is
+ * supposed to be a responsibility ledger. Both dispositions the shell publishes
+ * now ride on every row at arrival, with refusals struck through and their
+ * reasons beside them, which is where this repository's own capability model
+ * makes them most legible: a seat that cannot finish work in a project says so
+ * on the row it cannot finish.
+ *
  * THE UNDATED ARE NOT PLACED. A row with no date prints "No date" in the
  * gutter at full weight rather than a blank, an approximation or a dash. A
  * direction whose structure is time is the one most tempted to invent a
@@ -33,12 +41,13 @@ import {
   EntryTitle,
   FirstRun,
   HORIZON_MARK,
+  LAB_LIMIT_NOTE,
   Meta,
   Notice,
   Notices,
   Prov,
   ReadNotice,
-  ScopeAccount,
+  sameFact,
   SourcePath,
   TheRead,
   type ModeArgs,
@@ -71,9 +80,23 @@ function WorkEntry({
   closeHref: string;
 }) {
   const open = selectedKey !== null && selectedKey === row.key;
-  const reason = row.groupReasonLine === groupNote ? null : row.groupReasonLine;
+  const time = timeOf(row);
+  /*
+   * ONE FACT, ONE PLACE. Round 4 caught this row printing "Parked in this
+   * project's waiting column" inline and "Parked in the waiting column."
+   * immediately beneath it. The waiting line is the more precise of the two —
+   * it names how many other items are in the way, or that the project has no
+   * waiting column at all — so it wins and the group reason stands down.
+   */
+  const waiting = row.group === "waiting" ? row.waitingLine : null;
+  const reason =
+    sameFact(row.groupReasonLine, groupNote) ||
+    sameFact(row.groupReasonLine, time) ||
+    sameFact(row.groupReasonLine, waiting)
+      ? null
+      : row.groupReasonLine;
   return (
-    <Entry time={timeOf(row)} overdue={row.due?.overdue ?? false} selected={open}>
+    <Entry time={time} overdue={row.due?.overdue ?? false} selected={open}>
       <EntryTitle href={row.href}>{row.title}</EntryTitle>
       <Meta
         items={[
@@ -84,20 +107,16 @@ function WorkEntry({
           row.isMilestone ? <span key="ms">Milestone</span> : null,
         ]}
       />
-      {/* Only where it explains the grouping. Outside Waiting the only line
-          this field carries is a project-level fact about a missing waiting
-          column, which the read already discloses once rather than on every
-          row it touches. */}
-      {row.group === "waiting" && row.waitingLine ? (
+      {waiting ? (
         <p className="mr-warn" data-band="waiting">
-          {row.waitingLine}
+          {waiting}
         </p>
       ) : null}
       {row.coAssigneeLine ? <p className="mr-aside">{row.coAssigneeLine}</p> : null}
+      <Actions actions={row.actions} />
       {open ? (
         <div className="mr-detail">
           <SourcePath path={row.sourcePath} close={closeHref} />
-          <Actions actions={row.actions} />
         </div>
       ) : null}
     </Entry>
@@ -106,11 +125,13 @@ function WorkEntry({
 
 function Group({
   group,
+  caveat,
   selectedKey,
   closeHref,
   showNote = true,
 }: {
   group: MyWorkGroupView;
+  caveat: string | null;
   selectedKey: string | null;
   closeHref: string;
   /** False below the horizon, where the rule itself already carries the note. */
@@ -122,6 +143,7 @@ function Group({
       id={`mr-h-${group.id}`}
       heading={group.heading}
       note={showNote ? group.note : null}
+      caveat={caveat}
     >
       <Entries>
         {group.rows.map((row) => (
@@ -146,17 +168,24 @@ export function MyWorkMode({ props, here }: ModeArgs) {
   const inside = myWork.groups.filter((group) => group.id !== BELOW_THE_LINE);
   const later = myWork.groups.find((group) => group.id === BELOW_THE_LINE) ?? null;
   const shown = inside.reduce((total, group) => total + group.rows.length, 0);
+  const setup = firstRun
+    ? (myWork.disclosures.find((item) => item.tone === "setup") ?? null)
+    : null;
+  const rest = accountOf(myWork.disclosures, worst ?? setup);
+  const caveat = here.refused ? myWork.coverageLine : null;
+  const hasLater = (later?.rows.length ?? 0) > 0;
 
   return (
     <Chronology
       when={chrome.asOf.line}
+      statusLabel={chrome.statusRegionLabel}
       material={here.material}
       notice={worst ? <ReadNotice band={here.material}>{worst.text}</ReadNotice> : null}
       horizonMark={HORIZON_MARK}
       horizonLine={later?.note ?? null}
       stream={
         firstRun ? (
-          <FirstRun view={firstRun} />
+          <FirstRun view={firstRun} lead={setup?.text ?? null} />
         ) : (
           <>
             {myWork.selectionMissingLine ? (
@@ -164,14 +193,13 @@ export function MyWorkMode({ props, here }: ModeArgs) {
             ) : null}
             {myWork.emptyLine ? <p className="mr-day">{myWork.emptyLine}</p> : null}
             {shown === 0 && !myWork.emptyLine ? (
-              <EmptyField>
-                Nothing you are carrying falls between now and the edge of this read.
-              </EmptyField>
+              <EmptyField>Nothing you are carrying falls inside this read.</EmptyField>
             ) : null}
             {inside.map((group) => (
               <Group
                 key={group.id}
                 group={group}
+                caveat={caveat}
                 selectedKey={selectedKey}
                 closeHref={closeHref}
               />
@@ -180,41 +208,43 @@ export function MyWorkMode({ props, here }: ModeArgs) {
         )
       }
       record={
-        <TheRead>
-          <Notices items={accountOf(myWork.disclosures, worst)} />
-          {myWork.coverageLine ? <p className="mr-account">{myWork.coverageLine}</p> : null}
-          {myWork.timeZoneLine ? <p className="mr-account">{myWork.timeZoneLine}</p> : null}
-          {myWork.doneExcludedLine ? (
-            <p className="mr-account">{myWork.doneExcludedLine}</p>
-          ) : null}
-          <ScopeAccount
-            scopeLabel={chrome.scope.label}
-            coverageLine={chrome.scope.coverageLine}
-          />
-          <p className="mr-active">{chrome.activeProject.line}</p>
-        </TheRead>
+        firstRun && rest.length === 0 ? null : (
+          <TheRead>
+            <Notices items={rest} />
+            {myWork.timeZoneLine ? <p className="mr-account">{myWork.timeZoneLine}</p> : null}
+            {myWork.doneExcludedLine ? (
+              <p className="mr-account">{myWork.doneExcludedLine}</p>
+            ) : null}
+            {firstRun ? null : <p className="mr-account">{LAB_LIMIT_NOTE}</p>}
+          </TheRead>
+        )
       }
       beyond={
-        <>
-          <p className="mr-beyond-caption">
-            Nothing below this line is due inside the read above.
-          </p>
-          {later ? (
-            <Group
-              group={later}
-              selectedKey={selectedKey}
-              closeHref={closeHref}
-              showNote={false}
-            />
-          ) : null}
-          {myWork.moreHref && myWork.moreLabel ? (
-            <p className="mr-onward">
-              <a className="mr-onward-link" href={myWork.moreHref}>
-                {myWork.moreLabel}
-              </a>
-            </p>
-          ) : null}
-        </>
+        firstRun ? null : (
+          <>
+            {hasLater ? (
+              <p className="mr-beyond-caption">
+                Nothing below this line is due inside the read above.
+              </p>
+            ) : null}
+            {later ? (
+              <Group
+                group={later}
+                caveat={caveat}
+                selectedKey={selectedKey}
+                closeHref={closeHref}
+                showNote={false}
+              />
+            ) : null}
+            {myWork.moreHref && myWork.moreLabel ? (
+              <p className="mr-onward">
+                <a className="mr-onward-link" href={myWork.moreHref}>
+                  {myWork.moreLabel}
+                </a>
+              </p>
+            ) : null}
+          </>
+        )
       }
     />
   );

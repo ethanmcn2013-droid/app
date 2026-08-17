@@ -4,31 +4,51 @@
  * Rationale lives in the TSX doc comments. This file records only what a reader
  * of the CSS cannot infer from it.
  *
- * THE TWO RULES are the only full-bleed elements in the direction. They break
- * out of the page's padding with a negative inline margin and put it back as
- * padding, so the line runs edge to edge while its labels stay on the measure.
- * On arrival each one draws itself once, left to right, transform only, 200ms
- * and 260ms — both under the 300ms ceiling, and both inside a
- * `prefers-reduced-motion: no-preference` block.
+ * ONE PAGE, TWO EDGES. `main` is the grid and everything sits in one of two
+ * columns: the measure on the left, the account of the read on the right,
+ * against the page. The two rules are the only elements that cross both, and
+ * they are the only full-bleed elements in the direction. Round 4 counted three
+ * competing right edges with nothing establishing which one the page was set to.
+ * Every block now ends at the measure or at the page, and nothing ends anywhere
+ * else.
  *
- * THE MATERIAL OF THE READ. `[data-band]` on the notice under the meridian is
- * the direction's state language, and it is carried by three things at once:
+ * THE ROWS ARE PLACED, NOT FLOWED. `.mr-record` is written LAST in the document
+ * and placed into the second column of the field's row. That is deliberate: at
+ * 1200 and up a reader sees the account beside the read, and below that the
+ * whole grid collapses to one column and the account follows the entire
+ * document, which is where page metadata belongs on a phone. There is no
+ * `row-gap`, because an absent row would still pay for one; vertical rhythm is
+ * carried by each block's own padding.
+ *
+ * THE TWO RULES break out of the page's padding with a negative inline margin
+ * and put it back as padding, so the line runs edge to edge while its labels
+ * stay on the measure. On arrival each one draws itself once, left to right,
+ * transform only, 200ms and 260ms — both under the 300ms ceiling, and both
+ * inside a `prefers-reduced-motion: no-preference` block.
+ *
+ * THE MATERIAL OF THE READ. `[data-band]` is the direction's state language:
  *   read     nothing is drawn at all
  *   waiting  nothing is drawn at all
- *   partial  a block, two hairlines, the sentence at heading size
- *   broken   the same block on RULED ground, which is time Home could not see
- *            into, and which survives forced colours as a real border pattern
- * The state's own word is printed under every mode name in every world, so
- * nothing here is state carried by colour alone.
+ *   partial  the sentence at heading size behind a heavy leading rule
+ *   broken   the sentence REVERSED, knocked out of solid ink
+ * Nothing else in the direction is reversed, so a refused read is legible as a
+ * black slab from across a room. The previous device — a ruled ground of grey
+ * hairlines — was read by two directors as a skeleton loader and is gone. The
+ * state's own word is printed under every mode name in every world, so nothing
+ * here is state carried by colour alone.
  *
  * THE GUTTER is the axis: one right-aligned mono column of the shell's own
  * temporal sentences, 10rem from 1024 up, 8rem from 640, and below 640 it
  * rotates into a dateline above each entry. That rotation is the mobile
  * transformation, and it is why the phone keeps the whole argument.
  *
- * BANDS  ≥1200 two columns, stream 56rem and the read 22rem · 1024–1199 two
- * columns, narrower · 640–1023 one column, the read after the stream · <640 the
- * gutter rotates and the suite line wraps.
+ * CONTRAST. Every small mono label is set in `--ink-soft` rather than
+ * `--ink-faint`: they are 11px and load-bearing, and round 4 measured the
+ * per-mode state captions under the 4.5:1 floor. The one severity mark that sat
+ * under 3:1 was amber, which no token darkens, so it is mixed toward the ink
+ * token rather than redefined — `--mr-flight` below is the only derived colour
+ * in the file and it lands at roughly 4.7:1 in light and comfortably above 3:1
+ * in dark.
  *
  * Every colour, size, space and duration is a vendored token. There is not a
  * hex value, an arbitrary px font size or a redefined token in this file.
@@ -48,8 +68,9 @@
 .mr-page {
   --mr-pad: var(--space-10);
   --mr-gutter: 10rem;
-  --mr-stream: 56rem;
-  --mr-record: 22rem;
+  --mr-column: 46rem;
+  --mr-record: 26rem;
+  --mr-flight: color-mix(in srgb, var(--status-flight) 62%, var(--ink));
 
   max-width: 90rem;
   margin-inline: auto;
@@ -163,10 +184,6 @@
   gap: var(--space-3);
   margin: 0;
   font-size: var(--text-caption);
-  color: var(--ink-faint);
-}
-
-.mr-actor-name {
   color: var(--ink-soft);
 }
 
@@ -176,55 +193,88 @@
   text-underline-offset: 3px;
 }
 
-/* ── Masthead ────────────────────────────────────────────────────────────── */
+/* ── The page grid ───────────────────────────────────────────────────────── */
 
-.mr-masthead {
+.mr-main {
+  display: grid;
+  grid-template-columns: minmax(0, var(--mr-column)) minmax(0, var(--mr-record));
+  justify-content: space-between;
+  column-gap: var(--space-10);
+  align-items: start;
+}
+
+.mr-identity {
+  grid-column: 1;
+  grid-row: 1;
   padding-block: var(--space-7) var(--space-5);
-  max-width: 46rem;
 }
 
-.mr-h1 {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin: 0;
+.mr-ledger {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  padding-block: var(--space-7) var(--space-5);
 }
 
-.mr-h1-eyebrow {
+.mr-meridian {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.mr-field {
+  grid-column: 1;
+  grid-row: 3;
+  min-width: 0;
+  padding-block-end: var(--space-8);
+}
+
+.mr-record {
+  grid-column: 2;
+  grid-row: 3;
+  min-width: 0;
+}
+
+/* THE ONE THING THAT BREAKS THE MEASURE. */
+.mr-wide {
+  grid-column: 1 / -1;
+  grid-row: 4;
+  padding-block: var(--space-7) var(--space-9);
+  border-block-start: 1px solid var(--hairline);
+}
+
+.mr-horizon {
+  grid-column: 1 / -1;
+  grid-row: 5;
+}
+
+.mr-beyond {
+  grid-column: 1;
+  grid-row: 6;
+  min-width: 0;
+  padding-block-start: var(--space-6);
+}
+
+/* ── The four modes, above the heading, anchored ─────────────────────────── */
+
+.mr-modes {
+  padding-block-end: var(--space-5);
+}
+
+.mr-home {
+  margin: 0 0 var(--space-3);
   font-family: var(--font-mono);
   font-size: var(--text-label);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.mr-h1-line {
-  font-size: var(--text-section);
-  line-height: var(--leading-section);
-  letter-spacing: var(--tracking-section);
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
-}
-
-.mr-lead {
-  margin: var(--space-4) 0 0;
-  font-size: var(--text-body-lg);
-  line-height: var(--leading-body-lg);
   color: var(--ink-soft);
-}
-
-/* ── The four modes ──────────────────────────────────────────────────────── */
-
-.mr-modes {
-  padding-block-end: var(--space-4);
 }
 
 .mr-mode-list,
 .mr-submode {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-7);
+  gap: var(--space-2) var(--space-7);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -239,7 +289,7 @@
   flex-direction: column;
   gap: var(--space-1);
   min-height: 44px;
-  padding-block: var(--space-2);
+  padding-block: var(--space-1);
   text-decoration: none;
 }
 
@@ -264,21 +314,23 @@
 .mr-mode-state {
   font-family: var(--font-mono);
   font-size: var(--text-label);
+  line-height: var(--leading-body);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 /* The read of a mode you are not standing in, marked before you click it. The
-   word is always printed; the rule is the redundant second carrier. */
+   word is always printed; the rule is the redundant second carrier, and it is
+   held above 3:1 against the paper in both themes. */
 .mr-mode[data-band="partial"] .mr-mode-state {
-  color: var(--ink-soft);
-  box-shadow: inset 2px 0 0 0 var(--status-flight);
+  box-shadow: inset 2px 0 0 0 var(--mr-flight);
   padding-inline-start: var(--space-2);
 }
 
 .mr-mode[data-band="broken"] .mr-mode-state {
   color: var(--ink);
+  font-weight: var(--weight-medium);
   box-shadow: inset 3px 0 0 0 var(--status-blocked);
   padding-inline-start: var(--space-2);
 }
@@ -289,9 +341,20 @@
 }
 
 .mr-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
   color: var(--ink);
+}
+
+/* A count taken over an incomplete read is a floor, and it says so. */
+.mr-badge-floor {
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-soft);
 }
 
 .mr-mode-sub {
@@ -299,19 +362,43 @@
   border-inline-start: 1px solid var(--hairline);
 }
 
-/* ── Controls ────────────────────────────────────────────────────────────── */
+/* ── The heading ─────────────────────────────────────────────────────────── */
 
-.mr-controls {
+.mr-h1 {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-4);
-  padding-block-end: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
 }
 
+.mr-h1-eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.mr-h1-line {
+  font-size: var(--text-section);
+  line-height: var(--leading-section);
+  letter-spacing: var(--tracking-section);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
+.mr-lead {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-body-lg);
+  color: var(--ink-soft);
+}
+
+/* ── The scope control ───────────────────────────────────────────────────── */
+
 .mr-scope {
-  max-width: 32rem;
+  margin-block-start: var(--space-5);
 }
 
 .mr-scope-summary {
@@ -334,15 +421,13 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-scope-value {
   font-size: var(--text-body);
   color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  text-decoration-color: var(--ink-ghost);
+  font-weight: var(--weight-medium);
 }
 
 .mr-scope-body {
@@ -350,11 +435,10 @@
   border-block-start: 1px solid var(--hairline);
 }
 
-.mr-scope-help,
-.mr-scope-coverage {
+.mr-scope-help {
   margin: 0 0 var(--space-3);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-scope-list {
@@ -388,24 +472,25 @@
   color: var(--accent);
 }
 
-.mr-status {
-  margin: 0;
-  padding-block: var(--space-2);
+/*
+ * THE ONE DISCLOSURE MARK, used by every `<details>` in the direction: the scope
+ * control, every row disposition, and every evidence receipt. Round 4 found
+ * three separate controls that read as navigating away when they expand in
+ * place. A plus that becomes a minus is the one sign nobody has to be taught.
+ */
+.mr-scope-summary::before,
+.mr-act-summary::before {
+  content: "+";
+  display: inline-block;
+  width: 1ch;
   font-family: var(--font-mono);
-  font-size: var(--text-label);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-
-.mr-status[data-band="partial"] {
+  font-weight: var(--weight-medium);
   color: var(--ink-soft);
-  box-shadow: inset 0 -2px 0 0 var(--status-flight);
 }
 
-.mr-status[data-band="broken"] {
-  color: var(--ink);
-  box-shadow: inset 0 -3px 0 0 var(--status-blocked);
+.mr-scope[open] > .mr-scope-summary::before,
+.mr-act[open] > .mr-act-summary::before {
+  content: "\2212";
 }
 
 /* ── THE MERIDIAN AND THE HORIZON ────────────────────────────────────────── */
@@ -438,17 +523,13 @@
   content: "";
   position: absolute;
   inset-inline: 0;
+  inset-block-start: 0;
   height: 2px;
   background: var(--ink);
   transform-origin: left center;
 }
 
-.mr-meridian::before {
-  inset-block-start: 0;
-}
-
 .mr-horizon::before {
-  inset-block-start: 0;
   height: 1px;
   background: var(--ink-faint);
 }
@@ -464,95 +545,58 @@
 }
 
 .mr-horizon-mark {
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-meridian-when,
 .mr-horizon-line {
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
-}
-
-/* ── The field between the rules ─────────────────────────────────────────── */
-
-.mr-field {
-  position: relative;
-  min-height: 21rem;
-}
-
-.mr-columns {
-  display: grid;
-  grid-template-columns: minmax(0, var(--mr-stream)) minmax(0, var(--mr-record));
-  justify-content: space-between;
-  gap: var(--space-10);
-}
-
-.mr-stream {
-  min-width: 0;
-}
-
-/* THE ONE THING THAT BREAKS THE MEASURE. */
-.mr-wide {
-  margin-block-start: var(--space-10);
-  padding-block-start: var(--space-7);
-  border-block-start: 1px solid var(--hairline);
+  color: var(--ink-soft);
 }
 
 /* ── The read that did not finish ────────────────────────────────────────── */
 
 .mr-read-notice {
   margin: 0 0 var(--space-8);
-  padding-block: var(--space-5);
+}
+
+.mr-read-notice-text {
+  margin: 0;
   font-size: var(--text-heading);
   line-height: var(--leading-heading);
   letter-spacing: var(--tracking-heading);
   font-weight: var(--weight-medium);
-  color: var(--ink);
-  border-block: 1px solid var(--ink-ghost);
-  max-width: 46rem;
 }
 
+.mr-read-notice-detail {
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-body-sm);
+}
+
+/* Part of the read came back. Clean paper, one heavy leading rule. */
 .mr-read-notice[data-band="partial"] {
-  box-shadow: inset 0 3px 0 0 var(--status-flight);
+  padding: var(--space-4) 0 var(--space-4) var(--space-5);
+  border-inline-start: 4px solid var(--mr-flight);
 }
 
 /*
- * A SOURCE THAT DID NOT ANSWER CHANGES THE PAPER.
+ * A SOURCE THAT DID NOT ANSWER REVERSES THE PAGE.
  *
- * The time is still there and Home could not see into it, so the ground under
- * the whole notice is ruled. It is a repeating gradient, so it costs nothing
- * and cannot be mistaken for content; the sentence sits over it on its own
- * paper so nothing is ever read through a line. Forced colours drop the
- * gradient and keep the heavy border, and the words say it either way.
+ * The one moment this direction raises its voice, and it raises it only for
+ * this. Nothing else on any of the five surfaces is knocked out of solid ink, so
+ * a refused read is unmistakable before a word is read and cannot be confused
+ * with a page that has not finished loading — which is exactly what happened to
+ * the ruled-hairline device this replaced.
  */
 .mr-read-notice[data-band="broken"] {
-  padding: 0;
-  border-block: 3px solid var(--status-blocked);
-  max-width: none;
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--space-6);
 }
 
-/*
- * The ruled ground is drawn ABOVE AND BELOW the sentence rather than behind it.
- * Behind it, the leading between two wrapped lines shows a rule through the
- * type at narrow widths, which is a legibility fault dressed as an idea. In
- * bands it is unambiguous: two stretches of time Home could not see into, with
- * the reason set on clean paper between them.
- */
-.mr-read-notice[data-band="broken"]::before,
-.mr-read-notice[data-band="broken"]::after {
-  content: "";
-  display: block;
-  height: var(--space-9);
-  background-image: repeating-linear-gradient(
-    to bottom,
-    var(--hairline) 0 1px,
-    transparent 1px 12px
-  );
-}
-
-.mr-read-notice[data-band="broken"] .mr-read-notice-text {
-  display: block;
-  padding-block: var(--space-5);
+.mr-read-notice[data-band="broken"] .mr-read-notice-detail {
+  color: var(--paper);
+  opacity: 0.86;
 }
 
 /* ── Bands, entries and the time gutter ──────────────────────────────────── */
@@ -570,10 +614,27 @@
   color: var(--ink);
 }
 
+.mr-h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-heading);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+}
+
 .mr-band-note {
   margin: 0 0 var(--space-5);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
+}
+
+/* What a list was drawn from, when the read did not cover everything. */
+.mr-band-caveat {
+  margin: calc(-1 * var(--space-3)) 0 var(--space-5);
+  padding-inline-start: var(--space-3);
+  border-inline-start: 3px solid var(--status-blocked);
+  font-size: var(--text-body-sm);
+  color: var(--ink);
 }
 
 .mr-entries {
@@ -588,7 +649,7 @@
 
 .mr-entry {
   display: grid;
-  grid-template-columns: var(--mr-gutter) minmax(0, 44rem);
+  grid-template-columns: var(--mr-gutter) minmax(0, 1fr);
   column-gap: var(--space-6);
   padding-block: var(--space-5);
   border-block-start: 1px solid var(--hairline-soft);
@@ -631,6 +692,24 @@
   min-width: 0;
 }
 
+/* RANK IS NOT TIME, so it is set on the body and never in the gutter. Only
+   Today's three decisions carry one. */
+.mr-rank {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+/*
+ * A LINK LOOKS LIKE A LINK, and the underline is the affordance rather than the
+ * colour. There are sixty row titles on My work at scale; setting them in indigo
+ * would spend the anchor colour on the most repeated element in the direction.
+ * Indigo stays for the one onward link per section.
+ */
 .mr-title {
   display: block;
   margin: 0;
@@ -641,9 +720,15 @@
   text-decoration: none;
 }
 
-.mr-title-link:hover {
+.mr-title-link {
   text-decoration: underline;
+  text-decoration-thickness: 1px;
   text-underline-offset: 4px;
+  text-decoration-color: var(--ink-ghost);
+}
+
+.mr-title-link:hover {
+  text-decoration-color: var(--ink);
 }
 
 .mr-kind {
@@ -652,7 +737,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-why {
@@ -664,7 +749,7 @@
 .mr-meta {
   margin: var(--space-2) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-sep {
@@ -672,18 +757,10 @@
   color: var(--ink-ghost);
 }
 
-.mr-prov {
-  color: var(--ink-faint);
-}
-
-.mr-abs {
-  color: var(--ink-faint);
-}
-
 .mr-aside {
   margin: var(--space-2) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-return {
@@ -703,7 +780,7 @@
 }
 
 .mr-warn[data-band="partial"] {
-  border-inline-start-color: var(--status-flight);
+  border-inline-start-color: var(--mr-flight);
 }
 
 .mr-warn[data-band="broken"] {
@@ -726,7 +803,7 @@
 .mr-suppressed {
   margin: var(--space-4) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-suppressed .mr-inline-link {
@@ -738,7 +815,6 @@
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
   color: var(--ink);
-  max-width: 44rem;
 }
 
 .mr-thread {
@@ -762,7 +838,7 @@
   margin: var(--space-1) 0 0;
   padding-inline-start: calc(var(--mr-gutter) + var(--space-6));
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 /* ── Detail, in place, at the time the thing sits ────────────────────────── */
@@ -786,7 +862,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-source-path {
@@ -800,13 +876,26 @@
   color: var(--accent);
 }
 
-/* ── Actions ─────────────────────────────────────────────────────────────── */
+/* ── Dispositions, on the row, at arrival ────────────────────────────────── */
+
+.mr-dispositions {
+  margin-block-start: var(--space-3);
+}
+
+.mr-actions-label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
 
 .mr-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
-  margin: var(--space-4) 0 0;
+  gap: 0 var(--space-5);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -819,12 +908,21 @@
 .mr-act-summary {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-2);
   min-height: 44px;
   font-size: var(--text-body-sm);
   font-weight: var(--weight-medium);
-  color: var(--accent);
+  color: var(--ink);
   cursor: pointer;
   list-style: none;
+  text-decoration: underline;
+  text-decoration-color: var(--ink-ghost);
+  text-underline-offset: 4px;
+}
+
+.mr-act-open:hover,
+.mr-act-summary:hover {
+  text-decoration-color: var(--ink);
 }
 
 .mr-act-summary::-webkit-details-marker {
@@ -832,69 +930,78 @@
 }
 
 .mr-act-body {
-  padding-block: var(--space-3);
-  max-width: 34rem;
+  padding-block: var(--space-3) var(--space-4);
   font-size: var(--text-body-sm);
   color: var(--ink-soft);
   border-block-start: 1px solid var(--hairline);
 }
 
-.mr-act-body p {
+.mr-act-body > p {
   margin: 0;
+}
+
+.mr-act-aside {
+  margin: var(--space-3) 0 0;
+  color: var(--ink-soft);
 }
 
 /* A refusal is a statement, not a control, so it does not claim a 44px target
    and it does not sit at the weight of the things you can actually do. */
-.mr-act-refused {
+.mr-refusals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-5);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mr-refusal {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2);
-  padding-block: var(--space-3);
   font-size: var(--text-caption);
-  color: var(--ink-faint);
-}
-
-.mr-action[data-refused="yes"] {
-  flex: 0 1 auto;
+  color: var(--ink-soft);
 }
 
 .mr-act-name {
   text-decoration: line-through;
-  text-decoration-color: var(--ink-ghost);
+  text-decoration-color: var(--ink-faint);
 }
 
-.mr-act-why {
-  color: var(--ink-faint);
-}
-
-/* ── The read, as a column ───────────────────────────────────────────────── */
+/* ── The two accounts of the read ────────────────────────────────────────── */
 
 /*
- * THE READ FOLLOWS THE READER. My work and Analytics run to two thousand pixels,
- * and an account of the read that scrolls away at the first screen is an account
- * the reader has to go back for. One sticky element, no fixed positioning, and
- * only where there is width to spare.
+ * WHAT THIS READ IS, top right, level with the heading. It is the direction's
+ * answer to what the width is for, and it is the block that fills the band round
+ * 4 called the least-defended emptiness in the lab.
  */
-.mr-record {
-  min-width: 0;
-  padding-block-start: var(--space-1);
-  position: sticky;
-  top: var(--space-6);
-  align-self: start;
-  max-height: calc(100svh - var(--space-9));
-  overflow-y: auto;
-}
-
+.mr-ledger .mr-field-row,
 .mr-record .mr-field-row {
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
 }
 
-.mr-scope-account {
-  margin-block: var(--space-5);
-  padding-block-start: var(--space-4);
-  border-block-start: 1px solid var(--hairline);
+.mr-covered {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-body-sm);
+  color: var(--ink);
+}
+
+/*
+ * WHAT IT COULD NOT SEE, beside the read. It follows the reader on tall modes:
+ * My work and Analytics run past two thousand pixels and an account that scrolls
+ * away at the first screen is one the reader has to go back for. One sticky
+ * element, no fixed positioning, and only where there is width to spare.
+ */
+.mr-record {
+  padding-block-start: var(--space-6);
+  position: sticky;
+  top: var(--space-6);
+  align-self: start;
+  max-height: calc(100svh - var(--space-9));
+  overflow-y: auto;
 }
 
 .mr-label {
@@ -904,7 +1011,7 @@
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-notices {
@@ -923,7 +1030,7 @@
 }
 
 .mr-notice[data-band="partial"] {
-  border-inline-start-color: var(--status-flight);
+  border-inline-start-color: var(--mr-flight);
   color: var(--ink);
 }
 
@@ -936,20 +1043,24 @@
 
 .mr-notice-alone {
   margin: 0 0 var(--space-6);
-  max-width: 44rem;
 }
 
-.mr-record .mr-account,
-.mr-record .mr-active {
+.mr-record .mr-account {
   margin: 0 0 var(--space-4);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
-.mr-unsupported {
+.mr-schedule {
   margin-block: var(--space-6);
   padding-block-start: var(--space-4);
   border-block-start: 1px solid var(--hairline);
+}
+
+/* ── Below the horizon ───────────────────────────────────────────────────── */
+
+.mr-unsupported {
+  margin-block: var(--space-7) var(--space-6);
 }
 
 .mr-unsupported-list {
@@ -957,17 +1068,11 @@
   padding: 0;
   list-style: none;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-unsupported-list li {
   margin-block-end: var(--space-3);
-}
-
-.mr-schedule {
-  margin-block: var(--space-6);
-  padding-block-start: var(--space-4);
-  border-block-start: 1px solid var(--hairline);
 }
 
 /* ── Fields ──────────────────────────────────────────────────────────────── */
@@ -989,7 +1094,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-field-row dd {
@@ -1001,15 +1106,20 @@
 /* ── The first screen ────────────────────────────────────────────────────── */
 
 .mr-first {
-  max-width: 40rem;
-  padding-block: var(--space-8) var(--space-10);
+  padding-block: var(--space-4) var(--space-6);
 }
 
 .mr-first-line {
-  margin: var(--space-4) 0 0;
+  margin: 0;
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
   color: var(--ink);
+}
+
+.mr-first-honest {
+  margin: var(--space-3) 0 var(--space-7);
+  font-size: var(--text-body);
+  color: var(--ink-soft);
 }
 
 .mr-first-next {
@@ -1042,29 +1152,29 @@
 
 /* ── Emptiness, and what it is doing ─────────────────────────────────────── */
 
+/*
+ * THE DISTANCE BETWEEN THE RULES IS THE WORK. Nothing is reserved: a quiet day
+ * closes the two rules up around one sentence, and that shortness is the
+ * statement. Round 4 held 21rem open here whether or not anything stood in it
+ * and every director who mentioned it read the result as an unmade decision.
+ */
 .mr-empty {
-  margin: 0 0 var(--space-9);
-  max-width: 40rem;
+  margin: 0;
   font-size: var(--text-body-lg);
   line-height: var(--leading-body-lg);
-  color: var(--ink-faint);
-}
-
-.mr-beyond {
-  padding-block-start: var(--space-7);
+  color: var(--ink-soft);
 }
 
 .mr-beyond-caption {
-  margin: 0 0 var(--space-7);
-  max-width: 44rem;
+  margin: 0 0 var(--space-6);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-beyond-empty {
   margin: 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-onward {
@@ -1113,7 +1223,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-claim-none {
@@ -1127,7 +1237,11 @@
 .mr-claim-limit {
   margin: var(--space-2) 0 0;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
+}
+
+.mr-act-wide .mr-act-body {
+  max-width: none;
 }
 
 .mr-exception {
@@ -1158,7 +1272,7 @@
   font-size: var(--text-label);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-lens {
@@ -1169,10 +1283,6 @@
 
 .mr-table-wrap {
   overflow-x: auto;
-}
-
-.mr-wide > section {
-  max-width: 68rem;
 }
 
 .mr-table {
@@ -1195,7 +1305,7 @@
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-label);
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-soft);
   border-block-end: 1px solid var(--ink-ghost);
 }
 
@@ -1220,7 +1330,7 @@
   padding: 0;
   list-style: none;
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 .mr-receipt li {
@@ -1229,8 +1339,7 @@
 
 .mr-trend,
 .mr-trend-refused {
-  margin: 0 0 var(--space-9);
-  max-width: 44rem;
+  margin: 0 0 var(--space-6);
 }
 
 .mr-stream .mr-trend,
@@ -1265,7 +1374,7 @@
 .mr-trend-cap {
   margin: var(--space-3) 0 var(--space-4);
   font-size: var(--text-body-sm);
-  color: var(--ink-faint);
+  color: var(--ink-soft);
 }
 
 /* ── Bands of width ──────────────────────────────────────────────────────── */
@@ -1273,15 +1382,11 @@
 @media (max-width: 1199px) {
   .mr-page {
     --mr-pad: var(--space-8);
-    --mr-record: 18rem;
+    --mr-record: 20rem;
   }
 
-  .mr-columns {
-    gap: var(--space-8);
-  }
-
-  .mr-entry {
-    grid-template-columns: var(--mr-gutter) minmax(0, 1fr);
+  .mr-main {
+    column-gap: var(--space-8);
   }
 }
 
@@ -1291,18 +1396,42 @@
     --mr-gutter: 8rem;
   }
 
-  /* One column. The read follows the stream rather than leading it: the
-     sentence that matters most is already under the meridian, and a founder
-     opening this on a tablet should reach the first decision first. */
-  .mr-columns {
+  /*
+   * ONE COLUMN, AND THE ACCOUNT FOLLOWS THE WHOLE DOCUMENT. Every placed item
+   * gives up its row and flows in document order, which puts `.mr-record` last —
+   * after the read, after the horizon, after everything below it. Round 4 found
+   * it dropped into the middle of the sections at 390 and the section order
+   * broken by page metadata. This is the reason it is written last in the TSX.
+   */
+  .mr-main {
     grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-9);
+  }
+
+  .mr-identity,
+  .mr-ledger,
+  .mr-meridian,
+  .mr-field,
+  .mr-record,
+  .mr-wide,
+  .mr-horizon,
+  .mr-beyond {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .mr-identity {
+    padding-block-end: var(--space-3);
+  }
+
+  .mr-ledger {
+    padding-block: 0 var(--space-5);
   }
 
   /* One column, so nothing sticks: a sticky block in a single-column flow just
      pins itself over the work underneath it. */
   .mr-record {
     padding-block-start: var(--space-7);
+    margin-block-start: var(--space-6);
     border-block-start: 1px solid var(--hairline);
     position: static;
     max-height: none;
@@ -1314,6 +1443,18 @@
   .mr-page {
     --mr-pad: var(--space-5);
     padding-block-end: var(--space-10);
+  }
+
+  /*
+   * THE FOUR MODES BECOME A 2x2 GRID, not a ragged wrap. Four equal cells keep
+   * every mode name aligned with the state caption underneath it, which is the
+   * pairing that carries the whole idea and the one that broke when the row
+   * wrapped Analytics onto a line of its own.
+   */
+  .mr-mode-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3) var(--space-4);
   }
 
   /* THE AXIS ROTATES. The gutter becomes a dateline above each entry, in the
@@ -1329,12 +1470,16 @@
     text-transform: uppercase;
     letter-spacing: var(--tracking-label);
     font-size: var(--text-label);
-    color: var(--ink-faint);
+    color: var(--ink-soft);
+  }
+
+  .mr-time:empty {
+    display: none;
   }
 
   .mr-entry[data-overdue="yes"] .mr-time {
     padding-inline: var(--space-3) 0;
-    border-inline: 3px solid var(--status-blocked) 0;
+    border-inline-start: 3px solid var(--status-blocked);
     border-inline-end: 0;
   }
 
@@ -1343,29 +1488,17 @@
     padding-inline-start: 0;
   }
 
-  .mr-masthead {
-    padding-block: var(--space-5) var(--space-4);
-  }
-
-  .mr-mode-list {
-    gap: var(--space-2) var(--space-5);
-  }
-
-  .mr-modes {
-    padding-block-end: var(--space-3);
-  }
-
-  .mr-field {
-    min-height: 16rem;
-  }
-
-  .mr-controls {
-    align-items: flex-start;
+  .mr-identity {
+    padding-block-start: var(--space-5);
   }
 
   .mr-field-row {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--space-1);
+  }
+
+  .mr-read-notice[data-band="broken"] {
+    padding: var(--space-5);
   }
 }
 
@@ -1399,8 +1532,15 @@
     forced-color-adjust: none;
   }
 
-  .mr-read-notice {
-    border-block: 3px solid CanvasText;
+  /* The reversal survives, because it is the one silhouette that has to. */
+  .mr-read-notice[data-band="broken"] {
+    background: CanvasText;
+    color: Canvas;
+    forced-color-adjust: none;
+  }
+
+  .mr-read-notice[data-band="partial"] {
+    border-inline-start: 4px solid CanvasText;
   }
 
   .mr-entry[data-overdue="yes"] .mr-time {

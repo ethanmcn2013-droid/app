@@ -19,12 +19,14 @@ import type {
   MyWorkRowView,
 } from "@/lib/home-layer/lab-shell";
 import {
+  Dispositions,
   Flag,
+  LAB_WRITES_NOTHING,
   Ordinal,
   Page,
-  Perms,
   Section,
   When,
+  WritesNothing,
   entryAnchor,
   sectionAnchor,
 } from "./parts";
@@ -102,7 +104,7 @@ function Row({
               <span className="ri-label">In the product</span>
               {row.sourcePath}
             </span>
-            <Perms actions={row.actions} show="all" />
+            <Dispositions actions={row.actions} label="What you can do here" />
             <a className="ri-close" href={closeHref}>
               Close this entry
             </a>
@@ -119,12 +121,23 @@ function Row({
         <div>
           {title}
           <Facts row={row} groupNote={groupNote} />
-          <Perms actions={row.actions} show="restrictions" />
         </div>
         <span className="ri-led-due">
           {row.due ? <When due={row.due} /> : null}
         </span>
       </a>
+
+      {/*
+        WHAT A RESPONSIBILITY LETS YOU DO, ON THE ROW.
+        Round 4 printed only the refusals here, on the reasoning that sixty
+        rows allowing the same two things say nothing by saying so. A director
+        read the same rows and found a ledger with no dispositions at all, and
+        on an operating surface they were right: Mark as done and Change who
+        owns it are what this mode is for. Both are named on every row now, the
+        shut ones struck through with their reason, in the ledger's own quiet
+        register rather than as a run of buttons.
+      */}
+      <Dispositions actions={row.actions} />
     </li>
   );
 }
@@ -149,6 +162,11 @@ export function MyWorkMode({ props }: { props: HomeCandidateProps }) {
         myWork.selectionMissingLine ? <Flag>{myWork.selectionMissingLine}</Flag> : null
       }
     >
+      {/* Said once for the whole ledger, not once on each of sixty rows. */}
+      {myWork.rowsShown > 0 ? (
+        <WritesNothing>{LAB_WRITES_NOTHING}</WritesNothing>
+      ) : null}
+
       {/*
         A read that could not be made is not an empty list. `kind` separates
         "you have nothing" from "there is no project", "we could not tell who
