@@ -297,9 +297,163 @@ test("the shell fails closed and prefers an explicit Project", () => {
   );
 });
 
-test("the shell records why the searchParams half of its allowlist condition is unmet", () => {
-  // The allowlist entry is conditional. If a later change claims to satisfy
-  // it, this test is where the claim has to be argued.
+/* ── D-022 · the runtime mounts from the pages ──────────────────────────── */
+
+/**
+ * The nine segments whose layouts used to mount `TasksRuntimeShell`
+ * directly, and every page inside them. The mount now goes through
+ * `tasks-runtime-mount.tsx` (flag-selected; its branch shape is pinned in
+ * `active-project-contract.test.mjs`). This section pins the wiring: which
+ * boundary mounts what, and which pages hand the shell the URL's Project.
+ */
+const RUNTIME_SEGMENTS = [
+  "archived",
+  "import",
+  "inbox",
+  "my-tasks",
+  "project",
+  "settings",
+  "task",
+  "tasks",
+  "your-work",
+];
+
+/**
+ * Passing `searchParams` moves the whole runtime — chrome, palette, board
+ * data — to the URL's Project, so only pages whose own content moves with it
+ * may pass it: the four Tasks views and My Tasks render from the runtime's
+ * providers, Your Work is user-scoped, and the project overview verifies its
+ * data against the explicit Project itself.
+ */
+const PAGES_PASSING_THE_URL = [
+  "src/app/app/my-tasks/page.tsx",
+  "src/app/app/project/page.tsx",
+  "src/app/app/tasks/calendar/page.tsx",
+  "src/app/app/tasks/list/page.tsx",
+  "src/app/app/tasks/page.tsx",
+  "src/app/app/tasks/timeline/page.tsx",
+  "src/app/app/your-work/page.tsx",
+];
+
+/**
+ * These pages resolve their content ambiently (`requireRouteProjectId`, or
+ * the task object's own Project per ADR 0001 §9), so their mounts must never
+ * claim an explicit Project: chrome naming B over content resolved as A is
+ * the inequality ADR 0001 §2 calls a release blocker. None of these is a
+ * `PROJECT_DESTINATION_SURFACES` entry, so the switcher never emits a
+ * `workspaceId` at them. An entry may move to the passing list only when its
+ * content reads take the same explicit Project.
+ */
+const PAGES_STAYING_AMBIENT = [
+  "src/app/app/archived/page.tsx",
+  "src/app/app/import/page.tsx",
+  "src/app/app/inbox/page.tsx",
+  "src/app/app/settings/page.tsx",
+  "src/app/app/task/[id]/page.tsx",
+];
+
+test("every runtime segment layout mounts through the flag branch and resolves nothing", () => {
+  for (const segment of RUNTIME_SEGMENTS) {
+    const layout = read(`src/app/app/${segment}/layout.tsx`);
+    assert.match(
+      layout,
+      /<TasksRuntimeLayoutMount>\{children\}<\/TasksRuntimeLayoutMount>/,
+      `${segment}/layout.tsx must mount the runtime through the layout half of the flag branch`,
+    );
+    assert.doesNotMatch(
+      layout,
+      /TasksRuntimeShell|resolveProjectForRoute|requireRouteProjectId|getActiveWorkspace\s*\(/,
+      `${segment}/layout.tsx must not mount the shell directly or resolve a Project of its own`,
+    );
+    assert.doesNotMatch(
+      layout,
+      /searchParams/,
+      `a layout receives no searchParams; ${segment}/layout.tsx must not pretend otherwise`,
+    );
+  }
+});
+
+test("every page in a runtime segment mounts the runtime's page half", () => {
+  for (const page of [...PAGES_PASSING_THE_URL, ...PAGES_STAYING_AMBIENT]) {
+    const source = read(page);
+    assert.match(
+      source,
+      /<TasksRuntimePageMount/,
+      `${page} must mount the runtime so the flag-on tree still has chrome and providers`,
+    );
+    assert.doesNotMatch(
+      source,
+      /<TasksRuntimeShell/,
+      `${page} must go through the flag branch, never mount the shell directly`,
+    );
+  }
+});
+
+test("only the pages whose content follows the URL hand the mount their searchParams", () => {
+  for (const page of PAGES_PASSING_THE_URL) {
+    assert.match(
+      read(page),
+      /<TasksRuntimePageMount searchParams=\{searchParams\}>/,
+      `${page} is a surface whose content follows the URL's Project; the mount must receive its searchParams`,
+    );
+  }
+  for (const page of PAGES_STAYING_AMBIENT) {
+    assert.doesNotMatch(
+      read(page),
+      /<TasksRuntimePageMount searchParams/,
+      `${page} resolves its content ambiently; handing only its chrome an explicit Project would let the URL and the content disagree (ADR 0001 §2)`,
+    );
+  }
+});
+
+test("the board's refusal cards render in the ambient runtime; the board follows the URL", () => {
+  // The two withholding cards state a disagreement with what the caller has
+  // open, so the chrome around them must keep showing the ambient Project —
+  // their mounts carry no searchParams. The board itself is the surface the
+  // parameter exists for.
+  const unavailable = tasksPage.slice(
+    tasksPage.indexOf("function ProjectUnavailable"),
+    tasksPage.indexOf("function ProjectMismatch"),
+  );
+  const mismatch = tasksPage.slice(
+    tasksPage.indexOf("function ProjectMismatch"),
+    tasksPage.indexOf("export default async function TasksPage"),
+  );
+  for (const [name, card] of [
+    ["ProjectUnavailable", unavailable],
+    ["ProjectMismatch", mismatch],
+  ]) {
+    assert.match(
+      card,
+      /<TasksRuntimePageMount>/,
+      `${name} must mount the runtime so the refusal renders inside chrome`,
+    );
+    assert.doesNotMatch(
+      card,
+      /<TasksRuntimePageMount searchParams/,
+      `${name} must stay on the ambient Project — the card's copy refers to it`,
+    );
+  }
+  const body = tasksPage.slice(
+    tasksPage.indexOf("export default async function TasksPage"),
+  );
+  assert.match(body, /<TasksRuntimePageMount searchParams=\{searchParams\}>/);
+});
+
+test("the shell records how the searchParams half of its allowlist condition is met", () => {
+  // The allowlist entry was conditional, and this test used to pin the
+  // recorded reason it was unmet: layouts receive no searchParams. WP6
+  // (D-022) is the change that satisfies it, and this is the argument: the
+  // mount moved into the page boundaries, flag-selected in
+  // tasks-runtime-mount.tsx, so pages supply the URL's Project while the
+  // flag-off tree keeps the layout mount byte-identical. The framework
+  // constraint stays cited because it is why the layout half can never do
+  // this itself.
   assert.match(shell, /LayoutProps/, "the framework constraint must be cited, not asserted");
   assert.match(shell, /layout\.tsx/);
+  assert.match(
+    shell,
+    /tasks-runtime-mount\.tsx/,
+    "the shell must name the mount module that now supplies requestedProjectId",
+  );
 });

@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.page.app-project",
+  "source": "tasks/src/app/app/project/page.tsx",
+  "materialityHash": "9643e60183b5aa11",
+  "reviewedAt": "2026-08-17",
+  "reviewer": "Claude Fable 5, WP6 Lane B integration owner (personal diff review of the D-022 mount seam; canonical evidence reproduced 132/132 in this session's browser run)",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-45b0a6c89756d6eb76c5daf5-3999024fe29407d1.json",
+    "attestationSha256": "8e9324ac24cf039c99c6f4264cbf4c3a9df96d905b0113763cf435cac8687c3f",
+    "runId": "tasks-playwright-45b0a6c89756d6eb76c5daf5",
+    "canonicalEvidenceSha256": "45b0a6c89756d6eb76c5daf59a768e981cbe7f313c39b323e48dd2ce509aca57",
+    "rawArtifactSha256": "3999024fe29407d11350eabe8bfb871383a700f87862e5fcd09a5d0e0d8a8c2f",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "front door lands on Home",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "D-022: the Tasks runtime mount moved from the segment layouts into the pages behind a flag branch; flag-off tree byte-identical, page half never reads searchParams flag-off; pass/ambient split pinned in route-authz-contract",
+  "decision": "approved"
+}

@@ -1,5 +1,5 @@
-import { TasksRuntimeShell } from "@/components/app/tasks-runtime-shell";
+import { TasksRuntimeLayoutMount } from "@/components/app/tasks-runtime-mount";
 
 export default function ArchivedLayout({ children }: { children: React.ReactNode }) {
-  return <TasksRuntimeShell>{children}</TasksRuntimeShell>;
+  return <TasksRuntimeLayoutMount>{children}</TasksRuntimeLayoutMount>;
 }
