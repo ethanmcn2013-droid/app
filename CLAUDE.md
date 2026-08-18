@@ -15,4 +15,17 @@ proposal, a before/after — always show it visually: screenshots of the
 running product (demo mode exists for exactly this), rendered pages, or
 captures sent to the side panel. Prose alone is never a presentation.
 
+## Operator guides
+
+Step-by-step guides the operator will follow (setup walkthroughs,
+runbooks with commands to type) ship as published artifacts styled with
+the vendored DS tokens — Geist and Geist Mono, paper/ink neutrals,
+hairlines, one indigo moment — never an ad-hoc palette. Commands the
+operator types sit on dark terminal blocks with a copy control;
+expected responses sit on light paper blocks; the two must never look
+alike, and every snag gets its own amber-edged note naming the exact
+message and its cause. Guide source is committed to `docs/guides/`;
+the next guide starts from the last one's file
+(`connect-claude-design.html` is the exemplar).
+
 @AGENTS.md
