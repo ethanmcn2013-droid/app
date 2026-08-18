@@ -1,0 +1,683 @@
+<title>Notes · Three Directions</title>
+<style>
+/* The product's own Geist, inlined. The Artifact content-security policy
+   admits no external host, and this page argues about a 400/600 pairing —
+   arguing about a typeface while silently falling back to system-ui would
+   make every judgement on this page unsafe. */
+__FONTS__
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --bg: #0d0d0e;
+  --panel: #141416;
+  --panel-2: #191a1c;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.20);
+  --t1: #ffffff;
+  --t2: rgba(255, 255, 255, 0.66);
+  --t3: rgba(255, 255, 255, 0.44);
+  --t4: rgba(255, 255, 255, 0.28);
+  --acc: #8b83ff;
+  --acc-deep: #4f46e5;
+  --acc-wash: rgba(79, 70, 229, 0.16);
+
+  --r: 12px;
+  --r-lg: 18px;
+  --dur: 140ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--t1);
+  font-family: var(--sans); font-size: 15px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--acc); }
+.tab { font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+
+.wrap { max-width: 1400px; margin: 0 auto; padding: 0 28px 120px; }
+
+/* ── masthead ──────────────────────────────────────────────────── */
+.mast { padding: 78px 0 46px; border-bottom: 1px solid var(--line); }
+.kicker {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--t3);
+}
+.kicker i { width: 5px; height: 5px; border-radius: 50%; background: var(--indigo); }
+h1 {
+  margin: 18px 0 0; font-size: clamp(38px, 6vw, 68px); font-weight: 600;
+  line-height: 1.03; letter-spacing: -0.042em;
+}
+h1 em { font-style: normal; color: var(--t3); }
+.standfirst {
+  margin: 22px 0 0; max-width: 62ch; font-size: 17px; line-height: 1.62; color: var(--t2); letter-spacing: -0.012em;
+}
+.mastFacts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+.fact {
+  display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px;
+  border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 12.5px; color: var(--t2); letter-spacing: -0.006em;
+}
+.fact b { font-weight: 600; color: var(--t1); }
+
+/* ── sections ──────────────────────────────────────────────────── */
+section { padding: 62px 0 0; }
+.head2 { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+h2 { margin: 0; font-size: 27px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.2; }
+.h2note { font-size: 13.5px; color: var(--t3); letter-spacing: -0.008em; }
+.lede { margin: 16px 0 0; max-width: 68ch; font-size: 15.5px; line-height: 1.65; color: var(--t2); }
+
+/* ── the before ────────────────────────────────────────────────── */
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 26px; }
+.finding { background: var(--panel); border-radius: var(--r); padding: 20px 20px 22px; box-shadow: inset 0 0 0 1px var(--line-soft); }
+.finding h3 { margin: 0; font-size: 14.5px; font-weight: 600; letter-spacing: -0.014em; }
+.finding p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.58; color: var(--t2); }
+.finding .num { font-family: var(--mono); font-size: 26px; font-weight: 600; letter-spacing: -0.03em; color: var(--t1); display: block; margin-bottom: 4px; }
+.finding .num small { font-family: var(--sans); font-size: 13px; font-weight: 400; color: var(--t3); letter-spacing: -0.006em; }
+
+/* ── the three arguments ───────────────────────────────────────── */
+.args { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.arg { background: var(--panel); border-radius: var(--r-lg); padding: 26px 24px 28px; box-shadow: inset 0 0 0 1px var(--line-soft); display: flex; flex-direction: column; }
+.arg[data-key="c"] { box-shadow: inset 0 0 0 1px var(--acc-wash); }
+.argTag { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); }
+.arg[data-key="c"] .argTag { color: var(--acc); }
+.argName { margin: 10px 0 0; font-size: 24px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.14; }
+.argThesis { margin: 14px 0 0; font-size: 14.5px; line-height: 1.62; color: var(--t2); }
+.argBlock { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line-soft); }
+.argBlock h4 { margin: 0 0 9px; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--t4); }
+.argBlock ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.argBlock li { font-size: 13.5px; line-height: 1.55; color: var(--t2); padding-left: 15px; position: relative; }
+.argBlock li::before { content: ""; position: absolute; left: 0; top: 8px; width: 5px; height: 1px; background: var(--t4); }
+.argBlock li b { color: var(--t1); font-weight: 600; }
+.tokenChip {
+  display: inline-flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 11.5px;
+  padding: 4px 9px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line); color: var(--t2); margin: 0 5px 5px 0;
+}
+.tokenChip i { width: 9px; height: 9px; border-radius: 2px; }
+
+/* ── the comparison ────────────────────────────────────────────── */
+.controls {
+  position: sticky; top: 0; z-index: 40; margin-top: 26px;
+  background: rgba(13, 13, 14, 0.86); backdrop-filter: blur(14px);
+  border-radius: var(--r); box-shadow: inset 0 0 0 1px var(--line);
+  padding: 11px 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  max-width: 100%; min-width: 0;
+}
+.controls > * { min-width: 0; }
+/* Ten state buttons cannot wrap without breaking the pill, so the strip
+   scrolls inside its own bounds. Without this the whole page scrolled
+   sideways below 700px, which is the one thing a comparison surface must
+   never do. */
+.seg {
+  display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.05);
+  max-width: 100%; overflow-x: auto; scrollbar-width: none;
+}
+.seg::-webkit-scrollbar { display: none; }
+.segItem { flex: none; }
+.segItem {
+  height: 30px; padding: 0 13px; border-radius: 999px; font-size: 12.5px; color: var(--t3);
+  letter-spacing: -0.006em; white-space: nowrap;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.segItem:hover { color: var(--t1); }
+.segItem[data-on] { background: var(--white); color: var(--ink); font-weight: 600; }
+.segLabel { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--t4); padding-left: 6px; }
+.controls .spacer { flex: 1; }
+
+.stateNote { margin: 22px 0 0; font-size: 14px; line-height: 1.6; color: var(--t2); max-width: 78ch; }
+.stateNote b { color: var(--t1); font-weight: 600; }
+
+.strip { display: grid; gap: 14px; margin-top: 20px; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: start; }
+.strip[data-narrow] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cell { min-width: 0; }
+.cellHead { display: flex; align-items: baseline; gap: 9px; padding: 0 2px 9px; }
+.cellName { font-size: 13px; font-weight: 600; letter-spacing: -0.012em; }
+.cellSub { font-size: 11.5px; color: var(--t4); letter-spacing: -0.004em; }
+.cell[data-now] .cellName { color: var(--t3); }
+.shot {
+  display: block; width: 100%; border-radius: 10px; overflow: hidden; background: #000;
+  box-shadow: inset 0 0 0 1px var(--line-soft); cursor: zoom-in; position: relative;
+}
+.shot img { display: block; width: 100%; height: auto; }
+.shot.miss { aspect-ratio: 3 / 2; display: grid; place-items: center; color: var(--t4); font-size: 12px; }
+.caveat { margin: 9px 2px 0; font-size: 11.5px; line-height: 1.5; color: var(--t4); }
+
+/* ── zoom ──────────────────────────────────────────────────────── */
+.zoom { position: fixed; inset: 0; z-index: 100; background: rgba(6, 6, 7, 0.94); display: none; padding: 26px; overflow: auto; }
+.zoom[data-on] { display: block; }
+.zoom img { display: block; max-width: 1600px; width: 100%; margin: 0 auto; border-radius: 10px; }
+.zoomBar { max-width: 1600px; margin: 0 auto 14px; display: flex; align-items: center; gap: 14px; }
+.zoomName { font-size: 14px; font-weight: 600; letter-spacing: -0.014em; }
+.zoomBar .spacer { flex: 1; }
+.zoomClose { height: 34px; padding: 0 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; color: var(--t2); }
+
+/* ── reactions ─────────────────────────────────────────────────── */
+.zones { display: grid; gap: 12px; margin-top: 26px; }
+.zone { background: var(--panel); border-radius: var(--r); box-shadow: inset 0 0 0 1px var(--line-soft); padding: 20px 22px 22px; }
+.zoneTop { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.zoneNum { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--t4); }
+.zoneName { font-size: 16px; font-weight: 600; letter-spacing: -0.018em; }
+.zoneWhat { font-size: 13px; color: var(--t3); line-height: 1.55; }
+.zoneGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.pick { background: var(--panel-2); border-radius: 10px; padding: 13px 14px 14px; box-shadow: inset 0 0 0 1px var(--line-soft); }
+.pickName { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 10px; }
+.vote { display: flex; gap: 6px; }
+.voteBtn {
+  flex: 1; height: 34px; border-radius: 8px; font-size: 12.5px; color: var(--t3);
+  box-shadow: inset 0 0 0 1px var(--line); transition: all var(--dur) var(--curve);
+}
+.voteBtn:hover { color: var(--t1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.voteBtn[data-on="yes"] { background: var(--white); color: var(--ink); font-weight: 600; box-shadow: none; }
+.voteBtn[data-on="no"] { background: rgba(255, 255, 255, 0.10); color: var(--t1); font-weight: 600; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.noteField {
+  width: 100%; margin-top: 8px; background: rgba(0, 0, 0, 0.28); border: 0; border-radius: 8px;
+  box-shadow: inset 0 0 0 1px var(--line-soft); color: var(--t1); font: inherit; font-size: 12.5px;
+  padding: 9px 11px; resize: vertical; min-height: 38px; line-height: 1.5;
+}
+.noteField::placeholder { color: var(--t4); }
+.noteField:focus { box-shadow: inset 0 0 0 1px var(--acc-deep); outline: none; }
+
+/* ── digest ────────────────────────────────────────────────────── */
+.digestWrap { margin-top: 26px; background: var(--panel); border-radius: var(--r-lg); box-shadow: inset 0 0 0 1px var(--line-soft); padding: 24px; }
+.digestTop { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.digestTop .spacer { flex: 1; }
+.btn {
+  height: 38px; padding: 0 17px; border-radius: 9px; font-size: 13.5px; font-weight: 600;
+  background: var(--white); color: var(--ink);
+}
+.btn[data-quiet] { background: none; color: var(--t2); font-weight: 400; box-shadow: inset 0 0 0 1px var(--line); }
+.digest {
+  margin: 16px 0 0; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; line-height: 1.72;
+  color: var(--t2); background: rgba(0, 0, 0, 0.32); border-radius: 10px; padding: 18px 20px;
+  max-height: 460px; overflow: auto;
+}
+
+/* ── the ask ───────────────────────────────────────────────────── */
+.ask { margin-top: 62px; padding: 34px 32px 36px; border-radius: var(--r-lg); background: var(--panel); box-shadow: inset 0 0 0 1px var(--acc-wash); }
+.ask h2 { font-size: 24px; }
+.ask ol { margin: 18px 0 0; padding-left: 20px; display: grid; gap: 10px; }
+.ask li { font-size: 15px; line-height: 1.6; color: var(--t2); }
+.ask li b { color: var(--t1); font-weight: 600; }
+
+.foot { margin-top: 62px; padding-top: 26px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.65; color: var(--t4); max-width: 82ch; }
+.foot code { font-family: var(--mono); font-size: 11.5px; color: var(--t3); }
+
+/* Nothing on this page needs to move for its meaning to arrive. */
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+}
+
+@media (max-width: 1100px) {
+  .args { grid-template-columns: minmax(0, 1fr); }
+  .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .zoneGrid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .controls .spacer { display: none; }
+  .controls { row-gap: 8px; }
+}
+@media (max-width: 640px) {
+  .wrap { padding: 0 16px 90px; }
+  .strip { grid-template-columns: minmax(0, 1fr); }
+  h1 { letter-spacing: -0.034em; }
+  .zoom { padding: 14px; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <span class="kicker"><i></i>Signal Studio · design exploration · August 2026</span>
+  <h1>Notes.<br><em>Three directions on one floor.</em></h1>
+  <p class="standfirst">
+    Tasks locked Studio Floor: an ink floor, one white sheet lifted off it, a floating
+    capsule carrying the suite, a dock at the foot, identity on the sheet's own head.
+    That architecture is inherited here and is not re-explored. What is open is
+    everything on the Notes sheet — the composer, the note, the shelf, the queue,
+    the seam into Tasks, and the states where the product does not yet have your work
+    where it promised. Three directions answer those differently. One of them becomes
+    the master.
+  </p>
+  <div class="mastFacts">
+    <span class="fact"><b>3</b> directions</span>
+    <span class="fact"><b>10</b> states each</span>
+    <span class="fact"><b>4</b> viewports</span>
+    <span class="fact"><b>120</b> frames</span>
+    <span class="fact"><b>0</b> console errors</span>
+    <span class="fact"><b>3</b> colours · Ink, Indigo, White</span>
+    <span class="fact">Geist <b>400/600</b> only</span>
+  </div>
+</header>
+
+<section id="before">
+  <div class="head2">
+    <h2>What is being replaced</h2>
+    <span class="h2note">Measured off the running build, not read off a screenshot</span>
+  </div>
+  <p class="lede">
+    Twelve findings are written up in <code style="font-family:var(--mono);font-size:13px">DIRECTIONS.md</code>.
+    These four are the ones that decide the shape of a direction rather than the finish of one.
+  </p>
+  <div class="findings">
+    <div class="finding">
+      <h3><span class="num">5 <small>hues on screen</small></span>Not on the palette lock</h3>
+      <p>Cool zinc <span class="tab">#3f3f46</span> as the type colour on 283 nodes, green <span class="tab">#1b873f</span>, red <span class="tab">#ef4444</span>, amber, indigo. The greys are the worse half: <span class="tab">#3f3f46</span> is not a tint of <span class="tab">#111111</span>, it is a cool zinc, and it is the colour of nearly all the type.</p>
+    </div>
+    <div class="finding">
+      <h3><span class="num">12× <small>font-weight: 500</small></span>The dominant weight is a forbidden one</h3>
+      <p>Declared twelve times in the Notes stylesheet against six for 600 and one for 400. The most-used weight in the product is the one weight the locked pairing does not permit.</p>
+    </div>
+    <div class="finding">
+      <h3><span class="num">939px <small>discarded at 1920</small></span>The screen is thrown away</h3>
+      <p>1440 → notebook 945px. 1920 → 981px. Between them the product gains 480px of screen and spends 36px of it. Nearly half the window is undifferentiated white.</p>
+    </div>
+    <div class="finding">
+      <h3><span class="num">2 <small>leading edges</small></span>The header does not belong to its content</h3>
+      <p>The header rule runs the full 1380px. Everything under it is inset 217px each side. The tabs sit 217px to the left of the composer's own left edge.</p>
+    </div>
+  </div>
+  <p class="lede" style="margin-top:22px">
+    And the one that is not about pixels: the offline state — the product working exactly as
+    designed, holding your words safely on the device — states its reassurance in red.
+    The behaviour says nothing was lost. The colour says something broke.
+  </p>
+</section>
+
+<section id="arguments">
+  <div class="head2">
+    <h2>The three arguments</h2>
+    <span class="h2note">Each fully resolved across all ten states. C reaches furthest.</span>
+  </div>
+  <div class="args" id="args"></div>
+</section>
+
+<section id="frames">
+  <div class="head2">
+    <h2>Every state, side by side</h2>
+    <span class="h2note">Now, then A, B and C. Click any frame to open it full size.</span>
+  </div>
+  <div class="controls" role="group" aria-label="Which state and which viewport">
+    <span class="segLabel">State</span>
+    <div class="seg" id="stateSeg"></div>
+    <span class="spacer"></span>
+    <span class="segLabel">Viewport</span>
+    <div class="seg" id="viewSeg"></div>
+  </div>
+  <p class="stateNote" id="stateNote"></p>
+  <div class="strip" id="strip"></div>
+</section>
+
+<section id="zones">
+  <div class="head2">
+    <h2>React by zone</h2>
+    <span class="h2note">Six zones, three directions. Nothing here leaves this page until you copy it.</span>
+  </div>
+  <p class="lede">
+    The numbers exist so a reply can name a zone without describing it. Mark what works and
+    what does not, add a line where it matters, then copy the digest at the bottom.
+  </p>
+  <div class="zones" id="zoneList"></div>
+</section>
+
+<section id="digest">
+  <div class="head2"><h2>The digest</h2><span class="h2note">Copy this back and the next round is built from it</span></div>
+  <div class="digestWrap">
+    <div class="digestTop">
+      <button class="btn" id="copyBtn">Copy the digest</button>
+      <button class="btn" data-quiet id="clearBtn">Clear everything</button>
+      <span class="spacer"></span>
+      <span class="h2note" id="digestCount">nothing marked yet</span>
+    </div>
+    <pre class="digest" id="digestOut"></pre>
+  </div>
+</section>
+
+<div class="ask">
+  <h2>What is being asked</h2>
+  <ol>
+    <li><b>Pick one direction.</b> A, B or C. It becomes the master, and the next round builds three finished rooms of it as presets of named design decisions.</li>
+    <li><b>Say what is not good enough about the one you pick.</b> Verbatim, in your own words. It goes into the lock document and the next round is graded against it, exactly the way the Tasks lock was.</li>
+    <li><b>Say whether anything here should be grafted from a direction you did not pick.</b> Nothing is deleted; elements can move across if they earn it.</li>
+  </ol>
+</div>
+
+<p class="foot">
+  Exploration only. Branch <code>design/notes-exploration</code>, cut from <code>design/tasks-exploration</code>. No PR, no deploy,
+  no app-code or schema change; the chrome and navigation contract gates are knowingly unmet until product lock-in.
+  Every frame is rendered from the real review fixture — The Orchard, events; Mara &amp; Finn; Orla; the pinned 16 July clock —
+  in real Geist, and packed to WebP so this page carries its own evidence under the Artifact content-security policy.
+  Artboards: <code>docs/design/labs/notes-2026-08/</code>. The written brief and the fold from 29 product states to 10 lab states:
+  <code>DIRECTIONS.md</code>. The before: <code>docs/design/shots/notes-reference-2026-08/</code>, 29 states, zero console errors.
+</p>
+
+</div>
+
+<div class="zoom" id="zoom" role="dialog" aria-modal="true" aria-label="Full size frame">
+  <div class="zoomBar">
+    <span class="zoomName" id="zoomName"></span>
+    <span class="spacer"></span>
+    <button class="zoomClose" id="zoomClose">Close · Esc</button>
+  </div>
+  <img id="zoomImg" alt="">
+</div>
+
+<script>
+const FRAMES = __FRAMES__;
+
+const STATES = [
+  { key: "notebook", name: "Notebook", sub: "the resting state",
+    note: "Where the product spends nearly all of its life. The composer at rest and a note being read are the same frame, and each direction argues a different thing about how much of the sheet capture is allowed to own when nothing is being captured." },
+  { key: "capture", name: "Capture", sub: "mid-thought",
+    note: "Focus and filled are one continuous moment. The field growing, the counter arriving, the save affordance waking, and the keyboard path — all in one frame, because photographed apart they hide the transition that is the entire promise." },
+  { key: "voice", name: "Voice", sub: "the spoken sequence",
+    note: "The shipped product opens this flow with a 90-word consent panel and a Start recording button before anything is listening. The disclosure is right and survives verbatim in all three. Where it lives, and whether it costs a press, is the design problem." },
+  { key: "readback", name: "Read-back", sub: "what came back",
+    note: "You said one continuous run of speech and it comes back as two notes you can edit. Conceptually the most delightful thing the product does; shipped, it is two identical text inputs in a box." },
+  { key: "review", name: "Review", sub: "the queue",
+    note: "The shipped review view is one 700px card centred in roughly 1.2 million pixels of undifferentiated white, with no sense of a queue, no progress and no idea what is next." },
+  { key: "seam", name: "The seam", sub: "into Tasks",
+    note: "The most important cross-product moment in the suite. The contract underneath only ever sends the exact words you picked, sealed. The shipped interface presents that in a modal that scrims the note it came from, with a raw operating-system select in it." },
+  { key: "search", name: "Search", sub: "a query and its hits",
+    note: "Marking a match inside a person's own prose is its own typographic problem, which is why it is not folded into the notebook state." },
+  { key: "pressure", name: "Pressure", sub: "36 notes and a 900-word note",
+    note: "The shelf under count and the note object under length, in one frame, so a direction cannot solve one by sacrificing the other. Peak season is an extension of the fixture and is labelled as one." },
+  { key: "nothing", name: "Nothing", sub: "every empty at once",
+    note: "The deliberate fold. Today Notes ships two empty states side by side saying the same sentence and offering no move. All four empties on one sheet makes that impossible to repeat and forces four different first moves." },
+  { key: "not-yet", name: "Not yet", sub: "loading, saving, offline, conflict, delete",
+    note: "Every state where the product does not yet have your work where it promised. One family, because they share one job: make losing work visibly impossible. And because putting loading next to save-failure is what stops a direction shipping a beautiful skeleton and a red apology." },
+];
+
+const VIEWS = [
+  { key: "1440x960", name: "1440" },
+  { key: "1280x900", name: "1280" },
+  { key: "768x1024", name: "Tablet" },
+  { key: "390x844", name: "Phone" },
+];
+
+const DIRS = [
+  { key: "current", name: "Now", sub: "what ships today", now: true },
+  { key: "a", name: "A · The Desk", sub: "the dock is the composer" },
+  { key: "b", name: "B · The Page", sub: "a manuscript, three columns" },
+  { key: "c", name: "C · The Stack", sub: "two planes, with depth" },
+];
+
+const CAVEATS = {
+  capture: "The four-viewport reference set photographs the shipped composer only at rest.",
+  voice: "The shipped voice flow opens on a consent stage the four-viewport set does not cover.",
+  readback: "The shipped read-back is not in the four-viewport set.",
+  seam: "The shipped hand-off is a centred dialog over this view.",
+  search: "The shipped search filters this notebook in place.",
+};
+
+const ARGS = [
+  {
+    key: "a",
+    tag: "Direction A",
+    name: "The Desk",
+    thesis: "Capture is not a feature at the top of a page, it is the instrument the whole product is. So the composer leaves the sheet entirely and becomes the dock: the floating bar at the foot, where your hands already are, is the capture field. It is always live, one keystroke from ink, and it grows upward into a sheet of paper when there is more to say. That buys the entire sheet for the notes.",
+    anatomy: [
+      "<b>The note</b> is a ruled entry, not a card. The border was doing nothing a rule cannot do better and cost a third of the vertical space.",
+      "<b>The shelf</b> is one continuous run at a held measure, grouped by date rule. Nothing selects into a reading pane.",
+      "<b>Reading</b> happens in place: an entry grows where it already is and is marked in the sheet's own margin, so the run never shifts under your eye.",
+      "<b>Review</b> is walked, not navigated. The queue keeps its own tail on screen so you can see how many are left.",
+      "<b>Search</b> is the same field pointed at the other job. Nothing new appears.",
+    ],
+    sacrifices: [
+      "Density. Five notes visible where C shows fourteen.",
+      "The dock is a pattern that has to be learned once, and the first-contact test decides whether that is acceptable.",
+      "The sheet is a held page with ink floor either side, so it will read as small to anyone expecting a full-bleed app.",
+    ],
+    broken: [
+      "<b>The composer box.</b> Deleted. It sat empty ninety-nine percent of the time and pushed every note down.",
+      "<b>Notes' five-hue status system.</b> Superseded by the inherited three-colour lock.",
+      "<b>The list/detail split.</b> Retired. One column, one measure.",
+    ],
+    delight: [
+      "Saving slides the written words up out of the dock and settles them as the newest entry, with the dock laying a fresh line under them.",
+      "The dock's send wakes from grey to indigo on the first keystroke, which is the only moment Notes raises its voice.",
+    ],
+  },
+  {
+    key: "b",
+    tag: "Direction B",
+    name: "The Page",
+    thesis: "A notebook is not a list you file into, it is a page you write on. So there is no composer object at all: the top of the page is a caret and your words, set in exactly the type every note below it is set in. The page is a three-column manuscript — when and how on the left, the words in the centre, what became of them on the right — and nothing is ever set into the prose column but the person's own writing.",
+    anatomy: [
+      "<b>The note</b> is a block of prose read whole. Most notes are short and never need opening at all, which is the argument for a page over a list.",
+      "<b>The shelf</b> is one document, newest first, with a hanging gutter carrying when and how.",
+      "<b>The right margin</b> carries the receipt, the state and the one way to act. The text column stays uninterrupted.",
+      "<b>Review</b> does not navigate: an ink band lifts the notes that want a decision to the top of the same page.",
+      "<b>The seam</b> is written in the margin beside the words it comes from, with the picked words marked inside the person's own sentence.",
+    ],
+    sacrifices: [
+      "The lowest density of the three. Scanning 36 notes is scrolling.",
+      "The three-column grid costs the right margin entirely below 980px, and the layout has to fold rather than shrink.",
+      "The ink band is the loudest object in the product and appears on almost every visit.",
+    ],
+    broken: [
+      "<b>The composer as an object.</b> Deleted outright. Capture is the top of the document.",
+      "<b>The dock as the primary action.</b> Narrowed: it carries only the verbs that are about the whole notebook, never the composer.",
+      "<b>Notes' five-hue status system.</b> Superseded.",
+    ],
+    delight: [
+      "Keeping a note settles it into the page below the caret, and the caret returns to a fresh line without the page moving.",
+      "The band counts down as decisions are made and removes itself, rather than sitting at zero.",
+    ],
+  },
+  {
+    key: "c",
+    tag: "Direction C · reaches furthest",
+    name: "The Stack",
+    thesis: "A note is a thing, and things pile up. So the sheet is two planes with depth between them. The upper plane is a desk carrying the newest piece of paper, with the last two behind it, offset and settling. The lower plane is an index: everything older, one line each, scannable at a glance. Reading lifts a note out of the index and up onto the desk. Dictating takes the whole floor to ink.",
+    anatomy: [
+      "<b>The composer</b> is a sheet of paper on the top of a pile. You are not filling in a field, you are writing on paper.",
+      "<b>The index</b> is one line per note with a status column, so a season of capture is scannable without scrolling past your own week. Fourteen notes visible where A shows five.",
+      "<b>Voice</b> takes the whole floor. White words on ink at 34px, the disclosure at the foot, the sheet still mounted behind it.",
+      "<b>Review</b> is a hand of cards. The depth behind the top card is the number of decisions left, visible without reading a figure.",
+      "<b>The seam</b> peels a second, smaller piece of paper off the note, carrying only the words that will cross.",
+    ],
+    sacrifices: [
+      "Build cost. By far the most expensive of the three.",
+      "Physical metaphor is the fastest way to make software feel expensive and the fastest way to make it feel cheap. There is no middle.",
+      "Two planes means two scroll contexts to keep honest, and the desk cannot grow without the index shrinking.",
+    ],
+    broken: [
+      "<b>Hairlines, not shadows.</b> Narrowed further than A or B: paper on paper is three stacked micro-shadows, and the pile is the direction's whole argument.",
+      "<b>One plane per surface.</b> Broken. The sheet is split, and depth carries the difference between now and everything else.",
+      "<b>Notes' five-hue status system.</b> Superseded.",
+    ],
+    delight: [
+      "Saving slides the top sheet down onto the pile and lays a fresh one, so the pile visibly grows by one.",
+      "Deciding a note in the hand flicks it off the top and the next comes up, with the depth behind reducing by one card.",
+      "The floor going to ink when you speak, and the words arriving at the size a person speaking expects.",
+    ],
+  },
+];
+
+const ZONES = [
+  { n: 1, name: "Chrome", what: "the floor, the capsule, the sheet's head, the dock, where identity, search, account and suite switching live, and the phone merge" },
+  { n: 2, name: "Composer", what: "the capture instrument: idle, focused, filled, saving, failed; the three ways in; where it sits and how much it owns" },
+  { n: 3, name: "Note & shelf", what: "the note object, its typography, its metadata, its states, and the surface that holds the run of them" },
+  { n: 4, name: "Voice & read-back", what: "the spoken sequence and what comes back from it; the photo sibling; where the disclosure lives" },
+  { n: 5, name: "Review & seam", what: "the queue, the decision, the crossing into Tasks, and the record of what crossed" },
+  { n: 6, name: "Type, colour & motion", what: "the type scale at 400/600, where the one indigo is spent, how state reads without hue, and what moves" },
+];
+
+const state = { view: "1440x960", state: "notebook", votes: {}, notes: {} };
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+/* ── the arguments ─────────────────────────────────────────────── */
+el("args").innerHTML = ARGS.map((a) => `
+  <article class="arg" data-key="${a.key}">
+    <span class="argTag">${a.tag}</span>
+    <h3 class="argName">${a.name}</h3>
+    <p class="argThesis">${a.thesis}</p>
+    <div class="argBlock"><h4>What it argues</h4><ul>${a.anatomy.map((x) => `<li>${x}</li>`).join("")}</ul></div>
+    <div class="argBlock"><h4>What it deliberately sacrifices</h4><ul>${a.sacrifices.map((x) => `<li>${x}</li>`).join("")}</ul></div>
+    <div class="argBlock"><h4>Pinned decisions it breaks</h4><ul>${a.broken.map((x) => `<li>${x}</li>`).join("")}</ul></div>
+    <div class="argBlock"><h4>Candidate delight — recorded, not decided</h4><ul>${a.delight.map((x) => `<li>${x}</li>`).join("")}</ul></div>
+    <div class="argBlock"><h4>Additive tokens proposed</h4>
+      <div>
+        <span class="tokenChip"><i style="background:#111111"></i>Ink #111111</span>
+        <span class="tokenChip"><i style="background:#4f46e5"></i>Indigo #4f46e5</span>
+        <span class="tokenChip"><i style="background:#ffffff"></i>White #ffffff</span>
+      </div>
+      <p style="margin:10px 0 0;font-size:12.5px;line-height:1.55;color:var(--t4)">None. All three directions run on the inherited lock and its stated alphas, so no direction can reach a fourth colour.</p>
+    </div>
+  </article>`).join("");
+
+/* ── the controls ──────────────────────────────────────────────── */
+el("stateSeg").innerHTML = STATES.map((s) =>
+  `<button class="segItem" data-state="${s.key}"${s.key === state.state ? " data-on" : ""}>${s.name}</button>`).join("");
+el("viewSeg").innerHTML = VIEWS.map((v) =>
+  `<button class="segItem" data-view="${v.key}"${v.key === state.view ? " data-on" : ""}>${v.name}</button>`).join("");
+
+el("stateSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-state]");
+  if (!b) return;
+  state.state = b.dataset.state;
+  for (const n of el("stateSeg").children) n.toggleAttribute("data-on", n === b);
+  paint();
+});
+el("viewSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-view]");
+  if (!b) return;
+  state.view = b.dataset.view;
+  for (const n of el("viewSeg").children) n.toggleAttribute("data-on", n === b);
+  paint();
+});
+
+function paint() {
+  const s = STATES.find((x) => x.key === state.state);
+  el("stateNote").innerHTML = `<b>${s.name} · ${s.sub}.</b> ${s.note}`;
+  el("strip").innerHTML = DIRS.map((d) => {
+    const key = `${d.key}-${state.state}--${state.view}`;
+    const src = FRAMES[key];
+    const caveat = d.now && CAVEATS[state.state] ? `<p class="caveat">${CAVEATS[state.state]}</p>` : "";
+    return `
+      <div class="cell"${d.now ? " data-now" : ""}>
+        <div class="cellHead"><span class="cellName">${d.name}</span><span class="cellSub">${d.sub}</span></div>
+        ${src
+          ? `<button class="shot" data-src="${key}" data-name="${esc(d.name)} · ${esc(s.name)} · ${state.view}" aria-label="Open ${esc(d.name)} ${esc(s.name)} full size"><img src="${src}" alt="${esc(d.name)}, ${esc(s.name)}, ${state.view}" loading="lazy"></button>`
+          : `<div class="shot miss">not captured</div>`}
+        ${caveat}
+      </div>`;
+  }).join("");
+}
+
+el("strip").addEventListener("click", (e) => {
+  const b = e.target.closest(".shot[data-src]");
+  if (!b) return;
+  el("zoomImg").src = FRAMES[b.dataset.src];
+  el("zoomImg").alt = b.dataset.name;
+  el("zoomName").textContent = b.dataset.name;
+  el("zoom").setAttribute("data-on", "");
+});
+const closeZoom = () => el("zoom").removeAttribute("data-on");
+el("zoomClose").addEventListener("click", closeZoom);
+el("zoom").addEventListener("click", (e) => { if (e.target === el("zoom")) closeZoom(); });
+addEventListener("keydown", (e) => { if (e.key === "Escape") closeZoom(); });
+
+/* ── reactions ─────────────────────────────────────────────────── */
+el("zoneList").innerHTML = ZONES.map((z) => `
+  <div class="zone">
+    <div class="zoneTop">
+      <span class="zoneNum">${z.n}</span>
+      <span class="zoneName">${z.name}</span>
+      <span class="zoneWhat">${z.what}</span>
+    </div>
+    <div class="zoneGrid">
+      ${ARGS.map((a) => `
+        <div class="pick">
+          <p class="pickName">${a.tag.split(" · ")[0]} · ${a.name}</p>
+          <div class="vote" role="group" aria-label="${z.name}, ${a.name}">
+            <button class="voteBtn" data-vote="yes" data-z="${z.n}" data-d="${a.key}">Works</button>
+            <button class="voteBtn" data-vote="no" data-z="${z.n}" data-d="${a.key}">Does not</button>
+          </div>
+          <textarea class="noteField" data-z="${z.n}" data-d="${a.key}" placeholder="Why, in your words" aria-label="Note on ${z.name} in ${a.name}"></textarea>
+        </div>`).join("")}
+    </div>
+  </div>`).join("");
+
+el("zoneList").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-vote]");
+  if (!b) return;
+  const id = `${b.dataset.z}:${b.dataset.d}`;
+  state.votes[id] = state.votes[id] === b.dataset.vote ? null : b.dataset.vote;
+  const group = b.parentElement;
+  for (const n of group.children) {
+    if (state.votes[id] === n.dataset.vote) n.setAttribute("data-on", n.dataset.vote);
+    else n.removeAttribute("data-on");
+  }
+  digest();
+});
+el("zoneList").addEventListener("input", (e) => {
+  const f = e.target.closest(".noteField");
+  if (!f) return;
+  state.notes[`${f.dataset.z}:${f.dataset.d}`] = f.value.trim();
+  digest();
+});
+
+function digest() {
+  const lines = ["Notes · three directions · reactions", ""];
+  let marked = 0;
+  for (const z of ZONES) {
+    const rows = [];
+    for (const a of ARGS) {
+      const id = `${z.n}:${a.key}`;
+      const v = state.votes[id];
+      const n = state.notes[id];
+      if (!v && !n) continue;
+      marked += 1;
+      const verdict = v === "yes" ? "works" : v === "no" ? "does not work" : "noted";
+      rows.push(`  ${a.key.toUpperCase()} · ${a.name} — ${verdict}${n ? `\n     ${n}` : ""}`);
+    }
+    if (rows.length) lines.push(`${z.n} · ${z.name}`, ...rows, "");
+  }
+  if (!marked) {
+    el("digestOut").textContent = "Mark a zone above and the digest writes itself here.";
+    el("digestCount").textContent = "nothing marked yet";
+    return;
+  }
+  el("digestOut").textContent = lines.join("\n");
+  el("digestCount").textContent = `${marked} reaction${marked === 1 ? "" : "s"} marked`;
+}
+
+el("copyBtn").addEventListener("click", async () => {
+  const text = el("digestOut").textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    el("copyBtn").textContent = "Copied";
+  } catch {
+    const range = document.createRange();
+    range.selectNodeContents(el("digestOut"));
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    el("copyBtn").textContent = "Selected, press copy";
+  }
+  setTimeout(() => { el("copyBtn").textContent = "Copy the digest"; }, 1800);
+});
+el("clearBtn").addEventListener("click", () => {
+  state.votes = {};
+  state.notes = {};
+  for (const n of document.querySelectorAll(".voteBtn")) n.removeAttribute("data-on");
+  for (const n of document.querySelectorAll(".noteField")) n.value = "";
+  digest();
+});
+
+paint();
+digest();
+</script>
