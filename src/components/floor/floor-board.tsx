@@ -10,8 +10,10 @@
  * this file renders the same board over the live workspace store.
  *
  * What the direction locks:
- *   · Three colours. Ink #111111, Indigo #4f46e5, White #ffffff, and tints
- *     of those three at stated alpha. Status is carried by ink density and
+ *   · Three colours, all from tokens.css: --ink, --indigo-600 and --paper,
+ *     and tints of those three at stated alpha. The board names no value of
+ *     its own, because a second copy of a colour is a second place it drifts
+ *     from. Status is carried by ink density and
  *     fill, never by hue — so there is no amber lane, no green tick and no
  *     red overdue here on purpose.
  *   · One chip grammar. Every time fact is a point in time; the fill says

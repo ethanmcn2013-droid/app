@@ -234,8 +234,43 @@ const host = `
  * root. Renaming on the emitted text rather than per-selector catches it
  * wherever it appears, including inside :has() and media blocks. The host
  * block goes last so it wins on the properties it deliberately overrides. */
-const sheet = (head + tokens + "\n" + kept.join("") + host)
-  .replace(/(^|[\s,(])\.floor\b/g, "$1.root");
+const sheet = alias((head + tokens + "\n" + kept.join("") + host)
+  .replace(/(^|[\s,(])\.floor\b/g, "$1.root"),
+);
 
 await writeFile(OUT, sheet, "utf8");
 process.stdout.write(`${OUT}\n  tokens: ${tokens ? "yes" : "MISSING"}  kept: ${kept.length}  dropped: ${dropped}\n`);
+
+/**
+ * The palette, sourced rather than restated.
+ *
+ * The master is a standalone file and states its three colours literally, so
+ * it opens without the app around it. The stylesheet the app ships must not:
+ * the design system already holds these exact values, and a second copy of a
+ * value is a second place it can drift from. Every literal in the palette
+ * block becomes the token that already carries it.
+ */
+function alias(css) {
+  const SAME = [
+    /* --ink is dropped, not aliased: `--ink: var(--ink)` is a cycle, which
+       makes the property invalid at computed-value time and unsets the whole
+       board's ink. Removing it lets the identical value inherit from
+       tokens.css, which is where it should have come from all along. */
+    [/\n *--ink: *#111111;.*/, ""],
+    [/(--indigo:\s*)#4f46e5/, "$1var(--indigo-600)"],
+    [/(--indigo-deep:\s*)#4338ca/, "$1var(--indigo-700)"],
+    [/(--white:\s*)#ffffff/, "$1var(--paper)"],
+    [/(--on-ink-1:\s*)#ffffff/, "$1var(--paper)"],
+  ];
+  let out = css;
+  for (const [find, put] of SAME) {
+    if (!find.test(out)) throw new Error(`palette alias missed: ${find}`);
+    out = out.replace(find, put);
+  }
+  /* A colour named in prose is still a second copy of the value. */
+  out = out.replace(
+    /locked to Ink #111111, Indigo #4f46e5 and White #ffffff/,
+    "locked to three: --ink, --indigo-600 and --paper, all from tokens.css",
+  );
+  return out;
+}
