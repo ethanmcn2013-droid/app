@@ -708,6 +708,21 @@
       </nav>`;
   }
 
+  /* The one fact this notebook has that no other product's would: the day
+     the house is running, and how long there is. The head's top-line fact
+     had been a generic count of unread items while the thing that
+     actually presses on this person sat in the data unsaid. */
+  function nextUp() {
+    const soon = N.next;
+    if (!soon) return "";
+    const waiting = work().filter((n) => n.pending && n.aboutKey === "mara-finn").length;
+    return `
+      <span class="headNext">
+        <b>${esc(soon.label)}</b>
+        <span>${esc(soon.when)}, in ${soon.days} day${soon.days === 1 ? "" : "s"}${waiting ? `, ${waiting} still to decide` : ""}</span>
+      </span>`;
+  }
+
   function head() {
     const c = counts();
     const chip =
@@ -721,6 +736,7 @@
         <span class="word">notes</span>
         <span class="headRule" aria-hidden="true"></span>
         <h1 class="headName">${esc(N.workspace)}</h1>
+        ${nextUp()}
         ${chip}
         <div class="headActions">
           <button class="headAct" type="button" data-act="privacy">${I.lock}<span>${esc(N.copy.privacy)}</span></button>

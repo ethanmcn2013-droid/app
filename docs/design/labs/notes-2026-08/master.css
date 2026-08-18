@@ -237,6 +237,13 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; letter-spacing: var(--tr-18); flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
 .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
 .headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
+/* What the house is facing, at the head of the sheet. The head's top-line
+   fact had been a generic count of unread items while the thing that
+   actually presses on this person — a wedding in two days with notes
+   unresolved — was already in the data and printed only as a group rule. */
+.headNext { display: inline-flex; align-items: baseline; gap: 8px; flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.headNext b { font-size: var(--t-15); line-height: var(--lh-base); font-weight: 600; letter-spacing: var(--tr-16); color: var(--ink-1); white-space: nowrap; }
+.headNext span { font-size: var(--t-13); line-height: var(--lh-base); font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .headName { margin: 0; font-size: var(--t-15); font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 5ch; line-height: var(--lh-base); }
 .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
 .headAct {
@@ -303,7 +310,11 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    column plus an arbitrary remainder — a mystery foot of 37px in one
    state and 77px in another. */
 .top[data-two] {
-  display: grid; grid-template-columns: minmax(0, 1fr) 296px; column-gap: 30px;
+  /* The writing column IS the measure. Given a share of the paper it was
+     wider than the measure and capped inside itself, so a twenty-word
+     note floated in a column of dead white with the margin cramped
+     beside it. The margin takes whatever is left. */
+  display: grid; grid-template-columns: minmax(0, var(--measure)) minmax(276px, 1fr); column-gap: 34px;
   align-items: start; grid-template-rows: auto;
 }
 .top[data-two] > .deskWrite { grid-column: 1; grid-row: 1; min-width: 0; }
@@ -318,7 +329,10 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
   letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3);
 }
 .deskFact span { font-size: var(--t-13); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1); }
-.deskFact a { color: var(--ink-1); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+/* The link out to the task the note became. The drawn rule is the
+   underline; the thing a pointer lands on is the 28 behind it. */
+.deskFact a { position: relative; display: inline-block; color: var(--ink-1); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.deskFact a::before { content: ""; position: absolute; inset: -8px -6px; }
 .deskFact a:hover { border-color: var(--ink-2); }
 .deskFact .filingBtn { justify-self: start; margin-left: -10px; }
 
