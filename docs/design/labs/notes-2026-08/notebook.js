@@ -75,9 +75,18 @@
   let filing = "mara-finn";
   let picker = null;      /* the open subject picker, if any                 */
   let inputTimer = null;
+  let confirming = null;   /* the note delete is asking about              */
 
   /* Everything the capture field's own words change, written on the next
      tick rather than during the input event. */
+  /* The one change that cannot wait for a pause is the sheet waking, and
+     it is made without touching the document: a CSS custom property on
+     the root, which the stylesheet reads. Nothing in the tree changes, so
+     the browser's typing history is untouched. */
+  function wakeSheet(live) {
+    root.style.setProperty("--writing", live ? "1" : "0");
+  }
+
   function applyDraft() {
     const live = Boolean(draft.trim());
     const host = mount.querySelector(".top") || mount.querySelector(".dock");
@@ -90,8 +99,8 @@
         foot.insertAdjacentHTML(
           "beforeend",
           phone.matches
-            ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span><button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Keep it">${I.check}</button>`
-            : `<span class="topMeta tab" data-count>${draft.length} / 4000</span><button class="act" data-ink type="button" data-act="keep">${I.check}Keep it<kbd>${MOD}+Enter</kbd></button>`,
+            ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span><button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`
+            : `<span class="topMeta tab" data-count>${draft.length} / 4000</span><button class="act" data-ink type="button" data-act="keep">${I.check}Save it<kbd>${MOD}+Enter</kbd></button>`,
         );
         const idle = [...foot.querySelectorAll(".topMeta")].find((n) => !n.dataset.count && !n.classList.contains("tab"));
         if (idle) idle.remove();
@@ -163,15 +172,17 @@
   };
 
   /* ── the way back ────────────────────────────────────────────── */
+  /* Thirty seconds, said out loud, and the same number in every room. The
+     product printed a thirty-second promise in one place and expired the
+     strip silently at ten in another. */
+  const UNDO_SECONDS = 30;
   function offerUndo(label, revert) {
     undone = { label, revert };
     clearTimeout(undoTimer);
-    /* The strip waits while you are reading it. Ten seconds is long enough
-       to notice a mistake and short enough not to become chrome. */
     undoTimer = setTimeout(() => {
       undone = null;
       paint();
-    }, 10000);
+    }, UNDO_SECONDS * 1000);
   }
   function doUndo() {
     if (!undone) return false;
@@ -189,15 +200,31 @@
      were building the object by hand and the newest one forgot `about`,
      so opening a note you had just written threw on note.about.label and
      took the whole repaint with it. */
+  /* A note captured in three seconds does not have a full stop in it.
+     Deriving the 600-weight lede from terminal punctuation therefore set
+     every real capture entirely in semibold — the only hierarchy device
+     this product has inside a person's own writing, decided by how
+     carefully they punctuated. It is a word-safe budget now, and a note
+     that has no remainder has no lede at all rather than being bolded
+     end to end. */
+  function ledeOf(body) {
+    const stop = body.search(/(?<=[.?!”])\s/);
+    if (stop > 0 && stop <= 88) return body.slice(0, stop + 1).trim();
+    if (body.length <= 52) return null;
+    const cut = body.lastIndexOf(" ", 46);
+    return cut > 12 ? body.slice(0, cut) : null;
+  }
+
   function makeNote(body, opts) {
     const o = opts || {};
     const about = o.about || filing;
-    const title = body.split(/(?<=[.?!”])\s/)[0] || body;
+    const title = ledeOf(body) || body;
     return {
       id: o.id || `new_${Date.now()}_${Math.round(performance.now())}`,
       body,
       title,
       rest: body.slice(title.length).trim(),
+      lede: Boolean(ledeOf(body)),
       source: o.source || "typed",
       when: "Just now",
       day: "Today",
@@ -225,7 +252,7 @@
        says what pressing it will do. Written as the post-undo sentence and
        shown before the undo, it told the operator their note had already
        gone back to the sheet while it was sitting safely on the pile. */
-    offerUndo("Kept.", () => {
+    offerUndo("Saved.", () => {
       WORK = work().filter((n) => n !== note);
       draft = body;
     });
@@ -348,11 +375,30 @@
       pickedWords = picked || null;
       taskWording = picked ? picked.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "") : "";
       sentTask = null;
-      say(picked ? `${N.copy.sourceLabel}: ${picked}. ${N.copy.payload}` : N.copy.nothingSelected);
+      /* An invitation, not a reprimand. The product's only scolding
+         imperative was being fired as the greeting to its most important
+         flow. */
+      say(
+        picked
+          ? `${N.copy.sourceLabel}: ${picked}. ${N.copy.payload}`
+          : "Nothing picked yet. Write what the task should say, or pick words in the note.",
+      );
       refocus = { kind: "field", sel: ".peelField" };
       paint();
       return;
     }
+    if (kind === "delete" && confirming !== note.id) {
+      /* The card printed "every decision can be put back" directly over a
+         one-click, no-confirm verb whose own specimen room promises a
+         confirmation and thirty seconds. It asks now, and the two rooms
+         say the same number. */
+      confirming = note.id;
+      say("Delete this note? It has not been sent anywhere, so this deletes it everywhere.");
+      refocus = { kind: "act", sel: '[data-act="d-delete-yes"]' };
+      paint();
+      return;
+    }
+    confirming = null;
     if (kind === "keep" || kind === "later") {
       note.pending = kind === "keep" ? false : true;
       note.reviewed = kind === "keep";
@@ -455,8 +501,8 @@
        rather than quietly sending a sentence they never chose. */
     const words = o.words || picked || note.pick;
     if (!words) {
-      say(N.copy.nothingSelected);
-      nudge = N.copy.nothingSelected;
+      say("Nothing picked yet. Pick the words in the note that should become the task.");
+      nudge = "Pick the words in the note that should become the task. Only those cross.";
       openId = note.id;
       paint();
       setTimeout(() => {
@@ -524,7 +570,7 @@
   function openSearch() {
     state = "search";
     refocus = { kind: "field", sel: "#q" };
-    say("Search everything you have written.");
+    say("Search everything you wrote.");
     paint();
   }
 
@@ -588,7 +634,13 @@
       if (!text) continue;
       /* A row that wraps has already solved this in CSS; measuring
          scrollWidth on it compares the wrong axis. */
-      if (getComputedStyle(text).whiteSpace !== "nowrap") continue;
+      /* A wrapped row is clamped by CSS, and the clamp has to admit it:
+         mark it so the stylesheet can draw the sign, then leave it alone. */
+      if (getComputedStyle(text).whiteSpace !== "nowrap") {
+        if (text.scrollHeight > text.clientHeight + 1) text.dataset.clamped = "";
+        else delete text.dataset.clamped;
+        continue;
+      }
       const full = text.dataset.full;
       if (!full) continue;
       const lede = text.dataset.lede || "";
@@ -685,7 +737,7 @@
        only way to commit a note was a keyboard chord on a device with no
        keyboard. */
     const commit = live
-      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Keep it">${I.check}</button>`
+      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`
       : "";
     /* On a wide screen the capture field is on the desk's paper, and
        reading a note replaces it. So the dock carries the way back to
@@ -702,7 +754,7 @@
             phone.matches
               ? `<textarea class="phoneField" rows="2" aria-label="Write a note" placeholder="${attr(N.copy.placeholder)}">${esc(draft)}</textarea>
                  <div class="dockRow" data-verbs>
-                   <button class="dockGlyph" type="button" data-act="search" aria-label="Search notebook">${I.search}</button>
+                   <button class="dockGlyph" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}</button>
                    <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
                    <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
                    ${live ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span>` : ""}
@@ -713,7 +765,7 @@
                    ${railTiles({ tight: true })}
                    <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
                  </div>`
-              : `${backToWriting}<button class="dockField" type="button" data-act="search" aria-label="Search notebook">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>
+              : `${backToWriting}<button class="dockField" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
                  <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
@@ -730,6 +782,7 @@
       <div class="undo" role="status">
         <span>${esc(undone.label)}</span>
         <button class="undoAct" type="button" data-act="undo">${I.undo}Undo<kbd>${MOD}+Z</kbd></button>
+        <span class="undoFor tab">for ${UNDO_SECONDS}s</span>
       </div>`;
   }
 
@@ -799,7 +852,7 @@
           ${
             draft.trim()
               ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
-                 <button class="act" data-ink type="button" data-act="keep">${I.check}Keep it<kbd>${MOD}+Enter</kbd></button>`
+                 <button class="act" data-ink type="button" data-act="keep">${I.check}Save it<kbd>${MOD}+Enter</kbd></button>`
               : `<span class="topMeta">Nobody else can read this</span>`
           }
         </div>
@@ -831,14 +884,22 @@
           <span class="peelLabel">${esc(N.copy.heading)}</span>
         </div>
         <p class="peelBoundary">${esc(N.copy.handoffBoundary)}</p>
-        ${pickedWords ? `<p class="peelFrom"><b>${esc(N.copy.sourceLabel)}</b><span>${esc(pickedWords)}</span></p>` : ""}
-        <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
-        <textarea class="peelField" rows="1" aria-labelledby="peel-label">${esc(taskWording)}</textarea>
+        ${
+          /* The picked words are printed once, and only when the wording
+             has been edited away from them. Seeded, the two were the same
+             sentence twice at the same size forty pixels apart. */
+          pickedWords && taskWording.trim() && taskWording.trim() !== pickedWords.replace(/[.]$/, "")
+            ? `<p class="peelFrom"><b>${esc(N.copy.sourceLabel)}</b><span>${esc(pickedWords)}</span></p>`
+            : ""
+        }
+        <span class="peelLabel" id="peel-label">What the task will say</span>
+        <textarea class="peelField" rows="1" id="peel-field" aria-labelledby="peel-label"
+          placeholder="What should the task say?">${esc(taskWording)}</textarea>
         <div class="peelRow">
           <button class="picker" type="button" aria-label="${attr(N.copy.destinationLabel)}: ${attr(N.projects[0])}"><b>To</b>${esc(N.projects[0])}${I.chevron}</button>
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
-          <button class="act" data-primary type="button" data-act="send">${I.send}${esc(N.copy.send)}</button>
+          <button class="act" data-primary type="button" data-act="send"${taskWording.trim() ? "" : " aria-disabled=\"true\""}>${I.send}${taskWording.trim() ? esc(N.copy.send) : "Write the wording, then send"}</button>
         </div>
       </div>`;
   }
@@ -852,15 +913,21 @@
     /* While a task is being written, the words that will cross stay marked
        inside the person's own sentence, so what crosses can be checked
        against where it came from without either being covered. */
-    const mark = isPeeling ? pickedWords : null;
+    /* The repaint destroys the native selection, so the mark is drawn
+       rather than borrowed: without it the only evidence of what has been
+       picked disappeared the instant the control offering to use it
+       appeared. */
+    const mark = isPeeling ? pickedWords : picked;
     const bodyHtml =
       mark && note.body.includes(mark)
         ? esc(note.body).replace(esc(mark), `<span class="pick">${esc(mark)}</span>`)
-        : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
+        : note.lede === false
+          ? esc(note.body)
+          : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
     if (isPeeling) {
       return deskOf(
         `<div class="top" data-two>
-          <p class="readBody">${bodyHtml}</p>
+          <div class="deskWrite"><p class="readBody">${bodyHtml}</p></div>
           <div class="deskAside">${peelPanel(note)}</div>
         </div>`,
         { behind: 1, label: `Turning a note into a task: ${note.title}` },
@@ -886,18 +953,19 @@
       </div>`;
     return deskOf(
       `<div class="top" data-two>
-        <p class="readBody"><span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}</p>
-        ${aside}
+        <div class="deskWrite">
+          <p class="readBody">${bodyHtml}</p>
         <div class="pickSlot">
-          ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
+          ${picked ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${picked.split(/\s+/).length} words picked.</span> <span>Send to Tasks will use exactly these.</span></p>` : ""}
           ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
         </div>
+        </div>
+        ${aside}
         <div class="topFoot">
           ${
             isPeeling
               ? `<span class="topMeta">Writing the task below.</span>`
               : `<button class="act" data-primary type="button" data-act="peel">${I.tasks}${picked ? "Send to Tasks" : "Pick the words, then send"}</button>
-                 <button class="act" type="button" data-act="timeline">${I.share}Send to Timeline</button>
                  <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>`
           }
           <span class="spacer"></span>
@@ -956,7 +1024,7 @@
         tabindex="${note.id === cursorId ? "0" : "-1"}"
         aria-label="${attr(name)}">
         <span class="idxMark" aria-hidden="true">${crossed ? I.tasks : I[src.icon]}${!crossed && note.pending ? "<i></i>" : ""}</span>
-        <span class="idxText" data-full="${attr(crossed ? note.task : `${note.title} ${note.rest || ""}`.trim())}" data-lede="${attr(lede)}"><b>${hl(lede)}</b>${rest ? ` <span>${hl(rest)}</span>` : ""}${crossed ? '<span class="idxFrom">from a note that stayed here</span>' : ""}</span>
+        <span class="idxText" data-full="${attr(crossed ? note.task : `${note.title} ${note.rest || ""}`.trim())}" data-lede="${attr(lede)}">${note.lede === false && !crossed ? hl(lede) : `<b>${hl(lede)}</b>`}${rest ? ` <span>${hl(rest)}</span>` : ""}${crossed ? '<span class="idxFrom">from a note that stayed here</span>' : ""}</span>
         ${tag}
         <span class="idxWhen tab">${esc(when)}</span>
       </button></li>`;
@@ -1071,7 +1139,7 @@
      task, send it, and go back. */
   function phoneSheet(note) {
     const src = N.sources[note.source];
-    const marked = peeling === note.id ? pickedWords : null;
+    const marked = peeling === note.id ? pickedWords : picked;
     const bodyHtml =
       marked && note.body.includes(marked)
         ? esc(note.body).replace(esc(marked), `<span class="pick">${esc(marked)}</span>`)
@@ -1093,7 +1161,7 @@
           <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks</span>` : ""}</p>
           <p class="readBody">${bodyHtml}</p>
           <div class="pickSlot">
-            ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
+            ${picked ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${picked.split(/\s+/).length} words picked.</span> <span>Send to Tasks will use exactly these.</span></p>` : ""}
             ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
           </div>
           ${peeling === note.id ? peelPanel(note) : ""}
@@ -1143,7 +1211,7 @@
         ? readSheet(open)
         : deskOf(
             `<div class="top" data-two>
-              <p class="readBody readLong">${esc(N.long.body)}</p>
+              <div class="deskWrite"><p class="readBody readLong">${esc(N.long.body)}</p></div>
               <div class="deskAside">
                 <span class="deskFact"><b>How it arrived</b><span>Written, ${esc(N.long.when)}</span></span>
                 <span class="deskFact"><b>Length</b><span class="tab">${N.long.words} words</span></span>
@@ -1203,11 +1271,19 @@
               <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span></p>
               <p class="handBody">${esc(note.body)}</p>
               <div class="handFoot">
-                <button class="act" data-primary type="button" data-act="d-task">${I.tasks}Send to Tasks<kbd>T</kbd></button>
-                <button class="act" type="button" data-act="d-keep">${I.keep}Just keep it<kbd>K</kbd></button>
-                <span class="spacer"></span>
-                <button class="act" data-quiet type="button" data-act="d-later">Decide later</button>
-                <button class="act" data-quiet data-destroy type="button" data-act="d-delete">${I.trash}Delete</button>
+                ${
+                  peeling === note.id
+                    ? `<span class="topMeta">Writing the task below.</span><span class="spacer"></span>`
+                    : confirming === note.id
+                      ? `<span class="confirm" role="status">${I.trash}<span>Delete it everywhere?</span>
+                           <button class="act" data-ink type="button" data-act="d-delete-yes">Delete</button>
+                           <button class="act" data-quiet type="button" data-act="d-delete-no">Keep it</button></span><span class="spacer"></span>`
+                      : `<button class="act" data-primary type="button" data-act="d-task">${I.tasks}${picked ? "Send to Tasks" : "Pick the words, then send"}<kbd>T</kbd></button>
+                         <button class="act" type="button" data-act="d-keep">${I.keep}Just keep it<kbd>K</kbd></button>
+                         <span class="spacer"></span>
+                         <button class="act" data-quiet type="button" data-act="d-later">Decide later</button>
+                         <button class="act" data-quiet data-destroy type="button" data-act="d-delete">${I.trash}Delete</button>`
+                }
                 <button class="act" data-quiet type="button" data-act="notebook">Back to your notes<kbd>Esc</kbd></button>
               </div>
             </article>
@@ -1341,12 +1417,12 @@
         <div class="searchTop">
           <div class="searchBar">
             ${I.search}
-            <input id="q" value="${esc(query)}" aria-label="Search notebook" placeholder="Search everything you wrote">
+            <input id="q" value="${esc(query)}" aria-label="Search everything you wrote" placeholder="Search everything you wrote">
             <button class="esc" type="button" data-act="clear-search">Esc</button>
           </div>
         </div>`,
       body: indexOf(rows, {
-        title: query ? "Found" : "Everything you have written",
+        title: query ? "Found" : "Everything you wrote",
         count: query ? `${rows.length} of ${counts().total} notes have “${query}” in them` : `${counts().total} notes`,
         noDays: true,
         empty: `
@@ -1576,14 +1652,20 @@
     const field = e.target.closest(".topField, .phoneField");
     if (field) {
       draft = field.value;
+      wakeSheet(Boolean(draft.trim()));
       /* NOTHING is written to the DOM inside the input event. Chromium ends
          the browser's own typing burst the moment the document is mutated
          during input, which turned one Ctrl+Z into one character — and
          undo that gives back a letter at a time is undo that does not
          work. Both the waking of the sheet and the character count are
          therefore deferred by a tick, off the input event entirely. */
+      /* And not on the next tick either. At machine speed one setTimeout(0)
+         lands after the whole burst; at human speed — 40 to 90ms a key —
+         it lands BETWEEN every pair of keystrokes, so the document was
+         still being mutated inside the typing history and one Ctrl+Z
+         still gave back one character. The write waits for a pause. */
       clearTimeout(inputTimer);
-      inputTimer = setTimeout(applyDraft, 0);
+      inputTimer = setTimeout(applyDraft, 450);
       return;
     }
     const q = e.target.closest("#q");
@@ -1601,7 +1683,19 @@
       return;
     }
     const wording = e.target.closest(".peelField");
-    if (wording) taskWording = wording.value;
+    if (wording) {
+      taskWording = wording.value;
+      /* The primary answers the field as it is typed rather than waiting
+         for a repaint, so it can never sit disabled over wording that is
+         already written. */
+      const send = mount.querySelector('[data-act="send"]');
+      if (send) {
+        const ready = Boolean(taskWording.trim());
+        send.toggleAttribute("aria-disabled", !ready);
+        const label = send.lastChild;
+        if (label && label.nodeType === 3) label.textContent = ready ? N.copy.send : "Write the wording, then send";
+      }
+    }
   });
 
   mount.addEventListener("click", (e) => {
@@ -1722,7 +1816,13 @@
     } else if (a === "d-task") decide("task");
     else if (a === "d-keep") decide("keep");
     else if (a === "d-later") decide("later");
-    else if (a === "d-delete") decide("delete");
+    else if (a === "d-delete" || a === "d-delete-yes") decide("delete");
+    else if (a === "d-delete-no") {
+      confirming = null;
+      say("Nothing was deleted.");
+      refocus = { kind: "act", sel: '[data-act="d-delete"]' };
+      paint();
+    }
     else if (a === "search") {
       state = "search";
       refocus = { kind: "field", sel: "#q" };

@@ -227,7 +227,13 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
   display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden;
 }
 
-.head { flex: none; display: flex; align-items: center; gap: 13px; padding: 0 var(--gutter); height: 62px; }
+/* The head belongs to the column, not to the sheet. At 1920 both planes
+   held a 1000px column while the wordmark sat at x=130 and the account at
+   x=1872 — the chrome untethered from everything under it. */
+.head {
+  flex: none; width: var(--stack); margin: 0 auto;
+  display: flex; align-items: center; gap: 13px; padding: 0 var(--gutter); height: 62px;
+}
 .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; letter-spacing: var(--tr-18); flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
 .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
 .headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
@@ -291,19 +297,17 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    receded behind the index it is meant to lift off. The writing keeps the
    measure; everything that is true ABOUT the writing goes in a margin
    beside it, which is also where the peel opens. */
+/* Two real columns, both on row one. Spanning the margin across twenty
+   rows made Chromium invent seventeen phantom tracks and distribute the
+   margin's surplus across them, so the paper's height was the taller
+   column plus an arbitrary remainder — a mystery foot of 37px in one
+   state and 77px in another. */
 .top[data-two] {
   display: grid; grid-template-columns: minmax(0, 1fr) 296px; column-gap: 30px;
-  align-items: start;
+  align-items: start; grid-template-rows: auto;
 }
-.top[data-two] > .readSrc,
-.top[data-two] > .readBody,
-.top[data-two] > .topField,
-.top[data-two] > .pickSlot,
-.top[data-two] > .nudge,
-.top[data-two] > .saidWas,
-.top[data-two] > .pieces,
-.top[data-two] > .topFoot { grid-column: 1; }
-.top[data-two] > .deskAside { grid-column: 2; grid-row: 1 / span 20; }
+.top[data-two] > .deskWrite { grid-column: 1; grid-row: 1; min-width: 0; }
+.top[data-two] > .deskAside { grid-column: 2; grid-row: 1; }
 .deskAside {
   align-self: start; padding-left: 30px; box-shadow: inset 1px 0 0 var(--line-soft);
   display: grid; align-content: start; gap: 13px;
@@ -324,7 +328,11 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
   box-shadow: var(--ring), var(--paper); padding: 22px 24px 14px;
   transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve);
 }
-.top[data-live] { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper-lift); }
+/* The sheet wakes from a custom property the renderer sets on the root,
+   because writing an attribute into the tree while somebody is typing
+   destroys the browser's own undo history. Nothing in the document
+   changes; only a number does. */
+.top[data-live], [style*="--writing: 1"] .top { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper-lift); }
 /* The focused object is the paper, not the rectangle inside it. A default
    outline around a two-line field held at a 31em measure drew a large
    empty box across the resting state; the sheet lighting up says the same
@@ -571,6 +579,9 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    and delete says so before it happens. */
 /* Above the dock and clear of the last row, rather than across the words
    of whatever note happens to be at the foot of the pile. */
+/* Outside the pile's own scroll region, so it can never land on a
+   person's sentences. It was an opaque pill floating inside the index and
+   occluding the middle of whichever row happened to be under it. */
 .undo {
   position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
   display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 15px;
@@ -583,6 +594,9 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   background: var(--white); color: var(--ink); font-size: var(--t-13); font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; flex: none; line-height: var(--lh-base); }
 .undoAct svg { width: 13px; height: 13px; }
 .undoAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; opacity: 0.55; }
+.undoFor { font-size: var(--t-11); line-height: var(--lh-base); color: var(--on-ink-2); letter-spacing: var(--tr-11); flex: none; }
+.confirm { display: inline-flex; align-items: center; gap: 9px; font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-14); }
+.confirm svg { width: 15px; height: 15px; color: var(--ink-2); }
 
 /* ── the phone's read-and-decide sheet ─────────────────────────── */
 /* There is no desk on a phone, so a note opens as a sheet over the pile.
@@ -624,7 +638,10 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .darkTime { font-size: var(--t-12); font-weight: 600; color: var(--on-ink-2); letter-spacing: var(--tr-12); line-height: var(--lh-base); }
 .darkTop .spacer { flex: 1; }
 .darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; overflow: auto; }
-.darkSaid { max-width: 900px; width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: 1.38; letter-spacing: var(--tr-34); }
+/* The same measure as every other surface a person's words appear on.
+   It was running 78 characters against everything else's 69. */
+.darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: 1.38; letter-spacing: var(--tr-34); }
+.darkWave { max-width: var(--measure); }
 .darkSaid .tail { color: var(--on-ink-3); }
 .darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; width: 100%; margin: 40px auto 0; }
 .darkWave i { width: 3px; border-radius: 2px; background: var(--on-ink-2); transition: height var(--dur) var(--curve); }
@@ -760,13 +777,19 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* The slot is always there, so raising the control costs no layout and
    the page cannot move under the hand holding a selection. */
 .pickSlot { min-height: 54px; margin-top: 10px; }
+/* It states what is picked and what will happen to it. It used to carry
+   its own filled primary beside the note's filled primary, two ink
+   buttons live at the same instant with nothing saying which honoured
+   the pick. */
 .pickBar {
-  position: relative; z-index: 3;
-  display: flex; align-items: center; gap: 12px; padding: 9px 10px 9px 14px;
-  border-radius: var(--r-chip); background: var(--white);
-  box-shadow: 0 0 0 1px var(--indigo-line), var(--paper);
+  position: relative; z-index: 3; margin: 0;
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px;
+  border-radius: var(--r-chip); background: var(--indigo-wash);
+  box-shadow: inset 0 0 0 1px var(--indigo-line);
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-14);
 }
-.pickCount { font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-12); }
+.pickBar svg { width: 15px; height: 15px; color: var(--indigo); flex: none; }
+.pickCount { font-weight: 600; color: var(--ink-1); }
 .pickBar .act { margin-left: auto; }
 .nudge {
   position: relative; z-index: 3; background: var(--white);
@@ -822,11 +845,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .peelMark { width: 22px; height: 22px; border-radius: var(--r-chip); background: var(--ink); color: var(--white); display: grid; place-items: center; flex: none; }
 .peelMark svg { width: 13px; height: 13px; }
 .peelLabel { font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
+/* It looks editable at rest. Its only editable control was invisible
+   until it took focus, on the one screen where a stranger has to be shown
+   what they can change. */
 .peelField {
-  width: 100%; margin-top: 8px; border: 0; outline: 0; background: none; resize: none; display: block;
+  width: 100%; margin-top: 8px; padding: 9px 11px; border-radius: var(--r-chip);
+  box-shadow: inset 0 0 0 1px var(--line); border: 0; outline: 0; background: none; resize: none; display: block;
   font-family: inherit; font-weight: 600; color: var(--ink-1);
-  field-sizing: content; min-height: 32px; padding: 3px 0; max-width: var(--measure);
+  field-sizing: content; min-height: 40px; max-width: var(--measure);
 }
+.peelField:focus-visible { box-shadow: inset 0 0 0 1px var(--indigo); outline: none; }
+.peelField::placeholder { color: var(--ink-3); font-weight: 400; }
 .peelRow { display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; line-height: var(--lh-base); }
 .picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
@@ -981,6 +1010,16 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* ═══════════════════════════════════════════════════════════════════
    NARROW
    ═══════════════════════════════════════════════════════════════════ */
+/* Below this the margin would be wider than the writing it annotates, so
+   it folds under it instead. Across the whole tablet band the facts were
+   winning: a 203px writing column against a 296px margin at 721. */
+@media (max-width: 1080px) {
+  .top[data-two] { grid-template-columns: minmax(0, 1fr); row-gap: 18px; }
+  .top[data-two] > .deskAside { grid-column: 1; grid-row: 2; padding-left: 0; box-shadow: none; border-top: 1px solid var(--line-soft); padding-top: 16px; }
+  .deskAside { grid-auto-flow: column; grid-auto-columns: max-content; justify-content: start; gap: 26px; }
+  .top[data-two] .deskAside .peel { grid-column: 1 / -1; }
+}
+
 @media (max-width: 900px) {
   :root { --inset: 12px; --gutter: 22px; }
   .specs { grid-template-columns: minmax(0, 1fr); }
@@ -1043,6 +1082,22 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   }
   .idxText span { color: var(--ink-3); }
   [data-index="tight"] .idxText span { display: none; }
+  /* One line, not three ragged columns. The heading is a three-item flex
+     row with no phone treatment, so at 390 each item wrapped
+     independently and the first group rendered as six lines. */
+  .idxDay { flex-wrap: wrap; row-gap: 2px; column-gap: 8px; padding: 16px 0 6px; font-size: var(--t-15); }
+  .idxDay .idxDayNote { font-size: var(--t-12); }
+  .idxDay .idxDayTail { margin-left: 0; font-size: var(--t-12); }
+  /* And the clamp admits it is a clamp. The two-line box simply hid line
+     three with no ellipsis, no fade and no mark of any kind. */
+  .idxText { position: relative; }
+  .idxText[data-clamped]::after {
+    content: "…"; position: absolute; right: 0; bottom: 0; padding-left: 18px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white) 40%);
+    color: var(--ink-3);
+  }
+  .idxRow:hover .idxText[data-clamped]::after,
+  .idxRow[data-cursor] .idxText[data-clamped]::after { background: none; }
   .idxTag, .idxWhen { grid-column: 2; grid-row: 2; font-size: var(--t-12); }
   .idxTag { justify-self: start; box-shadow: none; padding: 0; color: var(--ink-3); font-weight: 400; }
   .idxWhen { justify-self: end; }

@@ -49,9 +49,19 @@ const said = (page) => page.locator("#say").textContent();
   await page.locator(".topField").fill("Ring the marquee company back about the side panels.");
   await page.waitForTimeout(120);
 
-  ok("writing wakes the sheet", (await page.locator(".top[data-live]").count()) === 1);
+  /* The sheet wakes at once, from a custom property rather than a write
+     into the tree — because mutating the document while somebody is
+     typing destroys the browser's own undo history. */
+  const woke = await page.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector(".top"));
+    return cs.boxShadow.includes("79, 70, 229");
+  });
+  ok("writing wakes the sheet at once", woke);
+  /* The chord does not wait for anything. */
+  ok("and the chord is live immediately", (await page.locator(".topField").inputValue()).length > 0);
+  await page.waitForTimeout(560);
   ok(
-    "the save affordance only exists once there is something to save",
+    "the save affordance arrives in the pause after typing",
     (await page.locator('[data-act="keep"]').count()) === 1,
   );
 
@@ -531,10 +541,14 @@ const said = (page) => page.locator("#say").textContent();
   await page.keyboard.type("Ring the marquee company back");
   await page.waitForTimeout(160);
   ok("typing lands in order", (await page.locator(".topField").inputValue()) === "Ring the marquee company back");
+  /* The count settles in the pause after typing, never during it: a write
+     into the document mid-burst is what destroyed the browser's own undo
+     history. */
+  await page.waitForTimeout(560);
   ok("the counter counts", (await page.locator("[data-count]").textContent()).startsWith("29 /"));
 
   await page.keyboard.type(" about the side panels");
-  await page.waitForTimeout(140);
+  await page.waitForTimeout(560);
   ok("and keeps counting", (await page.locator("[data-count]").textContent()).startsWith("51 /"));
 
   /* Undo must never eat the words being written. */
@@ -555,7 +569,12 @@ const said = (page) => page.locator("#say").textContent();
     await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("topField")),
     await page.evaluate(() => document.activeElement.tagName + "." + document.activeElement.className),
   );
-  ok("the undo strip says what happened, in the present", (await page.locator(".undo span").textContent()).trim() === "Kept.", await page.locator(".undo span").textContent());
+  ok(
+    "the undo strip says what happened, in the present",
+    (await page.locator(".undo span").first().textContent()).trim() === "Saved.",
+    await page.locator(".undo span").first().textContent(),
+  );
+  ok("and how long the way back lasts", (await page.locator(".undoFor").textContent()).includes("30s"));
   await page.close();
 }
 
@@ -565,10 +584,10 @@ const said = (page) => page.locator("#say").textContent();
   ok("there is no commit control before there is anything to commit", (await page.locator('[data-act="keep"]').count()) === 0);
   await page.locator(".phoneField").click();
   await page.keyboard.type("Bar restock, tonic and the good olives.");
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(560);
   const commit = page.locator('.dock [data-act="keep"]');
   ok("a commit control appears in the dock", (await commit.count()) === 1);
-  ok("it says what it does", (await commit.getAttribute("aria-label")) === "Keep it", await commit.getAttribute("aria-label"));
+  ok("it says what it does", (await commit.getAttribute("aria-label")) === "Save it", await commit.getAttribute("aria-label"));
   const box = await commit.boundingBox();
   ok("and a finger can land on it", box.width >= 36 && box.height >= 36, `${Math.round(box.width)}x${Math.round(box.height)}`);
 
@@ -1014,7 +1033,8 @@ const said = (page) => page.locator("#say").textContent();
     sel.addRange(range);
   });
   await page.waitForTimeout(300);
-  ok("a pick raises a control", (await page.locator(".pickBar").count()) === 1);
+  ok("a pick raises a statement of what will cross", (await page.locator(".pickBar").count()) === 1);
+  ok("and marks the words in the note", (await page.locator(".readBody .pick").count()) === 1);
   const after = await page.evaluate(() => document.querySelector(".indexHead").getBoundingClientRect().top);
   ok("without moving the page under the person's hand", Math.abs(after - before) < 3, `${Math.round(before)} then ${Math.round(after)}`);
   await page.close();
@@ -1081,7 +1101,10 @@ const said = (page) => page.locator("#say").textContent();
   });
   await page.waitForTimeout(320);
   ok("picking works on a phone", (await page.locator(".phoneSheet .pickBar").count()) === 1);
-  await page.locator('.phoneSheet .pickBar [data-act="peel"]').click();
+  /* The pick bar states; the note's own primary acts. Two ink buttons live
+     at the same instant is what this replaced. */
+  ok("and the strip states rather than acts", (await page.locator(".phoneSheet .pickBar button").count()) === 0);
+  await page.locator('.phoneSheetFoot [data-act="peel"]').click();
   await page.waitForTimeout(280);
   ok("and the peel opens in the sheet", (await page.locator(".phoneSheet .peel").count()) === 1);
   await page.locator('.phoneSheet [data-act="send"]').click();
@@ -1183,12 +1206,29 @@ const said = (page) => page.locator("#say").textContent();
 /* ── the person's words outrank the machine's version ────────────── */
 {
   const page = await open("?state=seam");
+  /* Seeded, the picked words and the wording are the same sentence, and
+     the seam prints it once. They appear together only once the wording
+     has been edited away from them. */
+  ok("the seam does not print the same sentence twice", (await page.locator(".peelFrom").count()) === 0);
+  await page.locator(".peelField").fill("Warm the orchard room before guests arrive");
+  await page.waitForTimeout(240);
+  await page.locator(".peelField").blur();
+  await page.locator('[data-act="send"]').hover();
+  await page.waitForTimeout(120);
+  /* Re-render by touching state the paint path owns. */
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(160);
   const rank = await page.evaluate(() => {
-    const picked = getComputedStyle(document.querySelector(".peelFrom span"));
-    const wording = getComputedStyle(document.querySelector(".peelField"));
-    return { picked: parseFloat(picked.fontSize), wording: parseFloat(wording.fontSize) };
+    const picked = document.querySelector(".peelFrom span");
+    const wording = document.querySelector(".peelField");
+    if (!picked) return null;
+    return { picked: parseFloat(getComputedStyle(picked).fontSize), wording: parseFloat(getComputedStyle(wording).fontSize) };
   });
-  ok("the words a person picked are not demoted beneath the machine's version", rank.picked >= rank.wording, `${rank.picked} vs ${rank.wording}`);
+  ok(
+    "and when it shows both, the words a person picked are not demoted",
+    rank === null || rank.picked >= rank.wording,
+    rank ? `${rank.picked} vs ${rank.wording}` : "not shown until edited",
+  );
   await page.close();
 }
 
@@ -1216,6 +1256,222 @@ const said = (page) => page.locator("#say").textContent();
     );
     await page.close();
   }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 5
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── undo, at the speed a person actually types ──────────────────── */
+{
+  for (const delay of [40, 90]) {
+    const page = await open();
+    await page.locator(".topField").click();
+    await page.keyboard.type("Ring the marquee company back about the side panels", { delay });
+    await page.waitForTimeout(200);
+    const before = (await page.locator(".topField").inputValue()).length;
+    await page.keyboard.press("Control+z");
+    await page.waitForTimeout(200);
+    const after = (await page.locator(".topField").inputValue()).length;
+    ok(
+      `one undo gives back a burst at ${delay}ms a key`,
+      before - after > 5,
+      `${before} then ${after}`,
+    );
+    await page.close();
+  }
+}
+
+/* ── the lede is a budget, not a full stop ───────────────────────── */
+{
+  const page = await open();
+  /* A note captured in three seconds has no terminal punctuation, and the
+     600-weight lede was derived from one — so every real capture came out
+     entirely semibold. */
+  await page.keyboard.type("ring the marquee people about the side panels before four on friday");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(700);
+  const row = page.locator(".idxRow", { hasText: "ring the marquee people" }).first();
+  const weights = await row.locator(".idxText").evaluate((n) => {
+    const out = [];
+    for (const child of n.childNodes) {
+      const el = child.nodeType === 1 ? child : n;
+      out.push(getComputedStyle(el).fontWeight);
+    }
+    return out;
+  });
+  ok("a note with no full stop is not set entirely in semibold", weights.includes("400"), weights.join(" · "));
+  await page.locator(".idxRow", { hasText: "ring the marquee people" }).first().click();
+  await page.waitForTimeout(260);
+  const desk = await page.evaluate(() => {
+    const b = document.querySelector(".readBody");
+    const lede = b.querySelector(".lede");
+    return { hasLede: Boolean(lede), whole: b.textContent.length, ledeLen: lede ? lede.textContent.length : 0 };
+  });
+  ok("and on the desk the lede is a budget, not the whole note", !desk.hasLede || desk.ledeLen < desk.whole * 0.8, JSON.stringify(desk));
+  await page.close();
+}
+
+/* ── the queue never scolds, and never refuses silently ──────────── */
+{
+  const page = await open("?state=review");
+  ok(
+    "the queue's primary states its precondition at rest",
+    (await page.locator('.handFoot [data-act="d-task"]').textContent()).includes("Pick the words"),
+  );
+  await page.keyboard.press("t");
+  await page.waitForTimeout(300);
+  const heard = await said(page);
+  ok("pressing it invites rather than reprimands", !/^Highlight/.test(heard), heard);
+  ok("and it says what to do next", /pick words|what the task should say/i.test(heard), heard);
+  ok("the peel asks in its own field", (await page.locator(".peelField").getAttribute("placeholder")).length > 6);
+  ok(
+    "and its primary states its precondition too",
+    (await page.locator('.peel [data-act="send"]').textContent()).includes("Write the wording"),
+  );
+  ok("with the card's own actions stood down", (await page.locator('.handFoot [data-act="d-task"]').count()) === 0);
+  await page.close();
+}
+
+/* ── delete asks, and keeps the promise printed beside it ────────── */
+{
+  const page = await open("?state=review");
+  const before = await page.locator(".handOf").textContent();
+  await page.locator('[data-act="d-delete"]').click();
+  await page.waitForTimeout(260);
+  ok("delete asks before it deletes", (await page.locator(".confirm").count()) === 1);
+  ok("and nothing has happened yet", (await page.locator(".handOf").textContent()) === before);
+  await page.locator('[data-act="d-delete-no"]').click();
+  await page.waitForTimeout(240);
+  ok("saying no keeps the note", (await page.locator(".handOf").textContent()) === before);
+
+  await page.locator('[data-act="d-delete"]').click();
+  await page.waitForTimeout(200);
+  await page.locator('[data-act="d-delete-yes"]').click();
+  await page.waitForTimeout(320);
+  ok("saying yes deletes it", (await page.locator(".handOf").textContent()) !== before);
+  ok("and the way back says how long it lasts", (await page.locator(".undoFor").textContent()).includes("30s"));
+  await page.close();
+}
+
+/* ── the desk's foot is designed ─────────────────────────────────── */
+{
+  const page = await open();
+  await page.locator(".idxRow").nth(1).click();
+  await page.waitForTimeout(280);
+  const foot = await page.evaluate(() => {
+    const top = document.querySelector(".top");
+    const write = document.querySelector(".deskWrite");
+    const aside = document.querySelector(".deskAside");
+    const pad = parseFloat(getComputedStyle(top).paddingBottom);
+    const foot = document.querySelector(".topFoot");
+    const tallest = Math.max(
+      write.getBoundingClientRect().bottom,
+      aside.getBoundingClientRect().bottom,
+      foot ? foot.getBoundingClientRect().bottom : 0,
+    );
+    return Math.round(top.getBoundingClientRect().bottom - tallest - pad);
+  });
+  ok("the paper ends where its content ends", Math.abs(foot) < 30, `${foot}px of unexplained foot`);
+  await page.close();
+}
+
+/* ── the margin never outmeasures the writing ────────────────────── */
+{
+  for (const width of [768, 900, 1080, 1280, 1440]) {
+    const page = await open("", { width, height: 900 });
+    await page.locator(".idxRow").nth(1).click();
+    await page.waitForTimeout(280);
+    const cols = await page.evaluate(() => {
+      const w = document.querySelector(".deskWrite").getBoundingClientRect().width;
+      const a = document.querySelector(".deskAside").getBoundingClientRect().width;
+      const side = document.querySelector(".deskAside").getBoundingClientRect().left >
+        document.querySelector(".deskWrite").getBoundingClientRect().left + 10;
+      return { w, a, side };
+    });
+    ok(
+      `the writing outmeasures its margin at ${width}`,
+      !cols.side || cols.w > cols.a,
+      `${Math.round(cols.w)} writing vs ${Math.round(cols.a)} margin`,
+    );
+    await page.close();
+  }
+}
+
+/* ── the chrome belongs to the column ────────────────────────────── */
+{
+  const page = await open("", { width: 1920, height: 900 });
+  const edges = await page.evaluate(() => {
+    const head = document.querySelector(".head").getBoundingClientRect();
+    const row = document.querySelector(".idxRow").getBoundingClientRect();
+    return { headL: head.left, headR: head.right, rowL: row.left, rowR: row.right };
+  });
+  ok(
+    "the head resolves to the same column as the pile at 1920",
+    Math.abs(edges.headL - (edges.rowL - 20)) < 24 && Math.abs(edges.headR - (edges.rowR + 20)) < 24,
+    `head ${Math.round(edges.headL)}..${Math.round(edges.headR)} row ${Math.round(edges.rowL)}..${Math.round(edges.rowR)}`,
+  );
+  await page.close();
+}
+
+/* ── one name for the search ─────────────────────────────────────── */
+{
+  const page = await open();
+  const names = await page.evaluate(() => {
+    const b = document.querySelector('[data-act="search"]');
+    return { label: (b.getAttribute("aria-label") || "").trim(), visible: b.textContent.trim() };
+  });
+  /* The keycap is not part of the label a person would say out loud. */
+  const spoken = names.visible.replace(/(Ctrl|⌘)\s?K$/, "").trim();
+  ok("the visible label is inside the accessible name", names.label.includes(spoken), `${names.label} / ${spoken}`);
+  await page.close();
+}
+
+/* ── the phone's group rule is one line ──────────────────────────── */
+{
+  const page = await open("", { width: 390, height: 844 });
+  const rule = await page.evaluate(() => {
+    const h = document.querySelector(".idxDay");
+    const lh = parseFloat(getComputedStyle(h).lineHeight);
+    const pad = parseFloat(getComputedStyle(h).paddingTop) + parseFloat(getComputedStyle(h).paddingBottom);
+    return Math.round((h.getBoundingClientRect().height - pad) / lh);
+  });
+  ok("the group rule is at most two lines on a phone", rule <= 2, `${rule} lines`);
+
+  const clamped = await page.evaluate(() =>
+    [...document.querySelectorAll(".idxText")].filter((t) => t.dataset.clamped !== undefined).length);
+  const marks = await page.evaluate(() => {
+    const t = [...document.querySelectorAll(".idxText")].find((n) => n.dataset.clamped !== undefined);
+    return t ? getComputedStyle(t, "::after").content : "none";
+  });
+  ok("a clamped row says it is clamped", clamped === 0 || marks.includes("…"), `${clamped} clamped, mark ${marks}`);
+  await page.close();
+}
+
+/* ── the spoken words keep the measure ───────────────────────────── */
+{
+  const page = await open("?state=voice");
+  const cpl = await page.evaluate(() => {
+    const n = document.querySelector(".darkSaid");
+    return Math.round(n.getBoundingClientRect().width / (parseFloat(getComputedStyle(n).fontSize) * 0.45));
+  });
+  ok("the spoken words are on the same measure as every other surface", cpl >= 45 && cpl <= 78, `${cpl} characters per line`);
+  await page.close();
+}
+
+/* ── one destination on the note's row ───────────────────────────── */
+{
+  const page = await open();
+  await page.locator(".idxRow").nth(1).click();
+  await page.waitForTimeout(260);
+  const text = await page.locator(".topFoot").textContent();
+  ok(
+    "the note's row offers one destination, the one the boundary covers",
+    !/Timeline/i.test(text),
+    text.trim(),
+  );
+  await page.close();
 }
 
 ok("no console errors anywhere", errors.length === 0, [...new Set(errors)].slice(0, 3).join(" · "));

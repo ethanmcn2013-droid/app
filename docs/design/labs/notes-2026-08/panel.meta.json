@@ -20,7 +20,7 @@
     },
     {
       "file": "notes-interaction-check.mjs",
-      "score": "244",
+      "score": "276",
       "unit": "assertions, 0 failing",
       "what": "Capture and undo, place-keeping across every repaint, the index's single tab stop, the hand's keyboard model, search and its no-result state, the voice takeover and its disclosure, word-safe trims, the honesty states carrying no warning hue, and no sideways scroll at six widths."
     },
