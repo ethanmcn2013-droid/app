@@ -697,7 +697,16 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   const page = await open();
   await page.locator('[data-act="late"]').click();
   await page.waitForTimeout(200);
-  await page.locator('.tray[data-lane="todo"] .trayAdd').click();
+  /* A filtered board collapses the columns that answered nothing, which takes
+     their Add row with it — offering "add here" in a column that is not part
+     of the answer is noise. Nothing is lost by it: the dock's Add task is
+     always there, and so is the Add row of any column that did answer. Both
+     are asserted here, because a collapse that quietly removed the only way
+     to add would be a capability regression wearing a tidier face. */
+  ok("adding is still offered under a filter",
+    (await page.locator(".dockPrimary").isVisible())
+      && (await page.locator(".trayAdd:visible").count()) >= 1);
+  await page.locator(".trayAdd:visible").first().click();
   await page.waitForTimeout(200);
   await page.keyboard.type("Order more ice for Saturday");
   await page.keyboard.press("Enter");

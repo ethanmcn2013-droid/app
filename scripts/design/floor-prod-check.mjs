@@ -265,6 +265,42 @@ const counts = (page) =>
   await page.close();
 }
 
+/* ── the composer ─────────────────────────────────────────────────── */
+{
+  const page = await open();
+  await page.locator('[data-lane="review"] [data-act="add"]').click();
+  await page.waitForTimeout(350);
+  /* "Add here" that does not take the caret sends the next sentence to the
+     page, which is how a task title became a command-palette query. */
+  ok("add here puts the caret where it says",
+    await page.evaluate(() => document.activeElement?.getAttribute("contenteditable") === "true"));
+  await page.keyboard.type("Ring the florist back about");
+  await page.waitForTimeout(200);
+  ok("and the words land in it",
+    (await page.locator("[contenteditable=true]").innerText()).startsWith("Ring the florist"));
+
+  const chip = page.locator('[class*="late"]').last();
+  if (await chip.count()) {
+    await chip.click();
+    await page.waitForTimeout(400);
+    /* A filter collapses columns that answered nothing — but not the one the
+       operator is writing in, and not before their half-written line is safe. */
+    ok("a repaint cannot destroy a half-written task",
+      (await page.locator("[contenteditable=true]").count()) === 1);
+    await page.locator("[contenteditable=true]").press("Escape");
+    await page.waitForTimeout(400);
+    /* Closing the composer is what empties that column, so the control focus
+       returns to can vanish in the same repaint. */
+    ok("escape lands on a control that is still on screen",
+      await page.evaluate(() => {
+        const a = document.activeElement;
+        return a !== document.body && !!a?.offsetParent;
+      }),
+      await page.evaluate(() => document.activeElement?.tagName ?? "none"));
+  }
+  await page.close();
+}
+
 /* ── every view still works inside the shell ──────────────────────── */
 {
   for (const [path, label] of [["/app/tasks/list", "list"], ["/app/tasks/timeline", "schedule"], ["/app/tasks/calendar", "calendar"]]) {
