@@ -204,10 +204,35 @@ const counts = (page) =>
 /* ── the keyboard model is real ───────────────────────────────────── */
 {
   const page = await open();
-  const walked = await page.evaluate(() =>
-    [...document.querySelectorAll("[data-board] a, [data-board] button, [data-board] [tabindex]")]
-      .filter((n) => n.offsetParent !== null && n.getAttribute("tabindex") !== "-1").length);
-  ok("the board is a roving group, not a stop per card", walked <= 5, `${walked} stops`);
+  const walk = await page.evaluate(() => {
+    const stops = [...document.querySelectorAll("[data-board] a, [data-board] button, [data-board] [tabindex]")]
+      .filter((n) => n.offsetParent !== null && n.getAttribute("tabindex") !== "-1");
+    const lanes = document.querySelectorAll("[data-board] [data-lane]").length;
+    const cards = document.querySelectorAll("[data-board] [data-id]").length;
+    const scrollers = [...document.querySelectorAll("[data-tray-body]")];
+    return {
+      stops: stops.length,
+      lanes,
+      cards,
+      cardStops: stops.filter((n) => n.matches("[data-id]")).length,
+      /* Every scroller reachable, whether or not it holds the roving stop —
+         axe rates a scrollable region with no keyboard route as serious, and
+         only the column holding the roving card used to have one. */
+      reachable: scrollers.every((n) => n.tabIndex >= 0),
+      scrollers: scrollers.length,
+    };
+  });
+  /* The property, stated as the property rather than as a number: however
+     many cards the board holds, exactly one of them is a tab stop and the
+     rest are reachable only by arrow. The remaining stops belong to the
+     board's SHAPE — one scroller per column, and the controls inside
+     whichever single card currently holds the stop. */
+  ok("the board is a roving group, not a stop per card",
+    walk.cardStops === 1 && walk.cards > 1 && walk.stops <= walk.lanes + 6,
+    `${walk.cardStops} of ${walk.cards} cards is a stop; ${walk.stops} stops for ${walk.lanes} columns`);
+  ok("every column scroller has a keyboard route",
+    walk.reachable && walk.scrollers === walk.lanes,
+    `${walk.scrollers} scrollers, all reachable: ${walk.reachable}`);
 
   await page.locator('[data-id][tabindex="0"]').first().focus();
   await page.keyboard.press(" ");

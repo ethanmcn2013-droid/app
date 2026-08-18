@@ -651,7 +651,7 @@ export function FloorBoard({
                 <div className={styles.trayHead}>
                   <div className={styles.trayTop}>
                     <span className={styles.pip} aria-hidden="true" />
-                    <h2 className={styles.trayName}>{column.name}</h2>
+                    <h2 className={styles.trayName} id={`ln-${column.key}`}>{column.name}</h2>
                     <span className={styles.trayCount} aria-hidden="true">
                       {rows.length}
                       {filtering && <span className={styles.ofAll}> of {laneAll.length}</span>}
@@ -662,7 +662,22 @@ export function FloorBoard({
                   </p>
                 </div>
 
-                <div className={styles.trayBody} data-tray-body="">
+                {/* A column that overflows is a scrollable region, and a
+                    scrollable region with no keyboard route is a serious WCAG
+                    failure — one no visual reviewer caught and axe found in a
+                    single pass. The roving stop lives on the cards, so every
+                    column except the one holding it had no way in. Tab reaches
+                    the column; arrows then fall through to native scrolling,
+                    because the board's key handler only acts inside a card.
+                    Labelled by the heading already above it, so this adds a
+                    route without inventing a second name for the column. */}
+                <div
+                  className={styles.trayBody}
+                  data-tray-body=""
+                  tabIndex={0}
+                  role="group"
+                  aria-labelledby={`ln-${column.key}`}
+                >
                   {rows.map((task) => (
                     <FloorCard
                       key={task.id}

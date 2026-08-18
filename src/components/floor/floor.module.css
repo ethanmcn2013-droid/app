@@ -1406,6 +1406,12 @@
 .boardHost[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
 .boardHost[data-filtered] .tray[data-empty] { opacity: 0.5; }
 
+/* Accessibility · a column that overflows is a scrollable region, and axe
+   rates one with no keyboard route as a serious failure. It is a stop now, so
+   it needs a ring — drawn inside its own box, because it marks a region the
+   eye should read as bounded, not an object sitting on the board. */
+.trayBody:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; border-radius: 4px; }
+
 /* Taste · emptiness is the state this board spends most of its life in, and
    it had no design. One centred sentence and one action, inside the sheet,
    instead of four identical Add rows over a white void. */
