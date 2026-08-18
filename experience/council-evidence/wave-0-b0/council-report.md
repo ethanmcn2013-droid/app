@@ -6,7 +6,7 @@
 
 ## Provenance
 
-- App `c02ddfaaba4ad7000dd5627cf68e560872db2090`, source tree `ac4190b08992931a299d6ba493b7ff7bf5b65d255659c7d3dae0f70d4c075596`; source-identical review render of a production build, review access mode, Active Project flag off — the production default.
+- App `ba2c905482fd26a5152c2fab7337d92744e81d95`, source tree `ac4190b08992931a299d6ba493b7ff7bf5b65d255659c7d3dae0f70d4c075596`; source-identical review render of a production build, review access mode, Active Project flag off — the production default. The render was taken at `c02ddfaaba4ad7000dd5627cf68e560872db2090`, the pre-merge head of PR #151. The squash-merge that landed it on `main` as `ba2c905` left that commit unreachable from any branch here, while leaving every pinned input — `src`, `public`, `drizzle`, `package.json`, `pnpm-lock.yaml`, `next.config.ts`, `tsconfig.json` — byte-identical, each resolving to the same git tree object. The baseline therefore pins the reachable commit carrying the reviewed tree rather than the render's own sha: a receipt pinned to a commit nobody can find is not a receipt (D-033). The ten director reviews under `directors/` are untouched and still name the commit they actually read.
 - Studio `6e656c807cb67e9b4acc38393f71b63356b6c791`; source-identical review render of a production build of the marketing site.
 - Contract: products are Notes, Tasks, Timeline; Home is front door and daily briefing; Signal route is legacy redirect.
 - Evidence: 16 renders across desktop 1440×900 and mobile 390×844, 16 axe-core WCAG 2.1 AA runs, console and HTTP capture on every render. Automated results were clean throughout: **0 axe violations, 0 console errors, 0 non-200 responses.**
