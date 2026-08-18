@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'tasks-panel-round-9',
+  name: 'tasks-panel-round-10',
   description: 'Seven fresh independent seats re-grade the Tasks master against a 9.5 bar',
   phases: [
     { title: 'Review' },
@@ -66,7 +66,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 126 assertions, all passing. READ IT. Everything it asserts is already
+with 154 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -85,27 +85,25 @@ Also live, and worth driving before you score:
   with it if you disagree, but do not report it as an oversight.
 
 NEW SINCE THE LAST ROUND, all live and all worth driving:
-- Every control on the sheet is either wired or marked aria-disabled with a
-  plain-English reason. The Planning drawer now opens from the header button
-  and from the "N with no date" count in the header.
-- The composer holds your typed sentence across any repaint, keeps the caret,
-  and returns focus to the control it was opened from. A task made under a
-  filter releases the filter so you can see it.
-- Done carries the day each task was finished, and a finished card's title no
-  longer drops below its client's name.
-- Ticking a card: the ghost flies and the cards it left close the gap on the
-  same curve and the same duration. On a phone it cannot leave the sheet.
-- The move menu is one tab stop with arrow keys.
+- Planning is a real room: it takes focus, declares itself a dialog, closes
+  on Escape / the X / a click away, its tabs switch the list, its checkboxes
+  pick, Select all flips to Clear all, and its list comes from the live set.
+- The couple's name on a card is a FILTER. Click "Nora & Cian" on any card.
+- Done reads newest first and every finished card says when. Waiting says how
+  long each thing has been held.
+- The vertical column fades are hairlines, not gradients, and the column
+  snaps so it rests on a card.
+- Clearing the board says "Everything is done."
 
-THE PREVIOUS ROUND SCORED 9.0 / 8.5 / 8.3 / 8.5 / 8.6 / 8.5 / 8.3, and every
-seat volunteered that the remaining distance was a build of hours rather than
-a redesign. All twenty-eight confirmed findings from that round were fixed.
+THE LAST THREE ROUNDS WENT 7.4 -> 8.3 -> 8.6 at the minimum, and the spread
+is now 0.3. Every seat in each of those rounds volunteered that the remaining
+distance was hours of building rather than a redesign.
 
-GRADE HONESTLY AND WITHOUT MERCY. A seat at 9.5 or above must name exactly
-what earned it. A seat below 9.5 must name the exact remaining distance:
-what, how big, and whether it is polish, a build, or a different decision. Do
-not inflate to be kind and do not deflate to look rigorous. The single most
-useful output you can produce is an accurate number with its reason.
+GRADE HONESTLY AND WITHOUT MERCY. If a seat is at or above 9.5, say exactly
+what earned it. If it is below, name the exact remaining distance: what, how
+big, and whether it is polish, a build, or a different decision. Do not
+inflate to be kind and do not deflate to look rigorous. An accurate number
+with its reason is the only useful output.
 `
 
 const SCHEMA = {

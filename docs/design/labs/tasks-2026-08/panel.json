@@ -449,6 +449,61 @@
           "done": "The hint takes the card foot's own rank and band, in sentence case, so the draft and the card it becomes have the same shape — and on a touch screen it becomes the two controls it was describing. The utility pair joins the spine's rhythm."
         }
       ]
+    },
+    {
+      "round": 9,
+      "scores": {
+        "UI composition": 8.9,
+        "Typography": 8.9,
+        "Interaction and states": 8.7,
+        "UX and information design": 8.9,
+        "Brand and copy": 8.6,
+        "Product taste and emotional resonance": 8.7,
+        "Measured evidence": 8.6
+      },
+      "findings": 35,
+      "confirmed": 28,
+      "refuted": 7,
+      "fixed": 28,
+      "headline": "The minimum rose from 8.3 to 8.6 and the spread closed to 0.3 — the tightest the panel has ever been. Five of seven seats named the same thing without conferring: the Planning drawer, promoted into the header in round 8, was shipped as a picture of a room. Fourteen inert controls, a close button that did nothing, no Escape, no focus, and a list read from the fixture rather than the live set. Every seat again volunteered that what remains is hours of building, not a redesign.",
+      "worst": [
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 9.0,
+          "problem": "The one surface promoted last round was the only one still a rendering. All thirteen of its controls were inert with no aria-disabled and no reason given; it ignored Escape, ignored an outside click, never took focus, and sat twenty-two tab stops from the control that opened it. A stranger who clicks the second lit control in the header hits the dead surface before they ever meet the roving tab stop, the undo strip or the flight.",
+          "done": "It is a room. It declares itself a dialog with a name, takes focus when it opens, and gives it back to whatever opened it. Escape closes it, the X closes it, clicking away closes it. Its tabs switch the list and carry a roving tab stop, its checkboxes pick, Select all picks and flips to Clear all, and Add a task with no date opens the same composer every other Add opens. Its list is derived from the live set, so the header's count and the drawer's count cannot disagree. Picking a day is the one thing still to build, and it says so."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 4.0,
+          "problem": "Nineteen cards print a couple's name and it was dead text — the board's only real grouping, doing nothing. The board could not answer the question a venue opens it to ask: where is Nora and Cian up to.",
+          "done": "The name is a filter on the identical machinery the overdue chip already proves: one click shows only that couple's work, the strip says whose and offers the way back, Escape clears it. This is the change that turns a workflow view into a venue view, and it cost no colour, no weight and no layout."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.45,
+          "problem": "The sheet was admitting on screen that it is a lab file. Six tooltips told a venue manager that Notes and Timeline are \"outside this design exploration\" and five more that a feature is \"not built yet\" — build status and lab language, in a product that otherwise never breaks character. None of it was reachable on a phone at all.",
+          "done": "One grammar, present tense, each line naming what does work, and the same sentence is spoken and shown on tap because hover is not available to a thumb."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "A scrolled column rendered a bold title at about 40% ink. The mask ramp is 26px and a title's line box is 19px, and with no vertical snap the column rests at any offset, so 92% of resting positions put ink inside the ramp. It was the one place on the sheet that looked like a rendering fault rather than a decision, in the exact state the product exists for.",
+          "done": "The top edge can be snapped into the gutter; the bottom edge falls wherever the column's height puts it, so no ramp length is safe there. The vertical fades are hairlines now — they say the same thing and never touch a glyph — and the column snaps, so it rests on a card rather than halfway through one."
+        },
+        {
+          "seat": "Typography",
+          "cost": 4.0,
+          "problem": "text-wrap: balance optimises around a float, so on any card carrying a date chip it produced the one-word opening line it exists to prevent — measured rag deltas of 73px, 69px and 53px on a 180px measure.",
+          "done": "Balance runs only where it earns its place: on titles with no chip beside them. Measured to 11px, 56px and 1px."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 8.0,
+          "problem": "Un-completing a task left its completion record on the undo stack, so the board went on offering to redo something already undone. The drawer's count came from the fixture while the header's came from the live set, so the two could contradict each other on screen.",
+          "done": "Stale records are dropped when the act that made them is reversed, and the drawer derives its list and both tab counts from the same set the header counts."
+        }
+      ]
     }
   ]
 }
