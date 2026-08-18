@@ -88,3 +88,4 @@ chk.mjs
 .seat-tmp/
 _seat/
 drive_tmp.mjs
+peelcheck*.mjs
