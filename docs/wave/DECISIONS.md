@@ -935,3 +935,49 @@ was exercised before this landed.
 not exist and cannot honestly be authored at current review capacity (D-030). No 9.5 claim
 may be made on this basis by anyone, including by citing the now-green CI check — which is
 why D-029's not-certified output says so in its own last line.
+
+## D-033 · The baseline pins the commit that survives the merge, not the one that was rendered
+
+**18 August 2026. State A lasted one commit.**
+
+D-032 landed State A and verified it on the branch. It did not survive the merge. The
+baseline pinned app commit `c02ddfa`, the pre-merge head of PR #151, and the squash-merge
+that landed that PR on `main` as `ba2c905` left `c02ddfa` reachable only from the PR
+branch. The reachability check D-029 unmasked — *a receipt pinned to a commit nobody can
+find is not a receipt* — therefore failed on `main` from the moment the repair merged.
+`experience:council --ci` reported `INSTRUMENT FAILURE`, correctly, and the required
+Design quality check went red at `ba2c905` on step 14. PR #150 was blocked behind it.
+
+This is the same defect the workflow comment predicted in D-029's own diff, one commit
+earlier than expected: it noted the previous baseline's commit had been failing this check
+every run, swallowed by the mask. Removing the mask surfaced it. Squash-merging then
+recreated it immediately, because a squash always discards the sha the review names.
+
+**The fix is the pin, not the check, and not the scores.** `sources.app.sourceGitCommitSha`
+now reads `ba2c905`. That is honest and it is not a hash bump: all seven pinned integrity
+inputs — `src`, `public`, `drizzle`, `package.json`, `pnpm-lock.yaml`, `next.config.ts`,
+`tsconfig.json` — resolve to **the same git tree objects** at `c02ddfa` and at `ba2c905`
+(`src` at `1d3fec73`, `public` at `cf61c5e4`, `drizzle` at `ab6a865a`, the four files
+identical blobs). The ten directors reviewed exactly the tree `main` now carries;
+`sourceTreeSha256` never went stale, which is why the stale-tree error never appeared.
+D-032's warning was about attaching scores to a tree 391 files away from what was read.
+This attaches them to a byte-identical one.
+
+**What was deliberately not touched.** The ten director reviews under `directors/` still
+name `c02ddfa`, because that is the commit each of them actually read and a first-person
+record is not rewritten to tidy a machine check. `evidence-manifest.json` likewise. Only
+two files change: the baseline's pinned commit, and the report's provenance paragraph,
+which now states both shas and the identical-tree proof — so the reader is told why the
+two disagree rather than discovering it. The report's re-hash into
+`artifacts[0].sha256` follows from editing the report, and no score, seat, veto or
+decision moved.
+
+**Verified both ways.** `experience:council` exits 1 printing the score matrix — State A,
+the designed honest NO-PASS. `experience:council --ci` exits 0, `instrument healthy`, with
+the seven surface indices printed and the gate restated. Still no pass, still no
+certification, and still no 9.5 claim available to anyone citing the green check.
+
+**The standing hazard.** Every future squash-merge of a PR that re-pins the baseline will
+reintroduce this. The durable fix is to pin the baseline in a follow-up commit on `main`
+after the merge, or to stop squashing the council PRs. Recorded here rather than solved
+now, because the choice between those two is a repo-convention call.

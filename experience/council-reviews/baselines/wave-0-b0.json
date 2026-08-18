@@ -4,7 +4,7 @@
   "reviewedAt": "2026-08-17",
   "sources": {
     "app": {
-      "sourceGitCommitSha": "c02ddfaaba4ad7000dd5627cf68e560872db2090",
+      "sourceGitCommitSha": "ba2c905482fd26a5152c2fab7337d92744e81d95",
       "sourceTreeSha256": "ac4190b08992931a299d6ba493b7ff7bf5b65d255659c7d3dae0f70d4c075596",
       "deploymentId": "source-identical-review-render",
       "productionUrl": "https://app.signalstudio.ie"
@@ -33,7 +33,7 @@
   "artifacts": [
     {
       "path": "experience/council-evidence/wave-0-b0/council-report.md",
-      "sha256": "933680affbcddb6f18b00bca489076b47ed1051284b534c677d64ea7286be7d6"
+      "sha256": "0a3a8618e9ef917ef67ecfaf71299c26328e461e7f64ef336f692adbc810b8f4"
     },
     {
       "path": "experience/council-evidence/wave-0-b0/evidence-manifest.json",
