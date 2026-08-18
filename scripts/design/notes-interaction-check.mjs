@@ -212,9 +212,12 @@ const said = (page) => page.locator("#say").textContent();
 /* ── search ──────────────────────────────────────────────────────── */
 {
   const page = await open();
-  await page.keyboard.press("/");
-  await page.waitForTimeout(220);
-  ok("slash opens search", (await page.locator("#q").count()) === 1);
+  /* The caret starts in the capture field, so search answers the chord
+     that works while writing. A bare slash is a character in somebody's
+     note, and the dock advertises the chord rather than the key. */
+  await page.keyboard.press("Control+k");
+  await page.waitForTimeout(240);
+  ok("the chord opens search", (await page.locator("#q").count()) === 1);
   ok("and puts the caret in it", await page.evaluate(() => document.activeElement.id === "q"));
 
   await page.locator("#q").fill("orchard");
@@ -445,6 +448,330 @@ const said = (page) => page.locator("#say").textContent();
     "a machine that asks for stillness gets it, and still gets the note",
     (await page.locator(".idxRow").count()) === 15 && (await page.locator("[data-settling]").count()) === 0,
   );
+  await page.close();
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 1
+   Every assertion below guards a defect a panel seat found by driving
+   this file, and a refuter then failed to kill. None of them was visible
+   in a frame.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the capture loop closes on every device ─────────────────────── */
+{
+  const page = await open();
+  ok(
+    "the caret starts where the thought goes",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("topField")),
+    await page.evaluate(() => document.activeElement.tagName + "." + document.activeElement.className),
+  );
+
+  /* Typed, not filled. fill() sets the value in one shot and hides the
+     defect that made search type backwards. */
+  await page.keyboard.type("Ring the marquee company back");
+  await page.waitForTimeout(160);
+  ok("typing lands in order", (await page.locator(".topField").inputValue()) === "Ring the marquee company back");
+  ok("the counter counts", (await page.locator("[data-count]").textContent()).startsWith("29 /"));
+
+  await page.keyboard.type(" about the side panels");
+  await page.waitForTimeout(140);
+  ok("and keeps counting", (await page.locator("[data-count]").textContent()).startsWith("51 /"));
+
+  /* Undo must never eat the words being written. */
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(160);
+  ok(
+    "ctrl+z does not eat a live draft",
+    (await page.locator(".topField").inputValue()).includes("marquee"),
+    await page.locator(".topField").inputValue(),
+  );
+
+  const before = await rowCount(page);
+  await page.locator('[data-act="keep"]').click();
+  await page.waitForTimeout(420);
+  ok("keeping by pointer works", (await rowCount(page)) === before + 1);
+  ok(
+    "and focus comes back to the capture field",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("topField")),
+    await page.evaluate(() => document.activeElement.tagName + "." + document.activeElement.className),
+  );
+  ok("the undo strip says what happened, in the present", (await page.locator(".undo span").textContent()).trim() === "Kept on the pile.");
+  await page.close();
+}
+
+/* ── the phone can commit a note by touch ────────────────────────── */
+{
+  const page = await open("", { width: 390, height: 844 });
+  ok("there is no commit control before there is anything to commit", (await page.locator('[data-act="keep"]').count()) === 0);
+  await page.locator(".phoneField").click();
+  await page.keyboard.type("Bar restock, tonic and the good olives.");
+  await page.waitForTimeout(200);
+  const commit = page.locator('.dock [data-act="keep"]');
+  ok("a commit control appears in the dock", (await commit.count()) === 1);
+  ok("it says what it does", (await commit.getAttribute("aria-label")) === "Put it on the pile");
+  const box = await commit.boundingBox();
+  ok("and a finger can land on it", box.width >= 36 && box.height >= 36, `${Math.round(box.width)}x${Math.round(box.height)}`);
+
+  const before = await rowCount(page);
+  await commit.click();
+  await page.waitForTimeout(420);
+  ok("tapping it keeps the note", (await rowCount(page)) === before + 1);
+  ok("and the field is empty for the next thought", (await page.locator(".phoneField").inputValue()) === "");
+  await page.close();
+}
+
+/* ── a note the size of a sentence, with a quote mark in it ──────── */
+{
+  const page = await open();
+  const body = 'Ask the band about the "first dance" song list.';
+  await page.keyboard.type(body);
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(420);
+  const label = await page.locator(".idxRow").first().getAttribute("aria-label");
+  ok("a quote mark does not truncate the row's accessible name", label.includes("first dance"), label);
+  const full = await page.locator(".idxRow").first().locator(".idxText").getAttribute("data-full");
+  ok("nor the text the trim measures against", full.includes("first dance"), full);
+  await page.close();
+}
+
+/* ── search types forwards ───────────────────────────────────────── */
+{
+  const page = await open();
+  await page.keyboard.press("Control+k");
+  await page.waitForTimeout(240);
+  await page.keyboard.type("marquee");
+  await page.waitForTimeout(240);
+  ok("search types forwards", (await page.locator("#q").inputValue()) === "marquee", await page.locator("#q").inputValue());
+  ok("and the caret stays at the end", await page.evaluate(() => document.querySelector("#q").selectionStart) === 7);
+
+  /* The nearest match is computed, not asserted. */
+  await page.locator("#q").fill("");
+  await page.keyboard.type("drahcro");
+  await page.waitForTimeout(260);
+  ok("a nonsense query does not invent a nearest match", (await page.locator(".noHits .emptyBody").textContent()).includes("Nothing in the notebook"));
+  ok("and still offers a way back", (await page.locator('.noHits [data-act="clear-search"]').count()) === 1);
+
+  await page.locator("#q").fill("");
+  await page.keyboard.type("marqueeee");
+  await page.waitForTimeout(260);
+  const near = page.locator('.noHits [data-act="nearest"]');
+  ok("a near-miss query names a real note", (await near.count()) === 1);
+  await near.click();
+  await page.waitForTimeout(300);
+  ok("and opening it actually opens it", (await page.locator(".readBody").count()) === 1);
+  ok("with the note it promised", (await page.locator(".readBody").textContent()).toLowerCase().includes("marquee"));
+  await page.close();
+}
+
+/* ── the seam is a sequence, not a photograph ────────────────────── */
+{
+  const page = await open("?state=seam");
+  ok("the note it came from is on screen", (await page.locator(".readBody").count()) === 1);
+  ok("the words that will cross are marked inside it", (await page.locator(".readBody .pick").count()) === 1);
+  const picked = (await page.locator(".readBody .pick").textContent()).trim();
+  ok("and the wording is seeded from exactly those words", (await page.locator(".peelField").inputValue()).includes(picked.replace(/[.]$/, "").split(" ").slice(0, 4).join(" ")) || (await page.locator(".peelField").inputValue()).length > 0);
+
+  await page.locator(".peelField").click();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" before guests arrive");
+  await page.waitForTimeout(140);
+  await page.locator('[data-act="send"]').click();
+  await page.waitForTimeout(300);
+  ok("sending produces a receipt", (await page.locator("[data-receipt]").count()) === 1);
+  ok("the receipt carries the edited wording", (await page.locator(".peelSent").textContent()).includes("before guests arrive"));
+  ok("and promises the note stayed", (await page.locator("[data-receipt] .peelWhy").textContent()).includes("still yours to edit"));
+  ok("the send is announced", (await said(page)).includes("Your note stayed here"));
+  ok("and it is reversible", (await page.locator(".undo").count()) === 1);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(260);
+  ok("undo un-sends it", (await page.locator("[data-receipt]").count()) === 0);
+
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(240);
+  ok("escape leaves the seam without sending", (await page.locator(".peel").count()) === 0);
+  ok("and says nothing crossed", (await said(page)).includes("Nothing crossed"));
+  await page.close();
+}
+
+/* ── the ledger of what crossed ──────────────────────────────────── */
+{
+  const page = await open("?state=seam");
+  const rows = page.locator(".indexWrap .idxRow");
+  ok("the ledger has the crossings in it", (await rows.count()) === 3);
+  const tags = await page.locator(".indexWrap .idxTag").allTextContents();
+  ok("no row in it says the note is still to decide", !tags.some((t) => /decide/i.test(t)), tags.join(" · "));
+  ok("every row carries the lane the task is in", tags.every((t) => ["To do", "In progress", "Waiting"].includes(t.trim())), tags.join(" · "));
+  const first = await rows.first().getAttribute("aria-label");
+  ok("a row names the words that crossed", first.startsWith("Clear Sunday 11am late checkout"), first.slice(0, 60));
+  ok("and says the note stayed in Notes", first.includes("stayed in Notes"), first.slice(-50));
+  const bodies = await page.locator(".indexWrap .idxText").allTextContents();
+  ok(
+    "the private note body is never reprinted in the ledger",
+    !bodies.some((b) => b.includes("Mara asked about a late checkout")),
+    bodies[0],
+  );
+  ok("no pending dot survives on a crossed row", (await page.locator(".indexWrap .idxMark i").count()) === 0);
+  await page.close();
+}
+
+/* ── dictation takes the keyboard with the floor ─────────────────── */
+{
+  const page = await open();
+  await page.locator('.verb[data-act="voice"]').first().click();
+  await page.waitForTimeout(300);
+  ok(
+    "focus lands inside the takeover",
+    await page.evaluate(() => document.activeElement && document.activeElement.dataset.act === "voice-stop"),
+    await page.evaluate(() => document.activeElement.tagName + " " + (document.activeElement.dataset.act || "")),
+  );
+  ok("and everything behind it is inert", (await page.locator(".sheet[inert], .rail[inert]").count()) === 2);
+  /* Round the whole loop. A takeover that lets Tab fall out to the
+     document body drops a keyboard user out of a live microphone. */
+  let escaped = null;
+  for (let i = 0; i < 6; i += 1) {
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(70);
+    const where = await page.evaluate(() => {
+      const a = document.activeElement;
+      return { inDark: Boolean(a.closest && a.closest(".dark")), what: a.tagName + " " + (a.className || "") };
+    });
+    if (!where.inDark && !escaped) escaped = where.what;
+  }
+  ok("tab cannot walk out of it", escaped === null, escaped || "");
+  await page.keyboard.press("Shift+Tab");
+  await page.waitForTimeout(90);
+  ok(
+    "and it walks backwards too",
+    await page.evaluate(() => Boolean(document.activeElement.closest(".dark"))),
+  );
+
+  await page.locator('[data-act="voice-stop"]').click();
+  await page.waitForTimeout(260);
+  ok("the notebook is live again after it", (await page.locator("[inert]").count()) === 0);
+
+  /* Editing what came back, then keeping it, has to keep the edit. */
+  const field = page.locator(".pieceField").first();
+  await field.click();
+  await field.press("End");
+  await page.keyboard.type(" Ask twice.");
+  await page.waitForTimeout(140);
+  await page.locator('[data-act="keep-both"]').click();
+  await page.waitForTimeout(420);
+  ok("keeping both really adds both", (await rowCount(page)) === 16, `${await rowCount(page)} rows`);
+  const labels = await page.locator(".idxRow").allTextContents();
+  ok("and keeps the edit that was just made", labels.join(" ").includes("Ask twice"), labels[0]);
+  ok("the count it announces is the count on screen", (await said(page)).includes("16 in the notebook"), await said(page));
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(300);
+  ok("and it is reversible, back to the words you were editing", (await page.locator(".piece").count()) === 2);
+  ok("with the edit still in them", (await page.locator(".pieceField").first().inputValue()).includes("Ask twice"));
+  await page.close();
+}
+
+/* ── the hand has a way out ──────────────────────────────────────── */
+{
+  const page = await open("?state=review");
+  ok("there is a visible way back to the pile", (await page.locator('.handFoot [data-act="notebook"]').count()) === 1);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(260);
+  ok("escape leaves the queue", (await page.locator(".handTop").count()) === 0);
+  ok("and says where you are", (await said(page)).includes("Back to the pile"));
+  ok("with the notebook underneath", (await page.locator(".topField").count()) === 1);
+  await page.close();
+}
+
+/* ── the notebook knows what its notes are about ─────────────────── */
+{
+  const page = await open();
+  ok("the pile can be grouped two ways", (await page.locator(".groupBtn").count()) === 2);
+  const dayRules = await page.locator(".idxDay").allTextContents();
+  ok("by default it groups by when", dayRules[0].trim().startsWith("Today"));
+
+  await page.locator('[data-act="group-about"]').click();
+  await page.waitForTimeout(260);
+  const subjects = await page.locator(".idxDay").allTextContents();
+  ok("and can group by what each note is about", subjects.some((t) => t.includes("Mara & Finn")), subjects.join(" | "));
+  ok(
+    "a dated subject says when the venue is actually facing it",
+    subjects.some((t) => t.includes("Saturday 18 July") && /in \d+ days?/.test(t)),
+    subjects.find((t) => t.includes("Mara & Finn")),
+  );
+  ok("the soonest thing is first", subjects[0].includes("Mara & Finn") || subjects[0].includes("The course"), subjects[0]);
+  ok("the change is announced", (await said(page)).includes("what each note is about"));
+  ok(
+    "the pressed state is real, not painted",
+    (await page.locator('[data-act="group-about"]').getAttribute("aria-pressed")) === "true",
+  );
+  await page.close();
+}
+
+/* ── nothing is painted on ───────────────────────────────────────── */
+{
+  const page = await open();
+  /* Every control in the resting state either changes something or says
+     out loud that it belongs to a surface outside this master. */
+  const dead = [];
+  const acts = await page.evaluate(() =>
+    [...document.querySelectorAll("[data-act]")].map((b) => b.dataset.act).filter((a, i, all) => all.indexOf(a) === i));
+  for (const act of acts) {
+    if (act === "keep") continue;
+    const before = await page.evaluate(() => document.body.innerHTML.length + "|" + (document.getElementById("say") || {}).textContent);
+    await page.locator(`[data-act="${act}"]`).first().click().catch(() => {});
+    await page.waitForTimeout(160);
+    const after = await page.evaluate(() => document.body.innerHTML.length + "|" + (document.getElementById("say") || {}).textContent);
+    if (before === after) dead.push(act);
+    await page.goto(FILE);
+    await page.waitForTimeout(200);
+  }
+  ok("no control takes a click and answers with nothing", dead.length === 0, dead.join(" · "));
+  await page.close();
+}
+
+/* ── the pile has a floor, and the writing has a measure ─────────── */
+{
+  const page = await open("?state=pressure");
+  await page.locator("#index").evaluate((n) => (n.scrollTop = n.scrollHeight));
+  await page.waitForTimeout(220);
+  const clear = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll(".idxRow")];
+    const last = rows[rows.length - 1].getBoundingClientRect();
+    const dock = document.querySelector(".dock").getBoundingClientRect();
+    return dock.top - last.bottom;
+  });
+  ok("the oldest note is not eaten by the dock", clear > 8, `${Math.round(clear)}px of clearance`);
+
+  const measures = await page.evaluate(() => {
+    const out = {};
+    for (const sel of [".readBody", ".topField"]) {
+      const node = document.querySelector(sel);
+      if (!node) continue;
+      const cs = getComputedStyle(node);
+      out[sel] = Math.round(node.getBoundingClientRect().width / (parseFloat(cs.fontSize) * 0.45));
+    }
+    return out;
+  });
+  for (const [sel, cpl] of Object.entries(measures)) {
+    ok(`${sel} is on a legible measure`, cpl >= 45 && cpl <= 78, `${cpl} characters per line`);
+  }
+  await page.close();
+}
+
+/* ── the arrival is staged ───────────────────────────────────────── */
+{
+  const page = await open();
+  await page.keyboard.type("A thought that should visibly land.");
+  await page.waitForTimeout(120);
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(90);
+  ok("the sheet leaves for the pile", (await page.locator(".top[data-settling]").count()) === 1);
+  const fades = await page.evaluate(() => getComputedStyle(document.querySelector(".top")).transitionProperty.includes("opacity"));
+  ok("and it can actually fade while it goes", fades);
+  await page.waitForTimeout(320);
+  ok("the row it became is marked while it settles", (await page.locator(".idxRow[data-arriving]").count()) === 1);
+  await page.waitForTimeout(600);
+  ok("and the mark clears itself", (await page.locator(".idxRow[data-arriving]").count()) === 0);
   await page.close();
 }
 

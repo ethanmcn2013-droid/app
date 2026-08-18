@@ -87,6 +87,15 @@
   --tap: 44px;
   --gutter: 30px;
 
+  /* One measure for every surface that carries a person's own writing.
+     Calibrated in em rather than ch: Geist's average glyph is about
+     0.45em, so 31em lands near 68 characters per line at any size and
+     self-scales with the type ramp, which `ch` does not.
+     Before this the field a person types their thought into ran the full
+     width of the sheet — 145 characters per line at 1440 — and this is a
+     product whose entire content is somebody's own sentences. */
+  --measure: 31em;
+
   /* One duration and one curve for the whole product. Any other value
      has to be argued for in writing. The one exception is the paper
      settle, which is the direction's own signature and is declared and
@@ -222,6 +231,10 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 /* ── the desk ──────────────────────────────────────────────────── */
 .desk { flex: none; position: relative; padding: 6px var(--gutter) var(--gutter); }
 .pile { position: relative; }
+/* The paper and the sheets behind it. Anything hung off the paper — the
+   task peeled from a note — sits outside this box, so the ghosts cannot
+   stretch behind it. */
+.paperStack { position: relative; }
 /* The sheets behind. Decoration, hidden from the reader: the notes they
    stand for are in the index below, and naming them twice gives a screen
    reader a duplicate notebook. */
@@ -240,14 +253,35 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
   transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve);
 }
 .top[data-live] { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper-lift); }
+/* The focused object is the paper, not the rectangle inside it. A default
+   outline around a two-line field held at a 31em measure drew a large
+   empty box across the resting state; the sheet lighting up says the same
+   thing in the direction's own language, and says it about the object a
+   person thinks they are writing on. */
+.top:has(.topField:focus-visible) { box-shadow: 0 0 0 2px var(--indigo), var(--paper-lift); }
+.topField:focus-visible { outline: none; }
+.dock:has(.phoneField:focus-visible) { box-shadow: 0 0 0 2px var(--indigo), var(--paper); }
+.phoneField:focus-visible { outline: none; }
 /* A sheet leaving for the pile. One overshoot-free settle, inside the
    motion budget, and it never runs when the machine asks for stillness. */
-.top[data-settling] { transform: translateY(12px) scale(0.972); opacity: 0; }
+/* The sheet leaves for the pile. The transition list has to name opacity
+   or the fade can only snap, which is exactly what it did. */
+.top { transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve); }
+.top[data-settling] { transform: translateY(14px) scale(0.972); opacity: 0; }
+/* And the row it became is marked while it settles, so the eye is told
+   where the words went rather than being left to find them. This is the
+   one moment the whole direction exists for. */
+@keyframes arrive {
+  from { background: var(--indigo-wash); box-shadow: inset 2px 0 0 var(--indigo); }
+  to { background: transparent; box-shadow: inset 0 0 0 0 var(--indigo); }
+}
+.idxRow[data-arriving] { animation: arrive 620ms var(--curve) both; }
 
 .topField {
   width: 100%; border: 0; outline: 0; background: none; resize: none; display: block;
   font: inherit; font-size: 18px; line-height: 1.55; letter-spacing: var(--tr-18); color: var(--ink-1);
   field-sizing: content; min-height: calc(1.55em * 2); max-height: 42vh; overflow: auto;
+  max-width: var(--measure);
 }
 .topField::placeholder { color: var(--ink-3); }
 .topFoot { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
@@ -290,11 +324,11 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .readSrc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
 .readSrc a:hover { color: var(--ink-1); border-color: var(--ink-2); }
 .readBody {
-  margin: 0; max-width: 68ch;
+  margin: 0; max-width: var(--measure); text-wrap: pretty;
   font-size: 18px; font-weight: 400; line-height: 1.62; letter-spacing: var(--tr-18); color: var(--ink-1);
 }
 .readBody .lede { font-weight: 600; }
-.readLong { font-size: 16.5px; line-height: 1.66; max-width: 72ch; }
+.readLong { font-size: 16.5px; line-height: 1.66; max-width: var(--measure); }
 
 /* ── the index ─────────────────────────────────────────────────── */
 .indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -304,8 +338,35 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 }
 .indexHead::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
 .indexHead .cnt { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: 12px; white-space: nowrap; }
-.index { flex: 1; min-height: 0; overflow: auto; padding: 0 var(--gutter) 22px; scrollbar-width: thin; overflow-anchor: none; }
-.idxDay { margin: 0; padding: 16px 0 5px; font-size: 11px; font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); }
+/* The dock floats over the foot of the sheet, so the last row of the pile
+   needs clearance rather than being scrimmed out of legibility. Scrolled
+   to the end, the oldest note used to sit under solid white. */
+.index { flex: 1; min-height: 0; overflow: auto; padding: 0 var(--gutter) 92px; scrollbar-width: thin; overflow-anchor: none; }
+/* A day rule says when you wrote it. A subject rule says what it is
+   about, and carries the date the venue is actually facing — which is the
+   only thing on this surface that a notebook belonging to somebody else
+   could not also say. */
+.idxDay {
+  margin: 0; padding: 16px 0 5px; font-size: 11px; font-weight: 600;
+  letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3);
+  display: flex; align-items: baseline; gap: 10px;
+}
+.idxDayNote { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); }
+[data-group="about"] .idxDay { font-size: 12.5px; text-transform: none; letter-spacing: var(--tr-13, -0.01em); color: var(--ink-1); padding-top: 20px; }
+.groupBy { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--wash); margin-left: auto; flex: none; }
+/* The drawn control is 24px because that is the size the index head
+   wants beside an 11px label; the thing a pointer lands on is the 40
+   behind it. */
+.groupBtn {
+  position: relative;
+  height: 24px; padding: 0 10px; border-radius: var(--r-pill); cursor: pointer;
+  font-size: 11.5px; font-weight: 400; letter-spacing: var(--tr-11); color: var(--ink-3);
+  text-transform: none;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.groupBtn::before { content: ""; position: absolute; inset: -8px -2px; }
+.groupBtn:hover { color: var(--ink-1); }
+.groupBtn[data-on] { background: var(--white); color: var(--ink-1); font-weight: 600; box-shadow: var(--ring), var(--raise); }
 
 .idxRow {
   display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto; column-gap: 13px; align-items: center;
@@ -324,7 +385,12 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .idxMark svg { width: 15px; height: 15px; }
 .idxMark i { position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-1); box-shadow: 0 0 0 2px var(--white); }
 .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px #f2f1fd; }
-.idxText { font-size: 14.5px; line-height: 1.45; letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; }
+/* The trim is measured in the file and cut at a word boundary. The
+   ellipsis is the backstop for the case where four words still do not
+   fit: without it the browser sliced a letter in half against the status
+   pill, which reads as damage rather than as a truncation. */
+.idxText { font-size: 14.5px; line-height: 1.45; letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.idxFrom { display: none; }
 .idxText b { font-weight: 600; }
 .idxText span { color: var(--ink-3); }
 .idxTag {
@@ -355,7 +421,11 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .dockField svg { width: 15px; height: 15px; flex: none; }
 .dockField span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dockField kbd { font: inherit; margin-left: auto; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); flex: none; }
-.dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+.dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; flex: none; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+/* The one filled control in the dock, and it only exists when there is
+   something to keep. */
+.dockGlyph[data-ink] { background: var(--ink); color: var(--white); }
+.dockGlyph[data-ink]:hover { background: #000; }
 .dockGlyph svg { width: 17px; height: 17px; }
 .dockGlyph:hover { color: var(--ink-1); background: var(--wash); }
 .dockRule { width: 1px; height: 20px; background: var(--line); margin: 0 4px; flex: none; }
@@ -405,7 +475,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* The one thing on this screen that must be readable is the sentence
    saying the words are leaving the device. At --on-ink-3 it measured
    4.1:1 and failed AA, which for a disclosure is not a nicety. */
-.darkNote { max-width: 62ch; margin: 0; font-size: 12px; line-height: 1.6; color: var(--on-ink-2); letter-spacing: var(--tr-12); }
+.darkNote { max-width: 62ch; text-wrap: pretty; margin: 0; font-size: 12px; line-height: 1.6; color: var(--on-ink-2); letter-spacing: var(--tr-12); }
 .darkFoot .spacer { flex: 1; }
 .darkAct {
   display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border-radius: var(--r-pill);
@@ -421,13 +491,13 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 
 /* ── the read-back ─────────────────────────────────────────────── */
 .saidWas {
-  margin: 0 0 4px; max-width: 84ch; padding: 14px 16px; border-radius: var(--r-chip);
+  margin: 0 0 4px; max-width: calc(var(--measure) + 6em); padding: 14px 16px; border-radius: var(--r-chip);
   background: var(--wash); font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14);
 }
 .saidWas b { display: block; font-size: 11px; font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
 .pieces { display: grid; gap: 9px; margin-top: 14px; }
 .piece {
-  position: relative; max-width: 74ch; padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
+  position: relative; max-width: calc(var(--measure) + 4em); padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
   background: var(--white); box-shadow: var(--ring), var(--raise);
   font-size: 16.5px; line-height: 1.52; letter-spacing: var(--tr-16); color: var(--ink-1);
   transition: box-shadow var(--dur) var(--curve);
@@ -464,7 +534,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .pips i { width: 15px; height: 3px; border-radius: 2px; background: var(--line-strong); transition: background-color var(--dur) var(--curve); }
 .pips i[data-done] { background: var(--ink-1); }
 .pips i[data-now] { background: var(--indigo); }
-.handBody { margin: 0; max-width: 66ch; font-size: 18px; line-height: 1.58; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.handBody { margin: 0; max-width: var(--measure); text-wrap: pretty; font-size: 18px; line-height: 1.58; letter-spacing: var(--tr-18); color: var(--ink-1); }
 .handFoot { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .handFoot .spacer { flex: 1; }
 .deckNote { margin: 52px 0 0; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); display: flex; align-items: center; gap: 9px; }
@@ -473,7 +543,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* ── the seam ──────────────────────────────────────────────────── */
 .pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); }
 .peel {
-  position: relative; max-width: 720px; margin: -6px 6px 0 34px;
+  position: relative; max-width: min(720px, calc(100% - 40px)); margin: 9px 6px 0 34px;
   background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 18px 20px;
 }
 .peel::before { content: ""; position: absolute; left: 30px; top: -7px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--white); box-shadow: -1px -1px 0 var(--line); }
@@ -484,7 +554,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .peelField {
   width: 100%; margin-top: 11px; border: 0; outline: 0; background: none; resize: none; display: block;
   font: inherit; font-size: 16.5px; font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); color: var(--ink-1);
-  field-sizing: content; min-height: 32px; padding: 3px 0;
+  field-sizing: content; min-height: 32px; padding: 3px 0; max-width: var(--measure);
 }
 .peelRow { display: flex; align-items: center; gap: 9px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; }
@@ -492,7 +562,11 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .picker svg { width: 14px; height: 14px; color: var(--ink-3); }
 .picker b { font-weight: 400; color: var(--ink-3); }
 .peelRow .spacer { flex: 1; }
-.peelWhy { margin: 12px 0 0; max-width: 74ch; font-size: 12.5px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.peelWhy { margin: 12px 0 0; max-width: var(--measure); text-wrap: pretty; font-size: 12.5px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.peel[data-receipt] { box-shadow: 0 0 0 1px var(--ink-1), var(--paper); }
+.peel[data-receipt] .peelMark { background: var(--ink); }
+.peelSent { margin: 11px 0 0; max-width: var(--measure); font-size: 16.5px; font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); }
+.noHits { padding: 26px 0 0; }
 .stays { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); margin-top: 12px; }
 .stays svg { width: 13px; height: 13px; }
 
@@ -517,7 +591,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 
 /* ── every empty ───────────────────────────────────────────────── */
 .emptyTitle { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.22; letter-spacing: var(--tr-27); text-wrap: balance; }
-.emptyBody { margin: 12px 0 0; font-size: 16px; line-height: 1.58; color: var(--ink-2); letter-spacing: var(--tr-16); max-width: 46ch; }
+.emptyBody { margin: 12px 0 0; font-size: 16px; line-height: 1.58; color: var(--ink-2); letter-spacing: var(--tr-16); max-width: var(--measure); text-wrap: pretty; }
 .emptyMove { margin-top: 20px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .specs { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px 0 8px; }
 .spec { border-radius: var(--r-paper); box-shadow: var(--ring); padding: 20px 22px 22px; }
@@ -525,14 +599,14 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .spec .emptyTitle { font-size: 18px; letter-spacing: var(--tr-21); }
 .spec .emptyBody { font-size: 14px; margin-top: 8px; }
 .spec .emptyMove { margin-top: 14px; }
-.specWhy { margin: 13px 0 0; font-size: 12px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.specWhy { margin: 13px 0 0; font-size: 12px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); text-wrap: pretty; }
 
 /* ── not yet ───────────────────────────────────────────────────── */
 .states { display: grid; gap: 11px; padding: 4px 0 8px; }
 .state { display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: var(--r-paper); box-shadow: inset 0 0 0 1px var(--line); }
 .state svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--ink-2); }
 .state b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: var(--tr-14); }
-.state p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14); max-width: 62ch; }
+.state p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14); max-width: var(--measure); text-wrap: pretty; }
 .state .act { margin-left: auto; align-self: center; }
 /* Held on this device is the product keeping its promise, so it is stated
    in ink at full strength, not in a warning colour. */
@@ -666,6 +740,10 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   .indexWrap { padding-top: 6px; }
   .index { padding-bottom: 128px; }
   .dock { width: calc(100% - var(--gutter) * 2); max-width: none; padding: 6px 6px 6px 14px; align-items: flex-end; }
+  .dockCount { align-self: center; font-size: 11px; color: var(--ink-3); letter-spacing: var(--tr-11); padding: 0 4px 10px; flex: none; }
+  .indexHead { flex-wrap: wrap; row-gap: 8px; }
+  .groupBy { margin-left: 0; }
+  .index { padding-bottom: 148px; }
   .dockField { display: none; }
   .phoneField {
     display: block; flex: 1; min-width: 0;

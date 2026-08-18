@@ -1,0 +1,53 @@
+{
+  "gate": 9.5,
+  "seats": [
+    "UI composition",
+    "Typography",
+    "Interaction and states",
+    "UX and information design",
+    "Brand and copy",
+    "Product taste and emotional resonance",
+    "Measured evidence"
+  ],
+  "consoleUrl": "https://claude.ai/code/artifact/23178180-3a00-4809-a08b-2c88bc6b1083",
+  "compareUrl": "https://claude.ai/code/artifact/33dc4e0c-050d-44fd-81ef-b320058d1501",
+  "gates": [
+    {
+      "file": "notes-audit.mjs",
+      "score": "0",
+      "unit": "violations",
+      "what": "Palette lock, type weights, type families, WCAG AA contrast against the real composited backdrop, hit targets including pseudo-element expanders, the radii ladder and motion tokens \u2014 across ten states and four rooms."
+    },
+    {
+      "file": "notes-interaction-check.mjs",
+      "score": "171",
+      "unit": "assertions, 0 failing",
+      "what": "Capture and undo, place-keeping across every repaint, the index's single tab stop, the hand's keyboard model, search and its no-result state, the voice takeover and its disclosure, word-safe trims, the honesty states carrying no warning hue, and no sideways scroll at six widths."
+    },
+    {
+      "file": "notes-verify-console.mjs",
+      "score": "44",
+      "unit": "assertions, 0 failing",
+      "what": "Every control in the console writes the attribute the master reads, every room selects, every state paints, and the notebook inside the console really captures and really undoes."
+    }
+  ],
+  "badges": [
+    {
+      "n": "3",
+      "what": "colours, and no fourth is reachable"
+    },
+    {
+      "n": "400/600",
+      "what": "the only Geist weights"
+    },
+    {
+      "n": "22",
+      "what": "colour tokens, all Ink, Indigo or White"
+    },
+    {
+      "n": "0",
+      "what": "console errors in 160 captured frames"
+    }
+  ],
+  "logUrl": "https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25"
+}

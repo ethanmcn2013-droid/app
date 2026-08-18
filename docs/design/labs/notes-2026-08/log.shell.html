@@ -1,0 +1,401 @@
+<title>Notes Elevation Log</title>
+<style>
+@font-face{font-family:"Geist";src:url(__FONT_SANS__) format("woff2-variations");font-weight:100 900;font-display:swap;}
+@font-face{font-family:"Geist Mono";src:url(__FONT_MONO__) format("woff2-variations");font-weight:100 900;font-display:swap;}
+
+:root {
+  --bg: #0d0d0e;
+  --panel: #151517;
+  --panel-2: #1b1c1e;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --t1: #ffffff;
+  --t2: rgba(255, 255, 255, 0.66);
+  --t3: rgba(255, 255, 255, 0.44);
+  --t4: rgba(255, 255, 255, 0.28);
+  --acc: #8b83ff;
+  --acc-deep: #4f46e5;
+  --acc-wash: rgba(79, 70, 229, 0.16);
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --dur: 140ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--t1); font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+a { color: var(--acc); }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.tab { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 0 24px 110px; }
+
+/* ── masthead ──────────────────────────────────────────────────── */
+.mast { padding: 66px 0 34px; border-bottom: 1px solid var(--line); }
+.kicker { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--t3); }
+.kicker i { width: 5px; height: 5px; border-radius: 50%; background: var(--acc-deep); }
+h1 { margin: 16px 0 0; font-size: clamp(34px, 5.4vw, 60px); font-weight: 600; line-height: 1.04; letter-spacing: -0.042em; }
+h1 em { font-style: normal; color: var(--t3); }
+.standfirst { margin: 20px 0 0; max-width: 66ch; font-size: 16.5px; line-height: 1.62; color: var(--t2); letter-spacing: -0.01em; }
+.mastFacts { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 26px; }
+.fact { display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 14px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12.5px; color: var(--t2); }
+.fact b { font-weight: 600; color: var(--t1); }
+.fact[data-gate] { box-shadow: inset 0 0 0 1px var(--acc-deep); background: var(--acc-wash); }
+
+section { padding: 58px 0 0; }
+.head2 { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+h2 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+.h2note { font-size: 13px; color: var(--t3); }
+.lede { margin: 15px 0 0; max-width: 72ch; font-size: 15px; line-height: 1.64; color: var(--t2); }
+
+/* ── the gate ──────────────────────────────────────────────────── */
+.gateWrap { margin-top: 26px; background: var(--panel); border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line-soft); padding: 24px 24px 10px; overflow-x: auto; }
+.chart { display: grid; gap: 0; min-width: 640px; }
+.chartRow { display: grid; grid-template-columns: 210px minmax(0, 1fr) 62px; gap: 16px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line-soft); }
+.chartRow:first-child { border-top: 0; }
+.seatName { font-size: 13px; letter-spacing: -0.012em; color: var(--t2); }
+.track { position: relative; height: 26px; }
+.track .grid { position: absolute; inset: 0; }
+.track .grid i { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line-soft); }
+.track .grid i[data-gate] { background: var(--acc-deep); width: 2px; }
+.bar { position: absolute; top: 6px; height: 14px; border-radius: 3px; background: rgba(255,255,255,0.16); }
+.dot { position: absolute; top: 7px; width: 12px; height: 12px; border-radius: 50%; background: var(--t4); transform: translateX(-6px); transition: background-color var(--dur) var(--curve); }
+.dot[data-latest] { background: var(--t1); width: 14px; height: 14px; top: 6px; transform: translateX(-7px); }
+.dot[data-pass] { background: var(--acc); }
+.scoreNow { font-family: var(--mono); font-size: 15px; font-weight: 600; text-align: right; letter-spacing: -0.02em; }
+.scoreNow small { display: block; font-family: var(--sans); font-size: 10.5px; font-weight: 400; color: var(--t4); letter-spacing: 0; }
+.axis { display: grid; grid-template-columns: 210px minmax(0, 1fr) 62px; gap: 16px; padding: 8px 0 14px; min-width: 640px; }
+.axisTicks { position: relative; height: 14px; font-family: var(--mono); font-size: 10.5px; color: var(--t4); }
+.axisTicks span { position: absolute; transform: translateX(-50%); }
+.axisTicks span[data-gate] { color: var(--acc); font-weight: 600; }
+
+/* ── rounds ────────────────────────────────────────────────────── */
+.round { margin-top: 18px; background: var(--panel); border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line-soft); padding: 26px 26px 28px; }
+.roundTop { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.roundNo { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t4); }
+.roundSpread { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--t3); }
+.roundHead { margin: 12px 0 0; font-size: 19px; font-weight: 600; line-height: 1.4; letter-spacing: -0.024em; text-wrap: balance; }
+.roundBody { margin: 12px 0 0; max-width: 78ch; font-size: 14.5px; line-height: 1.64; color: var(--t2); }
+.findings { margin-top: 22px; display: grid; gap: 1px; }
+.finding { display: grid; grid-template-columns: 156px minmax(0, 1fr); gap: 6px 18px; padding: 15px 0; border-top: 1px solid var(--line-soft); }
+.fSeat { font-size: 11.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--t4); }
+.fCost { font-family: var(--mono); font-size: 11.5px; color: var(--t3); }
+.fProblem { font-size: 14.5px; line-height: 1.6; color: var(--t1); }
+.fDone { grid-column: 2; font-size: 13.5px; line-height: 1.6; color: var(--t2); display: flex; gap: 9px; }
+.fDone b { flex: none; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--acc); padding-top: 3px; }
+.refuted { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.refutedTitle { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--t4); margin: 0 0 10px; }
+.refutedList { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.refutedList li { font-size: 13px; line-height: 1.55; color: var(--t3); padding-left: 16px; position: relative; }
+.refutedList li::before { content: ""; position: absolute; left: 0; top: 9px; width: 8px; height: 1px; background: var(--t4); }
+.refutedList li b { color: var(--t2); font-weight: 600; }
+
+/* ── frames ────────────────────────────────────────────────────── */
+.frames { display: grid; gap: 22px; margin-top: 24px; }
+.frame { }
+.frameTop { display: flex; align-items: baseline; gap: 12px; padding: 0 2px 10px; flex-wrap: wrap; }
+.frameName { font-size: 15px; font-weight: 600; letter-spacing: -0.018em; }
+.frameWhat { font-size: 13px; color: var(--t3); line-height: 1.5; }
+.shot { display: block; width: 100%; border-radius: 12px; overflow: hidden; background: #000; box-shadow: inset 0 0 0 1px var(--line-soft); }
+.shot img { display: block; width: 100%; height: auto; }
+.pair { display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 18px; align-items: start; }
+.rooms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 24px; }
+.roomCard { }
+.roomTop { display: flex; align-items: baseline; gap: 10px; padding: 0 2px 9px; flex-wrap: wrap; }
+.roomName { font-size: 14px; font-weight: 600; letter-spacing: -0.014em; }
+.roomWhat { font-size: 12px; color: var(--t3); font-family: var(--mono); }
+
+/* ── receipt ───────────────────────────────────────────────────── */
+.badges { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 22px; }
+.gates { display: grid; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); gap: 12px; margin-top: 22px; }
+.gate { background: var(--panel); border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line-soft); padding: 18px 20px 20px; }
+.gateName { font-family: var(--mono); font-size: 12px; color: var(--t2); }
+.gateScore { margin: 8px 0 0; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
+.gateScore small { font-size: 13px; font-weight: 400; color: var(--t3); letter-spacing: -0.006em; }
+.gateWhat { margin: 9px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--t3); }
+
+.cta { margin-top: 26px; display: flex; gap: 10px; flex-wrap: wrap; }
+.btn { display: inline-flex; align-items: center; gap: 9px; height: 42px; padding: 0 18px; border-radius: 10px; font-size: 14px; font-weight: 600; background: var(--t1); color: #111; text-decoration: none; }
+.btn[data-quiet] { background: none; color: var(--t2); font-weight: 400; box-shadow: inset 0 0 0 1px var(--line); }
+
+.how { margin-top: 58px; background: var(--panel); border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line-soft); padding: 30px 28px 32px; }
+.how h2 { font-size: 22px; }
+.how ol { margin: 18px 0 0; padding-left: 20px; display: grid; gap: 11px; }
+.how li { font-size: 14.5px; line-height: 1.62; color: var(--t2); max-width: 84ch; }
+.how li b { color: var(--t1); font-weight: 600; }
+
+.foot { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.65; color: var(--t4); max-width: 88ch; }
+.foot code { font-family: var(--mono); font-size: 11.5px; color: var(--t3); }
+
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 0ms !important; } }
+@media (max-width: 900px) {
+  .pair { grid-template-columns: minmax(0, 1fr); }
+  .rooms { grid-template-columns: minmax(0, 1fr); }
+  .finding { grid-template-columns: minmax(0, 1fr); }
+  .fDone { grid-column: 1; }
+}
+@media (max-width: 620px) { .wrap { padding: 0 14px 80px; } }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <span class="kicker"><i></i>Signal Studio · Notes · the elevation loop</span>
+  <h1>The panel.<br><em>Unanimous 9.5, or an honest distance.</em></h1>
+  <p class="standfirst">
+    Seven seats, blind to each other, grade the locked Notes master every round against one
+    standard: the work of an award-winning studio that iterated on this product for months.
+    Every finding then goes to a fresh agent whose only job is to kill it and which defaults to
+    refuted when uncertain. Only survivors are fixed, and every survivor is fixed before anything
+    is re-scored. Scores are allowed to fall, and should when the panel looks harder.
+  </p>
+  <div class="mastFacts" id="mastFacts"></div>
+</header>
+
+<section>
+  <div class="head2">
+    <h2>The gate</h2>
+    <span class="h2note">Every seat, every round. The line at 9.5 is the gate.</span>
+  </div>
+  <p class="lede">
+    A seat that cannot grant 9.5 has to say plainly what stands between the work and the grade.
+    A panel that only ever goes up is not looking hard enough.
+  </p>
+  <div class="gateWrap">
+    <div class="axis"><span></span><div class="axisTicks" id="ticks"></div><span></span></div>
+    <div class="chart" id="chart"></div>
+  </div>
+</section>
+
+<section>
+  <div class="head2">
+    <h2>The rounds</h2>
+    <span class="h2note">Newest first. Each round: what it found, what survived a refuter, and what was done.</span>
+  </div>
+  <div id="rounds"></div>
+</section>
+
+<section>
+  <div class="head2">
+    <h2>The build being graded</h2>
+    <span class="h2note">Every state of the current master, at 1440</span>
+  </div>
+  <p class="lede">
+    Rendered from the real review fixture — The Orchard, events; Mara &amp; Finn; Orla; the pinned
+    16 July clock — in real Geist. These frames are re-shot every round, so what is on this page
+    is always the build the scores above belong to.
+  </p>
+  <div class="frames" id="frames"></div>
+</section>
+
+<section>
+  <div class="head2">
+    <h2>The three rooms</h2>
+    <span class="h2note">Presets of five named design decisions, on one master</span>
+  </div>
+  <p class="lede">
+    Nothing distinguishes a room but a combination of five attributes the master already reads.
+    That is what guarantees every one of the seventy-two combinations stays on palette: none of
+    them can reach a colour that is not Ink, Indigo or White.
+  </p>
+  <div class="rooms" id="rooms"></div>
+  <div class="cta">
+    <a class="btn" id="consoleLink" href="#">Open the design console</a>
+    <a class="btn" data-quiet id="compareLink" href="#">The three directions it came from</a>
+  </div>
+</section>
+
+<section>
+  <div class="head2">
+    <h2>The measured seats</h2>
+    <span class="h2note">Two harnesses, both green before round 1</span>
+  </div>
+  <p class="lede">
+    Both were built before the first panel round, not after it. The sibling programme on Tasks
+    built its behaviour gate at round 6 and paid for it: three seats dropped at round 5, one by
+    1.1, on defects that were invisible in a screenshot and obvious the moment anyone drove the
+    file. Every seat is told what these already prove, so no finding is spent restating one.
+  </p>
+  <div class="gates" id="gates"></div>
+  <div class="badges" id="badges"></div>
+</section>
+
+<div class="how">
+  <h2>How the panel works</h2>
+  <ol>
+    <li><b>Seven seats, in parallel, blind.</b> UI composition · Typography · Interaction and states · UX and information design · Brand and copy · Product taste and emotional resonance · Measured evidence. No seat sees another's opinion, and none is told the previous round's scores.</li>
+    <li><b>Five costed findings each, at most.</b> Every finding names an element, a problem, a fix implementable exactly as written, and what it costs the score in tenths.</li>
+    <li><b>Every finding goes to a fresh refuter</b> whose only job is to kill it, which opens the file and checks the claim, and which defaults to refuted when uncertain. A finding that restates something the measured gates already prove is refuted on sight.</li>
+    <li><b>Only survivors are fixed, and every survivor is fixed</b> before anything is re-shot or re-scored.</li>
+    <li><b>Grading is done by driving the file, from round 1.</b> Frames alone hide exactly the defects that cost the most: a live region that never announces, a repaint that loses your place, a keyboard model that is advertised and not implemented.</li>
+    <li><b>Scores may fall.</b> When the panel looks harder it finds more, and a round where every seat rises is a round where nobody looked.</li>
+    <li><b>The gate is unanimous 9.5.</b> Not an average. A seat that cannot grant it says what stands in the way, and that sentence is the next round's work.</li>
+  </ol>
+</div>
+
+<p class="foot">
+  Exploration only. Branch <code>design/notes-exploration</code>, cut from <code>design/tasks-exploration</code>.
+  No PR, no deploy, no app-code or schema change; the chrome and navigation contract gates are knowingly unmet until product lock-in.
+  The master: <code>docs/design/labs/notes-2026-08/notebook.js</code> and <code>master.css</code>.
+  The gates: <code>scripts/design/notes-audit.mjs</code> and <code>scripts/design/notes-interaction-check.mjs</code>.
+  The panel: <code>scripts/design/notes-panel-round.js</code>. The written brief and the fold from 29 product states to 10 lab states: <code>DIRECTIONS.md</code>.
+</p>
+
+</div>
+
+<script>
+const PANEL = __PANEL__;
+const FRAMES = __FRAMES__;
+const STATES = __STATES__;
+const ROOMS = __ROOMS__;
+
+const el = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+const rounds = PANEL.rounds;
+const latest = rounds[rounds.length - 1];
+const seats = PANEL.seats;
+const GATE = PANEL.gate;
+
+/* ── masthead facts ────────────────────────────────────────────── */
+const scores = seats.map((s) => latest.scores[s]).filter((n) => typeof n === "number");
+const min = Math.min(...scores);
+const max = Math.max(...scores);
+const passing = scores.filter((n) => n >= GATE).length;
+el("mastFacts").innerHTML = [
+  `<span class="fact"><b>${rounds.length}</b> round${rounds.length === 1 ? "" : "s"}</span>`,
+  `<span class="fact"><b>7</b> seats</span>`,
+  `<span class="fact" data-gate>gate <b>${GATE.toFixed(1)}</b>, unanimous</span>`,
+  `<span class="fact">now <b>${min.toFixed(1)}</b> to <b>${max.toFixed(1)}</b></span>`,
+  `<span class="fact"><b>${passing}</b> of 7 at the gate</span>`,
+  `<span class="fact"><b>${rounds.reduce((n, r) => n + (r.confirmed || []).length, 0)}</b> findings confirmed</span>`,
+  `<span class="fact"><b>${rounds.reduce((n, r) => n + (r.refuted || []).length, 0)}</b> refuted</span>`,
+].join("");
+
+/* ── the chart ─────────────────────────────────────────────────── */
+const LO = 5;
+const HI = 10;
+const at = (score) => ((score - LO) / (HI - LO)) * 100;
+el("ticks").innerHTML = [5, 6, 7, 8, 9, 9.5, 10]
+  .map((t) => `<span style="left:${at(t)}%"${t === GATE ? " data-gate" : ""}>${t === GATE ? "9.5" : t}</span>`)
+  .join("");
+el("chart").innerHTML = seats
+  .map((seat) => {
+    const history = rounds.map((r) => r.scores[seat]).filter((n) => typeof n === "number");
+    const now = history[history.length - 1];
+    const first = history[0];
+    const lo = Math.min(...history);
+    const hi = Math.max(...history);
+    const dots = history
+      .map((score, i) => {
+        const isLast = i === history.length - 1;
+        return `<span class="dot" style="left:${at(score)}%;opacity:${isLast ? 1 : 0.28 + (i / history.length) * 0.4}"${isLast ? " data-latest" : ""}${isLast && score >= GATE ? " data-pass" : ""} title="round ${rounds[i].round}: ${score.toFixed(1)}"></span>`;
+      })
+      .join("");
+    const delta = history.length > 1 ? now - first : 0;
+    return `
+      <div class="chartRow">
+        <span class="seatName">${esc(seat)}</span>
+        <div class="track">
+          <div class="grid">${[6, 7, 8, 9].map((t) => `<i style="left:${at(t)}%"></i>`).join("")}<i style="left:${at(GATE)}%" data-gate></i></div>
+          <span class="bar" style="left:${at(lo)}%;width:${Math.max(0, at(hi) - at(lo))}%"></span>
+          ${dots}
+        </div>
+        <span class="scoreNow">${now.toFixed(1)}<small>${history.length > 1 ? (delta >= 0 ? "+" : "") + delta.toFixed(1) : "first"}</small></span>
+      </div>`;
+  })
+  .join("");
+
+/* ── the rounds ────────────────────────────────────────────────── */
+el("rounds").innerHTML = [...rounds]
+  .reverse()
+  .map((r) => {
+    const vals = seats.map((s) => r.scores[s]).filter((n) => typeof n === "number");
+    const confirmed = r.confirmed || [];
+    const refuted = r.refuted || [];
+    return `
+      <article class="round">
+        <div class="roundTop">
+          <span class="roundNo">Round ${r.round}</span>
+          <span class="roundSpread">${Math.min(...vals).toFixed(1)} – ${Math.max(...vals).toFixed(1)} · spread ${(Math.max(...vals) - Math.min(...vals)).toFixed(1)}</span>
+        </div>
+        <h3 class="roundHead">${esc(r.headline)}</h3>
+        ${r.body ? `<p class="roundBody">${esc(r.body)}</p>` : ""}
+        ${
+          confirmed.length
+            ? `<div class="findings">${confirmed
+                .map(
+                  (f) => `
+            <div class="finding">
+              <span class="fSeat">${esc(f.seat)}</span>
+              <p class="fProblem" style="margin:0">${esc(f.problem)}</p>
+              <span class="fCost">−${(f.cost || 0).toFixed(1)} · ${esc(f.element)}</span>
+              <p class="fDone" style="margin:0"><b>Done</b><span>${esc(f.done || f.fix)}</span></p>
+            </div>`,
+                )
+                .join("")}</div>`
+            : ""
+        }
+        ${
+          refuted.length
+            ? `<div class="refuted">
+                 <p class="refutedTitle">${refuted.length} refuted, and why</p>
+                 <ul class="refutedList">${refuted.map((x) => `<li><b>${esc(x.problem)}</b> — ${esc(x.why)}</li>`).join("")}</ul>
+               </div>`
+            : ""
+        }
+      </article>`;
+  })
+  .join("");
+
+/* ── frames ────────────────────────────────────────────────────── */
+el("frames").innerHTML = STATES.map(([key, name, what]) => {
+  const src = FRAMES[`locked-${key}`];
+  if (!src) return "";
+  if (key === "notebook") {
+    return `
+      <div class="frame">
+        <div class="frameTop"><span class="frameName">${name}</span><span class="frameWhat">${what}</span></div>
+        <span class="shot"><img src="${src}" alt="${name}" loading="lazy"></span>
+        <div class="pair" style="margin-top:18px">
+          <div><div class="frameTop"><span class="frameName">On a phone</span><span class="frameWhat">the capsule and the dock are one object; the desk stands down and capture moves into the dock</span></div>
+            <span class="shot"><img src="${FRAMES["locked-phone"]}" alt="Notes on a phone" loading="lazy"></span></div>
+          <div><div class="frameTop"><span class="frameName">On a tablet</span><span class="frameWhat">both planes survive</span></div>
+            <span class="shot"><img src="${FRAMES["locked-tablet"]}" alt="Notes on a tablet" loading="lazy"></span></div>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="frame">
+      <div class="frameTop"><span class="frameName">${name}</span><span class="frameWhat">${what}</span></div>
+      <span class="shot"><img src="${src}" alt="${name}" loading="lazy"></span>
+    </div>`;
+}).join("");
+
+el("rooms").innerHTML = ROOMS.map(([key, name, what]) => {
+  const src = FRAMES[`room-${key}`];
+  if (!src) return "";
+  return `
+    <div class="roomCard">
+      <div class="roomTop"><span class="roomName">${name}</span><span class="roomWhat">${what}</span></div>
+      <span class="shot"><img src="${src}" alt="${name}" loading="lazy"></span>
+    </div>`;
+}).join("");
+
+el("consoleLink").href = PANEL.consoleUrl || "#";
+el("compareLink").href = PANEL.compareUrl || "#";
+
+/* ── the measured seats ────────────────────────────────────────── */
+el("gates").innerHTML = (PANEL.gates || [])
+  .map(
+    (g) => `
+  <div class="gate">
+    <p class="gateName" style="margin:0">${esc(g.file)}</p>
+    <p class="gateScore">${esc(g.score)} <small>${esc(g.unit)}</small></p>
+    <p class="gateWhat">${esc(g.what)}</p>
+  </div>`,
+  )
+  .join("");
+el("badges").innerHTML = (PANEL.badges || []).map((b) => `<span class="fact"><b>${esc(b.n)}</b> ${esc(b.what)}</span>`).join("");
+</script>

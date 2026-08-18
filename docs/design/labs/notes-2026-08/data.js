@@ -50,6 +50,28 @@ window.NOTES = (function () {
     return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][d.getUTCDay()];
   }
 
+  /* What each note is ABOUT, as opposed to when it was written.
+   *
+   * This is the one honest extension to the fixture and it is labelled as
+   * one wherever it appears. The subjects are not invented: every one of
+   * them is named in the body of the notes it groups, and the two that are
+   * dated come from the review fixture's own project and its wedding date.
+   *
+   * It exists because a panel seat put the direction's real failure
+   * plainly: grouped only by the day they were captured, these notes could
+   * be swapped for engineering standups and not one pixel of the design
+   * would change. A venue's notes are ABOUT something — a Saturday, a
+   * couple, the house, a course — and the product that holds them should
+   * know that or admit it does not.
+   */
+  const SUBJECTS = {
+    "mara-finn": { label: "Mara & Finn", when: "Saturday 18 July", days: 2, kind: "event" },
+    house: { label: "The house", when: null, days: null, kind: "standing" },
+    studio: { label: "The studio", when: null, days: null, kind: "standing" },
+    course: { label: "The course", when: "Thursday 16 July", days: 0, kind: "event" },
+    enquiries: { label: "Enquiries", when: null, days: null, kind: "standing" },
+  };
+
   /* The fixture, in the fixture's own order. `sent` means a task exists for
      this note; `reviewed` means the decision has already been made and the
      note is simply kept. Neither is missing by accident: a note with both
@@ -57,6 +79,7 @@ window.NOTES = (function () {
   const SEED = [
     {
       id: "n01",
+      about: "mara-finn",
       body: "Saturday wedding, Mara & Finn. Ceremony 2pm in the orchard, drinks on the terrace if it stays dry. Confirm marquee sides with the hire company by Thursday.",
       ago: 35 * MIN,
       task: "Confirm marquee sides with hire company before Thursday",
@@ -65,6 +88,7 @@ window.NOTES = (function () {
     },
     {
       id: "n02",
+      about: "mara-finn",
       body: "Mara & Finn’s menu tasting at The Orchard is booked for 1 August. Confirm the final dietary list before the venue team locks the service notes.",
       ago: 2 * HOUR,
       task: "Menu tasting with Mara & Finn",
@@ -73,23 +97,28 @@ window.NOTES = (function () {
     },
     {
       id: "n03",
+      pick: "Ask the venue whether the ballroom can be accessed from 8am on the Saturday.",
+      about: "mara-finn",
       body: "Ask the venue whether the ballroom can be accessed from 8am on the Saturday. If not we lose the whole morning setup and the florist has to come back twice.",
       ago: 3 * HOUR,
       source: "voice",
     },
     {
       id: "n04",
+      about: "studio",
       body: "Idea for the studio newsletter: short piece on “what a calm Saturday actually looks like behind the bar”. People love the backstage angle.",
       ago: 5 * HOUR,
     },
     {
       id: "n05",
+      about: "studio",
       body: "Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand a job to someone without chasing it, and something that works on a phone at the back of a classroom.",
       ago: 6 * HOUR,
       source: "photo",
     },
     {
       id: "n06",
+      about: "course",
       body: "Course reading for Thursday: chapters 4–5 on cash-flow forecasting. Bring the worked example, the lecturer always opens with it.",
       ago: 9 * HOUR,
       task: "Read cash-flow chapters 4–5 before Thursday class",
@@ -97,6 +126,7 @@ window.NOTES = (function () {
     },
     {
       id: "n07",
+      about: "studio",
       body: "Student launch pricing needs one simple annual option. Two prices and a discount code is already too many decisions for someone signing up between lectures.",
       ago: 1 * DAY + 1 * HOUR,
       source: "voice",
@@ -104,11 +134,13 @@ window.NOTES = (function () {
     },
     {
       id: "n08",
+      about: "enquiries",
       body: "Walk-in couple this morning, June 2027, ~80 guests, budget-conscious but lovely. Sent them the midweek rate. Follow up Friday if no reply.",
       ago: 1 * DAY + 3 * HOUR,
     },
     {
       id: "n09",
+      about: "house",
       body: "Bar restock: tonic running low, order two extra cases before the weekend. Also the good olives, last delivery was short.",
       ago: 1 * DAY + 6 * HOUR,
       task: "Order 2 cases tonic + olives before weekend",
@@ -117,29 +149,36 @@ window.NOTES = (function () {
     },
     {
       id: "n10",
+      about: "enquiries",
       body: "Photographer recommendation from the Hendersons: Aoife @ northlight. Natural light, doesn’t herd people. Keep her card for the recommended-suppliers list.",
       ago: 2 * DAY,
       reviewed: true,
     },
     {
       id: "n11",
+      pick: "Reprint before the open day",
+      about: "house",
       body: "Small thing but it matters: the welcome sign by the gate is faded. Reprint before the open day, first impression is the whole car-park walk.",
       ago: 2 * DAY + 4 * HOUR,
     },
     {
       id: "n12",
+      about: "studio",
       body: "Quote from today that I want to keep: “we don’t want a big production, we just want it to feel like us.” That’s the whole pitch, really.",
       ago: 3 * DAY,
       reviewed: true,
     },
     {
       id: "n13",
+      about: "studio",
       body: "Follow up with the motion designer about the venue film. She needs the final music choice before she can lock the edit, and the cut is due the week after next.",
       ago: 3 * DAY + 5 * HOUR,
       source: "email",
     },
     {
       id: "n14",
+      pick: "Switch on before guests arrive, not when.",
+      about: "house",
       body: "Heating: orchard room takes ~40 min to warm in October. Switch on before guests arrive, not when. Note for the winter brochure couples.",
       ago: 4 * DAY,
     },
@@ -157,6 +196,8 @@ window.NOTES = (function () {
   const CROSSED = [
     {
       id: "s1",
+      about: "mara-finn",
+      sent: true,
       body: "Mara asked about a late checkout for the bridal suite, Sunday 11am instead of 9. Said yes in principle, just needs to clear housekeeping.",
       ago: 1 * DAY + 8 * HOUR,
       source: "voice",
@@ -166,6 +207,8 @@ window.NOTES = (function () {
     },
     {
       id: "s2",
+      about: "mara-finn",
+      sent: true,
       body: "Linen supplier rang, the order now ships Tuesday, not Friday. Fine for Saturday, but tight if anything slips.",
       ago: 2 * DAY + 5 * HOUR,
       task: "Chase linen order, now shipping Tuesday",
@@ -174,6 +217,8 @@ window.NOTES = (function () {
     },
     {
       id: "s3",
+      about: "mara-finn",
+      sent: true,
       body: "Registrar confirmed she can do 2pm but wants the final paperwork a fortnight out. Don’t leave it late this time.",
       ago: 4 * DAY,
       task: "Send registrar paperwork two weeks before the date",
@@ -183,6 +228,7 @@ window.NOTES = (function () {
   ];
 
   function build(seed) {
+    const about = SUBJECTS[seed.about] || SUBJECTS.house;
     const title = seed.body.split(/(?<=[.?!”])\s/)[0] || seed.body;
     const rest = seed.body.slice(title.length).trim();
     return {
@@ -204,12 +250,19 @@ window.NOTES = (function () {
       crossedWhen: seed.crossedAgo ? ago(seed.crossedAgo) : null,
       lane: seed.lane || null,
       words: seed.body.trim().split(/\s+/).length,
+      /* The words a person highlighted in their own note. The contract
+         underneath the real product sends exactly this and nothing else,
+         so the lab carries it as a field rather than inventing one at
+         render time. */
+      pick: seed.pick || null,
+      about,
+      aboutKey: seed.about || "house",
     };
   }
 
   const notes = SEED.map(build);
   const crossed = CROSSED.map(build);
-  const long = build({ id: "long", body: LONG_BODY, ago: 18 * MIN, task: "Write the wet-weather room-turn checklist and share it with the Saturday team" });
+  const long = build({ id: "long", about: "mara-finn", body: LONG_BODY, ago: 18 * MIN, task: "Write the wet-weather room-turn checklist and share it with the Saturday team" });
 
   /* Peak season. The shipped fixture holds fourteen notes and cannot
      exercise a full shelf, so the product's own dense fixture repeats them
@@ -239,6 +292,12 @@ window.NOTES = (function () {
     dense,
     crossed,
     pending,
+
+    subjects: SUBJECTS,
+    /* The venue's own next date, from the review fixture's project. The
+       head states it because a notebook that does not know what is coming
+       is a notebook that could belong to anyone. */
+    next: { label: "Mara & Finn", when: "Saturday 18 July", days: 2 },
 
     counts: {
       notebook: notes.length,

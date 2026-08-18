@@ -10,7 +10,14 @@
   const N = window.NOTES;
   const I = window.ICON;
   const params = new URLSearchParams(location.search);
+  /* Text going into markup, and text going into an ATTRIBUTE, are two
+     different jobs. esc() alone left quotes intact, so a note reading
+     Ask the band about the "first dance" song list truncated its own
+     aria-label and its own trim source at the first quote — the row lost
+     two thirds of a person's sentence and said nothing about it. */
   const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  const attr = (s) =>
+    String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
   /* ── the decision layer ──────────────────────────────────────────
      The three finished rooms are three preset combinations of five
@@ -45,9 +52,14 @@
   let undone = null;      /* the last reversible act                       */
   let undoTimer = null;
   let settling = null;    /* a sheet on its way to the pile                */
-  let confirmDelete = null;
   let refocus = null;     /* what to put focus back on after a repaint     */
-  let held = false;       /* the offline note, held on this device         */
+  let group = "day";      /* how the index is grouped: day | about         */
+  let peeling = null;     /* the note a task is being written from         */
+  let taskWording = "";   /* the words that will cross                     */
+  let sentTask = null;    /* the receipt, once Tasks has it                */
+  let arriving = null;    /* the id of the note being staged into the pile */
+  let pieces = N.speech.separated.slice(); /* the read-back, as edited      */
+  let seamTouched = false; /* the seam has been entered at least once       */
 
   const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl";
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -149,25 +161,39 @@
       words: body.trim().split(/\s+/).length,
     };
     draft = "";
-    const put = () => {
-      work().unshift(note);
-    };
-    put();
+    work().unshift(note);
     say(`Kept. ${counts().total} notes, ${counts().pending} waiting on a decision.`);
-    offerUndo("The note went back to the sheet.", () => {
+    /* The strip says what just happened, in the present, and the button
+       says what pressing it will do. Written as the post-undo sentence and
+       shown before the undo, it told the operator their note had already
+       gone back to the sheet while it was sitting safely on the pile. */
+    offerUndo("Kept on the pile.", () => {
       WORK = work().filter((n) => n !== note);
       draft = body;
     });
+    /* The capture field is where the next thought goes, so that is where
+       the caret goes. Without this, keeping by mouse dropped focus to the
+       body and the next thing typed went nowhere. */
+    refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
     if (reduced) {
       paint();
       return;
     }
+    /* The arrival is staged: the words leave the sheet and land as the
+       newest row, and the row it became is marked while it settles. This
+       is the moment the whole direction exists for, and it was a hard cut
+       with nothing in between. */
     settling = note.id;
+    arriving = note.id;
     paint();
     setTimeout(() => {
       settling = null;
       paint();
-    }, 220);
+      setTimeout(() => {
+        arriving = null;
+        paint();
+      }, 420);
+    }, 200);
   }
 
   function decide(kind) {
@@ -199,6 +225,61 @@
       settling = null;
       paint();
     }, 220);
+  }
+
+  /* ── the seam ────────────────────────────────────────────────────
+     The sealed one-way edge is the product's second promise, and it was a
+     photograph: three controls that took a click and answered with
+     nothing. It is a real sequence now — pick the words, edit the wording,
+     choose where it goes, send, and get a receipt — and the note it comes
+     from is never covered at any point in it. */
+  function startPeel(id) {
+    const note = work().find((n) => n.id === id) || N.notes[13];
+    peeling = note.id;
+    openId = note.id;
+    sentTask = null;
+    /* Seeded from the words the person picked, not from the whole note.
+       Only these ever cross, which is the promise the panel is here to
+       check. */
+    taskWording = note.task || note.pick || note.title.replace(/[.]$/, "");
+    say(`${N.copy.sourceLabel}. ${N.copy.payload}`);
+    refocus = { kind: "field", sel: ".peelField" };
+    paint();
+  }
+  function cancelPeel() {
+    if (!peeling) return;
+    peeling = null;
+    sentTask = null;
+    say("Nothing crossed. Your note is unchanged.");
+    refocus = { kind: "act", sel: '[data-act="peel"]' };
+    paint();
+  }
+  function sendPeel() {
+    if (!peeling || !taskWording.trim()) return;
+    const note = work().find((n) => n.id === peeling);
+    const wording = taskWording.trim();
+    const before = note ? { sent: note.sent, task: note.task, pending: note.pending } : null;
+    if (note) {
+      note.sent = true;
+      note.task = wording;
+      note.pending = false;
+    }
+    sentTask = { wording, project: N.projects[0] };
+    say(`${N.copy.sentReceipt} ${N.copy.stayedPut}`);
+    offerUndo("Sent to Tasks.", () => {
+      if (note && before) Object.assign(note, before);
+      sentTask = null;
+      peeling = note ? note.id : null;
+    });
+    refocus = { kind: "act", sel: '[data-act="open-task"]' };
+    paint();
+  }
+
+  function openSearch() {
+    state = "search";
+    refocus = { kind: "field", sel: "#q" };
+    say("Search everything you have written.");
+    paint();
   }
 
   function openNote(id) {
@@ -267,6 +348,11 @@
         head.pop();
         text.innerHTML = `<b>${hl(head.join(" "))}…</b>`;
       }
+      /* Below four words there is nothing left to give back, so the row
+         admits it with an ellipsis rather than letting the browser slice a
+         letter in half against the status pill. */
+      if (text.scrollWidth > text.clientWidth) text.dataset.clipped = "";
+      else delete text.dataset.clipped;
     }
   }
 
@@ -317,20 +403,40 @@
   }
 
   function dock() {
+    const live = Boolean(draft.trim());
+    /* On a phone the dock IS the capture instrument, so the dock has to
+       carry the act of keeping. Without it the product's whole promise —
+       a thought is safe in three seconds — was unreachable by touch: the
+       only way to commit a note was a keyboard chord on a device with no
+       keyboard. */
+    const commit = live
+      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Put it on the pile">${I.check}</button>`
+      : "";
+    /* On a wide screen the capture field is on the desk's paper, and
+       reading a note replaces it. So the dock carries the way back to
+       writing, which is otherwise off the screen entirely. */
+    const backToWriting =
+      !phone.matches && openId
+        ? `<button class="dockGlyph" type="button" data-act="write" aria-label="Write a note">${I.typed}</button>
+           <span class="dockRule" aria-hidden="true"></span>`
+        : "";
     return `
       <div class="dockWrap">
-        <div class="dock">
+        <div class="dock"${live ? " data-live" : ""}>
           ${
             phone.matches
-              ? `<textarea class="phoneField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
+              ? `<textarea class="phoneField" rows="2" aria-label="Write a note" placeholder="${attr(N.copy.placeholder)}">${esc(draft)}</textarea>
+                 ${live ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span>` : ""}
+                 ${commit}
+                 <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="search" aria-label="Search notebook">${I.search}</button>`
-              : `<button class="dockField" type="button" data-act="search" aria-label="Search notebook">${I.search}<span>Search everything you wrote</span><kbd>/</kbd></button>`
+              : `${backToWriting}<button class="dockField" type="button" data-act="search" aria-label="Search notebook">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>`
           }
           <span class="dockRule" aria-hidden="true"></span>
-          <button class="dockGlyph" type="button" data-act="voice" aria-label="${esc(N.copy.voiceStart)}">${I.mic}</button>
+          <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
           <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
           <span class="dockRule" aria-hidden="true"></span>
-          <button class="dockAvatar" type="button" aria-label="${esc(N.operator.role)}. Account and settings">${N.operator.initials}</button>
+          <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
         </div>
       </div>`;
   }
@@ -348,11 +454,16 @@
   function behind(n) {
     return Array.from({ length: n }, (_, i) => `<div class="behind" data-n="${n - i}" aria-hidden="true"></div>`).join("");
   }
+  /* The sheets behind stretch to the height of their own container, so
+     the container has to be the paper and nothing else. Given the whole
+     pile they stretched behind the peel as well, and two overlapping
+     white rectangles with no edge between them is not depth, it is mud. */
   function deskOf(inner, opts) {
     const o = opts || {};
+    const n = o.behind === undefined ? 2 : o.behind;
     return `
-      <section class="desk" aria-label="${esc(o.label || "Write a note")}">
-        <div class="pile">${behind(o.behind === undefined ? 2 : o.behind)}${inner}</div>
+      <section class="desk" aria-label="${attr(o.label || "Write a note")}">
+        <div class="pile"><div class="paperStack">${behind(n)}${inner}</div>${o.under || ""}</div>
       </section>`;
   }
 
@@ -371,7 +482,7 @@
           <span class="spacer"></span>
           ${
             draft.trim()
-              ? `<span class="topMeta tab">${draft.length} / 4000</span>
+              ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
                  <button class="act" data-ink type="button" data-act="keep">${I.check}Put it on the pile<kbd>${MOD}+Enter</kbd></button>`
               : `<span class="topMeta">Nobody else can read this</span>`
           }
@@ -380,13 +491,71 @@
     );
   }
 
+  function peelPanel(note) {
+    if (sentTask) {
+      return `
+        <div class="peel" data-receipt>
+          <div class="peelTop">
+            <span class="peelMark" aria-hidden="true">${I.check}</span>
+            <span class="peelLabel">${esc(N.copy.confirmed)}</span>
+          </div>
+          <p class="peelSent">${esc(sentTask.wording)}</p>
+          <p class="peelWhy">${esc(N.copy.stayedPut)}</p>
+          <div class="peelRow">
+            <button class="act" type="button" data-act="open-task">${I.tasks}${esc(N.copy.open)}</button>
+            <span class="spacer"></span>
+            <button class="act" data-quiet type="button" data-act="close-peel">Done</button>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="peel">
+        <div class="peelTop">
+          <span class="peelMark" aria-hidden="true">${I.tasks}</span>
+          <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
+        </div>
+        <textarea class="peelField" rows="1" aria-labelledby="peel-label">${esc(taskWording)}</textarea>
+        <div class="peelRow">
+          <button class="picker" type="button" aria-label="${attr(N.copy.destinationLabel)}: ${attr(N.projects[0])}"><b>To</b>${esc(N.projects[0])}${I.chevron}</button>
+          <span class="spacer"></span>
+          <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
+          <button class="act" data-primary type="button" data-act="send">${I.send}${esc(N.copy.send)}</button>
+        </div>
+        <p class="peelWhy">${esc(N.copy.payload)}</p>
+      </div>`;
+  }
+
   function readSheet(note) {
     const src = N.sources[note.source];
+    const isPeeling = peeling === note.id;
+    /* The words that will cross are marked inside the person's own
+       sentence, so what crosses can be checked against where it came
+       from without either of them being covered. */
+    const picked = note.pick && note.body.includes(note.pick) ? note.pick : null;
+    const bodyHtml =
+      isPeeling && picked
+        ? esc(note.body).replace(esc(picked), `<span class="pick">${esc(picked)}</span>`)
+        : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
+    if (isPeeling) {
+      return deskOf(
+        `<div class="top">
+          <p class="readSrc">
+            ${I[src.icon]}<span>${src.label}</span>
+            <span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>
+            <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}</span>
+          </p>
+          <p class="readBody">${bodyHtml}</p>
+          <p class="stays">${I.lock}${esc(N.copy.stayedPut)}</p>
+        </div>`,
+        { behind: 1, label: `Turning a note into a task: ${note.title}`, under: peelPanel(note) },
+      );
+    }
     return deskOf(
       `<div class="top">
         <p class="readSrc">
           ${I[src.icon]}<span>${src.label}</span>
           <span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>
+          <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>
           ${note.edited ? '<span class="sep" aria-hidden="true"></span><span>edited</span>' : ""}
           ${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks as <a href="#tasks">${esc(note.task || "a task")}</a></span>` : ""}
         </p>
@@ -414,43 +583,124 @@
     return safe.replace(new RegExp(`(${needle})`, "gi"), "<mark>$1</mark>");
   }
 
-  function idxRow(note) {
+  function idxRow(note, opts) {
+    const o = opts || {};
     const src = N.sources[note.source];
-    const tag = note.sent
-      ? `<span class="idxTag">In Tasks</span>`
-      : note.pending
-        ? `<span class="idxTag">To decide</span>`
-        : `<span class="idxTag" data-quiet>Kept</span>`;
-    const name = `${note.title} ${note.rest || ""}`.trim();
+    /* The ledger of what has crossed shows the WORDS THAT CROSSED, never
+       the private note they came from. The whole promise of this product
+       is that the note stayed here; a ledger that reprints it is the one
+       surface that must not. */
+    const crossed = o.mode === "crossed";
+    const lede = crossed ? note.task : note.title;
+    const rest = crossed ? "" : note.rest;
+    const when = crossed ? note.crossedWhen || note.when : note.when;
+    const name = crossed
+      ? `${note.task}. In Tasks, ${note.lane}. Crossed ${when}. The note it came from stayed in Notes.`
+      : `${note.title} ${note.rest || ""}`.trim() +
+        `. ${src.label}. ${note.when}.${note.pending ? " Waiting on a decision." : note.sent ? " In Tasks." : " Kept."}`;
+    const tag = crossed
+      ? `<span class="idxTag">${esc(note.lane)}</span>`
+      : note.sent
+        ? `<span class="idxTag">In Tasks</span>`
+        : note.pending
+          ? `<span class="idxTag">To decide</span>`
+          : `<span class="idxTag" data-quiet>Kept</span>`;
     const cursor = note.id === cursorId ? " data-cursor" : "";
     const open = note.id === openId ? " data-open" : "";
+    const arrivingNow = note.id === arriving ? " data-arriving" : "";
     return `
-      <button class="idxRow" type="button" data-id="${note.id}"${cursor}${open}
+      <button class="idxRow" type="button" data-id="${attr(note.id)}"${cursor}${open}${arrivingNow}
         tabindex="${note.id === cursorId ? "0" : "-1"}"
-        aria-label="${esc(name)}. ${src.label}. ${esc(note.when)}.${note.pending ? " Waiting on a decision." : note.sent ? " In Tasks." : " Kept."}">
-        <span class="idxMark" aria-hidden="true">${I[src.icon]}${note.pending ? "<i></i>" : ""}</span>
-        <span class="idxText" data-full="${esc(name)}" data-lede="${esc(note.title)}"><b>${hl(note.title)}</b>${note.rest ? ` <span>${hl(note.rest)}</span>` : ""}</span>
+        aria-label="${attr(name)}">
+        <span class="idxMark" aria-hidden="true">${crossed ? I.tasks : I[src.icon]}${!crossed && note.pending ? "<i></i>" : ""}</span>
+        <span class="idxText" data-full="${attr(crossed ? note.task : `${note.title} ${note.rest || ""}`.trim())}" data-lede="${attr(lede)}"><b>${hl(lede)}</b>${rest ? ` <span>${hl(rest)}</span>` : ""}${crossed ? '<span class="idxFrom">from a note that stayed here</span>' : ""}</span>
         ${tag}
-        <span class="idxWhen tab">${esc(note.when)}</span>
+        <span class="idxWhen tab">${esc(when)}</span>
       </button>`;
+  }
+
+  /* The index can be read two ways, and both are true.
+     By day is when you wrote it. By subject is what it is about — which
+     Saturday, which couple, the house, the course. A notebook grouped only
+     by the day it was captured is a notebook that would look identical if
+     it belonged to anyone doing anything; this one knows that these notes
+     are about a wedding on Saturday, and says so. */
+  function groupsOf(notes) {
+    if (group === "about") {
+      const order = [];
+      const bag = new Map();
+      for (const note of notes) {
+        if (!bag.has(note.aboutKey)) {
+          bag.set(note.aboutKey, []);
+          order.push(note.aboutKey);
+        }
+        bag.get(note.aboutKey).push(note);
+      }
+      /* Dated subjects first, soonest first, then the standing ones. */
+      order.sort((a, b) => {
+        const A = N.subjects[a];
+        const B = N.subjects[b];
+        if (A.days === null && B.days === null) return 0;
+        if (A.days === null) return 1;
+        if (B.days === null) return -1;
+        return A.days - B.days;
+      });
+      return order.map((key) => {
+        const about = N.subjects[key];
+        return {
+          label: about.label,
+          note:
+            about.days === null
+              ? `${bag.get(key).length} notes`
+              : about.days === 0
+                ? `${about.when} · today`
+                : `${about.when} · in ${about.days} day${about.days === 1 ? "" : "s"}`,
+          rows: bag.get(key),
+        };
+      });
+    }
+    const order = [];
+    const bag = new Map();
+    for (const note of notes) {
+      if (!bag.has(note.day)) {
+        bag.set(note.day, []);
+        order.push(note.day);
+      }
+      bag.get(note.day).push(note);
+    }
+    return order.map((day) => ({ label: day, note: "", rows: bag.get(day) }));
+  }
+
+  function groupControl() {
+    return `
+      <span class="groupBy" role="group" aria-label="How the pile is grouped">
+        <button class="groupBtn" type="button" data-act="group-day"${group === "day" ? " data-on" : ""} aria-pressed="${group === "day"}">When</button>
+        <button class="groupBtn" type="button" data-act="group-about"${group === "about" ? " data-on" : ""} aria-pressed="${group === "about"}">What it is about</button>
+      </span>`;
   }
 
   function indexOf(notes, opts) {
     const o = opts || {};
-    let day = null;
     const rows = [];
-    for (const note of notes) {
-      if (!o.noDays && note.day !== day) {
-        day = note.day;
-        rows.push(`<p class="idxDay">${esc(day)}</p>`);
+    if (o.noDays) {
+      for (const note of notes) rows.push(idxRow(note, o));
+    } else {
+      for (const g of groupsOf(notes)) {
+        rows.push(
+          `<p class="idxDay">${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}</p>`,
+        );
+        for (const note of g.rows) rows.push(idxRow(note, o));
       }
-      rows.push(idxRow(note));
     }
     if (!rows.length) rows.push(o.empty || "");
     return `
       <div class="indexWrap">
-        <div class="indexHead"><span>${esc(o.title || "The pile")}</span><span class="cnt">${esc(o.count || `${notes.length} notes`)}</span></div>
-        <div class="index" id="index" role="list" aria-label="${esc(o.title || "The pile")}">${rows.join("")}</div>
+        <div class="indexHead">
+          <span>${esc(o.title || "The pile")}</span>
+          <span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>
+          ${o.group === false ? "" : groupControl()}
+        </div>
+        <div class="index" id="index" role="list" aria-label="${attr(o.title || "The pile")}">${rows.join("")}</div>
       </div>`;
   }
 
@@ -539,6 +789,7 @@
                 <span class="spacer"></span>
                 <button class="act" data-quiet type="button" data-act="d-later">Decide later</button>
                 <button class="act" data-quiet type="button" data-act="d-delete">${I.trash}Delete</button>
+                <button class="act" data-quiet type="button" data-act="notebook">Back to the pile<kbd>Esc</kbd></button>
               </div>
             </article>
             </div>
@@ -587,12 +838,12 @@
       `<div class="top">
         <p class="saidWas"><b>What you said, once</b>${esc(N.speech.transcript)}</p>
         <div class="pieces">
-          ${N.speech.separated
+          ${pieces
             .map(
               (p, i) => `
             <div class="piece">
-              <textarea class="pieceField" rows="1" aria-label="Note ${i + 1} of ${N.speech.separated.length}">${esc(p)}</textarea>
-              <button class="drop" type="button" aria-label="Drop note ${i + 1}">${I.close}</button>
+              <textarea class="pieceField" rows="1" data-i="${i}" aria-label="Note ${i + 1} of ${pieces.length}">${esc(p)}</textarea>
+              <button class="drop" type="button" data-act="drop-piece" data-i="${i}" aria-label="Drop note ${i + 1}">${I.close}</button>
             </div>`,
             )
             .join("")}
@@ -600,9 +851,9 @@
         <div class="topFoot">
           <button class="verb" type="button">${I.plus}Add another</button>
           <span class="spacer"></span>
-          <span class="topMeta">Two notes, not one</span>
-          <button class="act" data-quiet type="button">Discard</button>
-          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Put both on the pile</button>
+          <span class="topMeta">${pieces.length} note${pieces.length === 1 ? "" : "s"}, not one</span>
+          <button class="act" data-quiet type="button" data-act="discard-speech">Discard</button>
+          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Put ${pieces.length === 1 ? "it" : "both"} on the pile</button>
         </div>
       </div>`,
       { behind: 1, label: "What came back" },
@@ -612,43 +863,56 @@
   });
 
   STATES.seam = () => {
-    const note = N.notes[13];
-    const marked = esc(note.body).replace(
-      "Switch on before guests arrive, not when.",
-      '<span class="pick">Switch on before guests arrive, not when.</span>',
-    );
+    const note = work().find((n) => n.id === peeling) || work()[13] || N.notes[13];
+    /* Only on the way in. Re-peeling whenever `peeling` is null made
+       cancelling the seam a no-op: Escape cleared it and the next paint
+       put it straight back. */
+    if (!peeling && !seamTouched) {
+      peeling = note.id;
+      seamTouched = true;
+    }
+    if (!taskWording) taskWording = "Switch the orchard room heating on 40 minutes before guests arrive";
     return {
-      desk: `
-        <section class="desk" aria-label="Turning a note into a task">
-          <div class="pile">
-            <div class="top">
-              <p class="readSrc">${I.typed}<span>Written</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span></p>
-              <p class="readBody">${marked}</p>
-              <p class="stays">${I.lock}${esc(N.copy.stayedPut)}</p>
-            </div>
-            <div class="peel">
-              <div class="peelTop">
-                <span class="peelMark" aria-hidden="true">${I.tasks}</span>
-                <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
-              </div>
-              <textarea class="peelField" rows="1" aria-labelledby="peel-label">Switch the orchard room heating on 40 minutes before guests arrive</textarea>
-              <div class="peelRow">
-                <button class="picker" type="button" aria-label="${esc(N.copy.destinationLabel)}: ${esc(N.projects[0])}"><b>To</b>${esc(N.projects[0])}${I.chevron}</button>
-                <span class="spacer"></span>
-                <button class="act" data-quiet type="button" data-act="close">${esc(N.copy.cancel)}</button>
-                <button class="act" data-primary type="button" data-act="send">${I.send}${esc(N.copy.send)}</button>
-              </div>
-              <p class="peelWhy">${esc(N.copy.payload)}</p>
-            </div>
-          </div>
-        </section>`,
-      body: indexOf(N.crossed, { title: "What has crossed into Tasks", count: `${N.counts.sent} so far`, noDays: true }),
+      desk: readSheet(note),
+      body: indexOf(N.crossed, {
+        title: "What has crossed into Tasks",
+        count: `${N.counts.sent} so far, and every note stayed here`,
+        noDays: true,
+        mode: "crossed",
+        group: false,
+      }),
       dock: true,
     };
   };
 
+  /* The nearest thing the notebook actually has, computed, not asserted.
+     The panel found the product stating with full confidence that the
+     nearest note to the nonsense query "drahcro" was one about the hire
+     company — a hard-coded sentence, in a product whose whole claim is
+     that it is honest about what it holds. */
+  function nearest(q) {
+    const tokens = q.toLowerCase().split(/[^a-z0-9]+/i).filter((t) => t.length >= 3);
+    if (!tokens.length) return null;
+    let best = null;
+    for (const note of work()) {
+      const body = note.body.toLowerCase();
+      let score = 0;
+      for (const token of tokens) {
+        for (let len = token.length; len >= 3; len -= 1) {
+          if (body.includes(token.slice(0, len))) {
+            score += len / token.length;
+            break;
+          }
+        }
+      }
+      if (score > 0 && (!best || score > best.score)) best = { note, score };
+    }
+    return best ? best.note : null;
+  }
+
   STATES.search = () => {
     const rows = visible();
+    const near = rows.length ? null : nearest(query);
     return {
       desk: `
         <div class="searchTop">
@@ -663,12 +927,16 @@
         count: query ? `${rows.length} of ${counts().total} notes have “${query}” in them` : `${counts().total} notes`,
         noDays: true,
         empty: `
-          <div style="padding:26px 0 0">
+          <div class="noHits">
             <h2 class="emptyTitle">No note says “${esc(query)}”.</h2>
-            <p class="emptyBody">The closest is one about the hire company, from Thursday.</p>
+            <p class="emptyBody">${
+              near
+                ? `The closest is ${esc(near.about.label)}, from ${esc(near.when)}.`
+                : "Nothing in the notebook is close to it either."
+            }</p>
             <div class="emptyMove">
-              <button class="act" data-ink type="button" data-act="nearest">${I.search}Open that one</button>
-              <button class="act" data-quiet type="button" data-act="clear-search">Clear the search</button>
+              ${near ? `<button class="act" data-ink type="button" data-act="nearest" data-id="${attr(near.id)}">${I.arrowRight}Open that one</button>` : ""}
+              <button class="act" ${near ? 'data-quiet' : 'data-ink'} type="button" data-act="clear-search">Back to the pile</button>
             </div>
           </div>`,
       }),
@@ -836,8 +1104,22 @@
     if (indexAfter) indexAfter.scrollTop = scroll;
     trimRows();
 
+    /* Taking the whole floor to ink has to take the keyboard with it. The
+       overlay paints after the sheet, so without this the way out of
+       dictation was seventeen tab stops behind a notebook nobody can see,
+       and a screen-reader user was reading a pile of notes while the
+       microphone was live. */
+    const over = mount.querySelector(".dark");
+    for (const behindIt of mount.querySelectorAll(".sheet, .rail")) {
+      if (over) behindIt.setAttribute("inert", "");
+      else behindIt.removeAttribute("inert");
+    }
+
     if (refocus) {
-      if (refocus.kind === "row") {
+      if (refocus.kind === "act") {
+        const target = mount.querySelector(refocus.sel);
+        if (target) target.focus({ preventScroll: true });
+      } else if (refocus.kind === "row") {
         const row = mount.querySelector(`.idxRow[data-id="${CSS.escape(refocus.id)}"]`);
         if (row) {
           row.focus({ preventScroll: true });
@@ -863,6 +1145,7 @@
       }
     }
     document.documentElement.setAttribute("data-state", state);
+    root.setAttribute("data-group", group);
   }
 
   /* ── events ──────────────────────────────────────────────────── */
@@ -870,24 +1153,44 @@
     const field = e.target.closest(".topField, .phoneField");
     if (field) {
       draft = field.value;
-      /* The other field has to agree without stealing the caret from the
-         one being typed in. */
-      for (const twin of mount.querySelectorAll(".topField, .phoneField")) {
-        if (twin !== field && twin.value !== draft) twin.value = draft;
+      /* The counter is written straight into its own node. Repainting on
+         every keystroke to update it would be the same defect the search
+         field had: a repaint costs the caret. Repainting only when the
+         sheet crosses from empty to live left the count frozen at whatever
+         it was when the first character landed. */
+      const live = Boolean(draft.trim());
+      const wasLive = mount.querySelector("[data-live]") !== null;
+      if (wasLive !== live) {
+        paint();
+        const again = mount.querySelector(field.className.includes("phoneField") ? ".phoneField" : ".topField");
+        if (again) {
+          again.focus({ preventScroll: true });
+          again.setSelectionRange(field.selectionStart, field.selectionEnd);
+        }
+        return;
       }
-      const foot = mount.querySelector(".topFoot");
-      const top = mount.querySelector(".top");
-      const wasLive = top && top.hasAttribute("data-live");
-      const isLive = Boolean(draft.trim());
-      if (foot && wasLive !== isLive) paint();
+      for (const node of mount.querySelectorAll(".topMeta[data-count], .dockCount")) {
+        node.textContent = node.classList.contains("dockCount") ? String(draft.length) : `${draft.length} / 4000`;
+      }
       return;
     }
     const q = e.target.closest("#q");
     if (q) {
+      /* No refocus here. Setting one focused the field without restoring
+         the caret, which put every new character at index 0 — typing
+         "marquee" produced "eeuqram". The caret path in paint() already
+         re-finds this field by id and restores the range. */
       query = q.value;
-      refocus = { kind: "field", sel: "#q" };
       paint();
+      return;
     }
+    const piece = e.target.closest(".pieceField");
+    if (piece) {
+      pieces[Number(piece.dataset.i)] = piece.value;
+      return;
+    }
+    const wording = e.target.closest(".peelField");
+    if (wording) taskWording = wording.value;
   });
 
   mount.addEventListener("click", (e) => {
@@ -899,9 +1202,65 @@
     const act = e.target.closest("[data-act]");
     if (!act) return;
     const a = act.dataset.act;
+    if (a === "group-day" || a === "group-about") {
+      group = a === "group-day" ? "day" : "about";
+      say(group === "about" ? "Grouped by what each note is about." : "Grouped by when each note was written.");
+      refocus = { kind: "act", sel: `[data-act="${a}"]` };
+      paint();
+      return;
+    }
+    if (a === "peel") { startPeel(openId); return; }
+    if (a === "cancel-peel") { cancelPeel(); return; }
+    if (a === "send") { sendPeel(); return; }
+    if (a === "close-peel" || a === "open-task") {
+      peeling = null;
+      sentTask = null;
+      say(a === "open-task" ? "Opening Tasks. Your note stayed here." : "Done. Your note stayed here.");
+      refocus = { kind: "read" };
+      paint();
+      return;
+    }
+    if (a === "write") {
+      openId = null;
+      peeling = null;
+      refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
+      say("Ready to write.");
+      paint();
+      return;
+    }
+    if (a === "nearest") {
+      query = "";
+      state = "notebook";
+      openNote(act.dataset.id);
+      return;
+    }
+    if (a === "drop-piece") {
+      const i = Number(act.dataset.i);
+      const dropped = pieces[i];
+      pieces = pieces.filter((_, n) => n !== i);
+      say(`Dropped. ${pieces.length} left.`);
+      offerUndo("Dropped one of them.", () => {
+        pieces = [...pieces.slice(0, i), dropped, ...pieces.slice(i)];
+      });
+      paint();
+      return;
+    }
+    if (a === "discard-speech") {
+      state = "notebook";
+      pieces = N.speech.separated.slice();
+      say("Discarded. Nothing was kept.");
+      paint();
+      return;
+    }
+    if (a === "timeline" || a === "more" || a === "privacy" || a === "options" || a === "photo" || a === "retry" || a === "destroy") {
+      /* Named so the panel can see they are deliberately inert in the lab
+         rather than dead: each belongs to a surface outside this master. */
+      say("Not part of this exploration.");
+      return;
+    }
     if (a === "keep" || a === "first") {
       if (a === "first") {
-        refocus = { kind: "field", sel: ".topField" };
+        refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
         paint();
         return;
       }
@@ -929,17 +1288,56 @@
       paint();
     } else if (a === "voice") {
       state = "voice";
-      say("Listening. Speak whenever you are ready.");
+      pieces = N.speech.separated.slice();
+      say("Listening. Speak whenever you are ready. Stop when you are done.");
+      refocus = { kind: "act", sel: '[data-act="voice-stop"]' };
       paint();
     } else if (a === "voice-cancel" || a === "voice-stop") {
       state = a === "voice-stop" ? "readback" : "notebook";
       say(a === "voice-stop" ? "Two notes came back from that." : "Nothing was kept.");
       paint();
     } else if (a === "keep-both") {
+      /* The edited values, not the ones the model first proposed. A person
+         who fixes a transcription and presses keep has to get the fixed
+         version; before this the button announced two notes and added
+         neither. */
+      const made = pieces
+        .map((body) => body.trim())
+        .filter(Boolean)
+        .map((body, i) => {
+          const title = body.split(/(?<=[.?!”])\s/)[0] || body;
+          return {
+            id: `spoken_${Date.now()}_${i}`,
+            body,
+            title,
+            rest: body.slice(title.length).trim(),
+            source: "voice",
+            when: "Just now",
+            day: "Today",
+            ms: 0,
+            task: null,
+            sent: false,
+            reviewed: false,
+            edited: false,
+            pending: true,
+            words: body.trim().split(/\s+/).length,
+            about: N.subjects["mara-finn"],
+            aboutKey: "mara-finn",
+          };
+        });
+      for (const note of [...made].reverse()) work().unshift(note);
       state = "notebook";
-      say("Both notes are on the pile.");
-      offerUndo("Both notes were taken back off the pile.", () => {});
+      arriving = made.length ? made[0].id : null;
+      say(`${made.length} note${made.length === 1 ? "" : "s"} on the pile. ${counts().total} in the notebook.`);
+      offerUndo(`${made.length} kept from what you said.`, () => {
+        WORK = work().filter((n) => !made.includes(n));
+        state = "readback";
+      });
       paint();
+      setTimeout(() => {
+        arriving = null;
+        paint();
+      }, 600);
     }
   });
 
@@ -949,7 +1347,23 @@
     const typing = e.target.matches("textarea, input, [contenteditable]");
 
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {
+      /* While there is a live draft in the capture field, undo belongs to
+         the browser and to the words being typed. Intercepting it there
+         reverted the previously saved note and overwrote the draft the
+         person was in the middle of writing — undo destroying work is the
+         worst possible failure in a capture product. */
+      if (typing && e.target.closest(".topField, .phoneField") && draft.trim()) return;
       if (doUndo()) e.preventDefault();
+      return;
+    }
+    /* The caret starts in the capture field, which is the whole point, so
+       a bare slash can never reach a shortcut handler — it is a character
+       somebody is typing into their note. Search therefore answers the
+       chord that works while writing, and the dock advertises that chord
+       rather than one the file cannot honour. */
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      openSearch();
       return;
     }
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -960,6 +1374,26 @@
       return;
     }
     if (e.key === "Escape") {
+      if (peeling) {
+        e.preventDefault();
+        cancelPeel();
+        return;
+      }
+      if (state === "review") {
+        e.preventDefault();
+        state = "notebook";
+        say("Back to the pile.");
+        paint();
+        return;
+      }
+      if (state === "readback") {
+        e.preventDefault();
+        state = "notebook";
+        pieces = N.speech.separated.slice();
+        say("Discarded. Nothing was kept.");
+        paint();
+        return;
+      }
       if (state === "voice") {
         state = "notebook";
         say("Nothing was kept.");
@@ -983,13 +1417,28 @@
       }
       return;
     }
+    /* A takeover holds the keyboard until it is left. Inerting what is
+       behind it stops Tab reaching the notebook, but the last control
+       still handed focus to the document body, so a keyboard user fell out
+       of a live microphone into nothing. This wraps. */
+    if (state === "voice" && e.key === "Tab") {
+      const stops = [...mount.querySelectorAll(".dark button, .dark [tabindex]:not([tabindex='-1'])")];
+      if (stops.length) {
+        const at = stops.indexOf(document.activeElement);
+        const next = e.shiftKey ? at - 1 : at + 1;
+        if (at === -1 || next < 0 || next >= stops.length) {
+          e.preventDefault();
+          stops[e.shiftKey ? stops.length - 1 : 0].focus();
+        }
+      }
+      return;
+    }
+
     if (typing) return;
 
     if (e.key === "/") {
       e.preventDefault();
-      state = "search";
-      refocus = { kind: "field", sel: "#q" };
-      paint();
+      openSearch();
       return;
     }
     if (state === "review") {
@@ -1059,6 +1508,14 @@
 
   paint();
 
+  /* Three seconds between a thought and it being safe, and the file was
+     spending nine tab presses of them on navigation. The caret starts
+     where the thought goes. */
+  {
+    const field = mount.querySelector(".topField, .phoneField");
+    if (field && !params.get("nofocus")) field.focus({ preventScroll: true });
+  }
+
   /* The console drives the same file through this. */
   window.NOTEBOOK = {
     presets: PRESETS,
@@ -1076,9 +1533,17 @@
       queueAt = 0;
       decided = [];
       undone = null;
+      peeling = null;
+      sentTask = null;
+      taskWording = "";
+      arriving = null;
+      seamTouched = false;
+      pieces = N.speech.separated.slice();
       WORK = null;
       cursorId = (visible()[0] || {}).id || null;
       paint();
+      const field = mount.querySelector(".topField, .phoneField");
+      if (field) field.focus({ preventScroll: true });
     },
     state: () => state,
   };
