@@ -26,6 +26,7 @@ import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import type { LabTask, LabView } from "@/components/hybrid/types";
 import { FloorBoard, timeOf, todayStamp } from "./floor-board";
+import { useDayIsKnown } from "./use-floor-place";
 import styles from "./floor.module.css";
 
 /* ── the spine ─────────────────────────────────────────────────── */
@@ -193,6 +194,8 @@ export function FloorWorkspace({
 
   const suite = useSuiteContext();
 
+  const dayKnown = useDayIsKnown();
+
   const todayLabel = useMemo(() => {
     const now = new Date();
     return `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]}`;
@@ -272,7 +275,12 @@ export function FloorWorkspace({
           <span className={styles.headRule} />
           <h1 className={styles.headName}>{projectName}</h1>
           <div className={styles.headFacts}>
-            <span className={styles.today}>{todayLabel}</span>
+            {/* Withheld until a timezone exists, and marked so React never
+                treats the change from nothing to a date as a mismatch. The
+                span itself is always here, so the row does not move. */}
+            <span className={styles.today} suppressHydrationWarning>
+              {dayKnown ? todayLabel : ""}
+            </span>
             {facts.total > 0 && facts.done === facts.total ? (
               <span className={styles.ratio} data-all="">Everything is done.</span>
             ) : facts.total > 0 ? (

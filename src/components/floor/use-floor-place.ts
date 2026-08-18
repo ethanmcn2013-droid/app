@@ -19,7 +19,7 @@
  *           information.
  */
 
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 
 /* ── the word-safe trim ─────────────────────────────────────────── */
 
@@ -258,4 +258,34 @@ export function measureEdges(root: HTMLElement) {
     sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
     sheet.toggleAttribute("data-more-left", board.scrollLeft > 1);
   }
+}
+
+/* ── the operator's own day ─────────────────────────────────────── */
+
+/**
+ * Whether a timezone exists yet.
+ *
+ * Every time fact on this board — the header's date, "Today", "Tomorrow",
+ * what counts as overdue — is measured against the operator's own day. The
+ * server has no timezone, so anything derived from the clock during SSR bakes
+ * the SERVER's calendar day into the markup, and an operator on the other
+ * side of a date line hydrates against text that is a day out. React does not
+ * treat that as cosmetic: it fails the hydration and regenerates the whole
+ * board. It showed up as "server rendered Tue 18 Aug, client rendered
+ * Wed 19 Aug", and it fires for a large share of the world every evening.
+ *
+ * There is no value the server and the first client render can both compute
+ * and agree on, so they agree on nothing: the day is withheld until mount,
+ * when a timezone exists. One frame later it is the operator's own.
+ */
+const NEVER_CHANGES = () => () => {};
+const ON_THE_CLIENT = () => true;
+const ON_THE_SERVER = () => false;
+
+export function useDayIsKnown(): boolean {
+  /* useSyncExternalStore, not an effect: it is the API built for a value
+     whose server snapshot differs from its client one. React hydrates
+     against the server snapshot and swaps to the client's straight after,
+     with no mismatch and no cascading render to lint around. */
+  return useSyncExternalStore(NEVER_CHANGES, ON_THE_CLIENT, ON_THE_SERVER);
 }
