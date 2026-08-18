@@ -39,10 +39,10 @@ window.BOARD = {
   views: ["Board", "List", "Schedule", "Calendar"],
   columns: [
     { id: "todo", name: "To do", tone: "neutral", note: "Agreed and ready to start.", empty: "Add the first thing you have to do." },
-    { id: "doing", name: "In progress", tone: "flight", note: "In motion right now.", empty: "Nothing started yet." },
-    { id: "review", name: "Review", tone: "neutral", note: "Being checked before it goes out.", empty: "Nothing to check." },
+    { id: "doing", name: "In progress", tone: "flight", note: "In motion right now.", empty: "Move something across when you start it." },
+    { id: "review", name: "Review", tone: "neutral", note: "Being checked before it goes out.", empty: "Nothing to check yet." },
     { id: "waiting", name: "Waiting", tone: "neutral", note: "Held by a reply, a delivery, or a decision.", empty: "Nothing held up." },
-    { id: "done", name: "Done", tone: "done", note: "Finished work stays visible.", empty: "Nothing finished yet." },
+    { id: "done", name: "Done", tone: "done", note: "Work that is finished and settled.", empty: "The first thing you finish lands here." },
   ],
   tasks: [
     {

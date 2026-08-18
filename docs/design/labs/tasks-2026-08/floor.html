@@ -123,12 +123,14 @@ body {
 }
 
 /* Every interactive thing answers the keyboard the same way. */
+/* Outline only. Setting a radius here overrode every element's own, which
+   squared off the completion circle for keyboard users and nobody else. */
 a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   outline: 2px solid var(--indigo);
   outline-offset: 2px;
-  border-radius: var(--r-chip);
 }
 
+/* The sheet is the positioning context for the carry bar and the dock. */
 .floor {
   height: 100dvh;
   padding: var(--inset);
@@ -168,10 +170,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 /* Buttons, not href-less anchors. An anchor with no href carries no role,
    so the whole spine was a row of focusable generics inside a nav that
    contained no links. The reset below means the change costs no pixels. */
-.railTile, .railMark, .segItem {
+.railTile, .railMark, .segItem, .railAvatar, .dockAvatar, .late {
   font: inherit; color: inherit; background: none; border: 0; padding: 0;
   -webkit-appearance: none;
 }
+/* Three things that looked like controls and were spans. The account disc
+   is the only way out of the product; the overdue count is the only filter
+   an operator reaches for on a Saturday. Both now answer the keyboard. */
+.railAvatar, .dockAvatar, .late { cursor: pointer; }
 .railTile {
   width: var(--tap); height: var(--tap);
   border-radius: 12px;
@@ -221,12 +227,12 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .sheet::after {
   content: "";
   position: absolute; right: 0; top: 118px; bottom: 0;
-  width: 44px;
+  width: 44px; z-index: 3;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white));
   opacity: 0; pointer-events: none; z-index: 1;
   transition: opacity var(--dur) var(--curve);
 }
-.floor:has(.drawer) .sheet::after { opacity: 1; }
+.sheet[data-overflow]::after { opacity: 1; }
 
 .head {
   flex: none;
@@ -259,12 +265,17 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 /* Overdue reads as the loudest object in the header for the same reason
    it does on a card: it is filled ink, not a colour. */
 .late {
+  position: relative;
   display: inline-flex; align-items: center;
   height: 22px; padding: 0 9px;
+  transition: box-shadow var(--dur) var(--curve);
   border-radius: var(--r-pill);
   background: var(--ink); color: var(--white);
   font-size: 12px; font-weight: 600; letter-spacing: -0.004em;
 }
+/* The chip is 22px because that is the size the header wants; the target
+   it answers to is 44, taken behind the two facts either side of it. */
+.late::before { content: ""; position: absolute; inset: -11px -6px; }
 .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
 
 .ghost {
@@ -326,7 +337,6 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 
 .trayHead {
   flex: none; padding: 0 0 12px;
-  position: sticky; top: 0; z-index: 2;
   background: var(--white);
 }
 .trayTop { display: flex; align-items: center; gap: 8px; }
@@ -345,12 +355,20 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .trayCount { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-3); }
 .trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: -0.003em; }
+/* A column with more in it than fits fades at its own foot, the same mask
+   idiom the sheet's right edge uses. Before this the fourth card was simply
+   cut through the middle of a word with nothing to say there was more. */
 .trayBody {
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto;
   display: grid; gap: 8px; align-content: start;
   padding: 2px 0 8px;
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
 }
+/* A column that fits needs no fade, and the mask must not clip a card's
+   own ring. */
+.trayBody:not([data-more]) { -webkit-mask-image: none; mask-image: none; }
 
 /* ═══ THE CARD ═══════════════════════════════════════════════════
    One optical baseline: the completion control sits in a fixed gutter,
@@ -434,9 +452,15 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: 0;
 }
 .cardFoot > .who, .cardFoot > .tag, .cardFoot > .hi {
-  flex: 0 1 auto; min-width: 0;
+  min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* Whose wedding it is never shrinks. Everything else in the row yields
+   first, in a stated order, rather than every token losing pixels in
+   proportion to its own length. */
+.cardFoot > .who { flex: 0 0 auto; }
+.cardFoot > .tag { flex: 0 3 auto; }
+.cardFoot > .hi  { flex: 0 1 auto; }
 .cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
 .cardFoot .cm svg { width: 12px; height: 12px; }
 .cardFoot .grow { margin-left: auto; display: inline-flex; flex: none; }
@@ -543,6 +567,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   color: var(--ink-2);
   min-height: calc(1.45em * 2 + 12px);
 }
+.tray[data-empty] .trayBody { flex: 0 0 auto; }
+.tray[data-empty] .trayAdd { margin-top: 0; }
 .trayAdd {
   display: flex; align-items: center; gap: 8px;
   height: 36px; padding: 0 8px; margin-top: 4px;
@@ -649,18 +675,22 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   margin-right: calc(388px + var(--inset));
   transition: margin-right var(--dur) var(--curve);
 }
-/* Five trays have to fit the narrowed board, or opening Planning silently
-   deletes a status. 5 x 170 = 850 inside the 884 the drawer leaves at 1440,
-   with the tray gutter tightened to the value the compact preset already
-   ships. What still runs over snaps and fades rather than being cut. */
+/* A card has one floor, in every state. Squeezing five trays into the
+   narrowed board gave the card a 105px measure, which is half what the
+   specimen sheet designs it at. What does not fit scrolls, snaps and fades
+   at the edge instead. */
 .floor:has(.drawer) .board {
   grid-template-columns: none;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(170px, 1fr);
+  grid-auto-columns: minmax(258px, 1fr);
   scroll-snap-type: x proximity;
   scroll-padding-left: 16px;
 }
-.floor:has(.drawer) .tray { padding-left: 9px; padding-right: 9px; scroll-snap-align: start; }
+.floor:has(.drawer) .tray { scroll-snap-align: start; }
+/* Room is made by dropping the last fact, never by clipping the name of the
+   project the operator is looking at. */
+.floor:has(.drawer) .headFacts > span:last-child { display: none; }
+.headName { min-width: 0; }
 .drawer {
   position: absolute;
   right: var(--inset); top: var(--inset); bottom: var(--inset);
@@ -724,15 +754,17 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .box::before { content: ""; position: absolute; inset: -8px; }
 .box:hover { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
-.drawerRow button {
+/* Scoped to the schedule control. Unscoped, this also claimed the row's
+   checkbox and pushed it off the left margin on any row with slack. */
+.drawerRow .sched {
   margin-left: auto; flex: none;
   display: inline-flex; align-items: center; gap: 4px;
   min-height: 28px; padding: 0 6px; border-radius: var(--r-chip);
   font-size: 12px; font-weight: 400; color: var(--ink-2);
   transition: background-color var(--dur) var(--curve);
 }
-.drawerRow button:hover { background: var(--wash-2); color: var(--ink-1); }
-.drawerRow button svg { width: 13px; height: 13px; color: var(--ink-3); }
+.drawerRow .sched:hover { background: var(--wash-2); color: var(--ink-1); }
+.drawerRow .sched svg { width: 13px; height: 13px; color: var(--ink-3); }
 .drawerAdd {
   margin: 6px 12px 18px; padding: 0 10px;
   display: flex; align-items: center; gap: 9px;
@@ -745,7 +777,55 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 
 /* ── loading ───────────────────────────────────────────────────── */
 .sk { display: block; background: var(--wash); border-radius: 5px; animation: breathe 1.8s var(--ease-in-out) infinite; }
+/* While a card is in the operator's hand the sheet says what is happening
+   and how to finish it. It is the only instruction in the product, it exists
+   only while the hand is full, and it leaves the moment the card lands. */
+.carry {
+  position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%);
+  z-index: 6;
+  display: flex; align-items: center; gap: 10px;
+  height: 36px; padding: 0 6px 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink-1); color: var(--on-ink-1);
+  font-size: 12px; letter-spacing: -0.01em;
+  box-shadow: var(--lift);
+  animation: carryIn var(--dur) var(--curve);
+}
+.carry b { font-weight: 600; }
+.carry em {
+  font-style: normal; color: var(--on-ink-2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.carry kbd {
+  font: inherit; font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 11px; letter-spacing: 0.06em;
+  padding: 2px 5px; border-radius: var(--r-xs);
+  background: var(--chrome); color: var(--on-ink-1);
+}
+@keyframes carryIn { from { opacity: 0; transform: translate(-50%, 6px) } }
+@media (prefers-reduced-motion: reduce) { .carry { animation: none } }
+
+/* The completion beat. A tick is the one thing on this board a person does
+   for pleasure, so it gets the one flourish: the ring closes, the card
+   settles, and it is over in a fifth of a second. */
+@keyframes settle {
+  0% { transform: none }
+  40% { transform: translateY(-2px) }
+  100% { transform: none }
+}
+.card[data-settling] { animation: settle 220ms var(--curve); }
+.card[data-settling] .tick { animation: tickPop 220ms var(--curve); }
+@keyframes tickPop { 0% { transform: scale(1) } 45% { transform: scale(1.18) } 100% { transform: scale(1) } }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-settling], .card[data-settling] .tick { animation: none }
+}
+
+/* Filtering is a state of the board, so the board says so rather than
+   leaving five columns mysteriously short. */
+.late[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--indigo-ring); }
+
 @keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: 0.7; } }
 .loadCard { background: var(--white); box-shadow: var(--ring); border-radius: var(--r-card); padding: 12px; display: grid; gap: 9px; }
 .loadSay {
   position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
@@ -754,7 +834,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 
 /* ── card specimen sheet ───────────────────────────────────────── */
 .spec { flex: 1; min-height: 0; overflow: auto; padding: 4px 28px 32px; }
-.specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); gap: 26px 20px; }
+.specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 26px 20px; }
 /* Every caption in a row starts on one baseline, with no hard-coded height
    to go stale as the specimens change. The page that argues the system is
    ruled cannot have its own captions on four different lines. */
@@ -763,16 +843,21 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
 }
+/* An invisible board, laid out by the real rules, so --tray-card is the
+   width a tray actually gives a card at this viewport rather than a number
+   typed into the stylesheet and left to go stale. */
+.specProbe { position: absolute; visibility: hidden; pointer-events: none; left: 0; right: 0; height: 0; overflow: hidden; }
+.specProbe .board { grid-auto-rows: 0; padding-bottom: 0; }
 .specStage {
   background: var(--wash); border-radius: var(--r-card);
-  padding: 13px; width: 280px; max-width: 100%;
+  padding: 13px; width: calc(var(--tray-card, 234px) + 26px); max-width: 100%;
   display: flex; align-items: center;
 }
-.specStage .card { max-width: 254px; }
-.specTray { padding: 8px; border-left: 0; width: 254px; border-radius: var(--r-card); }
+.specStage .card { width: var(--tray-card, 234px); max-width: 100%; }
+.specTray { padding: 8px; border-left: 0; width: calc(var(--tray-card, 234px) + 16px); border-radius: var(--r-card); }
 .specTray .trayBody { padding: 0; gap: 8px; overflow: visible; }
-.specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 280px; }
-.specLabel { max-width: 280px; }
+.specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 268px; }
+.specLabel { max-width: 268px; }
 .specIntro { max-width: 64ch; margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
 
 /* A finger needs 44px. A mouse does not, and inflating every control to
@@ -911,7 +996,6 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
     scroll-snap-type: x proximity; scroll-padding-left: 16px;
   }
   .tray { scroll-snap-align: start; }
-  .sheet::after { opacity: 1; }
   .drawer { width: 364px; }
   .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
@@ -921,7 +1005,11 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
      done and what is late cannot: for a while the tablet was showing
      strictly less than the phone. */
   .headFacts span { display: none; }
-  .headFacts .late, .headFacts .ratio { display: inline-flex; }
+  /* The chip needs inline-flex to centre its own contents. The ratio is a
+     sentence: making it a flex container turns " of " and " done" into
+     anonymous flex items and strips the spaces around them. */
+  .headFacts .late { display: inline-flex; }
+  .headFacts .ratio { display: inline; }
   .headFacts { gap: 12px; }
   .dockField { min-width: 148px; }
   .drawer { left: var(--inset); width: auto; }
@@ -962,11 +1050,23 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .word { grid-area: word; }
   .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
   .headName { grid-area: name; width: auto; font-size: 19px; }
-  .headFacts { grid-area: facts; display: flex; font-size: 13px; gap: 12px; }
-  .headFacts span { display: inline; }
+  /* Four facts on a 390 measure wrap onto two lines. Clipping the season
+     line at the sheet edge lost the one fact this product has that no other
+     task board does. */
+  .headFacts {
+    grid-area: facts; display: flex; flex-wrap: wrap;
+    font-size: 13px; column-gap: 12px; row-gap: 7px;
+  }
+  .headFacts > span { display: inline; }
+  .headFacts .late { display: inline-flex; }
   .headRule { display: none; }
   .headSearch { display: inline-flex; }
-  .views { padding: 14px 16px 12px; overflow-x: auto; }
+  /* The switcher loses its icons rather than its fourth view. Cutting
+     "Calendar" mid-word at the sheet edge read as a broken layout. */
+  .views { padding: 14px 16px 12px; }
+  .seg { width: 100%; }
+  .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
+  .segItem svg { display: none; }
   .viewTools { display: none; }
   .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
   /* No dock on a phone, so no clearance to reserve. */
@@ -1011,6 +1111,18 @@ for (const key of DECISIONS) {
   root.setAttribute("data-" + key, params.get(key) || preset[key]);
 }
 
+/* ── The interaction layer ────────────────────────────────────────────
+   Everything below is state the operator can change and the renderer reads.
+   There is one source for the board and one render path; a handler mutates
+   a fact and asks for a repaint, never touches the DOM it did not create. */
+let WORK = null;        /* the mutable task set, seeded from the fixture   */
+let focusId = null;     /* the board's single tab stop                     */
+let carriedId = null;   /* the card currently in the operator's hand       */
+let carriedFrom = null; /* where it was picked up, so Escape can undo      */
+let lateOnly = false;   /* the overdue chip, pressed                       */
+let settlingId = null;  /* the card playing the completion beat            */
+let refocus = false;    /* the last change came from the keyboard          */
+
 const B = window.BOARD;
 const I = window.ICON;
 const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -1028,16 +1140,45 @@ const CLIENTS = new Set(["Mara & Finn", "Nora & Cian", "Aisling & Tom"]);
    done count was not, so the board said "5 of 32 done" above a Done column
    labelled 9. A board that contradicts itself on screen is a blocker, not a
    polish item. */
-function allTasks() {
+function seed() {
   if (state === "empty") return [];
   const base = B.tasks.slice();
-  return state === "dense"
+  return (state === "dense"
     ? base.concat(window.DENSE_EXTRA.map((t, i) => ({ ...t, id: "x" + i })))
-    : base;
+    : base
+  ).map((t) => ({ ...t }));
 }
 
+/* The working set is per state, so switching to the empty board and back
+   does not resurrect a card the operator moved. */
+function allTasks() {
+  if (!WORK || WORK.key !== state) WORK = { key: state, rows: seed() };
+  return WORK.rows;
+}
+
+function taskById(id) {
+  return allTasks().find((t) => t.id === id) || null;
+}
+
+/* The header counts the whole project. The board shows what is being looked
+   at. Filtering must never change what "5 of 13 done" means. */
 function tasksFor(lane) {
-  return allTasks().filter((t) => t.lane === lane);
+  const rows = allTasks().filter((t) => t.lane === lane);
+  return lateOnly ? rows.filter((t) => timeOf(t).kind === "overdue") : rows;
+}
+
+/* The board in reading order, which is also the order the arrows walk. */
+function laneIds() {
+  return B.columns.map((c) => c.id);
+}
+function place(id) {
+  const lanes = laneIds();
+  for (let x = 0; x < lanes.length; x += 1) {
+    const rows = tasksFor(lanes[x]);
+    const y = rows.findIndex((t) => t.id === id);
+    if (y !== -1) return { x, y, rows };
+  }
+  return null;
 }
 
 /* One time fact per card, resolved once, in ONE grammar: every chip states
@@ -1081,7 +1222,7 @@ function timeOf(task) {
 /* One tab stop per column, not one per card. Crossing the dense board was
    ninety-odd tab presses; the arrows walk the column and the roving stop
    means Tab still crosses the whole board in five. */
-function card(task, force, first) {
+function card(task, force, stop) {
   const done = task.lane === "done";
   const next = Boolean(task.milestone);
   const time = timeOf(task);
@@ -1099,15 +1240,26 @@ function card(task, force, first) {
       ? '<span class="who">' + esc(task.tag) + "</span>"
       : '<span class="tag">' + esc(task.tag) + "</span>");
   }
-  if (task.priority && !done) bits.push('<span class="hi">' + esc(task.priority) + " priority</span>");
+  /* One word. The row has to carry whose wedding it is, which room of the
+     house it touches and how urgent it is, in a 254px measure; "priority"
+     is the word in that sentence that no operator needs to read twice. It
+     stays in the accessible name. */
+  if (task.priority && !done) {
+    bits.push('<span class="hi">' + esc(task.priority) + '<span class="sr"> priority</span></span>');
+  }
   if (task.comments) bits.push('<span class="cm">' + I.comment + task.comments + "</span>");
 
   return (
-    '<article class="card" tabindex="' + (first ? "0" : "-1") + '" aria-roledescription="Task, movable"' +
+    '<article class="card" data-id="' + esc(task.id) + '" draggable="true"' +
+    ' tabindex="' + (stop ? "0" : "-1") + '" aria-roledescription="Task, movable"' +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
+    (task.id === carriedId ? ' aria-grabbed="true"' : "") +
+    (task.id === settlingId ? " data-settling" : "") +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
-    (force ? ' data-force="' + force + '"' : "") + ">" +
-    '<button type="button" class="tick" role="checkbox" aria-checked="' + (done ? "true" : "false") +
+    (force ? ' data-force="' + force + '"' :
+      task.id === carriedId ? ' data-force="moving"' : "") + ">" +
+    '<button type="button" class="tick" data-act="tick" tabindex="' + (stop ? "0" : "-1") +
+      '" role="checkbox" aria-checked="' + (done ? "true" : "false") +
       '" aria-label="' + esc(task.title) + '">' + I.check + "</button>" +
     '<div class="cardTitleRow">' +
       '<p class="cardTitle">' + esc(task.title) + "</p>" +
@@ -1116,7 +1268,8 @@ function card(task, force, first) {
     (task.note && !done ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
       (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
-      '<button class="cardDots" aria-label="Task actions">' + I.dots + "</button>" +
+      '<button class="cardDots" tabindex="' + (stop ? "0" : "-1") + '" aria-label="Task actions">' +
+        I.dots + "</button>" +
     "</div>" +
     "</article>"
   );
@@ -1135,7 +1288,8 @@ function rail() {
     '<span class="railSpacer"></span>' +
     tile("inbox", "Inbox", false) + tile("help", "Help and settings", false) +
     '<button class="railAdd" aria-label="Add task">' + I.plus + "</button>" +
-    '<span class="railAvatar" title="' + esc(B.operator.role) + '">' + B.operator.initials + "</span>" +
+    '<button type="button" class="railAvatar" aria-label="' + esc(B.operator.role) + '">' +
+      B.operator.initials + "</button>" +
     "</nav>"
   );
 }
@@ -1154,7 +1308,8 @@ function head() {
     '<div class="headFacts">' +
       '<span class="today">' + todayLabel() + "</span>" +
       (total ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
-      (overdue ? '<span class="late">' + overdue + " overdue</span>" : "") +
+      (overdue ? '<button type="button" class="late" data-act="late" aria-pressed="' +
+        (lateOnly ? "true" : "false") + '">' + overdue + " overdue</button>" : "") +
       "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
     "</div>" +
     '<div class="headActions">' +
@@ -1182,12 +1337,20 @@ function views() {
 }
 
 function board() {
+  /* One tab stop for the whole board. Without this the dense board cost
+     ninety-odd presses to cross; with it, Tab reaches the board, the arrows
+     walk it, and Tab leaves. */
+  const all = laneIds().flatMap((id) => tasksFor(id).map((t) => t.id));
+  if (!all.includes(focusId)) focusId = all[0] || null;
   return (
-    '<div class="board">' +
+    '<div class="board" role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
     B.columns.map((c) => {
       const rows = tasksFor(c.id);
+      const empty = lateOnly ? "Nothing late here." : c.empty;
       return (
-        '<section class="tray" data-tone="' + c.tone + '" role="region" aria-label="' +
+        '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
+          (rows.length ? "" : " data-empty") +
+          ' role="region" aria-label="' +
           esc(c.name) + ", " + rows.length + (rows.length === 1 ? " task" : " tasks") + '">' +
         '<div class="trayHead"><div class="trayTop">' +
           '<span class="pip" aria-hidden="true"></span>' +
@@ -1195,8 +1358,8 @@ function board() {
           '<span class="trayCount" aria-hidden="true">' + rows.length + "</span></div>" +
           '<p class="trayNote">' + esc(c.note) + "</p></div>" +
         '<div class="trayBody">' +
-          (rows.length ? rows.map((t, i) => card(t, null, i === 0)).join("")
-            : '<p class="trayEmpty">' + esc(c.empty) + "</p>") +
+          (rows.length ? rows.map((t) => card(t, null, t.id === focusId)).join("")
+            : '<p class="trayEmpty">' + esc(empty) + "</p>") +
         "</div>" +
         '<button class="trayAdd">' + I.plus + "<span>Add task</span></button>" +
         "</section>"
@@ -1211,7 +1374,22 @@ function dock() {
       '<button class="dockField">' + I.search + "<span>Search this project</span><kbd>⌘K</kbd></button>" +
       '<button class="dockPrimary">' + I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
-      '<span class="dockAvatar" title="' + esc(B.operator.role) + '">' + B.operator.initials + "</span>" +
+      '<button type="button" class="dockAvatar" aria-label="' + esc(B.operator.role) + '">' +
+        B.operator.initials + "</button>" +
+    "</div>"
+  );
+}
+
+/* Said only while a card is in the hand. */
+function carryBar() {
+  const task = carriedId && taskById(carriedId);
+  if (!task) return "";
+  return (
+    '<div class="carry" role="status">' +
+    "<span>Moving <b>" + esc(task.title.split(" ").slice(0, 4).join(" ")) + "…</b></span>" +
+    "<em><kbd>↑↓←→</kbd> place</em>" +
+    "<em><kbd>Space</kbd> drop</em>" +
+    "<em><kbd>Esc</kbd> cancel</em>" +
     "</div>"
   );
 }
@@ -1235,7 +1413,7 @@ function drawer() {
     p.unscheduled.map((t) =>
       '<div class="drawerRow"><button type="button" class="box" role="checkbox" aria-checked="false" aria-label="Select ' +
       esc(t) + '"></button><span>' + esc(t) +
-      '</span><button type="button">Schedule ' + I.chevron + "</button></div>").join("") +
+      '</span><button type="button" class="sched">Schedule ' + I.chevron + "</button></div>").join("") +
     "</div>" +
     '<button class="drawerAdd">' + I.plus + "<span>Add unscheduled task</span></button></aside>"
   );
@@ -1244,17 +1422,22 @@ function drawer() {
 function loading() {
   return (
     '<div class="sheet">' +
+    /* The product's own furniture is a constant, not payload. Greying out
+       the workspace chrome, the five column names and the view switcher
+       made the wait look like a bigger outage than it is; what is actually
+       unknown is the work, and only that is drawn as a skeleton. */
     '<div class="head"><span class="word">tasks</span><span class="headRule"></span>' +
       '<span class="sk" style="width:172px;height:15px"></span>' +
       '<div class="headActions"><span class="sk" style="width:92px;height:14px"></span></div></div>' +
-    '<div class="views"><span class="sk" style="width:320px;height:38px;border-radius:999px"></span></div>' +
+    views() +
     '<div class="board">' +
     B.columns.map((c, i) => (
-      '<section class="tray"><div class="trayHead">' +
-        '<span class="sk" style="width:' + [50, 74, 48, 54, 38][i] + 'px;height:11px"></span>' +
-        '<span class="sk" style="width:' + [120, 92, 132, 150, 116][i] + 'px;height:9px;margin-top:9px"></span></div>' +
+      '<section class="tray" data-tone="' + c.tone + '"><div class="trayHead">' +
+        '<div class="trayTop"><span class="pip" aria-hidden="true"></span>' +
+        '<h2 class="trayName">' + esc(c.name) + "</h2></div>" +
+        '<p class="trayNote">' + esc(c.note) + "</p></div>" +
       '<div class="trayBody">' +
-      [0, 1, 2].slice(0, [3, 3, 2, 0, 3][i]).map(() => (
+      [0, 1, 2].slice(0, [3, 3, 2, 1, 3][i]).map(() => (
         '<div class="loadCard"><span class="sk" style="width:86%;height:12px"></span>' +
         '<span class="sk" style="width:62%;height:10px"></span>' +
         '<span class="sk" style="width:34%;height:9px"></span></div>'
@@ -1282,6 +1465,8 @@ function specimens() {
   ];
   return (
     '<div class="sheet">' + head() +
+    '<div class="specProbe" aria-hidden="true"><div class="board">' +
+    '<section class="tray"><div class="trayBody"></div></section>'.repeat(5) + "</div></div>" +
     '<div class="spec"><p class="specIntro">Every state a card can be in, at the exact width a tray gives it. ' +
     "The gutter, the title's left edge and every line beneath it share one optical baseline, and the time fact right-aligns on the title's own line so a tray reads as a column of dates rather than a pile. Severity is expressed by ink density and fill, never by hue.</p>" +
     '<div class="specGrid">' +
@@ -1290,9 +1475,10 @@ function specimens() {
       '<div class="specStage">' +
         (c[2] === "drop"
           ? '<div class="tray specTray" data-over><div class="trayBody">' +
-            card(find("demo-t-08")) + '<span class="dropLine"></span>' + card(find("demo-t-07")) +
+            card(find("demo-t-08"), null, true) + '<span class="dropLine"></span>' +
+            card(find("demo-t-07"), null, true) +
             "</div></div>"
-          : card(c[1], c[2])) +
+          : card(c[1], c[2], true)) +
       "</div>" +
       '<p class="specNote">' + c[3] + "</p></div>"
     )).join("") + "</div></div></div>"
@@ -1303,8 +1489,208 @@ function renderApp() {
   const sheet =
     state === "loading" ? loading()
     : state === "cards" ? specimens()
-    : '<div class="sheet">' + head() + views() + board() + dock() + "</div>";
+    : '<div class="sheet">' + head() + views() + board() + carryBar() + dock() + "</div>";
   return '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + "</div>";
+}
+
+/* The live region is created once and never re-rendered. A region that is
+   replaced on every repaint is a new region every time, and a new region
+   announces nothing. */
+function say(words) {
+  let node = document.getElementById("say");
+  if (!node) {
+    node = document.createElement("p");
+    node.id = "say";
+    node.className = "sr";
+    node.setAttribute("role", "status");
+    node.setAttribute("aria-live", "polite");
+    document.body.appendChild(node);
+  }
+  node.textContent = words;
+}
+
+function laneName(id) {
+  const column = B.columns.find((c) => c.id === id);
+  return column ? column.name : id;
+}
+
+function moveTo(id, lane, index) {
+  const rows = allTasks();
+  const from = rows.findIndex((t) => t.id === id);
+  if (from === -1) return;
+  const [task] = rows.splice(from, 1);
+  task.lane = lane;
+  /* Splice it in beside the card it was placed against, so the order the
+     operator sees is the order that is kept. */
+  const target = tasksFor(lane)[index];
+  const at = target ? rows.findIndex((t) => t.id === target.id) : -1;
+  if (at === -1) rows.push(task);
+  else rows.splice(at, 0, task);
+}
+
+function toggleDone(id) {
+  const task = taskById(id);
+  if (!task) return;
+  if (task.lane === "done") {
+    task.lane = task.prevLane || "todo";
+    say(task.title + " moved back to " + laneName(task.lane) + ".");
+  } else {
+    task.prevLane = task.lane;
+    task.lane = "done";
+    settlingId = id;
+    say(task.title + " done.");
+    setTimeout(() => { settlingId = null; }, 260);
+  }
+  focusId = id;
+  mount();
+}
+
+function walk(dx, dy) {
+  const at = place(focusId);
+  if (!at) return;
+  if (dy) {
+    const next = at.rows[at.y + dy];
+    if (next) focusId = next.id;
+    return;
+  }
+  const lanes = laneIds();
+  for (let x = at.x + dx; x >= 0 && x < lanes.length; x += dx) {
+    const rows = tasksFor(lanes[x]);
+    if (rows.length) { focusId = rows[Math.min(at.y, rows.length - 1)].id; return; }
+  }
+}
+
+function carryMove(dx, dy) {
+  const at = place(carriedId);
+  if (!at) return;
+  focusId = carriedId;
+  const lanes = laneIds();
+  if (dy) {
+    const to = Math.max(0, Math.min(at.rows.length - 1, at.y + dy));
+    if (to === at.y) return;
+    moveTo(carriedId, lanes[at.x], to);
+    say("Position " + (to + 1) + " of " + at.rows.length + " in " + laneName(lanes[at.x]) + ".");
+    return;
+  }
+  const x = at.x + dx;
+  if (x < 0 || x >= lanes.length) return;
+  const rows = tasksFor(lanes[x]);
+  moveTo(carriedId, lanes[x], Math.min(at.y, rows.length));
+  say(laneName(lanes[x]) + ", position " + (Math.min(at.y, rows.length) + 1) + " of " + (rows.length + 1) + ".");
+}
+
+function onKey(event) {
+  const card = event.target.closest && event.target.closest(".card[data-id]");
+  if (!card) return;
+  const id = card.dataset.id;
+  const key = event.key;
+  const DIR = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+
+  /* The tab stop is always the card the operator is on. Without this, a
+     pick-up left the ring on whichever card held the stop last and the next
+     arrow walked the wrong card. */
+  focusId = id;
+
+  if (key === " " || key === "Spacebar") {
+    event.preventDefault();
+    if (carriedId === id) {
+      const at = place(id);
+      say(taskById(id).title + " dropped in " + laneName(laneIds()[at.x]) + ".");
+      carriedId = null; carriedFrom = null;
+    } else {
+      const at = place(id);
+      carriedId = id;
+      carriedFrom = { lane: laneIds()[at.x], index: at.y };
+      say("Picked up " + taskById(id).title + ". Arrow keys to place, space to drop.");
+    }
+    refocus = true; mount(); return;
+  }
+  if (key === "Escape" && carriedId) {
+    event.preventDefault();
+    moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
+    say("Move cancelled. Back in " + laneName(carriedFrom.lane) + ".");
+    carriedId = null; carriedFrom = null;
+    refocus = true; mount(); return;
+  }
+  if (key === "Enter") {
+    event.preventDefault();
+    toggleDone(id); refocus = true; return;
+  }
+  if (DIR[key]) {
+    event.preventDefault();
+    focusId = id;
+    if (carriedId === id) carryMove(DIR[key][0], DIR[key][1]);
+    else walk(DIR[key][0], DIR[key][1]);
+    refocus = true; mount();
+  }
+}
+
+function onClick(event) {
+  const act = event.target.closest && event.target.closest("[data-act]");
+  if (act && act.dataset.act === "tick") {
+    event.preventDefault();
+    toggleDone(act.closest(".card").dataset.id);
+    return;
+  }
+  if (act && act.dataset.act === "late") {
+    lateOnly = !lateOnly;
+    say(lateOnly ? "Showing late work only." : "Showing all work.");
+    mount();
+    return;
+  }
+  const card = event.target.closest && event.target.closest(".card[data-id]");
+  if (card && card.closest(".board")) { focusId = card.dataset.id; }
+}
+
+/* The pointer gets the same model as the keyboard: the tray it is over
+   warms half a step and draws the line the card will land on. */
+let overLane = null;
+function onDragStart(event) {
+  const card = event.target.closest && event.target.closest(".card[data-id]");
+  if (!card || !card.closest(".board")) return;
+  carriedId = card.dataset.id;
+  const at = place(carriedId);
+  carriedFrom = { lane: laneIds()[at.x], index: at.y };
+  card.setAttribute("data-force", "drag");
+  if (event.dataTransfer) { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", carriedId); }
+}
+function dropIndex(body, y) {
+  const cards = [...body.querySelectorAll(".card[data-id]")];
+  for (let i = 0; i < cards.length; i += 1) {
+    const box = cards[i].getBoundingClientRect();
+    if (y < box.top + box.height / 2) return i;
+  }
+  return cards.length;
+}
+function onDragOver(event) {
+  if (!carriedId) return;
+  const tray = event.target.closest && event.target.closest(".tray[data-lane]");
+  if (!tray) return;
+  event.preventDefault();
+  document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
+  document.querySelectorAll(".dropLine").forEach((n) => n.remove());
+  tray.setAttribute("data-over", "");
+  overLane = { lane: tray.dataset.lane, index: dropIndex(tray.querySelector(".trayBody"), event.clientY) };
+  const body = tray.querySelector(".trayBody");
+  const line = document.createElement("span");
+  line.className = "dropLine";
+  const cards = [...body.querySelectorAll(".card[data-id]")];
+  if (overLane.index >= cards.length) body.appendChild(line);
+  else body.insertBefore(line, cards[overLane.index]);
+}
+function onDrop(event) {
+  if (!carriedId || !overLane) return;
+  event.preventDefault();
+  moveTo(carriedId, overLane.lane, overLane.index);
+  say(taskById(carriedId).title + " moved to " + laneName(overLane.lane) + ".");
+  focusId = carriedId;
+  carriedId = null; carriedFrom = null; overLane = null;
+  mount();
+}
+function onDragEnd() {
+  document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
+  document.querySelectorAll(".dropLine").forEach((n) => n.remove());
+  if (carriedId) { carriedId = null; carriedFrom = null; overLane = null; mount(); }
 }
 
 /* A word-safe trim. The browser's own line clamp cuts at the character,
@@ -1329,11 +1715,31 @@ function trimToWord(node) {
   node.textContent = words.slice(0, low).join(" ") + "…";
 }
 
+/* A fade that is always on is decoration; a fade that appears exactly when
+   something is hidden is information. Both edge masks are measured, after
+   layout, from the elements themselves. */
+function measureEdges(target) {
+  target.querySelectorAll(".trayBody").forEach((body) => {
+    body.toggleAttribute("data-more", body.scrollHeight > body.clientHeight + 1);
+  });
+  const board = target.querySelector(".board");
+  const sheet = target.querySelector(".sheet");
+  if (board && sheet) sheet.toggleAttribute("data-overflow", board.scrollWidth > board.clientWidth + 1);
+  const probe = target.querySelector(".specProbe .trayBody");
+  if (probe && sheet) sheet.style.setProperty("--tray-card", Math.round(probe.getBoundingClientRect().width) + "px");
+}
+
 function mount() {
   const target = document.getElementById("root") || document.getElementById("deck");
   if (!target) return;
   target.innerHTML = renderApp();
   target.querySelectorAll(".cardTitle, .cardNote").forEach(trimToWord);
+  measureEdges(target);
+  if (refocus && focusId) {
+    const node = target.querySelector('.card[data-id="' + focusId + '"]');
+    if (node) node.focus({ preventScroll: false });
+  }
+  refocus = false;
 }
 
 /* The customizer drives this same renderer from a control panel rather than
@@ -1342,8 +1748,24 @@ window.__signal = {
   mount,
   presets: PRESETS,
   decisions: DECISIONS,
-  setState(next) { state = next; },
+  setState(next) { state = next; carriedId = null; focusId = null; lateOnly = false; },
 };
+
+/* One delegated listener per event, on the container, so a repaint can
+   never leave a handler behind or bind one twice. */
+const host = document.getElementById("root") || document.getElementById("deck");
+if (host) {
+  host.addEventListener("click", onClick);
+  host.addEventListener("keydown", onKey);
+  host.addEventListener("dragstart", onDragStart);
+  host.addEventListener("dragover", onDragOver);
+  host.addEventListener("drop", onDrop);
+  host.addEventListener("dragend", onDragEnd);
+}
+addEventListener("resize", () => {
+  const target = document.getElementById("root") || document.getElementById("deck");
+  if (target) measureEdges(target);
+});
 
 mount();
 </script>
