@@ -81,3 +81,5 @@ _shots/
 _probe*.mjs
 _drive*.mjs
 t[0-9].mjs
+.probe/
+probe-tmp.mjs
