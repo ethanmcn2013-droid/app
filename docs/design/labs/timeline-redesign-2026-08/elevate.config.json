@@ -1,0 +1,104 @@
+{
+  "name": "timeline-redesign",
+  "product": "Signal Timeline — how one person hands another the plan for a day that matters.",
+  "master": "master.html",
+  "gate": 9.5,
+  "states": [
+    "owner-flight",
+    "owner-empty",
+    "owner-editing",
+    "publish",
+    "phone",
+    "desk",
+    "day",
+    "print",
+    "unfurl",
+    "ended",
+    "loading"
+  ],
+  "variants": [
+    "a"
+  ],
+  "defaultVariant": "a",
+  "viewports": [
+    {
+      "name": "390x844",
+      "width": 390,
+      "height": 844,
+      "isMobile": true
+    },
+    {
+      "name": "768x1024",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "name": "1280x900",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "name": "1440x960",
+      "width": 1440,
+      "height": 960
+    }
+  ],
+  "palette": [
+    {
+      "name": "Ink",
+      "hex": "#111111"
+    },
+    {
+      "name": "Indigo",
+      "hex": "#4f46e5"
+    },
+    {
+      "name": "White",
+      "hex": "#ffffff"
+    }
+  ],
+  "families": [
+    "Geist",
+    "Geist Mono"
+  ],
+  "weights": [
+    400,
+    600
+  ],
+  "ladders": {
+    "radii": [
+      0,
+      4,
+      6,
+      8,
+      12,
+      16,
+      24,
+      999
+    ],
+    "durations": [
+      0,
+      0.08,
+      0.14,
+      0.22
+    ],
+    "easings": [
+      "cubic-bezier(0.23, 1, 0.32, 1)"
+    ],
+    "typeRamp": []
+  },
+  "console": {
+    "widths": [
+      1440,
+      1280,
+      768,
+      390
+    ],
+    "inline": [],
+    "fonts": []
+  },
+  "artifacts": {
+    "console": "",
+    "log": ""
+  }
+}

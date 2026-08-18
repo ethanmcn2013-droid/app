@@ -1,0 +1,67 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>timeline-redesign · master</title>
+<style>
+/* ═════════════════════════════════════════════════════════════════
+   timeline-redesign · the working master.
+   Palette lock: Ink #111111 · Indigo #4f46e5 · White #ffffff.
+   Every colour below must be one of those at some alpha — audit.mjs
+   enforces it. Every decision carries its argument in a comment
+   beside it; a rule nobody can argue for is a rule to delete.
+   ═════════════════════════════════════════════════════════════════ */
+:root {
+  --ink: #111111;
+  --accent: #4f46e5;
+  --paper: #ffffff;
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --line: rgba(17, 17, 17, 0.08);
+  --wash: rgba(17, 17, 17, 0.04);
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: "Geist", system-ui, sans-serif;
+  font-weight: 400; font-size: 15px;
+  line-height: 1.55; /* leading is a decision; 'normal' fails the audit */
+  -webkit-font-smoothing: antialiased;
+}
+main { padding: 48px; max-width: 720px; margin: 0 auto; }
+h1 { font-size: 24px; font-weight: 600; line-height: 1.15; margin: 0 0 12px; }
+p { margin: 0 0 12px; color: var(--ink-2); line-height: 1.55; }
+[data-state] main > section { display: none; }
+[data-state="owner-flight"] main > section[data-for="owner-flight"],
+[data-state="owner-empty"] main > section[data-for="owner-empty"],
+[data-state="owner-editing"] main > section[data-for="owner-editing"],
+[data-state="publish"] main > section[data-for="publish"],
+[data-state="phone"] main > section[data-for="phone"],
+[data-state="desk"] main > section[data-for="desk"],
+[data-state="day"] main > section[data-for="day"],
+[data-state="print"] main > section[data-for="print"],
+[data-state="unfurl"] main > section[data-for="unfurl"],
+[data-state="ended"] main > section[data-for="ended"],
+[data-state="loading"] main > section[data-for="loading"] { display: block; }
+</style>
+<body data-state="owner-flight" data-v="a">
+<main>
+  <section data-for="owner-flight"><h1>timeline-redesign · owner-flight</h1><p>Replace with the real owner-flight state, rendered from the real fixture.</p></section>
+  <section data-for="owner-empty"><h1>timeline-redesign · owner-empty</h1><p>Replace with the real owner-empty state, rendered from the real fixture.</p></section>
+  <section data-for="owner-editing"><h1>timeline-redesign · owner-editing</h1><p>Replace with the real owner-editing state, rendered from the real fixture.</p></section>
+  <section data-for="publish"><h1>timeline-redesign · publish</h1><p>Replace with the real publish state, rendered from the real fixture.</p></section>
+  <section data-for="phone"><h1>timeline-redesign · phone</h1><p>Replace with the real phone state, rendered from the real fixture.</p></section>
+  <section data-for="desk"><h1>timeline-redesign · desk</h1><p>Replace with the real desk state, rendered from the real fixture.</p></section>
+  <section data-for="day"><h1>timeline-redesign · day</h1><p>Replace with the real day state, rendered from the real fixture.</p></section>
+  <section data-for="print"><h1>timeline-redesign · print</h1><p>Replace with the real print state, rendered from the real fixture.</p></section>
+  <section data-for="unfurl"><h1>timeline-redesign · unfurl</h1><p>Replace with the real unfurl state, rendered from the real fixture.</p></section>
+  <section data-for="ended"><h1>timeline-redesign · ended</h1><p>Replace with the real ended state, rendered from the real fixture.</p></section>
+  <section data-for="loading"><h1>timeline-redesign · loading</h1><p>Replace with the real loading state, rendered from the real fixture.</p></section>
+</main>
+<script>
+/* The toolchain contract: the master answers ?state= and ?v=. */
+const q = new URLSearchParams(location.search);
+const state = q.get("state"); const v = q.get("v");
+if (state) document.body.dataset.state = state;
+if (v) document.body.dataset.v = v;
+</script>
+</body>
