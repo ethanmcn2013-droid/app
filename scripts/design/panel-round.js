@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'tasks-panel-round-10',
+  name: 'tasks-panel-round-11-final',
   description: 'Seven fresh independent seats re-grade the Tasks master against a 9.5 bar',
   phases: [
     { title: 'Review' },
@@ -66,7 +66,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 154 assertions, all passing. READ IT. Everything it asserts is already
+with 186 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -85,25 +85,24 @@ Also live, and worth driving before you score:
   with it if you disagree, but do not report it as an oversight.
 
 NEW SINCE THE LAST ROUND, all live and all worth driving:
-- Planning is a real room: it takes focus, declares itself a dialog, closes
-  on Escape / the X / a click away, its tabs switch the list, its checkboxes
-  pick, Select all flips to Clear all, and its list comes from the live set.
-- The couple's name on a card is a FILTER. Click "Nora & Cian" on any card.
-- Done reads newest first and every finished card says when. Waiting says how
-  long each thing has been held.
-- The vertical column fades are hairlines, not gradients, and the column
-  snaps so it rests on a card.
-- Clearing the board says "Everything is done."
+- The board really is one roving group now: five tab stops at rest and five
+  at peak season, and the rail, the view switcher and the tools are each one
+  stop the arrows walk.
+- The card column has a floor as well as a ceiling, so the card holds its
+  documented measure at 1280 as well as 1440. Check both.
+- The overdue chip, a couple's name and the new "N today" chip COMPOSE — two
+  or three filters at once — and Escape unwinds them one layer at a time.
+- The composer repeats: Enter commits and opens a fresh line beneath.
+- A drop into Done is a completion, with the flight and the undo.
+- An open card's words can be selected. Forced-colors mode is supported.
 
-THE LAST THREE ROUNDS WENT 7.4 -> 8.3 -> 8.6 at the minimum, and the spread
-is now 0.3. Every seat in each of those rounds volunteered that the remaining
-distance was hours of building rather than a redesign.
+THIS IS THE FINAL ROUND. There will be no further remediation, so your score
+is the number that goes on the record. Grade it as the finished artifact.
 
-GRADE HONESTLY AND WITHOUT MERCY. If a seat is at or above 9.5, say exactly
-what earned it. If it is below, name the exact remaining distance: what, how
-big, and whether it is polish, a build, or a different decision. Do not
-inflate to be kind and do not deflate to look rigorous. An accurate number
-with its reason is the only useful output.
+Say plainly what this is: name the score, name what earned it, and name what
+still stands between it and 9.5 in terms a founder can act on — is what
+remains polish, a build, or a different decision, and roughly how big. Do not
+inflate to be kind and do not deflate to look rigorous.
 `
 
 const SCHEMA = {

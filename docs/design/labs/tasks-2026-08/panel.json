@@ -504,6 +504,61 @@
           "done": "Stale records are dropped when the act that made them is reversed, and the drawer derives its list and both tab counts from the same set the header counts."
         }
       ]
+    },
+    {
+      "round": 10,
+      "scores": {
+        "UI composition": 8.5,
+        "Typography": 8.7,
+        "Interaction and states": 8.5,
+        "UX and information design": 8.7,
+        "Brand and copy": 8.9,
+        "Product taste and emotional resonance": 8.7,
+        "Measured evidence": 8.7
+      },
+      "findings": 35,
+      "confirmed": 26,
+      "refuted": 9,
+      "fixed": 26,
+      "headline": "The minimum eased from 8.6 to 8.5 as fresh seats found two things nine rounds had missed: the board's loudest claim — one tab stop — was false at fifteen stops, and the card had a ceiling with no floor, so at 1280 it measured 202px against its own documented 258. That second one had survived because every frame in shots/ is captured at 1440, the single width where it is invisible. Brand reached 8.9 and stated plainly that what keeps it off the gate is a dozen strings that were templated rather than written.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 9.0,
+          "problem": "The artifact's single loudest claim was false. \"One tab stop for the whole board\" measured fifteen stops at rest and twenty-seven at peak season, because the couple's name and every column's Add row were tab stops on every card. The assertion that existed to protect the claim counted elements carrying tabindex=\"0\" rather than what a keyboard actually walks, so it was blind to the exact elements breaking it.",
+          "done": "Both join the roving stop. The gate now counts what is walked, not what carries an attribute, and asserts the number does not grow with the work on the board — five stops at rest, five at peak season. Eleven unavailable controls also guarded the way in; the rail, the switcher and the tools are each one stop the arrows walk, and every stated reason stays reachable."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 1.0,
+          "problem": "The card had a ceiling and no floor. At 1280 — a MacBook, all day — it measured 202px against the 258px its own specimen sheet documents: eighteen of thirty-two titles ran to three lines, \"High\" clipped mid-word, and the Waiting column's wrapped note dropped its first card 17px below the other four so the board lost its shared top baseline. Ten rounds of review never saw it because every frame in shots/ is captured at 1440, the one width where it is invisible.",
+          "done": "The column has a floor as well as a ceiling. Below about 1400 the board becomes the horizontal scroller it already is at 1200 — the snap, the safe centring and both edge signals were already built and already gate-proven — so there is no discontinuity at the breakpoint. Asserted at four widths."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.35,
+          "problem": "The header answered four questions the operator did not ask and none of the one they did. On a thirty-two task board the single Due Today chip was the quietest object in the view while one overdue olive order was the loudest, and the two views that would answer the day are drawn but not live.",
+          "done": "\"3 today\" sits beside \"1 overdue\" in the outlined chip grammar the card already uses for the same fact, and it filters the board the same way. The two filters also compose now rather than cancelling each other silently, and Escape unwinds one layer at a time through a single ordered stack."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 20.0,
+          "problem": "The rail's six doors were named by a template, so each said the same sentence with a different noun, and the wider \"not yet\" system carried three verbs, two vocabularies and inconsistent punctuation. The couple-filter sentence had lost its noun and read \"Showing the 7 for Mara & Finn\" in the most prominent pill on the sheet.",
+          "done": "Each door names what is behind it. The whole system is one verb, one shape and a terminal stop, and the filter sentence is composed from whichever filters are live rather than branched per filter."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "Filtering emptied the column note, which lifted every column body by 16.8px — so the board jumped on the most-clicked control on the page. The hairline that says \"there is more below\" was painted on the scroller, so a card sitting at the foot was drawn over the very line describing it.",
+          "done": "The note holds its one-line box when it is empty. The rules are drawn on the tray, above the cards, with the tray told after layout where its own scroller starts and ends."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.3,
+          "problem": "A card's own words could not be selected — the shell suppresses selection so a drag never starts on a text run, and the exception was never made for the card the operator has opened to read. An open card also read as a hover, because its rule was declared above the interaction block and lost to it. A forced palette threw away every box-shadow, which on this board is the focus ring, the picked-up card, the card's edge and the entire severity language.",
+          "done": "An open card is the read surface, is not draggable, and its words can be taken. It carries a rank above hover. Every shadow-borne signal is restated in system colours under a forced palette, and the gate drives the board with forced colors active."
+        }
+      ]
     }
   ]
 }
