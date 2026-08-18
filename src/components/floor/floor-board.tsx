@@ -229,8 +229,13 @@ function FloorCard({
       </button>
 
       <div className={styles.cardTitleRow}>
+        {/* Same exposure as the header's date, one step rarer: a task due at
+            the operator's own date boundary reads "Today" on one side of it
+            and "Tomorrow" on the other, and the server is always on the wrong
+            side for somebody. Marked so a difference corrects itself on the
+            next render instead of regenerating the board. */}
         {showTime && (
-          <span className={styles.when} data-t={time.kind} title={time.said}>
+          <span className={styles.when} data-t={time.kind} title={time.said} suppressHydrationWarning>
             <span className={styles.sr}>{time.spoken}</span>
             {time.label}
           </span>

@@ -301,6 +301,40 @@ const counts = (page) =>
   await page.close();
 }
 
+/* ── the board hydrates wherever the operator is ──────────────────── */
+{
+  /* The server has no timezone, so anything it derives from the clock is its
+     own calendar day. An operator on the other side of a date line used to
+     hydrate against a header a day out — which React does not treat as
+     cosmetic: it fails the hydration and regenerates the whole board. These
+     three are chosen to sit on different sides of the date line from each
+     other, whatever day this runs on. */
+  const seen = [];
+  for (const timezoneId of ["Pacific/Kiritimati", "America/Los_Angeles", "Europe/Dublin"]) {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, timezoneId });
+    const page = await context.newPage();
+    const bad = [];
+    page.on("pageerror", (e) => bad.push(String(e).slice(0, 90)));
+    await page.goto(BASE + "/app/tasks", { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("[data-board]", { timeout: 30_000 });
+    await page.waitForTimeout(1500);
+    const date = await page.evaluate(() =>
+      [...document.querySelectorAll("span")]
+        .find((n) => /^[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/.test(n.textContent.trim()))?.textContent.trim() ?? "");
+    seen.push({ timezoneId, date, bad: bad.filter((t) => /hydrat/i.test(t)) });
+    await context.close();
+  }
+  ok("the board hydrates in every timezone",
+    seen.every((s) => s.bad.length === 0),
+    JSON.stringify(seen.filter((s) => s.bad.length)));
+  /* Withholding the date until mount is only correct if it then arrives, and
+     arrives as the operator's own day rather than the server's. */
+  ok("and the header shows the operator's own day, not the server's",
+    seen.every((s) => /^[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/.test(s.date)) &&
+      new Set(seen.map((s) => s.date)).size > 1,
+    JSON.stringify(seen.map((s) => `${s.timezoneId}: ${s.date}`)));
+}
+
 /* ── every view still works inside the shell ──────────────────────── */
 {
   for (const [path, label] of [["/app/tasks/list", "list"], ["/app/tasks/timeline", "schedule"], ["/app/tasks/calendar", "calendar"]]) {
