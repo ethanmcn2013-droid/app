@@ -142,54 +142,11 @@ const host = `
 /* The workspace owns the shell; the board component renders the board and its
    foot strip into the sheet, so it is a plain flex column with no inset, no
    ground and no second sheet of its own. */
-/* ── the panel's standing list, closed ───────────────────────────────
- *
- * The five items the final round left open, each named by the seat that
- * found it.
- */
-
-/* UI composition · the filtered board was one card marooned in a field of
-   full-height empty rules. A column that answered collapses to its head, so
-   the answer is what the eye lands on. */
-.boardHost[data-filtered] .tray[data-empty] { flex: 0 1 auto; }
-.boardHost[data-filtered] .tray[data-empty] .trayBody,
-.boardHost[data-filtered] .tray[data-empty] .trayAdd { display: none; }
-.boardHost[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
-.boardHost[data-filtered] .tray[data-empty] { opacity: 0.5; }
-
-/* Accessibility · a column that overflows is a scrollable region, and axe
-   rates one with no keyboard route as a serious failure. It is a stop now, so
-   it needs a ring — drawn inside its own box, because it marks a region the
-   eye should read as bounded, not an object sitting on the board. */
-.trayBody:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; border-radius: 4px; }
-
-/* Taste · emptiness is the state this board spends most of its life in, and
-   it had no design. One centred sentence and one action, inside the sheet,
-   instead of four identical Add rows over a white void. */
-.emptyBoard {
-  position: absolute; inset: 0 0 84px;
-  display: grid; place-content: center; justify-items: center;
-  gap: 14px; text-align: center; padding: 0 24px;
-  pointer-events: none;
-}
-.emptyBoard p {
-  margin: 0; max-width: 34ch;
-  font-size: 15px; font-weight: 400; letter-spacing: var(--tr-15);
-  color: var(--ink-2); text-wrap: balance;
-}
-.emptyBoard b {
-  display: block; font-size: 18px; font-weight: 600;
-  letter-spacing: var(--tr-18); color: var(--ink-1);
-}
-.emptyBoard button {
-  pointer-events: auto;
-  display: inline-flex; align-items: center; gap: 8px;
-  height: 38px; padding: 0 17px 0 14px; border-radius: var(--r-pill);
-  background: var(--ink); color: var(--white); border: 0;
-  font: inherit; font-size: 14px; font-weight: 600; letter-spacing: var(--tr-14);
-  cursor: pointer;
-}
-.emptyBoard svg { width: 16px; height: 16px; }
+/* The panel's standing list — the filtered state, the ring on the column
+   scrollers and the empty board — now lives in the MASTER, where a design
+   decision belongs. What stays here is host plumbing only: things that are
+   true because the board sits inside the app's shell rather than owning a
+   page of its own. */
 
 /* Typography · the Done column measured as the darkest thing on the sheet, so
    the eye landed on finished work before the work in hand. The tick states

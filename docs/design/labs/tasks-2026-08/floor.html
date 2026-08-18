@@ -1297,6 +1297,53 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 [data-type="expressive"] .headFacts { font-size: 13px; }
 
 /* ── responsive ────────────────────────────────────────────────── */
+/* UI composition · the filtered board was one card marooned in a field of
+   full-height empty rules. A column that answered collapses to its head, so
+   the answer is what the eye lands on. */
+.board[data-filtered] .tray[data-empty] { flex: 0 1 auto; opacity: 0.5; }
+.board[data-filtered] .tray[data-empty] .trayBody,
+.board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
+.board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
+
+/* Accessibility · a column that overflows is a scrollable region, and axe
+   rates one with no keyboard route as a serious failure. It is a stop now, so
+   it needs a ring — drawn inside its own box, because it marks a region the
+   eye should read as bounded, not an object sitting on the board. */
+.trayBody:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; border-radius: 4px; }
+
+/* A blank board makes its one offer once. Five Add rows behind a centred
+   "Add the first task" is the same offer six times. */
+.board[data-blank] .trayAdd, .board[data-blank] .trayEmpty { display: none; }
+
+/* Taste · emptiness is the state this board spends most of its life in, and
+   it had no design. One centred sentence and one action, inside the sheet,
+   instead of four identical Add rows over a white void. */
+.emptyBoard {
+  position: absolute; inset: 0 0 84px;
+  display: grid; place-content: center; justify-items: center;
+  gap: 14px; text-align: center; padding: 0 24px;
+  pointer-events: none;
+}
+.emptyBoard p {
+  margin: 0; max-width: 34ch;
+  font-size: 15px; font-weight: 400; letter-spacing: var(--tr-15);
+  color: var(--ink-2); text-wrap: balance;
+}
+.emptyBoard b {
+  display: block; font-size: 18px; font-weight: 600;
+  letter-spacing: var(--tr-18); color: var(--ink-1); margin-bottom: 6px;
+}
+.emptyBoard button {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong); background: var(--white);
+  font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
+  cursor: pointer; transition: background var(--motion-fast) var(--curve);
+}
+.emptyBoard button:hover { background: var(--wash); }
+.emptyBoard button svg { width: 16px; height: 16px; }
+
 @media (max-width: 1200px) {
   /* Below this the board is a horizontal scroller, so it gets the edge fade
      and the snap it needs to read as one. Without them a column is simply
@@ -1845,7 +1892,9 @@ function board() {
   const all = laneIds().flatMap((id) => tasksFor(id).map((t) => t.id));
   if (!all.includes(focusId)) focusId = all[0] || null;
   return (
-    '<div class="board" role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
+    '<div class="board"' + (filtering() ? " data-filtered" : "") +
+      (allTasks().length ? "" : " data-blank") +
+      ' role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
     B.columns.map((c) => {
       const rows = tasksFor(c.id);
       const all = allTasks().filter((t) => t.lane === c.id);
@@ -1857,10 +1906,14 @@ function board() {
       /* One instruction on the sheet, in the column the work starts in. The
          other four columns keep their note, so each still teaches what it
          holds without four of them issuing an order. */
-      const empty = filtering() || (!allTasks().length && c.id !== B.columns[0].id) ? "" : c.empty;
+      const empty = filtering() || !allTasks().length ? "" : c.empty;
       return (
         '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
-          (rows.length ? "" : " data-empty") +
+          /* A column holding the open composer is not an empty column — it is
+             where the operator is working. Collapsing it under a filter took
+             the ground away mid-sentence and dropped focus off the Add row it
+             came from. */
+          (rows.length || draftLane === c.id ? "" : " data-empty") +
           ' aria-describedby="tn-' + c.id + '"' +
           ' role="region" aria-label="' +
           esc(c.name) + (filtering()
@@ -1894,7 +1947,20 @@ function board() {
           I.plus + "<span>Add here</span></button>" +
         "</section>"
       );
-    }).join("") + "</div>"
+    }).join("") + "</div>" +
+    /* Emptiness is the state this board spends most of its life in, and for
+       ten rounds it had no design — four identical Add rows over a white
+       void. One centred sentence and one action, inside the sheet. */
+    (!allTasks().length
+      ? '<div class="emptyBoard"><p><b>Nothing on the board yet.</b>' +
+        "Put the first thing you have to do somewhere you will see it again." +
+        '</p><button type="button" data-act="add" data-lane="' + B.columns[0].id + '">' +
+        I.plus + "Add the first task</button></div>"
+      : filtering() && !laneIds().flatMap((id) => tasksFor(id)).length
+      ? '<div class="emptyBoard"><p><b>Nothing matches.</b>' +
+        "Every task on the board is hidden by the filter you have on." +
+        '</p><button type="button" data-act="clear">Show all work</button></div>'
+      : "")
   );
 }
 
@@ -2418,8 +2484,15 @@ function closeMenu() {
    on the board's own tab stop. Nothing may drop them on <body>. */
 function leaveDraft() {
   const target = document.getElementById("root") || document.getElementById("deck");
-  const back = draftFrom && target.querySelector(draftFrom);
+  let back = draftFrom && target.querySelector(draftFrom);
   draftFrom = null;
+  /* Closing the composer is what empties the column, and under a filter an
+     empty column collapses — so the very control focus is returning to can
+     vanish in the same repaint, dropping the operator on <body>. Focus goes
+     to the nearest control still on screen instead. */
+  if (back && !back.offsetParent) {
+    back = [...target.querySelectorAll(".trayAdd")].find((n) => n.offsetParent) || null;
+  }
   if (back) back.focus({ preventScroll: true });
   else {
     const stop = target.querySelector('.card[tabindex="0"]');

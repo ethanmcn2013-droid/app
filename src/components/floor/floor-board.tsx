@@ -337,6 +337,9 @@ export function FloorBoard({
   const totalShown = columns.reduce((n, c) => n + rowsFor(c).length, 0);
 
   const snapWas = useRef<string | null>(null);
+  /** The lane whose composer has already been given the caret, so a repaint
+   *  does not take focus back off the operator mid-sentence. */
+  const caretGiven = useRef<string | null>(null);
   const edgeFrame = useRef(0);
 
   /* Place, truth and travel are all measured after layout, so they live in
@@ -602,6 +605,9 @@ export function FloorBoard({
   const commitDraft = (lane: string) => {
     const title = draftText.trim().replace(/\s+/g, " ");
     setDraftText("");
+    /* The run continues: a fresh line opens under the one just added, and it
+       needs the caret as much as the first one did. */
+    caretGiven.current = null;
     if (!title) { setDraftLane(null); return; }
     const before = new Set(tasks.map((t) => t.id));
     store.addTask(lane, undefined, title);
@@ -621,12 +627,13 @@ export function FloorBoard({
       ref={rootRef}
       className={styles.boardHost}
       onKeyDown={onKeyDown}
-      {...(filtering ? { "data-filtered": "" } : {})}
     >
       {/* ── the board ─────────────────────────────────────── */}
         <div
           className={styles.board}
           data-board=""
+          {...(filtering ? { "data-filtered": "" } : {})}
+          {...(all.length ? {} : { "data-blank": "" })}
           style={{ "--lanes": columns.length } as React.CSSProperties}
           role="application"
           aria-label="Task board, arrow keys to move between tasks, space to pick one up"
@@ -644,7 +651,10 @@ export function FloorBoard({
                 key={column.key}
                 className={styles.tray}
                 data-lane={column.key}
-                {...(rows.length ? {} : { "data-empty": "" })}
+                {/* A column holding the open composer is not empty — it is where
+                    the operator is working, and collapsing it under a filter
+                    takes the ground away mid-sentence. */
+                  ...(rows.length || draftLane === column.key ? {} : { "data-empty": "" })}
                 aria-describedby={`fn-${column.key}`}
                 role="region"
                 aria-label={
@@ -726,11 +736,52 @@ export function FloorBoard({
                           role="textbox"
                           aria-label="What has to happen?"
                           data-placeholder="What has to happen?"
-                          ref={(node) => { if (node && node.textContent !== draftText) node.textContent = draftText; }}
+                          ref={(node) => {
+                            if (!node) return;
+                            if (node.textContent !== draftText) node.textContent = draftText;
+                            /* The affordance says "Add here" and then left the
+                               caret on the button, so the next thing typed went
+                               to the page — which is how a sentence became a
+                               command-palette query. Opening the composer puts
+                               the caret in it. Once per opening: a repaint must
+                               not snatch focus back mid-sentence. */
+                            if (caretGiven.current !== column.key) {
+                              caretGiven.current = column.key;
+                              node.focus();
+                              const range = document.createRange();
+                              range.selectNodeContents(node);
+                              range.collapse(false);
+                              const sel = window.getSelection();
+                              sel?.removeAllRanges();
+                              sel?.addRange(range);
+                            }
+                          }}
                           onInput={(e) => setDraftText((e.target as HTMLElement).textContent ?? "")}
                           onKeyDown={(e) => {
                             if (e.key === "Enter") { e.preventDefault(); commitDraft(column.key); }
-                            if (e.key === "Escape") { e.preventDefault(); setDraftLane(null); setDraftText(""); }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              setDraftLane(null);
+                              setDraftText("");
+                              caretGiven.current = null;
+                              /* Closing the composer is what empties the column,
+                                 and under a filter an empty column collapses —
+                                 so the Add row focus should return to can vanish
+                                 in the same repaint. Focus goes to it if it
+                                 survives, and to the nearest one that did if it
+                                 does not; never to <body>. */
+                              const root = rootRef.current;
+                              queueMicrotask(() => {
+                                if (!root) return;
+                                const mine = root.querySelector<HTMLElement>(
+                                  `[data-lane="${CSS.escape(column.key)}"] [data-act="add"]`,
+                                );
+                                const aim = mine?.offsetParent
+                                  ? mine
+                                  : [...root.querySelectorAll<HTMLElement>('[data-act="add"]')].find((n) => n.offsetParent);
+                                aim?.focus({ preventScroll: true });
+                              });
+                            }
                           }}
                         />
                       </div>
@@ -742,6 +793,7 @@ export function FloorBoard({
                 <button
                   type="button"
                   className={styles.trayAdd}
+                  data-act="add"
                   tabIndex={rows.some((t) => t.id === stopId) || (!stopId && column === columns[0]) ? 0 : -1}
                   aria-label={`Add a task to ${column.name}`}
                   onClick={() => { setDraftLane(column.key); setDraftText(""); }}
@@ -766,8 +818,17 @@ export function FloorBoard({
         )}
         {filtering && totalShown === 0 && (
           <div className={styles.emptyBoard}>
-            <p><b>Nothing matches.</b>{filterSentence()}</p>
-            <button type="button" onClick={clearFilters}><Plus />Show all work</button>
+            {/* The strip below already carries the filter sentence, and that
+                sentence now opens with "Nothing" too — printing both gave
+                "Nothing matches.Nothing overdue for Mara & Finn." So this
+                says what is true of the board, and lets the strip say what
+                is true of the filter. No plus icon: the way out of a filter
+                is not an act of adding. */}
+            <p>
+              <b>Nothing matches.</b>
+              Every task on the board is hidden by the filter you have on.
+            </p>
+            <button type="button" onClick={clearFilters}>Show all work</button>
           </div>
         )}
 
