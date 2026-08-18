@@ -66,6 +66,17 @@ function trimToWord(node: HTMLElement) {
   node.textContent = `${tidy(words.slice(0, low))}…`;
 }
 
+/** Whether a card is inside the board's own visible width. Vertical position
+ *  is the column scroller's business and is handled separately; this is only
+ *  about columns that sit past the edge of a narrow board. */
+function inView(card: HTMLElement, root: HTMLElement): boolean {
+  const board = root.querySelector<HTMLElement>("[data-board]");
+  if (!board) return true;
+  const box = board.getBoundingClientRect();
+  const rect = card.getBoundingClientRect();
+  return rect.left >= box.left - 1 && rect.right <= box.right + 1;
+}
+
 /* ── the hook ───────────────────────────────────────────────────── */
 
 export type FloorPlace = {
@@ -140,7 +151,19 @@ export function useFloorPlace(root: React.RefObject<HTMLElement | null>, version
        stops from the board. */
     const target = wanted.current ?? memory?.id ?? null;
     if (target && (wanted.current || memory?.hadFocus)) {
-      const card = node.querySelector<HTMLElement>(`[data-id="${CSS.escape(target)}"]`);
+      let card = node.querySelector<HTMLElement>(`[data-id="${CSS.escape(target)}"]`);
+      /* On a narrow board the columns are a horizontal scroller, so a card
+         that has just moved to Done can land a thousand pixels off screen.
+         Focusing it there leaves the operator's focus on something they
+         cannot see, and following it there costs them their place in the
+         column they are actually working down. Neither is right: focus
+         stays with the work, on the nearest card still in view. The card
+         that left is still reachable — the strip names it and Ctrl+Z
+         reverses it, neither of which depends on focus. */
+      if (card && !inView(card, node)) {
+        const near = [...node.querySelectorAll<HTMLElement>("[data-id]")].find((n) => inView(n, node));
+        card = near ?? card;
+      }
       const part = wanted.current ? "card" : memory?.part ?? "card";
       const aim = part === "card" ? card : card?.querySelector<HTMLElement>(`[data-act="${part}"]`) ?? card;
       if (aim) {

@@ -146,6 +146,20 @@ const counts = (page) =>
     await page.evaluate(() => Boolean(document.activeElement?.closest("[data-id]"))),
     await page.evaluate(() => document.activeElement?.tagName ?? "none"));
 
+  /* Focus surviving is not the same as focus being reachable. On a narrow
+     board the card that just completed can land a column off screen, and
+     focus parked on something invisible is both a lost operator and a
+     focus-visibility failure. */
+  ok("and lands somewhere the operator can see",
+    await page.evaluate(() => {
+      const host = document.activeElement?.closest("[data-id]");
+      const board = document.querySelector("[data-board]");
+      if (!host || !board) return false;
+      const r = host.getBoundingClientRect();
+      const b = board.getBoundingClientRect();
+      return r.left >= b.left - 1 && r.right <= b.right + 1 && r.top >= 0 && r.bottom <= innerHeight;
+    }));
+
   ok("a way back is offered", (await page.locator('[data-act="undo"]').count()) === 1);
   await page.locator('[data-act="undo"]').click();
   await page.waitForTimeout(600);
