@@ -20,13 +20,18 @@ const LAB = path.resolve("docs/design/labs/tasks-2026-08/shots");
 const OUT = path.resolve("docs/design/labs/tasks-2026-08/frames.json");
 
 const VIEWPORTS = ["390x844", "768x1024", "1280x900", "1440x960"];
-const STATES = ["board", "dense", "empty", "loading", "planning"];
+const STATES = ["board", "cards", "dense", "empty", "loading", "planning"];
+/* The locked direction's three variations, plus the three original
+   directions kept for the record. */
+const VARIANTS = ["linen", "wash", "ink"];
+const ARCHIVE = ["a", "b", "c"];
 
 /* The shipped app's nearest equivalent for each state. Where the shipped
    fixture has no such state, the mapping says so and the surface labels it
    rather than pretending a frame is something it is not. */
 const CURRENT_FOR_STATE = {
   board: { file: "tasks-board", note: null },
+  cards: { file: "tasks-board", note: "The shipped app has no card specimen sheet. This is its board; judge its cards inside it." },
   dense: { file: "tasks-board", note: "The shipped fixture holds one project, so there is no dense board to photograph. This is the populated board." },
   empty: { file: "tasks-board-empty-search", note: "The shipped app has no empty-workspace fixture in review mode. This is its real no-result state." },
   loading: { file: "tasks-loading", note: null },
@@ -41,7 +46,7 @@ for (const viewport of VIEWPORTS) {
       file: path.join(REF, `${CURRENT_FOR_STATE[state].file}--${viewport}.png`),
       width: Number(viewport.split("x")[0]),
     });
-    for (const direction of ["a", "b", "c"]) {
+    for (const direction of VARIANTS) {
       jobs.push({
         key: `${direction}-${state}--${viewport}`,
         file: path.join(LAB, `${direction}-${state}--${viewport}.png`),
@@ -58,6 +63,16 @@ for (const slug of ["notes-notebook", "timeline-owner", "home"]) {
     key: `ref-${slug}--1440x960`,
     file: path.join(REF, `${slug}--1440x960.png`),
     width: 1440,
+  });
+}
+
+/* The three original directions, kept so the locked decision has its own
+   receipt on the page rather than only in a document. */
+for (const direction of ARCHIVE) {
+  jobs.push({
+    key: `archive-${direction}--1440x960`,
+    file: path.join(LAB, `${direction}-board--1440x960.png`),
+    width: 1120,
   });
 }
 

@@ -25,6 +25,7 @@ const OUT = args.get("out") ?? path.join(LAB, "shots");
 const ONLY = args.get("only")?.split(",").map((v) => v.trim().toLowerCase()) ?? null;
 const STATES = args.get("states")?.split(",").map((v) => v.trim()) ?? [
   "board",
+  "cards",
   "dense",
   "empty",
   "loading",
@@ -39,10 +40,16 @@ const VIEWPORTS = [
   { name: "1440x960", width: 1440, height: 960, isMobile: false },
 ];
 
+/* The three original directions stay capturable for the record; the three
+   Studio Floor variations are the live work. A `query` rides into the URL so
+   one master file can serve all three variations. */
 const DIRECTIONS = [
   { key: "a", file: "direction-a.html", name: "Ledger" },
   { key: "b", file: "direction-b.html", name: "Atelier" },
   { key: "c", file: "direction-c.html", name: "Studio Floor" },
+  { key: "linen", file: "floor.html", name: "Studio Floor · Linen", query: "v=linen" },
+  { key: "wash", file: "floor.html", name: "Studio Floor · Wash", query: "v=wash" },
+  { key: "ink", file: "floor.html", name: "Studio Floor · Ink Room", query: "v=ink" },
 ];
 
 async function shoot() {
@@ -72,7 +79,9 @@ async function shoot() {
 
     for (const direction of directions) {
       for (const state of STATES) {
-        const url = `${pathToFileURL(path.join(LAB, direction.file)).href}?state=${state}`;
+        if (state === "cards" && (viewport.width < 1000 || !direction.query)) continue;
+        const url = `${pathToFileURL(path.join(LAB, direction.file)).href}?state=${state}` +
+          (direction.query ? `&${direction.query}` : "");
         await page.goto(url, { waitUntil: "load" });
         await page.waitForTimeout(450);
         const file = path.join(OUT, `${direction.key}-${state}--${viewport.name}.png`);

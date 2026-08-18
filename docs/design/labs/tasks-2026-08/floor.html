@@ -1,0 +1,1049 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio Floor · Tasks master</title>
+<link rel="stylesheet" href="./foundation.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   STUDIO FLOOR — the locked Tasks direction, elevated.
+
+   One architecture, three variations. The floor, the sheet, the capsule
+   spine, the trays and the dock are identical in all three; what changes
+   is the MATERIAL the room is made of and the ANATOMY of a card. Those
+   are the two things the founder named: the palette is not to be grey,
+   white or papery, and the cards are to be rebuilt rather than tuned.
+
+     ?v=linen   warm oat floor, ivory sheet, linen trays.
+                Card = a tile. Dates right-align into a column.
+     ?v=wash    indigo-tinted stone floor, tinted sheet, outlined trays.
+                Card = a slip. Metadata is one plain-English sentence.
+     ?v=ink     near-black floor continuous with the spine, warm ivory
+                sheet. Card = a plate; colour appears only when time
+                matters.
+
+     ?state=board | cards | dense | empty | loading | planning
+
+   Every colour is declared as a named, additive --x- extension token in
+   the variant blocks below. src/ds/tokens.css is vendored and untouched.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --inset: 18px;
+  --rail: 66px;
+  --sheet-radius: 20px;
+  --tap: 44px;
+
+  /* Semantics that survive every variant. Overdue is the one place red is
+     allowed; the milestone is the one earned indigo. */
+  --time-late: #b42318;
+  --time-today: #9a6a06;
+  --done: #1b873f;
+}
+
+/* ── LINEN ─────────────────────────────────────────────────────────
+   Paper stock. The room is warm and the ink is warm with it, so nothing
+   on screen is a neutral grey. */
+[data-variant="linen"] {
+  --floor: #e6dfd2;
+  --floor-edge: rgba(72, 58, 38, 0.10);
+  --sheet: #fdfbf6;
+  --tray: #f2ece0;
+  --tray-hover: #eee6d7;
+  --tray-line: transparent;
+  --card: #fffdf8;
+  --card-line: rgba(72, 58, 38, 0.13);
+  --card-line-hover: rgba(72, 58, 38, 0.24);
+  --card-lift: 0 1px 1px rgba(72, 58, 38, 0.05);
+  --card-lift-hover: 0 1px 2px rgba(72, 58, 38, 0.06), 0 6px 14px rgba(72, 58, 38, 0.07);
+  --ink: #191510;
+  --ink-soft: #4e4436;
+  --ink-faint: #857a67;
+  --ink-ghost: #cdc4b1;
+  --hair: rgba(72, 58, 38, 0.11);
+  --hair-soft: rgba(72, 58, 38, 0.06);
+  --wash-soft: rgba(72, 58, 38, 0.05);
+  --chrome: #17130d;
+  --chrome-ink: rgba(255, 253, 246, 0.6);
+  --chrome-ink-strong: #fffdf6;
+  --chrome-active: rgba(255, 253, 246, 0.12);
+  --sheet-shadow: 0 1px 2px rgba(60, 46, 26, 0.06), 0 10px 30px rgba(60, 46, 26, 0.09);
+}
+
+/* ── WASH ──────────────────────────────────────────────────────────
+   The brand's own indigo, taken all the way down to a stone. Cool but
+   chromatic: there is no grey in it. */
+[data-variant="wash"] {
+  --floor: #e6e5f1;
+  --floor-edge: rgba(30, 28, 62, 0.10);
+  --sheet: #fbfbff;
+  --tray: transparent;
+  --tray-hover: rgba(38, 36, 80, 0.028);
+  --tray-line: rgba(38, 36, 80, 0.11);
+  --card: #ffffff;
+  --card-line: transparent;
+  --card-line-hover: transparent;
+  --card-lift: 0 1px 1px rgba(30, 28, 62, 0.05), 0 2px 6px rgba(30, 28, 62, 0.05);
+  --card-lift-hover: 0 1px 2px rgba(30, 28, 62, 0.06), 0 8px 18px rgba(30, 28, 62, 0.09);
+  --ink: #15131f;
+  --ink-soft: #44415c;
+  --ink-faint: #77748f;
+  --ink-ghost: #c6c4d6;
+  --hair: rgba(38, 36, 80, 0.12);
+  --hair-soft: rgba(38, 36, 80, 0.07);
+  --wash-soft: rgba(38, 36, 80, 0.045);
+  --chrome: #16142b;
+  --chrome-ink: rgba(255, 255, 255, 0.6);
+  --chrome-ink-strong: #ffffff;
+  --chrome-active: rgba(255, 255, 255, 0.13);
+  --sheet-shadow: 0 1px 2px rgba(30, 28, 62, 0.07), 0 12px 34px rgba(30, 28, 62, 0.11);
+}
+
+/* ── INK ROOM ──────────────────────────────────────────────────────
+   The spine stops being a stripe and becomes the room. One ivory panel
+   under a lamp, and the cards are the only bright objects on it. */
+[data-variant="ink"] {
+  --floor: #131110;
+  --floor-edge: rgba(255, 255, 255, 0.07);
+  --sheet: #faf7f1;
+  --tray: transparent;
+  --tray-line: rgba(60, 48, 32, 0.13);
+  --tray-hover: rgba(60, 48, 32, 0.03);
+  --card: #ffffff;
+  --card-line: transparent;
+  --card-line-hover: transparent;
+  --card-lift: 0 1px 1px rgba(45, 34, 18, 0.06), 0 2px 5px rgba(45, 34, 18, 0.05);
+  --card-lift-hover: 0 1px 2px rgba(45, 34, 18, 0.07), 0 10px 22px rgba(45, 34, 18, 0.11);
+  --ink: #16120c;
+  --ink-soft: #4c4234;
+  --ink-faint: #857a68;
+  --ink-ghost: #cbc2b0;
+  --hair: rgba(60, 48, 32, 0.12);
+  --hair-soft: rgba(60, 48, 32, 0.07);
+  --wash-soft: rgba(60, 48, 32, 0.05);
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-ink: rgba(255, 251, 244, 0.58);
+  --chrome-ink-strong: #fffdf8;
+  --chrome-active: rgba(255, 251, 244, 0.14);
+  --sheet-shadow: 0 2px 6px rgba(0, 0, 0, 0.28), 0 22px 56px rgba(0, 0, 0, 0.36);
+}
+
+body {
+  background: var(--floor);
+  color: var(--ink);
+  font-feature-settings: "ss01", "cv01";
+}
+
+.floor {
+  height: 100dvh;
+  padding: var(--inset);
+  padding-left: calc(var(--inset) * 2 + var(--rail));
+  position: relative;
+}
+
+/* ── the capsule spine ─────────────────────────────────────────── */
+.rail {
+  position: absolute;
+  left: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: var(--rail);
+  background: var(--chrome);
+  border-radius: 22px;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 0;
+  z-index: 4;
+}
+[data-variant="linen"] .rail, [data-variant="wash"] .rail { box-shadow: var(--card-lift); }
+/* In the ink room the capsule is a lighter panel cut out of the floor
+   rather than an object dropped on it. */
+[data-variant="ink"] .rail { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09); }
+
+.railMark {
+  width: var(--tap); height: var(--tap);
+  display: grid; place-items: center;
+  color: var(--chrome-ink-strong);
+  position: relative;
+  border-radius: 14px;
+}
+.railMark svg { width: 20px; height: 20px; }
+.railMark i {
+  position: absolute; right: 9px; bottom: 10px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--floor);
+}
+[data-variant="linen"] .railMark i, [data-variant="wash"] .railMark i { box-shadow: 0 0 0 2px var(--chrome); }
+.railDivider { width: 20px; height: 1px; background: var(--chrome-ink); opacity: 0.22; margin: 10px 0; }
+.railGroup { display: grid; gap: 5px; }
+.railTile {
+  width: 46px; height: 46px;
+  border-radius: 15px;
+  display: grid; place-items: center;
+  color: var(--chrome-ink);
+  position: relative;
+  transition: color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+.railTile svg { width: 20px; height: 20px; }
+.railTile:hover { color: var(--chrome-ink-strong); background: var(--chrome-active); }
+.railTile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.railTile[data-active] {
+  color: var(--chrome-ink-strong);
+  background: var(--chrome-active);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+/* The capsule points at the sheet it opened. */
+.railTile[data-active]::after {
+  content: "";
+  position: absolute; right: -13px; top: 50%;
+  width: 8px; height: 8px; margin-top: -4px;
+  transform: rotate(45deg);
+  background: var(--chrome);
+  border-radius: 2px;
+}
+[data-variant="ink"] .railTile[data-active]::after { background: rgba(255, 255, 255, 0.09); }
+.railSpacer { flex: 1; }
+.railAdd { display: none; }
+.railAvatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--chrome-active);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  color: var(--chrome-ink-strong);
+  display: grid; place-items: center;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+  margin-top: 8px;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────── */
+.sheet {
+  height: 100%;
+  background: var(--sheet);
+  border-radius: var(--sheet-radius);
+  box-shadow: var(--sheet-shadow);
+  display: flex; flex-direction: column;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.head {
+  flex: none;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 20px;
+  height: 60px;
+}
+.word {
+  display: inline-flex; align-items: baseline;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.045em;
+  color: var(--ink); flex: none;
+}
+.word::after {
+  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: var(--accent); margin-left: 2px;
+}
+.headRule { width: 1px; height: 22px; background: var(--hair); flex: none; }
+.headName {
+  font-size: 18px; font-weight: 600; letter-spacing: -0.026em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 0 1 auto; min-width: 8ch;
+}
+/* Progress is a sentence, not a bar. The numbers carry the weight and the
+   words stay quiet, so it reads at a glance and never duplicates itself. */
+.headFacts {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 13px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.006em;
+  white-space: nowrap;
+}
+.headFacts b { font-weight: 600; color: var(--ink); }
+.late {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px 0 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--time-late) 9%, transparent);
+  color: var(--time-late);
+  font-size: 12px; font-weight: 500;
+}
+.late::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+
+.ghost {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 11px;
+  border-radius: 999px;
+  font-size: 12.5px; color: var(--ink-soft); letter-spacing: -0.008em;
+  white-space: nowrap;
+  transition: background-color var(--motion-instant) var(--ease-out), color var(--motion-instant) var(--ease-out);
+}
+.ghost svg { width: 15px; height: 15px; color: var(--ink-faint); }
+.ghost:hover { background: var(--wash-soft); color: var(--ink); }
+.ghost:hover svg { color: var(--ink-soft); }
+.ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ghost em { font-style: normal; font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.headSearch { display: none; }
+
+.views {
+  flex: none;
+  display: flex; align-items: center;
+  padding: 0 20px 14px;
+}
+.seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash-soft); border-radius: 999px; }
+.segItem {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 14px;
+  border-radius: 999px;
+  font-size: 12.5px; color: var(--ink-faint); letter-spacing: -0.008em;
+  transition: color var(--motion-instant) var(--ease-out);
+}
+.segItem svg { width: 15px; height: 15px; }
+.segItem:hover { color: var(--ink-soft); }
+.segItem:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.segItem[data-active] {
+  background: var(--sheet); color: var(--ink); font-weight: 550;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+}
+[data-variant="ink"] .segItem[data-active] { background: #fff; }
+.viewTools { margin-left: auto; display: flex; gap: 2px; }
+
+/* ── trays ─────────────────────────────────────────────────────── */
+.board {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  padding: 0 14px 92px;
+  overflow: auto;
+}
+.tray {
+  min-width: 0;
+  background: var(--tray);
+  border-radius: 16px;
+  display: flex; flex-direction: column;
+  padding: 12px 10px 8px;
+  transition: background-color var(--motion-base) var(--ease-out);
+}
+.tray:hover { background: var(--tray-hover); }
+/* Wash and Ink have no tray fill: the tray is a ruled column, so the
+   sheet stays one continuous surface. */
+[data-variant="wash"] .tray, [data-variant="ink"] .tray {
+  border-radius: 0;
+  border-left: 1px solid var(--tray-line);
+  padding: 12px 12px 8px;
+}
+[data-variant="wash"] .tray:first-child, [data-variant="ink"] .tray:first-child { border-left: 0; }
+[data-variant="wash"] .board, [data-variant="ink"] .board { gap: 0; padding: 0 16px 92px; }
+
+.trayHead { flex: none; padding: 0 6px 10px; }
+.trayTop { display: flex; align-items: center; gap: 8px; }
+.pip { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-ghost); flex: none; }
+.tray[data-tone="flight"] .pip { background: var(--status-flight); }
+.tray[data-tone="done"] .pip { background: var(--done); }
+.trayName { font-size: 13px; font-weight: 600; letter-spacing: -0.014em; }
+.trayCount {
+  margin-left: auto;
+  font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums;
+}
+.trayNote { margin: 5px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--ink-faint); letter-spacing: -0.003em; }
+.trayBody { overflow: auto; display: grid; gap: 8px; align-content: start; padding: 2px 0 54px; }
+
+/* ═══ THE CARD ═══════════════════════════════════════════════════
+   Common to all three variants: one optical baseline. The completion
+   control lives in a fixed left gutter, the title starts at a fixed x,
+   and every line under it aligns to the same x. Nothing below the title
+   can push the title around. */
+.card {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  box-shadow: var(--card-lift);
+  padding: 11px 12px 10px 11px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 5px;
+  transition: box-shadow var(--motion-fast) var(--ease-out),
+              border-color var(--motion-fast) var(--ease-out),
+              transform var(--motion-fast) var(--ease-out);
+}
+/* Linen alone catches a highlight along its top edge, the way a real card
+   stock does. Declared before the interaction states so it can never win
+   against them on source order. */
+[data-variant="linen"] .card { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), var(--card-lift); }
+
+[data-variant] .card:hover, [data-variant] .card[data-force="hover"] {
+  box-shadow: var(--card-lift-hover);
+  border-color: var(--card-line-hover);
+}
+[data-variant="linen"] .card:hover, [data-variant="linen"] .card[data-force="hover"] {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), var(--card-lift-hover);
+}
+[data-variant] .card:focus-visible, [data-variant] .card[data-force="focus"] {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+[data-variant] .card[data-force="selected"] {
+  box-shadow: var(--card-lift), 0 0 0 1.5px var(--accent);
+  border-color: transparent;
+}
+[data-variant] .card[data-force="drag"] {
+  transform: rotate(-1.6deg) scale(1.03);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.07), 0 22px 44px rgba(0, 0, 0, 0.17);
+  border-color: transparent;
+}
+
+.tick {
+  grid-column: 1; grid-row: 1;
+  width: 18px; height: 18px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.4px var(--ink-ghost);
+  margin-top: 1px;
+  display: grid; place-items: center;
+  color: transparent;
+  transition: box-shadow var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+.tick svg { width: 11px; height: 11px; stroke-width: 2.4; }
+.card:hover .tick, .card[data-force="hover"] .tick { box-shadow: inset 0 0 0 1.4px var(--ink-faint); }
+
+.cardTitleRow {
+  grid-column: 2; grid-row: 1;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.cardTitle {
+  font-size: 14px; line-height: 1.36; font-weight: 550;
+  letter-spacing: -0.015em; color: var(--ink);
+  margin: 0;
+  /* The time fact shares this line, so the title is guaranteed most of
+     it. Without the floor, a long overdue label turns a two-line title
+     into a four-line one. */
+  flex: 1 1 auto; min-width: 62%;
+}
+.cardNote {
+  grid-column: 2; grid-row: 2;
+  margin: 0; font-size: 12px; line-height: 1.42; color: var(--ink-faint);
+  letter-spacing: -0.003em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cardFoot {
+  grid-column: 2; grid-row: 3;
+  display: flex; align-items: center; gap: 8px;
+  min-height: 20px;
+  font-size: 11.5px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.002em;
+}
+.who {
+  width: 20px; height: 20px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: var(--wash-soft);
+  box-shadow: inset 0 0 0 1px var(--hair-soft);
+  font-size: 9px; font-weight: 600; letter-spacing: 0.02em; color: var(--ink-soft);
+}
+.cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
+.cardFoot .cm svg { width: 12px; height: 12px; }
+.cardFoot .grow { margin-left: auto; }
+.cardDots {
+  position: absolute; top: 7px; right: 7px;
+  width: 26px; height: 26px; border-radius: 7px;
+  display: grid; place-items: center; color: var(--ink-faint);
+  background: var(--card);
+  opacity: 0;
+  transition: opacity var(--motion-instant) var(--ease-out);
+}
+.cardDots svg { width: 15px; height: 15px; }
+.card:hover .cardDots, .card[data-force="hover"] .cardDots { opacity: 1; }
+
+/* The time fact. This is the card's most important upgrade: it right
+   aligns on the title's own line, so scanning a tray gives a real date
+   column instead of a ragged pile. */
+.when {
+  flex: none; margin-left: auto;
+  font-size: 11.5px; font-variant-numeric: tabular-nums;
+  color: var(--ink-faint); letter-spacing: 0.002em;
+  padding-top: 2px;
+  white-space: nowrap;
+}
+.when[data-t="overdue"] { color: var(--time-late); font-weight: 550; }
+.when[data-t="today"] { color: var(--time-today); font-weight: 550; }
+.when[data-t="milestone"] { color: var(--accent); font-weight: 550; display: inline-flex; align-items: center; gap: 4px; }
+.when[data-t="milestone"] svg { width: 9px; height: 9px; stroke-width: 2.2; }
+
+/* Tags: one quiet word, never a row of pills. Each room says it its own
+   way — a stamped label on paper stock, a word inside a sentence, or a
+   plain quiet noun. */
+.tag { color: var(--ink-faint); white-space: nowrap; }
+[data-variant="linen"] .tag {
+  font-family: var(--font-mono);
+  font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+[data-variant="ink"] .tag { font-size: 11.5px; letter-spacing: -0.004em; }
+.hi { color: var(--ink-soft); font-weight: 550; }
+
+/* Done. Never a strike-through: the work happened, it is not a mistake. */
+[data-variant] .card[data-done] { background: transparent; border-color: var(--hair-soft); box-shadow: none; }
+[data-variant] .card[data-done][data-force="drag"] { transform: rotate(-1.6deg) scale(1.03); box-shadow: 0 3px 6px rgba(0,0,0,0.07), 0 22px 44px rgba(0,0,0,0.17); }
+[data-variant="linen"] .card[data-done] { box-shadow: none; background: var(--wash-soft); border-color: transparent; }
+[data-variant="wash"] .card[data-done], [data-variant="ink"] .card[data-done] {
+  background: var(--wash-soft); border-color: transparent; box-shadow: none;
+}
+.card[data-done] .cardTitle { color: var(--ink-faint); font-weight: 450; }
+.card[data-done] .tick { background: var(--done); box-shadow: none; color: #fff; }
+.card[data-done] .who { opacity: 0.7; }
+
+/* The one earned indigo: the next dated milestone. */
+.card[data-next] { box-shadow: var(--card-lift), inset 0 0 0 1.5px var(--accent); border-color: transparent; }
+[data-variant="linen"] .card[data-next] { box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), var(--card-lift), inset 0 0 0 1.5px var(--accent); }
+/* ── VARIANT: WASH · the slip ────────────────────────────────────
+   No border, no chip vocabulary. Metadata is one plain-English
+   sentence, which is what the brand voice would have written if it had
+   been asked to describe the task out loud. */
+[data-variant="wash"] .card { padding: 12px 13px 11px 12px; border-radius: 11px; }
+[data-variant="wash"] .cardFoot { gap: 0; }
+[data-variant="wash"] .sentence { color: var(--ink-faint); }
+[data-variant="wash"] .sentence .hi { color: var(--ink-soft); font-weight: 500; }
+[data-variant="wash"] .sentence .late { all: unset; color: var(--time-late); font-weight: 550; }
+[data-variant="wash"] .sentence .today { color: var(--time-today); font-weight: 550; }
+[data-variant="wash"] .when { display: none; }
+[data-variant="wash"] .tag { display: none; }
+
+/* ── VARIANT: INK · the plate ────────────────────────────────────
+   The card is quiet until time matters. When it does, the fact becomes a
+   filled chip, so the board's colour is a map of what is time critical
+   and nothing else. */
+[data-variant="ink"] .card { border-radius: 10px; padding: 12px 13px 11px 12px; }
+[data-variant="ink"] .when {
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--wash-soft); color: var(--ink-faint);
+  font-size: 10.5px; letter-spacing: 0;
+}
+[data-variant="ink"] .when[data-t="overdue"] {
+  background: color-mix(in srgb, var(--time-late) 12%, transparent);
+  color: var(--time-late);
+}
+[data-variant="ink"] .when[data-t="today"] {
+  background: color-mix(in srgb, var(--time-today) 14%, transparent);
+  color: var(--time-today);
+}
+[data-variant="ink"] .when[data-t="milestone"] {
+  background: var(--accent-soft); color: var(--accent);
+}
+[data-variant="ink"] .when[data-t="none"] { display: none; }
+
+/* ── empty and add ─────────────────────────────────────────────── */
+.trayEmpty {
+  padding: 10px 8px 6px;
+  font-size: 12px; line-height: 1.45; color: var(--ink-faint);
+}
+.trayAdd {
+  display: flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 8px; margin-top: 4px;
+  border-radius: 9px;
+  font-size: 12.5px; color: var(--ink-faint);
+  transition: color var(--motion-instant) var(--ease-out), background-color var(--motion-instant) var(--ease-out);
+}
+.trayAdd svg { width: 15px; height: 15px; }
+.trayAdd:hover { color: var(--ink); background: var(--wash-soft); }
+.trayAdd:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── the dock ──────────────────────────────────────────────────── */
+.dockScrim {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 104px;
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--sheet) 88%, transparent) 44%, var(--sheet) 100%);
+  pointer-events: none; z-index: 2;
+}
+.dock {
+  position: absolute; left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  box-shadow: var(--shadow-modal);
+  z-index: 3;
+}
+[data-variant="ink"] .dock { border-color: transparent; box-shadow: 0 2px 6px rgba(45,34,18,0.1), 0 14px 34px rgba(45,34,18,0.16); }
+.dockField {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 38px; padding: 0 14px 0 13px;
+  min-width: 188px;
+  border-radius: 999px;
+  background: var(--wash-soft);
+  font-size: 13px; color: var(--ink-faint); letter-spacing: -0.008em;
+  transition: background-color var(--motion-instant) var(--ease-out);
+}
+.dockField:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.dockField svg { width: 16px; height: 16px; }
+.dockField kbd {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 10px;
+  border: 1px solid var(--hair); border-radius: 5px;
+  padding: 2px 5px; color: var(--ink-faint);
+}
+.dockPrimary {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 17px 0 14px;
+  border-radius: 999px;
+  background: var(--ink); color: var(--sheet);
+  font-size: 13px; font-weight: 550; letter-spacing: -0.008em;
+  transition: transform var(--motion-fast) var(--ease-out);
+}
+.dockPrimary svg { width: 16px; height: 16px; }
+.dockPrimary:active { transform: scale(0.98); }
+.dockRule { width: 1px; height: 22px; background: var(--hair); margin: 0 3px; }
+.dockAvatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ink); color: var(--sheet);
+  display: grid; place-items: center;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+}
+.dock button:focus-visible, .dock span:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── planning drawer ───────────────────────────────────────────── */
+.drawer {
+  position: absolute;
+  right: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: 392px;
+  background: var(--sheet);
+  border-radius: var(--sheet-radius);
+  box-shadow: var(--shadow-modal);
+  display: flex; flex-direction: column;
+  z-index: 5; overflow: hidden;
+}
+[data-variant="ink"] .drawer { box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 24px 60px rgba(0,0,0,0.4); }
+.drawerHead { padding: 20px 22px 16px; }
+.drawerTop { display: flex; align-items: center; }
+.drawerKicker {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint);
+}
+.drawerHead h2 { margin: 10px 0 3px; font-size: 19px; font-weight: 600; letter-spacing: -0.026em; }
+.drawerLine { margin: 0; font-size: 12.5px; color: var(--ink-faint); }
+.axis { margin: 20px 0 8px; height: 6px; background: var(--wash-soft); border-radius: 3px; position: relative; }
+.axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 3px; }
+.axis b {
+  position: absolute; left: 11.3%; top: 50%;
+  width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 3px var(--sheet), 0 1px 3px rgba(0, 0, 0, 0.22);
+}
+.axisEnds { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.drawerSummary { margin: 13px 0 0; font-size: 13px; color: var(--ink-soft); }
+.drawerTabs { display: flex; gap: 3px; padding: 0 18px 12px; }
+.drawerTab { height: 32px; padding: 0 12px; border-radius: 999px; font-size: 12.5px; color: var(--ink-faint); }
+.drawerTab[data-active] { background: var(--wash-soft); color: var(--ink); font-weight: 550; }
+.drawerTab em { font-style: normal; font-size: 11px; margin-left: 6px; color: var(--ink-faint); }
+.drawerHelp { padding: 0 22px 12px; margin: 0; font-size: 12px; color: var(--ink-faint); line-height: 1.5; }
+.drawerHelp a { color: var(--accent); text-decoration: none; float: right; margin-left: 12px; }
+.drawerRows { overflow: auto; padding: 0 14px 16px; display: grid; gap: 6px; align-content: start; }
+.drawerRow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  box-shadow: var(--card-lift);
+  border-radius: 10px;
+  font-size: 12.5px; line-height: 1.4; letter-spacing: -0.008em;
+}
+.box { width: 15px; height: 15px; border-radius: 4px; box-shadow: inset 0 0 0 1.4px var(--ink-ghost); flex: none; }
+.drawerRow button { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-soft); }
+.drawerRow button svg { width: 13px; height: 13px; color: var(--ink-faint); }
+.drawerAdd { margin: 0 22px 18px; display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink-faint); }
+.drawerAdd svg { width: 15px; height: 15px; }
+
+/* ── loading ───────────────────────────────────────────────────── */
+.sk { display: block; background: var(--wash-soft); border-radius: 5px; animation: breathe 1.8s var(--ease-in-out) infinite; }
+@keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.48 } }
+.loadCard {
+  background: var(--card); border: 1px solid var(--card-line);
+  box-shadow: var(--card-lift); border-radius: 12px;
+  padding: 12px 13px; display: grid; gap: 8px;
+}
+.loadSay {
+  position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+  font-size: 13px; color: var(--ink-faint); z-index: 3;
+}
+
+/* ── card specimen sheet ───────────────────────────────────────── */
+.spec { flex: 1; min-height: 0; overflow: auto; padding: 4px 22px 32px; }
+.specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); gap: 24px 20px; }
+.specCell { display: grid; gap: 9px; align-content: start; }
+.specLabel {
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint);
+}
+/* 254px is what a tray gives a card on a 1440 board, so the specimen is
+   the real thing rather than a flattering wide version of it. */
+.specStage { background: var(--tray); border-radius: 14px; padding: 13px; width: 280px; max-width: 100%; }
+.specStage .card { max-width: 254px; }
+[data-variant="wash"] .specStage, [data-variant="ink"] .specStage { background: var(--wash-soft); }
+.specNote { font-size: 12px; line-height: 1.45; color: var(--ink-faint); margin: 0; }
+.specIntro { max-width: 64ch; margin: 0 0 22px; font-size: 13px; line-height: 1.55; color: var(--ink-soft); }
+
+/* ── responsive ────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .board { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(258px, 1fr); }
+  .drawer { width: 366px; }
+}
+@media (max-width: 900px) {
+  :root { --inset: 12px; }
+  .headFacts { display: none; }
+  .drawer { left: var(--inset); width: auto; }
+}
+@media (max-width: 720px) {
+  :root { --inset: 9px; }
+  .floor { padding: var(--inset) var(--inset) 0; }
+  .rail {
+    left: var(--inset); right: var(--inset); top: auto;
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    width: auto; height: 60px;
+    flex-direction: row; justify-content: space-around;
+    border-radius: 20px; padding: 0 8px;
+  }
+  [data-variant="ink"] .rail { background: rgba(255,255,255,0.07); }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  .railTile[title="Inbox"], .railTile[title="Help and settings"] { display: none; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -4px; }
+  .railAdd {
+    display: grid; place-items: center;
+    width: 44px; height: 44px; border-radius: 15px;
+    background: var(--sheet); color: var(--ink);
+    margin: 0 2px 0 8px;
+  }
+  .railAdd svg { width: 20px; height: 20px; }
+  .railAvatar { margin: 0; }
+  .sheet {
+    height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom));
+    border-radius: 18px;
+  }
+  .head { height: auto; flex-wrap: wrap; gap: 8px 12px; padding: 14px 16px 0; }
+  .headName { font-size: 19px; width: 100%; order: 2; }
+  .headRule { display: none; }
+  .headActions { order: 1; margin-left: auto; }
+  .headSearch { display: inline-flex; }
+  .headFacts { display: flex; order: 3; width: 100%; font-size: 12.5px; gap: 12px; }
+  .views { padding: 14px 16px 12px; overflow-x: auto; }
+  .viewTools { display: none; }
+  .board {
+    padding: 0 12px 14px; gap: 10px;
+    grid-auto-columns: 86%;
+    scroll-snap-type: x mandatory; scroll-padding-left: 12px;
+  }
+  [data-variant="wash"] .board, [data-variant="ink"] .board { gap: 0; padding: 0 12px 14px; }
+  .tray { scroll-snap-align: start; }
+  .trayBody { padding-bottom: 4px; }
+  .dock, .dockScrim { display: none; }
+  .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
+  .loadSay { bottom: 16px; }
+  .spec { padding: 4px 16px 24px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="./data.js"></script>
+<script src="./icons.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const state = params.get("state") || "board";
+const variant = params.get("v") || "linen";
+document.documentElement.setAttribute("data-variant", variant);
+
+const B = window.BOARD;
+const I = window.ICON;
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const initials = (name) =>
+  String(name).replace(/&/g, " ").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
+
+/* Every task in the review fixture belongs to Orla. */
+const UNIFORM_ASSIGNEES = true;
+
+function tasksFor(lane) {
+  if (state === "empty") return [];
+  let all = B.tasks.slice();
+  if (state === "dense") all = all.concat(window.DENSE_EXTRA.map((t, i) => ({ ...t, id: "x" + i })));
+  return all.filter((t) => t.lane === lane);
+}
+
+/* One time fact per card, resolved once so every variant renders the same
+   truth and only its presentation differs. */
+function timeOf(task) {
+  if (task.lane === "done") return { kind: "done", label: "Done" };
+  if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
+  if (task.dueTone === "overdue") return { kind: "overdue", label: "2 days late" };
+  if (task.dueTone === "today") return { kind: "today", label: "Today" };
+  if (task.dueTone === "soon") return { kind: "soon", label: task.due.replace("Due ", "") };
+  return { kind: "none", label: "" };
+}
+
+/* Wash speaks metadata as a sentence rather than a row of chips. */
+function sentenceFor(task) {
+  const time = timeOf(task);
+  const parts = [];
+  if (task.tag) parts.push('<span class="hi">' + esc(task.tag) + "</span>");
+  if (time.kind === "overdue") parts.push('<span class="late">two days late</span>');
+  else if (time.kind === "today") parts.push('<span class="today">due today</span>');
+  else if (time.kind === "milestone") parts.push('<span style="color:var(--accent);font-weight:550">milestone, ' + esc(time.label) + "</span>");
+  else if (time.kind === "soon") parts.push("due " + esc(time.label.toLowerCase()));
+  if (task.priority && task.lane !== "done") parts.push(esc(task.priority.toLowerCase()) + " priority");
+  if (task.comments) parts.push(task.comments + (task.comments === 1 ? " note" : " notes"));
+  if (task.contact) parts.push("with " + esc(task.contact));
+  if (!parts.length) return "";
+  /* One fact is a label, not a sentence, and a full stop after a single
+     word reads like a typo. */
+  const body = parts.length === 1 ? parts[0] : parts.join(", ") + ".";
+  return '<span class="sentence">' + body + "</span>";
+}
+
+function card(task, force) {
+  const done = task.lane === "done";
+  const next = Boolean(task.milestone);
+  const time = timeOf(task);
+
+  const whenLabel = time.kind === "milestone"
+    ? I.milestone + esc(time.label)
+    : time.kind === "done" ? "" : esc(time.label);
+  const showWhen = variant !== "wash" && time.kind !== "none" && time.kind !== "done";
+
+  let foot = "";
+  if (variant === "wash") {
+    const sentence = sentenceFor(task);
+    foot = sentence ? '<div class="cardFoot">' + sentence + "</div>" : "";
+  } else {
+    /* uniformAssignees, the shipped board's own rule: when every visible
+       task belongs to the same person the avatar says nothing, so it is
+       not drawn. This fixture is one operator, Orla. */
+    const bits = [];
+    if (task.tag) bits.push('<span class="tag">' + esc(task.tag) + "</span>");
+    if (task.priority && !done) bits.push('<span class="hi">' + esc(task.priority) + "</span>");
+    if (task.comments) bits.push('<span class="cm">' + I.comment + task.comments + "</span>");
+    foot =
+      '<div class="cardFoot">' +
+      (UNIFORM_ASSIGNEES ? "" : '<span class="who" title="Orla">' + initials(B.operator.name) + "</span>") +
+      bits.join("") +
+      (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
+      "</div>";
+  }
+
+  return (
+    '<article class="card"' +
+    (done ? " data-done" : "") +
+    (next ? " data-next" : "") +
+    (force ? ' data-force="' + force + '"' : "") +
+    ">" +
+    '<span class="tick">' + I.check + "</span>" +
+    '<div class="cardTitleRow">' +
+      '<p class="cardTitle">' + esc(task.title) + "</p>" +
+      (showWhen ? '<span class="when" data-t="' + time.kind + '">' + whenLabel + "</span>" : "") +
+    "</div>" +
+    (task.note && !done ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
+    foot +
+    '<button class="cardDots" aria-label="Task actions">' + I.dots + "</button>" +
+    "</article>"
+  );
+}
+
+function rail() {
+  const tile = (key, label, active) =>
+    '<a class="railTile" title="' + label + '" tabindex="0"' + (active ? " data-active" : "") + ">" + I[key] + "</a>";
+  return (
+    '<nav class="rail" aria-label="Signal Studio">' +
+    '<a class="railMark" title="Signal Studio">' + I.more + "<i></i></a>" +
+    '<span class="railDivider"></span>' +
+    '<div class="railGroup">' +
+      tile("home", "Home", false) +
+      B.rail.products.map((p) => tile(p.key, p.label, p.active)).join("") +
+    "</div>" +
+    '<span class="railSpacer"></span>' +
+    tile("inbox", "Inbox", false) +
+    tile("help", "Help and settings", false) +
+    '<button class="railAdd" aria-label="Add task">' + I.plus + "</button>" +
+    '<span class="railAvatar" title="' + esc(B.operator.role) + '">' + B.operator.initials + "</span>" +
+    "</nav>"
+  );
+}
+
+function head() {
+  const p = B.progress;
+  const total = state === "empty" ? 0 : state === "dense" ? p.total + window.DENSE_EXTRA.length : p.total;
+  const done = state === "empty" ? 0 : p.done;
+  return (
+    '<div class="head">' +
+    '<span class="word">tasks</span>' +
+    '<span class="headRule"></span>' +
+    '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
+    '<div class="headFacts">' +
+      "<span><b>" + done + "</b> of <b>" + total + "</b> done</span>" +
+      (state === "empty" ? "" : '<span class="late">' + p.overdue + " overdue</span>") +
+      "<span>day " + p.day + " of " + p.of + "</span>" +
+    "</div>" +
+    '<div class="headActions">' +
+      '<button class="ghost headSearch" aria-label="Search">' + I.search + "</button>" +
+      '<button class="ghost">' + I.share + "<span>Share</span></button>" +
+      '<button class="ghost">' + I.planning + "<span>Planning</span>" +
+        (state === "empty" ? "" : "<em>" + p.undated + "</em>") + "</button>" +
+      '<button class="ghost" aria-label="More">' + I.dots + "</button>" +
+    "</div>" +
+    "</div>"
+  );
+}
+
+function views() {
+  const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
+  return (
+    '<div class="views">' +
+    '<nav class="seg" aria-label="View">' +
+    B.views.map((v) => '<a class="segItem" tabindex="0"' + (v === "Board" ? " data-active" : "") + ">" + icons[v] + "<span>" + v + "</span></a>").join("") +
+    "</nav>" +
+    '<div class="viewTools">' +
+      '<button class="ghost">' + I.filter + "<span>Filter</span></button>" +
+      '<button class="ghost">' + I.sort + "<span>Sort</span></button>" +
+      '<button class="ghost">' + I.display + "<span>Display</span></button>" +
+    "</div></div>"
+  );
+}
+
+const EMPTY_COPY = {
+  todo: "Nothing agreed yet. Add the first thing you have to do.",
+  doing: "Nothing in motion. Move something across when you start it.",
+  review: "Nothing waiting on a check.",
+  waiting: "Nothing held up.",
+  done: "Nothing finished yet. Finished work stays here.",
+};
+
+function board() {
+  return (
+    '<div class="board">' +
+    B.columns.map((c) => {
+      const rows = tasksFor(c.id);
+      return (
+        '<section class="tray" data-tone="' + c.tone + '">' +
+        '<div class="trayHead"><div class="trayTop">' +
+          '<span class="pip"></span><span class="trayName">' + esc(c.name) + "</span>" +
+          '<span class="trayCount">' + rows.length + "</span></div>" +
+          '<p class="trayNote">' + esc(c.note) + "</p></div>" +
+        '<div class="trayBody">' +
+          (rows.length
+            ? rows.map((t) => card(t)).join("")
+            : '<p class="trayEmpty">' + esc(c.id === "waiting" ? c.empty : EMPTY_COPY[c.id]) + "</p>") +
+        "</div>" +
+        '<button class="trayAdd">' + I.plus + "<span>Add task</span></button>" +
+        "</section>"
+      );
+    }).join("") +
+    "</div>"
+  );
+}
+
+function dock() {
+  return (
+    '<span class="dockScrim" aria-hidden="true"></span>' +
+    '<div class="dock">' +
+      '<button class="dockField">' + I.search + "<span>Search this project</span><kbd>⌘K</kbd></button>" +
+      '<button class="dockPrimary">' + I.plus + "<span>Add task</span></button>" +
+      '<span class="dockRule"></span>' +
+      '<span class="dockAvatar" title="' + esc(B.operator.role) + '">' + B.operator.initials + "</span>" +
+    "</div>"
+  );
+}
+
+function drawer() {
+  const p = B.planning;
+  return (
+    '<aside class="drawer">' +
+    '<div class="drawerHead">' +
+      '<div class="drawerTop"><span class="drawerKicker">' + esc(p.title) + "</span>" +
+      '<button class="ghost" style="margin-left:auto" aria-label="Close">' + I.close + "</button></div>" +
+      "<h2>" + esc(p.project) + "</h2>" +
+      '<p class="drawerLine">' + esc(p.line) + "</p>" +
+      '<div class="axis"><i></i><b></b></div>' +
+      '<div class="axisEnds"><span>6 Jul</span><span>10 Oct</span></div>' +
+      '<p class="drawerSummary">' + esc(p.summary) + "</p>" +
+    "</div>" +
+    '<div class="drawerTabs">' +
+      '<button class="drawerTab" data-active>Unscheduled<em>' + p.unscheduled.length + "</em></button>" +
+      '<button class="drawerTab">Milestones<em>' + p.milestones.length + "</em></button>" +
+    "</div>" +
+    '<p class="drawerHelp"><a>Select all</a>' + esc(p.help) + "</p>" +
+    '<div class="drawerRows">' +
+    p.unscheduled.map((t) => '<div class="drawerRow"><span class="box"></span><span>' + esc(t) + "</span><button>Schedule " + I.chevron + "</button></div>").join("") +
+    "</div>" +
+    '<button class="drawerAdd">' + I.plus + "<span>Add unscheduled task</span></button>" +
+    "</aside>"
+  );
+}
+
+function loading() {
+  return (
+    '<div class="sheet">' +
+    '<div class="head">' +
+      '<span class="word">tasks</span><span class="headRule"></span>' +
+      '<span class="sk" style="width:176px;height:15px"></span>' +
+      '<div class="headActions"><span class="sk" style="width:92px;height:14px"></span></div>' +
+    "</div>" +
+    '<div class="views"><span class="sk" style="width:318px;height:38px;border-radius:999px"></span></div>' +
+    '<div class="board">' +
+    B.columns.map((c, i) => (
+      '<section class="tray">' +
+      '<div class="trayHead">' +
+        '<span class="sk" style="width:' + [52, 74, 50, 56, 38][i] + 'px;height:11px"></span>' +
+        '<span class="sk" style="width:' + [120, 92, 132, 150, 116][i] + 'px;height:9px;margin-top:8px"></span>' +
+      "</div>" +
+      '<div class="trayBody">' +
+      [0, 1, 2].slice(0, [3, 3, 2, 0, 3][i]).map(() => (
+        '<div class="loadCard">' +
+        '<span class="sk" style="width:86%;height:12px"></span>' +
+        '<span class="sk" style="width:62%;height:10px"></span>' +
+        '<span class="sk" style="width:34%;height:9px"></span>' +
+        "</div>"
+      )).join("") +
+      "</div></section>"
+    )).join("") +
+    "</div>" +
+    '<p class="loadSay">Opening The Orchard, events</p>' +
+    "</div>"
+  );
+}
+
+/* The specimen sheet. Every state a card can be in, at the width it is
+   really drawn, so the card system can be judged on its own. */
+function specimens() {
+  const find = (id) => B.tasks.find((t) => t.id === id);
+  const cells = [
+    ["At rest", find("demo-t-03"), null, "Nothing but the work. No empty slots, no placeholder chips."],
+    ["Hover", find("demo-t-04"), "hover", "The card lifts a little and the menu appears. Height never changes."],
+    ["Keyboard focus", find("demo-t-08"), "focus", "A real focus ring, not a colour change."],
+    ["Selected", find("demo-t-07"), "selected", "Selection is a ring in the accent, so it cannot be confused with hover."],
+    ["Overdue", find("demo-t-06"), null, "The only red on the board. It states how late, not that it is late."],
+    ["Due today", find("demo-t-05"), null, "Today is warm, not red. Nothing has gone wrong yet."],
+    ["Next milestone", find("demo-t-02"), null, "The one earned indigo, spent on the next dated thing."],
+    ["Done", find("demo-t-09"), null, "Never struck through. The work happened, it was not a mistake."],
+    ["Long title", { ...find("demo-t-01"), title: "Confirm the marquee sides and the wet-weather plan with the hire company before Thursday" }, null, "Two lines of title, then the note clamps. The card cannot run away."],
+    ["In flight", find("demo-t-03"), "drag", "The card at rest, top left, picked up. Tilted, lifted, carrying the only heavy shadow in the product."],
+  ];
+  return (
+    '<div class="sheet">' + head() +
+    '<div class="spec">' +
+    '<p class="specIntro">Every state a card can be in, drawn at the width a tray really gives it. ' +
+    "The gutter, the title's left edge and every line beneath it share one optical baseline, and the time fact right-aligns on the title's own line so a tray reads as a date column rather than a pile.</p>" +
+    '<div class="specGrid">' +
+    cells.map((c) => (
+      '<div class="specCell">' +
+      '<span class="specLabel">' + c[0] + "</span>" +
+      '<div class="specStage">' + card(c[1], c[2]) + "</div>" +
+      '<p class="specNote">' + c[3] + "</p>" +
+      "</div>"
+    )).join("") +
+    "</div></div></div>"
+  );
+}
+
+const sheet =
+  state === "loading" ? loading()
+  : state === "cards" ? specimens()
+  : '<div class="sheet">' + head() + views() + board() + dock() + "</div>";
+
+document.getElementById("root").innerHTML =
+  '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + "</div>";
+</script>
+</body>
+</html>
