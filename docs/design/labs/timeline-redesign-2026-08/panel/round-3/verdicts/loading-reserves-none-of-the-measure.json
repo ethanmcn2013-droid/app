@@ -1,0 +1,6 @@
+{
+  "id": "loading-reserves-none-of-the-measure",
+  "real": false,
+  "reason": "Measured: loading 390x329, phone 390x1658. The jump is real but grows below the fold, moving nothing visible. The honestly-known parts reserve almost nothing (head 76x15, origin 117x13, a 1px rail); the height comes only from the invented parts - a 320px rail and a 74px row band assert a plan with items, which the finding itself concedes is dishonest. Its left:100px/84px are sheet values; loading renders phone.",
+  "sharpenedFix": "Keep the measure unreserved. The salvageable part is smaller: the comment claims the horizon is reserved at its real height, but the four bars stack to 174px against a real 270.7px horizon. In states.loading size them to the real objects at phone medium - 346x17, 346x83, 346x26, 346x23 - closing 100px of the jump and making the comment true, without asserting one date, tick or row."
+}

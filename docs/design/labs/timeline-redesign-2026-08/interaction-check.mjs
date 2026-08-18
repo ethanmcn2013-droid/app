@@ -513,6 +513,11 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
     return {
       attr: item.getAttribute("data-visibility"),
       chip: item.querySelector(".b-grabWord").textContent,
+      mark: item.querySelector(".b-hiddenMark"),
+      markSaid: (() => {
+        const m = item.querySelector(".b-hiddenMark");
+        return m && m.checkVisibility({ contentVisibilityAuto: true }) ? m.textContent : "";
+      })(),
       label: item.querySelector(".b-grab").getAttribute("aria-label"),
       pressed: Array.from(seg).map((b) => b.getAttribute("aria-pressed")).join(","),
       words: Array.from(seg).map((b) => b.textContent).join(","),
@@ -520,14 +525,23 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
   });
   const shown = await readVis();
   ok("visibility uses one vocabulary", shown.words === "Shown,Hidden", shown.words);
-  ok("the row and the toggle agree at rest",
-    shown.attr === "shown" && shown.chip === "Shown" && shown.pressed === "true,false");
+  /* The control names the ACTION and the row carries the STATE. The
+     same word cannot be a status noun on the row and a verb in the
+     panel: the obvious guess, press SHOWN to hide it, was wrong in the
+     first place a planner would try it. */
+  ok("the row control names its own action",
+    shown.chip === "Edit", shown.chip);
+  ok("a shown moment says nothing about being shown",
+    shown.attr === "shown" && shown.markSaid === "" && shown.pressed === "true,false", shown.markSaid);
   await page.locator(".b-seg button", { hasText: "Hidden" }).click();
   await page.waitForTimeout(200);
   const hidden = await readVis();
   ok("the toggle presses", hidden.pressed === "false,true", hidden.pressed);
   ok("the row follows the toggle in ink and in words",
-    hidden.attr === "hidden" && hidden.chip === "Hidden" && /Hidden from guests/.test(hidden.label), hidden.label);
+    hidden.attr === "hidden" && /Hidden from guests/.test(hidden.markSaid)
+    && /Hidden from guests/.test(hidden.label), hidden.markSaid + " | " + hidden.label);
+  ok("the control does not change its own name",
+    hidden.chip === "Edit", hidden.chip);
 
   /* "Take it off the plan" sat under a toggle reading "On the plan". */
   const destructive = await page.evaluate(() =>
@@ -1131,10 +1145,346 @@ for (const state of ["phone", "desk", "day"]) {
     === document.querySelectorAll(".b-behindRow").length));
   await page.close();
 }
+/* Where the past is LISTED there is no disclosure at all. The old rule
+   hid the control in CSS, which took the heading and the count with it
+   and left the rows behind a <details> that was still closed — and the
+   one assertion here passed by proving the control was gone, which was
+   the cause. */
+for (const variant of ["approach", "record"]) {
+  for (const state of ["print", "desk", "phone"]) {
+    const listed = variant === "record" || state === "print";
+    if (!listed) continue;
+    const page = await open({ state, variant });
+    const seen = await page.evaluate(() => {
+      const rows = Array.from(document.querySelectorAll(".b-behindRow"));
+      const label = document.querySelector(".b-behindLabel");
+      const count = document.querySelector(".b-behindCount");
+      const vis = (el) => !!el && el.checkVisibility({ contentVisibilityAuto: true });
+      return {
+        rows: rows.length,
+        visible: rows.filter(vis).length,
+        label: vis(label),
+        count: count ? count.textContent : "",
+        summaries: document.querySelectorAll(".b-behindSummary").length,
+      };
+    });
+    ok(`the past is listed, not hidden · ${variant}/${state}`,
+      seen.rows > 0 && seen.visible === seen.rows, `${seen.visible}/${seen.rows}`);
+    ok(`the heading survives · ${variant}/${state}`, seen.label);
+    ok(`the count is the number of rows · ${variant}/${state}`,
+      seen.count === seen.rows + " moments", seen.count);
+    ok(`nothing to press where nothing folds · ${variant}/${state}`, seen.summaries === 0);
+    await page.close();
+  }
+}
+
+/* ═══ round 3 ══════════════════════════════════════════════════════ */
+
+/* The reversibility bar is absolutely positioned inside the editor, and
+   at the two widths where the editor is the rail it had no positioned
+   ancestor, so it escaped to the sticky column and painted across the
+   148px count. */
+for (const width of [390, 768, 1280, 1440]) {
+  const page = await open({ state: "owner-editing", viewport: { width, height: 900 } });
+  await page.waitForTimeout(300);
+  await page.locator('.b-step[data-delta="7"]').first().click();
+  await page.waitForTimeout(250);
+  const band = await page.evaluate(() => {
+    const box = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? el.getBoundingClientRect().toJSON() : null;
+    };
+    return { undo: box(".b-undo"), edit: box(".b-edit"), num: box(".b-num") };
+  });
+  ok(`the bar sits inside the editor · ${width}`,
+    !!band.undo && !!band.edit
+    && band.undo.top >= band.edit.top - 1 && band.undo.bottom <= band.edit.bottom + 1,
+    JSON.stringify(band.undo) + " in " + JSON.stringify(band.edit));
+  const clear = !band.num || !band.undo
+    || band.undo.bottom <= band.num.top || band.undo.top >= band.num.bottom
+    || band.undo.right <= band.num.left || band.undo.left >= band.num.right;
+  ok(`the bar never stands on the count · ${width}`, clear);
+  await page.close();
+}
+
+/* The list calls itself nearest first. It stopped being it on the first
+   press, so tab order contradicted the column on screen. */
 {
-  const page = await open({ state: "print", variant: "record" });
-  ok("the printed sheet never prints a closed control", await page.evaluate(() =>
-    getComputedStyle(document.querySelector(".b-behindSummary")).display === "none"));
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(300);
+  const order = async () => page.evaluate(() =>
+    Array.from(document.querySelectorAll(".b-item")).map((el) => Number(el.getAttribute("data-away"))));
+  for (let i = 0; i < 3; i += 1) {
+    await page.locator('.b-step[data-delta="7"]').first().click();
+    await page.waitForTimeout(150);
+  }
+  const after = await order();
+  ok("the DOM order is the order the list claims",
+    JSON.stringify(after) === JSON.stringify(after.slice().sort((a, b) => a - b)),
+    JSON.stringify(after));
+  ok("the pressed control still has focus after a reorder",
+    await page.evaluate(() => document.activeElement.classList.contains("b-step")));
+  await page.close();
+}
+
+/* Preview previews the plan as edited, and coming back does not destroy
+   the owner's work. Every state remounts from the record, so an edit
+   written only to the DOM lasted exactly as long as one screen. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(300);
+  const before = await page.locator(".b-item").count();
+  await page.locator('[data-act="add"]').click();
+  await page.waitForTimeout(300);
+  await page.locator("#b-edit-title").fill("Hair trial");
+  await page.waitForTimeout(200);
+  await page.locator('[data-act="done"]').click();
+  await page.waitForTimeout(200);
+  await page.locator('[data-act="preview"]').click();
+  await page.waitForTimeout(350);
+  ok("a moment added is a moment previewed",
+    (await page.evaluate(() => document.body.innerText)).includes("Hair trial"));
+  await page.locator('[data-act="owner"]').click();
+  await page.waitForTimeout(350);
+  ok("coming back does not destroy the plan",
+    (await page.locator(".b-item").count()) === before + 1,
+    String(await page.locator(".b-item").count()));
+
+  /* And hiding a moment hides it from the person it is hidden from. */
+  await page.locator(".b-grab").first().click();
+  await page.waitForTimeout(300);
+  const title = await page.evaluate(() =>
+    document.querySelector('.b-item[data-editing="true"] .b-title').textContent);
+  await page.locator(".b-seg button", { hasText: "Hidden" }).click();
+  await page.waitForTimeout(200);
+  await page.locator('[data-act="done"]').click();
+  await page.waitForTimeout(200);
+  await page.locator('[data-act="preview"]').click();
+  await page.waitForTimeout(350);
+  const guestSees = await page.evaluate((t) => {
+    const artifact = document.querySelector(".b-field");
+    return artifact.innerText.includes(t);
+  }, title);
+  ok("what guests see is what the owner said they would see", !guestSees, title);
+  await page.close();
+}
+
+/* Focus must not move the page. The browser scrolls to whatever takes
+   it, so a delete threw the surface up to 638px away and undo restored
+   the moment without restoring the view. */
+for (const width of [320, 768, 1024, 1280]) {
+  const page = await open({ state: "owner-editing", viewport: { width, height: 900 } });
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.scrollTo(0, 300));
+  await page.waitForTimeout(100);
+  /* Measured on the screen, not on the scroll offset. Removing a row
+     changes the height of the document, and the browser's own scroll
+     anchoring then moves scrollY BY DESIGN to hold the picture still —
+     which is the property that actually matters. The reference is the
+     head of the measure: it is in normal flow, it is not sticky, and it
+     does not move when a row leaves the plan. */
+  const mark = () => page.evaluate(() => {
+    const el = document.querySelector(".b-measureHead");
+    return el ? el.getBoundingClientRect().top : null;
+  });
+  /* Pressed through the element itself, because Playwright scrolls a
+     control into view before it clicks it and that scroll is the
+     harness, not the product. What is measured here is whether the PAGE
+     moves under the owner when the plan changes. */
+  const press = (sel) => page.evaluate((q) => document.querySelector(q).click(), sel);
+  const at = await mark();
+  await press('[data-act="delete"]');
+  await page.waitForTimeout(350);
+  const afterDelete = await mark();
+  ok(`deleting does not move the page · ${width}`, Math.abs(afterDelete - at) <= 2,
+    `${at} → ${afterDelete}`);
+  await press(".b-undoAct");
+  await page.waitForTimeout(350);
+  const afterUndo = await mark();
+  ok(`the way back returns the view · ${width}`, Math.abs(afterUndo - at) <= 2,
+    `${at} → ${afterUndo}`);
+  await page.close();
+}
+
+/* A change of surface lands somewhere and says where. Three of the
+   owner's five top-level actions were silent screen changes. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1280, height: 900 } });
+  await page.waitForTimeout(300);
+  for (const [act, next] of [["preview", "desk"], ["owner", "owner-flight"], ["publish", "publish"]]) {
+    await page.locator(`[data-act="${act}"]`).first().click();
+    await page.waitForTimeout(350);
+    ok(`${act} lands on something`, await page.evaluate(() =>
+      document.activeElement && document.activeElement !== document.body));
+    ok(`${act} says where it went`, await page.evaluate(() => {
+      const live = document.querySelector(".b-live");
+      return !!live && live.textContent.trim().length > 0;
+    }));
+    if (next === "publish") break;
+  }
+  await page.close();
+}
+
+/* The keepsake is a fixed physical artifact and its column count must
+   be a fact about the paper, not about the window that previewed it. */
+{
+  const shapes = [];
+  for (const width of [1024, 1280, 1440]) {
+    const page = await open({ state: "print", viewport: { width, height: 900 } });
+    await page.waitForTimeout(250);
+    shapes.push(await page.evaluate(() => {
+      const two = document.querySelector(".b-print .b-two");
+      const titles = Array.from(document.querySelectorAll(".b-print .b-title"));
+      const oneLine = titles.every((t) => {
+        const lh = parseFloat(getComputedStyle(t).lineHeight);
+        return t.getBoundingClientRect().height <= lh * 1.4;
+      });
+      return { cols: getComputedStyle(two).gridTemplateColumns, oneLine };
+    }));
+    await page.close();
+  }
+  ok("the sheet is one document at every window width",
+    shapes.every((s) => s.cols === shapes[0].cols), shapes.map((s) => s.cols).join(" | "));
+  ok("no title breaks on the printed sheet", shapes.every((s) => s.oneLine));
+}
+
+/* The only link on paper has to be one a person can type. */
+{
+  const page = await open({ state: "print" });
+  const paper = await page.evaluate(() => document.body.innerText);
+  const token = await page.evaluate(() => window.__TLCORE.F.token);
+  ok("the keepsake prints a link that can be typed",
+    paper.includes(token) && !paper.includes(token.toUpperCase()));
+  await page.close();
+}
+
+/* Every date in the record has to fit its own lane. Two thirds of a
+   calendar was breaking the weekday off the day it belonged to. */
+for (const [variant, state, click] of [["record", "day", false], ["approach", "phone", true]]) {
+  const page = await open({ state, variant, viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  if (click) { await page.locator(".b-behindSummary").click(); await page.waitForTimeout(200); }
+  const lanes = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".b-behindDate")).map((el) => {
+      const cs = getComputedStyle(el);
+      return { h: el.getBoundingClientRect().height, lh: parseFloat(cs.lineHeight) };
+    }));
+  ok(`no date breaks in half · ${variant}/${state}`,
+    lanes.length > 0 && lanes.every((l) => l.h <= l.lh * 1.4),
+    JSON.stringify(lanes.slice(0, 3)));
+  await page.close();
+}
+
+/* A moment that was called off says so in words, in the row, so the
+   accessible name carries it too. */
+for (const [variant, state] of [["record", "phone"], ["record", "day"]]) {
+  const page = await open({ state, variant });
+  await page.waitForTimeout(250);
+  const off = await page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll(".b-behindRow"));
+    const cancelled = rows.filter((r) => r.querySelector('[data-cancelled="true"]'));
+    return {
+      any: cancelled.length,
+      said: cancelled.every((r) => /not going ahead/i.test(r.innerText)),
+      count: (document.querySelector(".b-behindCount") || {}).textContent,
+      rows: rows.length,
+    };
+  });
+  ok(`a cancelled moment says so · ${variant}/${state}`, off.any > 0 && off.said,
+    String(off.any));
+  ok(`the record counts what it lists · ${variant}/${state}`,
+    off.count === off.rows + " moments", off.count + " vs " + off.rows);
+  await page.close();
+}
+
+/* The only control a guest is ever given has to read as one. */
+for (const state of ["phone", "desk", "day"]) {
+  const page = await open({ state, viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  const door = await page.evaluate(() => {
+    const sum = document.querySelector(".b-behindSummary");
+    if (!sum) return null;
+    const closed = getComputedStyle(sum, "::after").content;
+    sum.parentElement.open = true;
+    const opened = getComputedStyle(sum, "::after").content;
+    return { h: sum.getBoundingClientRect().height, closed, opened };
+  });
+  ok(`the door is big enough to press · ${state}`, !!door && door.h >= 44,
+    door ? String(door.h) : "missing");
+  ok(`the door says whether it is open · ${state}`,
+    !!door && door.closed !== "none" && door.opened !== "none" && door.closed !== door.opened,
+    door ? door.closed + " → " + door.opened : "missing");
+  await page.close();
+}
+
+/* An untitled moment has one name, and it is the same name everywhere. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(300);
+  await page.locator('[data-act="add"]').click();
+  await page.waitForTimeout(350);
+  const fresh = await page.evaluate(() => {
+    const item = document.querySelector('.b-item[data-editing="true"]');
+    return {
+      row: item.querySelector(".b-title").textContent,
+      label: item.querySelector(".b-grab").getAttribute("aria-label"),
+      panel: document.getElementById("b-edit").getAttribute("aria-label"),
+    };
+  });
+  ok("an untitled moment is named once",
+    fresh.row === "Untitled moment"
+    && fresh.label.indexOf("Edit Untitled moment.") === 0
+    && fresh.panel === "Editing Untitled moment",
+    JSON.stringify(fresh));
+  await page.locator("#b-edit-title").fill("Hair trial");
+  await page.waitForTimeout(200);
+  const named = await page.evaluate(() => ({
+    row: document.querySelector('.b-item[data-editing="true"] .b-title').textContent,
+    panel: document.getElementById("b-edit").getAttribute("aria-label"),
+  }));
+  ok("a typed name reaches the panel that is editing it",
+    named.row === "Hair trial" && named.panel === "Editing Hair trial", JSON.stringify(named));
+  await page.close();
+}
+
+/* Three answers, three sentences. One refusal told a typist to type. */
+{
+  const page = await open({ state: "owner-empty", viewport: { width: 1280, height: 900 } });
+  const says = async (value) => {
+    await page.locator("#b-empty-date").fill(value);
+    await page.locator('[data-act="setday"]').click();
+    await page.waitForTimeout(150);
+    return page.evaluate(() => document.querySelector("#b-empty-hint").textContent);
+  };
+  ok("an empty field is asked for a day", (await says("")).indexOf("Type the day first") === 0);
+  ok("an unreadable date is told so", (await says("banana")).indexOf("That is not a date") === 0);
+  ok("a day that has gone is told so", (await says("1 January 2020")).indexOf("That day has gone") === 0);
+  ok("a real day is accepted", (await says("3 October 2026")).indexOf("The day is set") === 0);
+  await page.close();
+}
+
+/* Figures are mono; words are not. */
+{
+  const page = await open({ state: "day" });
+  const word = await page.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector(".b-dayCount"));
+    return { family: cs.fontFamily, size: parseFloat(cs.fontSize), weight: cs.fontWeight };
+  });
+  ok("the morning word is set in the reading face",
+    !/mono/i.test(word.family) && word.size === 96, JSON.stringify(word));
+  await page.close();
+}
+
+/* The owner's own phone shows the owner their plan. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(300);
+  const first = await page.evaluate(() => {
+    const el = document.querySelector(".b-item");
+    return el ? el.getBoundingClientRect().toJSON() : null;
+  });
+  ok("the owner sees their first moment without scrolling",
+    !!first && first.bottom <= 844, first ? String(Math.round(first.bottom)) : "missing");
   await page.close();
 }
 

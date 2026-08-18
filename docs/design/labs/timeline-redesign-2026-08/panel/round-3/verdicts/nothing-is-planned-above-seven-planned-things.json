@@ -1,0 +1,6 @@
+{
+  "id": "nothing-is-planned-above-seven-planned-things",
+  "real": false,
+  "reason": "The premise is factually wrong. \"Nothing is planned until 1 August\" is true: the first of the seven items IS 1 August, so the boundary excludes nothing. The second half is also wrong twice over. Measured gap is 103px, not 140, and both strings are the same deictic grammar, not two, so the library class is not reappearing.",
+  "sharpenedFix": "Only the visual repeat is arguable, and the proposed fix inverts it: deleting .b-todayLabel orphans the indigo .b-todayRule and strands the 79-day countdown with no anchor in its own column, while un-hiding .b-origin exposes a decorative rail marker carrying a ::before dot. If anything, drop .b-origin. Leave gapSentence alone; interaction-check.mjs lines 238 and 369 assert its exact string."
+}

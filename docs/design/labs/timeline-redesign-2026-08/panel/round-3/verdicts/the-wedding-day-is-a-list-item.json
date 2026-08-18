@@ -1,0 +1,6 @@
+{
+  "id": "the-wedding-day-is-a-list-item",
+  "real": false,
+  "reason": "Factually wrong and self-defeating. render-b.js:94 already sets data-anchor, and b.css:237-244 already draws that row at weight 600 (measured 600 vs 400 on plain rows) plus a full-width hairline above it. The one new ask, a solid mark, collides with b.css:225 where filled is reserved as the single accent for the lead item; two filled marks destroy 'filled means this one'.",
+  "sharpenedFix": "Only one atom survives and it is minor: .b-rail runs to 1388px while the anchor mark centres at 1306px, so the measure trails ~82px past its terminus into nothing. If taken, end the rail at the anchor tick centre only. Leave weight, size and mark alone: 600 is already there, and the filled mark must stay unique to the lead item."
+}

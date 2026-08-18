@@ -1,0 +1,6 @@
+{
+  "id": "the-list-says-nearest-first-and-stops-being-it-on-the-first-press",
+  "real": true,
+  "reason": "Reproduced at 1440: three +7 presses give DOM order 16,44,37,44,51,65,79 against painted order 16,37,44,44,51,65,79, so tab and screen-reader order contradict the list's own name. The reparent is safe: the steppers live in .b-editHost outside .b-item, so focus survived (verified activeElement unchanged) and top still transitions.",
+  "sharpenedFix": "Keep place() the only mover, but reorder there. After items.sort(), if DOM order differs, pin each row with getComputedStyle(el).top (fractional; offsetTop rounds mid-flight), appendChild in sorted order, force layout, then write the new tops. Guard it: if document.activeElement sits inside a .b-item, re-focus it after. Also fix the add path (render-b.js:732 insertBefore first .b-item) to rely on this rather than guess. Assert DOM order equals its sorted copy after +7 presses, after add, and after undoing a delete."
+}

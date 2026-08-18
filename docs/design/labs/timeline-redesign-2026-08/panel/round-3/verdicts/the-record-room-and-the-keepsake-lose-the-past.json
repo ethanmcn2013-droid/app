@@ -1,0 +1,6 @@
+{
+  "id": "the-record-room-and-the-keepsake-lose-the-past",
+  "real": true,
+  "reason": "Measured in Chromium. ?v=record at print, desk, phone and day: data-past=\"listed\", details.open false, summary display:none, 0 of 3 (8 on day) .b-behindRow pass checkVisibility({contentVisibilityAuto:true}), count hidden, label hidden except on day. The two .b-behindRows rules are dead against ::details-content. interaction-check.mjs:1136 passes by proving the control is gone. ?v=approach&state=print prints past=\"folded\": summary visible, cursor:pointer, rows 0/3.",
+  "sharpenedFix": "Fix it in the DOM, not the cascade. In behindBlock (render-b.js:252) set open on details when the root's data-past is \"listed\" or opts.print is true, and pass {print:true} from states.print so any room's sheet prints open. Lift h2.b-behindLabel and .b-behindCount out of <summary> to be the first children of section.b-behind, leaving the summary as a named affordance only; keep b.css:381, delete 382-383. Rewrite interaction-check.mjs:1136 as a loop over approach and record at print, desk and phone asserting every row passes checkVisibility and no summary is visible. Reshoot."
+}

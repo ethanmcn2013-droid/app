@@ -1,0 +1,6 @@
+{
+  "id": "record-room-dates-break-in-half",
+  "real": true,
+  "reason": "Measured on the live page: .b-behindDate is 76px but every two-digit-day string needs 84px, so SAT 18 APR / 22 AUG / 29 AUG / 19 SEP wrap to 35.2px against 17.6px, rows alternating 55.2px and 38.5px. It is not hidden: in the record room [data-past=\"listed\"] hides the summary and renders the rows open by default; in the approach room a real click on the summary shows the same break.",
+  "sharpenedFix": "Correct file and correct numbers: in b.css set .b-behindDate to width:96px; line-height:1.5; white-space:nowrap. Verified — longest fixture string measures 84px nowrap, all rows settle to 38.5px, no date overflows, and titles stay single-line at 390/768/1440 and in print (row 346px, longest title 189px). Sharpen only the gate: assert single-line .b-behindDate heights in v=record at default (rows already open, no click) and in v=approach after clicking .b-behindSummary."
+}

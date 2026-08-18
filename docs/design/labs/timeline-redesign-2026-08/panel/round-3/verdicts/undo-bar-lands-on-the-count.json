@@ -1,0 +1,6 @@
+{
+  "id": "undo-bar-lands-on-the-count",
+  "real": true,
+  "reason": "Confirmed at 1440 and 1280 on owner-editing. .b-undo's offsetParent is .b-stick, not .b-edit; its rect (202, 83-153) overlaps .b-num (106-233) by 47px, and elementFromPoint over the numerals returns .b-undoText, so it steals the pointer too. The panel meanwhile holds a 78px reserve the bar never enters. Below 1280 position:fixed holds and the sheet is correct.",
+  "sharpenedFix": "position:relative alone is wrong: it reactivates the base rule's left:12px/bottom:12px, shifting the panel 12px right and 12px up and overflowing its column (measured). Use position: relative; inset: auto; in the 1280 block. Then the panel rect matches static exactly, the bar sits inside it, overlap with .b-num is 0 at 1440/1280/768/390, rows are unmoved and the phone sheet is byte-identical. Also raise the base .b-edit padding-top 78px to 88px (bar bottom measures 85px below panel top), not 94px, which buys 16px of void at 768 where the bar is one line."
+}

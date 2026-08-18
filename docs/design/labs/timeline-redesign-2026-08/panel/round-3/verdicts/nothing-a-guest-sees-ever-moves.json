@@ -1,0 +1,6 @@
+{
+  "id": "nothing-a-guest-sees-ever-moves",
+  "real": false,
+  "reason": "The observation is right (no @keyframes in b.css or shell.css) but the verdict is taste, and the fix breaks the mechanical lock: 320ms, 240ms and a 24ms stagger are not on the declared ladder (0/0.08/0.14/0.22), so the audit gate fails on sight. The lock also states the horizon never moves and nothing floats idly; a staggered entrance on a document a guest opens once, distracted, on a phone, delays the fact and reads as ceremony, not confidence.",
+  "sharpenedFix": "None required. If an entrance is ever revisited it must stay inside the lock: opacity only, 0.22s, --ease, on the count in the day state alone, no transform, no stagger, no per-item choreography, and reduced motion must zero it under the existing shell.css guard. Ship it only if a side-by-side against the flat control shows the day landing harder; otherwise the surface is correct as painted."
+}

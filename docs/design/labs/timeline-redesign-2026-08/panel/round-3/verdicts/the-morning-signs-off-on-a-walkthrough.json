@@ -1,0 +1,6 @@
+{
+  "id": "the-morning-signs-off-on-a-walkthrough",
+  "real": false,
+  "reason": "Its premise is false. Round 2's confirmed fix wrote the day-of label AND its sentence together (render-b.js 227-229, 255) and deliberately chose last.title over alternatives; nothing was left unrewritten. Move 1 re-litigates b-dayNote, which the measuring verdict kept. Move 3 breaks interaction-check.mjs:699, written to close a confirmed round-1 finding, and swaps one true label for another. What remains is preference between two defensible sentences.",
+  "sharpenedFix": "If the panel still wants the morning to close warmer, change only the sentence and keep the shared grammar: in behindBlock's dayOf branch render both ends of the arc, note = done[0].title + ', ' + F.fmt.medium(done[0].date) + ' to ' + last.title + ', ' + F.fmt.medium(last.date) + '.' Leave b-dayNote, the Happening now section and interaction-check.mjs:699 untouched; add one assertion that state=day text contains done[0].title. Reshoot day at 390 and 1440."
+}

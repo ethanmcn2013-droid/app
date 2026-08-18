@@ -1,0 +1,6 @@
+{
+  "id": "a-cancelled-moment-reads-as-a-live-one",
+  "real": true,
+  "reason": "Verified in the render. The cancelled row's text is \"No dateCity hotel shortlist\", no aria, and its only state cue is line-through rgba(255,255,255,0.28) on 15px text. Counts confirmed too: \"3 moments\" on the guest clock, \"8 moments\" day-of, because render-b.js:220 filters cancelled only when dayOf, so an item silently leaves the record. Both halves hold.",
+  "sharpenedFix": "In render-b.js behindBlock's row builder, on cancelled items pass the date cell empty text (b-behindDate is width:76px, flex:none, so alignment survives) and append a third child h(\"span.b-behindState\", { text: F.stateLabel.cancelled }) — reuse the fixture's existing label, do not hardcode a new string. Style .b-behindState in b.css on the .b-behindDate treatment (mono, 11px, --track-label, uppercase, --fore-62); no new type step, no new colour. Keep the line-through. Then include cancelled on both clocks at line 220."
+}

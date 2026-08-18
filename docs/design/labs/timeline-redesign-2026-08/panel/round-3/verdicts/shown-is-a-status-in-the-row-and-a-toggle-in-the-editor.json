@@ -1,0 +1,6 @@
+{
+  "id": "shown-is-a-status-in-the-row-and-a-toggle-in-the-editor",
+  "real": true,
+  "reason": "Verified by driving the master: every row's only visible control reads SHOWN, and clicking it opens an editor whose \"What guests see\" segment uses the identical words as an aria-pressed toggle. Both appear on screen at once. A control labelled with a state it does not change is a real flaw at 9.5. No information is lost: hidden rows already read as hidden via fore-62 ink, weight 400 and the dashed tick.",
+  "sharpenedFix": "In render-b.js give .b-grabWord one constant action word and make grabLabel's verb match it, so the visible word and the accessible name agree (currently \"Open ...\"); \"Edit\" is plain English, not tool jargon, and is acceptable if both strings use it. Keep the whole-row ::after hit area and the hairline underline. Let the existing dashed tick and dimmed ink carry hidden state; add a static, non-interactive mono \"Hidden\" mark in fore-62 only if that reads too quietly. Reserve Shown/Hidden for the editor segment."
+}

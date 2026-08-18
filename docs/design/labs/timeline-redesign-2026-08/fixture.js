@@ -108,7 +108,10 @@
   /* Everything derived lives here, so no surface can do its own
      arithmetic and disagree with another. */
   var dated = MILESTONES.filter(function (m) { return m.date; });
-  var live = MILESTONES.filter(function (m) { return m.state !== "cancelled"; });
+  /* Derived ON CALL, not once at load. As a snapshot, a moment the
+     owner added never reached the guest surfaces and a moment they
+     deleted came back, because every state remounts from here. */
+  function live() { return MILESTONES.filter(function (m) { return m.state !== "cancelled"; }); }
   var api = {
     today: TODAY,
     updatedAt: UPDATED,
@@ -164,14 +167,15 @@
     },
     toDay: function () { return days(TODAY, PROJECT.primaryDate.date); },
     counts: function () {
+      var on = live();
       return {
-        total: live.length,                                      // 9
-        done: live.filter(function (m) { return m.state === "covered"; }).length,   // 2
-        ahead: live.filter(function (m) { return m.state !== "covered"; }).length,  // 7
-        cancelled: MILESTONES.length - live.length,              // 1
+        total: on.length,                                        // 9
+        done: on.filter(function (m) { return m.state === "covered"; }).length,     // 2
+        ahead: on.filter(function (m) { return m.state !== "covered"; }).length,    // 7
+        cancelled: MILESTONES.length - on.length,                // 1
       };
     },
-    live: function () { return live.slice(); },
+    live: live,
     dated: function () { return dated.slice(); },
     nextUp: function () {
       return MILESTONES.filter(function (m) { return m.state === "now"; })[0];

@@ -46,7 +46,7 @@ const FAMILY_PATTERN = (config.families ?? ["Geist", "Geist Mono"])
 const TYPE_RAMP = config.ladders?.typeRamp ?? [];
 
 const AUDIT = `(() => {
-  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], tracking: [], counts: {} };
+  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], leadingLadder: [], tracking: [], trackingLadder: [], counts: {} };
   const tracks = new Map();
 
   const parse = (value) => {
@@ -77,10 +77,25 @@ const AUDIT = `(() => {
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   };
 
+  /* A ground painted as a single-colour gradient IS a ground. Only
+     one-colour gradients are composited: a real multi-stop gradient has
+     no single backdrop, and guessing one would be worse than saying so,
+     so those are reported as unmeasured rather than scored. */
+  const groundOf = (cs) => {
+    const flat = parse(cs.backgroundColor);
+    const stops = cs.backgroundImage.match(/rgba?\\([^)]+\\)/g) || [];
+    if (!stops.length) return flat;
+    const first = stops[0];
+    if (!stops.every((c) => c === first)) return flat;
+    const wash = parse(first);
+    if (!wash) return flat;
+    return flat && flat.a > 0 ? over(wash, flat) : wash;
+  };
+
   const backdropOf = (el) => {
     let node = el, stack = [];
     while (node && node !== document.documentElement) {
-      const bg = parse(getComputedStyle(node).backgroundColor);
+      const bg = groundOf(getComputedStyle(node));
       if (bg && bg.a > 0) { stack.push(bg); if (bg.a === 1) break; }
       node = node.parentElement;
     }
@@ -94,6 +109,29 @@ const AUDIT = `(() => {
     const cls = typeof el.className === "string" && el.className ? "." + el.className.trim().split(/\\s+/).slice(0, 2).join(".") : "";
     return el.tagName.toLowerCase() + cls;
   };
+
+  /* Read off the page, so the gate grades what the file declares rather
+     than a list copied into the script. A lab with no ladder declared
+     simply skips both checks. */
+  const rootCs = getComputedStyle(document.documentElement);
+  const ladder = (prefix) => {
+    const found = [];
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
+      for (const rule of Array.from(rules || [])) {
+        if (!rule.style) continue;
+        for (const name of Array.from(rule.style)) {
+          if (name.indexOf(prefix) === 0) found.push(name);
+        }
+      }
+    }
+    return Array.from(new Set(found))
+      .map((name) => parseFloat(rootCs.getPropertyValue(name)))
+      .filter((v) => Number.isFinite(v));
+  };
+  const LEAD = ladder("--lead-");
+  const TRACK = ladder("--track-");
+  out.counts.ladders = { leading: LEAD.length, tracking: TRACK.length };
 
   const all = Array.from(document.querySelectorAll("*"));
   out.counts.elements = all.length;
@@ -180,6 +218,23 @@ const AUDIT = `(() => {
       if (cs.lineHeight === "normal") {
         out.leading.push({ el: describe(el), text: el.textContent.trim().slice(0, 32) });
       }
+      /* And a declared leading still has to be ON the declared ladder.
+         Comparing each family and size only with itself let a seventh
+         undeclared value ship clean, and it could never see the same
+         object carrying two baselines on two different states. */
+      else if (LEAD.length && size > 0) {
+        const furniture0 = el.closest(".tl-caption") || cs.clipPath !== "none";
+        const ratioNow = parseFloat(cs.lineHeight) / size;
+        if (!furniture0 && Number.isFinite(ratioNow)
+          && !LEAD.some((v) => Math.abs(v - ratioNow) < 0.015)) {
+          out.leadingLadder.push({
+            el: describe(el),
+            size: Math.round(size * 10) / 10,
+            lead: Math.round(ratioNow * 1000) / 1000,
+            text: el.textContent.trim().slice(0, 24),
+          });
+        }
+      }
 
       /* One size, one letterfit. A tracking ladder that is declared and
          then applied by hand drifts: the same face at the same size ends
@@ -189,6 +244,20 @@ const AUDIT = `(() => {
          a caption naming the frame, and a span that exists to speak a
          unit, must not decide the system's letterfit. */
       const furniture = el.closest(".tl-caption") || cs.clipPath !== "none";
+      /* The same for tracking: on the ladder, not merely self-consistent
+         within one state. */
+      if (!furniture && TRACK.length && size > 0) {
+        const spaceNow = cs.letterSpacing === "normal" ? 0 : parseFloat(cs.letterSpacing);
+        if (Number.isFinite(spaceNow)
+          && !TRACK.some((em) => Math.abs(em * size - spaceNow) < 0.02)) {
+          out.trackingLadder.push({
+            el: describe(el),
+            size: Math.round(size * 10) / 10,
+            track: Math.round((spaceNow / size) * 10000) / 10000 + "em",
+            text: el.textContent.trim().slice(0, 24),
+          });
+        }
+      }
       const trackKey = furniture ? null : family + "|" + Math.round(size * 10) / 10;
       if (trackKey !== null) {
       const space = cs.letterSpacing === "normal" ? "0px" : cs.letterSpacing;
@@ -217,7 +286,7 @@ const AUDIT = `(() => {
     /* 5. hit targets — a control may carry a larger hit area than its
        drawn box via an absolutely positioned pseudo-element with negative
        insets; that is the correct technique, so measure the union. */
-    const interactive = el.matches("button, a, [tabindex], input, textarea, select");
+    const interactive = el.matches("button, a, summary, [tabindex], input, textarea, select");
     if (interactive && visible && rect.width >= 1) {
       let grow = 0;
       for (const pseudo of ["::before", "::after"]) {
@@ -284,6 +353,8 @@ const AUDIT = `(() => {
   out.contrast = dedupe(out.contrast, (i) => i.el + i.ratio);
   out.ramp = dedupe(out.ramp, (i) => i.el + i.size);
   out.leading = dedupe(out.leading, (i) => i.el);
+  out.leadingLadder = dedupe(out.leadingLadder, (i) => i.el + i.lead);
+  out.trackingLadder = dedupe(out.trackingLadder, (i) => i.el + i.track);
   for (const [key, seen] of tracks) {
     if (seen.size < 2) continue;
     out.tracking.push({
@@ -308,7 +379,7 @@ for (const state of STATES) {
 }
 await browser.close();
 
-const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading", "tracking"];
+const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading", "leadingLadder", "tracking", "trackingLadder"];
 const totals = Object.fromEntries(KEYS.map((k) => [k, 0]));
 for (const state of Object.keys(report.states)) {
   for (const key of KEYS) totals[key] += report.states[state][key].length;
@@ -334,7 +405,9 @@ if (AS_JSON) {
     line("motion", r.motion, (i) => (i.kind === "duration" ? `${i.el} ${i.duration}s` : `${i.el} ${i.easing}`));
     line("type ramp", r.ramp, (i) => `${i.el} ${i.size}px  "${i.text}"`);
     line("leading", r.leading, (i) => `${i.el} line-height normal  "${i.text}"`);
+    line("lead ladder", r.leadingLadder, (i) => `${i.el} ${i.size}px at ${i.lead}  "${i.text}"`);
     line("tracking", r.tracking, (i) => `${i.key} → ${i.values}   ${i.where}`);
+    line("track ladder", r.trackingLadder, (i) => `${i.el} ${i.size}px at ${i.track}  "${i.text}"`);
   }
   process.stdout.write(`\nTOTALS  ${JSON.stringify(totals)}\n`);
   if (!TYPE_RAMP.length) process.stdout.write(`note: type-ramp check skipped — fill ladders.typeRamp at the palette lock\n`);

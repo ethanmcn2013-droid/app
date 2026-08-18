@@ -1,0 +1,6 @@
+{
+  "id": "the-measured-gate-cannot-see-the-ground-it-grades",
+  "real": true,
+  "reason": "Verified by driving. Body computes background-color rgb(255,255,255) with a linear-gradient(rgb(17,17,17)) image, so backdropOf returns white while the pixels are #111. After pressing Preview, .b-previewStrip paints \"Preview\" and \"Back to the plan\" in rgb(17,17,17) on that ground — 1.0:1, an invisible exit — breaking b.css's own \"never write against ink or paper\" law. The tracking Map is per-state and self-referential; the --track-* ladder is never read.",
+  "sharpenedFix": "Fix the CSS first, it is the live defect: b.css:488-489 become .b-previewStrip { border-bottom-color: var(--fore-16) }, .b-where { color: var(--fore-62) }, .b-act { color: var(--fore); border-color: var(--fore-16) }; give .tl-caption --fore-62 as well. Then in backdropOf composite only gradients whose stops are one colour, and report any other background-image as unmeasured rather than guessing. For tracking, read --track-* off :root, convert em at each element's font-size, and hoist tracks to the outer report."
+}

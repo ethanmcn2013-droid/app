@@ -1,0 +1,6 @@
+{
+  "id": "the-owners-phone-puts-three-verbs-before-the-plan",
+  "real": true,
+  "reason": "Symptom verified at 390 owner-flight: first .b-item at y=792, 1 of 7 rows visible; guest phone 540, 3 of 7. But the cause is misattributed. .b-bar is 190px, not ~380, and the three verbs are only 88px of the 602px above the first row; .b-horizon alone is 271px. A fixed bottom band costs ~59px of every screen, nets ~29px, fails its own two-row gate (row pitch 98px), and collides with the fixed undo and the 536px sheet.",
+  "sharpenedFix": "Keep .b-barActs in .b-bar; add no fixed bottom band at 390 — that edge already carries the undo (fixed, bottom:12, h50) and the 536px editor sheet, and a third band strands rows. Attack the real 602px instead: below 701px compress .b-horizon (271px) to one line of name, countdown and date, and fold the pre-plan header into the first row's day label. That clears ~250px and lands two moments (pitch 98px) above the fold. Gate: at 390 owner-flight assert two .b-item boxes fully in viewport on first paint."
+}

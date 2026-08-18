@@ -1,0 +1,6 @@
+{
+  "id": "delete-teleports-the-page",
+  "real": true,
+  "reason": "Reproduced on master.html owner-editing from scrollY 300: delete jumps +485px at 320, +566px at 768, +638px at 1024, 0 at 1280; present at 120ms, scroll-behavior auto; undo restores 0px. Cause isolated: patching focus() to preventScroll makes the delta exactly 0 while the document still shortens 504px, so it is the focus-driven scroll in focusAfterRemoval, not the measure. No literal scrollIntoView exists in render-b.js, but the mechanism and the aim of the fix are right.",
+  "sharpenedFix": "In render-b.js focusAfterRemoval, call target.focus({ preventScroll: true }), then nudge only if target.getBoundingClientRect() falls outside the visible band, reusing keepInBand's math rather than a new scrollIntoView. Apply the same preventScroll to the focus calls in closeEditor, openEditor and the delete/add undo closures. Record window.scrollY on each history entry and have undo restore it after re-inserting. In interaction-check.mjs add 320 and 1024 and assert |delta scrollY| <= 1 across delete and undo; exempt add, which may legitimately reveal the new row."
+}

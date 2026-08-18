@@ -1,0 +1,6 @@
+{
+  "id": "leading-is-the-unbuilt-half-of-the-ladder",
+  "real": true,
+  "reason": "Measured, not read: driving all 11 states at 390/768/1280/1440 renders 13 distinct leading ratios and 10 of 18 family+size buckets carry two or more. Every case cited holds (11px mono is worse: four). The audit keys tracking on family|size but only checks leading is not 'normal'. Same object, two baselines: .b-num 0.86 vs .b-dayCount 0.90; .b-emptyTitle 1.05 vs .b-pressTitle 1.08.",
+  "sharpenedFix": "Declare the ladder in shell.css as proposed, but do not enforce one leading per family+size. .b-switch and .b-act are single-line controls at 15px sans where leading is box metric, not rhythm, and must stay tighter than 15px prose; the fix's own --lead-label concedes this while its assertion forbids it. Key the audit on family+size+role (prose, heading, control/label) via a data-lead attribute or a control selector list, and fail on two leadings within one role. Fix the same-role drift first: .b-num/.b-dayCount to one display step, .b-emptyTitle/.b-pressTitle to one title step."
+}

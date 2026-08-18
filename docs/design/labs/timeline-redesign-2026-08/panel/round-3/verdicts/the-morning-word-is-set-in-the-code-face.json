@@ -1,0 +1,6 @@
+{
+  "id": "the-morning-word-is-set-in-the-code-face",
+  "real": true,
+  "reason": "Verified in b.css:822 and by driving state=day. .b-dayCount is Geist Mono 96px at -4.32px, ink 266.4px in a 300px box; every other word in .b-dayWrap is Geist. Weight 600 is not a third weight: the lock and audit.mjs ALLOWED_WEIGHTS are [400,600] and b.css already uses both. No other sans exists at 96px, so the one-letterfit-per-family-per-size rule holds. Measured after the swap: 249.9px (600), 236.1px (400). interaction-check.mjs asserts only the text and size, never the family.",
+  "sharpenedFix": "Edit b.css:822 only: font-family: var(--sans); font-weight: 600; leave size, leading and --track-display as they are, and leave .b-num and .b-ogNum mono. Also carry the optical pull across states: .b-num sets margin-left: -0.05em for the mono numeral's bearing but .b-dayCount sets none, so the display object starts at a different x on the two states. Give the word a smaller pull (about -0.02em) so both left edges align optically."
+}
