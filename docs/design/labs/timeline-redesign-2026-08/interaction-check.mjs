@@ -674,9 +674,23 @@ for (const state of ["publish", "day", "ended", "loading"]) {
   ok("it keeps focus in the field", refused.focused === "b-empty-date", refused.focused);
   await page.locator("#b-empty-date").fill("3 October 2026");
   await page.locator('[data-act="setday"]').click();
-  await page.waitForTimeout(200);
-  ok("a real answer clears the refusal",
-    await page.evaluate(() => document.querySelector("#b-empty-date").getAttribute("aria-invalid") === "false"));
+  await page.waitForTimeout(250);
+  /* The question is answered, so the screen stops asking it. It used to
+     leave the heading, the field and the button exactly as they were and
+     append a sentence under the button. */
+  const answered = await page.evaluate(() => ({
+    asking: !!document.querySelector("#b-empty-date"),
+    count: (document.querySelector(".b-empty .b-num") || {}).textContent,
+    next: (document.querySelector('.b-empty [data-act="add"]') || {}).textContent,
+    focused: document.activeElement.getAttribute("data-act"),
+    said: (document.querySelector("#b-empty-hint") || {}).textContent,
+  }));
+  ok("the first screen stops asking once it is answered", !answered.asking);
+  ok("the answer becomes the count the plan is measured from",
+    Number(answered.count) > 0, String(answered.count));
+  ok("the first screen offers the next move", answered.next === "Add a moment", String(answered.next));
+  ok("the next move takes focus", answered.focused === "add", String(answered.focused));
+  ok("the answer is announced", /day is set/i.test(answered.said || ""), String(answered.said));
   await page.close();
 }
 
@@ -1731,6 +1745,180 @@ for (const state of ["phone", "day", "owner-flight"]) {
     skel.today + " → " + real.today);
 }
 
+/* ═══ round 5 ══════════════════════════════════════════════════════ */
+
+/* The keepsake is the one artifact this product makes that cannot be
+   reflowed after it exists, and it had honoured A4's width and nothing
+   else: no page rule, no print media, no break rules, so it printed as
+   two sheets - and the two-column document every frame showed was one
+   the printer never produced, because the lab's own stage padding took
+   the sheet under its column threshold. */
+{
+  const page = await open({ state: "print", viewport: { width: 794, height: 1123 } });
+  await page.waitForTimeout(300);
+  await page.emulateMedia({ media: "print" });
+  await page.waitForTimeout(200);
+  const sheet = await page.evaluate(() => {
+    const el = document.querySelector(".b-print");
+    const two = document.querySelector(".b-print .b-two");
+    const pad = parseFloat(getComputedStyle(el).paddingLeft);
+    return {
+      height: el.getBoundingClientRect().height,
+      box: el.clientWidth - 2 * pad,
+      tracks: getComputedStyle(two).gridTemplateColumns.split(" ").length,
+      caption: !!document.querySelector(".tl-caption")
+        && document.querySelector(".tl-caption").checkVisibility(),
+    };
+  });
+  ok("the sheet fits the page it is printed on", sheet.height <= 1123,
+    String(Math.round(sheet.height)));
+  ok("the sheet keeps its composition on paper", sheet.tracks === 2, String(sheet.tracks));
+  ok("the lab's furniture stays off the paper", !sheet.caption);
+  const pdf = await page.pdf({ format: "A4", printBackground: true });
+  const pages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
+  ok("the keepsake is one sheet", pages === 1, String(pages));
+  await page.close();
+}
+
+/* Paper cannot be reloaded, so it dates itself. Everything on the sheet
+   was relative to a today the sheet never named. */
+{
+  const page = await open({ state: "print" });
+  await page.waitForTimeout(200);
+  const said = await page.evaluate(() => ({
+    unit: document.querySelector(".b-unit").textContent,
+    today: !!document.querySelector(".b-todayLabel"),
+    origin: document.querySelector(".b-origin").textContent,
+    link: (document.querySelector(".b-printLinkUrl") || {}).textContent,
+  }));
+  ok("the sheet dates its own figure", /away on .*20\d\d/.test(said.unit), said.unit);
+  ok("the sheet states today once", !said.today);
+  ok("the rail's origin carries the year on paper", /20\d\d/.test(said.origin), said.origin);
+  ok("the sheet carries a link that can be typed",
+    !!said.link && said.link.indexOf("https://") === 0, String(said.link));
+  await page.close();
+}
+
+/* The link is set to be read rather than clipped. */
+for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 900 }]) {
+  const page = await open({ state: "publish", viewport: vp });
+  await page.waitForTimeout(250);
+  ok(`the link is not cut mid-token @ ${vp.width}`, await page.evaluate(() => {
+    const el = document.querySelector(".b-linkRow span");
+    return el.scrollWidth <= el.clientWidth + 1;
+  }));
+  await page.close();
+}
+
+/* A rail that counts backwards says so, in the words a screen reader
+   hears as well as the heading a reader sees. */
+{
+  const page = await open({ state: "day", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  await page.locator(".b-behindSummary").click();
+  await page.waitForTimeout(250);
+  const spoken = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".b-back .b-unitSaid")).map((el) => el.textContent));
+  ok("the past rail speaks its own direction",
+    spoken.length > 0 && spoken.every((t) => /days back/.test(t)),
+    spoken.slice(0, 2).join(" | "));
+  await page.close();
+}
+
+/* One name for the past, on every surface it appears on. */
+{
+  const seen = new Set();
+  for (const [variant, state] of [["approach", "phone"], ["approach", "desk"],
+    ["approach", "day"], ["approach", "print"], ["record", "desk"]]) {
+    const page = await open({ state, variant });
+    await page.waitForTimeout(200);
+    seen.add(await page.evaluate(() => {
+      const el = document.querySelector(".b-behind .b-behindLabel");
+      return el ? el.textContent : "missing";
+    }));
+    await page.close();
+  }
+  ok("the past has one name", seen.size === 1, Array.from(seen).join(" vs "));
+}
+
+/* Today is one mark. Across the band from 701 to 1279 the field is one
+   wide track, and the single indigo on the owner's screen ran the whole
+   width of it, reading as a divider. */
+{
+  const widths = new Set();
+  for (const width of [701, 1152, 1279, 1280, 1440]) {
+    const page = await open({ state: "owner-flight", viewport: { width, height: 800 } });
+    await page.waitForTimeout(200);
+    widths.add(await page.evaluate(() =>
+      Math.round(document.querySelector(".b-todayRule").getBoundingClientRect().width)));
+    await page.close();
+  }
+  ok("today is one mark at every width", widths.size === 1, Array.from(widths).join(" vs "));
+}
+
+/* The editor is docked, not modal, so the page may scroll under it -
+   but the browser's own focus scrolling must never park a control
+   beneath it. */
+for (const width of [390, 1024]) {
+  const page = await open({ state: "owner-editing", viewport: { width, height: 800 } });
+  await page.waitForTimeout(300);
+  await page.locator('[data-act="delete"]').focus();
+  let hidden = 0;
+  for (let i = 0; i < 5; i += 1) {
+    await page.keyboard.press("Tab");
+    await page.waitForTimeout(120);
+    if (await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return false;
+      const r = el.getBoundingClientRect();
+      const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return !!at && !!at.closest && !!at.closest(".b-edit") && !el.closest(".b-edit");
+    })) hidden += 1;
+  }
+  ok(`nothing parks under the sheet @ ${width}`, hidden === 0, String(hidden));
+  await page.close();
+}
+
+/* The pinned horizon keeps speaking. After a screen of scrolling it was
+   still announcing the empty stretch before the first moment. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 900 } });
+  await page.waitForTimeout(300);
+  const atRest = await page.evaluate(() => document.querySelector(".b-gapNote").textContent);
+  await page.evaluate(() => window.scrollTo(0, 900));
+  await page.waitForTimeout(300);
+  const scrolled = await page.evaluate(() => document.querySelector(".b-gapNote").textContent);
+  ok("the pinned column says where the plan is now", scrolled !== atRest, scrolled);
+  ok("and says it in figures that exist", /\d/.test(scrolled), scrolled);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(300);
+  ok("and goes back to the gap when the gap is on screen",
+    (await page.evaluate(() => document.querySelector(".b-gapNote").textContent)) === atRest);
+  await page.close();
+}
+
+/* No sentence ends on one word. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1280, height: 900 } });
+  await page.waitForTimeout(300);
+  const widows = await page.evaluate(() => {
+    const out = [];
+    for (const sel of [".b-note", ".b-stepRead"]) {
+      const el = document.querySelector(sel);
+      if (!el) continue;
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const lines = Array.from(range.getClientRects()).filter((r) => r.width > 0);
+      if (lines.length < 2) continue;
+      out.push([sel, lines[lines.length - 1].width / Math.max.apply(null, lines.map((r) => r.width))]);
+    }
+    return out;
+  });
+  ok("no sentence ends on one word",
+    widows.every((w) => w[1] > 0.25), JSON.stringify(widows));
+  await page.close();
+}
+
 /* The owner's own phone shows the owner their plan. */
 {
   const page = await open({ state: "owner-flight", viewport: { width: 390, height: 844 } });
@@ -1792,7 +1980,7 @@ for (const state of ["phone", "day", "owner-flight"]) {
   await page.locator('[data-act="setday"]').click();
   await page.waitForTimeout(200);
   ok("a real day is accepted", await page.evaluate(() =>
-    document.querySelector("#b-empty-date").getAttribute("aria-invalid") === "false"));
+    !document.querySelector("#b-empty-date") && !!document.querySelector(".b-empty .b-num")));
   await page.close();
 }
 

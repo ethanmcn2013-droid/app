@@ -30,7 +30,7 @@
      tightest pair in each case. The scale is a page-size decision; the
      proportion between one gap and the next is identical at every
      scale. */
-  var SCALE = { phone: 12, sheet: 14, full: 14, card: 12, print: 10 };
+  var SCALE = { phone: 12, sheet: 14, full: 14, card: 12, print: 8 };
   var OWNER_SCALE = { narrow: 14, wide: 18 };
   var ROW = 92;
 
@@ -85,13 +85,20 @@
      arrival is the same object the morning is built on, at the same
      display step, so the two screens cannot disagree about what an
      arrived countdown looks like. */
-  function countBlock(n) {
+  function countBlock(n, medium) {
     var said = F.countdown(n);
     if (said.state === "today") return h("p.b-dayCount", { text: said.word });
     if (said.state === "passed") return h("p.b-passed", { text: said.said });
     return h("div.b-count", {}, [
       h("span.b-num.num", { text: said.num }),
-      h("span.b-unit", { text: said.unit }),
+      /* Paper cannot be reloaded, so it dates itself. On a screen the
+         unit is the unit; on a sheet it is the unit and the day the
+         figure was true. */
+      h("span.b-unit", {
+        text: medium === "print"
+          ? said.unit + " away on " + F.fmt.longYear(F.today)
+          : said.unit,
+      }),
     ]);
   }
 
@@ -101,14 +108,17 @@
     var next = ahead(clock, o.owner)[0];
     return h("header.b-horizon", {}, [
       h("h1.b-who", { text: F.project.name }),
-      countBlock(daysFrom(clock, F.project.primaryDate.date)),
-      h("p.b-when", { text: F.fmt.longYear(F.project.primaryDate.date) }),
+      countBlock(daysFrom(clock, F.project.primaryDate.date), o.medium),
+      h("p.b-when", { "data-type": "date", text: F.fmt.longYear(F.project.primaryDate.date) }),
       /* The venue was a string literal typed into the renderer, in two
          places, presented as a fact about the record. The record has no
          venue field, and inventing one is a data-model change. */
       h("p.b-sub", { text: F.project.primaryDate.label }),
-      h("div.b-todayRule"),
-      h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(clock) }),
+      /* Today is a screen fact. On paper it is already in the line
+         above, and a second, differently grammared one dates the sheet
+         twice. */
+      o.medium === "print" ? null : h("div.b-todayRule"),
+      o.medium === "print" ? null : h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(clock) }),
       next ? h("p.b-gapNote", { text: gapSentence(next.date) }) : null,
     ]);
   }
@@ -120,7 +130,10 @@
       + ". " + (hidden ? "Hidden from guests." : "Shown to guests.");
   }
 
-  function row(item, away, owner) {
+  /* The unit the row speaks. The past rail reuses this builder, and a
+     row on it read "14 days away" under a heading saying "days back" -
+     in the visible text and in the accessible name both. */
+  function row(item, away, owner, unit) {
     return h("div.b-item", {
       role: "listitem",
       "data-anchor": item.date === F.project.primaryDate.date ? "true" : null,
@@ -134,10 +147,10 @@
          is the right typography and leaves the unit unspoken. It is
          spoken here instead, so the row reads as a sentence to anyone
          not looking at the column. */
-      h("span.b-vh.b-unitSaid", { text: " days away," }),
+      h("span.b-vh.b-unitSaid", { text: " " + (unit || "days away") + "," }),
       h("span.b-tick", { "aria-hidden": "true" }),
       h("div.b-copy", {}, [
-        h("p.b-title", { "data-clamp": "true", text: nameOf(item) }),
+        h("p.b-title", { "data-type": "title", "data-clamp": "true", text: nameOf(item) }),
         h("p.b-date", { text: F.fmt.weekdayShort(item.date) + " " + F.fmt.short(item.date) }),
         owner ? h("button.b-grab", {
           type: "button",
@@ -158,7 +171,10 @@
     /* The top of the rail is today, and it says so. The instrument could
        not be read on its own: the only anchor for "now" was in the other
        column, four hundred pixels away. */
-    kids.push(h("p.b-origin", { "aria-hidden": "true", text: "Today, " + F.fmt.medium(clock) }));
+    kids.push(h("p.b-origin", {
+      "aria-hidden": "true",
+      text: "Today, " + (o.medium === "print" ? F.fmt.longYear(clock) : F.fmt.medium(clock)),
+    }));
     ahead(clock, o.owner).forEach(function (item) {
       var node = row(item, daysFrom(clock, item.date), o.owner);
       if (item.hidden) setVisibility(node, true);
@@ -221,6 +237,7 @@
       }
     }
 
+    var unit = back ? "days back" : "days away";
     var bottom = -Infinity, lastBottom = 0, run = [];
     function closeRun() {
       run.forEach(function (el, i) {
@@ -228,8 +245,8 @@
         var said = el.querySelector(".b-unitSaid");
         if (said) {
           said.textContent = run.length === 1
-            ? " days away,"
-            : " days away, " + (i === 0 ? "first" : "then") + " of "
+            ? " " + unit + ","
+            : " " + unit + ", " + (i === 0 ? "first" : "then") + " of "
               + run.length + " moments on this day,";
         }
       });
@@ -334,7 +351,10 @@
       : h("div.b-behindRows", {}, rows);
 
     var head = [
-      h("h2.b-behindLabel", { text: dayOf ? "How you got here" : "Behind you" }),
+      /* One name. The morning called this "How you got here" while its
+         own closing sentence read "moments behind you", so the screen
+         contradicted itself. */
+      h("h2.b-behindLabel", { text: "Behind you" }),
       h("span.b-behindCount.num", { text: past.length + " moments" }),
     ];
     /* Where the past is listed in full - the record room, and paper -
@@ -381,13 +401,13 @@
     var undated = past.filter(function (m) { return !m.date; });
     var kids = [h("div.b-rail", { "aria-hidden": "true" })];
     dated.forEach(function (item) {
-      kids.push(row(item, -daysFrom(clock, item.date), false));
+      kids.push(row(item, -daysFrom(clock, item.date), false, "days back"));
     });
     return h("div.b-backWrap", {}, [
       h("h2.b-measureHead", { text: "days back" }),
       h("div.b-measure.b-back", {
         role: "list",
-        "aria-label": "How you got here, most recent first",
+        "aria-label": "Behind you, most recent first",
         "data-px": String(BACK_PX),
         "data-clock": clock,
         "data-back": "true",
@@ -544,7 +564,10 @@
         : (away <= 1 ? "This is as near as it goes. Tomorrow is the soonest." : "");
     }
     place(measureEl);
-    keepInBand(root, item);
+    /* On the next frame, not this one: the bar that reports the move
+       fills after the move, and the sheet is anchored to the bottom
+       edge, so the band the row must stay inside grows upward under it. */
+    requestAnimationFrame(function () { keepInBand(root, item); });
     return away;
   }
 
@@ -557,9 +580,19 @@
     var panel = root.querySelector(".b-edit");
     if (!panel || getComputedStyle(panel).position !== "fixed") return;
     var free = panel.getBoundingClientRect().top - 16;
-    var box = item.querySelector(".b-copy").getBoundingClientRect();
-    if (box.top >= 16 && box.bottom <= free) return;
-    window.scrollBy(0, Math.round(box.top - Math.max(16, (free - box.height) / 2)));
+    var copy = item.querySelector(".b-copy");
+    /* Where the row WILL be, not where it is mid-flight. The move is
+       animated, so a rect read during the transition is the position the
+       row is leaving, and scrolling to that lands the reader ninety-odd
+       pixels behind the thing they just moved. */
+    var measureEl = item.parentElement;
+    var px = Number(measureEl.getAttribute("data-px")) || 14;
+    var away = Number(item.getAttribute("data-away"));
+    var push = parseFloat(getComputedStyle(copy).getPropertyValue("--push")) || 0;
+    var height = copy.getBoundingClientRect().height;
+    var top = measureEl.getBoundingClientRect().top + away * px + push;
+    if (top >= 16 && top + height <= free) return;
+    window.scrollBy(0, Math.round(top - Math.max(16, (free - height) / 2)));
   }
 
   function setVisibility(item, hidden) {
@@ -959,6 +992,55 @@
       });
     }
 
+    /* At desk width the horizon is pinned while the plan scrolls past
+       it, and after a screen it was still announcing the empty stretch
+       before the first moment - a sentence about a part of the plan no
+       longer on screen. It now names the nearest tick above the fold,
+       from the same accessors every other figure comes from. */
+    var note = root.querySelector(".b-gapNote");
+    if (note) {
+      var atRest = note.textContent;
+      var stick = root.querySelector(".b-stick");
+      var pending = false;
+      var speak = function () {
+        pending = false;
+        if (!stick || getComputedStyle(stick).position !== "sticky") return;
+        var rows = root.querySelectorAll(".b-measure .b-item");
+        var top = null;
+        for (var i = 0; i < rows.length; i++) {
+          if (rows[i].getBoundingClientRect().top >= 0) { top = rows[i]; break; }
+        }
+        var said = !top || top === rows[0]
+          ? atRest
+          : F.fmt.medium(top.getAttribute("data-date")) + " \u00b7 "
+            + F.fmt.dayCount(Number(top.getAttribute("data-away"))) + " away";
+        if (note.textContent !== said) note.textContent = said;
+      };
+      window.addEventListener("scroll", function () {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(speak);
+      }, { passive: true });
+    }
+
+    /* The editor is docked, not modal: the page may scroll under it, and
+       nothing is trapped. But a fixed panel is invisible to the
+       browser's own scrolling - a row underneath it counts as on screen
+       - so tabbing past the last control in the panel used to land on
+       buttons a keyboard owner could not see. Focus is followed, not
+       fenced: anything that takes it and is standing behind the sheet is
+       brought out from behind it. */
+    root.addEventListener("focusin", function (event) {
+      var panel = root.querySelector(".b-edit");
+      if (!panel || getComputedStyle(panel).position !== "fixed") return;
+      var el = event.target;
+      if (!el || panel.contains(el)) return;
+      var box = el.getBoundingClientRect();
+      var free = panel.getBoundingClientRect().top;
+      if (box.bottom <= free) return;
+      window.scrollBy(0, Math.round(box.bottom - free + 16));
+    });
+
     var undoAct = root.querySelector(".b-undoAct");
     if (undoAct) undoAct.addEventListener("click", function () { undo(root); });
 
@@ -1082,7 +1164,7 @@
       bar(sibling.name, [inert("Nothing to preview yet")]),
       h("div.b-empty", {}, [
         h("h1.b-who", { text: sibling.name }),
-        h("p.b-emptyTitle", { text: "When is the day?" }),
+        h("p.b-emptyTitle", { "data-type": "headline", text: "When is the day?" }),
         h("p.b-emptyBody", { text: "Everything on this page is measured from it, so it is the only thing needed to start." }),
         h("div.b-emptyForm", {}, [
           h("label.b-label", { for: "b-empty-date", text: "The day" }),
@@ -1110,6 +1192,26 @@
       if (iso && F.days(F.today, iso) >= 1) {
         input.setAttribute("aria-invalid", "false");
         hint.textContent = "The day is set. Moments come next.";
+        /* The question is answered, so the screen stops asking it. It
+           used to leave the heading, the field and the button exactly
+           as they were and append a sentence under the button, which is
+           a form that congratulates you and then offers nothing. */
+        var empty = node.querySelector(".b-empty");
+        var away = F.days(F.today, iso);
+        var next = h("div.b-empty", {}, [
+          h("h1.b-who", { text: sibling.name }),
+          countBlock(away),
+          h("p.b-when", { "data-type": "date", text: F.fmt.longYear(iso) }),
+          h("p.b-emptyBody", {
+            text: "Nothing sits between today and the day yet. "
+              + "Everything you add is measured from it.",
+          }),
+          h("div.b-emptyForm", {}, [act("Add a moment", true, { "data-act": "add" })]),
+          h("p.b-hint#b-empty-hint", { role: "status", text: "The day is set. Moments come next." }),
+        ]);
+        empty.parentElement.replaceChild(next, empty);
+        var go = next.querySelector('[data-act="add"]');
+        if (go) go.focus({ preventScroll: true });
         return;
       }
       input.setAttribute("aria-invalid", "true");
@@ -1168,7 +1270,7 @@
         ]),
         h("div", { style: "line-height:1.5" }, [
           h("p.b-who", { text: "The link" }),
-          h("h2.b-pressTitle", { text: "Send it to " + F.project.name + "." }),
+          h("h2.b-pressTitle", { "data-type": "headline", text: "Send it to " + F.project.name + "." }),
           h("p.b-pressBody", {
             text: "It carries the day, the distance and the plan, and nothing from "
               + "your workspace: no notes, no suppliers, no prices.",
@@ -1226,7 +1328,7 @@
         h("div.b-dayWrap", {}, [
           h("h1.b-who", { text: F.project.name }),
           h("p.b-dayCount", { text: "Today" }),
-          h("p.b-dayDate", { text: F.fmt.longYear(clock) }),
+          h("p.b-dayDate", { "data-type": "date", text: F.fmt.longYear(clock) }),
           h("div.b-dayRule"),
           h("p.b-dayNote", { text: "This is the day the plan was for." }),
         ]),
@@ -1237,7 +1339,7 @@
         todayItems.length ? h("section.b-dayNow", {}, [
           h("h2.b-behindLabel", { text: todayItems.length > 1 ? "Happening today" : "Happening now" }),
           h("div", {}, todayItems.map(function (m) {
-            return h("p.b-dayNowTitle", { text: m.title });
+            return h("p.b-dayNowTitle", { "data-type": "title", text: m.title });
           })),
         ]) : null,
         behindBlock({ clock: clock, back: true }),
@@ -1254,16 +1356,20 @@
            bottom of it. The scale changes; the proportion between one
            gap and the next does not. */
         h("div.b-two", {}, [
-          h("div", { style: "line-height:1.5" }, [horizon({})]),
           h("div", { style: "line-height:1.5" }, [
-            measure({ medium: "print" }), behindBlock({ print: true }),
+            horizon({ medium: "print" }),
+            behindBlock({ print: true }),
+            /* The footer is uppercase and this token is case-sensitive,
+               so the only route back from paper used to be one nobody
+               could type. It is set as data, in its own case-preserving
+               block, in the column that had the room. */
+            h("div.b-printLink", {}, [
+              h("p.b-printLinkLabel", { text: "The plan stays online at" }),
+              h("p.b-printLinkUrl", { text: F.shareUrlFull }),
+            ]),
           ]),
+          h("div", { style: "line-height:1.5" }, [measure({ medium: "print" })]),
         ]),
-        /* The footer is uppercase, and this token is case-sensitive: the
-           only link on the keepsake could not be typed by the person
-           holding it. It is set as data now, in its own case-preserving
-           line, and the footer closes on the product name. */
-        h("p.b-printLink", { text: "The plan stays online at " + F.shareUrlFull }),
         foot({}),
       ], ".b-print"),
     ]);
@@ -1282,7 +1388,7 @@
           /* True whether the link was turned off or simply ran out -
              the surface cannot tell the two apart and used to assert
              one of them. */
-          h("h1.b-endedTitle", { text: "This link has stopped working." }),
+          h("h1.b-endedTitle", { "data-type": "headline", text: "This link has stopped working." }),
           h("p.b-endedBody", {
             text: "The day was " + F.fmt.longYear(F.project.primaryDate.date) + ". "
               + F.workspace.owner + " can send a new link.",
@@ -1316,7 +1422,7 @@
            188 pixels of ink - the only filled panels in a hairline
            product, and a mass that collapsed on arrival. */
         h("div.b-skel", { style: "width:107px;height:86px;margin:0 0 10px -5px" }),
-        h("div.b-skel", { style: "width:227px;height:26px;margin-bottom:4px" }),
+        h("div.b-skel", { style: "width:227px;height:26px;margin-bottom:8px" }),
         h("div.b-skel", { style: "width:188px;height:23px" }),
         h("div", { style: "height:1px;background:var(--fore-16);margin:26px 0 0" }),
         h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(F.today) }),

@@ -1,0 +1,6 @@
+{
+  "id": "the-pinned-column-stops-speaking",
+  "real": true,
+  "reason": "Verified by driving owner-flight at 1440 and 1280: 1416px of scroll with .b-stick pinned at top:24 throughout, and at maximum scroll the only visible ticks are 19 September and 3 October while the pinned copy still reads \"Nothing is planned until 1 August\", with 362px of column empty beneath it. Round 3 refuted deleting this track and prescribed giving the rail a present-tense object instead. This is that object, and the data exists.",
+  "sharpenedFix": "Aim at render-b.js horizon()/layout(), not a second copy: at desk there is one horizon instance inside .b-stick, so \"the gap note keeps its place in normal flow\" has no slot to keep. Swap that same .b-gapNote node — gap sentence while the first item is still below the fold, otherwise a mono line naming the topmost tick in the viewport built from existing accessors (F.fmt.medium plus F.fmt.dayCount of its day offset: \"19 SEPTEMBER · 65 DAYS\"), never invented fuzzy phrasing like \"late September\". Gate to the sticky media query; count, date and \"Wedding day\" stay fixed; no hue; cross-fade on --t-fast/--ease, zeroed under prefers-reduced-motion."
+}

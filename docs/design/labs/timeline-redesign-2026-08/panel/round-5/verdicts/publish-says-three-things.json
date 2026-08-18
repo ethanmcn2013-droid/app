@@ -1,0 +1,6 @@
+{
+  "id": "publish-says-three-things",
+  "real": false,
+  "reason": "Not one fact three ways. \"Live since 15 July\" states the link's state; the surface Publish opens is wholly about the link (\"Send it to Mara & Finn\", \"Copy the link\", \"Sending comes next\", \"Ready to send\") and agrees that sending is still the owner's act. \"the moment it becomes theirs\" is .tl-caption lab chrome (render-core.js:76), not copy the owner reads. The proposed shareState() rewrite leaves the never-shared branch unreachable (fixture publication is fixed \"published\") and hollows out a required frame.",
+  "sharpenedFix": "If anything moves it is one string, the bar control, not three. In render-b.js ownerSurface, when F.publication.state === \"published\" label the third act \"The link\" instead of \"Publish\", since that door opens a surface carrying no publish action. Keep \"Live since 15 July\", \"Sending comes next\", \"Ready to send. The link is below.\" and the publish frame id and caption verbatim, and keep \"Publish\" for the unpublished branch. No shareState() accessor, no re-headed surface."
+}

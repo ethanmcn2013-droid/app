@@ -91,6 +91,27 @@
   --gap-major: 56px;
   --gap-page: 80px;
 
+  /* The size ladder, and with it the last unnamed axis. Ink, tracking,
+     leading, space and motion were each declared, commented and gated;
+     type SIZE was seventy-one raw literals across thirteen values, so a
+     second product could only learn the ramp by grepping this one. The
+     names are ROLES, and they are the same roles the leading and
+     tracking ladders are bound to, so a component picks one word and
+     gets its size, its letterfit and its leading together. */
+  --size-label: 11px;         /* mono micro-labels */
+  --size-labelWide: 12px;     /* the ceremonial top line */
+  --size-data: 13px;          /* mono figures and fields */
+  --size-body: 15px;          /* prose, and single-line controls */
+  --size-lead: 17px;          /* the opening paragraph of a block */
+  --size-date: 20px;          /* the ceremonial date line */
+  --size-head: 24px;          /* a moment title at desk width */
+  --size-title: 30px;         /* a screen's own headline */
+  --size-titleWide: 38px;     /* the publish headline */
+  --size-figure: 48px;        /* a figure that is not the count */
+  --size-card: 64px;          /* the count on the unfurl card */
+  --size-count: 96px;         /* the count on a phone */
+  --size-countWide: 148px;    /* the count at desk width */
+
   /* The stage is how one page can show a phone artifact, a desk artifact
      and an A4 sheet honestly. Each state declares the medium it belongs
      to; below 430px the stage stops being a frame and becomes the page. */
@@ -154,7 +175,7 @@ body {
   color: var(--ink);
   font-family: var(--sans);
   font-weight: 400;
-  font-size: 17px;
+  font-size: var(--size-lead);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -237,12 +258,12 @@ body {
    pass AA. */
 .tl-caption {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--size-label);
   line-height: 1.4;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--fore-62);
-  margin: 0 0 12px;
+  margin: 0 0 var(--gap-snug);
   display: flex;
   gap: 10px;
   align-items: baseline;

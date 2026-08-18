@@ -1,0 +1,6 @@
+{
+  "id": "sheet-occludes-the-plan",
+  "real": true,
+  "reason": "Verified by driving at 1024 and 390: tabbing past \"Delete this moment\" lands on row EDIT buttons whose centre hit-tests to the editor's own inputs, so a keyboard user presses controls they cannot see. No gate covers it. But the panel is docked, not modal: it reserves a 570px band, shares the edge with the undo bar, and becomes an inline rail panel at 1280. Inert, scrim, body lock and a tab wrap would build a second, modal editor and strand the reserve. Free scrolling beneath it is the docked decision, not drift.",
+  "sharpenedFix": "Keep it docked; fix the scroll anchor, not the focus order. While [data-editor-open] below 1280, set scroll-padding-bottom: var(--b-sheet) on the scroll root, so the browser's own focus scroll never parks a control under the sheet. Verified: at 1024 and 390 every tab past Delete then lands in the visible strip above the panel, occluded false at all five stops, with no inert, scrim, trap or body lock. In interaction-check.mjs, tab from Delete through five stops below 1280 and assert elementFromPoint at each focused element's centre is never inside .b-edit. Drop the scroll-lock assertion."
+}

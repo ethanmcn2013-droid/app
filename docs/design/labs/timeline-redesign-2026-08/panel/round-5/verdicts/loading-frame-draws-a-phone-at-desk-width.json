@@ -1,0 +1,6 @@
+{
+  "id": "loading-frame-draws-a-phone-at-desk-width",
+  "real": false,
+  "reason": "Measured wrong artifact. Loading resolves into the guest page (state=phone), not state=desk. At 1440 both are phone medium: field 388 at left 526, .b-who at 548, and the skeleton 107x86 at left 543 is exactly where .b-num lands. Zero sideways jump, no under-drawn count. At 390 they match too. The 361px figure comes from comparing phone medium against the desk state's full medium.",
+  "sharpenedFix": "Drop the fix as written: widening the loading field to 1178 at desk width would move it away from the only state it becomes. One small residual survives, unrelated to the claim: safe-center places the short skeleton card 26px higher than the tall loaded page (b-who top 94 vs 120 at 1440), so the header lifts slightly on arrival. If anything is worth doing, pin the loading card to the same top alignment as the loaded page in shell.css."
+}

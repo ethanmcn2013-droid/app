@@ -229,6 +229,61 @@
           "done": "Removed rather than invented: a place field is a data-model change and out of scope, and writing one into the fixture would be exactly the hand-rolled data the brief forbids. The milestone titles that genuinely name the venue are real record content and are untouched. The gate now asserts the page does NOT claim a venue."
         }
       ]
+    },
+    {
+      "round": 5,
+      "scores": {
+        "UI composition": 7.8,
+        "Typography": 8.4,
+        "Interaction and states": 7.9,
+        "UX and information design": 7.9,
+        "Brand and copy": 7.9,
+        "Product taste and emotional resonance": 7.9,
+        "Measured evidence": 8.0
+      },
+      "findings": 35,
+      "confirmed": 24,
+      "refuted": 11,
+      "fixed": 24,
+      "headline": "The floor rose 7.5 to 7.8 and the spread closed to six tenths - but the round was decided by two things the panel had never been asked to grade, and all seven seats failed both. The printed keepsake was not A4. It declared 1123 pixels and rendered up to 1935; there was no @page rule, no print media block, no break rule and no millimetre anywhere in the stylesheets; and the sharpest finding of the engagement was that the two-column sheet every reviewed frame showed NEVER OCCURS ON PAPER - the lab's own stage padding took the sheet's content box under the threshold that gives it two columns, so the object the panel graded and the object that prints were different documents. It printed as two pages, the second carrying an orphaned rail stub, the link and the footer, naming neither the couple nor the day. The second was extractability: the brief requires the winner to come out as a small named language, and five ladders were declared, commented and gated while type SIZE was seventy-one raw literals across thirteen values, vertical space was forty-nine off-ladder values under a heading promising a system, and the four real inventions - the row is the control, the travelling reversibility node, the stepper that states its ceiling, position is the quantity - existed only as class names and gate assertions. Both are now built. The sheet is a real A4 page, verified by rendering the PDF and counting its pages. The size and space ladders are declared and enforced AT THE SOURCE, because a render cannot tell a token from the number it resolves to. Leading and tracking are now graded across the whole state matrix rather than per state, which immediately caught the same date standing on two baselines on two screens. And the language has a name and a page: Measure. The measured gate went from thirteen categories to fifteen; the behaviour gate from 454 assertions to 499.",
+      "worst": [
+        {
+          "seat": "UI composition",
+          "cost": 0.6,
+          "problem": "The keepsake is the only artifact this product makes that cannot be reflowed after it exists, and it was never a page. Rendered at true A4 it was 714 by 1828 in a single stacked column, and page.pdf returned two sheets. Zero @page, zero @media print, zero break rules, zero mm or pt in any stylesheet. And the two-column composition in every frame the panel had reviewed for five rounds was a screen picture of a document no printer produces: the lab's 40px stage padding was leaking onto the paper and taking the content box 16px under the container threshold.",
+          "done": "The sheet is told it is 210 by 297 millimetres. A print media block takes the lab's furniture and its stage padding off the paper, which lifts the content box to 680 and restores the two columns on paper for the first time. The composition was re-cut so it fits rather than shrunk: the past moved under the horizon into the left column, which held 396 pixels against 1194 on the right, and the sheet's scale dropped from ten pixels a day to eight. Nothing may be cut in half by a page edge. Measured: 1003 pixels inside 1123, and the PDF is one page - now an assertion that renders the real PDF and counts them."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.5,
+          "problem": "Ink, leading, tracking, space and motion each had a named, commented, mechanically gated ladder. Type SIZE had none: seventy-one raw pixel literals across thirteen values with no role names, so a second product could only learn the ramp by grepping this one. The config's ramp was an inventory ratified after the fact, not a scale.",
+          "done": "Thirteen role-named size tokens, paired to the leading and tracking roles so a component picks one word and gets its size, its letterfit and its leading together, with every literal routed onto them and no pixel moved. And the gate learned to read the SOURCE, not the render: a render cannot tell a token from the number it resolves to, so a declared ladder bypassed by a literal scored clean. Any untokenised font-size now fails the build."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.4,
+          "problem": "Below 1280 the editor is a fixed panel, and a fixed panel is invisible to the browser's own scrolling - a row underneath it counts as on screen. So tabbing past the last control in the panel landed focus on row buttons the keyboard owner could not see, and pressed things they could not see.",
+          "done": "Focus is followed, not fenced. The panel is docked rather than modal - a refuter was clear that a scrim, a body lock and a tab wrap would build a second, modal editor and strand the reserved band - so instead anything that takes focus while standing behind the sheet is brought out from behind it. Graded by tabbing five stops past Delete at two widths and hit-testing the centre of whatever holds focus."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.5,
+          "problem": "A whole band of widths had never been drawn. From 701 to 1279 the field is one wide track, and the single indigo mark on the owner's screen is bound to it - so today ran 344 pixels at 1280 and 1068 pixels full-bleed at 1279, reading as a divider rather than as a mark. The shot matrix rendered 390, 768, 1280 and 1440, which is why four rounds never saw it.",
+          "done": "Today is held to one constant width - a no-op on a phone and at the two-column widths, a correction across the whole band. The breakpoint itself did not move: a refuter showed that two columns at 1000 pixels leaves the plan lane 284 wide inside its own gutter and reopens the collision the 1280 threshold was raised to close. The band now renders in both the shot matrix and the console, so it cannot go unseen again."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.3,
+          "problem": "Nothing gave the language a name, so there was nothing for the next product to ask for. The materials transferred cleanly; the compositions did not, and the four real inventions - the row is the control, the travelling reversibility node, the stepper that states its ceiling, position is the quantity - existed only as .b-prefixed classes with their contracts living inside gate assertions. Notes could inherit by copying Timeline and deleting the wedding, and no other way.",
+          "done": "The language is called Measure, and LANGUAGE.md states it: the six ladders, the four rules, and the four behaviours written as contracts - each with its states, its keyboard model, its focus-return rule, the assertion that proves it and the class implementing it today. It also states plainly what a second product does NOT inherit, and records the two jobs deliberately deferred rather than swept late in an engagement: splitting the .b- prefix into a neutral layer, and collapsing thirteen size steps to fewer. Both move pixels."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.3,
+          "problem": "The morning's past rail, built last round, reused the forward row builder - so every row on it said \"14 days away\" under a heading reading \"days back\", in the accessible name a screen reader hears. The gate could not see it: its unit assertion runs on a state that has no past rail.",
+          "done": "The rail passes its own direction to the row builder, and to the run grouper that rewrites the same phrase on every repaint - otherwise the wrong word came back on the next paint. Graded on the state that actually has the rail."
+        }
+      ]
     }
   ]
 }

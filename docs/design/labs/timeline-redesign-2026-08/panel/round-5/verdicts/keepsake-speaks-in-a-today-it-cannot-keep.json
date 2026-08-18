@@ -1,0 +1,6 @@
+{
+  "id": "keepsake-speaks-in-a-today-it-cannot-keep",
+  "real": true,
+  "reason": "Verified by rendering state=print: hero \"79\" at 148px, unit \"days\" at 11px, \"Today is 16 July\" at 11px, heading \"days away\", left column all relative (16,23,37,44,51,65,79), footer \"Updated 15 July 2026\" which is the plan's edit stamp. Nothing on the sheet dates the sheet, so its largest fact is false from midnight. The unfurl was fixed this round to say \"days away when this was sent\" (render-b.js:1134); print calls horizon({}) and foot({}) unchanged. Real, and a parity gap on the medium that can be corrected least.",
+  "sharpenedFix": "Date the sheet; keep the distances. Reject the column swap: those numerals are the scale that makes the proportional rail readable without arithmetic, and each row's sub-line already carries its calendar date. Reject the hero swap: the count is the hero in every other state, and one object should have one hero. Thread medium through horizon()/countBlock(); on print set the unit line to \"days away on 16 July 2026\" from F.fmt.longYear(F.today), drop .b-todayRule and .b-todayLabel in print only, and give .b-origin the year. Keep the footer's Updated stamp: it now plainly dates the plan, not the paper."
+}

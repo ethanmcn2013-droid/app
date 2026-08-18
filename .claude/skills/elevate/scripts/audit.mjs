@@ -232,9 +232,13 @@ const AUDIT = `(() => {
            belongs to, so the role is what it is keyed on. */
         const isControl = el.matches("button, a, summary, input, textarea, select, [tabindex]");
         const upperMono = /mono|geist mono/i.test(family) && cs.textTransform === "uppercase";
-        const role = size >= 48 ? "display"
+        /* An element may DECLARE its role, and where it does that wins:
+           a moment title and a paragraph of prose can sit at the same
+           size and still be two different things, and a check keyed on
+           rendered size can never tell them apart. */
+        const role = el.getAttribute("data-type") || (size >= 48 ? "display"
           : (upperMono && size <= 12 ? "label"
-            : (isControl ? "control" : (size >= 20 ? "head" : "body")));
+            : (isControl ? "control" : (size >= 20 ? "head" : "body"))));
         const roleKey = family + "|" + Math.round(size * 10) / 10 + "|" + role;
         const leadNow = Math.round((parseFloat(cs.lineHeight) / size) * 100) / 100;
         if (!(el.closest(".tl-caption") || cs.clipPath !== "none")) {
@@ -377,21 +381,17 @@ const AUDIT = `(() => {
   out.leading = dedupe(out.leading, (i) => i.el);
   out.leadingLadder = dedupe(out.leadingLadder, (i) => i.el + i.lead);
   out.trackingLadder = dedupe(out.trackingLadder, (i) => i.el + i.track);
+  /* Emitted as raw pairs and merged across every state by the runner:
+     these are properties of the whole matrix, and a map rebuilt per
+     state can never see the same object standing on two baselines on
+     two different screens. */
+  out.leadPairs = [];
   for (const [key, seen] of leads) {
-    if (seen.size < 2) continue;
-    out.leadingRole.push({
-      key,
-      values: Array.from(seen.keys()).join(" vs "),
-      where: Array.from(seen.values()).join(" | ").slice(0, 120),
-    });
+    for (const [value, where] of seen) out.leadPairs.push([key, value, where]);
   }
+  out.trackPairs = [];
   for (const [key, seen] of tracks) {
-    if (seen.size < 2) continue;
-    out.tracking.push({
-      key,
-      values: Array.from(seen.keys()).join(" vs "),
-      where: Array.from(seen.values()).join(" | ").slice(0, 120),
-    });
+    for (const [value, where] of seen) out.trackPairs.push([key, value, where]);
   }
   return out;
 })()`;
@@ -414,6 +414,73 @@ const totals = Object.fromEntries(KEYS.map((k) => [k, 0]));
 for (const state of Object.keys(report.states)) {
   for (const key of KEYS) totals[key] += report.states[state][key].length;
 }
+/* Merge the type pairs across every state before grading them. */
+const merge = (field) => {
+  const map = new Map();
+  for (const state of Object.keys(report.states)) {
+    for (const [key, value, where] of report.states[state][field] || []) {
+      if (!map.has(key)) map.set(key, new Map());
+      if (!map.get(key).has(value)) map.get(key).set(value, where);
+    }
+  }
+  const out = [];
+  for (const [key, seen] of map) {
+    if (seen.size < 2) continue;
+    out.push({
+      key,
+      values: Array.from(seen.keys()).join(" vs "),
+      where: Array.from(seen.values()).join(" | ").slice(0, 120),
+    });
+  }
+  return out;
+};
+const acrossStates = { leadingRole: merge("leadPairs"), tracking: merge("trackPairs") };
+for (const state of Object.keys(report.states)) {
+  report.states[state].leadingRole = [];
+  report.states[state].tracking = [];
+}
+const firstState = Object.keys(report.states)[0];
+report.states[firstState].leadingRole = acrossStates.leadingRole;
+report.states[firstState].tracking = acrossStates.tracking;
+
+/* 14 + 15 · the ladders enforced at the SOURCE. A declared ladder that
+   is bypassed by a literal is a comment: type size was seventy-one
+   literals and vertical space forty-nine off-ladder values, both under
+   headings promising a system. Read the stylesheets, not the render -
+   the render cannot tell a token from the number it resolves to. */
+report.source = { size: [], space: [] };
+{
+  const { readFile, readdir } = await import("node:fs/promises");
+  const path = await import("node:path");
+  /* Only the stylesheets the master is actually built from. A lab keeps
+     its discarded directions as the record of the exploration, and
+     history is not held to the standard of the thing that shipped. */
+  const build = await readFile(path.join(lab, "build.mjs"), "utf8").catch(() => "");
+  const declared = (build.match(/const CSS = \[([^\]]+)\]/) || [])[1];
+  const files = declared
+    ? declared.split(",").map((f) => f.trim().replace(/["']/g, "")).filter(Boolean)
+    : (await readdir(lab)).filter((f) => f.endsWith(".css"));
+  for (const file of files) {
+    const text = await readFile(path.join(lab, file), "utf8");
+    text.split("\n").forEach((line, i) => {
+      const bare = line.split("/*")[0];
+      if (/font-size:\s*[0-9]/.test(bare)) {
+        report.source.size.push({ file, line: i + 1, text: bare.trim().slice(0, 70) });
+      }
+      /* Four pixels and under is an optical inset, not a step on a
+         ladder, and a line may say so for itself with an annotation. */
+      const space = bare.match(/(?:^|[\s;{])(?:margin|padding)(?:-(?:top|right|bottom|left))?:\s*([^;}]+)/);
+      if (space && !/off-ladder/.test(line)) {
+        const values = space[1].match(/-?\d+px/g) || [];
+        if (values.some((v) => Math.abs(parseInt(v, 10)) > 4)) {
+          report.source.space.push({ file, line: i + 1, text: bare.trim().slice(0, 70) });
+        }
+      }
+    });
+  }
+}
+totals.sizeLadder = report.source.size.length;
+totals.spaceLadder = report.source.space.length;
 report.totals = totals;
 
 if (AS_JSON) {
@@ -438,10 +505,15 @@ if (AS_JSON) {
     line("lead role", r.leadingRole, (i) => `${i.key} → ${i.values}   ${i.where}`);
     line("lead ladder", r.leadingLadder, (i) => `${i.el} ${i.size}px at ${i.lead}  "${i.text}"`);
     line("tracking", r.tracking, (i) => `${i.key} → ${i.values}   ${i.where}`);
+    if (state === firstState) {
+      line("size ladder", report.source.size, (i) => `${i.file}:${i.line}  ${i.text}`);
+      line("space ladder", report.source.space, (i) => `${i.file}:${i.line}  ${i.text}`);
+    }
     line("track ladder", r.trackingLadder, (i) => `${i.el} ${i.size}px at ${i.track}  "${i.text}"`);
   }
   process.stdout.write(`\nTOTALS  ${JSON.stringify(totals)}\n`);
   if (!TYPE_RAMP.length) process.stdout.write(`note: type-ramp check skipped — fill ladders.typeRamp at the palette lock\n`);
 }
 
-process.exit(KEYS.reduce((sum, k) => sum + totals[k], 0) > 0 ? 1 : 0);
+process.exit(KEYS.reduce((sum, k) => sum + totals[k], 0)
+  + totals.sizeLadder + totals.spaceLadder > 0 ? 1 : 0);

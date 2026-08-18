@@ -1,0 +1,6 @@
+{
+  "id": "two-names-for-the-past-on-guest-surfaces",
+  "real": true,
+  "reason": "Verified at 390: phone, desk, print and the record room head the block \"Behind you\"; the day heads the identical object \"How you got here\", while that same block's own closing sentence still reads \"moments behind you\", so the morning contradicts itself. Round 4 endorsed exactly this and it is unfixed. The aria sub-claim is wrong: that label renders only on the day, where it matches. The fix's selector is also wrong.",
+  "sharpenedFix": "\"Behind you\" wins: it is on four surfaces, both record rooms, and inside the day's own closing sentence. Delete the dayOf ternary at render-b.js:337 and set the aria-label at 390 to \"Behind you, most recent first\" (it exists only on the day, so it is not a third variant). Assert on .b-behind .b-behindLabel, never document.querySelector(\".b-behindLabel\") — on the day that returns the .b-dayNow \"Happening now\" heading and the assertion would fail on the wrong node. Change nothing else in the block."
+}

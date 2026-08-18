@@ -1,0 +1,6 @@
+{
+  "id": "widowed-reassurances",
+  "real": true,
+  "reason": "Measured last-line ratios confirm it: .b-note 15.4% at 768/1280/1440, .b-behindNote 21.8% at the same three, .b-stepRead 13.3% at 390/1280/1440. Forcing text-wrap: balance lifts them to 84.9%, 100% and 54.5%, so balance is the lever, not the measure. But the finding is wrong that these 'did not get it': .b-note and .b-behindNote already carry text-wrap: pretty and ch measures; only .b-stepRead has neither.",
+  "sharpenedFix": "In b.css swap the existing text-wrap: pretty to balance on .b-note (line 897) and .b-behindNote (line 452); their 52ch/46ch measures are already correct, leave them. Add text-wrap: balance to .b-stepRead (line 710) but do NOT add the proposed 34ch max-width: it currently fits one line at 768, and capping it would force a needless wrap there. Skip the blanket nbsp; instead bind only the mono date string in render-b.js as 'in 23\u00a0days'."
+}

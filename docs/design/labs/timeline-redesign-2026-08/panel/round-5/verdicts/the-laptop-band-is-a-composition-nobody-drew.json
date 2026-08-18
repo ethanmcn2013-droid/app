@@ -1,0 +1,6 @@
+{
+  "id": "the-laptop-band-is-a-composition-nobody-drew",
+  "real": true,
+  "reason": "Measured on the real page: .b-two is one track from 701 to 1279 (509px at 701, 908px at 1100, 1068px at 1279), and .b-todayRule is bound to it, so the single indigo mark runs 1068px full-bleed at 1279 against 344px at 1280 - it reads as a divider, not as today. The first moment sits at y941 at 1100, below an 800px fold. lock.md promises the horizon stops scrolling at desk width and b.css calls 701 desk, so the sticky gap is a real contradiction. Two legs are overstated: single-column is the drawn tablet form, and sticky genuinely needs a column.",
+  "sharpenedFix": "Do not move the breakpoint. Two columns at 1000px leaves the plan lane 284px inside its 124px gutter and reopens the round-1 collision the 1280 threshold was raised to close. The band is correctly single-column; only the accent rule is wrong. In b.css add .b-todayRule { max-width: 344px } unconditionally - a no-op at 390 and at 1280+, it holds today to one constant mark across 701-1279. Leave .b-stick at 1280 and amend lock.md to say desk width means the two-column width. Add 1152x800 and 1279x800 to the shot matrix so the band renders every build."
+}
