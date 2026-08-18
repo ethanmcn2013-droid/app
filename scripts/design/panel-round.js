@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'tasks-panel-round-6',
+  name: 'tasks-panel-round-7',
   description: 'Seven fresh independent seats re-grade the Tasks master against a 9.5 bar',
   phases: [
     { title: 'Review' },
@@ -66,17 +66,29 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 43 assertions, all passing. READ IT. Everything it asserts is already
+with 73 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
-Also live as of this round, and worth driving before you score:
-- The foot strip is the board's reversibility surface: what is in your hand,
-  what you just finished with Undo (Cmd/Ctrl+Z), what the filter is hiding.
-- The card's "..." button opens a Move menu — the touch and keyboard route.
-- Every scroll position and the focus point survive a repaint.
-- Both edge fades are measured from distance-to-end and bound to live scroll.
-- The date chip states its condition: "2 days overdue", "Milestone 1 Aug".
+Also live, and worth driving before you score:
+- Ticking a card makes it FLY to its new column as a fixed-position copy
+  carrying the product's one heavy shadow, then play a check-draw beat.
+- The foot strip reverses a completion, a menu move and a pointer drop, and
+  states the filter. Cmd/Ctrl+Z. It waits while you are reading it.
+- Clicking a card, or Enter, opens its full note in place.
+- The card's "..." opens a Move menu. Holding a dragged card at the board's
+  edge walks it across. Arrows keep the focused card inside its column.
+- The chip carries the VALUE and the fill carries the CONDITION: filled
+  means behind, outlined means today, indigo means the next milestone. The
+  sentence lives in the accessible name, the tooltip and the specimen sheet.
+  This is a deliberate reversal of round 5 on measured rag evidence; argue
+  with it if you disagree, but do not report it as an oversight.
+
+TWO ROUNDS REMAIN BEFORE THE HARD CAP. The seats have sat between 7.1 and
+8.1 for three rounds. If you believe the artifact cannot reach 9.5 without
+something structural that is currently out of scope, SAY SO PLAINLY in
+biggestWin rather than listing more small defects — an honest distance is
+worth more than another round of polish.
 Judge the FEEL of these moments — timing, what is announced, what is
 reversible, what a first-time venue owner would discover — as harshly as you
 judge the pixels. "It is implemented" earns nothing; "it is implemented at

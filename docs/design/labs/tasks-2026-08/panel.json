@@ -284,6 +284,61 @@
           "done": "The body sizes to its content and only fills when it has more than fits. The band is 18 and 18. The pill sits clear of the Add rows, and they stand down while it is up rather than being covered."
         }
       ]
+    },
+    {
+      "round": 6,
+      "scores": {
+        "UI composition": 7.6,
+        "Typography": 7.5,
+        "Interaction and states": 7.2,
+        "UX and information design": 7.2,
+        "Brand and copy": 7.4,
+        "Product taste and emotional resonance": 7.1,
+        "Measured evidence": 7.3
+      },
+      "findings": 35,
+      "confirmed": 24,
+      "refuted": 11,
+      "fixed": 24,
+      "headline": "Every seat recovered from the round-5 dip, and the round found two defects that made the direction's own written claims unreachable on the real board: the completion flight was dead code, and every outward ring on a card was being clipped by its own column scroller. Both had survived five rounds of frame-reading because neither is visible in a screenshot. The behaviour gate grew from 43 assertions to 73.",
+      "worst": [
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 9.0,
+          "problem": "The board's one celebratory moment did not happen. Sampled over 40 consecutive frames after a tick: transform none on every one, data-flying alive for two milliseconds. Setting the FLIP offset and clearing it inside the same style-change event starts no transition, so the single act this product exists for was a silent teleport a thousand pixels to the right — and the only thing on the board designed to be felt remained the filled ink overdue chip, which is bad news.",
+          "done": "The card flies as a fixed-position copy over the whole sheet, because the real node lives inside a column scroller that would clip both it and its shadow. It carries the one heavy shadow in the product, lands, and then plays the check-draw beat that was also written and never wired. The gate samples the ghost across the flight rather than trusting an attribute."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 8.5,
+          "problem": "overflow-y: auto on the tray forces overflow-x: auto, and the card measured exactly the scroller's client width, so every outward ring and shadow was clipped on both flanks. The keyboard focus ring rendered as two disconnected indigo arcs with no sides; the picked-up card the same; --lift, described in the source as the one heavy shadow that exists, was unreachable on the real board. The specimen sheet was the only place either rendered correctly, because it opted out of the same overflow.",
+          "done": "A 6px gutter inside the tray's own 12px padding, pulled back by an equal negative margin. Card measure unchanged at 234, column rhythm unchanged, no horizontal scrollbar, rings whole — all four asserted in the gate. The specimen sheet is now rendered by the same rules it documents."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 9.0,
+          "problem": "Five of thirteen cards clip their note, and the clipped half is the operationally load-bearing half — \"…they need the call by Thursday\", \"…before service notes are locked\". Clicking the card, the title or the note did nothing at all. The only route to the full string was a native hover tooltip: unreachable by keyboard and unreachable on the iPad that sits on a venue desk. The board could not deliver the instruction a card exists to carry.",
+          "done": "Clicking a card opens its note in place, which is also the obvious thing it looked like and previously did nothing, and Enter does the same — which removes a destructive default key, since Enter used to complete the task."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 7.5,
+          "problem": "On the dense board the arrows walked focus off the bottom of the column and nothing scrolled: from the fifth card on the focused card was outside its own scroller, by up to 509px, while the live region announced \"Position 9 of 10 in To do\". At 768 the drag could not cross the board at all — three of five columns were unreachable, so the board's defining gesture could not finish a task's journey.",
+          "done": "A tray-scoped vertical correction after focus, deliberately not a general scrollIntoView, which nudges the horizontally snapped board on a phone and undoes the scroll restore. Holding a dragged card at the board's edge walks it across, with mandatory snap suspended for the length of the gesture."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 9.0,
+          "problem": "The filtered board told the operator the same fact four times in three vocabularies with two exits, and parked a board-scoped sentence in a column-scoped slot so it read as a claim about To do. Separately, the two most consequential keys in the interaction were labelled with a minimal pair — \"Space put it down\" and \"Esc put it back\" — one of which commits the move and one of which throws it away, read at a glance mid-move.",
+          "done": "The board states the filter once, at the foot, with the header chip left as the control. \"Space drop it here\" and \"Esc cancel the move\", with the announcements matched and the cancel line finally naming the task."
+        },
+        {
+          "seat": "Typography",
+          "cost": 5.0,
+          "problem": "The date chip was 56% of the title measure at 1440 and 68% at 1280, and it reserved that width on line one only — so every dated card set a starved first line while lines two and three ran full width. The milestone card, the one indigo card the whole board is composed to make you look at, set \"Menu\" over \"tasting at The Orchard\" at every width tested.",
+          "done": "The chip carries the value and the fill carries the condition. This narrows round 5's visible strings and is recorded as a reversal rather than slipped in: the sentence moves to the accessible name, the tooltip and the specimen sheet, which now teaches the mapping instead of assuming it. Zero starved first lines at six widths."
+        }
+      ]
     }
   ]
 }
