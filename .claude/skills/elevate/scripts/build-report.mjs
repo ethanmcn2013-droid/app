@@ -73,11 +73,15 @@ const meta = {
 
 if (panel.gate === undefined) panel.gate = config.gate;
 
+/* Finding prose can legally contain "</script>" — escape every "<" so the
+   embedded JSON can never terminate the shell's script block. */
+const jsonForScript = (value) => JSON.stringify(value).replace(/</g, "\\u003c");
+
 const page = shell
-  .replace("/*__PANEL__*/", () => JSON.stringify(panel))
-  .replace("/*__PALETTE__*/", () => JSON.stringify(palette))
-  .replace("/*__FRAMES__*/", () => JSON.stringify(frames))
-  .replace("/*__META__*/", () => JSON.stringify(meta));
+  .replace("/*__PANEL__*/", () => jsonForScript(panel))
+  .replace("/*__PALETTE__*/", () => jsonForScript(palette))
+  .replace("/*__FRAMES__*/", () => jsonForScript(frames))
+  .replace("/*__META__*/", () => jsonForScript(meta));
 
 const out = path.join(lab, "report.html");
 await writeFile(out, page, "utf8");

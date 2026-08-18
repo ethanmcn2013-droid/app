@@ -199,7 +199,8 @@ const page = shell
   .replace("/*__DATA__*/", () => inlineJs)
   .replace("/*__ICONS__*/", () => "")
   .replace("/*__RENDERER__*/", () => scriptBlocks.join("\n;\n"))
-  .replace("/*__META__*/", () => JSON.stringify(meta));
+  /* Copy in meta can contain "<" — escaped so it can't close the script block. */
+  .replace("/*__META__*/", () => JSON.stringify(meta).replace(/</g, "\\u003c"));
 
 const out = path.join(lab, "console.html");
 await writeFile(out, page, "utf8");

@@ -468,8 +468,14 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
   const cap = document.getElementById("frameCap");
   let current = FRAME_TABS.length ? FRAME_TABS[0][0] : "";
 
+  /* No packed frames at all (pre-shot state) — the section has nothing to
+     say, and a src-less img would fail the artifact render check. */
+  if (!Object.keys(FRAMES).length) img.closest("section").style.display = "none";
+
   function paint() {
-    img.src = FRAMES[current] || "";
+    const has = !!FRAMES[current];
+    img.style.display = has ? "" : "none";
+    if (has) img.src = FRAMES[current];
     img.alt = CAPS[current] || current;
     cap.textContent = CAPS[current] || "";
     Array.prototype.forEach.call(tabs.children, function (b) {
