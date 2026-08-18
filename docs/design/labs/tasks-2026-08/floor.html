@@ -81,7 +81,7 @@
   --r-sheet: 16px;
   --r-pill: 999px;
 
-  --inset: 18px;
+  --inset: 18px; --dock-w: 442px;
   --rail: 64px;
   --tap: 44px;
 
@@ -232,12 +232,22 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .sheet::after {
   content: "";
   position: absolute; right: 0; top: 118px; bottom: 0;
-  width: 44px; z-index: 3;
+  width: 44px;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white));
   opacity: 0; pointer-events: none; z-index: 1;
   transition: opacity var(--dur) var(--curve);
 }
 .sheet[data-more-right]::after { opacity: 1; }
+/* The mirror. A one-sided signal says nothing about the column behind you. */
+.sheet::before {
+  content: "";
+  position: absolute; left: 0; top: 118px; bottom: 0;
+  width: 44px; z-index: 1;
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0), var(--white));
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) var(--curve);
+}
+.sheet[data-more-left]::before { opacity: 1; }
 
 .head {
   flex: none;
@@ -369,7 +379,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   flex: 0 1 auto; min-height: 0;
   overflow-y: auto;
   display: grid; gap: 8px; align-content: start;
-  padding: 2px 0 8px;
+  padding: 2px 6px 8px; margin: 0 -6px;
   --fade-top: -1px;
   --fade-bottom: 101%;
   -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
@@ -455,7 +465,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   color: var(--ink-2); letter-spacing: var(--tr-13);
   text-wrap: pretty;
   display: block; max-height: calc(1.45em * 2); overflow: hidden;
+  transition: color var(--dur) var(--curve);
 }
+.card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
+/* Opened in place. The clipped half of a note is the half that carries the
+   deadline, and the only route to it used to be a hover tooltip: no keyboard,
+   no touch, no iPad on a venue desk. */
+.card[data-open] .cardNote { max-height: none; color: var(--ink-1); }
+.card[data-open] { --card-ring: 0 0 0 1.5px var(--indigo); }
 .cardFoot {
   grid-column: 2; grid-row: 3;
   /* One line, always. Wrapping put the actions button on a second row and
@@ -474,11 +491,15 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    proportion to its own length. */
 .cardFoot > .who { flex: 0 0 auto; }
 .cardFoot > .tag { flex: 0 3 auto; }
-.cardFoot > .hi  { flex: 0 1 auto; }
+.cardFoot > .hi { flex: 0 1 auto; color: var(--ink-2); }
 .cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
 .cardFoot .cm svg { width: 12px; height: 12px; }
 .cardFoot .grow { margin-left: auto; display: inline-flex; flex: none; }
-.cardFoot .grow + .cardDots { margin-left: 8px; }
+/* Right-aligning one content glyph to the reserved menu slot left an
+   invisible hole in every card foot, on the sheet whose own caption reads
+   "no empty slots". The row simply reads left to right. */
+.cardFoot .grow { margin-left: 0; flex: none; }
+.cardFoot .grow + .cardDots { margin-left: auto; }
 .cardFoot .cm { flex: none; }
 .cardFoot .grow svg { width: 13px; height: 13px; color: var(--ink-4); }
 /* The menu sits at the end of the foot row, in space that is always
@@ -504,7 +525,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 /* The time fact. Right-aligned on the title's own line, so a tray reads
    as a column of dates. Severity is fill, never hue. */
 .when {
-  float: right; margin: 0 0 0 9px;
+  float: right; margin: 0 0 0 9px; max-width: 38%;
   display: inline-flex; align-items: center; gap: 5px;
   height: 19px; padding: 0 8px;
   border-radius: var(--r-pill);
@@ -661,6 +682,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 
 /* ── the dock ──────────────────────────────────────────────────── */
 .dock {
+  /* The foot is one object in three states, so the strip and the dock share
+     a declared width instead of each arriving at their own. */
+  width: var(--dock-w); box-sizing: border-box;
   position: absolute; left: 50%; bottom: 18px;
   transform: translateX(-50%);
   display: flex; align-items: center; gap: 4px;
@@ -694,6 +718,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .dockField kbd { margin-left: auto; border: 1px solid var(--line); color: var(--ink-3); }
 .carry kbd { background: var(--chrome); color: var(--on-ink-1); }
+/* The one deliberate exception to the tracking curve: mono forces each arrow
+   into a narrow cell, and at 10px the shafts touch. */
+.carry kbd[data-keys="arrows"] { letter-spacing: 0.28em; padding-inline: 6px 3px; }
 .dockPrimary {
   display: inline-flex; align-items: center; gap: 8px;
   height: 38px; padding: 0 17px 0 14px;
@@ -831,20 +858,30 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .carry {
   position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
   z-index: 6;
-  display: flex; align-items: center; flex-wrap: nowrap; gap: 10px;
-  min-height: 36px; max-width: calc(100% - 32px); padding: 0 6px 0 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap; gap: 10px;
+  width: var(--dock-w); max-width: calc(100% - 32px); box-sizing: border-box;
+  min-height: 36px; padding: 0 6px 0 14px;
   border-radius: var(--r-pill);
   background: var(--ink-1); color: var(--on-ink-1);
   font-size: 12px; letter-spacing: var(--tr-12);
   box-shadow: var(--lift);
   animation: carryIn var(--dur) var(--curve);
 }
-/* The pill sits where the Add rows are, so while it is up they stand down
-   rather than being covered. */
-.floor:has(.carry) .trayAdd { opacity: 0; pointer-events: none; }
+/* An Add row stands down only where the strip actually covers it, measured
+   after layout. Before this the board blinked out its primary create
+   affordance, in all five columns, after every single completion. */
+.trayAdd[data-under] { opacity: 0; pointer-events: none; }
 .trayAdd { transition: opacity var(--dur) var(--curve); }
 .carry b { font-weight: 600; }
-.carryName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carryName {
+  flex: 1 1 auto; min-width: 0; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A hint is one phrase and never breaks. Wrapping put "put it back" in white
+   type outside the black pill on a phone, at the exact instant the operator
+   is holding a card and most needs to trust the board. */
+.carry em { white-space: nowrap; flex: none; }
 .carryDo {
   flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
   background: var(--chrome-active); color: var(--on-ink-1);
@@ -853,7 +890,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   transition: background-color var(--dur) var(--curve);
 }
 .carryDo:hover { background: rgba(255, 255, 255, 0.22); }
-.carryDo::before { content: ""; position: absolute; }
+.carryDo { position: relative; }
+.carryDo::before { content: ""; position: absolute; inset: -9px -6px; }
 .carry em {
   font-style: normal; color: var(--on-ink-2);
   display: inline-flex; align-items: center; gap: 6px;
@@ -863,11 +901,15 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 @media (prefers-reduced-motion: reduce) { .carry { animation: none } }
 
 /* A completed card travels from where the eye already is to where it lands,
-   rather than teleporting a thousand pixels to the right. The distance is
-   measured after the repaint and played back; on a phone, where Done is off
-   screen, the card leaves in the direction it went. */
-.card[data-flying] { transition: transform 260ms var(--curve); }
-@media (prefers-reduced-motion: reduce) { .card[data-flying] { transition: none; } }
+   rather than teleporting a thousand pixels to the right. It flies as a
+   fixed-position copy over the whole sheet, because the real node is inside
+   a column scroller that would clip both the card and its shadow. */
+.cardGhost {
+  position: fixed; margin: 0; z-index: 60; pointer-events: none;
+  box-shadow: var(--lift);
+  transition: transform 260ms var(--curve);
+}
+@media (prefers-reduced-motion: reduce) { .cardGhost { transition: none; } }
 
 /* A completed tick still answers the pointer, so putting the work back is
    as visible as finishing it. The done rule outranked the hover rule, which
@@ -915,7 +957,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .specStage .card { width: var(--tray-card, 234px); max-width: 100%; }
 .specTray { padding: 8px; border-left: 0; width: calc(var(--tray-card, 234px) + 16px); border-radius: var(--r-card); }
-.specTray .trayBody { padding: 0; gap: 8px; overflow: visible; }
+/* The specimen sheet is rendered by the same rules it documents. */
+.specTray .trayBody { padding: 0 6px; margin: 0 -6px; gap: 8px; }
 .specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 268px; }
 .specLabel { max-width: 268px; }
 .specIntro { max-width: 64ch; margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
@@ -1121,6 +1164,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .headFacts .late { display: inline-flex; }
   .headRule { display: none; }
   .headSearch { display: inline-flex; }
+  /* Only the way out survives, because there is no keyboard here to teach. */
+  .carry em:not(:last-child) { display: none; }
   /* The switcher loses its icons rather than its fourth view. Cutting
      "Calendar" mid-word at the sheet edge read as a broken layout. */
   .views { padding: 14px 16px 12px; }
@@ -1132,7 +1177,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   /* No dock on a phone, so no clearance to reserve. */
   .tray { scroll-snap-align: start; padding-bottom: 8px; }
   .trayBody { padding-bottom: 4px; }
-  .sheet::after { display: none; }
+  .sheet::after, .sheet::before { display: none; }
   .dock { display: none; }
   .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
   .loadSay { bottom: 16px; }
@@ -1180,7 +1225,10 @@ let focusId = null;     /* the board's single tab stop                     */
 let carriedId = null;   /* the card currently in the operator's hand       */
 let carriedFrom = null; /* where it was picked up, so Escape can undo      */
 let lateOnly = false;   /* the overdue chip, pressed                       */
-let undone = null;      /* the last completion, still reversible           */
+let undone = null;      /* the last reversible act: a completion or a move  */
+let openNoteId = null;  /* the card showing its full note                   */
+let flyId = null;       /* the card that should travel on the next repaint  */
+let refocusPart = null; /* which part of the card to land focus on          */
 let undoTimer = null;
 let menuFor = null;     /* the card whose move menu is open                 */
 let menuAt = "";
@@ -1280,12 +1328,12 @@ function daysLate(iso) {
   const parts = String(iso).split("-").map(Number);
   const date = Date.UTC(parts[0], parts[1] - 1, parts[2]);
   const days = Math.round((Date.UTC(2026, 6, 16) - date) / 86400000);
-  return days + (days === 1 ? " day overdue" : " days overdue");
+  return days + (days === 1 ? " day" : " days");
 }
 
 function timeOf(task) {
   if (task.lane === "done") return { kind: "done", label: "" };
-  if (task.milestone) return { kind: "milestone", label: "Milestone " + task.milestone.replace("Milestone due ", "") };
+  if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
   if (!task.dueAt) return { kind: "none", label: "" };
   const label = dayLabel(task.dueAt);
   if (task.dueTone === "overdue") return { kind: "overdue", label: daysLate(task.dueAt) };
@@ -1301,9 +1349,17 @@ function card(task, force, stop) {
   const next = Boolean(task.milestone);
   const time = timeOf(task);
   const show = time.kind !== "none" && time.kind !== "done";
-  const SPOKEN = { overdue: "", today: "Due ", soon: "Due ", milestone: "" };
-  const spoken = '<span class="sr">' + (SPOKEN[time.kind] || "") + "</span>";
-  const label = spoken + esc(time.label);
+  /* The sentence the chip used to print is not lost: it is the chip's
+     accessible name and its tooltip, and the header's own "1 overdue" chip
+     teaches the filled-ink mapping in situ. */
+  const SAID = {
+    overdue: [time.label + " overdue", ""],
+    today: ["Due today", "Due "],
+    soon: ["Due " + time.label, "Due "],
+    milestone: ["Milestone, due " + time.label, "Milestone "],
+  };
+  const said = SAID[time.kind] || ["", ""];
+  const label = '<span class="sr">' + said[1] + "</span>" + esc(time.label);
 
   /* Which couple a task belongs to is the question a venue asks on a
      Saturday. Which area of the house it touches is background. They were
@@ -1325,10 +1381,12 @@ function card(task, force, stop) {
 
   return (
     '<article class="card" data-id="' + esc(task.id) + '" draggable="true"' +
-    ' aria-labelledby="ct-' + esc(task.id) + '"' +
+    ' aria-label="' + esc(task.title) + '" aria-describedby="cd-' + esc(task.id) + '"' +
+    (task.note && !done ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
     ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Task, movable"') +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (task.id === carriedId ? ' aria-grabbed="true"' : "") +
+    (task.id === openNoteId ? " data-open" : "") +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
     (force ? ' data-force="' + force + '"' :
       task.id === carriedId ? ' data-force="moving"' : "") + ">" +
@@ -1336,8 +1394,13 @@ function card(task, force, stop) {
       '" role="checkbox" aria-checked="' + (done ? "true" : "false") +
       '" aria-label="' + (done ? "Not done yet" : "Mark done") + '">' + I.check + "</button>" +
     '<div class="cardTitleRow">' +
-      (show ? '<span class="when" data-t="' + time.kind + '">' + label + "</span>" : "") +
+      (show ? '<span class="when" data-t="' + time.kind + '" title="' + esc(said[0]) + '">' +
+        label + "</span>" : "") +
       '<p class="cardTitle" id="ct-' + esc(task.id) + '">' + esc(task.title) + "</p>" +
+      '<span class="sr" id="cd-' + esc(task.id) + '">' + esc([
+        said[0], task.note, task.tag, task.priority ? task.priority + " priority" : "",
+        task.comments ? task.comments + " comments" : "",
+      ].filter(Boolean).join(". ")) + "</span>" +
     "</div>" +
     (task.note && !done ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
@@ -1390,8 +1453,7 @@ function head() {
         ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") + '">' +
           (lateOnly ? "Showing " + overdue + " overdue" + I.close : overdue + " overdue") + "</button>"
         : "") +
-      (lateOnly ? "<span>" + (total - overdue) + " hidden</span>"
-        : "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>") +
+      (lateOnly ? "" : "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>") +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search">' + I.search + "</button>" +
@@ -1427,12 +1489,13 @@ function board() {
     '<div class="board" role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
     B.columns.map((c) => {
       const rows = tasksFor(c.id);
+      const late = allTasks().filter((t) => timeOf(t).kind === "overdue").length;
       /* Under a filter, five columns saying the same sentence read as a
          rendering fault. The board says it once, in the first column. */
-      const empty = lateOnly
-        ? (c.id === B.columns[0].id ? (allTasks().some((t) => timeOf(t).kind === "overdue")
-            ? "Nothing else is overdue." : "Nothing is overdue.") : "")
-        : c.empty;
+      /* Under a filter the board states itself once, at the foot. A
+         board-scoped sentence sitting in a column slot reads as a claim
+         about that column. */
+      const empty = lateOnly ? "" : c.empty;
       return (
         '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
           (rows.length ? "" : " data-empty") +
@@ -1486,25 +1549,34 @@ function footPill() {
     return (
       '<div class="carry">' +
       '<span class="carryName">Moving <b>' + esc(shortTitle(task.title)) + "</b></span>" +
-      "<em><kbd>\u2191\u2193\u2190\u2192</kbd> move</em>" +
-      "<em><kbd>Space</kbd> put it down</em>" +
-      "<em><kbd>Esc</kbd> put it back</em>" +
+      '<em><kbd data-keys="arrows">\u2191\u2193\u2190\u2192</kbd> move</em>' +
+      "<em><kbd>Space</kbd> drop it here</em>" +
+      "<em><kbd>Esc</kbd> cancel the move</em>" +
       "</div>"
     );
   }
   if (undone) {
+    const what = undone.kind === "done"
+      ? "<b>" + esc(shortTitle(undone.title)) + "</b> is done."
+      : "Moved <b>" + esc(shortTitle(undone.title)) + "</b> to " + esc(laneName(undone.toLane)) + ".";
     return (
       '<div class="carry">' +
-      '<span class="carryName"><b>' + esc(shortTitle(undone.title)) + "</b> is done.</span>" +
+      '<span class="carryName">' + what + "</span>" +
       '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
       "<em><kbd>" + MOD + "Z</kbd></em>" +
       "</div>"
     );
   }
   if (lateOnly) {
+    const late = allTasks().filter((t) => timeOf(t).kind === "overdue").length;
+    const rest = allTasks().length - late;
     return (
       '<div class="carry">' +
-      '<span class="carryName">Showing overdue work only.</span>' +
+      '<span class="carryName">' +
+        (late ? "Showing the " + late + " overdue " + (late === 1 ? "task" : "tasks") + ". "
+          : "Nothing is overdue. ") +
+        rest + " " + (rest === 1 ? "other is" : "others are") + " hidden." +
+      "</span>" +
       '<button type="button" class="carryDo" data-act="showall">Show all</button>' +
       "</div>"
     );
@@ -1600,9 +1672,9 @@ function specimens() {
     ["Hover", find("demo-t-04"), "hover", "The edge darkens and the menu appears. Height never changes."],
     ["Keyboard focus", find("demo-t-08"), "focus", "A real focus ring in the accent, not a colour change."],
     ["Selected", find("demo-t-07"), "selected", "Selection is a ring, so it can never be confused with hover."],
-    ["Overdue", find("demo-t-06"), null, "Filled ink, white type. The loudest object on the board, and not a colour."],
-    ["Due today", find("demo-t-05"), null, "Outlined, ink at full strength. Serious, but nothing has gone wrong yet."],
-    ["Next milestone", find("demo-t-02"), null, "The one earned indigo in the whole view."],
+    ["Overdue", find("demo-t-06"), null, "Filled ink, white type. The chip counts the days; the fill says they are behind you."],
+    ["Due today", find("demo-t-05"), null, "Outlined, ink at full strength. Serious, and nothing has gone wrong yet."],
+    ["Next milestone", find("demo-t-02"), null, "The one earned indigo in the whole view. The chip carries the date; the colour carries the fact."],
     ["Done", find("demo-t-09"), null, "Never struck through. The work happened, it was not a mistake."],
     ["Long title", { ...find("demo-t-01"), title: "Confirm the marquee sides and the wet-weather plan with the hire company before Thursday" }, null, "Two lines of title, then the note clamps. A card cannot run away."],
     ["In flight", find("demo-t-03"), "drag", "The card at rest, top left, picked up. The only shadow in the product."],
@@ -1614,7 +1686,7 @@ function specimens() {
     '<div class="specProbe" aria-hidden="true"><div class="board">' +
     '<section class="tray"><div class="trayBody"></div></section>'.repeat(5) + "</div></div>" +
     '<div class="spec"><p class="specIntro">Every state a card can be in, at the exact width a tray gives it. ' +
-    "The gutter, the title's left edge and every line beneath it share one optical baseline, and the time fact right-aligns on the title's own line so a tray reads as a column of dates rather than a pile. Severity is expressed by ink density and fill, never by hue.</p>" +
+    "The gutter, the title's left edge and every line beneath it share one optical baseline, and the time fact sits at the head of the title so a tray reads as a column of dates rather than a pile, with the title flowing around it. Every chip carries a value and every fill carries a condition: filled means behind, outlined means today, indigo means the next milestone. Severity is expressed by ink density and fill, never by hue.</p>" +
     '<div class="specGrid">' +
     cells.map((c) => (
       '<div class="specCell"><span class="specLabel">' + c[0] + "</span>" +
@@ -1664,7 +1736,17 @@ function moveTo(id, lane, index) {
   const rows = allTasks();
   const from = rows.findIndex((t) => t.id === id);
   if (from === -1) return;
-  const [task] = rows.splice(from, 1);
+  const task = rows[from];
+  const was = task.lane;
+  /* Moving into Done is a completion, wherever it came from. */
+  if (lane === "done" && was !== "done") {
+    task.prevLane = was;
+    const node = document.querySelector('.card[data-id="' + id + '"]');
+    flyFrom = node ? node.getBoundingClientRect() : null;
+    flyId = id;
+  }
+  if (was === "done" && lane !== "done") task.prevLane = null;
+  rows.splice(from, 1);
   task.lane = lane;
   /* Splice it in beside the card it was placed against, so the order the
      operator sees is the order that is kept. */
@@ -1677,24 +1759,49 @@ function moveTo(id, lane, index) {
 /* Finishing a task was a silent teleport to a column a thousand pixels away,
    and on a phone to a column that is off screen entirely. The card now
    travels the distance it actually moved, measured after the repaint. */
-function flyCompleted(target, id) {
-  if (!flyFrom) return;
-  const node = target.querySelector('.card[data-id="' + id + '"]');
+function flyCompleted(target) {
   const was = flyFrom;
+  const id = flyId;
   flyFrom = null;
-  if (!node || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  flyId = null;
+  if (!was || !id) return;
+  const node = target.querySelector('.card[data-id="' + id + '"]');
+  if (!node) return;
+  const land = () => node.setAttribute("data-just-done", "");
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { land(); return; }
   const now = node.getBoundingClientRect();
   const dx = was.left - now.left;
   const dy = was.top - now.top;
-  if (!dx && !dy) return;
-  node.style.transform = "translate(" + dx + "px," + dy + "px)";
-  node.getBoundingClientRect();
-  node.setAttribute("data-flying", "");
-  node.style.transform = "";
-  node.addEventListener("transitionend", () => {
-    node.removeAttribute("data-flying");
-    node.setAttribute("data-just-done", "");
-  }, { once: true });
+  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { land(); return; }
+
+  const ghost = node.cloneNode(true);
+  ghost.className = node.className + " cardGhost";
+  ghost.removeAttribute("id");
+  ghost.setAttribute("aria-hidden", "true");
+  ghost.style.left = was.left + "px";
+  ghost.style.top = was.top + "px";
+  ghost.style.width = was.width + "px";
+  ghost.style.height = was.height + "px";
+  document.body.appendChild(ghost);
+  node.style.opacity = "0";
+  /* A committed frame before the offset is released, or the browser has no
+     before-change style to transition from. */
+  ghost.getBoundingClientRect();
+  ghost.style.transform = "translate(" + -dx + "px," + -dy + "px)";
+
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    ghost.remove();
+    node.style.opacity = "";
+    land();
+  };
+  ghost.addEventListener("transitionend", (event) => {
+    if (event.propertyName === "transform" && event.target === ghost) finish();
+  });
+  /* A transition that never fires must not leave the card invisible. */
+  setTimeout(finish, 400);
 }
 
 function clearUndo() {
@@ -1702,25 +1809,49 @@ function clearUndo() {
   undone = null;
 }
 
+/* One reversible act at a time, with the strip as its face. Arming it here
+   rather than at each call site means every route to a change — the tick,
+   the menu, a drop — inherits the same model. */
+function arm(act) {
+  clearTimeout(undoTimer);
+  undone = act;
+  undoTimer = setTimeout(() => {
+    undone = null;
+    /* The live region must not go on offering an undo that has lapsed. */
+    const node = document.getElementById("say");
+    if (node && node.textContent.indexOf("to undo") !== -1) say("That undo has expired.");
+    mount();
+  }, 6000);
+}
+
+/* Suspended while the operator is reading or reaching for it — the strip
+   used to vanish mid-decision and drop focus to the top of the document. */
+function holdUndo() { clearTimeout(undoTimer); }
+function releaseUndo() { if (undone) arm(undone); }
+
 function toggleDone(id) {
   const task = taskById(id);
   if (!task) return;
   const target = document.getElementById("root") || document.getElementById("deck");
   const node = target && target.querySelector('.card[data-id="' + id + '"]');
   flyFrom = node ? node.getBoundingClientRect() : null;
+  flyId = id;
 
   if (task.lane === "done") {
-    task.lane = task.prevLane || B.columns[0].id;
+    /* Back to where it actually came from, never to the first column. */
+    const back = task.prevLane || B.columns[0].id;
+    task.lane = back;
+    task.prevLane = null;
     clearUndo();
-    say(task.title + " moved back to " + laneName(task.lane) + ".");
+    say(task.title + " is back in " + laneName(back) + ".");
   } else {
     task.prevLane = task.lane;
     task.lane = "done";
-    clearTimeout(undoTimer);
-    undone = { id: id, title: task.title };
-    undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
+    arm({ kind: "done", id: id, title: task.title });
     say(task.title + " done. Press " + MOD + "Z to undo.");
   }
+  /* A checkbox must not move focus off itself on toggle. */
+  refocusPart = document.activeElement && document.activeElement.classList.contains("tick") ? "tick" : null;
   /* Clearing the last overdue task while filtered used to leave an empty
      board behind a control that had just disappeared. */
   if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
@@ -1733,10 +1864,19 @@ function toggleDone(id) {
 }
 
 function undoLast() {
-  if (!undone) return;
-  const id = undone.id;
+  if (!undone) { say("Nothing left to undo."); return; }
+  const act = undone;
   clearUndo();
-  toggleDone(id);
+  if (act.kind === "done") { toggleDone(act.id); return; }
+  const task = taskById(act.id);
+  flyFrom = document.querySelector('.card[data-id="' + act.id + '"]');
+  flyFrom = flyFrom ? flyFrom.getBoundingClientRect() : null;
+  flyId = act.id;
+  moveTo(act.id, act.lane, act.index);
+  focusId = act.id;
+  refocus = true;
+  say((task ? task.title : "The task") + " is back in " + laneName(act.lane) + ".");
+  mount();
 }
 
 function walk(dx, dy) {
@@ -1788,7 +1928,8 @@ function onKey(event) {
 
   /* Board-wide keys, live wherever focus is inside the sheet. */
   if ((event.metaKey || event.ctrlKey) && (key === "z" || key === "Z")) {
-    if (undone) { event.preventDefault(); undoLast(); }
+    event.preventDefault();
+    undoLast();
     return;
   }
   if (key === "Escape") {
@@ -1820,27 +1961,29 @@ function onKey(event) {
     event.preventDefault();
     if (carriedId === id) {
       const at = place(id);
-      say(taskById(id).title + " put down in " + laneName(laneIds()[at.x]) + ".");
+      say(taskById(id).title + " dropped in " + laneName(laneIds()[at.x]) + ".");
       carriedId = null; carriedFrom = null;
     } else {
       const at = place(id);
       carriedId = id;
       carriedFrom = { lane: laneIds()[at.x], index: at.y };
-      clearUndo();
       say("Picked up " + taskById(id).title + ".");
     }
     refocus = true; mount(); return;
   }
   if (key === "Escape" && carriedId) {
     event.preventDefault();
+    const title = taskById(carriedId).title;
     moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
-    say("Put back in " + laneName(carriedFrom.lane) + ".");
+    say("Move cancelled. " + title + " is back in " + laneName(carriedFrom.lane) + ".");
     carriedId = null; carriedFrom = null;
     refocus = true; mount(); return;
   }
   if (key === "Enter") {
     event.preventDefault();
-    toggleDone(id); return;
+    openNoteId = openNoteId === id ? null : id;
+    say(openNoteId ? "Showing the whole note." : "Note closed.");
+    refocus = true; mount(); return;
   }
   if (DIR[key]) {
     event.preventDefault();
@@ -1861,7 +2004,6 @@ function onClick(event) {
   }
   if (what === "late") {
     lateOnly = !lateOnly;
-    clearUndo();
     say(lateOnly ? "Showing overdue work only." : "Showing all work.");
     mount();
     return;
@@ -1892,23 +2034,67 @@ function onClick(event) {
   if (what === "moveto") {
     const id = menuFor;
     const lane = act.dataset.lane;
+    const at = place(id);
+    const task = taskById(id);
+    const from = at ? { lane: laneIds()[at.x], index: at.y } : null;
     moveTo(id, lane, 0);
+    if (lane === "done") {
+      arm({ kind: "done", id: id, title: task.title });
+      say(task.title + " done. Press " + MOD + "Z to undo.");
+    } else {
+      if (from) arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: lane });
+      say(task.title + " moved to " + laneName(lane) + ".");
+    }
     menuFor = null;
     focusId = id;
     refocus = true;
-    say(taskById(id).title + " moved to " + laneName(lane) + ".");
     mount();
     return;
   }
+
   if (what === "closemenu") { closeMenu(); return; }
 
+  /* Clicking the card was the obvious thing it looked like and did nothing,
+     while the half of the note that carries the deadline was unreachable by
+     keyboard and on touch. */
   const card = event.target.closest && event.target.closest(".card[data-id]");
-  if (card && card.closest(".board")) { focusId = card.dataset.id; }
+  if (!card || !card.closest(".board")) return;
+  focusId = card.dataset.id;
+  if (!card.hasAttribute("aria-expanded")) return;
+  openNoteId = openNoteId === card.dataset.id ? null : card.dataset.id;
+  refocus = true;
+  say(openNoteId ? "Showing the whole note." : "Note closed.");
+  mount();
 }
 
 /* The pointer gets the same model as the keyboard: the tray it is over
    warms half a step and draws the line the card will land on. */
 let overLane = null;
+let edgeFrame = 0;
+let snapWas = null;
+
+/* Holding a card at the edge of the board walks it across. Without this, at
+   768 the reachable targets were the first three columns only, and the
+   board's defining gesture could not finish a task's journey. */
+function edgeScroll(board, x) {
+  const box = board.getBoundingClientRect();
+  const near = 64;
+  const step = x < box.left + near ? -14 : x > box.right - near ? 14 : 0;
+  cancelAnimationFrame(edgeFrame);
+  edgeFrame = 0;
+  if (!step) return;
+  const run = () => {
+    board.scrollLeft += step;
+    edgeFrame = requestAnimationFrame(run);
+  };
+  edgeFrame = requestAnimationFrame(run);
+}
+function stopEdge(board) {
+  cancelAnimationFrame(edgeFrame);
+  edgeFrame = 0;
+  if (board && snapWas !== null) { board.style.scrollSnapType = snapWas; snapWas = null; }
+}
+
 function onDragStart(event) {
   const card = event.target.closest && event.target.closest(".card[data-id]");
   if (!card || !card.closest(".board")) return;
@@ -1916,6 +2102,10 @@ function onDragStart(event) {
   const at = place(carriedId);
   carriedFrom = { lane: laneIds()[at.x], index: at.y };
   card.setAttribute("data-force", "drag");
+  /* Mandatory snap re-snaps every per-frame nudge back to zero, so it stands
+     down for the length of the gesture. */
+  const board = card.closest(".board");
+  if (board) { snapWas = board.style.scrollSnapType; board.style.scrollSnapType = "none"; }
   if (event.dataTransfer) { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", carriedId); }
 }
 
@@ -1933,6 +2123,10 @@ function dropIndex(body, y) {
 
 function onDragOver(event) {
   if (!carriedId) return;
+  /* The edge check runs before the tray guard: the gap between two trays and
+     the sheet's own margin are exactly where the operator holds the card. */
+  const board = event.target.closest && event.target.closest(".board");
+  if (board) { event.preventDefault(); edgeScroll(board, event.clientX); }
   const tray = event.target.closest && event.target.closest(".tray[data-lane]");
   if (!tray) return;
   event.preventDefault();
@@ -1949,11 +2143,19 @@ function onDragOver(event) {
 }
 
 function onDrop(event) {
+  stopEdge(event.target.closest && event.target.closest(".board"));
   if (!carriedId || !overLane) return;
   event.preventDefault();
   const id = carriedId;
   const sameLane = overLane.lane === carriedFrom.lane;
+  const from = carriedFrom;
+  const task = taskById(id);
   moveTo(id, overLane.lane, overLane.index);
+  /* A drop is the most mis-fireable gesture on a pointer board and had no
+     way back; only a keyboard-carried card had Escape. */
+  if (overLane.lane !== "done") {
+    arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: overLane.lane });
+  }
   const place = tasksFor(overLane.lane);
   say(sameLane
     ? taskById(id).title + " moved to position " + (overLane.index + 1) + " of " + place.length + " in " + laneName(overLane.lane) + "."
@@ -1964,6 +2166,7 @@ function onDrop(event) {
 }
 
 function onDragEnd() {
+  stopEdge(document.querySelector(".board"));
   document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
   document.querySelectorAll(".dropLine").forEach((n) => n.remove());
   if (carriedId) { carriedId = null; carriedFrom = null; overLane = null; mount(); }
@@ -1999,7 +2202,20 @@ function trimToWord(node) {
     if (fits()) low = mid;
     else high = mid - 1;
   }
-  node.textContent = words.slice(0, low).join(" ") + "…";
+  node.textContent = tidy(words.slice(0, low)) + "…";
+}
+
+/* The binary search finds the last word that fits; this decides which of
+   those words should be the last one read. Cleanup only ever shortens, so
+   the fit the search proved still holds. */
+function tidy(words) {
+  const kept = words.slice();
+  /* A word left stranded at the start of a sentence the reader never sees. */
+  if (kept.length > 1 && /[.!?]$/.test(kept[kept.length - 2])) kept.pop();
+  let out = kept.join(" ").replace(/[\s,;:.!?\u2013\u2014-]+$/, "");
+  /* A dangling function word promises a clause that does not arrive. */
+  if (kept.length > 1) out = out.replace(/\s+(a|an|the|and|or|but|if|to|of|with|for|in|on|at|by|from|that|which)$/i, "");
+  return out || words[0];
 }
 
 /* A fade that is always on is decoration; a fade that appears exactly when
@@ -2017,12 +2233,28 @@ function measureEdges(target) {
   if (board && sheet) {
     sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
   }
+  if (board && sheet) sheet.toggleAttribute("data-more-left", board.scrollLeft > 1);
+  const strip = target.querySelector(".carry");
+  const bar = strip ? strip.getBoundingClientRect() : null;
+  target.querySelectorAll(".trayAdd").forEach((row) => {
+    if (!bar) { row.removeAttribute("data-under"); return; }
+    const box = row.getBoundingClientRect();
+    const hit = box.left < bar.right && box.right > bar.left &&
+      box.top < bar.bottom && box.bottom > bar.top;
+    row.toggleAttribute("data-under", hit);
+  });
   const probe = target.querySelector(".specProbe .trayBody");
   if (probe && sheet) sheet.style.setProperty("--tray-card", Math.round(probe.getBoundingClientRect().width) + "px");
 }
 
 function retrim(target) {
-  target.querySelectorAll(".cardTitle, .cardNote").forEach(trimToWord);
+  target.querySelectorAll(".cardTitle, .cardNote").forEach((node) => {
+    if (node.closest(".card[data-open]") && node.classList.contains("cardNote")) {
+      if (node.dataset.full) node.textContent = node.dataset.full;
+      return;
+    }
+    trimToWord(node);
+  });
   measureEdges(target);
 }
 
@@ -2046,6 +2278,7 @@ function keepPlace(target) {
     left: board ? board.scrollLeft : 0,
     id: card ? card.dataset.id : null,
     act: chrome ? chrome.dataset.act : null,
+    hadFocus: !!(active && active !== document.body && target.contains(active)),
     part: active && active.classList.contains("tick") ? "tick"
       : active && active.classList.contains("cardDots") ? "cardDots" : "card",
   };
@@ -2069,19 +2302,33 @@ function restorePlace(target, kept) {
     board.scrollLeft = kept.left;
     requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
   }
+  /* Nothing may drop the operator on <body>, eight stops from the board. */
+  const fallback = () => {
+    const stop = target.querySelector('.card[tabindex="0"]') || target.querySelector(".dockPrimary");
+    if (stop) stop.focus({ preventScroll: true });
+  };
   const wanted = refocus ? focusId : kept.id;
   if (!wanted) {
-    if (kept.act) {
-      const back = target.querySelector('[data-act="' + kept.act + '"]');
-      if (back) back.focus({ preventScroll: true });
-    }
+    if (!kept.act) return;
+    const back = target.querySelector('[data-act="' + kept.act + '"]');
+    if (back) back.focus({ preventScroll: true });
+    else if (kept.hadFocus) fallback();
     return;
   }
   const node = target.querySelector('.card[data-id="' + wanted + '"]');
-  if (!node) return;
-  const part = refocus ? "card" : kept.part;
+  if (!node) { if (kept.hadFocus) fallback(); return; }
+  const part = refocusPart || (refocus ? "card" : kept.part);
   const aim = part === "card" ? node : node.querySelector("." + part) || node;
-  if (kept.id || refocus) aim.focus({ preventScroll: true });
+  if (!kept.id && !refocus) return;
+  aim.focus({ preventScroll: true });
+  /* Scoped to the column, deliberately: a general scrollIntoView nudges the
+     horizontally snapped board on a phone and undoes the restore above. */
+  const scroller = node.closest(".trayBody");
+  if (!scroller) return;
+  const card = node.getBoundingClientRect();
+  const box = scroller.getBoundingClientRect();
+  if (card.top < box.top + 4) scroller.scrollTop -= box.top + 4 - card.top;
+  else if (card.bottom > box.bottom - 4) scroller.scrollTop += card.bottom - box.bottom + 4;
 }
 
 let bound = null;
@@ -2109,8 +2356,9 @@ function mount() {
   restorePlace(target, kept);
   retrim(target);
   bindScroll(target);
-  flyCompleted(target, undone ? undone.id : null);
+  flyCompleted(target);
   refocus = false;
+  refocusPart = null;
 }
 
 /* The customizer drives this same renderer from a control panel rather than
@@ -2122,6 +2370,7 @@ window.__signal = {
   setState(next) {
     state = next;
     carriedId = null; focusId = null; lateOnly = false; menuFor = null;
+    openNoteId = null; flyId = null; flyFrom = null;
     clearUndo();
   },
 };
@@ -2130,6 +2379,10 @@ window.__signal = {
    never leave a handler behind or bind one twice. */
 const host = document.getElementById("root") || document.getElementById("deck");
 if (host) {
+  host.addEventListener("focusin", (e) => { if (e.target.closest(".carry")) holdUndo(); });
+  host.addEventListener("focusout", (e) => { if (e.target.closest(".carry")) releaseUndo(); });
+  host.addEventListener("mouseenter", (e) => { if (e.target.closest && e.target.closest(".carry")) holdUndo(); }, true);
+  host.addEventListener("mouseleave", (e) => { if (e.target.closest && e.target.closest(".carry")) releaseUndo(); }, true);
   host.addEventListener("click", onClick);
   document.addEventListener("keydown", onKey);
   host.addEventListener("dragstart", onDragStart);

@@ -247,7 +247,8 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
 /* ── the board answers assistive technology ───────────────────────── */
 {
   const page = await open();
-  const named = await page.$$eval(".board .card", (n) => n.filter((c) => !c.getAttribute("aria-labelledby")).length);
+  const named = await page.$$eval(".board .card", (n) =>
+    n.filter((c) => !c.getAttribute("aria-label") && !c.getAttribute("aria-labelledby")).length);
   ok("every card has an accessible name", named === 0, named + " unnamed");
   const stops = await page.locator('.board [tabindex="0"]').count();
   ok("the board is a roving tab stop", stops <= 3, stops + " stops");
@@ -256,6 +257,210 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   const denseAll = await dense.locator(".board button, .board .card").count();
   ok("and stays one at peak density", denseStops <= 3, denseStops + " of " + denseAll + " focusables");
   await dense.close();
+  await page.close();
+}
+
+
+/* ── the completion actually travels ──────────────────────────────── */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card .tick').first().click();
+  /* Sample the ghost across the flight rather than trusting the attribute. */
+  const seen = await page.evaluate(async () => {
+    const out = [];
+    for (let i = 0; i < 14; i += 1) {
+      const g = document.querySelector(".cardGhost");
+      out.push(g ? getComputedStyle(g).transform : "gone");
+      await new Promise((r) => setTimeout(r, 20));
+    }
+    return out;
+  });
+  const moving = seen.filter((t) => t !== "gone" && t !== "none");
+  ok("the completed card is drawn in flight", moving.length >= 3, seen.slice(0, 6).join(" | "));
+  ok("its position actually changes", new Set(moving).size >= 3, String(new Set(moving).size) + " distinct");
+  await page.waitForTimeout(500);
+  ok("the ghost is cleaned up", (await page.locator(".cardGhost").count()) === 0);
+  ok("the landed card is visible", await page.evaluate(() =>
+    [...document.querySelectorAll(".card")].every((c) => c.style.opacity !== "0")));
+  ok("and plays the arrival beat", (await page.locator(".card[data-just-done]").count()) === 1);
+  await page.close();
+}
+
+/* ── a move is reversible too, not only a completion ──────────────── */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card').first().hover();
+  await page.locator('.tray[data-lane="todo"] .cardDots').first().click();
+  await page.waitForTimeout(150);
+  await page.locator('.cardMenu [data-lane="waiting"]').click();
+  await page.waitForTimeout(200);
+  ok("a menu move offers a way back", (await page.locator('.carry [data-act="undo"]').count()) === 1);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(250);
+  ok("and ctrl+z returns it", (await counts(page)).waiting === 0, JSON.stringify(await counts(page)));
+
+  /* Moving into Done through the menu is a completion, with prevLane kept. */
+  await page.locator('.tray[data-lane="review"] .card').first().hover();
+  await page.locator('.tray[data-lane="review"] .cardDots').first().click();
+  await page.waitForTimeout(150);
+  await page.locator('.cardMenu [data-lane="done"]').click();
+  await page.waitForTimeout(500);
+  await page.locator('.tray[data-lane="done"] .card .tick').first().click();
+  await page.waitForTimeout(400);
+  const said = await page.locator("#say").textContent();
+  ok("un-completing names the lane it came from", said.indexOf("Review") !== -1, said);
+  await page.close();
+}
+
+/* ── the note can be read ─────────────────────────────────────────── */
+{
+  const page = await open();
+  const clipped = await page.$$eval(".cardNote", (n) => n.filter((x) => x.textContent.indexOf("…") !== -1).length);
+  ok("some notes are clipped, so a way in is needed", clipped > 0, clipped + " clipped");
+  await page.locator(".board .card").first().click();
+  await page.waitForTimeout(250);
+  ok("clicking a card opens its note", (await page.locator(".card[data-open]").count()) === 1);
+  ok("and shows the whole thing", await page.evaluate(() => {
+    const n = document.querySelector(".card[data-open] .cardNote");
+    return n.scrollHeight <= n.clientHeight + 1 && n.textContent.indexOf("…") === -1;
+  }));
+  await page.locator(".card[data-open]").click();
+  await page.waitForTimeout(200);
+  ok("clicking again closes it", (await page.locator(".card[data-open]").count()) === 0);
+
+  await page.locator('.board .card[tabindex="0"]').focus();
+  const before = (await counts(page)).done;
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(200);
+  ok("enter opens the note", (await page.locator(".card[data-open]").count()) === 1);
+  ok("enter no longer completes", (await counts(page)).done === before);
+  await page.close();
+}
+
+/* ── a card ring is not clipped by its own column ─────────────────── */
+{
+  const page = await open();
+  const bleed = await page.evaluate(() => {
+    const body = document.querySelector(".trayBody");
+    const card = body.querySelector(".card");
+    const cs = getComputedStyle(body);
+    return {
+      pad: parseFloat(cs.paddingLeft),
+      cardW: Math.round(card.getBoundingClientRect().width),
+      clientW: body.clientWidth,
+      scrollW: body.scrollWidth,
+    };
+  });
+  ok("the scroller leaves room for a ring", bleed.pad >= 4, JSON.stringify(bleed));
+  ok("without a horizontal scrollbar", bleed.scrollW === bleed.clientW, JSON.stringify(bleed));
+  ok("and without changing the card measure", bleed.cardW === 234, JSON.stringify(bleed));
+  await page.close();
+}
+
+/* ── the arrow walk keeps the card in view ────────────────────────── */
+{
+  const page = await open("?state=dense");
+  await page.locator('.board .card[tabindex="0"]').focus();
+  const off = [];
+  for (let i = 0; i < 9; i += 1) {
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(60);
+    off.push(await page.evaluate(() => {
+      const c = document.activeElement.closest(".card");
+      if (!c) return 999;
+      const s = c.closest(".trayBody");
+      const a = c.getBoundingClientRect();
+      const b = s.getBoundingClientRect();
+      return Math.round(Math.max(0, b.top - a.top, a.bottom - b.bottom));
+    }));
+  }
+  ok("every walked card stays inside its column", Math.max.apply(null, off) <= 2, off.join(","));
+  await page.close();
+}
+
+/* ── the drag can cross the board ─────────────────────────────────── */
+{
+  const page = await open("?state=dense", { width: 768, height: 1024 });
+  const card = await page.locator('.tray[data-lane="todo"] .card').first().boundingBox();
+  const board = await page.locator(".board").boundingBox();
+  await page.mouse.move(card.x + card.width / 2, card.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(board.x + board.width - 8, card.y + 20, { steps: 12 });
+  await page.waitForTimeout(900);
+  const scrolled = await page.evaluate(() => document.querySelector(".board").scrollLeft);
+  await page.mouse.up();
+  ok("holding at the edge walks the board across", scrolled > 200, "scrollLeft " + scrolled);
+  await page.close();
+}
+
+/* ── the foot is one object ───────────────────────────────────────── */
+{
+  const page = await open();
+  const dock = await page.locator(".dock").boundingBox();
+  await page.locator(".card .tick").first().click();
+  await page.waitForTimeout(500);
+  const undoBar = await page.locator(".carry").boundingBox();
+  ok("the undo strip shares the dock's silhouette",
+    Math.abs(undoBar.x - dock.x) < 1 && Math.abs(undoBar.width - dock.width) < 1,
+    "dock " + Math.round(dock.x) + "/" + Math.round(dock.width) + " strip " + Math.round(undoBar.x) + "/" + Math.round(undoBar.width));
+  const alive = await page.locator(".trayAdd:not([data-under])").count();
+  ok("and does not blink out every Add row", alive >= 3, alive + " of 5 still live");
+  await page.close();
+}
+
+/* ── the strip holds still while it is being read ─────────────────── */
+{
+  const page = await open();
+  await page.locator(".card .tick").first().click();
+  await page.waitForTimeout(400);
+  await page.locator('.carry [data-act="undo"]').focus();
+  await page.waitForTimeout(6800);
+  ok("the strip waits while focused", (await page.locator(".carry").count()) === 1);
+  ok("focus is still on it", await page.evaluate(() => document.activeElement.dataset.act === "undo"));
+  await page.close();
+}
+
+/* ── the strip fits the phone ─────────────────────────────────────── */
+{
+  const page = await open("", { width: 390, height: 844 });
+  await page.locator('.board .card[tabindex="0"]').focus();
+  await page.keyboard.press(" ");
+  await page.waitForTimeout(250);
+  const bar = await page.locator(".carry").boundingBox();
+  const sheet = await page.locator(".sheet").boundingBox();
+  ok("the strip stays inside the sheet", bar.x >= sheet.x - 1 && bar.x + bar.width <= sheet.x + sheet.width + 1,
+    "strip " + Math.round(bar.x) + "-" + Math.round(bar.x + bar.width) + " sheet " + Math.round(sheet.x) + "-" + Math.round(sheet.x + sheet.width));
+  ok("on one line", bar.height <= 44, "height " + Math.round(bar.height));
+  const out = await page.evaluate(() => {
+    const c = document.querySelector(".carry").getBoundingClientRect();
+    return [...document.querySelectorAll(".carry *")].filter((n) => {
+      const b = n.getBoundingClientRect();
+      return b.width && (b.left < c.left - 1 || b.right > c.right + 1);
+    }).length;
+  });
+  ok("with nothing rendered outside it", out === 0, out + " escaped");
+  await page.close();
+}
+
+/* ── the left edge dissolves too ──────────────────────────────────── */
+{
+  const page = await open("?state=dense", { width: 1120, height: 960 });
+  ok("nothing hidden to the left at rest", (await page.locator(".sheet[data-more-left]").count()) === 0);
+  await page.evaluate(() => { const b = document.querySelector(".board"); b.scrollLeft = b.scrollWidth; });
+  await page.waitForTimeout(300);
+  ok("scrolled over, the left edge fades", (await page.locator(".sheet[data-more-left]").count()) === 1);
+  ok("and the right fade clears", (await page.locator(".sheet[data-more-right]").count()) === 0);
+  await page.close();
+}
+
+/* ── the trim hands back copy a typesetter would sign ─────────────── */
+{
+  const page = await open();
+  const bad = await page.$$eval(".cardTitle, .cardNote", (nodes) =>
+    nodes.map((n) => n.textContent).filter((t) =>
+      /[\s,;:.!?-]…$/.test(t) ||
+      /\s(a|an|the|and|or|but|if|to|of|with|for|in|on|at|by|from|that|which)…$/i.test(t)));
+  ok("no ellipsis lands on punctuation or a dangling word", bad.length === 0, JSON.stringify(bad));
   await page.close();
 }
 
