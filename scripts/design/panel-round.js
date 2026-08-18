@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'tasks-panel-round-8',
+  name: 'tasks-panel-round-9',
   description: 'Seven fresh independent seats re-grade the Tasks master against a 9.5 bar',
   phases: [
     { title: 'Review' },
@@ -66,7 +66,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 105 assertions, all passing. READ IT. Everything it asserts is already
+with 126 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -85,31 +85,27 @@ Also live, and worth driving before you score:
   with it if you disagree, but do not report it as an oversight.
 
 NEW SINCE THE LAST ROUND, all live and all worth driving:
-- Creating a task is REAL. The dock's Add task pill and every column's "Add
-  here" open a composer that is a card in the column it will live in; Enter
-  adds, Escape discards, and it is reversible.
-- Undo is a STACK. Ctrl/Cmd+Z repeatedly. The strip is news and retires after
-  six seconds; the record is history and does not.
-- The views and tools that do not exist are drawn as unavailable and say why.
-- A completed card keeps its note. Click or Enter opens any card in place.
-- The column is bounded at 312px and centred; titles use text-wrap: balance;
-  partner names cannot break across two lines.
-- Every chip is a point in time. The day count lives in the accessible name.
+- Every control on the sheet is either wired or marked aria-disabled with a
+  plain-English reason. The Planning drawer now opens from the header button
+  and from the "N with no date" count in the header.
+- The composer holds your typed sentence across any repaint, keeps the caret,
+  and returns focus to the control it was opened from. A task made under a
+  filter releases the filter so you can see it.
+- Done carries the day each task was finished, and a finished card's title no
+  longer drops below its client's name.
+- Ticking a card: the ghost flies and the cards it left close the gap on the
+  same curve and the same duration. On a phone it cannot leave the sheet.
+- The move menu is one tab stop with arrow keys.
 
-THIS IS THE FINAL ROUND BEFORE THE HARD CAP OF EIGHT. Grade honestly. If a
-seat is at or above 9.5, say so and say what earned it. If it is not, the
-most valuable thing you can return is the exact, specific distance: what
-remains, how big it is, and whether it is polish, a build, or a different
-decision. Do not pad the list with small defects to look thorough, and do not
-inflate the score to be kind — a gate that was not met is the most useful
-output this panel can produce.
-Judge the FEEL of these moments — timing, what is announced, what is
-reversible, what a first-time venue owner would discover — as harshly as you
-judge the pixels. "It is implemented" earns nothing; "it is implemented at
-the standard of Linear" is the bar.
+THE PREVIOUS ROUND SCORED 9.0 / 8.5 / 8.3 / 8.5 / 8.6 / 8.5 / 8.3, and every
+seat volunteered that the remaining distance was a build of hours rather than
+a redesign. All twenty-eight confirmed findings from that round were fixed.
 
-Read at least four frames, drive the live file, and read the source before
-scoring.
+GRADE HONESTLY AND WITHOUT MERCY. A seat at 9.5 or above must name exactly
+what earned it. A seat below 9.5 must name the exact remaining distance:
+what, how big, and whether it is polish, a build, or a different decision. Do
+not inflate to be kind and do not deflate to look rigorous. The single most
+useful output you can produce is an accurate number with its reason.
 `
 
 const SCHEMA = {

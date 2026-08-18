@@ -394,6 +394,61 @@
           "done": "One unit family — every chip is a point in time, with the day count moved to the accessible name and the tooltip. The count with no day is words in the header and opens Planning. The chip is named for what it does, in both states, from the same count that prints its label."
         }
       ]
+    },
+    {
+      "round": 8,
+      "scores": {
+        "UI composition": 9.0,
+        "Typography": 8.5,
+        "Interaction and states": 8.3,
+        "UX and information design": 8.5,
+        "Brand and copy": 8.6,
+        "Product taste and emotional resonance": 8.5,
+        "Measured evidence": 8.3
+      },
+      "findings": 35,
+      "confirmed": 28,
+      "refuted": 7,
+      "fixed": 28,
+      "headline": "A full point in one round, and the first seat above 9. Every seat converged on the same theme by a different route: eleven chrome controls were drawn at the weight of a control that works and did nothing at all, including the two whose surface — the Planning drawer — was already fully built and reachable only by editing the URL. Every seat also stated, unprompted, that the remaining distance is a build of hours rather than a redesign or a different decision. Interaction called the behaviour layer itself 9.4 work held down by unmarked dead chrome.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 9.0,
+          "problem": "A venue owner meeting this board touches the dock's search field, presses Ctrl K, clicks \"Planning 5\" and clicks \"5 with no date\" — the four most inviting targets on the sheet — and gets silence from all four, with nothing at rest telling them why. Six controls already told the truth with aria-disabled and a stated reason; eleven did not. Two of them needed no build at all: the Planning drawer was fully written and rendered under a URL parameter, and onClick simply had no case for it.",
+          "done": "One helper, applied to every inert control, and they stay in the tab order deliberately — a control that cannot be reached never gets to say why it is missing. Both Planning entry points now open the drawer, which closes the board's largest information gap: nineteen of thirty-two peak-season tasks carry no date and there was no route in the product to give them one. The rail says \"outside this design exploration\" rather than \"not built yet\", because Notes and Timeline exist; they are simply not in this artefact."
+        },
+        {
+          "seat": "Typography",
+          "cost": 10.0,
+          "problem": "The Done column inverted the card's own hierarchy. The title dropped to weight 400 while the couple's name stayed at 600, so on a finished card the loudest word was the client and the title was indistinguishable from its own note — on roughly forty per cent of the cards on any populated board. It was the one place in the artefact where the type system actively told a venue owner the wrong thing about what matters.",
+          "done": "Ink alone carries done — the transparent card, the hairline ring and the filled tick already state it three times over — and the partner name de-escalates with the card instead of outranking it. The whole card steps back together and its internal rank survives."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 2.5,
+          "problem": "The composer was the only path in the artefact that destroyed the operator's own typed words, and it did so silently on any repaint: clicking the overdue chip with a half-written task open took the sentence with it. Two of its three exits also dropped focus on <body>, which the source promises twice may never happen.",
+          "done": "The title is held in state, an open composer keeps focus and the caret across any repaint — being mid-sentence is the worse place to lose — and every exit returns to the control it was opened from. A task created while a filter was on used to be confirmed by name and be nowhere on screen; the filter now releases and says so."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 3.0,
+          "problem": "The ghost flew for four hundred milliseconds while the board it left snapped shut in one frame, so the product's one designed moment read as two unrelated events. On a phone the ghost flew to a column that is off screen and left the sheet entirely. Undoing a move played the completion beat on a card that had not been completed.",
+          "done": "Both trays close and open on the same curve and the same duration as the flight, keyed by id across the repaint. The ghost lands at the board's own edge rather than past it. The check only draws on a card that is actually finished."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.4,
+          "problem": "The filtered board left four columns describing what they normally hold while holding nothing, and a tray count that openly contradicted the header. Six tooltips said \"is not built yet\" in a voice this product does not use.",
+          "done": "Each column says what it is showing under the filter, and the count reads filtered of total. The tooltips say \"Board is the only view for now\" and \"Filter, Sort and Display arrive with the other views\"."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.15,
+          "problem": "The composer — the newest headline feature — shipped a micro-label that wrapped every single time, at every width, orphaning one word onto its own line; it was the only two-line mono micro-label in the product. The spine spaced one column of identical tiles two different ways, the product stack on a 4px rhythm and the utility pair below it touching.",
+          "done": "The hint takes the card foot's own rank and band, in sentence case, so the draft and the card it becomes have the same shape — and on a touch screen it becomes the two controls it was describing. The utility pair joins the spine's rhythm."
+        }
+      ]
     }
   ]
 }
