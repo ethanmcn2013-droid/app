@@ -739,7 +739,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 <script src="./icons.js"></script>
 <script>
 const params = new URLSearchParams(location.search);
-const state = params.get("state") || "board";
+let state = params.get("state") || "board";
 const variant = params.get("v") || "locked";
 
 /* The three finished variants are three preset combinations of the six
@@ -753,7 +753,10 @@ const PRESETS = {
 };
 const DECISIONS = ["cards", "radius", "density", "indigo", "type"];
 
-const root = document.documentElement;
+/* Standalone, the decisions live on the document. Inside the customizer
+   they live on the deck element, and the code does not know the
+   difference, which is what keeps one implementation of the board. */
+const root = document.getElementById("deck") || document.documentElement;
 const preset = PRESETS[variant] || PRESETS.locked;
 root.setAttribute("data-variant", variant);
 for (const key of DECISIONS) {
@@ -981,13 +984,29 @@ function specimens() {
   );
 }
 
-const sheet =
-  state === "loading" ? loading()
-  : state === "cards" ? specimens()
-  : '<div class="sheet">' + head() + views() + board() + dock() + "</div>";
+function renderApp() {
+  const sheet =
+    state === "loading" ? loading()
+    : state === "cards" ? specimens()
+    : '<div class="sheet">' + head() + views() + board() + dock() + "</div>";
+  return '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + "</div>";
+}
 
-document.getElementById("root").innerHTML =
-  '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + "</div>";
+function mount() {
+  const target = document.getElementById("root") || document.getElementById("deck");
+  if (target) target.innerHTML = renderApp();
+}
+
+/* The customizer drives this same renderer from a control panel rather than
+   from the URL, so the board is never implemented twice. */
+window.__signal = {
+  mount,
+  presets: PRESETS,
+  decisions: DECISIONS,
+  setState(next) { state = next; },
+};
+
+mount();
 </script>
 </body>
 </html>
