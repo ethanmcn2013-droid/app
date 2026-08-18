@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio Floor · Tasks direction C</title>
+<link rel="stylesheet" href="./foundation.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DIRECTION C · STUDIO FLOOR   (the one that reaches furthest)
+
+   Thesis: stop drawing a frame around the work and give the work a
+   surface. The app becomes a warm stone floor holding one white sheet.
+   The spine lifts off the wall and becomes a floating black capsule.
+   The five statuses become shallow trays cut into the sheet, so a card
+   is somewhere rather than merely listed, and dragging one is moving an
+   object between two real places. The verbs — search, add, account —
+   collect into a single floating dock at the foot of the sheet, which is
+   where your hands already are.
+
+   Chrome: the top rail is gone. Identity moves onto the sheet's own tab,
+   the way a file names itself. Suite switching stays in the capsule.
+   Search and account move into the dock. Nothing is orphaned, and the
+   whole frame is now three floating objects on one ground.
+
+   Two pinned decisions are contradicted on purpose. They are named in
+   the designer's note and in DIRECTIONS.md; neither is undone quietly.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* PROPOSED TOKEN — warm stone ground.
+     BRAND.md §5 has always specified warm-stone #fafaf7 as the
+     background and says "never pure white in elevated surfaces". DS 2.0
+     locked --paper to #ffffff and board pass 3 mapped the Tasks canvas
+     to it. This direction argues the two can coexist: paper stays white
+     and becomes the SHEET; the ground under it is warm stone, slightly
+     deeper than BRAND's value so a white sheet reads as lifted. */
+  --c-ground: #efece7;
+  /* The tray is warm, not grey: a cool wash on a warm floor is the
+     single fastest way to make a surface look unauthored. */
+  --c-tray: #f6f4f1;
+  --c-tray-hover: #f2efeb;
+  --c-chrome: #121214;
+  --c-ink: rgba(255,255,255,0.6);
+  --c-ink-strong: #fff;
+  --c-inset: 18px;
+  --c-rail: 66px;
+  --c-sheet-radius: 18px;
+}
+
+body { background: var(--c-ground); }
+
+.floor {
+  height: 100dvh;
+  padding: var(--c-inset);
+  padding-left: calc(var(--c-inset) * 2 + var(--c-rail));
+  position: relative;
+}
+
+/* ── the capsule spine ─────────────────────────────────────────── */
+.rail {
+  position: absolute;
+  left: var(--c-inset); top: var(--c-inset); bottom: var(--c-inset);
+  width: var(--c-rail);
+  background: var(--c-chrome);
+  border-radius: 20px;
+  box-shadow: var(--shadow-float);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 12px 0 12px;
+  z-index: 4;
+}
+.railMark {
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  color: var(--c-ink-strong);
+  position: relative;
+  margin-bottom: 10px;
+}
+.railMark svg { width: 20px; height: 20px; }
+.railMark i {
+  position: absolute; right: 8px; bottom: 9px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--c-chrome);
+}
+.railDivider { width: 20px; height: 1px; background: rgba(255,255,255,0.13); margin: 2px 0 10px; }
+.railGroup { display: grid; gap: 6px; }
+.railTile {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: grid; place-items: center;
+  color: var(--c-ink);
+  position: relative;
+  transition: color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out);
+}
+.railTile svg { width: 20px; height: 20px; }
+.railTile:hover { color: var(--c-ink-strong); background: rgba(255,255,255,0.08); }
+.railTile[data-active] {
+  color: var(--c-ink-strong);
+  background: rgba(255,255,255,0.11);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+}
+/* The capsule points at the sheet it opened. */
+.railTile[data-active]::after {
+  content: "";
+  position: absolute; right: -13px; top: 50%;
+  width: 7px; height: 7px;
+  margin-top: -3.5px;
+  transform: rotate(45deg);
+  background: var(--c-chrome);
+  border-radius: 1.5px;
+}
+.railSpacer { flex: 1; }
+/* Desktop keeps Add task in the dock; the phone has no dock, so the
+   bar carries it. Only ever one of the two is on screen. */
+.railAdd { display: none; }
+.headSearch { display: none; }
+.railAvatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16);
+  color: #fff; display: grid; place-items: center;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+  margin-top: 8px;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────── */
+.sheet {
+  height: 100%;
+  background: var(--paper);
+  border-radius: var(--c-sheet-radius);
+  box-shadow: var(--shadow-float);
+  display: flex; flex-direction: column;
+  position: relative;
+  min-width: 0;
+}
+/* The sheet names itself at its own head, the way a file does — one
+   object, Geist 600 at -0.045em with the indigo full stop as its ::after,
+   so the mark cannot come apart. */
+.sheetHead {
+  flex: none;
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px 22px 0;
+}
+.word {
+  display: inline-flex; align-items: baseline;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.045em;
+  color: var(--ink);
+  flex: none;
+}
+.word::after {
+  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: var(--accent); margin-left: 2px;
+}
+.headRule { width: 1px; height: 20px; background: var(--hairline); flex: none; }
+.headName { font-size: 17px; font-weight: 600; letter-spacing: -0.026em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.headFacts {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 12.5px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.headFacts b { font-weight: 550; color: var(--ink-soft); }
+.headFacts .over { color: var(--status-blocked); }
+.headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+.ghost {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px; color: var(--ink-soft); letter-spacing: -0.008em;
+  white-space: nowrap;
+}
+.ghost svg { width: 15px; height: 15px; color: var(--ink-faint); }
+.ghost:hover { background: var(--paper-deep); color: var(--ink); }
+.ghost em { font-style: normal; font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+.sheetViews {
+  flex: none;
+  display: flex; align-items: center;
+  padding: 14px 22px 0;
+}
+.seg {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--paper-deep);
+  border-radius: var(--radius-pill);
+}
+.segItem {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 13px;
+  border-radius: var(--radius-pill);
+  font-size: 12.5px; color: var(--ink-faint); letter-spacing: -0.008em;
+}
+.segItem svg { width: 15px; height: 15px; }
+.segItem:hover { color: var(--ink-soft); }
+.segItem[data-active] {
+  background: var(--paper); color: var(--ink); font-weight: 550;
+  box-shadow: 0 1px 2px rgba(17,17,17,0.06);
+}
+.viewTools { margin-left: auto; display: flex; gap: 2px; }
+
+/* ── trays ─────────────────────────────────────────────────────── */
+.floorBoard {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px 16px 92px;
+  overflow: auto;
+}
+.tray {
+  min-width: 0;
+  background: var(--c-tray);
+  border-radius: 16px;
+  display: flex; flex-direction: column;
+  padding: 12px 10px 10px;
+  transition: background-color var(--motion-base) var(--ease-out);
+}
+.tray:hover { background: var(--c-tray-hover); }
+.trayHead { flex: none; padding: 0 6px 10px; }
+.trayTop { display: flex; align-items: center; gap: 8px; }
+.pip { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-ghost); flex: none; }
+.tray[data-tone="flight"] .pip { background: var(--status-flight); }
+.tray[data-tone="done"] .pip { background: var(--x-status-done); }
+.trayName { font-size: 13px; font-weight: 600; letter-spacing: -0.014em; }
+.trayCount {
+  margin-left: auto;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(17,17,17,0.055);
+  display: inline-grid; place-items: center;
+  font-size: 11px; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+}
+.trayNote { margin: 5px 0 0; font-size: 11.5px; line-height: 1.35; color: var(--ink-faint); }
+/* The dock floats over the foot of the sheet, so a tray must be able to
+   scroll its last card clear of it. */
+.trayBody { overflow: auto; display: grid; gap: 8px; align-content: start; padding: 2px 0 54px; }
+
+.card {
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(17,17,17,0.055);
+  box-shadow: 0 1px 1.5px rgba(17,17,17,0.035);
+  padding: 11px 12px 10px;
+  display: grid; gap: 6px;
+  position: relative;
+  transition: transform var(--motion-fast) var(--ease-out),
+              box-shadow var(--motion-fast) var(--ease-out);
+}
+.card:hover { box-shadow: 0 1px 2px rgba(17,17,17,0.05), 0 4px 12px rgba(17,17,17,0.05); }
+.cardTop { display: flex; align-items: flex-start; gap: 9px; }
+.tick {
+  width: 16px; height: 16px; border-radius: 50%; flex: none;
+  box-shadow: inset 0 0 0 1.4px var(--ink-ghost);
+  margin-top: 1px;
+  display: grid; place-items: center; color: transparent;
+}
+.tick svg { width: 10px; height: 10px; stroke-width: 2.4; }
+.card:hover .tick { box-shadow: inset 0 0 0 1.4px var(--ink-faint); }
+.cardTitle { font-size: 13.5px; line-height: 1.34; font-weight: 550; letter-spacing: -0.014em; min-width: 0; }
+.cardNote {
+  margin: 0; font-size: 12px; line-height: 1.42; color: var(--ink-faint);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.cardMeta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 3px 8px;
+  font-size: 11.5px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.003em;
+}
+.cardMeta .hi { color: var(--ink-soft); font-weight: 500; }
+.cardMeta .due-overdue { color: var(--status-blocked); }
+.cardMeta .due-today { color: #a16207; }
+.cardMeta .cm { display: inline-flex; align-items: center; gap: 4px; }
+.cardMeta .cm svg { width: 12px; height: 12px; }
+.tag {
+  display: inline-flex; align-items: center; height: 19px; padding: 0 7px;
+  border-radius: var(--radius-pill);
+  background: rgba(17,17,17,0.05); color: var(--ink-soft);
+  font-size: 10.5px; letter-spacing: -0.002em;
+}
+.cardDots {
+  position: absolute; top: 7px; right: 7px;
+  width: 24px; height: 24px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; color: var(--ink-faint);
+  opacity: 0; transition: opacity var(--motion-instant) var(--ease-out);
+}
+.cardDots svg { width: 15px; height: 15px; }
+.card:hover .cardDots { opacity: 1; }
+
+/* The one earned indigo: the next thing that has a date on it. */
+.card[data-next] { box-shadow: 0 0 0 1.5px var(--accent), 0 4px 14px rgba(79,70,229,0.1); border-color: transparent; }
+.nextKicker {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--font-mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+  margin: 0;
+}
+.nextKicker svg { width: 10px; height: 10px; }
+
+.card[data-done] { background: rgba(255,255,255,0.7); box-shadow: none; border-color: rgba(17,17,17,0.05); }
+.card[data-done] .cardTitle { color: var(--ink-faint); font-weight: 450; }
+.card[data-done] .tick { background: var(--x-status-done); box-shadow: none; color: #fff; }
+
+.trayEmpty {
+  padding: 14px 8px 12px; text-align: center;
+  font-size: 12px; color: var(--ink-faint);
+}
+.trayAdd {
+  display: flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 8px; margin-top: 6px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px; color: var(--ink-faint);
+}
+.trayAdd svg { width: 15px; height: 15px; }
+.trayAdd:hover { color: var(--ink); background: rgba(17,17,17,0.05); }
+
+/* ── the dock ──────────────────────────────────────────────────── */
+/* Content passing under the dock fades instead of being cut in half. */
+.dockScrim {
+  position: absolute; left: 1px; right: 1px; bottom: 1px;
+  height: 96px;
+  border-radius: 0 0 var(--c-sheet-radius) var(--c-sheet-radius);
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.86) 46%, #fff 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+.dock {
+  position: absolute;
+  left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-modal);
+  z-index: 3;
+}
+.dockBtn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px; color: var(--ink-soft); letter-spacing: -0.008em;
+  white-space: nowrap;
+}
+.dockBtn svg { width: 16px; height: 16px; color: var(--ink-faint); }
+.dockBtn:hover { background: var(--paper-deep); color: var(--ink); }
+.dockBtn kbd {
+  font-family: var(--font-mono); font-size: 10px;
+  border: 1px solid var(--hairline); border-radius: var(--radius-sm);
+  padding: 2px 4px; color: var(--ink-faint);
+}
+.dockPrimary {
+  background: var(--ink); color: var(--paper);
+  font-weight: 550;
+  padding: 0 16px 0 13px;
+}
+.dockPrimary svg { color: currentColor; }
+.dockPrimary:hover { background: #000; color: var(--paper); }
+.dockRule { width: 1px; height: 22px; background: var(--hairline); margin: 0 3px; }
+.dockAvatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ink); color: var(--paper);
+  display: grid; place-items: center;
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.02em;
+}
+
+/* ── planning drawer ───────────────────────────────────────────── */
+.drawer {
+  position: absolute;
+  right: var(--c-inset); top: var(--c-inset); bottom: var(--c-inset);
+  width: 388px;
+  background: var(--paper);
+  border-radius: var(--c-sheet-radius);
+  box-shadow: var(--shadow-modal);
+  display: flex; flex-direction: column;
+  z-index: 5;
+}
+.drawerHead { padding: 20px 22px 16px; }
+.drawerTop { display: flex; align-items: center; }
+.drawerKicker { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+.drawerHead h2 { margin: 10px 0 3px; font-size: 19px; font-weight: 600; letter-spacing: -0.026em; }
+.drawerLine { margin: 0; font-size: 12.5px; color: var(--ink-faint); }
+.axis { margin: 20px 0 8px; height: 6px; background: var(--paper-deep); border-radius: 3px; position: relative; }
+.axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 3px; }
+.axis b { position: absolute; left: 11.3%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--paper), 0 1px 3px rgba(17,17,17,0.2); }
+.axisEnds { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.drawerSummary { margin: 13px 0 0; font-size: 13px; color: var(--ink-soft); }
+.drawerTabs { display: flex; gap: 3px; padding: 0 18px 12px; }
+.drawerTab { height: 32px; padding: 0 12px; border-radius: var(--radius-pill); font-size: 12.5px; color: var(--ink-faint); }
+.drawerTab[data-active] { background: var(--paper-deep); color: var(--ink); font-weight: 550; }
+.drawerTab em { font-style: normal; font-size: 11px; margin-left: 6px; color: var(--ink-faint); }
+.drawerHelp { padding: 0 22px 12px; margin: 0; font-size: 12px; color: var(--ink-faint); line-height: 1.5; }
+.drawerHelp a { color: var(--accent); text-decoration: none; float: right; margin-left: 12px; }
+.drawerRows { overflow: auto; padding: 0 14px 16px; display: grid; gap: 6px; align-content: start; }
+.drawerRow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px;
+  background: var(--c-tray);
+  border: 1px solid rgba(17,17,17,0.03);
+  border-radius: var(--radius-lg);
+  font-size: 12.5px; line-height: 1.4; letter-spacing: -0.008em;
+}
+.box { width: 15px; height: 15px; border-radius: 4px; box-shadow: inset 0 0 0 1.4px var(--ink-ghost); flex: none; background: var(--paper); }
+.drawerRow button { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-soft); }
+.drawerRow button svg { width: 13px; height: 13px; color: var(--ink-faint); }
+.drawerAdd { margin: 0 22px 18px; display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink-faint); }
+.drawerAdd svg { width: 15px; height: 15px; }
+
+/* ── loading ───────────────────────────────────────────────────── */
+.sk { display: block; background: rgba(17,17,17,0.06); border-radius: 4px; animation: cBreathe 1.8s var(--ease-in-out) infinite; }
+@keyframes cBreathe { 0%,100% { opacity: 1 } 50% { opacity: .5 } }
+.loadCard { background: var(--paper); border: 1px solid rgba(17,17,17,0.055); border-radius: var(--radius-lg); padding: 11px 12px; display: grid; gap: 8px; }
+.loadSay {
+  position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+  font-size: 13px; color: var(--ink-faint);
+}
+
+/* ── responsive ────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .floorBoard { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(252px, 1fr); }
+  .drawer { width: 360px; }
+}
+@media (max-width: 820px) {
+  :root { --c-inset: 10px; }
+  .headFacts { display: none; }
+  .drawer { left: var(--c-inset); width: auto; }
+}
+@media (max-width: 720px) {
+  :root { --c-inset: 8px; }
+  .floor { padding: var(--c-inset) var(--c-inset) 0; }
+  /* The capsule and the dock are the same object on a phone: one bar,
+     thumb height, carrying the suite and the verbs together. */
+  .rail {
+    left: var(--c-inset); right: var(--c-inset); top: auto;
+    bottom: calc(var(--c-inset) + env(safe-area-inset-bottom));
+    width: auto; height: 58px;
+    flex-direction: row; justify-content: space-around;
+    border-radius: 18px;
+    padding: 0 8px;
+  }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  /* Inbox and Help fold into the account menu on a phone. */
+  .railTile[title="Inbox"], .railTile[title="Help and settings"] { display: none; }
+  .railAdd {
+    display: grid; place-items: center;
+    width: 42px; height: 42px; border-radius: 14px;
+    background: var(--paper); color: var(--ink);
+    margin: 0 4px 0 8px;
+  }
+  .railAdd svg { width: 19px; height: 19px; }
+  .headSearch { display: inline-flex; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+  .railAvatar { margin: 0; }
+  .sheet { height: calc(100dvh - 58px - var(--c-inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  .sheetHead { flex-wrap: wrap; gap: 8px 12px; padding: 14px 16px 0; }
+  .headName { font-size: 18px; width: 100%; order: 2; }
+  .headRule { display: none; }
+  .headActions { order: 1; margin-left: auto; }
+  .headFacts { display: flex; order: 3; width: 100%; font-size: 12px; gap: 10px; }
+  .sheetViews { padding: 12px 16px 0; overflow-x: auto; }
+  .viewTools { display: none; }
+  .floorBoard { padding: 12px 12px 16px; gap: 10px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; }
+  .tray { scroll-snap-align: start; }
+  .trayBody { padding-bottom: 4px; }
+  .dock, .dockScrim { display: none; }
+  .drawer { top: 64px; bottom: calc(58px + var(--c-inset) * 2); right: var(--c-inset); }
+  .loadSay { bottom: 16px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="./data.js"></script>
+<script src="./icons.js"></script>
+<script>
+const state = new URLSearchParams(location.search).get("state") || "board";
+const B = window.BOARD;
+const I = window.ICON;
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+function tasksFor(lane) {
+  if (state === "empty") return [];
+  let all = B.tasks.slice();
+  if (state === "dense") all = all.concat(window.DENSE_EXTRA.map((t, i) => ({ ...t, id: "x" + i })));
+  return all.filter((t) => t.lane === lane);
+}
+
+function rail() {
+  const tile = (key, label, active) =>
+    `<a class="railTile" title="${label}"${active ? " data-active" : ""}>${I[key]}</a>`;
+  return `
+  <nav class="rail" aria-label="Signal Studio">
+    <a class="railMark" title="Signal Studio">${I.more}<i></i></a>
+    <span class="railDivider"></span>
+    <div class="railGroup">
+      ${tile("home", "Home", false)}
+      ${B.rail.products.map((p) => tile(p.key, p.label, p.active)).join("")}
+    </div>
+    <span class="railSpacer"></span>
+    ${tile("inbox", "Inbox", false)}
+    ${tile("help", "Help and settings", false)}
+    <button class="railAdd" aria-label="Add task">${I.plus}</button>
+    <span class="railAvatar" title="${esc(B.operator.role)}">${B.operator.initials}</span>
+  </nav>`;
+}
+
+function head() {
+  const p = B.progress;
+  const total = state === "empty" ? 0 : state === "dense" ? p.total + window.DENSE_EXTRA.length : p.total;
+  const done = state === "empty" ? 0 : p.done;
+  return `
+  <div class="sheetHead">
+    <span class="word">tasks</span>
+    <span class="headRule"></span>
+    <h1 class="headName">${esc(B.workspace)}</h1>
+    <div class="headFacts">
+      <span><b>${done} of ${total}</b> done</span>
+      ${state === "empty" ? "" : `<span class="over">${p.overdue} overdue</span>`}
+      <span>day ${p.day} of ${p.of}</span>
+    </div>
+    <div class="headActions">
+      <button class="ghost headSearch" aria-label="Search">${I.search}</button>
+      <button class="ghost">${I.share}<span>Share</span></button>
+      <button class="ghost">${I.planning}<span>Planning</span>${state === "empty" ? "" : `<em>${p.undated}</em>`}</button>
+      <button class="ghost" aria-label="More">${I.dots}</button>
+    </div>
+  </div>`;
+}
+
+function views() {
+  const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
+  return `
+  <div class="sheetViews">
+    <nav class="seg">
+      ${B.views.map((v) => `<a class="segItem"${v === "Board" ? " data-active" : ""}>${icons[v]}<span>${v}</span></a>`).join("")}
+    </nav>
+    <div class="viewTools">
+      <button class="ghost">${I.filter}<span>Filter</span></button>
+      <button class="ghost">${I.sort}<span>Sort</span></button>
+      <button class="ghost">${I.display}<span>Display</span></button>
+    </div>
+  </div>`;
+}
+
+function card(t) {
+  const done = t.lane === "done";
+  const next = Boolean(t.milestone);
+  const meta = [];
+  if (t.tag) meta.push(`<span class="tag">${esc(t.tag)}</span>`);
+  if (t.priority && !done) meta.push(`<span class="hi">${esc(t.priority)}</span>`);
+  if (t.due) meta.push(`<span class="due-${t.dueTone}">${esc(t.due)}</span>`);
+  if (t.contact) meta.push(`<span>${esc(t.contact)}</span>`);
+  if (t.comments) meta.push(`<span class="cm">${I.comment}${t.comments}</span>`);
+  return `
+  <article class="card"${done ? " data-done" : ""}${next ? " data-next" : ""}>
+    ${next ? `<p class="nextKicker">${I.milestone}Next milestone · ${esc(t.milestone.replace("Milestone due ", ""))}</p>` : ""}
+    <div class="cardTop"><span class="tick">${I.check}</span><p class="cardTitle">${esc(t.title)}</p></div>
+    ${t.note && !done ? `<p class="cardNote">${esc(t.note)}</p>` : ""}
+    ${meta.length ? `<div class="cardMeta">${meta.join("")}</div>` : ""}
+    ${t.quiet ? `<div class="cardMeta" style="color:#a16207">${esc(t.quiet)}</div>` : ""}
+    <button class="cardDots" aria-label="Task actions">${I.dots}</button>
+  </article>`;
+}
+
+function board() {
+  return `
+  <div class="floorBoard">
+    ${B.columns.map((c) => {
+      const rows = tasksFor(c.id);
+      return `
+      <section class="tray" data-tone="${c.tone}">
+        <div class="trayHead">
+          <div class="trayTop">
+            <span class="pip"></span>
+            <span class="trayName">${esc(c.name)}</span>
+            <span class="trayCount">${rows.length}</span>
+          </div>
+          <p class="trayNote">${esc(c.note)}</p>
+        </div>
+        <div class="trayBody">
+          ${rows.length ? rows.map(card).join("") : `<p class="trayEmpty">${esc(c.empty || "Nothing here yet")}</p>`}
+        </div>
+        <button class="trayAdd">${I.plus}<span>Add task</span></button>
+      </section>`;
+    }).join("")}
+  </div>`;
+}
+
+function dock() {
+  return `
+  <span class="dockScrim" aria-hidden="true"></span>
+  <div class="dock">
+    <button class="dockBtn">${I.search}<span>Search</span><kbd>⌘K</kbd></button>
+    <button class="dockBtn dockPrimary">${I.plus}<span>Add task</span></button>
+    <span class="dockRule"></span>
+    <span class="dockAvatar" title="${esc(B.operator.role)}">${B.operator.initials}</span>
+  </div>`;
+}
+
+function drawer() {
+  const p = B.planning;
+  return `
+  <aside class="drawer">
+    <div class="drawerHead">
+      <div class="drawerTop"><span class="drawerKicker">${esc(p.title)}</span><button class="ghost" style="margin-left:auto" aria-label="Close">${I.close}</button></div>
+      <h2>${esc(p.project)}</h2>
+      <p class="drawerLine">${esc(p.line)}</p>
+      <div class="axis"><i></i><b></b></div>
+      <div class="axisEnds"><span>6 Jul</span><span>10 Oct</span></div>
+      <p class="drawerSummary">${esc(p.summary)}</p>
+    </div>
+    <div class="drawerTabs">
+      <button class="drawerTab" data-active>Unscheduled<em>${p.unscheduled.length}</em></button>
+      <button class="drawerTab">Milestones<em>${p.milestones.length}</em></button>
+    </div>
+    <p class="drawerHelp"><a>Select all</a>${esc(p.help)}</p>
+    <div class="drawerRows">
+      ${p.unscheduled.map((t) => `<div class="drawerRow"><span class="box"></span><span>${esc(t)}</span><button>Schedule ${I.chevron}</button></div>`).join("")}
+    </div>
+    <button class="drawerAdd">${I.plus}<span>Add unscheduled task</span></button>
+  </aside>`;
+}
+
+function loading() {
+  return `
+  <div class="sheet">
+    <div class="sheetHead">
+      <span class="word">tasks</span>
+      <span class="headRule"></span>
+      <span class="sk" style="width:170px;height:14px"></span>
+      <div class="headActions"><span class="sk" style="width:88px;height:14px"></span></div>
+    </div>
+    <div class="sheetViews"><span class="sk" style="width:300px;height:36px;border-radius:999px"></span></div>
+    <div class="floorBoard">
+      ${B.columns.map((c, i) => `
+        <section class="tray">
+          <div class="trayHead">
+            <span class="sk" style="width:${[52, 74, 50, 56, 38][i]}px;height:11px"></span>
+            <span class="sk" style="width:${[120, 92, 132, 150, 116][i]}px;height:9px;margin-top:8px"></span>
+          </div>
+          <div class="trayBody">
+            ${[0, 1, 2].slice(0, [3, 3, 2, 0, 3][i]).map(() => `
+              <div class="loadCard">
+                <span class="sk" style="width:86%;height:11px"></span>
+                <span class="sk" style="width:62%;height:9px"></span>
+                <span class="sk" style="width:34%;height:9px"></span>
+              </div>`).join("")}
+          </div>
+        </section>`).join("")}
+    </div>
+    <p class="loadSay">Opening The Orchard, events</p>
+  </div>`;
+}
+
+const sheet = state === "loading"
+  ? loading()
+  : `<div class="sheet">${head()}${views()}${board()}${dock()}</div>`;
+
+document.getElementById("root").innerHTML = `
+  <div class="floor">
+    ${rail()}
+    ${sheet}
+    ${state === "planning" ? drawer() : ""}
+  </div>`;
+</script>
+</body>
+</html>

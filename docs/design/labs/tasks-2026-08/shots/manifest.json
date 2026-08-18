@@ -1,0 +1,267 @@
+{
+  "viewports": [
+    "390x844",
+    "768x1024",
+    "1280x900",
+    "1440x960"
+  ],
+  "states": [
+    "empty",
+    "loading",
+    "dense"
+  ],
+  "shots": [
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "a-empty--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "a-loading--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "a-dense--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "b-empty--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "b-loading--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "b-dense--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "c-empty--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "c-loading--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "c-dense--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "a-empty--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "a-loading--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "a-dense--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "b-empty--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "b-loading--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "b-dense--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "c-empty--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "c-loading--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "c-dense--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "a-empty--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "a-loading--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "a-dense--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "b-empty--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "b-loading--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "b-dense--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "c-empty--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "c-loading--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "c-dense--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "a-empty--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "a-loading--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "a-dense--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "b-empty--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "b-loading--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "b-dense--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "c-empty--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "c-loading--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "c-dense--1440x960.png"
+    }
+  ]
+}
