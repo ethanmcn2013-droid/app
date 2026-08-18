@@ -625,7 +625,9 @@ body {
   position: relative;
   background: var(--white);
   border-radius: var(--r-card);
-  --card-ring: var(--ring);
+  
+  --card-rest: var(--ring);
+  --card-ring: var(--card-rest);
   box-shadow: var(--card-ring);
   padding: 12px 12px 12px 11px;
   display: grid;
@@ -681,7 +683,6 @@ body {
 .deck .card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
 .deck .card[data-open] .cardNote { max-height: none; color: var(--ink-1); }
 .deck .card[data-open] .cardTitle, .deck .card[data-open] .cardNote { user-select: text; cursor: text; }
-.deck .card[data-open] { --card-ring: 0 0 0 1.5px var(--indigo); }
 .deck .cardFoot {
   grid-column: 2; grid-row: 3;
   
@@ -752,11 +753,11 @@ body {
 }
 .deck .cardFoot .who + .tag { padding-left: 10px; border-left: 1px solid var(--line); }
 .deck .hi { color: var(--ink-1); font-weight: 400; white-space: nowrap; }
-.deck .card[data-done] { background: transparent; --card-ring: 0 0 0 1px var(--line-soft); }
+.deck .card[data-done] { background: transparent; --card-rest: 0 0 0 1px var(--line-soft); }
 .deck .card[data-done] .cardTitle { color: var(--ink-2); }
 .deck .card[data-done] .who { font-weight: 400; color: var(--ink-2); }
 .deck .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
-.deck .card[data-next] { --card-ring: 0 0 0 1px var(--indigo-line); }
+.deck .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
 .deck .card:hover, .deck .card[data-force="hover"] { --card-ring: var(--ring-strong), var(--raise); }
 .deck .card:focus-visible, .deck .card[data-force="focus"] {
   outline: none;
@@ -1108,7 +1109,10 @@ body {
 .deck .when[data-t="overdue"] { forced-color-adjust: none; background: CanvasText; color: Canvas; }
 .deck .when[data-t="today"] { border-width: 2px; }
 .deck .tick { border: 1px solid CanvasText; }
+.deck .card:not([data-done]) .tick svg { display: none; }
 .deck .card[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+.deck .dropLine { forced-color-adjust: none; background: Highlight; }
+.deck .tray::before, .deck .tray::after { forced-color-adjust: none; background: CanvasText; }
 .deck .dock, .deck .carry, .deck .cardMenu, .deck .drawer { border: 1px solid CanvasText; }
 .deck .trayBody[data-above], .deck .trayBody[data-more] { border-block: 1px solid CanvasText; }
 }
@@ -1156,15 +1160,15 @@ body {
 .deck[data-w="390"] .cardTitle { min-width: 0; }
 .deck[data-w="390"] .dockField kbd { display: none; }
 .deck[data-w="390"] .tick::before { inset: -13px; }
-.deck[data-cards="flat"] .card { box-shadow: none; }
+.deck[data-cards="flat"] .card { --card-rest: none; }
 .deck[data-cards="flat"] .card:hover, .deck[data-cards="flat"] .card[data-force="hover"] { box-shadow: none; background: var(--wash); }
-.deck[data-cards="flat"] .card[data-done] { box-shadow: none; background: var(--wash); }
+.deck[data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
 .deck[data-cards="flat"] .card[data-next] { box-shadow: 0 0 0 1px var(--indigo-line); }
 .deck[data-cards="flat"] .trayBody { gap: 2px; }
 .deck[data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
-.deck[data-cards="elevated"] .card { box-shadow: var(--ring), var(--raise); }
+.deck[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); }
 .deck[data-cards="elevated"] .card:hover, .deck[data-cards="elevated"] .card[data-force="hover"] { box-shadow: var(--ring-strong), var(--float); }
-.deck[data-cards="elevated"] .card[data-done] { box-shadow: 0 0 0 1px var(--line-soft); }
+.deck[data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); }
 .deck[data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
 .deck[data-radius="sharp"] {
   --r-chip: 4px; --r-ctl: 4px; --r-card: 4px; --r-sheet: 8px;
@@ -2008,7 +2012,7 @@ function views() {
     /* Painted at the same weight as a control that works, these promised a
        Schedule and a Calendar nobody has built. Drawn as unavailable they
        stop lying, and they say why when asked rather than doing nothing. */
-    B.views.map((v) => '<button type="button" class="segItem"' +
+    B.views.map((v) => '<button type="button" role="tab" class="segItem"' +
       (v === "Board"
         ? ' data-active aria-current="true"'
         : notYet(SOON)) +
@@ -2463,7 +2467,13 @@ function arm(act) {
 /* Suspended while the operator is reading or reaching for it — the strip
    used to vanish mid-decision and drop focus to the top of the document. */
 function holdUndo() { clearTimeout(undoTimer); }
-function releaseUndo() { if (undone) arm(undone); }
+function releaseUndo() {
+  /* Re-time the strip; do not re-record the act. arm() pushes, so this used
+     to add a phantom entry on every pointer pass over the strip. */
+  if (!undone) return;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
+}
 
 function toggleDone(id) {
   const task = taskById(id);

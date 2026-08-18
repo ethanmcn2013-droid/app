@@ -444,7 +444,12 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   position: relative;
   background: var(--white);
   border-radius: var(--r-card);
-  --card-ring: var(--ring);
+  /* --card-rest is what the card looks like when nothing is happening to
+     it, and is what a preset may change. --card-ring is what is happening to
+     it, and only the interaction rules may set that. Sharing one property
+     let a preset delete the focus ring. */
+  --card-rest: var(--ring);
+  --card-ring: var(--card-rest);
   box-shadow: var(--card-ring);
   padding: 12px 12px 12px 11px;
   display: grid;
@@ -524,7 +529,6 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .card[data-open] .cardNote { max-height: none; color: var(--ink-1); }
 /* An open card is being read, not carried, so its words can be taken. */
 .card[data-open] .cardTitle, .card[data-open] .cardNote { user-select: text; cursor: text; }
-.card[data-open] { --card-ring: 0 0 0 1.5px var(--indigo); }
 .cardFoot {
   grid-column: 2; grid-row: 3;
   /* One line, always. Wrapping put the actions button on a second row and
@@ -623,7 +627,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .hi { color: var(--ink-1); font-weight: 400; white-space: nowrap; }
 
 /* Done. Never struck through: the work happened, it was not a mistake. */
-.card[data-done] { background: transparent; --card-ring: 0 0 0 1px var(--line-soft); }
+.card[data-done] { background: transparent; --card-rest: 0 0 0 1px var(--line-soft); }
 /* Ink alone carries done — the transparent card, the hairline ring, the
    suppressed date chip and the filled tick already say it four times over.
    Dropping the weight as well inverted the card's internal rank and made the
@@ -633,7 +637,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
 
 /* The one earned indigo in a resting view. */
-.card[data-next] { --card-ring: 0 0 0 1px var(--indigo-line); }
+.card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
 
 /* ── interaction, declared after every state ────────────────────── */
 .card:hover, .card[data-force="hover"] { --card-ring: var(--ring-strong), var(--raise); }
@@ -1105,7 +1109,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .when[data-t="overdue"] { forced-color-adjust: none; background: CanvasText; color: Canvas; }
   .when[data-t="today"] { border-width: 2px; }
   .tick { border: 1px solid CanvasText; }
+  /* Colour is how an unfinished tick hides its check, and a forced palette
+     overrides colour — so every card read as done. */
+  .card:not([data-done]) .tick svg { display: none; }
   .card[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  /* Both are 1px ink at low alpha, which a forced palette resolves to the
+     page background. */
+  .dropLine { forced-color-adjust: none; background: Highlight; }
+  .tray::before, .tray::after { forced-color-adjust: none; background: CanvasText; }
   .dock, .carry, .cardMenu, .drawer { border: 1px solid CanvasText; }
   .trayBody[data-above], .trayBody[data-more] { border-block: 1px solid CanvasText; }
 }
@@ -1196,18 +1207,22 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 /* ── card style ────────────────────────────────────────────────── */
 /* Flat: no ring at rest. Space does the separating, and the card only
    acquires an edge when you point at it. */
-[data-cards="flat"] .card { box-shadow: none; }
+/* The presets set the RESTING ring, never box-shadow: setting the property
+   outranks the custom property the whole state system is carried in, which
+   deleted the focus ring, the selection ring and the in-hand lift in two of
+   the four variants. */
+[data-cards="flat"] .card { --card-rest: none; }
 [data-cards="flat"] .card:hover, [data-cards="flat"] .card[data-force="hover"] { box-shadow: none; background: var(--wash); }
-[data-cards="flat"] .card[data-done] { box-shadow: none; background: var(--wash); }
+[data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
 [data-cards="flat"] .card[data-next] { box-shadow: 0 0 0 1px var(--indigo-line); }
 [data-cards="flat"] .trayBody { gap: 2px; }
 [data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
 
 /* Elevated: the card is an object at rest, and picking it up only
    deepens something that was already there. */
-[data-cards="elevated"] .card { box-shadow: var(--ring), var(--raise); }
+[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); }
 [data-cards="elevated"] .card:hover, [data-cards="elevated"] .card[data-force="hover"] { box-shadow: var(--ring-strong), var(--float); }
-[data-cards="elevated"] .card[data-done] { box-shadow: 0 0 0 1px var(--line-soft); }
+[data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); }
 [data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
 
 /* ── corner radius ─────────────────────────────────────────────── */
@@ -1799,7 +1814,7 @@ function views() {
     /* Painted at the same weight as a control that works, these promised a
        Schedule and a Calendar nobody has built. Drawn as unavailable they
        stop lying, and they say why when asked rather than doing nothing. */
-    B.views.map((v) => '<button type="button" class="segItem"' +
+    B.views.map((v) => '<button type="button" role="tab" class="segItem"' +
       (v === "Board"
         ? ' data-active aria-current="true"'
         : notYet(SOON)) +
@@ -2254,7 +2269,13 @@ function arm(act) {
 /* Suspended while the operator is reading or reaching for it — the strip
    used to vanish mid-decision and drop focus to the top of the document. */
 function holdUndo() { clearTimeout(undoTimer); }
-function releaseUndo() { if (undone) arm(undone); }
+function releaseUndo() {
+  /* Re-time the strip; do not re-record the act. arm() pushes, so this used
+     to add a phantom entry on every pointer pass over the strip. */
+  if (!undone) return;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
+}
 
 function toggleDone(id) {
   const task = taskById(id);

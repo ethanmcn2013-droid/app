@@ -559,6 +559,62 @@
           "done": "An open card is the read surface, is not draggable, and its words can be taken. It carries a rank above hover. Every shadow-borne signal is restated in system colours under a forced palette, and the gate drives the board with forced colors active."
         }
       ]
+    },
+    {
+      "round": 11,
+      "final": true,
+      "scores": {
+        "UI composition": 8.5,
+        "Typography": 8.7,
+        "Interaction and states": 8.2,
+        "UX and information design": 8.3,
+        "Brand and copy": 8.6,
+        "Product taste and emotional resonance": 8.4,
+        "Measured evidence": 8.1
+      },
+      "findings": 35,
+      "confirmed": 4,
+      "refuted": 31,
+      "fixed": 4,
+      "headline": "The final round, graded as a finished artifact rather than as work in progress. Seven seats, seven independent verdicts, and they agree: the direction, the palette, the type ramp and the architecture are settled and nothing here asks to reopen them. What separates this from the gate is between two and three focused days of polish and four small builds. Interaction, the harshest seat at 8.2, put the keyboard model \"genuinely at or above Linear\" and named its remaining distance as \"the last week's work that a studio does before it ships\". Four regressions this session had introduced were caught and fixed before the record closed.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 9.0,
+          "problem": "A forced palette overrode the colour an unfinished tick uses to hide its check, so a high-contrast operator saw a board where all thirteen cards read as done. Introduced by the forced-colors block added in round 10. The drop line and both overflow rules resolved to the page background in the same mode.",
+          "done": "The check is removed rather than hidden for an unfinished task, and the drop line and the rules are restated in system colours. Asserted with the browser driven in forced-colors mode."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 8.0,
+          "problem": "The three card presets set box-shadow directly, at a specificity above the custom property the entire state system is carried in — so in two of the four variants the focus ring, the selection ring and the in-hand lift were simply deleted. The state system and the resting appearance were sharing one property.",
+          "done": "Rest and state are now two properties: --card-rest is what the card looks like when nothing is happening to it and is what a preset may change; --card-ring is what is happening to it and only the interaction rules may set it. Asserted across all four presets."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 7.0,
+          "problem": "releaseUndo() called arm(), and arm() pushes — so every pointer pass over the foot strip added a phantom entry to the undo history and the depth the strip printed was a lie.",
+          "done": "Releasing the clock re-times the strip; it does not re-record the act. Asserted by passing the pointer over the strip three times and requiring the depth not to move."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 5.0,
+          "problem": "The view switcher was given role=\"tablist\" with the roving group in round 10 and its children were never given role=\"tab\" — the only axe-critical violation on the page.",
+          "done": "Fixed."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.0,
+          "problem": "STANDING, NOT FIXED. The filtered board is the one screen still visibly undesigned: the answer to \"what is late\" is one card in a field of four full-height empty columns, with the sentence explaining it 700px below at the foot. Roughly half a day.",
+          "done": "Left standing. Recorded as the largest single item in the honest distance."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.0,
+          "problem": "STANDING, NOT FIXED. Emptiness has no design. The zero board and the filtered board are white voids with four identical Add rows and no focal point, and those are the states an operator lives in most.",
+          "done": "Left standing. Recorded with the filtered state as the same piece of work."
+        }
+      ]
     }
   ]
 }

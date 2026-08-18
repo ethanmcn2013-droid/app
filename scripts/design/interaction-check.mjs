@@ -1148,6 +1148,54 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.close();
 }
 
+
+/* ── every variant keeps the state system ────────────────────────── */
+{
+  for (const v of ["locked", "a", "b", "c"]) {
+    const page = await open("?v=" + v);
+    await page.locator('.board .card[tabindex="0"]').focus();
+    await page.waitForTimeout(200);
+    const ring = await page.evaluate(() =>
+      getComputedStyle(document.querySelector(".board .card:focus-visible") ||
+        document.activeElement.closest(".card")).boxShadow);
+    ok("the focus ring survives preset " + v, /79, 70, 229/.test(ring), ring.slice(0, 60));
+    await page.close();
+  }
+}
+
+/* ── a forced palette does not say every task is done ─────────────── */
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, forcedColors: "active" });
+  await page.goto(URL);
+  await page.waitForTimeout(400);
+  const checks = await page.evaluate(() =>
+    [...document.querySelectorAll(".board .card:not([data-done]) .tick svg")]
+      .filter((n) => getComputedStyle(n).display !== "none").length);
+  ok("an unfinished task shows no check in a forced palette", checks === 0, checks + " showing");
+  await page.close();
+}
+
+/* ── the undo depth is the truth ──────────────────────────────────── */
+{
+  const page = await open();
+  await page.locator(".board .card .tick").first().click();
+  await page.waitForTimeout(400);
+  const depth = () => page.evaluate(() => {
+    const n = document.querySelector(".carry em");
+    return n && /more/.test(n.textContent) ? n.textContent : "none";
+  });
+  const before = await depth();
+  for (let i = 0; i < 3; i += 1) {
+    await page.locator(".carry").hover();
+    await page.waitForTimeout(60);
+    await page.locator(".head").hover();
+    await page.waitForTimeout(60);
+  }
+  ok("passing over the strip does not inflate the history", (await depth()) === before,
+    before + " -> " + (await depth()));
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
 
 await browser.close();
