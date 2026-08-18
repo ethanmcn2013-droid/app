@@ -118,6 +118,13 @@ body {
 .trayCount, .when, .cardFoot .cm, .ghost em, .drawerTab em, .axisEnds, .axis {
   font-variant-numeric: tabular-nums;
 }
+/* The count belongs to the label beside it, not to the prose. The negative
+   margin absorbs the trailing tracking cell so the digits stay flush with
+   the content edge the name and the note align to. */
+.trayCount {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; margin-right: -0.1em;
+}
 
 /* Visually hidden, but read. Ink density and fill carry severity on screen;
    this is the same fact for anyone not looking at it. */
@@ -176,7 +183,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    so the whole spine was a row of focusable generics inside a nav that
    contained no links. The reset below means the change costs no pixels. */
 .railTile, .railMark, .segItem, .railAvatar, .dockAvatar, .late {
-  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 0; padding: 0;
   -webkit-appearance: none;
 }
 /* Three things that looked like controls and were spans. The account disc
@@ -256,6 +264,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
      and every card's left edge resolve to the same x. */
   padding: 0 28px; height: 60px;
 }
+.word { font-size: 15px; letter-spacing: var(--tr-15); }
 .word {
   display: inline-flex; align-items: baseline;
   font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
@@ -307,7 +316,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .ghost em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-1); }
 .headSearch { display: none; }
 
-.views { flex: none; display: flex; align-items: center; padding: 0 25px 14px; }
+/* 25 on the left because the segmented pill carries its own 3px of optical
+   inset; the two edges then land on the same line as the header and cards. */
+.views { flex: none; display: flex; align-items: center; padding: 0 28px 14px 25px; }
 .seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash); border-radius: var(--r-pill); }
 .segItem {
   display: inline-flex; align-items: center; gap: 7px;
@@ -329,7 +340,11 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    Ruled columns, not filled boxes. The sheet stays one surface. */
 .board {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(5, minmax(0, 312px));
+  /* `safe` is load-bearing: a centred grid that overflows puts its leading
+     content out of reach of the scroller, which is exactly what the board
+     becomes below 1100. It centres when it fits and starts when it does not. */
+  justify-content: safe center;
   grid-auto-rows: 100%;
   gap: 0;
   /* The dock's band is real layout, not something masked over. 48px of dock
@@ -451,7 +466,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   font-size: 14px; line-height: 1.36; font-weight: 600;
   letter-spacing: var(--tr-14); color: var(--ink-1); margin: 0;
   min-width: 0;
-  text-wrap: pretty;
+  /* Titles are clamped to three lines, so they sit inside the balancer's own
+     line cap. Notes keep `pretty`, which is the right tool for a paragraph. */
+  text-wrap: balance;
   overflow-wrap: break-word;
   /* Three lines, clamped by the row above; the trim happens at a word
      boundary in the renderer. A character-level clamp is what produces
@@ -680,6 +697,46 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
 .menuVeil { position: fixed; inset: 0; z-index: 7; }
 
+/* Painted at the same weight as a live control, four view tabs and three
+   tools promised a Schedule and a Calendar that do not exist. They are drawn
+   as what they are — coming, not broken — and they answer the keyboard by
+   saying so rather than by doing nothing. */
+/* Quiet, but legible: ink-4 is decorative by the file's own rule and never
+   type, so the label sits at ink-3 and only the glyph drops to ink-4. */
+[aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+[aria-disabled="true"]:hover { background: none; color: var(--ink-3); }
+[aria-disabled="true"] svg { color: var(--ink-4); }
+
+/* The composer is a card, not a dialog: the thing being made looks like the
+   thing it will be, in the column it will live in. */
+.card[data-draft] { --card-ring: 0 0 0 1.5px var(--indigo); cursor: default; }
+.card[data-draft] .cardTitle {
+  outline: none; min-height: 19px; cursor: text;
+  text-wrap: pretty;
+}
+.card[data-draft] .cardTitle:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-4);
+}
+.draftHint {
+  grid-column: 2; grid-row: 3;
+  margin: 0; font-size: 11px; font-family: var(--font-mono);
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+
+/* The count of tasks with no day, said in words where a thumb and a screen
+   reader can both reach it. */
+.undated {
+  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-2); background: none; border: 0; padding: 0;
+  cursor: pointer; text-underline-offset: 3px;
+}
+.undated { position: relative; }
+/* A word in a sentence, at the size the sentence is set; the target it
+   answers to is taken behind the facts either side of it. */
+.undated::before { content: ""; position: absolute; inset: -14px -6px; }
+.undated:hover { color: var(--ink-1); text-decoration: underline; }
+
 /* ── the dock ──────────────────────────────────────────────────── */
 .dock {
   /* The foot is one object in three states, so the strip and the dock share
@@ -733,6 +790,12 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .dockPrimary svg { width: 16px; height: 16px; }
 .dockPrimary:active { transform: scale(0.985); }
 .dockRule { width: 1px; height: 22px; background: var(--line); margin: 0 3px; }
+/* The foot is one object at one width from the first paint to the board; it
+   simply cannot be used yet. */
+.dock[data-idle] { box-shadow: var(--ring); }
+.dock[data-idle] .dockPrimary { background: var(--wash-2); color: var(--ink-3); }
+.dock[data-idle] .dockField, .dock[data-idle] .dockAvatar { color: var(--ink-3); }
+.dock[data-idle] .dockAvatar { background: var(--wash-2); }
 .dockAvatar {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--ink); color: var(--white);
@@ -860,7 +923,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   z-index: 6;
   display: flex; align-items: center; justify-content: center;
   flex-wrap: nowrap; gap: 10px;
-  width: var(--dock-w); max-width: calc(100% - 32px); box-sizing: border-box;
+  width: max-content; min-width: min(var(--dock-w), calc(100% - 36px));
+  max-width: min(760px, calc(100% - 36px)); box-sizing: border-box;
   min-height: 36px; padding: 0 6px 0 14px;
   border-radius: var(--r-pill);
   background: var(--ink-1); color: var(--on-ink-1);
@@ -875,7 +939,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .trayAdd { transition: opacity var(--dur) var(--curve); }
 .carry b { font-weight: 600; }
 .carryName {
-  flex: 1 1 auto; min-width: 0; text-align: left;
+  flex: 0 1 auto; min-width: 24ch; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* A hint is one phrase and never breaks. Wrapping put "put it back" in white
@@ -929,6 +993,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 @keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: 0.7; } }
 .loadCard { background: var(--white); box-shadow: var(--ring); border-radius: var(--r-card); padding: 12px; display: grid; gap: 9px; }
+.loadSay { bottom: 78px; z-index: 4; }
 .loadSay {
   position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
   font-size: 13px; font-weight: 400; color: var(--ink-3); z-index: 3;
@@ -1102,6 +1167,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .drawer { width: 364px; }
   .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
+/* The chrome yields before the name of the project does. Visually hidden
+   rather than removed, so the controls keep their accessible names. */
+@media (max-width: 1100px) {
+  .head .ghost > span {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+}
 @media (max-width: 900px) {
   :root { --inset: 12px; }
   /* Today's date and the day count can wait for a wider screen. What is
@@ -1180,7 +1253,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .sheet::after, .sheet::before { display: none; }
   .dock { display: none; }
   .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
-  .loadSay { bottom: 16px; }
+  .loadSay { bottom: 72px; }
   .spec { padding: 4px 16px 24px; }
 }
 </style>
@@ -1229,6 +1302,8 @@ let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
 let flyId = null;       /* the card that should travel on the next repaint  */
 let refocusPart = null; /* which part of the card to land focus on          */
+let draftLane = null;   /* the column currently composing a new task        */
+let seq = 0;
 let undoTimer = null;
 let menuFor = null;     /* the card whose move menu is open                 */
 let menuAt = "";
@@ -1331,12 +1406,16 @@ function daysLate(iso) {
   return days + (days === 1 ? " day" : " days");
 }
 
+function bindName(text) {
+  return String(text).replace(/ & /g, "\u00a0&\u00a0");
+}
+
 function timeOf(task) {
   if (task.lane === "done") return { kind: "done", label: "" };
   if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
   if (!task.dueAt) return { kind: "none", label: "" };
   const label = dayLabel(task.dueAt);
-  if (task.dueTone === "overdue") return { kind: "overdue", label: daysLate(task.dueAt) };
+  if (task.dueTone === "overdue") return { kind: "overdue", label: dayLabel(task.dueAt) };
   if (task.dueTone === "today") return { kind: "today", label };
   return { kind: "soon", label };
 }
@@ -1353,7 +1432,7 @@ function card(task, force, stop) {
      accessible name and its tooltip, and the header's own "1 overdue" chip
      teaches the filled-ink mapping in situ. */
   const SAID = {
-    overdue: [time.label + " overdue", ""],
+    overdue: [daysLate(task.dueAt) + " overdue, due " + time.label, "Overdue, due "],
     today: ["Due today", "Due "],
     soon: ["Due " + time.label, "Due "],
     milestone: ["Milestone, due " + time.label, "Milestone "],
@@ -1367,7 +1446,7 @@ function card(task, force, stop) {
   const bits = [];
   if (task.tag) {
     bits.push(CLIENTS.has(task.tag)
-      ? '<span class="who">' + esc(task.tag) + "</span>"
+      ? '<span class="who">' + bindName(esc(task.tag)) + "</span>"
       : '<span class="tag">' + esc(task.tag) + "</span>");
   }
   /* One word. The row has to carry whose wedding it is, which room of the
@@ -1382,7 +1461,7 @@ function card(task, force, stop) {
   return (
     '<article class="card" data-id="' + esc(task.id) + '" draggable="true"' +
     ' aria-label="' + esc(task.title) + '" aria-describedby="cd-' + esc(task.id) + '"' +
-    (task.note && !done ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
+    (task.note ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
     ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Task, movable"') +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (task.id === carriedId ? ' aria-grabbed="true"' : "") +
@@ -1396,13 +1475,13 @@ function card(task, force, stop) {
     '<div class="cardTitleRow">' +
       (show ? '<span class="when" data-t="' + time.kind + '" title="' + esc(said[0]) + '">' +
         label + "</span>" : "") +
-      '<p class="cardTitle" id="ct-' + esc(task.id) + '">' + esc(task.title) + "</p>" +
+      '<p class="cardTitle" id="ct-' + esc(task.id) + '">' + bindName(esc(task.title)) + "</p>" +
       '<span class="sr" id="cd-' + esc(task.id) + '">' + esc([
         said[0], task.note, task.tag, task.priority ? task.priority + " priority" : "",
         task.comments ? task.comments + " comments" : "",
       ].filter(Boolean).join(". ")) + "</span>" +
     "</div>" +
-    (task.note && !done ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
+    (task.note ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
       (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
       '<button class="cardDots" data-act="menu" tabindex="' + (stop ? "0" : "-1") +
@@ -1445,15 +1524,19 @@ function head() {
     '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
     '<div class="headFacts">' +
       '<span class="today">' + todayLabel() + "</span>" +
-      (total && !lateOnly ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
+      (total ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
       /* The control survives at zero while the filter is on, or clearing the
          last overdue task leaves the operator with an empty board and no way
          back. */
       (overdue || lateOnly
-        ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") + '">' +
-          (lateOnly ? "Showing " + overdue + " overdue" + I.close : overdue + " overdue") + "</button>"
+        ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") +
+          '" title="' + (lateOnly ? "Show all " + total + " tasks"
+            : "Show only the " + overdue + " overdue " + (overdue === 1 ? "task" : "tasks")) + '">' +
+          overdue + " overdue" + (lateOnly ? I.close : "") + "</button>"
         : "") +
-      (lateOnly ? "" : "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>") +
+      (undated ? '<button type="button" class="undated" data-act="planning">' +
+        undated + " with no date</button>" : "") +
+      "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search">' + I.search + "</button>" +
@@ -1469,12 +1552,18 @@ function views() {
   const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
   return (
     '<div class="views"><nav class="seg" aria-label="View">' +
+    /* Painted at the same weight as a control that works, these promised a
+       Schedule and a Calendar nobody has built. Drawn as unavailable they
+       stop lying, and they say why when asked rather than doing nothing. */
     B.views.map((v) => '<button type="button" class="segItem"' +
-      (v === "Board" ? ' data-active aria-current="true"' : "") + ">" + icons[v] + "<span>" + v + "</span></button>").join("") +
+      (v === "Board"
+        ? ' data-active aria-current="true"'
+        : ' aria-disabled="true" title="' + v + ' is not built yet"') +
+      ">" + icons[v] + "<span>" + v + "</span></button>").join("") +
     '</nav><div class="viewTools">' +
-      '<button class="ghost">' + I.filter + "<span>Filter</span></button>" +
-      '<button class="ghost">' + I.sort + "<span>Sort</span></button>" +
-      '<button class="ghost">' + I.display + "<span>Display</span></button>" +
+      ["Filter", "Sort", "Display"].map((t) =>
+        '<button class="ghost" aria-disabled="true" title="' + t + ' is not built yet">' +
+        I[t.toLowerCase()] + "<span>" + t + "</span></button>").join("") +
     "</div></div>"
   );
 }
@@ -1495,24 +1584,31 @@ function board() {
       /* Under a filter the board states itself once, at the foot. A
          board-scoped sentence sitting in a column slot reads as a claim
          about that column. */
-      const empty = lateOnly ? "" : c.empty;
+      /* One instruction on the sheet, in the column the work starts in. The
+         other four columns keep their note, so each still teaches what it
+         holds without four of them issuing an order. */
+      const empty = lateOnly || (!allTasks().length && c.id !== B.columns[0].id) ? "" : c.empty;
       return (
         '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
           (rows.length ? "" : " data-empty") +
+          ' aria-describedby="tn-' + c.id + '"' +
           ' role="region" aria-label="' +
           esc(c.name) + ", " + rows.length + (rows.length === 1 ? " task" : " tasks") + '">' +
         '<div class="trayHead"><div class="trayTop">' +
           '<span class="pip" aria-hidden="true"></span>' +
           '<h2 class="trayName">' + esc(c.name) + "</h2>" +
           '<span class="trayCount" aria-hidden="true">' + rows.length + "</span></div>" +
-          '<p class="trayNote">' + esc(c.note) + "</p></div>" +
+          '<p class="trayNote" id="tn-' + c.id + '">' + esc(c.note) + "</p></div>" +
         '<div class="trayBody">' +
           (rows.length ? rows.map((t) => card(t, null, t.id === focusId)).join("")
             : empty ? '<p class="trayEmpty">' + esc(empty) + "</p>" : "") +
+          (draftLane === c.id ? draft() : "") +
         "</div>" +
         /* "Add task" also sits on the dock, ten pixels below, meaning the
            whole project. This one means this column. */
-        '<button class="trayAdd">' + I.plus + "<span>Add here</span></button>" +
+        '<button class="trayAdd" data-act="add" data-lane="' + c.id +
+          '" aria-label="Add a task to ' + esc(c.name) + '">' +
+          I.plus + "<span>Add here</span></button>" +
         "</section>"
       );
     }).join("") + "</div>"
@@ -1524,11 +1620,28 @@ function dock() {
     '<div class="dock">' +
       '<button class="dockField">' + I.search + "<span>Search " + esc(B.workspace) + "</span>" +
         "<kbd>" + MOD + "K</kbd></button>" +
-      '<button class="dockPrimary">' + I.plus + "<span>Add task</span></button>" +
+      '<button class="dockPrimary" data-act="add" data-lane="' + B.columns[0].id + '">' +
+        I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
       '<button type="button" class="dockAvatar" aria-label="' + esc(B.operator.role) + '">' +
         B.operator.initials + "</button>" +
     "</div>"
+  );
+}
+
+/* The composer. It is a card in the tray it belongs to, with the title as
+   the only field, because a task is a sentence and everything else about it
+   can be decided afterwards on the card itself. */
+function draft() {
+  return (
+    '<article class="card" data-draft>' +
+    '<button type="button" class="tick" tabindex="-1" aria-hidden="true">' + I.check + "</button>" +
+    '<div class="cardTitleRow">' +
+      '<p class="cardTitle" contenteditable="plaintext-only" role="textbox"' +
+      ' aria-label="What has to happen?" data-placeholder="What has to happen?"></p>' +
+    "</div>" +
+    '<p class="draftHint">Enter to add \u00b7 Esc to discard</p>' +
+    "</article>"
   );
 }
 
@@ -1548,21 +1661,26 @@ function footPill() {
   if (task) {
     return (
       '<div class="carry">' +
-      '<span class="carryName">Moving <b>' + esc(shortTitle(task.title)) + "</b></span>" +
+      /* The live region already said "Picked up", so the strip leads with
+         the subject rather than repeating the verb. */
+      '<span class="carryName"><b>' + esc(shortTitle(task.title)) + "</b></span>" +
       '<em><kbd data-keys="arrows">\u2191\u2193\u2190\u2192</kbd> move</em>' +
-      "<em><kbd>Space</kbd> drop it here</em>" +
-      "<em><kbd>Esc</kbd> cancel the move</em>" +
+      "<em><kbd>Space</kbd> drop</em>" +
+      "<em><kbd>Esc</kbd> cancel</em>" +
       "</div>"
     );
   }
   if (undone) {
     const what = undone.kind === "done"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> is done."
+      : undone.kind === "add"
+      ? "Added <b>" + esc(shortTitle(undone.title)) + "</b> to " + esc(laneName(undone.toLane)) + "."
       : "Moved <b>" + esc(shortTitle(undone.title)) + "</b> to " + esc(laneName(undone.toLane)) + ".";
     return (
       '<div class="carry">' +
       '<span class="carryName">' + what + "</span>" +
       '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
+      (history.length > 1 ? "<em>" + (history.length - 1) + " more</em>" : "") +
       "<em><kbd>" + MOD + "Z</kbd></em>" +
       "</div>"
     );
@@ -1621,7 +1739,8 @@ function drawer() {
     p.unscheduled.map((t) =>
       '<div class="drawerRow"><button type="button" class="box" role="checkbox" aria-checked="false" aria-label="Select ' +
       esc(t) + '"></button><span>' + esc(t) +
-      '</span><button type="button" class="sched">Schedule ' + I.chevron + "</button></div>").join("") +
+      '</span><button type="button" class="sched" aria-label="Pick a day for ' + esc(t) +
+      '">Pick a day ' + I.chevron + "</button></div>").join("") +
     "</div>" +
     '<button class="drawerAdd">' + I.plus + "<span>Add unscheduled task</span></button></aside>"
   );
@@ -1774,6 +1893,10 @@ function flyCompleted(target) {
   const dy = was.top - now.top;
   if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { land(); return; }
 
+  /* --motion-fast governs a state change; this is a journey across the
+     sheet, and a fixed 260ms reads as a teleport at 1000px and as a lag at
+     120px. Stated here rather than added to the token ladder. */
+  const travel = Math.round(Math.min(460, Math.max(220, 170 + Math.hypot(dx, dy) * 0.22)));
   const ghost = node.cloneNode(true);
   ghost.className = node.className + " cardGhost";
   ghost.removeAttribute("id");
@@ -1782,6 +1905,7 @@ function flyCompleted(target) {
   ghost.style.top = was.top + "px";
   ghost.style.width = was.width + "px";
   ghost.style.height = was.height + "px";
+  ghost.style.transitionDuration = travel + "ms";
   document.body.appendChild(ghost);
   node.style.opacity = "0";
   /* A committed frame before the offset is released, or the browser has no
@@ -1801,8 +1925,11 @@ function flyCompleted(target) {
     if (event.propertyName === "transform" && event.target === ghost) finish();
   });
   /* A transition that never fires must not leave the card invisible. */
-  setTimeout(finish, 400);
+  setTimeout(finish, travel + 140);
 }
+
+const history = [];
+let undoing = false;
 
 function clearUndo() {
   clearTimeout(undoTimer);
@@ -1813,15 +1940,14 @@ function clearUndo() {
    rather than at each call site means every route to a change — the tick,
    the menu, a drop — inherits the same model. */
 function arm(act) {
+  if (undoing) return;
   clearTimeout(undoTimer);
+  history.push(act);
+  if (history.length > 10) history.shift();
   undone = act;
-  undoTimer = setTimeout(() => {
-    undone = null;
-    /* The live region must not go on offering an undo that has lapsed. */
-    const node = document.getElementById("say");
-    if (node && node.textContent.indexOf("to undo") !== -1) say("That undo has expired.");
-    mount();
-  }, 6000);
+  /* The strip retires; the record does not. Nothing that used to be true
+     stops being true because six seconds passed. */
+  undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
 }
 
 /* Suspended while the operator is reading or reaching for it — the strip
@@ -1864,9 +1990,27 @@ function toggleDone(id) {
 }
 
 function undoLast() {
-  if (!undone) { say("Nothing left to undo."); return; }
-  const act = undone;
+  const act = history.pop();
+  if (!act) { say("Nothing left to undo."); return; }
   clearUndo();
+  undoing = true;
+  try { runUndo(act); } finally { undoing = false; }
+  /* The strip now shows whatever is left beneath, so the operator can see
+     the way back is still open. */
+  if (history.length) { undone = history[history.length - 1]; clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { undone = null; mount(); }, 6000); }
+  mount();
+}
+
+function runUndo(act) {
+  if (act.kind === "add") {
+    const rows = allTasks();
+    const at = rows.findIndex((t) => t.id === act.id);
+    if (at !== -1) rows.splice(at, 1);
+    say(act.title + " removed again.");
+    mount();
+    return;
+  }
   if (act.kind === "done") { toggleDone(act.id); return; }
   const task = taskById(act.id);
   flyFrom = document.querySelector('.card[data-id="' + act.id + '"]');
@@ -1876,7 +2020,6 @@ function undoLast() {
   focusId = act.id;
   refocus = true;
   say((task ? task.title : "The task") + " is back in " + laneName(act.lane) + ".");
-  mount();
 }
 
 function walk(dx, dy) {
@@ -1923,8 +2066,41 @@ function closeMenu() {
   return true;
 }
 
+function commitDraft(field) {
+  const title = field.textContent.trim().replace(/\s+/g, " ");
+  const lane = draftLane;
+  draftLane = null;
+  if (!title) { say("Nothing typed, so nothing was added."); mount(); return; }
+  seq += 1;
+  const id = "new-" + seq;
+  const rows = allTasks();
+  const before = tasksFor(lane).length ? tasksFor(lane)[tasksFor(lane).length - 1] : null;
+  const task = { id: id, title: title, lane: lane, tag: "", priority: "", comments: 0 };
+  const at = before ? rows.findIndex((t) => t.id === before.id) + 1 : rows.length;
+  rows.splice(at, 0, task);
+  arm({ kind: "add", id: id, title: title, toLane: lane });
+  focusId = id;
+  refocus = true;
+  say(title + " added to " + laneName(lane) + ". Press " + MOD + "Z to undo.");
+  mount();
+}
+
 function onKey(event) {
   const key = event.key;
+
+  /* The draft owns Enter and Escape while it is open; nothing else does. */
+  const field = event.target.closest && event.target.closest(".card[data-draft] .cardTitle");
+  if (field) {
+    if (key === "Enter") { event.preventDefault(); commitDraft(field); return; }
+    if (key === "Escape") {
+      event.preventDefault();
+      draftLane = null;
+      say("Discarded.");
+      mount();
+      return;
+    }
+    return;
+  }
 
   /* Board-wide keys, live wherever focus is inside the sheet. */
   if ((event.metaKey || event.ctrlKey) && (key === "z" || key === "Z")) {
@@ -1971,6 +2147,12 @@ function onKey(event) {
     }
     refocus = true; mount(); return;
   }
+  if (key === "Escape" && openNoteId === id && !carriedId) {
+    event.preventDefault();
+    openNoteId = null;
+    say("Note closed.");
+    refocus = true; mount(); return;
+  }
   if (key === "Escape" && carriedId) {
     event.preventDefault();
     const title = taskById(carriedId).title;
@@ -2015,6 +2197,15 @@ function onClick(event) {
     return;
   }
   if (what === "undo") { undoLast(); return; }
+  if (what === "add") {
+    draftLane = act.dataset.lane;
+    openNoteId = null;
+    say("New task in " + laneName(draftLane) + ". Type it, then press Enter.");
+    mount();
+    const field = document.querySelector(".card[data-draft] .cardTitle");
+    if (field) field.focus();
+    return;
+  }
   if (what === "menu") {
     const card = act.closest(".card");
     const box = act.getBoundingClientRect();
@@ -2099,6 +2290,7 @@ function onDragStart(event) {
   const card = event.target.closest && event.target.closest(".card[data-id]");
   if (!card || !card.closest(".board")) return;
   carriedId = card.dataset.id;
+  holdUndo();
   const at = place(carriedId);
   carriedFrom = { lane: laneIds()[at.x], index: at.y };
   card.setAttribute("data-force", "drag");
@@ -2147,6 +2339,13 @@ function onDrop(event) {
   if (!carriedId || !overLane) return;
   event.preventDefault();
   const id = carriedId;
+  /* Picking a card up and putting it back is a non-event. It was arming an
+     undo and announcing a move. */
+  if (overLane.lane === carriedFrom.lane && overLane.index === carriedFrom.index) {
+    carriedId = null; carriedFrom = null; overLane = null;
+    mount();
+    return;
+  }
   const sameLane = overLane.lane === carriedFrom.lane;
   const from = carriedFrom;
   const task = taskById(id);
@@ -2166,6 +2365,7 @@ function onDrop(event) {
 }
 
 function onDragEnd() {
+  releaseUndo();
   stopEdge(document.querySelector(".board"));
   document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
   document.querySelectorAll(".dropLine").forEach((n) => n.remove());
@@ -2370,7 +2570,8 @@ window.__signal = {
   setState(next) {
     state = next;
     carriedId = null; focusId = null; lateOnly = false; menuFor = null;
-    openNoteId = null; flyId = null; flyFrom = null;
+    openNoteId = null; flyId = null; flyFrom = null; draftLane = null;
+    history.length = 0;
     clearUndo();
   },
 };

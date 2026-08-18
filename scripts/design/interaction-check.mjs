@@ -190,8 +190,12 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   const page = await open();
   await page.locator(".late").click();
   await page.waitForTimeout(150);
-  ok("the chip states the filter", (await page.locator(".late").textContent()).startsWith("Showing"));
-  ok("the header stops asserting a total", (await page.locator(".ratio").count()) === 0);
+  /* The chip is the value in both states; aria-pressed and the close glyph
+     carry "this is on" and "this is the way out", so the foot strip is the
+     only place the filter is stated in words. */
+  ok("the chip stays the value", (await page.locator(".late").textContent()).trim().startsWith("1 overdue"));
+  ok("and reads as pressed", (await page.locator('.late[aria-pressed="true"]').count()) === 1);
+  ok("the standing project facts stay put", (await page.locator(".ratio").count()) === 1);
   ok("a way back is on screen", (await page.locator('.carry [data-act="showall"]').count()) === 1);
   const lines = await page.$$eval(".trayEmpty", (n) => n.map((x) => x.textContent));
   ok("the board says it once, not five times", lines.length <= 1, JSON.stringify(lines));
@@ -400,9 +404,14 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.locator(".card .tick").first().click();
   await page.waitForTimeout(500);
   const undoBar = await page.locator(".carry").boundingBox();
-  ok("the undo strip shares the dock's silhouette",
-    Math.abs(undoBar.x - dock.x) < 1 && Math.abs(undoBar.width - dock.width) < 1,
-    "dock " + Math.round(dock.x) + "/" + Math.round(dock.width) + " strip " + Math.round(undoBar.x) + "/" + Math.round(undoBar.width));
+  /* The strip is no longer pinned to the dock's width — it has to be able to
+     say the card's name — but it must still share its centre line and never
+     be narrower than the object it sits on. */
+  ok("the strip shares the dock's centre line",
+    Math.abs((undoBar.x + undoBar.width / 2) - (dock.x + dock.width / 2)) < 1,
+    "dock centre " + Math.round(dock.x + dock.width / 2) + " strip centre " + Math.round(undoBar.x + undoBar.width / 2));
+  ok("and is never narrower than it", undoBar.width >= dock.width - 1,
+    "dock " + Math.round(dock.width) + " strip " + Math.round(undoBar.width));
   const alive = await page.locator(".trayAdd:not([data-under])").count();
   ok("and does not blink out every Add row", alive >= 3, alive + " of 5 still live");
   await page.close();
@@ -462,6 +471,151 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
       /\s(a|an|the|and|or|but|if|to|of|with|for|in|on|at|by|from|that|which)…$/i.test(t)));
   ok("no ellipsis lands on punctuation or a dangling word", bad.length === 0, JSON.stringify(bad));
   await page.close();
+}
+
+
+/* ── creating a task is real ──────────────────────────────────────── */
+{
+  const page = await open();
+  const before = await counts(page);
+  await page.locator(".dockPrimary").click();
+  await page.waitForTimeout(200);
+  ok("the dock's pill opens a composer", (await page.locator(".card[data-draft]").count()) === 1);
+  ok("in the column it will live in",
+    (await page.locator('.tray[data-lane="todo"] .card[data-draft]').count()) === 1);
+  ok("with the caret already in it",
+    await page.evaluate(() => document.activeElement.closest(".card[data-draft]") !== null));
+  await page.keyboard.type("Chase the cake delivery slot");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(250);
+  ok("enter adds it", (await counts(page)).todo === before.todo + 1, JSON.stringify(await counts(page)));
+  ok("and it says so", (await page.locator("#say").textContent()).indexOf("added to To do") !== -1);
+  ok("creating is reversible like everything else",
+    (await page.locator('.carry [data-act="undo"]').count()) === 1);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(250);
+  ok("ctrl+z removes it again", (await counts(page)).todo === before.todo);
+
+  await page.locator('.tray[data-lane="review"] .trayAdd').click();
+  await page.waitForTimeout(200);
+  ok("a column's own Add opens it there",
+    (await page.locator('.tray[data-lane="review"] .card[data-draft]').count()) === 1);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  ok("escape discards it", (await page.locator(".card[data-draft]").count()) === 0);
+  ok("and nothing was added", (await counts(page)).review === before.review);
+  await page.close();
+}
+
+/* ── the way back is more than one deep ───────────────────────────── */
+{
+  const page = await open();
+  const before = await counts(page);
+  await page.locator('.tray[data-lane="todo"] .card .tick').first().click();
+  await page.waitForTimeout(400);
+  await page.locator('.tray[data-lane="doing"] .card .tick').first().click();
+  await page.waitForTimeout(400);
+  ok("two completions land", (await counts(page)).done === before.done + 2, JSON.stringify(await counts(page)));
+  ok("and the strip says how deep the way back goes",
+    (await page.locator(".carry em").first().textContent()).indexOf("more") !== -1);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(350);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(350);
+  ok("two undos reverse both", (await counts(page)).done === before.done, JSON.stringify(await counts(page)));
+
+  /* The strip is news and retires; the record is history and does not. */
+  await page.locator('.tray[data-lane="todo"] .card .tick').first().click();
+  await page.waitForTimeout(7000);
+  ok("the strip has retired", (await page.locator(".carry").count()) === 0);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(350);
+  ok("but ctrl+z still works", (await counts(page)).done === before.done, JSON.stringify(await counts(page)));
+  await page.close();
+}
+
+/* ── nothing is drawn as live when it is not ──────────────────────── */
+{
+  const page = await open();
+  const live = await page.$$eval(".views button", (n) =>
+    n.filter((b) => b.getAttribute("aria-disabled") !== "true").map((b) => b.textContent.trim()));
+  ok("only the view that exists is drawn as live", live.length === 1 && live[0] === "Board", JSON.stringify(live));
+  const named = await page.$$eval('.views [aria-disabled="true"]', (n) =>
+    n.filter((b) => !b.getAttribute("title")).length);
+  ok("and the rest say why when asked", named === 0, named + " silent");
+  await page.close();
+}
+
+/* ── a completed card keeps its note ──────────────────────────────── */
+{
+  const page = await open();
+  const note = await page.locator('.tray[data-lane="doing"] .card').nth(2).locator(".cardNote").textContent();
+  await page.locator('.tray[data-lane="doing"] .card').nth(2).locator(".tick").click();
+  await page.waitForTimeout(500);
+  const kept = await page.$$eval('.tray[data-lane="done"] .cardNote', (n) => n.map((x) => x.textContent));
+  ok("done is where a venue's memory lives", kept.length > 0, kept.length + " notes in Done");
+  ok("including the one just completed",
+    kept.some((t) => t.slice(0, 14) === note.slice(0, 14)), JSON.stringify(kept.slice(0, 2)));
+  await page.locator('.tray[data-lane="done"] .card').first().click();
+  await page.waitForTimeout(200);
+  ok("and it opens like any other", (await page.locator(".card[data-open]").count()) === 1);
+  await page.close();
+}
+
+/* ── the strip can say what you are holding ───────────────────────── */
+{
+  for (const width of [1440, 1280, 1024, 900, 768]) {
+    const page = await open("", { width, height: 960 });
+    await page.locator('.board .card[tabindex="0"]').focus();
+    await page.keyboard.press(" ");
+    await page.waitForTimeout(200);
+    const clipped = await page.evaluate(() => {
+      const n = document.querySelector(".carryName");
+      return n ? n.scrollWidth > n.clientWidth + 1 : true;
+    });
+    ok("the card's name is not clipped at " + width, !clipped);
+    await page.close();
+  }
+}
+
+/* ── a drop that goes nowhere is not a move ───────────────────────── */
+{
+  const page = await open();
+  const card = await page.locator('.tray[data-lane="todo"] .card').first().boundingBox();
+  await page.mouse.move(card.x + card.width / 2, card.y + 20);
+  await page.mouse.down();
+  await page.mouse.move(card.x + card.width / 2, card.y + 24, { steps: 4 });
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  ok("putting a card back where it was arms no undo", (await page.locator(".carry").count()) === 0);
+  await page.close();
+}
+
+/* ── the couple's name never breaks in two ────────────────────────── */
+{
+  const page = await open("?state=dense");
+  const split = await page.evaluate(() => {
+    const range = document.createRange();
+    return [...document.querySelectorAll(".cardTitle, .who")].filter((n) => {
+      if (!/&/.test(n.textContent)) return false;
+      range.selectNodeContents(n);
+      return range.getClientRects().length > 1 &&
+        /[  ]&\s*$/.test(n.textContent.slice(0, n.textContent.indexOf("&") + 1)) === false &&
+        n.textContent.indexOf(" ") === -1;
+    }).length;
+  });
+  ok("partner names are bound", split === 0, split + " unbound");
+  await page.close();
+}
+
+/* ── the card holds a real measure at any width ───────────────────── */
+{
+  for (const width of [1440, 1920, 2560]) {
+    const page = await open("", { width, height: 960 });
+    const w = await page.evaluate(() => Math.round(document.querySelector(".board .card").getBoundingClientRect().width));
+    ok("the card is bounded at " + width, w <= 312 && w >= 220, w + "px");
+    await page.close();
+  }
 }
 
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
