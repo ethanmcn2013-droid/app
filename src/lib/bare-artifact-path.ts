@@ -27,6 +27,11 @@ export const BARE_CHROME_HEADER = "x-signal-bare-artifact";
 /** `/app/timeline/<projectSlug>/preview`, and nothing else under /app. */
 const TIMELINE_PREVIEW_PATH = /^\/app\/timeline\/[^/]+\/preview\/?$/;
 
+/** Every Tasks view. Studio Floor carries its own spine, its own header and
+ *  its own dock — the design's central claim is one spine, so the Studio Bar
+ *  and the product rail stand down here rather than stacking a second one. */
+const TASKS_PATH = /^\/app\/tasks(\/|$)/;
+
 export function isBareArtifactPath(pathname: string): boolean {
   return pathname === "/s" || pathname.startsWith("/s/");
 }
@@ -35,6 +40,10 @@ export function isTimelinePreviewPath(pathname: string): boolean {
   return TIMELINE_PREVIEW_PATH.test(pathname);
 }
 
+export function isFloorPath(pathname: string): boolean {
+  return TASKS_PATH.test(pathname);
+}
+
 export function isBareChromePath(pathname: string): boolean {
-  return isBareArtifactPath(pathname) || isTimelinePreviewPath(pathname);
+  return isBareArtifactPath(pathname) || isTimelinePreviewPath(pathname) || isFloorPath(pathname);
 }
