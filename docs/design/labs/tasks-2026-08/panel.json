@@ -339,6 +339,61 @@
           "done": "The chip carries the value and the fill carries the condition. This narrows round 5's visible strings and is recorded as a reversal rather than slipped in: the sentence moves to the accessible name, the tooltip and the specimen sheet, which now teaches the mapping instead of assuming it. Zero starved first lines at six widths."
         }
       ]
+    },
+    {
+      "round": 7,
+      "scores": {
+        "UI composition": 7.4,
+        "Typography": 7.8,
+        "Interaction and states": 8.0,
+        "UX and information design": 7.4,
+        "Brand and copy": 7.8,
+        "Product taste and emotional resonance": 7.4,
+        "Measured evidence": 7.9
+      },
+      "findings": 35,
+      "confirmed": 29,
+      "refuted": 6,
+      "fixed": 29,
+      "headline": "The best round, and the first where the seats were asked for an honest distance and gave one. Interaction reached 8.0 and states plainly that 9.5 is achievable inside the locked direction with nothing structural missing; Brand agrees and asks for a copy contract; Typography puts its own ceiling at 8.7 unless the card gets a real measure; UX says a composer and honest disabled states buy 8.2, and passing 9 needs a day lens the board does not have. The single most-found defect across five seats was that the loudest object on the sheet — the filled-ink Add task pill — did nothing at all, along with all sixteen other chrome controls.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 9.0,
+          "problem": "All seventeen chrome controls were dead — not a state change, not a cursor hint, not a live-region word. The most prominent object on the sheet is the one filled-ink pill labelled Add task, and it did nothing; on the empty board the copy reads \"Add the first thing you have to do\" and there was no working way to do it, so first contact for a venue owner ended in a dead click. Four view tabs and three tools were painted at full strength promising a Schedule and a Calendar nobody has built.",
+          "done": "Creating a task is real. The composer is a card, not a dialog: it appears in the column it will live in, the caret is already in it, Enter adds, Escape discards, and creation is reversible through the same strip as a completion. The views and tools that do not exist are drawn as unavailable — quiet but legible, since this file's own rule makes ink-4 decorative and never type — and they say why when asked."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 9.0,
+          "problem": "Pinning the foot strip to the dock's width left the card's name 81px after three keyboard hints, so the product's signature gesture read \"Moving Confi…\" at every width measured. Four seats found it independently. A venue owner who cannot tell what she is holding will not use the keyboard model a second time.",
+          "done": "The strip sizes to its content with the dock's width as a floor, so the foot still reads as one family and can never be narrower than the object it sits on. The hints are one word each. Asserted unclipped at 1440, 1280, 1024, 900 and 768."
+        },
+        {
+          "seat": "Typography",
+          "cost": 8.0,
+          "problem": "The stated ceiling for this seat: the card gave the title 181px at 1440 — twenty-two characters — and nothing is excellent at twenty-two characters. Five columns stretching to fill any sheet also meant the 234px card the specimen sheet declares was only true at one viewport. Separately the rag was unmanaged: \"Deposit invoice settled, Mara / & Finn\" set 179px against 38px, and the couple's name broke across two lines.",
+          "done": "The column is bounded at 312 and centred, with `safe` centring because a centred grid that overflows puts its leading content out of reach of its own scroller — which is what the board becomes below 1100. Titles set with text-wrap: balance, re-breaking fifteen of the thirty-two dense titles. Partner names are bound at render, not in the data, because CLIENTS is compared literally and a non-breaking space there would silently drop every card out of client-tag styling."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 7.0,
+          "problem": "The board treated an action as a moment rather than as an entry in a history, so both the way back and the operator's place evaporated the instant a second action happened. Operators act in runs; the safety model was built for one action at a time.",
+          "done": "Every reversible act pushes onto a stack, the strip shows how deep it goes, and Ctrl+Z keeps working after the strip has retired — the strip is news and lives six seconds, the record is history and does not. Reversing an act no longer counts as an act, which is what had made the second undo reach the wrong thing."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 8.0,
+          "problem": "Ticking a card destroyed its note. Done is exactly where a venue's memory lives, and \"Three asked for dates. Tea urn was the hero. Repeat the format in spring.\" was invisible on the board it was written on, by any route — the note was gated on the task not being done, and a done card opened nothing.",
+          "done": "A completed card keeps its note under the same two-line clamp, and click and Enter expand it in place exactly as they do elsewhere."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 5.0,
+          "problem": "The chip family carried two units: every chip stated a point in time and the overdue one stated a magnitude, so the reader had to switch. The count of tasks with no day existed only as a bare numeral on a ghost button, its meaning hidden in a title attribute nobody hovers. The overdue chip read as a badge rather than as the control it is.",
+          "done": "One unit family — every chip is a point in time, with the day count moved to the accessible name and the tooltip. The count with no day is words in the header and opens Planning. The chip is named for what it does, in both states, from the same count that prints its label."
+        }
+      ]
     }
   ]
 }

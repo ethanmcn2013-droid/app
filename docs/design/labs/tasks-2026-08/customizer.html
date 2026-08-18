@@ -378,6 +378,10 @@ body {
 .deck .trayCount, .deck .when, .deck .cardFoot .cm, .deck .ghost em, .deck .drawerTab em, .deck .axisEnds, .deck .axis {
   font-variant-numeric: tabular-nums;
 }
+.deck .trayCount {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; margin-right: -0.1em;
+}
 .deck .sr {
   position: absolute; width: 1px; height: 1px;
   margin: -1px; padding: 0; overflow: hidden;
@@ -420,7 +424,8 @@ body {
 .deck .railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
 .deck .railGroup { display: grid; gap: 4px; }
 .deck .railTile, .deck .railMark, .deck .segItem, .deck .railAvatar, .deck .dockAvatar, .deck .late {
-  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 0; padding: 0;
   -webkit-appearance: none;
 }
 .deck .railAvatar, .deck .dockAvatar, .deck .late { cursor: pointer; }
@@ -487,6 +492,7 @@ body {
   
   padding: 0 28px; height: 60px;
 }
+.deck .word { font-size: 15px; letter-spacing: var(--tr-15); }
 .deck .word {
   display: inline-flex; align-items: baseline;
   font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
@@ -532,7 +538,7 @@ body {
 .deck .ghost:hover svg { color: var(--ink-2); }
 .deck .ghost em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-1); }
 .deck .headSearch { display: none; }
-.deck .views { flex: none; display: flex; align-items: center; padding: 0 25px 14px; }
+.deck .views { flex: none; display: flex; align-items: center; padding: 0 28px 14px 25px; }
 .deck .seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash); border-radius: var(--r-pill); }
 .deck .segItem {
   display: inline-flex; align-items: center; gap: 7px;
@@ -551,7 +557,9 @@ body {
 .deck .viewTools { margin-left: auto; display: flex; gap: 2px; }
 .deck .board {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(5, minmax(0, 312px));
+  
+  justify-content: safe center;
   grid-auto-rows: 100%;
   gap: 0;
   
@@ -640,7 +648,8 @@ body {
   font-size: 14px; line-height: 1.36; font-weight: 600;
   letter-spacing: var(--tr-14); color: var(--ink-1); margin: 0;
   min-width: 0;
-  text-wrap: pretty;
+  
+  text-wrap: balance;
   overflow-wrap: break-word;
   
   display: block;
@@ -805,6 +814,31 @@ body {
 .deck .cardMenu button[aria-current] { font-weight: 600; }
 .deck .cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
 .deck .menuVeil { position: fixed; inset: 0; z-index: 7; }
+.deck [aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+.deck [aria-disabled="true"]:hover { background: none; color: var(--ink-3); }
+.deck [aria-disabled="true"] svg { color: var(--ink-4); }
+.deck .card[data-draft] { --card-ring: 0 0 0 1.5px var(--indigo); cursor: default; }
+.deck .card[data-draft] .cardTitle {
+  outline: none; min-height: 19px; cursor: text;
+  text-wrap: pretty;
+}
+.deck .card[data-draft] .cardTitle:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-4);
+}
+.deck .draftHint {
+  grid-column: 2; grid-row: 3;
+  margin: 0; font-size: 11px; font-family: var(--font-mono);
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.deck .undated {
+  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-2); background: none; border: 0; padding: 0;
+  cursor: pointer; text-underline-offset: 3px;
+}
+.deck .undated { position: relative; }
+.deck .undated::before { content: ""; position: absolute; inset: -14px -6px; }
+.deck .undated:hover { color: var(--ink-1); text-decoration: underline; }
 .deck .dock {
   
   width: var(--dock-w); box-sizing: border-box;
@@ -851,6 +885,10 @@ body {
 .deck .dockPrimary svg { width: 16px; height: 16px; }
 .deck .dockPrimary:active { transform: scale(0.985); }
 .deck .dockRule { width: 1px; height: 22px; background: var(--line); margin: 0 3px; }
+.deck .dock[data-idle] { box-shadow: var(--ring); }
+.deck .dock[data-idle] .dockPrimary { background: var(--wash-2); color: var(--ink-3); }
+.deck .dock[data-idle] .dockField, .deck .dock[data-idle] .dockAvatar { color: var(--ink-3); }
+.deck .dock[data-idle] .dockAvatar { background: var(--wash-2); }
 .deck .dockAvatar {
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--ink); color: var(--white);
@@ -955,7 +993,8 @@ body {
   z-index: 6;
   display: flex; align-items: center; justify-content: center;
   flex-wrap: nowrap; gap: 10px;
-  width: var(--dock-w); max-width: calc(100% - 32px); box-sizing: border-box;
+  width: max-content; min-width: min(var(--dock-w), calc(100% - 36px));
+  max-width: min(760px, calc(100% - 36px)); box-sizing: border-box;
   min-height: 36px; padding: 0 6px 0 14px;
   border-radius: var(--r-pill);
   background: var(--ink-1); color: var(--on-ink-1);
@@ -967,7 +1006,7 @@ body {
 .deck .trayAdd { transition: opacity var(--dur) var(--curve); }
 .deck .carry b { font-weight: 600; }
 .deck .carryName {
-  flex: 1 1 auto; min-width: 0; text-align: left;
+  flex: 0 1 auto; min-width: 24ch; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .deck .carry em { white-space: nowrap; flex: none; }
@@ -1010,6 +1049,7 @@ body {
 .deck .sk { animation: none; opacity: 0.7; }
 }
 .deck .loadCard { background: var(--white); box-shadow: var(--ring); border-radius: var(--r-card); padding: 12px; display: grid; gap: 9px; }
+.deck .loadSay { bottom: 78px; z-index: 4; }
 .deck .loadSay {
   position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
   font-size: 13px; font-weight: 400; color: var(--ink-3); z-index: 3;
@@ -1111,6 +1151,14 @@ body {
 .deck[data-w="390"] .tray { scroll-snap-align: start; }
 .deck[data-w="390"] .drawer { width: 364px; }
 .deck[data-w="390"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+.deck[data-w="768"] .head .ghost > span {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+.deck[data-w="390"] .head .ghost > span {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
 .deck[data-w="768"] { --inset: 12px; }
 .deck[data-w="768"] .headFacts span { display: none; }
 .deck[data-w="768"] .headFacts .late { display: inline-flex; }
@@ -1179,7 +1227,7 @@ body {
 .deck[data-w="390"] .sheet::after, .deck[data-w="390"] .sheet::before { display: none; }
 .deck[data-w="390"] .dock { display: none; }
 .deck[data-w="390"] .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
-.deck[data-w="390"] .loadSay { bottom: 16px; }
+.deck[data-w="390"] .loadSay { bottom: 72px; }
 .deck[data-w="390"] .spec { padding: 4px 16px 24px; }
 .deck { position: relative; }
 
@@ -1516,6 +1564,8 @@ let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
 let flyId = null;       /* the card that should travel on the next repaint  */
 let refocusPart = null; /* which part of the card to land focus on          */
+let draftLane = null;   /* the column currently composing a new task        */
+let seq = 0;
 let undoTimer = null;
 let menuFor = null;     /* the card whose move menu is open                 */
 let menuAt = "";
@@ -1618,12 +1668,16 @@ function daysLate(iso) {
   return days + (days === 1 ? " day" : " days");
 }
 
+function bindName(text) {
+  return String(text).replace(/ & /g, "\u00a0&\u00a0");
+}
+
 function timeOf(task) {
   if (task.lane === "done") return { kind: "done", label: "" };
   if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
   if (!task.dueAt) return { kind: "none", label: "" };
   const label = dayLabel(task.dueAt);
-  if (task.dueTone === "overdue") return { kind: "overdue", label: daysLate(task.dueAt) };
+  if (task.dueTone === "overdue") return { kind: "overdue", label: dayLabel(task.dueAt) };
   if (task.dueTone === "today") return { kind: "today", label };
   return { kind: "soon", label };
 }
@@ -1640,7 +1694,7 @@ function card(task, force, stop) {
      accessible name and its tooltip, and the header's own "1 overdue" chip
      teaches the filled-ink mapping in situ. */
   const SAID = {
-    overdue: [time.label + " overdue", ""],
+    overdue: [daysLate(task.dueAt) + " overdue, due " + time.label, "Overdue, due "],
     today: ["Due today", "Due "],
     soon: ["Due " + time.label, "Due "],
     milestone: ["Milestone, due " + time.label, "Milestone "],
@@ -1654,7 +1708,7 @@ function card(task, force, stop) {
   const bits = [];
   if (task.tag) {
     bits.push(CLIENTS.has(task.tag)
-      ? '<span class="who">' + esc(task.tag) + "</span>"
+      ? '<span class="who">' + bindName(esc(task.tag)) + "</span>"
       : '<span class="tag">' + esc(task.tag) + "</span>");
   }
   /* One word. The row has to carry whose wedding it is, which room of the
@@ -1669,7 +1723,7 @@ function card(task, force, stop) {
   return (
     '<article class="card" data-id="' + esc(task.id) + '" draggable="true"' +
     ' aria-label="' + esc(task.title) + '" aria-describedby="cd-' + esc(task.id) + '"' +
-    (task.note && !done ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
+    (task.note ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
     ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Task, movable"') +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (task.id === carriedId ? ' aria-grabbed="true"' : "") +
@@ -1683,13 +1737,13 @@ function card(task, force, stop) {
     '<div class="cardTitleRow">' +
       (show ? '<span class="when" data-t="' + time.kind + '" title="' + esc(said[0]) + '">' +
         label + "</span>" : "") +
-      '<p class="cardTitle" id="ct-' + esc(task.id) + '">' + esc(task.title) + "</p>" +
+      '<p class="cardTitle" id="ct-' + esc(task.id) + '">' + bindName(esc(task.title)) + "</p>" +
       '<span class="sr" id="cd-' + esc(task.id) + '">' + esc([
         said[0], task.note, task.tag, task.priority ? task.priority + " priority" : "",
         task.comments ? task.comments + " comments" : "",
       ].filter(Boolean).join(". ")) + "</span>" +
     "</div>" +
-    (task.note && !done ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
+    (task.note ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
       (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
       '<button class="cardDots" data-act="menu" tabindex="' + (stop ? "0" : "-1") +
@@ -1732,15 +1786,19 @@ function head() {
     '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
     '<div class="headFacts">' +
       '<span class="today">' + todayLabel() + "</span>" +
-      (total && !lateOnly ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
+      (total ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
       /* The control survives at zero while the filter is on, or clearing the
          last overdue task leaves the operator with an empty board and no way
          back. */
       (overdue || lateOnly
-        ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") + '">' +
-          (lateOnly ? "Showing " + overdue + " overdue" + I.close : overdue + " overdue") + "</button>"
+        ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") +
+          '" title="' + (lateOnly ? "Show all " + total + " tasks"
+            : "Show only the " + overdue + " overdue " + (overdue === 1 ? "task" : "tasks")) + '">' +
+          overdue + " overdue" + (lateOnly ? I.close : "") + "</button>"
         : "") +
-      (lateOnly ? "" : "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>") +
+      (undated ? '<button type="button" class="undated" data-act="planning">' +
+        undated + " with no date</button>" : "") +
+      "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search">' + I.search + "</button>" +
@@ -1756,12 +1814,18 @@ function views() {
   const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
   return (
     '<div class="views"><nav class="seg" aria-label="View">' +
+    /* Painted at the same weight as a control that works, these promised a
+       Schedule and a Calendar nobody has built. Drawn as unavailable they
+       stop lying, and they say why when asked rather than doing nothing. */
     B.views.map((v) => '<button type="button" class="segItem"' +
-      (v === "Board" ? ' data-active aria-current="true"' : "") + ">" + icons[v] + "<span>" + v + "</span></button>").join("") +
+      (v === "Board"
+        ? ' data-active aria-current="true"'
+        : ' aria-disabled="true" title="' + v + ' is not built yet"') +
+      ">" + icons[v] + "<span>" + v + "</span></button>").join("") +
     '</nav><div class="viewTools">' +
-      '<button class="ghost">' + I.filter + "<span>Filter</span></button>" +
-      '<button class="ghost">' + I.sort + "<span>Sort</span></button>" +
-      '<button class="ghost">' + I.display + "<span>Display</span></button>" +
+      ["Filter", "Sort", "Display"].map((t) =>
+        '<button class="ghost" aria-disabled="true" title="' + t + ' is not built yet">' +
+        I[t.toLowerCase()] + "<span>" + t + "</span></button>").join("") +
     "</div></div>"
   );
 }
@@ -1782,24 +1846,31 @@ function board() {
       /* Under a filter the board states itself once, at the foot. A
          board-scoped sentence sitting in a column slot reads as a claim
          about that column. */
-      const empty = lateOnly ? "" : c.empty;
+      /* One instruction on the sheet, in the column the work starts in. The
+         other four columns keep their note, so each still teaches what it
+         holds without four of them issuing an order. */
+      const empty = lateOnly || (!allTasks().length && c.id !== B.columns[0].id) ? "" : c.empty;
       return (
         '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
           (rows.length ? "" : " data-empty") +
+          ' aria-describedby="tn-' + c.id + '"' +
           ' role="region" aria-label="' +
           esc(c.name) + ", " + rows.length + (rows.length === 1 ? " task" : " tasks") + '">' +
         '<div class="trayHead"><div class="trayTop">' +
           '<span class="pip" aria-hidden="true"></span>' +
           '<h2 class="trayName">' + esc(c.name) + "</h2>" +
           '<span class="trayCount" aria-hidden="true">' + rows.length + "</span></div>" +
-          '<p class="trayNote">' + esc(c.note) + "</p></div>" +
+          '<p class="trayNote" id="tn-' + c.id + '">' + esc(c.note) + "</p></div>" +
         '<div class="trayBody">' +
           (rows.length ? rows.map((t) => card(t, null, t.id === focusId)).join("")
             : empty ? '<p class="trayEmpty">' + esc(empty) + "</p>" : "") +
+          (draftLane === c.id ? draft() : "") +
         "</div>" +
         /* "Add task" also sits on the dock, ten pixels below, meaning the
            whole project. This one means this column. */
-        '<button class="trayAdd">' + I.plus + "<span>Add here</span></button>" +
+        '<button class="trayAdd" data-act="add" data-lane="' + c.id +
+          '" aria-label="Add a task to ' + esc(c.name) + '">' +
+          I.plus + "<span>Add here</span></button>" +
         "</section>"
       );
     }).join("") + "</div>"
@@ -1811,11 +1882,28 @@ function dock() {
     '<div class="dock">' +
       '<button class="dockField">' + I.search + "<span>Search " + esc(B.workspace) + "</span>" +
         "<kbd>" + MOD + "K</kbd></button>" +
-      '<button class="dockPrimary">' + I.plus + "<span>Add task</span></button>" +
+      '<button class="dockPrimary" data-act="add" data-lane="' + B.columns[0].id + '">' +
+        I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
       '<button type="button" class="dockAvatar" aria-label="' + esc(B.operator.role) + '">' +
         B.operator.initials + "</button>" +
     "</div>"
+  );
+}
+
+/* The composer. It is a card in the tray it belongs to, with the title as
+   the only field, because a task is a sentence and everything else about it
+   can be decided afterwards on the card itself. */
+function draft() {
+  return (
+    '<article class="card" data-draft>' +
+    '<button type="button" class="tick" tabindex="-1" aria-hidden="true">' + I.check + "</button>" +
+    '<div class="cardTitleRow">' +
+      '<p class="cardTitle" contenteditable="plaintext-only" role="textbox"' +
+      ' aria-label="What has to happen?" data-placeholder="What has to happen?"></p>' +
+    "</div>" +
+    '<p class="draftHint">Enter to add \u00b7 Esc to discard</p>' +
+    "</article>"
   );
 }
 
@@ -1835,21 +1923,26 @@ function footPill() {
   if (task) {
     return (
       '<div class="carry">' +
-      '<span class="carryName">Moving <b>' + esc(shortTitle(task.title)) + "</b></span>" +
+      /* The live region already said "Picked up", so the strip leads with
+         the subject rather than repeating the verb. */
+      '<span class="carryName"><b>' + esc(shortTitle(task.title)) + "</b></span>" +
       '<em><kbd data-keys="arrows">\u2191\u2193\u2190\u2192</kbd> move</em>' +
-      "<em><kbd>Space</kbd> drop it here</em>" +
-      "<em><kbd>Esc</kbd> cancel the move</em>" +
+      "<em><kbd>Space</kbd> drop</em>" +
+      "<em><kbd>Esc</kbd> cancel</em>" +
       "</div>"
     );
   }
   if (undone) {
     const what = undone.kind === "done"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> is done."
+      : undone.kind === "add"
+      ? "Added <b>" + esc(shortTitle(undone.title)) + "</b> to " + esc(laneName(undone.toLane)) + "."
       : "Moved <b>" + esc(shortTitle(undone.title)) + "</b> to " + esc(laneName(undone.toLane)) + ".";
     return (
       '<div class="carry">' +
       '<span class="carryName">' + what + "</span>" +
       '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
+      (history.length > 1 ? "<em>" + (history.length - 1) + " more</em>" : "") +
       "<em><kbd>" + MOD + "Z</kbd></em>" +
       "</div>"
     );
@@ -1908,7 +2001,8 @@ function drawer() {
     p.unscheduled.map((t) =>
       '<div class="drawerRow"><button type="button" class="box" role="checkbox" aria-checked="false" aria-label="Select ' +
       esc(t) + '"></button><span>' + esc(t) +
-      '</span><button type="button" class="sched">Schedule ' + I.chevron + "</button></div>").join("") +
+      '</span><button type="button" class="sched" aria-label="Pick a day for ' + esc(t) +
+      '">Pick a day ' + I.chevron + "</button></div>").join("") +
     "</div>" +
     '<button class="drawerAdd">' + I.plus + "<span>Add unscheduled task</span></button></aside>"
   );
@@ -2061,6 +2155,10 @@ function flyCompleted(target) {
   const dy = was.top - now.top;
   if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { land(); return; }
 
+  /* --motion-fast governs a state change; this is a journey across the
+     sheet, and a fixed 260ms reads as a teleport at 1000px and as a lag at
+     120px. Stated here rather than added to the token ladder. */
+  const travel = Math.round(Math.min(460, Math.max(220, 170 + Math.hypot(dx, dy) * 0.22)));
   const ghost = node.cloneNode(true);
   ghost.className = node.className + " cardGhost";
   ghost.removeAttribute("id");
@@ -2069,6 +2167,7 @@ function flyCompleted(target) {
   ghost.style.top = was.top + "px";
   ghost.style.width = was.width + "px";
   ghost.style.height = was.height + "px";
+  ghost.style.transitionDuration = travel + "ms";
   document.body.appendChild(ghost);
   node.style.opacity = "0";
   /* A committed frame before the offset is released, or the browser has no
@@ -2088,8 +2187,11 @@ function flyCompleted(target) {
     if (event.propertyName === "transform" && event.target === ghost) finish();
   });
   /* A transition that never fires must not leave the card invisible. */
-  setTimeout(finish, 400);
+  setTimeout(finish, travel + 140);
 }
+
+const history = [];
+let undoing = false;
 
 function clearUndo() {
   clearTimeout(undoTimer);
@@ -2100,15 +2202,14 @@ function clearUndo() {
    rather than at each call site means every route to a change — the tick,
    the menu, a drop — inherits the same model. */
 function arm(act) {
+  if (undoing) return;
   clearTimeout(undoTimer);
+  history.push(act);
+  if (history.length > 10) history.shift();
   undone = act;
-  undoTimer = setTimeout(() => {
-    undone = null;
-    /* The live region must not go on offering an undo that has lapsed. */
-    const node = document.getElementById("say");
-    if (node && node.textContent.indexOf("to undo") !== -1) say("That undo has expired.");
-    mount();
-  }, 6000);
+  /* The strip retires; the record does not. Nothing that used to be true
+     stops being true because six seconds passed. */
+  undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
 }
 
 /* Suspended while the operator is reading or reaching for it — the strip
@@ -2151,9 +2252,27 @@ function toggleDone(id) {
 }
 
 function undoLast() {
-  if (!undone) { say("Nothing left to undo."); return; }
-  const act = undone;
+  const act = history.pop();
+  if (!act) { say("Nothing left to undo."); return; }
   clearUndo();
+  undoing = true;
+  try { runUndo(act); } finally { undoing = false; }
+  /* The strip now shows whatever is left beneath, so the operator can see
+     the way back is still open. */
+  if (history.length) { undone = history[history.length - 1]; clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { undone = null; mount(); }, 6000); }
+  mount();
+}
+
+function runUndo(act) {
+  if (act.kind === "add") {
+    const rows = allTasks();
+    const at = rows.findIndex((t) => t.id === act.id);
+    if (at !== -1) rows.splice(at, 1);
+    say(act.title + " removed again.");
+    mount();
+    return;
+  }
   if (act.kind === "done") { toggleDone(act.id); return; }
   const task = taskById(act.id);
   flyFrom = document.querySelector('.card[data-id="' + act.id + '"]');
@@ -2163,7 +2282,6 @@ function undoLast() {
   focusId = act.id;
   refocus = true;
   say((task ? task.title : "The task") + " is back in " + laneName(act.lane) + ".");
-  mount();
 }
 
 function walk(dx, dy) {
@@ -2210,8 +2328,41 @@ function closeMenu() {
   return true;
 }
 
+function commitDraft(field) {
+  const title = field.textContent.trim().replace(/\s+/g, " ");
+  const lane = draftLane;
+  draftLane = null;
+  if (!title) { say("Nothing typed, so nothing was added."); mount(); return; }
+  seq += 1;
+  const id = "new-" + seq;
+  const rows = allTasks();
+  const before = tasksFor(lane).length ? tasksFor(lane)[tasksFor(lane).length - 1] : null;
+  const task = { id: id, title: title, lane: lane, tag: "", priority: "", comments: 0 };
+  const at = before ? rows.findIndex((t) => t.id === before.id) + 1 : rows.length;
+  rows.splice(at, 0, task);
+  arm({ kind: "add", id: id, title: title, toLane: lane });
+  focusId = id;
+  refocus = true;
+  say(title + " added to " + laneName(lane) + ". Press " + MOD + "Z to undo.");
+  mount();
+}
+
 function onKey(event) {
   const key = event.key;
+
+  /* The draft owns Enter and Escape while it is open; nothing else does. */
+  const field = event.target.closest && event.target.closest(".card[data-draft] .cardTitle");
+  if (field) {
+    if (key === "Enter") { event.preventDefault(); commitDraft(field); return; }
+    if (key === "Escape") {
+      event.preventDefault();
+      draftLane = null;
+      say("Discarded.");
+      mount();
+      return;
+    }
+    return;
+  }
 
   /* Board-wide keys, live wherever focus is inside the sheet. */
   if ((event.metaKey || event.ctrlKey) && (key === "z" || key === "Z")) {
@@ -2258,6 +2409,12 @@ function onKey(event) {
     }
     refocus = true; mount(); return;
   }
+  if (key === "Escape" && openNoteId === id && !carriedId) {
+    event.preventDefault();
+    openNoteId = null;
+    say("Note closed.");
+    refocus = true; mount(); return;
+  }
   if (key === "Escape" && carriedId) {
     event.preventDefault();
     const title = taskById(carriedId).title;
@@ -2302,6 +2459,15 @@ function onClick(event) {
     return;
   }
   if (what === "undo") { undoLast(); return; }
+  if (what === "add") {
+    draftLane = act.dataset.lane;
+    openNoteId = null;
+    say("New task in " + laneName(draftLane) + ". Type it, then press Enter.");
+    mount();
+    const field = document.querySelector(".card[data-draft] .cardTitle");
+    if (field) field.focus();
+    return;
+  }
   if (what === "menu") {
     const card = act.closest(".card");
     const box = act.getBoundingClientRect();
@@ -2386,6 +2552,7 @@ function onDragStart(event) {
   const card = event.target.closest && event.target.closest(".card[data-id]");
   if (!card || !card.closest(".board")) return;
   carriedId = card.dataset.id;
+  holdUndo();
   const at = place(carriedId);
   carriedFrom = { lane: laneIds()[at.x], index: at.y };
   card.setAttribute("data-force", "drag");
@@ -2434,6 +2601,13 @@ function onDrop(event) {
   if (!carriedId || !overLane) return;
   event.preventDefault();
   const id = carriedId;
+  /* Picking a card up and putting it back is a non-event. It was arming an
+     undo and announcing a move. */
+  if (overLane.lane === carriedFrom.lane && overLane.index === carriedFrom.index) {
+    carriedId = null; carriedFrom = null; overLane = null;
+    mount();
+    return;
+  }
   const sameLane = overLane.lane === carriedFrom.lane;
   const from = carriedFrom;
   const task = taskById(id);
@@ -2453,6 +2627,7 @@ function onDrop(event) {
 }
 
 function onDragEnd() {
+  releaseUndo();
   stopEdge(document.querySelector(".board"));
   document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
   document.querySelectorAll(".dropLine").forEach((n) => n.remove());
@@ -2657,7 +2832,8 @@ window.__signal = {
   setState(next) {
     state = next;
     carriedId = null; focusId = null; lateOnly = false; menuFor = null;
-    openNoteId = null; flyId = null; flyFrom = null;
+    openNoteId = null; flyId = null; flyFrom = null; draftLane = null;
+    history.length = 0;
     clearUndo();
   },
 };

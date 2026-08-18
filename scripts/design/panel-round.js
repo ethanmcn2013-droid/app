@@ -1,5 +1,5 @@
 export const meta = {
-  name: 'tasks-panel-round-7',
+  name: 'tasks-panel-round-8',
   description: 'Seven fresh independent seats re-grade the Tasks master against a 9.5 bar',
   phases: [
     { title: 'Review' },
@@ -66,7 +66,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 73 assertions, all passing. READ IT. Everything it asserts is already
+with 105 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -84,11 +84,25 @@ Also live, and worth driving before you score:
   This is a deliberate reversal of round 5 on measured rag evidence; argue
   with it if you disagree, but do not report it as an oversight.
 
-TWO ROUNDS REMAIN BEFORE THE HARD CAP. The seats have sat between 7.1 and
-8.1 for three rounds. If you believe the artifact cannot reach 9.5 without
-something structural that is currently out of scope, SAY SO PLAINLY in
-biggestWin rather than listing more small defects — an honest distance is
-worth more than another round of polish.
+NEW SINCE THE LAST ROUND, all live and all worth driving:
+- Creating a task is REAL. The dock's Add task pill and every column's "Add
+  here" open a composer that is a card in the column it will live in; Enter
+  adds, Escape discards, and it is reversible.
+- Undo is a STACK. Ctrl/Cmd+Z repeatedly. The strip is news and retires after
+  six seconds; the record is history and does not.
+- The views and tools that do not exist are drawn as unavailable and say why.
+- A completed card keeps its note. Click or Enter opens any card in place.
+- The column is bounded at 312px and centred; titles use text-wrap: balance;
+  partner names cannot break across two lines.
+- Every chip is a point in time. The day count lives in the accessible name.
+
+THIS IS THE FINAL ROUND BEFORE THE HARD CAP OF EIGHT. Grade honestly. If a
+seat is at or above 9.5, say so and say what earned it. If it is not, the
+most valuable thing you can return is the exact, specific distance: what
+remains, how big it is, and whether it is polish, a build, or a different
+decision. Do not pad the list with small defects to look thorough, and do not
+inflate the score to be kind — a gate that was not met is the most useful
+output this panel can produce.
 Judge the FEEL of these moments — timing, what is announced, what is
 reversible, what a first-time venue owner would discover — as harshly as you
 judge the pixels. "It is implemented" earns nothing; "it is implemented at
