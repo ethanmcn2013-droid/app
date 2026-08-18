@@ -164,7 +164,15 @@ const said = (page) => page.locator("#say").textContent();
 
   await page.keyboard.press("t");
   await page.waitForTimeout(360);
-  ok("T turns the top card into a task", (await page.locator(".handOf").textContent()) !== ofBefore);
+  /* T does not send anything on its own. It opens the same peel the
+     notebook uses, inside the hand, so the promise the product is sold on
+     is not skipped by its own review flow. */
+  ok("T opens the peel inside the hand", (await page.locator(".hand .peel").count()) === 1);
+  ok("the queue has not moved yet", (await page.locator(".handOf").textContent()) === ofBefore);
+  ok("and the wording is there to edit", (await page.locator(".peelField").inputValue()).length > 3);
+  await page.locator('[data-act="send"]').click();
+  await page.waitForTimeout(360);
+  ok("sending advances the queue", (await page.locator(".handOf").textContent()) !== ofBefore);
   ok("the decision is announced with what is left", /left\.$/.test(await said(page)));
   /* The pile behind the top card is capped at three: eight sheets of paper
      drawn on top of each other is a smudge, not a count. So the depth
@@ -446,7 +454,7 @@ const said = (page) => page.locator("#say").textContent();
   await page.waitForTimeout(180);
   ok(
     "a machine that asks for stillness gets it, and still gets the note",
-    (await page.locator(".idxRow").count()) === 15 && (await page.locator("[data-settling]").count()) === 0,
+    (await page.locator(".idxRow").count()) === 15 && (await page.locator(".fly").count()) === 0,
   );
   await page.close();
 }
@@ -529,9 +537,12 @@ const said = (page) => page.locator("#say").textContent();
   await page.keyboard.type(body);
   await page.keyboard.press("Control+Enter");
   await page.waitForTimeout(420);
-  const label = await page.locator(".idxRow").first().getAttribute("aria-label");
+  /* Found by its words, not by its position: the pile is grouped by what
+     each note is about, so a new note is not necessarily the first row. */
+  const row = page.locator(".idxRow", { hasText: "Ask the band" }).first();
+  const label = await row.getAttribute("aria-label");
   ok("a quote mark does not truncate the row's accessible name", label.includes("first dance"), label);
-  const full = await page.locator(".idxRow").first().locator(".idxText").getAttribute("data-full");
+  const full = await row.locator(".idxText").getAttribute("data-full");
   ok("nor the text the trim measures against", full.includes("first dance"), full);
   await page.close();
 }
@@ -686,13 +697,29 @@ const said = (page) => page.locator("#say").textContent();
 {
   const page = await open();
   ok("the pile can be grouped two ways", (await page.locator(".groupBtn").count()) === 2);
+  /* The resting state is what each note is ABOUT. Shipped as an opt-in it
+     was an answer filed in a drawer: the product still opened on the
+     calendar of when you typed. */
+  const subjects = await page.locator(".idxDay").allTextContents();
+  ok("the pile opens on what each note is about", subjects.some((t) => t.includes("Mara & Finn")), subjects.join(" | "));
+  ok(
+    "and on the thing the venue is facing, not the nearest date",
+    subjects[0].includes("Mara & Finn"),
+    subjects[0],
+  );
+  ok(
+    "every group's slot means the same thing",
+    subjects.every((t) => /,\s(today|in \d+ days?)|No date/.test(t)),
+    subjects.join(" | "),
+  );
+
+  await page.locator('[data-act="group-day"]').click();
+  await page.waitForTimeout(260);
   const dayRules = await page.locator(".idxDay").allTextContents();
-  ok("by default it groups by when", dayRules[0].trim().startsWith("Today"));
+  ok("and it can still be read by when", dayRules[0].trim().startsWith("Today"), dayRules[0]);
 
   await page.locator('[data-act="group-about"]').click();
   await page.waitForTimeout(260);
-  const subjects = await page.locator(".idxDay").allTextContents();
-  ok("and can group by what each note is about", subjects.some((t) => t.includes("Mara & Finn")), subjects.join(" | "));
   ok(
     "a dated subject says when the venue is actually facing it",
     subjects.some((t) => t.includes("Saturday 18 July") && /in \d+ days?/.test(t)),
@@ -764,14 +791,19 @@ const said = (page) => page.locator("#say").textContent();
   await page.keyboard.type("A thought that should visibly land.");
   await page.waitForTimeout(120);
   await page.keyboard.press("Control+Enter");
-  await page.waitForTimeout(90);
-  ok("the sheet leaves for the pile", (await page.locator(".top[data-settling]").count()) === 1);
-  const fades = await page.evaluate(() => getComputedStyle(document.querySelector(".top")).transitionProperty.includes("opacity"));
-  ok("and it can actually fade while it goes", fades);
-  await page.waitForTimeout(320);
-  ok("the row it became is marked while it settles", (await page.locator(".idxRow[data-arriving]").count()) === 1);
-  await page.waitForTimeout(600);
-  ok("and the mark clears itself", (await page.locator(".idxRow[data-arriving]").count()) === 0);
+  await page.waitForTimeout(70);
+  /* The words themselves travel, on their own layer, because paint()
+     remounts the tree and anything animated inside it did not exist a
+     frame ago. */
+  const fly = page.locator(".fly");
+  ok("the words leave the field", (await fly.count()) === 1);
+  ok("carrying what was written", (await fly.textContent()).includes("visibly land"));
+  ok("outside the notebook's own tree", await page.evaluate(() => document.querySelector(".fly").parentElement === document.body));
+  ok("and hidden from a reader who has already been told", (await fly.getAttribute("aria-hidden")) === "true");
+  ok("the row it became is marked while they land", (await page.locator(".idxRow[data-arriving]").count()) === 1);
+  await page.waitForTimeout(1000);
+  ok("the words clear themselves", (await page.locator(".fly").count()) === 0);
+  ok("and so does the mark", (await page.locator(".idxRow[data-arriving]").count()) === 0);
   await page.close();
 }
 

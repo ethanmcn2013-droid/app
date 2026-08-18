@@ -64,12 +64,21 @@ window.NOTES = (function () {
    * couple, the house, a course — and the product that holds them should
    * know that or admit it does not.
    */
+  /* One grammar for every name, one meaning for every slot, and an order
+     by what the venue is actually facing rather than by whichever date is
+     nearest. A college reading due today does not outrank a wedding in two
+     days, and a panel seat was right to say that sorting by proximity made
+     the pile open on the wrong thing.
+
+     stake 1  a day the venue is running. The business.
+     stake 2  a commitment with a date on it that is not the business.
+     stake 3  standing work that never stops and has no date.  */
   const SUBJECTS = {
-    "mara-finn": { label: "Mara & Finn", when: "Saturday 18 July", days: 2, kind: "event" },
-    house: { label: "The house", when: null, days: null, kind: "standing" },
-    studio: { label: "The studio", when: null, days: null, kind: "standing" },
-    course: { label: "The course", when: "Thursday 16 July", days: 0, kind: "event" },
-    enquiries: { label: "Enquiries", when: null, days: null, kind: "standing" },
+    "mara-finn": { label: "Mara & Finn", when: "Saturday 18 July", days: 2, stake: 1 },
+    "the-house": { label: "The house", when: null, days: null, stake: 3 },
+    "the-studio": { label: "The studio", when: null, days: null, stake: 3 },
+    "the-course": { label: "The course", when: "Thursday 16 July", days: 0, stake: 2 },
+    "the-enquiries": { label: "The enquiries", when: null, days: null, stake: 3 },
   };
 
   /* The fixture, in the fixture's own order. `sent` means a task exists for
@@ -105,20 +114,20 @@ window.NOTES = (function () {
     },
     {
       id: "n04",
-      about: "studio",
+      about: "the-studio",
       body: "Idea for the studio newsletter: short piece on “what a calm Saturday actually looks like behind the bar”. People love the backstage angle.",
       ago: 5 * HOUR,
     },
     {
       id: "n05",
-      about: "studio",
+      about: "the-studio",
       body: "Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand a job to someone without chasing it, and something that works on a phone at the back of a classroom.",
       ago: 6 * HOUR,
       source: "photo",
     },
     {
       id: "n06",
-      about: "course",
+      about: "the-course",
       body: "Course reading for Thursday: chapters 4–5 on cash-flow forecasting. Bring the worked example, the lecturer always opens with it.",
       ago: 9 * HOUR,
       task: "Read cash-flow chapters 4–5 before Thursday class",
@@ -126,7 +135,7 @@ window.NOTES = (function () {
     },
     {
       id: "n07",
-      about: "studio",
+      about: "the-studio",
       body: "Student launch pricing needs one simple annual option. Two prices and a discount code is already too many decisions for someone signing up between lectures.",
       ago: 1 * DAY + 1 * HOUR,
       source: "voice",
@@ -134,13 +143,13 @@ window.NOTES = (function () {
     },
     {
       id: "n08",
-      about: "enquiries",
+      about: "the-enquiries",
       body: "Walk-in couple this morning, June 2027, ~80 guests, budget-conscious but lovely. Sent them the midweek rate. Follow up Friday if no reply.",
       ago: 1 * DAY + 3 * HOUR,
     },
     {
       id: "n09",
-      about: "house",
+      about: "the-house",
       body: "Bar restock: tonic running low, order two extra cases before the weekend. Also the good olives, last delivery was short.",
       ago: 1 * DAY + 6 * HOUR,
       task: "Order 2 cases tonic + olives before weekend",
@@ -149,7 +158,7 @@ window.NOTES = (function () {
     },
     {
       id: "n10",
-      about: "enquiries",
+      about: "the-enquiries",
       body: "Photographer recommendation from the Hendersons: Aoife @ northlight. Natural light, doesn’t herd people. Keep her card for the recommended-suppliers list.",
       ago: 2 * DAY,
       reviewed: true,
@@ -157,20 +166,20 @@ window.NOTES = (function () {
     {
       id: "n11",
       pick: "Reprint before the open day",
-      about: "house",
+      about: "the-house",
       body: "Small thing but it matters: the welcome sign by the gate is faded. Reprint before the open day, first impression is the whole car-park walk.",
       ago: 2 * DAY + 4 * HOUR,
     },
     {
       id: "n12",
-      about: "studio",
+      about: "the-studio",
       body: "Quote from today that I want to keep: “we don’t want a big production, we just want it to feel like us.” That’s the whole pitch, really.",
       ago: 3 * DAY,
       reviewed: true,
     },
     {
       id: "n13",
-      about: "studio",
+      about: "the-studio",
       body: "Follow up with the motion designer about the venue film. She needs the final music choice before she can lock the edit, and the cut is due the week after next.",
       ago: 3 * DAY + 5 * HOUR,
       source: "email",
@@ -178,7 +187,7 @@ window.NOTES = (function () {
     {
       id: "n14",
       pick: "Switch on before guests arrive, not when.",
-      about: "house",
+      about: "the-house",
       body: "Heating: orchard room takes ~40 min to warm in October. Switch on before guests arrive, not when. Note for the winter brochure couples.",
       ago: 4 * DAY,
     },
@@ -228,7 +237,7 @@ window.NOTES = (function () {
   ];
 
   function build(seed) {
-    const about = SUBJECTS[seed.about] || SUBJECTS.house;
+    const about = SUBJECTS[seed.about] || SUBJECTS["the-house"];
     const title = seed.body.split(/(?<=[.?!”])\s/)[0] || seed.body;
     const rest = seed.body.slice(title.length).trim();
     return {
@@ -256,7 +265,7 @@ window.NOTES = (function () {
          render time. */
       pick: seed.pick || null,
       about,
-      aboutKey: seed.about || "house",
+      aboutKey: seed.about || "the-house",
     };
   }
 
@@ -318,7 +327,8 @@ window.NOTES = (function () {
       voiceStop: "Stop listening",
       voiceDisclosure:
         "Your browser may send microphone audio to its speech service to turn it into text. Signal Studio does not receive or retain that audio. Your browser or speech provider controls its service retention. Typing stays on your device until you save.",
-      handoffHeading: "Turn this into a task",
+      heading: "Turn this into a task",
+      begin: "Use these words",
       handoffBoundary:
         "Your note stays here. Tasks only ever receives the exact words you pick and check below.",
       sourceLabel: "The words you picked",

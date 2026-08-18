@@ -16,11 +16,11 @@
       "file": "notes-audit.mjs",
       "score": "0",
       "unit": "violations",
-      "what": "Palette lock, type weights, type families, WCAG AA contrast against the real composited backdrop, hit targets including pseudo-element expanders, the radii ladder and motion tokens \u2014 across ten states and four rooms."
+      "what": "Palette lock, type weights, type families, WCAG AA contrast against the real composited backdrop, hit targets including pseudo-element expanders, the radii ladder, motion tokens, the eight-step type ramp and a declared leading on every text-bearing element \u2014 across ten states and four rooms."
     },
     {
       "file": "notes-interaction-check.mjs",
-      "score": "171",
+      "score": "179",
       "unit": "assertions, 0 failing",
       "what": "Capture and undo, place-keeping across every repaint, the index's single tab stop, the hand's keyboard model, search and its no-result state, the voice takeover and its disclosure, word-safe trims, the honesty states carrying no warning hue, and no sideways scroll at six widths."
     },
@@ -41,12 +41,16 @@
       "what": "the only Geist weights"
     },
     {
-      "n": "22",
-      "what": "colour tokens, all Ink, Indigo or White"
+      "n": "8",
+      "what": "steps on the type ramp, and no ninth"
     },
     {
       "n": "0",
-      "what": "console errors in 160 captured frames"
+      "what": "elements whose leading the browser chose"
+    },
+    {
+      "n": "0",
+      "what": "console errors in 190 captured frames"
     }
   ],
   "logUrl": "https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25"

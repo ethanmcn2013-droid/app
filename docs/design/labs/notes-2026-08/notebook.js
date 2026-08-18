@@ -53,13 +53,20 @@
   let undoTimer = null;
   let settling = null;    /* a sheet on its way to the pile                */
   let refocus = null;     /* what to put focus back on after a repaint     */
-  let group = "day";      /* how the index is grouped: day | about         */
+  /* What a note is ABOUT is the resting state. Shipped as an opt-in
+     control it was, in a seat's words, an answer filed in a drawer: the
+     product still opened on Today / Yesterday / Monday, which is the
+     calendar of when you typed rather than of what you are facing. */
+  let group = params.get("group") || "about";
   let peeling = null;     /* the note a task is being written from         */
   let taskWording = "";   /* the words that will cross                     */
   let sentTask = null;    /* the receipt, once Tasks has it                */
   let arriving = null;    /* the id of the note being staged into the pile */
   let pieces = N.speech.separated.slice(); /* the read-back, as edited      */
   let seamTouched = false; /* the seam has been entered at least once       */
+  let picked = null;      /* the words highlighted in a note, right now      */
+  let pickedWords = null; /* the words a peel was opened from                */
+  let nudge = null;       /* the one sentence asking for a pick              */
 
   const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl";
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -93,7 +100,7 @@
   /* Every count on screen is derived from the same list, so the head can
      never state a number the body below it disagrees with. */
   function counts() {
-    const w = work();
+    const w = work().filter((n) => !n.deleted);
     return {
       total: w.length,
       pending: w.filter((n) => n.pending).length,
@@ -140,26 +147,38 @@
   }
 
   /* ── acts ────────────────────────────────────────────────────── */
-  function keepDraft() {
-    const body = draft.trim();
-    if (!body) return;
+  /* One shape for a note, used everywhere one is made. Three call sites
+     were building the object by hand and the newest one forgot `about`,
+     so opening a note you had just written threw on note.about.label and
+     took the whole repaint with it. */
+  function makeNote(body, opts) {
+    const o = opts || {};
     const title = body.split(/(?<=[.?!”])\s/)[0] || body;
-    const note = {
-      id: `new_${Date.now()}`,
+    return {
+      id: o.id || `new_${Date.now()}_${Math.round(performance.now())}`,
       body,
       title,
       rest: body.slice(title.length).trim(),
-      source: "typed",
+      source: o.source || "typed",
       when: "Just now",
       day: "Today",
       ms: 0,
       task: null,
+      pick: null,
       sent: false,
       reviewed: false,
       edited: false,
       pending: true,
       words: body.trim().split(/\s+/).length,
+      about: N.subjects[o.about || "the-house"],
+      aboutKey: o.about || "the-house",
     };
+  }
+
+  function keepDraft() {
+    const body = draft.trim();
+    if (!body) return;
+    const note = makeNote(body);
     draft = "";
     work().unshift(note);
     say(`Kept. ${counts().total} notes, ${counts().pending} waiting on a decision.`);
@@ -179,40 +198,131 @@
       paint();
       return;
     }
-    /* The arrival is staged: the words leave the sheet and land as the
-       newest row, and the row it became is marked while it settles. This
-       is the moment the whole direction exists for, and it was a hard cut
-       with nothing in between. */
-    settling = note.id;
+    /* THE MOMENT.
+       The promise is the three seconds between a thought and it being
+       safe, and it was asserted in copy and shown nowhere: the words
+       vanished from the field at frame one and a row hard-cut in
+       elsewhere. Staging it as CSS state on the sheet and the row cannot
+       work — paint() remounts the whole tree, so any transition is on an
+       element that did not exist a frame ago. So the words themselves
+       travel, as one fixed-position copy outside the render tree, from
+       where they were written to the row they became. Nothing in the
+       notebook animates; the thought does. */
+    const field = mount.querySelector(phone.matches ? ".phoneField" : ".topField");
+    const from = field ? field.getBoundingClientRect() : null;
+    const size = field ? getComputedStyle(field) : null;
     arriving = note.id;
     paint();
+    const row = mount.querySelector(`.idxRow[data-id="${CSS.escape(note.id)}"] .idxText`);
+    if (from && row) flyWords(body, from, row.getBoundingClientRect(), size);
     setTimeout(() => {
-      settling = null;
+      arriving = null;
       paint();
-      setTimeout(() => {
-        arriving = null;
-        paint();
-      }, 420);
-    }, 200);
+    }, 620);
+  }
+
+  /* One copy of the words, in the air, on its own layer. It is
+     aria-hidden because the live region has already said what happened,
+     and it removes itself whether the animation finishes or is cut. */
+  function flyWords(text, from, to, size) {
+    const ghost = document.createElement("div");
+    ghost.className = "fly";
+    ghost.setAttribute("aria-hidden", "true");
+    ghost.textContent = text;
+    ghost.style.cssText = [
+      `left:${from.left}px`,
+      `top:${from.top}px`,
+      `width:${from.width}px`,
+      `font-size:${size ? size.fontSize : "17px"}`,
+      `line-height:${size ? size.lineHeight : "1.55"}`,
+      `letter-spacing:${size ? size.letterSpacing : "normal"}`,
+    ].join(";");
+    document.body.appendChild(ghost);
+    const dx = to.left - from.left;
+    const dy = to.top - from.top;
+    const scale = Math.min(1, to.width / Math.max(1, from.width));
+    const done = () => ghost.remove();
+    const animation = ghost.animate(
+      [
+        { transform: "translate(0,0) scale(1)", opacity: 1 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 0.9, offset: 0.82 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 0 },
+      ],
+      { duration: 460, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" },
+    );
+    animation.addEventListener("finish", done);
+    animation.addEventListener("cancel", done);
+    setTimeout(done, 900);
+  }
+
+  function queue() {
+    return work().filter((n) => n.pending);
   }
 
   function decide(kind) {
-    const note = N.pending[queueAt];
+    const note = queue()[queueAt];
     if (!note) return;
-    const before = queueAt;
-    queueAt += 1;
-    decided.push({ note, kind });
+    const before = { queueAt, pending: note.pending, reviewed: note.reviewed, sent: note.sent, task: note.task };
+    /* The decision reaches the notebook. Before this the hand incremented
+       a counter and pushed onto a local array: the live region announced
+       a decision, the card advanced, and the note behind it was untouched
+       in every other state. */
+    if (kind === "task") {
+      /* The same sequence the notebook uses, opened inside the hand rather
+         than instead of it. Sending a note to Tasks from the queue with no
+         peel at all skipped the one promise the product is sold on; taking
+         the person out of the queue to do it would cost them their place
+         in eight decisions. */
+      peeling = note.id;
+      pickedWords = note.pick || note.title.replace(/[.]$/, "");
+      taskWording = pickedWords.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
+      sentTask = null;
+      say(`${N.copy.sourceLabel}: ${pickedWords}. ${N.copy.payload}`);
+      refocus = { kind: "field", sel: ".peelField" };
+      paint();
+      return;
+    }
+    if (kind === "keep" || kind === "later") {
+      note.pending = kind === "keep" ? false : true;
+      note.reviewed = kind === "keep";
+    } else if (kind === "delete") {
+      note.deleted = true;
+      note.pending = false;
+    }
+    if (kind !== "later") queueAt = before.queueAt;
+    else queueAt += 1;
+    decided.push({ note, kind, before });
+    const left = queue().length - (kind === "later" ? queueAt : 0);
     const label =
       kind === "task"
-        ? `Turned into a task. ${N.counts.review - queueAt} left.`
+        ? `Turned into a task. ${left} left.`
         : kind === "keep"
-          ? `Kept in Notes. ${N.counts.review - queueAt} left.`
+          ? `Kept in Notes. ${left} left.`
           : kind === "later"
-            ? `Left for later. ${N.counts.review - queueAt} left.`
-            : `Deleted. ${N.counts.review - queueAt} left.`;
+            ? `Left for later. ${left} left.`
+            : `Deleted. ${left} left.`;
     say(label);
-    offerUndo("That decision was put back.", () => {
-      queueAt = before;
+    /* The strip states what happened, in the present. One string was being
+       painted before the undo and concatenated after it, so at the moment
+       the ear heard "turned into a task" the eye read "that decision was
+       put back". */
+    const strip =
+      kind === "task"
+        ? "Turned into a task."
+        : kind === "keep"
+          ? "Kept in Notes."
+          : kind === "later"
+            ? "Left for later."
+            : "Deleted.";
+    offerUndo(strip, () => {
+      Object.assign(note, {
+        pending: before.pending,
+        reviewed: before.reviewed,
+        sent: before.sent,
+        task: before.task,
+        deleted: false,
+      });
+      queueAt = before.queueAt;
       decided.pop();
     });
     if (reduced) {
@@ -233,25 +343,66 @@
      nothing. It is a real sequence now — pick the words, edit the wording,
      choose where it goes, send, and get a receipt — and the note it comes
      from is never covered at any point in it. */
-  function startPeel(id) {
+  /* The whole product turns on this. "Tasks only ever receives the exact
+     words you pick" was, until now, a sentence over a field seeded with
+     whatever the fixture happened to carry: eleven of the fourteen notes
+     had no picked words at all and sent their first sentence instead.
+     A person can now pick, and nothing crosses that they did not. */
+  function pickedRange() {
+    const sel = document.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    const body = mount.querySelector(".readBody");
+    if (!body) return null;
+    const range = sel.getRangeAt(0);
+    if (!body.contains(range.commonAncestorContainer)) return null;
+    const text = sel.toString().replace(/\s+/g, " ").trim();
+    if (text.length < 3) return null;
+    return text;
+  }
+
+  function offerPick() {
+    const text = pickedRange();
+    if (text === picked) return;
+    picked = text;
+    if (text) say(`${text.split(/\s+/).length} words picked. ${N.copy.begin} to make them a task.`);
+    paint();
+  }
+
+  function startPeel(id, opts) {
+    const o = opts || {};
     const note = work().find((n) => n.id === id) || N.notes[13];
+    /* Nothing is seeded that the person did not pick. Pressing the primary
+       action with nothing highlighted says so, in the product's own words,
+       rather than quietly sending a sentence they never chose. */
+    const words = o.words || picked || note.pick;
+    if (!words) {
+      say(N.copy.nothingSelected);
+      nudge = N.copy.nothingSelected;
+      openId = note.id;
+      paint();
+      setTimeout(() => {
+        nudge = null;
+        paint();
+      }, 4200);
+      return;
+    }
+    nudge = null;
     peeling = note.id;
+    pickedWords = words;
     openId = note.id;
     sentTask = null;
-    /* Seeded from the words the person picked, not from the whole note.
-       Only these ever cross, which is the promise the panel is here to
-       check. */
-    taskWording = note.task || note.pick || note.title.replace(/[.]$/, "");
-    say(`${N.copy.sourceLabel}. ${N.copy.payload}`);
+    taskWording = words.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
+    say(`${N.copy.sourceLabel}: ${words}. ${N.copy.payload}`);
     refocus = { kind: "field", sel: ".peelField" };
     paint();
   }
   function cancelPeel() {
     if (!peeling) return;
     peeling = null;
+    pickedWords = null;
     sentTask = null;
     say("Nothing crossed. Your note is unchanged.");
-    refocus = { kind: "act", sel: '[data-act="peel"]' };
+    refocus = { kind: "act", sel: state === "review" ? '[data-act="d-task"]' : '[data-act="peel"]' };
     paint();
   }
   function sendPeel() {
@@ -263,6 +414,22 @@
       note.sent = true;
       note.task = wording;
       note.pending = false;
+    }
+    /* In the hand, the crossing settles the card and the next one comes
+       up. In the notebook it settles the note and stays where it is. */
+    if (state === "review") {
+      sentTask = null;
+      peeling = null;
+      pickedWords = null;
+      taskWording = "";
+      decided.push({ note, kind: "task", before });
+      say(`${N.copy.sentReceipt} ${Math.max(0, queue().length)} left.`);
+      offerUndo("Turned into a task.", () => {
+        if (note && before) Object.assign(note, before);
+        decided.pop();
+      });
+      paint();
+      return;
     }
     sentTask = { wording, project: N.projects[0] };
     say(`${N.copy.sentReceipt} ${N.copy.stayedPut}`);
@@ -283,6 +450,8 @@
   }
 
   function openNote(id) {
+    picked = null;
+    nudge = null;
     openId = id;
     cursorId = id;
     const note = work().find((n) => n.id === id);
@@ -292,6 +461,8 @@
   }
   function closeNote() {
     if (!openId) return;
+    picked = null;
+    nudge = null;
     const id = openId;
     openId = null;
     say("Put back.");
@@ -301,7 +472,7 @@
 
   /* ── the index's one tab stop ────────────────────────────────── */
   function visible() {
-    const w = work();
+    const w = work().filter((n) => !n.deleted);
     if (!query) return w;
     const q = query.toLowerCase();
     return w.filter((n) => n.body.toLowerCase().includes(q));
@@ -387,7 +558,7 @@
       state === "review"
         ? ""
         : c.pending > 0
-          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} notes are waiting on a decision. Go through them">${c.pending} to decide</button>`
+          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} to decide. Go through the notes waiting on a decision.">${c.pending} to decide</button>`
           : "";
     return `
       <header class="head">
@@ -512,8 +683,11 @@
       <div class="peel">
         <div class="peelTop">
           <span class="peelMark" aria-hidden="true">${I.tasks}</span>
-          <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
+          <span class="peelLabel">${esc(N.copy.heading)}</span>
         </div>
+        <p class="peelBoundary">${esc(N.copy.handoffBoundary)}</p>
+        ${pickedWords ? `<p class="peelFrom"><b>${esc(N.copy.sourceLabel)}</b><span>${esc(pickedWords)}</span></p>` : ""}
+        <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
         <textarea class="peelField" rows="1" aria-labelledby="peel-label">${esc(taskWording)}</textarea>
         <div class="peelRow">
           <button class="picker" type="button" aria-label="${attr(N.copy.destinationLabel)}: ${attr(N.projects[0])}"><b>To</b>${esc(N.projects[0])}${I.chevron}</button>
@@ -531,10 +705,13 @@
     /* The words that will cross are marked inside the person's own
        sentence, so what crosses can be checked against where it came
        from without either of them being covered. */
-    const picked = note.pick && note.body.includes(note.pick) ? note.pick : null;
+    /* While a task is being written, the words that will cross stay marked
+       inside the person's own sentence, so what crosses can be checked
+       against where it came from without either being covered. */
+    const mark = isPeeling ? pickedWords : null;
     const bodyHtml =
-      isPeeling && picked
-        ? esc(note.body).replace(esc(picked), `<span class="pick">${esc(picked)}</span>`)
+      mark && note.body.includes(mark)
+        ? esc(note.body).replace(esc(mark), `<span class="pick">${esc(mark)}</span>`)
         : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
     if (isPeeling) {
       return deskOf(
@@ -545,7 +722,7 @@
             <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}</span>
           </p>
           <p class="readBody">${bodyHtml}</p>
-          <p class="stays">${I.lock}${esc(N.copy.stayedPut)}</p>
+          ${sentTask ? "" : `<p class="stays">${I.lock}${esc(N.copy.stayedPut)}</p>`}
         </div>`,
         { behind: 1, label: `Turning a note into a task: ${note.title}`, under: peelPanel(note) },
       );
@@ -560,6 +737,8 @@
           ${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks as <a href="#tasks">${esc(note.task || "a task")}</a></span>` : ""}
         </p>
         <p class="readBody"><span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}</p>
+        ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
+        ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
         <div class="topFoot">
           <button class="act" data-primary type="button" data-act="peel">${I.tasks}Turn into a task</button>
           <button class="act" type="button" data-act="timeline">${I.share}Send to Timeline</button>
@@ -597,7 +776,7 @@
     const name = crossed
       ? `${note.task}. In Tasks, ${note.lane}. Crossed ${when}. The note it came from stayed in Notes.`
       : `${note.title} ${note.rest || ""}`.trim() +
-        `. ${src.label}. ${note.when}.${note.pending ? " Waiting on a decision." : note.sent ? " In Tasks." : " Kept."}`;
+        `. ${src.label}. ${note.when}.${note.pending ? " To decide." : note.sent ? " In Tasks." : " Kept."}`;
     const tag = crossed
       ? `<span class="idxTag">${esc(note.lane)}</span>`
       : note.sent
@@ -636,25 +815,33 @@
         }
         bag.get(note.aboutKey).push(note);
       }
-      /* Dated subjects first, soonest first, then the standing ones. */
+      /* By what the venue is facing, then by date inside that. The day the
+         house is running comes before a dated commitment that is not the
+         business, which comes before standing work. */
       order.sort((a, b) => {
         const A = N.subjects[a];
         const B = N.subjects[b];
-        if (A.days === null && B.days === null) return 0;
+        if (A.stake !== B.stake) return A.stake - B.stake;
+        if (A.days === null && B.days === null) return bag.get(b).length - bag.get(a).length;
         if (A.days === null) return 1;
         if (B.days === null) return -1;
         return A.days - B.days;
       });
+      /* Every group's slot means the same thing: the date it is facing, or
+         that it has none. A count in one and a deadline in another was two
+         meanings in one column. */
       return order.map((key) => {
         const about = N.subjects[key];
+        const waiting = bag.get(key).filter((n) => n.pending).length;
         return {
           label: about.label,
           note:
             about.days === null
-              ? `${bag.get(key).length} notes`
+              ? "No date"
               : about.days === 0
-                ? `${about.when} · today`
-                : `${about.when} · in ${about.days} day${about.days === 1 ? "" : "s"}`,
+                ? `${about.when}, today`
+                : `${about.when}, in ${about.days} day${about.days === 1 ? "" : "s"}`,
+          tail: waiting ? `${waiting} to decide` : "",
           rows: bag.get(key),
         };
       });
@@ -668,14 +855,14 @@
       }
       bag.get(note.day).push(note);
     }
-    return order.map((day) => ({ label: day, note: "", rows: bag.get(day) }));
+    return order.map((day) => ({ label: day, note: "", tail: "", rows: bag.get(day) }));
   }
 
   function groupControl() {
     return `
       <span class="groupBy" role="group" aria-label="How the pile is grouped">
-        <button class="groupBtn" type="button" data-act="group-day"${group === "day" ? " data-on" : ""} aria-pressed="${group === "day"}">When</button>
         <button class="groupBtn" type="button" data-act="group-about"${group === "about" ? " data-on" : ""} aria-pressed="${group === "about"}">What it is about</button>
+        <button class="groupBtn" type="button" data-act="group-day"${group === "day" ? " data-on" : ""} aria-pressed="${group === "day"}">When</button>
       </span>`;
   }
 
@@ -687,7 +874,7 @@
     } else {
       for (const g of groupsOf(notes)) {
         rows.push(
-          `<p class="idxDay">${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}</p>`,
+          `<p class="idxDay">${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</p>`,
         );
         for (const note of g.rows) rows.push(idxRow(note, o));
       }
@@ -698,7 +885,7 @@
         <div class="indexHead">
           <span>${esc(o.title || "The pile")}</span>
           <span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>
-          ${o.group === false ? "" : groupControl()}
+          ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
         <div class="index" id="index" role="list" aria-label="${attr(o.title || "The pile")}">${rows.join("")}</div>
       </div>`;
@@ -747,9 +934,15 @@
   };
 
   STATES.review = () => {
-    const note = N.pending[queueAt];
-    const left = N.counts.review - queueAt;
-    const pips = N.pending.map((_, i) => `<i${i < queueAt ? " data-done" : i === queueAt ? " data-now" : ""}></i>`).join("");
+    const note = queue()[queueAt];
+    const left = Math.max(0, queue().length - queueAt);
+    /* The count is of decisions MADE, not of an index into a list that
+       shrinks under it. Marking a note decided removes it from the queue,
+       so an index-based count stood still while the card behind it
+       changed. */
+    const total = queue().length + decided.length;
+    const pips = Array.from({ length: total }, (_, i) =>
+      `<i${i < decided.length ? " data-done" : i === decided.length ? " data-now" : ""}></i>`).join("");
     if (!note) {
       return {
         desk: deskOf(
@@ -778,8 +971,8 @@
             <article class="handTop"${settling === "hand" ? " data-settling" : ""}>
               <div class="handQ">
                 <h2 class="handTitle">Worth doing something about?</h2>
-                <span class="handOf tab">${queueAt + 1} of ${N.counts.review}</span>
-                <span class="pips" role="img" aria-label="${queueAt} of ${N.counts.review} decided">${pips}</span>
+                <span class="handOf tab">${decided.length + 1} of ${total}</span>
+                <span class="pips" role="img" aria-label="${decided.length} of ${total} decided">${pips}</span>
               </div>
               <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span></p>
               <p class="handBody">${esc(note.body)}</p>
@@ -788,11 +981,12 @@
                 <button class="act" type="button" data-act="d-keep">${I.keep}Just keep it<kbd>K</kbd></button>
                 <span class="spacer"></span>
                 <button class="act" data-quiet type="button" data-act="d-later">Decide later</button>
-                <button class="act" data-quiet type="button" data-act="d-delete">${I.trash}Delete</button>
+                <button class="act" data-quiet data-destroy type="button" data-act="d-delete">${I.trash}Delete</button>
                 <button class="act" data-quiet type="button" data-act="notebook">Back to the pile<kbd>Esc</kbd></button>
               </div>
             </article>
             </div>
+            ${peeling === note.id ? peelPanel(note) : ""}
             <p class="deckNote">${I.undo}<span data-left>${left} still to decide.</span> ${
               decided.length
                 ? `${decided.length} decided just now, and every one of them can be put back.`
@@ -800,7 +994,7 @@
             }</p>
           </div>
         </section>`,
-      body: indexOf(N.pending.slice(queueAt + 1), { title: "Still in the hand", count: `${Math.max(0, left - 1)} left`, noDays: true }),
+      body: indexOf(queue().slice(queueAt + 1), { title: "Still in the hand", count: `${Math.max(0, left - 1)} left`, noDays: true }),
       dock: true,
     };
   };
@@ -871,7 +1065,10 @@
       peeling = note.id;
       seamTouched = true;
     }
-    if (!taskWording) taskWording = "Switch the orchard room heating on 40 minutes before guests arrive";
+    if (!pickedWords) pickedWords = note.pick || note.title.replace(/[.]$/, "");
+    if (!taskWording) {
+      taskWording = pickedWords.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
+    }
     return {
       desk: readSheet(note),
       body: indexOf(N.crossed, {
@@ -1269,7 +1466,7 @@
     else if (a === "undo") doUndo();
     else if (a === "review") {
       state = "review";
-      say(`${N.counts.review} notes to decide.`);
+      say(`${counts().pending} to decide.`);
       paint();
     } else if (a === "notebook" || a === "tasks") {
       state = "notebook";
@@ -1465,6 +1662,16 @@
          written down so the model is complete in one place. */
     }
   });
+
+  /* Picking is a pointer gesture and a keyboard one, so both are watched.
+     selectionchange fires on the document, which is why this is not bound
+     to the note body. */
+  document.addEventListener("selectionchange", () => {
+    if (!openId || peeling) return;
+    clearTimeout(pickTimer);
+    pickTimer = setTimeout(offerPick, 120);
+  });
+  let pickTimer = null;
 
   /* A trim measured against a fallback face is a trim measured against the
      wrong widths, and one measured before a resize is simply stale. */

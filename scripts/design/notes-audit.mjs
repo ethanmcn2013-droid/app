@@ -57,13 +57,18 @@ const ALLOWED = [
    presets redefine. */
 const ALLOWED_RADII = [0, 2, 4, 6, 8, 12, 14, 16, 20, 24, 999];
 const ALLOWED_WEIGHTS = [400, 600];
+/* The type ramp. Eight steps and no ninth. Declared here as well as in
+   master.css so the gate fails when a size drifts off it rather than when
+   somebody notices. Before this the file ran eighteen ad-hoc sizes, eleven
+   of them inside the 10 to 15 band on half-pixel increments. */
+const ALLOWED_SIZES = [11, 12, 13, 15, 17, 20, 27, 34];
 /* One duration, one exit, one settle. The settle is the direction's own
    signature — paper coming to rest — and it is declared in master.css
    rather than being an accident. */
 const ALLOWED_DURATIONS = [0, 0.05, 0.14, 0.22];
 
 const AUDIT = `(() => {
-  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], counts: {} };
+  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], sizes: [], leading: [], counts: {} };
 
   const parse = (value) => {
     const m = String(value).match(/rgba?\\(([^)]+)\\)/);
@@ -169,6 +174,20 @@ const AUDIT = `(() => {
       const family = cs.fontFamily.split(",")[0].replace(/["']/g, "").trim();
       if (!/^Geist( Mono)?$/.test(family)) out.families.push({ el: describe(el), family });
 
+      /* 8. the type ramp */
+      const size = Math.round(parseFloat(cs.fontSize) * 10) / 10;
+      if (!${JSON.stringify(ALLOWED_SIZES)}.some((step) => Math.abs(size - step) < 0.6)) {
+        out.sizes.push({ el: describe(el), size, text: el.textContent.trim().slice(0, 28) });
+      }
+
+      /* 9. leading. A text-bearing element computing line-height: normal
+         is an element whose leading the browser chose, which is how a
+         baseline drifts by a pixel between a note's words and the facts
+         beside them on every row of a list. */
+      if (cs.lineHeight === "normal") {
+        out.leading.push({ el: describe(el), text: el.textContent.trim().slice(0, 28) });
+      }
+
       /* 4. contrast, against the real composited backdrop */
       const fg = parse(cs.color);
       if (fg && fg.a > 0) {
@@ -254,6 +273,8 @@ const AUDIT = `(() => {
   out.motion = dedupe(out.motion, (i) => i.kind + (i.duration ?? i.easing));
   out.targets = dedupe(out.targets, (i) => i.el + i.w + "x" + i.h);
   out.contrast = dedupe(out.contrast, (i) => i.el + i.ratio);
+  out.sizes = dedupe(out.sizes, (i) => i.el + i.size);
+  out.leading = dedupe(out.leading, (i) => i.el);
   return out;
 })()`;
 
@@ -273,7 +294,7 @@ async function run() {
 
   await browser.close();
 
-  const totals = { colors: 0, weights: 0, families: 0, contrast: 0, targets: 0, radii: 0, motion: 0 };
+  const totals = { colors: 0, weights: 0, families: 0, contrast: 0, targets: 0, radii: 0, motion: 0, sizes: 0, leading: 0 };
   for (const state of Object.keys(report.states)) {
     for (const key of Object.keys(totals)) totals[key] += report.states[state][key].length;
   }
@@ -296,11 +317,15 @@ async function run() {
       line("targets", r.targets, (i) => `${i.el} ${i.w}×${i.h}  "${i.label}"`);
       line("radii", r.radii, (i) => `${i.el} ${i.px}px`);
       line("motion", r.motion, (i) => (i.kind === "duration" ? `${i.el} ${i.duration}s` : `${i.el} ${i.easing}`));
+      line("type ramp", r.sizes, (i) => `${i.el} ${i.size}px  "${i.text}"`);
+      line("leading", r.leading, (i) => `${i.el} line-height: normal  "${i.text}"`);
     }
     process.stdout.write(`\nTOTALS  ${JSON.stringify(totals)}\n`);
   }
 
-  const hard = totals.colors + totals.weights + totals.families + totals.contrast + totals.radii + totals.motion;
+  const hard =
+    totals.colors + totals.weights + totals.families + totals.contrast + totals.radii + totals.motion +
+    totals.sizes + totals.leading;
   process.exit(hard > 0 ? 1 : 0);
 }
 
