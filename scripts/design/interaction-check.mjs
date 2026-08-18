@@ -618,6 +618,167 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   }
 }
 
+
+/* ── nothing on the sheet is silently dead ────────────────────────── */
+{
+  const page = await open();
+  const silent = await page.evaluate(() => {
+    const out = [];
+    document.querySelectorAll(".floor button").forEach((b) => {
+      if (b.closest(".card") || b.classList.contains("trayAdd")) return;
+      const live = b.dataset.act || b.hasAttribute("data-active") || b.classList.contains("dockPrimary");
+      const marked = b.getAttribute("aria-disabled") === "true" && b.getAttribute("title");
+      if (!live && !marked) out.push((b.className || b.tagName) + ":" + b.textContent.trim().slice(0, 18));
+    });
+    return out;
+  });
+  ok("every control is either live or says why it is not", silent.length === 0, JSON.stringify(silent));
+
+  /* The Planning drawer was fully built and reachable only by URL. */
+  await page.locator('.headActions [data-act="planning"]').click();
+  await page.waitForTimeout(250);
+  ok("the Planning button opens the drawer", (await page.locator(".drawer").count()) === 1);
+  await page.locator('.headActions [data-act="planning"]').click();
+  await page.waitForTimeout(200);
+  ok("and closes it", (await page.locator(".drawer").count()) === 0);
+  await page.locator(".undated").click();
+  await page.waitForTimeout(250);
+  ok("so does the count of tasks with no date", (await page.locator(".drawer").count()) === 1);
+  await page.close();
+}
+
+/* ── the composer does not eat your words ─────────────────────────── */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="review"] .trayAdd').click();
+  await page.waitForTimeout(200);
+  await page.keyboard.type("Ring the florist back about");
+  /* Any repaint at all: the filter is the cheapest one to trigger. */
+  await page.locator(".late").click();
+  await page.waitForTimeout(300);
+  const kept = await page.locator(".card[data-draft] .cardTitle").textContent();
+  ok("a repaint cannot destroy a half-written task", kept.indexOf("Ring the florist") === 0, JSON.stringify(kept));
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  ok("escape returns focus to the control it came from",
+    await page.evaluate(() => document.activeElement.classList.contains("trayAdd")),
+    await page.evaluate(() => document.activeElement.tagName + "." + document.activeElement.className));
+  await page.close();
+}
+
+/* ── a task made under a filter is visible ────────────────────────── */
+{
+  const page = await open();
+  await page.locator(".late").click();
+  await page.waitForTimeout(200);
+  await page.locator('.tray[data-lane="todo"] .trayAdd').click();
+  await page.waitForTimeout(200);
+  await page.keyboard.type("Order more ice for Saturday");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(300);
+  ok("the filter releases so the new task can be seen",
+    (await page.locator('.late[aria-pressed="true"]').count()) === 0);
+  ok("and it is on screen", (await page.locator(".board .cardTitle", { hasText: "Order more ice" }).count()) === 1);
+  ok("and the board says why", (await page.locator("#say").textContent()).indexOf("filter is off") !== -1);
+  await page.close();
+}
+
+/* ── the filtered board does not describe what it is not showing ──── */
+{
+  const page = await open();
+  await page.locator(".late").click();
+  await page.waitForTimeout(250);
+  const notes = await page.$$eval(".trayNote", (n) => n.map((x) => x.textContent));
+  ok("no column claims to hold what it is hiding",
+    notes.every((t) => t.toLowerCase().indexOf("overdue") !== -1), JSON.stringify(notes));
+  const count = await page.locator('.tray[data-lane="todo"] .trayCount').textContent();
+  ok("the count states filtered of total", count.indexOf(" of ") !== -1, JSON.stringify(count));
+  await page.close();
+}
+
+/* ── the Done column de-escalates as one card ─────────────────────── */
+{
+  const page = await open();
+  const ranks = await page.evaluate(() => {
+    const card = document.querySelector('.tray[data-lane="done"] .card .who').closest(".card");
+    const w = (sel) => {
+      const n = card.querySelector(sel);
+      return n ? getComputedStyle(n).fontWeight : null;
+    };
+    return { title: w(".cardTitle"), who: w(".who") };
+  });
+  ok("a finished card's title still outranks its client",
+    Number(ranks.title) > Number(ranks.who), JSON.stringify(ranks));
+  ok("and Done says when", (await page.locator('.tray[data-lane="done"] .when').count()) > 0);
+  await page.close();
+}
+
+/* ── the board settles as one movement ────────────────────────────── */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card .tick').first().click();
+  await page.waitForTimeout(80);
+  const moving = await page.evaluate(() =>
+    [...document.querySelectorAll(".board .card")].filter((c) => getComputedStyle(c).transform !== "none").length);
+  ok("the cards left behind close the gap rather than snapping", moving > 0, moving + " in motion");
+  await page.waitForTimeout(700);
+  const stuck = await page.evaluate(() =>
+    [...document.querySelectorAll(".board .card")].filter((c) => c.style.transform).length);
+  ok("and nothing is left transformed", stuck === 0, stuck + " stuck");
+  await page.close();
+}
+
+/* ── the flight never leaves the sheet ────────────────────────────── */
+{
+  const page = await open("", { width: 390, height: 844 });
+  await page.locator(".board .card .tick").first().click();
+  await page.waitForTimeout(120);
+  const out = await page.evaluate(() => {
+    const g = document.querySelector(".cardGhost");
+    if (!g) return 0;
+    const b = g.getBoundingClientRect();
+    return b.right > window.innerWidth + 2 || b.left < -2 ? 1 : 0;
+  });
+  ok("the ghost stays on the phone's screen", out === 0);
+  await page.close();
+}
+
+/* ── the move menu answers like a menu ────────────────────────────── */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card').first().hover();
+  await page.locator('.tray[data-lane="todo"] .cardDots').first().click();
+  await page.waitForTimeout(200);
+  const stops = await page.locator('.cardMenu [tabindex="0"]').count();
+  ok("the menu is one tab stop", stops === 1, stops + " stops");
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(80);
+  ok("and the arrows walk it",
+    await page.evaluate(() => document.activeElement.closest(".cardMenu") !== null));
+  await page.close();
+}
+
+/* ── a card with no note says so ──────────────────────────────────── */
+{
+  const page = await open();
+  await page.locator('.board .card:not([aria-expanded])').first().focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(200);
+  ok("enter on a card with no note is honest",
+    (await page.locator("#say").textContent()).indexOf("no note") !== -1,
+    await page.locator("#say").textContent());
+  await page.close();
+}
+
+/* ── the live region exists before it is needed ───────────────────── */
+{
+  const page = await open();
+  ok("the live region is in the tree from the first paint",
+    (await page.locator("#say").count()) === 1);
+  ok("and starts empty", (await page.locator("#say").textContent()).trim() === "");
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
 
 await browser.close();
