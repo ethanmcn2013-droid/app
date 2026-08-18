@@ -1,0 +1,4 @@
+output: docs/design/shots/notes-reference-2026-08
+scenes attempted: 6
+scene failures: 0
+console errors: 0

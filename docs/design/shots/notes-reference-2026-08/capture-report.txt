@@ -1,0 +1,8 @@
+output: C:/Users/ethan/signal-studio-workspace/_wt-design-notes/docs/design/shots/notes-reference-2026-08
+scenes attempted: 27
+scene failures: 4
+  FAILED voice-processing: TimeoutError: locator.click: Timeout 30000ms exceeded.
+  FAILED voice-review: TimeoutError: locator.click: Timeout 30000ms exceeded.
+  FAILED photo-preview: TimeoutError: locator.waitFor: Timeout 30000ms exceeded.
+  FAILED photo-review: TimeoutError: locator.click: Timeout 30000ms exceeded.
+console errors: 0
