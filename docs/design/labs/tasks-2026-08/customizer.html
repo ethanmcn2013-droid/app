@@ -341,6 +341,9 @@ body {
 
   
   
+  
+  --tr-19: -0.026em; --tr-18: -0.022em; --tr-15: -0.016em; --tr-14: -0.014em;
+  --tr-13: -0.010em; --tr-12: -0.006em; --tr-11: 0em; --tr-10: 0.004em;
   --r-xs: 4px;
   --r-chip: 6px;
   --r-ctl: 8px;
@@ -468,7 +471,7 @@ body {
   opacity: 0; pointer-events: none; z-index: 1;
   transition: opacity var(--dur) var(--curve);
 }
-.deck .sheet[data-overflow]::after { opacity: 1; }
+.deck .sheet[data-more-right]::after { opacity: 1; }
 .deck .head {
   flex: none;
   display: flex; align-items: center; gap: 14px;
@@ -477,7 +480,7 @@ body {
 }
 .deck .word {
   display: inline-flex; align-items: baseline;
-  font-size: 17px; font-weight: 600; letter-spacing: -0.045em;
+  font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
   color: var(--ink-1); flex: none;
 }
 .deck .word::after {
@@ -486,14 +489,14 @@ body {
 }
 .deck .headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
 .deck .headName {
-  font-size: 18px; font-weight: 600; letter-spacing: -0.03em;
+  font-size: 18px; font-weight: 600; letter-spacing: var(--tr-18);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   flex: 0 1 auto; min-width: 8ch;
 }
 .deck .headFacts {
   display: flex; align-items: center; gap: 14px;
   font-size: 13px; font-weight: 400; color: var(--ink-2);
-  letter-spacing: -0.006em; white-space: nowrap;
+  letter-spacing: var(--tr-13); white-space: nowrap;
 }
 .deck .headFacts b { font-weight: 600; color: var(--ink-1); }
 .deck .late {
@@ -503,7 +506,7 @@ body {
   transition: box-shadow var(--dur) var(--curve);
   border-radius: var(--r-pill);
   background: var(--ink); color: var(--white);
-  font-size: 12px; font-weight: 600; letter-spacing: -0.004em;
+  font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
 }
 .deck .late::before { content: ""; position: absolute; inset: -11px -6px; }
 .deck .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
@@ -512,7 +515,7 @@ body {
   height: 34px; padding: 0 11px;
   border-radius: var(--r-chip);
   font-size: 13px; font-weight: 400; color: var(--ink-2);
-  letter-spacing: -0.008em; white-space: nowrap;
+  letter-spacing: var(--tr-13); white-space: nowrap;
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
 .deck .ghost svg { width: 15px; height: 15px; color: var(--ink-3); }
@@ -527,7 +530,7 @@ body {
   height: 32px; padding: 0 14px;
   cursor: pointer;
   border-radius: var(--r-pill);
-  font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: -0.008em;
+  font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-13);
   transition: color var(--dur) var(--curve);
 }
 .deck .segItem svg { width: 15px; height: 15px; }
@@ -543,7 +546,8 @@ body {
   grid-auto-rows: 100%;
   gap: 0;
   
-  padding: 0 16px 76px;
+  
+  padding: 0 16px 84px;
   
   overflow-x: auto; overflow-y: hidden;
   border-top: 1px solid var(--line-soft);
@@ -573,16 +577,19 @@ body {
   color: var(--ink-1);
 }
 .deck .trayCount { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-3); }
-.deck .trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: -0.003em; }
+.deck .trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: var(--tr-12); }
 .deck .trayBody {
-  flex: 1 1 auto; min-height: 0;
+  flex: 0 1 auto; min-height: 0;
   overflow-y: auto;
   display: grid; gap: 8px; align-content: start;
   padding: 2px 0 8px;
-  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
-  mask-image: linear-gradient(180deg, #000 calc(100% - 28px), transparent);
+  --fade-top: -1px;
+  --fade-bottom: 101%;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
 }
-.deck .trayBody:not([data-more]) { -webkit-mask-image: none; mask-image: none; }
+.deck .trayBody[data-above] { --fade-top: 26px; }
+.deck .trayBody[data-more] { --fade-bottom: calc(100% - 26px); }
 .deck .card {
   position: relative;
   background: var(--white);
@@ -616,21 +623,23 @@ body {
 .deck .tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
 .deck .tick:active { background: var(--line-strong); }
 .deck .tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
-.deck .cardTitleRow { grid-column: 2; grid-row: 1; display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.deck .cardTitleRow {
+  grid-column: 2; grid-row: 1; min-width: 0;
+  max-height: calc(14px * 1.36 * 3); overflow: hidden;
+}
 .deck .cardTitle {
   font-size: 14px; line-height: 1.36; font-weight: 600;
-  letter-spacing: -0.02em; color: var(--ink-1); margin: 0;
-  
-  flex: 1 1 auto; min-width: 0;
+  letter-spacing: var(--tr-14); color: var(--ink-1); margin: 0;
+  min-width: 0;
   text-wrap: pretty;
   overflow-wrap: break-word;
   
-  display: block; max-height: calc(1.36em * 3); overflow: hidden;
+  display: block;
 }
 .deck .cardNote {
   grid-column: 2; grid-row: 2;
   margin: 0; font-size: 13px; line-height: 1.45; font-weight: 400;
-  color: var(--ink-2); letter-spacing: 0;
+  color: var(--ink-2); letter-spacing: var(--tr-13);
   text-wrap: pretty;
   display: block; max-height: calc(1.45em * 2); overflow: hidden;
 }
@@ -639,7 +648,7 @@ body {
   
   display: flex; align-items: center; flex-wrap: nowrap; gap: 10px;
   min-height: 24px; min-width: 0;
-  font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: 0;
+  font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-12);
 }
 .deck .cardFoot > .who, .deck .cardFoot > .tag, .deck .cardFoot > .hi {
   min-width: 0;
@@ -668,12 +677,12 @@ body {
 .deck .card:hover .cardDots, .deck .card[data-force="hover"] .cardDots, .deck .card:focus-within .cardDots { visibility: visible; }
 .deck .cardDots:hover { background: var(--wash-2); color: var(--ink-1); }
 .deck .when {
-  flex: none; margin-left: auto;
+  float: right; margin: 0 0 0 9px;
   display: inline-flex; align-items: center; gap: 5px;
-  height: 20px; padding: 0 8px;
+  height: 19px; padding: 0 8px;
   border-radius: var(--r-pill);
   font-size: 11px; font-weight: 400;
-  letter-spacing: 0; white-space: nowrap;
+  letter-spacing: var(--tr-11); white-space: nowrap;
   color: var(--ink-3);
   background: var(--wash);
 }
@@ -690,7 +699,7 @@ body {
 }
 .deck .who {
   font-size: 12px; font-weight: 600; color: var(--ink-1);
-  letter-spacing: -0.008em; white-space: nowrap;
+  letter-spacing: var(--tr-12); white-space: nowrap;
 }
 .deck .cardFoot .who + .tag { padding-left: 10px; border-left: 1px solid var(--line); }
 .deck .hi { color: var(--ink-1); font-weight: 400; white-space: nowrap; }
@@ -710,7 +719,11 @@ body {
   --card-ring: var(--lift);
 }
 .deck .card[data-force="moving"] {
-  --card-ring: 0 0 0 1.5px var(--indigo), var(--raise);
+  --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
+  transform: scale(1.02);
+}
+@media (prefers-reduced-motion: reduce) {
+.deck .card[data-force="moving"] { transform: none; }
 }
 .deck .tray[data-over] { background: var(--wash); }
 .deck .tray[data-over] .trayHead {
@@ -723,8 +736,7 @@ body {
   color: var(--ink-2);
   min-height: calc(1.45em * 2 + 12px);
 }
-.deck .tray[data-empty] .trayBody { flex: 0 0 auto; }
-.deck .tray[data-empty] .trayAdd { margin-top: 0; }
+.deck .trayBody[data-more], .deck .trayBody[data-above] { flex: 1 1 auto; }
 .deck .trayAdd {
   display: flex; align-items: center; gap: 8px;
   height: 36px; padding: 0 8px; margin-top: 4px;
@@ -756,6 +768,29 @@ body {
 @media (prefers-reduced-motion: reduce) {
 .deck .card[data-just-done] .tick, .deck .card[data-just-done] .tick svg path, .deck .trayCount[data-changed], .deck .headFacts b[data-changed] { animation: none; }
 }
+.deck .cardMenu {
+  position: absolute; z-index: 8; min-width: 188px;
+  padding: 5px; border-radius: var(--r-ctl);
+  background: var(--white);
+  box-shadow: var(--ring), var(--float);
+  display: grid; gap: 1px;
+}
+.deck .cardMenu p {
+  margin: 0; padding: 8px 9px 6px;
+  font-size: 11px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-mono, ui-monospace, monospace); color: var(--ink-3);
+}
+.deck .cardMenu button {
+  display: flex; align-items: center; gap: 9px;
+  min-height: 34px; padding: 0 9px; border-radius: var(--r-chip);
+  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-1); background: none; border: 0; text-align: left; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.deck .cardMenu button:hover { background: var(--wash); }
+.deck .cardMenu button[aria-current] { font-weight: 600; }
+.deck .cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
+.deck .menuVeil { position: fixed; inset: 0; z-index: 7; }
 .deck .dock {
   position: absolute; left: 50%; bottom: 18px;
   transform: translateX(-50%);
@@ -775,23 +810,24 @@ body {
   border-radius: var(--r-pill);
   background: var(--wash);
   white-space: nowrap;
-  font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: -0.008em;
+  font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
 .deck .dockField:hover { background: var(--wash-2); color: var(--ink-2); }
 .deck .dockField svg { width: 16px; height: 16px; }
-.deck .dockField kbd {
-  margin-left: auto;
+.deck .dockField kbd, .deck .carry kbd {
   font-family: var(--font-mono); font-size: 10px; font-weight: 400;
-  border: 1px solid var(--line); border-radius: 5px;
-  padding: 2px 5px; color: var(--ink-3);
+  letter-spacing: var(--tr-10);
+  border-radius: 5px; padding: 3px 5px;
 }
+.deck .dockField kbd { margin-left: auto; border: 1px solid var(--line); color: var(--ink-3); }
+.deck .carry kbd { background: var(--chrome); color: var(--on-ink-1); }
 .deck .dockPrimary {
   display: inline-flex; align-items: center; gap: 8px;
   height: 38px; padding: 0 17px 0 14px;
   border-radius: var(--r-pill);
   background: var(--ink); color: var(--white);
-  font-size: 13px; font-weight: 600; letter-spacing: -0.008em;
+  font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
   white-space: nowrap;
   transition: transform var(--dur) var(--curve);
 }
@@ -833,7 +869,7 @@ body {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
 }
-.deck .drawerHead h2 { margin: 12px 0 4px; font-size: 19px; font-weight: 600; letter-spacing: -0.03em; }
+.deck .drawerHead h2 { margin: 12px 0 4px; font-size: 19px; font-weight: 600; letter-spacing: var(--tr-19); }
 .deck .drawerLine { margin: 0; font-size: 13px; font-weight: 400; color: var(--ink-3); }
 .deck .axis { margin: 22px 0 8px; height: 4px; background: var(--wash); border-radius: 2px; position: relative; }
 .deck .axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 2px; }
@@ -866,7 +902,7 @@ body {
   display: flex; align-items: center; gap: 11px;
   padding: 11px 10px;
   border-radius: var(--r-chip);
-  font-size: 13px; font-weight: 400; line-height: 1.4; letter-spacing: -0.008em;
+  font-size: 13px; font-weight: 400; line-height: 1.4; letter-spacing: var(--tr-13);
   transition: background-color var(--dur) var(--curve);
 }
 .deck .drawerRow:hover { background: var(--wash); }
@@ -898,43 +934,49 @@ body {
 .deck .drawerAdd svg { width: 15px; height: 15px; }
 .deck .sk { display: block; background: var(--wash); border-radius: 5px; animation: breathe 1.8s var(--ease-in-out) infinite; }
 .deck .carry {
-  position: absolute; left: 50%; bottom: 76px; transform: translateX(-50%);
+  position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
   z-index: 6;
-  display: flex; align-items: center; gap: 10px;
-  height: 36px; padding: 0 6px 0 14px;
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 10px;
+  min-height: 36px; max-width: calc(100% - 32px); padding: 0 6px 0 14px;
   border-radius: var(--r-pill);
   background: var(--ink-1); color: var(--on-ink-1);
-  font-size: 12px; letter-spacing: -0.01em;
+  font-size: 12px; letter-spacing: var(--tr-12);
   box-shadow: var(--lift);
   animation: carryIn var(--dur) var(--curve);
 }
+.deck .floor:has(.carry) .trayAdd { opacity: 0; pointer-events: none; }
+.deck .trayAdd { transition: opacity var(--dur) var(--curve); }
 .deck .carry b { font-weight: 600; }
+.deck .carryName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deck .carryDo {
+  flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
+  background: var(--chrome-active); color: var(--on-ink-1);
+  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  border: 0; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.deck .carryDo:hover { background: rgba(255, 255, 255, 0.22); }
+.deck .carryDo::before { content: ""; position: absolute; }
 .deck .carry em {
   font-style: normal; color: var(--on-ink-2);
   display: inline-flex; align-items: center; gap: 6px;
-}
-.deck .carry kbd {
-  font: inherit; font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 11px; letter-spacing: 0.06em;
-  padding: 2px 5px; border-radius: var(--r-xs);
-  background: var(--chrome); color: var(--on-ink-1);
 }
 @keyframes carryIn { from { opacity: 0; transform: translate(-50%, 6px) } }
 @media (prefers-reduced-motion: reduce) {
 .deck .carry { animation: none }
 }
-@keyframes settle {
-  0% { transform: none }
-  40% { transform: translateY(-2px) }
-  100% { transform: none }
-}
-.deck .card[data-settling] { animation: settle 220ms var(--curve); }
-.deck .card[data-settling] .tick { animation: tickPop 220ms var(--curve); }
-@keyframes tickPop { 0% { transform: scale(1) } 45% { transform: scale(1.18) } 100% { transform: scale(1) } }
+.deck .card[data-flying] { transition: transform 260ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {
-.deck .card[data-settling], .deck .card[data-settling] .tick { animation: none }
+.deck .card[data-flying] { transition: none; }
 }
-.deck .late[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--indigo-ring); }
+.deck .card[data-done] .tick:hover, .deck .card[data-done] .tick:focus-visible {
+  box-shadow: 0 0 0 4px var(--wash-2);
+}
+.deck .late { transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+.deck .late:hover { box-shadow: 0 0 0 3px var(--wash-2); }
+.deck .late[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink-4); }
+.deck .late[aria-pressed="true"]:hover { box-shadow: 0 0 0 3px var(--ink-2); }
+.deck .late svg { width: 11px; height: 11px; margin-left: 3px; margin-right: -2px; }
 @keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
 @media (prefers-reduced-motion: reduce) {
 .deck .sk { animation: none; opacity: 0.7; }
@@ -1017,12 +1059,12 @@ body {
 .deck[data-indigo="forward"] .card[data-next] { box-shadow: 0 0 0 1.5px var(--indigo); }
 .deck[data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
 .deck[data-indigo="forward"] .trayAdd:hover, .deck[data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
-.deck[data-type="expressive"] .headName { font-size: 22px; letter-spacing: -0.034em; }
+.deck[data-type="expressive"] .headName { font-size: 22px; letter-spacing: var(--tr-19); }
 .deck[data-type="expressive"] .word { font-size: 19px; }
-.deck[data-type="expressive"] .cardTitle { font-size: 15px; line-height: 1.34; letter-spacing: -0.022em; }
+.deck[data-type="expressive"] .cardTitle { font-size: 15px; line-height: 1.34; letter-spacing: var(--tr-15); }
 .deck[data-type="expressive"] .cardNote { font-size: 13px; }
 .deck[data-type="expressive"] .trayName { font-size: 11px; letter-spacing: 0.14em; }
-.deck[data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: -0.034em; }
+.deck[data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: var(--tr-19); }
 .deck[data-type="expressive"] .specIntro { font-size: 14px; }
 .deck[data-type="expressive"] .headFacts { font-size: 13px; }
 .deck[data-w="768"] .board {
@@ -1441,8 +1483,15 @@ let focusId = null;     /* the board's single tab stop                     */
 let carriedId = null;   /* the card currently in the operator's hand       */
 let carriedFrom = null; /* where it was picked up, so Escape can undo      */
 let lateOnly = false;   /* the overdue chip, pressed                       */
-let settlingId = null;  /* the card playing the completion beat            */
+let undone = null;      /* the last completion, still reversible           */
+let undoTimer = null;
+let menuFor = null;     /* the card whose move menu is open                 */
+let menuAt = "";
+let flyFrom = null;     /* where a completed card was, so it can travel     */
 let refocus = false;    /* the last change came from the keyboard          */
+
+/* The keycap says what this keyboard actually has on it. */
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "\u2318" : "Ctrl ";
 
 const B = window.BOARD;
 const I = window.ICON;
@@ -1530,12 +1579,19 @@ function dayLabel(iso) {
   return date.getUTCDate() + " " + MONTHS[date.getUTCMonth()];
 }
 
+function daysLate(iso) {
+  const parts = String(iso).split("-").map(Number);
+  const date = Date.UTC(parts[0], parts[1] - 1, parts[2]);
+  const days = Math.round((Date.UTC(2026, 6, 16) - date) / 86400000);
+  return days + (days === 1 ? " day overdue" : " days overdue");
+}
+
 function timeOf(task) {
   if (task.lane === "done") return { kind: "done", label: "" };
-  if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
+  if (task.milestone) return { kind: "milestone", label: "Milestone " + task.milestone.replace("Milestone due ", "") };
   if (!task.dueAt) return { kind: "none", label: "" };
   const label = dayLabel(task.dueAt);
-  if (task.dueTone === "overdue") return { kind: "overdue", label };
+  if (task.dueTone === "overdue") return { kind: "overdue", label: daysLate(task.dueAt) };
   if (task.dueTone === "today") return { kind: "today", label };
   return { kind: "soon", label };
 }
@@ -1548,9 +1604,9 @@ function card(task, force, stop) {
   const next = Boolean(task.milestone);
   const time = timeOf(task);
   const show = time.kind !== "none" && time.kind !== "done";
-  const SPOKEN = { overdue: "Overdue, was due ", today: "Due ", soon: "Due ", milestone: "Milestone, " };
+  const SPOKEN = { overdue: "", today: "Due ", soon: "Due ", milestone: "" };
   const spoken = '<span class="sr">' + (SPOKEN[time.kind] || "") + "</span>";
-  const label = spoken + (time.kind === "milestone" ? I.milestone : "") + esc(time.label);
+  const label = spoken + esc(time.label);
 
   /* Which couple a task belongs to is the question a venue asks on a
      Saturday. Which area of the house it touches is background. They were
@@ -1572,25 +1628,26 @@ function card(task, force, stop) {
 
   return (
     '<article class="card" data-id="' + esc(task.id) + '" draggable="true"' +
-    ' tabindex="' + (stop ? "0" : "-1") + '" aria-roledescription="Task, movable"' +
+    ' aria-labelledby="ct-' + esc(task.id) + '"' +
+    ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Task, movable"') +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (task.id === carriedId ? ' aria-grabbed="true"' : "") +
-    (task.id === settlingId ? " data-settling" : "") +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
     (force ? ' data-force="' + force + '"' :
       task.id === carriedId ? ' data-force="moving"' : "") + ">" +
     '<button type="button" class="tick" data-act="tick" tabindex="' + (stop ? "0" : "-1") +
       '" role="checkbox" aria-checked="' + (done ? "true" : "false") +
-      '" aria-label="' + esc(task.title) + '">' + I.check + "</button>" +
+      '" aria-label="' + (done ? "Not done yet" : "Mark done") + '">' + I.check + "</button>" +
     '<div class="cardTitleRow">' +
-      '<p class="cardTitle">' + esc(task.title) + "</p>" +
       (show ? '<span class="when" data-t="' + time.kind + '">' + label + "</span>" : "") +
+      '<p class="cardTitle" id="ct-' + esc(task.id) + '">' + esc(task.title) + "</p>" +
     "</div>" +
     (task.note && !done ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
       (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
-      '<button class="cardDots" tabindex="' + (stop ? "0" : "-1") + '" aria-label="Task actions">' +
-        I.dots + "</button>" +
+      '<button class="cardDots" data-act="menu" tabindex="' + (stop ? "0" : "-1") +
+        '" aria-haspopup="menu" aria-expanded="' + (menuFor === task.id ? "true" : "false") +
+        '" aria-label="Move this task">' + I.dots + "</button>" +
     "</div>" +
     "</article>"
   );
@@ -1628,16 +1685,22 @@ function head() {
     '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
     '<div class="headFacts">' +
       '<span class="today">' + todayLabel() + "</span>" +
-      (total ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
-      (overdue ? '<button type="button" class="late" data-act="late" aria-pressed="' +
-        (lateOnly ? "true" : "false") + '">' + overdue + " overdue</button>" : "") +
-      "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
+      (total && !lateOnly ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
+      /* The control survives at zero while the filter is on, or clearing the
+         last overdue task leaves the operator with an empty board and no way
+         back. */
+      (overdue || lateOnly
+        ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") + '">' +
+          (lateOnly ? "Showing " + overdue + " overdue" + I.close : overdue + " overdue") + "</button>"
+        : "") +
+      (lateOnly ? "<span>" + (total - overdue) + " hidden</span>"
+        : "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>") +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search">' + I.search + "</button>" +
       '<button class="ghost">' + I.share + "<span>Share</span></button>" +
       '<button class="ghost">' + I.planning + "<span>Planning</span>" +
-        (undated ? "<em>" + undated + "</em>" : "") + "</button>" +
+        (undated ? '<em title="' + undated + ' tasks with no date">' + undated + "</em>" : "") + "</button>" +
       '<button class="ghost" aria-label="More">' + I.dots + "</button>" +
     "</div></div>"
   );
@@ -1667,7 +1730,12 @@ function board() {
     '<div class="board" role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
     B.columns.map((c) => {
       const rows = tasksFor(c.id);
-      const empty = lateOnly ? "Nothing late here." : c.empty;
+      /* Under a filter, five columns saying the same sentence read as a
+         rendering fault. The board says it once, in the first column. */
+      const empty = lateOnly
+        ? (c.id === B.columns[0].id ? (allTasks().some((t) => timeOf(t).kind === "overdue")
+            ? "Nothing else is overdue." : "Nothing is overdue.") : "")
+        : c.empty;
       return (
         '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
           (rows.length ? "" : " data-empty") +
@@ -1680,9 +1748,11 @@ function board() {
           '<p class="trayNote">' + esc(c.note) + "</p></div>" +
         '<div class="trayBody">' +
           (rows.length ? rows.map((t) => card(t, null, t.id === focusId)).join("")
-            : '<p class="trayEmpty">' + esc(empty) + "</p>") +
+            : empty ? '<p class="trayEmpty">' + esc(empty) + "</p>" : "") +
         "</div>" +
-        '<button class="trayAdd">' + I.plus + "<span>Add task</span></button>" +
+        /* "Add task" also sits on the dock, ten pixels below, meaning the
+           whole project. This one means this column. */
+        '<button class="trayAdd">' + I.plus + "<span>Add here</span></button>" +
         "</section>"
       );
     }).join("") + "</div>"
@@ -1692,7 +1762,8 @@ function board() {
 function dock() {
   return (
     '<div class="dock">' +
-      '<button class="dockField">' + I.search + "<span>Search this project</span><kbd>⌘K</kbd></button>" +
+      '<button class="dockField">' + I.search + "<span>Search " + esc(B.workspace) + "</span>" +
+        "<kbd>" + MOD + "K</kbd></button>" +
       '<button class="dockPrimary">' + I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
       '<button type="button" class="dockAvatar" aria-label="' + esc(B.operator.role) + '">' +
@@ -1701,16 +1772,63 @@ function dock() {
   );
 }
 
-/* Said only while a card is in the hand. */
-function carryBar() {
+/* Titles are short; the pill is wide. Cutting at four words severed
+   sentences after a preposition with hundreds of pixels going spare. */
+function shortTitle(title) {
+  if (title.length <= 48) return title;
+  const words = title.slice(0, 48).split(" ");
+  words.pop();
+  return words.join(" ") + "\u2026";
+}
+
+/* One strip at the foot of the sheet, and the board's only statement of
+   what it is currently doing. In hand beats just-finished beats filtered. */
+function footPill() {
   const task = carriedId && taskById(carriedId);
+  if (task) {
+    return (
+      '<div class="carry">' +
+      '<span class="carryName">Moving <b>' + esc(shortTitle(task.title)) + "</b></span>" +
+      "<em><kbd>\u2191\u2193\u2190\u2192</kbd> move</em>" +
+      "<em><kbd>Space</kbd> put it down</em>" +
+      "<em><kbd>Esc</kbd> put it back</em>" +
+      "</div>"
+    );
+  }
+  if (undone) {
+    return (
+      '<div class="carry">' +
+      '<span class="carryName"><b>' + esc(shortTitle(undone.title)) + "</b> is done.</span>" +
+      '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
+      "<em><kbd>" + MOD + "Z</kbd></em>" +
+      "</div>"
+    );
+  }
+  if (lateOnly) {
+    return (
+      '<div class="carry">' +
+      '<span class="carryName">Showing overdue work only.</span>' +
+      '<button type="button" class="carryDo" data-act="showall">Show all</button>' +
+      "</div>"
+    );
+  }
+  return "";
+}
+
+/* The menu is the one route to moving a card that a mouse, a finger and a
+   keyboard can all take. Drag is a pointer gesture; Space is a keyboard one;
+   a touch screen had neither. */
+function cardMenu() {
+  if (!menuFor) return "";
+  const task = taskById(menuFor);
   if (!task) return "";
   return (
-    '<div class="carry" role="status">' +
-    "<span>Moving <b>" + esc(task.title.split(" ").slice(0, 4).join(" ")) + "…</b></span>" +
-    "<em><kbd>↑↓←→</kbd> place</em>" +
-    "<em><kbd>Space</kbd> drop</em>" +
-    "<em><kbd>Esc</kbd> cancel</em>" +
+    '<div class="menuVeil" data-act="closemenu"></div>' +
+    '<div class="cardMenu" role="menu" aria-label="Move ' + esc(task.title) + '" style="' + menuAt + '">' +
+    "<p>Move to</p>" +
+    B.columns.map((c) =>
+      '<button type="button" role="menuitem" data-act="moveto" data-lane="' + c.id + '"' +
+      (c.id === task.lane ? ' aria-current="true"' : "") + ">" + esc(c.name) + "</button>").join("") +
     "</div>"
   );
 }
@@ -1727,7 +1845,7 @@ function drawer() {
       '<div class="axisEnds"><span>6 Jul</span><span>10 Oct</span></div>' +
       '<p class="drawerSummary">' + esc(p.summary) + "</p></div>" +
     '<div class="drawerTabs">' +
-      '<button class="drawerTab" data-active>Unscheduled<em>' + p.unscheduled.length + "</em></button>" +
+      '<button class="drawerTab" data-active>No date<em>' + p.unscheduled.length + "</em></button>" +
       '<button class="drawerTab">Milestones<em>' + p.milestones.length + "</em></button></div>" +
     '<p class="drawerHelp"><button type="button" class="selectAll">Select all</button>' + esc(p.help) + "</p>" +
     '<div class="drawerRows" role="group" aria-label="Tasks with no date">' +
@@ -1758,13 +1876,23 @@ function loading() {
         '<h2 class="trayName">' + esc(c.name) + "</h2></div>" +
         '<p class="trayNote">' + esc(c.note) + "</p></div>" +
       '<div class="trayBody">' +
-      [0, 1, 2].slice(0, [3, 3, 2, 1, 3][i]).map(() => (
+      /* Two per column: honest about not knowing, rather than a specific
+         promise per column that the payload then contradicts. */
+      [0, 1].map(() => (
         '<div class="loadCard"><span class="sk" style="width:86%;height:12px"></span>' +
         '<span class="sk" style="width:62%;height:10px"></span>' +
         '<span class="sk" style="width:34%;height:9px"></span></div>'
       )).join("") + "</div></section>"
     )).join("") + "</div>" +
-    '<p class="loadSay">Opening The Orchard, events</p></div>'
+    '<p class="loadSay">Opening ' + esc(B.workspace) + "</p>" +
+    /* The foot furniture is a constant of the product, so it is present from
+       the first paint. It simply cannot be used yet. */
+    '<div class="dock" aria-hidden="true" data-idle>' +
+      '<span class="dockField">' + I.search + "<span>Search " + esc(B.workspace) + "</span></span>" +
+      '<span class="dockPrimary">' + I.plus + "<span>Add task</span></span>" +
+      '<span class="dockRule"></span>' +
+      '<span class="dockAvatar">' + B.operator.initials + "</span>" +
+    "</div></div>"
   );
 }
 
@@ -1810,8 +1938,8 @@ function renderApp() {
   const sheet =
     state === "loading" ? loading()
     : state === "cards" ? specimens()
-    : '<div class="sheet">' + head() + views() + board() + carryBar() + dock() + "</div>";
-  return '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + "</div>";
+    : '<div class="sheet">' + head() + views() + board() + footPill() + dock() + "</div>";
+  return '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + cardMenu() + "</div>";
 }
 
 /* The live region is created once and never re-rendered. A region that is
@@ -1849,21 +1977,69 @@ function moveTo(id, lane, index) {
   else rows.splice(at, 0, task);
 }
 
+/* Finishing a task was a silent teleport to a column a thousand pixels away,
+   and on a phone to a column that is off screen entirely. The card now
+   travels the distance it actually moved, measured after the repaint. */
+function flyCompleted(target, id) {
+  if (!flyFrom) return;
+  const node = target.querySelector('.card[data-id="' + id + '"]');
+  const was = flyFrom;
+  flyFrom = null;
+  if (!node || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const now = node.getBoundingClientRect();
+  const dx = was.left - now.left;
+  const dy = was.top - now.top;
+  if (!dx && !dy) return;
+  node.style.transform = "translate(" + dx + "px," + dy + "px)";
+  node.getBoundingClientRect();
+  node.setAttribute("data-flying", "");
+  node.style.transform = "";
+  node.addEventListener("transitionend", () => {
+    node.removeAttribute("data-flying");
+    node.setAttribute("data-just-done", "");
+  }, { once: true });
+}
+
+function clearUndo() {
+  clearTimeout(undoTimer);
+  undone = null;
+}
+
 function toggleDone(id) {
   const task = taskById(id);
   if (!task) return;
+  const target = document.getElementById("root") || document.getElementById("deck");
+  const node = target && target.querySelector('.card[data-id="' + id + '"]');
+  flyFrom = node ? node.getBoundingClientRect() : null;
+
   if (task.lane === "done") {
-    task.lane = task.prevLane || "todo";
+    task.lane = task.prevLane || B.columns[0].id;
+    clearUndo();
     say(task.title + " moved back to " + laneName(task.lane) + ".");
   } else {
     task.prevLane = task.lane;
     task.lane = "done";
-    settlingId = id;
-    say(task.title + " done.");
-    setTimeout(() => { settlingId = null; }, 260);
+    clearTimeout(undoTimer);
+    undone = { id: id, title: task.title };
+    undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
+    say(task.title + " done. Press " + MOD + "Z to undo.");
+  }
+  /* Clearing the last overdue task while filtered used to leave an empty
+     board behind a control that had just disappeared. */
+  if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
+    lateOnly = false;
+    say(task.title + " done. Nothing is overdue, so the filter is off.");
   }
   focusId = id;
+  refocus = true;
   mount();
+}
+
+function undoLast() {
+  if (!undone) return;
+  const id = undone.id;
+  clearUndo();
+  toggleDone(id);
 }
 
 function walk(dx, dy) {
@@ -1900,46 +2076,77 @@ function carryMove(dx, dy) {
   say(laneName(lanes[x]) + ", position " + (Math.min(at.y, rows.length) + 1) + " of " + (rows.length + 1) + ".");
 }
 
+function closeMenu() {
+  if (!menuFor) return false;
+  const id = menuFor;
+  menuFor = null;
+  focusId = id;
+  refocus = true;
+  mount();
+  return true;
+}
+
 function onKey(event) {
+  const key = event.key;
+
+  /* Board-wide keys, live wherever focus is inside the sheet. */
+  if ((event.metaKey || event.ctrlKey) && (key === "z" || key === "Z")) {
+    if (undone) { event.preventDefault(); undoLast(); }
+    return;
+  }
+  if (key === "Escape") {
+    if (closeMenu()) { event.preventDefault(); return; }
+    if (!carriedId && lateOnly) {
+      event.preventDefault();
+      lateOnly = false; clearUndo();
+      say("Showing all work.");
+      mount();
+      return;
+    }
+  }
+
   const card = event.target.closest && event.target.closest(".card[data-id]");
   if (!card) return;
+
+  /* The card's own controls answer for themselves. Before this, Space on a
+     checkbox picked the card up and Enter on the actions menu completed the
+     task — a labelled control doing an unrelated, unannounced thing. */
+  if (event.target.closest(".tick, .cardDots") && (key === " " || key === "Spacebar" || key === "Enter")) return;
+
   const id = card.dataset.id;
-  const key = event.key;
   const DIR = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
-  /* The tab stop is always the card the operator is on. Without this, a
-     pick-up left the ring on whichever card held the stop last and the next
-     arrow walked the wrong card. */
+  /* The tab stop is always the card the operator is on. */
   focusId = id;
 
   if (key === " " || key === "Spacebar") {
     event.preventDefault();
     if (carriedId === id) {
       const at = place(id);
-      say(taskById(id).title + " dropped in " + laneName(laneIds()[at.x]) + ".");
+      say(taskById(id).title + " put down in " + laneName(laneIds()[at.x]) + ".");
       carriedId = null; carriedFrom = null;
     } else {
       const at = place(id);
       carriedId = id;
       carriedFrom = { lane: laneIds()[at.x], index: at.y };
-      say("Picked up " + taskById(id).title + ". Arrow keys to place, space to drop.");
+      clearUndo();
+      say("Picked up " + taskById(id).title + ".");
     }
     refocus = true; mount(); return;
   }
   if (key === "Escape" && carriedId) {
     event.preventDefault();
     moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
-    say("Move cancelled. Back in " + laneName(carriedFrom.lane) + ".");
+    say("Put back in " + laneName(carriedFrom.lane) + ".");
     carriedId = null; carriedFrom = null;
     refocus = true; mount(); return;
   }
   if (key === "Enter") {
     event.preventDefault();
-    toggleDone(id); refocus = true; return;
+    toggleDone(id); return;
   }
   if (DIR[key]) {
     event.preventDefault();
-    focusId = id;
     if (carriedId === id) carryMove(DIR[key][0], DIR[key][1]);
     else walk(DIR[key][0], DIR[key][1]);
     refocus = true; mount();
@@ -1948,17 +2155,56 @@ function onKey(event) {
 
 function onClick(event) {
   const act = event.target.closest && event.target.closest("[data-act]");
-  if (act && act.dataset.act === "tick") {
+  const what = act && act.dataset.act;
+
+  if (what === "tick") {
     event.preventDefault();
     toggleDone(act.closest(".card").dataset.id);
     return;
   }
-  if (act && act.dataset.act === "late") {
+  if (what === "late") {
     lateOnly = !lateOnly;
-    say(lateOnly ? "Showing late work only." : "Showing all work.");
+    clearUndo();
+    say(lateOnly ? "Showing overdue work only." : "Showing all work.");
     mount();
     return;
   }
+  if (what === "showall") {
+    lateOnly = false;
+    say("Showing all work.");
+    mount();
+    return;
+  }
+  if (what === "undo") { undoLast(); return; }
+  if (what === "menu") {
+    const card = act.closest(".card");
+    const box = act.getBoundingClientRect();
+    const host = document.getElementById("root") || document.getElementById("deck");
+    const frame = host.getBoundingClientRect();
+    /* Anchored to the control, kept inside the sheet. */
+    const left = Math.min(box.left - frame.left, frame.width - 200);
+    const top = Math.min(box.bottom - frame.top + 6, frame.height - 250);
+    menuAt = "left:" + Math.max(8, Math.round(left)) + "px;top:" + Math.round(top) + "px";
+    menuFor = menuFor === card.dataset.id ? null : card.dataset.id;
+    focusId = card.dataset.id;
+    mount();
+    const first = document.querySelector(".cardMenu button");
+    if (first) first.focus();
+    return;
+  }
+  if (what === "moveto") {
+    const id = menuFor;
+    const lane = act.dataset.lane;
+    moveTo(id, lane, 0);
+    menuFor = null;
+    focusId = id;
+    refocus = true;
+    say(taskById(id).title + " moved to " + laneName(lane) + ".");
+    mount();
+    return;
+  }
+  if (what === "closemenu") { closeMenu(); return; }
+
   const card = event.target.closest && event.target.closest(".card[data-id]");
   if (card && card.closest(".board")) { focusId = card.dataset.id; }
 }
@@ -1975,14 +2221,19 @@ function onDragStart(event) {
   card.setAttribute("data-force", "drag");
   if (event.dataTransfer) { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", carriedId); }
 }
+
+/* The dragged card is about to be spliced out, so it must not be counted
+   when resolving where the line sits. Counting it landed every downward
+   reorder one slot past the line the operator was shown. */
 function dropIndex(body, y) {
-  const cards = [...body.querySelectorAll(".card[data-id]")];
+  const cards = [...body.querySelectorAll(".card[data-id]")].filter((c) => c.dataset.id !== carriedId);
   for (let i = 0; i < cards.length; i += 1) {
     const box = cards[i].getBoundingClientRect();
     if (y < box.top + box.height / 2) return i;
   }
   return cards.length;
 }
+
 function onDragOver(event) {
   if (!carriedId) return;
   const tray = event.target.closest && event.target.closest(".tray[data-lane]");
@@ -1991,23 +2242,30 @@ function onDragOver(event) {
   document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
   document.querySelectorAll(".dropLine").forEach((n) => n.remove());
   tray.setAttribute("data-over", "");
-  overLane = { lane: tray.dataset.lane, index: dropIndex(tray.querySelector(".trayBody"), event.clientY) };
   const body = tray.querySelector(".trayBody");
+  overLane = { lane: tray.dataset.lane, index: dropIndex(body, event.clientY) };
   const line = document.createElement("span");
   line.className = "dropLine";
-  const cards = [...body.querySelectorAll(".card[data-id]")];
+  const cards = [...body.querySelectorAll(".card[data-id]")].filter((c) => c.dataset.id !== carriedId);
   if (overLane.index >= cards.length) body.appendChild(line);
   else body.insertBefore(line, cards[overLane.index]);
 }
+
 function onDrop(event) {
   if (!carriedId || !overLane) return;
   event.preventDefault();
-  moveTo(carriedId, overLane.lane, overLane.index);
-  say(taskById(carriedId).title + " moved to " + laneName(overLane.lane) + ".");
-  focusId = carriedId;
+  const id = carriedId;
+  const sameLane = overLane.lane === carriedFrom.lane;
+  moveTo(id, overLane.lane, overLane.index);
+  const place = tasksFor(overLane.lane);
+  say(sameLane
+    ? taskById(id).title + " moved to position " + (overLane.index + 1) + " of " + place.length + " in " + laneName(overLane.lane) + "."
+    : taskById(id).title + " moved to " + laneName(overLane.lane) + ".");
+  focusId = id;
   carriedId = null; carriedFrom = null; overLane = null;
   mount();
 }
+
 function onDragEnd() {
   document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
   document.querySelectorAll(".dropLine").forEach((n) => n.remove());
@@ -2018,9 +2276,20 @@ function onDragEnd() {
    which is how a card ends up reading "dinner 5.30p...". This walks back to
    the last whole word, keeps the full string on the element for the tooltip
    and for assistive technology, and costs one binary search per clipped
-   line box. */
+   line box.
+
+   It must also be idempotent and re-runnable: it used to run once, before
+   the webfont had swapped in, and never again — so a card silently lost its
+   last line, with no ellipsis, at every width but the one it was measured
+   at. Restoring the full string first is what lets a node grow back when
+   its column widens. */
 function trimToWord(node) {
-  if (node.scrollHeight <= node.clientHeight + 1) return;
+  /* The title is clipped by its row, because the row is what contains the
+     floated date. Measuring the title itself would always report a fit. */
+  const clip = node.classList.contains("cardTitle") ? node.parentElement : node;
+  const fits = () => clip.scrollHeight <= clip.clientHeight + 1;
+  if (node.dataset.full) node.textContent = node.dataset.full;
+  if (fits()) { node.removeAttribute("title"); return; }
   const full = node.dataset.full || node.textContent;
   node.dataset.full = full;
   node.title = full;
@@ -2030,36 +2299,120 @@ function trimToWord(node) {
   while (low < high) {
     const mid = Math.ceil((low + high) / 2);
     node.textContent = words.slice(0, mid).join(" ") + "…";
-    if (node.scrollHeight <= node.clientHeight + 1) low = mid;
+    if (fits()) low = mid;
     else high = mid - 1;
   }
   node.textContent = words.slice(0, low).join(" ") + "…";
 }
 
 /* A fade that is always on is decoration; a fade that appears exactly when
-   something is hidden is information. Both edge masks are measured, after
-   layout, from the elements themselves. */
+   something is hidden in that direction is information. Both masks are
+   measured from distance-to-end, after layout and on every scroll — before
+   this they reported "this scrolls" rather than "there is more", so the last
+   card sat permanently under a white gradient with nothing below it. */
 function measureEdges(target) {
   target.querySelectorAll(".trayBody").forEach((body) => {
-    body.toggleAttribute("data-more", body.scrollHeight > body.clientHeight + 1);
+    body.toggleAttribute("data-above", body.scrollTop > 1);
+    body.toggleAttribute("data-more", body.scrollTop + body.clientHeight < body.scrollHeight - 1);
   });
   const board = target.querySelector(".board");
   const sheet = target.querySelector(".sheet");
-  if (board && sheet) sheet.toggleAttribute("data-overflow", board.scrollWidth > board.clientWidth + 1);
+  if (board && sheet) {
+    sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
+  }
   const probe = target.querySelector(".specProbe .trayBody");
   if (probe && sheet) sheet.style.setProperty("--tray-card", Math.round(probe.getBoundingClientRect().width) + "px");
+}
+
+function retrim(target) {
+  target.querySelectorAll(".cardTitle, .cardNote").forEach(trimToWord);
+  measureEdges(target);
+}
+
+/* Repainting the whole sheet used to annihilate every scroll position and
+   the focus point with it: one tick on a phone threw the board back to To
+   Do, and any pointer completion dropped focus to <body>, eight tab stops
+   from where the operator was. Place is captured, restored in the same
+   frame, and restored on every path rather than only the keyboard one. */
+function keepPlace(target) {
+  const scrolls = {};
+  target.querySelectorAll(".tray[data-lane]").forEach((tray) => {
+    const body = tray.querySelector(".trayBody");
+    if (body) scrolls[tray.dataset.lane] = body.scrollTop;
+  });
+  const board = target.querySelector(".board");
+  const active = document.activeElement;
+  const card = active && active.closest && active.closest(".card[data-id]");
+  const chrome = !card && active && active.closest && active.closest("[data-act]");
+  return {
+    scrolls: scrolls,
+    left: board ? board.scrollLeft : 0,
+    id: card ? card.dataset.id : null,
+    act: chrome ? chrome.dataset.act : null,
+    part: active && active.classList.contains("tick") ? "tick"
+      : active && active.classList.contains("cardDots") ? "cardDots" : "card",
+  };
+}
+
+function restorePlace(target, kept) {
+  target.querySelectorAll(".tray[data-lane]").forEach((tray) => {
+    const body = tray.querySelector(".trayBody");
+    const top = kept.scrolls[tray.dataset.lane];
+    if (body && top) body.scrollTop = top;
+  });
+  const board = target.querySelector(".board");
+  if (board && kept.left) {
+    /* Mandatory snap re-runs against the fresh layout and drags the board
+       back to the first column, which is why every tick on a phone threw the
+       operator back to To Do. Snap is suspended for the one frame the
+       restore takes. */
+    const snap = board.style.scrollSnapType;
+    board.style.scrollSnapType = "none";
+    void board.scrollWidth;
+    board.scrollLeft = kept.left;
+    requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
+  }
+  const wanted = refocus ? focusId : kept.id;
+  if (!wanted) {
+    if (kept.act) {
+      const back = target.querySelector('[data-act="' + kept.act + '"]');
+      if (back) back.focus({ preventScroll: true });
+    }
+    return;
+  }
+  const node = target.querySelector('.card[data-id="' + wanted + '"]');
+  if (!node) return;
+  const part = refocus ? "card" : kept.part;
+  const aim = part === "card" ? node : node.querySelector("." + part) || node;
+  if (kept.id || refocus) aim.focus({ preventScroll: true });
+}
+
+let bound = null;
+function bindScroll(target) {
+  const scrollers = [target.querySelector(".board"), ...target.querySelectorAll(".trayBody")].filter(Boolean);
+  if (bound) bound.forEach((n) => n.removeEventListener("scroll", onScroll));
+  bound = scrollers;
+  scrollers.forEach((n) => n.addEventListener("scroll", onScroll, { passive: true }));
+}
+let scrollFrame = 0;
+function onScroll() {
+  if (scrollFrame) return;
+  scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = 0;
+    const target = document.getElementById("root") || document.getElementById("deck");
+    if (target) measureEdges(target);
+  });
 }
 
 function mount() {
   const target = document.getElementById("root") || document.getElementById("deck");
   if (!target) return;
+  const kept = keepPlace(target);
   target.innerHTML = renderApp();
-  target.querySelectorAll(".cardTitle, .cardNote").forEach(trimToWord);
-  measureEdges(target);
-  if (refocus && focusId) {
-    const node = target.querySelector('.card[data-id="' + focusId + '"]');
-    if (node) node.focus({ preventScroll: false });
-  }
+  restorePlace(target, kept);
+  retrim(target);
+  bindScroll(target);
+  flyCompleted(target, undone ? undone.id : null);
   refocus = false;
 }
 
@@ -2069,7 +2422,11 @@ window.__signal = {
   mount,
   presets: PRESETS,
   decisions: DECISIONS,
-  setState(next) { state = next; carriedId = null; focusId = null; lateOnly = false; },
+  setState(next) {
+    state = next;
+    carriedId = null; focusId = null; lateOnly = false; menuFor = null;
+    clearUndo();
+  },
 };
 
 /* One delegated listener per event, on the container, so a repaint can
@@ -2077,7 +2434,7 @@ window.__signal = {
 const host = document.getElementById("root") || document.getElementById("deck");
 if (host) {
   host.addEventListener("click", onClick);
-  host.addEventListener("keydown", onKey);
+  document.addEventListener("keydown", onKey);
   host.addEventListener("dragstart", onDragStart);
   host.addEventListener("dragover", onDragOver);
   host.addEventListener("drop", onDrop);
@@ -2085,8 +2442,16 @@ if (host) {
 }
 addEventListener("resize", () => {
   const target = document.getElementById("root") || document.getElementById("deck");
-  if (target) measureEdges(target);
+  if (target) retrim(target);
 });
+/* The webfont swaps in after the first paint, which is what made every
+   measured trim wrong on load. */
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    const target = document.getElementById("root") || document.getElementById("deck");
+    if (target) retrim(target);
+  });
+}
 
 mount();
 </script>

@@ -229,6 +229,61 @@
           "done": "The tray foot is designed. A column with more in it than fits dissolves into the same mask idiom the sheet's right edge uses, measured rather than always-on; an empty tray's body stops at its content so the Add row sits under the line it belongs to."
         }
       ]
+    },
+    {
+      "round": 5,
+      "scores": {
+        "UI composition": 7.2,
+        "Typography": 7.2,
+        "Interaction and states": 6.3,
+        "UX and information design": 6.4,
+        "Brand and copy": 8.1,
+        "Product taste and emotional resonance": 7.4,
+        "Measured evidence": 7.4
+      },
+      "findings": 35,
+      "confirmed": 29,
+      "refuted": 6,
+      "fixed": 29,
+      "headline": "Three seats dropped, one by 1.1. This was the first round graded by driving the file rather than reading frames, and the interaction layer built in round 4 turned out to punish the operator for using it: every repaint annihilated every scroll position and the focus point, Space on a checkbox picked the card up instead of ticking it, nothing committed was reversible, and the filter emptied the board with no way back. A panel that only goes up is not looking hard enough — this is the round that proves it is. Brand rose to 8.1 and is the first seat within striking distance of the gate.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 9.0,
+          "problem": "Every state change replaced the whole sheet, so every scroll position and the focus point were annihilated. Measured: one tick on a phone threw the board from Done back to To Do; the dense board lost every column's place on every interaction, including columns the operator had not touched; any pointer completion dropped focus to <body>, eight tab stops from where they were. It fired on tick, drag, drop, filter and every arrow press.",
+          "done": "Place is captured before the write and restored in the same frame, on every path rather than only the keyboard one — each column's scroll by lane, the board's horizontal scroll, and the exact control that held focus, including chrome controls. Mandatory scroll-snap is suspended for the one frame the restore takes, which is what had been dragging the phone back to the first column."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 8.5,
+          "problem": "Space on the tick — a role=checkbox, whose contract key is Space — picked the card up instead of ticking it, and Enter on the '...' actions button completed the task and flew it to Done without opening any menu. A labelled control performing an unrelated, unannounced and unreversible action is the worst class of keyboard defect, and both sat on the single tab stop the whole design is built around.",
+          "done": "The card's own controls answer for themselves: the delegated handler stands down for Space and Enter inside the tick or the menu, and each button's native activation runs. Proven by four assertions in the behaviour gate."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 8.0,
+          "problem": "Nothing the board committed was reversible, and the filter was a dead end. Clicking the overdue chip emptied five columns, repeated one identical sentence four times, left the header asserting '5 of 13 done' directly above columns counting zero, and clearing the last overdue task destroyed the only control that could undo it — leaving an empty board and no way back.",
+          "done": "The foot strip is the board's one reversibility surface, with three states in priority order: what is in your hand, what you just finished with an Undo bound to Cmd/Ctrl+Z, and what the filter is hiding with a way out. The chip states the filter, the header stops asserting totals it is not showing, Escape clears it, and it releases itself when nothing is overdue. The board says it once, in one column, rather than five times."
+        },
+        {
+          "seat": "Typography",
+          "cost": 9.0,
+          "problem": "The board silently deleted content. The word-safe trim ran once, inside the first paint, before the webfont had swapped in, and never again — the resize listener only re-measured the edge fades. So a note read 'Ceremony 2pm orchard, drinks terrace, dinner', a complete-looking sentence that had quietly dropped '5.30pm. Share...', with no ellipsis and no visual tell. A venue operator cannot know they are reading a fragment.",
+          "done": "The trim restores from the full string first, so it is idempotent and a line can grow back when its column widens, and it re-runs on fonts.ready, on resize and on every repaint. Zero silent clips at six widths, asserted in the gate. The clamp also moved off the title onto its row: overflow:hidden made the title establish a formatting context, which is a block's instruction to avoid a float rather than flow around it, so a wide date chip was stealing width from all three lines instead of one."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 7.0,
+          "problem": "The blackest, loudest object on the board was a bare date the operator had to decode by arithmetic, and the one indigo in the entire view was an undecodable diamond. Ink density said how loud; nothing said why.",
+          "done": "Every chip states its own condition in one grammar: '2 days overdue', 'Milestone 1 Aug', 'Today'. The diamond is gone. The dock's keycap now says what the operator's keyboard actually has on it, and the tray control says 'Add here' so it cannot be confused with the dock's 'Add task' ten pixels below."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 6.0,
+          "problem": "The tray body grew to fill its column, leaving a 246px ruled void between the last card and the control that appends to it, and under a filter four Add rows landed on one line with the fifth stranded 548px below — five identical controls reading as a rendering fault rather than a filter. The foot band had 10px of clearance above the dock and 18px below, and the carry pill materialised in the exact 36px band the Add rows occupy.",
+          "done": "The body sizes to its content and only fills when it has more than fits. The band is 18 and 18. The pill sits clear of the Add rows, and they stand down while it is up rather than being covered."
+        }
+      ]
     }
   ]
 }
