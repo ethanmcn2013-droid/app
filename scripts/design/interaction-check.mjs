@@ -688,9 +688,13 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   const page = await open();
   await page.locator(".late").click();
   await page.waitForTimeout(250);
-  const notes = await page.$$eval(".trayNote", (n) => n.map((x) => x.textContent));
-  ok("no column claims to hold what it is hiding",
-    notes.every((t) => t.toLowerCase().indexOf("overdue") !== -1), JSON.stringify(notes));
+  /* The column carries the fact in its own accessible name; a note here
+     would be the same fact a fourth time on one screen. */
+  const notes = await page.$$eval(".trayNote", (n) => n.map((x) => x.textContent.trim()));
+  ok("no column describes what it is not showing", notes.every((t) => t === ""), JSON.stringify(notes));
+  const labels = await page.$$eval(".tray[data-lane]", (n) => n.map((x) => x.getAttribute("aria-label")));
+  ok("but each one says what it is showing, out of what",
+    labels.every((t) => / \d+ of \d+ shown$/.test(t)), JSON.stringify(labels));
   const count = await page.locator('.tray[data-lane="todo"] .trayCount').textContent();
   ok("the count states filtered of total", count.indexOf(" of ") !== -1, JSON.stringify(count));
   await page.close();
@@ -776,6 +780,178 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   ok("the live region is in the tree from the first paint",
     (await page.locator("#say").count()) === 1);
   ok("and starts empty", (await page.locator("#say").textContent()).trim() === "");
+  await page.close();
+}
+
+
+/* ── Planning is a room, not a picture of one ─────────────────────── */
+{
+  const page = await open();
+  await page.locator(".undated").click();
+  await page.waitForTimeout(300);
+  ok("it takes focus when it opens",
+    await page.evaluate(() => document.activeElement.classList.contains("drawer")),
+    await page.evaluate(() => document.activeElement.className));
+  ok("and declares itself a dialog with a name",
+    await page.evaluate(() => {
+      const d = document.querySelector(".drawer");
+      return d.getAttribute("role") === "dialog" && !!d.getAttribute("aria-labelledby");
+    }));
+
+  /* Its list is the live set, so the header's count and the drawer's count
+     can never disagree. */
+  const head = await page.locator(".undated").textContent();
+  const tab = await page.locator('.drawerTab[data-tab="nodate"] em').textContent();
+  ok("its count is the header's count", head.trim().indexOf(tab.trim()) === 0, head + " vs " + tab);
+
+  await page.locator(".drawerRow .box").first().click();
+  await page.waitForTimeout(200);
+  ok("a row can be picked", (await page.locator('.box[aria-checked="true"]').count()) === 1);
+  await page.locator(".selectAll").click();
+  await page.waitForTimeout(200);
+  const picked = await page.locator('.box[aria-checked="true"]').count();
+  ok("select all picks every row", picked === (await page.locator(".drawerRow").count()), picked + " picked");
+  ok("and the control flips", (await page.locator(".selectAll").textContent()).trim() === "Clear all");
+
+  await page.locator('.drawerTab[data-tab="milestones"]').click();
+  await page.waitForTimeout(250);
+  ok("the tabs switch the list",
+    (await page.locator('.drawerTab[aria-selected="true"]').getAttribute("data-tab")) === "milestones");
+  ok("and the list actually changes", (await page.locator(".drawerRow, .drawerEmpty").count()) > 0);
+
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  ok("escape closes it", (await page.locator(".drawer").count()) === 0);
+  ok("and focus goes back to what opened it",
+    await page.evaluate(() => document.activeElement.classList.contains("undated")),
+    await page.evaluate(() => document.activeElement.className));
+
+  await page.locator('.headActions [data-act="planning"]').click();
+  await page.waitForTimeout(250);
+  await page.locator(".drawer .ghost").click();
+  await page.waitForTimeout(250);
+  ok("the close button closes it", (await page.locator(".drawer").count()) === 0);
+
+  await page.locator('.headActions [data-act="planning"]').click();
+  await page.waitForTimeout(250);
+  await page.locator(".board").click({ position: { x: 40, y: 400 } });
+  await page.waitForTimeout(250);
+  ok("clicking away closes it", (await page.locator(".drawer").count()) === 0);
+  await page.close();
+}
+
+/* ── the couple's name is the venue's own way of looking ──────────── */
+{
+  const page = await open("?state=dense");
+  const before = await counts(page);
+  const name = await page.locator(".who").first().textContent();
+  await page.locator(".who").first().click();
+  await page.waitForTimeout(300);
+  const after = await counts(page);
+  const shown = Object.values(after).reduce((a, b) => a + b, 0);
+  const all = Object.values(before).reduce((a, b) => a + b, 0);
+  ok("clicking a couple shows only their work", shown > 0 && shown < all, shown + " of " + all);
+  ok("and the strip says whose", (await page.locator(".carryName").textContent()).indexOf(name.trim()) !== -1);
+  ok("with a way back", (await page.locator('.carry [data-act="showall"]').count()) === 1);
+  const only = await page.$$eval(".board .who", (n) => new Set(n.map((x) => x.textContent)).size);
+  ok("every card shown is theirs", only === 1, only + " couples on screen");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  ok("escape shows every couple again",
+    Object.values(await counts(page)).reduce((a, b) => a + b, 0) === all);
+  await page.close();
+}
+
+/* ── the column that holds waits has a clock ──────────────────────── */
+{
+  /* The default fixture has an empty Waiting column, which is itself the
+     point of the column; peak season is where the waits actually sit. */
+  const page = await open("?state=dense");
+  const chips = await page.$$eval('.tray[data-lane="waiting"] .when', (n) => n.map((x) => x.textContent));
+  ok("a held task says how long it has been held", chips.length > 0, JSON.stringify(chips));
+  const cards = await page.locator('.tray[data-lane="done"] .card').count();
+  const done = await page.$$eval('.tray[data-lane="done"] .when', (n) => n.map((x) => x.textContent));
+  ok("and every finished task says when", done.length === cards, done.length + " of " + cards);
+  const order = await page.$$eval('.tray[data-lane="done"] .card', (n) =>
+    n.map((c) => c.querySelector(".when") && c.querySelector(".when").textContent));
+  ok("Done reads newest first", order.length === cards, JSON.stringify(order));
+  await page.close();
+}
+
+/* ── the sheet speaks as the product, not as a lab file ───────────── */
+{
+  const page = await open();
+  const bad = await page.$$eval('[title]', (n) =>
+    n.map((x) => x.getAttribute("title")).filter((t) =>
+      /not built|exploration|lab|TODO|coming soon|WIP/i.test(t)));
+  ok("no control admits on screen that this is a lab file", bad.length === 0, JSON.stringify(bad));
+
+  /* Hover is not available to a thumb, so tapping says the same sentence. */
+  await page.locator('.segItem[aria-disabled="true"]').first().click({ force: true });
+  await page.waitForTimeout(200);
+  const said = await page.locator("#say").textContent();
+  ok("tapping an unavailable control says why", said.length > 4, JSON.stringify(said));
+  ok("and it does not switch the view",
+    (await page.locator('.segItem[data-active]').textContent()).indexOf("Board") !== -1);
+  await page.close();
+}
+
+/* ── a scrolled column never renders type at a mid-tone ───────────── */
+{
+  const page = await open("?state=dense");
+  const dimmed = await page.evaluate(async () => {
+    const body = document.querySelector('.tray[data-lane="todo"] .trayBody');
+    let worst = 0;
+    for (const target of [120, 240, 380, 500]) {
+      body.scrollTop = target;
+      await new Promise((r) => setTimeout(r, 220));
+      /* A mask would give an element an effective alpha between 0 and 1;
+         a hairline cannot. Read the computed mask off the scroller itself. */
+      const cs = getComputedStyle(body);
+      const masked = (cs.maskImage && cs.maskImage !== "none") ||
+        (cs.webkitMaskImage && cs.webkitMaskImage !== "none");
+      if (masked) worst = 1;
+    }
+    return worst;
+  });
+  ok("no gradient is laid over a column of type", dimmed === 0);
+
+  /* And the column still says, at both ends, that there is more this way. */
+  await page.evaluate(() => { document.querySelector('.tray[data-lane="todo"] .trayBody').scrollTop = 240; });
+  await page.waitForTimeout(250);
+  const edges = await page.evaluate(() => {
+    const b = document.querySelector('.tray[data-lane="todo"] .trayBody');
+    return { above: b.hasAttribute("data-above"), more: b.hasAttribute("data-more"),
+      shadow: getComputedStyle(b).boxShadow !== "none" };
+  });
+  ok("a column with more at both ends says so", edges.above && edges.more && edges.shadow, JSON.stringify(edges));
+
+  /* The column rests on a card rather than halfway through one. */
+  const rest = await page.evaluate(() => {
+    const b = document.querySelector('.tray[data-lane="todo"] .trayBody');
+    const box = b.getBoundingClientRect();
+    return [...b.querySelectorAll(".card")]
+      .map((c) => Math.round(c.getBoundingClientRect().top - box.top))
+      .some((t) => Math.abs(t - 20) < 2);
+  });
+  ok("and rests on a card, not halfway through one", rest);
+  await page.close();
+}
+
+/* ── the rag is managed, not merely balanced ──────────────────────── */
+{
+  const page = await open("?state=dense");
+  const orphans = await page.$$eval(".cardTitle", (nodes) => {
+    const out = [];
+    for (const n of nodes) {
+      const range = document.createRange();
+      range.selectNodeContents(n);
+      const lines = [...range.getClientRects()].filter((r) => r.height > 4);
+      if (lines.length > 1 && lines[0].width < 60) out.push(n.textContent.slice(0, 24));
+    }
+    return out;
+  });
+  ok("no title opens on a one-word line", orphans.length === 0, JSON.stringify(orphans));
   await page.close();
 }
 
