@@ -17,11 +17,11 @@
     "loading"
   ],
   "variants": [
-    "a",
-    "b",
-    "c"
+    "approach",
+    "paper",
+    "record"
   ],
-  "defaultVariant": "a",
+  "defaultVariant": "approach",
   "viewports": [
     {
       "name": "390x844",
@@ -87,7 +87,21 @@
     "easings": [
       "cubic-bezier(0.23, 1, 0.32, 1)"
     ],
-    "typeRamp": []
+    "typeRamp": [
+      11,
+      12,
+      13,
+      15,
+      17,
+      20,
+      24,
+      30,
+      38,
+      48,
+      64,
+      96,
+      148
+    ]
   },
   "console": {
     "widths": [
@@ -99,9 +113,7 @@
     "inline": [
       "fixture.js",
       "render-core.js",
-      "render-a.js",
-      "render-b.js",
-      "render-c.js"
+      "render-b.js"
     ],
     "fonts": []
   },
@@ -111,7 +123,7 @@
   },
   "report": {
     "title": "Timeline Elevation Log",
-    "kicker": "Signal Timeline · the plan for a day that matters · August 2026",
+    "kicker": "Signal Timeline · direction B, The Approach · August 2026",
     "consoleTitle": "Timeline Design Console",
     "consoleSub": "Three directions, eleven states, four widths, live.",
     "consoleLead": "The real master with a control panel on it, not a picture of one.",
@@ -161,21 +173,21 @@
         "Loading"
       ]
     ],
-    "footNote": "Exploration only. Branch design/timeline-redesign-2026-08, draft PR #154, no deploy and no app code.",
+    "footNote": "Exploration only. Branch design/timeline-redesign-2026-08, draft PR #154, no deploy and no app code. Direction B, The Approach, locked 2026-08-18.",
     "variants": [
       [
-        "dir-a",
-        "A · The Programme"
+        "room-approach",
+        "The approach"
       ],
       [
-        "dir-b",
-        "B · The Approach"
+        "room-paper",
+        "On paper"
       ],
       [
-        "dir-c",
-        "C · The Answer"
+        "room-record",
+        "The long view"
       ]
     ],
-    "variantsLead": "Three arguments about what a shared timeline is, shown here on the screen that decides: a phone at 390px. A says it is a printed document. B says it is a distance to a horizon. C says it is an answer with the plan underneath. All three are live in the console at every state and every width."
+    "variantsLead": "Three finished rooms of the locked direction, each a combination of the four named decisions rather than a copy. The ground decision is the reversal for the light-lock: the same composition, inverted through the declared ink ladder, with nothing hand-tuned to make the flip work. Print forces paper either way."
   }
 }

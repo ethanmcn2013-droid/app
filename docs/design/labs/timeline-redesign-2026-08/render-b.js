@@ -21,7 +21,7 @@
 
      The consequence is a long page. That is the point. A plan that is
      seventy-nine days long should take a while to scroll. */
-  var SCALE = { phone: 12, sheet: 14, full: 14, card: 12, print: 9 };
+  var SCALE = { phone: 12, sheet: 14, full: 14, card: 12, print: 10 };
   var ROW = 92;
 
   function ahead() {
@@ -231,7 +231,10 @@
         if (current < 1) current = 1;
         item.setAttribute("data-away", String(current));
         item.style.top = (current * Number(item.parentElement.getAttribute("data-px") || 14)) + "px";
-        item.querySelector(".b-away").textContent = "in " + current;
+        /* A bare number, like every other row. The column has one header
+           and one grammar; writing "in 16" into the one row you just
+           touched gives that row a second grammar nobody asked for. */
+        item.querySelector(".b-away").textContent = String(current);
         read.textContent = "in " + current + " days";
       };
       host.appendChild(h("div.b-edit", {}, [
@@ -327,12 +330,12 @@
 
   states.print = function () {
     return h("div.tl-paperEdge", { style: "min-height:1123px" }, [
-      h("div.b-print", {}, [
+      h("div.b-print.b-field", {}, [
         /* Print sets the horizon beside the measure and drops to nine
            pixels a day: A4 is 1123px tall and the screen scale runs
            off the bottom of it. The scale changes; the proportion
            between one gap and the next does not. */
-        h("div.b-two", { style: "grid-template-columns:300px minmax(0,1fr);gap:48px;align-items:start" }, [
+        h("div.b-two", {}, [
           h("div", { style: "line-height:1.5" }, [horizon({}), behindBlock()]),
           h("div", { style: "line-height:1.5" }, [measure({ medium: "print" })]),
         ]),
@@ -388,6 +391,10 @@
   window.__TLD.b = {
     name: "B · The Approach",
     medium: function (state) { return MEDIUM[state] || "full"; },
+    /* Print is paper whatever the ground decision says. A home printer
+       cannot make an ink page, and pretending otherwise would put a
+       state in this lab that nobody can actually hold. */
+    forces: function (state) { return state === "print" ? { ground: "paper" } : null; },
     render: function (state) { return (states[state] || states.phone)(); },
   };
 })();

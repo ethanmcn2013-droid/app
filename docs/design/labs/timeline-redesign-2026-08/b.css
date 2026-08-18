@@ -22,15 +22,22 @@
    constraint is what stops the accent becoming wallpaper here.
    ═══════════════════════════════════════════════════════════════════ */
 
-[data-v="b"] { --focus: var(--paper); --page-wash: var(--ink); }
+:root { --focus: var(--fore); --page-wash: var(--ink); }
+[data-ground="paper"] { --focus: var(--accent); --page-wash: var(--ink-04); }
 
 .b-field {
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--back);
+  color: var(--fore);
   padding: 26px 22px 30px;
   line-height: 1.5;
 }
 [data-medium="sheet"] .b-field, [data-medium="full"] .b-field { padding: 48px 56px 56px; }
+@media (max-width: 700px) {
+  /* A desk padding on a phone is a quarter of the screen. */
+  .b-field { padding: 26px 22px 30px; }
+  .b-empty, .b-ended { padding: 56px 22px 64px; }
+  .b-print { padding: 26px 22px 30px; }
+}
 
 /* ── the horizon ──────────────────────────────────────────────────
    Whose day, how far, which day. In that order, because on a phone in
@@ -42,7 +49,7 @@
   line-height: 1.4;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
   margin: 0 0 22px;
 }
 .b-count { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; }
@@ -52,7 +59,7 @@
   font-size: 96px;
   line-height: 0.86;
   letter-spacing: -0.045em;
-  color: var(--paper);
+  color: var(--fore);
 }
 [data-medium="sheet"] .b-num, [data-medium="full"] .b-num { font-size: 148px; }
 .b-unit {
@@ -61,18 +68,18 @@
   line-height: 1.4;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
 }
 .b-when {
   font-size: 20px;
   font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.015em;
-  color: var(--paper);
+  color: var(--fore);
   margin: 0 0 4px;
 }
-[data-medium="sheet"] .b-when, [data-medium="full"] .b-when { font-size: 27px; }
-.b-sub { font-size: 15px; line-height: 1.5; color: var(--paper-62); margin: 0; }
+[data-medium="sheet"] .b-when, [data-medium="full"] .b-when { font-size: 30px; }
+.b-sub { font-size: 15px; line-height: 1.5; color: var(--fore-62); margin: 0; }
 
 /* Today is the one thing indigo is spent on at the top of the page: a
    full-bleed hairline the whole surface hangs from. */
@@ -87,13 +94,13 @@
   line-height: 1.4;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
   margin: 8px 0 0;
 }
 /* The first real gap on the measure is a fortnight of nothing, and a
    fortnight of nothing is a fact worth saying out loud rather than a
    hole for the reader to wonder about. */
-.b-gapNote { font-size: 15px; line-height: 1.5; color: var(--paper-62); margin: 14px 0 0; }
+.b-gapNote { font-size: 15px; line-height: 1.5; color: var(--fore-62); margin: 14px 0 0; }
 
 /* ── the measure ──────────────────────────────────────────────────
    A pixel is nine days divided by nine: --px-per-day is the only number
@@ -107,15 +114,26 @@
   line-height: 1.5;
 }
 [data-medium="sheet"] .b-measure, [data-medium="full"] .b-measure { padding-left: 124px; }
+@media (max-width: 700px) {
+  .b-measure { padding-left: 96px; }
+  .b-rail { left: 76px; }
+  .b-item { left: 96px; }
+  .b-away { left: -96px; width: 62px; font-size: 15px; }
+  .b-tick { left: -23px; }
+  .b-item[data-lead="true"] .b-tick { left: -24px; }
+  .b-item[data-anchor="true"]::before { left: -23px; }
+  .b-measureHead { width: 62px; }
+  .b-title { font-size: 17px; }
+}
 /* The column header is what lets the count column be a bare number.
    One label, once, and every figure under it has one grammar. */
 .b-measureHead {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.4;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
   margin: 22px 0 0;
   width: 62px;
   text-align: right;
@@ -127,7 +145,7 @@
   top: 6px;
   bottom: 0;
   width: 1px;
-  background: var(--paper-16);
+  background: var(--fore-16);
 }
 [data-medium="sheet"] .b-rail, [data-medium="full"] .b-rail { left: 100px; }
 
@@ -143,7 +161,7 @@
   font-variant-numeric: tabular-nums;
   font-size: 15px;
   line-height: 1.4;
-  color: var(--paper-72);
+  color: var(--fore-72);
 }
 [data-medium="sheet"] .b-away, [data-medium="full"] .b-away { left: -124px; width: 84px; font-size: 17px; }
 .b-tick {
@@ -153,19 +171,19 @@
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  border: 1px solid var(--paper-46);
-  background: var(--ink);
+  border: 1px solid var(--fore-46);
+  background: var(--back);
 }
 [data-medium="sheet"] .b-tick, [data-medium="full"] .b-tick { left: -27px; }
 /* Titles are allowed two lines and no more, and the scale above is set
    so two lines still cannot collide with the item below. The clamp is
    word-safe and keeps the whole string in the accessible name. */
 .b-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 400;
   line-height: 1.3;
   letter-spacing: -0.015em;
-  color: var(--paper);
+  color: var(--fore);
   margin: 0 0 3px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -179,7 +197,7 @@
   line-height: 1.5;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
   margin: 0;
 }
 
@@ -189,7 +207,7 @@
 .b-item[data-lead="true"] .b-tick { background: var(--accent); border-color: var(--accent); width: 9px; height: 9px; left: -24px; top: 5px; }
 [data-medium="sheet"] .b-item[data-lead="true"] .b-tick,
 [data-medium="full"] .b-item[data-lead="true"] .b-tick { left: -28px; }
-.b-item[data-lead="true"] .b-away { color: var(--paper); }
+.b-item[data-lead="true"] .b-away { color: var(--fore); }
 .b-item[data-lead="true"] .b-title { font-weight: 600; }
 
 /* The day itself is the horizon the measure ends on: a wider rule right
@@ -202,7 +220,7 @@
   right: 0;
   top: -16px;
   height: 1px;
-  background: var(--paper-28);
+  background: var(--fore-28);
 }
 [data-medium="sheet"] .b-item[data-anchor="true"]::before,
 [data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
@@ -215,16 +233,19 @@
 .b-behind {
   margin: 40px 0 0;
   padding: 20px 0 0;
-  border-top: 1px solid var(--paper-16);
+  border-top: 1px solid var(--fore-16);
   line-height: 1.5;
 }
 .b-behindLabel {
+  /* An h2 inherits bold from the user agent. Two weights means two, so
+     every heading in this lab declares the one it is using. */
+  font-weight: 400;
   font-family: var(--mono);
   font-size: 11px;
   line-height: 1.4;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
   margin: 0 0 10px;
 }
 .b-behindRow { display: flex; gap: 14px; align-items: baseline; padding: 8px 0; line-height: 1.5; }
@@ -235,13 +256,16 @@
   line-height: 1.6;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--paper-46);
+  /* 0.62, not 0.46. The two ladders do not permit the same floor: over
+     ink, 0.46 is 4.65:1 and legal; over paper it is 3.15:1 and is not.
+     A token chosen for one ground is a token that fails on the other. */
+  color: var(--fore-62);
   width: 76px;
   flex: none;
 }
-.b-behindTitle { font-size: 15px; line-height: 1.5; color: var(--paper-72); margin: 0; }
-.b-behindTitle[data-cancelled="true"] { text-decoration: line-through; text-decoration-color: var(--paper-28); }
-.b-behindNote { font-size: 15px; line-height: 1.5; color: var(--paper-62); margin: 0; }
+.b-behindTitle { font-size: 15px; line-height: 1.5; color: var(--fore-72); margin: 0; }
+.b-behindTitle[data-cancelled="true"] { text-decoration: line-through; text-decoration-color: var(--fore-28); }
+.b-behindNote { font-size: 15px; line-height: 1.5; color: var(--fore-62); margin: 0; }
 [data-past="folded"] .b-behindRow { display: none; }
 [data-past="folded"] .b-behindNote { display: block; }
 [data-past="listed"] .b-behindNote { display: none; }
@@ -251,9 +275,12 @@
 [data-accent="structure"] .b-rail { background: var(--accent); opacity: 0.5; }
 
 .b-foot {
+  /* The printed foot carries the whole share link, which is one 60-character
+     word. It breaks rather than pushing the page sideways. */
+  overflow-wrap: anywhere;
   margin: 34px 0 0;
   padding: 16px 0 0;
-  border-top: 1px solid var(--paper-16);
+  border-top: 1px solid var(--fore-16);
   display: flex;
   flex-wrap: wrap;
   gap: 6px 18px;
@@ -263,19 +290,26 @@
   line-height: 1.5;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
 }
 
 /* ── desk ─────────────────────────────────────────────────────────
    At desk width the horizon stops scrolling. The number and the day
    hold the left, the approach runs down the right, and the reader can
    see both at once — which is the one thing a phone cannot give them. */
+/* One column until there is genuinely room for two. The medium says what
+   KIND of surface this is; only the width says how wide the screen is,
+   and putting a 360px column inside a 390px phone because the state is
+   an owner state is how four states came to scroll sideways. */
 .b-two { display: grid; gap: 32px; }
-[data-medium="sheet"] .b-two { grid-template-columns: 300px minmax(0, 1fr); gap: 48px; align-items: start; }
-[data-medium="full"] .b-two { grid-template-columns: 360px minmax(0, 1fr); gap: 64px; align-items: start; }
-/* The horizon does not scroll away. The number is the reason the reader
-   is on this page; losing it two screens down would be losing the page. */
-.b-stick { position: sticky; top: 24px; }
+@media (min-width: 901px) {
+  [data-medium="sheet"] .b-two { grid-template-columns: 300px minmax(0, 1fr); gap: 48px; align-items: start; }
+  [data-medium="full"] .b-two { grid-template-columns: 360px minmax(0, 1fr); gap: 64px; align-items: start; }
+  /* The horizon does not scroll away — but only where it has a column of
+     its own. Stuck to the top of a single column it would cover the
+     measure it is meant to introduce. */
+  .b-stick { position: sticky; top: 24px; }
+}
 
 /* ── owner chrome ─────────────────────────────────────────────────
    Same ground, one bar. The owner is standing in the same room as the
@@ -287,7 +321,7 @@
   gap: 8px 16px;
   padding: 0 0 16px;
   margin: 0 0 24px;
-  border-bottom: 1px solid var(--paper-16);
+  border-bottom: 1px solid var(--fore-16);
 }
 .b-where {
   font-family: var(--mono);
@@ -295,7 +329,7 @@
   line-height: 1.5;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
 }
 .b-switch {
   display: inline-flex;
@@ -303,30 +337,30 @@
   gap: 8px;
   min-height: 32px;
   padding: 4px 10px;
-  border: 1px solid var(--paper-16);
+  border: 1px solid var(--fore-16);
   border-radius: 6px;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.4;
-  color: var(--paper);
+  color: var(--fore);
   transition: border-color var(--t-base) var(--ease);
 }
-.b-switch:hover { border-color: var(--paper-46); }
-.b-switch span { font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: 0.09em; color: var(--paper-62); }
+.b-switch:hover { border-color: var(--fore-46); }
+.b-switch span { font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: 0.09em; color: var(--fore-62); }
 .b-spacer { flex: 1 1 auto; }
 .b-act {
   min-height: 32px;
   padding: 6px 12px;
-  border: 1px solid var(--paper-16);
+  border: 1px solid var(--fore-16);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.4;
-  color: var(--paper);
+  color: var(--fore);
   transition: border-color var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
 }
-.b-act:hover { border-color: var(--paper-46); background: var(--paper-06); }
-.b-act[data-primary="true"] { background: var(--paper); color: var(--ink); border-color: var(--paper); }
-.b-act[data-primary="true"]:hover { background: var(--paper-90); }
+.b-act:hover { border-color: var(--fore-46); background: var(--fore-06); }
+.b-act[data-primary="true"] { background: var(--fore); color: var(--back); border-color: var(--fore); }
+.b-act[data-primary="true"]:hover { background: var(--fore-90); }
 .b-grab {
   min-height: 28px;
   padding: 0 8px;
@@ -336,10 +370,10 @@
   line-height: 1.5;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
   transition: background-color var(--t-base) var(--ease);
 }
-.b-grab:hover { background: var(--paper-06); }
+.b-grab:hover { background: var(--fore-06); }
 
 /* ── the editor ───────────────────────────────────────────────────
    The date control moves the item ON the measure while you hold it.
@@ -353,12 +387,12 @@
 .b-edit {
   position: relative;
   z-index: 2;
-  background: var(--ink);
+  background: var(--back);
   margin: 12px 0 0;
   padding: 16px;
-  border: 1px solid var(--paper-16);
+  border: 1px solid var(--fore-16);
   border-radius: 8px;
-  background: var(--paper-06);
+  background: var(--fore-06);
   display: grid;
   gap: 12px;
   line-height: 1.5;
@@ -369,16 +403,16 @@
   line-height: 1.4;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  color: var(--paper-62);
+  color: var(--fore-62);
 }
 .b-input {
   width: 100%;
   min-height: 40px;
   padding: 8px 10px;
-  border: 1px solid var(--paper-28);
+  border: 1px solid var(--fore-28);
   border-radius: 6px;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--back);
+  color: var(--fore);
   font-size: 17px;
   line-height: 1.4;
 }
@@ -387,102 +421,109 @@
 .b-step {
   min-width: 40px;
   min-height: 40px;
-  border: 1px solid var(--paper-28);
+  border: 1px solid var(--fore-28);
   border-radius: 6px;
-  color: var(--paper);
+  color: var(--fore);
   font-family: var(--mono);
   font-size: 15px;
   line-height: 1.4;
   text-align: center;
   transition: background-color var(--t-base) var(--ease);
 }
-.b-step:hover { background: var(--paper-06); }
+.b-step:hover { background: var(--fore-06); }
 .b-stepRead {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: 0.06em;
-  color: var(--paper);
+  color: var(--fore);
 }
-.b-seg { display: inline-flex; border: 1px solid var(--paper-28); border-radius: 6px; overflow: hidden; }
+.b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; overflow: hidden; }
 .b-seg button {
   min-height: 34px;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.4;
-  color: var(--paper-72);
+  color: var(--fore-72);
   transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
 }
-.b-seg button + button { border-left: 1px solid var(--paper-28); }
-.b-seg button[aria-pressed="true"] { background: var(--paper); color: var(--ink); }
+.b-seg button + button { border-left: 1px solid var(--fore-28); }
+.b-seg button[aria-pressed="true"] { background: var(--fore); color: var(--back); }
 .b-editActs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .b-undo {
   margin: 20px 0 0;
   padding: 10px 12px;
-  border: 1px solid var(--paper-16);
+  border: 1px solid var(--fore-16);
   border-radius: 6px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
   align-items: center;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
-  color: var(--paper-72);
+  color: var(--fore-72);
 }
 .b-undo button {
   min-height: 28px;
   padding: 2px 8px;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
-  color: var(--paper);
+  color: var(--fore);
   text-decoration: underline;
-  text-decoration-color: var(--paper-28);
+  text-decoration-color: var(--fore-28);
   text-underline-offset: 3px;
 }
-.b-undo kbd { font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--paper-62); }
+.b-undo kbd { font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--fore-62); }
 
 /* ── the empty field ──────────────────────────────────────────────
    Nothing is further away than a day with no date. One question. */
 .b-empty { padding: 80px 22px 90px; }
 [data-medium="sheet"] .b-empty, [data-medium="full"] .b-empty { padding: 120px 56px 130px; }
-.b-emptyTitle { font-size: 38px; font-weight: 600; line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 12px; color: var(--paper); }
+.b-emptyTitle { font-size: 38px; font-weight: 600; line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 12px; color: var(--fore); }
 [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { font-size: 64px; }
-.b-emptyBody { font-size: 17px; line-height: 1.5; color: var(--paper-62); margin: 0 0 28px; max-width: 34ch; }
+.b-emptyBody { font-size: 17px; line-height: 1.5; color: var(--fore-62); margin: 0 0 28px; max-width: 34ch; }
 .b-emptyForm { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
 /* ── publish ──────────────────────────────────────────────────────
    The ceremony is not a form. It is the card itself, held up, before
    anyone has seen it. */
+/* A 43-character share token cannot shrink, so its row sets the
+   min-content width of the whole column unless every box between it and
+   the grid is told it may be narrower than its contents. */
 .b-press { display: grid; gap: 28px; }
-[data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
-.b-pressTitle { font-size: 38px; font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 12px; color: var(--paper); }
+.b-press > * { min-width: 0; }
+@media (min-width: 901px) {
+  [data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
+}
+.b-pressTitle { font-size: 38px; font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 12px; color: var(--fore); }
 [data-medium="full"] .b-pressTitle { font-size: 48px; }
-.b-pressBody { font-size: 17px; line-height: 1.55; color: var(--paper-62); margin: 0 0 20px; max-width: 46ch; }
+.b-pressBody { font-size: 17px; line-height: 1.55; color: var(--fore-62); margin: 0 0 20px; max-width: 46ch; }
 .b-linkRow {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  border: 1px solid var(--paper-16);
+  border: 1px solid var(--fore-16);
   border-radius: 6px;
   font-family: var(--mono);
   font-size: 12px;
   line-height: 1.5;
-  color: var(--paper);
+  color: var(--fore);
   overflow: hidden;
   margin: 0 0 16px;
 }
-.b-linkRow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-note { font-size: 13px; line-height: 1.55; color: var(--paper-62); margin: 16px 0 0; }
+.b-linkRow { min-width: 0; }
+.b-linkRow span { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-note { font-size: 13px; line-height: 1.55; color: var(--fore-62); margin: 16px 0 0; }
 
 /* ── the card, as it lands in a chat ──────────────────────────────
    A black card in a white chat app is the whole first impression, and
    it is the strongest argument this direction has. */
-/* A chat app is a light surface. On an ink-grounded direction the chat
-   ground has to be opaque paper, or the tint composites over black and
-   the card is being shown in a room that does not exist. */
+/* LITERAL, not laddered: the chat app is somebody else's surface and it
+   is light whatever ground we chose. Everything from here to the end of
+   the unfurl block is deliberately outside the fore/back system. */
 .b-chat { padding: 24px 16px; background: var(--paper); }
 .b-bubble {
   max-width: 300px;
@@ -495,21 +536,26 @@
   line-height: 1.45;
   color: var(--ink);
 }
-.b-unfurl { max-width: 300px; border: 1px solid var(--ink-16); border-radius: 12px; overflow: hidden; background: var(--paper); }
+/* display: block, and it matters. An anchor is inline by default, and on
+   a non-replaced inline element max-width does nothing, the background
+   paints only around the line boxes and the border-radius paints nothing
+   at all. Inside the chat the card looked right for the wrong reason —
+   the chat ground is white — and on the publish screen it vanished. */
+.b-unfurl { display: block; max-width: 300px; border: 1px solid var(--ink-16); border-radius: 12px; overflow: hidden; background: var(--paper); }
 .b-og {
   aspect-ratio: 1200 / 630;
-  background: var(--ink);
+  background: var(--back);
   padding: 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   line-height: 1.4;
 }
-.b-ogWho { font-family: var(--mono); font-size: 10px; line-height: 1.4; letter-spacing: 0.2em; text-transform: uppercase; color: var(--paper-62); margin: 0; }
-.b-ogNum { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 48px; line-height: 0.9; letter-spacing: -0.04em; color: var(--paper); margin: 0; }
-.b-ogDate { font-family: var(--mono); font-size: 10px; line-height: 1.4; letter-spacing: 0.13em; text-transform: uppercase; color: var(--paper-62); margin: 6px 0 0; }
+.b-ogWho { font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: 0.2em; text-transform: uppercase; color: var(--fore-62); margin: 0; }
+.b-ogNum { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 48px; line-height: 0.9; letter-spacing: -0.04em; color: var(--fore); margin: 0; }
+.b-ogDate { font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: 0.13em; text-transform: uppercase; color: var(--fore-62); margin: 6px 0 0; }
 .b-unfurlMeta { padding: 10px 12px; }
-.b-unfurlTitle { font-size: 14px; font-weight: 600; line-height: 1.35; margin: 0 0 3px; color: var(--ink); }
+.b-unfurlTitle { font-size: 15px; font-weight: 600; line-height: 1.35; margin: 0 0 3px; color: var(--ink); }
 .b-unfurlHost { font-size: 12px; line-height: 1.4; color: var(--ink-62); margin: 0; }
 
 /* ── the day ──────────────────────────────────────────────────────
@@ -518,40 +564,70 @@
    it goes. */
 .b-dayWrap { padding: 80px 22px 90px; text-align: center; }
 [data-medium="sheet"] .b-dayWrap, [data-medium="full"] .b-dayWrap { padding: 130px 56px 140px; }
-.b-dayToday { font-family: var(--mono); font-size: 12px; line-height: 1.4; letter-spacing: 0.3em; text-transform: uppercase; color: var(--paper-62); margin: 0 0 26px; }
-.b-dayNames { font-size: 48px; font-weight: 600; line-height: 1.02; letter-spacing: -0.035em; color: var(--paper); margin: 0 0 16px; }
+.b-dayToday { font-family: var(--mono); font-size: 12px; line-height: 1.4; letter-spacing: 0.3em; text-transform: uppercase; color: var(--fore-62); margin: 0 0 26px; }
+.b-dayNames { font-size: 48px; font-weight: 600; line-height: 1.02; letter-spacing: -0.035em; color: var(--fore); margin: 0 0 16px; }
 [data-medium="sheet"] .b-dayNames, [data-medium="full"] .b-dayNames { font-size: 96px; }
-.b-dayDate { font-size: 20px; line-height: 1.4; color: var(--paper-72); margin: 0 0 40px; }
+.b-dayDate { font-size: 20px; line-height: 1.4; color: var(--fore-72); margin: 0 0 40px; }
 .b-dayRule { height: 1px; background: var(--accent); margin: 0 auto 24px; max-width: 200px; }
-.b-dayNote { font-size: 15px; line-height: 1.6; color: var(--paper-62); margin: 0; }
+.b-dayNote { font-size: 15px; line-height: 1.6; color: var(--fore-62); margin: 0; }
 
 /* ── ended ────────────────────────────────────────────────────────  */
 .b-ended { padding: 72px 22px 80px; }
 [data-medium="sheet"] .b-ended, [data-medium="full"] .b-ended { padding: 110px 56px 120px; }
-.b-endedTitle { font-size: 30px; font-weight: 600; line-height: 1.12; letter-spacing: -0.025em; color: var(--paper); margin: 0 0 14px; }
-.b-endedBody { font-size: 17px; line-height: 1.55; color: var(--paper-62); margin: 0 0 24px; max-width: 40ch; }
+.b-endedTitle { font-size: 30px; font-weight: 600; line-height: 1.12; letter-spacing: -0.025em; color: var(--fore); margin: 0 0 14px; }
+.b-endedBody { font-size: 17px; line-height: 1.55; color: var(--fore-62); margin: 0 0 24px; max-width: 40ch; }
 
 /* ── loading ──────────────────────────────────────────────────────
    The measure cannot be drawn before the dates arrive: a skeleton with
    invented tick positions would be a picture of a plan that does not
    exist. So the frame reserves the horizon at its real height and says
    plainly that the rest is coming. */
-.b-skel { background: var(--paper-10); border-radius: 4px; }
+.b-skel { background: var(--fore-10); border-radius: 4px; }
 
+/* ═══ the ground decision ═════════════════════════════════════════
+   This direction was drawn on ink and the operator light-lock says
+   Signal Studio surfaces are light. Rather than argue that in prose, the
+   ground is a named decision with two ratified values, and both are
+   built. `ink` is the direction as designed: a link opened in the
+   evening on a phone, where a white page is a flashlight. `paper` is the
+   same composition inverted — the measure, the horizon, the proportions
+   and the type all survive the flip; what it loses is the black card
+   that stops a thumb in a chat app.
+
+   There is no block of overrides here on purpose. Everything in this
+   file is written against --fore and --back (shell.css), so the ground
+   decision is the nine-line ladder flip and nothing else. Print forces
+   paper, because you cannot hand somebody an ink page off a home
+   printer, and that is the one impossibility this direction admits.
+
+   Two things stay literal whatever the ground is, and they are marked
+   where they appear: the chat app the unfurl card lands in, which is
+   somebody else's light surface, and the card's own metadata rows. */
+
+/* ═══ the spacing decision ════════════════════════════════════════
+   `measured` is the thesis: a pixel is a real unit of time, so the
+   fortnight of nothing before the menu tasting is a fortnight of nothing
+   on the screen. `even` sets the same items at one rhythm and is here
+   because the honest cost of `measured` is holes, and the panel should
+   be able to look at both rather than take the lab's word for it. The
+   renderer computes both; only one is ever laid out. */
+[data-spacing="even"] .b-measure { height: auto !important; }
+/* relative, not static: the count and the tick are positioned against the
+   item, and a static item hands them the measure as their containing
+   block instead — which puts every tick on top of the first one. */
+[data-spacing="even"] .b-item { position: relative; left: auto; right: auto; top: auto !important; margin: 0 0 26px; }
+[data-spacing="even"] .b-item:last-child { margin-bottom: 0; }
+[data-spacing="even"] .b-item[data-anchor="true"] { margin-top: 34px; }
 /* ── print ────────────────────────────────────────────────────────
    The one place this direction inverts. Stated, not hidden. */
-.b-print { background: var(--paper); color: var(--ink); padding: 56px 64px 44px; line-height: 1.5; }
-.b-print .b-who { color: var(--ink-62); }
-.b-print .b-num, .b-print .b-when, .b-print .b-title, .b-print .b-dayNames { color: var(--ink); }
-.b-print .b-unit, .b-print .b-sub, .b-print .b-date, .b-print .b-behindLabel, .b-print .b-foot { color: var(--ink-62); }
-.b-print .b-rail { background: var(--ink-16); }
-.b-print .b-tick { border-color: var(--ink-46); background: var(--paper); }
-.b-print .b-item[data-lead="true"] .b-tick { background: var(--accent); border-color: var(--accent); }
-.b-print .b-away { color: var(--ink-62); }
-.b-print .b-behind { border-top-color: var(--ink-16); }
-.b-print .b-behindDate { color: var(--ink-62); }
-.b-print .b-behindTitle, .b-print .b-behindNote { color: var(--ink-72); }
-.b-print .b-foot { border-top-color: var(--ink-16); }
-.b-print .b-todayRule { background: var(--accent); }
-.b-print .b-todayLabel { color: var(--ink-62); }
-.b-print .b-item[data-anchor="true"]::before { background: var(--ink-28); }
+/* Print is no longer a colour special case — it is the ground decision,
+   forced. What it does still own is its own measure: A4 is 1123px and
+   fixed, so the type steps down one and the scale steps down with it.
+   Proportion between one gap and the next is untouched. */
+.b-print { padding: 56px 64px 44px; line-height: 1.5; }
+.b-print .b-title { font-size: 17px; }
+.b-print .b-away { font-size: 15px; }
+.b-print .b-two { display: grid; gap: 40px; }
+@media (min-width: 901px) {
+  .b-print .b-two { grid-template-columns: 280px minmax(0, 1fr); align-items: start; }
+}

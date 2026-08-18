@@ -92,24 +92,43 @@
     ]);
   }
 
-  function currentVariant() {
-    var v = rootEl().getAttribute("data-v");
-    return window.__TLD[v] ? v : "a";
+  /* One direction is locked, so the variant is no longer a choice of
+     direction — the console writes the ROOM name into data-v and the
+     rooms are combinations of the named decisions below. Whichever
+     direction file is loaded is the direction. */
+  function theDirection() {
+    var keys = Object.keys(window.__TLD);
+    return window.__TLD[keys[0]];
   }
   function currentState() {
     var s = rootEl().getAttribute("data-state");
     return CAPTIONS[s] ? s : STATES[0][0];
   }
 
+  /* A state may force a decision the reader cannot argue with — print is
+     always paper, because a home printer cannot make an ink page. The
+     chooser's own value is stashed and given back the moment the state
+     stops forcing it, so leaving print does not silently change what the
+     operator had picked. */
+  var stashedGround = null;
+
   function mount() {
     var host = document.getElementById("tl");
     if (!host) return;
-    var v = currentVariant();
     var state = currentState();
-    var direction = window.__TLD[v];
+    var direction = theDirection();
     var root = rootEl();
+    var forced = direction.forces ? direction.forces(state) : null;
+    if (forced && forced.ground) {
+      if (root.getAttribute("data-ground") !== forced.ground) {
+        stashedGround = root.getAttribute("data-ground");
+      }
+      root.setAttribute("data-ground", forced.ground);
+    } else if (stashedGround) {
+      root.setAttribute("data-ground", stashedGround);
+      stashedGround = null;
+    }
     root.setAttribute("data-medium", direction.medium(state));
-    root.setAttribute("data-v", v);
     root.setAttribute("data-state", state);
 
     host.textContent = "";
@@ -162,31 +181,40 @@
     states: STATES,
     setState: function (state) { rootEl().setAttribute("data-state", state); },
     mount: mount,
-    /* Filled by the direction files as they load; at the lock this
-       becomes the room presets and the named design decisions. */
-    /* Presets are the three directions. The console writes the preset key
-       to data-v itself, so a "which direction" control would fight it —
-       the controls below are the decisions that cut ACROSS all three. */
+
+    /* Three finished rooms. Each is a combination of the four named
+       decisions below, never a copy: start from one, then change anything
+       underneath and every combination you land on is buildable. */
     presets: {
-      a: { past: "listed", accent: "once" },
-      b: { past: "folded", accent: "once" },
-      c: { past: "folded", accent: "structure" },
+      approach: { ground: "ink", past: "folded", accent: "once", spacing: "measured" },
+      paper: { ground: "paper", past: "folded", accent: "once", spacing: "measured" },
+      record: { ground: "ink", past: "listed", accent: "structure", spacing: "measured" },
     },
     presetCopy: {
-      a: { name: "A · The Programme", note: "The artifact is a printed document." },
-      b: { name: "B · The Approach", note: "The artifact is a distance to a horizon." },
-      c: { name: "C · The Answer", note: "The artifact is one card that answers one question." },
+      approach: { name: "The approach", note: "The direction as drawn: ink, and a measure you fall down." },
+      paper: { name: "On paper", note: "The same composition inverted, for the light-lock." },
+      record: { name: "The long view", note: "Everything that happened, and today drawn on the rail." },
     },
     controls: [
       {
+        key: "ground", label: "The ground",
+        help: "Ink is the direction as drawn. Paper is the same composition inverted through the ink ladder, and it is the reversal for the light-lock. Print is always paper either way.",
+        options: [["ink", "Ink"], ["paper", "Paper"]],
+      },
+      {
+        key: "spacing", label: "The measure",
+        help: "Measured means a pixel is a real unit of time, so a fortnight of nothing looks like a fortnight of nothing. Even sets the same items at one rhythm. The honest cost of measured is holes.",
+        options: [["measured", "Real distance"], ["even", "Even rhythm"]],
+      },
+      {
         key: "past", label: "The past",
         help: "A guest opening this in August does not need January. The question is whether the plan still says January happened.",
-        options: [["listed", "Listed in full"], ["folded", "Folded to a line"]],
+        options: [["folded", "Folded to a line"], ["listed", "Listed in full"]],
       },
       {
         key: "accent", label: "The indigo",
-        help: "One accent, spent like a laser. Either it marks only the next thing, or it also draws today.",
-        options: [["once", "Only the next thing"], ["structure", "Next thing and today"]],
+        help: "One accent, spent like a laser. Either it marks only the next thing, or it also draws the part of the rail that is still ahead.",
+        options: [["once", "Only the next thing"], ["structure", "Next thing and the rail"]],
       },
     ],
   };

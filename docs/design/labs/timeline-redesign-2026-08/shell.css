@@ -35,6 +35,7 @@
   --paper-16: rgba(255, 255, 255, 0.16);
   --paper-10: rgba(255, 255, 255, 0.10);
   --paper-06: rgba(255, 255, 255, 0.06);
+  --paper-04: rgba(255, 255, 255, 0.04);
 
   /* Motion is physics. One easing family, three durations, and a
      reduced-motion escape that is honoured completely below. */
@@ -53,6 +54,46 @@
   --stage-pad: 40px;
 }
 
+/* ═══ the fore / back ladder ══════════════════════════════════════
+   Two grounds, one set of names. `--back` is whatever the surface
+   stands on and `--fore` is the ink laid on it, at the same nine
+   declared alphas either way. Everything downstream is written against
+   these, so flipping the ground is nine lines rather than a parallel
+   stylesheet — and there is no way for one of them to be forgotten,
+   which is exactly how the first attempt at this left two controls
+   painting white on white.
+
+   The two ladders are not mirror images in what they permit. Over
+   paper, ink at 0.62 is 5.34:1 and is the floor for type. Over ink,
+   paper at 0.46 is 4.65:1 and is the floor. Below those, both ladders
+   draw rules and never letters. */
+:root, [data-ground="ink"] {
+  --back: var(--ink);
+  --fore: var(--paper);
+  --fore-90: var(--paper-90);
+  --fore-72: var(--paper-72);
+  --fore-62: var(--paper-62);
+  --fore-46: var(--paper-46);
+  --fore-28: var(--paper-28);
+  --fore-16: var(--paper-16);
+  --fore-10: var(--paper-10);
+  --fore-06: var(--paper-06);
+  --fore-04: var(--paper-04);
+}
+[data-ground="paper"] {
+  --back: var(--paper);
+  --fore: var(--ink);
+  --fore-90: var(--ink-90);
+  --fore-72: var(--ink-72);
+  --fore-62: var(--ink-62);
+  --fore-46: var(--ink-46);
+  --fore-28: var(--ink-28);
+  --fore-16: var(--ink-16);
+  --fore-10: var(--ink-10);
+  --fore-06: var(--ink-06);
+  --fore-04: var(--ink-04);
+}
+
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
@@ -69,7 +110,7 @@ body {
   color: var(--ink);
   font-family: var(--sans);
   font-weight: 400;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

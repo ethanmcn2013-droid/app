@@ -22,8 +22,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const LAB = path.dirname(fileURLToPath(import.meta.url));
-const CSS = ["fonts.css", "shell.css", "a.css", "b.css", "c.css"];
-const JS = ["fixture.js", "render-core.js", "render-a.js", "render-b.js", "render-c.js"];
+/* The lock. Direction B is the locked direction; a.css / render-a.js and
+ * c.css / render-c.js stay in the lab as the record of the exploration
+ * and are no longer built into the master. Re-pointing the loop at
+ * another direction is this one line plus a room definition. */
+const CSS = ["fonts.css", "shell.css", "b.css"];
+const JS = ["fixture.js", "render-core.js", "render-b.js"];
 
 const css = [];
 for (const file of CSS) {
@@ -39,7 +43,7 @@ const page = `<!doctype html>
 <style>
 ${css.join("\n\n")}
 </style>
-<body data-state="owner-flight" data-v="a" data-past="listed" data-accent="once">
+<body data-state="owner-flight" data-v="approach" data-ground="ink" data-past="folded" data-accent="once" data-spacing="measured">
 <div id="tl"></div>
 ${JS.map((f) => `<script src="./${f}"></script>`).join("\n")}
 <script>
@@ -49,7 +53,19 @@ ${JS.map((f) => `<script src="./${f}"></script>`).join("\n")}
 (function () {
   var q = new URLSearchParams(location.search);
   var root = document.getElementById("deck") || document.body;
-  ["state", "v", "past", "accent"].forEach(function (key) {
+  /* ?v= names a ROOM, and a room is a preset of the named decisions. It
+     applies the whole preset first so that shots.mjs --v=paper and
+     audit.mjs --v=paper grade the room the console shows, not the
+     default decisions with a different label on them. Explicit
+     parameters then override, so ?v=paper&ground=ink is still reachable. */
+  var room = q.get("v");
+  var presets = window.__elevate.presets;
+  if (room && presets[room]) {
+    Object.keys(presets[room]).forEach(function (key) {
+      root.setAttribute("data-" + key, presets[room][key]);
+    });
+  }
+  ["state", "v", "ground", "past", "accent", "spacing"].forEach(function (key) {
     var value = q.get(key);
     if (value) root.setAttribute("data-" + key, value);
   });
