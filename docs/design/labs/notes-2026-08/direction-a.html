@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A · The Desk · Notes</title>
+<link rel="stylesheet" href="./foundation.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   A · THE DESK
+
+   Thesis. Capture is not a feature at the top of a page, it is the
+   instrument the whole product is. So the composer leaves the sheet
+   entirely and becomes the dock: the floating bar at the foot of the
+   sheet, where your hands already are, IS the capture field. It is
+   always live, always one keystroke from ink, and it grows upward into
+   a sheet of paper when there is more to say.
+
+   That buys the entire sheet for the notes. No composer box sitting
+   empty ninety-nine percent of the time, no two panes, no selecting a
+   note into a reader. One held measure, one continuous run of ruled
+   entries, and a note opens where it already is.
+
+   Palette is the inherited lock: Ink #111111, Indigo #4f46e5, White
+   #ffffff, and tints of those three at stated alpha. No other hue.
+   Geist 400 and 600 only.
+
+     ?state=notebook | capture | voice | readback | review | seam
+            | search | pressure | nothing | not-yet
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --ink-3: rgba(17, 17, 17, 0.60);
+  --ink-4: rgba(17, 17, 17, 0.30);
+
+  --wash: rgba(17, 17, 17, 0.035);
+  --line-soft: rgba(17, 17, 17, 0.06);
+  --line: rgba(17, 17, 17, 0.09);
+  --line-strong: rgba(17, 17, 17, 0.16);
+
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.62);
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  --indigo-wash: rgba(79, 70, 229, 0.08);
+  --indigo-line: rgba(79, 70, 229, 0.30);
+  --indigo-deep: #4338ca;
+
+  --tr-30: -0.032em; --tr-22: -0.028em; --tr-19: -0.026em; --tr-17: -0.020em;
+  --tr-15: -0.016em; --tr-13: -0.010em; --tr-12: -0.006em; --tr-11: 0em;
+
+  --r-chip: 6px; --r-ctl: 8px; --r-card: 12px; --r-sheet: 16px; --r-pill: 999px;
+
+  --inset: 18px;
+  --rail: 64px;
+  --tap: 44px;
+  /* The sheet is a held page, not a full-bleed frame, and the ink floor
+     shows on both sides of it. This is the direction's answer to the
+     widest measured failure in current Notes: at 1920 the shipped product
+     discards 939px as undifferentiated white. Discarded width and
+     deliberate ground look nothing alike, and the floor is what makes the
+     difference. */
+  --sheet-w: 830px;
+  /* One leading edge. Head, run and dock all resolve to it, so nothing on
+     this sheet is inset from anything else. */
+  --gutter: 34px;
+
+  --dur: 140ms;
+  --dur-slow: 220ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --ring: 0 0 0 1px var(--line);
+  --raise: 0 1px 1px rgba(17, 17, 17, 0.02), 0 2px 3px rgba(17, 17, 17, 0.03);
+  --float: 0 1px 1px rgba(17, 17, 17, 0.03), 0 4px 8px rgba(17, 17, 17, 0.03), 0 14px 28px rgba(17, 17, 17, 0.07);
+  --lift: 0 1px 2px rgba(17, 17, 17, 0.06), 0 6px 14px rgba(17, 17, 17, 0.09), 0 26px 50px rgba(17, 17, 17, 0.16);
+}
+
+html, body { background: var(--ink); color: var(--ink-1); }
+body { font-feature-settings: "ss01", "cv01"; }
+.tab { font-variant-numeric: tabular-nums; }
+
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 2px;
+}
+
+/* ── the floor ─────────────────────────────────────────────────── */
+.floor {
+  height: 100dvh; padding: var(--inset);
+  padding-left: calc(var(--inset) * 2 + var(--rail));
+  position: relative;
+}
+
+/* ── the capsule ───────────────────────────────────────────────── */
+.rail {
+  position: absolute; left: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: var(--rail);
+  background: var(--chrome); box-shadow: inset 0 0 0 1px var(--chrome-line);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; align-items: center; padding: 10px 0;
+  z-index: 4;
+}
+.railMark { width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--on-ink-1); position: relative; }
+.railMark svg { width: 19px; height: 19px; }
+.railMark i { position: absolute; right: 9px; bottom: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--indigo); }
+.railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
+.railGroup { display: grid; gap: 4px; }
+.railTile, .railMark, .railAvatar, .dockGlyph, .dockSend, .headAct, .entryAct, .chip, .tabBtn, .bigAct, .qAct {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; -webkit-appearance: none;
+}
+.railTile {
+  width: var(--tap); height: var(--tap); border-radius: 12px;
+  display: grid; place-items: center; color: var(--on-ink-2); position: relative; cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.railTile svg { width: 19px; height: 19px; }
+.railTile:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+.railTile[data-active]::after {
+  content: ""; position: absolute; right: -12px; top: 50%;
+  width: 7px; height: 7px; margin-top: -3.5px; transform: rotate(45deg);
+  background: var(--chrome); box-shadow: inset -1px 1px 0 var(--chrome-line); border-radius: 1.5px;
+}
+.railSpacer { flex: 1; }
+.railAvatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--chrome-active); box-shadow: inset 0 0 0 1px var(--chrome-line);
+  color: var(--on-ink-1); display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em; margin-top: 8px; cursor: pointer;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────── */
+.sheet {
+  height: 100%; width: min(var(--sheet-w), 100%); margin: 0 auto;
+  background: var(--white); border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden;
+}
+
+/* The sheet's own head names the file. One leading edge, 28px, which
+   every rule, every entry and the dock all resolve to. */
+.head { flex: none; display: flex; align-items: center; gap: 13px; padding: 0 var(--gutter); height: 62px; }
+.word { display: inline-flex; align-items: baseline; font-size: 17px; font-weight: 600; letter-spacing: var(--tr-17); flex: none; }
+.word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
+.headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
+.headName { font-size: 18px; font-weight: 600; letter-spacing: var(--tr-17); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 6ch; }
+.headFacts { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-13); white-space: nowrap; }
+.headFacts b { font-weight: 600; color: var(--ink-1); }
+.headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+.headAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px;
+  border-radius: var(--r-chip); font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-13);
+  cursor: pointer; white-space: nowrap;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.headAct svg { width: 15px; height: 15px; color: var(--ink-3); }
+.headAct:hover { background: var(--wash); color: var(--ink-1); }
+
+/* The one filled object in the head. A count of outstanding decisions is
+   the only thing in Notes that is genuinely urgent, and it reads as
+   filled ink rather than as a colour. */
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px;
+  border-radius: var(--r-pill); background: var(--ink); color: var(--white);
+  font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; position: relative;
+}
+.chip::before { content: ""; position: absolute; inset: -9px -6px; }
+.chip[data-quiet] { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); font-weight: 400; }
+
+/* ── the run ───────────────────────────────────────────────────── */
+.body { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.run { padding: 6px var(--gutter) 152px; }
+.pressure .run { padding-bottom: 152px; }
+
+.dayRule {
+  display: flex; align-items: center; gap: 12px;
+  padding: 26px 0 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.dayRule::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+.dayRule:first-child { padding-top: 6px; }
+
+/* An entry, not a card. The border was doing nothing a rule cannot do
+   better, and it cost a third of the vertical space on a surface whose
+   whole promise is that you can see what you wrote. */
+.entry {
+  display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 14px;
+  padding: 14px 10px 15px; margin: 0 -10px;
+  border-radius: var(--r-card); position: relative; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.entry + .entry::before { content: ""; position: absolute; left: 10px; right: 10px; top: 0; height: 1px; background: var(--line-soft); }
+.entry:hover { background: var(--wash); }
+.entry:hover::before, .entry:hover + .entry::before { opacity: 0; }
+.entryMark { grid-row: 1 / span 3; padding-top: 3px; color: var(--ink-4); display: grid; align-content: start; justify-items: center; position: relative; }
+.entryMark svg { width: 15px; height: 15px; }
+/* A note still waiting on a decision carries one ink dot on its source
+   mark. Not three buttons: the decision has a place of its own, and the
+   run's job is to let you read what you wrote. Sat under the mark it read
+   as a list bullet against the title, which is why it is a badge. */
+.entryMark i {
+  position: absolute; top: 1px; right: 0; width: 6px; height: 6px;
+  border-radius: 50%; background: var(--ink-1);
+  box-shadow: 0 0 0 2px var(--white);
+}
+
+.entryTitle {
+  font-size: 15.5px; font-weight: 600; line-height: 1.42; letter-spacing: var(--tr-15);
+  color: var(--ink-1); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+.entryRest {
+  font-size: 14px; line-height: 1.52; letter-spacing: var(--tr-13); color: var(--ink-2);
+  margin-top: 3px; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+.entryFoot { margin-top: 8px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.entryFoot .dot { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--ink-4); }
+.entryFoot em { font-style: normal; }
+/* "In Tasks" is a fact about the past, so it is quiet outlined ink, and
+   the words that crossed are the link. Green is not available and is not
+   missed: nothing here is a status, it is a receipt. */
+.crossed { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.crossed svg { width: 13px; height: 13px; color: var(--ink-3); }
+
+/* An entry that is open. It does not go anywhere: it grows. */
+.entry[data-open] { background: none; cursor: default; padding-bottom: 20px; }
+/* Open, a note is one continuous paragraph in the person's own words.
+   The 600-weight first sentence is a scanning aid for the closed run; at
+   full length it invents a heading nobody wrote. */
+.entry[data-open] .entryTitle,
+.entry[data-open] .entryRest {
+  -webkit-line-clamp: unset; font-weight: 400; color: var(--ink-1);
+  font-size: 17px; line-height: 1.64; letter-spacing: var(--tr-17);
+}
+.entry[data-open] .entryRest { margin-top: 0; display: inline; }
+.entry[data-open] .entryTitle { display: inline; }
+/* An open note is marked in the sheet's own margin, so opening one costs
+   no layout and the run never shifts under the reader's eye. */
+.entry[data-open]::after {
+  content: ""; position: absolute; left: -22px; top: 16px; bottom: 20px; width: 2px;
+  border-radius: 2px; background: var(--indigo);
+}
+.openFoot { grid-column: 2; margin-top: 16px; padding-top: 13px; border-top: 1px solid var(--line-soft); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.entryAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px;
+  border-radius: var(--r-chip); font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line); cursor: pointer;
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.entryAct svg { width: 14px; height: 14px; }
+.entryAct:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.entryAct[data-primary] { background: var(--indigo); color: var(--white); box-shadow: none; font-weight: 600; }
+.entryAct[data-primary]:hover { background: var(--indigo-deep); }
+.openMeta { margin-left: auto; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); }
+
+/* ── the dock, which is the composer ───────────────────────────── */
+.dockWrap {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 20px;
+  display: flex; justify-content: center; pointer-events: none; z-index: 3;
+}
+/* The run scrolls under the dock, so the last entry needs a soft exit
+   rather than being sliced at the dock's top edge. */
+.dockWrap::before {
+  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: 122px;
+  background: linear-gradient(to top, var(--white) 66%, rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.dock {
+  position: relative; pointer-events: auto;
+  width: calc(100% - var(--gutter) * 2);
+  background: var(--white); border-radius: 18px;
+  box-shadow: var(--ring), var(--float);
+  padding: 7px 7px 7px 16px;
+  display: flex; align-items: flex-end; gap: 8px;
+  transition: box-shadow var(--dur-slow) var(--curve);
+}
+.dockField {
+  flex: 1; min-width: 0; border: 0; outline: 0; resize: none; background: none;
+  font: inherit; font-size: 15.5px; line-height: 1.5; letter-spacing: var(--tr-15); color: var(--ink-1);
+  padding: 10px 0 9px; max-height: 260px; overflow: auto;
+}
+.dockField::placeholder { color: var(--ink-3); }
+.dockGlyph {
+  width: 38px; height: 38px; flex: none; border-radius: 11px; display: grid; place-items: center;
+  color: var(--ink-3); cursor: pointer; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.dockGlyph svg { width: 18px; height: 18px; }
+.dockGlyph:hover { color: var(--ink-1); background: var(--wash); }
+.dockSend {
+  width: 38px; height: 38px; flex: none; border-radius: 11px; display: grid; place-items: center;
+  background: var(--wash); color: var(--ink-4); cursor: default;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve), transform var(--dur) var(--curve);
+}
+.dockSend svg { width: 18px; height: 18px; }
+.dockRule { width: 1px; height: 22px; background: var(--line); margin: 0 2px 8px; flex: none; }
+
+/* Awake: something has been written and the send is the loudest thing
+   on the screen. This is the only moment Notes raises its voice. */
+.dock[data-live] { box-shadow: 0 0 0 1px var(--indigo-line), var(--float); }
+.dock[data-live] .dockSend { background: var(--indigo); color: var(--white); cursor: pointer; }
+.dock[data-live] .dockSend:hover { background: var(--indigo-deep); }
+/* The hint lives inside the dock. Hung below it, it fell outside the
+   sheet's own rounded corner and was clipped, which is how a keyboard
+   model gets advertised to nobody. */
+.dockHint {
+  display: flex; align-items: center; gap: 5px; align-self: center;
+  font-size: 11px; color: var(--ink-4); letter-spacing: var(--tr-11);
+  padding-right: 4px; white-space: nowrap;
+}
+.dockHint kbd {
+  font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2);
+}
+.dockCount { align-self: center; font-size: 11px; color: var(--ink-4); letter-spacing: var(--tr-11); padding-right: 6px; }
+
+/* Search is the same field doing the other job. Nothing new appears, the
+   instrument simply changes what it is pointed at. */
+.dock[data-mode="search"] { box-shadow: var(--ring), var(--raise); }
+.dock[data-mode="search"] .dockField { font-weight: 400; }
+.dockLead { display: grid; place-items: center; width: 20px; height: 38px; color: var(--ink-3); flex: none; margin-right: -4px; }
+.dockLead svg { width: 17px; height: 17px; }
+
+/* ── voice, which takes the sheet ──────────────────────────────── */
+.stage { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--white); z-index: 5; }
+.stageBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 40px; text-align: center; }
+.stageKicker { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); }
+.recDot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-1); }
+.stageTime { font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12); color: var(--ink-2); }
+.stageSaid {
+  max-width: 640px; margin: 26px 0 0;
+  font-size: 25px; font-weight: 400; line-height: 1.44; letter-spacing: var(--tr-22); color: var(--ink-1);
+}
+.stageSaid .tail { color: var(--ink-3); }
+.wave { display: flex; align-items: center; gap: 3px; height: 30px; margin-top: 30px; }
+.wave i { width: 3px; border-radius: 2px; background: var(--ink-1); opacity: 0.9; }
+.stageDisclosure {
+  max-width: 560px; margin: 34px auto 0; font-size: 12px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12);
+}
+.stageFoot { flex: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 28px 34px; }
+.bigAct {
+  display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px;
+  border-radius: var(--r-pill); font-size: 14px; letter-spacing: var(--tr-13); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line); cursor: pointer;
+}
+.bigAct svg { width: 17px; height: 17px; }
+.bigAct:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.bigAct[data-primary] { background: var(--ink); color: var(--white); box-shadow: none; font-weight: 600; }
+.spin {
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 1.6px solid var(--line-strong); border-top-color: var(--ink-1);
+  animation: sp 700ms linear infinite;
+}
+@keyframes sp { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* ── the read-back ─────────────────────────────────────────────── */
+.back { padding: 22px var(--gutter) 44px; }
+.backHead { display: flex; align-items: baseline; gap: 12px; padding-bottom: 4px; }
+.backTitle { font-size: 19px; font-weight: 600; letter-spacing: var(--tr-19); }
+.backNote { font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-13); margin-left: auto; }
+/* What you said, kept visible above what it became. The relationship is
+   the whole moment; without it this is a form with two inputs in it. */
+.heard {
+  margin: 14px 0 0; padding: 13px 16px; border-radius: var(--r-card);
+  background: var(--wash); font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-13);
+}
+.heard b { font-weight: 600; color: var(--ink-3); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+.piece {
+  position: relative; margin-top: 10px; padding: 14px 44px 14px 18px;
+  border-radius: var(--r-card); box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 15.5px; line-height: 1.5; letter-spacing: var(--tr-15); color: var(--ink-1);
+}
+.piece[data-focus] { box-shadow: inset 0 0 0 1px var(--indigo-line), 0 0 0 3px var(--indigo-wash); }
+.piece .drop {
+  position: absolute; right: 8px; top: 50%; margin-top: -16px; width: 32px; height: 32px;
+  border-radius: 9px; display: grid; place-items: center; color: var(--ink-4); cursor: pointer;
+}
+.piece .drop:hover { color: var(--ink-1); background: var(--wash); }
+.piece .drop svg { width: 15px; height: 15px; }
+.piece::before {
+  content: ""; position: absolute; left: -18px; top: 20px; width: 10px; height: 1px; background: var(--line-strong);
+}
+.backFoot { display: flex; align-items: center; gap: 8px; margin-top: 16px; }
+.backFoot .spacer { flex: 1; }
+
+/* ── review, walked in place ───────────────────────────────────── */
+.walk { padding: 20px var(--gutter) 60px; }
+.walkBar { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; }
+.walkTitle { font-size: 19px; font-weight: 600; letter-spacing: var(--tr-19); }
+.walkOf { font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-13); }
+/* Progress is a row of marks, not a percentage. Eight decisions, three
+   made: you can count them, which is the point of a queue. */
+.pips { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.pips i { width: 16px; height: 3px; border-radius: 2px; background: var(--line-strong); }
+.pips i[data-done] { background: var(--ink-1); }
+.pips i[data-now] { background: var(--indigo); }
+.walkNote {
+  padding: 26px 28px 24px; border-radius: var(--r-sheet); box-shadow: var(--ring), var(--raise);
+}
+.walkMeta { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.walkMeta svg { width: 14px; height: 14px; }
+.walkBody { margin: 14px 0 0; font-size: 19px; font-weight: 400; line-height: 1.58; letter-spacing: var(--tr-19); color: var(--ink-1); }
+.walkActions { display: flex; align-items: center; gap: 8px; margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line-soft); }
+.walkActions .spacer { flex: 1; }
+.qAct {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 15px;
+  border-radius: var(--r-ctl); font-size: 13.5px; letter-spacing: var(--tr-13); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line); cursor: pointer;
+}
+.qAct svg { width: 15px; height: 15px; }
+.qAct:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.qAct[data-primary] { background: var(--indigo); color: var(--white); box-shadow: none; font-weight: 600; }
+.qAct[data-quiet] { box-shadow: none; color: var(--ink-3); }
+.qAct kbd { font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line); }
+.next { margin-top: 16px; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-13); display: flex; align-items: center; gap: 8px; }
+.next svg { width: 14px; height: 14px; }
+/* What is still coming stays on screen. A queue that shows one anonymous
+   card and nothing else is why the shipped review view reads as an ocean:
+   you cannot tell whether you are three decisions from the end or thirty. */
+.queueTail { margin-top: 30px; }
+.tailHead { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); display: flex; align-items: center; gap: 12px; }
+.tailHead::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+.tailRow { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; column-gap: 14px; align-items: center; padding: 12px 10px; margin: 0 -10px; border-radius: var(--r-card); }
+.tailRow + .tailRow { box-shadow: 0 -1px 0 var(--line-soft); }
+.tailRow:hover { background: var(--wash); box-shadow: none; }
+.tailRow svg { width: 15px; height: 15px; color: var(--ink-4); }
+.tailRow p { margin: 0; font-size: 14px; line-height: 1.45; letter-spacing: var(--tr-13); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tailRow span { font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); }
+
+/* ── the seam ──────────────────────────────────────────────────── */
+/* No dialog. The task is written inside the note it comes from, with the
+   words that will cross marked in the person's own sentence, because you
+   cannot check what crosses if the thing it came from is behind a scrim. */
+.seamNote { position: relative; }
+.pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: 3px; padding: 1px 0; }
+.craft {
+  margin: 18px 0 0; padding: 18px 20px 18px; border-radius: var(--r-card);
+  background: var(--white); box-shadow: var(--ring), var(--raise); position: relative;
+}
+.craft::before {
+  content: ""; position: absolute; left: 26px; top: -7px; width: 12px; height: 12px; transform: rotate(45deg);
+  background: var(--white); box-shadow: -1px -1px 0 var(--line);
+}
+.craftLabel { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.craftField {
+  width: 100%; margin-top: 8px; border: 0; outline: 0; background: none; resize: none;
+  font: inherit; font-size: 16px; font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-15); color: var(--ink-1);
+  field-sizing: content; min-height: 1.45em;
+}
+.craftRow { display: flex; align-items: center; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.picker {
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px;
+  border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1); cursor: pointer;
+}
+.picker svg { width: 14px; height: 14px; color: var(--ink-3); }
+.picker b { font-weight: 400; color: var(--ink-3); }
+.craftRow .spacer { flex: 1; }
+.boundary { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+
+/* The receipt. It replaces the craft panel in place, so nothing moves. */
+.receipt { margin: 18px 0 0; padding: 18px 20px; border-radius: var(--r-card); box-shadow: var(--ring), var(--raise); }
+.receiptTop { display: flex; align-items: center; gap: 10px; }
+.tick { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; flex: none; }
+.tick svg { width: 12px; height: 12px; }
+.receiptTitle { font-size: 15px; font-weight: 600; letter-spacing: var(--tr-15); }
+.receiptBody { margin: 10px 0 0 32px; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-13); }
+.receiptBody a { color: var(--indigo); text-decoration: none; font-weight: 600; }
+.receiptBody a:hover { text-decoration: underline; }
+
+/* ── the record of what crossed ────────────────────────────────── */
+.ledger { margin-top: 34px; }
+.ledgerHead { display: flex; align-items: baseline; gap: 12px; padding-bottom: 6px; }
+.ledgerTitle { font-size: 15px; font-weight: 600; letter-spacing: var(--tr-15); }
+.ledgerNote { font-size: 12.5px; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.cross { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 16px; padding: 12px 0 13px; border-top: 1px solid var(--line-soft); align-items: center; }
+.crossTask { font-size: 14.5px; font-weight: 600; letter-spacing: var(--tr-13); }
+.crossLane { font-size: 11.5px; font-weight: 600; letter-spacing: var(--tr-11); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r-pill); padding: 3px 9px; white-space: nowrap; }
+.crossFrom { grid-column: 1 / -1; grid-row: 2; margin-top: -2px; font-size: 13px; line-height: 1.45; color: var(--ink-3); letter-spacing: var(--tr-13); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── search ────────────────────────────────────────────────────── */
+mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: 3px; color: inherit; padding: 0 1px; }
+.found { padding: 18px 0 4px; font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-13); }
+.found b { font-weight: 600; color: var(--ink-1); }
+
+/* ── every empty in the product ────────────────────────────────── */
+/* One first move each, and no two of them say the same sentence. */
+.emptyStage { display: grid; align-content: center; min-height: 100%; padding: 34px var(--gutter) 128px; }
+.emptyBox { width: 100%; }
+.emptyTitle { font-size: 27px; font-weight: 600; line-height: 1.24; letter-spacing: var(--tr-30); margin: 0; }
+.emptyBody { margin: 12px 0 0; font-size: 15.5px; line-height: 1.58; color: var(--ink-2); letter-spacing: var(--tr-15); max-width: 46ch; }
+.emptyMove { margin-top: 22px; display: flex; align-items: center; gap: 10px; }
+.emptyGhosts { margin-top: 34px; display: grid; gap: 1px; }
+.ghostRow { display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 12px; padding: 13px 0; border-top: 1px solid var(--line-soft); opacity: 0.32; }
+.ghostBar { height: 9px; border-radius: 3px; background: var(--ink); }
+.ghostBar + .ghostBar { margin-top: 8px; }
+
+.specGrid { display: grid; gap: 18px; padding: 22px 0 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.spec { box-shadow: var(--ring); border-radius: var(--r-card); padding: 22px 22px 24px; }
+.specName { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; }
+.specWhy { margin: 14px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.spec .emptyTitle { font-size: 19px; letter-spacing: var(--tr-19); }
+.spec .emptyBody { font-size: 14px; margin-top: 9px; }
+.spec .emptyMove { margin-top: 16px; }
+
+/* ── not yet ───────────────────────────────────────────────────── */
+.state {
+  display: flex; align-items: flex-start; gap: 13px; padding: 15px 17px; border-radius: var(--r-card);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.state svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--ink-2); }
+.state b { display: block; font-size: 14px; font-weight: 600; letter-spacing: var(--tr-13); }
+.state p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-13); }
+.state .act { margin-left: auto; align-self: center; flex: none; }
+/* Held on the device is not a failure. It is the product keeping its
+   promise, so it is stated in ink like everything else. Only the one
+   destructive act is filled, and filled ink is the loudest this palette
+   goes. */
+.state[data-tone="hold"] { box-shadow: inset 0 0 0 1px var(--ink-1); }
+.state[data-tone="destroy"] { background: var(--ink); box-shadow: none; color: var(--white); }
+.state[data-tone="destroy"] p { color: var(--on-ink-2); }
+.state[data-tone="destroy"] svg { color: var(--white); }
+.state[data-tone="destroy"] .qAct { box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-2); }
+.state[data-tone="destroy"] .qAct[data-primary] { background: var(--white); color: var(--ink); }
+
+.skel { display: grid; gap: 1px; }
+.skelRow { display: grid; grid-template-columns: 26px minmax(0, 1fr); column-gap: 12px; padding: 14px 0; border-top: 1px solid var(--line-soft); }
+.sk { height: 10px; border-radius: 3px; background: var(--wash); }
+.sk + .sk { margin-top: 9px; }
+.skelSay { text-align: center; padding: 30px 0 0; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-13); }
+
+/* ── the phone ─────────────────────────────────────────────────── */
+@media (max-width: 900px) { :root { --inset: 12px; } .headFacts .soft { display: none; } }
+@media (max-width: 720px) {
+  :root { --inset: 9px; --sheet-w: 100%; --gutter: 16px; }
+  .floor { padding: var(--inset) var(--inset) 0; }
+  /* The capsule and the dock become one object, which is the locked
+     behaviour — and in this direction that is not a compromise, it is the
+     thesis arriving early: on a phone the thing at the bottom of the
+     screen already was the composer. */
+  .rail {
+    left: var(--inset); right: var(--inset); top: auto;
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    width: auto; height: 60px; flex-direction: row; justify-content: space-around;
+    border-radius: 18px; padding: 0 6px;
+  }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+  .railAvatar { margin: 0; }
+  .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  .head { height: auto; display: grid; grid-template-areas: "word actions" "name name" "facts facts"; grid-template-columns: auto 1fr; padding: 14px 16px 12px; column-gap: 12px; row-gap: 9px; align-items: center; }
+  .word { grid-area: word; } .headActions { grid-area: actions; justify-self: end; margin-left: 0; }
+  .headName { grid-area: name; font-size: 19px; } .headFacts { grid-area: facts; flex-wrap: wrap; row-gap: 7px; }
+  .headRule { display: none; }
+  .run { padding-bottom: 148px; }
+  .dockWrap { padding-bottom: 12px; }
+  .dockHint { display: none; }
+  /* The placeholder is one sentence and it is not shortened for a small
+     screen. So the field opens at two lines here rather than clipping it
+     mid-word, which is the whole reason the sentence exists. */
+  .dockField { min-height: calc(1.5em * 2); }
+  .dock { align-items: flex-start; padding-top: 6px; }
+  .dockGlyph, .dockSend { margin-top: 2px; }
+  .specGrid { grid-template-columns: minmax(0, 1fr); }
+  .stageSaid { font-size: 21px; }
+  .walkActions { flex-wrap: wrap; }
+  .walkActions .spacer { display: none; }
+  .qAct { flex: 1 1 auto; justify-content: center; min-height: 44px; }
+}
+@media (pointer: coarse) {
+  .dockGlyph, .dockSend, .headAct, .entryAct { min-height: 44px; min-width: 44px; }
+  .entryAct { padding: 0 14px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="./data.js"></script>
+<script src="./icons.js"></script>
+<script src="./render-a.js"></script>
+</body>
+</html>

@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>B · The Page · Notes</title>
+<link rel="stylesheet" href="./foundation.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   B · THE PAGE
+
+   Thesis. A notebook is not a list you file into, it is a page you write
+   on. So there is no composer object at all: the top of the page is a
+   caret and your words, set in exactly the type every note below it is
+   set in, and the thing you are writing is simply the newest entry
+   before it exists. Nothing changes mode. Nothing pushes anything down
+   except the words themselves.
+
+   The page is a manuscript, not a feed. Every note keeps a hanging
+   gutter on the left carrying when it arrived and how it got here, the
+   way a margin note works, so the text column is uninterrupted prose at
+   one editorial measure and the metadata never sits inside the writing.
+
+   Nothing navigates. Review lifts the notes that want a decision to the
+   top of the same page. A task is written in the margin beside the words
+   it comes from. The person never leaves the page they are reading.
+
+   Palette is the inherited lock: Ink #111111, Indigo #4f46e5, White
+   #ffffff, and tints of those three. Geist 400 and 600 only.
+
+     ?state=notebook | capture | voice | readback | review | seam
+            | search | pressure | nothing | not-yet
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.70);
+  --ink-3: rgba(17, 17, 17, 0.55);
+  --ink-4: rgba(17, 17, 17, 0.28);
+
+  --wash: rgba(17, 17, 17, 0.035);
+  --line-soft: rgba(17, 17, 17, 0.055);
+  --line: rgba(17, 17, 17, 0.09);
+  --line-strong: rgba(17, 17, 17, 0.16);
+
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.62);
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  --indigo-wash: rgba(79, 70, 229, 0.08);
+  --indigo-line: rgba(79, 70, 229, 0.30);
+  --indigo-deep: #4338ca;
+
+  --tr-34: -0.034em; --tr-24: -0.028em; --tr-20: -0.024em; --tr-18: -0.020em;
+  --tr-16: -0.016em; --tr-14: -0.012em; --tr-12: -0.006em; --tr-11: 0em;
+
+  --r-chip: 6px; --r-ctl: 8px; --r-card: 10px; --r-sheet: 16px; --r-pill: 999px;
+
+  --inset: 18px;
+  --rail: 64px;
+  --tap: 44px;
+
+  /* The manuscript. Three columns, fixed, so the text column never
+     reflows as the window changes and a person's own sentences keep the
+     line breaks they had a moment ago:
+       left    when it arrived and how it got here
+       centre  the words, and nothing else
+       right   what became of it, and what it is still waiting for
+     Metadata and actions both live in the margins. The prose column is
+     the only place a person's own writing appears, and nothing is ever
+     set into it. */
+  --gutter: 128px;
+  --column: 616px;
+  --margin: 208px;
+  --page: calc(var(--gutter) + var(--column) + var(--margin));
+
+  --dur: 140ms;
+  --dur-slow: 220ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --ring: 0 0 0 1px var(--line);
+  --raise: 0 1px 1px rgba(17, 17, 17, 0.02), 0 2px 3px rgba(17, 17, 17, 0.03);
+  --float: 0 1px 1px rgba(17, 17, 17, 0.03), 0 4px 8px rgba(17, 17, 17, 0.03), 0 14px 28px rgba(17, 17, 17, 0.07);
+}
+
+html, body { background: var(--ink); color: var(--ink-1); }
+body { font-feature-settings: "ss01", "cv01"; }
+.tab { font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 2px;
+}
+
+.floor { height: 100dvh; padding: var(--inset); padding-left: calc(var(--inset) * 2 + var(--rail)); position: relative; }
+
+/* ── the capsule ───────────────────────────────────────────────── */
+.rail {
+  position: absolute; left: var(--inset); top: var(--inset); bottom: var(--inset); width: var(--rail);
+  background: var(--chrome); box-shadow: inset 0 0 0 1px var(--chrome-line); border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; align-items: center; padding: 10px 0; z-index: 4;
+}
+.railMark { width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--on-ink-1); position: relative; }
+.railMark svg { width: 19px; height: 19px; }
+.railMark i { position: absolute; right: 9px; bottom: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--indigo); }
+.railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
+.railGroup { display: grid; gap: 4px; }
+.railTile, .railMark, .railAvatar, .headAct, .chip, .act, .verb, .mini {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; -webkit-appearance: none;
+}
+.railTile {
+  width: var(--tap); height: var(--tap); border-radius: 12px; display: grid; place-items: center;
+  color: var(--on-ink-2); position: relative; cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.railTile svg { width: 19px; height: 19px; }
+.railTile:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+.railTile[data-active]::after {
+  content: ""; position: absolute; right: -12px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px;
+  transform: rotate(45deg); background: var(--chrome); box-shadow: inset -1px 1px 0 var(--chrome-line); border-radius: 1.5px;
+}
+.railSpacer { flex: 1; }
+.railAvatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--chrome-active);
+  box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-1); display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em; margin-top: 8px; cursor: pointer;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────── */
+/* B fills the floor rather than holding a page inside it: the argument is
+   that a manuscript wants room around its own column, and that room
+   should be white paper, not ink. The measure is held by the column, not
+   by the sheet. */
+.sheet {
+  height: 100%; background: var(--white); border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden;
+}
+
+/* The head is a masthead on the paper, aligned to the page's own column
+   so the wordmark sits exactly where the writing starts. */
+.head { flex: none; position: relative; z-index: 2; background: var(--white); }
+.headInner {
+  width: min(var(--page), 100%); margin: 0 auto; padding: 0 30px;
+  display: flex; align-items: center; gap: 13px; height: 66px;
+}
+.headPad { width: var(--gutter); flex: none; }
+.word { display: inline-flex; align-items: baseline; font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18); flex: none; }
+.word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
+.headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
+.headName { font-size: 15px; font-weight: 400; letter-spacing: var(--tr-14); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+.headAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-14); cursor: pointer; white-space: nowrap;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.headAct svg { width: 15px; height: 15px; color: var(--ink-3); }
+.headAct:hover { background: var(--wash); color: var(--ink-1); }
+
+/* ── the band ──────────────────────────────────────────────────── */
+/* It exists only when there are decisions, and pressing it does not
+   navigate: it lifts those notes to the top of this page. */
+.band { flex: none; background: var(--ink); color: var(--white); position: relative; z-index: 2; }
+.bandInner {
+  width: min(var(--page), 100%); margin: 0 auto; padding: 0 30px;
+  display: flex; align-items: center; gap: 12px; height: 42px;
+  font-size: 13px; letter-spacing: var(--tr-14);
+}
+.bandInner b { font-weight: 600; }
+.bandInner .chip {
+  margin-left: auto; height: 26px; padding: 0 12px; border-radius: var(--r-pill);
+  background: var(--white); color: var(--ink); font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+}
+.bandInner .chip svg { width: 13px; height: 13px; }
+
+/* ── the page ──────────────────────────────────────────────────── */
+.body { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.page { width: min(var(--page), 100%); margin: 0 auto; padding: 0 30px 72px; }
+
+/* The block. A hanging gutter carrying when and how, then prose. */
+.block { display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr) var(--margin); position: relative; }
+.blockSide {
+  padding: 22px 22px 0 0; text-align: right;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 5px;
+}
+.blockWhen { font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; }
+.blockHow { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink-4); letter-spacing: var(--tr-11); }
+.blockHow svg { width: 13px; height: 13px; }
+/* A note waiting on a decision is marked in the margin, in the margin's
+   own voice: an ink rule down the gutter's inner edge. It is a fact
+   about the note, so it belongs beside it, not on top of it. */
+.block[data-pending] .blockSide::after {
+  content: ""; position: absolute; left: calc(var(--gutter) - 11px); top: 26px; bottom: 22px;
+  width: 2px; border-radius: 2px; background: var(--ink-1);
+}
+/* The right margin. Everything that is true ABOUT a note rather than
+   part of it: where it went, what it is waiting for, and the one way to
+   act on it. Nothing is ever set into the prose column. */
+.blockAside { padding: 21px 0 0 26px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; align-content: flex-start; }
+.block + .block .blockAside { padding-top: 23px; }
+.blockText { padding: 20px 0 22px; }
+.block + .block .blockText { border-top: 1px solid var(--line-soft); padding-top: 22px; }
+.block + .block .blockSide { padding-top: 24px; }
+
+/* Prose, in the person's own words, at one size. Notes are short: the
+   overwhelming majority are read whole in the run and never need to be
+   opened at all, which is the argument for a page over a list. */
+.blockBody {
+  margin: 0; font-size: 16.5px; font-weight: 400; line-height: 1.62; letter-spacing: var(--tr-16); color: var(--ink-1);
+}
+.blockBody .lede { font-weight: 600; }
+/* Long notes fold. The fold is word-safe and states what it is hiding. */
+.blockBody[data-fold] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+.more {
+  margin-top: 9px; font-size: 13px; font-weight: 600; color: var(--indigo); letter-spacing: var(--tr-14);
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; background: none; border: 0; padding: 0;
+}
+.more svg { width: 13px; height: 13px; }
+.blockFoot { margin-top: 11px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.asideWait { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12); color: var(--ink-1); }
+.asideWait i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-1); }
+.mini {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--r-chip);
+  font-size: 12.5px; letter-spacing: var(--tr-12); color: var(--ink-3); cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.mini svg { width: 13px; height: 13px; }
+.mini:hover { color: var(--ink-1); background: var(--wash); }
+.mini[data-strong] { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line); }
+.receiptLine { display: flex; flex: 1 1 100%; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.45; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.receiptLine svg { width: 13px; height: 13px; flex: none; margin-top: 1px; }
+.receiptLine a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.receiptLine b { display: block; font-weight: 400; color: var(--ink-4); }
+
+.dayMark { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 30px 0 4px; }
+.dayMark span { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-4); }
+.dayMark::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+
+/* ── the caret: capture, with no object around it ──────────────── */
+/* There is no composer. The top of the page is the newest entry before
+   it exists, set in exactly the type every note below it is set in. */
+.write { display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr) var(--margin); position: relative; }
+.writeSide { padding: 26px 22px 0 0; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.writeNow { font-size: 12px; font-weight: 600; color: var(--ink-1); letter-spacing: var(--tr-12); }
+.writeHint { font-size: 11.5px; color: var(--ink-4); letter-spacing: var(--tr-11); }
+.writeMain { padding: 24px 0 26px; position: relative; }
+.writeField {
+  width: 100%; border: 0; outline: 0; background: none; resize: none; display: block;
+  font: inherit; font-size: 16.5px; line-height: 1.62; letter-spacing: var(--tr-16); color: var(--ink-1);
+  field-sizing: content; min-height: 1.62em;
+}
+.writeField::placeholder { color: var(--ink-4); }
+/* The caret is drawn, so the page reads as ready even in a screenshot and
+   even before focus. It is the only thing on the page that moves. */
+.caret {
+  position: absolute; left: -13px; top: 27px; width: 2px; height: 22px; background: var(--indigo);
+  border-radius: 2px; animation: blink 1.1s steps(2, start) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+.writeFoot { display: flex; align-items: center; gap: 6px; margin-top: 14px; }
+.verb {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.verb svg { width: 15px; height: 15px; }
+.verb:hover { color: var(--ink-1); background: var(--wash); }
+.writeFoot .spacer { flex: 1; }
+.saveHint { font-size: 12px; color: var(--ink-4); letter-spacing: var(--tr-12); display: inline-flex; align-items: center; gap: 6px; }
+.saveHint kbd { font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); }
+.act {
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: var(--r-ctl);
+  font-size: 13.5px; letter-spacing: var(--tr-14); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer;
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.act svg { width: 15px; height: 15px; }
+.act:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.act[data-primary] { background: var(--indigo); color: var(--white); box-shadow: none; font-weight: 600; }
+.act[data-primary]:hover { background: var(--indigo-deep); }
+.act[data-ink] { background: var(--ink); color: var(--white); box-shadow: none; font-weight: 600; }
+.act[data-quiet] { box-shadow: none; color: var(--ink-3); }
+.act kbd { font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px currentColor; opacity: 0.5; }
+
+/* The page's own rule under the writing zone. Heavier than the rules
+   between notes, because it divides what is not yet saved from what is. */
+.writeRule { grid-column: 1 / -1; height: 1px; background: var(--line); }
+.writeAside { padding: 26px 0 0 26px; font-size: 12px; line-height: 1.5; color: var(--ink-4); letter-spacing: var(--tr-12); }
+
+/* ── the dock, verbs only ──────────────────────────────────────── */
+/* The inherited architecture keeps a dock at the foot of the sheet, and
+   B keeps it. What it does not do is hold the composer: capture is at
+   the top of the page where the writing is, so the dock carries only the
+   verbs that are about the whole notebook. */
+.dockWrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 18px; display: flex; justify-content: center; pointer-events: none; z-index: 3; }
+.dockWrap::before {
+  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: 96px;
+  background: linear-gradient(to top, var(--white) 62%, rgba(255, 255, 255, 0)); pointer-events: none;
+}
+.dock {
+  position: relative; pointer-events: auto; display: flex; align-items: center; gap: 3px; padding: 5px;
+  background: var(--white); border-radius: var(--r-pill); box-shadow: var(--ring), var(--float);
+}
+.dockField {
+  display: inline-flex; align-items: center; gap: 9px; height: 36px; padding: 0 14px 0 12px; border-radius: var(--r-pill);
+  min-width: 232px; background: var(--wash); color: var(--ink-3); font-size: 13px; letter-spacing: var(--tr-14); cursor: pointer;
+}
+.dockField svg { width: 15px; height: 15px; }
+.dockField kbd { font: inherit; margin-left: auto; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line); }
+.dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; background: none; border: 0; }
+.dockGlyph svg { width: 17px; height: 17px; }
+.dockGlyph:hover { color: var(--ink-1); background: var(--wash); }
+.dockRule { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+.dockAvatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; margin: 0 3px 0 1px; border: 0; cursor: pointer; }
+
+/* ── voice, which stays on the page ────────────────────────────── */
+/* A does the opposite and takes the whole sheet. B's argument is that a
+   person dictating is still writing, so the words arrive exactly where
+   typed words arrive, in the same type, and nothing is covered. */
+.listening { position: relative; }
+.listening .writeMain { padding-bottom: 10px; }
+.said { margin: 0; font-size: 16.5px; line-height: 1.62; letter-spacing: var(--tr-16); color: var(--ink-1); }
+.said .tail { color: var(--ink-4); }
+.liveSide { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.liveTag { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12); color: var(--ink-1); }
+.recDot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-1); animation: pulse 1.4s var(--curve) infinite; }
+@keyframes pulse { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .recDot { animation: none; } }
+.wave { display: flex; align-items: center; gap: 2.5px; height: 22px; }
+.wave i { width: 2.5px; border-radius: 2px; background: var(--ink-2); }
+.disclose {
+  grid-column: 2; margin: 4px 0 0; max-width: 54ch;
+  font-size: 12px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12);
+}
+
+/* ── the read-back, in the margin ──────────────────────────────── */
+.heardSide { padding-top: 24px; text-align: right; }
+.heardLabel { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-4); }
+.heardBody { padding: 22px 0 6px; font-size: 14px; line-height: 1.6; color: var(--ink-3); letter-spacing: var(--tr-14); }
+.pieces { padding: 4px 0 0; display: grid; gap: 8px; }
+.piece {
+  position: relative; padding: 13px 42px 13px 16px; border-radius: var(--r-card);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 16px; line-height: 1.55; letter-spacing: var(--tr-16);
+}
+.piece[data-focus] { box-shadow: inset 0 0 0 1px var(--indigo-line), 0 0 0 3px var(--indigo-wash); }
+.piece .drop { position: absolute; right: 7px; top: 50%; margin-top: -15px; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-4); background: none; border: 0; cursor: pointer; }
+.piece .drop:hover { color: var(--ink-1); background: var(--wash); }
+.piece .drop svg { width: 14px; height: 14px; }
+.piece::before { content: ""; position: absolute; left: -22px; top: 21px; width: 14px; height: 1px; background: var(--line-strong); }
+
+/* ── review: the same page, lifted ─────────────────────────────── */
+.lift { background: var(--wash); border-radius: var(--r-card); margin: 0 -14px; padding: 0 14px; }
+.decide { margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.decide .spacer { flex: 1; }
+.queueHead { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; padding: 22px 0 10px; }
+.queueTitle { font-size: 21px; font-weight: 600; letter-spacing: var(--tr-20); margin: 0; }
+.queueNote { font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); }
+.pips { margin-left: auto; display: flex; gap: 4px; }
+.pips i { width: 15px; height: 3px; border-radius: 2px; background: var(--line-strong); }
+.pips i[data-done] { background: var(--ink-1); }
+
+/* ── the seam, written in the margin ───────────────────────────── */
+.pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: 3px; }
+.marginTask {
+  position: relative; margin-top: 14px; padding: 15px 17px; border-radius: var(--r-card);
+  box-shadow: var(--ring), var(--raise); background: var(--white);
+}
+.marginTask::before { content: ""; position: absolute; left: -6px; top: 20px; width: 11px; height: 11px; transform: rotate(45deg); background: var(--white); box-shadow: -1px 1px 0 var(--line); }
+.taskLabel { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-4); }
+.taskField {
+  width: 100%; margin-top: 7px; border: 0; outline: 0; background: none; resize: none; display: block;
+  font: inherit; font-size: 15.5px; font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); color: var(--ink-1);
+  field-sizing: content; min-height: 1.45em;
+}
+.taskRow { display: flex; align-items: center; gap: 9px; margin-top: 13px; padding-top: 12px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.picker { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 11px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: 12.5px; letter-spacing: var(--tr-12); color: var(--ink-1); cursor: pointer; background: none; border: 0; }
+.picker svg { width: 13px; height: 13px; color: var(--ink-3); }
+.picker b { font-weight: 400; color: var(--ink-3); }
+.taskRow .spacer { flex: 1; }
+.taskWhy { margin: 11px 0 0; font-size: 12px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+
+/* ── the record ────────────────────────────────────────────────── */
+.ledgerHead { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 12px; padding: 34px 0 8px; }
+.ledgerTitle { font-size: 15px; font-weight: 600; letter-spacing: var(--tr-16); margin: 0; }
+.ledgerNote { font-size: 12.5px; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.crossSide { padding: 15px 22px 0 0; text-align: right; }
+.crossLane { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: var(--r-pill); box-shadow: inset 0 0 0 1px var(--line); font-size: 11px; font-weight: 600; letter-spacing: var(--tr-11); color: var(--ink-2); white-space: nowrap; }
+.crossMain { padding: 13px 0 14px; border-top: 1px solid var(--line-soft); }
+.crossTask { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: var(--tr-16); }
+.crossFrom { margin: 4px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink-3); letter-spacing: var(--tr-14); }
+
+/* ── search ────────────────────────────────────────────────────── */
+mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: 3px; color: inherit; padding: 0 1px; }
+.foundHead { grid-column: 1 / -1; padding: 22px 0 6px; font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-14); }
+.foundHead b { font-weight: 600; color: var(--ink-1); }
+
+/* ── every empty ───────────────────────────────────────────────── */
+.emptyMain { grid-column: 2; padding: 34px 0 0; }
+.emptyTitle { font-size: 30px; font-weight: 600; line-height: 1.2; letter-spacing: var(--tr-34); margin: 0; }
+.emptyBody { margin: 13px 0 0; font-size: 16px; line-height: 1.6; color: var(--ink-2); letter-spacing: var(--tr-16); max-width: 44ch; }
+.emptyMove { margin-top: 20px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.specs { grid-column: 1 / -1; display: grid; gap: 0; padding-top: 30px; }
+.specRow { display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr) var(--margin); border-top: 1px solid var(--line-soft); }
+.specName { padding: 20px 22px 0 0; text-align: right; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-4); }
+.specMain { padding: 18px 0 22px; }
+.specMain .emptyTitle { font-size: 19px; letter-spacing: var(--tr-20); }
+.specMain .emptyBody { font-size: 14.5px; margin-top: 8px; }
+.specMain .emptyMove { margin-top: 14px; }
+.specWhy { margin: 13px 0 0; font-size: 12px; line-height: 1.55; color: var(--ink-4); letter-spacing: var(--tr-12); max-width: 56ch; }
+
+/* ── not yet ───────────────────────────────────────────────────── */
+.stateRow { display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr) var(--margin); }
+.stateSide { padding: 20px 22px 0 0; text-align: right; color: var(--ink-3); }
+.stateSide svg { width: 17px; height: 17px; }
+.stateMain { padding: 18px 0 20px; border-top: 1px solid var(--line-soft); }
+.stateTitle { margin: 0; font-size: 15.5px; font-weight: 600; letter-spacing: var(--tr-16); }
+.stateBody { margin: 6px 0 0; font-size: 14.5px; line-height: 1.58; color: var(--ink-2); letter-spacing: var(--tr-14); max-width: 58ch; }
+.stateMove { margin-top: 13px; display: flex; gap: 8px; flex-wrap: wrap; }
+/* Held on this device is the product keeping its promise, so it is
+   stated in ink. The single destructive act is the one filled object. */
+.stateRow[data-tone="hold"] .stateSide { color: var(--ink-1); }
+.stateRow[data-tone="hold"] .stateMain { box-shadow: inset 2px 0 0 var(--ink-1); padding-left: 16px; margin-left: -16px; }
+.skel { display: grid; }
+.skelRow { display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr) var(--margin); }
+.skelSide { padding: 21px 22px 0 0; display: flex; justify-content: flex-end; }
+.skelMain { padding: 20px 0 22px; border-top: 1px solid var(--line-soft); }
+.sk { height: 11px; border-radius: 3px; background: var(--wash); }
+.sk + .sk { margin-top: 10px; }
+.skelSay { grid-column: 2; padding: 26px 0 0; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); }
+
+/* ── narrow ────────────────────────────────────────────────────── */
+@media (max-width: 1180px) { :root { --column: 560px; --margin: 176px; } }
+/* Below this the right margin cannot hold a sentence, so it goes and its
+   contents fold back under the prose. The left gutter survives longer
+   because it holds two short facts, not a line of prose. */
+@media (max-width: 980px) {
+  :root { --inset: 12px; --gutter: 108px; --column: 520px; --margin: 0px; }
+  .block, .write, .stateRow, .skelRow, .specRow { grid-template-columns: var(--gutter) minmax(0, 1fr); }
+  .blockAside, .writeAside { grid-column: 2; padding: 0 0 14px; flex-direction: row; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .block + .block .blockAside { padding-top: 0; }
+}
+@media (max-width: 720px) {
+  :root { --inset: 9px; --gutter: 0px; --column: 100%; --margin: 0px; --page: 100%; }
+  .floor { padding: var(--inset) var(--inset) 0; }
+  .rail {
+    left: var(--inset); right: var(--inset); top: auto; bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    width: auto; height: 60px; flex-direction: row; justify-content: space-around; border-radius: 18px; padding: 0 6px;
+  }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+  .railAvatar { margin: 0; }
+  .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  .headInner, .bandInner { padding: 0 18px; }
+  /* The workspace name is the one fact a phone can afford to drop: the
+     product is named beside it and there is only ever one notebook. */
+  .headName, .headRule { display: none; }
+  /* The band's sentence and its control both have to survive. Stacking
+     them keeps the sentence whole rather than wrapping the button. */
+  .band .bandInner { height: auto; padding-top: 11px; padding-bottom: 11px; flex-wrap: wrap; row-gap: 9px; }
+  .bandInner .chip { margin-left: 0; white-space: nowrap; }
+  /* The write zone loses its desktop air; on a phone the first note has
+     to be reachable without scrolling past an empty field. */
+  .writeMain { padding-bottom: 12px; }
+  .writeFoot { margin-top: 10px; }
+  .writeAside { padding: 8px 0 0; }
+  /* The capsule already carries the account on a phone, and the locked
+     architecture merges the two objects here. A second avatar in the
+     dock is the same control twice. */
+  .dockAvatar, .dock .dockRule:last-of-type { display: none; }
+  .page { padding: 0 18px 84px; }
+  /* The gutter collapses. On a phone a hanging margin is a luxury the
+     measure cannot pay for, so when and how move to a line above the
+     writing rather than being cut off the side of the page. */
+  .block, .write, .stateRow, .skelRow, .specRow, .crossRow { grid-template-columns: minmax(0, 1fr); }
+  .blockAside, .writeAside { grid-column: 1; }
+  .blockSide, .writeSide, .stateSide, .skelSide, .specName, .crossSide, .heardSide {
+    padding: 16px 0 0; text-align: left; flex-direction: row; align-items: center; gap: 10px; justify-content: flex-start;
+  }
+  .block[data-pending] .blockSide::after { left: -18px; top: 18px; bottom: auto; height: 18px; }
+  .blockText, .writeMain, .stateMain, .skelMain, .specMain, .crossMain { padding-top: 6px; border-top: 0; }
+  .block + .block { border-top: 1px solid var(--line-soft); margin-top: 4px; }
+  .disclose, .emptyMain, .skelSay { grid-column: 1; }
+  .caret { left: -8px; }
+  .dockField { min-width: 0; }
+  .dockField span, .dockField kbd { display: none; }
+}
+@media (pointer: coarse) {
+  .mini, .verb, .headAct, .dockGlyph { min-height: 44px; min-width: 44px; }
+  .mini { padding: 0 12px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="./data.js"></script>
+<script src="./icons.js"></script>
+<script src="./render-b.js"></script>
+</body>
+</html>

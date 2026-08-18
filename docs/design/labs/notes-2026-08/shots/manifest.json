@@ -1,0 +1,46 @@
+{
+  "viewports": [
+    "390x844"
+  ],
+  "states": [
+    "notebook"
+  ],
+  "directions": [
+    {
+      "key": "a",
+      "name": "A · The Desk"
+    },
+    {
+      "key": "b",
+      "name": "B · The Page"
+    },
+    {
+      "key": "c",
+      "name": "C · The Stack"
+    }
+  ],
+  "errors": [],
+  "shots": [
+    {
+      "direction": "a",
+      "name": "A · The Desk",
+      "state": "notebook",
+      "viewport": "390x844",
+      "file": "a-notebook--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "B · The Page",
+      "state": "notebook",
+      "viewport": "390x844",
+      "file": "b-notebook--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "C · The Stack",
+      "state": "notebook",
+      "viewport": "390x844",
+      "file": "c-notebook--390x844.png"
+    }
+  ]
+}

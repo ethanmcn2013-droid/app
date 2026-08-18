@@ -1,0 +1,146 @@
+/* Shared foundation for the three Tasks directions.
+ *
+ * Tokens are the vendored Signal Design System 2.0 values from
+ * src/ds/tokens.css, unedited. Fonts are the real Geist variable files copied
+ * out of node_modules/geist so the artboards render in the product's own
+ * typeface offline. Nothing product-specific lives here: every direction
+ * brings its own layout, its own chrome and its own extension tokens, and any
+ * proposed token change is declared inside that direction's file.
+ */
+
+@font-face {
+  font-family: "Geist";
+  src: url("./fonts/Geist.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-display: block;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./fonts/GeistMono.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-display: block;
+}
+
+:root {
+  --indigo-50: #eef2ff;
+  --indigo-100: #e0e7ff;
+  --indigo-200: #c7d2fe;
+  --indigo-300: #a5b4fc;
+  --indigo-400: #818cf8;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+  --indigo-800: #3730a3;
+  --indigo-900: #312e81;
+
+  --paper: #ffffff;
+  --paper-soft: #fafafa;
+  --paper-deep: #f4f4f5;
+
+  --ink: #111111;
+  --ink-soft: #3f3f46;
+  --ink-faint: #71717a;
+  --ink-ghost: #d4d4d8;
+
+  --accent: var(--indigo-600);
+  --accent-hover: var(--indigo-700);
+  --accent-tint: var(--indigo-50);
+  --accent-glow: rgba(79, 70, 229, 0.32);
+  --accent-soft: rgba(79, 70, 229, 0.12);
+
+  --hairline: rgba(17, 17, 17, 0.1);
+  --hairline-soft: rgba(17, 17, 17, 0.06);
+
+  --status-done: #10b981;
+  --status-flight: #f59e0b;
+  --status-blocked: #ef4444;
+  --status-next: var(--ink-faint);
+
+  --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+
+  --shadow-float: 0 1px 2px rgba(17, 17, 17, 0.04), 0 6px 16px rgba(17, 17, 17, 0.04);
+  --shadow-modal: 0 4px 8px rgba(17, 17, 17, 0.04), 0 16px 40px rgba(17, 17, 17, 0.07);
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --motion-instant: 80ms;
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 400ms;
+
+  /* The Tasks board's own Done green (T·132 canon, AA at 4.58:1). Kept as an
+     --x- extension exactly as the product does, never as a redefinition of
+     the system's --status-done. */
+  --x-status-done: #1b873f;
+  --x-status-done-tint: #eaf5ee;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-weight: var(--weight-regular);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv01";
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-instant: 0ms;
+    --motion-fast: 0ms;
+    --motion-base: 0ms;
+    --motion-slow: 0ms;
+  }
+}

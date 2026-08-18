@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C · The Stack · Notes</title>
+<link rel="stylesheet" href="./foundation.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   C · THE STACK — the one that reaches furthest
+
+   Thesis. A note is a thing, and things pile up. So the sheet is not a
+   list, it is two planes with depth between them.
+
+   The upper plane is the DESK: the newest capture is a fresh piece of
+   paper lying face up on it, and the two behind it are the last two
+   things you wrote, offset and settling. Writing happens on the top
+   sheet — you are not filling in a field, you are writing on paper, and
+   the paper is the newest note before it exists. Saving slides it onto
+   the pile and lays a fresh one down.
+
+   The lower plane is the INDEX: everything older, tight, one line each,
+   scannable at a glance. Reading lifts a note out of the index and up
+   onto the desk, which is the only movement in the product and the
+   reason the two planes exist.
+
+   The gamble this direction takes: physical metaphor is the fastest way
+   to make software feel expensive, and the fastest way to make it feel
+   cheap. Every affordance therefore carries a real accessible name, a
+   linear tab order, and a flat fallback, because paper that a screen
+   reader cannot pick up is not paper, it is decoration.
+
+   Palette is the inherited lock: Ink #111111, Indigo #4f46e5, White
+   #ffffff, and tints of those three. Geist 400 and 600 only. Depth is
+   made of shadow and offset, never of a second colour.
+
+     ?state=notebook | capture | voice | readback | review | seam
+            | search | pressure | nothing | not-yet
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --ink-3: rgba(17, 17, 17, 0.58);
+  --ink-4: rgba(17, 17, 17, 0.30);
+
+  --wash: rgba(17, 17, 17, 0.035);
+  --line-soft: rgba(17, 17, 17, 0.055);
+  --line: rgba(17, 17, 17, 0.09);
+  --line-strong: rgba(17, 17, 17, 0.16);
+
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.60);
+  --on-ink-3: rgba(255, 255, 255, 0.38);
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  --indigo-wash: rgba(79, 70, 229, 0.08);
+  --indigo-line: rgba(79, 70, 229, 0.32);
+  --indigo-deep: #4338ca;
+
+  --tr-40: -0.036em; --tr-28: -0.030em; --tr-21: -0.026em; --tr-18: -0.020em;
+  --tr-16: -0.016em; --tr-14: -0.012em; --tr-12: -0.006em; --tr-11: 0em;
+
+  --r-chip: 6px; --r-ctl: 8px; --r-paper: 14px; --r-sheet: 16px; --r-pill: 999px;
+
+  --inset: 18px;
+  --rail: 64px;
+  --tap: 44px;
+  /* One measure for both planes. The paper on the desk and the rows of
+     the index resolve to the same two edges, so the sheet has one leading
+     edge and the depth between the planes is the only thing separating
+     them. */
+  --desk: 100%;
+
+  --dur: 140ms;
+  --dur-slow: 220ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+
+  --ring: 0 0 0 1px var(--line);
+  --raise: 0 1px 1px rgba(17, 17, 17, 0.02), 0 2px 3px rgba(17, 17, 17, 0.03);
+  /* Paper on paper. Three stacked micro-shadows rather than one soft
+     blur, so an offset sheet reads as a separate object at 100% zoom and
+     not as a grey haze. */
+  --paper: 0 1px 1px rgba(17, 17, 17, 0.04), 0 3px 6px rgba(17, 17, 17, 0.04), 0 10px 22px rgba(17, 17, 17, 0.06);
+  --paper-lift: 0 2px 3px rgba(17, 17, 17, 0.05), 0 8px 16px rgba(17, 17, 17, 0.07), 0 26px 52px rgba(17, 17, 17, 0.14);
+}
+
+html, body { background: var(--ink); color: var(--ink-1); }
+body { font-feature-settings: "ss01", "cv01"; }
+.tab { font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 3px;
+}
+
+.floor { height: 100dvh; padding: var(--inset); padding-left: calc(var(--inset) * 2 + var(--rail)); position: relative; }
+
+/* ── the capsule ───────────────────────────────────────────────── */
+.rail {
+  position: absolute; left: var(--inset); top: var(--inset); bottom: var(--inset); width: var(--rail);
+  background: var(--chrome); box-shadow: inset 0 0 0 1px var(--chrome-line); border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; align-items: center; padding: 10px 0; z-index: 4;
+}
+.railMark { width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--on-ink-1); position: relative; }
+.railMark svg { width: 19px; height: 19px; }
+.railMark i { position: absolute; right: 9px; bottom: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--indigo); }
+.railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
+.railGroup { display: grid; gap: 4px; }
+.railTile, .railMark, .railAvatar, .headAct, .chip, .act, .verb, .mini, .idxRow, .paperAct {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; -webkit-appearance: none;
+}
+.railTile {
+  width: var(--tap); height: var(--tap); border-radius: 12px; display: grid; place-items: center;
+  color: var(--on-ink-2); position: relative; cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.railTile svg { width: 19px; height: 19px; }
+.railTile:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+.railTile[data-active]::after {
+  content: ""; position: absolute; right: -12px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px;
+  transform: rotate(45deg); background: var(--chrome); box-shadow: inset -1px 1px 0 var(--chrome-line); border-radius: 1.5px;
+}
+.railSpacer { flex: 1; }
+.railAvatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--chrome-active);
+  box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-1); display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em; margin-top: 8px; cursor: pointer;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────── */
+.sheet {
+  height: 100%; background: var(--white); border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden;
+}
+.head { flex: none; display: flex; align-items: center; gap: 13px; padding: 0 30px; height: 62px; }
+.word { display: inline-flex; align-items: baseline; font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18); flex: none; }
+.word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
+.headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
+.headName { font-size: 15px; font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+.headAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-14); cursor: pointer; white-space: nowrap;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.headAct svg { width: 15px; height: 15px; color: var(--ink-3); }
+.headAct:hover { background: var(--wash); color: var(--ink-1); }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; position: relative;
+}
+.chip::before { content: ""; position: absolute; inset: -9px -6px; }
+
+/* ── the desk ──────────────────────────────────────────────────── */
+/* The upper plane. Everything here is paper: the sheet you are writing
+   on, and the two behind it that have already been written. */
+.desk {
+  flex: none; position: relative; padding: 6px 30px 30px;
+  display: flex; justify-content: center;
+}
+.pile { position: relative; width: min(var(--desk), 100%); }
+/* The two sheets behind. They are decoration and are hidden from the
+   reader, because the notes they stand for are in the index below and
+   naming them twice is how a screen reader ends up with a duplicate
+   notebook. */
+.behind {
+  position: absolute; left: 0; right: 0; top: 0; height: 100%;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--raise);
+}
+.behind[data-n="1"] { transform: translate(0, 11px) scale(0.982); opacity: 0.92; }
+.behind[data-n="2"] { transform: translate(0, 22px) scale(0.964); opacity: 0.66; }
+
+.top {
+  position: relative; background: var(--white); border-radius: var(--r-paper);
+  box-shadow: var(--ring), var(--paper); padding: 22px 24px 14px;
+  transition: box-shadow var(--dur-slow) var(--curve);
+}
+.top[data-live] { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper-lift); }
+.topField {
+  width: 100%; border: 0; outline: 0; background: none; resize: none; display: block;
+  font: inherit; font-size: 18px; line-height: 1.55; letter-spacing: var(--tr-18); color: var(--ink-1);
+  field-sizing: content; min-height: calc(1.55em * 2);
+}
+.topField::placeholder { color: var(--ink-4); }
+.topFoot { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft); }
+.verb {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.verb svg { width: 16px; height: 16px; }
+.verb:hover { color: var(--ink-1); background: var(--wash); }
+.topFoot .spacer { flex: 1; }
+.topMeta { font-size: 12px; color: var(--ink-4); letter-spacing: var(--tr-12); }
+.act {
+  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: var(--r-ctl);
+  font-size: 13.5px; letter-spacing: var(--tr-14); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); cursor: pointer;
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.act svg { width: 15px; height: 15px; }
+.act:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.act[data-primary] { background: var(--indigo); color: var(--white); box-shadow: none; font-weight: 600; }
+.act[data-primary]:hover { background: var(--indigo-deep); }
+.act[data-ink] { background: var(--ink); color: var(--white); box-shadow: none; font-weight: 600; }
+.act[data-quiet] { box-shadow: none; color: var(--ink-3); }
+.act kbd { font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px currentColor; opacity: 0.5; }
+
+/* A note lifted out of the index and read on the desk. */
+.readSrc { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); margin-bottom: 12px; }
+.readSrc svg { width: 14px; height: 14px; }
+.readSrc .dot { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--ink-4); }
+/* The paper is as wide as the desk; the writing on it is not. A
+   measure is a property of prose, not of the surface under it. */
+.readBody { margin: 0; max-width: 68ch; font-size: 18px; font-weight: 400; line-height: 1.6; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.readBody .lede { font-weight: 600; }
+
+/* ── the index ─────────────────────────────────────────────────── */
+/* The lower plane. Older notes, one line each, tight enough that a
+   season of capture is scannable without scrolling past your own week. */
+.indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.indexHead {
+  flex: none; display: flex; align-items: center; gap: 12px; padding: 0 30px 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-4);
+}
+.indexHead::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+.indexHead .cnt { text-transform: none; letter-spacing: var(--tr-11); font-weight: 400; color: var(--ink-3); font-size: 12px; }
+.index { flex: 1; min-height: 0; overflow: auto; padding: 0 30px 22px; scrollbar-width: thin; }
+.idxDay { padding: 16px 0 5px; font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-4); }
+.idxRow {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto; column-gap: 13px; align-items: center;
+  width: 100%; text-align: left; padding: 9px 10px; margin: 0 -10px; border-radius: var(--r-chip); cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+  position: relative;
+}
+.idxRow + .idxRow::before { content: ""; position: absolute; left: 10px; right: 10px; top: 0; height: 1px; background: var(--line-soft); }
+.idxRow:hover { background: var(--wash); }
+.idxRow:hover::before, .idxRow:hover + .idxRow::before { opacity: 0; }
+.idxMark { color: var(--ink-4); display: grid; place-items: center; position: relative; }
+.idxMark svg { width: 15px; height: 15px; }
+.idxMark i { position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-1); box-shadow: 0 0 0 2px var(--white); }
+.idxText { font-size: 14.5px; line-height: 1.45; letter-spacing: var(--tr-14); color: var(--ink-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.idxText b { font-weight: 600; }
+.idxText span { color: var(--ink-3); }
+.idxTag {
+  font-size: 11px; font-weight: 600; letter-spacing: var(--tr-11); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r-pill); padding: 3px 8px; white-space: nowrap;
+}
+.idxWhen { font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; }
+.idxRow[data-open] { background: var(--wash); }
+
+/* ── the dock ──────────────────────────────────────────────────── */
+.dockWrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 18px; display: flex; justify-content: center; pointer-events: none; z-index: 3; }
+.dockWrap::before {
+  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: 92px;
+  background: linear-gradient(to top, var(--white) 64%, rgba(255, 255, 255, 0)); pointer-events: none;
+}
+.dock {
+  position: relative; pointer-events: auto; display: flex; align-items: center; gap: 3px; padding: 5px;
+  background: var(--white); border-radius: var(--r-pill); box-shadow: var(--ring), var(--paper);
+}
+.dockField {
+  display: inline-flex; align-items: center; gap: 9px; height: 36px; padding: 0 14px 0 12px; border-radius: var(--r-pill);
+  min-width: 236px; background: var(--wash); color: var(--ink-3); font-size: 13px; letter-spacing: var(--tr-14); cursor: pointer;
+}
+.dockField svg { width: 15px; height: 15px; }
+.dockField kbd { font: inherit; margin-left: auto; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line); }
+.dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; background: none; border: 0; }
+.dockGlyph svg { width: 17px; height: 17px; }
+.dockGlyph:hover { color: var(--ink-1); background: var(--wash); }
+.dockRule { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+.dockAvatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; margin: 0 3px 0 1px; border: 0; cursor: pointer; }
+
+/* ── voice, which takes the whole floor ────────────────────────── */
+/* The boldest moment in the lab. The sheet recedes into the desk it sits
+   on and the words arrive in white on the ink floor, because a person
+   dictating is not looking at a notebook, they are talking. */
+.dark { position: fixed; inset: 0; background: var(--ink); color: var(--on-ink-1); z-index: 9; display: flex; flex-direction: column; }
+.darkTop { flex: none; display: flex; align-items: center; gap: 12px; padding: 26px 32px 0; }
+.darkTag { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-ink-1); }
+.darkTag .rec { width: 8px; height: 8px; border-radius: 50%; background: var(--white); animation: pulse 1.5s var(--curve) infinite; }
+@keyframes pulse { 50% { opacity: 0.28; } }
+@media (prefers-reduced-motion: reduce) { .darkTag .rec { animation: none; } }
+.darkTime { font-size: 12px; font-weight: 600; color: var(--on-ink-2); letter-spacing: var(--tr-12); }
+.darkTop .spacer { flex: 1; }
+.darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; }
+.darkSaid {
+  max-width: 900px; margin: 0 auto; font-size: 34px; font-weight: 400; line-height: 1.38; letter-spacing: var(--tr-40); color: var(--on-ink-1);
+}
+.darkSaid .tail { color: var(--on-ink-3); }
+.darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; margin: 40px auto 0; }
+.darkWave i { width: 3px; border-radius: 2px; background: var(--on-ink-2); }
+.darkFoot { flex: none; padding: 0 32px 34px; display: flex; align-items: flex-end; gap: 20px; }
+.darkNote { max-width: 62ch; font-size: 12px; line-height: 1.55; color: var(--on-ink-3); letter-spacing: var(--tr-12); }
+.darkFoot .spacer { flex: 1; }
+.darkAct {
+  display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border-radius: var(--r-pill);
+  font: inherit; font-size: 14px; letter-spacing: var(--tr-14); cursor: pointer; border: 0;
+  background: none; color: var(--on-ink-2); box-shadow: inset 0 0 0 1px var(--chrome-line);
+}
+.darkAct svg { width: 17px; height: 17px; }
+.darkAct[data-primary] { background: var(--white); color: var(--ink); box-shadow: none; font-weight: 600; }
+
+/* ── the read-back: what was said, and what it became ──────────── */
+.split { position: relative; }
+.saidWas {
+  margin: 0 0 4px; max-width: 84ch; padding: 14px 16px; border-radius: var(--r-chip);
+  background: var(--wash); font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14);
+}
+.saidWas b { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 6px; }
+.pieces { display: grid; gap: 9px; margin-top: 14px; }
+.piece {
+  position: relative; max-width: 74ch; padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
+  background: var(--white); box-shadow: var(--ring), var(--raise);
+  font-size: 16.5px; line-height: 1.52; letter-spacing: var(--tr-16); color: var(--ink-1);
+}
+.piece[data-focus] { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); }
+.piece .drop { position: absolute; right: 8px; top: 50%; margin-top: -16px; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: var(--ink-4); background: none; border: 0; cursor: pointer; }
+.piece .drop:hover { color: var(--ink-1); background: var(--wash); }
+.piece .drop svg { width: 15px; height: 15px; }
+.piece::before { content: ""; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; border-radius: 2px; background: var(--line-strong); }
+.piece[data-focus]::before { background: var(--indigo); }
+
+/* ── review: a hand of cards ───────────────────────────────────── */
+/* Eight decisions dealt as a hand. Deciding one takes it off the top and
+   the next comes up, so progress is a thing you can see rather than a
+   percentage you have to read. */
+.hand { position: relative; width: min(var(--desk), 100%); }
+.handCard {
+  position: absolute; left: 0; right: 0; top: 0; background: var(--white);
+  border-radius: var(--r-paper); box-shadow: var(--ring), var(--raise); height: 100%;
+}
+.handCard[data-n="1"] { transform: translate(0, 12px) scale(0.972); opacity: 0.9; }
+.handCard[data-n="2"] { transform: translate(0, 24px) scale(0.944); opacity: 0.6; }
+.handCard[data-n="3"] { transform: translate(0, 36px) scale(0.916); opacity: 0.32; }
+.handTop { position: relative; background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper-lift); padding: 24px 26px 18px; }
+.handQ { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.handTitle { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: var(--tr-21); }
+.handOf { font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); }
+.pips { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.pips i { width: 15px; height: 3px; border-radius: 2px; background: var(--line-strong); }
+.pips i[data-done] { background: var(--ink-1); }
+.pips i[data-now] { background: var(--indigo); }
+.handBody { margin: 0; max-width: 66ch; font-size: 18px; line-height: 1.58; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.handFoot { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.handFoot .spacer { flex: 1; }
+.deckNote { margin: 46px 0 0; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); display: flex; align-items: center; gap: 9px; }
+.deckNote svg { width: 14px; height: 14px; }
+
+/* ── the seam: the note stays, a task peels off it ─────────────── */
+.pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: 3px; }
+.peel {
+  position: relative; max-width: 720px; margin-top: -6px; margin-left: 34px; margin-right: 6px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper);
+  padding: 18px 20px;
+}
+.peel::before { content: ""; position: absolute; left: 30px; top: -7px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--white); box-shadow: -1px -1px 0 var(--line); }
+.peelTop { display: flex; align-items: center; gap: 9px; }
+.peelMark { width: 22px; height: 22px; border-radius: 6px; background: var(--ink); color: var(--white); display: grid; place-items: center; flex: none; }
+.peelMark svg { width: 13px; height: 13px; }
+.peelLabel { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.peelField {
+  width: 100%; margin-top: 11px; border: 0; outline: 0; background: none; resize: none; display: block;
+  font: inherit; font-size: 16.5px; font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); color: var(--ink-1);
+  field-sizing: content; min-height: 1.45em;
+}
+.peelRow { display: flex; align-items: center; gap: 9px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; background: none; border: 0; }
+.picker svg { width: 14px; height: 14px; color: var(--ink-3); }
+.picker b { font-weight: 400; color: var(--ink-3); }
+.peelRow .spacer { flex: 1; }
+.peelWhy { margin: 12px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.stays { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); margin-top: 12px; }
+.stays svg { width: 13px; height: 13px; }
+
+/* ── search ────────────────────────────────────────────────────── */
+mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: 3px; color: inherit; padding: 0 1px; }
+.searchTop { padding: 6px 30px 18px; display: flex; justify-content: center; }
+.searchBar {
+  width: min(var(--desk), 100%); display: flex; align-items: center; gap: 11px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); padding: 14px 18px;
+}
+.searchBar svg { width: 18px; height: 18px; color: var(--ink-3); }
+.searchBar input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; font-size: 17px; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.searchBar .esc { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); }
+.hits { padding: 0 30px 22px; }
+.hitsCount { font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-14); padding: 4px 0 8px; }
+.hitsCount b { font-weight: 600; color: var(--ink-1); }
+.hit { padding: 15px 10px; margin: 0 -10px; border-top: 1px solid var(--line-soft); border-radius: var(--r-chip); cursor: pointer; display: grid; grid-template-columns: 20px minmax(0, 1fr); column-gap: 13px; }
+.hit:hover { background: var(--wash); }
+.hit svg { width: 15px; height: 15px; color: var(--ink-4); margin-top: 3px; }
+.hitBody { font-size: 15px; line-height: 1.55; letter-spacing: var(--tr-16); color: var(--ink-2); }
+.hitBody b { font-weight: 600; color: var(--ink-1); }
+.hitWhen { margin-top: 6px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); }
+
+/* ── every empty ───────────────────────────────────────────────── */
+.emptyPaper { text-align: left; }
+.emptyTitle { font-size: 28px; font-weight: 600; line-height: 1.22; letter-spacing: var(--tr-28); margin: 0; }
+.emptyBody { margin: 12px 0 0; font-size: 16px; line-height: 1.58; color: var(--ink-2); letter-spacing: var(--tr-16); max-width: 42ch; }
+.emptyMove { margin-top: 20px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.specs { padding: 8px 30px 26px; display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.spec { border-radius: var(--r-paper); box-shadow: var(--ring); padding: 20px 22px 22px; }
+.specName { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-4); margin-bottom: 12px; }
+.spec .emptyTitle { font-size: 18px; letter-spacing: var(--tr-21); }
+.spec .emptyBody { font-size: 14px; margin-top: 8px; }
+.spec .emptyMove { margin-top: 14px; }
+.specWhy { margin: 13px 0 0; font-size: 12px; line-height: 1.55; color: var(--ink-4); letter-spacing: var(--tr-12); }
+
+/* ── not yet ───────────────────────────────────────────────────── */
+.states { padding: 4px 30px 26px; display: grid; gap: 11px; }
+.state { display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: var(--r-paper); box-shadow: inset 0 0 0 1px var(--line); }
+.state svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--ink-2); }
+.state b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: var(--tr-14); }
+.state p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14); max-width: 62ch; }
+.state .act { margin-left: auto; align-self: center; flex: none; }
+.state[data-tone="hold"] { box-shadow: inset 0 0 0 1px var(--ink-1); }
+.state[data-tone="destroy"] { background: var(--ink); box-shadow: none; color: var(--white); }
+.state[data-tone="destroy"] p { color: var(--on-ink-2); }
+.state[data-tone="destroy"] svg { color: var(--white); }
+.state[data-tone="destroy"] .act { box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-2); }
+.state[data-tone="destroy"] .act[data-ink] { background: var(--white); color: var(--ink); }
+.sk { height: 11px; border-radius: 3px; background: var(--wash); }
+.sk + .sk { margin-top: 9px; }
+.skelSay { text-align: center; padding: 20px 0 0; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); }
+
+/* ── narrow ────────────────────────────────────────────────────── */
+@media (max-width: 900px) { :root { --inset: 12px; --desk: 100%; } .specs { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 720px) {
+  :root { --inset: 9px; }
+  .floor { padding: var(--inset) var(--inset) 0; }
+  .rail {
+    left: var(--inset); right: var(--inset); top: auto; bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    width: auto; height: 60px; flex-direction: row; justify-content: space-around; border-radius: 18px; padding: 0 6px;
+  }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+  .railAvatar { margin: 0; }
+  .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  .head { padding: 0 16px; }
+  .headName { display: none; }
+  .desk { padding: 4px 16px 22px; }
+  /* The pile flattens. Two sheets of decorative depth cost 20px of a
+     844px screen and buy nothing a phone can use. */
+  .behind { display: none; }
+  .topField { font-size: 17px; min-height: calc(1.5em * 2); }
+  .indexHead, .index, .hits, .states, .specs, .searchTop { padding-left: 16px; padding-right: 16px; }
+  .idxRow { grid-template-columns: 20px minmax(0, 1fr) auto; }
+  .idxTag { display: none; }
+  .darkSaid { font-size: 24px; }
+  .dockField { min-width: 0; }
+  .dockField span, .dockField kbd { display: none; }
+  /* The capsule carries the account on a phone. A second avatar in the
+     dock is the same control twice. */
+  .dockAvatar { display: none; }
+  .dock .dockRule:last-of-type { display: none; }
+  .handCard[data-n="3"] { display: none; }
+  .peel { margin-left: 12px; margin-right: 0; }
+}
+@media (pointer: coarse) {
+  .verb, .headAct, .dockGlyph, .mini { min-height: 44px; min-width: 44px; }
+  .idxRow { padding-top: 12px; padding-bottom: 12px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="./data.js"></script>
+<script src="./icons.js"></script>
+<script src="./render-c.js"></script>
+</body>
+</html>
