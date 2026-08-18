@@ -16,7 +16,7 @@
  * `/app/tasks` is a bare-chrome path: the spine here is the one spine.
  */
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
@@ -124,6 +124,19 @@ const VIEW_LABEL: Record<LabView, string> = {
   calendar: "Calendar",
 };
 
+/* What each of the shipped lanes is for, in the product's own voice. A
+   workspace that has never renamed or described a column has no description
+   at all, and the line under the column name is part of the design — it is
+   what tells a first-time venue owner what the column is holding. An owner's
+   own description always wins. */
+export const LANE_NOTE: Record<string, string> = {
+  todo: "Agreed and ready to start.",
+  doing: "In motion right now.",
+  review: "Being checked before it goes out.",
+  waiting: "Held by a reply, a delivery, or a decision.",
+  done: "Work that is finished and settled.",
+};
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -149,18 +162,31 @@ export function FloorWorkspace({
   const columns = useBoardColumns();
   const today = todayStamp();
 
+  /* The two facts a venue owner acts on. They are the loudest objects in the
+     header because they are the questions the board is opened to answer, and
+     they compose — pressing both is a legitimate, if usually empty, thing to
+     ask. */
+  const [lateOnly, setLateOnly] = useState(false);
+  const [todayOnly, setTodayOnly] = useState(false);
+  const clearHeaderFilters = useCallback(() => {
+    setLateOnly(false);
+    setTodayOnly(false);
+  }, []);
+
   const facts = useMemo(() => {
     const total = tasks.length;
     const isDone = (t: LabTask) => t.completed || columns.find((c) => c.key === t.status)?.isDone === true;
     const done = tasks.filter(isDone).length;
     let overdue = 0;
+    let dueToday = 0;
     let undated = 0;
     for (const task of tasks) {
       const time = timeOf(task, isDone(task), today);
       if (time.kind === "overdue") overdue += 1;
+      if (time.kind === "today") dueToday += 1;
       if (time.kind === "none" && !isDone(task)) undated += 1;
     }
-    return { total, done, overdue, undated };
+    return { total, done, overdue, dueToday, undated };
   }, [tasks, columns, today]);
 
   const todayLabel = useMemo(() => {
@@ -230,7 +256,7 @@ export function FloorWorkspace({
       </nav>
 
       {/* ── the sheet ─────────────────────────────────────────── */}
-      <div className={styles.sheet}>
+      <div className={styles.sheet} data-sheet="">
         <div className={styles.head}>
           <span className={styles.word}>tasks</span>
           <span className={styles.headRule} />
@@ -242,8 +268,30 @@ export function FloorWorkspace({
             ) : facts.total > 0 ? (
               <span className={styles.ratio}><b>{facts.done}</b> of <b>{facts.total}</b> done</span>
             ) : null}
-            {facts.overdue > 0 && (
-              <span className={styles.late}>{facts.overdue} overdue</span>
+            {facts.dueToday > 0 && (
+              <button
+                type="button"
+                className={styles.late}
+                data-soft=""
+                aria-pressed={todayOnly}
+                title={todayOnly ? `Show all ${facts.total} tasks` : `Show only the ${facts.dueToday} due today`}
+                onClick={() => setTodayOnly((v) => !v)}
+              >
+                {facts.dueToday} today
+              </button>
+            )}
+            {(facts.overdue > 0 || lateOnly) && (
+              <button
+                type="button"
+                className={styles.late}
+                aria-pressed={lateOnly}
+                title={lateOnly
+                  ? `Show all ${facts.total} tasks`
+                  : `Show only the ${facts.overdue} overdue ${facts.overdue === 1 ? "task" : "tasks"}`}
+                onClick={() => setLateOnly((v) => !v)}
+              >
+                {facts.overdue} overdue
+              </button>
             )}
             {facts.undated > 0 && onOpenPlanning && (
               <button
@@ -294,7 +342,16 @@ export function FloorWorkspace({
           </nav>
         </div>
 
-        {view === "board" ? <FloorBoard tasks={tasks} /> : <div className={styles.otherView}>{children}</div>}
+        {view === "board" ? (
+          <FloorBoard
+            lateOnly={lateOnly}
+            onClearHeaderFilters={clearHeaderFilters}
+            tasks={tasks}
+            todayOnly={todayOnly}
+          />
+        ) : (
+          <div className={styles.otherView}>{children}</div>
+        )}
 
         {/* ── the dock ────────────────────────────────────────── */}
         <div className={styles.dock}>
