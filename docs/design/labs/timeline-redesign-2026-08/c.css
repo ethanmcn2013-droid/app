@@ -1,0 +1,512 @@
+/* ═══════════════════════════════════════════════════════════════════
+   DIRECTION C · THE ANSWER
+
+   Thesis: a guest opening this link once, on a phone, while doing
+   something else, is not reading a plan. They are asking one question —
+   what is next, and when is the day — and everything else on the screen
+   is in the way of the answer. So the artifact leads with the ANSWER,
+   full bleed, and the plan lives underneath it for anyone who wants it.
+
+   The material argument: the accent stops being a mark and becomes a
+   surface. One indigo field, once, in the whole product, carrying the
+   one thing that is next. Nowhere else in Signal Studio is allowed to
+   use indigo as a ground after this. That is either the strongest use
+   of an accent in the three directions or the one that breaks the
+   register, and the panel should say which.
+
+   What it sacrifices: scannability of the whole plan at a glance, and
+   the owner has to trust that a guest will scroll. If a guest never
+   scrolls, this direction has decided that is fine.
+
+   Contrast discipline on the indigo field: white is 6.3:1 and passes at
+   every size; white at 0.90 is 5.4:1 and passes; white at 0.72 is
+   3.98:1 and does NOT, so it never sets type here. On paper the ink
+   ladder from Direction A applies unchanged.
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-v="c"] { --focus: var(--ink); --page-wash: var(--ink-04); }
+
+/* ── the answer ───────────────────────────────────────────────────  */
+.c-answer {
+  background: var(--accent);
+  color: var(--paper);
+  padding: 40px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  min-height: 560px;
+  line-height: 1.5;
+}
+[data-medium="sheet"] .c-answer, [data-medium="full"] .c-answer {
+  padding: 56px 64px 48px;
+  min-height: 0;
+}
+.c-who {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--paper-90);
+  margin: 0;
+}
+.c-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--paper-90);
+  margin: 0 0 14px;
+}
+.c-headline {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  color: var(--paper);
+  margin: 0 0 14px;
+}
+[data-medium="sheet"] .c-headline, [data-medium="full"] .c-headline { font-size: 64px; }
+.c-line { font-size: 17px; line-height: 1.45; color: var(--paper); margin: 0; }
+[data-medium="sheet"] .c-line, [data-medium="full"] .c-line { font-size: 20px; }
+.c-lineQuiet { font-size: 17px; line-height: 1.45; color: var(--paper-90); margin: 4px 0 0; }
+.c-answerBody { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
+.c-rule { height: 1px; background: var(--paper-28); }
+
+/* The day is the second fact on the card and it never moves: a guest who
+   only ever reads this one surface still leaves knowing the date. */
+.c-dayBlock { display: grid; gap: 6px; }
+.c-dayLabel {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--paper-90);
+  margin: 0;
+}
+.c-dayValue { font-size: 24px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; color: var(--paper); margin: 0; }
+[data-medium="sheet"] .c-dayValue, [data-medium="full"] .c-dayValue { font-size: 30px; }
+.c-dayAway {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--paper-90);
+  margin: 0;
+}
+
+/* The way down. It is a real control with a real name, at the bottom
+   edge where a thumb already is, and it says how much is under it —
+   because "there is more" without a number is a guess. */
+.c-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--paper-28);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--paper);
+  width: 100%;
+}
+.c-more span:last-child {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--paper-90);
+}
+
+/* ── the plan underneath ──────────────────────────────────────────  */
+.c-plan { background: var(--paper); color: var(--ink); padding: 30px 24px 28px; line-height: 1.5; }
+[data-medium="sheet"] .c-plan, [data-medium="full"] .c-plan { padding: 48px 64px 44px; }
+.c-planLabel {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  margin: 0 0 4px;
+}
+.c-planNote { font-size: 15px; line-height: 1.55; color: var(--ink-72); margin: 0 0 20px; }
+/* One column, always. A two-column plan orphans its own condition
+   headings — "Coming up" printed above nothing while its rows sit in
+   the other column — and that was worth losing the density for. */
+.c-planGrid { display: grid; gap: 0; max-width: 720px; }
+.c-planRow {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 0 14px;
+  align-items: baseline;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--ink-06);
+  line-height: 1.5;
+}
+.c-planDate {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  white-space: nowrap;
+}
+.c-planTitle { font-size: 16px; line-height: 1.35; color: var(--ink); margin: 0; }
+.c-planRow[data-state="covered"] .c-planTitle { color: var(--ink-72); }
+.c-planRow[data-state="cancelled"] .c-planTitle {
+  color: var(--ink-72);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-28);
+}
+.c-planRow[data-lead="true"] .c-planTitle { font-weight: 600; }
+.c-planRow[data-lead="true"] .c-planDate { color: var(--ink); }
+/* The one mark the plan carries: the row the answer above is about. A
+   guest who scrolls should be able to find their place in one look. */
+.c-planRow[data-lead="true"] { border-bottom-color: var(--ink-16); box-shadow: inset 3px 0 0 var(--accent); padding-left: 12px; }
+.c-planGrid .c-planRow[data-lead="true"] { margin-left: -12px; }
+.c-planCondition {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  margin: 22px 0 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--ink-16);
+}
+.c-planCondition:first-child { margin-top: 0; }
+[data-past="folded"] .c-planRow[data-past="true"] { display: none; }
+[data-past="folded"] .c-planFold { display: block; }
+.c-planFold { display: none; font-size: 15px; line-height: 1.5; color: var(--ink-72); padding: 11px 0 0; }
+[data-accent="structure"] .c-planTodayRule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 10px 0 2px;
+}
+.c-planTodayRule { display: none; }
+[data-accent="structure"] .c-planTodayRule::after { content: ""; flex: 1; height: 1px; background: var(--accent); }
+
+.c-foot {
+  margin: 26px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--ink-16);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+}
+
+/* ── owner chrome ─────────────────────────────────────────────────
+   The owner is never shown a version of the plan the guest does not
+   get. The answer card sits on the left at real phone width, live, and
+   the plan the owner edits is on the right. Editing a row changes the
+   card while you look at it, which is the only feedback that matters:
+   what will they see first. */
+.c-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 0 0 16px;
+  margin: 0 0 24px;
+  border-bottom: 1px solid var(--ink-16);
+}
+.c-where {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+}
+.c-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--paper);
+  transition: border-color var(--t-base) var(--ease);
+}
+.c-switch:hover { border-color: var(--ink-28); }
+.c-switch span { font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: 0.08em; color: var(--ink-62); }
+.c-spacer { flex: 1 1 auto; }
+.c-act {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--paper);
+  transition: border-color var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
+}
+.c-act:hover { border-color: var(--ink-28); background: var(--ink-04); }
+.c-act[data-primary="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.c-act[data-primary="true"]:hover { background: var(--ink-90); }
+
+.c-studio { display: grid; gap: 28px; }
+[data-medium="full"] .c-studio { grid-template-columns: 390px minmax(0, 1fr); gap: 56px; align-items: start; }
+.c-preview { border: 1px solid var(--ink-16); border-radius: 16px; overflow: hidden; }
+.c-previewLabel {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  margin: 0 0 10px;
+}
+.c-editorHead { font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 6px; }
+.c-editorNote { font-size: 15px; line-height: 1.55; color: var(--ink-72); margin: 0 0 20px; }
+
+.c-ownerRow { grid-template-columns: 96px 1fr auto; }
+.c-vis {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: 4px;
+  transition: background-color var(--t-base) var(--ease);
+}
+.c-vis:hover { background: var(--ink-06); }
+
+.c-edit {
+  grid-column: 1 / -1;
+  margin: 10px 0 2px;
+  padding: 16px;
+  background: var(--ink-04);
+  border: 1px solid var(--ink-16);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  line-height: 1.5;
+}
+.c-label2 {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+}
+.c-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-28);
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.c-input[data-mono="true"] { font-family: var(--mono); font-size: 15px; letter-spacing: 0.04em; }
+.c-seg { display: inline-flex; border: 1px solid var(--ink-28); border-radius: 6px; overflow: hidden; }
+.c-seg button {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-72);
+  background: var(--paper);
+  transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
+}
+.c-seg button + button { border-left: 1px solid var(--ink-28); }
+.c-seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.c-editActs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.c-undo {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  background: var(--paper);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-72);
+}
+.c-undo button {
+  min-height: 28px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-28);
+  text-underline-offset: 3px;
+}
+.c-undo kbd { font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-62); }
+
+/* ── empty ────────────────────────────────────────────────────────
+   An answer card with no answer in it. The card is still there, because
+   the card is the product: the owner is filling in what a guest will
+   read, not filling in a database. */
+.c-empty { background: var(--accent); color: var(--paper); padding: 48px 24px 40px; min-height: 460px; display: flex; flex-direction: column; justify-content: center; line-height: 1.5; }
+.c-emptyTitle { font-size: 34px; font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; color: var(--paper); margin: 0 0 12px; }
+.c-emptyBody { font-size: 17px; line-height: 1.5; color: var(--paper-90); margin: 0 0 26px; }
+.c-emptyInput {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--paper-46);
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.c-emptyAct {
+  min-height: 44px;
+  margin: 12px 0 0;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── publish ──────────────────────────────────────────────────────  */
+.c-press { display: grid; gap: 28px; }
+[data-medium="full"] .c-press { grid-template-columns: 390px minmax(0, 1fr); gap: 56px; align-items: start; }
+.c-pressTitle { font-size: 38px; font-weight: 600; line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 12px; }
+[data-medium="full"] .c-pressTitle { font-size: 48px; }
+.c-pressBody { font-size: 17px; line-height: 1.55; color: var(--ink-72); margin: 0 0 20px; max-width: 46ch; }
+.c-linkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  background: var(--ink-04);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow: hidden;
+  margin: 0 0 16px;
+}
+.c-linkRow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-note { font-size: 13px; line-height: 1.55; color: var(--ink-62); margin: 16px 0 0; }
+
+/* ── unfurl ───────────────────────────────────────────────────────  */
+.c-chat { padding: 24px 16px; background: var(--ink-06); }
+.c-bubble {
+  max-width: 300px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--paper);
+  border: 1px solid var(--ink-10);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.c-unfurl { max-width: 300px; border: 1px solid var(--ink-16); border-radius: 12px; overflow: hidden; background: var(--paper); }
+.c-og {
+  aspect-ratio: 1200 / 630;
+  background: var(--accent);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  line-height: 1.4;
+}
+.c-ogWho { font-family: var(--mono); font-size: 10px; line-height: 1.4; letter-spacing: 0.2em; text-transform: uppercase; color: var(--paper-90); margin: 0; }
+.c-ogNext { font-size: 22px; font-weight: 600; line-height: 1.12; letter-spacing: -0.025em; color: var(--paper); margin: 0 0 4px; }
+.c-ogWhen { font-family: var(--mono); font-size: 10px; line-height: 1.4; letter-spacing: 0.13em; text-transform: uppercase; color: var(--paper-90); margin: 0; }
+.c-unfurlMeta { padding: 10px 12px; }
+.c-unfurlTitle { font-size: 14px; font-weight: 600; line-height: 1.35; margin: 0 0 3px; }
+.c-unfurlHost { font-size: 12px; line-height: 1.4; color: var(--ink-62); margin: 0; }
+
+/* ── the day ──────────────────────────────────────────────────────
+   The answer changes to the only answer there is. */
+.c-dayCard {
+  background: var(--accent);
+  color: var(--paper);
+  padding: 60px 24px 48px;
+  min-height: 560px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  line-height: 1.5;
+}
+.c-dayHead { font-size: 48px; font-weight: 600; line-height: 1.02; letter-spacing: -0.035em; color: var(--paper); margin: 0; }
+.c-dayWhen { font-size: 20px; line-height: 1.4; color: var(--paper); margin: 0; }
+.c-dayFoot { font-size: 15px; line-height: 1.55; color: var(--paper-90); margin: 0; }
+
+/* ── ended ────────────────────────────────────────────────────────
+   The indigo is gone. In a direction where the accent is the answer,
+   the absence of it is the most honest way to say there is no longer
+   an answer here. */
+.c-ended { background: var(--paper); padding: 56px 24px 60px; min-height: 420px; line-height: 1.5; }
+.c-endedTitle { font-size: 27px; font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; margin: 0 0 12px; }
+.c-endedBody { font-size: 17px; line-height: 1.5; color: var(--ink-72); margin: 0 0 24px; max-width: 40ch; }
+
+/* ── loading ──────────────────────────────────────────────────────
+   The card is the frame and the frame is known before the data is, so
+   the indigo lands immediately and only the words are reserved. This is
+   the one direction whose loading state is genuinely the product. */
+.c-skel { background: var(--paper-28); border-radius: 4px; }
+.c-skelPlan { background: var(--ink-06); border-radius: 4px; }
+
+/* ── print · the folded card ──────────────────────────────────────
+   The keepsake is not an A4 page, it is a folded card: the answer on
+   the front, the plan inside. Printed indigo is a decision to take to a
+   print shop, and this direction says that is worth it once. */
+/* minmax(0, 1fr), not 1fr: the plan inside has a wide min-content width,
+   and with a bare 1fr it squeezed the front panel until the couple name
+   broke one word to a line. */
+.c-print { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 560px; }
+.c-printFront { background: var(--accent); color: var(--paper); padding: 48px 40px; display: flex; flex-direction: column; justify-content: space-between; line-height: 1.5; }
+.c-printInside { background: var(--paper); color: var(--ink); padding: 40px 32px; line-height: 1.5; border-left: 1px dashed var(--ink-28); }
+.c-printInside .c-plan { padding: 0; }
+.c-printInside .c-planRow { grid-template-columns: 88px 1fr; padding: 8px 0; }
+.c-printInside .c-planTitle { font-size: 15px; }
+.c-printInside .c-planCondition { margin-top: 16px; }
+.c-printNames { font-size: 38px; font-weight: 600; line-height: 1.05; letter-spacing: -0.03em; margin: 0 0 10px; color: var(--paper); }
+.c-printDate { font-size: 17px; line-height: 1.45; color: var(--paper); margin: 0; }

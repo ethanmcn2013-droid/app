@@ -1,0 +1,193 @@
+/* ═══════════════════════════════════════════════════════════════════
+   The renderer core. Three directions share one contract:
+
+     window.__TLD[variant] = {
+       medium(state)  -> "phone" | "card" | "sheet" | "full"
+       caption(state) -> the lab's own label for what you are looking at
+       render(state)  -> a DOM node
+     }
+
+   The page keeps its state on ONE element — <body> when the master is
+   opened directly, #deck when it has been compiled into the console —
+   because the compiled CSS attaches every [data-*] decision to .deck.
+   Reading and writing through rootEl() is what lets the same file be
+   both the master and the console's live deck.
+   ═══════════════════════════════════════════════════════════════════ */
+(function () {
+  "use strict";
+  var F = window.__TLFIXTURE;
+  window.__TLD = window.__TLD || {};
+
+  function rootEl() { return document.getElementById("deck") || document.body; }
+
+  /* A very small DOM builder. Strings are text, never markup: every
+     visible string in this lab is content, and content is never parsed. */
+  function h(tag, attrs, kids) {
+    var parts = String(tag).split(/([.#])/);
+    var el = document.createElement(parts[0] || "div");
+    for (var i = 1; i < parts.length; i += 2) {
+      if (parts[i] === ".") el.classList.add(parts[i + 1]);
+      else el.id = parts[i + 1];
+    }
+    if (attrs) {
+      for (var key in attrs) {
+        if (!Object.prototype.hasOwnProperty.call(attrs, key)) continue;
+        var value = attrs[key];
+        if (value === null || value === undefined || value === false) continue;
+        if (key === "text") { el.textContent = String(value); continue; }
+        if (key === "on") {
+          for (var evt in value) el.addEventListener(evt, value[evt]);
+          continue;
+        }
+        if (key === "style") { el.setAttribute("style", value); continue; }
+        el.setAttribute(key, value === true ? "" : String(value));
+      }
+    }
+    (kids || []).forEach(function (kid) {
+      if (kid === null || kid === undefined || kid === false) return;
+      el.appendChild(typeof kid === "string" ? document.createTextNode(kid) : kid);
+    });
+    return el;
+  }
+
+  /* Uppercase micro-labels are a typographic treatment, not a shout: the
+     string stays sentence case in the DOM so a screen reader says
+     "Coming up", not "C O M I N G  U P", and CSS does the capitals. */
+  function micro(text, cls) { return h("span." + (cls || "micro"), { text: text }); }
+
+  var STATES = [
+    ["owner-flight", "Owner · in flight"],
+    ["owner-empty", "Owner · new"],
+    ["owner-editing", "Owner · editing"],
+    ["publish", "Publish"],
+    ["phone", "Received · phone"],
+    ["desk", "Received · desk"],
+    ["day", "The day"],
+    ["print", "Print"],
+    ["unfurl", "Unfurl"],
+    ["ended", "Ended"],
+    ["loading", "Loading"],
+  ];
+
+  var CAPTIONS = {
+    "owner-flight": ["Owner", "Mara &amp; Finn in full flight"],
+    "owner-empty": ["Owner", "a project with nothing in it yet"],
+    "owner-editing": ["Owner", "changing one line"],
+    publish: ["Publish", "the moment it becomes theirs"],
+    phone: ["Received", "390px, the screen that decides"],
+    desk: ["Received", "desk width"],
+    day: ["The day", "Saturday 3 October, morning"],
+    print: ["Print", "A4, the keepsake"],
+    unfurl: ["Unfurl", "the link before it is opened"],
+    ended: ["Ended", "revoked or expired"],
+    loading: ["Loading", "what the frame promises"],
+  };
+
+  function caption(state, variantName) {
+    var pair = CAPTIONS[state] || [state, ""];
+    return h("p.tl-caption", {}, [
+      h("b", { text: pair[0] }),
+      h("span", { text: pair[1].replace("&amp;", "&") }),
+      h("span", { text: variantName }),
+    ]);
+  }
+
+  function currentVariant() {
+    var v = rootEl().getAttribute("data-v");
+    return window.__TLD[v] ? v : "a";
+  }
+  function currentState() {
+    var s = rootEl().getAttribute("data-state");
+    return CAPTIONS[s] ? s : STATES[0][0];
+  }
+
+  function mount() {
+    var host = document.getElementById("tl");
+    if (!host) return;
+    var v = currentVariant();
+    var state = currentState();
+    var direction = window.__TLD[v];
+    var root = rootEl();
+    root.setAttribute("data-medium", direction.medium(state));
+    root.setAttribute("data-v", v);
+    root.setAttribute("data-state", state);
+
+    host.textContent = "";
+    var page = h("div.tl-page", {}, [
+      h("div.tl-stage", {}, [
+        caption(state, direction.name),
+        direction.render(state),
+      ]),
+    ]);
+    host.appendChild(page);
+    /* Trims and measured fades run after layout, and again once the
+       webfonts have swapped — a trim that runs once at first paint
+       produces complete-looking sentences with the middle missing. */
+    requestAnimationFrame(settle);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
+  }
+
+  /* Post-layout work every direction gets for free. Word-safe clamping:
+     the full string always stays in title and aria-label, and the visible
+     string is rebuilt from the full string every time, so running this
+     twice can never eat a second bite out of the same sentence. */
+  function settle() {
+    var nodes = document.querySelectorAll("[data-clamp]");
+    for (var i = 0; i < nodes.length; i++) clamp(nodes[i]);
+    var fades = document.querySelectorAll("[data-fade]");
+    for (var j = 0; j < fades.length; j++) {
+      var el = fades[j];
+      var hidden = el.scrollHeight - el.clientHeight > 2 || el.scrollWidth - el.clientWidth > 2;
+      el.setAttribute("data-fade", hidden ? "on" : "off");
+    }
+  }
+
+  function clamp(el) {
+    var full = el.getAttribute("data-full") || el.textContent;
+    el.setAttribute("data-full", full);
+    el.setAttribute("title", full);
+    el.textContent = full;
+    if (el.scrollWidth <= el.clientWidth + 1) return;
+    var words = full.split(" ");
+    while (words.length > 1) {
+      words.pop();
+      el.textContent = words.join(" ") + "…";
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+    }
+  }
+
+  window.__TLCORE = { h: h, micro: micro, F: F, rootEl: rootEl, settle: settle, mount: mount };
+
+  window.__elevate = {
+    states: STATES,
+    setState: function (state) { rootEl().setAttribute("data-state", state); },
+    mount: mount,
+    /* Filled by the direction files as they load; at the lock this
+       becomes the room presets and the named design decisions. */
+    /* Presets are the three directions. The console writes the preset key
+       to data-v itself, so a "which direction" control would fight it —
+       the controls below are the decisions that cut ACROSS all three. */
+    presets: {
+      a: { past: "listed", accent: "once" },
+      b: { past: "folded", accent: "once" },
+      c: { past: "folded", accent: "structure" },
+    },
+    presetCopy: {
+      a: { name: "A · The Programme", note: "The artifact is a printed document." },
+      b: { name: "B · The Approach", note: "The artifact is a distance to a horizon." },
+      c: { name: "C · The Answer", note: "The artifact is one card that answers one question." },
+    },
+    controls: [
+      {
+        key: "past", label: "The past",
+        help: "A guest opening this in August does not need January. The question is whether the plan still says January happened.",
+        options: [["listed", "Listed in full"], ["folded", "Folded to a line"]],
+      },
+      {
+        key: "accent", label: "The indigo",
+        help: "One accent, spent like a laser. Either it marks only the next thing, or it also draws today.",
+        options: [["once", "Only the next thing"], ["structure", "Next thing and today"]],
+      },
+    ],
+  };
+})();

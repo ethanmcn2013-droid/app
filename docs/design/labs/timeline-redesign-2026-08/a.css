@@ -1,0 +1,541 @@
+/* ═══════════════════════════════════════════════════════════════════
+   DIRECTION A · THE PROGRAMME
+
+   Thesis: the received artifact is not a timeline, it is a printed
+   programme — the sheet that sits on the seat at a wedding. One sheet of
+   paper at four sizes: the phone is the sheet at hand width, the desk is
+   the sheet on a table, the print IS the sheet, and the unfurl card is
+   the head of the sheet torn off. The owner does not operate a
+   dashboard; the owner sets the sheet.
+
+   What it sacrifices: motion, and any sense of the day approaching. A
+   printed sheet does not count down. This is the calmest direction and
+   the least emotional, and that is the trade it is making.
+
+   Contrast discipline in this file: ink at 0.62 is the lowest alpha any
+   text is allowed (5.3:1 on paper). 0.46 appears only at 24px and above.
+   Everything at 0.28 and below draws rules, never letters.
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-v="a"] { --focus: var(--accent); --page-wash: var(--ink-04); }
+
+.a-sheet {
+  background: var(--paper);
+  color: var(--ink);
+  padding: 28px 22px 24px;
+  line-height: 1.5;
+}
+[data-medium="sheet"] .a-sheet, [data-medium="full"] .a-sheet { padding: 56px 64px 44px; }
+
+/* ── the masthead ─────────────────────────────────────────────────
+   A programme states three things before anything else: whose day,
+   which day, and how far off it is. Nothing competes with those. */
+.a-kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  margin: 0 0 14px;
+}
+.a-names {
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  margin: 0 0 10px;
+}
+.a-day {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--ink-72);
+  margin: 0;
+}
+[data-medium="sheet"] .a-names, [data-medium="full"] .a-names { font-size: 64px; letter-spacing: -0.03em; }
+[data-medium="sheet"] .a-day, [data-medium="full"] .a-day { font-size: 20px; }
+
+/* The facts line is the only place a number appears twice on the sheet,
+   and every one of them comes from the same accessor as the rows below
+   it. A header that disagrees with its own list spends the credibility
+   of the whole product. */
+.a-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  margin: 20px 0 0;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--ink-16);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+}
+.a-facts b { font-weight: 400; color: var(--ink); }
+.a-facts span + span::before { content: "·"; margin-right: 14px; color: var(--ink-28); }
+
+/* ── the register ─────────────────────────────────────────────────
+   Not a rail and not a list of cards: a printer register. A date column
+   set in tabular mono, a title column set in the text face, and a
+   hairline between one condition and the next. The condition is named
+   in words above its rows, so the fact is never carried by ink density
+   alone. */
+.a-register { margin: 26px 0 0; }
+.a-group + .a-group { margin-top: 22px; }
+.a-groupLabel {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  margin: 0 0 8px;
+  padding: 0 0 8px;
+  border-bottom: 1px solid var(--ink-16);
+}
+.a-groupLabel em { font-style: normal; color: var(--ink-62); letter-spacing: 0.13em; }
+
+.a-row {
+  display: grid;
+  /* 80px holds "Sat 22 Aug" at 12px mono with a hair to spare. It was
+     58, and the weekday ran straight into the title on a phone. */
+  grid-template-columns: 80px 1fr;
+  gap: 0 14px;
+  align-items: baseline;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--ink-06);
+  line-height: 1.5;
+}
+[data-medium="sheet"] .a-row, [data-medium="full"] .a-row {
+  grid-template-columns: 118px 1fr;
+  padding: 14px 0;
+}
+.a-row:last-child { border-bottom: 0; }
+.a-date {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  white-space: nowrap;
+}
+.a-title {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+[data-medium="sheet"] .a-title, [data-medium="full"] .a-title { font-size: 20px; }
+[data-medium="sheet"] .a-date, [data-medium="full"] .a-date { font-size: 13px; }
+/* The weekday travels INSIDE the date, not in a column of its own. A
+   right-hand column reading SAT seven times is not information, it is
+   wallpaper, and it was the first thing the sheet had to lose. */
+
+/* Complete is set at the same size as everything else and marked in
+   words. Fading the past to 40% would be the easy move, and it would
+   make a guest squint at the two things they already know happened. */
+.a-row[data-state="covered"] .a-title { color: var(--ink-72); }
+.a-row[data-state="cancelled"] .a-title {
+  color: var(--ink-72);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-28);
+}
+.a-row[data-anchor="true"] .a-title { font-weight: 600; }
+
+/* The one accent on the sheet. It is a mark, not a colour scheme: the
+   condition that is live is named in indigo, once. */
+.a-row[data-state="now"] { border-bottom-color: var(--ink-16); }
+.a-row[data-state="now"] .a-title { font-weight: 600; }
+.a-row[data-state="now"] .a-date { color: var(--ink); }
+.a-group[data-state="now"] .a-groupLabel { color: var(--accent); border-bottom-color: var(--accent); }
+.a-group[data-state="now"] .a-groupLabel em { color: var(--accent); }
+
+/* accent=structure additionally draws today into the register. */
+.a-today {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 8px 0 0;
+}
+[data-accent="structure"] .a-today { display: flex; }
+.a-today::after { content: ""; flex: 1; height: 1px; background: var(--accent); }
+
+/* past=folded replaces the completed rows with a single stated line. */
+[data-past="folded"] .a-group[data-state="covered"] .a-row { display: none; }
+[data-past="folded"] .a-group[data-state="covered"] .a-fold { display: block; }
+.a-fold {
+  display: none;
+  padding: 11px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink-72);
+}
+
+/* ── the foot ─────────────────────────────────────────────────────
+   Who keeps this, when it last changed, and where it lives. A guest who
+   wonders whether they are looking at something out of date is a guest
+   who has stopped trusting it. */
+.a-foot {
+  margin: 30px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--ink-16);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+}
+
+/* ── the bench (owner only) ───────────────────────────────────────
+   The owner home for a project is the sheet itself. The bench is the
+   only chrome: where you are, what you are setting, and the things you
+   can do to it. Deleting the dashboard is the whole argument. */
+.a-bench {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 0 0 16px;
+  margin: 0 0 20px;
+  border-bottom: 1px solid var(--ink-16);
+}
+.a-benchWhere {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+}
+.a-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  background: var(--paper);
+  transition: border-color var(--t-base) var(--ease);
+}
+.a-switch:hover { border-color: var(--ink-28); }
+.a-switch span {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-62);
+  letter-spacing: 0.08em;
+}
+.a-benchSpacer { flex: 1 1 auto; }
+.a-act {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink);
+  background: var(--paper);
+  transition: border-color var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
+}
+.a-act:hover { border-color: var(--ink-28); background: var(--ink-04); }
+.a-act[data-primary="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.a-act[data-primary="true"]:hover { background: var(--ink-90); }
+
+/* Owner rows carry one extra column: what a guest sees. It is a word,
+   not a dot, because "why is that one grey" is the question a dot
+   always produces. */
+.a-ownerRow { grid-template-columns: 80px 1fr auto; }
+[data-medium="sheet"] .a-ownerRow, [data-medium="full"] .a-ownerRow {
+  grid-template-columns: 118px 1fr auto;
+}
+.a-vis {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: 4px;
+  transition: background-color var(--t-base) var(--ease);
+}
+.a-vis:hover { background: var(--ink-06); }
+
+/* ── the editor ───────────────────────────────────────────────────
+   Editing happens on the sheet, in the place the row already occupies.
+   Nothing opens over the top of the plan, because the plan is the thing
+   you are judging the change against. */
+.a-edit {
+  grid-column: 1 / -1;
+  margin: 10px 0 2px;
+  padding: 16px;
+  background: var(--ink-04);
+  border: 1px solid var(--ink-16);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  line-height: 1.5;
+}
+.a-field { display: grid; gap: 6px; }
+.a-fieldLabel {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+}
+.a-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--ink-28);
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.a-input[data-mono="true"] { font-family: var(--mono); font-size: 15px; letter-spacing: 0.04em; }
+.a-seg { display: inline-flex; border: 1px solid var(--ink-28); border-radius: 6px; overflow: hidden; }
+.a-seg button {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-72);
+  background: var(--paper);
+  transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
+}
+.a-seg button + button { border-left: 1px solid var(--ink-28); }
+.a-seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.a-editActs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+
+/* One reversibility surface, in one place, always the same place. */
+.a-undo {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  background: var(--paper);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-72);
+}
+.a-undo button {
+  min-height: 28px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ink-28);
+  text-underline-offset: 3px;
+}
+.a-undo kbd {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  color: var(--ink-62);
+}
+
+/* ── the press (publish) ──────────────────────────────────────────
+   The true metaphor is handing someone a finished print, so the
+   ceremony is a press: the sheet is stamped, and the stamp is the thing
+   you hand over. */
+.a-press { display: grid; gap: 24px; }
+.a-pressHead { max-width: 52ch; }
+.a-pressCols { display: grid; gap: 28px; }
+[data-medium="full"] .a-pressCols { grid-template-columns: 480px 400px; align-items: start; gap: 64px; justify-content: start; }
+/* The sheet is shown at its real width and scaled down, so what is on
+   the left is a true layout being reduced rather than a narrow one
+   pretending to be a print. */
+.a-pressSheet { position: relative; width: 480px; height: 620px; overflow: hidden; border: 1px solid var(--ink-16); background: var(--paper); }
+.a-pressSheet > .a-sheet { width: 794px; transform: scale(0.6045); transform-origin: top left; }
+.a-stamp {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--paper);
+  transform: rotate(-3deg) scale(1.08);
+  opacity: 0;
+  transition: opacity var(--t-slow) var(--ease), transform var(--t-slow) var(--ease);
+}
+[data-pressed="true"] .a-stamp { opacity: 1; transform: rotate(-3deg) scale(1); }
+.a-pressPanel { display: grid; gap: 16px; align-content: start; }
+.a-pressTitle { font-size: 38px; font-weight: 600; line-height: 1.08; letter-spacing: -0.025em; margin: 0 0 12px; }
+[data-medium="full"] .a-pressTitle { font-size: 48px; }
+.a-pressBody { font-size: 17px; line-height: 1.55; color: var(--ink-72); margin: 0; }
+.a-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ink-16);
+  border-radius: 6px;
+  background: var(--ink-04);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink);
+  overflow: hidden;
+}
+.a-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.a-pressActs { display: flex; flex-wrap: wrap; gap: 10px; }
+.a-note { font-size: 13px; line-height: 1.55; color: var(--ink-62); margin: 0; }
+
+/* ── the empty sheet ──────────────────────────────────────────────
+   One instruction, once. Everything else on this screen is a
+   consequence of answering it. */
+.a-empty { padding: 64px 22px 72px; }
+[data-medium="sheet"] .a-empty, [data-medium="full"] .a-empty { padding: 96px 64px 104px; }
+.a-emptyRule { height: 1px; background: var(--ink-16); margin: 0 0 26px; }
+.a-emptyTitle { font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 10px; }
+[data-medium="sheet"] .a-emptyTitle, [data-medium="full"] .a-emptyTitle { font-size: 48px; }
+.a-emptyBody { font-size: 17px; line-height: 1.5; color: var(--ink-72); margin: 0 0 26px; max-width: 34ch; }
+.a-emptyForm { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.a-emptyLater { margin: 30px 0 0; font-size: 13px; line-height: 1.55; color: var(--ink-62); }
+
+/* ── the day ──────────────────────────────────────────────────────
+   On the morning itself the sheet stops being a plan. Everything on it
+   has happened except one line, so the sheet says that and gets out of
+   the way. */
+.a-dayMast { text-align: center; padding: 40px 0 30px; border-bottom: 1px solid var(--ink-16); }
+.a-dayKicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 18px;
+}
+.a-dayNames { font-size: 38px; font-weight: 600; line-height: 1.05; letter-spacing: -0.025em; margin: 0 0 12px; }
+[data-medium="sheet"] .a-dayNames, [data-medium="full"] .a-dayNames { font-size: 64px; }
+.a-dayDate { font-size: 17px; line-height: 1.4; color: var(--ink-72); margin: 0; }
+.a-dayLine { padding: 30px 0; text-align: center; }
+.a-dayLineTitle { font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; margin: 0 0 8px; }
+.a-dayLineNote { font-size: 15px; line-height: 1.5; color: var(--ink-72); margin: 0; }
+
+/* ── the unfurl card ──────────────────────────────────────────────
+   The first impression is an image nobody has opened yet. For a printed
+   programme the honest card is the head of the sheet, torn off. */
+.a-chat { padding: 24px 16px; background: var(--ink-06); }
+.a-bubble {
+  max-width: 300px;
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--paper);
+  border: 1px solid var(--ink-10);
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+.a-unfurl {
+  max-width: 300px;
+  border: 1px solid var(--ink-16);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.a-og {
+  aspect-ratio: 1200 / 630;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-bottom: 1px solid var(--ink-16);
+  line-height: 1.4;
+}
+.a-ogNames { font-size: 24px; font-weight: 600; line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 6px; }
+.a-ogDate {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ink-62);
+  margin: 0;
+}
+.a-ogRule { height: 1px; background: var(--ink-16); margin: 12px 0; }
+.a-ogDays {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0;
+}
+.a-unfurlMeta { padding: 10px 12px; }
+.a-unfurlTitle { font-size: 14px; font-weight: 600; line-height: 1.35; margin: 0 0 3px; }
+.a-unfurlHost { font-size: 12px; line-height: 1.4; color: var(--ink-62); margin: 0; }
+
+/* ── ended ────────────────────────────────────────────────────────
+   A dead link is still a surface someone is standing on. It states what
+   happened, keeps what is still true, and offers the one move left. */
+.a-ended { padding: 56px 22px 60px; }
+[data-medium="sheet"] .a-ended, [data-medium="full"] .a-ended { padding: 88px 64px 92px; }
+.a-endedTitle { font-size: 27px; font-weight: 600; line-height: 1.15; letter-spacing: -0.02em; margin: 0 0 12px; }
+.a-endedBody { font-size: 17px; line-height: 1.5; color: var(--ink-72); margin: 0 0 26px; max-width: 40ch; }
+
+/* ── loading ──────────────────────────────────────────────────────
+   The frame promises exactly what will arrive: a masthead, the groups
+   this plan actually has, one row apiece. No shimmer, no invented
+   sections, no second row of a group that will only ever have one. */
+.a-skel { background: var(--ink-06); border-radius: 4px; }
+.a-skelRow {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 0 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--ink-06);
+}
+[data-medium="sheet"] .a-skelRow, [data-medium="full"] .a-skelRow {
+  grid-template-columns: 118px 1fr;
+  padding: 14px 0;
+}

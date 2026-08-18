@@ -17,7 +17,9 @@
     "loading"
   ],
   "variants": [
-    "a"
+    "a",
+    "b",
+    "c"
   ],
   "defaultVariant": "a",
   "viewports": [
@@ -94,11 +96,86 @@
       768,
       390
     ],
-    "inline": [],
+    "inline": [
+      "fixture.js",
+      "render-core.js",
+      "render-a.js",
+      "render-b.js",
+      "render-c.js"
+    ],
     "fonts": []
   },
   "artifacts": {
-    "console": "",
-    "log": ""
+    "console": "https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f",
+    "log": "https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19"
+  },
+  "report": {
+    "title": "Timeline Elevation Log",
+    "kicker": "Signal Timeline · the plan for a day that matters · August 2026",
+    "consoleTitle": "Timeline Design Console",
+    "consoleSub": "Three directions, eleven states, four widths, live.",
+    "consoleLead": "The real master with a control panel on it, not a picture of one.",
+    "frames": [
+      [
+        "owner-flight",
+        "Owner · in flight"
+      ],
+      [
+        "owner-empty",
+        "Owner · new"
+      ],
+      [
+        "owner-editing",
+        "Owner · editing"
+      ],
+      [
+        "publish",
+        "Publish"
+      ],
+      [
+        "phone",
+        "Received · phone"
+      ],
+      [
+        "desk",
+        "Received · desk"
+      ],
+      [
+        "day",
+        "The day"
+      ],
+      [
+        "print",
+        "Print"
+      ],
+      [
+        "unfurl",
+        "Unfurl"
+      ],
+      [
+        "ended",
+        "Ended"
+      ],
+      [
+        "loading",
+        "Loading"
+      ]
+    ],
+    "footNote": "Exploration only. Branch design/timeline-redesign-2026-08, draft PR #154, no deploy and no app code.",
+    "variants": [
+      [
+        "dir-a",
+        "A · The Programme"
+      ],
+      [
+        "dir-b",
+        "B · The Approach"
+      ],
+      [
+        "dir-c",
+        "C · The Answer"
+      ]
+    ],
+    "variantsLead": "Three arguments about what a shared timeline is, shown here on the screen that decides: a phone at 390px. A says it is a printed document. B says it is a distance to a horizon. C says it is an answer with the plan underneath. All three are live in the console at every state and every width."
   }
 }
