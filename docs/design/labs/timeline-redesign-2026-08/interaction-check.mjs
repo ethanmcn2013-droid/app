@@ -153,8 +153,11 @@ const AHEAD = FIXTURE.milestones
 const collisions = (page) => page.evaluate(() => {
   /* The tick and the count sit on the true pixel; the words are what
      must not overlap. So the copy blocks are what get measured. */
-  const rects = Array.from(document.querySelectorAll(".b-measure .b-copy"))
-    .map((el) => el.getBoundingClientRect())
+  /* Two moments on the same day are one mark with two rows under it —
+     a designed adjacency, not an overlap. Everything else must clear. */
+  const rects = Array.from(document.querySelectorAll(".b-measure .b-item"))
+    .filter((el) => el.getAttribute("data-stack") !== "follow")
+    .map((el) => el.querySelector(".b-copy").getBoundingClientRect())
     .sort((a, b) => a.top - b.top);
   let hits = 0;
   for (let i = 1; i < rects.length; i++) if (rects[i].top < rects[i - 1].bottom - 0.5) hits += 1;
@@ -304,9 +307,13 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
   ok(`no clamped text overflows its box @ ${width}`,
     trims.every((t) => t.overX <= 1 && t.overY <= 1),
     trims.filter((t) => t.overX > 1 || t.overY > 1).map((t) => t.shown).join(" | "));
+  /* The cut must land on a word boundary, not merely be a prefix: a
+     mid-word slice passes a prefix test just as happily. */
   ok(`every trim ends on a whole word @ ${width}`,
-    trims.filter((t) => t.shown !== t.full).every((t) => /\s\S*…$/.test(t.shown) === false ? true : true)
-    && trims.filter((t) => t.shown !== t.full).every((t) => t.full.startsWith(t.shown.replace(/…$/, ""))),
+    trims.filter((t) => t.shown !== t.full).every((t) => {
+      const stem = t.shown.replace(/…$/, "");
+      return t.full.startsWith(stem) && (t.full === stem || t.full[stem.length] === " ");
+    }),
     trims.filter((t) => t.shown !== t.full).map((t) => t.shown).join(" | "));
   ok(`a trimmed string keeps its whole self in the accessibility tree @ ${width}`,
     trims.filter((t) => t.shown !== t.full).every((t) => t.hidden && t.twin === t.full),
@@ -399,7 +406,7 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
   ok("nothing can be placed past the day itself", ceiling.max <= FIXTURE.toDay(), String(ceiling.max));
   ok("nothing is placed outside the measure", ceiling.outside === 0, String(ceiling.outside));
   ok("the ceiling states itself rather than absorbing the press",
-    ceiling.blocked === "true" && /day itself/.test(ceiling.note), ceiling.note);
+    ceiling.blocked === "true" && /as far as it goes/.test(ceiling.note), ceiling.note);
   ok("twenty presses do not collide the measure", (await collisions(page)) === 0);
   await page.close();
 }
@@ -437,7 +444,7 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
   await page.waitForTimeout(300);
   const afterMove = await bar();
   ok("it names the change that actually happened",
-    /Send the invitations moved 7 days closer/.test(afterMove.text), afterMove.text);
+    /Send the invitations moved 7 days earlier\./.test(afterMove.text), afterMove.text);
   ok("its control is live once there is something to undo", afterMove.disabled === false);
 
   await page.locator(".b-undoAct").click();
@@ -531,23 +538,6 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
   await page.waitForTimeout(250);
   ok("delete removes the moment", (await page.locator(".b-item").count()) === beforeCount - 1);
   ok("the measure reflows after a delete", (await collisions(page)) === 0);
-  await page.close();
-}
-
-/* Nothing is a focusable promise. Every button either does something or
-   is not a button. */
-for (const state of ["owner-flight", "owner-empty"]) {
-  const page = await open({ state });
-  const dead = await page.evaluate(() =>
-    Array.from(document.querySelectorAll(".b-field button"))
-      .filter((el) => !el.hasAttribute("data-act")
-        && !el.classList.contains("b-grab")
-        && !el.classList.contains("b-step")
-        && !el.classList.contains("b-undoAct")
-        && !el.closest(".b-seg"))
-      .map((el) => el.textContent.trim()),
-  );
-  ok(`no control advertises a verb it does not have · ${state}`, dead.length === 0, dead.join(", "));
   await page.close();
 }
 
@@ -666,7 +656,7 @@ for (const state of ["publish", "day", "ended", "loading"]) {
     focused: document.activeElement.id,
   }));
   ok("an empty answer is refused rather than absorbed", refused.invalid === "true", refused.invalid);
-  ok("it says what to do instead", /Pick the date/.test(refused.hint), refused.hint);
+  ok("it says what to do instead", /Type the day first/.test(refused.hint), refused.hint);
   ok("it keeps focus in the field", refused.focused === "b-empty-date", refused.focused);
   await page.locator("#b-empty-date").fill("3 October 2026");
   await page.locator('[data-act="setday"]').click();
@@ -739,7 +729,7 @@ for (const state of ["unfurl", "publish"]) {
   const text = await page.evaluate(() => document.body.innerText);
   ok("the ended link says what happened", /turned off/i.test(text));
   ok("the ended link names who can fix it", text.includes(FIXTURE.workspace.owner));
-  ok("the ended link says nothing was deleted", /not been deleted|not public/i.test(text));
+  ok("the ended link says nothing was deleted", /nothing has been deleted/i.test(text));
   await page.close();
 }
 
@@ -769,6 +759,463 @@ for (const state of ["unfurl", "publish"]) {
       getComputedStyle(el).transitionDuration.split(",").map((d) => parseFloat(d) || 0))),
   );
   ok("reduced motion removes every transition", longest <= 0.002, `${longest}s`);
+  await page.close();
+}
+
+
+/* ══ round 2 · the controls around the gesture ══════════════════════
+   The gesture was fixed in round 1 and the panel said everything beside
+   it was a promise. These guard the promises.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* The title field. It held the one thing this product is about — a
+   person's own words — and discarded them on every path. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.locator("#b-edit-title").fill("Send the invitations to everyone");
+  await page.locator("#b-edit-title").dispatchEvent("change");
+  await page.waitForTimeout(250);
+  const after = await page.evaluate(() => {
+    const item = document.querySelector('.b-item[data-editing="true"]');
+    return {
+      shown: item.querySelector(".b-title").textContent,
+      full: item.querySelector(".b-title").getAttribute("data-full"),
+      label: item.querySelector(".b-grab").getAttribute("aria-label"),
+      undo: document.querySelector(".b-undoText").textContent,
+    };
+  });
+  ok("a typed title reaches the row", after.full === "Send the invitations to everyone", after.full);
+  ok("a typed title reaches the accessible name",
+    after.label.includes("Send the invitations to everyone"), after.label);
+  ok("a rename joins the history", /Renamed to/.test(after.undo), after.undo);
+  await page.locator(".b-undoAct").click();
+  await page.waitForTimeout(200);
+  ok("a rename can be taken back", await page.evaluate(() =>
+    document.querySelector('.b-item[data-editing="true"] .b-title').getAttribute("data-full")
+      === "Send the invitations"));
+  await page.close();
+}
+
+/* Add a moment. It opened the editor on somebody else's moment. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  const before = await page.evaluate(() => ({
+    count: document.querySelectorAll(".b-item").length,
+    titles: Array.from(document.querySelectorAll(".b-title")).map((el) => el.getAttribute("data-full") || el.textContent).join("|"),
+  }));
+  await page.locator('[data-act="add"]').click();
+  await page.waitForTimeout(300);
+  const added = await page.evaluate(() => ({
+    count: document.querySelectorAll(".b-item").length,
+    titles: Array.from(document.querySelectorAll(".b-title")).map((el) => el.getAttribute("data-full") || el.textContent).join("|"),
+    focused: document.activeElement.id,
+    value: (document.querySelector("#b-edit-title") || {}).value,
+    undo: document.querySelector(".b-undoText").textContent,
+  }));
+  ok("add creates a moment", added.count === before.count + 1, `${before.count} → ${added.count}`);
+  ok("add changes no existing moment", added.titles.includes(before.titles.split("|")[0]));
+  ok("add opens an empty field, focused", added.focused === "b-edit-title" && added.value === "",
+    `${added.focused} "${added.value}"`);
+  ok("add joins the history", /moment was added/.test(added.undo), added.undo);
+  await page.keyboard.press("Escape");
+  await page.locator(".b-undoAct").click();
+  await page.waitForTimeout(250);
+  ok("add can be taken back",
+    (await page.evaluate(() => document.querySelectorAll(".b-item").length)) === before.count);
+  await page.close();
+}
+
+/* Delete. It was the one destructive act and the only one outside the
+   reversibility system, and afterwards the bar offered to restore a row
+   that no longer existed. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.locator('.b-step[aria-label="Move a week later"]').click();
+  await page.waitForTimeout(250);
+  const start = await page.evaluate(() => document.querySelectorAll(".b-item").length);
+  await page.locator('[data-act="delete"]').click();
+  await page.waitForTimeout(300);
+  const gone = await page.evaluate(() => ({
+    count: document.querySelectorAll(".b-item").length,
+    undo: document.querySelector(".b-undoText").textContent,
+    active: document.activeElement.tagName,
+  }));
+  ok("delete removes the moment", gone.count === start - 1, `${start} → ${gone.count}`);
+  ok("delete names what it removed", /Send the invitations was removed/.test(gone.undo), gone.undo);
+  ok("delete never drops focus to the body", gone.active !== "BODY", gone.active);
+  await page.locator(".b-undoAct").click();
+  await page.waitForTimeout(300);
+  ok("delete can be taken back",
+    (await page.evaluate(() => document.querySelectorAll(".b-item").length)) === start);
+  ok("the move before the delete is still on the stack",
+    /moved 7 days later/.test(await page.evaluate(() => document.querySelector(".b-undoText").textContent)));
+  /* The advertised key was bound to the field, so once focus fell to the
+     body after a delete it was dead for the rest of the session. */
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(250);
+  ok("the advertised key still works after a delete",
+    (await page.evaluate(() => document.querySelector(".b-undo").getAttribute("data-empty"))) === "true");
+  await page.close();
+}
+
+/* Hiding a moment from the couple's families is the highest-stakes
+   change on the screen and it had no undo and no ink. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  const shown = await page.evaluate(() =>
+    getComputedStyle(document.querySelector('.b-item[data-editing="true"] .b-title')).color);
+  await page.locator(".b-seg button", { hasText: "Hidden" }).click();
+  await page.waitForTimeout(250);
+  const hidden = await page.evaluate(() => ({
+    colour: getComputedStyle(document.querySelector('.b-item[data-editing="true"] .b-title')).color,
+    undo: document.querySelector(".b-undoText").textContent,
+  }));
+  ok("a hidden moment is drawn quieter, in ink not hue", hidden.colour !== shown,
+    `${shown} → ${hidden.colour}`);
+  ok("hiding joins the history", /is now hidden from guests/.test(hidden.undo), hidden.undo);
+  await page.locator(".b-undoAct").click();
+  await page.waitForTimeout(250);
+  const back = await page.evaluate(() => ({
+    attr: document.querySelector('.b-item[data-editing="true"]').getAttribute("data-visibility"),
+    pressed: Array.from(document.querySelectorAll(".b-seg button")).map((b) => b.getAttribute("aria-pressed")).join(","),
+  }));
+  ok("hiding can be taken back", back.attr === "shown" && back.pressed === "true,false",
+    `${back.attr} ${back.pressed}`);
+  await page.close();
+}
+
+/* The reversibility surface has to be where the change is made. It was
+   rendered a thousand pixels below the button that filled it. */
+for (const vp of [{ width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1280, height: 900 }, { width: 1440, height: 960 }]) {
+  const page = await open({ state: "owner-editing", viewport: vp });
+  await page.locator('.b-step[aria-label="Move a week later"]').click();
+  await page.waitForTimeout(300);
+  const seen = await page.evaluate(() => {
+    const el = document.querySelector(".b-undo");
+    const r = el.getBoundingClientRect();
+    const mid = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + 6));
+    return {
+      inView: r.top >= 0 && r.bottom <= window.innerHeight && r.height > 0,
+      reachable: !!(mid && mid.closest(".b-undo")),
+      count: document.querySelectorAll(".b-undo").length,
+    };
+  });
+  ok(`the way back is on screen when it has something to say @ ${vp.width}`, seen.inView);
+  ok(`the way back is reachable by pointer @ ${vp.width}`, seen.reachable);
+  ok(`there is still exactly one of it @ ${vp.width}`, seen.count === 1, String(seen.count));
+  /* Closing the panel must bring the bar home, not destroy it with the
+     panel: paintUndo would then have nothing to find for the rest of
+     the mount and the surface would be silently dead. */
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  ok(`the way back survives closing the panel @ ${vp.width}`, await page.evaluate(() => {
+    const el = document.querySelector(".b-undo");
+    return document.querySelectorAll(".b-undo").length === 1 && el.getAttribute("data-empty") === "false";
+  }));
+  await page.close();
+}
+
+/* The move is the one animated thing in the product and below the
+   gutter width it was happening under the sheet. */
+for (const vp of [{ width: 390, height: 844 }, { width: 768, height: 1024 }]) {
+  const page = await open({ state: "owner-editing", viewport: vp });
+  const band = () => page.evaluate(() => {
+    const panel = document.querySelector(".b-edit");
+    const fixed = getComputedStyle(panel).position === "fixed";
+    const free = fixed ? panel.getBoundingClientRect().top : window.innerHeight;
+    const box = document.querySelector('.b-item[data-editing="true"] .b-copy').getBoundingClientRect();
+    return { inBand: box.top >= 0 && box.bottom <= free + 1, fixed };
+  });
+  const onOpen = await band();
+  ok(`the row being edited is on screen when it opens @ ${vp.width}`, onOpen.inBand);
+  await page.locator('.b-step[aria-label="Move a week earlier"]').click();
+  await page.waitForTimeout(400);
+  ok(`the move is on screen where it happens @ ${vp.width}`, (await band()).inBand);
+  /* A fixed sheet is outside layout, so the column it covers must be
+     given the room back or the last rows are unreachable. */
+  const reserved = await page.evaluate(() => {
+    const field = document.querySelector(".b-field");
+    const panel = document.querySelector(".b-edit");
+    return parseFloat(getComputedStyle(field).paddingBottom) >= panel.offsetHeight;
+  });
+  ok(`the sheet reserves its own band @ ${vp.width}`, reserved);
+  /* A fixed sheet always covers whatever is behind it at that scroll.
+     What must never happen is a control being covered with no scroll
+     left to free it — which is exactly what an unreserved band does to
+     the last rows. */
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(200);
+  const stranded = await page.evaluate(() => {
+    const panel = document.querySelector(".b-edit").getBoundingClientRect();
+    return Array.from(document.querySelectorAll(".b-grab")).filter((el) => {
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.bottom > panel.top && r.top < panel.bottom;
+    }).length;
+  });
+  ok(`no row control is stranded under the sheet @ ${vp.width}`, stranded === 0, `${stranded} stranded`);
+  await page.close();
+}
+
+/* Opening a panel that nothing announces, from a control that does not
+   say it opened anything, upstream of the rows in tab order. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.locator(".b-item .b-grab").first().focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(300);
+  const opened = await page.evaluate(() => ({
+    focusInside: !!(document.activeElement && document.activeElement.closest(".b-edit")),
+    expanded: document.querySelector('.b-item[data-editing="true"] .b-grab').getAttribute("aria-expanded"),
+    named: (document.querySelector(".b-edit") || {}).getAttribute
+      ? document.querySelector(".b-edit").getAttribute("aria-label") : "",
+    role: document.querySelector(".b-edit").getAttribute("role"),
+  }));
+  ok("opening the editor moves focus into it", opened.focusInside);
+  ok("the control says it opened something", opened.expanded === "true", opened.expanded);
+  ok("the panel names the moment it edits", /Editing /.test(opened.named), opened.named);
+  ok("the panel is a group", opened.role === "group", opened.role);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  ok("closing says so too", (await page.evaluate(() =>
+    document.querySelector(".b-item .b-grab").getAttribute("aria-expanded"))) === "false");
+  await page.close();
+}
+
+/* A planner told "it has moved to Thursday 10 September" should be able
+   to type that on the surface built to remove arithmetic. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.locator("#b-edit-date").fill("10 September 2026");
+  await page.locator("#b-edit-date").press("Enter");
+  await page.waitForTimeout(300);
+  const typed = await page.evaluate(() => {
+    const item = document.querySelector('.b-item[data-editing="true"]');
+    return {
+      date: item.getAttribute("data-date"),
+      away: item.getAttribute("data-away"),
+      shown: item.querySelector(".b-date").textContent,
+      undo: document.querySelector(".b-undoText").textContent,
+    };
+  });
+  ok("a typed date moves the moment", typed.date === "2026-09-10" && typed.away === "56",
+    `${typed.date} / ${typed.away}`);
+  ok("the row follows a typed date", /10 Sep/.test(typed.shown), typed.shown);
+  ok("a typed date joins the history", /moved \d+ days later/.test(typed.undo), typed.undo);
+
+  await page.locator("#b-edit-date").fill("3 December 2026");
+  await page.locator("#b-edit-date").press("Enter");
+  await page.waitForTimeout(250);
+  const refused = await page.evaluate(() => ({
+    invalid: document.querySelector("#b-edit-date").getAttribute("aria-invalid"),
+    hint: document.querySelector(".b-ceiling").textContent,
+    away: document.querySelector('.b-item[data-editing="true"]').getAttribute("data-away"),
+  }));
+  ok("a date past the day itself is refused", refused.invalid === "true" && refused.away === "56",
+    `${refused.invalid} / ${refused.away}`);
+  ok("the refusal says why", /as far as it goes/.test(refused.hint), refused.hint);
+
+  await page.locator("#b-edit-date").fill("1 January 2026");
+  await page.locator("#b-edit-date").press("Enter");
+  await page.waitForTimeout(250);
+  ok("a date that has gone is refused", await page.evaluate(() =>
+    document.querySelector("#b-edit-date").getAttribute("aria-invalid") === "true"
+    && /has gone/.test(document.querySelector(".b-ceiling").textContent)));
+  await page.close();
+}
+
+/* The ceremony had two buttons and neither did anything, on the screen
+   the whole product exists for. */
+{
+  const page = await open({ state: "publish", viewport: { width: 1440, height: 960 } });
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]).catch(() => {});
+  await page.locator('[data-act="copy"]').click();
+  await page.waitForTimeout(400);
+  const copied = await page.evaluate(() => ({
+    label: document.querySelector('[data-act="copy"]').textContent,
+    live: document.querySelector(".b-live").textContent,
+    role: document.querySelector(".b-live").getAttribute("role"),
+  }));
+  ok("copy answers on the face of the control", copied.label === "Copied", copied.label);
+  ok("copy answers out loud", /copied/i.test(copied.live), copied.live);
+  ok("it answers through a live region", copied.role === "status");
+  await page.locator('[data-act="owner"]').click();
+  await page.waitForTimeout(400);
+  ok("there is a way back from the ceremony", await page.evaluate(() =>
+    (document.getElementById("deck") || document.body).getAttribute("data-state") === "owner-flight"));
+  await page.close();
+}
+
+/* Preview reached an audience surface with no way out — and the way out
+   must not put owner chrome inside the artifact a guest gets. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.locator('[data-act="preview"]').click();
+  await page.waitForTimeout(400);
+  ok("preview lands on the artifact", await page.evaluate(() =>
+    (document.getElementById("deck") || document.body).getAttribute("data-state") === "desk"));
+  ok("the way back sits outside the artifact", await page.evaluate(() =>
+    !!document.querySelector(".b-previewStrip")
+    && !document.querySelector(".b-field .b-previewStrip")));
+  await page.locator('[data-act="owner"]').click();
+  await page.waitForTimeout(400);
+  ok("the way back works", await page.evaluate(() =>
+    (document.getElementById("deck") || document.body).getAttribute("data-state") === "owner-flight"));
+  await page.close();
+}
+{
+  const page = await open({ state: "desk" });
+  ok("a guest loading the artifact gets no owner chrome",
+    (await page.locator(".b-previewStrip").count()) === 0);
+  await page.close();
+}
+
+/* No control advertises a verb it does not have — proven by pressing it,
+   in every state, rather than by checking for an attribute. */
+for (const state of ["owner-flight", "owner-empty", "owner-editing", "publish", "phone", "desk", "day"]) {
+  const page = await open({ state });
+  const dead = [];
+  const buttons = await page.locator(".tl-stage button").all();
+  for (let i = 0; i < buttons.length; i++) {
+    const before = await page.evaluate(() => ({
+      html: document.querySelector(".tl-stage").innerHTML.length,
+      state: (document.getElementById("deck") || document.body).getAttribute("data-state"),
+      active: document.activeElement.className,
+    }));
+    const label = (await buttons[i].textContent()) || (await buttons[i].getAttribute("aria-label")) || "?";
+    await buttons[i].click({ force: true }).catch(() => {});
+    await page.waitForTimeout(160);
+    const after = await page.evaluate(() => ({
+      html: document.querySelector(".tl-stage") ? document.querySelector(".tl-stage").innerHTML.length : -1,
+      state: (document.getElementById("deck") || document.body).getAttribute("data-state"),
+      active: document.activeElement.className,
+    }));
+    if (before.html === after.html && before.state === after.state && before.active === after.active) {
+      dead.push(label.trim().slice(0, 24));
+    }
+    if (before.state !== after.state) break;   /* it navigated; the rest belong to another state */
+  }
+  ok(`every control does something · ${state}`, dead.length === 0, dead.join(", "));
+  await page.close();
+}
+
+/* The past is listed only if asked for — and the asking has to be a
+   control the reader has, not a console knob. */
+for (const state of ["phone", "desk", "day"]) {
+  const page = await open({ state });
+  const fold = await page.evaluate(() => {
+    const details = document.querySelector(".b-behindDetails");
+    const rows = Array.from(document.querySelectorAll(".b-behindRow"));
+    const note = document.querySelector(".b-behindNote");
+    return {
+      exists: !!details,
+      open: details ? details.open : null,
+      /* A closed <details> keeps layout boxes for its children in
+         Chromium, so a rect test says they are visible when nobody can
+         see them. checkVisibility knows about content-visibility. */
+      visible: rows.filter((r) => r.checkVisibility({ contentVisibilityAuto: true })).length,
+      total: rows.length,
+      noteAfterRows: note && rows.length
+        ? note.compareDocumentPosition(rows[rows.length - 1]) === Node.DOCUMENT_POSITION_PRECEDING
+        : true,
+    };
+  });
+  ok(`the past can be asked for · ${state}`, fold.exists && fold.open === false);
+  ok(`the past is folded until it is · ${state}`, fold.visible === 0 && fold.total > 0,
+    `${fold.visible}/${fold.total}`);
+  ok(`the sentence closes the block · ${state}`, fold.noteAfterRows);
+  await page.locator(".b-behindSummary").click();
+  await page.waitForTimeout(200);
+  ok(`asking shows every one of them · ${state}`, await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".b-behindRow"))
+      .filter((r) => r.checkVisibility({ contentVisibilityAuto: true })).length
+    === document.querySelectorAll(".b-behindRow").length));
+  await page.close();
+}
+{
+  const page = await open({ state: "print", variant: "record" });
+  ok("the printed sheet never prints a closed control", await page.evaluate(() =>
+    getComputedStyle(document.querySelector(".b-behindSummary")).display === "none"));
+  await page.close();
+}
+
+/* The morning itself. It carried an eleven-week-old timestamp, named a
+   cancelled hotel search as its closing sentence, and printed the one
+   fact it exists for twice. */
+{
+  const page = await open({ state: "day" });
+  const day = await page.evaluate(() => {
+    const text = document.body.innerText;
+    return {
+      text,
+      stamped: /Updated/i.test(text),
+      dropped: /not going ahead/i.test(text),
+      weddings: (text.match(/wedding day/gi) || []).length,
+      count: document.querySelector(".b-dayCount").textContent,
+      countSize: parseFloat(getComputedStyle(document.querySelector(".b-dayCount")).fontSize),
+      nameSize: parseFloat(getComputedStyle(document.querySelector(".b-dayWrap .b-who")).fontSize),
+    };
+  });
+  ok("the morning carries no stale timestamp", !day.stamped);
+  ok("the morning does not close on a cancellation", !day.dropped);
+  ok("the morning says the one fact once", day.weddings === 1, String(day.weddings));
+  /* A countdown that has arrived is a word, not a zero — and the word
+     takes the count's slot rather than being demoted to a micro-label
+     while the couple's name is promoted into the display register. */
+  ok("the arrived count is a word", day.count === "Today", day.count);
+  ok("the arrived count keeps the count's register",
+    day.countSize >= 96 && day.countSize > day.nameSize, `${day.countSize} vs ${day.nameSize}`);
+  await page.close();
+}
+
+/* A project that has never held anything wore another couple's facts. */
+{
+  const page = await open({ state: "owner-empty" });
+  const identity = await page.evaluate(() => ({
+    region: document.querySelector("section.b-field").getAttribute("aria-label"),
+    h1: document.querySelector("h1").textContent,
+    bar: document.querySelector(".b-switch").textContent,
+    foot: document.querySelector(".b-foot").textContent,
+    hint: document.querySelector("#b-empty-hint").textContent,
+  }));
+  ok("the region names the project it belongs to", /Aisling/.test(identity.region), identity.region);
+  ok("every name on the screen is the same name",
+    /Aisling/.test(identity.h1) && /Aisling/.test(identity.bar));
+  ok("a project with nothing in it claims no update", !/Updated/.test(identity.foot), identity.foot);
+  ok("the date format survives typing", /3 October 2026/.test(identity.hint), identity.hint);
+  await page.locator("#b-empty-date").fill("3 October 2026");
+  await page.locator('[data-act="setday"]').click();
+  await page.waitForTimeout(200);
+  ok("a real day is accepted", await page.evaluate(() =>
+    document.querySelector("#b-empty-date").getAttribute("aria-invalid") === "false"));
+  await page.close();
+}
+
+/* Two moments on one day. The measure's law is that position is the
+   quantity, and it used to be abandoned at the moment two things
+   coincided: one count and one tick painted over another. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.locator('.b-step[aria-label="Move a week earlier"]').click();
+  await page.waitForTimeout(400);
+  const stacked = await page.evaluate(() => {
+    const items = Array.from(document.querySelectorAll(".b-item"))
+      .filter((el) => el.getAttribute("data-away") === "16");
+    return {
+      pair: items.length,
+      stacks: items.map((el) => el.getAttribute("data-stack")).join(","),
+      marks: items.filter((el) => getComputedStyle(el.querySelector(".b-tick")).visibility === "visible").length,
+      counts: items.filter((el) => getComputedStyle(el.querySelector(".b-away")).visibility === "visible").length,
+      said: items.map((el) => el.querySelector(".b-unitSaid").textContent).join(" / "),
+      tops: items.map((el) => el.offsetTop).join(","),
+    };
+  });
+  ok("two moments can share a day", stacked.pair === 2, String(stacked.pair));
+  ok("they share one mark and one count", stacked.marks === 1 && stacked.counts === 1,
+    `${stacked.marks} marks, ${stacked.counts} counts`);
+  ok("they are grouped, not overprinted", stacked.stacks === "lead,follow", stacked.stacks);
+  ok("both stay on the true pixel", stacked.tops === "288,288", stacked.tops);
+  ok("the day says how many it holds", /2 moments on this day/.test(stacked.said), stacked.said);
+  ok("nothing else collides", (await collisions(page)) === 0);
   await page.close();
 }
 

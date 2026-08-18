@@ -64,6 +64,61 @@
           "done": "The phone is now the base and the desk values live inside a min-width query, so the conflict is deleted rather than out-ranked. The two-column threshold moved from 901px to 1280px, where the measure genuinely has a column: at 901 it was still producing three collisions in a band neither gate had ever measured."
         }
       ]
+    },
+    {
+      "round": 2,
+      "scores": {
+        "UI composition": 7.4,
+        "Typography": 7.4,
+        "Interaction and states": 7.3,
+        "UX and information design": 6.6,
+        "Brand and copy": 7.2,
+        "Product taste and emotional resonance": 7.4,
+        "Measured evidence": 7.4
+      },
+      "findings": 35,
+      "confirmed": 33,
+      "refuted": 2,
+      "fixed": 33,
+      "headline": "The gesture held. Every seat that graded it said so, two of them in the same words, and the floor rose to 6.6 while Brand and Typography FELL — the panel looking harder at things it had passed. What it found was that the gesture was the only thing in the owner's panel that had been built. The create verb opened the editor on somebody else's moment. The title field, on a surface whose whole subject is a person's own words, discarded everything typed into it. Delete removed a moment with no way back, dropped focus to the body, killed the advertised key for the rest of the session, and left the reversibility bar offering to restore a row that no longer existed — an offer that, pressed, restored nothing and cleared itself as though it had worked. The bar itself rendered a thousand pixels below the button that filled it. The publish ceremony carried two buttons and neither did anything, on the screen the product exists for. And three of the 262 gate assertions were tautologies, one of them covering that live defect. Everything an owner can now do joins one history stack with its own undo closure; the gate went to 357 assertions and learned to grade placeholders and the tracking ladder.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 0.9,
+          "problem": "The owner's only creation verb created nothing: \"Add a moment\" opened the editor on the first existing moment with its title pre-filled, and the title field wrote nowhere, so there was no path in the whole direction by which an owner could put a new moment on the plan or name one.",
+          "done": "Add builds a real moment, inserts it in date order, opens the panel on it with an empty focused field, and joins the history so Ctrl+Z removes it. The title field writes through to the record, the row, the word-safe trim and the accessible name, and a rename is itself undoable. A refuter caught that the first version of this fix would have thrown on the new row, because the editor resolves its record through the fixture."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.7,
+          "problem": "Delete was the one destructive act on the surface and the only action outside the reversibility system that already guarded a one-day move. It dropped focus to the body, which — because the key handler was bound to the field — killed the advertised Ctrl+Z for the rest of the session, and the bar kept a live offer to undo the move before it.",
+          "done": "Every change now carries its own undo closure on one stack, and undo peeks before it pops, so a press that cannot restore anything no longer clears the bar as though it had. Delete keeps the live node rather than its markup — the owner's edits live on the DOM, so rebuilding from the record would have restored a moment they never had — puts focus on the next row, and the key handler moved to the document."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.7,
+          "problem": "The move is the one animated thing in the product, and below 1280 it happened off screen: the edited row opened 152px below the fold with the sheet covering the lower half of the phone, so the owner pressed, every fact updated correctly, and they saw nothing move.",
+          "done": "The row is scrolled into the band between the top of the screen and the sheet, on open and after any press that would take it out — gated on the sheet being a sheet rather than on a width, so where the editor is the static rail the scroll path is unreachable and the page keeps its place exactly as round 1 asserted. The sheet now reserves its own band in layout, so the last rows can no longer be stranded under it at maximum scroll."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.3,
+          "problem": "Three of the 262 assertions were true by construction: one whose predicate was a literal tautology, one whose exemption list emptied its own array, and one whose else branch restated its if. The second was covering a live defect — the two publish buttons — because its state loop never visited that state.",
+          "done": "The trim assertion tests a word boundary rather than a prefix. The dead-control check now presses every button in seven states and requires the page, the state or the focus to change, so a control that does nothing fails by construction. The sheet assertion asserts what the sheet owes instead of restating its own condition."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.6,
+          "problem": "The wedding morning was the worst-written screen in the set: it printed the fact it exists for twice, closed on a cancelled hotel search, and carried an eleven-week-old timestamp. The count — the whole composition on every other screen — was demoted to a 12px micro-label while the couple's name was promoted into the display register.",
+          "done": "The morning states its one fact once, drops the stamp, names how you got here rather than what did not happen, and the arrived countdown takes the count's own slot at the display step. Two refuters disagreed about whether to delete the closing line; the one that measured the screen won, and it stayed."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.7,
+          "problem": "The tracking ladder was declared and then applied by hand, so it did not hold: 24px sans rendered at two different letterfits, 30px at two more, eight prose blocks carried no tracking at all, and every size raised at desk width kept the phone's tracking.",
+          "done": "Every font-size in the file now carries its step on the same rule, and the ladder is enforced mechanically: audit.mjs grades it, failing when one family at one size renders at two letterfits anywhere in the state matrix. Two sizes moved so the ladder is unambiguous — the ceremonial label is a step up in size as well as tracking, and a share token is data, not a label."
+        }
+      ]
     }
   ]
 }

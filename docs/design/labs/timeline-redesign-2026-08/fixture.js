@@ -47,11 +47,17 @@
   /* One grammar per fact. The artifact says "Saturday 3 October" for a
      day and "3 Oct" for a column; it never mixes elapsed, deictic and
      absolute forms for the same fact on the same screen. */
+  /* A non-breaking space binds the day figure to its month, so the
+     ceremonial date can break after the weekday but never between the 3
+     and the October. Binding the WHOLE string overflows its column on a
+     phone and on the printed sheet, which is why only this one joint is
+     welded. parseDay normalises it back. */
+  var NB = " ";
   var fmt = {
-    long: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + " " + p.month; },
-    longYear: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + " " + p.month + " " + p.year; },
-    medium: function (iso) { var p = parts(iso); return p.day + " " + p.month; },
-    short: function (iso) { var p = parts(iso); return p.day + " " + p.monthShort; },
+    long: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + NB + p.month; },
+    longYear: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + NB + p.month + NB + p.year; },
+    medium: function (iso) { var p = parts(iso); return p.day + NB + p.month; },
+    short: function (iso) { var p = parts(iso); return p.day + NB + p.monthShort; },
     numeral: function (iso) { return String(parts(iso).day); },
     monthShort: function (iso) { return parts(iso).monthShort; },
     /* "1 days" is the kind of thing that makes a person stop trusting a
@@ -119,6 +125,37 @@
     parts: parts,
     days: days,
     daysTo: function (iso) { return days(TODAY, iso); },
+    /* The one parser. An owner told "it has moved to Thursday 10
+       September" should be able to type that, and the surface built to
+       remove arithmetic should not make them count days to say it. */
+    parseDay: function (text) {
+      if (!text) return null;
+      var clean = String(text).replace(/ /g, " ").trim().toLowerCase()
+        .replace(/^(sunday|monday|tuesday|wednesday|thursday|friday|saturday),?\s+/, "")
+        .replace(/(\d)(st|nd|rd|th)/g, "$1");
+      var iso = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) return clean;
+      var slash = clean.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+      if (slash) {
+        return slash[3] + "-" + ("0" + slash[2]).slice(-2) + "-" + ("0" + slash[1]).slice(-2);
+      }
+      var words = clean.match(/^(\d{1,2})\s+([a-z]+)\s*(\d{4})?$/);
+      if (!words) return null;
+      var month = -1;
+      for (var i = 0; i < MONTHS.length; i++) {
+        if (MONTHS[i].toLowerCase().indexOf(words[2]) === 0 && words[2].length >= 3) month = i;
+      }
+      if (month < 0) return null;
+      var day = Number(words[1]);
+      if (day < 1 || day > 31) return null;
+      var year = words[3] ? Number(words[3]) : Number(TODAY.slice(0, 4));
+      var out = year + "-" + ("0" + (month + 1)).slice(-2) + "-" + ("0" + day).slice(-2);
+      /* No year given means the next one that has not gone yet. */
+      if (!words[3] && days(TODAY, out) < 0) {
+        out = (year + 1) + "-" + ("0" + (month + 1)).slice(-2) + "-" + ("0" + day).slice(-2);
+      }
+      return out;
+    },
     /* One place that does date arithmetic. Anything that needs "the date
        N days from here" asks for it rather than reaching for Date, so a
        moved milestone and its own label can never disagree. */

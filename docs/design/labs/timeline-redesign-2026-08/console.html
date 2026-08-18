@@ -377,9 +377,10 @@ body {
   padding: 26px 22px 30px;
   line-height: 1.5;
 }
+.deck .b-field[data-editor-open] { padding-bottom: var(--b-sheet, 30px); }
 .deck .b-who {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.4;
   letter-spacing: var(--track-labelWide);
@@ -400,7 +401,7 @@ body {
 }
 .deck .b-unit {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
@@ -426,11 +427,19 @@ body {
   color: var(--fore-62);
   margin: 8px 0 0;
 }
-.deck .b-gapNote { font-size: 15px; line-height: 1.5; color: var(--fore-62); margin: 14px 0 0; text-wrap: pretty; }
+.deck .b-gapNote {
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 14px 0 0;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
 .deck .b-measure {
   position: relative;
   margin: 14px 0 0;
-  padding: 0 0 0 96px;   
+  padding: 0 0 0 110px;   
   line-height: 1.5;
 }
 .deck .b-measureHead {
@@ -442,13 +451,36 @@ body {
   text-transform: uppercase;
   color: var(--fore-62);
   margin: 22px 0 0;
-  width: 62px;
+  width: 76px;
   text-align: right;
+  white-space: nowrap;
 }
-.deck .b-rail { position: absolute; left: 76px; top: 6px; bottom: 0; width: 1px; background: var(--fore-16); }
+.deck .b-rail { position: absolute; left: 90px; top: 6px; bottom: 0; width: 1px; background: var(--fore-16); }
+.deck .b-origin {
+  position: absolute;
+  left: 110px;
+  top: 0;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  
+  color: var(--fore-62);
+}
+.deck .b-origin::before {
+  content: "";
+  position: absolute;
+  left: -23px;
+  top: 6px;
+  width: 9px;
+  height: 1px;
+  background: var(--fore-28);
+}
 .deck .b-item {
   position: absolute;
-  left: 96px;
+  left: 110px;
   right: 0;
   line-height: 1.5;
   
@@ -456,9 +488,9 @@ body {
 }
 .deck .b-away {
   position: absolute;
-  left: -96px;
+  left: -110px;
   top: 2px;
-  width: 62px;
+  width: 76px;
   text-align: right;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -485,6 +517,7 @@ body {
   letter-spacing: var(--track-body);
   color: var(--fore);
   margin: 0 0 3px;
+  text-wrap: balance;
   
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -520,12 +553,20 @@ body {
   height: 1px;
   background: var(--fore-28);
 }
+.deck .b-item[data-stack="follow"] .b-away, .deck .b-item[data-stack="follow"] .b-tick { visibility: hidden; }
+.deck .b-item[data-stack="follow"] .b-copy {
+  border-top: 1px solid var(--fore-16);
+  padding-top: 12px;
+}
+.deck .b-item[data-stack="lead"] .b-copy { padding-bottom: 12px; }
+.deck .b-item[data-visibility="hidden"] .b-title, .deck .b-item[data-visibility="hidden"] .b-date, .deck .b-item[data-visibility="hidden"] .b-away { color: var(--fore-62); }
+.deck .b-item[data-visibility="hidden"] .b-title { font-weight: 400; }
+.deck .b-item[data-visibility="hidden"] .b-tick { border-style: dashed; }
 .deck .b-grab {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
   padding: 0 8px;
-  
   margin-left: -8px;
   margin-top: 4px;
   border-radius: 4px;
@@ -535,14 +576,19 @@ body {
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
+  
+  text-decoration: underline;
+  text-decoration-color: var(--fore-16);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
   transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
 }
-.deck .b-item:not([data-editing="true"]) .b-grab::after {
-  content: "";
-  position: absolute;
-  inset: 0;
+.deck .b-item:not([data-editing="true"]) .b-grab::after { content: ""; position: absolute; inset: 0; }
+.deck .b-item:hover .b-grab, .deck .b-item:focus-within .b-grab {
+  color: var(--fore);
+  background: var(--fore-06);
+  text-decoration-color: var(--fore-46);
 }
-.deck .b-item:hover .b-grab, .deck .b-item:focus-within .b-grab { color: var(--fore); background: var(--fore-06); }
 .deck .b-item:hover .b-copy, .deck .b-item:focus-within .b-copy {
   background: var(--fore-04);
   box-shadow: 0 0 0 12px var(--fore-04);
@@ -550,7 +596,24 @@ body {
   transition: background-color var(--t-fast) var(--ease);
 }
 .deck .b-item[data-crowded="true"] .b-copy { box-shadow: 0 0 0 12px var(--back); background: var(--back); border-radius: 4px; }
+.deck .b-item[data-editing="true"] .b-copy {
+  box-shadow: 0 0 0 12px var(--fore-06);
+  background: var(--fore-06);
+  border-radius: 4px;
+}
 .deck .b-behind { margin: 40px 0 0; padding: 20px 0 0; border-top: 1px solid var(--fore-16); line-height: 1.5; }
+.deck .b-behindSummary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  padding: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.deck .b-behindSummary::-webkit-details-marker { display: none; }
 .deck .b-behindLabel {
   font-family: var(--mono);
   font-weight: 400;
@@ -559,8 +622,19 @@ body {
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
-  margin: 0 0 10px;
+  margin: 0;
 }
+.deck .b-behindCount {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--fore-62);
+}
+.deck .b-behindDetails[open] .b-behindCount { color: var(--fore); }
+.deck .b-behindRows { padding: 6px 0 0; }
 .deck .b-behindRow { display: flex; gap: 14px; align-items: baseline; padding: 8px 0; line-height: 1.5; }
 .deck .b-behindDate {
   font-family: var(--mono);
@@ -569,17 +643,24 @@ body {
   line-height: 1.6;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  
   color: var(--fore-62);
   width: 76px;
   flex: none;
 }
 .deck .b-behindTitle { font-size: 15px; line-height: 1.5; letter-spacing: var(--track-body); color: var(--fore-72); margin: 0; }
 .deck .b-behindTitle[data-cancelled="true"] { text-decoration: line-through; text-decoration-color: var(--fore-28); }
-.deck .b-behindNote { font-size: 15px; line-height: 1.5; color: var(--fore-62); margin: 0; text-wrap: pretty; }
-.deck[data-past="folded"] .b-behindRow { display: none; }
-.deck[data-past="folded"] .b-behindNote { display: block; }
-.deck[data-past="listed"] .b-behindNote { display: none; }
+.deck .b-behindNote {
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 12px 0 0;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+.deck[data-past="listed"] .b-behindSummary { display: none; }
+.deck[data-past="listed"] .b-behindRows { display: block; }
+.deck[data-past="listed"] .b-behindDetails > .b-behindRows { display: block; }
 .deck[data-accent="structure"] .b-rail { background: var(--accent); opacity: 0.5; }
 .deck .b-foot {
   overflow-wrap: anywhere;
@@ -641,7 +722,7 @@ body {
   color: var(--fore-62);
 }
 .deck .b-spacer { flex: 1 1 auto; }
-.deck .b-barActs { display: flex; gap: 10px; flex-wrap: wrap; line-height: 1.5; }
+.deck .b-barActs { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; line-height: 1.5; }
 .deck .b-act {
   min-height: 32px;
   padding: 6px 12px;
@@ -664,6 +745,17 @@ body {
   text-transform: uppercase;
   color: var(--fore-62);
 }
+.deck .b-previewStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 0 16px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--ink-16);
+}
+.deck .b-previewStrip .b-where, .deck .b-previewStrip .b-act { color: var(--ink); }
+.deck .b-previewStrip .b-act { border-color: var(--ink-16); }
 .deck .b-edit {
   position: fixed;
   left: 12px;
@@ -681,7 +773,7 @@ body {
   gap: 12px;
   line-height: 1.5;
 }
-.deck .b-item[data-editing="true"] .b-copy { box-shadow: 0 0 0 12px var(--fore-06); background: var(--fore-06); border-radius: 4px; }
+.deck .b-edit:focus-visible { outline-offset: -2px; }
 .deck .b-editHost:empty { display: none; }
 .deck .b-label {
   font-family: var(--mono);
@@ -701,11 +793,19 @@ body {
   color: var(--fore);
   font-size: 17px;
   line-height: 1.4;
+  letter-spacing: var(--track-body);
 }
-.deck .b-input::placeholder { color: var(--fore-46); opacity: 1; }
+.deck .b-input::placeholder { color: var(--fore-62); opacity: 1; }
 .deck .b-input[aria-invalid="true"] { border-color: var(--fore); }
 .deck .b-input[data-mono="true"] { font-family: var(--mono); font-size: 15px; letter-spacing: var(--track-data); }
-.deck .b-hint { font-size: 13px; line-height: 1.5; color: var(--fore); margin: 12px 0 0; min-height: 20px; }
+.deck .b-hint {
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 12px 0 0;
+  min-height: 20px;
+}
 .deck .b-stepRow { display: grid; gap: 10px; }
 .deck .b-stepBtns { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .deck .b-step {
@@ -717,11 +817,12 @@ body {
   font-family: var(--mono);
   font-size: 15px;
   line-height: 1.4;
+  letter-spacing: var(--track-data);
   text-align: center;
   transition: background-color var(--t-base) var(--ease);
 }
 .deck .b-step:hover { background: var(--fore-06); }
-.deck .b-step[aria-disabled="true"] { color: var(--fore-46); border-color: var(--fore-16); }
+.deck .b-step[aria-disabled="true"] { color: var(--fore-62); border-color: var(--fore-16); }
 .deck .b-stepRead {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -729,8 +830,18 @@ body {
   line-height: 1.5;
   letter-spacing: var(--track-data);
   color: var(--fore);
+  
+  min-height: 45px;
 }
-.deck .b-ceiling { font-size: 13px; line-height: 1.5; color: var(--fore-62); margin: 0; min-height: 20px; }
+.deck .b-ceiling {
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0;
+  min-height: 20px;
+  max-width: 46ch;
+}
 .deck .b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; overflow: hidden; }
 .deck .b-seg button {
   min-height: 34px;
@@ -744,11 +855,15 @@ body {
 .deck .b-seg button + button { border-left: 1px solid var(--fore-28); }
 .deck .b-seg button[aria-pressed="true"] { background: var(--fore); color: var(--back); }
 .deck .b-editActs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.deck .b-editDanger { padding: 12px 0 0; border-top: 1px solid var(--fore-16); }
+.deck .b-editDanger .b-act { border-color: transparent; color: var(--fore-72); padding-left: 0; }
+.deck .b-editDanger .b-act:hover { border-color: var(--fore-46); color: var(--fore); padding-left: 12px; }
 .deck .b-undo {
   margin: 20px 0 0;
   padding: 10px 12px;
   border: 1px solid var(--fore-16);
   border-radius: 6px;
+  background-color: var(--back);
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
@@ -759,12 +874,28 @@ body {
   color: var(--fore-72);
 }
 .deck .b-undo[data-empty="true"] { display: none; }
+.deck .b-edit { padding-top: 78px; }
+.deck .b-edit .b-undo {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--fore-16);
+  border-radius: 0;
+  padding: 0 0 10px;
+  min-height: 50px;
+  align-items: flex-start;
+}
+.deck .b-edit .b-undo[data-empty="true"] { display: flex; visibility: hidden; }
 .deck .b-undoAct {
   min-height: 28px;
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 15px;
   line-height: 1.5;
+  letter-spacing: var(--track-body);
   color: var(--fore);
   text-decoration: underline;
   text-decoration-color: var(--fore-28);
@@ -781,7 +912,15 @@ body {
   margin: 0 0 12px;
   text-wrap: balance;
 }
-.deck .b-emptyBody { font-size: 17px; line-height: 1.5; color: var(--fore-62); margin: 0 0 28px; max-width: 34ch; text-wrap: pretty; }
+.deck .b-emptyBody {
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0 0 28px;
+  max-width: 34ch;
+  text-wrap: pretty;
+}
 .deck .b-emptyForm { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .deck .b-press { display: grid; gap: 28px; }
 .deck .b-press > * { min-width: 0; }
@@ -794,7 +933,15 @@ body {
   margin: 0 0 12px;
   text-wrap: balance;
 }
-.deck .b-pressBody { font-size: 17px; line-height: 1.55; color: var(--fore-62); margin: 0 0 20px; max-width: 46ch; text-wrap: pretty; }
+.deck .b-pressBody {
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0 0 20px;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
 .deck .b-linkRow {
   display: flex;
   align-items: center;
@@ -804,7 +951,8 @@ body {
   border: 1px solid var(--fore-16);
   border-radius: 6px;
   font-family: var(--mono);
-  font-size: 12px;
+  
+  font-size: 13px;
   line-height: 1.5;
   letter-spacing: var(--track-data);
   color: var(--fore);
@@ -812,7 +960,23 @@ body {
   margin: 0 0 16px;
 }
 .deck .b-linkRow span { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.deck .b-note { font-size: 13px; line-height: 1.55; color: var(--fore-62); margin: 16px 0 0; text-wrap: pretty; }
+.deck .b-live {
+  font-size: 13px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore);
+  margin: 12px 0 0;
+  min-height: 20px;
+}
+.deck .b-note {
+  font-size: 13px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 8px 0 0;
+  max-width: 52ch;
+  text-wrap: pretty;
+}
 .deck .b-chat { padding: 24px 16px; background: var(--paper); }
 .deck .b-bubble {
   max-width: 300px;
@@ -823,6 +987,7 @@ body {
   border: 1px solid var(--ink-10);
   font-size: 15px;
   line-height: 1.45;
+  letter-spacing: var(--track-body);
   color: var(--ink);
 }
 .deck .b-unfurl {
@@ -844,7 +1009,7 @@ body {
 }
 .deck .b-ogWho {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
   letter-spacing: var(--track-labelWide);
   text-transform: uppercase;
@@ -854,50 +1019,59 @@ body {
 .deck .b-ogNum {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-  font-size: 48px;
+  font-size: 64px;
   line-height: 0.9;
-  letter-spacing: var(--track-title);
+  letter-spacing: var(--track-display);
   color: var(--fore);
   margin: 0 0 0 -0.05em;
 }
 .deck .b-ogDate {
-  font-family: var(--mono);
-  font-size: 11px;
+  font-size: 15px;
   line-height: 1.4;
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--fore-62);
-  margin: 6px 0 0;
+  letter-spacing: var(--track-body);
+  color: var(--fore-72);
+  margin: 4px 0 0;
   text-wrap: balance;
 }
 .deck .b-unfurlMeta { padding: 10px 12px; }
 .deck .b-unfurlTitle { font-size: 15px; font-weight: 600; line-height: 1.35; letter-spacing: var(--track-body); margin: 0 0 3px; color: var(--ink); }
-.deck .b-unfurlHost { font-size: 12px; line-height: 1.4; color: var(--ink-62); margin: 0; }
+.deck .b-unfurlHost { font-size: 12px; line-height: 1.4; letter-spacing: var(--track-body); color: var(--ink-62); margin: 0; }
 .deck .b-dayWrap { padding: 56px 22px 40px; text-align: center; }
-.deck .b-dayToday {
+.deck .b-dayWrap .b-who { margin: 0 0 18px; }
+.deck .b-dayCount {
   font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.4;
-  letter-spacing: var(--track-labelWide);
-  text-transform: uppercase;
-  color: var(--fore-62);
-  margin: 0 0 26px;
-}
-.deck .b-dayNames {
-  font-size: 48px;
-  font-weight: 600;
-  line-height: 1.02;
-  letter-spacing: var(--track-title);
+  font-size: 96px;
+  line-height: 0.9;
+  letter-spacing: var(--track-display);
   color: var(--fore);
   margin: 0 0 16px;
+}
+.deck .b-dayDate {
+  font-size: 20px;
+  line-height: 1.4;
+  letter-spacing: var(--track-body);
+  color: var(--fore);
+  margin: 0 0 40px;
   text-wrap: balance;
 }
-.deck .b-dayDate { font-size: 20px; line-height: 1.4; letter-spacing: var(--track-body); color: var(--fore-72); margin: 0 0 6px; text-wrap: balance; }
-.deck .b-dayWrap .b-sub { margin: 0 0 40px; }
 .deck .b-dayRule { height: 1px; background: var(--accent); margin: 0 auto 24px; max-width: 200px; }
-.deck .b-dayNote { font-size: 15px; line-height: 1.6; color: var(--fore-62); margin: 0; text-wrap: pretty; }
+.deck .b-dayNote {
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0;
+  text-wrap: pretty;
+}
 .deck .b-dayNow { margin: 30px 0 0; padding: 20px 0 0; border-top: 1px solid var(--fore-16); }
-.deck .b-dayNowTitle { font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: var(--track-head); color: var(--fore); margin: 0; }
+.deck .b-dayNowTitle {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--track-head);
+  color: var(--fore);
+  margin: 8px 0 0;
+}
 .deck .b-ended { padding: 56px 22px 64px; }
 .deck .b-endedTitle {
   font-size: 30px;
@@ -908,10 +1082,18 @@ body {
   margin: 0 0 14px;
   text-wrap: balance;
 }
-.deck .b-endedBody { font-size: 17px; line-height: 1.55; color: var(--fore-62); margin: 0 0 24px; max-width: 40ch; text-wrap: pretty; }
+.deck .b-endedBody {
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0 0 24px;
+  max-width: 40ch;
+  text-wrap: pretty;
+}
 .deck .b-skel { background: var(--fore-10); border-radius: 4px; }
 .deck .b-print { padding: 26px 22px 30px; line-height: 1.5; }
-.deck .b-print .b-title { font-size: 17px; }
+.deck .b-print .b-title { font-size: 17px; letter-spacing: var(--track-body); }
 .deck .b-print .b-away { font-size: 15px; }
 .deck[data-w="1440"] .b-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .deck[data-w="1440"] .b-bar .b-spacer { display: block; flex: 1 1 auto; }
@@ -919,72 +1101,95 @@ body {
 .deck[data-w="1440"] .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
 .deck[data-w="1440"][data-medium="sheet"] .b-field, .deck[data-w="1440"][data-medium="full"] .b-field { padding: 48px 56px 56px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-num, .deck[data-w="1440"][data-medium="full"] .b-num { font-size: 148px; }
-.deck[data-w="1440"][data-medium="sheet"] .b-when, .deck[data-w="1440"][data-medium="full"] .b-when { font-size: 30px; }
+.deck[data-w="1440"][data-medium="sheet"] .b-when, .deck[data-w="1440"][data-medium="full"] .b-when { font-size: 30px; letter-spacing: var(--track-head); }
 .deck[data-w="1440"][data-medium="sheet"] .b-measure, .deck[data-w="1440"][data-medium="full"] .b-measure { padding-left: 124px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-measureHead, .deck[data-w="1440"][data-medium="full"] .b-measureHead { width: 84px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-rail, .deck[data-w="1440"][data-medium="full"] .b-rail { left: 100px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-item, .deck[data-w="1440"][data-medium="full"] .b-item { left: 124px; }
+.deck[data-w="1440"][data-medium="sheet"] .b-origin, .deck[data-w="1440"][data-medium="full"] .b-origin { left: 124px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-away, .deck[data-w="1440"][data-medium="full"] .b-away { left: -124px; width: 84px; font-size: 17px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-tick, .deck[data-w="1440"][data-medium="full"] .b-tick { left: -27px; }
+.deck[data-w="1440"][data-medium="sheet"] .b-origin::before, .deck[data-w="1440"][data-medium="full"] .b-origin::before { left: -27px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-item[data-lead="true"] .b-tick, .deck[data-w="1440"][data-medium="full"] .b-item[data-lead="true"] .b-tick { left: -28px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-item[data-anchor="true"]::before, .deck[data-w="1440"][data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
-.deck[data-w="1440"][data-medium="sheet"] .b-title, .deck[data-w="1440"][data-medium="full"] .b-title { font-size: 24px; }
+.deck[data-w="1440"][data-medium="sheet"] .b-title, .deck[data-w="1440"][data-medium="full"] .b-title { font-size: 24px; letter-spacing: var(--track-head); }
 .deck[data-w="1440"][data-medium="sheet"] .b-empty, .deck[data-w="1440"][data-medium="full"] .b-empty { padding: 110px 56px 120px; }
-.deck[data-w="1440"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1440"][data-medium="full"] .b-emptyTitle { font-size: 64px; }
+.deck[data-w="1440"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1440"][data-medium="full"] .b-emptyTitle { font-size: 64px; letter-spacing: var(--track-title); }
 .deck[data-w="1440"][data-medium="sheet"] .b-ended, .deck[data-w="1440"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1440"][data-medium="full"] .b-dayWrap { padding: 110px 56px 60px; }
-.deck[data-w="1440"][data-medium="sheet"] .b-dayNames, .deck[data-w="1440"][data-medium="full"] .b-dayNames { font-size: 96px; }
 .deck[data-w="1440"][data-medium="full"] .b-pressTitle { font-size: 48px; letter-spacing: var(--track-title); }
 .deck[data-w="1440"][data-medium="sheet"] .b-print { padding: 56px 64px 44px; }
-.deck[data-w="1440"][data-medium="sheet"] .b-print .b-title { font-size: 17px; }
+.deck[data-w="1440"][data-medium="sheet"] .b-print .b-title { font-size: 17px; letter-spacing: var(--track-body); }
 .deck[data-w="1280"] .b-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .deck[data-w="1280"] .b-bar .b-spacer { display: block; flex: 1 1 auto; }
 .deck[data-w="1280"] .b-bar .b-barActs { display: flex; width: auto; gap: 10px; }
 .deck[data-w="1280"] .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
 .deck[data-w="1280"][data-medium="sheet"] .b-field, .deck[data-w="1280"][data-medium="full"] .b-field { padding: 48px 56px 56px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-num, .deck[data-w="1280"][data-medium="full"] .b-num { font-size: 148px; }
-.deck[data-w="1280"][data-medium="sheet"] .b-when, .deck[data-w="1280"][data-medium="full"] .b-when { font-size: 30px; }
+.deck[data-w="1280"][data-medium="sheet"] .b-when, .deck[data-w="1280"][data-medium="full"] .b-when { font-size: 30px; letter-spacing: var(--track-head); }
 .deck[data-w="1280"][data-medium="sheet"] .b-measure, .deck[data-w="1280"][data-medium="full"] .b-measure { padding-left: 124px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-measureHead, .deck[data-w="1280"][data-medium="full"] .b-measureHead { width: 84px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-rail, .deck[data-w="1280"][data-medium="full"] .b-rail { left: 100px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-item, .deck[data-w="1280"][data-medium="full"] .b-item { left: 124px; }
+.deck[data-w="1280"][data-medium="sheet"] .b-origin, .deck[data-w="1280"][data-medium="full"] .b-origin { left: 124px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-away, .deck[data-w="1280"][data-medium="full"] .b-away { left: -124px; width: 84px; font-size: 17px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-tick, .deck[data-w="1280"][data-medium="full"] .b-tick { left: -27px; }
+.deck[data-w="1280"][data-medium="sheet"] .b-origin::before, .deck[data-w="1280"][data-medium="full"] .b-origin::before { left: -27px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-item[data-lead="true"] .b-tick, .deck[data-w="1280"][data-medium="full"] .b-item[data-lead="true"] .b-tick { left: -28px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-item[data-anchor="true"]::before, .deck[data-w="1280"][data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
-.deck[data-w="1280"][data-medium="sheet"] .b-title, .deck[data-w="1280"][data-medium="full"] .b-title { font-size: 24px; }
+.deck[data-w="1280"][data-medium="sheet"] .b-title, .deck[data-w="1280"][data-medium="full"] .b-title { font-size: 24px; letter-spacing: var(--track-head); }
 .deck[data-w="1280"][data-medium="sheet"] .b-empty, .deck[data-w="1280"][data-medium="full"] .b-empty { padding: 110px 56px 120px; }
-.deck[data-w="1280"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1280"][data-medium="full"] .b-emptyTitle { font-size: 64px; }
+.deck[data-w="1280"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1280"][data-medium="full"] .b-emptyTitle { font-size: 64px; letter-spacing: var(--track-title); }
 .deck[data-w="1280"][data-medium="sheet"] .b-ended, .deck[data-w="1280"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1280"][data-medium="full"] .b-dayWrap { padding: 110px 56px 60px; }
-.deck[data-w="1280"][data-medium="sheet"] .b-dayNames, .deck[data-w="1280"][data-medium="full"] .b-dayNames { font-size: 96px; }
 .deck[data-w="1280"][data-medium="full"] .b-pressTitle { font-size: 48px; letter-spacing: var(--track-title); }
 .deck[data-w="1280"][data-medium="sheet"] .b-print { padding: 56px 64px 44px; }
-.deck[data-w="1280"][data-medium="sheet"] .b-print .b-title { font-size: 17px; }
+.deck[data-w="1280"][data-medium="sheet"] .b-print .b-title { font-size: 17px; letter-spacing: var(--track-body); }
 .deck[data-w="768"] .b-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .deck[data-w="768"] .b-bar .b-spacer { display: block; flex: 1 1 auto; }
 .deck[data-w="768"] .b-bar .b-barActs { display: flex; width: auto; gap: 10px; }
 .deck[data-w="768"] .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
 .deck[data-w="768"][data-medium="sheet"] .b-field, .deck[data-w="768"][data-medium="full"] .b-field { padding: 48px 56px 56px; }
 .deck[data-w="768"][data-medium="sheet"] .b-num, .deck[data-w="768"][data-medium="full"] .b-num { font-size: 148px; }
-.deck[data-w="768"][data-medium="sheet"] .b-when, .deck[data-w="768"][data-medium="full"] .b-when { font-size: 30px; }
+.deck[data-w="768"][data-medium="sheet"] .b-when, .deck[data-w="768"][data-medium="full"] .b-when { font-size: 30px; letter-spacing: var(--track-head); }
 .deck[data-w="768"][data-medium="sheet"] .b-measure, .deck[data-w="768"][data-medium="full"] .b-measure { padding-left: 124px; }
 .deck[data-w="768"][data-medium="sheet"] .b-measureHead, .deck[data-w="768"][data-medium="full"] .b-measureHead { width: 84px; }
 .deck[data-w="768"][data-medium="sheet"] .b-rail, .deck[data-w="768"][data-medium="full"] .b-rail { left: 100px; }
 .deck[data-w="768"][data-medium="sheet"] .b-item, .deck[data-w="768"][data-medium="full"] .b-item { left: 124px; }
+.deck[data-w="768"][data-medium="sheet"] .b-origin, .deck[data-w="768"][data-medium="full"] .b-origin { left: 124px; }
 .deck[data-w="768"][data-medium="sheet"] .b-away, .deck[data-w="768"][data-medium="full"] .b-away { left: -124px; width: 84px; font-size: 17px; }
 .deck[data-w="768"][data-medium="sheet"] .b-tick, .deck[data-w="768"][data-medium="full"] .b-tick { left: -27px; }
+.deck[data-w="768"][data-medium="sheet"] .b-origin::before, .deck[data-w="768"][data-medium="full"] .b-origin::before { left: -27px; }
 .deck[data-w="768"][data-medium="sheet"] .b-item[data-lead="true"] .b-tick, .deck[data-w="768"][data-medium="full"] .b-item[data-lead="true"] .b-tick { left: -28px; }
 .deck[data-w="768"][data-medium="sheet"] .b-item[data-anchor="true"]::before, .deck[data-w="768"][data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
-.deck[data-w="768"][data-medium="sheet"] .b-title, .deck[data-w="768"][data-medium="full"] .b-title { font-size: 24px; }
+.deck[data-w="768"][data-medium="sheet"] .b-title, .deck[data-w="768"][data-medium="full"] .b-title { font-size: 24px; letter-spacing: var(--track-head); }
 .deck[data-w="768"][data-medium="sheet"] .b-empty, .deck[data-w="768"][data-medium="full"] .b-empty { padding: 110px 56px 120px; }
-.deck[data-w="768"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="768"][data-medium="full"] .b-emptyTitle { font-size: 64px; }
+.deck[data-w="768"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="768"][data-medium="full"] .b-emptyTitle { font-size: 64px; letter-spacing: var(--track-title); }
 .deck[data-w="768"][data-medium="sheet"] .b-ended, .deck[data-w="768"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="768"][data-medium="sheet"] .b-dayWrap, .deck[data-w="768"][data-medium="full"] .b-dayWrap { padding: 110px 56px 60px; }
-.deck[data-w="768"][data-medium="sheet"] .b-dayNames, .deck[data-w="768"][data-medium="full"] .b-dayNames { font-size: 96px; }
 .deck[data-w="768"][data-medium="full"] .b-pressTitle { font-size: 48px; letter-spacing: var(--track-title); }
 .deck[data-w="768"][data-medium="sheet"] .b-print { padding: 56px 64px 44px; }
-.deck[data-w="768"][data-medium="sheet"] .b-print .b-title { font-size: 17px; }
+.deck[data-w="768"][data-medium="sheet"] .b-print .b-title { font-size: 17px; letter-spacing: var(--track-body); }
+.deck[data-w="768"][data-medium] .b-field[data-editor-open] { padding-bottom: var(--b-sheet, 30px); }
+.deck[data-w="768"][data-undo="true"] .b-undoHome .b-undo {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 4;
+    margin: 0;
+  }
+.deck[data-w="768"][data-undo="true"][data-editor-open] .b-edit { bottom: 76px; }
+.deck[data-w="390"][data-medium] .b-field[data-editor-open] { padding-bottom: var(--b-sheet, 30px); }
+.deck[data-w="390"][data-undo="true"] .b-undoHome .b-undo {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 4;
+    margin: 0;
+  }
+.deck[data-w="390"][data-undo="true"][data-editor-open] .b-edit { bottom: 76px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-two { grid-template-columns: 300px minmax(0, 1fr); gap: 48px; align-items: start; }
 .deck[data-w="1440"][data-medium="full"] .b-two { grid-template-columns: 360px minmax(0, 1fr); gap: 64px; align-items: start; }
 .deck[data-w="1440"][data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
@@ -1098,11 +1303,17 @@ body {
   /* One grammar per fact. The artifact says "Saturday 3 October" for a
      day and "3 Oct" for a column; it never mixes elapsed, deictic and
      absolute forms for the same fact on the same screen. */
+  /* A non-breaking space binds the day figure to its month, so the
+     ceremonial date can break after the weekday but never between the 3
+     and the October. Binding the WHOLE string overflows its column on a
+     phone and on the printed sheet, which is why only this one joint is
+     welded. parseDay normalises it back. */
+  var NB = " ";
   var fmt = {
-    long: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + " " + p.month; },
-    longYear: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + " " + p.month + " " + p.year; },
-    medium: function (iso) { var p = parts(iso); return p.day + " " + p.month; },
-    short: function (iso) { var p = parts(iso); return p.day + " " + p.monthShort; },
+    long: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + NB + p.month; },
+    longYear: function (iso) { var p = parts(iso); return p.weekday + " " + p.day + NB + p.month + NB + p.year; },
+    medium: function (iso) { var p = parts(iso); return p.day + NB + p.month; },
+    short: function (iso) { var p = parts(iso); return p.day + NB + p.monthShort; },
     numeral: function (iso) { return String(parts(iso).day); },
     monthShort: function (iso) { return parts(iso).monthShort; },
     /* "1 days" is the kind of thing that makes a person stop trusting a
@@ -1170,6 +1381,37 @@ body {
     parts: parts,
     days: days,
     daysTo: function (iso) { return days(TODAY, iso); },
+    /* The one parser. An owner told "it has moved to Thursday 10
+       September" should be able to type that, and the surface built to
+       remove arithmetic should not make them count days to say it. */
+    parseDay: function (text) {
+      if (!text) return null;
+      var clean = String(text).replace(/ /g, " ").trim().toLowerCase()
+        .replace(/^(sunday|monday|tuesday|wednesday|thursday|friday|saturday),?\s+/, "")
+        .replace(/(\d)(st|nd|rd|th)/g, "$1");
+      var iso = clean.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (iso) return clean;
+      var slash = clean.match(/^(\d{1,2})[\/.](\d{1,2})[\/.](\d{4})$/);
+      if (slash) {
+        return slash[3] + "-" + ("0" + slash[2]).slice(-2) + "-" + ("0" + slash[1]).slice(-2);
+      }
+      var words = clean.match(/^(\d{1,2})\s+([a-z]+)\s*(\d{4})?$/);
+      if (!words) return null;
+      var month = -1;
+      for (var i = 0; i < MONTHS.length; i++) {
+        if (MONTHS[i].toLowerCase().indexOf(words[2]) === 0 && words[2].length >= 3) month = i;
+      }
+      if (month < 0) return null;
+      var day = Number(words[1]);
+      if (day < 1 || day > 31) return null;
+      var year = words[3] ? Number(words[3]) : Number(TODAY.slice(0, 4));
+      var out = year + "-" + ("0" + (month + 1)).slice(-2) + "-" + ("0" + day).slice(-2);
+      /* No year given means the next one that has not gone yet. */
+      if (!words[3] && days(TODAY, out) < 0) {
+        out = (year + 1) + "-" + ("0" + (month + 1)).slice(-2) + "-" + ("0" + day).slice(-2);
+      }
+      return out;
+    },
     /* One place that does date arithmetic. Anything that needs "the date
        N days from here" asks for it rather than reaching for Date, so a
        moved milestone and its own label can never disagree. */
@@ -1468,34 +1710,39 @@ body {
    from the real dates, so the measure cannot flatter the plan: a
    fortnight is twice a week, on the screen, always.
 
-   Round 1 rebuilt everything an owner touches. The panel's verdict was
-   that at rest this was studio-grade and under the hand it was a five,
-   and it was right: the gesture wrote a pixel and a count and left the
-   date, the accessible name and the readout saying something else.
-   There is now exactly ONE writer of an item's position — setAway() —
-   and every fact about that item is derived from the date it produces.
+   Round 1 rebuilt the gesture: setAway() is the only writer of an
+   item's distance and every fact is derived from the one date it
+   produces. Round 2 finished the controls around it. The panel's
+   verdict was that the gesture felt like Linear and everything beside
+   it was a promise — a create verb that created nothing, a title field
+   that discarded what you typed, a delete with no way back that then
+   left the undo bar offering to reverse a row that no longer existed,
+   and a reversibility surface rendered a thousand pixels below the
+   button that filled it.
+
+   So there is now one history stack, every entry carries its own undo
+   closure, and nothing changes the plan without joining it.
    ═══════════════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
   var C = window.__TLCORE, F = C.F, h = C.h;
 
-  /* Pixels per day. The tightest real gap on this plan is seven days and
-     an item that wraps to two lines is 70px on a phone and 81px at desk
-     width, so the scale has to be at least 10 and 12 respectively or two
-     items can touch. 12 and 14 leave a hairline of air at the tightest
-     pair. The consequence is a long page, and that is the point: a plan
-     that is seventy-nine days long should take a while to scroll. */
-  /* The owner measure runs at eighteen. An owner row carries a third
-     line — the control that says what a guest sees — so it is a hundred
-     pixels tall against the guest row's seventy, and fourteen pixels a
-     day would let the tightest real pair touch before the owner had
-     touched anything. The scale is a page-size decision; the proportion
-     between one gap and the next is identical at every scale. */
-  var SCALE = { phone: 12, sheet: 14, full: 14, owner: 18, card: 12, print: 10 };
+  /* Pixels per day. The tightest real gap on this plan is seven days.
+     A guest row is 70px on a phone and 81px at desk width; an owner row
+     carries a third line — the control that says what a guest sees — so
+     it is 74px and 100px. Fourteen and eighteen leave air at the
+     tightest pair in each case. The scale is a page-size decision; the
+     proportion between one gap and the next is identical at every
+     scale. */
+  var SCALE = { phone: 12, sheet: 14, full: 14, card: 12, print: 10 };
+  var OWNER_SCALE = { narrow: 14, wide: 18 };
   var ROW = 92;
 
-  function daysFrom(clock, iso) { return F.days(clock, iso); }
+  function ownerScale() {
+    return window.innerWidth >= 701 ? OWNER_SCALE.wide : OWNER_SCALE.narrow;
+  }
 
+  function daysFrom(clock, iso) { return F.days(clock, iso); }
   function ahead(clock) {
     return F.live()
       .filter(function (m) { return m.date && daysFrom(clock, m.date) > 0; })
@@ -1503,19 +1750,19 @@ body {
   }
   /* Strictly behind. Anything dated exactly on the clock is happening,
      not happened, and on the wedding morning the difference is the whole
-     screen: the day itself was appearing in the keepsake list as the
-     last thing already done. */
+     screen. */
   function behind(clock) {
     return F.milestones.filter(function (m) { return !m.date || daysFrom(clock, m.date) < 0; });
+  }
+  function recordFor(id) {
+    return F.milestones.filter(function (m) { return m.id === id; })[0];
   }
 
   /* ── the horizon ──────────────────────────────────────────────── */
 
-  /* The empty run before the first thing is stated as a boundary, not as
-     a count. "The next 16 days" swallows the sixteenth day, which is the
-     day the menu tasting falls on, so the sentence was false by one on
-     the one surface whose whole claim is that time is measured honestly.
-     A boundary cannot go off by one. */
+  /* The empty run before the first thing is stated as a boundary, not a
+     count. "The next 16 days" swallows the day the menu tasting falls
+     on. A boundary cannot go off by one. */
   function gapSentence(nearestIso) {
     return "Nothing is planned until " + F.fmt.medium(nearestIso) + ".";
   }
@@ -1541,48 +1788,51 @@ body {
   /* ── the measure ──────────────────────────────────────────────── */
 
   function grabLabel(record, iso, away, hidden) {
-    return record.title + ", " + F.fmt.long(iso) + ", in " + F.fmt.dayCount(away)
-      + ". " + (hidden ? "Hidden from guests" : "Shown to guests") + ". Open to change it.";
+    return "Open " + record.title + ". " + F.fmt.long(iso) + ", in " + F.fmt.dayCount(away)
+      + ". " + (hidden ? "Hidden from guests." : "Shown to guests.");
   }
 
-  function recordFor(id) {
-    return F.milestones.filter(function (m) { return m.id === id; })[0];
+  function row(item, away, owner) {
+    return h("div.b-item", {
+      role: "listitem",
+      "data-anchor": item.date === F.project.primaryDate.date ? "true" : null,
+      "data-id": item.id,
+      "data-away": String(away),
+      "data-date": item.date,
+      "data-visibility": "shown",
+    }, [
+      h("span.b-away.num", { text: String(away) }),
+      /* The count column carries a bare figure under one header, which
+         is the right typography and leaves the unit unspoken. It is
+         spoken here instead, so the row reads as a sentence to anyone
+         not looking at the column. */
+      h("span.b-vh.b-unitSaid", { text: " days away," }),
+      h("span.b-tick", { "aria-hidden": "true" }),
+      h("div.b-copy", {}, [
+        h("p.b-title", { "data-clamp": "true", text: item.title }),
+        h("p.b-date", { text: F.fmt.weekdayShort(item.date) + " " + F.fmt.short(item.date) }),
+        owner ? h("button.b-grab", {
+          type: "button",
+          "aria-controls": "b-edit",
+          "aria-expanded": "false",
+          "aria-label": grabLabel(item, item.date, away, false),
+        }, [h("span.b-grabWord", { text: "Shown" })]) : null,
+      ]),
+    ]);
   }
 
   function measure(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
-    var px = SCALE[o.medium] || SCALE.phone;
+    var px = o.owner ? ownerScale() : (SCALE[o.medium] || SCALE.phone);
     var kids = [h("div.b-rail", { "aria-hidden": "true" })];
-
+    /* The top of the rail is today, and it says so. The instrument could
+       not be read on its own: the only anchor for "now" was in the other
+       column, four hundred pixels away. */
+    kids.push(h("p.b-origin", { "aria-hidden": "true", text: "Today, " + F.fmt.medium(clock) }));
     ahead(clock).forEach(function (item) {
-      var away = daysFrom(clock, item.date);
-      kids.push(h("div.b-item", {
-        role: "listitem",
-        "data-anchor": item.date === F.project.primaryDate.date ? "true" : null,
-        "data-id": item.id,
-        "data-away": String(away),
-        "data-date": item.date,
-        "data-visibility": "shown",
-      }, [
-        h("span.b-away.num", { text: String(away) }),
-        /* The count column carries a bare figure under one header, which
-           is the right typography and leaves the unit unspoken. It is
-           spoken here instead, so the row reads as a sentence to anyone
-           not looking at the column. */
-        h("span.b-vh", { text: " days away," }),
-        h("span.b-tick", { "aria-hidden": "true" }),
-        h("div.b-copy", {}, [
-          h("p.b-title", { "data-clamp": "true", text: item.title }),
-          h("p.b-date", { text: F.fmt.weekdayShort(item.date) + " " + F.fmt.short(item.date) }),
-          o.owner ? h("button.b-grab", {
-            type: "button",
-            "aria-label": grabLabel(item, item.date, away, false),
-          }, [h("span.b-grabWord", { text: "Shown" })]) : null,
-        ]),
-      ]));
+      kids.push(row(item, daysFrom(clock, item.date), o.owner));
     });
-
     return h("div", { style: "line-height:1.5" }, [
       h("h2.b-measureHead", { text: "days away" }),
       h("div.b-measure", {
@@ -1599,11 +1849,11 @@ body {
      node — moving the subtree that holds the focused stepper drops focus
      to the body, and the gesture dies for a keyboard user.
 
-     Two items can legitimately land near each other once an owner starts
-     moving things. The tick and the count stay on the true pixel,
-     always, because they are the truth; only the words are pushed clear.
-     So the measure can never restate one item's distance as another's,
-     and it never quietly fudges a close pair. */
+     The tick and the count stay on the true pixel, always, because they
+     are the truth; only the words are pushed clear. Where two moments
+     land on the SAME day they become one mark with two rows under it,
+     done by attribute rather than by structure, so nothing is
+     reparented and every row keeps its own name. */
   function place(measureEl) {
     if (!measureEl) return;
     var px = Number(measureEl.getAttribute("data-px")) || 14;
@@ -1614,55 +1864,73 @@ body {
       return Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away"));
     });
 
-    var bottom = -Infinity, lastBottom = 0;
+    var bottom = -Infinity, lastBottom = 0, run = [];
+    function closeRun() {
+      run.forEach(function (el, i) {
+        el.setAttribute("data-stack", run.length === 1 ? "" : (i === 0 ? "lead" : "follow"));
+        var said = el.querySelector(".b-unitSaid");
+        if (said) {
+          said.textContent = run.length === 1
+            ? " days away,"
+            : " days away, " + (i === 0 ? "first" : "then") + " of "
+              + run.length + " moments on this day,";
+        }
+      });
+      run = [];
+    }
+
     items.forEach(function (el, index) {
       var away = Number(el.getAttribute("data-away"));
       var top = away * px;
       el.style.top = top + "px";
       el.removeAttribute("data-lead");
 
+      if (run.length && Number(run[0].getAttribute("data-away")) !== away) closeRun();
+      run.push(el);
+
       var copy = el.querySelector(".b-copy");
       copy.style.setProperty("--push", "0px");
       var height = copy.getBoundingClientRect().height;
+      var gap = el.getAttribute("data-stack") === "follow" ? 1 : 10;
       var push = bottom > top ? Math.ceil(bottom - top) : 0;
       copy.style.setProperty("--push", push + "px");
       el.setAttribute("data-crowded", push > 0 ? "true" : "false");
-      bottom = top + push + height + 10;
+      bottom = top + push + height + gap;
       lastBottom = bottom;
       if (index === 0) el.setAttribute("data-lead", "true");
     });
+    closeRun();
 
-    var note = measureEl.closest(".b-field");
-    note = note && note.querySelector(".b-gapNote");
+    var field = measureEl.closest(".b-field");
+    var note = field && field.querySelector(".b-gapNote");
     if (note && items.length) note.textContent = gapSentence(items[0].getAttribute("data-date"));
     /* The measure is at least the horizon, and taller if the words at
        the foot of it need the room. A rail that ends above its own last
-       row is the undesigned edge the panel looks for first. */
-    var needed = Math.ceil(lastBottom + 24);
-    measureEl.style.height = Math.max(horizonDays * px + ROW, needed) + "px";
+       row is the undesigned edge a panel looks for first. */
+    measureEl.style.height = Math.max(horizonDays * px + ROW, Math.ceil(lastBottom + 24)) + "px";
   }
 
   /* ── behind you ───────────────────────────────────────────────── */
 
-  /* Two sentences, split by who is reading. The owner is the person
-     doing the work and a tally is the right thing to hand them. A guest
-     is not, and "2 done" to somebody who has never used a tracker, with
-     a cancellation alluded to and never named, reads as withheld bad
-     news. The received surfaces name the things instead. */
+  /* Two sentences, split by who is reading, and the rows behind a
+     disclosure the reader can actually open. The lock says the past is
+     stated in a sentence and listed in full only if asked for; the
+     asking was the half that had never been built, so the rows were in
+     the DOM and reachable by nobody. */
   function behindBlock(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
-    var past = behind(clock);
-    /* "Done" is everything behind the clock that is still going ahead,
-       not everything the fixture happens to label covered. Read at the
-       day-of clock the two are very different numbers, and the label is
-       the one that would have been wrong. */
+    var dayOf = clock === F.project.primaryDate.date;
+    var past = behind(clock).filter(function (m) { return dayOf ? m.state !== "cancelled" : true; });
     var done = past.filter(function (m) { return m.state !== "cancelled"; });
     var dropped = past.filter(function (m) { return m.state === "cancelled"; });
     var last = done[done.length - 1];
+    if (!past.length) return null;
 
     var note;
-    if (o.owner) {
+    if (dayOf) {
+      note = last ? last.title + ", " + F.fmt.medium(last.date) + "." : "";
+    } else if (o.owner) {
       note = done.length + " done, the last of them " + F.fmt.medium(last.date) + "."
         + (dropped.length ? " One thing is not going ahead." : "");
     } else {
@@ -1673,10 +1941,7 @@ body {
           : "");
     }
 
-    return h("section.b-behind", {}, [
-      h("h2.b-behindLabel", { text: "Behind you" }),
-      h("p.b-behindNote", { text: note.trim() }),
-    ].concat(past.map(function (item) {
+    var rows = past.map(function (item) {
       return h("div.b-behindRow", {}, [
         h("span.b-behindDate.num", {
           text: item.date ? F.fmt.weekdayShort(item.date) + " " + F.fmt.short(item.date) : "No date",
@@ -1686,24 +1951,41 @@ body {
           text: item.title,
         }),
       ]);
-    })));
+    });
+
+    return h("section.b-behind", {}, [
+      h("details.b-behindDetails", {}, [
+        h("summary.b-behindSummary", {}, [
+          h("h2.b-behindLabel", { text: dayOf ? "How you got here" : "Behind you" }),
+          h("span.b-behindCount.num", { text: past.length + " moments" }),
+        ]),
+        h("div.b-behindRows", {}, rows),
+      ]),
+      /* The sentence closes the block. It used to open it, so on the
+         wedding morning the last thing a guest read before the footer
+         was a cancelled hotel search. */
+      h("p.b-behindNote", { text: note.trim() }),
+    ]);
   }
 
-  function foot() {
+  function foot(opts) {
+    var o = opts || {};
     return h("footer.b-foot", {}, [
       h("span", { text: "Kept by " + F.workspace.owner }),
-      h("span", { text: "Updated " + F.updatedLabel }),
-      h("span", { text: "Signal Timeline" }),
+      /* No stamp where there is nothing to stamp: a project that has
+         never held anything, and the morning itself, where an
+         eleven-week-old timestamp reads as neglect. */
+      o.stamp === false ? null : h("span", { text: "Updated " + F.updatedLabel }),
+      h("span", { text: o.link || "Signal Timeline" }),
     ]);
   }
 
   /* A labelled section is a region landmark. It travels better than
-     <main> too: when this language moves to Home, Notes and Tasks it
-     will sit inside an app shell that already owns the document's one
-     main element. */
-  function field(kids, extra) {
+     <main>: when this language moves to Home, Notes and Tasks it will
+     sit inside an app shell that already owns the document's one main. */
+  function field(kids, extra, projectName) {
     return h("section.b-field" + (extra || ""), {
-      "aria-label": "The plan for " + F.project.name,
+      "aria-label": "The plan for " + (projectName || F.project.name),
     }, kids);
   }
 
@@ -1712,10 +1994,7 @@ body {
     if (attrs) for (var k in attrs) a[k] = attrs[k];
     return h("button.b-act", a);
   }
-
-  /* Anything not built is inert text, never a focusable promise. The
-     panel counted fifteen named, focus-ringed, hover-styled controls
-     advertising verbs the direction did not have. */
+  /* Anything not built is inert text, never a focusable promise. */
   function inert(label) { return h("span.b-inert", { text: label }); }
 
   function bar(projectName, actions) {
@@ -1729,9 +2008,11 @@ body {
 
   /* ── reversibility ────────────────────────────────────────────── */
 
-  /* One surface, one place, and empty until it has something true to
-     say. A live region that announces a change on arrival is announcing
-     a change that did not happen. */
+  /* One surface, one place, silent until it has something true to say,
+     and every entry carries the closure that reverses it. Round 2 found
+     a stack that only knew how to move a date: a delete left a live
+     offer to restore a row that no longer existed, and pressing it
+     restored nothing and cleared itself as though it had worked. */
   var history = [];
 
   function undoBar() {
@@ -1748,26 +2029,39 @@ body {
     var text = bar.querySelector(".b-undoText");
     var button = bar.querySelector(".b-undoAct");
     var top = history[history.length - 1];
+    text.textContent = "";
     if (!top) {
       bar.setAttribute("data-empty", "true");
-      text.textContent = "";
       button.disabled = true;
-      /* The bar is display:none while it has nothing to say, and a
-         control inside a hidden box that can still take focus strands a
-         keyboard user in a place they cannot see. */
       button.setAttribute("tabindex", "-1");
+      root.removeAttribute("data-undo");
       return;
     }
-    var moved = Math.abs(top.to - top.from);
     bar.setAttribute("data-empty", "false");
-    text.textContent = "";
-    text.appendChild(document.createTextNode("Last change: " + top.title + " moved "));
-    text.appendChild(h("span.num", { text: String(moved) }));
-    text.appendChild(document.createTextNode(
-      (moved === 1 ? " day " : " days ") + (top.to < top.from ? "closer." : "later."),
-    ));
+    top.say.forEach(function (part) {
+      text.appendChild(typeof part === "number"
+        ? h("span.num", { text: String(part) })
+        : document.createTextNode(part));
+    });
     button.disabled = false;
     button.removeAttribute("tabindex");
+    root.setAttribute("data-undo", "true");
+  }
+
+  function remember(root, entry) {
+    history.push(entry);
+    paintUndo(root);
+  }
+
+  function undo(root) {
+    var top = history[history.length - 1];
+    if (!top) return;
+    var restored = top.undo();
+    /* Peek, then pop. Popping first is how pressing Undo after a delete
+       used to restore nothing and empty the bar as though it had. */
+    if (restored !== false) history.pop();
+    paintUndo(root);
+    if (top.focus) top.focus();
   }
 
   /* ── the primary gesture ──────────────────────────────────────── */
@@ -1775,7 +2069,7 @@ body {
   /* setAway is the ONLY writer of an item's distance. Every fact about
      the item is derived from the one date it computes, in the same
      frame, so the count, the date line, the accessible name and the
-     readout cannot drift apart the way they did in round 1. */
+     readout cannot drift apart. */
   function setAway(root, item, next) {
     var measureEl = item.parentElement;
     var clock = measureEl.getAttribute("data-clock") || F.today;
@@ -1798,17 +2092,32 @@ body {
     var steps = root.querySelectorAll(".b-step");
     for (var i = 0; i < steps.length; i++) {
       var delta = Number(steps[i].getAttribute("data-delta"));
-      var blocked = delta > 0 ? away >= ceiling : away <= 1;
-      steps[i].setAttribute("aria-disabled", blocked ? "true" : "false");
+      steps[i].setAttribute("aria-disabled",
+        (delta > 0 ? away >= ceiling : away <= 1) ? "true" : "false");
     }
     var ceilingNote = root.querySelector(".b-ceiling");
     if (ceilingNote) {
       ceilingNote.textContent = away >= ceiling
-        ? "The day itself is in " + F.fmt.dayCount(ceiling) + "."
-        : "";
+        ? "This is as far as it goes. " + F.project.primaryDate.label + " is the last day."
+        : (away <= 1 ? "This is as near as it goes. Tomorrow is the soonest." : "");
     }
     place(measureEl);
+    keepInBand(root, item);
     return away;
+  }
+
+  /* The move is the one animated thing in the product, and below the
+     gutter width it was happening under a sheet that covered the row.
+     Gated on the sheet, not on a width: where the editor is the static
+     rail the steppers cannot move under the hand, so the scroll path is
+     unreachable there and the page keeps its place exactly as before. */
+  function keepInBand(root, item) {
+    var panel = root.querySelector(".b-edit");
+    if (!panel || getComputedStyle(panel).position !== "fixed") return;
+    var free = panel.getBoundingClientRect().top - 16;
+    var box = item.querySelector(".b-copy").getBoundingClientRect();
+    if (box.top >= 16 && box.bottom <= free) return;
+    window.scrollBy(0, Math.round(box.top - Math.max(16, (free - box.height) / 2)));
   }
 
   function setVisibility(item, hidden) {
@@ -1826,6 +2135,24 @@ body {
     }
   }
 
+  function setTitle(item, value) {
+    var record = recordFor(item.getAttribute("data-id"));
+    var shown = value.trim() || "Untitled moment";
+    record.title = value.trim();
+    var title = item.querySelector(".b-title");
+    title.setAttribute("data-full", shown);
+    title.textContent = shown;
+    var grab = item.querySelector(".b-grab");
+    if (grab) {
+      grab.setAttribute("aria-label", grabLabel(
+        { title: shown },
+        item.getAttribute("data-date"),
+        Number(item.getAttribute("data-away")),
+        item.getAttribute("data-visibility") === "hidden",
+      ));
+    }
+  }
+
   /* ── the editor ───────────────────────────────────────────────── */
 
   function editor(root, item) {
@@ -1833,6 +2160,7 @@ body {
     var away = Number(item.getAttribute("data-away"));
     var iso = item.getAttribute("data-date");
     var hidden = item.getAttribute("data-visibility") === "hidden";
+    var titleAtOpen = record.title;
 
     function step(delta, label) {
       return h("button.b-step", {
@@ -1846,10 +2174,15 @@ body {
             if (event.currentTarget.getAttribute("aria-disabled") === "true") return;
             var from = Number(item.getAttribute("data-away"));
             var to = setAway(root, item, from + delta);
-            if (to !== from) {
-              history.push({ id: record.id, title: record.title, from: from, to: to });
-              paintUndo(root);
-            }
+            if (to === from) return;
+            var moved = Math.abs(to - from);
+            remember(root, {
+              id: record.id,
+              say: [record.title + " moved ", moved, moved === 1 ? " day " : " days ",
+                to < from ? "earlier." : "later."],
+              undo: function () { setAway(root, item, from); },
+              focus: function () { event.currentTarget.focus(); },
+            });
           },
         },
       });
@@ -1863,37 +2196,88 @@ body {
         on: {
           click: function (event) {
             var group = event.currentTarget.parentElement.querySelectorAll("button");
+            var was = item.getAttribute("data-visibility") === "hidden";
+            if (was === wantHidden) return;
             for (var i = 0; i < group.length; i++) {
               group[i].setAttribute("aria-pressed", String(group[i] === event.currentTarget));
             }
             setVisibility(item, wantHidden);
+            remember(root, {
+              id: record.id,
+              say: [record.title + (wantHidden ? " is now hidden from guests." : " is now shown to guests.")],
+              undo: function () {
+                setVisibility(item, was);
+                for (var j = 0; j < group.length; j++) {
+                  group[j].setAttribute("aria-pressed", String(group[j].textContent === (was ? "Hidden" : "Shown")));
+                }
+              },
+            });
           },
         },
       });
     }
 
-    return h("div.b-edit", {}, [
+    return h("div.b-edit#b-edit", {
+      role: "group",
+      tabindex: "-1",
+      "aria-label": "Editing " + record.title,
+    }, [
       h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
         h("label.b-label", { for: "b-edit-title", text: "What it is" }),
-        h("input.b-input", { id: "b-edit-title", type: "text", value: record.title }),
+        h("input.b-input", {
+          id: "b-edit-title", type: "text", value: record.title,
+          placeholder: "What is happening",
+          on: {
+            input: function (event) { setTitle(item, event.target.value); },
+            change: function (event) {
+              var to = event.target.value.trim();
+              if (to === titleAtOpen) return;
+              var from = titleAtOpen;
+              titleAtOpen = to;
+              remember(root, {
+                id: record.id,
+                say: ["Renamed to " + (to || "Untitled moment") + "."],
+                undo: function () {
+                  setTitle(item, from);
+                  event.target.value = from;
+                  titleAtOpen = from;
+                },
+              });
+              C.settle();
+            },
+          },
+        }),
       ]),
       h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
-        h("span.b-label", { text: "When" }),
+        h("label.b-label", { for: "b-edit-date", text: "When" }),
+        /* A planner told "it has moved to Thursday 10 September" should
+           not have to work out that this is nineteen days from Saturday
+           22 August on the one surface built to remove arithmetic. */
+        h("input.b-input", {
+          id: "b-edit-date", type: "text", "data-mono": "true",
+          value: F.fmt.medium(iso) + " " + F.fmt.year(iso),
+          "aria-describedby": "b-edit-when-hint",
+          on: {
+            change: function (event) { commitDate(root, item, event.target); },
+            keydown: function (event) {
+              if (event.key === "Enter") { event.preventDefault(); commitDate(root, item, event.target); }
+            },
+          },
+        }),
         h("div.b-stepRow", {}, [
           h("div.b-stepBtns", {}, [
             step(-7, "Move a week earlier"), step(-1, "Move a day earlier"),
             step(1, "Move a day later"), step(7, "Move a week later"),
           ]),
-          /* Its own line, and a fixed measure. When this readout lived
-             beside the buttons it collapsed from 347px to 99px on the
-             first press and threw the button you were about to press
-             again 209px out from under the cursor. */
+          /* Its own line, at a reserved height. Beside the buttons it
+             collapsed on the first press and threw the button you were
+             about to press again two hundred pixels sideways. */
           h("span.b-stepRead.num", {
             role: "status",
             text: F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away),
           }),
         ]),
-        h("p.b-ceiling", { text: "" }),
+        h("p.b-ceiling#b-edit-when-hint", { text: "" }),
       ]),
       h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
         h("span.b-label", { id: "b-vis", text: "What guests see" }),
@@ -1901,55 +2285,103 @@ body {
           visButton("Shown", false), visButton("Hidden", true),
         ]),
       ]),
-      h("div.b-editActs", {}, [
-        act("Done", true, { "data-act": "done" }),
-        /* "Take it off the plan" sat thirteen pixels under a toggle
-           reading "On the plan", so the same three words meant both
-           "a guest can see this" and "this ceases to exist". */
+      h("div.b-editActs", {}, [act("Done", true, { "data-act": "done" })]),
+      /* On its own line, after a rule. It used to sit ten pixels to the
+         right of the safe action at two and a half times its width. */
+      h("div.b-editDanger", {}, [
         act("Delete this moment", false, { "data-act": "delete" }),
       ]),
     ]);
   }
 
-  function closeEditor(root, focusBack) {
-    var open = root.querySelector('.b-item[data-editing="true"]');
-    if (!open) return;
-    var node = root.querySelector(".b-edit");
-    if (node) node.remove();
-    open.removeAttribute("data-editing");
-    root.removeAttribute("data-editor-open");
-    place(root.querySelector(".b-measure"));
-    if (focusBack) {
-      var grab = open.querySelector(".b-grab");
-      if (grab) grab.focus();
+  function commitDate(root, item, input) {
+    var measureEl = item.parentElement;
+    var clock = measureEl.getAttribute("data-clock") || F.today;
+    var ceiling = daysFrom(clock, F.project.primaryDate.date);
+    var iso = F.parseDay(input.value);
+    var hint = root.querySelector(".b-ceiling");
+    function refuse(message) {
+      input.setAttribute("aria-invalid", "true");
+      if (hint) hint.textContent = message;
+    }
+    if (!iso) return refuse("That is not a date. Try 3 October 2026.");
+    var away = daysFrom(clock, iso);
+    if (away < 1) return refuse("That day has gone. Pick one still ahead.");
+    if (away > ceiling) {
+      return refuse("This is as far as it goes. " + F.project.primaryDate.label + " is the last day.");
+    }
+    input.setAttribute("aria-invalid", "false");
+    if (hint) hint.textContent = "";
+    var record = recordFor(item.getAttribute("data-id"));
+    var from = Number(item.getAttribute("data-away"));
+    var to = setAway(root, item, away);
+    input.value = F.fmt.medium(F.plusDays(clock, to)) + " " + F.fmt.year(F.plusDays(clock, to));
+    if (to === from) return;
+    var moved = Math.abs(to - from);
+    remember(root, {
+      id: record.id,
+      say: [record.title + " moved ", moved, moved === 1 ? " day " : " days ",
+        to < from ? "earlier." : "later."],
+      undo: function () {
+        setAway(root, item, from);
+        input.value = F.fmt.medium(F.plusDays(clock, from)) + " " + F.fmt.year(F.plusDays(clock, from));
+      },
+    });
+  }
+
+  function moveUndoBar(root, into) {
+    var bar = root.querySelector(".b-undo");
+    if (!bar) return;
+    if (into) into.insertBefore(bar, into.firstChild);
+    else {
+      var host = root.querySelector(".b-undoHome") || root;
+      host.appendChild(bar);
     }
   }
 
-  /* The panel is appended to the MEASURE, not to the item, and pinned at
-     the height the item had when it was opened. Hung off the item it
-     travelled ninety-eight pixels on the first press and took the button
-     you were about to press again with it. The thing you are moving
-     moves; the thing you are pressing does not. */
+  function closeEditor(root, focusBack) {
+    var open = root.querySelector('.b-item[data-editing="true"]');
+    var node = root.querySelector(".b-edit");
+    /* The bar comes home BEFORE the panel is removed, or the one
+       reversibility surface is destroyed with it and paintUndo has
+       nothing to find for the rest of the mount. */
+    moveUndoBar(root, null);
+    if (node) node.remove();
+    root.removeAttribute("data-editor-open");
+    root.style.removeProperty("--b-sheet");
+    if (!open) return;
+    open.removeAttribute("data-editing");
+    var grab = open.querySelector(".b-grab");
+    if (grab) grab.setAttribute("aria-expanded", "false");
+    place(root.querySelector(".b-measure"));
+    if (focusBack && grab) grab.focus();
+  }
+
   function openEditor(root, item) {
     if (item.getAttribute("data-editing") === "true") return;
     closeEditor(root, false);
     var node = editor(root, item);
     (root.querySelector(".b-editHost") || item.parentElement).appendChild(node);
+    moveUndoBar(root, node);
     item.setAttribute("data-editing", "true");
     root.setAttribute("data-editor-open", "true");
+    var grab = item.querySelector(".b-grab");
+    if (grab) grab.setAttribute("aria-expanded", "true");
     place(root.querySelector(".b-measure"));
+    /* A fixed sheet stands outside layout, so the column it covers has
+       to be given the room back or the last rows are unreachable. */
+    if (getComputedStyle(node).position === "fixed") {
+      root.style.setProperty("--b-sheet", (node.offsetHeight + 24) + "px");
+    }
+    keepInBand(root, item);
+    node.focus();
   }
 
-  function undo(root) {
-    var last = history.pop();
-    if (!last) return;
-    var item = root.querySelector('.b-item[data-id="' + last.id + '"]');
-    if (item) {
-      setAway(root, item, last.from);
-      var back = root.querySelector('.b-step[data-delta="' + (last.to < last.from ? "-7" : "7") + '"]');
-      if (back) back.focus();
-    }
-    paintUndo(root);
+  function focusAfterRemoval(root, next) {
+    var target = (next && next.isConnected && next.querySelector(".b-grab"))
+      || root.querySelector(".b-item .b-grab")
+      || root.querySelector('[data-act="add"]');
+    if (target) target.focus();
   }
 
   function wireOwner(root, opts) {
@@ -1963,24 +2395,79 @@ body {
       var name = action.getAttribute("data-act");
       if (name === "done") { closeEditor(root, true); return; }
       if (name === "delete") {
-        /* The editor is a sibling of the rows now, not a child of one,
-           so the row it belongs to has to be named rather than walked
-           up to. */
         var item = root.querySelector('.b-item[data-editing="true"]');
         if (!item) return;
         var measureEl = item.parentElement;
+        var record = recordFor(item.getAttribute("data-id"));
+        var next = item.nextElementSibling;
         closeEditor(root, false);
         item.remove();
         place(measureEl);
+        focusAfterRemoval(root, next);
+        /* The live node is kept, not its markup: setAway writes the
+           owner's edits to the DOM, so rebuilding from the record would
+           restore a moment they never had. */
+        remember(root, {
+          id: record.id,
+          say: [record.title + " was removed."],
+          undo: function () {
+            measureEl.insertBefore(item, next && next.isConnected ? next : null);
+            place(measureEl);
+            var back = item.querySelector(".b-grab");
+            if (back) back.focus();
+          },
+        });
         return;
       }
       if (name === "add") {
-        var first = root.querySelector(".b-item");
-        if (first) openEditor(root, first);
+        var host = root.querySelector(".b-measure");
+        var clock = host.getAttribute("data-clock") || F.today;
+        var first = ahead(clock)[0];
+        var away = Math.max(1, (first ? daysFrom(clock, first.date) : 8) - 7);
+        var fresh = {
+          id: "moment-" + (F.milestones.length + 1),
+          title: "",
+          date: F.plusDays(clock, away),
+          state: "next",
+        };
+        F.milestones.push(fresh);
+        var node = row(fresh, away, true);
+        node.querySelector(".b-title").textContent = "Untitled moment";
+        host.insertBefore(node, host.querySelector(".b-item"));
+        place(host);
+        openEditor(root, node);
+        var input = root.querySelector("#b-edit-title");
+        if (input) { input.value = ""; input.focus(); }
+        remember(root, {
+          id: fresh.id,
+          say: ["A moment was added."],
+          undo: function () {
+            closeEditor(root, false);
+            node.remove();
+            F.milestones.splice(F.milestones.indexOf(fresh), 1);
+            place(host);
+          },
+        });
         return;
       }
-      if (name === "preview") { C.rootEl().setAttribute("data-state", "desk"); C.mount(); return; }
-      if (name === "publish") { C.rootEl().setAttribute("data-state", "publish"); C.mount(); }
+      if (name === "copy") {
+        var live = root.querySelector(".b-live");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(F.shareUrlFull).then(function () {
+            action.textContent = "Copied";
+            if (live) live.textContent = "Link copied.";
+            setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
+          }, function () {
+            if (live) live.textContent = "Copy did not work. Select the link and copy it by hand.";
+          });
+        } else if (live) {
+          live.textContent = "Copy did not work. Select the link and copy it by hand.";
+        }
+        return;
+      }
+      if (name === "preview") { cameFromOwner = true; go("desk"); return; }
+      if (name === "publish") { cameFromOwner = true; go("publish"); return; }
+      if (name === "owner") { cameFromOwner = false; go("owner-flight"); }
     });
 
     root.addEventListener("keydown", function (event) {
@@ -1989,26 +2476,44 @@ body {
       if (grab && (event.key === "Enter" || event.key === " ")) {
         event.preventDefault();
         openEditor(root, grab.closest(".b-item"));
-        return;
       }
-      /* Ctrl+Z is printed on the reversibility bar, so it exists. It
-         stays out of the way of native undo inside a text field, which
-         is a different promise the browser already keeps. */
-      var key = (event.key || "").toLowerCase();
-      if (key !== "z" || !(event.ctrlKey || event.metaKey) || event.shiftKey) return;
-      var el = document.activeElement;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
-      event.preventDefault();
-      undo(root);
     });
+
+    /* On document, not on the field: after a delete used to drop focus
+       to the body, a root-bound listener meant the advertised key was
+       dead for the rest of the session. */
+    if (!wireOwner.keys) {
+      wireOwner.keys = true;
+      document.addEventListener("keydown", function (event) {
+        var key = (event.key || "").toLowerCase();
+        if (key !== "z" || !(event.ctrlKey || event.metaKey) || event.shiftKey) return;
+        var el = document.activeElement;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+        var live = document.querySelector(".b-undo");
+        if (!live) return;
+        event.preventDefault();
+        undo(live.closest(".b-field") || document.body);
+      });
+    }
 
     var undoAct = root.querySelector(".b-undoAct");
     if (undoAct) undoAct.addEventListener("click", function () { undo(root); });
 
+    /* Deferred to after the mount: getComputedStyle on a node that is
+       not in the document yet reports static for everything, so the
+       sheet would never know it was a sheet and would reserve nothing. */
     if (o.open) {
-      var target = root.querySelector('.b-item[data-id="' + o.open + '"]');
-      if (target) openEditor(root, target);
+      requestAnimationFrame(function () {
+        var target = root.querySelector('.b-item[data-id="' + o.open + '"]');
+        if (target) openEditor(root, target);
+      });
     }
+  }
+
+  var cameFromOwner = false;
+  function go(state) {
+    C.rootEl().setAttribute("data-state", state);
+    C.mount();
   }
 
   /* ── the states ───────────────────────────────────────────────── */
@@ -2023,18 +2528,14 @@ body {
         act("Publish", true, { "data-act": "publish" }),
       ]),
       h("div.b-two", {}, [
-        /* The editor takes the rail, beside the plan. Reserving a gutter
-           inside the measure column starved the titles down to 144px at
-           1440, and hanging the panel off the item took the button you
-           were pressing with it. The rail is already there, it is
-           sticky, and it costs the measure nothing. */
-        h("div.b-stick", { style: "line-height:1.5" }, [horizon({}), h("div.b-editHost")]),
+        h("div.b-stick", { style: "line-height:1.5" }, [
+          horizon({}), h("div.b-editHost"), h("div.b-undoHome", {}, [undoBar()]),
+        ]),
         h("div", { style: "line-height:1.5" }, [
-          measure({ owner: true, medium: "owner" }), behindBlock({ owner: true }),
+          measure({ owner: true }), behindBlock({ owner: true }),
         ]),
       ]),
-      undoBar(),
-      foot(),
+      foot({}),
     ]);
     wireOwner(node, opts || {});
     return node;
@@ -2042,24 +2543,38 @@ body {
 
   states.phone = function () {
     return h("div.tl-device", {}, [
-      field([horizon({}), measure({ medium: "phone" }), behindBlock({}), foot()]),
+      field([horizon({}), measure({ medium: "phone" }), behindBlock({}), foot({})]),
     ]);
   };
 
   states.desk = function () {
     /* At desk width the horizon holds the left and stops scrolling, and
        the approach runs down the right. Seeing both at once is the one
-       thing a phone cannot give the reader, so it is the only thing this
-       state does differently. */
-    return h("div.tl-paperEdge", { style: "border-color:var(--fore-16)" }, [
+       thing a phone cannot give the reader. */
+    var artifact = h("div.tl-paperEdge", { style: "border-color:var(--fore-16)" }, [
       field([
         h("div.b-two", {}, [
           h("div.b-stick", { style: "line-height:1.5" }, [horizon({})]),
           h("div", { style: "line-height:1.5" }, [measure({ medium: "full" }), behindBlock({})]),
         ]),
-        foot(),
+        foot({}),
       ]),
     ]);
+    if (!cameFromOwner) return artifact;
+    /* The way back lives OUTSIDE the audience artifact, and only when
+       the owner arrived here by pressing Preview. Loading this state
+       directly is byte-identical to what a guest gets. */
+    var node = h("div", {}, [
+      h("div.b-previewStrip", {}, [
+        h("span.b-where", { text: "Preview" }),
+        act("Back to the plan", false, { "data-act": "owner" }),
+      ]),
+      artifact,
+    ]);
+    node.addEventListener("click", function (event) {
+      if (event.target.closest('[data-act="owner"]')) { cameFromOwner = false; go("owner-flight"); }
+    });
+    return node;
   };
 
   states["owner-flight"] = function () { return ownerSurface({}); };
@@ -2070,8 +2585,6 @@ body {
   states["owner-empty"] = function () {
     var sibling = F.siblings[1];      /* Aisling & Tom — real, and genuinely empty */
     var node = field([
-      /* No Preview on a project with nothing to preview. An aria-disabled
-         control the owner cannot use is worse than an absent one. */
       bar(sibling.name, [inert("Nothing to preview yet")]),
       h("div.b-empty", {}, [
         h("h1.b-who", { text: sibling.name }),
@@ -2081,29 +2594,27 @@ body {
           h("label.b-label", { for: "b-empty-date", text: "The day" }),
           h("input.b-input", {
             id: "b-empty-date", type: "text", "data-mono": "true",
-            placeholder: "3 October 2026", style: "max-width:240px",
-            "aria-describedby": "b-empty-hint",
+            style: "max-width:240px", "aria-describedby": "b-empty-hint",
           }),
           act("Set the day", true, { "data-act": "setday" }),
         ]),
-        h("p.b-hint", { id: "b-empty-hint", role: "status", text: "" }),
+        /* The format lives in a line that survives typing, not in a
+           placeholder that vanishes at the first keystroke. */
+        h("p.b-hint#b-empty-hint", { role: "status", text: "For example, 3 October 2026." }),
       ]),
-      foot(),
-    ]);
-    /* The one form in the direction had no failure path at all: pressing
-       the button on an empty field changed nothing, said nothing, and
-       moved nothing. */
+      foot({ stamp: false }),
+    ], "", sibling.name);
     node.addEventListener("click", function (event) {
       if (!event.target.closest('[data-act="setday"]')) return;
       var input = node.querySelector("#b-empty-date");
       var hint = node.querySelector("#b-empty-hint");
-      if (input.value.trim()) {
+      if (F.parseDay(input.value)) {
         input.setAttribute("aria-invalid", "false");
-        hint.textContent = "";
+        hint.textContent = "The day is set. Moments come next.";
         return;
       }
       input.setAttribute("aria-invalid", "true");
-      hint.textContent = "Pick the date of the day first.";
+      hint.textContent = "Type the day first. For example, 3 October 2026.";
       input.focus();
     });
     return node;
@@ -2126,25 +2637,49 @@ body {
   }
 
   states.publish = function () {
-    return field([
+    var node = field([
+      bar(F.project.name, [act("Back to the plan", false, { "data-act": "owner" })]),
       h("div.b-press", {}, [
         h("div", { style: "line-height:1.5" }, [
           h("p.b-who", { text: "What lands in the message" }),
           h("div", { style: "margin-top:14px;line-height:1.5" }, [card()]),
         ]),
         h("div", { style: "line-height:1.5" }, [
-          h("p.b-who", { text: "The moment it becomes theirs" }),
+          h("p.b-who", { text: "The link" }),
           h("h2.b-pressTitle", { text: "Send it to " + F.project.name + "." }),
           h("p.b-pressBody", {
-            text: "This is what lands in the message. It carries the day, the distance "
-              + "and the plan, and nothing from your workspace: no notes, no suppliers, no prices.",
+            text: "It carries the day, the distance and the plan, and nothing from "
+              + "your workspace: no notes, no suppliers, no prices.",
           }),
           h("div.b-linkRow", {}, [h("span", { text: F.shareUrl })]),
-          h("div.b-barActs", {}, [act("Send the link", true), act("Copy the link")]),
+          h("div.b-barActs", {}, [
+            act("Copy the link", true, { "data-act": "copy" }),
+            inert("Sending comes next"),
+          ]),
+          h("p.b-live", { role: "status", text: "" }),
           h("p.b-note", { text: "You can turn the link off at any time. Anyone holding it then sees that it has ended." }),
         ]),
       ]),
     ]);
+    node.addEventListener("click", function (event) {
+      var action = event.target.closest("[data-act]");
+      if (!action) return;
+      if (action.getAttribute("data-act") === "owner") { cameFromOwner = false; go("owner-flight"); return; }
+      if (action.getAttribute("data-act") !== "copy") return;
+      var live = node.querySelector(".b-live");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(F.shareUrlFull).then(function () {
+          action.textContent = "Copied";
+          live.textContent = "Link copied.";
+          setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
+        }, function () {
+          live.textContent = "Copy did not work. Select the link and copy it by hand.";
+        });
+      } else {
+        live.textContent = "Copy did not work. Select the link and copy it by hand.";
+      }
+    });
+    return node;
   };
 
   states.unfurl = function () {
@@ -2155,32 +2690,28 @@ body {
   };
 
   /* The wedding morning. The count is a countdown, and a countdown that
-     has arrived is a word, not a zero, so the number goes and "Today"
-     takes its place. Everything else on the screen is the fixture read
-     at the day-of clock: the milestone dated 3 October is happening, and
-     the eight that got the couple here are the keepsake reading. The old
-     copy said everything had happened while a live milestone was dated
-     that morning, which made this the one screen in the set telling a
-     lie on the one morning it is read. */
+     has arrived is a word, not a zero — so the word takes the count's
+     slot rather than being demoted to a micro-label while the couple's
+     name is promoted into the display register, which is the register
+     swap round 2 caught. */
   states.day = function () {
     var clock = F.project.primaryDate.date;
     var todayItems = F.live().filter(function (m) { return m.date && daysFrom(clock, m.date) === 0; });
     return h("div.tl-device", {}, [
       field([
         h("div.b-dayWrap", {}, [
-          h("p.b-dayToday", { text: "Today" }),
-          h("h1.b-dayNames", { text: F.project.name }),
+          h("h1.b-who", { text: F.project.name }),
+          h("p.b-dayCount", { text: "Today" }),
           h("p.b-dayDate", { text: F.fmt.longYear(clock) }),
-          h("p.b-sub", { text: F.project.primaryDate.label + " at The Orchard" }),
           h("div.b-dayRule"),
           h("p.b-dayNote", { text: "This is the day the plan was for." }),
         ]),
         todayItems.length ? h("section.b-dayNow", {}, [
           h("h2.b-behindLabel", { text: "Happening now" }),
-          h("p.b-dayNowTitle", { text: todayItems[0].title }),
+          h("p.b-dayNowTitle", { text: todayItems[0].title + " at The Orchard" }),
         ]) : null,
         behindBlock({ clock: clock }),
-        foot(),
+        foot({ stamp: false }),
       ]),
     ]);
   };
@@ -2189,18 +2720,16 @@ body {
     return h("div.tl-paperEdge", { style: "min-height:1123px" }, [
       field([
         /* Print sets the horizon beside the measure and drops to ten
-           pixels a day: A4 is 1123px tall and the screen scale runs off
-           the bottom of it. The scale changes; the proportion between
-           one gap and the next does not. */
+           pixels a day: A4 is 1123px and the screen scale runs off the
+           bottom of it. The scale changes; the proportion between one
+           gap and the next does not. */
         h("div.b-two", {}, [
           h("div", { style: "line-height:1.5" }, [horizon({})]),
-          h("div", { style: "line-height:1.5" }, [measure({ medium: "print" }), behindBlock({})]),
+          h("div", { style: "line-height:1.5" }, [
+            measure({ medium: "print" }), behindBlock({}),
+          ]),
         ]),
-        h("footer.b-foot", {}, [
-          h("span", { text: "Kept by " + F.workspace.owner }),
-          h("span", { text: "Updated " + F.updatedLabel }),
-          h("span", { text: F.shareUrl }),
-        ]),
+        foot({ link: F.shareUrl }),
       ], ".b-print"),
     ]);
   };
@@ -2215,7 +2744,7 @@ body {
             text: "The plan for " + F.project.name + " is no longer shared here. "
               + F.workspace.owner + " can send a new link whenever they want to.",
           }),
-          h("p.b-note", { text: "Nothing you saw before has been deleted. It is just not public any more." }),
+          h("p.b-note", { text: "Nothing has been deleted. Only the link stopped working." }),
         ]),
       ]),
     ]);
@@ -2261,9 +2790,6 @@ body {
       }
       return node;
     },
-    /* The core calls this after layout and again after the webfonts
-       swap, so a title that clamps to one less word re-places the rows
-       below it rather than leaving them on a stale push. */
     settle: function () {
       var all = document.querySelectorAll(".b-measure");
       for (var i = 0; i < all.length; i++) place(all[i]);

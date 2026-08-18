@@ -5,24 +5,26 @@
    feel like it is coming. So the organising object is a DISTANCE, not a
    list: one vertical measure on which a pixel is a real unit of time.
 
-   Two structural rules this file now keeps, both paid for in round 1:
+   Three structural rules this file keeps, all paid for by the panel:
 
-   1. THE PHONE IS THE BASE. Every value here is the phone value, and the
-      desk values live inside @media (min-width: 701px). The first pass
-      wrote it the other way round — desk values on [data-medium="full"],
-      phone values in a max-width block — and a media query adds no
-      specificity, so fifteen declarations written to make this work on a
-      phone never applied at any width. Scoping the desk rules deletes
-      the conflict instead of out-ranking it.
+   1. THE PHONE IS THE BASE. Every value here is the phone value and the
+      desk values live inside @media (min-width: 701px). Written the
+      other way round, a media query adds no specificity, so fifteen
+      phone declarations never applied at any width.
 
    2. NOTHING IS WRITTEN AGAINST INK OR PAPER. Everything uses --fore and
       --back (shell.css), so the ground decision is a nine-line ladder
-      flip with no parallel stylesheet to forget, and print — which
-      forces paper — comes out of the same mechanism.
+      flip and print — which forces paper — comes out of the same
+      mechanism.
+
+   3. EVERY FONT-SIZE CARRIES ITS TRACKING ON THE SAME RULE. The ladder
+      in shell.css is size-bound, and applying it by hand left 24px sans
+      rendering at two different letterfits and eight prose blocks with
+      no tracking at all. A size that appears without its step is a bug.
 
    Contrast, both ways: on ink, paper at 0.46 is the floor for type
    (4.65:1) and indigo never sets a word (2.99:1); on paper, ink at 0.62
-   is the floor (5.34:1) and indigo passes at every size (6.31:1).
+   is the floor (5.34:1) and 0.46 is 3.1:1 and sets nothing at all.
    ═══════════════════════════════════════════════════════════════════ */
 
 :root { --focus: var(--fore); --page-wash: var(--ink); }
@@ -34,6 +36,9 @@
   padding: 26px 22px 30px;
   line-height: 1.5;
 }
+/* A fixed sheet stands outside layout, so the column it covers is given
+   the room back or the last rows are unreachable at maximum scroll. */
+.b-field[data-editor-open] { padding-bottom: var(--b-sheet, 30px); }
 
 /* ── the horizon ──────────────────────────────────────────────────
    Whose day, how far, which day. In that order, because on a phone in
@@ -41,7 +46,7 @@
    useless without the two facts beside it. */
 .b-who {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.4;
   letter-spacing: var(--track-labelWide);
@@ -64,7 +69,7 @@
 }
 .b-unit {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
@@ -81,8 +86,7 @@
 }
 .b-sub { font-size: 15px; line-height: 1.5; letter-spacing: var(--track-body); color: var(--fore-62); margin: 0; }
 
-/* Today is the one thing indigo is spent on at the top of the page: a
-   hairline the whole surface hangs from. */
+/* Today is the one thing indigo is spent on at the top of the page. */
 .b-todayRule { height: 1px; background: var(--accent); margin: 26px 0 0; }
 .b-todayLabel {
   font-family: var(--mono);
@@ -93,23 +97,27 @@
   color: var(--fore-62);
   margin: 8px 0 0;
 }
-/* The first real gap on the measure is a fortnight of nothing, and a
-   fortnight of nothing is a fact worth saying out loud rather than a
-   hole for the reader to wonder about. Stated as a boundary, because a
-   boundary cannot be off by one. */
-.b-gapNote { font-size: 15px; line-height: 1.5; color: var(--fore-62); margin: 14px 0 0; text-wrap: pretty; }
+.b-gapNote {
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 14px 0 0;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
 
 /* ── the measure ──────────────────────────────────────────────────
    Every position here is written by place() in render-b.js from
-   daysFromToday × pixels-per-day. Nothing is hand-placed, so nothing
-   can lie about how far away something is. */
+   daysFromToday × pixels-per-day. Nothing is hand-placed. */
 .b-measure {
   position: relative;
   margin: 14px 0 0;
-  padding: 0 0 0 96px;   /* 62 for the count, a lane, then the rail */
+  padding: 0 0 0 110px;   /* the count, a lane, then the rail */
   line-height: 1.5;
 }
-/* One label, once, so every figure under it can be a bare number. */
+/* One label, once, so every figure under it can be a bare number. It
+   sat two words deep in a 62px lane in every phone frame. */
 .b-measureHead {
   font-family: var(--mono);
   font-size: 11px;
@@ -119,14 +127,42 @@
   text-transform: uppercase;
   color: var(--fore-62);
   margin: 22px 0 0;
-  width: 62px;
+  width: 76px;
   text-align: right;
+  white-space: nowrap;
 }
-.b-rail { position: absolute; left: 76px; top: 6px; bottom: 0; width: 1px; background: var(--fore-16); }
+.b-rail { position: absolute; left: 90px; top: 6px; bottom: 0; width: 1px; background: var(--fore-16); }
+/* The top of the rail is today, and it says so. The instrument could not
+   be read on its own: the only anchor for now was in the other column,
+   five hundred pixels away. */
+.b-origin {
+  position: absolute;
+  left: 110px;
+  top: 0;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  /* 0.62, not 0.46. The gate caught this the round it was written: over
+     paper 0.46 is 3.13:1, and the origin is the one label that tells a
+     reader what the top of the rail means. */
+  color: var(--fore-62);
+}
+.b-origin::before {
+  content: "";
+  position: absolute;
+  left: -23px;
+  top: 6px;
+  width: 9px;
+  height: 1px;
+  background: var(--fore-28);
+}
 
 .b-item {
   position: absolute;
-  left: 96px;
+  left: 110px;
   right: 0;
   line-height: 1.5;
   /* Position is the quantity in this direction, so animating position
@@ -137,9 +173,9 @@
 }
 .b-away {
   position: absolute;
-  left: -96px;
+  left: -110px;
   top: 2px;
-  width: 62px;
+  width: 76px;
   text-align: right;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -159,8 +195,7 @@
   background: var(--back);
 }
 /* The tick and the count sit on the true pixel, always. Only the words
-   are pushed clear when an owner moves two things close together, so the
-   measure can never restate one item's distance as another's. */
+   are pushed clear when an owner moves two things close together. */
 .b-copy { margin-top: var(--push, 0px); position: relative; }
 .b-title {
   font-size: 17px;
@@ -169,6 +204,7 @@
   letter-spacing: var(--track-body);
   color: var(--fore);
   margin: 0 0 3px;
+  text-wrap: balance;
   /* A safety net only. The word-safe trim in render-core.js decides the
      break; this stops a pre-settle frame spilling a third line. */
   display: -webkit-box;
@@ -186,9 +222,8 @@
   margin: 0;
 }
 
-/* The next thing is the only item that gets the accent, and it gets it
-   as a filled mark. Filled means "this one", and it is the only filled
-   mark on the surface. */
+/* The next thing is the only item that gets the accent, as a filled
+   mark. Filled means "this one", and it is the only filled mark here. */
 .b-item[data-lead="true"] .b-tick {
   background: var(--accent);
   border-color: var(--accent);
@@ -199,9 +234,6 @@
 }
 .b-item[data-lead="true"] .b-away { color: var(--fore); }
 .b-item[data-lead="true"] .b-title { font-weight: 600; }
-
-/* The day itself is the horizon the measure ends on: a rule right across
-   the surface, so the eye can see where it is going. */
 .b-item[data-anchor="true"] .b-title { font-weight: 600; }
 .b-item[data-anchor="true"]::before {
   content: "";
@@ -213,19 +245,38 @@
   background: var(--fore-28);
 }
 
+/* ── two moments on one day ───────────────────────────────────────
+   A real wedding holds several things on one date. One mark, one count,
+   the rows stacked under it and divided by a hairline — done by
+   attribute, never by re-parenting, because moving the subtree that
+   holds the focused stepper kills the gesture for a keyboard user.
+   visibility, not display, so nothing reflows and the row is still
+   found by every query that looks for it. */
+.b-item[data-stack="follow"] .b-away,
+.b-item[data-stack="follow"] .b-tick { visibility: hidden; }
+.b-item[data-stack="follow"] .b-copy {
+  border-top: 1px solid var(--fore-16);
+  padding-top: 12px;
+}
+.b-item[data-stack="lead"] .b-copy { padding-bottom: 12px; }
+
+/* A moment guests will never see is drawn one rung quieter. 0.62, not
+   0.46: over paper 0.46 is 3.1:1 and sets nothing. Status by ink
+   density and fill, never by hue. */
+.b-item[data-visibility="hidden"] .b-title,
+.b-item[data-visibility="hidden"] .b-date,
+.b-item[data-visibility="hidden"] .b-away { color: var(--fore-62); }
+.b-item[data-visibility="hidden"] .b-title { font-weight: 400; }
+.b-item[data-visibility="hidden"] .b-tick { border-style: dashed; }
+
 /* ── the row as a control ─────────────────────────────────────────
-   The row was 520×79 with a 24px title and its only button was a 54×28
-   badge at the bottom of it, so the thing that looked like the object
-   was not the thing you could press. The badge stays as the visible
-   mark and its hit area covers the row. */
+   The badge stays the visible mark and its hit area covers the row, so
+   the thing that looks like the object is the thing you can press. */
 .b-grab {
   display: inline-flex;
   align-items: center;
   min-height: 28px;
   padding: 0 8px;
-  /* -8px so the word starts on the same left edge as the title and the
-     date. The hover ground still breathes 8px either side and stays
-     clear of the rail. */
   margin-left: -8px;
   margin-top: 4px;
   border-radius: 4px;
@@ -235,14 +286,21 @@
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
+  /* A hairline underline is what declares it a control at rest. Dropping
+     its ink instead would make the only pressable thing in the row the
+     dimmest text on it. */
+  text-decoration: underline;
+  text-decoration-color: var(--fore-16);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
   transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
 }
-.b-item:not([data-editing="true"]) .b-grab::after {
-  content: "";
-  position: absolute;
-  inset: 0;
+.b-item:not([data-editing="true"]) .b-grab::after { content: ""; position: absolute; inset: 0; }
+.b-item:hover .b-grab, .b-item:focus-within .b-grab {
+  color: var(--fore);
+  background: var(--fore-06);
+  text-decoration-color: var(--fore-46);
 }
-.b-item:hover .b-grab, .b-item:focus-within .b-grab { color: var(--fore); background: var(--fore-06); }
 .b-item:hover .b-copy, .b-item:focus-within .b-copy {
   background: var(--fore-04);
   box-shadow: 0 0 0 12px var(--fore-04);
@@ -250,13 +308,30 @@
   transition: background-color var(--t-fast) var(--ease);
 }
 .b-item[data-crowded="true"] .b-copy { box-shadow: 0 0 0 12px var(--back); background: var(--back); border-radius: 4px; }
+.b-item[data-editing="true"] .b-copy {
+  box-shadow: 0 0 0 12px var(--fore-06);
+  background: var(--fore-06);
+  border-radius: 4px;
+}
 
 /* ── behind you ───────────────────────────────────────────────────
-   The past is not deleted and it is not given equal weight. It sits
-   under the measure, stated in a sentence, and the rows are there for
-   anyone who asks. Two things that already happened do not deserve a
-   third of a phone screen. */
+   Stated in a sentence, listed in full if asked for — and the asking is
+   a control the reader has, not a console knob. The sentence closes the
+   block: opening with it meant the last thing a guest read on the
+   wedding morning was a cancelled hotel search. */
 .b-behind { margin: 40px 0 0; padding: 20px 0 0; border-top: 1px solid var(--fore-16); line-height: 1.5; }
+.b-behindSummary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  padding: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.b-behindSummary::-webkit-details-marker { display: none; }
 .b-behindLabel {
   font-family: var(--mono);
   font-weight: 400;
@@ -265,8 +340,19 @@
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
-  margin: 0 0 10px;
+  margin: 0;
 }
+.b-behindCount {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--fore-62);
+}
+.b-behindDetails[open] .b-behindCount { color: var(--fore); }
+.b-behindRows { padding: 6px 0 0; }
 .b-behindRow { display: flex; gap: 14px; align-items: baseline; padding: 8px 0; line-height: 1.5; }
 .b-behindDate {
   font-family: var(--mono);
@@ -275,21 +361,28 @@
   line-height: 1.6;
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  /* 0.62, not 0.46. The two ladders do not permit the same floor: over
-     ink, 0.46 is 4.65:1 and legal; over paper it is 3.15:1 and is not. */
   color: var(--fore-62);
   width: 76px;
   flex: none;
 }
 .b-behindTitle { font-size: 15px; line-height: 1.5; letter-spacing: var(--track-body); color: var(--fore-72); margin: 0; }
 .b-behindTitle[data-cancelled="true"] { text-decoration: line-through; text-decoration-color: var(--fore-28); }
-.b-behindNote { font-size: 15px; line-height: 1.5; color: var(--fore-62); margin: 0; text-wrap: pretty; }
-[data-past="folded"] .b-behindRow { display: none; }
-[data-past="folded"] .b-behindNote { display: block; }
-[data-past="listed"] .b-behindNote { display: none; }
+.b-behindNote {
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 12px 0 0;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+/* The record room asks for everything at once, and print must never
+   put a collapsed control on paper. */
+[data-past="listed"] .b-behindSummary { display: none; }
+[data-past="listed"] .b-behindRows { display: block; }
+[data-past="listed"] .b-behindDetails > .b-behindRows { display: block; }
 
-/* accent=structure spends the indigo a second time, on the rail, so the
-   eye can see which part of the measure is still ahead. */
+/* accent=structure spends the indigo a second time, on the rail. */
 [data-accent="structure"] .b-rail { background: var(--accent); opacity: 0.5; }
 
 /* The page opens on a full-measure rule and has to close on one. */
@@ -310,19 +403,10 @@
   color: var(--fore-62);
 }
 
-/* ── two columns, and only where there is room ────────────────────
-   At 901px the two-column band still produced three collisions, because
-   the threshold fired before there was width for it. 1280 is where the
-   measure genuinely has its column. */
 .b-two { display: grid; gap: 32px; }
 
 /* ── owner chrome ─────────────────────────────────────────────────
-   Same ground, one bar. The owner stands in the same room as the guest;
-   the difference is that the owner can move things. */
-/* Stacked on a phone, a row where there is room. As a wrapping flex row
-   at 390 it broke into four ragged lines with the primary action
-   orphaned on the last of them, and a 102px spacer holding the wrap
-   open. */
+   Stacked on a phone, a row where there is room. */
 .b-bar {
   display: grid;
   justify-items: start;
@@ -366,7 +450,7 @@
   color: var(--fore-62);
 }
 .b-spacer { flex: 1 1 auto; }
-.b-barActs { display: flex; gap: 10px; flex-wrap: wrap; line-height: 1.5; }
+.b-barActs { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; line-height: 1.5; }
 .b-act {
   min-height: 32px;
   padding: 6px 12px;
@@ -390,16 +474,25 @@
   text-transform: uppercase;
   color: var(--fore-62);
 }
+/* The way back out of a preview, outside the artifact it is previewing,
+   so what a guest gets is untouched. */
+.b-previewStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 0 16px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--ink-16);
+}
+.b-previewStrip .b-where, .b-previewStrip .b-act { color: var(--ink); }
+.b-previewStrip .b-act { border-color: var(--ink-16); }
 
 /* ── the editor ───────────────────────────────────────────────────
-   Opaque, and beside the measure rather than over it. The first pass
-   declared an opaque ground and then re-declared it as a six-percent
-   tint four lines later, so three rows of the plan printed straight
-   through the panel in the state the owner lives in.
-
-   Below the gutter width it is a sheet on the bottom edge of the
-   screen, because a 154px-wide editor inside an absolutely positioned
-   item is not an editor. */
+   Opaque, and beside the plan rather than over it: in the rail at desk
+   width, a sheet on the bottom edge below that. Reserving a gutter
+   inside the measure column starved the titles to 144px; hanging the
+   panel off the item took the button you were pressing with it. */
 .b-edit {
   position: fixed;
   left: 12px;
@@ -417,7 +510,7 @@
   gap: 12px;
   line-height: 1.5;
 }
-.b-item[data-editing="true"] .b-copy { box-shadow: 0 0 0 12px var(--fore-06); background: var(--fore-06); border-radius: 4px; }
+.b-edit:focus-visible { outline-offset: -2px; }
 .b-editHost:empty { display: none; }
 .b-label {
   font-family: var(--mono);
@@ -437,14 +530,22 @@
   color: var(--fore);
   font-size: 17px;
   line-height: 1.4;
+  letter-spacing: var(--track-body);
 }
-/* Declared, not inherited. The user-agent placeholder grey is a hair off
-   the surface's own secondary ink on the paper ground, so an empty field
-   read as a filled one. */
-.b-input::placeholder { color: var(--fore-46); opacity: 1; }
+/* Declared, not inherited, and at 0.62 — the user-agent grey is 3.1:1
+   on the paper ground and the placeholder was the only statement of the
+   date format on the screen. */
+.b-input::placeholder { color: var(--fore-62); opacity: 1; }
 .b-input[aria-invalid="true"] { border-color: var(--fore); }
 .b-input[data-mono="true"] { font-family: var(--mono); font-size: 15px; letter-spacing: var(--track-data); }
-.b-hint { font-size: 13px; line-height: 1.5; color: var(--fore); margin: 12px 0 0; min-height: 20px; }
+.b-hint {
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 12px 0 0;
+  min-height: 20px;
+}
 
 .b-stepRow { display: grid; gap: 10px; }
 .b-stepBtns { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -457,11 +558,13 @@
   font-family: var(--mono);
   font-size: 15px;
   line-height: 1.4;
+  letter-spacing: var(--track-data);
   text-align: center;
   transition: background-color var(--t-base) var(--ease);
 }
 .b-step:hover { background: var(--fore-06); }
-.b-step[aria-disabled="true"] { color: var(--fore-46); border-color: var(--fore-16); }
+/* 0.62, not 0.46: on the paper ground 0.46 is 3.1:1. */
+.b-step[aria-disabled="true"] { color: var(--fore-62); border-color: var(--fore-16); }
 .b-stepRead {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -469,8 +572,19 @@
   line-height: 1.5;
   letter-spacing: var(--track-data);
   color: var(--fore);
+  /* Two lines reserved. Unreserved, the first press collapsed it from
+     45px to 23px and moved every control below it by 22px. */
+  min-height: 45px;
 }
-.b-ceiling { font-size: 13px; line-height: 1.5; color: var(--fore-62); margin: 0; min-height: 20px; }
+.b-ceiling {
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0;
+  min-height: 20px;
+  max-width: 46ch;
+}
 .b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; overflow: hidden; }
 .b-seg button {
   min-height: 34px;
@@ -484,14 +598,23 @@
 .b-seg button + button { border-left: 1px solid var(--fore-28); }
 .b-seg button[aria-pressed="true"] { background: var(--fore); color: var(--back); }
 .b-editActs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+/* On its own line, after a rule. It sat ten pixels to the right of the
+   safe action at two and a half times its width. Separated, not hidden:
+   deleting a moment from a draft is ordinary editing, and in a palette
+   with no red, position is what carries consequence. */
+.b-editDanger { padding: 12px 0 0; border-top: 1px solid var(--fore-16); }
+.b-editDanger .b-act { border-color: transparent; color: var(--fore-72); padding-left: 0; }
+.b-editDanger .b-act:hover { border-color: var(--fore-46); color: var(--fore); padding-left: 12px; }
 
-/* One reversibility surface, in one place, and silent until it has
-   something true to say. */
+/* One reversibility surface, one node, and it travels to wherever the
+   change is being made. It used to render a thousand pixels below the
+   button that filled it. */
 .b-undo {
   margin: 20px 0 0;
   padding: 10px 12px;
   border: 1px solid var(--fore-16);
   border-radius: 6px;
+  background-color: var(--back);
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
@@ -502,12 +625,35 @@
   color: var(--fore-72);
 }
 .b-undo[data-empty="true"] { display: none; }
+/* Inside the panel the bar is taken out of the flow and its band is
+   reserved at the top, so filling it — or growing to a second line —
+   cannot move the stepper the owner is about to press again. Round 1
+   paid for those buttons holding still under the pointer. */
+/* No position here: the base rule is already position: fixed, which is
+   a positioned ancestor for the bar below, and re-declaring it as
+   relative silently turned the phone sheet back into a block in flow. */
+.b-edit { padding-top: 78px; }
+.b-edit .b-undo {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  margin: 0;
+  border: 0;
+  border-bottom: 1px solid var(--fore-16);
+  border-radius: 0;
+  padding: 0 0 10px;
+  min-height: 50px;
+  align-items: flex-start;
+}
+.b-edit .b-undo[data-empty="true"] { display: flex; visibility: hidden; }
 .b-undoAct {
   min-height: 28px;
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 15px;
   line-height: 1.5;
+  letter-spacing: var(--track-body);
   color: var(--fore);
   text-decoration: underline;
   text-decoration-color: var(--fore-28);
@@ -515,8 +661,7 @@
 }
 .b-undo kbd { font-family: var(--mono); font-size: 11px; line-height: 1.4; letter-spacing: var(--track-label); color: var(--fore-62); }
 
-/* ── the empty field ──────────────────────────────────────────────
-   Nothing is further away than a day with no date. One question. */
+/* ── the empty field ──────────────────────────────────────────────  */
 .b-empty { padding: 56px 22px 64px; }
 .b-emptyTitle {
   font-size: 38px;
@@ -527,12 +672,18 @@
   margin: 0 0 12px;
   text-wrap: balance;
 }
-.b-emptyBody { font-size: 17px; line-height: 1.5; color: var(--fore-62); margin: 0 0 28px; max-width: 34ch; text-wrap: pretty; }
+.b-emptyBody {
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0 0 28px;
+  max-width: 34ch;
+  text-wrap: pretty;
+}
 .b-emptyForm { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
-/* ── publish ──────────────────────────────────────────────────────
-   The ceremony is not a form. It is the card itself, held up, before
-   anyone has seen it. */
+/* ── publish ──────────────────────────────────────────────────────  */
 .b-press { display: grid; gap: 28px; }
 /* A 43-character share token cannot shrink, so every box between it and
    the grid has to be told it may be narrower than its contents. */
@@ -546,7 +697,15 @@
   margin: 0 0 12px;
   text-wrap: balance;
 }
-.b-pressBody { font-size: 17px; line-height: 1.55; color: var(--fore-62); margin: 0 0 20px; max-width: 46ch; text-wrap: pretty; }
+.b-pressBody {
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0 0 20px;
+  max-width: 46ch;
+  text-wrap: pretty;
+}
 .b-linkRow {
   display: flex;
   align-items: center;
@@ -556,7 +715,9 @@
   border: 1px solid var(--fore-16);
   border-radius: 6px;
   font-family: var(--mono);
-  font-size: 12px;
+  /* 13, not 12: the ladder is size-bound, and 12 is the ceremonial
+     label step. A share token is data and takes the data step. */
+  font-size: 13px;
   line-height: 1.5;
   letter-spacing: var(--track-data);
   color: var(--fore);
@@ -564,12 +725,27 @@
   margin: 0 0 16px;
 }
 .b-linkRow span { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.b-note { font-size: 13px; line-height: 1.55; color: var(--fore-62); margin: 16px 0 0; text-wrap: pretty; }
+.b-live {
+  font-size: 13px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore);
+  margin: 12px 0 0;
+  min-height: 20px;
+}
+.b-note {
+  font-size: 13px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 8px 0 0;
+  max-width: 52ch;
+  text-wrap: pretty;
+}
 
 /* ── the card, as it lands in a chat ──────────────────────────────
    LITERAL, not laddered: the chat app is somebody else's surface and it
-   is light whatever ground we chose. Everything to the end of the
-   unfurl block is deliberately outside the fore/back system. */
+   is light whatever ground we chose. */
 .b-chat { padding: 24px 16px; background: var(--paper); }
 .b-bubble {
   max-width: 300px;
@@ -580,13 +756,12 @@
   border: 1px solid var(--ink-10);
   font-size: 15px;
   line-height: 1.45;
+  letter-spacing: var(--track-body);
   color: var(--ink);
 }
-/* display: block, and it matters. An anchor is inline by default, and on
-   a non-replaced inline element max-width does nothing, the background
-   paints only around the line boxes and the border-radius paints nothing
-   at all. Inside the chat the card looked right for the wrong reason —
-   the chat ground is white — and on the publish screen it vanished. */
+/* display: block, and it matters. An anchor is inline by default, so
+   max-width does nothing, the background paints only around the line
+   boxes and the border-radius paints nothing at all. */
 .b-unfurl {
   display: block;
   max-width: 300px;
@@ -606,7 +781,7 @@
 }
 .b-ogWho {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
   letter-spacing: var(--track-labelWide);
   text-transform: uppercase;
@@ -616,54 +791,68 @@
 .b-ogNum {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
-  font-size: 48px;
+  font-size: 64px;
   line-height: 0.9;
-  letter-spacing: var(--track-title);
+  letter-spacing: var(--track-display);
   color: var(--fore);
   margin: 0 0 0 -0.05em;
 }
+/* Sentence case, in the text face. As a second uppercase mono stamp it
+   was the widest line on the card and the couple's own date read as a
+   machine label. */
 .b-ogDate {
-  font-family: var(--mono);
-  font-size: 11px;
+  font-size: 15px;
   line-height: 1.4;
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--fore-62);
-  margin: 6px 0 0;
+  letter-spacing: var(--track-body);
+  color: var(--fore-72);
+  margin: 4px 0 0;
   text-wrap: balance;
 }
 .b-unfurlMeta { padding: 10px 12px; }
 .b-unfurlTitle { font-size: 15px; font-weight: 600; line-height: 1.35; letter-spacing: var(--track-body); margin: 0 0 3px; color: var(--ink); }
-.b-unfurlHost { font-size: 12px; line-height: 1.4; color: var(--ink-62); margin: 0; }
+.b-unfurlHost { font-size: 12px; line-height: 1.4; letter-spacing: var(--track-body); color: var(--ink-62); margin: 0; }
 
 /* ── the day ──────────────────────────────────────────────────────
    The count is a countdown, and a countdown that has arrived is a word,
-   not a zero. */
+   not a zero — so the word takes the count's slot rather than being
+   demoted to a micro-label while the couple's name is promoted into the
+   display register. */
 .b-dayWrap { padding: 56px 22px 40px; text-align: center; }
-.b-dayToday {
+.b-dayWrap .b-who { margin: 0 0 18px; }
+.b-dayCount {
   font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.4;
-  letter-spacing: var(--track-labelWide);
-  text-transform: uppercase;
-  color: var(--fore-62);
-  margin: 0 0 26px;
-}
-.b-dayNames {
-  font-size: 48px;
-  font-weight: 600;
-  line-height: 1.02;
-  letter-spacing: var(--track-title);
+  font-size: 96px;
+  line-height: 0.9;
+  letter-spacing: var(--track-display);
   color: var(--fore);
   margin: 0 0 16px;
+}
+.b-dayDate {
+  font-size: 20px;
+  line-height: 1.4;
+  letter-spacing: var(--track-body);
+  color: var(--fore);
+  margin: 0 0 40px;
   text-wrap: balance;
 }
-.b-dayDate { font-size: 20px; line-height: 1.4; letter-spacing: var(--track-body); color: var(--fore-72); margin: 0 0 6px; text-wrap: balance; }
-.b-dayWrap .b-sub { margin: 0 0 40px; }
 .b-dayRule { height: 1px; background: var(--accent); margin: 0 auto 24px; max-width: 200px; }
-.b-dayNote { font-size: 15px; line-height: 1.6; color: var(--fore-62); margin: 0; text-wrap: pretty; }
+.b-dayNote {
+  font-size: 15px;
+  line-height: 1.6;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0;
+  text-wrap: pretty;
+}
 .b-dayNow { margin: 30px 0 0; padding: 20px 0 0; border-top: 1px solid var(--fore-16); }
-.b-dayNowTitle { font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: var(--track-head); color: var(--fore); margin: 0; }
+.b-dayNowTitle {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: var(--track-head);
+  color: var(--fore);
+  margin: 8px 0 0;
+}
 
 /* ── ended ────────────────────────────────────────────────────────  */
 .b-ended { padding: 56px 22px 64px; }
@@ -676,27 +865,28 @@
   margin: 0 0 14px;
   text-wrap: balance;
 }
-.b-endedBody { font-size: 17px; line-height: 1.55; color: var(--fore-62); margin: 0 0 24px; max-width: 40ch; text-wrap: pretty; }
+.b-endedBody {
+  font-size: 17px;
+  line-height: 1.55;
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0 0 24px;
+  max-width: 40ch;
+  text-wrap: pretty;
+}
 
-/* ── loading ──────────────────────────────────────────────────────
-   The measure cannot be drawn before the dates arrive: a skeleton with
-   invented tick positions would be a picture of a plan that does not
-   exist. So the frame reserves the horizon at its real height and says
-   plainly that the rest is coming. */
+/* ── loading ──────────────────────────────────────────────────────  */
 .b-skel { background: var(--fore-10); border-radius: 4px; }
 
-/* ── print ────────────────────────────────────────────────────────
-   Print is not a colour special case; it is the ground decision,
-   forced. What it does own is its own measure: A4 is 1123px and fixed,
-   so the type steps down one and the scale steps down with it. */
+/* ── print ────────────────────────────────────────────────────────  */
 .b-print { padding: 26px 22px 30px; line-height: 1.5; }
-.b-print .b-title { font-size: 17px; }
+.b-print .b-title { font-size: 17px; letter-spacing: var(--track-body); }
 .b-print .b-away { font-size: 15px; }
 
 /* ═══ desk and up ═════════════════════════════════════════════════
-   Everything above is the phone. These are the only rules that raise it,
-   and they are inside a min-width query so a narrow screen can never
-   lose to them on specificity. */
+   Everything above is the phone. These are the only rules that raise
+   it, inside a min-width query so a narrow screen can never lose to
+   them on specificity. Every raise carries its tracking. */
 @media (min-width: 701px) {
   .b-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
   .b-bar .b-spacer { display: block; flex: 1 1 auto; }
@@ -704,43 +894,57 @@
   .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
   [data-medium="sheet"] .b-field, [data-medium="full"] .b-field { padding: 48px 56px 56px; }
   [data-medium="sheet"] .b-num, [data-medium="full"] .b-num { font-size: 148px; }
-  [data-medium="sheet"] .b-when, [data-medium="full"] .b-when { font-size: 30px; }
+  [data-medium="sheet"] .b-when, [data-medium="full"] .b-when { font-size: 30px; letter-spacing: var(--track-head); }
   [data-medium="sheet"] .b-measure, [data-medium="full"] .b-measure { padding-left: 124px; }
   [data-medium="sheet"] .b-measureHead, [data-medium="full"] .b-measureHead { width: 84px; }
   [data-medium="sheet"] .b-rail, [data-medium="full"] .b-rail { left: 100px; }
   [data-medium="sheet"] .b-item, [data-medium="full"] .b-item { left: 124px; }
+  [data-medium="sheet"] .b-origin, [data-medium="full"] .b-origin { left: 124px; }
   [data-medium="sheet"] .b-away, [data-medium="full"] .b-away { left: -124px; width: 84px; font-size: 17px; }
   [data-medium="sheet"] .b-tick, [data-medium="full"] .b-tick { left: -27px; }
+  [data-medium="sheet"] .b-origin::before, [data-medium="full"] .b-origin::before { left: -27px; }
   [data-medium="sheet"] .b-item[data-lead="true"] .b-tick,
   [data-medium="full"] .b-item[data-lead="true"] .b-tick { left: -28px; }
   [data-medium="sheet"] .b-item[data-anchor="true"]::before,
   [data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
-  [data-medium="sheet"] .b-title, [data-medium="full"] .b-title { font-size: 24px; }
+  [data-medium="sheet"] .b-title, [data-medium="full"] .b-title { font-size: 24px; letter-spacing: var(--track-head); }
   [data-medium="sheet"] .b-empty, [data-medium="full"] .b-empty { padding: 110px 56px 120px; }
-  [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { font-size: 64px; }
+  [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { font-size: 64px; letter-spacing: var(--track-title); }
   [data-medium="sheet"] .b-ended, [data-medium="full"] .b-ended { padding: 100px 56px 110px; }
   [data-medium="sheet"] .b-dayWrap, [data-medium="full"] .b-dayWrap { padding: 110px 56px 60px; }
-  [data-medium="sheet"] .b-dayNames, [data-medium="full"] .b-dayNames { font-size: 96px; }
   [data-medium="full"] .b-pressTitle { font-size: 48px; letter-spacing: var(--track-title); }
   /* Its own rule, at the same specificity as the field rule above and
      later in source, so the printed page keeps its own margins. */
   [data-medium="sheet"] .b-print { padding: 56px 64px 44px; }
-  [data-medium="sheet"] .b-print .b-title { font-size: 17px; }
+  [data-medium="sheet"] .b-print .b-title { font-size: 17px; letter-spacing: var(--track-body); }
+}
+
+/* Below the gutter width the editor is a sheet on the bottom edge, and
+   the reversibility bar rides the same edge when the sheet is closed,
+   so the offer to take a change back is never off screen. */
+@media (max-width: 1279px) {
+  /* Later in source and one selector heavier than the desk padding rule
+     above, or the reserve loses to it at 768 and the last rows are
+     stranded under the sheet with no scroll left to free them. */
+  [data-medium] .b-field[data-editor-open] { padding-bottom: var(--b-sheet, 30px); }
+  [data-undo="true"] .b-undoHome .b-undo {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 4;
+    margin: 0;
+  }
+  [data-undo="true"][data-editor-open] .b-edit { bottom: 76px; }
 }
 
 @media (min-width: 1280px) {
   [data-medium="sheet"] .b-two { grid-template-columns: 300px minmax(0, 1fr); gap: 48px; align-items: start; }
   [data-medium="full"] .b-two { grid-template-columns: 360px minmax(0, 1fr); gap: 64px; align-items: start; }
   [data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
-  /* The horizon does not scroll away — but only where it has a column of
-     its own. Stuck to the top of a single column it would cover the
-     measure it is meant to introduce. */
+  /* The horizon does not scroll away — but only where it has a column
+     of its own. */
   .b-stick { position: sticky; top: 24px; }
-
-  /* The editor takes a reserved gutter rather than standing over the
-     plan. The band is taken from the item's width, never from the
-     measure's height: shifting the rows below would add about
-     twenty-five phantom days to the one gap the owner is looking at. */
   /* In the rail, where there is a column already. */
   .b-editHost .b-edit {
     position: static;

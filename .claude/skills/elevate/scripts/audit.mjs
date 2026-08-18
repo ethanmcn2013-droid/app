@@ -46,7 +46,8 @@ const FAMILY_PATTERN = (config.families ?? ["Geist", "Geist Mono"])
 const TYPE_RAMP = config.ladders?.typeRamp ?? [];
 
 const AUDIT = `(() => {
-  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], counts: {} };
+  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], tracking: [], counts: {} };
+  const tracks = new Map();
 
   const parse = (value) => {
     const m = String(value).match(/rgba?\\(([^)]+)\\)/);
@@ -141,6 +142,30 @@ const AUDIT = `(() => {
     }
 
     /* 2 + 3 + 4 + 8 + 9: text checks */
+    /* A placeholder is text a person reads, and it was invisible to
+       this gate: the pseudo scan below is for hit-target expanders, and
+       nothing else looked at ::placeholder. It failed AA on a shipped
+       room for a whole round because of it. */
+    if (el.matches("input, textarea")) {
+      const ps = getComputedStyle(el, "::placeholder");
+      const pc = parse(ps.color);
+      if (pc && pc.a > 0 && el.getAttribute("placeholder")) {
+        if (!near(pc)) out.colors.push({ el: describe(el) + "::placeholder", prop: "color", value: ps.color });
+        const pbg = backdropOf(el);
+        const pcomp = over(pc, pbg);
+        const psize = parseFloat(ps.fontSize) || parseFloat(cs.fontSize);
+        const pweight = parseInt(ps.fontWeight, 10) || parseInt(cs.fontWeight, 10);
+        const plarge = psize >= 24 || (psize >= 18.66 && pweight >= 600);
+        const pgot = ratio(pcomp, pbg);
+        if (pgot < (plarge ? 3 : 4.5)) {
+          out.contrast.push({
+            el: describe(el) + "::placeholder", text: el.getAttribute("placeholder").slice(0, 36),
+            size: psize, weight: pweight, ratio: Math.round(pgot * 100) / 100, need: plarge ? 3 : 4.5,
+          });
+        }
+      }
+    }
+
     if (hasText && visible) {
       const weight = parseInt(cs.fontWeight, 10);
       if (!${JSON.stringify(ALLOWED_WEIGHTS)}.includes(weight)) out.weights.push({ el: describe(el), weight, text: el.textContent.trim().slice(0, 32) });
@@ -154,6 +179,23 @@ const AUDIT = `(() => {
       }
       if (cs.lineHeight === "normal") {
         out.leading.push({ el: describe(el), text: el.textContent.trim().slice(0, 32) });
+      }
+
+      /* One size, one letterfit. A tracking ladder that is declared and
+         then applied by hand drifts: the same face at the same size ends
+         up rendering at two different values on two surfaces, and no
+         reader can name why one of them feels wrong. */
+      /* Lab furniture and screen-reader-only text are not the artifact:
+         a caption naming the frame, and a span that exists to speak a
+         unit, must not decide the system's letterfit. */
+      const furniture = el.closest(".tl-caption") || cs.clipPath !== "none";
+      const trackKey = furniture ? null : family + "|" + Math.round(size * 10) / 10;
+      if (trackKey !== null) {
+      const space = cs.letterSpacing === "normal" ? "0px" : cs.letterSpacing;
+      if (!tracks.has(trackKey)) tracks.set(trackKey, new Map());
+      if (!tracks.get(trackKey).has(space)) {
+        tracks.get(trackKey).set(space, describe(el) + ' "' + el.textContent.trim().slice(0, 20) + '"');
+      }
       }
 
       const fg = parse(cs.color);
@@ -242,6 +284,14 @@ const AUDIT = `(() => {
   out.contrast = dedupe(out.contrast, (i) => i.el + i.ratio);
   out.ramp = dedupe(out.ramp, (i) => i.el + i.size);
   out.leading = dedupe(out.leading, (i) => i.el);
+  for (const [key, seen] of tracks) {
+    if (seen.size < 2) continue;
+    out.tracking.push({
+      key,
+      values: Array.from(seen.keys()).join(" vs "),
+      where: Array.from(seen.values()).join(" | ").slice(0, 120),
+    });
+  }
   return out;
 })()`;
 
@@ -258,7 +308,7 @@ for (const state of STATES) {
 }
 await browser.close();
 
-const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading"];
+const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading", "tracking"];
 const totals = Object.fromEntries(KEYS.map((k) => [k, 0]));
 for (const state of Object.keys(report.states)) {
   for (const key of KEYS) totals[key] += report.states[state][key].length;
@@ -284,6 +334,7 @@ if (AS_JSON) {
     line("motion", r.motion, (i) => (i.kind === "duration" ? `${i.el} ${i.duration}s` : `${i.el} ${i.easing}`));
     line("type ramp", r.ramp, (i) => `${i.el} ${i.size}px  "${i.text}"`);
     line("leading", r.leading, (i) => `${i.el} line-height normal  "${i.text}"`);
+    line("tracking", r.tracking, (i) => `${i.key} → ${i.values}   ${i.where}`);
   }
   process.stdout.write(`\nTOTALS  ${JSON.stringify(totals)}\n`);
   if (!TYPE_RAMP.length) process.stdout.write(`note: type-ramp check skipped — fill ladders.typeRamp at the palette lock\n`);

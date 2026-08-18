@@ -1,0 +1,42 @@
+{
+  "seat": "UI composition",
+  "score": 7.4,
+  "findings": [
+    {
+      "id": "dead-left-column",
+      "element": ".b-stick / .b-two at >=1280 (b.css 731-738), .b-behind (render-b.js 214)",
+      "problem": "The sticky horizon is 327px tall and pins at top:24 in a 960px viewport, so from the first scroll onward a 360x609 block sits permanently empty: 34% of the composition's 1068px width, and it never receives anything at any scroll offset. Meanwhile the one object that belongs in it is at the bottom of the other column. 'Behind you' renders at y1822, below the wedding day at y1665, so the past is placed after the future on an axis whose entire meaning is that down means later. At 1440 scrolled the page is one pinned placard on the left and a sparse ladder on the right with no relationship between them; the eye lands on the 79, falls off the bottom of the horizon, and has to jump the 64px gutter to find anything else.",
+      "fix": "In render-b.js, stop appending the .b-behind section to the measure column and append it inside .b-stick immediately beneath .b-horizon instead. Give .b-stick 'display:grid; gap:32px; align-content:start' and change .b-behind to 'margin:0; padding:20px 0 0' so its hairline reads as the horizon's closing rule. Below 1280, where the layout is single column, keep .b-behind in its present flow position after the measure so the stacked reading order is unchanged.",
+      "cost": 0.6
+    },
+    {
+      "id": "measure-without-an-origin",
+      "element": ".b-rail / .b-measure (b.css 106-128)",
+      "problem": "The top of the rail IS today. That is the whole basis of the instrument, and it is unmarked. 282px of bare hairline runs above the first moment with no origin rule, no label and no terminus, so the most valuable strip on the page states nothing. The only anchor for 'now' is 'Today is 16 July' sitting 400px away across the gutter in the other column, which means the measure cannot be read on its own, and on the phone that unlabelled lead-in is most of the first screen: the plan opens on a line that does not yet mean anything.",
+      "fix": "Render an origin at top:0 of .b-measure: a 1px var(--fore-28) rule spanning from the rail lane to the right edge, with 'Today, 16 July' set in the existing 11px mono label style, right-aligned in the same 84px number gutter as every count so it shares their edge. Start .b-rail at that rule (top:0 rather than top:6px) and end it on the wedding-day tick rather than the bottom of the box, so the line has two stated ends.",
+      "cost": 0.3
+    },
+    {
+      "id": "first-screen-carries-nothing",
+      "element": "SCALE.owner (render-b.js:32), .b-barActs at 390, .b-measureHead width (b.css 113-124)",
+      "problem": "At 390 the owner's vertical budget before the first moment is bar 164 + horizon 269 + head 31 + lead-in 282 = 746px, and the first moment lands at y870 on an 844 screen, so the entire first screen of a 2363px page is chrome and empty rule. The 1000-1279 band is worse: single column, the horizon's type block is roughly 340px wide inside a 1008px column, and the first moment sits at y890 on a 900px screen with the other 660px of every row blank. The cause is that SCALE.owner is a flat 18 at every width while every other medium takes the page-size decision the brief describes (phone 12, sheet and full 14, print 10); the one surface that never scales is the one the owner opens on a phone. 'days away' also wraps to two lines at 390 because .b-measureHead is locked to 62px.",
+      "fix": "Make SCALE.owner width-dependent the same way every other medium already is: 12 below 1024, 14 from 1024 to 1279, 18 at 1280 and up. The proportion between one gap and the next is untouched at every scale, so the gate's scale-spread and collision assertions still hold (12px/day gives 84px for the tightest 7-day gap against a 74px row at 390). Add 'grid-template-columns: repeat(3, 1fr)' to .b-barActs below 700 so the three actions cost one 44px row instead of two rows plus a gap. Add '.b-measureHead { width: auto; white-space: nowrap }' below 701 so the label stays on one line.",
+      "cost": 0.5
+    },
+    {
+      "id": "same-day-stack-undesigned",
+      "element": ".b-item placement when two moments share a date (render-b.js measure)",
+      "problem": "Open 'Menu tasting at The Orchard' and press +7 once: it lands on Sat 8 Aug, the same day as 'Send the invitations'. Both items now carry top:657. The second moment's count and tick are painted underneath the first's and disappear, its copy is shunted 83px below its true day position, and it butts against the plate above with 24px and no boundary, so the two read as one four-line card under a single '23'. The rule the whole design is staked on, that vertical position is the quantity, is abandoned at the exact instant two things coincide, the number gutter goes blank for a row, and nothing on screen says a day now holds two.",
+      "fix": "When two or more moments share a date, render one .b-item at that day's true top with one count, one tick and one plate, and the moments as rows inside it separated by a 1px var(--fore-16) hairline with 12px padding either side. The group's accessible name states the count once ('23 days away, two moments') and each row keeps its own name. The group's top stays away x scale so placement remains true and the proportionality assertion still passes.",
+      "cost": 0.4
+    },
+    {
+      "id": "undo-lands-below-the-fold",
+      "element": ".b-undoAct plate at the foot of .b-field",
+      "problem": "Press a stepper at rest and the sentence naming what just happened plus the control that reverses it render at y1922, 962px below the fold, and the page grows 70px as they arrive so the footer shifts under the person who just acted. The single surface that reports the change is the one place the owner making the change cannot see, and its arrival is a reflow rather than a reserved band. This is invisible to the behaviour gate, which proves the plate exists, is live and names its key, but never asks where it is.",
+      "fix": "Render the undo plate permanently inside .b-stick as the last child, directly beneath the editor host, with min-height:44px and empty text before the first change, so its band is reserved in layout at all times and nothing moves when it fills. Keep it a single live region with the same wording and the same Ctrl Z legend. Below 1280, where .b-stick is not a rail, pin the same plate above the editor sheet on the bottom edge so it is never off-screen at the moment it has something to say.",
+      "cost": 0.3
+    }
+  ],
+  "biggestWin": "The measure. One scale, one label, bare tabular counts in their own gutter, a hairline that is a real axis, and a transition that animates position so moving a date is seen as a change of distance rather than a change of text. Position genuinely is the quantity here, and that one decision carries the owner surface, the guest surface, the phone and the printed sheet without being redrawn for any of them. It is the part a founder should refuse to trade. Everything marked above is the composition around it failing to live up to it: the instrument is finished and the page it sits in is not. What remains is polish plus one parameter change, not a different decision. The left column needs its second object, the rail needs its origin marked, the owner measure needs the width-scaling every other medium already has, and same-day moments need a grouped form. That is roughly a day and a half of build in files that already exist, with no architectural move in it."
+}

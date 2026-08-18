@@ -6,34 +6,39 @@
    from the real dates, so the measure cannot flatter the plan: a
    fortnight is twice a week, on the screen, always.
 
-   Round 1 rebuilt everything an owner touches. The panel's verdict was
-   that at rest this was studio-grade and under the hand it was a five,
-   and it was right: the gesture wrote a pixel and a count and left the
-   date, the accessible name and the readout saying something else.
-   There is now exactly ONE writer of an item's position — setAway() —
-   and every fact about that item is derived from the date it produces.
+   Round 1 rebuilt the gesture: setAway() is the only writer of an
+   item's distance and every fact is derived from the one date it
+   produces. Round 2 finished the controls around it. The panel's
+   verdict was that the gesture felt like Linear and everything beside
+   it was a promise — a create verb that created nothing, a title field
+   that discarded what you typed, a delete with no way back that then
+   left the undo bar offering to reverse a row that no longer existed,
+   and a reversibility surface rendered a thousand pixels below the
+   button that filled it.
+
+   So there is now one history stack, every entry carries its own undo
+   closure, and nothing changes the plan without joining it.
    ═══════════════════════════════════════════════════════════════════ */
 (function () {
   "use strict";
   var C = window.__TLCORE, F = C.F, h = C.h;
 
-  /* Pixels per day. The tightest real gap on this plan is seven days and
-     an item that wraps to two lines is 70px on a phone and 81px at desk
-     width, so the scale has to be at least 10 and 12 respectively or two
-     items can touch. 12 and 14 leave a hairline of air at the tightest
-     pair. The consequence is a long page, and that is the point: a plan
-     that is seventy-nine days long should take a while to scroll. */
-  /* The owner measure runs at eighteen. An owner row carries a third
-     line — the control that says what a guest sees — so it is a hundred
-     pixels tall against the guest row's seventy, and fourteen pixels a
-     day would let the tightest real pair touch before the owner had
-     touched anything. The scale is a page-size decision; the proportion
-     between one gap and the next is identical at every scale. */
-  var SCALE = { phone: 12, sheet: 14, full: 14, owner: 18, card: 12, print: 10 };
+  /* Pixels per day. The tightest real gap on this plan is seven days.
+     A guest row is 70px on a phone and 81px at desk width; an owner row
+     carries a third line — the control that says what a guest sees — so
+     it is 74px and 100px. Fourteen and eighteen leave air at the
+     tightest pair in each case. The scale is a page-size decision; the
+     proportion between one gap and the next is identical at every
+     scale. */
+  var SCALE = { phone: 12, sheet: 14, full: 14, card: 12, print: 10 };
+  var OWNER_SCALE = { narrow: 14, wide: 18 };
   var ROW = 92;
 
-  function daysFrom(clock, iso) { return F.days(clock, iso); }
+  function ownerScale() {
+    return window.innerWidth >= 701 ? OWNER_SCALE.wide : OWNER_SCALE.narrow;
+  }
 
+  function daysFrom(clock, iso) { return F.days(clock, iso); }
   function ahead(clock) {
     return F.live()
       .filter(function (m) { return m.date && daysFrom(clock, m.date) > 0; })
@@ -41,19 +46,19 @@
   }
   /* Strictly behind. Anything dated exactly on the clock is happening,
      not happened, and on the wedding morning the difference is the whole
-     screen: the day itself was appearing in the keepsake list as the
-     last thing already done. */
+     screen. */
   function behind(clock) {
     return F.milestones.filter(function (m) { return !m.date || daysFrom(clock, m.date) < 0; });
+  }
+  function recordFor(id) {
+    return F.milestones.filter(function (m) { return m.id === id; })[0];
   }
 
   /* ── the horizon ──────────────────────────────────────────────── */
 
-  /* The empty run before the first thing is stated as a boundary, not as
-     a count. "The next 16 days" swallows the sixteenth day, which is the
-     day the menu tasting falls on, so the sentence was false by one on
-     the one surface whose whole claim is that time is measured honestly.
-     A boundary cannot go off by one. */
+  /* The empty run before the first thing is stated as a boundary, not a
+     count. "The next 16 days" swallows the day the menu tasting falls
+     on. A boundary cannot go off by one. */
   function gapSentence(nearestIso) {
     return "Nothing is planned until " + F.fmt.medium(nearestIso) + ".";
   }
@@ -79,48 +84,51 @@
   /* ── the measure ──────────────────────────────────────────────── */
 
   function grabLabel(record, iso, away, hidden) {
-    return record.title + ", " + F.fmt.long(iso) + ", in " + F.fmt.dayCount(away)
-      + ". " + (hidden ? "Hidden from guests" : "Shown to guests") + ". Open to change it.";
+    return "Open " + record.title + ". " + F.fmt.long(iso) + ", in " + F.fmt.dayCount(away)
+      + ". " + (hidden ? "Hidden from guests." : "Shown to guests.");
   }
 
-  function recordFor(id) {
-    return F.milestones.filter(function (m) { return m.id === id; })[0];
+  function row(item, away, owner) {
+    return h("div.b-item", {
+      role: "listitem",
+      "data-anchor": item.date === F.project.primaryDate.date ? "true" : null,
+      "data-id": item.id,
+      "data-away": String(away),
+      "data-date": item.date,
+      "data-visibility": "shown",
+    }, [
+      h("span.b-away.num", { text: String(away) }),
+      /* The count column carries a bare figure under one header, which
+         is the right typography and leaves the unit unspoken. It is
+         spoken here instead, so the row reads as a sentence to anyone
+         not looking at the column. */
+      h("span.b-vh.b-unitSaid", { text: " days away," }),
+      h("span.b-tick", { "aria-hidden": "true" }),
+      h("div.b-copy", {}, [
+        h("p.b-title", { "data-clamp": "true", text: item.title }),
+        h("p.b-date", { text: F.fmt.weekdayShort(item.date) + " " + F.fmt.short(item.date) }),
+        owner ? h("button.b-grab", {
+          type: "button",
+          "aria-controls": "b-edit",
+          "aria-expanded": "false",
+          "aria-label": grabLabel(item, item.date, away, false),
+        }, [h("span.b-grabWord", { text: "Shown" })]) : null,
+      ]),
+    ]);
   }
 
   function measure(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
-    var px = SCALE[o.medium] || SCALE.phone;
+    var px = o.owner ? ownerScale() : (SCALE[o.medium] || SCALE.phone);
     var kids = [h("div.b-rail", { "aria-hidden": "true" })];
-
+    /* The top of the rail is today, and it says so. The instrument could
+       not be read on its own: the only anchor for "now" was in the other
+       column, four hundred pixels away. */
+    kids.push(h("p.b-origin", { "aria-hidden": "true", text: "Today, " + F.fmt.medium(clock) }));
     ahead(clock).forEach(function (item) {
-      var away = daysFrom(clock, item.date);
-      kids.push(h("div.b-item", {
-        role: "listitem",
-        "data-anchor": item.date === F.project.primaryDate.date ? "true" : null,
-        "data-id": item.id,
-        "data-away": String(away),
-        "data-date": item.date,
-        "data-visibility": "shown",
-      }, [
-        h("span.b-away.num", { text: String(away) }),
-        /* The count column carries a bare figure under one header, which
-           is the right typography and leaves the unit unspoken. It is
-           spoken here instead, so the row reads as a sentence to anyone
-           not looking at the column. */
-        h("span.b-vh", { text: " days away," }),
-        h("span.b-tick", { "aria-hidden": "true" }),
-        h("div.b-copy", {}, [
-          h("p.b-title", { "data-clamp": "true", text: item.title }),
-          h("p.b-date", { text: F.fmt.weekdayShort(item.date) + " " + F.fmt.short(item.date) }),
-          o.owner ? h("button.b-grab", {
-            type: "button",
-            "aria-label": grabLabel(item, item.date, away, false),
-          }, [h("span.b-grabWord", { text: "Shown" })]) : null,
-        ]),
-      ]));
+      kids.push(row(item, daysFrom(clock, item.date), o.owner));
     });
-
     return h("div", { style: "line-height:1.5" }, [
       h("h2.b-measureHead", { text: "days away" }),
       h("div.b-measure", {
@@ -137,11 +145,11 @@
      node — moving the subtree that holds the focused stepper drops focus
      to the body, and the gesture dies for a keyboard user.
 
-     Two items can legitimately land near each other once an owner starts
-     moving things. The tick and the count stay on the true pixel,
-     always, because they are the truth; only the words are pushed clear.
-     So the measure can never restate one item's distance as another's,
-     and it never quietly fudges a close pair. */
+     The tick and the count stay on the true pixel, always, because they
+     are the truth; only the words are pushed clear. Where two moments
+     land on the SAME day they become one mark with two rows under it,
+     done by attribute rather than by structure, so nothing is
+     reparented and every row keeps its own name. */
   function place(measureEl) {
     if (!measureEl) return;
     var px = Number(measureEl.getAttribute("data-px")) || 14;
@@ -152,55 +160,73 @@
       return Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away"));
     });
 
-    var bottom = -Infinity, lastBottom = 0;
+    var bottom = -Infinity, lastBottom = 0, run = [];
+    function closeRun() {
+      run.forEach(function (el, i) {
+        el.setAttribute("data-stack", run.length === 1 ? "" : (i === 0 ? "lead" : "follow"));
+        var said = el.querySelector(".b-unitSaid");
+        if (said) {
+          said.textContent = run.length === 1
+            ? " days away,"
+            : " days away, " + (i === 0 ? "first" : "then") + " of "
+              + run.length + " moments on this day,";
+        }
+      });
+      run = [];
+    }
+
     items.forEach(function (el, index) {
       var away = Number(el.getAttribute("data-away"));
       var top = away * px;
       el.style.top = top + "px";
       el.removeAttribute("data-lead");
 
+      if (run.length && Number(run[0].getAttribute("data-away")) !== away) closeRun();
+      run.push(el);
+
       var copy = el.querySelector(".b-copy");
       copy.style.setProperty("--push", "0px");
       var height = copy.getBoundingClientRect().height;
+      var gap = el.getAttribute("data-stack") === "follow" ? 1 : 10;
       var push = bottom > top ? Math.ceil(bottom - top) : 0;
       copy.style.setProperty("--push", push + "px");
       el.setAttribute("data-crowded", push > 0 ? "true" : "false");
-      bottom = top + push + height + 10;
+      bottom = top + push + height + gap;
       lastBottom = bottom;
       if (index === 0) el.setAttribute("data-lead", "true");
     });
+    closeRun();
 
-    var note = measureEl.closest(".b-field");
-    note = note && note.querySelector(".b-gapNote");
+    var field = measureEl.closest(".b-field");
+    var note = field && field.querySelector(".b-gapNote");
     if (note && items.length) note.textContent = gapSentence(items[0].getAttribute("data-date"));
     /* The measure is at least the horizon, and taller if the words at
        the foot of it need the room. A rail that ends above its own last
-       row is the undesigned edge the panel looks for first. */
-    var needed = Math.ceil(lastBottom + 24);
-    measureEl.style.height = Math.max(horizonDays * px + ROW, needed) + "px";
+       row is the undesigned edge a panel looks for first. */
+    measureEl.style.height = Math.max(horizonDays * px + ROW, Math.ceil(lastBottom + 24)) + "px";
   }
 
   /* ── behind you ───────────────────────────────────────────────── */
 
-  /* Two sentences, split by who is reading. The owner is the person
-     doing the work and a tally is the right thing to hand them. A guest
-     is not, and "2 done" to somebody who has never used a tracker, with
-     a cancellation alluded to and never named, reads as withheld bad
-     news. The received surfaces name the things instead. */
+  /* Two sentences, split by who is reading, and the rows behind a
+     disclosure the reader can actually open. The lock says the past is
+     stated in a sentence and listed in full only if asked for; the
+     asking was the half that had never been built, so the rows were in
+     the DOM and reachable by nobody. */
   function behindBlock(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
-    var past = behind(clock);
-    /* "Done" is everything behind the clock that is still going ahead,
-       not everything the fixture happens to label covered. Read at the
-       day-of clock the two are very different numbers, and the label is
-       the one that would have been wrong. */
+    var dayOf = clock === F.project.primaryDate.date;
+    var past = behind(clock).filter(function (m) { return dayOf ? m.state !== "cancelled" : true; });
     var done = past.filter(function (m) { return m.state !== "cancelled"; });
     var dropped = past.filter(function (m) { return m.state === "cancelled"; });
     var last = done[done.length - 1];
+    if (!past.length) return null;
 
     var note;
-    if (o.owner) {
+    if (dayOf) {
+      note = last ? last.title + ", " + F.fmt.medium(last.date) + "." : "";
+    } else if (o.owner) {
       note = done.length + " done, the last of them " + F.fmt.medium(last.date) + "."
         + (dropped.length ? " One thing is not going ahead." : "");
     } else {
@@ -211,10 +237,7 @@
           : "");
     }
 
-    return h("section.b-behind", {}, [
-      h("h2.b-behindLabel", { text: "Behind you" }),
-      h("p.b-behindNote", { text: note.trim() }),
-    ].concat(past.map(function (item) {
+    var rows = past.map(function (item) {
       return h("div.b-behindRow", {}, [
         h("span.b-behindDate.num", {
           text: item.date ? F.fmt.weekdayShort(item.date) + " " + F.fmt.short(item.date) : "No date",
@@ -224,24 +247,41 @@
           text: item.title,
         }),
       ]);
-    })));
+    });
+
+    return h("section.b-behind", {}, [
+      h("details.b-behindDetails", {}, [
+        h("summary.b-behindSummary", {}, [
+          h("h2.b-behindLabel", { text: dayOf ? "How you got here" : "Behind you" }),
+          h("span.b-behindCount.num", { text: past.length + " moments" }),
+        ]),
+        h("div.b-behindRows", {}, rows),
+      ]),
+      /* The sentence closes the block. It used to open it, so on the
+         wedding morning the last thing a guest read before the footer
+         was a cancelled hotel search. */
+      h("p.b-behindNote", { text: note.trim() }),
+    ]);
   }
 
-  function foot() {
+  function foot(opts) {
+    var o = opts || {};
     return h("footer.b-foot", {}, [
       h("span", { text: "Kept by " + F.workspace.owner }),
-      h("span", { text: "Updated " + F.updatedLabel }),
-      h("span", { text: "Signal Timeline" }),
+      /* No stamp where there is nothing to stamp: a project that has
+         never held anything, and the morning itself, where an
+         eleven-week-old timestamp reads as neglect. */
+      o.stamp === false ? null : h("span", { text: "Updated " + F.updatedLabel }),
+      h("span", { text: o.link || "Signal Timeline" }),
     ]);
   }
 
   /* A labelled section is a region landmark. It travels better than
-     <main> too: when this language moves to Home, Notes and Tasks it
-     will sit inside an app shell that already owns the document's one
-     main element. */
-  function field(kids, extra) {
+     <main>: when this language moves to Home, Notes and Tasks it will
+     sit inside an app shell that already owns the document's one main. */
+  function field(kids, extra, projectName) {
     return h("section.b-field" + (extra || ""), {
-      "aria-label": "The plan for " + F.project.name,
+      "aria-label": "The plan for " + (projectName || F.project.name),
     }, kids);
   }
 
@@ -250,10 +290,7 @@
     if (attrs) for (var k in attrs) a[k] = attrs[k];
     return h("button.b-act", a);
   }
-
-  /* Anything not built is inert text, never a focusable promise. The
-     panel counted fifteen named, focus-ringed, hover-styled controls
-     advertising verbs the direction did not have. */
+  /* Anything not built is inert text, never a focusable promise. */
   function inert(label) { return h("span.b-inert", { text: label }); }
 
   function bar(projectName, actions) {
@@ -267,9 +304,11 @@
 
   /* ── reversibility ────────────────────────────────────────────── */
 
-  /* One surface, one place, and empty until it has something true to
-     say. A live region that announces a change on arrival is announcing
-     a change that did not happen. */
+  /* One surface, one place, silent until it has something true to say,
+     and every entry carries the closure that reverses it. Round 2 found
+     a stack that only knew how to move a date: a delete left a live
+     offer to restore a row that no longer existed, and pressing it
+     restored nothing and cleared itself as though it had worked. */
   var history = [];
 
   function undoBar() {
@@ -286,26 +325,39 @@
     var text = bar.querySelector(".b-undoText");
     var button = bar.querySelector(".b-undoAct");
     var top = history[history.length - 1];
+    text.textContent = "";
     if (!top) {
       bar.setAttribute("data-empty", "true");
-      text.textContent = "";
       button.disabled = true;
-      /* The bar is display:none while it has nothing to say, and a
-         control inside a hidden box that can still take focus strands a
-         keyboard user in a place they cannot see. */
       button.setAttribute("tabindex", "-1");
+      root.removeAttribute("data-undo");
       return;
     }
-    var moved = Math.abs(top.to - top.from);
     bar.setAttribute("data-empty", "false");
-    text.textContent = "";
-    text.appendChild(document.createTextNode("Last change: " + top.title + " moved "));
-    text.appendChild(h("span.num", { text: String(moved) }));
-    text.appendChild(document.createTextNode(
-      (moved === 1 ? " day " : " days ") + (top.to < top.from ? "closer." : "later."),
-    ));
+    top.say.forEach(function (part) {
+      text.appendChild(typeof part === "number"
+        ? h("span.num", { text: String(part) })
+        : document.createTextNode(part));
+    });
     button.disabled = false;
     button.removeAttribute("tabindex");
+    root.setAttribute("data-undo", "true");
+  }
+
+  function remember(root, entry) {
+    history.push(entry);
+    paintUndo(root);
+  }
+
+  function undo(root) {
+    var top = history[history.length - 1];
+    if (!top) return;
+    var restored = top.undo();
+    /* Peek, then pop. Popping first is how pressing Undo after a delete
+       used to restore nothing and empty the bar as though it had. */
+    if (restored !== false) history.pop();
+    paintUndo(root);
+    if (top.focus) top.focus();
   }
 
   /* ── the primary gesture ──────────────────────────────────────── */
@@ -313,7 +365,7 @@
   /* setAway is the ONLY writer of an item's distance. Every fact about
      the item is derived from the one date it computes, in the same
      frame, so the count, the date line, the accessible name and the
-     readout cannot drift apart the way they did in round 1. */
+     readout cannot drift apart. */
   function setAway(root, item, next) {
     var measureEl = item.parentElement;
     var clock = measureEl.getAttribute("data-clock") || F.today;
@@ -336,17 +388,32 @@
     var steps = root.querySelectorAll(".b-step");
     for (var i = 0; i < steps.length; i++) {
       var delta = Number(steps[i].getAttribute("data-delta"));
-      var blocked = delta > 0 ? away >= ceiling : away <= 1;
-      steps[i].setAttribute("aria-disabled", blocked ? "true" : "false");
+      steps[i].setAttribute("aria-disabled",
+        (delta > 0 ? away >= ceiling : away <= 1) ? "true" : "false");
     }
     var ceilingNote = root.querySelector(".b-ceiling");
     if (ceilingNote) {
       ceilingNote.textContent = away >= ceiling
-        ? "The day itself is in " + F.fmt.dayCount(ceiling) + "."
-        : "";
+        ? "This is as far as it goes. " + F.project.primaryDate.label + " is the last day."
+        : (away <= 1 ? "This is as near as it goes. Tomorrow is the soonest." : "");
     }
     place(measureEl);
+    keepInBand(root, item);
     return away;
+  }
+
+  /* The move is the one animated thing in the product, and below the
+     gutter width it was happening under a sheet that covered the row.
+     Gated on the sheet, not on a width: where the editor is the static
+     rail the steppers cannot move under the hand, so the scroll path is
+     unreachable there and the page keeps its place exactly as before. */
+  function keepInBand(root, item) {
+    var panel = root.querySelector(".b-edit");
+    if (!panel || getComputedStyle(panel).position !== "fixed") return;
+    var free = panel.getBoundingClientRect().top - 16;
+    var box = item.querySelector(".b-copy").getBoundingClientRect();
+    if (box.top >= 16 && box.bottom <= free) return;
+    window.scrollBy(0, Math.round(box.top - Math.max(16, (free - box.height) / 2)));
   }
 
   function setVisibility(item, hidden) {
@@ -364,6 +431,24 @@
     }
   }
 
+  function setTitle(item, value) {
+    var record = recordFor(item.getAttribute("data-id"));
+    var shown = value.trim() || "Untitled moment";
+    record.title = value.trim();
+    var title = item.querySelector(".b-title");
+    title.setAttribute("data-full", shown);
+    title.textContent = shown;
+    var grab = item.querySelector(".b-grab");
+    if (grab) {
+      grab.setAttribute("aria-label", grabLabel(
+        { title: shown },
+        item.getAttribute("data-date"),
+        Number(item.getAttribute("data-away")),
+        item.getAttribute("data-visibility") === "hidden",
+      ));
+    }
+  }
+
   /* ── the editor ───────────────────────────────────────────────── */
 
   function editor(root, item) {
@@ -371,6 +456,7 @@
     var away = Number(item.getAttribute("data-away"));
     var iso = item.getAttribute("data-date");
     var hidden = item.getAttribute("data-visibility") === "hidden";
+    var titleAtOpen = record.title;
 
     function step(delta, label) {
       return h("button.b-step", {
@@ -384,10 +470,15 @@
             if (event.currentTarget.getAttribute("aria-disabled") === "true") return;
             var from = Number(item.getAttribute("data-away"));
             var to = setAway(root, item, from + delta);
-            if (to !== from) {
-              history.push({ id: record.id, title: record.title, from: from, to: to });
-              paintUndo(root);
-            }
+            if (to === from) return;
+            var moved = Math.abs(to - from);
+            remember(root, {
+              id: record.id,
+              say: [record.title + " moved ", moved, moved === 1 ? " day " : " days ",
+                to < from ? "earlier." : "later."],
+              undo: function () { setAway(root, item, from); },
+              focus: function () { event.currentTarget.focus(); },
+            });
           },
         },
       });
@@ -401,37 +492,88 @@
         on: {
           click: function (event) {
             var group = event.currentTarget.parentElement.querySelectorAll("button");
+            var was = item.getAttribute("data-visibility") === "hidden";
+            if (was === wantHidden) return;
             for (var i = 0; i < group.length; i++) {
               group[i].setAttribute("aria-pressed", String(group[i] === event.currentTarget));
             }
             setVisibility(item, wantHidden);
+            remember(root, {
+              id: record.id,
+              say: [record.title + (wantHidden ? " is now hidden from guests." : " is now shown to guests.")],
+              undo: function () {
+                setVisibility(item, was);
+                for (var j = 0; j < group.length; j++) {
+                  group[j].setAttribute("aria-pressed", String(group[j].textContent === (was ? "Hidden" : "Shown")));
+                }
+              },
+            });
           },
         },
       });
     }
 
-    return h("div.b-edit", {}, [
+    return h("div.b-edit#b-edit", {
+      role: "group",
+      tabindex: "-1",
+      "aria-label": "Editing " + record.title,
+    }, [
       h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
         h("label.b-label", { for: "b-edit-title", text: "What it is" }),
-        h("input.b-input", { id: "b-edit-title", type: "text", value: record.title }),
+        h("input.b-input", {
+          id: "b-edit-title", type: "text", value: record.title,
+          placeholder: "What is happening",
+          on: {
+            input: function (event) { setTitle(item, event.target.value); },
+            change: function (event) {
+              var to = event.target.value.trim();
+              if (to === titleAtOpen) return;
+              var from = titleAtOpen;
+              titleAtOpen = to;
+              remember(root, {
+                id: record.id,
+                say: ["Renamed to " + (to || "Untitled moment") + "."],
+                undo: function () {
+                  setTitle(item, from);
+                  event.target.value = from;
+                  titleAtOpen = from;
+                },
+              });
+              C.settle();
+            },
+          },
+        }),
       ]),
       h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
-        h("span.b-label", { text: "When" }),
+        h("label.b-label", { for: "b-edit-date", text: "When" }),
+        /* A planner told "it has moved to Thursday 10 September" should
+           not have to work out that this is nineteen days from Saturday
+           22 August on the one surface built to remove arithmetic. */
+        h("input.b-input", {
+          id: "b-edit-date", type: "text", "data-mono": "true",
+          value: F.fmt.medium(iso) + " " + F.fmt.year(iso),
+          "aria-describedby": "b-edit-when-hint",
+          on: {
+            change: function (event) { commitDate(root, item, event.target); },
+            keydown: function (event) {
+              if (event.key === "Enter") { event.preventDefault(); commitDate(root, item, event.target); }
+            },
+          },
+        }),
         h("div.b-stepRow", {}, [
           h("div.b-stepBtns", {}, [
             step(-7, "Move a week earlier"), step(-1, "Move a day earlier"),
             step(1, "Move a day later"), step(7, "Move a week later"),
           ]),
-          /* Its own line, and a fixed measure. When this readout lived
-             beside the buttons it collapsed from 347px to 99px on the
-             first press and threw the button you were about to press
-             again 209px out from under the cursor. */
+          /* Its own line, at a reserved height. Beside the buttons it
+             collapsed on the first press and threw the button you were
+             about to press again two hundred pixels sideways. */
           h("span.b-stepRead.num", {
             role: "status",
             text: F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away),
           }),
         ]),
-        h("p.b-ceiling", { text: "" }),
+        h("p.b-ceiling#b-edit-when-hint", { text: "" }),
       ]),
       h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
         h("span.b-label", { id: "b-vis", text: "What guests see" }),
@@ -439,55 +581,103 @@
           visButton("Shown", false), visButton("Hidden", true),
         ]),
       ]),
-      h("div.b-editActs", {}, [
-        act("Done", true, { "data-act": "done" }),
-        /* "Take it off the plan" sat thirteen pixels under a toggle
-           reading "On the plan", so the same three words meant both
-           "a guest can see this" and "this ceases to exist". */
+      h("div.b-editActs", {}, [act("Done", true, { "data-act": "done" })]),
+      /* On its own line, after a rule. It used to sit ten pixels to the
+         right of the safe action at two and a half times its width. */
+      h("div.b-editDanger", {}, [
         act("Delete this moment", false, { "data-act": "delete" }),
       ]),
     ]);
   }
 
-  function closeEditor(root, focusBack) {
-    var open = root.querySelector('.b-item[data-editing="true"]');
-    if (!open) return;
-    var node = root.querySelector(".b-edit");
-    if (node) node.remove();
-    open.removeAttribute("data-editing");
-    root.removeAttribute("data-editor-open");
-    place(root.querySelector(".b-measure"));
-    if (focusBack) {
-      var grab = open.querySelector(".b-grab");
-      if (grab) grab.focus();
+  function commitDate(root, item, input) {
+    var measureEl = item.parentElement;
+    var clock = measureEl.getAttribute("data-clock") || F.today;
+    var ceiling = daysFrom(clock, F.project.primaryDate.date);
+    var iso = F.parseDay(input.value);
+    var hint = root.querySelector(".b-ceiling");
+    function refuse(message) {
+      input.setAttribute("aria-invalid", "true");
+      if (hint) hint.textContent = message;
+    }
+    if (!iso) return refuse("That is not a date. Try 3 October 2026.");
+    var away = daysFrom(clock, iso);
+    if (away < 1) return refuse("That day has gone. Pick one still ahead.");
+    if (away > ceiling) {
+      return refuse("This is as far as it goes. " + F.project.primaryDate.label + " is the last day.");
+    }
+    input.setAttribute("aria-invalid", "false");
+    if (hint) hint.textContent = "";
+    var record = recordFor(item.getAttribute("data-id"));
+    var from = Number(item.getAttribute("data-away"));
+    var to = setAway(root, item, away);
+    input.value = F.fmt.medium(F.plusDays(clock, to)) + " " + F.fmt.year(F.plusDays(clock, to));
+    if (to === from) return;
+    var moved = Math.abs(to - from);
+    remember(root, {
+      id: record.id,
+      say: [record.title + " moved ", moved, moved === 1 ? " day " : " days ",
+        to < from ? "earlier." : "later."],
+      undo: function () {
+        setAway(root, item, from);
+        input.value = F.fmt.medium(F.plusDays(clock, from)) + " " + F.fmt.year(F.plusDays(clock, from));
+      },
+    });
+  }
+
+  function moveUndoBar(root, into) {
+    var bar = root.querySelector(".b-undo");
+    if (!bar) return;
+    if (into) into.insertBefore(bar, into.firstChild);
+    else {
+      var host = root.querySelector(".b-undoHome") || root;
+      host.appendChild(bar);
     }
   }
 
-  /* The panel is appended to the MEASURE, not to the item, and pinned at
-     the height the item had when it was opened. Hung off the item it
-     travelled ninety-eight pixels on the first press and took the button
-     you were about to press again with it. The thing you are moving
-     moves; the thing you are pressing does not. */
+  function closeEditor(root, focusBack) {
+    var open = root.querySelector('.b-item[data-editing="true"]');
+    var node = root.querySelector(".b-edit");
+    /* The bar comes home BEFORE the panel is removed, or the one
+       reversibility surface is destroyed with it and paintUndo has
+       nothing to find for the rest of the mount. */
+    moveUndoBar(root, null);
+    if (node) node.remove();
+    root.removeAttribute("data-editor-open");
+    root.style.removeProperty("--b-sheet");
+    if (!open) return;
+    open.removeAttribute("data-editing");
+    var grab = open.querySelector(".b-grab");
+    if (grab) grab.setAttribute("aria-expanded", "false");
+    place(root.querySelector(".b-measure"));
+    if (focusBack && grab) grab.focus();
+  }
+
   function openEditor(root, item) {
     if (item.getAttribute("data-editing") === "true") return;
     closeEditor(root, false);
     var node = editor(root, item);
     (root.querySelector(".b-editHost") || item.parentElement).appendChild(node);
+    moveUndoBar(root, node);
     item.setAttribute("data-editing", "true");
     root.setAttribute("data-editor-open", "true");
+    var grab = item.querySelector(".b-grab");
+    if (grab) grab.setAttribute("aria-expanded", "true");
     place(root.querySelector(".b-measure"));
+    /* A fixed sheet stands outside layout, so the column it covers has
+       to be given the room back or the last rows are unreachable. */
+    if (getComputedStyle(node).position === "fixed") {
+      root.style.setProperty("--b-sheet", (node.offsetHeight + 24) + "px");
+    }
+    keepInBand(root, item);
+    node.focus();
   }
 
-  function undo(root) {
-    var last = history.pop();
-    if (!last) return;
-    var item = root.querySelector('.b-item[data-id="' + last.id + '"]');
-    if (item) {
-      setAway(root, item, last.from);
-      var back = root.querySelector('.b-step[data-delta="' + (last.to < last.from ? "-7" : "7") + '"]');
-      if (back) back.focus();
-    }
-    paintUndo(root);
+  function focusAfterRemoval(root, next) {
+    var target = (next && next.isConnected && next.querySelector(".b-grab"))
+      || root.querySelector(".b-item .b-grab")
+      || root.querySelector('[data-act="add"]');
+    if (target) target.focus();
   }
 
   function wireOwner(root, opts) {
@@ -501,24 +691,79 @@
       var name = action.getAttribute("data-act");
       if (name === "done") { closeEditor(root, true); return; }
       if (name === "delete") {
-        /* The editor is a sibling of the rows now, not a child of one,
-           so the row it belongs to has to be named rather than walked
-           up to. */
         var item = root.querySelector('.b-item[data-editing="true"]');
         if (!item) return;
         var measureEl = item.parentElement;
+        var record = recordFor(item.getAttribute("data-id"));
+        var next = item.nextElementSibling;
         closeEditor(root, false);
         item.remove();
         place(measureEl);
+        focusAfterRemoval(root, next);
+        /* The live node is kept, not its markup: setAway writes the
+           owner's edits to the DOM, so rebuilding from the record would
+           restore a moment they never had. */
+        remember(root, {
+          id: record.id,
+          say: [record.title + " was removed."],
+          undo: function () {
+            measureEl.insertBefore(item, next && next.isConnected ? next : null);
+            place(measureEl);
+            var back = item.querySelector(".b-grab");
+            if (back) back.focus();
+          },
+        });
         return;
       }
       if (name === "add") {
-        var first = root.querySelector(".b-item");
-        if (first) openEditor(root, first);
+        var host = root.querySelector(".b-measure");
+        var clock = host.getAttribute("data-clock") || F.today;
+        var first = ahead(clock)[0];
+        var away = Math.max(1, (first ? daysFrom(clock, first.date) : 8) - 7);
+        var fresh = {
+          id: "moment-" + (F.milestones.length + 1),
+          title: "",
+          date: F.plusDays(clock, away),
+          state: "next",
+        };
+        F.milestones.push(fresh);
+        var node = row(fresh, away, true);
+        node.querySelector(".b-title").textContent = "Untitled moment";
+        host.insertBefore(node, host.querySelector(".b-item"));
+        place(host);
+        openEditor(root, node);
+        var input = root.querySelector("#b-edit-title");
+        if (input) { input.value = ""; input.focus(); }
+        remember(root, {
+          id: fresh.id,
+          say: ["A moment was added."],
+          undo: function () {
+            closeEditor(root, false);
+            node.remove();
+            F.milestones.splice(F.milestones.indexOf(fresh), 1);
+            place(host);
+          },
+        });
         return;
       }
-      if (name === "preview") { C.rootEl().setAttribute("data-state", "desk"); C.mount(); return; }
-      if (name === "publish") { C.rootEl().setAttribute("data-state", "publish"); C.mount(); }
+      if (name === "copy") {
+        var live = root.querySelector(".b-live");
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(F.shareUrlFull).then(function () {
+            action.textContent = "Copied";
+            if (live) live.textContent = "Link copied.";
+            setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
+          }, function () {
+            if (live) live.textContent = "Copy did not work. Select the link and copy it by hand.";
+          });
+        } else if (live) {
+          live.textContent = "Copy did not work. Select the link and copy it by hand.";
+        }
+        return;
+      }
+      if (name === "preview") { cameFromOwner = true; go("desk"); return; }
+      if (name === "publish") { cameFromOwner = true; go("publish"); return; }
+      if (name === "owner") { cameFromOwner = false; go("owner-flight"); }
     });
 
     root.addEventListener("keydown", function (event) {
@@ -527,26 +772,44 @@
       if (grab && (event.key === "Enter" || event.key === " ")) {
         event.preventDefault();
         openEditor(root, grab.closest(".b-item"));
-        return;
       }
-      /* Ctrl+Z is printed on the reversibility bar, so it exists. It
-         stays out of the way of native undo inside a text field, which
-         is a different promise the browser already keeps. */
-      var key = (event.key || "").toLowerCase();
-      if (key !== "z" || !(event.ctrlKey || event.metaKey) || event.shiftKey) return;
-      var el = document.activeElement;
-      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
-      event.preventDefault();
-      undo(root);
     });
+
+    /* On document, not on the field: after a delete used to drop focus
+       to the body, a root-bound listener meant the advertised key was
+       dead for the rest of the session. */
+    if (!wireOwner.keys) {
+      wireOwner.keys = true;
+      document.addEventListener("keydown", function (event) {
+        var key = (event.key || "").toLowerCase();
+        if (key !== "z" || !(event.ctrlKey || event.metaKey) || event.shiftKey) return;
+        var el = document.activeElement;
+        if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return;
+        var live = document.querySelector(".b-undo");
+        if (!live) return;
+        event.preventDefault();
+        undo(live.closest(".b-field") || document.body);
+      });
+    }
 
     var undoAct = root.querySelector(".b-undoAct");
     if (undoAct) undoAct.addEventListener("click", function () { undo(root); });
 
+    /* Deferred to after the mount: getComputedStyle on a node that is
+       not in the document yet reports static for everything, so the
+       sheet would never know it was a sheet and would reserve nothing. */
     if (o.open) {
-      var target = root.querySelector('.b-item[data-id="' + o.open + '"]');
-      if (target) openEditor(root, target);
+      requestAnimationFrame(function () {
+        var target = root.querySelector('.b-item[data-id="' + o.open + '"]');
+        if (target) openEditor(root, target);
+      });
     }
+  }
+
+  var cameFromOwner = false;
+  function go(state) {
+    C.rootEl().setAttribute("data-state", state);
+    C.mount();
   }
 
   /* ── the states ───────────────────────────────────────────────── */
@@ -561,18 +824,14 @@
         act("Publish", true, { "data-act": "publish" }),
       ]),
       h("div.b-two", {}, [
-        /* The editor takes the rail, beside the plan. Reserving a gutter
-           inside the measure column starved the titles down to 144px at
-           1440, and hanging the panel off the item took the button you
-           were pressing with it. The rail is already there, it is
-           sticky, and it costs the measure nothing. */
-        h("div.b-stick", { style: "line-height:1.5" }, [horizon({}), h("div.b-editHost")]),
+        h("div.b-stick", { style: "line-height:1.5" }, [
+          horizon({}), h("div.b-editHost"), h("div.b-undoHome", {}, [undoBar()]),
+        ]),
         h("div", { style: "line-height:1.5" }, [
-          measure({ owner: true, medium: "owner" }), behindBlock({ owner: true }),
+          measure({ owner: true }), behindBlock({ owner: true }),
         ]),
       ]),
-      undoBar(),
-      foot(),
+      foot({}),
     ]);
     wireOwner(node, opts || {});
     return node;
@@ -580,24 +839,38 @@
 
   states.phone = function () {
     return h("div.tl-device", {}, [
-      field([horizon({}), measure({ medium: "phone" }), behindBlock({}), foot()]),
+      field([horizon({}), measure({ medium: "phone" }), behindBlock({}), foot({})]),
     ]);
   };
 
   states.desk = function () {
     /* At desk width the horizon holds the left and stops scrolling, and
        the approach runs down the right. Seeing both at once is the one
-       thing a phone cannot give the reader, so it is the only thing this
-       state does differently. */
-    return h("div.tl-paperEdge", { style: "border-color:var(--fore-16)" }, [
+       thing a phone cannot give the reader. */
+    var artifact = h("div.tl-paperEdge", { style: "border-color:var(--fore-16)" }, [
       field([
         h("div.b-two", {}, [
           h("div.b-stick", { style: "line-height:1.5" }, [horizon({})]),
           h("div", { style: "line-height:1.5" }, [measure({ medium: "full" }), behindBlock({})]),
         ]),
-        foot(),
+        foot({}),
       ]),
     ]);
+    if (!cameFromOwner) return artifact;
+    /* The way back lives OUTSIDE the audience artifact, and only when
+       the owner arrived here by pressing Preview. Loading this state
+       directly is byte-identical to what a guest gets. */
+    var node = h("div", {}, [
+      h("div.b-previewStrip", {}, [
+        h("span.b-where", { text: "Preview" }),
+        act("Back to the plan", false, { "data-act": "owner" }),
+      ]),
+      artifact,
+    ]);
+    node.addEventListener("click", function (event) {
+      if (event.target.closest('[data-act="owner"]')) { cameFromOwner = false; go("owner-flight"); }
+    });
+    return node;
   };
 
   states["owner-flight"] = function () { return ownerSurface({}); };
@@ -608,8 +881,6 @@
   states["owner-empty"] = function () {
     var sibling = F.siblings[1];      /* Aisling & Tom — real, and genuinely empty */
     var node = field([
-      /* No Preview on a project with nothing to preview. An aria-disabled
-         control the owner cannot use is worse than an absent one. */
       bar(sibling.name, [inert("Nothing to preview yet")]),
       h("div.b-empty", {}, [
         h("h1.b-who", { text: sibling.name }),
@@ -619,29 +890,27 @@
           h("label.b-label", { for: "b-empty-date", text: "The day" }),
           h("input.b-input", {
             id: "b-empty-date", type: "text", "data-mono": "true",
-            placeholder: "3 October 2026", style: "max-width:240px",
-            "aria-describedby": "b-empty-hint",
+            style: "max-width:240px", "aria-describedby": "b-empty-hint",
           }),
           act("Set the day", true, { "data-act": "setday" }),
         ]),
-        h("p.b-hint", { id: "b-empty-hint", role: "status", text: "" }),
+        /* The format lives in a line that survives typing, not in a
+           placeholder that vanishes at the first keystroke. */
+        h("p.b-hint#b-empty-hint", { role: "status", text: "For example, 3 October 2026." }),
       ]),
-      foot(),
-    ]);
-    /* The one form in the direction had no failure path at all: pressing
-       the button on an empty field changed nothing, said nothing, and
-       moved nothing. */
+      foot({ stamp: false }),
+    ], "", sibling.name);
     node.addEventListener("click", function (event) {
       if (!event.target.closest('[data-act="setday"]')) return;
       var input = node.querySelector("#b-empty-date");
       var hint = node.querySelector("#b-empty-hint");
-      if (input.value.trim()) {
+      if (F.parseDay(input.value)) {
         input.setAttribute("aria-invalid", "false");
-        hint.textContent = "";
+        hint.textContent = "The day is set. Moments come next.";
         return;
       }
       input.setAttribute("aria-invalid", "true");
-      hint.textContent = "Pick the date of the day first.";
+      hint.textContent = "Type the day first. For example, 3 October 2026.";
       input.focus();
     });
     return node;
@@ -664,25 +933,49 @@
   }
 
   states.publish = function () {
-    return field([
+    var node = field([
+      bar(F.project.name, [act("Back to the plan", false, { "data-act": "owner" })]),
       h("div.b-press", {}, [
         h("div", { style: "line-height:1.5" }, [
           h("p.b-who", { text: "What lands in the message" }),
           h("div", { style: "margin-top:14px;line-height:1.5" }, [card()]),
         ]),
         h("div", { style: "line-height:1.5" }, [
-          h("p.b-who", { text: "The moment it becomes theirs" }),
+          h("p.b-who", { text: "The link" }),
           h("h2.b-pressTitle", { text: "Send it to " + F.project.name + "." }),
           h("p.b-pressBody", {
-            text: "This is what lands in the message. It carries the day, the distance "
-              + "and the plan, and nothing from your workspace: no notes, no suppliers, no prices.",
+            text: "It carries the day, the distance and the plan, and nothing from "
+              + "your workspace: no notes, no suppliers, no prices.",
           }),
           h("div.b-linkRow", {}, [h("span", { text: F.shareUrl })]),
-          h("div.b-barActs", {}, [act("Send the link", true), act("Copy the link")]),
+          h("div.b-barActs", {}, [
+            act("Copy the link", true, { "data-act": "copy" }),
+            inert("Sending comes next"),
+          ]),
+          h("p.b-live", { role: "status", text: "" }),
           h("p.b-note", { text: "You can turn the link off at any time. Anyone holding it then sees that it has ended." }),
         ]),
       ]),
     ]);
+    node.addEventListener("click", function (event) {
+      var action = event.target.closest("[data-act]");
+      if (!action) return;
+      if (action.getAttribute("data-act") === "owner") { cameFromOwner = false; go("owner-flight"); return; }
+      if (action.getAttribute("data-act") !== "copy") return;
+      var live = node.querySelector(".b-live");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(F.shareUrlFull).then(function () {
+          action.textContent = "Copied";
+          live.textContent = "Link copied.";
+          setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
+        }, function () {
+          live.textContent = "Copy did not work. Select the link and copy it by hand.";
+        });
+      } else {
+        live.textContent = "Copy did not work. Select the link and copy it by hand.";
+      }
+    });
+    return node;
   };
 
   states.unfurl = function () {
@@ -693,32 +986,28 @@
   };
 
   /* The wedding morning. The count is a countdown, and a countdown that
-     has arrived is a word, not a zero, so the number goes and "Today"
-     takes its place. Everything else on the screen is the fixture read
-     at the day-of clock: the milestone dated 3 October is happening, and
-     the eight that got the couple here are the keepsake reading. The old
-     copy said everything had happened while a live milestone was dated
-     that morning, which made this the one screen in the set telling a
-     lie on the one morning it is read. */
+     has arrived is a word, not a zero — so the word takes the count's
+     slot rather than being demoted to a micro-label while the couple's
+     name is promoted into the display register, which is the register
+     swap round 2 caught. */
   states.day = function () {
     var clock = F.project.primaryDate.date;
     var todayItems = F.live().filter(function (m) { return m.date && daysFrom(clock, m.date) === 0; });
     return h("div.tl-device", {}, [
       field([
         h("div.b-dayWrap", {}, [
-          h("p.b-dayToday", { text: "Today" }),
-          h("h1.b-dayNames", { text: F.project.name }),
+          h("h1.b-who", { text: F.project.name }),
+          h("p.b-dayCount", { text: "Today" }),
           h("p.b-dayDate", { text: F.fmt.longYear(clock) }),
-          h("p.b-sub", { text: F.project.primaryDate.label + " at The Orchard" }),
           h("div.b-dayRule"),
           h("p.b-dayNote", { text: "This is the day the plan was for." }),
         ]),
         todayItems.length ? h("section.b-dayNow", {}, [
           h("h2.b-behindLabel", { text: "Happening now" }),
-          h("p.b-dayNowTitle", { text: todayItems[0].title }),
+          h("p.b-dayNowTitle", { text: todayItems[0].title + " at The Orchard" }),
         ]) : null,
         behindBlock({ clock: clock }),
-        foot(),
+        foot({ stamp: false }),
       ]),
     ]);
   };
@@ -727,18 +1016,16 @@
     return h("div.tl-paperEdge", { style: "min-height:1123px" }, [
       field([
         /* Print sets the horizon beside the measure and drops to ten
-           pixels a day: A4 is 1123px tall and the screen scale runs off
-           the bottom of it. The scale changes; the proportion between
-           one gap and the next does not. */
+           pixels a day: A4 is 1123px and the screen scale runs off the
+           bottom of it. The scale changes; the proportion between one
+           gap and the next does not. */
         h("div.b-two", {}, [
           h("div", { style: "line-height:1.5" }, [horizon({})]),
-          h("div", { style: "line-height:1.5" }, [measure({ medium: "print" }), behindBlock({})]),
+          h("div", { style: "line-height:1.5" }, [
+            measure({ medium: "print" }), behindBlock({}),
+          ]),
         ]),
-        h("footer.b-foot", {}, [
-          h("span", { text: "Kept by " + F.workspace.owner }),
-          h("span", { text: "Updated " + F.updatedLabel }),
-          h("span", { text: F.shareUrl }),
-        ]),
+        foot({ link: F.shareUrl }),
       ], ".b-print"),
     ]);
   };
@@ -753,7 +1040,7 @@
             text: "The plan for " + F.project.name + " is no longer shared here. "
               + F.workspace.owner + " can send a new link whenever they want to.",
           }),
-          h("p.b-note", { text: "Nothing you saw before has been deleted. It is just not public any more." }),
+          h("p.b-note", { text: "Nothing has been deleted. Only the link stopped working." }),
         ]),
       ]),
     ]);
@@ -799,9 +1086,6 @@
       }
       return node;
     },
-    /* The core calls this after layout and again after the webfonts
-       swap, so a title that clamps to one less word re-places the rows
-       below it rather than leaving them on a stale push. */
     settle: function () {
       var all = document.querySelectorAll(".b-measure");
       for (var i = 0; i < all.length; i++) place(all[i]);
