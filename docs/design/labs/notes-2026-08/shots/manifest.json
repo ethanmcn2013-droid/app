@@ -1,8 +1,5 @@
 {
   "viewports": [
-    "390x844",
-    "768x1024",
-    "1280x900",
     "1440x960"
   ],
   "states": [
@@ -19,859 +16,229 @@
   ],
   "directions": [
     {
-      "key": "a",
-      "name": "A · The Desk"
+      "key": "r1",
+      "name": "Room 1"
     },
     {
-      "key": "b",
-      "name": "B · The Page"
+      "key": "r2",
+      "name": "Room 2"
     },
     {
-      "key": "c",
-      "name": "C · The Stack"
+      "key": "r3",
+      "name": "Room 3"
     }
   ],
   "errors": [],
   "shots": [
     {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "notebook",
-      "viewport": "390x844",
-      "file": "a-notebook--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "capture",
-      "viewport": "390x844",
-      "file": "a-capture--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "voice",
-      "viewport": "390x844",
-      "file": "a-voice--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "readback",
-      "viewport": "390x844",
-      "file": "a-readback--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "review",
-      "viewport": "390x844",
-      "file": "a-review--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "seam",
-      "viewport": "390x844",
-      "file": "a-seam--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "search",
-      "viewport": "390x844",
-      "file": "a-search--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "pressure",
-      "viewport": "390x844",
-      "file": "a-pressure--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "nothing",
-      "viewport": "390x844",
-      "file": "a-nothing--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "not-yet",
-      "viewport": "390x844",
-      "file": "a-not-yet--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "notebook",
-      "viewport": "390x844",
-      "file": "b-notebook--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "capture",
-      "viewport": "390x844",
-      "file": "b-capture--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "voice",
-      "viewport": "390x844",
-      "file": "b-voice--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "readback",
-      "viewport": "390x844",
-      "file": "b-readback--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "review",
-      "viewport": "390x844",
-      "file": "b-review--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "seam",
-      "viewport": "390x844",
-      "file": "b-seam--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "search",
-      "viewport": "390x844",
-      "file": "b-search--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "pressure",
-      "viewport": "390x844",
-      "file": "b-pressure--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "nothing",
-      "viewport": "390x844",
-      "file": "b-nothing--390x844.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "not-yet",
-      "viewport": "390x844",
-      "file": "b-not-yet--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "notebook",
-      "viewport": "390x844",
-      "file": "c-notebook--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "capture",
-      "viewport": "390x844",
-      "file": "c-capture--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "voice",
-      "viewport": "390x844",
-      "file": "c-voice--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "readback",
-      "viewport": "390x844",
-      "file": "c-readback--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "review",
-      "viewport": "390x844",
-      "file": "c-review--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "seam",
-      "viewport": "390x844",
-      "file": "c-seam--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "search",
-      "viewport": "390x844",
-      "file": "c-search--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "pressure",
-      "viewport": "390x844",
-      "file": "c-pressure--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "nothing",
-      "viewport": "390x844",
-      "file": "c-nothing--390x844.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "not-yet",
-      "viewport": "390x844",
-      "file": "c-not-yet--390x844.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "notebook",
-      "viewport": "768x1024",
-      "file": "a-notebook--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "capture",
-      "viewport": "768x1024",
-      "file": "a-capture--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "voice",
-      "viewport": "768x1024",
-      "file": "a-voice--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "readback",
-      "viewport": "768x1024",
-      "file": "a-readback--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "review",
-      "viewport": "768x1024",
-      "file": "a-review--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "seam",
-      "viewport": "768x1024",
-      "file": "a-seam--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "search",
-      "viewport": "768x1024",
-      "file": "a-search--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "pressure",
-      "viewport": "768x1024",
-      "file": "a-pressure--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "nothing",
-      "viewport": "768x1024",
-      "file": "a-nothing--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "not-yet",
-      "viewport": "768x1024",
-      "file": "a-not-yet--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "notebook",
-      "viewport": "768x1024",
-      "file": "b-notebook--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "capture",
-      "viewport": "768x1024",
-      "file": "b-capture--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "voice",
-      "viewport": "768x1024",
-      "file": "b-voice--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "readback",
-      "viewport": "768x1024",
-      "file": "b-readback--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "review",
-      "viewport": "768x1024",
-      "file": "b-review--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "seam",
-      "viewport": "768x1024",
-      "file": "b-seam--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "search",
-      "viewport": "768x1024",
-      "file": "b-search--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "pressure",
-      "viewport": "768x1024",
-      "file": "b-pressure--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "nothing",
-      "viewport": "768x1024",
-      "file": "b-nothing--768x1024.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "not-yet",
-      "viewport": "768x1024",
-      "file": "b-not-yet--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "notebook",
-      "viewport": "768x1024",
-      "file": "c-notebook--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "capture",
-      "viewport": "768x1024",
-      "file": "c-capture--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "voice",
-      "viewport": "768x1024",
-      "file": "c-voice--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "readback",
-      "viewport": "768x1024",
-      "file": "c-readback--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "review",
-      "viewport": "768x1024",
-      "file": "c-review--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "seam",
-      "viewport": "768x1024",
-      "file": "c-seam--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "search",
-      "viewport": "768x1024",
-      "file": "c-search--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "pressure",
-      "viewport": "768x1024",
-      "file": "c-pressure--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "nothing",
-      "viewport": "768x1024",
-      "file": "c-nothing--768x1024.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "not-yet",
-      "viewport": "768x1024",
-      "file": "c-not-yet--768x1024.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "notebook",
-      "viewport": "1280x900",
-      "file": "a-notebook--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "capture",
-      "viewport": "1280x900",
-      "file": "a-capture--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "voice",
-      "viewport": "1280x900",
-      "file": "a-voice--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "readback",
-      "viewport": "1280x900",
-      "file": "a-readback--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "review",
-      "viewport": "1280x900",
-      "file": "a-review--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "seam",
-      "viewport": "1280x900",
-      "file": "a-seam--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "search",
-      "viewport": "1280x900",
-      "file": "a-search--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "pressure",
-      "viewport": "1280x900",
-      "file": "a-pressure--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "nothing",
-      "viewport": "1280x900",
-      "file": "a-nothing--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
-      "state": "not-yet",
-      "viewport": "1280x900",
-      "file": "a-not-yet--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "notebook",
-      "viewport": "1280x900",
-      "file": "b-notebook--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "capture",
-      "viewport": "1280x900",
-      "file": "b-capture--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "voice",
-      "viewport": "1280x900",
-      "file": "b-voice--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "readback",
-      "viewport": "1280x900",
-      "file": "b-readback--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "review",
-      "viewport": "1280x900",
-      "file": "b-review--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "seam",
-      "viewport": "1280x900",
-      "file": "b-seam--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "search",
-      "viewport": "1280x900",
-      "file": "b-search--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "pressure",
-      "viewport": "1280x900",
-      "file": "b-pressure--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "nothing",
-      "viewport": "1280x900",
-      "file": "b-nothing--1280x900.png"
-    },
-    {
-      "direction": "b",
-      "name": "B · The Page",
-      "state": "not-yet",
-      "viewport": "1280x900",
-      "file": "b-not-yet--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "notebook",
-      "viewport": "1280x900",
-      "file": "c-notebook--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "capture",
-      "viewport": "1280x900",
-      "file": "c-capture--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "voice",
-      "viewport": "1280x900",
-      "file": "c-voice--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "readback",
-      "viewport": "1280x900",
-      "file": "c-readback--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "review",
-      "viewport": "1280x900",
-      "file": "c-review--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "seam",
-      "viewport": "1280x900",
-      "file": "c-seam--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "search",
-      "viewport": "1280x900",
-      "file": "c-search--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "pressure",
-      "viewport": "1280x900",
-      "file": "c-pressure--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "nothing",
-      "viewport": "1280x900",
-      "file": "c-nothing--1280x900.png"
-    },
-    {
-      "direction": "c",
-      "name": "C · The Stack",
-      "state": "not-yet",
-      "viewport": "1280x900",
-      "file": "c-not-yet--1280x900.png"
-    },
-    {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "notebook",
       "viewport": "1440x960",
-      "file": "a-notebook--1440x960.png"
+      "file": "r1-notebook--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "capture",
       "viewport": "1440x960",
-      "file": "a-capture--1440x960.png"
+      "file": "r1-capture--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "voice",
       "viewport": "1440x960",
-      "file": "a-voice--1440x960.png"
+      "file": "r1-voice--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "readback",
       "viewport": "1440x960",
-      "file": "a-readback--1440x960.png"
+      "file": "r1-readback--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "review",
       "viewport": "1440x960",
-      "file": "a-review--1440x960.png"
+      "file": "r1-review--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "seam",
       "viewport": "1440x960",
-      "file": "a-seam--1440x960.png"
+      "file": "r1-seam--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "search",
       "viewport": "1440x960",
-      "file": "a-search--1440x960.png"
+      "file": "r1-search--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "pressure",
       "viewport": "1440x960",
-      "file": "a-pressure--1440x960.png"
+      "file": "r1-pressure--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "nothing",
       "viewport": "1440x960",
-      "file": "a-nothing--1440x960.png"
+      "file": "r1-nothing--1440x960.png"
     },
     {
-      "direction": "a",
-      "name": "A · The Desk",
+      "direction": "r1",
+      "name": "Room 1",
       "state": "not-yet",
       "viewport": "1440x960",
-      "file": "a-not-yet--1440x960.png"
+      "file": "r1-not-yet--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "notebook",
       "viewport": "1440x960",
-      "file": "b-notebook--1440x960.png"
+      "file": "r2-notebook--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "capture",
       "viewport": "1440x960",
-      "file": "b-capture--1440x960.png"
+      "file": "r2-capture--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "voice",
       "viewport": "1440x960",
-      "file": "b-voice--1440x960.png"
+      "file": "r2-voice--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "readback",
       "viewport": "1440x960",
-      "file": "b-readback--1440x960.png"
+      "file": "r2-readback--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "review",
       "viewport": "1440x960",
-      "file": "b-review--1440x960.png"
+      "file": "r2-review--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "seam",
       "viewport": "1440x960",
-      "file": "b-seam--1440x960.png"
+      "file": "r2-seam--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "search",
       "viewport": "1440x960",
-      "file": "b-search--1440x960.png"
+      "file": "r2-search--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "pressure",
       "viewport": "1440x960",
-      "file": "b-pressure--1440x960.png"
+      "file": "r2-pressure--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "nothing",
       "viewport": "1440x960",
-      "file": "b-nothing--1440x960.png"
+      "file": "r2-nothing--1440x960.png"
     },
     {
-      "direction": "b",
-      "name": "B · The Page",
+      "direction": "r2",
+      "name": "Room 2",
       "state": "not-yet",
       "viewport": "1440x960",
-      "file": "b-not-yet--1440x960.png"
+      "file": "r2-not-yet--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "notebook",
       "viewport": "1440x960",
-      "file": "c-notebook--1440x960.png"
+      "file": "r3-notebook--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "capture",
       "viewport": "1440x960",
-      "file": "c-capture--1440x960.png"
+      "file": "r3-capture--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "voice",
       "viewport": "1440x960",
-      "file": "c-voice--1440x960.png"
+      "file": "r3-voice--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "readback",
       "viewport": "1440x960",
-      "file": "c-readback--1440x960.png"
+      "file": "r3-readback--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "review",
       "viewport": "1440x960",
-      "file": "c-review--1440x960.png"
+      "file": "r3-review--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "seam",
       "viewport": "1440x960",
-      "file": "c-seam--1440x960.png"
+      "file": "r3-seam--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "search",
       "viewport": "1440x960",
-      "file": "c-search--1440x960.png"
+      "file": "r3-search--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "pressure",
       "viewport": "1440x960",
-      "file": "c-pressure--1440x960.png"
+      "file": "r3-pressure--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "nothing",
       "viewport": "1440x960",
-      "file": "c-nothing--1440x960.png"
+      "file": "r3-nothing--1440x960.png"
     },
     {
-      "direction": "c",
-      "name": "C · The Stack",
+      "direction": "r3",
+      "name": "Room 3",
       "state": "not-yet",
       "viewport": "1440x960",
-      "file": "c-not-yet--1440x960.png"
+      "file": "r3-not-yet--1440x960.png"
     }
   ]
 }

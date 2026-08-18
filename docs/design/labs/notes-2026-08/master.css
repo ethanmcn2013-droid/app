@@ -1,0 +1,704 @@
+/* ═══════════════════════════════════════════════════════════════════
+   NOTES · THE STACK — the locked master.
+
+   Two planes with depth between them. The upper plane is a desk carrying
+   the newest piece of paper; the lower plane is an index carrying
+   everything older. Reading lifts a note out of the index onto the desk.
+   Dictating takes the whole floor to ink.
+
+   The palette is exactly three colours and their stated alphas:
+
+     Ink      #111111   the floor, the type, every weight of emphasis
+     Indigo   #4f46e5   the accent, spent once
+     White    #ffffff   the paper the work lives on
+
+   There are no other hues anywhere: no red, no amber, no green, no
+   independent grey. State is ink DENSITY and FILL, never colour.
+
+     waiting on you   a filled ink dot on the note's own mark
+     in Tasks         an outlined chip, ink at full strength
+     the one indigo   the live edge of whatever you are doing right now
+     held / failed    ink, outlined or filled. Never red.
+
+   Type is Geist at 400 and 600. No other weight appears anywhere.
+
+     ?v=locked | quiet | studio | press
+     ?state=notebook | capture | voice | readback | review | seam
+            | search | pressure | nothing | not-yet
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── the three ─────────────────────────────────────────────── */
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  /* ── ink, at stated alphas over white ──────────────────────── */
+  --ink-1: var(--ink);                     /* primary type        21:1 */
+  --ink-2: rgba(17, 17, 17, 0.72);         /* secondary type     7.4:1 */
+  --ink-3: rgba(17, 17, 17, 0.62);         /* micro labels       5.3:1 */
+  /* Decorative only, and the gate enforces it. At 0.30 over white this is
+     1.99:1 — it was carrying uppercase labels, timestamps and the index's
+     source marks, all of which failed AA. Nothing that has to be read may
+     use it. */
+  --ink-4: rgba(17, 17, 17, 0.30);
+
+  /* The surface ladder. Four steps, and no value sits between them.
+     Nothing on white goes above 9%: a heavier rule reads as a box, and
+     this product does not draw boxes around a person's own writing. */
+  --wash: rgba(17, 17, 17, 0.035);
+  --line-soft: rgba(17, 17, 17, 0.055);
+  --line: rgba(17, 17, 17, 0.09);
+  --line-strong: rgba(17, 17, 17, 0.16);
+
+  /* ── white, at stated alphas over the ink floor ────────────── */
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.62);   /* 7.7:1 on ink             */
+  --on-ink-3: rgba(255, 255, 255, 0.42);   /* large type only          */
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  /* ── indigo, at stated alphas ──────────────────────────────── */
+  --indigo-ink: var(--indigo);             /* 6.3:1 on white           */
+  --indigo-deep: #4338ca;
+  --indigo-wash: rgba(79, 70, 229, 0.08);
+  --indigo-line: rgba(79, 70, 229, 0.32);
+  --indigo-ring: rgba(79, 70, 229, 0.16);
+
+  /* ── the ladders ───────────────────────────────────────────── */
+  /* One tracking curve, by size, declared once. Every letter-spacing in
+     this file is a token from it. */
+  --tr-34: -0.034em; --tr-27: -0.030em; --tr-21: -0.026em; --tr-18: -0.021em;
+  --tr-16: -0.016em; --tr-14: -0.012em; --tr-12: -0.006em; --tr-11: 0em;
+  --tr-cap: 0.075em;
+
+  /* 4 - 6 - 8 - 12 - 14 - 16 - pill. No seventh step. */
+  --r-xs: 4px;
+  --r-chip: 6px;
+  --r-ctl: 8px;
+  --r-card: 12px;
+  --r-paper: 14px;
+  --r-sheet: 16px;
+  --r-pill: 999px;
+
+  --inset: 18px;
+  --rail: 64px;
+  --tap: 44px;
+  --gutter: 30px;
+
+  /* One duration and one curve for the whole product. Any other value
+     has to be argued for in writing. The one exception is the paper
+     settle, which is the direction's own signature and is declared and
+     named below. */
+  --dur: 140ms;
+  --dur-out: 50ms;
+  --dur-settle: 220ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* Borders are rings, so thickening one on hover cannot move a pixel of
+     layout. Depth is stacked micro-shadows plus the ring, never one soft
+     blur — a blur is a haze, and paper is not hazy. */
+  --ring: 0 0 0 1px var(--line);
+  --ring-strong: 0 0 0 1px var(--line-strong);
+  --raise: 0 1px 1px rgba(17, 17, 17, 0.02), 0 2px 3px rgba(17, 17, 17, 0.03);
+  --paper: 0 1px 1px rgba(17, 17, 17, 0.04), 0 3px 6px rgba(17, 17, 17, 0.04), 0 10px 22px rgba(17, 17, 17, 0.06);
+  --paper-lift: 0 2px 3px rgba(17, 17, 17, 0.05), 0 8px 16px rgba(17, 17, 17, 0.07), 0 26px 52px rgba(17, 17, 17, 0.14);
+}
+
+/* The colour is set on html, not only on body. Without it every node in
+   the document head inherits the initial black, which is a colour this
+   product does not have. */
+html { background: var(--ink); color: var(--ink-1); }
+body {
+  background: var(--ink); color: var(--ink-1);
+  font-feature-settings: "ss01", "cv01";
+  overflow: hidden;
+}
+
+/* Tabular for digits that stack in a column or tick in place. Prose keeps
+   Geist's proportional figures, so "14 notes" reads as a sentence and a
+   timestamp column reads as a column. */
+.tab { font-variant-numeric: tabular-nums; }
+
+/* Visually hidden, but read. Ink density and fill carry state on screen;
+   this is the same fact for anyone not looking at it. */
+.sr {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Every interactive thing answers the keyboard the same way. Outline
+   only: setting a radius here overrides each element's own. */
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible,
+input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 3px;
+}
+.reset, .railTile, .railMark, .railAvatar, .headAct, .chip, .act, .verb,
+.mini, .idxRow, .dockGlyph, .dockField, .dockAvatar, .drop, .picker,
+.darkAct, .undoAct {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+  -webkit-appearance: none;
+}
+
+/* ── the floor ─────────────────────────────────────────────────── */
+.floor {
+  height: 100dvh; padding: var(--inset);
+  padding-left: calc(var(--inset) * 2 + var(--rail));
+  position: relative;
+}
+
+/* ── the capsule ───────────────────────────────────────────────── */
+.rail {
+  position: absolute; left: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: var(--rail);
+  background: var(--chrome); box-shadow: inset 0 0 0 1px var(--chrome-line);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; align-items: center; padding: 10px 0;
+  z-index: 4;
+}
+.railMark { width: var(--tap); height: var(--tap); display: grid; place-items: center; color: var(--on-ink-1); position: relative; }
+.railMark svg { width: 19px; height: 19px; }
+.railMark i { position: absolute; right: 9px; bottom: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--indigo); }
+.railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
+.railGroup { display: grid; gap: 4px; }
+.railTile {
+  width: var(--tap); height: var(--tap); border-radius: 12px; display: grid; place-items: center;
+  color: var(--on-ink-2); position: relative; cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.railTile svg { width: 19px; height: 19px; }
+.railTile:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+/* The capsule points at the sheet it opened. */
+.railTile[data-active]::after {
+  content: ""; position: absolute; right: -12px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px;
+  transform: rotate(45deg); background: var(--chrome); box-shadow: inset -1px 1px 0 var(--chrome-line); border-radius: 1.5px;
+}
+.railSpacer { flex: 1; }
+.railAvatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--chrome-active);
+  box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-1); display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em; margin-top: 8px; cursor: pointer;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────── */
+/* White against ink needs no shadow. Contrast is the elevation. */
+.sheet {
+  height: 100%; background: var(--white); border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; position: relative; min-width: 0; overflow: hidden;
+}
+
+.head { flex: none; display: flex; align-items: center; gap: 13px; padding: 0 var(--gutter); height: 62px; }
+.word { display: inline-flex; align-items: baseline; font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18); flex: none; color: var(--ink-1); }
+.word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
+.headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
+.headName { margin: 0; font-size: 15px; font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 5ch; }
+.headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+.headAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-14); cursor: pointer; white-space: nowrap;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.headAct svg { width: 15px; height: 15px; color: var(--ink-3); }
+.headAct:hover { background: var(--wash); color: var(--ink-1); }
+
+/* The one filled object in the head. A count of outstanding decisions is
+   the only genuinely urgent thing in Notes, and it reads as filled ink
+   rather than as a colour. */
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  cursor: pointer; position: relative; flex: none;
+  transition: background-color var(--dur) var(--curve);
+}
+/* The chip is 26px because that is the size the head wants; the target it
+   answers to is 44, taken behind the wordmark and the actions either
+   side of it. */
+.chip::before { content: ""; position: absolute; inset: -9px -6px; }
+.chip:hover { background: #000; }
+.chip[data-off] { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); font-weight: 400; }
+
+/* ── the desk ──────────────────────────────────────────────────── */
+.desk { flex: none; position: relative; padding: 6px var(--gutter) var(--gutter); }
+.pile { position: relative; }
+/* The sheets behind. Decoration, hidden from the reader: the notes they
+   stand for are in the index below, and naming them twice gives a screen
+   reader a duplicate notebook. */
+.behind {
+  position: absolute; left: 0; right: 0; top: 0; height: 100%;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--raise);
+  transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
+}
+.behind[data-n="1"] { transform: translateY(11px) scale(0.982); opacity: 0.92; }
+.behind[data-n="2"] { transform: translateY(22px) scale(0.964); opacity: 0.66; }
+.behind[data-n="3"] { transform: translateY(33px) scale(0.946); opacity: 0.4; }
+
+.top {
+  position: relative; background: var(--white); border-radius: var(--r-paper);
+  box-shadow: var(--ring), var(--paper); padding: 22px 24px 14px;
+  transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve);
+}
+.top[data-live] { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper-lift); }
+/* A sheet leaving for the pile. One overshoot-free settle, inside the
+   motion budget, and it never runs when the machine asks for stillness. */
+.top[data-settling] { transform: translateY(12px) scale(0.972); opacity: 0; }
+
+.topField {
+  width: 100%; border: 0; outline: 0; background: none; resize: none; display: block;
+  font: inherit; font-size: 18px; line-height: 1.55; letter-spacing: var(--tr-18); color: var(--ink-1);
+  field-sizing: content; min-height: calc(1.55em * 2); max-height: 42vh; overflow: auto;
+}
+.topField::placeholder { color: var(--ink-3); }
+.topFoot { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.topFoot .spacer { flex: 1; }
+.topMeta { font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; }
+.topMeta kbd { font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 7px; }
+
+.verb {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.verb svg { width: 16px; height: 16px; }
+.verb:hover { color: var(--ink-1); background: var(--wash); }
+
+.act {
+  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: var(--r-ctl);
+  font-size: 13.5px; letter-spacing: var(--tr-14); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer; white-space: nowrap;
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.act svg { width: 15px; height: 15px; flex: none; }
+.act:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.act[data-primary] { background: var(--indigo); color: var(--white); box-shadow: none; font-weight: 600; }
+.act[data-primary]:hover { background: var(--indigo-deep); }
+.act[data-ink] { background: var(--ink); color: var(--white); box-shadow: none; font-weight: 600; }
+.act[data-ink]:hover { background: #000; }
+.act[data-quiet] { box-shadow: none; color: var(--ink-3); }
+.act[data-quiet]:hover { box-shadow: none; background: var(--wash); color: var(--ink-1); }
+.act[disabled] { opacity: 0.4; cursor: default; }
+.act kbd { font: inherit; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; }
+
+/* A note lifted out of the index and read on the desk. Grafted from
+   direction B: the metadata is out of the text column, and the words are
+   prose at a held measure, because a note being read is the one place in
+   Notes where a person's own writing is the entire content. */
+.readSrc { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); margin: 0 0 12px; flex-wrap: wrap; }
+.readSrc svg { width: 14px; height: 14px; flex: none; }
+.readSrc .sep { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--ink-4); flex: none; }
+.readSrc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+.readSrc a:hover { color: var(--ink-1); border-color: var(--ink-2); }
+.readBody {
+  margin: 0; max-width: 68ch;
+  font-size: 18px; font-weight: 400; line-height: 1.62; letter-spacing: var(--tr-18); color: var(--ink-1);
+}
+.readBody .lede { font-weight: 600; }
+.readLong { font-size: 16.5px; line-height: 1.66; max-width: 72ch; }
+
+/* ── the index ─────────────────────────────────────────────────── */
+.indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.indexHead {
+  flex: none; display: flex; align-items: center; gap: 12px; padding: 0 var(--gutter) 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3);
+}
+.indexHead::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+.indexHead .cnt { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: 12px; white-space: nowrap; }
+.index { flex: 1; min-height: 0; overflow: auto; padding: 0 var(--gutter) 22px; scrollbar-width: thin; overflow-anchor: none; }
+.idxDay { margin: 0; padding: 16px 0 5px; font-size: 11px; font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); }
+
+.idxRow {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) auto auto; column-gap: 13px; align-items: center;
+  width: 100%; text-align: left; padding: 9px 10px; margin: 0 -10px; border-radius: var(--r-chip); cursor: pointer;
+  position: relative; transition: background-color var(--dur) var(--curve);
+}
+.idxRow + .idxRow::before { content: ""; position: absolute; left: 10px; right: 10px; top: 0; height: 1px; background: var(--line-soft); }
+.idxRow:hover { background: var(--wash); }
+.idxRow:hover::before, .idxRow:hover + .idxRow::before { opacity: 0; }
+.idxRow[data-open] { background: var(--wash); }
+/* The row a keyboard is on. The board has one tab stop; the arrows walk
+   it, and the row it is on has to be visible without hovering. */
+.idxRow[data-cursor] { background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line); }
+.idxRow[data-cursor]::before, .idxRow[data-cursor] + .idxRow::before { opacity: 0; }
+.idxMark { color: var(--ink-3); display: grid; place-items: center; position: relative; }
+.idxMark svg { width: 15px; height: 15px; }
+.idxMark i { position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-1); box-shadow: 0 0 0 2px var(--white); }
+.idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px #f2f1fd; }
+.idxText { font-size: 14.5px; line-height: 1.45; letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; }
+.idxText b { font-weight: 600; }
+.idxText span { color: var(--ink-3); }
+.idxTag {
+  font-size: 11px; font-weight: 600; letter-spacing: var(--tr-11); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r-pill); padding: 3px 8px; white-space: nowrap;
+}
+.idxTag[data-quiet] { box-shadow: none; color: var(--ink-3); font-weight: 400; }
+.idxWhen { font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; }
+mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); color: inherit; padding: 0 1px; }
+
+/* ── the dock ──────────────────────────────────────────────────── */
+.dockWrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 18px; display: flex; justify-content: center; pointer-events: none; z-index: 3; }
+.dockWrap::before {
+  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: 96px;
+  background: linear-gradient(to top, var(--white) 66%, rgba(255, 255, 255, 0)); pointer-events: none;
+}
+.dock {
+  position: relative; pointer-events: auto; display: flex; align-items: center; gap: 3px; padding: 5px;
+  background: var(--white); border-radius: var(--r-pill); box-shadow: var(--ring), var(--paper);
+  max-width: calc(100% - var(--gutter) * 2);
+}
+.dockField {
+  display: inline-flex; align-items: center; gap: 9px; height: 36px; padding: 0 14px 0 12px; border-radius: var(--r-pill);
+  min-width: 236px; background: var(--wash); color: var(--ink-3); font-size: 13px; letter-spacing: var(--tr-14); cursor: pointer;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.dockField:hover { background: rgba(17, 17, 17, 0.06); color: var(--ink-2); }
+.dockField svg { width: 15px; height: 15px; flex: none; }
+.dockField span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dockField kbd { font: inherit; margin-left: auto; font-size: 10.5px; font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); flex: none; }
+.dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+.dockGlyph svg { width: 17px; height: 17px; }
+.dockGlyph:hover { color: var(--ink-1); background: var(--wash); }
+.dockRule { width: 1px; height: 20px; background: var(--line); margin: 0 4px; flex: none; }
+.dockAvatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; margin: 0 3px 0 1px; cursor: pointer; flex: none; }
+
+/* ── the way back ──────────────────────────────────────────────── */
+/* The only reversible surface in the product, and it waits while you are
+   reading it. Nothing this product does is unreversible except delete,
+   and delete says so before it happens. */
+.undo {
+  position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 15px;
+  background: var(--ink); color: var(--white); border-radius: var(--r-pill);
+  box-shadow: var(--paper-lift); font-size: 13px; letter-spacing: var(--tr-14);
+  z-index: 5; white-space: nowrap; max-width: calc(100% - var(--gutter) * 2);
+}
+.undo span { overflow: hidden; text-overflow: ellipsis; }
+.undoAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: var(--r-pill);
+  background: var(--white); color: var(--ink); font-size: 12.5px; font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; flex: none;
+}
+.undoAct svg { width: 13px; height: 13px; }
+.undoAct kbd { font: inherit; font-size: 10px; font-weight: 600; opacity: 0.55; }
+
+/* ── voice: the floor goes to ink ──────────────────────────────── */
+.dark { position: fixed; inset: 0; background: var(--ink); color: var(--on-ink-1); z-index: 9; display: flex; flex-direction: column; }
+.darkTop { flex: none; display: flex; align-items: center; gap: 12px; padding: 26px 32px 0; }
+.darkTag { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.darkTag .rec { width: 8px; height: 8px; border-radius: 50%; background: var(--white); animation: recPulse 1.5s var(--curve) infinite; }
+@keyframes recPulse { 50% { opacity: 0.28; } }
+.darkTime { font-size: 12px; font-weight: 600; color: var(--on-ink-2); letter-spacing: var(--tr-12); }
+.darkTop .spacer { flex: 1; }
+.darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; overflow: auto; }
+.darkSaid { max-width: 900px; width: 100%; margin: 0 auto; font-size: 34px; font-weight: 400; line-height: 1.38; letter-spacing: var(--tr-34); }
+.darkSaid .tail { color: var(--on-ink-3); }
+.darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; width: 100%; margin: 40px auto 0; }
+.darkWave i { width: 3px; border-radius: 2px; background: var(--on-ink-2); transition: height var(--dur) var(--curve); }
+.darkFoot { flex: none; padding: 0 32px 34px; display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+/* The disclosure. It is not negotiable and it is not hidden behind a
+   press: the browser's speech engine is a third party the person did not
+   choose, and they are entitled to know while it is listening. */
+/* The one thing on this screen that must be readable is the sentence
+   saying the words are leaving the device. At --on-ink-3 it measured
+   4.1:1 and failed AA, which for a disclosure is not a nicety. */
+.darkNote { max-width: 62ch; margin: 0; font-size: 12px; line-height: 1.6; color: var(--on-ink-2); letter-spacing: var(--tr-12); }
+.darkFoot .spacer { flex: 1; }
+.darkAct {
+  display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border-radius: var(--r-pill);
+  font-size: 14px; letter-spacing: var(--tr-14); cursor: pointer;
+  color: var(--on-ink-2); box-shadow: inset 0 0 0 1px var(--chrome-line);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.darkAct svg { width: 17px; height: 17px; }
+.darkAct:hover { color: var(--on-ink-1); background: var(--chrome); }
+.darkAct[data-primary] { background: var(--white); color: var(--ink); box-shadow: none; font-weight: 600; }
+.darkAct[data-primary]:hover { background: #f2f2f2; }
+.dark :focus-visible { outline-color: var(--white); }
+
+/* ── the read-back ─────────────────────────────────────────────── */
+.saidWas {
+  margin: 0 0 4px; max-width: 84ch; padding: 14px 16px; border-radius: var(--r-chip);
+  background: var(--wash); font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14);
+}
+.saidWas b { display: block; font-size: 11px; font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+.pieces { display: grid; gap: 9px; margin-top: 14px; }
+.piece {
+  position: relative; max-width: 74ch; padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
+  background: var(--white); box-shadow: var(--ring), var(--raise);
+  font-size: 16.5px; line-height: 1.52; letter-spacing: var(--tr-16); color: var(--ink-1);
+  transition: box-shadow var(--dur) var(--curve);
+}
+.piece:focus-within { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); }
+.pieceField { width: 100%; border: 0; outline: 0; background: none; resize: none; display: block; font: inherit; color: inherit; field-sizing: content; }
+.drop { position: absolute; right: 8px; top: 50%; margin-top: -16px; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+.drop:hover { color: var(--ink-1); background: var(--wash); }
+.drop svg { width: 15px; height: 15px; }
+.piece::before { content: ""; position: absolute; left: 8px; top: 12px; bottom: 12px; width: 2px; border-radius: 2px; background: var(--line-strong); }
+.piece:focus-within::before { background: var(--indigo); }
+
+/* ── the hand ──────────────────────────────────────────────────── */
+.hand { position: relative; }
+/* The cards behind stretch to the height of their own container, so the
+   container has to be the cards and nothing else. Given the whole hand,
+   they painted straight over the line that says the decisions can be
+   undone, which is the one sentence in this state that has to be read. */
+.handStack { position: relative; }
+.handCard {
+  position: absolute; left: 0; right: 0; top: 0; height: 100%;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--raise);
+  transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
+}
+.handCard[data-n="1"] { transform: translateY(12px) scale(0.972); opacity: 0.9; }
+.handCard[data-n="2"] { transform: translateY(24px) scale(0.944); opacity: 0.6; }
+.handCard[data-n="3"] { transform: translateY(36px) scale(0.916); opacity: 0.32; }
+.handTop { position: relative; background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper-lift); padding: 24px 26px 18px; transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve); }
+.handTop[data-settling] { transform: translateY(-14px) scale(0.985); opacity: 0; }
+.handQ { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.handTitle { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: var(--tr-21); }
+.handOf { font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); }
+.pips { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+.pips i { width: 15px; height: 3px; border-radius: 2px; background: var(--line-strong); transition: background-color var(--dur) var(--curve); }
+.pips i[data-done] { background: var(--ink-1); }
+.pips i[data-now] { background: var(--indigo); }
+.handBody { margin: 0; max-width: 66ch; font-size: 18px; line-height: 1.58; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.handFoot { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.handFoot .spacer { flex: 1; }
+.deckNote { margin: 52px 0 0; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); display: flex; align-items: center; gap: 9px; }
+.deckNote svg { width: 14px; height: 14px; flex: none; }
+
+/* ── the seam ──────────────────────────────────────────────────── */
+.pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); }
+.peel {
+  position: relative; max-width: 720px; margin: -6px 6px 0 34px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 18px 20px;
+}
+.peel::before { content: ""; position: absolute; left: 30px; top: -7px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--white); box-shadow: -1px -1px 0 var(--line); }
+.peelTop { display: flex; align-items: center; gap: 9px; }
+.peelMark { width: 22px; height: 22px; border-radius: var(--r-chip); background: var(--ink); color: var(--white); display: grid; place-items: center; flex: none; }
+.peelMark svg { width: 13px; height: 13px; }
+.peelLabel { font-size: 11px; font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); }
+.peelField {
+  width: 100%; margin-top: 11px; border: 0; outline: 0; background: none; resize: none; display: block;
+  font: inherit; font-size: 16.5px; font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); color: var(--ink-1);
+  field-sizing: content; min-height: 32px; padding: 3px 0;
+}
+.peelRow { display: flex; align-items: center; gap: 9px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: 13px; letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; }
+.picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
+.picker svg { width: 14px; height: 14px; color: var(--ink-3); }
+.picker b { font-weight: 400; color: var(--ink-3); }
+.peelRow .spacer { flex: 1; }
+.peelWhy { margin: 12px 0 0; max-width: 74ch; font-size: 12.5px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.stays { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-3); letter-spacing: var(--tr-12); margin-top: 12px; }
+.stays svg { width: 13px; height: 13px; }
+
+/* ── search ────────────────────────────────────────────────────── */
+.searchTop { flex: none; padding: 6px var(--gutter) 18px; }
+.searchBar {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 14px 18px;
+  transition: box-shadow var(--dur) var(--curve);
+}
+.searchBar:focus-within { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); }
+.searchBar svg { width: 18px; height: 18px; color: var(--ink-3); flex: none; }
+.searchBar input { flex: 1; min-width: 0; min-height: 30px; padding: 3px 0; border: 0; outline: 0; background: none; font: inherit; font-size: 17px; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.searchBar input::placeholder { color: var(--ink-3); }
+/* On the ladder, and a real target: the drawn chip is 18px tall and the
+   thing a finger lands on is the 44 behind it. */
+.searchBar .esc {
+  position: relative; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: var(--r-xs);
+  box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); flex: none; cursor: pointer;
+}
+.searchBar .esc::before { content: ""; position: absolute; inset: -12px -10px; }
+
+/* ── every empty ───────────────────────────────────────────────── */
+.emptyTitle { margin: 0; font-size: 28px; font-weight: 600; line-height: 1.22; letter-spacing: var(--tr-27); text-wrap: balance; }
+.emptyBody { margin: 12px 0 0; font-size: 16px; line-height: 1.58; color: var(--ink-2); letter-spacing: var(--tr-16); max-width: 46ch; }
+.emptyMove { margin-top: 20px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.specs { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px 0 8px; }
+.spec { border-radius: var(--r-paper); box-shadow: var(--ring); padding: 20px 22px 22px; }
+.specName { margin: 0 0 12px; font-size: 11px; font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); }
+.spec .emptyTitle { font-size: 18px; letter-spacing: var(--tr-21); }
+.spec .emptyBody { font-size: 14px; margin-top: 8px; }
+.spec .emptyMove { margin-top: 14px; }
+.specWhy { margin: 13px 0 0; font-size: 12px; line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+
+/* ── not yet ───────────────────────────────────────────────────── */
+.states { display: grid; gap: 11px; padding: 4px 0 8px; }
+.state { display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: var(--r-paper); box-shadow: inset 0 0 0 1px var(--line); }
+.state svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--ink-2); }
+.state b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: var(--tr-14); }
+.state p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14); max-width: 62ch; }
+.state .act { margin-left: auto; align-self: center; }
+/* Held on this device is the product keeping its promise, so it is stated
+   in ink at full strength, not in a warning colour. */
+.state[data-tone="hold"] { box-shadow: inset 0 0 0 1px var(--ink-1); }
+/* The single destructive act is the one filled object in the family. */
+.state[data-tone="destroy"] { background: var(--ink); box-shadow: none; color: var(--white); }
+.state[data-tone="destroy"] p { color: var(--on-ink-2); }
+.state[data-tone="destroy"] svg { color: var(--white); }
+.state[data-tone="destroy"] .act { box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-2); }
+.state[data-tone="destroy"] .act[data-ink] { background: var(--white); color: var(--ink); }
+.state[data-tone="destroy"] :focus-visible { outline-color: var(--white); }
+.sk { height: 11px; border-radius: 2px; background: var(--wash); }
+.sk + .sk { margin-top: 9px; }
+.skelRow { padding: 12px 0; border-top: 1px solid var(--line-soft); }
+.skelSay { text-align: center; padding: 20px 0 0; margin: 0; font-size: 13px; color: var(--ink-3); letter-spacing: var(--tr-14); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE DECISION LAYER
+
+   Five design decisions, each isolated on its own root attribute, so a
+   change to one cannot leak into another. The three finished rooms are
+   nothing but three preset combinations of these five, which is why
+   every combination stays on brand: none of them can reach a colour that
+   is not Ink, Indigo or White.
+
+     data-paper    flat | stacked | deep
+     data-index    airy | tight
+     data-radius   sharp | soft | round
+     data-indigo   subtle | forward
+     data-type     calm | expressive
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── how the pile reads ────────────────────────────────────────── */
+/* Flat: no pile. The newest note is simply the top of the index, and the
+   direction gives up its signature in exchange for the whole sheet. */
+[data-paper="flat"] .behind { display: none; }
+[data-paper="flat"] .top { box-shadow: var(--ring); }
+[data-paper="flat"] .top[data-live] { box-shadow: 0 0 0 1px var(--indigo-line); }
+[data-paper="flat"] .handCard { display: none; }
+[data-paper="flat"] .handTop { box-shadow: var(--ring), var(--raise); }
+[data-paper="flat"] .desk { padding-bottom: 20px; }
+
+/* Deep: three sheets behind instead of two, and the shadow carries
+   further, so the pile reads as a season rather than as a week. */
+[data-paper="deep"] .behind[data-n="1"] { transform: translateY(13px) scale(0.978); }
+[data-paper="deep"] .behind[data-n="2"] { transform: translateY(26px) scale(0.956); }
+[data-paper="deep"] .top { box-shadow: var(--ring), var(--paper-lift); }
+[data-paper="deep"] .desk { padding-bottom: calc(var(--gutter) + 14px); }
+
+/* ── index density ─────────────────────────────────────────────── */
+/* Tight is not "the same thing, smaller". The preview stops earning its
+   place, so the row carries the title alone and the day rule takes the
+   width the preview gave back. */
+[data-index="tight"] .idxRow { padding: 7px 10px; column-gap: 11px; }
+[data-index="tight"] .idxText { font-size: 14px; }
+[data-index="tight"] .idxText span { display: none; }
+[data-index="tight"] .idxDay { padding: 13px 0 4px; }
+[data-index="tight"] .idxTag { padding: 2px 7px; }
+
+/* ── corner radius ─────────────────────────────────────────────── */
+[data-radius="sharp"] {
+  --r-chip: 4px; --r-ctl: 4px; --r-card: 6px; --r-paper: 6px; --r-sheet: 8px;
+}
+[data-radius="sharp"] .rail, [data-radius="sharp"] .railTile { border-radius: 8px; }
+[data-radius="sharp"] .railAvatar, [data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+[data-radius="sharp"] .dock, [data-radius="sharp"] .dockField, [data-radius="sharp"] .chip,
+[data-radius="sharp"] .idxTag, [data-radius="sharp"] .undo, [data-radius="sharp"] .undoAct,
+[data-radius="sharp"] .darkAct, [data-radius="sharp"] .dockGlyph { border-radius: 4px; }
+
+[data-radius="round"] {
+  --r-chip: 8px; --r-ctl: 12px; --r-card: 16px; --r-paper: 20px; --r-sheet: 24px;
+}
+[data-radius="round"] .rail { border-radius: 24px; }
+[data-radius="round"] .railTile { border-radius: 16px; }
+
+/* ── indigo intensity ──────────────────────────────────────────── */
+/* Subtle spends the accent on the live edge of the thing you are doing
+   now, and nowhere else. Forward spends it on the primary action too,
+   so the next move is the loudest object on the sheet. */
+[data-indigo="subtle"] .act[data-primary] { background: var(--ink); }
+[data-indigo="subtle"] .act[data-primary]:hover { background: #000; }
+[data-indigo="forward"] .chip { background: var(--indigo); }
+[data-indigo="forward"] .chip:hover { background: var(--indigo-deep); }
+[data-indigo="forward"] .idxRow[data-open] { box-shadow: inset 2px 0 0 var(--indigo); }
+[data-indigo="forward"] .undo { background: var(--indigo); }
+[data-indigo="forward"] .word::after { width: 5.5px; height: 5.5px; }
+
+/* ── the type of the note object ───────────────────────────────── */
+/* Expressive raises the read note and the hand, which are the two places
+   in Notes where the content is entirely a person's own writing, and
+   leaves every label where it was. */
+[data-type="expressive"] .readBody { font-size: 19.5px; line-height: 1.6; letter-spacing: var(--tr-21); }
+[data-type="expressive"] .readLong { font-size: 17.5px; line-height: 1.64; }
+[data-type="expressive"] .handBody { font-size: 19.5px; line-height: 1.56; letter-spacing: var(--tr-21); }
+[data-type="expressive"] .topField { font-size: 19px; }
+[data-type="expressive"] .emptyTitle { font-size: 31px; letter-spacing: var(--tr-34); }
+[data-type="expressive"] .darkSaid { font-size: 38px; }
+[data-type="calm"] .readBody { font-size: 17px; }
+[data-type="calm"] .handBody { font-size: 17px; }
+[data-type="calm"] .darkSaid { font-size: 30px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   NARROW
+   ═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  :root { --inset: 12px; --gutter: 22px; }
+  .specs { grid-template-columns: minmax(0, 1fr); }
+  .dockField { min-width: 168px; }
+}
+@media (max-width: 720px) {
+  :root { --inset: 9px; --gutter: 16px; }
+  .floor { padding: var(--inset) var(--inset) 0; }
+  /* The capsule and the dock are the same object here, which is the
+     locked behaviour. */
+  .rail {
+    left: var(--inset); right: var(--inset); top: auto;
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    width: auto; height: 60px; flex-direction: row; justify-content: space-around;
+    border-radius: 18px; padding: 0 6px;
+  }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+  .railAvatar { margin: 0; }
+  .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  .headName { display: none; }
+  /* Grafted from direction A. The desk's paper costs most of an 844px
+     screen before a single note is visible, so on a phone capture moves
+     into the dock, which is where a thumb already is. */
+  .desk { display: none; }
+  .indexWrap { padding-top: 6px; }
+  .index { padding-bottom: 128px; }
+  .dock { width: calc(100% - var(--gutter) * 2); max-width: none; padding: 6px 6px 6px 14px; align-items: flex-end; }
+  .dockField { display: none; }
+  .phoneField {
+    display: block; flex: 1; min-width: 0;
+    font: inherit; font-size: 15.5px; line-height: 1.5; letter-spacing: var(--tr-16); color: var(--ink-1);
+    field-sizing: content; min-height: calc(1.5em * 2); max-height: 40vh; padding: 8px 0;
+  }
+  .phoneField::placeholder { color: var(--ink-3); }
+  .dockGlyph, .dockAvatar { margin-bottom: 3px; }
+  .dockAvatar { display: none; }
+  .dock .dockRule { display: none; }
+  .undo { bottom: 78px; }
+  .darkSaid { font-size: 24px; }
+  [data-type="expressive"] .darkSaid { font-size: 26px; }
+  .darkWave { margin-top: 26px; }
+  .handCard[data-n="3"] { display: none; }
+  .peel { margin-left: 12px; margin-right: 0; }
+  .searchTop { padding-top: 10px; }
+}
+/* The phone field is rendered by the file only on a phone, so it is never
+   an invisible control at a wide width. Its own colours are declared here
+   rather than inherited, because a field that inherits the user agent's
+   black and its 118-grey border is carrying two colours this product does
+   not have. */
+.phoneField {
+  border: 0; outline: 0; resize: none; background: none;
+  font: inherit; color: var(--ink-1);
+}
+
+@media (pointer: coarse) {
+  /* A finger needs 44px. A mouse does not, and inflating every control to
+     44 on a desktop sheet is how a dense index stops being dense. */
+  .verb, .headAct, .dockGlyph, .act, .drop, .picker, .chip { min-height: 44px; }
+  .chip { padding: 0 14px; }
+  .idxRow { padding-top: 12px; padding-bottom: 12px; }
+  [data-index="tight"] .idxRow { padding-top: 10px; padding-bottom: 10px; }
+  .dockField kbd, .topMeta kbd, .act kbd, .undoAct kbd { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0ms !important; }
+}
