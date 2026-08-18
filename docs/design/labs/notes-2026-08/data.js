@@ -306,7 +306,7 @@ window.NOTES = (function () {
     /* The venue's own next date, from the review fixture's project. The
        head states it because a notebook that does not know what is coming
        is a notebook that could belong to anyone. */
-    next: { label: "Mara & Finn", when: "Saturday 18 July", days: 2 },
+    next: { key: "mara-finn", label: "Mara & Finn", when: "Saturday 18 July", days: 2 },
 
     counts: {
       notebook: notes.length,
@@ -320,6 +320,10 @@ window.NOTES = (function () {
     copy: {
       placeholder: "Write the thought before it disappears…",
       privacy: "Private to you",
+      save: "Save it",
+      photo: "Read a photo",
+      filingLabel: "Filing under",
+      otherWaysLabel: "Other ways in",
       privacyLong: "Yours until you send something on",
       emptyTitle: "Your notebook starts with one private thought.",
       emptyBody: "The capture field is ready above.",

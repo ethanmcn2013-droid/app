@@ -43,6 +43,10 @@
   /* ── the mutable world ───────────────────────────────────────── */
   let state = params.get("state") || "notebook";
   let WORK = null;        /* the notebook, seeded from the fixture         */
+  /* The ledger of what has crossed. It read from the fixture constant, so
+     the one surface whose whole job is to hold the trace of the product's
+     central act was the one surface the act never reached. */
+  const CROSSED = N.crossed.slice();
   let draft = "";         /* what is on the top sheet and not yet saved    */
   let openId = null;      /* the note lifted onto the desk                 */
   let cursorId = null;    /* the index's single tab stop                   */
@@ -51,6 +55,15 @@
   let decided = [];       /* what the hand has settled, newest last        */
   let deferred = [];      /* cards put to the back: not decisions           */
   let sentAt = null;      /* the sentence a keyboard has picked, [from,to]  */
+  let editing = null;     /* the note being written on a second visit        */
+  let editDraft = "";     /* what it says while it is being written          */
+  /* What the whole notebook is narrowed to. The product knew the house was
+     facing Mara & Finn on Saturday, printed it in its largest type, and
+     then did nothing with it: the pile was still everything, the hand
+     still dealt everything, and the same string was repeated inertly as a
+     group rule below. A subject you can press is the difference between a
+     notes app that contains wedding words and a venue's notebook. */
+  let scope = null;
   let undone = null;      /* the last reversible act                       */
   let undoTimer = null;
   let settling = null;    /* a sheet on its way to the pile                */
@@ -138,7 +151,12 @@
 
   function seed() {
     if (state === "nothing") return [];
-    if (state === "pressure") return N.dense.slice();
+    /* The two-hundred-word note was a picture of a note: it rendered only
+       on a branch that could not be reached, so nothing in this build was
+       ever measured against a long one. It is in the notebook now, which
+       means it can be opened, picked from, written on and sent like any
+       other note — and the pressure room simply opens it. */
+    if (state === "pressure") return [N.long, ...N.dense];
     return N.notes.slice();
   }
   function work() {
@@ -148,8 +166,14 @@
 
   /* Every count on screen is derived from the same list, so the head can
      never state a number the body below it disagrees with. */
+  function inScope(list) {
+    return scope ? list.filter((n) => n.aboutKey === scope) : list;
+  }
+  function scopeLabel() {
+    return scope && N.subjects[scope] ? N.subjects[scope].label : null;
+  }
   function counts() {
-    const w = work().filter((n) => !n.deleted);
+    const w = inScope(work().filter((n) => !n.deleted));
     return {
       total: w.length,
       pending: w.filter((n) => n.pending).length,
@@ -178,21 +202,43 @@
      product printed a thirty-second promise in one place and expired the
      strip silently at ten in another. */
   const UNDO_SECONDS = 30;
-  function offerUndo(label, revert) {
-    undone = { label, revert };
+  /* Two strings, because they are two different sentences. The strip
+     states what just happened; the announcement after an undo has to
+     state where the person now IS. "Undone. Sent to Tasks." is the exact
+     opposite of what has occurred, read out loud at the moment somebody
+     is least sure. */
+  function offerUndo(label, undoneLabel, revert) {
+    if (typeof undoneLabel === "function") {
+      revert = undoneLabel;
+      undoneLabel = `Put back. ${label}`;
+    }
+    undone = { label, undoneLabel, revert };
     clearTimeout(undoTimer);
     undoTimer = setTimeout(() => {
+      /* A clock nobody started must not move the keyboard. Repainting on
+         expiry rebuilt the tree and dropped focus on the document body,
+         so thirty seconds after a save the caret silently left whatever a
+         person was doing. Removing one node costs nothing unless focus is
+         inside it, and that one case is handled. */
       undone = null;
-      paint();
+      const strip = mount.querySelector(".undo");
+      if (!strip) return;
+      if (strip.contains(document.activeElement)) {
+        const back = mount.querySelector(".idxRow[data-cursor]") || mount.querySelector(".topField, .phoneField");
+        if (back) back.focus({ preventScroll: true });
+      }
+      strip.remove();
+      const sheet = mount.querySelector(".sheet");
+      if (sheet) sheet.removeAttribute("data-undo");
     }, UNDO_SECONDS * 1000);
   }
   function doUndo() {
     if (!undone) return false;
-    const { revert, label } = undone;
+    const { revert, undoneLabel } = undone;
     undone = null;
     clearTimeout(undoTimer);
     revert();
-    say(`Undone. ${label}`);
+    say(undoneLabel);
     paint();
     return true;
   }
@@ -259,12 +305,16 @@
     const note = makeNote(body);
     draft = "";
     work().unshift(note);
-    say(`Kept. ${counts().total} notes, ${counts().pending} waiting on a decision.`);
+    /* "Kept" was the capture receipt AND the hand's second-largest button
+       AND the pill on a settled note — one word for three different acts,
+       said out loud at the moment somebody is checking that the right
+       thing happened. Capture saves. The hand keeps. One verb each. */
+    say(`Saved. ${counts().total} notes, ${counts().pending} still to decide.`);
     /* The strip says what just happened, in the present, and the button
        says what pressing it will do. Written as the post-undo sentence and
        shown before the undo, it told the operator their note had already
        gone back to the sheet while it was sitting safely on the pile. */
-    offerUndo("Saved.", () => {
+    offerUndo("Saved.", "Put back. Your note is in the field again.", () => {
       WORK = work().filter((n) => n !== note);
       draft = body;
     });
@@ -380,7 +430,7 @@
   }
 
   function queue() {
-    return work().filter((n) => n.pending);
+    return inScope(work().filter((n) => n.pending));
   }
 
   function decide(kind) {
@@ -424,6 +474,7 @@
        fell by one for a note still to decide, and the strip credited the
        person with a decision they had explicitly declined to make. */
     const deferral = kind === "later";
+    note.later = deferral;
     if (kind === "keep" || kind === "later") {
       note.pending = kind === "keep" ? false : true;
       note.reviewed = kind === "keep";
@@ -443,7 +494,11 @@
         : kind === "keep"
           ? `Kept in Notes. ${left} left.`
           : `Deleted. ${left} left.`;
-    say(label);
+    /* And it names the card it has just dealt, in the same grammar the
+       index walk uses, so one sentence shape covers both planes. */
+    const nextCard = queue()[deferral ? queueAt : before.queueAt];
+    say(nextCard ? `${label} Next, ${nextCard.title}` : `${label} Nothing left to decide.`);
+    if (!refocus) refocus = { kind: "act", sel: ".handBody" };
     /* The strip states what happened, in the present. One string was being
        painted before the undo and concatenated after it, so at the moment
        the ear heard "turned into a task" the eye read "that decision was
@@ -547,6 +602,19 @@
     setPick(sentenceText(note.body, from, to));
     return true;
   }
+  /* Forty presses to reach the last sentence of a long note is not a
+     keyboard route, it is a keyboard obstacle course. */
+  function jumpSentence(where, extend) {
+    const note = pickTarget();
+    if (!note) return false;
+    const parts = sentencesOf(note.body);
+    const at = sentAt || [0, 0];
+    const from = where === "first" ? 0 : extend ? at[0] : parts.length - 1;
+    const to = where === "first" ? (extend ? at[1] : 0) : parts.length - 1;
+    sentAt = [Math.min(from, to), Math.max(from, to)];
+    setPick(sentenceText(note.body, sentAt[0], sentAt[1]));
+    return true;
+  }
   function pickTarget() {
     if (state === "review") return queue()[queueAt] || null;
     if (openId) return work().find((n) => n.id === openId) || null;
@@ -587,6 +655,16 @@
   function standingPick(note) {
     if (!note) return picked;
     return picked || note.pick || null;
+  }
+
+  /* Where a thought belongs is answered once, by the note itself. The
+     seam's destination was hardcoded to the first project in the fixture,
+     so the most consequential control in the product ignored the filing
+     the person had just done on the same screen. */
+  function destinationOf(note) {
+    const about = note && note.about;
+    if (about && about.crossesTo !== false && about.when) return about.label;
+    return N.projects[0];
   }
 
   function offerPick() {
@@ -668,23 +746,92 @@
       pickedWords = null;
       taskWording = "";
       decided.push({ note, kind: "task", before });
+      CROSSED.unshift({
+        ...note,
+        id: `crossed_${note.id}`,
+        task: wording,
+        lane: destinationOf(note),
+        crossedWhen: "just now",
+        sent: true,
+      });
       say(`${N.copy.sentReceipt} ${Math.max(0, queue().length)} left.`);
-      offerUndo("Sent to Tasks.", () => {
+      offerUndo("Sent to Tasks.", "Taken back. Nothing crossed into Tasks.", () => {
         if (note && before) Object.assign(note, before);
+        CROSSED.shift();
         decided.pop();
       });
       paint();
       return;
     }
-    sentTask = { wording, project: N.projects[0] };
-    say(`${N.copy.sentReceipt} ${N.copy.stayedPut}`);
-    offerUndo("Sent to Tasks.", () => {
+    sentTask = { wording, project: destinationOf(note) };
+    /* One sentence, not two overlapping ones. The receipt and the promise
+       were concatenated and both said the note stayed here. */
+    say(N.copy.sentReceipt);
+    /* And the ledger beside it records the crossing. The pile headed
+       "What has crossed into Tasks" read from a fixture constant, so the
+       act the whole product exists for left no trace in the one surface
+       whose job is to hold the trace of it. */
+    const entry = {
+      ...note,
+      id: `crossed_${note.id}`,
+      task: wording,
+      lane: destinationOf(note),
+      crossedWhen: "just now",
+      sent: true,
+    };
+    CROSSED.unshift(entry);
+    offerUndo("Sent to Tasks.", "Taken back. Nothing crossed into Tasks.", () => {
       if (note && before) Object.assign(note, before);
+      CROSSED.shift();
       sentTask = null;
       peeling = note ? note.id : null;
     });
     refocus = { kind: "act", sel: '[data-act="open-task"]' };
     paint();
+  }
+
+  /* The floor going to ink is the boldest gesture this product makes, and
+     it was a still life: a clock frozen at 0:07 and twenty-eight bars
+     derived once from a sine curve. A microphone that does not visibly
+     hear you is a microphone nobody speaks into twice. Both are written
+     with textContent and inline height only — never a repaint, because a
+     repaint under a speaking person would rebuild the transcript. */
+  let voiceSeconds = 0;
+  let voiceClock = null;
+  let voiceWave = null;
+  let waveLevel = 0.4;
+  function startListening() {
+    stopListening();
+    voiceSeconds = 0;
+    voiceClock = setInterval(() => {
+      voiceSeconds += 1;
+      const el = mount.querySelector(".darkTime");
+      if (el) el.textContent = `${Math.floor(voiceSeconds / 60)}:${String(voiceSeconds % 60).padStart(2, "0")}`;
+    }, 1000);
+    if (reduced) return;
+    let last = 0;
+    const step = (now) => {
+      voiceWave = requestAnimationFrame(step);
+      if (now - last < 60) return;
+      last = now;
+      const bars = mount.querySelectorAll(".darkWave i");
+      if (!bars.length) return;
+      /* One amplitude, smoothed, so the bars move together the way a voice
+         moves them rather than twenty-eight independent flickers. */
+      waveLevel = Math.min(1, Math.max(0.12, waveLevel + (Math.random() - 0.5) * 0.34));
+      for (let i = 0; i < bars.length; i += 1) {
+        const shape = 0.45 + 0.55 * Math.abs(Math.sin(i * 0.7 + voiceSeconds));
+        const h = 6 + Math.round(34 * waveLevel * shape * (0.7 + Math.random() * 0.6));
+        bars[i].style.height = `${Math.min(40, h)}px`;
+      }
+    };
+    voiceWave = requestAnimationFrame(step);
+  }
+  function stopListening() {
+    clearInterval(voiceClock);
+    if (voiceWave) cancelAnimationFrame(voiceWave);
+    voiceClock = null;
+    voiceWave = null;
   }
 
   function openSearch() {
@@ -712,7 +859,51 @@
     refocus = { kind: "read" };
     paint();
   }
+  function startEdit(id) {
+    const note = work().find((n) => n.id === id);
+    if (!note) return;
+    editing = id;
+    editDraft = note.body;
+    picked = null;
+    sentAt = null;
+    say("Editing this note. Add what you found out, then save.");
+    refocus = { kind: "field", sel: ".readEdit", end: true };
+    paint();
+  }
+  function saveEdit() {
+    const note = work().find((n) => n.id === editing);
+    const body = editDraft.trim();
+    if (!note || !body) return;
+    const before = { body: note.body, title: note.title, rest: note.rest, lede: note.lede, words: note.words, edited: note.edited };
+    const title = ledeOf(body);
+    Object.assign(note, {
+      body,
+      title: title || body,
+      rest: title ? body.slice(title.length).trim() : "",
+      lede: Boolean(title),
+      words: body.split(/\s+/).length,
+      edited: true,
+    });
+    editing = null;
+    editDraft = "";
+    say("Saved. Your note now says what you found out.");
+    offerUndo("Saved.", "Put back. The note says what it said before.", () => {
+      Object.assign(note, before);
+    });
+    refocus = { kind: "act", sel: '[data-act="edit"]' };
+    paint();
+  }
+  function cancelEdit() {
+    editing = null;
+    editDraft = "";
+    say("Nothing changed.");
+    refocus = { kind: "act", sel: '[data-act="edit"]' };
+    paint();
+  }
+
   function closeNote() {
+    editing = null;
+    editDraft = "";
     sentAt = null;
     if (!openId) return;
     picked = null;
@@ -726,7 +917,7 @@
 
   /* ── the index's one tab stop ────────────────────────────────── */
   function visible() {
-    const w = work().filter((n) => !n.deleted);
+    const w = inScope(work().filter((n) => !n.deleted));
     if (!query) return w;
     const q = query.toLowerCase();
     return w.filter((n) => n.body.toLowerCase().includes(q));
@@ -770,7 +961,43 @@
       /* A wrapped row is clamped by CSS, and the clamp has to admit it:
          mark it so the stylesheet can draw the sign, then leave it alone. */
       if (getComputedStyle(text).whiteSpace !== "nowrap") {
-        if (text.scrollHeight > text.clientHeight + 1) text.dataset.clamped = "";
+        /* The two-line box is trimmed the same way the one-line row is:
+           whole words come off the preview until the sentence and its
+           ellipsis fit, and the mark is the last character of the text
+           rather than a pseudo-element parked at the box's right edge —
+           which is not where line two ends, so it landed mid-word with
+           half a glyph showing through the gradient beside it. */
+        const whole = text.dataset.full;
+        const head = text.dataset.lede || "";
+        if (!whole) continue;
+        const tail = whole.slice(head.length).trim();
+        const draw = (words, ell) => {
+          const body = words.join(" ") + (ell ? "…" : "");
+          text.innerHTML = head
+            ? `<b>${hl(head)}</b>${body ? ` <span>${hl(body)}</span>` : ""}`
+            : hl(body);
+        };
+        let words = (head ? tail : whole).split(" ").filter(Boolean);
+        draw(words, false);
+        let cut = false;
+        while (words.length > (head ? 0 : 4) && text.scrollHeight > text.clientHeight + 1) {
+          words.pop();
+          cut = true;
+          draw(words, true);
+        }
+        /* On a phone the box is two lines, so a lede can be longer than
+           the row on its own — and then there is nothing else to give
+           back. The desktop row never faces this because its lede is
+           capped at 48 characters against a full line. */
+        if (head && text.scrollHeight > text.clientHeight + 1) {
+          let lead = head.split(" ");
+          while (lead.length > 4 && text.scrollHeight > text.clientHeight + 1) {
+            lead.pop();
+            cut = true;
+            text.innerHTML = `<b>${hl(lead.join(" "))}…</b>`;
+          }
+        }
+        if (cut || text.scrollHeight > text.clientHeight + 1) text.dataset.clamped = "";
         else delete text.dataset.clamped;
         continue;
       }
@@ -872,11 +1099,13 @@
        to decide" — the same five words, twice, in one line, reading as
        one broken phrase. The group's own rule already states its share at
        the rows it applies to; the chip is the notebook-wide figure. */
+    const on = scope === soon.key;
     return `
-      <span class="headNext">
+      <button class="headNext" type="button" data-act="scope" data-key="${attr(soon.key)}" aria-pressed="${on}"
+        aria-label="${attr(soon.label)}, ${attr(soon.when)}, in ${soon.days} day${soon.days === 1 ? "" : "s"}. ${on ? "Showing only these notes. Press to see the whole notebook." : "Press to see only these notes."}">
         <b>${esc(soon.label)}</b>
-        <span>${esc(soon.when)}, in ${soon.days} day${soon.days === 1 ? "" : "s"}</span>
-      </span>`;
+        <span class="dateStamp">${esc(soon.when)}, in ${soon.days} day${soon.days === 1 ? "" : "s"}</span>
+      </button>${on ? `<button class="chip" data-quiet type="button" data-act="unscope">${I.close}All ${work().filter((n) => !n.deleted).length} notes</button>` : ""}`;
   }
 
   function head() {
@@ -885,7 +1114,7 @@
       state === "review"
         ? ""
         : c.pending > 0
-          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} still to decide across the whole notebook. Go through the notes waiting on a decision.">${c.pending} still to decide</button>`
+          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} still to decide ${scope ? `in ${attr(scopeLabel())}` : "across the whole notebook"}. Go through the notes still to decide.">${c.pending} still to decide</button>`
           : "";
     return `
       <header class="head">
@@ -1013,20 +1242,36 @@
     if (phone.matches) return "";
     const live = draft.trim() ? " data-live" : "";
     const isSettling = settling && settling !== "hand" ? " data-settling" : "";
+    /* The resting frame is the one a venue owner sees for most of her
+       session, and it was the only frame in the build that was not the
+       direction: a compose box the width of the paper, with the privacy
+       line marooned two hundred pixels out to its right, sitting on white
+       above a list on the same white. That is the shape of every notes
+       app there has ever been. The seam already had the answer — the
+       writing holds the measure and everything true about it holds a
+       ruled margin — so the resting state is composed the same way. */
     return deskOf(
-      `<div class="top"${live}${isSettling}>
-        <textarea class="topField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
-        <div class="topFoot">
-          ${filingChip()}
-          <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
-          <button class="verb" type="button" data-act="photo">${I.photo}Read a photo</button>
-          <span class="spacer"></span>
-          ${
-            draft.trim()
-              ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
-                 <button class="act" data-ink type="button" data-act="keep">${I.check}Save it<kbd>${MOD}+Enter</kbd></button>`
-              : `<span class="topMeta">${esc(N.copy.privacyLong)}</span>`
-          }
+      `<div class="top" data-two${live}${isSettling}>
+        <div class="deskWrite">
+          <textarea class="topField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
+          <div class="topFoot">
+            ${
+              draft.trim()
+                ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
+                   <span class="spacer"></span>
+                   <button class="act" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>`
+                : `<span class="topMeta">${esc(N.copy.privacyLong)}</span>`
+            }
+          </div>
+        </div>
+        <div class="deskAside">
+          <span class="deskFact"><b>${esc(N.copy.filingLabel)}</b>${filingChip()}</span>
+          <span class="deskFact"><b>${esc(N.copy.otherWaysLabel)}</b>
+            <span class="deskVerbs">
+              <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
+              <button class="verb" type="button" data-act="photo">${I.photo}${esc(N.copy.photo)}</button>
+            </span>
+          </span>
         </div>
       </div>`,
     );
@@ -1068,7 +1313,9 @@
         <textarea class="peelField" rows="1" id="peel-field" aria-labelledby="peel-label"
           placeholder="What should the task say?">${esc(taskWording)}</textarea>
         <div class="peelRow">
-          <button class="picker" type="button" aria-label="${attr(N.copy.destinationLabel)}: ${attr(N.projects[0])}"><b>To</b>${esc(N.projects[0])}${I.chevron}</button>
+          <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
+            aria-label="${attr(N.copy.destinationLabel)}: ${attr(destinationOf(note))}. Change it."><b>To</b>${esc(destinationOf(note))}${I.chevron}</button>
+          ${picker === "peel" ? subjectList("peel") : ""}
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
           <button class="act" data-primary type="button" data-act="send"${taskWording.trim() ? "" : " aria-disabled=\"true\""}>${I.send}${taskWording.trim() ? esc(N.copy.send) : "Write the wording, then send"}</button>
@@ -1096,15 +1343,6 @@
         : note.lede === false
           ? esc(note.body)
           : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
-    if (isPeeling) {
-      return deskOf(
-        `<div class="top" data-two>
-          <div class="deskWrite"><p class="readBody" tabindex="0" role="group" aria-label="The note. Pick the words that should cross, with the arrow keys.">${bodyHtml}</p></div>
-          <div class="deskAside">${peelPanel(note)}</div>
-        </div>`,
-        { behind: 1, label: `Turning a note into a task: ${note.title}` },
-      );
-    }
     /* Everything that is true ABOUT the note lives beside it, not above
        it: the desk was a thousand pixels wide doing five hundred of work,
        and the facts were stacked on one line over the writing. */
@@ -1123,10 +1361,49 @@
         <span class="deskFact"><b>Length</b><span class="tab">${note.words} words</span></span>
         ${note.sent ? `<span class="deskFact"><b>In Tasks as</b><span><a href="#tasks">${esc(note.task || "a task")}</a></span></span>` : ""}
       </div>`;
+    if (isPeeling) {
+      /* The product's signature promise is that the note never leaves and
+         only the words you pick cross. It was drawn properly exactly once,
+         in the review hand, and flattened into a share sidebar in the room
+         where most people will meet it — same shadowless rectangle, same
+         column, no edge of its own. It is a second sheet on the desk now,
+         with its own paper and a notch pointing back at the note it was
+         taken off. */
+      return deskOf(
+        `<div class="top" data-two>
+          <div class="deskWrite"><p class="readBody" tabindex="0" role="group" aria-label="The note. Pick the words that should cross, with the arrow keys.">${bodyHtml}</p></div>
+          ${aside}
+        </div>`,
+        { behind: 1, label: `Turning a note into a task: ${note.title}`, under: peelPanel(note) },
+      );
+    }
+    /* Everything in this build was made for the first three seconds and
+       nothing for minute four. A note reading "Ask the venue whether the
+       ballroom can be accessed from 8am" is a question, and the answer
+       arrives on Tuesday — with nowhere to put it the only move was a
+       second note that looked exactly like the first. The desk is where
+       you write, so the note is written on here too. */
+    if (editing === note.id) {
+      return deskOf(
+        `<div class="top" data-two data-live>
+          <div class="deskWrite">
+            <textarea class="readBody readEdit" rows="4" aria-label="Write on this note">${esc(editDraft)}</textarea>
+            <div class="topFoot">
+              <span class="topMeta tab" data-count>${editDraft.length} / 4000</span>
+              <span class="spacer"></span>
+              <button class="act" data-quiet type="button" data-act="cancel-edit">${esc(N.copy.cancel)}</button>
+              <button class="act" data-ink type="button" data-act="save-edit">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>
+            </div>
+          </div>
+          ${aside}
+        </div>`,
+        { behind: 1, label: `Writing on: ${note.title}` },
+      );
+    }
     return deskOf(
       `<div class="top" data-two>
         <div class="deskWrite">
-          <p class="readBody" tabindex="0" role="group" aria-label="The note. Pick the words that should cross, with the arrow keys.">${bodyHtml}</p>
+          <p class="readBody${note.words >= 150 ? " readLong" : ""}" tabindex="0" role="group" aria-label="The note. Pick the words that should cross, with the arrow keys.">${bodyHtml}</p>
         <div class="pickSlot">
           ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${standingPick(note).split(/\s+/).length} words picked.</span> <span>Send to Tasks will use exactly these.</span></p>` : ""}
           ${nudge ? `<p class="nudge" role="status">${I.tasks}${esc(nudge)}</p>` : ""}
@@ -1138,6 +1415,7 @@
             isPeeling
               ? `<span class="topMeta">Writing the task below.</span>`
               : `<button class="act" data-primary type="button" data-act="peel">${I.tasks}${standingPick(note) ? "Send to Tasks" : "Pick the words, then send"}</button>
+                 <button class="act" type="button" data-act="edit">${I.typed}Write on it</button>
                  <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>`
           }
           <span class="spacer"></span>
@@ -1166,6 +1444,19 @@
   let listed = [];
   let listedOpts = {};
 
+  /* A window onto the match, not the opening of the note. Searching for a
+     word that appears in the fourth sentence returned rows whose visible
+     text did not contain it anywhere, so the pile looked like it had
+     answered a different question. */
+  function matchWindow(body, q) {
+    const at = body.toLowerCase().indexOf(q.toLowerCase());
+    if (at < 0) return null;
+    const from = Math.max(0, body.lastIndexOf(" ", Math.max(0, at - 34)) + 1);
+    const stop = body.indexOf(" ", Math.min(body.length, at + q.length + 34));
+    const to = stop < 0 ? body.length : stop;
+    return `${from > 0 ? "…" : ""}${body.slice(from, to).trim()}${to < body.length ? "…" : ""}`;
+  }
+
   function idxRow(note, opts) {
     const o = opts || {};
     const src = N.sources[note.source];
@@ -1174,8 +1465,10 @@
        is that the note stayed here; a ledger that reprints it is the one
        surface that must not. */
     const crossed = o.mode === "crossed";
-    const lede = crossed ? note.task : note.title;
-    const rest = crossed ? "" : note.rest;
+    const hit = !crossed && query.trim() ? matchWindow(note.body, query.trim()) : null;
+    const showsMatch = hit && !note.body.slice(0, note.title.length).toLowerCase().includes(query.trim().toLowerCase());
+    const lede = crossed ? note.task : showsMatch ? "" : note.title;
+    const rest = crossed ? "" : showsMatch ? hit : note.rest;
     const when = crossed ? note.crossedWhen || note.when : note.when;
     const name = crossed
       ? `${note.task}. In Tasks, ${note.lane}. Crossed ${when}. The note it came from stayed in Notes.`
@@ -1186,7 +1479,7 @@
       : note.sent
         ? `<span class="idxTag">In Tasks</span>`
         : note.pending
-          ? `<span class="idxTag">To decide</span>`
+          ? `<span class="idxTag">${note.later ? "Left for later" : "To decide"}</span>`
           : `<span class="idxTag" data-quiet>Kept</span>`;
     const cursor = note.id === cursorId ? " data-cursor" : "";
     const open = note.id === openId ? " data-open" : "";
@@ -1196,7 +1489,7 @@
         tabindex="${note.id === cursorId ? "0" : "-1"}"
         aria-label="${attr(name)}">
         <span class="idxMark" aria-hidden="true">${crossed ? I.tasks : I[src.icon]}${!crossed && note.pending ? "<i></i>" : ""}</span>
-        <span class="idxText" data-full="${attr(crossed ? note.task : `${note.title} ${note.rest || ""}`.trim())}" data-lede="${attr(note.lede === false && !crossed ? "" : lede)}">${note.lede === false && !crossed ? hl(lede) : `<b>${hl(lede)}</b>`}${rest ? ` <span>${hl(rest)}</span>` : ""}${crossed ? '<span class="idxFrom">from a note that stayed here</span>' : ""}</span>
+        <span class="idxText" data-full="${attr(crossed ? note.task : showsMatch ? hit : `${note.title} ${note.rest || ""}`.trim())}" data-lede="${attr((note.lede === false && !crossed) || showsMatch ? "" : lede)}">${(note.lede === false && !crossed) || showsMatch ? hl(lede) : `<b>${hl(lede)}</b>`}${rest ? `${lede ? " " : ""}<span>${hl(rest)}</span>` : ""}${crossed ? '<span class="idxFrom">from a note that stayed here</span>' : ""}</span>
         ${tag}
         <span class="idxWhen tab">${esc(when)}</span>
       </button></li>`;
@@ -1276,6 +1569,10 @@
     const o = opts || {};
     listed = notes;
     listedOpts = o;
+    /* A drawn selection has to be on a row that is on screen. Typing a
+       query that filtered the cursor's row out left the mark nowhere and
+       the arrows walking a list the cursor was not in. */
+    if (notes.length && !notes.some((n) => n.id === cursorId)) cursorId = notes[0].id;
     if (!notes.some((n) => n.id === cursorId)) cursorId = (notes[0] || {}).id || null;
     const rows = [];
     if (o.noDays) {
@@ -1285,7 +1582,7 @@
         /* Its own sticky context, so a rule is pushed out by the next one
            rather than every rule in the pile stacking at the top. */
         rows.push(
-          `<li class="idxSection"><h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>` +
+          `<li class="idxSection"><h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote dateStamp">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>` +
             `<ul class="idxGroupRows">${g.rows.map((note) => idxRow(note, o)).join("")}</ul></li>`,
         );
       }
@@ -1374,23 +1671,12 @@
        one: with openId null its primary action reached for whatever note
        happened to be first and crossed the wrong words into Tasks. */
     if (!openId) {
-      const long = work().find((n) => n.words > 300) || work()[0];
+      const long = work().find((n) => n.id === "long") || work()[0];
       if (long) openId = long.id;
     }
-    const open = openId ? work().find((n) => n.id === openId) : null;
+    const open = openId ? work().find((n) => n.id === openId) : work()[0];
     return {
-      desk: open
-        ? readSheet(open)
-        : deskOf(
-            `<div class="top" data-two>
-              <div class="deskWrite"><p class="readBody readLong">${esc(N.long.body)}</p></div>
-              <div class="deskAside">
-                <span class="deskFact"><b>How it arrived</b><span>Written, ${esc(N.long.when)}</span></span>
-                <span class="deskFact"><b>Length</b><span class="tab">${N.long.words} words</span></span>
-              </div>
-            </div>`,
-            { behind: 1, label: `Reading: ${N.long.title}` },
-          ),
+      desk: readSheet(open),
       body: indexOf(visible(), {
         title: "Your notes",
         count: `${counts().total} notes`,
@@ -1401,7 +1687,15 @@
 
   STATES.review = () => {
     const note = queue()[queueAt];
-    const left = Math.max(0, queue().length - queueAt);
+    /* What is left to decide is what is left to decide. It was the undealt
+       remainder, so pressing "Decide later" — the one act that settles
+       nothing — took the drawn number down by one while the product said
+       out loud that the note was still waiting. The pile below carries
+       the deferred cards too, at the back, saying what they are. */
+    const ahead = queue().slice(queueAt + 1);
+    const putBack = queue().slice(0, queueAt);
+    const rest = [...ahead, ...putBack];
+    const left = queue().length;
     /* The count is of decisions MADE, not of an index into a list that
        shrinks under it. Marking a note decided removes it from the queue,
        so an index-based count stood still while the card behind it
@@ -1435,7 +1729,7 @@
         : esc(note.body);
     return {
       desk: `
-        <section class="desk" aria-label="Notes waiting on a decision">
+        <section class="desk" aria-label="Notes still to decide">
           <div class="hand">
             <div class="handStack">
             ${Array.from({ length: depth }, (_, i) => `<div class="handCard" data-n="${depth - i}" aria-hidden="true"></div>`).join("")}
@@ -1474,12 +1768,14 @@
             }</p>
           </div>
         </section>`,
-      body: indexOf(queue().slice(queueAt + 1), {
+      body: indexOf(rest, {
         title: "Still to decide",
         /* "8 still to decide" at the head against "7 left" here is one
            number reported twice in two grammars and read as a
-           contradiction. This one names what it counts. */
-        count: `${Math.max(0, left - 1)} behind this one`,
+           contradiction. This one names what it counts, and the drawn
+           count, the rows below it and the spoken sentence all resolve
+           from the same list. */
+        count: `${rest.length} behind this one`,
         noDays: true,
       }),
       dock: true,
@@ -1497,7 +1793,7 @@
         <section class="dark" aria-label="Dictating">
           <div class="darkTop">
             <span class="darkTag"><span class="rec" aria-hidden="true"></span>Listening</span>
-            <span class="darkTime tab">0:07</span>
+            <span class="darkTime tab">0:00</span>
             <span class="spacer"></span>
           </div>
           <div class="darkBody">
@@ -1564,9 +1860,9 @@
     }
     return {
       desk: readSheet(note),
-      body: indexOf(N.crossed, {
+      body: indexOf(CROSSED, {
         title: "What has crossed into Tasks",
-        count: `${N.counts.sent} so far, and every note stayed here`,
+        count: `${CROSSED.length} so far, and every note stayed here`,
         noDays: true,
         mode: "crossed",
         group: false,
@@ -1614,14 +1910,18 @@
         </div>`,
       body: indexOf(rows, {
         title: query ? "Found" : "Everything you wrote",
-        count: query ? `${rows.length} of ${counts().total} notes have “${query}” in them` : `${counts().total} notes`,
+        count: query
+          ? rows.length === 1
+            ? `1 of ${counts().total} notes has “${query}” in it`
+            : `${rows.length} of ${counts().total} notes have “${query}” in them`
+          : `${counts().total} notes`,
         noDays: true,
         empty: `
           <div class="noHits">
             <h2 class="emptyTitle">No note says “${esc(query)}”.</h2>
             <p class="emptyBody">${
               near
-                ? `The closest is ${esc(near.about.label)}, from ${esc(near.when)}.`
+                ? `The closest is ${esc(near.title.replace(/[.]$/, ""))}, from ${esc(near.when)}.`
                 : "Nothing in the notebook is close to it either."
             }</p>
             <div class="emptyMove">
@@ -1775,7 +2075,9 @@
           }
         : null;
 
-    const build = STATES[state] || STATES.notebook;
+    if (state === "voice" && !voiceClock) startListening();
+  else if (state !== "voice" && voiceClock) stopListening();
+  const build = STATES[state] || STATES.notebook;
     const s = build();
     mount.innerHTML = `
       <div class="floor">
@@ -1848,10 +2150,28 @@
     }
     document.documentElement.setAttribute("data-state", state);
     root.setAttribute("data-group", group);
+    /* The search field is outside the pile, so :focus-within can never
+       fire and the drawn cursor was painted in the same ink as hover. */
+    root.toggleAttribute("data-searching", Boolean(query.trim()));
+    /* The dock floats, so what it covers has to be measured rather than
+       guessed: a hardcoded 22px foot left the last row of the pile under
+       a 103px bar on every phone. */
+    const dockEl = mount.querySelector(".dock");
+    root.style.setProperty("--dock-h", `${dockEl ? Math.round(dockEl.offsetHeight) : 96}px`);
   }
 
   /* ── events ──────────────────────────────────────────────────── */
   mount.addEventListener("input", (e) => {
+    const writing = e.target.closest(".readEdit");
+    if (writing) {
+      /* Same rule as the capture field: nothing is written to the document
+         while somebody is typing, so the browser's own undo history for
+         this field survives. */
+      editDraft = writing.value;
+      const count = mount.querySelector("[data-count]");
+      if (count) count.textContent = `${editDraft.length} / 4000`;
+      return;
+    }
     const field = e.target.closest(".topField, .phoneField");
     if (field) {
       draft = field.value;
@@ -1920,6 +2240,24 @@
       paint();
       return;
     }
+    if (a === "destination") {
+      picker = picker === "peel" ? null : "peel";
+      paint();
+      return;
+    }
+    if (a === "file-peel") {
+      const about = N.subjects[act.dataset.key];
+      const note = work().find((n) => n.id === peeling);
+      if (note && about) {
+        note.about = about;
+        note.aboutKey = act.dataset.key;
+        say(`This one goes to ${about.label}.`);
+      }
+      picker = null;
+      refocus = { kind: "act", sel: '[data-act="destination"]' };
+      paint();
+      return;
+    }
     if (a === "file-capture" || a === "file-note") {
       const key = act.dataset.key;
       const about = N.subjects[key];
@@ -1929,13 +2267,14 @@
       } else {
         const note = work().find((n) => n.id === openId);
         if (note) {
-          const was = note.aboutKey;
+          const was = note.about;
+          const wasKey = note.aboutKey;
           note.about = about;
           note.aboutKey = key;
           say(`Moved to ${about.label}.`);
-          offerUndo(`Moved to ${about.label}.`, () => {
-            note.about = N.subjects[was];
-            note.aboutKey = was;
+          offerUndo(`Moved to ${about.label}.`, `Put back under ${was.label}.`, () => {
+            note.about = was;
+            note.aboutKey = wasKey;
           });
         }
       }
@@ -1970,6 +2309,20 @@
       paint();
       return;
     }
+    if (a === "scope" || a === "unscope") {
+      const key = a === "unscope" ? null : act.dataset.key;
+      scope = scope === key ? null : key;
+      queueAt = 0;
+      const c = counts();
+      say(
+        scope
+          ? `Showing ${scopeLabel()} only. ${c.total} note${c.total === 1 ? "" : "s"}, ${c.pending} still to decide.`
+          : `Showing the whole notebook. ${c.total} notes.`,
+      );
+      refocus = { kind: "act", sel: '[data-act="scope"]' };
+      paint();
+      return;
+    }
     if (a === "nearest") {
       query = "";
       state = "notebook";
@@ -1981,16 +2334,25 @@
       const dropped = pieces[i];
       pieces = pieces.filter((_, n) => n !== i);
       say(`Dropped. ${pieces.length} left.`);
-      offerUndo("Dropped one of them.", () => {
+      offerUndo("Dropped one of them.", "Put back. Both notes are here.", () => {
         pieces = [...pieces.slice(0, i), dropped, ...pieces.slice(i)];
       });
       paint();
       return;
     }
     if (a === "discard-speech") {
+      /* Everything in this product can be taken back for thirty seconds
+         except, until now, the one act that threw away words somebody had
+         spoken out loud and could not retype. It sat 24px from the
+         primary and destroyed them on one press. */
+      const spoken = pieces.slice();
       state = "notebook";
       pieces = N.speech.separated.slice();
-      say("Discarded. Nothing was kept.");
+      say(`Discarded. Nothing was kept. Undo for ${UNDO_SECONDS} seconds.`);
+      offerUndo("Discarded.", "Put back. What you said is here again.", () => {
+        pieces = spoken;
+        state = "readback";
+      });
       paint();
       return;
     }
@@ -2007,11 +2369,19 @@
         return;
       }
       keepDraft();
-    } else if (a === "close") closeNote();
+    } else if (a === "edit") startEdit(openId);
+    else if (a === "save-edit") saveEdit();
+    else if (a === "cancel-edit") cancelEdit();
+    else if (a === "close") closeNote();
     else if (a === "undo") doUndo();
     else if (a === "review") {
       state = "review";
-      say(`${counts().pending} still to decide.`);
+      const first = queue()[queueAt];
+      /* The hand dealt in silence: it announced a count and left focus on
+         the document body, so a keyboard user arrived in a room with a
+         card in it and no way to know what the card said. */
+      say(first ? `${counts().pending} still to decide. First, ${first.title}` : "Nothing left to decide.");
+      refocus = { kind: "act", sel: ".handBody" };
       paint();
     } else if (a === "notebook" || a === "tasks") {
       state = "notebook";
@@ -2040,7 +2410,9 @@
       say("Listening. Speak whenever you are ready. Stop when you are done.");
       refocus = { kind: "act", sel: '[data-act="voice-stop"]' };
       paint();
+      startListening();
     } else if (a === "voice-cancel" || a === "voice-stop") {
+      stopListening();
       state = a === "voice-stop" ? "readback" : "notebook";
       if (a === "voice-stop") {
         /* The boldest gesture in the product hands over to its weakest
@@ -2088,7 +2460,7 @@
       arriving = made.length ? made[0].id : null;
       if (made.length) cursorId = made[0].id;
       say(`${made.length} note${made.length === 1 ? "" : "s"} kept. ${counts().total} in the notebook.`);
-      offerUndo(`${made.length} kept from what you said.`, () => {
+      offerUndo(`${made.length} kept from what you said.`, "Put back. Nothing was kept from what you said.", () => {
         WORK = work().filter((n) => !made.includes(n));
         state = "readback";
       });
@@ -2130,6 +2502,11 @@
       return;
     }
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      if (editing && editDraft.trim()) {
+        e.preventDefault();
+        saveEdit();
+        return;
+      }
       if (draft.trim()) {
         e.preventDefault();
         keepDraft();
@@ -2156,7 +2533,7 @@
       if (e.key === "Tab") {
         e.preventDefault();
         picker = null;
-        refocus = { kind: "act", sel: '[data-act="filing"], [data-act="refile"]' };
+        refocus = { kind: "act", sel: '[data-act="filing"], [data-act="refile"], [data-act="destination"]' };
         paint();
         return;
       }
@@ -2167,7 +2544,7 @@
         picker = null;
         /* Closing a popup with the keyboard has to give the keyboard back
            somewhere. It was dropping focus on the document body. */
-        refocus = { kind: "act", sel: '[data-act="filing"], [data-act="refile"]' };
+        refocus = { kind: "act", sel: '[data-act="filing"], [data-act="refile"], [data-act="destination"]' };
         paint();
         return;
       }
@@ -2210,6 +2587,11 @@
           state = "notebook";
           paint();
         }
+        return;
+      }
+      if (editing) {
+        e.preventDefault();
+        cancelEdit();
         return;
       }
       if (openId) {
@@ -2266,6 +2648,11 @@
       if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         moveSentence(-1, e.shiftKey);
+        return;
+      }
+      if (e.key === "Home" || e.key === "End") {
+        e.preventDefault();
+        jumpSentence(e.key === "Home" ? "first" : "last", e.shiftKey);
         return;
       }
       if (e.key === " ") {

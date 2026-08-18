@@ -110,6 +110,12 @@
   --r-sheet: 16px;
   --r-pill: 999px;
 
+  /* The lower plane's own ground. Two planes with different jobs were
+     the same white, separated by one hairline, which is why the resting
+     frame read as a compose box on a list rather than a desk above an
+     index. A tint of ink, so the lock holds. */
+  --ground: rgba(17, 17, 17, 0.026);
+
   --inset: 18px;
   --rail: 64px;
   --tap: 44px;
@@ -247,9 +253,20 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    fact had been a generic count of unread items while the thing that
    actually presses on this person — a wedding in two days with notes
    unresolved — was already in the data and printed only as a group rule. */
-.headNext { display: inline-flex; align-items: baseline; gap: 8px; flex: 0 1 auto; min-width: 0; overflow: hidden; }
-.headNext b { font-size: var(--t-15); line-height: var(--lh-base); font-weight: 600; letter-spacing: var(--tr-16); color: var(--ink-1); white-space: nowrap; }
-.headNext span { font-size: var(--t-13); line-height: var(--lh-base); font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A control, because the fact it carries is one the notebook can be
+   narrowed to: the product knew the house was facing Mara & Finn on
+   Saturday, printed it in its largest type and then did nothing with it.
+   Its hit area reaches the whole row without the row growing — the same
+   expander the desk's facts already use. */
+.headNext {
+  position: relative; display: inline-flex; align-items: baseline; gap: 8px; flex: 0 1 auto;
+  min-width: 0; overflow: hidden; cursor: pointer; border-radius: var(--r-chip);
+}
+.headNext::before { content: ""; position: absolute; inset: -11px -9px; }
+.headNext:hover b { color: var(--ink); }
+.headNext[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--indigo); }
+.headNext b { white-space: nowrap; font-size: var(--t-15); line-height: var(--lh-base); font-weight: 600; letter-spacing: var(--tr-16); color: var(--ink-1); white-space: nowrap; }
+.headNext span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .headName { margin: 0; font-size: var(--t-15); font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 5ch; line-height: var(--lh-base); }
 .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
 .headAct {
@@ -262,6 +279,7 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 /* The one filled object in the head. A count of outstanding decisions is
    the only genuinely urgent thing in Notes, and it reads as filled ink
    rather than as a colour. */
+.chip { white-space: nowrap; flex: none; }
 .chip {
   display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: var(--r-pill);
   background: var(--ink); color: var(--white); font-size: var(--t-12); font-weight: 600; letter-spacing: var(--tr-12);
@@ -329,6 +347,16 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
   align-self: start; padding-left: 30px; box-shadow: inset 1px 0 0 var(--line-soft);
   display: grid; align-content: start; gap: 13px;
 }
+/* THE DATE REGISTER. This product's whole world is one date, and that
+   date was set three ways on one screen — one weight in the head, another
+   in the group rule, a third in the row. A venue operator and a couple
+   orient by it, so it is one declared setting, recognisable on sight
+   anywhere in the product. */
+.dateStamp {
+  font-size: var(--t-13); font-weight: 400; letter-spacing: var(--tr-14);
+  line-height: var(--lh-base); color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.deskVerbs { display: flex; flex-wrap: wrap; gap: 4px; margin-left: -8px; }
 .deskFact { display: grid; gap: 3px; }
 .deskFact b {
   font-size: var(--t-11); line-height: var(--lh-base); font-weight: 600;
@@ -459,11 +487,18 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    nine-hundred-word note squeezed the index — the second of the two
    locked planes — to two rows. The paper scrolls inside itself instead. */
 .readBody { max-height: 46vh; overflow: auto; }
+/* Two hundred words on one desk took 655 of 960 pixels and left the index
+   152 — a plane the whole direction rests on, reduced to three rows,
+   by one long note. The paper scrolls inside itself; the plane below it
+   keeps its share. */
+.readLong { max-height: 31vh; }
 .readBody::-webkit-scrollbar { width: 8px; }
 
 /* ── the index ─────────────────────────────────────────────────── */
-.indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; }
-.indexWrap { align-items: center; }
+.indexWrap {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center;
+  background: var(--ground); border-top: 1px solid var(--line-soft); padding-top: 18px;
+}
 .indexHead {
   flex: none; width: var(--stack); display: flex; align-items: center; gap: 12px; padding: 0 var(--gutter) 8px;
   font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
@@ -479,7 +514,7 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .index, .idxGroupRows { list-style: none; margin: 0; padding-inline: 0; }
 .idxItem, .idxSection { list-style: none; display: block; }
 .idxSection { position: relative; }
-.index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; padding: 0 var(--gutter) calc(132px + var(--undo-pad, 0px)); scrollbar-width: thin; overflow-anchor: none; }
+.index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; padding: 0 var(--gutter) 132px; scrollbar-width: thin; overflow-anchor: none; }
 /* A day rule says when you wrote it. A subject rule says what it is
    about, and carries the date the venue is actually facing — which is the
    only thing on this surface that a notebook belonging to somebody else
@@ -521,8 +556,8 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    lock requires. */
 .idxDay[data-soon] { color: var(--ink-1); }
 .idxDay[data-undated] { color: var(--ink-2); }
-.idxDayNote { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: var(--t-13); line-height: var(--lh-base); }
-.idxDay[data-soon] .idxDayNote { color: var(--ink-2); font-weight: 600; }
+.idxDayNote { text-transform: none; }
+.idxDay[data-soon] .idxDayNote { color: var(--ink-1); }
 
 .groupBy { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--wash); margin-left: auto; flex: none; }
 /* The drawn control is 24px because that is the size the index head
@@ -562,7 +597,15 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    at load, before a key is pressed, it was none of those, and it was the
    loudest object on the paper. It lights only while the pile has focus. */
 .idxRow[data-cursor] { background: var(--wash); scroll-margin-top: 66px; }
-.index:focus-within .idxRow[data-cursor] { background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line); }
+/* The search field lives outside the pile, so :focus-within never fired
+   and the drawn cursor was painted in the same 3.5% ink as hover — two
+   rows marked identically, one of them by the mouse resting anywhere. A
+   hit is one of indigo's three sanctioned jobs, so in search the cursor
+   takes it, and the pointer stands down. */
+.index:focus-within .idxRow[data-cursor],
+[data-searching] .idxRow[data-cursor] { background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line); }
+[data-searching] .idxRow[data-cursor] { box-shadow: inset 2px 0 0 var(--indigo), inset 0 0 0 1px var(--indigo-line); }
+[data-searching] .idxRow:hover:not([data-cursor]) { background: none; }
 .idxRow[data-cursor]::before, .idxRow[data-cursor] + .idxRow::before { opacity: 0; }
 .idxMark { color: var(--ink-3); display: grid; place-items: center; position: relative; }
 .idxMark svg { width: 15px; height: 15px; }
@@ -571,15 +614,24 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    keyboard is holding that surface is white under an indigo wash — which
    is two of the three, not a fourth colour mixed by hand. */
 .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--wash); }
-.index:focus-within .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--indigo-wash); }
+.index:focus-within .idxRow[data-cursor] .idxMark i,
+[data-searching] .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--indigo-wash); }
 /* The trim is measured in the file and cut at a word boundary. The
    ellipsis is the backstop for the case where four words still do not
    fit: without it the browser sliced a letter in half against the status
    pill, which reads as damage rather than as a truncation. */
 .idxText { font-size: var(--t-15); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .idxFrom { display: none; }
-.idxText b { font-weight: 600; }
-.idxText span { color: var(--ink-3); }
+/* Density, not weight. The 48-character sentence rule is right and the
+   payment was wrong: every row on screen opened in semibold, so the
+   emphasis meant nothing and the pile read as a wall of headlines rather
+   than as somebody's notes. 600 is reserved in the index for the two
+   things that are genuinely momentary — the row the keyboard is on and a
+   search hit. The lede keeps its rank in ink. */
+.idxText b { font-weight: 400; color: var(--ink-1); }
+.idxText span { color: var(--ink-2); }
+.index:focus-within .idxRow[data-cursor] .idxText b, [data-searching] .idxRow[data-cursor] .idxText b { font-weight: 600; }
+.idxText mark { font-weight: 600; }
 .idxTag {
   font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-11); color: var(--ink-2);
   box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r-pill); padding: 3px 8px; white-space: nowrap; line-height: var(--lh-base); }
@@ -627,7 +679,14 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    most offsets the strip still sat on top of a row's words. While it is
    live the pile is shorter by exactly its height, so the last row ends
    above it at every scroll position rather than only at the end. */
-.sheet[data-undo] { --undo-pad: 58px; }
+/* Shortening the scroller, not padding it, and by the strip's whole
+   reach rather than its height. Padding the scroll content leaves the box
+   the same height, so a row still travelled under the strip at every
+   offset but the last. The box now ends above the strip's top edge, and
+   the foot padding inside it comes down by the same amount so the pile
+   does not grow a second empty band. */
+.sheet[data-undo] .indexWrap { padding-bottom: 128px; }
+.sheet[data-undo] .index { padding-bottom: 20px; }
 .undo {
   position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
   display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 15px;
@@ -752,15 +811,26 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .handCard[data-n="3"] { transform: translateY(36px) scale(0.916); opacity: 0.32; }
 /* A fixed height, because the card is a card in a hand: working the queue
    made the second plane bob by 34px on every keystroke as each note's
-   length changed the card under it. */
+   length changed the card under it.
+
+   And a fixed WIDTH, on the desk's own column, because the card was
+   shrink-wrapping its content: its left edge, its pips, its body and its
+   actions all moved between cards, so a queue of eight looked like eight
+   different objects. It resolves to the same writing column plus margin
+   the desk does, so the card lands on the paper's own edge. */
+.hand, .handStack { width: min(100%, calc(var(--measure) + 276px + 34px + 48px)); }
 .handTop {
   position: relative; background: var(--white); border-radius: var(--r-paper);
   box-shadow: var(--ring), var(--paper-lift); padding: 24px 26px 18px;
+  width: min(100%, calc(var(--measure) + 276px + 34px + 48px));
   height: 272px; display: flex; flex-direction: column;
   transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
 }
-.handTop .handBody { flex: 1; overflow: auto; }
-.handCard { height: 272px; }
+/* Three lines of somebody's own writing, always. Opening the peel took
+   the body's flex share down to a single line, so on a short note the
+   words being decided about were the smallest thing on the card. */
+.handTop .handBody { flex: 1; overflow: auto; min-height: calc(var(--lh-read) * 3em); }
+.handCard { height: 272px; width: min(100%, calc(var(--measure) + 276px + 34px + 48px)); }
 .handTop[data-settling] { transform: translateY(-14px) scale(0.985); opacity: 0; }
 .handQ { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .handTitle { margin: 0; font-size: var(--t-20); font-weight: 600; letter-spacing: var(--tr-21); line-height: var(--lh-tight); }
@@ -868,6 +938,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .peelFrom span { font-size: var(--t-17); line-height: var(--lh-read); color: var(--ink-1); letter-spacing: var(--tr-18); font-weight: 600; }
 .peel .peelLabel { display: block; }
 .peel #peel-label { margin-top: 14px; }
+.idxDayTail { white-space: nowrap; }
 .idxDayTail {
   margin-left: auto; text-transform: none; letter-spacing: var(--tr-12); font-weight: 400;
   font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3);
@@ -882,10 +953,14 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 15px 17px 16px;
 }
 .peel::before { content: ""; position: absolute; left: 30px; top: -7px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--white); box-shadow: -1px -1px 0 var(--line); }
-/* Inside the desk's own margin, so the note and the task it is becoming
-   are side by side and the sheet's lower third is not left empty. */
-.top[data-two] .deskAside .peel { width: 100%; margin: 0; box-shadow: none; padding: 0; }
-.top[data-two] .deskAside .peel::before { display: none; }
+/* It arrives, because a piece of paper being peeled off another one is
+   the single gesture this product is named for. */
+@keyframes peelIn {
+  from { opacity: 0; transform: translateY(-9px) rotate(-0.35deg); }
+  to { opacity: 1; transform: none; }
+}
+.pile > .peel { animation: peelIn var(--dur-settle) var(--curve) both; }
+@media (prefers-reduced-motion: reduce) { .pile > .peel { animation: none; } }
 .deskAside .peelFrom { margin-top: 0; }
 .peelTop { display: flex; align-items: center; gap: 9px; }
 .peelMark { width: 22px; height: 22px; border-radius: var(--r-chip); background: var(--ink); color: var(--white); display: grid; place-items: center; flex: none; }
@@ -1098,11 +1173,14 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   }
   .head .word { grid-column: 1; grid-row: 1; }
   .head .headRule { display: none; }
-  .head .chip { grid-column: 2; grid-row: 1; justify-self: start; }
   .head .headActions { grid-column: 3; grid-row: 1; }
+  /* The count sits at the end of the second row rather than wrapping
+     inside its own pill — "8 still to" over "decide" is a count broken in
+     half, which is the one thing a count must not be. */
+  .head .chip { grid-column: 3; grid-row: 2; justify-self: end; align-self: center; }
   .head .headNext {
-    grid-column: 1 / -1; grid-row: 2; white-space: normal; overflow: visible;
-    flex-wrap: wrap; column-gap: 7px; row-gap: 0;
+    grid-column: 1 / 3; grid-row: 2; white-space: normal; overflow: visible;
+    flex-wrap: wrap; column-gap: 7px; row-gap: 0; min-width: 0;
   }
   .head .headNext b, .head .headNext span { white-space: normal; overflow: visible; }
   .head .headNext span { font-size: var(--t-12); letter-spacing: var(--tr-12); }
@@ -1111,16 +1189,19 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
      into the dock, which is where a thumb already is. */
   .desk { display: none; }
   .indexWrap { padding-top: 6px; }
-  .index { padding-bottom: calc(128px + var(--undo-pad, 0px)); }
+  .index { padding-bottom: 128px; }
   .dock { width: calc(100% - var(--gutter) * 2); max-width: none; padding: 6px 6px 6px 14px; align-items: flex-end; }
   .dockCount { align-self: center; font-size: var(--t-11); color: var(--ink-3); letter-spacing: var(--tr-11); padding: 0 4px 10px; flex: none; }
   .indexHead { flex-wrap: wrap; row-gap: 8px; }
   .groupBy { margin-left: 0; }
-  .index { padding-bottom: calc(148px + var(--undo-pad, 0px)); }
+  .index { padding-bottom: 148px; }
   .dockField { display: none; }
   .phoneField {
     display: block; flex: 1; min-width: 0;
-    font: inherit; font-size: var(--t-15); line-height: var(--lh-base); letter-spacing: var(--tr-16); color: var(--ink-1);
+    /* The one surface that set a person's own words smaller than every
+       other surface set them. The dock gives the field a full-width row;
+       the twelve pixels come out of the dock's padding, not the type. */
+    font: inherit; font-size: var(--t-17); line-height: var(--lh-read); letter-spacing: var(--tr-18); color: var(--ink-1);
     field-sizing: content; min-height: calc(1.5em * 2); max-height: 40vh; padding: 8px 0;
   }
   .phoneField::placeholder { color: var(--ink-3); }
@@ -1152,16 +1233,13 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   .idxDay { flex-wrap: wrap; row-gap: 2px; column-gap: 8px; padding: 16px 0 6px; font-size: var(--t-15); }
   .idxDay .idxDayNote { font-size: var(--t-12); }
   .idxDay .idxDayTail { margin-left: 0; font-size: var(--t-12); }
-  /* And the clamp admits it is a clamp. The two-line box simply hid line
-     three with no ellipsis, no fade and no mark of any kind. */
+  /* And the clamp admits it is a clamp — in the sentence, not over it.
+     The pseudo-element was absolutely positioned at the box's right edge,
+     which is not where line two ends, so it landed in the middle of a
+     word and half a glyph showed through the gradient beside it. The trim
+     now pops whole words off the second line until the ellipsis fits, in
+     the flow, exactly as the desktop row already does on its one line. */
   .idxText { position: relative; }
-  .idxText[data-clamped]::after {
-    content: "…"; position: absolute; right: 0; bottom: 0; padding-left: 18px;
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white) 40%);
-    color: var(--ink-3);
-  }
-  .idxRow:hover .idxText[data-clamped]::after,
-  .idxRow[data-cursor] .idxText[data-clamped]::after { background: none; }
   .idxTag, .idxWhen { grid-column: 2; grid-row: 2; font-size: var(--t-12); }
   .idxTag { justify-self: start; box-shadow: none; padding: 0; color: var(--ink-3); font-weight: 400; }
   .idxWhen { justify-self: end; }
@@ -1212,8 +1290,14 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   /* The separate capsule stands down; its tiles are in the dock. */
   .rail { display: none; }
   .sheet { height: calc(100dvh - 68px - var(--inset) * 2 - env(safe-area-inset-bottom)); }
-  .index { padding-bottom: calc(22px + var(--undo-pad, 0px)); }
+  /* The dock floats over the foot of the pile and its height was guessed
+     at 22px against a bar that measures 103, so the last row of somebody's
+     notebook sat underneath it on every phone. paint() measures the dock
+     and writes --dock-h; the pile reserves exactly that. */
+  .index { padding-bottom: calc(var(--dock-h, 103px) + 16px); scroll-padding-bottom: calc(var(--dock-h, 103px) + 16px); }
   .undo { bottom: 88px; }
+  .sheet[data-undo] .indexWrap { padding-bottom: 140px; }
+  .sheet[data-undo] .index { padding-bottom: 12px; }
   /* The one place the ramp bends, and it bends by dropping a step rather
      than inventing a value: 34 does not fit a 390 screen. */
   .darkSaid { font-size: var(--t-27); }
