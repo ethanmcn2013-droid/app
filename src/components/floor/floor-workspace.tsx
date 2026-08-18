@@ -20,6 +20,8 @@ import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { TASKS_VIEW_PATHS } from "@/lib/product-urls";
+import { useSuiteContext } from "@/components/app/use-suite-context";
+import { withSuiteContext } from "@/lib/suite-context";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import type { LabTask, LabView } from "@/components/hybrid/types";
@@ -189,18 +191,26 @@ export function FloorWorkspace({
     return { total, done, overdue, dueToday, undated };
   }, [tasks, columns, today]);
 
+  const suite = useSuiteContext();
+
   const todayLabel = useMemo(() => {
     const now = new Date();
     return `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]}`;
   }, []);
 
+  /* Crossing to another product carries the workspace with it. The suite
+     sidebar did this and the spine that replaced it did not, so stepping from
+     Tasks to Timeline landed a person in the right product with no idea which
+     wedding they were looking at. data-product is the same contract the rest
+     of the suite navigates by. */
   const product = (key: "notes" | "tasks" | "timeline", label: string, href: string) => {
     const active = key === "tasks";
     return (
       <Link
         key={key}
-        href={href}
+        href={withSuiteContext(href, suite)}
         className={styles.railTile}
+        data-product={key}
         data-key={key}
         aria-label={label}
         {...(active ? { "data-active": "", "aria-current": "page", title: label } : { title: label })}
@@ -235,7 +245,7 @@ export function FloorWorkspace({
         </div>
         <span className={styles.railSpacer} />
         <div className={styles.railUtil}>
-          <Link href="/app/inbox" className={styles.railTile} data-key="inbox" aria-label="Inbox" title="Inbox">
+          <Link href={withSuiteContext("/app/inbox", suite)} className={styles.railTile} data-key="inbox" aria-label="Inbox" title="Inbox">
             {RailIcon.inbox}
           </Link>
           <Link href="/app/settings" className={styles.railTile} data-key="help" aria-label="Help and settings" title="Help and settings">
