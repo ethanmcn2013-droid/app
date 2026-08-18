@@ -76,3 +76,6 @@ prefs.db*
 *.tmp.mjs
 .tmp-panel/
 scripts/design/r*.txt
+_*.mjs
+m-tmp.mjs
+scripts/design/_*.mjs
