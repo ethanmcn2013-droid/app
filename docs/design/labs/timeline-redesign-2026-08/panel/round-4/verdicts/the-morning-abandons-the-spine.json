@@ -1,0 +1,6 @@
+{
+  "id": "the-morning-abandons-the-spine",
+  "real": false,
+  "reason": "The shorthand half checks out: .b-dayCount margin-left computes 0px at 390/768/1280/1440. But it is dead by design, not by accident, and reviving it would shove the centred masthead 1.9px off the field axis. The composition half is round 3 re-argued: measured, every centred line sits on the field centre and every box starts at 22px. A masthead over a left-ranged ledger is the title-page move; full-width-ing .b-dayRule spends the one indigo ceremonial accent to buy uniformity.",
+  "sharpenedFix": "Keep .b-dayWrap centred and .b-dayRule at 200px auto. Do the housekeeping only: in b.css delete the dead margin-left: -0.02em from .b-dayCount and leave margin: 0 0 16px, because an optical left-pull is meaningless on a centred line and round 3's cross-state intent no longer applies here. If a gate is wanted, assert in interaction-check.mjs that .b-dayCount's box centre is within 1px of .b-field's at all four widths, which locks the axis the masthead actually rides."
+}

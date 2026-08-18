@@ -1,0 +1,6 @@
+{
+  "id": "morning-addresses-the-wrong-reader",
+  "real": false,
+  "reason": "Settled or gate-proven throughout. b-dayNote is round 1's remediation, kept by round 2's measuring verdict and refuted again in round 3. 'How you got here' and the dropped stamp are round 2's own confirmed fixes, and interaction-check asserts 'the morning carries no stale timestamp' plus /happening now/i, so both proposed fixes break green gates. The subject does render (/Wedding day at The Orchard/ passes); head placement is taste. Cancelled rows stay on both clocks by a written decision. The first-person rows sit under 'Behind you' on phone too, so there is no day-specific voice defect.",
+  "sharpenedFix": "If anything here is taken, take only the naming: one label for the past object on every guest surface. Either drop the dayOf ternary at render-b.js:306 so the day reads 'Behind you' like phone, desk, print and the record rooms, or adopt 'How you got here' everywhere. Then assert in interaction-check.mjs that .b-behindLabel is byte-identical on ?state=day and ?state=phone. Change nothing else: b-dayNote, the 'Happening now' section, the suppressed stamp and the cancelled row each close a confirmed earlier finding or hold a green assertion, and reversing any of them trades a fixed defect for an old one."
+}

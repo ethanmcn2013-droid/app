@@ -1,0 +1,6 @@
+{
+  "id": "the-unfurl-card-has-no-scale-invariant-spec",
+  "real": false,
+  "reason": "The lab renders the received chat preview, not the OG raster; a 1200x630 asset is produced by scaling this composition, so proportions already hold. The fix is also broken: driven in chromium, padding:6cqw self-references and falls back to the viewport (86.4px), and child cqw resolve against the content box, giving 10.64/56.71/13.28px - off the declared ramp, so audit.mjs fails.",
+  "sharpenedFix": "Do not use container units. If anything is missing it is one build note, not a type change: state in b.css above .b-og that the shipped 1200x630 asset is this same 298px composition rasterised at deviceScaleFactor 4.03 (or transform: scale(4.03) on a 298px box), which preserves every ramp step, em tracking pair and optical margin exactly. A harness check can assert the 1200px capture is a pixel-scaled match of the 298px one."
+}

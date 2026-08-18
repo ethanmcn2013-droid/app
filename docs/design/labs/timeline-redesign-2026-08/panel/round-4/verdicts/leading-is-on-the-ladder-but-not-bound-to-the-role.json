@@ -1,0 +1,6 @@
+{
+  "id": "leading-is-on-the-ladder-but-not-bound-to-the-role",
+  "real": true,
+  "reason": "Measured across 11 states at 390/768/1280/1440: 11px Geist Mono uppercase renders at 1.2 (.b-origin, 20), 1.4 (~460) and 1.5 (~380). Same-object splits confirmed: .b-title 24px/600 at 1.3 vs .b-dayNowTitle 24px/600 at 1.2; .b-when 20px/400 at 1.3 vs .b-dayDate 20px/400 at 1.4. This is binding, not membership, so the gate cannot see it. It is not the rule round 3 warned against: shell.css already defines --lead-label as covering single-line controls, so no control is forced looser.",
+  "sharpenedFix": "Take the bindings as written, but the class list is short of its own assertion: .b-grab and .b-foot also compute 11px mono uppercase at --lead-body, so the proposed audit rule fails on day one. Bind those to --lead-label too. Moving .b-origin 1.2 to 1.4 drops its single line ~1px against its hairline; move .b-origin::before top 6px to 7px in the same edit. And .b-title is 17px on card and phone, so re-key shell.css's --lead-head comment from a size list to the role (moment titles and headings), or the next reader restores the drift."
+}

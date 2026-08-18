@@ -103,6 +103,23 @@
   --lead-body: 1.5;           /* all prose, 13 to 20px */
   --lead-label: 1.4;          /* mono micro-labels and single-line controls */
 
+  /* The space ladder. Radii, motion, type, tracking and leading are all
+     declared and all gated; vertical space never was, and it drifted to
+     twenty-six distinct values with one element carrying four different
+     margins in four contexts. Nine steps, and the one rhythm the file
+     already declared out loud - a rule, twenty above the words, forty
+     below the block before it - is now a pair of tokens rather than a
+     number retyped per section. */
+  --gap-hair: 4px;
+  --gap-tight: 8px;
+  --gap-snug: 12px;
+  --gap-line: 16px;
+  --gap-item: 20px;
+  --gap-block: 28px;
+  --gap-section: 40px;
+  --gap-major: 56px;
+  --gap-page: 80px;
+
   /* The stage is how one page can show a phone artifact, a desk artifact
      and an A4 sheet honestly. Each state declares the medium it belongs
      to; below 430px the stage stops being a frame and becomes the page. */
@@ -439,7 +456,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   margin: 0;
   font-family: var(--mono);
   font-size: 11px;
-  line-height: var(--lead-head);
+  line-height: var(--lead-label);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   /* 0.62, not 0.46. The gate caught this the round it was written: over
@@ -451,7 +468,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   content: "";
   position: absolute;
   left: -23px;
-  top: 6px;
+  top: 7px;
   width: 9px;
   height: 1px;
   background: var(--fore-28);
@@ -512,7 +529,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 .b-date {
   font-family: var(--mono);
   font-size: 11px;
-  line-height: var(--lead-body);
+  line-height: var(--lead-label);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
@@ -579,7 +596,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   border-radius: 4px;
   font-family: var(--mono);
   font-size: 11px;
-  line-height: var(--lead-body);
+  line-height: var(--lead-label);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
@@ -616,7 +633,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    a control the reader has, not a console knob. The sentence closes the
    block: opening with it meant the last thing a guest read on the
    wedding morning was a cancelled hotel search. */
-.b-behind { margin: 40px 0 0; padding: 20px 0 0; border-top: 1px solid var(--fore-16); line-height: var(--lead-body); }
+/* One rhythm for every rule-topped section: forty above the rule,
+   twenty under it. It was declared here and then broken by the footer
+   on every state and by the morning's live block, so three siblings on
+   the same screen stood at 70, 40 and 34. */
+.b-behind { margin: var(--gap-section) 0 0; padding: var(--gap-item) 0 0; border-top: 1px solid var(--fore-16); line-height: var(--lead-body); }
 .b-behindSummary {
   display: flex;
   align-items: baseline;
@@ -699,7 +720,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 }
 .b-behindHead .b-behindCount { color: var(--fore); }
 .b-behindRows { padding: 6px 0 0; }
-.b-behindRow { display: flex; gap: 14px; align-items: baseline; padding: 8px 0; line-height: var(--lead-body); }
+/* A cancelled row has no date, and the empty lane went on reserving
+   96px, so the machine's status label took 125px while the couple's own
+   words were starved to 96 and broke to a one-word second line. */
+.b-behindRow { display: flex; flex-wrap: wrap; gap: var(--gap-snug) 14px; align-items: baseline; padding: var(--gap-tight) 0; line-height: var(--lead-body); }
+.b-behindDate:empty { display: none; }
 .b-behindDate {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -716,7 +741,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   white-space: nowrap;
   flex: none;
 }
-.b-behindTitle { font-size: 15px; line-height: var(--lead-body); letter-spacing: var(--track-body); color: var(--fore-72); margin: 0; }
+.b-behindTitle { font-size: 15px; line-height: var(--lead-body); letter-spacing: var(--track-body); color: var(--fore-72); margin: 0; min-width: 0; }
 .b-behindTitle[data-cancelled="true"] { text-decoration: line-through; text-decoration-color: var(--fore-28); }
 /* A line drawn through 15px text at 28% is not a statement. The row
    says what it is, in the label register, and the accessible name gets
@@ -749,6 +774,48 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    opened in the DOM by the renderer, and this rule only takes away a
    control nobody needs once it is open. */
 [data-past="listed"] .b-behindSummary { display: none; }
+/* One closing at a time. Where the rows are on screen the sentence
+   restated a title twelve pixels above it; where they are folded the
+   sentence is the only account of the past there is. */
+.b-behindNote[data-when="open"] { display: none; }
+.b-behindDetails[open] ~ .b-behindNote[data-when="folded"] { display: none; }
+.b-behindDetails[open] ~ .b-behindNote[data-when="open"] { display: block; }
+[data-past="listed"] .b-behindNote[data-when="folded"] { display: none; }
+[data-past="listed"] .b-behindNote[data-when="open"] { display: block; }
+
+/* The past on the wedding morning, in the product's own language: the
+   same rail, the same ticks, the same mono date beside the person's
+   words, running downward from today into the closed months at two
+   pixels a day. Quieter than what is ahead, and carrying no accent -
+   nothing behind you is the next thing. */
+.b-backWrap { margin: var(--gap-item) 0 0; }
+.b-back { margin-top: var(--gap-tight); }
+.b-back .b-tick { border-color: var(--fore-28); }
+.b-back .b-item[data-lead="true"] .b-tick {
+  background: var(--back);
+  border-color: var(--fore-28);
+  width: 7px;
+  height: 7px;
+  left: -23px;
+  top: 6px;
+}
+.b-back .b-item[data-lead="true"] .b-away { color: var(--fore-62); }
+.b-back .b-item[data-lead="true"] .b-title { font-weight: 400; }
+.b-back .b-item[data-anchor="true"] .b-title { font-weight: 400; }
+.b-back .b-item[data-anchor="true"]::before { display: none; }
+.b-back .b-away { color: var(--fore-62); }
+.b-back .b-title { color: var(--fore-72); }
+/* Anything with no date at all cannot stand on a measure of days, so
+   it is stated under it rather than placed at a distance that would be
+   a guess. */
+.b-behindOff { margin: var(--gap-line) 0 0; }
+.b-behindOffRow {
+  font-size: 15px;
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0;
+}
 
 /* accent=structure spends the indigo a second time, on the rail. */
 [data-accent="structure"] .b-rail { background: var(--accent); opacity: 0.5; }
@@ -756,8 +823,8 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 /* The page opens on a full-measure rule and has to close on one. */
 .b-foot {
   overflow-wrap: anywhere;
-  margin: 34px 0 0;
-  padding: 16px 0 0;
+  margin: var(--gap-section) 0 0;
+  padding: var(--gap-item) 0 0;
   border-top: 1px solid var(--fore-16);
   display: flex;
   flex-wrap: wrap;
@@ -765,7 +832,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   justify-content: space-between;
   font-family: var(--mono);
   font-size: 11px;
-  line-height: var(--lead-body);
+  line-height: var(--lead-label);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
@@ -784,13 +851,12 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   border-bottom: 1px solid var(--fore-16);
 }
 .b-bar .b-spacer { display: none; }
-.b-bar .b-barActs { display: grid; width: 100%; grid-template-columns: 1fr 1fr; gap: 8px; }
-.b-bar .b-barActs .b-act { justify-content: center; text-align: center; }
-.b-bar .b-barActs .b-act[data-primary="true"] { grid-column: 1 / -1; }
+.b-bar .b-barActs { display: flex; width: 100%; gap: var(--gap-tight); }
+.b-bar .b-barActs .b-act { flex: 0 1 auto; justify-content: center; text-align: center; min-width: 0; }
 .b-where {
   font-family: var(--mono);
   font-size: 11px;
-  line-height: var(--lead-body);
+  line-height: var(--lead-label);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
@@ -805,7 +871,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   border-radius: 6px;
   font-size: 15px;
   font-weight: 600;
-  line-height: var(--lead-label);
+  line-height: var(--lead-body);
   letter-spacing: var(--track-body);
   color: var(--fore);
 }
@@ -837,7 +903,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 .b-inert {
   font-family: var(--mono);
   font-size: 11px;
-  line-height: var(--lead-body);
+  line-height: var(--lead-label);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--fore-62);
@@ -858,6 +924,25 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    the preview was invisible. */
 .b-previewStrip .b-where { color: var(--fore-62); }
 .b-previewStrip .b-act { color: var(--fore); border-color: var(--fore-16); }
+
+/* On a phone there is no hover, so until now the primary gesture had
+   no answer at all until the sheet arrived - and the only thing marking
+   a press was the browser's own tap highlight, an unowned fourth hue
+   nobody chose. State here is ink density, so a press is one step
+   denser than a hover. Declared AFTER the hover rules, or equal
+   specificity loses. */
+.b-grab,
+.b-act,
+.b-step,
+.b-behindSummary,
+.b-undoAct { -webkit-tap-highlight-color: transparent; }
+.b-item:active .b-copy,
+.b-grab:active { background: var(--fore-10); }
+.b-act:active,
+.b-step:active,
+.b-behindSummary:active,
+.b-undoAct:active { background: var(--fore-10); }
+.b-act[data-primary="true"]:active { background: var(--fore-72); }
 
 /* ── the editor ───────────────────────────────────────────────────
    Opaque, and beside the plan rather than over it: in the rail at desk
@@ -1035,7 +1120,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 .b-undo kbd { font-family: var(--mono); font-size: 11px; line-height: var(--lead-label); letter-spacing: var(--track-label); color: var(--fore-62); }
 
 /* ── the empty field ──────────────────────────────────────────────  */
-.b-empty { padding: 56px 22px 64px; }
+.b-empty { padding: var(--gap-major) 0 var(--gap-major); }
 .b-emptyTitle {
   font-size: 38px;
   font-weight: 600;
@@ -1098,6 +1183,16 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   margin: 0 0 16px;
 }
 .b-linkRow span { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The owner's surface was byte-identical before and after publishing,
+   so nothing ever told them people were holding a copy of the plan they
+   were still editing. */
+.b-shared {
+  font-size: 13px;
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-body);
+  color: var(--fore-62);
+  margin: 0 0 var(--gap-item);
+}
 .b-live {
   font-size: 13px;
   line-height: var(--lead-body);
@@ -1119,7 +1214,10 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 /* ── the card, as it lands in a chat ──────────────────────────────
    LITERAL, not laddered: the chat app is somebody else's surface and it
    is light whatever ground we chose. */
-.b-chat { padding: 24px 16px; background: var(--paper); }
+/* On the owner's own screen the chat plate needs an edge, or on the
+   paper ground it is a white card on a white field. */
+.b-chat { padding: var(--gap-block) var(--gap-line); background: var(--paper); }
+.b-chatPlate { border: 1px solid var(--fore-16); border-radius: 12px; }
 .b-bubble {
   max-width: 300px;
   margin: 0 0 10px;
@@ -1143,9 +1241,13 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   overflow: hidden;
   background: var(--paper);
 }
+/* The card is rasterised and lands in somebody else's chat client, so
+   it cannot follow this lab's ground decision: written against the
+   ladder it painted white on white in the paper room and ink on ink on
+   the publish screen. Fixed tokens, both on palette. */
 .b-og {
   aspect-ratio: 1200 / 630;
-  background: var(--back);
+  background: var(--ink);
   padding: 18px;
   display: flex;
   flex-direction: column;
@@ -1158,7 +1260,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   line-height: var(--lead-label);
   letter-spacing: var(--track-labelWide);
   text-transform: uppercase;
-  color: var(--fore-62);
+  color: var(--paper-62);
   margin: 0;
 }
 .b-ogNum {
@@ -1167,18 +1269,28 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   font-size: 64px;
   line-height: var(--lead-display);
   letter-spacing: var(--track-display);
-  color: var(--fore);
+  color: var(--paper);
   margin: 0 0 0 -0.05em;
+}
+/* The arrived card. Figures are mono, words are not - the same rule the
+   morning follows. */
+.b-ogWord {
+  font-weight: 600;
+  font-size: 64px;
+  line-height: var(--lead-display);
+  letter-spacing: var(--track-display);
+  color: var(--paper);
+  margin: 0;
 }
 /* Sentence case, in the text face. As a second uppercase mono stamp it
    was the widest line on the card and the couple's own date read as a
    machine label. */
 .b-ogDate {
   font-size: 15px;
-  line-height: var(--lead-label);
+  line-height: var(--lead-body);
   letter-spacing: var(--track-body);
-  color: var(--fore-72);
-  margin: 4px 0 0;
+  color: var(--paper-72);
+  margin: var(--gap-hair) 0 0;
   text-wrap: balance;
 }
 .b-unfurlMeta { padding: 10px 12px; }
@@ -1192,7 +1304,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    display register. */
 /* No second inset: the field already carries 22px, and doubling it set
    the masthead on a 300px measure inside a 344px page. */
-.b-dayWrap { padding: 56px 0 40px; text-align: center; }
+.b-dayWrap { padding: var(--gap-major) 0 0; text-align: center; }
 .b-dayWrap .b-who { margin: 0 0 18px; }
 /* Figures are mono; words are not. "Today" set in the code face opened
    on a monospaced T with a hole beside it and closed on a letterfit
@@ -1201,7 +1313,6 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   font-family: var(--sans);
   font-weight: 600;
   font-size: 96px;
-  margin-left: -0.02em;
   line-height: var(--lead-display);
   letter-spacing: var(--track-display);
   color: var(--fore);
@@ -1215,7 +1326,22 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   margin: 0 0 40px;
   text-wrap: balance;
 }
-.b-dayRule { height: 1px; background: var(--accent); margin: 0 auto 24px; width: 200px; }
+/* Was indigo, and was dividing nothing. The accent moved to the block
+   below; what is left here is the same hairline every other section
+   rule in the product is drawn with. */
+.b-dayRule { height: 1px; background: var(--fore-16); margin: 0 auto var(--gap-block); width: 200px; }
+/* A countdown that has run out is a sentence, not a negative number.
+   It is set at the ceremonial step rather than the display step: there
+   is nothing left to count. */
+.b-passed {
+  font-size: 30px;
+  font-weight: 600;
+  line-height: var(--lead-head);
+  letter-spacing: var(--track-head);
+  color: var(--fore);
+  margin: 0 0 var(--gap-snug);
+  text-wrap: balance;
+}
 .b-dayNote {
   font-size: 15px;
   line-height: var(--lead-body);
@@ -1224,7 +1350,15 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   margin: 0;
   text-wrap: pretty;
 }
-.b-dayNow { margin: 30px 0 0; padding: 20px 0 0; border-top: 1px solid var(--fore-16); }
+/* The morning's live block carries the one indigo on the screen. It
+   used to be spent on a 200px hairline dividing two lines of the same
+   block; a mark means something when it marks the thing that is
+   happening. */
+.b-dayNow {
+  margin: var(--gap-section) 0 0;
+  padding: var(--gap-item) 0 0;
+  border-top: 1px solid var(--accent);
+}
 .b-dayNowTitle {
   font-size: 24px;
   font-weight: 600;
@@ -1235,7 +1369,10 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 }
 
 /* ── ended ────────────────────────────────────────────────────────  */
-.b-ended { padding: 56px 22px 64px; }
+/* The field already carries the inset. Doubling it put the last screen
+   a guest can see on a 300px measure inside a 344px page - the exact
+   defect the morning above records as fixed. */
+.b-ended { padding: var(--gap-major) 0 var(--gap-major); }
 .b-endedTitle {
   font-size: 30px;
   font-weight: 600;
@@ -1328,7 +1465,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   [data-medium="sheet"] .b-empty, [data-medium="full"] .b-empty { padding: 110px 56px 120px; }
   [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { font-size: 64px; letter-spacing: var(--track-title); }
   [data-medium="sheet"] .b-ended, [data-medium="full"] .b-ended { padding: 100px 56px 110px; }
-  [data-medium="sheet"] .b-dayWrap, [data-medium="full"] .b-dayWrap { padding: 110px 56px 60px; }
+  [data-medium="sheet"] .b-dayWrap, [data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
   [data-medium="full"] .b-pressTitle { font-size: 48px; letter-spacing: var(--track-title); }
   /* Its own rule, at the same specificity as the field rule above and
      later in source, so the printed page keeps its own margins. */

@@ -1,0 +1,6 @@
+{
+  "id": "space-is-the-ladder-nobody-built",
+  "real": true,
+  "reason": "Reproduced independently by driving all eleven states at 390 and 1440: exactly 26 distinct positive block margins/paddings, exactly the seventeen cited between 10 and 64, seven of them off the 4px grid. .b-who's margin-bottom renders 22/14/22/18. The 40/20 rhythm declared at b.css:322 is broken by .b-foot 34/16 on every state and by .b-dayNow 30/20 under .b-dayWrap's 40, staggering the morning's siblings at 70/40/34. Exact peer of round 3's confirmed leading ladder. No gate sees it.",
+  "sharpenedFix": "Declare the nine steps in shell.css as proposed; tokens alone are free. Do not re-key all 26 values now: the .b-ownerField phone/desk pairs (b.css:980-1010) are deliberate compression and round 3's confirmed phone finding is still moving them. Fix the one declared-then-broken rhythm: .b-foot { margin: 40px 0 0; padding: 20px 0 0 }, .b-dayNow the same, .b-dayWrap padding-bottom 0. Three lines lands the morning's siblings on 40/40/40. Gate only that: every rule-topped section carries one 40/20 pair. Sweep the remaining near-duplicates after the phone compression lands, re-keying compression pairs together so the ratio survives."
+}

@@ -81,18 +81,32 @@
     return "Nothing is planned until " + F.fmt.medium(nearestIso) + ".";
   }
 
+  /* The count, in whichever of its three states the clock is in. The
+     arrival is the same object the morning is built on, at the same
+     display step, so the two screens cannot disagree about what an
+     arrived countdown looks like. */
+  function countBlock(n) {
+    var said = F.countdown(n);
+    if (said.state === "today") return h("p.b-dayCount", { text: said.word });
+    if (said.state === "passed") return h("p.b-passed", { text: said.said });
+    return h("div.b-count", {}, [
+      h("span.b-num.num", { text: said.num }),
+      h("span.b-unit", { text: said.unit }),
+    ]);
+  }
+
   function horizon(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
     var next = ahead(clock, o.owner)[0];
     return h("header.b-horizon", {}, [
       h("h1.b-who", { text: F.project.name }),
-      h("div.b-count", {}, [
-        h("span.b-num.num", { text: String(daysFrom(clock, F.project.primaryDate.date)) }),
-        h("span.b-unit", { text: "days" }),
-      ]),
+      countBlock(daysFrom(clock, F.project.primaryDate.date)),
       h("p.b-when", { text: F.fmt.longYear(F.project.primaryDate.date) }),
-      h("p.b-sub", { text: F.project.primaryDate.label + " at The Orchard" }),
+      /* The venue was a string literal typed into the renderer, in two
+         places, presented as a fact about the record. The record has no
+         venue field, and inventing one is a data-model change. */
+      h("p.b-sub", { text: F.project.primaryDate.label }),
       h("div.b-todayRule"),
       h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(clock) }),
       next ? h("p.b-gapNote", { text: gapSentence(next.date) }) : null,
@@ -175,7 +189,13 @@
     if (!measureEl) return;
     var px = Number(measureEl.getAttribute("data-px")) || 14;
     var clock = measureEl.getAttribute("data-clock") || F.today;
-    var horizonDays = daysFrom(clock, F.project.primaryDate.date);
+    var back = measureEl.getAttribute("data-back") === "true";
+    /* Going back, the horizon is the oldest thing there is rather than
+       the wedding day, and the ceiling clamp does not apply. */
+    var horizonDays = back
+      ? Number(measureEl.lastChild && measureEl.lastChild.getAttribute
+        ? measureEl.lastChild.getAttribute("data-away") : 0) || 0
+      : daysFrom(clock, F.project.primaryDate.date);
     var items = Array.prototype.slice.call(measureEl.querySelectorAll(".b-item"));
     items.sort(function (a, b) {
       return Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away"));
@@ -302,11 +322,21 @@
       ]);
     });
 
+    /* On the day itself the past is drawn in the product's own
+       language rather than as a dated table: the same rail, the same
+       ticks, the same mono date beside the person's words, running
+       downward from today into the closed months at two pixels a day.
+       The best idea in the direction was absent from the one screen the
+       whole company is judged by. No new data and no new control - the
+       measure that draws what is ahead draws what is behind. */
+    var rowsNode = o.back
+      ? backMeasure(clock, past)
+      : h("div.b-behindRows", {}, rows);
+
     var head = [
       h("h2.b-behindLabel", { text: dayOf ? "How you got here" : "Behind you" }),
       h("span.b-behindCount.num", { text: past.length + " moments" }),
     ];
-    var rowsNode = h("div.b-behindRows", {}, rows);
     /* Where the past is listed in full - the record room, and paper -
        there is no disclosure at all. Taking the control away in CSS took
        the heading and the count with it and left the rows unreachable
@@ -326,7 +356,49 @@
       /* The sentence closes the block. It used to open it, so on the
          wedding morning the last thing a guest read before the footer
          was a cancelled hotel search. */
-      h("p.b-behindNote", { text: note.trim() }),
+      /* Two closings, one shown. Where the rows are visible the
+         sentence was printing a title the reader could already see,
+         twelve pixels below it; where they are folded the sentence is
+         the only statement of the past there is. */
+      listed ? null : h("p.b-behindNote", { "data-when": "folded", text: note.trim() }),
+      h("p.b-behindNote", {
+        "data-when": listed ? "listed" : "open",
+        text: done.length + (done.length === 1 ? " moment" : " moments") + " behind you"
+          + (dropped.length ? ", and one thing that did not happen." : "."),
+      }),
+    ]);
+  }
+
+  /* Two pixels a day. Nine months of a wedding is 274 days, which is
+     3,300px at guest scale and unreadable; at two it is about 550 and
+     the proportion between one gap and the next is exactly what it is
+     everywhere else. The scale is a page-size decision; the ratio is
+     not. */
+  var BACK_PX = 2;
+
+  function backMeasure(clock, past) {
+    var dated = past.filter(function (m) { return m.date; });
+    var undated = past.filter(function (m) { return !m.date; });
+    var kids = [h("div.b-rail", { "aria-hidden": "true" })];
+    dated.forEach(function (item) {
+      kids.push(row(item, -daysFrom(clock, item.date), false));
+    });
+    return h("div.b-backWrap", {}, [
+      h("h2.b-measureHead", { text: "days back" }),
+      h("div.b-measure.b-back", {
+        role: "list",
+        "aria-label": "How you got here, most recent first",
+        "data-px": String(BACK_PX),
+        "data-clock": clock,
+        "data-back": "true",
+      }, kids),
+      undated.length
+        ? h("div.b-behindOff", {}, undated.map(function (item) {
+          return h("p.b-behindOffRow", {
+            text: nameOf(item) + " \u2014 " + F.stateLabel[item.state],
+          });
+        }))
+        : null,
     ]);
   }
 
@@ -939,6 +1011,15 @@
         act("Publish", true, { "data-act": "publish" }),
       ]),
       h("p.b-live.b-vh", { role: "status", text: "" }),
+      /* The owner was never told anyone was holding a copy of the plan
+         they keep editing: the surface was byte-identical before and
+         after publishing. */
+      h("p.b-shared", {
+        text: F.publication.state === "published"
+          ? "Live since " + F.fmt.medium(F.publication.publishedAt)
+            + " \u00b7 anyone with the link can read it"
+          : "Only you can see this",
+      }),
       h("div.b-two", {}, [
         h("div.b-stick", { style: "line-height:1.5" }, [
           horizon({}), h("div.b-editHost"), h("div.b-undoHome", {}, [undoBar()]),
@@ -1043,16 +1124,32 @@
   };
 
   function card() {
-    return h("a.b-unfurl", { href: F.shareUrlFull, "aria-label": F.project.name + ", a wedding timeline" }, [
+    var said = F.countdown(F.toDay());
+    var when = F.fmt.longYear(F.project.primaryDate.date);
+    /* A chat client caches a preview at the moment it is sent, so the
+       card has to be true a month later. The figure stays, because the
+       distance IS the product, and the sentence under it says when it
+       was true. */
+    var figure = said.state === "ahead"
+      ? [h("p.b-ogNum.num", { text: said.num }),
+        h("p.b-ogDate", { text: said.unit + " away when this was sent" })]
+      : [h("p.b-ogWord", { text: said.state === "today" ? said.word : "The day" }),
+        h("p.b-ogDate", { text: when })];
+    return h("a.b-unfurl", {
+      href: F.shareUrlFull,
+      /* Built from what the card shows. An aria-label on an anchor
+         REPLACES its contents, so the 64px figure and the date were
+         announced to nobody. */
+      "aria-label": F.project.name + ", " + (said.state === "ahead"
+        ? said.num + " " + said.unit + " to " + when
+        : when),
+    }, [
       h("div.b-og", {}, [
         h("p.b-ogWho", { text: F.project.name }),
-        h("div", { style: "line-height:var(--lead-display)" }, [
-          h("p.b-ogNum.num", { text: String(F.toDay()) }),
-          h("p.b-ogDate", { text: "days to " + F.fmt.longYear(F.project.primaryDate.date) }),
-        ]),
+        h("div", { style: "line-height:var(--lead-display)" }, figure),
       ]),
       h("div.b-unfurlMeta", {}, [
-        h("p.b-unfurlTitle", { text: F.project.name + ", a wedding timeline" }),
+        h("p.b-unfurlTitle", { text: F.project.primaryDate.label + ", " + when }),
         h("p.b-unfurlHost", { text: "timeline.signalstudio.ie" }),
       ]),
     ]);
@@ -1064,7 +1161,10 @@
       h("div.b-press", {}, [
         h("div", { style: "line-height:1.5" }, [
           h("p.b-who", { text: "What lands in the message" }),
-          h("div", { style: "margin-top:14px;line-height:1.5" }, [card()]),
+          /* The card is a fixed asset that lands in somebody else's
+             chat client, so it is shown on a plate rather than floating
+             on the owner's own ground, where it painted ink on ink. */
+          h("div.b-chat.b-chatPlate", { style: "margin-top:14px" }, [card()]),
         ]),
         h("div", { style: "line-height:1.5" }, [
           h("p.b-who", { text: "The link" }),
@@ -1118,7 +1218,9 @@
      swap round 2 caught. */
   states.day = function () {
     var clock = F.project.primaryDate.date;
-    var todayItems = F.live().filter(function (m) { return m.date && daysFrom(clock, m.date) === 0; });
+    var todayItems = F.live()
+      .filter(function (m) { return m.date && daysFrom(clock, m.date) === 0; })
+      .sort(function (a, b) { return a.title.localeCompare(b.title); });
     return h("div.tl-device", {}, [
       field([
         h("div.b-dayWrap", {}, [
@@ -1128,11 +1230,17 @@
           h("div.b-dayRule"),
           h("p.b-dayNote", { text: "This is the day the plan was for." }),
         ]),
+        /* Every moment dated on the day, not the first of them: a
+           second thing on the wedding day used to make the wedding
+           itself vanish from its own screen, because behind() excludes
+           anything dated on the clock and nothing else rendered it. */
         todayItems.length ? h("section.b-dayNow", {}, [
-          h("h2.b-behindLabel", { text: "Happening now" }),
-          h("p.b-dayNowTitle", { text: todayItems[0].title + " at The Orchard" }),
+          h("h2.b-behindLabel", { text: todayItems.length > 1 ? "Happening today" : "Happening now" }),
+          h("div", {}, todayItems.map(function (m) {
+            return h("p.b-dayNowTitle", { text: m.title });
+          })),
         ]) : null,
-        behindBlock({ clock: clock }),
+        behindBlock({ clock: clock, back: true }),
         foot({ stamp: false }),
       ]),
     ]);
@@ -1165,13 +1273,22 @@
     return h("div.tl-device", {}, [
       field([
         h("div.b-ended", {}, [
-          h("h1.b-who", { text: "Signal Timeline" }),
-          h("p.b-endedTitle", { text: "This link has been turned off." }),
+          /* Every other guest surface gives its heading to the project,
+             and the region here already announces the project by name,
+             so withholding it from the heading protected nothing and
+             only made the visible and the announced page disagree. The
+             product name closes the page, as it does everywhere else. */
+          h("p.b-who", { text: F.project.name }),
+          /* True whether the link was turned off or simply ran out -
+             the surface cannot tell the two apart and used to assert
+             one of them. */
+          h("h1.b-endedTitle", { text: "This link has stopped working." }),
           h("p.b-endedBody", {
-            text: "The plan for " + F.project.name + " is no longer shared here. "
-              + F.workspace.owner + " can send a new link whenever they want to.",
+            text: "The day was " + F.fmt.longYear(F.project.primaryDate.date) + ". "
+              + F.workspace.owner + " can send a new link.",
           }),
           h("p.b-note", { text: "Nothing has been deleted. Only the link stopped working." }),
+          foot({ stamp: false, ended: true }),
         ]),
       ]),
     ]);
@@ -1189,10 +1306,18 @@
            claiming the horizon was reserved at its real height, which is
            271px. Nothing below the horizon is drawn, because tick
            positions come from the dates. */
-        h("div.b-skel", { style: "width:100%;height:17px;margin-bottom:22px" }),
-        h("div.b-skel", { style: "width:100%;height:83px;margin-bottom:14px" }),
-        h("div.b-skel", { style: "width:100%;height:26px;margin-bottom:10px" }),
-        h("div.b-skel", { style: "width:100%;height:23px" }),
+        /* The name is not pending: the card the guest just tapped
+           printed it, and the region here is already labelled with it.
+           So it is set as the real heading, in the real rule, and
+           cannot drift from the one the loaded page uses. */
+        h("h1.b-who", { text: F.project.name }),
+        /* Sized to the shape of what is coming, not to the width of the
+           column. Four full-bleed bars stood in for 106, 107, 227 and
+           188 pixels of ink - the only filled panels in a hairline
+           product, and a mass that collapsed on arrival. */
+        h("div.b-skel", { style: "width:107px;height:86px;margin:0 0 10px -5px" }),
+        h("div.b-skel", { style: "width:227px;height:26px;margin-bottom:4px" }),
+        h("div.b-skel", { style: "width:188px;height:23px" }),
         h("div", { style: "height:1px;background:var(--fore-16);margin:26px 0 0" }),
         h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(F.today) }),
         h("p.b-sub", { style: "margin-top:26px;line-height:1.5", text: "Bringing in what is ahead." }),

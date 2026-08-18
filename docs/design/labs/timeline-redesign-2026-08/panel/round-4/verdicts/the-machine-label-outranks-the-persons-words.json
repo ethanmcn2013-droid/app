@@ -1,0 +1,6 @@
+{
+  "id": "the-machine-label-outranks-the-persons-words",
+  "real": true,
+  "reason": "Measured and confirmed. On the cancelled row the empty .b-behindDate still reserves 96px, so .b-behindTitle gets 94.6-96.6px and 45px (two lines, \"shortlist\" orphaned) at 390/768/1280/1440 across day, phone, desk, print, owner-flight, record and paper, while .b-behindState holds 125.4px on one line. The label outranking the couple's own sentence is a layout fault, not taste.",
+  "sharpenedFix": "The proposed grid breaks it: with the empty date display:none, the unplaced title auto-places into the 96px first column. Measured under that fix the title is still 96px and 45px tall. Keep the flex row. In b.css: .b-behindDate:empty { display: none; } (it does match), .b-behindTitle { min-width: 0; }, .b-behindRow { flex-wrap: wrap; }. Measured result: title 121.2px, one line, 22.5px tall, at 360/390/768/1280, state still on the baseline; dated rows unchanged. Keep the proposed interaction-check.mjs assertions."
+}

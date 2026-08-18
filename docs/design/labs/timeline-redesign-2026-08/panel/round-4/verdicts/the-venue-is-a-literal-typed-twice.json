@@ -1,0 +1,6 @@
+{
+  "id": "the-venue-is-a-literal-typed-twice",
+  "real": true,
+  "reason": "Verified verbatim: render-b.js:95 and :1133 both concatenate \" at The Orchard\", and it renders on day, phone, owner-flight and print. fixture.js PROJECT.primaryDate is {label,date} only, and the real source src/lib/review-suite-fixture.ts has no place or venue field either. Typed content presented as record fact breaks the fixture's own stated contract.",
+  "sharpenedFix": "Remove, do not invent. The proposed place: \"The Orchard, Adare\" is fabricated fixture data — no venue field exists in review-suite-fixture.ts and \"Adare\" appears nowhere in the repo; the brief forbids inventing it. So: render-b.js:95 becomes text: F.project.primaryDate.label; render-b.js:1133 becomes text: todayItems[0].title. Change interaction-check.mjs:712 to assert /Wedding day/ without a venue. The milestone strings \"The Orchard reserved\" and \"Menu tasting at The Orchard\" are genuine record data and stay untouched. Adding a place field is a data-model change, out of scope here."
+}

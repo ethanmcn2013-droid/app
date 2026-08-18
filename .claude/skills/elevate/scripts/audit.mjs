@@ -46,8 +46,9 @@ const FAMILY_PATTERN = (config.families ?? ["Geist", "Geist Mono"])
 const TYPE_RAMP = config.ladders?.typeRamp ?? [];
 
 const AUDIT = `(() => {
-  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], leadingLadder: [], tracking: [], trackingLadder: [], counts: {} };
+  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], leadingLadder: [], leadingRole: [], tracking: [], trackingLadder: [], counts: {} };
   const tracks = new Map();
+  const leads = new Map();
 
   const parse = (value) => {
     const m = String(value).match(/rgba?\\(([^)]+)\\)/);
@@ -223,6 +224,27 @@ const AUDIT = `(() => {
          undeclared value ship clean, and it could never see the same
          object carrying two baselines on two different states. */
       else if (LEAD.length && size > 0) {
+        /* On the ladder is not the same as bound to the role. One
+           setting - 11px mono uppercase at the label track - rendered at
+           three different leadings across four hundred instances, and
+           the same object stood on two baselines on two states, all of
+           it inside the declared steps. The role is what a leading
+           belongs to, so the role is what it is keyed on. */
+        const isControl = el.matches("button, a, summary, input, textarea, select, [tabindex]");
+        const upperMono = /mono|geist mono/i.test(family) && cs.textTransform === "uppercase";
+        const role = size >= 48 ? "display"
+          : (upperMono && size <= 12 ? "label"
+            : (isControl ? "control" : (size >= 20 ? "head" : "body")));
+        const roleKey = family + "|" + Math.round(size * 10) / 10 + "|" + role;
+        const leadNow = Math.round((parseFloat(cs.lineHeight) / size) * 100) / 100;
+        if (!(el.closest(".tl-caption") || cs.clipPath !== "none")) {
+          if (!leads.has(roleKey)) leads.set(roleKey, new Map());
+          if (!leads.get(roleKey).has(String(leadNow))) {
+            leads.get(roleKey).set(String(leadNow), describe(el) + ' "' + el.textContent.trim().slice(0, 18) + '"');
+          }
+        }
+      }
+      if (false) {
         const furniture0 = el.closest(".tl-caption") || cs.clipPath !== "none";
         const ratioNow = parseFloat(cs.lineHeight) / size;
         if (!furniture0 && Number.isFinite(ratioNow)
@@ -355,6 +377,14 @@ const AUDIT = `(() => {
   out.leading = dedupe(out.leading, (i) => i.el);
   out.leadingLadder = dedupe(out.leadingLadder, (i) => i.el + i.lead);
   out.trackingLadder = dedupe(out.trackingLadder, (i) => i.el + i.track);
+  for (const [key, seen] of leads) {
+    if (seen.size < 2) continue;
+    out.leadingRole.push({
+      key,
+      values: Array.from(seen.keys()).join(" vs "),
+      where: Array.from(seen.values()).join(" | ").slice(0, 120),
+    });
+  }
   for (const [key, seen] of tracks) {
     if (seen.size < 2) continue;
     out.tracking.push({
@@ -379,7 +409,7 @@ for (const state of STATES) {
 }
 await browser.close();
 
-const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading", "leadingLadder", "tracking", "trackingLadder"];
+const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading", "leadingLadder", "leadingRole", "tracking", "trackingLadder"];
 const totals = Object.fromEntries(KEYS.map((k) => [k, 0]));
 for (const state of Object.keys(report.states)) {
   for (const key of KEYS) totals[key] += report.states[state][key].length;
@@ -405,6 +435,7 @@ if (AS_JSON) {
     line("motion", r.motion, (i) => (i.kind === "duration" ? `${i.el} ${i.duration}s` : `${i.el} ${i.easing}`));
     line("type ramp", r.ramp, (i) => `${i.el} ${i.size}px  "${i.text}"`);
     line("leading", r.leading, (i) => `${i.el} line-height normal  "${i.text}"`);
+    line("lead role", r.leadingRole, (i) => `${i.key} → ${i.values}   ${i.where}`);
     line("lead ladder", r.leadingLadder, (i) => `${i.el} ${i.size}px at ${i.lead}  "${i.text}"`);
     line("tracking", r.tracking, (i) => `${i.key} → ${i.values}   ${i.where}`);
     line("track ladder", r.trackingLadder, (i) => `${i.el} ${i.size}px at ${i.track}  "${i.text}"`);

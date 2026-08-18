@@ -1,0 +1,6 @@
+{
+  "id": "day-disclosure-opens-past-the-fold",
+  "real": false,
+  "reason": "Measured at 390x844: the summary sits at y539 and never moves, and opening paints rows 1-6 fully in view with row 7 (Sat 5 Sep, Final guest numbers) cut through mid-glyph at the fold. A clipped row plus a page that becomes scrollable is the standard, sufficient cue that a list continues. Nothing is hidden without indication, and the change plays where the reader pressed.",
+  "sharpenedFix": "None needed. The proposed auto-scroll would make it worse: scrolling the block to the top displaces the control the reader just pressed and still holds focus, hijacks scroll after a tap, and trades a visible clipped-row cue for a jump that hides the summary's own state change."
+}

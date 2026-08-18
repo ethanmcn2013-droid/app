@@ -1,0 +1,6 @@
+{
+  "id": "product-vocabulary-on-the-guest-transit",
+  "real": false,
+  "reason": "Two of the three strings fail. \"A wedding timeline\" is the couple's own trade phrase, not product-speak, and it is an appositive, not a comma splice; the proposed title restates the name and date already stamped on the card above it, so the fix is a regression. The loading frame contains no product vocabulary, and naming a project whose data has not landed invents what a skeleton exists not to invent. Only \"workspace\" is genuine jargon, and it sits on the owner's screen, not the guest transit.",
+  "sharpenedFix": "Fix the one true word, in render-b.js .b-pressBody: \"It carries the day, the distance and the plan, and nothing else: no notes, no suppliers, no prices.\" Leave \"the distance\" alone; it is the visible label of the measured/even control in render-core.js, so the surfaces agree, and \"the count\" is vaguer, not plainer. Leave the unfurl title and the loading copy as shipped."
+}

@@ -166,6 +166,20 @@
       return new Date(utc(iso) + n * 86400000).toISOString().slice(0, 10);
     },
     toDay: function () { return days(TODAY, PROJECT.primaryDate.date); },
+    /* The countdown, said once for the whole product. It answers with a
+       STATE, not a string, because the three cases are three different
+       compositions: a number and its unit while the day is ahead, the
+       word the morning is built on when it arrives, and a sentence with
+       no numeral once it has gone. A guest must never see a negative. */
+    countdown: function (n) {
+      if (n > 0) return { state: "ahead", num: String(n), unit: n === 1 ? "day" : "days" };
+      if (n === 0) return { state: "today", word: "Today" };
+      return { state: "passed", said: "The day has been and gone." };
+    },
+    /* Mirrors the shipped publication DTO. Nothing invented: a share
+       token exists in this projection, so the plan is published, and
+       the date it was published is the one the record already carries. */
+    publication: { state: "published", publishedAt: UPDATED },
     counts: function () {
       var on = live();
       return {

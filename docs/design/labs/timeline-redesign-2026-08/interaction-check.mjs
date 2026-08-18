@@ -709,7 +709,12 @@ for (const state of ["unfurl", "publish"]) {
 {
   const page = await open({ state: "day" });
   const text = await page.evaluate(() => document.body.innerText);
-  ok("the day names where to be", /Wedding day at The Orchard/.test(text));
+  /* The venue used to be a string literal typed into the renderer in
+     two places and presented as a fact about the record. The record has
+     no venue field, so the page must not claim one. */
+  ok("the day names the day", /Wedding day/.test(text));
+  ok("nothing invents a venue the record does not hold",
+    !/Wedding day at/.test(text));
   ok("the day names what is happening", /happening now/i.test(text) && /wedding day/i.test(text));
   /* It used to claim everything had happened while a live milestone was
      dated that very morning. */
@@ -741,8 +746,18 @@ for (const state of ["unfurl", "publish"]) {
 {
   const page = await open({ state: "ended" });
   const text = await page.evaluate(() => document.body.innerText);
-  ok("the ended link says what happened", /turned off/i.test(text));
+  /* True whether the link was revoked or simply ran out. The surface
+     cannot tell the two apart and used to assert one of them. */
+  ok("the ended link says what happened", /stopped working/i.test(text));
+  ok("the ended link does not assert a cause it cannot know",
+    !/turned off\./i.test(text));
+  ok("the ended link names the plan it belonged to",
+    text.toLowerCase().includes(FIXTURE.project.name.toLowerCase()));
+  ok("the ended link says when the day was",
+    text.includes(String(new Date(FIXTURE.project.primaryDate.date).getUTCFullYear())));
   ok("the ended link names who can fix it", text.includes(FIXTURE.workspace.owner));
+  ok("the news is the heading", await page.evaluate(() =>
+    /stopped working/i.test((document.querySelector("h1") || {}).textContent || "")));
   ok("the ended link says nothing was deleted", /nothing has been deleted/i.test(text));
   await page.close();
 }
@@ -1114,7 +1129,7 @@ for (const state of ["owner-flight", "owner-empty", "owner-editing", "publish", 
 
 /* The past is listed only if asked for — and the asking has to be a
    control the reader has, not a console knob. */
-for (const state of ["phone", "desk", "day"]) {
+for (const state of ["phone", "desk"]) {
   const page = await open({ state });
   const fold = await page.evaluate(() => {
     const details = document.querySelector(".b-behindDetails");
@@ -1360,7 +1375,7 @@ for (const width of [320, 768, 1024, 1280]) {
 
 /* Every date in the record has to fit its own lane. Two thirds of a
    calendar was breaking the weekday off the day it belonged to. */
-for (const [variant, state, click] of [["record", "day", false], ["approach", "phone", true]]) {
+for (const [variant, state, click] of [["record", "desk", false], ["approach", "phone", true]]) {
   const page = await open({ state, variant, viewport: { width: 390, height: 844 } });
   await page.waitForTimeout(250);
   if (click) { await page.locator(".b-behindSummary").click(); await page.waitForTimeout(200); }
@@ -1377,7 +1392,7 @@ for (const [variant, state, click] of [["record", "day", false], ["approach", "p
 
 /* A moment that was called off says so in words, in the row, so the
    accessible name carries it too. */
-for (const [variant, state] of [["record", "phone"], ["record", "day"]]) {
+for (const [variant, state] of [["record", "phone"], ["record", "desk"]]) {
   const page = await open({ state, variant });
   await page.waitForTimeout(250);
   const off = await page.evaluate(() => {
@@ -1473,6 +1488,247 @@ for (const state of ["phone", "desk", "day"]) {
   ok("the morning word is set in the reading face",
     !/mono/i.test(word.family) && word.size === 96, JSON.stringify(word));
   await page.close();
+}
+
+/* ═══ round 4 ══════════════════════════════════════════════════════ */
+
+/* The morning is the screen the whole company is judged by, and the
+   best idea in the direction was absent from it: the past opened into a
+   flat dated table while the measure — real days at real distance —
+   was nowhere. Same data, same language, two pixels a day. */
+{
+  const page = await open({ state: "day", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  await page.locator(".b-behindSummary").click();
+  await page.waitForTimeout(250);
+  const back = await page.evaluate(() => {
+    const measure = document.querySelector(".b-back");
+    if (!measure) return null;
+    const rows = Array.from(measure.querySelectorAll(".b-item"));
+    const px = Number(measure.getAttribute("data-px"));
+    return {
+      px,
+      rows: rows.length,
+      head: (document.querySelector(".b-backWrap .b-measureHead") || {}).textContent,
+      /* Position IS the quantity, going back exactly as going forward. */
+      exact: rows.every((el) =>
+        Math.abs(parseFloat(el.style.top) - Number(el.getAttribute("data-away")) * px) < 0.5),
+      accent: rows.some((el) => {
+        const tick = el.querySelector(".b-tick");
+        return tick && getComputedStyle(tick).backgroundColor === "rgb(79, 70, 229)";
+      }),
+      rail: !!measure.querySelector(".b-rail"),
+    };
+  });
+  ok("the morning draws the past as the instrument", !!back && back.rows > 0 && back.rail,
+    back ? String(back.rows) : "missing");
+  ok("the past is measured, not listed", !!back && back.exact);
+  ok("the past runs at its own scale", !!back && back.px === 2, back ? String(back.px) : "-");
+  ok("the past says which way it counts", !!back && back.head === "days back", back ? back.head : "-");
+  ok("nothing behind you is the next thing", !!back && !back.accent);
+  await page.close();
+}
+
+/* The morning names everything dated on it. A second moment on the
+   wedding day used to make the wedding itself vanish from its own
+   screen, because nothing rendered anything but the first. */
+{
+  const page = await open({ state: "day" });
+  await page.waitForTimeout(200);
+  const named = await page.evaluate(() => {
+    const F = window.__TLCORE.F;
+    const clock = F.project.primaryDate.date;
+    const on = F.live().filter((m) => m.date === clock);
+    const text = document.body.innerText;
+    return { on: on.length, missing: on.filter((m) => text.indexOf(m.title) < 0).map((m) => m.title) };
+  });
+  ok("the morning names everything happening on it", named.missing.length === 0,
+    named.missing.join(", "));
+  await page.close();
+}
+
+/* The countdown has three states and one owner. It had one, so a
+   wedding a day out read "1 DAYS", the morning read "0 DAYS", and the
+   week after read "-6 DAYS" at ninety-six pixels. */
+for (const k of [2, 1, 0, -3]) {
+  const page = await open({ state: "phone" });
+  await page.waitForTimeout(150);
+  const said = await page.evaluate((n) => {
+    const F = window.__TLCORE.F;
+    F.project.primaryDate.date = F.plusDays(F.today, n);
+    window.__TLCORE.mount();
+    const read = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? el.textContent.trim() : null;
+    };
+    return {
+      num: read(".b-num"), unit: read(".b-unit"),
+      word: read(".b-dayCount"), passed: read(".b-passed"),
+      text: document.body.innerText,
+    };
+  }, k);
+  if (k > 0) {
+    ok(`the count agrees with its unit · ${k}`,
+      said.num === String(k) && said.unit === (k === 1 ? "day" : "days"),
+      said.num + " " + said.unit);
+  } else if (k === 0) {
+    ok("the count arrives as a word", said.word === "Today" && said.num === null, String(said.word));
+  } else {
+    ok("a guest never sees a negative count", !/-\d/.test(said.text) && !!said.passed,
+      String(said.passed));
+  }
+  await page.close();
+}
+
+/* The card is a fixed asset that lands in somebody else's chat client,
+   so it cannot follow this lab's ground, and its name has to carry what
+   it shows. */
+for (const variant of ["approach", "paper"]) {
+  const page = await open({ state: "unfurl", variant });
+  await page.waitForTimeout(200);
+  const card = await page.evaluate(() => {
+    const og = document.querySelector(".b-og");
+    const link = document.querySelector(".b-unfurl");
+    return {
+      ground: getComputedStyle(og).backgroundColor,
+      label: link.getAttribute("aria-label"),
+      shown: link.innerText,
+    };
+  });
+  ok(`the card keeps one ground · ${variant}`, card.ground === "rgb(17, 17, 17)", card.ground);
+  const figure = (card.shown.match(/\d+/) || [""])[0];
+  ok(`the card announces what it shows · ${variant}`,
+    !!figure && card.label.indexOf(figure) >= 0, card.label);
+  await page.close();
+}
+
+/* The publish screen shows the card on a plate, not floating on the
+   owner's own ground, where it painted ink on ink. */
+{
+  const page = await open({ state: "publish", viewport: { width: 1280, height: 900 } });
+  await page.waitForTimeout(200);
+  ok("the card lands on a plate", await page.evaluate(() => {
+    const plate = document.querySelector(".b-chatPlate");
+    return !!plate && parseFloat(getComputedStyle(plate).borderTopWidth) >= 1;
+  }));
+  await page.close();
+}
+
+/* The past is stated once. Round 3 opened the rows and left the
+   sentence beside them, printing a title the reader could already see
+   twelve pixels above it. */
+for (const [variant, state] of [["record", "desk"], ["record", "print"], ["approach", "print"]]) {
+  const page = await open({ state, variant });
+  await page.waitForTimeout(200);
+  ok(`the past is stated once · ${variant}/${state}`, await page.evaluate(() => {
+    const notes = Array.from(document.querySelectorAll(".b-behindNote"))
+      .filter((n) => n.checkVisibility({ contentVisibilityAuto: true }));
+    const titles = Array.from(document.querySelectorAll(".b-behindTitle"))
+      .filter((n) => n.checkVisibility({ contentVisibilityAuto: true }))
+      .map((n) => n.textContent.trim());
+    return notes.length === 1 && !titles.some((t) => t && notes[0].textContent.indexOf(t) >= 0);
+  }));
+  await page.close();
+}
+
+/* A cancelled row has no date, and the empty lane went on reserving
+   96px while the machine's label took more room than the couple's own
+   words. */
+{
+  const page = await open({ state: "desk", variant: "record", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  const off = await page.evaluate(() => {
+    const row = Array.from(document.querySelectorAll(".b-behindRow"))
+      .filter((r) => r.querySelector('[data-cancelled="true"]'))[0];
+    if (!row) return null;
+    const title = row.querySelector(".b-behindTitle");
+    const lh = parseFloat(getComputedStyle(title).lineHeight);
+    const date = row.querySelector(".b-behindDate");
+    return {
+      oneLine: title.getBoundingClientRect().height <= lh * 1.4,
+      lane: date ? getComputedStyle(date).display : "gone",
+    };
+  });
+  ok("a cancelled moment keeps its own words on one line", !!off && off.oneLine);
+  ok("an empty lane reserves nothing", !!off && off.lane === "none", off ? off.lane : "-");
+  await page.close();
+}
+
+/* On a phone there is no hover, so a press had no answer at all until
+   the sheet arrived. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  const pressed = await page.evaluate(() => {
+    const el = document.querySelector(".b-grab");
+    const rest = getComputedStyle(el).backgroundColor;
+    const rules = Array.from(document.styleSheets)
+      .flatMap((sheet) => { try { return Array.from(sheet.cssRules); } catch (e) { return []; } })
+      .filter((r) => r.selectorText && r.selectorText.indexOf(":active") >= 0);
+    return { rest, actives: rules.length, tap: getComputedStyle(el).webkitTapHighlightColor };
+  });
+  ok("a press is answered", pressed.actives > 0, String(pressed.actives));
+  ok("no colour nobody chose", /rgba\(0, 0, 0, 0\)|transparent/.test(pressed.tap), pressed.tap);
+  await page.close();
+}
+
+/* One rhythm for every rule-topped section. It was declared in one
+   place and broken by the footer on every state. */
+for (const state of ["phone", "day", "owner-flight"]) {
+  const page = await open({ state, viewport: { width: 1280, height: 900 } });
+  await page.waitForTimeout(200);
+  const rhythm = await page.evaluate(() => {
+    const out = [];
+    for (const el of document.querySelectorAll(".b-behind, .b-foot, .b-dayNow")) {
+      const cs = getComputedStyle(el);
+      if (parseFloat(cs.borderTopWidth) < 1) continue;
+      out.push([el.className, cs.marginTop, cs.paddingTop]);
+    }
+    return out;
+  });
+  ok(`one rhythm above every rule · ${state}`,
+    rhythm.length > 0 && rhythm.every((r) => r[1] === "40px" && r[2] === "20px"),
+    JSON.stringify(rhythm));
+  await page.close();
+}
+
+/* The owner is told the plan is shared. The surface used to be
+   byte-identical before and after publishing. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1280, height: 900 } });
+  await page.waitForTimeout(200);
+  ok("the plan says it is shared", await page.evaluate(() => {
+    const el = document.querySelector(".b-shared");
+    return !!el && /live since/i.test(el.textContent);
+  }));
+  await page.close();
+}
+
+/* The loading frame stands in for the shape of what is coming, and the
+   one sentence readable in both frames does not move. */
+{
+  const before = await open({ state: "loading", viewport: { width: 390, height: 844 } });
+  await before.waitForTimeout(250);
+  const skel = await before.evaluate(() => ({
+    name: (document.querySelector(".b-who") || {}).textContent,
+    widths: Array.from(document.querySelectorAll(".b-skel"))
+      .map((el) => Math.round(el.getBoundingClientRect().width)),
+    today: document.querySelector(".b-todayLabel").getBoundingClientRect().top,
+  }));
+  await before.close();
+  const after = await open({ state: "phone", viewport: { width: 390, height: 844 } });
+  await after.waitForTimeout(250);
+  const real = await after.evaluate(() => ({
+    name: (document.querySelector(".b-who") || {}).textContent,
+    today: document.querySelector(".b-todayLabel").getBoundingClientRect().top,
+  }));
+  await after.close();
+  ok("the loading frame keeps the name the card promised", skel.name === real.name,
+    skel.name + " vs " + real.name);
+  ok("the frame stands in for the shape, not the column",
+    skel.widths.length > 0 && skel.widths.every((w) => w < 300), JSON.stringify(skel.widths));
+  ok("nothing hops when the data lands", Math.abs(skel.today - real.today) <= 2,
+    skel.today + " → " + real.today);
 }
 
 /* The owner's own phone shows the owner their plan. */

@@ -174,6 +174,61 @@
           "done": "The backdrop composites single-colour gradients and reports anything else as unmeasured rather than guessing. The preview strip is painted from the fore ladder, as is the lab's own caption, which had the same defect. Both ladders are now read off the page and enforced against it, and leading joined tracking as a declared, graded axis - six steps, bound by role, with sixty hand-set values routed onto them."
         }
       ]
+    },
+    {
+      "round": 4,
+      "scores": {
+        "UI composition": 8.1,
+        "Typography": 8.3,
+        "Interaction and states": 7.5,
+        "UX and information design": 8.1,
+        "Brand and copy": 7.6,
+        "Product taste and emotional resonance": 7.6,
+        "Measured evidence": 7.8
+      },
+      "findings": 35,
+      "confirmed": 22,
+      "refuted": 13,
+      "fixed": 22,
+      "headline": "The floor rose again, 7.2 to 7.5, and four seats rose by half a point or more - but the round belongs to one sentence five of the seven seats wrote independently: the wedding morning is a title card. The best idea in the direction, real days at real distance, was absent from the one screen the whole company is judged by; the past opened there into a flat dated table, and a second moment dated on the wedding day made the wedding itself vanish from its own screen. Underneath it the measured seat found the countdown had no arrival branch and no plural: a wedding one day out rendered \"1 DAYS\" at ninety-six pixels, the morning \"0 DAYS\", the week after \"-6 DAYS\", on every guest surface and on the card that lands in the chat - and the assertion written to guard it could not see it, because CSS uppercases the unit. The venue a guest is told to go to was a string literal typed into the renderer twice, from a record that has no venue field. The link card announced neither its figure nor its date to a screen reader, and painted its own ground from a ladder a rasterised asset can never follow - white on white in one room, ink on ink in another. The past said the same thing twice wherever round 3 had opened it. And nothing in the product answered a press: eight hover rules, zero active rules, and on a phone the only acknowledgement was the browser's own tap highlight, an unowned fourth hue nobody chose. The morning now draws its past in the product's own language at two pixels a day; the countdown has one owner and three states; leading is bound to its role and space has a declared ladder. The behaviour gate went 424 to 454 assertions.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 0.8,
+          "problem": "The wedding morning was 206 characters, one control, and a 715px card against 1674px in the received artifact: the measure - the whole thesis of the direction - was absent on the one day it is about, and its past opened into a flat dated table. Five of the seven seats raised it independently.",
+          "done": "The morning draws its past in the product's own language: the same rail, the same ticks, the same mono date beside the person's words, running downward from today into the closed months at two pixels a day, headed \"days back\" and carrying no accent, because nothing behind you is the next thing. No new data, no new control, and the same place() that positions what is ahead positions what is behind. Two refuters shaped it: a completed forward measure would have spanned 3,300 pixels with two hundred-day voids, and inverting the screen would have duplicated the rail's own origin under the display word."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.5,
+          "problem": "The countdown had no arrival branch and no plural. Driven, not read: a wedding one day out renders \"1 DAYS\" at 96px on a phone and 148px at a desk, the morning renders \"0 DAYS\", a week after renders \"-6 DAYS\", and the card that lands in the chat does the same. The fixture already carried an accessor written for exactly this, and the two biggest numbers in the design were the only ones that never called it. The guarding assertion could not fail: CSS uppercases the unit, so the page says \"1 DAYS\" while the regex looks for \"1 days\".",
+          "done": "One owner for the clock, answering with a state rather than a string, because the three cases are three compositions: a figure and its unit while the day is ahead, the word the morning is already built on when it arrives, and a sentence with no numeral once it has gone. A guest can no longer be shown a negative. Graded at two days out, one day out, the day itself and three days past, reading the figure and the unit as separate elements because innerText cannot see this."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.5,
+          "problem": "A second moment dated on the wedding day made the wedding itself vanish from its own screen: the morning rendered only the first item on the clock, and anything else dated that day was in neither the ahead list nor the behind list, so it existed nowhere. Reached by typing a date the editor itself accepts.",
+          "done": "The morning names everything dated on it, ordered explicitly rather than by fixture order, and heads the block \"Happening today\" when it holds more than one. Asserted against the record rather than against a literal: every live moment dated on the clock must appear in the text of the screen."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "The unfurl card painted its ground from the fore ladder, so the one artifact that gets rasterised and lands in somebody else's chat client followed a room it can never be in: white on white in the paper room, and #111 on #111 on the publish screen, where the owner previews what lands in the message. Separately its accessible name replaced its own contents, so the 64px figure and the date were announced to nobody.",
+          "done": "The card has one ground, written in fixed tokens that are still on the palette, and it is shown on a hairline plate wherever it is previewed. Its name is built from what it shows, and it now says when the figure was true - a chat client caches a preview at the moment it is sent, and the bubble beside it promises the plan updates itself."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.4,
+          "problem": "Nothing in the product answered a press: eight hover rules and zero active rules, so on a phone - where hover does not exist - the primary gesture had no acknowledgement at all until the sheet arrived, and the only thing marking a touch was the browser's own tap highlight, an unowned teal nobody chose and nothing overrode.",
+          "done": "State here is ink density, so a press is one step denser than a hover, declared after the hover rules so equal specificity cannot lose, with the tap highlight taken off the controls that now own their own press. No motion work needed: the reduced-motion block already zeroes every transition, and a colour step is state rather than motion."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.3,
+          "problem": "The venue - the only fact telling a guest where to go - was a string literal typed into the renderer in two places and presented as a fact about the record, which has no venue field. The gate proved it by matching the same literal.",
+          "done": "Removed rather than invented: a place field is a data-model change and out of scope, and writing one into the fixture would be exactly the hand-rolled data the brief forbids. The milestone titles that genuinely name the venue are real record content and are untouched. The gate now asserts the page does NOT claim a venue."
+        }
+      ]
     }
   ]
 }

@@ -74,6 +74,23 @@
   --lead-body: 1.5;           /* all prose, 13 to 20px */
   --lead-label: 1.4;          /* mono micro-labels and single-line controls */
 
+  /* The space ladder. Radii, motion, type, tracking and leading are all
+     declared and all gated; vertical space never was, and it drifted to
+     twenty-six distinct values with one element carrying four different
+     margins in four contexts. Nine steps, and the one rhythm the file
+     already declared out loud - a rule, twenty above the words, forty
+     below the block before it - is now a pair of tokens rather than a
+     number retyped per section. */
+  --gap-hair: 4px;
+  --gap-tight: 8px;
+  --gap-snug: 12px;
+  --gap-line: 16px;
+  --gap-item: 20px;
+  --gap-block: 28px;
+  --gap-section: 40px;
+  --gap-major: 56px;
+  --gap-page: 80px;
+
   /* The stage is how one page can show a phone artifact, a desk artifact
      and an A4 sheet honestly. Each state declares the medium it belongs
      to; below 430px the stage stops being a frame and becomes the page. */

@@ -1,0 +1,6 @@
+{
+  "id": "the-loading-frame-hides-a-name-it-already-holds",
+  "real": true,
+  "reason": "Both halves verified at 390. Loading's field carries aria-label \"The plan for Mara & Finn\" with no h1, so one frame speaks the name and greys a 17px bar over it. The name is not pending: the unfurl card and the ended state both print it without any plan data. Geometry: phone horizon 26-300.6 (275), loading stack ends 319.9 - a 19px lift, under a comment claiming 271.",
+  "sharpenedFix": "Swap the first bar for h(\"h1.b-who\", { text: F.project.name }) and drop the inline margin, so loading inherits the same .b-who rule the loaded field uses and cannot drift from it. Keep the three numbers (83->86, 14->10, 10->4, 26->14): the stack then ends at ~300.9 against a horizon at 300.6. Delete the 271 rather than restating it. Assert agreement within 2px, not 1px - both edges are subpixel."
+}

@@ -1,0 +1,7 @@
+{
+  "id": "loading-mis-draws-the-object-it-reserves",
+  "real": true,
+  "reason": "Measured at 390 and it is exact. All four .b-skel bars are width:100% (346px) against real ink of 106 / 107 / 227 / 188, and the count bar sits at x22 where .b-num hangs at x17. Heights and margins are wrong too (83 vs 86, mb 14/10 vs 0/4), so 'Today is 16 July' renders y256 loading and y249 loaded: a 7px hop on the one sentence readable in both frames.",
+  "sharpenedFix": "Take the geometry fix as written: bar 2 height 86, margin 0 0 10px -5px; bar 3 mb 4; bar 4 height 23. That lands the today line at y249 in both frames, drift gone; assert it in interaction-check.mjs. But do not hardcode the fixture's ink: a skeleton cannot know the couple's name. Use format-determined widths (two-digit mono advance for the count, the date's own string) and a bounded share for name and subject. Leave the measure undrawn.",
+  "cost": 0.3
+}
