@@ -119,6 +119,61 @@
           "done": "One source per column. The tray note says what the column is for; the empty line says only that there is nothing in it, and only To do leads with an instruction, so an empty board has exactly one first move."
         }
       ]
+    },
+    {
+      "round": 3,
+      "scores": {
+        "UI composition": 7.2,
+        "Typography": 7.4,
+        "Interaction and states": 7.2,
+        "UX and information design": 8.0,
+        "Brand and copy": 7.6,
+        "Product taste and emotional resonance": 7.2,
+        "Measured evidence": 7.3
+      },
+      "findings": 35,
+      "confirmed": 17,
+      "refuted": 18,
+      "fixed": 17,
+      "headline": "UX rose to 8.0 and the minimum rose again, but UI composition dropped, because a new dominant defect surfaced that four of seven seats found independently: the dock and its scrim were erasing each column's Add task row. A panel that only ever goes up is not looking hard enough.",
+      "worst": [
+        {
+          "seat": "UI composition",
+          "cost": 9.0,
+          "problem": "The dock is the largest floating object in the composition and it was placed with no regard for what sits beneath it. It erased the Add task row in two to four of five columns in every desktop frame, and half-dissolved a live card at peak density. The scrim existed only to blur the damage.",
+          "done": "The dock's band is reserved in real layout and the scrim is deleted. Nothing can sit under the dock any more, so every column gets its foot back, its rule runs to the sheet's edge, and the columns gain height rather than lose it."
+        },
+        {
+          "seat": "Typography",
+          "cost": 8.0,
+          "problem": "A browser line clamp cuts at the character, so cards read 'dinner 5.30p...' and 'before we hold th...'. It is the one defect visible in every populated frame and it is exactly what separates typeset copy from text poured into a container.",
+          "done": "The renderer trims to the last whole word by binary search, keeps the full string on the element for the tooltip and for assistive technology, and the title lost the percentage floor that was pushing date chips off the card's edge."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 6.0,
+          "problem": "Nothing anywhere on the board stated today's date, so every time chip floated without an anchor. The loudest object in the product, the filled ink overdue chip, said only '14 Jul': an operator could not tell two days late from two months.",
+          "done": "The header states today, first, and the season counter names the season it counts through rather than floating as an unexplained ordinal."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 2.0,
+          "problem": "The direction's central claim is that status is carried by ink density and fill. That channel is entirely presentational: the chip's accessible name was a bare date, so overdue, due today and milestone were indistinguishable to anyone not looking at the screen.",
+          "done": "A visually hidden prefix now carries the same fact in words, and the trays became named regions with real headings instead of nameless sections that contributed nothing to the accessibility tree."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 3.0,
+          "problem": "Every card was a tab stop with two more focusable children, so crossing the dense board was roughly ninety-six tab presses.",
+          "done": "One roving tab stop per column. Tab crosses the whole board in five presses and the arrows walk the column."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 1.0,
+          "problem": "The account chip read DO, the initials of the words 'Demo operator', which belong to nobody on the board. Both cards in the Waiting column opened with the word Waiting, under a tray already headed WAITING and described as held by a reply.",
+          "done": "The operator is Orla, so the chip reads OR. The Waiting titles say what is being waited on rather than restating their own container."
+        }
+      ]
     }
   ]
 }
