@@ -105,6 +105,12 @@ body {
   background: var(--ink);
   color: var(--ink-1);
   font-feature-settings: "ss01", "cv01";
+}
+
+/* Tabular is for digits that stack in a column or tick in place. Prose keeps
+   Geist's proportional figures, which is why "5 of 13 done" reads as a
+   sentence and a tray count reads as a number. */
+.trayCount, .when, .cardFoot .cm, .ghost em, .drawerTab em, .axisEnds, .axis {
   font-variant-numeric: tabular-nums;
 }
 
@@ -197,7 +203,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .head {
   flex: none;
   display: flex; align-items: center; gap: 14px;
-  padding: 0 20px; height: 60px;
+  /* 28px is the sheet's one leading edge. The view pill, the tray label
+     and every card's left edge resolve to the same x. */
+  padding: 0 28px; height: 60px;
 }
 .word {
   display: inline-flex; align-items: baseline;
@@ -245,7 +253,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .ghost em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-1); }
 .headSearch { display: none; }
 
-.views { flex: none; display: flex; align-items: center; padding: 0 20px 14px; }
+.views { flex: none; display: flex; align-items: center; padding: 0 25px 14px; }
 .seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash); border-radius: var(--r-pill); }
 .segItem {
   display: inline-flex; align-items: center; gap: 7px;
@@ -268,21 +276,24 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   flex: 1; min-height: 0;
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0;
-  padding: 0 16px 96px;
+  padding: 0 16px;
   overflow: auto;
   border-top: 1px solid var(--line-soft);
 }
 .tray {
   min-width: 0;
   display: flex; flex-direction: column;
-  padding: 14px 12px 8px;
+  /* The dock's clearance is carried here rather than on the grid, so the
+     column rule runs the full height of the sheet instead of stopping in
+     mid-air 96px above it. */
+  padding: 14px 12px 104px;
   border-left: 1px solid var(--line-soft);
   transition: background-color var(--dur) var(--curve);
 }
 .tray:first-child { border-left: 0; }
 
 .trayHead {
-  flex: none; padding: 0 4px 12px;
+  flex: none; padding: 0 0 12px;
   position: sticky; top: 0; z-index: 2;
   background: var(--white);
 }
@@ -307,55 +318,71 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    One optical baseline: the completion control sits in a fixed gutter,
    the title starts at a fixed x, and every line under it aligns to that
    same x. Nothing below the title can move the title. */
+/* Every ring on a card is written to one custom property. Done and Next are
+   states; hover, focus, selection and drag are interactions. Before this the
+   state rules were declared later at equal specificity and silently deleted
+   the focus ring on exactly the cards a keyboard user reaches first. */
 .card {
   position: relative;
   background: var(--white);
   border-radius: var(--r-card);
-  box-shadow: var(--ring);
+  --card-ring: var(--ring);
+  box-shadow: var(--card-ring);
   padding: 12px 12px 12px 11px;
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
   column-gap: 8px; row-gap: 6px;
   transition: box-shadow var(--dur) var(--curve), transform var(--dur) var(--curve);
 }
-.card:hover, .card[data-force="hover"] { box-shadow: var(--ring-strong), var(--raise); }
-.card:focus-visible, .card[data-force="focus"] {
-  outline: none;
-  box-shadow: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
-}
-.card[data-force="selected"] { box-shadow: 0 0 0 1.5px var(--indigo); }
-.card[data-force="drag"] {
-  transform: rotate(-1.4deg) scale(1.02);
-  box-shadow: var(--lift);
-}
 
+/* Completing a task is the one thing this board exists to do, so the circle
+   is a real control with its own hover, focus, active and keyboard path, not
+   a decorative span that lit up when the pointer was anywhere on the card. */
 .tick {
   grid-column: 1; grid-row: 1;
   width: 18px; height: 18px; border-radius: 50%;
+  border: 0; padding: 0; font: inherit; -webkit-appearance: none;
+  background: none;
   box-shadow: inset 0 0 0 1.4px var(--ink-4);
   margin-top: 1px;
   display: grid; place-items: center;
   color: transparent;
+  cursor: pointer;
+  position: relative;
   transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
+/* The hit area is 32px without the circle growing by a pixel. */
+.tick::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
 .tick svg { width: 11px; height: 11px; stroke-width: 2.4; }
-.card:hover .tick, .card[data-force="hover"] .tick { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
+/* The card hints. The control itself answers one step darker, so the ring
+   means "you are on it" rather than "you are somewhere near it". */
+.card:hover .tick, .card[data-force="hover"] .tick { background: var(--wash); }
+.tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
+.tick:active { background: var(--line-strong); }
+.tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
 
 .cardTitleRow { grid-column: 2; grid-row: 1; display: flex; align-items: flex-start; gap: 10px; }
 .cardTitle {
   font-size: 14px; line-height: 1.36; font-weight: 600;
   letter-spacing: -0.02em; color: var(--ink-1); margin: 0;
   flex: 1 1 auto; min-width: 62%;
+  /* Two lines, always, with no one-word last line. `pretty` rather than
+     `balance`: balance shortens every line before the clamp cuts, which
+     leaves a long title as two under-filled lines and an open right gutter. */
+  text-wrap: pretty;
+  overflow-wrap: break-word;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .cardNote {
   grid-column: 2; grid-row: 2;
-  margin: 0; font-size: 12.5px; line-height: 1.45; font-weight: 400;
+  margin: 0; font-size: 13px; line-height: 1.45; font-weight: 400;
   color: var(--ink-2); letter-spacing: 0;
+  text-wrap: pretty;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .cardFoot {
   grid-column: 2; grid-row: 3;
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 2px 10px;
   min-height: 18px;
   font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: 0;
 }
@@ -368,11 +395,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   width: 28px; height: 28px; border-radius: var(--r-chip);
   display: grid; place-items: center; color: var(--ink-3);
   background: var(--white);
-  opacity: 0;
+  /* House rule: a control at zero opacity is inert. Otherwise a keyboard
+     user's focus ring paints on nothing and a finger taps a ghost. */
+  opacity: 0; pointer-events: none;
   transition: opacity var(--dur) var(--curve);
 }
 .cardDots svg { width: 15px; height: 15px; }
-.card:hover .cardDots, .card[data-force="hover"] .cardDots { opacity: 1; }
+.card:hover .cardDots, .card[data-force="hover"] .cardDots,
+.card:focus-within .cardDots, .cardDots:focus-visible { opacity: 1; pointer-events: auto; }
 .cardDots:hover { background: var(--wash-2); color: var(--ink-1); }
 
 /* The time fact. Right-aligned on the title's own line, so a tray reads
@@ -393,39 +423,82 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .when[data-t="milestone"] svg { width: 9px; height: 9px; stroke-width: 2.2; }
 .when[data-t="none"], .when[data-t="done"] { display: none; }
 
+/* Two different taxonomies were sharing one slot. Which couple a task
+   belongs to is the question a venue asks on a Saturday; which area of the
+   house it touches is background. They now read at different ranks. */
 .tag {
   font-family: var(--font-mono);
   font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--ink-3); white-space: nowrap;
 }
-.hi { color: var(--ink-2); font-weight: 600; }
+.who {
+  font-size: 12px; font-weight: 600; color: var(--ink-1);
+  letter-spacing: -0.008em; white-space: nowrap;
+}
+.cardFoot .who + .tag { padding-left: 10px; border-left: 1px solid var(--line); }
+/* Severity is expressed by ink, not by weight. Bolding a 12px token to make
+   it matter is the thing the micro-label rule above exists to prevent. */
+.hi { color: var(--ink-1); font-weight: 400; white-space: nowrap; }
 
 /* Done. Never struck through: the work happened, it was not a mistake. */
-.card[data-done] { background: transparent; box-shadow: 0 0 0 1px var(--line-soft); }
+.card[data-done] { background: transparent; --card-ring: 0 0 0 1px var(--line-soft); }
 .card[data-done] .cardTitle { color: var(--ink-2); font-weight: 400; }
 .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
 
 /* The one earned indigo in a resting view. */
-.card[data-next] { box-shadow: 0 0 0 1px var(--indigo-line); }
+.card[data-next] { --card-ring: 0 0 0 1px var(--indigo-line); }
+
+/* ── interaction, declared after every state ────────────────────── */
+.card:hover, .card[data-force="hover"] { --card-ring: var(--ring-strong), var(--raise); }
+.card:focus-visible, .card[data-force="focus"] {
+  outline: none;
+  --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
+}
+.card[data-force="selected"] { --card-ring: 0 0 0 1.5px var(--indigo); }
+.card[data-force="drag"] {
+  transform: rotate(-1.4deg) scale(1.02);
+  --card-ring: var(--lift);
+}
+
+/* ── the destination, not just the hand ─────────────────────────── */
+/* Drag is the board's defining gesture, and half of it was undesigned: the
+   card in flight had a lift and the tray it was heading for had nothing. */
+.tray[data-over] { background: var(--wash); }
+.tray[data-over] .trayHead {
+  background: linear-gradient(var(--wash), var(--wash)), var(--white);
+}
+.dropLine { height: 2px; border-radius: 1px; background: var(--ink-1); }
 
 /* ── empty and add ─────────────────────────────────────────────── */
-.trayEmpty { padding: 8px 4px 4px; font-size: 12.5px; font-weight: 400; line-height: 1.45; color: var(--ink-3); }
+/* Two lines are always reserved, so the Add task row does not move from
+   column to column with the length of a sentence. */
+.trayEmpty {
+  padding: 8px 4px 4px;
+  font-size: 13px; font-weight: 400; line-height: 1.45;
+  color: var(--ink-2);
+  min-height: calc(1.45em * 2 + 12px);
+}
 .trayAdd {
   display: flex; align-items: center; gap: 8px;
   height: 36px; padding: 0 8px; margin-top: 4px;
   border-radius: var(--r-chip);
-  font-size: 12.5px; font-weight: 400; color: var(--ink-3);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 .trayAdd svg { width: 15px; height: 15px; }
 .trayAdd:hover { color: var(--ink-1); background: var(--wash); }
 
 /* ── the dock ──────────────────────────────────────────────────── */
+/* The scrim protects the dock and nothing else. Full bleed dissolved a card
+   in every column to shield a pill that covers one of them. */
 .dockScrim {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  height: 108px;
-  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.90) 42%, var(--white) 100%);
+  position: absolute; left: 50%; bottom: 0;
+  transform: translateX(-50%);
+  width: min(760px, 100%); height: 96px;
+  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.92) 46%, var(--white) 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
   pointer-events: none; z-index: 2;
 }
 .dock {
@@ -433,6 +506,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   transform: translateX(-50%);
   display: flex; align-items: center; gap: 4px;
   padding: 5px;
+  /* A shrink-to-fit box at left:50% can never be wider than half its
+     container, which is why both labels wrapped on a tablet. */
+  width: max-content; max-width: calc(100% - var(--inset) * 2);
   background: var(--white);
   border-radius: var(--r-pill);
   box-shadow: var(--ring), var(--float);
@@ -444,6 +520,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   min-width: 196px;
   border-radius: var(--r-pill);
   background: var(--wash);
+  white-space: nowrap;
   font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: -0.008em;
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
@@ -461,6 +538,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   border-radius: var(--r-pill);
   background: var(--ink); color: var(--white);
   font-size: 13px; font-weight: 600; letter-spacing: -0.008em;
+  white-space: nowrap;
   transition: transform var(--dur) var(--curve);
 }
 .dockPrimary svg { width: 16px; height: 16px; }
@@ -474,6 +552,20 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 
 /* ── planning drawer ───────────────────────────────────────────── */
+/* The sheet moves over to make room, so the ink floor shows through an
+   18px gutter and draws the seam. Before this the drawer was white on
+   white with no edge: it sliced the Waiting column mid-word and erased
+   Done entirely, which read as the board breaking rather than a panel
+   opening. */
+.floor:has(.drawer) .sheet {
+  margin-right: calc(388px + var(--inset));
+  transition: margin-right var(--dur) var(--curve);
+}
+.floor:has(.drawer) .board {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(238px, 1fr);
+}
 .drawer {
   position: absolute;
   right: var(--inset); top: var(--inset); bottom: var(--inset);
@@ -490,7 +582,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
 }
 .drawerHead h2 { margin: 12px 0 4px; font-size: 19px; font-weight: 600; letter-spacing: -0.03em; }
-.drawerLine { margin: 0; font-size: 12.5px; font-weight: 400; color: var(--ink-3); }
+.drawerLine { margin: 0; font-size: 13px; font-weight: 400; color: var(--ink-3); }
 .axis { margin: 22px 0 8px; height: 4px; background: var(--wash); border-radius: 2px; position: relative; }
 .axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 2px; }
 .axis b {
@@ -504,24 +596,28 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .drawerTabs { display: flex; gap: 3px; padding: 0 18px 12px; }
 .drawerTab {
   height: 32px; padding: 0 12px; border-radius: var(--r-pill);
-  font-size: 12.5px; font-weight: 400; color: var(--ink-3);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 .drawerTab:hover { color: var(--ink-1); }
 .drawerTab[data-active] { background: var(--wash); color: var(--ink-1); font-weight: 600; }
 .drawerTab em { font-style: normal; font-size: 11px; margin-left: 6px; color: var(--ink-3); }
 .drawerHelp { padding: 0 22px 12px; margin: 0; font-size: 12px; font-weight: 400; color: var(--ink-3); line-height: 1.5; }
+/* Once indigo means "select all", it stops meaning "the next thing that
+   matters". This is the same ink-on-quiet pattern every other control in
+   the file already uses. */
 .drawerHelp a {
-  color: var(--indigo-ink); text-decoration: none;
+  color: var(--ink-1); text-decoration: none;
   float: right; margin-left: 12px; font-weight: 600;
   display: inline-flex; align-items: center; min-height: 28px;
 }
+.drawerHelp a:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
 .drawerRows { overflow: auto; padding: 0 14px 16px; display: grid; gap: 4px; align-content: start; }
 .drawerRow {
   display: flex; align-items: center; gap: 11px;
   padding: 11px 10px;
   border-radius: var(--r-chip);
-  font-size: 12.5px; font-weight: 400; line-height: 1.4; letter-spacing: -0.008em;
+  font-size: 13px; font-weight: 400; line-height: 1.4; letter-spacing: -0.008em;
   transition: background-color var(--dur) var(--curve);
 }
 .drawerRow:hover { background: var(--wash); }
@@ -539,7 +635,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   margin: 6px 14px 18px; padding: 0 10px;
   display: flex; align-items: center; gap: 9px;
   min-height: 34px; border-radius: var(--r-chip);
-  font-size: 12.5px; font-weight: 400; color: var(--ink-3);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 .drawerAdd:hover { color: var(--ink-1); background: var(--wash); }
@@ -551,7 +647,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .loadCard { background: var(--white); box-shadow: var(--ring); border-radius: var(--r-card); padding: 12px; display: grid; gap: 9px; }
 .loadSay {
   position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
-  font-size: 12.5px; font-weight: 400; color: var(--ink-3); z-index: 3;
+  font-size: 13px; font-weight: 400; color: var(--ink-3); z-index: 3;
 }
 
 /* ── card specimen sheet ───────────────────────────────────────── */
@@ -573,7 +669,15 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .cardDots, .ghost, .trayAdd, .drawerTab, .drawerRow button, .drawerAdd, .drawerHelp a {
     min-height: 44px; min-width: 44px;
   }
-  .cardDots { width: 44px; height: 44px; top: 2px; right: 2px; }
+  /* Permanently present, because a finger never hovers, and quieter than
+     the desktop reveal so it does not compete with the title. */
+  .cardDots {
+    width: 44px; height: 44px; top: 0; right: 0;
+    opacity: 1; pointer-events: auto; color: var(--ink-4);
+  }
+  .dockField kbd { display: none; }
+  /* The circle stays 18px; only what a finger can land on grows. */
+  .tick::before { inset: -13px; }
 }
 
 
@@ -675,7 +779,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 [data-type="expressive"] .headName { font-size: 22px; letter-spacing: -0.034em; }
 [data-type="expressive"] .word { font-size: 19px; }
 [data-type="expressive"] .cardTitle { font-size: 15px; line-height: 1.34; letter-spacing: -0.022em; }
-[data-type="expressive"] .cardNote { font-size: 12.5px; }
+[data-type="expressive"] .cardNote { font-size: 13px; }
 [data-type="expressive"] .trayName { font-size: 11px; letter-spacing: 0.14em; }
 [data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: -0.034em; }
 [data-type="expressive"] .specIntro { font-size: 14px; }
@@ -685,11 +789,19 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 @media (max-width: 1200px) {
   .board { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(258px, 1fr); }
   .drawer { width: 364px; }
+  .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
 @media (max-width: 900px) {
   :root { --inset: 12px; }
-  .headFacts { display: none; }
+  /* The completion ratio and the day count can wait for a wider screen.
+     How many things are late cannot: it was the one fact the tablet
+     dropped. */
+  .headFacts span { display: none; }
+  .headFacts .late { display: inline-flex; }
+  .headFacts { gap: 0; }
+  .dockField { min-width: 148px; }
   .drawer { left: var(--inset); width: auto; }
+  .floor:has(.drawer) .sheet { margin-right: 0; }
 }
 @media (max-width: 720px) {
   :root { --inset: 9px; }
@@ -714,16 +826,27 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .railAdd svg { width: 20px; height: 20px; }
   .railAvatar { margin: 0; }
   .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
-  .head { height: auto; flex-wrap: wrap; gap: 8px 12px; padding: 14px 16px 0; }
-  .headName { font-size: 19px; width: 100%; order: 2; }
+  /* Explicit areas rather than wrap plus order. Wrapping left the wordmark
+     alone on line one with 60% of the row empty beside it. */
+  .head {
+    height: auto; display: grid; padding: 14px 16px 0;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "word actions" "name name" "facts facts";
+    align-items: center; column-gap: 12px; row-gap: 10px;
+    padding: 14px 16px 0;
+  }
+  .word { grid-area: word; }
+  .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
+  .headName { grid-area: name; width: auto; font-size: 19px; }
+  .headFacts { grid-area: facts; display: flex; font-size: 13px; gap: 12px; }
+  .headFacts span { display: inline; }
   .headRule { display: none; }
-  .headActions { order: 1; margin-left: auto; }
   .headSearch { display: inline-flex; }
-  .headFacts { display: flex; order: 3; width: 100%; font-size: 12.5px; gap: 12px; }
   .views { padding: 14px 16px 12px; overflow-x: auto; }
   .viewTools { display: none; }
   .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
-  .tray { scroll-snap-align: start; }
+  /* No dock on a phone, so no clearance to reserve. */
+  .tray { scroll-snap-align: start; padding-bottom: 8px; }
   .trayBody { padding-bottom: 4px; }
   .dock, .dockScrim { display: none; }
   .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
@@ -771,21 +894,56 @@ const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt
    says nothing and is not drawn. The shipped board's own rule. */
 const UNIFORM_ASSIGNEES = true;
 
-function tasksFor(lane) {
+/* The three couples the review fixture names. Everything else in the tag
+   field is an area of the house. */
+const CLIENTS = new Set(["Mara & Finn", "Nora & Cian", "Aisling & Tom"]);
+
+/* One accessor for the rendered set, and every header fact derived from it.
+   Before this the header's total was recomputed for the dense board and its
+   done count was not, so the board said "5 of 32 done" above a Done column
+   labelled 9. A board that contradicts itself on screen is a blocker, not a
+   polish item. */
+function allTasks() {
   if (state === "empty") return [];
-  let all = B.tasks.slice();
-  if (state === "dense") all = all.concat(window.DENSE_EXTRA.map((t, i) => ({ ...t, id: "x" + i })));
-  return all.filter((t) => t.lane === lane);
+  const base = B.tasks.slice();
+  return state === "dense"
+    ? base.concat(window.DENSE_EXTRA.map((t, i) => ({ ...t, id: "x" + i })))
+    : base;
 }
 
-/* One time fact per card, resolved once. Presentation is fill, not hue. */
+function tasksFor(lane) {
+  return allTasks().filter((t) => t.lane === lane);
+}
+
+/* One time fact per card, resolved once, in ONE grammar: every chip states
+   the day the work is due. Lateness is carried entirely by the fill, which
+   is the direction's own claim. Before this a single board scan carried an
+   elapsed duration ("2 days late"), a deictic ("Today"), a weekday
+   ("Friday") and a date ("1 Aug") for the same kind of fact, and the header
+   called the same state something else again. */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/* The review clock is pinned, so "today" is a fact rather than a guess. */
+function dayLabel(iso) {
+  const parts = String(iso).split("-").map(Number);
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  const today = new Date(Date.UTC(2026, 6, 16));
+  const days = Math.round((date - today) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days > 1 && days < 7) return DAYS[date.getUTCDay()];
+  return date.getUTCDate() + " " + MONTHS[date.getUTCMonth()];
+}
+
 function timeOf(task) {
   if (task.lane === "done") return { kind: "done", label: "" };
   if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
-  if (task.dueTone === "overdue") return { kind: "overdue", label: "2 days late" };
-  if (task.dueTone === "today") return { kind: "today", label: "Today" };
-  if (task.dueTone === "soon") return { kind: "soon", label: task.due.replace("Due ", "") };
-  return { kind: "none", label: "" };
+  if (!task.dueAt) return { kind: "none", label: "" };
+  const label = dayLabel(task.dueAt);
+  if (task.dueTone === "overdue") return { kind: "overdue", label };
+  if (task.dueTone === "today") return { kind: "today", label };
+  return { kind: "soon", label };
 }
 
 function card(task, force) {
@@ -795,16 +953,24 @@ function card(task, force) {
   const show = time.kind !== "none" && time.kind !== "done";
   const label = time.kind === "milestone" ? I.milestone + esc(time.label) : esc(time.label);
 
+  /* Which couple a task belongs to is the question a venue asks on a
+     Saturday. Which area of the house it touches is background. They were
+     sharing one mono slot and one ink level. */
   const bits = [];
-  if (task.tag) bits.push('<span class="tag">' + esc(task.tag) + "</span>");
-  if (task.priority && !done) bits.push('<span class="hi">' + esc(task.priority) + "</span>");
+  if (task.tag) {
+    bits.push(CLIENTS.has(task.tag)
+      ? '<span class="who">' + esc(task.tag) + "</span>"
+      : '<span class="tag">' + esc(task.tag) + "</span>");
+  }
+  if (task.priority && !done) bits.push('<span class="hi">' + esc(task.priority) + " priority</span>");
   if (task.comments) bits.push('<span class="cm">' + I.comment + task.comments + "</span>");
 
   return (
     '<article class="card" tabindex="0"' +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
     (force ? ' data-force="' + force + '"' : "") + ">" +
-    '<span class="tick">' + I.check + "</span>" +
+    '<button type="button" class="tick" role="checkbox" aria-checked="' + (done ? "true" : "false") +
+      '" aria-label="' + esc(task.title) + '">' + I.check + "</button>" +
     '<div class="cardTitleRow">' +
       '<p class="cardTitle">' + esc(task.title) + "</p>" +
       (show ? '<span class="when" data-t="' + time.kind + '">' + label + "</span>" : "") +
@@ -837,21 +1003,25 @@ function rail() {
 
 function head() {
   const p = B.progress;
-  const total = state === "empty" ? 0 : state === "dense" ? p.total + window.DENSE_EXTRA.length : p.total;
-  const done = state === "empty" ? 0 : p.done;
+  const rows = allTasks();
+  const total = rows.length;
+  const done = rows.filter((t) => t.lane === "done").length;
+  const overdue = rows.filter((t) => timeOf(t).kind === "overdue").length;
+  const undated = rows.filter((t) => timeOf(t).kind === "none").length;
   return (
     '<div class="head">' +
     '<span class="word">tasks</span><span class="headRule"></span>' +
     '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
     '<div class="headFacts">' +
-      "<span><b>" + done + "</b> of <b>" + total + "</b> done</span>" +
-      (state === "empty" ? "" : '<span class="late">' + p.overdue + " overdue</span>") +
+      (total ? "<span><b>" + done + "</b> of <b>" + total + "</b> done</span>" : "") +
+      (overdue ? '<span class="late">' + overdue + " overdue</span>" : "") +
       "<span>day " + p.day + " of " + p.of + "</span>" +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search">' + I.search + "</button>" +
       '<button class="ghost">' + I.share + "<span>Share</span></button>" +
-      '<button class="ghost">' + I.planning + "<span>Planning</span>" + (state === "empty" ? "" : "<em>" + p.undated + "</em>") + "</button>" +
+      '<button class="ghost">' + I.planning + "<span>Planning</span>" +
+        (undated ? "<em>" + undated + "</em>" : "") + "</button>" +
       '<button class="ghost" aria-label="More">' + I.dots + "</button>" +
     "</div></div>"
   );
@@ -870,12 +1040,15 @@ function views() {
   );
 }
 
+/* One source, one string each, and not five sentences opening on the same
+   word. Each line says what the column is for rather than restating the
+   zero the count already gives. */
 const EMPTY_COPY = {
-  todo: "Nothing agreed yet. Add the first thing you have to do.",
-  doing: "Nothing in motion. Move something across when you start it.",
-  review: "Nothing waiting on a check.",
-  waiting: "Nothing held up.",
-  done: "Nothing finished yet. Finished work stays here.",
+  todo: "Add the first thing you have to do.",
+  doing: "Move something across when you start it.",
+  review: "Work waiting on a check lands here.",
+  waiting: "Anything held up by a reply or a delivery sits here.",
+  done: "Finished work stays here, so you can see it.",
 };
 
 function board() {
@@ -891,7 +1064,7 @@ function board() {
           '<p class="trayNote">' + esc(c.note) + "</p></div>" +
         '<div class="trayBody">' +
           (rows.length ? rows.map((t) => card(t)).join("")
-            : '<p class="trayEmpty">' + esc(c.id === "waiting" ? c.empty : EMPTY_COPY[c.id]) + "</p>") +
+            : '<p class="trayEmpty">' + esc(EMPTY_COPY[c.id]) + "</p>") +
         "</div>" +
         '<button class="trayAdd">' + I.plus + "<span>Add task</span></button>" +
         "</section>"

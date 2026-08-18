@@ -115,7 +115,8 @@ const AUDIT = `(() => {
 
   for (const el of all) {
     const cs = getComputedStyle(el);
-    const rect = el.getBoundingClientRect();
+    const r0 = el.getBoundingClientRect();
+    const rect = { x: r0.x, y: r0.y, width: r0.width, height: r0.height, right: r0.right, bottom: r0.bottom };
     const visible = rect.width > 0 && rect.height > 0 && cs.visibility !== "hidden" && cs.display !== "none";
 
     /* 1. palette lock */
@@ -168,9 +169,24 @@ const AUDIT = `(() => {
       }
     }
 
-    /* 5. hit targets */
+    /* 5. hit targets.
+       A control may legitimately carry a larger hit area than its drawn box
+       via an absolutely positioned pseudo-element with negative insets. That
+       is the correct technique for a small circular control, so the audit
+       measures the union rather than punishing it. */
     const interactive = el.matches("button, a, [tabindex], input, textarea, select");
     if (interactive && visible && rect.width >= 1) {
+      let grow = 0;
+      for (const pseudo of ["::before", "::after"]) {
+        const ps = getComputedStyle(el, pseudo);
+        if (!ps || ps.content === "none" || ps.position !== "absolute") continue;
+        if (ps.pointerEvents === "none") continue;
+        const insets = [ps.top, ps.right, ps.bottom, ps.left].map(parseFloat);
+        if (insets.some((v) => !Number.isFinite(v) || v > 0)) continue;
+        grow = Math.max(grow, Math.min(...insets.map((v) => -v)));
+      }
+      rect.width += grow * 2;
+      rect.height += grow * 2;
       const min = Math.min(rect.width, rect.height);
       if (min < 28) out.targets.push({ el: describe(el), w: Math.round(rect.width), h: Math.round(rect.height), label: (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 28) });
     }
