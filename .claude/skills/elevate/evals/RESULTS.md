@@ -54,8 +54,16 @@ asking.
   their RESULT.md files followed the doors, ladders, and honesty rules as
   written.
 - The trigger description went through skill-creator's trigger-eval loop
-  (20 queries, 10 positive / 10 negative) after these runs; see the PR
-  description for the outcome.
+  (20 queries, 10 positive / 10 negative). The loop's two rewrites both
+  scored WORSE than the original on identical queries (7/12 train vs 8/12),
+  so the original description stands. The absolute rates from that harness
+  are not trustworthy for a deliberate model: it scores a query "not
+  triggered" the instant the first tool call is anything but Skill/Read,
+  and a careful model in a barren test directory often inspects the
+  referenced path before invoking. A manual probe of the worst-scoring
+  query ("client wants their landing page at award level — blind panel,
+  refuters") showed the Skill invocation as the very first tool call —
+  the description triggers; the harness under-counts.
 
 ## Reproducing
 
