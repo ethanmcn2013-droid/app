@@ -1312,11 +1312,22 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 /* The chrome yields before the name of the project does. Visually hidden
    rather than removed, so the controls keep their accessible names. */
-@media (max-width: 1100px) {
+/* Measured, not guessed. With the labels forced on at every width, the gap
+   between the facts and the controls is 121px at 1100, 41px at 1020 and 21px
+   at 1000 — so the old 1100 threshold was stripping the words off the
+   controls a full 120px before anything was competing for the room. That band
+   is exactly what the panel kept marking as thin. 1020 is where the two
+   groups actually start closing on each other. */
+@media (max-width: 1020px) {
   .head .ghost > span {
     position: absolute; width: 1px; height: 1px;
     overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
+  /* The count goes with the word it counts. Left on its own beside a bare
+     icon it read as a stray 5 — a number is not information until something
+     names what there are five of. The hidden label still carries both into
+     the accessible name, so nothing is lost to a screen reader. */
+  .head .ghost > em { display: none; }
 }
 @media (max-width: 900px) {
   :root { --inset: 12px; }

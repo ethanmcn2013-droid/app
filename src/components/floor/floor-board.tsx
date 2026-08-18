@@ -208,7 +208,7 @@ function FloorCard({
       aria-describedby={`fd-${task.id}`}
       {...(task.description ? { "aria-expanded": open } : {})}
       tabIndex={stop ? 0 : -1}
-      {...(done ? {} : { "aria-roledescription": "Task, movable" })}
+      {...(done ? {} : { "aria-roledescription": "Movable task" })}
       {...(carried ? { "aria-grabbed": true, "data-force": "moving" } : {})}
       {...(open ? { "data-open": "" } : {})}
       {...(done ? { "data-done": "" } : {})}
@@ -407,14 +407,22 @@ export function FloorBoard({
   const filterSentence = useCallback(() => {
     if (!filtering) return "Showing all work.";
     const rest = all.length - totalShown;
-    const what = [
-      clientOnly ? `for ${clientOnly}` : "",
-      lateOnly ? "overdue" : "",
-      todayOnly ? "due today" : "",
-    ].filter(Boolean).join(", ");
+    /* Three grammars, not one list. "Overdue" is an adjective and sits in
+       front of the noun; "due today" is a predicate and "for Mara & Finn" a
+       qualifier, and both sit behind it. One comma list gave "Showing the 2
+       tasks overdue", and putting them all in front gave "the 4 due today
+       tasks" — neither is a sentence anyone writes. */
+    const adjective = lateOnly ? "overdue " : "";
+    const tail = `${todayOnly ? " due today" : ""}${clientOnly ? ` for ${clientOnly}` : ""}`;
+    const noun = totalShown === 1 ? "task" : "tasks";
+    /* Nothing shown means there are no OTHERS — there is only the whole
+       board, hidden. Saying "13 others are hidden" implies a fourteenth. */
+    const remainder = totalShown
+      ? `${rest} ${rest === 1 ? "other is" : "others are"} hidden.`
+      : `All ${rest} ${rest === 1 ? "task is" : "tasks are"} hidden.`;
     return `${totalShown
-      ? `Showing the ${totalShown} ${totalShown === 1 ? "task" : "tasks"} ${what}. `
-      : `Nothing ${what}. `}${rest} ${rest === 1 ? "other is" : "others are"} hidden.`;
+      ? `Showing the ${totalShown} ${adjective}${noun}${tail}. `
+      : `Nothing ${adjective}${tail.trim() || (adjective ? "" : "matches")}. `.replace(/\s+/g, " ")}${remainder}`;
   }, [filtering, all.length, totalShown, clientOnly, lateOnly, todayOnly]);
 
   /** A lane by the name the operator sees on the column. */
@@ -726,7 +734,7 @@ export function FloorBoard({
                           }}
                         />
                       </div>
-                      <p className={styles.draftHint}>Enter adds it. Esc discards.</p>
+                      <p className={styles.draftHint}>Enter adds it. Esc discards it.</p>
                     </article>
                   )}
                 </div>
