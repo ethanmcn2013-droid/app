@@ -174,6 +174,61 @@
           "done": "The operator is Orla, so the chip reads OR. The Waiting titles say what is being waited on rather than restating their own container."
         }
       ]
+    },
+    {
+      "round": 4,
+      "scores": {
+        "UI composition": 7.6,
+        "Typography": 7.5,
+        "Interaction and states": 7.4,
+        "UX and information design": 7.4,
+        "Brand and copy": 7.6,
+        "Product taste and emotional resonance": 7.4,
+        "Measured evidence": 7.2
+      },
+      "findings": 35,
+      "confirmed": 21,
+      "refuted": 14,
+      "fixed": 21,
+      "headline": "Every seat moved up and the spread closed to 0.4, but the round diagnosed the ceiling rather than a defect. Four seats independently reached the same conclusion by different routes: the board advertises a keyboard model, draws the picked-up card and the drop target, and implements none of it. Interaction called it the finding with the widest blast radius; Measured evidence found the roving tab stop reached five of thirty-two cards; Taste said the work is 'an extremely well-made kanban that happens to contain wedding words'. No amount of typographic remediation was going to move a seat past that.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 9.0,
+          "problem": "Every card advertised 'Task, movable' and Space plus four arrows, the specimen sheet illustrated the picked-up state, and none of it existed. The per-tray roving tabindex meant only five of thirty-two cards could be focused at all, and the drop-target and moving states had nothing that could ever trigger them.",
+          "done": "The interaction layer is built. One tab stop for the whole board, arrows that walk it, Space to pick up, arrows to place, Space to drop, Escape to put it back exactly where it came from, a polite live region on every step and a pill at the foot of the sheet that says what is in the hand — present only while the hand is full. Pointer drag runs the same model. The tick completes a task and plays the one flourish in the product. The dense board went from 101 focusable elements in the tab order to 2. Checked end to end by scripts/design/interaction-check.mjs."
+        },
+        {
+          "seat": "Typography",
+          "cost": 8.0,
+          "problem": "The card foot truncated simultaneously: .who, .tag and .hi all shrank in proportion to their own width, so 'Mara & …  High pri…' sat under four of six cards on the default 1440 board — including on the specimen sheet that exists to prove the card is correct. Three seats found it independently.",
+          "done": "Whose wedding it is never shrinks. The row yields in a stated order — area of the house first, then priority — and the word 'priority' is cut to 'High', with the full phrase kept in the accessible name. Zero ellipses on the resting board at 1440."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 7.5,
+          "problem": "The filled ink chip is deliberately the loudest object on the sheet, it already knows the answer, and it was a span with no behaviour. On the dense board it read '1 overdue' above thirty-two cards with no way to see which one.",
+          "done": "It is the filter it looked like: a real button with aria-pressed that reduces all five trays to the late work and says so. The header's own counts still describe the whole project, so filtering can never change what '5 of 13 done' means."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 7.0,
+          "problem": "Opening Planning re-laid the board at minmax(170px, 1fr), giving the product's primary object a 105px title measure against the 254px the specimen sheet designs it at — 'Men / u…' broken mid-word. The global :focus-visible rule also set border-radius at (0,1,1), squaring off the completion circle and every pill in the chrome for keyboard users.",
+          "done": "The card has one floor in every state; the drawer-open board uses the same 258px minimum and what does not fit scrolls and snaps. The focus rule sets an outline and nothing else. Both edge fades are now measured from the elements after layout, so a fade means something is actually hidden."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 6.5,
+          "problem": "Four of five empty-column lines opened on the word 'Nothing' — the templated repetition on the one screen a new operator meets first — and the Done column's note, 'Finished work stays visible.', described the interface rather than the work, alone among five notes that describe the work.",
+          "done": "Two lines rewritten to say something true about the column rather than restate its emptiness, and the Done note now describes the work: 'Work that is finished and settled.'"
+        },
+        {
+          "seat": "UI composition",
+          "cost": 6.0,
+          "problem": "The bottom edge of the tray was the only undesigned edge on the sheet. An overflowing column was guillotined mid-word with nothing to say there was more, and on the empty board the Add row sat 860px below the sentence it belongs to.",
+          "done": "The tray foot is designed. A column with more in it than fits dissolves into the same mask idiom the sheet's right edge uses, measured rather than always-on; an empty tray's body stops at its content so the Add row sits under the line it belongs to."
+        }
+      ]
     }
   ]
 }

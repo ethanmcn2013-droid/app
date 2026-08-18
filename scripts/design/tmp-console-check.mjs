@@ -1,0 +1,13 @@
+import { chromium } from "@playwright/test";
+import path from "node:path";
+const url = "file:///" + path.resolve("docs/design/labs/tasks-2026-08/customizer.html").split("\\").join("/");
+const b = await chromium.launch();
+const p = await b.newPage({ viewport:{width:1500,height:1000} });
+const errs=[]; p.on("pageerror",e=>errs.push(String(e))); p.on("console",m=>m.type()==="error"&&errs.push(m.text()));
+await p.goto(url); await p.waitForTimeout(600);
+console.log("cards      ", await p.locator(".deck .card").count());
+console.log("h-overflow ", await p.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth+1));
+await p.locator(".deck .tray .card .tick").first().click(); await p.waitForTimeout(300);
+console.log("tick works ", await p.evaluate(()=>document.querySelector('.deck .tray[data-lane="done"]').querySelectorAll(".card").length));
+console.log(errs.length?"ERRORS "+errs.join(" | "):"no console errors");
+await b.close();
