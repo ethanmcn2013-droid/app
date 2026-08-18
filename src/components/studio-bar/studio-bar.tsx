@@ -43,6 +43,10 @@ import {
   type SuiteSurfaceId,
 } from "@/lib/product-urls";
 import { UserButtonWithSuite } from "@/components/app/user-button-with-suite";
+import {
+  ActiveProjectBarCell,
+  ActiveProjectMobileStrip,
+} from "./active-project/active-project-control";
 import { RailIcon } from "./rail-icons";
 import {
   STUDIO_CREATE_EVENT,
@@ -193,6 +197,10 @@ export function StudioBar() {
     // leaves the controls flush against the edges. Shell and contents have to
     // move together; that is the --spacing-* remap fix, not a local patch.
     // Tap targets *inside* the bar are absolute and were fixed to 44px.
+    // The fragment is deliberately flush with the header rather than indenting
+    // it: the phone strip is a sibling of the bar, and re-indenting a hundred
+    // lines of untouched chrome to say so would bury this change in whitespace.
+    <>
     <header
       role="banner"
       className="relative z-40 flex h-14 w-full flex-none items-stretch bg-[var(--x-studio-chrome)] md:h-10 md:pointer-coarse:h-11"
@@ -205,6 +213,13 @@ export function StudioBar() {
           is intentional: search became an intermittent command, not a
           resident input (board pass 4). */}
       <div className="flex min-w-0 flex-1 items-center px-3 md:px-6">
+
+        {/* The Active Project anchor (WP6 Lane A, D-025 variant A). First in
+            the open centre run, after product identity and before search —
+            one control, the same place, on every product. Renders nothing at
+            all while the Active Project flag is off, because the provider it
+            reads is not mounted. */}
+        <ActiveProjectBarCell />
 
         {/* The reserved Signal pulse ("3 need you") keeps its contractual
             slot at the far edge — deliberately empty, deliberately no bell. */}
@@ -283,5 +298,14 @@ export function StudioBar() {
         </span>
       </div>
     </header>
+
+    {/* Phone: the control reflows out of the bar into a sticky context strip
+        directly beneath it. A 56px bar has no room for a Project name beside a
+        wordmark and an account chip, and MobileSuiteNav hides itself on Tasks
+        — so without this strip the phone has no resident door into Project
+        switching at all. Renders nothing above md, and nothing at all while
+        the flag is off. */}
+    <ActiveProjectMobileStrip />
+    </>
   );
 }

@@ -290,3 +290,67 @@ test("a failed selection clears pending and states that A is still active", () =
   assert.equal(harness.state.pending, null);
   assert.match(harness.state.lastError ?? "", /still in the current project/);
 });
+
+/**
+ * WP6: the unsaved-work hold in the machine. A refusal is *held*, not failed:
+ * nothing started, so it must not disturb a genuinely pending switch, and it
+ * leaves the moment a switch starts or the founder stays put. The hold rule
+ * itself (which claims refuse) lives in `unsaved-work.test.ts`; the provider's
+ * ordering is pinned by `active-project-contract.test.mjs`.
+ */
+test("a held switch surfaces its refusal without touching pending, and clears on start or dismiss", () => {
+  const refusal = {
+    kind: "unsaved-work",
+    claims: [
+      {
+        source: "notes-draft",
+        description: "A note you started in Notes hasn’t been saved.",
+      },
+    ],
+  } as const;
+
+  const harness = new Harness();
+  harness.state = reduceActiveProject(harness.state, {
+    type: "select-refused",
+    refusal,
+  });
+  assert.equal(harness.state.refusal, refusal, "the chrome can render the hold");
+  assert.equal(harness.state.pending, null, "held means nothing started");
+
+  // "Stay" — the refusal leaves the screen; the claims live in the store and
+  // are untouched, so the next attempt re-consults them.
+  harness.state = reduceActiveProject(harness.state, { type: "refusal-dismissed" });
+  assert.equal(harness.state.refusal, null);
+
+  // After the owning surface clears its claim, a switch starts — and starting
+  // moots any refusal still on screen.
+  harness.state = reduceActiveProject(harness.state, {
+    type: "select-refused",
+    refusal,
+  });
+  harness.state = reduceActiveProject(harness.state, {
+    type: "select-started",
+    pending: { projectId: assertProjectId("ws-b"), label: "Opening WS-B…" },
+  });
+  assert.equal(harness.state.refusal, null, "a started switch clears the hold");
+  assert.equal(harness.state.pending?.projectId, "ws-b");
+});
+
+test("a refusal never erases an in-flight switch's own label", () => {
+  // The provider's ordering makes this unreachable today — the pending guard
+  // answers before the store is consulted, and that refusal is not dispatched
+  // — but the reducer cannot know its caller's discipline, so the invariant
+  // is pinned where it is enforced: `select-refused` touches `refusal` and
+  // nothing else.
+  const harness = new Harness();
+  harness.state = reduceActiveProject(harness.state, {
+    type: "select-started",
+    pending: { projectId: assertProjectId("ws-b"), label: "Opening WS-B…" },
+  });
+  harness.state = reduceActiveProject(harness.state, {
+    type: "select-refused",
+    refusal: { kind: "switch-pending" },
+  });
+  assert.equal(harness.state.pending?.projectId, "ws-b");
+  assert.equal(harness.state.refusal?.kind, "switch-pending");
+});

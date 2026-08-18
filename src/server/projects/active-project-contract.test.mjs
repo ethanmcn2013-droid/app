@@ -114,22 +114,40 @@ test("the unified cookie name is spelled in exactly one module", () => {
  *     silently downgrades the preference to a session cookie. DONE, and it
  *     gained `secure` too, which this note had listed as outstanding.
  *
- * Still outstanding, unchanged: `settings.ts` has neither `httpOnly` nor
- * `secure` (deferred — another session owned that file during WP3), and
- * `suite-context/route.ts` still rewrites the preference on a contextual link,
- * which needs a ratification or a change rather than a patch (D-021 item 4).
+ * ── Landed, from the WP6 transition lane (2026-08-17) ──────────────────────
+ *
+ * `settings.ts` — `httpOnly` and `secure` added and re-pinned below at the
+ * full five-attribute set. That was the last writer missing either; all five
+ * writers now carry identical attributes, though they remain five writers.
+ *
+ * ── Decided, and the list shrank (2026-08-17, D-028) ──────────────────────
+ *
+ * `suite-context/route.ts` — the founder decision that had been open since
+ * D-021 was taken: a contextual link is navigation, not selection. The handler
+ * carries the Project in the URL and no longer writes the cookie, so it leaves
+ * this list entirely. Five writers became four, which is the direction the
+ * ratchet below permits and the only direction it permits.
+ *
+ * Still outstanding: the migration of the remaining four onto
+ * `writeActiveProjectCookie` (D-021 interface request 5) has not begun.
  */
 const LEGACY_COOKIE_WRITERS = {
-  // The inbound suite-link handler. `src/app/app/page.tsx` redirects into it,
-  // so FOLLOWING A CONTEXTUAL LINK REWRITES THE PREFERENCE — the direct
-  // contradiction of ADR 0001 §4 "only an explicit Project selection does".
-  "src/app/api/suite-context/route.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
+  // src/app/api/suite-context/route.ts is deliberately ABSENT (D-028,
+  // 2026-08-17). It was writer #1 — the inbound suite-link handler, whose write
+  // made following a contextual link rewrite the bare-entry preference, the
+  // direct contradiction of ADR 0001 §4. The founder decision came down on
+  // "navigation, not selection": the handler now carries the Project in the URL
+  // and writes no cookie at all. Four writers remain, and the count only ever
+  // falls — the test below fails if this one comes back.
+  //
   // Fixed by WP3: was `httpOnly: false` with no `secure`, so the workspace
   // preference was readable by any script on the page.
   "src/server/actions/cross-workspace.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
   "src/server/actions/planning.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
-  // No httpOnly and no secure. Still outstanding.
-  "src/server/actions/settings.ts": ["maxAge", "path", "sameSite"],
+  // Fixed by WP6 lane C: had neither httpOnly nor secure, so accepting an
+  // invite downgraded the preference to a script-readable cookie until the
+  // next writer ran.
+  "src/server/actions/settings.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
   // Fixed by WP3, further than asked: the 30-day maxAge (it was a session
   // cookie where every sibling writes 30 days) AND `secure`.
   "src/server/actions/templates.ts": ["httpOnly", "maxAge", "path", "sameSite", "secure"],
@@ -241,12 +259,21 @@ test("useSearchParams is quarantined in the bridge, under its own Suspense", () 
   );
 });
 
+/**
+ * Renegotiated 2026-08-17 by the WP6 transition lane, not deleted: the guard
+ * used to pin `return false;`, and `selectProject` now answers with a
+ * structured result because a caller has to RENDER a refusal — a bare boolean
+ * cannot say what is unsaved or whose copy to show. What the old pin actually
+ * protected is unchanged and re-asserted here: the ref check is the first
+ * synchronous statement, the ref is claimed before anything dispatches, and
+ * the ref is never touched during render.
+ */
 test("the provider's one-selection guard is synchronous, not stateful", () => {
   const selectBody = provider.slice(provider.indexOf("const selectProject = useCallback"));
-  const guardAt = selectBody.indexOf("if (pendingRef.current) return false;");
+  const guardAt = selectBody.indexOf('if (pendingRef.current) return { kind: "switch-pending" };');
   const claimAt = selectBody.indexOf("pendingRef.current = true;");
   const dispatchAt = selectBody.indexOf('type: "select-started"');
-  assert(guardAt > 0 && claimAt > guardAt, "the ref is claimed immediately after the check");
+  assert(guardAt > 0 && claimAt > guardAt, "the ref check remains the first refusal");
   assert(
     claimAt < dispatchAt,
     "two clicks in one React batch would both read a pre-batch state value; the ref is what serializes them",
@@ -260,11 +287,215 @@ test("the provider's one-selection guard is synchronous, not stateful", () => {
   assert.doesNotMatch(renderBody, /pendingRef\.current/);
 });
 
+/**
+ * WP6: the unsaved-work hold. The map (§6) is explicit that production had no
+ * host signal for unsaved work — the only dirty tracking was Notes-local
+ * behind a same-tab beforeunload, which never fires on a client navigation.
+ * These pin the wiring the pure tests cannot see:
+ * `src/lib/projects/unsaved-work.test.ts` proves the store and the hold rule;
+ * `src/lib/projects/active-project-machine.test.ts` proves the reducer.
+ */
+test("selectProject consults the unsaved-work signal before a switch may start", () => {
+  const selectBody = provider.slice(provider.indexOf("const selectProject = useCallback"));
+  const guardAt = selectBody.indexOf("if (pendingRef.current)");
+  const consultAt = selectBody.indexOf("refuseForUnsavedWork(unsavedWork.claims())");
+  const refuseDispatchAt = selectBody.indexOf('type: "select-refused"');
+  const claimAt = selectBody.indexOf("pendingRef.current = true;");
+  assert(consultAt > guardAt, "the pending guard stays first; the hold is consulted next");
+  assert(
+    consultAt < claimAt,
+    "the hold must be consulted BEFORE the ref is claimed: a held switch never starts, so it must leave nothing pending",
+  );
+  assert(
+    refuseDispatchAt > consultAt && refuseDispatchAt < claimAt,
+    "the refusal reaches shared state so the Active Project chrome can render it whoever tripped it",
+  );
+  // The store is read synchronously in the handler, never via a hook value: a
+  // hook-carried claims list is one render stale, which is exactly the window
+  // a second click lives in.
+  assert.doesNotMatch(provider, /useUnsavedWorkClaims/);
+});
+
+test("the unsaved-work signal is consumable by surfaces that know nothing about Notes", () => {
+  const signalLib = read("src/lib/projects/unsaved-work.ts");
+  const signalContext = read("src/components/app/unsaved-work-context.tsx");
+  // Sources are vocabulary, not imports: the seam must never reach into the
+  // publisher's module, or every renderer of a refusal inherits Notes. Match
+  // on comment-stripped code — the docblocks may (and do) name the path while
+  // saying exactly this.
+  for (const source of [signalLib, signalContext, provider]) {
+    const code = source
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+    assert.doesNotMatch(code, /modules\/notes/);
+  }
+  // The claim carries state and copy, never behaviour: resolution stays with
+  // the owning surface, so the seam exposes no save/retry/discard callbacks.
+  assert.doesNotMatch(signalLib, /onSave|onRetry|onDiscard|resolve\s*:/);
+  // Notes publishes into the seam from the same dirty truths its beforeunload
+  // guard reads, and that guard survives untouched — the signal covers client
+  // navigations, beforeunload covers the tab.
+  const notes = read("src/modules/notes/app/workspace/NotesWorkspace.tsx");
+  assert.match(notes, /useUnsavedWork\(\)/);
+  for (const source of ['"notes-draft"', '"notes-edit"', '"notes-capture"']) {
+    assert.ok(notes.includes(source), `Notes publishes and clears ${source}`);
+  }
+  assert.match(notes, /beforeunload/);
+});
+
+/**
+ * WP6: the Tasks sidebar is repointed onto the guarded transition — flag on,
+ * a leaf click travels through the provider to `switchActiveProjectAction`;
+ * flag off, the legacy `selectWorkspaceAction` + `router.refresh()` pair runs
+ * exactly as it always has. Same discipline as every gate in this programme:
+ * the off path is not merely equivalent, it is the same statements.
+ */
+test("the Tasks sidebar switches through the provider flag-on and is unchanged flag-off", () => {
+  const sidebar = read("src/components/studio-bar/projects-sidebar.tsx");
+  const chooseBody = sidebar.slice(
+    sidebar.indexOf("function chooseWorkspace("),
+    sidebar.indexOf("const refreshTree"),
+  );
+  const enabledAt = chooseBody.indexOf("if (activeProject?.enabled)");
+  const providerCallAt = chooseBody.indexOf("activeProject.selectProject(");
+  const legacyAt = chooseBody.indexOf("await selectWorkspaceAction(id);");
+  assert(enabledAt > 0, "the client reads `enabled` off context, never the env var");
+  assert(
+    providerCallAt > enabledAt && providerCallAt < legacyAt,
+    "flag on, the switch is the guarded WP2 transition, decided before the legacy path",
+  );
+  // The WP2 path names its destination from the enum — no return URLs.
+  assert.match(chooseBody, /\{ surface: "tasks" \}/);
+  // The legacy pair survives byte-for-byte, inside the transition it always ran in.
+  assert.match(
+    chooseBody,
+    /await selectWorkspaceAction\(id\);\s*\n\s*router\.refresh\(\);/,
+    "flag off keeps today's behaviour exactly",
+  );
+});
+
 test("the /app shell mounts the provider only when the flag is on", () => {
   assert.match(layout, /if \(!isActiveProjectV3Enabled\(\)\) return children;/);
   assert.match(layout, /<ActiveProjectProvider enabled bootstrapProjectId=/);
   // The bootstrap must stay cheap: no membership query in the shared shell.
   assert.doesNotMatch(layout, /getProjectCatalog|resolveActiveProjectForRoute|listProjectCatalogRows/);
+});
+
+/**
+ * WP6 Lane A — the Active Project chrome (D-025 variant A).
+ *
+ * The control lives in the permanent Studio Bar, which renders on every
+ * signed-in surface. Three things therefore have to hold structurally rather
+ * than by inspection: it disappears completely with the flag off, it paints
+ * only what the provider's projection authorizes, and it does not put a
+ * membership query in front of every page view.
+ */
+test("the Active Project chrome renders nothing at all with the flag off", () => {
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  // The provider is not mounted flag-off, so the hook returns null and every
+  // entry point bails before it renders anything. Checked on all three: a
+  // guard on the inner component only would still mount the two wrappers.
+  assert.match(
+    control,
+    /const context = useActiveProject\(\);\s*\n\s*\/\/[^\n]*\n\s*if \(!context\) return null;/,
+    "the control returns null before rendering when there is no provider",
+  );
+  assert.match(
+    control,
+    /export function ActiveProjectMobileStrip\(\)[\s\S]*?if \(!phone \|\| !context\) return null;/,
+    "the phone strip bails on the same absent provider",
+  );
+  // The flag itself is never read in the client component: the server decides
+  // once and the client reads `enabled` off context (plan §2 gate pattern).
+  assert.doesNotMatch(control, /isActiveProjectV3Enabled|process\.env/);
+});
+
+test("the chrome paints only the provider's projection, never the cookie", () => {
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  // `verified` may be painted; `pending` is A held on screen and marked inert;
+  // `skeleton` is a fixed-width placeholder that names nothing. A name read
+  // from anywhere else is the wrong-Project substitution this wave removes.
+  assert.match(control, /chrome\.kind === "verified"\s*\n?\s*\? chrome\.project/);
+  assert.match(control, /chrome\.kind === "pending"\s*\n?\s*\? chrome\.showing/);
+  assert.match(
+    control,
+    /ACTIVE_PROJECT_TRIGGER_SKELETON_WIDTH/,
+    "the unverified trigger holds a fixed width so the chrome cannot collapse",
+  );
+  assert.doesNotMatch(
+    control,
+    /bootstrapProjectId/,
+    "the cookie bootstrap is not a Project name and must not reach the chrome",
+  );
+});
+
+test("the catalog is fetched on demand, never in the shared shell", () => {
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  const catalogAction = read("src/server/actions/project-catalog.ts");
+  // The membership query hangs off opening the chooser, not off rendering the
+  // bar — the bar renders on every signed-in page view.
+  assert.match(control, /if \(!open\) return;\s*\n\s*if \(state\.kind === "idle"\) load\(\);/);
+  // Reachable by direct POST like every Server Function: both gates run here.
+  assert.match(
+    catalogAction,
+    /if \(!isActiveProjectV3Enabled\(\)\) return \{ ok: false, reason: "disabled" \};/,
+  );
+  assert.match(
+    catalogAction,
+    /const actorUserId = await getCurrentUser\(\);/,
+    "the actor is the server's, never the payload's",
+  );
+  assert.match(
+    catalogAction,
+    /export async function loadProjectCatalogAction\(\): Promise<LoadProjectCatalogResult>/,
+    "the catalog action takes no caller input: the actor is the only input, and it is the server's",
+  );
+});
+
+test("archived and ambiguous Projects never travel through the guarded switch", () => {
+  const chooser = read("src/components/studio-bar/active-project/use-chooser.ts");
+  const chooseBody = chooser.slice(
+    chooser.indexOf("const choose = useCallback("),
+    chooser.indexOf("const move = useCallback("),
+  );
+  const blockedAt = chooseBody.indexOf("if (!row.selectable)");
+  const archivedAt = chooseBody.indexOf("if (row.archived)");
+  const chooseAt = chooseBody.indexOf("onChoose(row)");
+  assert(blockedAt >= 0 && blockedAt < archivedAt, "ambiguity refuses first");
+  assert(
+    archivedAt > 0 && archivedAt < chooseAt,
+    "ADR 0001 §5: an archived Project is a URL-only read-only flow, not a switch",
+  );
+  // And the archived route is built from the enum, not hand-assembled.
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  assert.match(control, /router\.push\(archivedProjectUrl\(row\.id\)\)/);
+});
+
+test("exactly one of the bar cell and the phone strip is mounted", () => {
+  const bar = read("src/components/studio-bar/studio-bar.tsx");
+  assert.match(bar, /<ActiveProjectBarCell \/>/);
+  assert.match(bar, /<ActiveProjectMobileStrip \/>/);
+  const control = read(
+    "src/components/studio-bar/active-project/active-project-control.tsx",
+  );
+  // Chosen by a media subscription rather than by CSS, so the catalog is
+  // fetched once and the chooser holds one piece of state.
+  assert.match(
+    control,
+    /export function ActiveProjectBarCell\(\)[\s\S]*?if \(phone\) return null;/,
+  );
+  assert.match(
+    control,
+    /export function ActiveProjectMobileStrip\(\)[\s\S]*?if \(!phone/,
+  );
 });
 
 /**

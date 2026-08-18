@@ -21,6 +21,7 @@
  */
 
 import type { ProjectId, ProjectSummary } from "@/lib/projects/project-ref";
+import type { SelectProjectRefusal } from "@/lib/projects/unsaved-work";
 
 /**
  * Normalized identity of a route for snapshot matching: the pathname plus the
@@ -214,13 +215,25 @@ export type ActiveProjectState = Readonly<{
   coldEntry: boolean;
   pending: ActiveProjectPending | null;
   lastError: string | null;
+  /**
+   * A held switch (WP6): the unsaved-work signal objected before anything
+   * started, so nothing is pending and nothing was committed. Kept in shared
+   * state — not only in the caller's return value — because the surface that
+   * tripped it (the Tasks sidebar, a chooser, the command palette) is not
+   * necessarily the surface designed to render it: the Active Project chrome
+   * is (D-025). Only `unsaved-work` refusals land here; a `switch-pending`
+   * refusal is a silent outright rejection, per the lab machine.
+   */
+  refusal: SelectProjectRefusal | null;
 }>;
 
 export type ActiveProjectEvent =
   | Readonly<{ type: "route"; routeKey: string }>
   | Readonly<{ type: "snapshot"; snapshot: RouteSnapshot }>
   | Readonly<{ type: "select-started"; pending: ActiveProjectPending }>
-  | Readonly<{ type: "select-failed"; message: string }>;
+  | Readonly<{ type: "select-failed"; message: string }>
+  | Readonly<{ type: "select-refused"; refusal: SelectProjectRefusal }>
+  | Readonly<{ type: "refusal-dismissed" }>;
 
 export function initialActiveProjectState(): ActiveProjectState {
   return {
@@ -229,6 +242,7 @@ export function initialActiveProjectState(): ActiveProjectState {
     coldEntry: true,
     pending: null,
     lastError: null,
+    refusal: null,
   };
 }
 
@@ -262,9 +276,21 @@ export function reduceActiveProject(
       };
     }
     case "select-started":
-      return { ...state, pending: event.pending, lastError: null };
+      // A switch that starts moots both an old failure and an old hold: the
+      // claims that held the last attempt were cleared, or it could not start.
+      return { ...state, pending: event.pending, lastError: null, refusal: null };
     case "select-failed":
       return { ...state, pending: null, lastError: event.message };
+    case "select-refused":
+      // Held, not failed: nothing started, so `pending` is untouched — and
+      // must be, because a refusal while another switch is genuinely in
+      // flight would otherwise erase that switch's own label.
+      return { ...state, refusal: event.refusal };
+    case "refusal-dismissed":
+      // "Stay" is the owning surface's word; to the machine it is only the
+      // refusal leaving the screen. The claims themselves live in the
+      // unsaved-work store and are untouched — the next attempt re-consults.
+      return { ...state, refusal: null };
   }
 }
 

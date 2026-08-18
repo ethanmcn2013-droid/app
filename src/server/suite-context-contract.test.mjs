@@ -21,15 +21,43 @@ test("scenario E: suite links carry only allowlisted context hints", () => {
   }
 });
 
-test("incoming workspace hint is membership and period validated before cookie write", () => {
+/**
+ * Renegotiated 2026-08-17 (D-028), not deleted to make a build green.
+ *
+ * This guard used to pin "membership and period are validated before the COOKIE
+ * WRITE". There is no cookie write any more: a contextual link is navigation,
+ * not selection, so the handler carries the Project in the URL and leaves the
+ * bare-entry preference alone. The invariant that mattered was never about the
+ * cookie specifically — it was that nothing authorized reaches the caller before
+ * both checks have run. That is what it pins now, against the authorized
+ * redirect, and it is strictly harder to satisfy than the old ordering because
+ * the redirect is the ONLY thing this route can hand back.
+ *
+ * The second assertion is the new half: this route writes no cookie at all. A
+ * bare ordering test would pass a file that quietly reintroduced the write
+ * further down, which is exactly the regression D-028 forecloses.
+ */
+test("incoming workspace hint is membership and period validated before anything authorized is returned", () => {
   const membershipCheck = incoming.indexOf("eq(workspaceMembers.userId, actorUserId)");
   const periodCheck = incoming.indexOf("eq(workspaces.planningPeriodId, planningPeriodId)");
-  const cookieWrite = incoming.indexOf("authorizedResponse.cookies.set");
+  const authorizedRedirect = incoming.indexOf("const authorizedTarget");
   assert.ok(membershipCheck >= 0);
   assert.ok(periodCheck >= 0);
-  assert.ok(cookieWrite > membershipCheck);
-  assert.ok(cookieWrite > periodCheck);
+  assert.ok(authorizedRedirect > membershipCheck);
+  assert.ok(authorizedRedirect > periodCheck);
   assert.match(incoming, /Cache-Control.*no-store/);
+
+  // D-028: navigation, not selection. The Project rides the URL.
+  assert.doesNotMatch(
+    incoming,
+    /cookies\.set|ACTIVE_WORKSPACE_COOKIE_NAME/,
+    "a contextual link must not rewrite the last-active Project preference",
+  );
+  assert.match(
+    incoming,
+    /authorizedTarget\.searchParams\.set\(PROJECT_URL_PARAM, workspaceId\)/,
+    "the destination must resolve the Project explicitly, never ambiently",
+  );
 });
 
 test("workspace-only suite hints are membership checked and project hints remain navigation-only", () => {
