@@ -22,7 +22,7 @@ const counts = (page) =>
   page.evaluate(() => {
     const o = {};
     document.querySelectorAll(".tray[data-lane]").forEach((t) => {
-      o[t.dataset.lane] = t.querySelectorAll(".card").length;
+      o[t.dataset.lane] = t.querySelectorAll(".card:not([data-draft])").length;
     });
     return o;
   });
@@ -188,13 +188,13 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
 /* ── the filter is not a dead end ─────────────────────────────────── */
 {
   const page = await open();
-  await page.locator(".late").click();
+  await page.locator('[data-act="late"]').click();
   await page.waitForTimeout(150);
   /* The chip is the value in both states; aria-pressed and the close glyph
      carry "this is on" and "this is the way out", so the foot strip is the
      only place the filter is stated in words. */
-  ok("the chip stays the value", (await page.locator(".late").textContent()).trim().startsWith("1 overdue"));
-  ok("and reads as pressed", (await page.locator('.late[aria-pressed="true"]').count()) === 1);
+  ok("the chip stays the value", (await page.locator('[data-act="late"]').textContent()).trim().startsWith("1 overdue"));
+  ok("and reads as pressed", (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 1);
   ok("the standing project facts stay put", (await page.locator(".ratio").count()) === 1);
   ok("a way back is on screen", (await page.locator('.carry [data-act="showall"]').count()) === 1);
   const lines = await page.$$eval(".trayEmpty", (n) => n.map((x) => x.textContent));
@@ -203,16 +203,16 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   /* Clearing the last overdue task while filtered used to brick the board. */
   await page.locator(".board .card .tick").first().click();
   await page.waitForTimeout(320);
-  ok("clearing the last overdue task releases the filter", (await page.locator('.late[aria-pressed="true"]').count()) === 0);
+  ok("clearing the last overdue task releases the filter", (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 0);
   ok("the board comes back", (await page.locator(".board .card").count()) > 5);
   await page.close();
 
   const two = await open();
-  await two.locator(".late").click();
+  await two.locator('[data-act="late"]').click();
   await two.waitForTimeout(120);
   await two.keyboard.press("Escape");
   await two.waitForTimeout(150);
-  ok("escape clears the filter", (await two.locator('.late[aria-pressed="true"]').count()) === 0);
+  ok("escape clears the filter", (await two.locator('[data-act="late"][aria-pressed="true"]').count()) === 0);
   ok("and the whole board is back", (await two.locator(".board .card").count()) > 5);
   await two.close();
 }
@@ -254,12 +254,24 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   const named = await page.$$eval(".board .card", (n) =>
     n.filter((c) => !c.getAttribute("aria-label") && !c.getAttribute("aria-labelledby")).length);
   ok("every card has an accessible name", named === 0, named + " unnamed");
-  const stops = await page.locator('.board [tabindex="0"]').count();
-  ok("the board is a roving tab stop", stops <= 3, stops + " stops");
+  /* Count what a keyboard actually walks, not what carries tabindex="0" —
+     an element with no tabindex attribute at all is still a tab stop, which
+     is exactly what this assertion used to be blind to. */
+  const walked = (p) => p.evaluate(() =>
+    [...document.querySelectorAll(".board a, .board button, .board [tabindex]")]
+      .filter((n) => n.offsetParent !== null && n.getAttribute("tabindex") !== "-1").length);
+  const stops = await walked(page);
+  ok("the board is a roving group, not a stop per card", stops <= 5, stops + " stops");
   const dense = await open("?state=dense");
-  const denseStops = await dense.locator('.board [tabindex="0"]').count();
+  const denseStops = await walked(dense);
   const denseAll = await dense.locator(".board button, .board .card").count();
-  ok("and stays one at peak density", denseStops <= 3, denseStops + " of " + denseAll + " focusables");
+  ok("and does not grow with the work on it", denseStops === stops,
+    denseStops + " of " + denseAll + " focusables at peak season, " + stops + " at rest");
+  const way = await page.evaluate(() => {
+    const out = [];
+    document.querySelector('.board .card[tabindex="0"]').focus();
+    return out;
+  });
   await dense.close();
   await page.close();
 }
@@ -490,6 +502,20 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.waitForTimeout(250);
   ok("enter adds it", (await counts(page)).todo === before.todo + 1, JSON.stringify(await counts(page)));
   ok("and it says so", (await page.locator("#say").textContent()).indexOf("added to To do") !== -1);
+  /* Adding one task is rare; adding six on a Monday morning is the case. */
+  ok("and opens a fresh line for the next one", (await page.locator(".card[data-draft]").count()) === 1);
+  ok("with the caret still in it",
+    await page.evaluate(() => document.activeElement.closest(".card[data-draft]") !== null));
+  await page.keyboard.type("Confirm the cake delivery slot");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(250);
+  ok("so a run of tasks costs one Add", (await counts(page)).todo === before.todo + 2, JSON.stringify(await counts(page)));
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  ok("and escape ends the run", (await page.locator(".card[data-draft]").count()) === 0);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(250);
+  ok("each one is its own step back", (await counts(page)).todo === before.todo + 1);
   ok("creating is reversible like everything else",
     (await page.locator('.carry [data-act="undo"]').count()) === 1);
   await page.keyboard.press("Control+z");
@@ -654,7 +680,7 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.waitForTimeout(200);
   await page.keyboard.type("Ring the florist back about");
   /* Any repaint at all: the filter is the cheapest one to trigger. */
-  await page.locator(".late").click();
+  await page.locator('[data-act="late"]').click();
   await page.waitForTimeout(300);
   const kept = await page.locator(".card[data-draft] .cardTitle").textContent();
   ok("a repaint cannot destroy a half-written task", kept.indexOf("Ring the florist") === 0, JSON.stringify(kept));
@@ -669,7 +695,7 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
 /* ── a task made under a filter is visible ────────────────────────── */
 {
   const page = await open();
-  await page.locator(".late").click();
+  await page.locator('[data-act="late"]').click();
   await page.waitForTimeout(200);
   await page.locator('.tray[data-lane="todo"] .trayAdd').click();
   await page.waitForTimeout(200);
@@ -677,7 +703,7 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.keyboard.press("Enter");
   await page.waitForTimeout(300);
   ok("the filter releases so the new task can be seen",
-    (await page.locator('.late[aria-pressed="true"]').count()) === 0);
+    (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 0);
   ok("and it is on screen", (await page.locator(".board .cardTitle", { hasText: "Order more ice" }).count()) === 1);
   ok("and the board says why", (await page.locator("#say").textContent()).indexOf("filter is off") !== -1);
   await page.close();
@@ -686,7 +712,7 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
 /* ── the filtered board does not describe what it is not showing ──── */
 {
   const page = await open();
-  await page.locator(".late").click();
+  await page.locator('[data-act="late"]').click();
   await page.waitForTimeout(250);
   /* The column carries the fact in its own accessible name; a note here
      would be the same fact a fourth time on one screen. */
@@ -921,8 +947,12 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.waitForTimeout(250);
   const edges = await page.evaluate(() => {
     const b = document.querySelector('.tray[data-lane="todo"] .trayBody');
+    /* The rules are drawn on the tray, above the cards, because an inset
+       shadow on the scroller is painted under its own content. */
+    const tray = b.closest(".tray");
+    const opacity = (which) => Number(getComputedStyle(tray, which).opacity);
     return { above: b.hasAttribute("data-above"), more: b.hasAttribute("data-more"),
-      shadow: getComputedStyle(b).boxShadow !== "none" };
+      shadow: opacity("::before") === 1 && opacity("::after") === 1 };
   });
   ok("a column with more at both ends says so", edges.above && edges.more && edges.shadow, JSON.stringify(edges));
 
@@ -952,6 +982,169 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
     return out;
   });
   ok("no title opens on a one-word line", orphans.length === 0, JSON.stringify(orphans));
+  await page.close();
+}
+
+
+/* ── the card has a floor, not only a ceiling ─────────────────────── */
+{
+  for (const width of [1280, 1360, 1440, 1920]) {
+    const page = await open("", { width, height: 900 });
+    const w = await page.evaluate(() =>
+      Math.round(document.querySelector(".board .card").getBoundingClientRect().width));
+    ok("the card never falls below its documented measure at " + width, w >= 234 && w <= 288, w + "px");
+    await page.close();
+  }
+}
+
+/* ── two questions can be asked at once ───────────────────────────── */
+{
+  const page = await open("?state=dense");
+  /* The couple first: the one overdue task belongs to an area of the house,
+     not to a couple, so the reverse order leaves no name to click. */
+  await page.locator(".board .who").first().click();
+  await page.waitForTimeout(250);
+  await page.locator('[data-act="late"]').click();
+  await page.waitForTimeout(250);
+  ok("an overdue filter does not silently cancel the couple",
+    (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 1);
+  const strip = await page.locator(".carryName").textContent();
+  ok("and the strip states both", /overdue/.test(strip) && /for /.test(strip), JSON.stringify(strip));
+  ok("with the noun in place", / tasks? /.test(strip) || /Nothing/.test(strip), JSON.stringify(strip));
+
+  /* Escape unwinds one layer at a time, innermost first. */
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  ok("escape drops the couple first",
+    (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 1 &&
+    (await page.locator('.who[aria-pressed="true"]').count()) === 0);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  ok("then the overdue one",
+    (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 0);
+  await page.close();
+}
+
+/* ── today is on the board ────────────────────────────────────────── */
+{
+  const page = await open("?state=dense");
+  ok("the header states what is due today", (await page.locator('[data-act="today"]').count()) === 1);
+  await page.locator('[data-act="today"]').click();
+  await page.waitForTimeout(300);
+  const chips = await page.$$eval(".board .when", (n) => n.map((x) => x.getAttribute("data-t")));
+  ok("and filtering to it shows only today's work",
+    chips.length > 0 && chips.every((t) => t === "today"), JSON.stringify(chips));
+  await page.close();
+}
+
+/* ── a drop into Done is a completion ─────────────────────────────── */
+{
+  const page = await open();
+  const before = await counts(page);
+  await page.dragAndDrop('.tray[data-lane="review"] .card >> nth=0', '.tray[data-lane="done"] .trayBody');
+  await page.waitForTimeout(400);
+  ok("it lands in Done", (await counts(page)).done === before.done + 1);
+  ok("and offers the way back every other route offers",
+    (await page.locator('.carry [data-act="undo"]').count()) === 1);
+  ok("and says so", (await page.locator("#say").textContent()).indexOf("done") !== -1);
+  await page.close();
+}
+
+/* ── the words on a card can be taken ─────────────────────────────── */
+{
+  const page = await open();
+  await page.locator(".board .card").first().click();
+  await page.waitForTimeout(250);
+  const selectable = await page.evaluate(() => {
+    const n = document.querySelector(".card[data-open] .cardNote");
+    return { open: getComputedStyle(n).userSelect, drag: n.closest(".card").getAttribute("draggable") };
+  });
+  ok("an open card's note can be selected", selectable.open === "text", JSON.stringify(selectable));
+  ok("and it is not the thing being dragged", selectable.drag === "false");
+  await page.close();
+}
+
+/* ── the board does not jump when it is filtered ──────────────────── */
+{
+  const page = await open();
+  const y = () => page.evaluate(() =>
+    Math.round(document.querySelector('.tray[data-lane="doing"] .trayBody').getBoundingClientRect().top));
+  const rest = await y();
+  await page.locator('[data-act="late"]').click();
+  await page.waitForTimeout(300);
+  ok("the most-clicked control on the page moves nothing", Math.abs((await y()) - rest) <= 1,
+    rest + " -> " + (await y()));
+  await page.close();
+}
+
+/* ── a forced palette keeps the whole status language ─────────────── */
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, forcedColors: "active" });
+  await page.goto(URL);
+  await page.waitForTimeout(400);
+  const kept = await page.evaluate(() => {
+    const card = document.querySelector(".board .card");
+    const chip = document.querySelector('.when[data-t="overdue"]');
+    const tick = document.querySelector(".board .tick");
+    return {
+      card: getComputedStyle(card).borderTopWidth,
+      chip: chip ? getComputedStyle(chip).borderTopWidth : "0px",
+      tick: getComputedStyle(tick).borderTopWidth,
+    };
+  });
+  ok("a card still has an edge", parseFloat(kept.card) >= 1, JSON.stringify(kept));
+  ok("a chip still has an edge", parseFloat(kept.chip) >= 1, JSON.stringify(kept));
+  ok("a tick still has an edge", parseFloat(kept.tick) >= 1, JSON.stringify(kept));
+  await page.close();
+}
+
+/* ── the copy is written, not templated ──────────────────────────── */
+{
+  const page = await open();
+  const tips = await page.$$eval("[title]", (n) => n.map((x) => x.getAttribute("title")));
+  const templated = tips.filter((t) => / is (a room|not built)/.test(t));
+  ok("no tooltip is generated from a label", templated.length === 0, JSON.stringify(templated));
+  const unpunctuated = tips.filter((t) => /(comes with|Not in this release|lives in)/.test(t) && !/[.?]$/.test(t));
+  ok("every one is a sentence", unpunctuated.length === 0, JSON.stringify(unpunctuated));
+  await page.close();
+}
+
+/* ── the copy is typeset, not typed ──────────────────────────────── */
+{
+  for (const state of ["board", "dense", "planning", "cards"]) {
+    const page = await open("?state=" + state);
+    const straight = await page.evaluate(() => {
+      const out = [];
+      document.querySelectorAll(".cardTitle, .cardNote, .trayNote, .trayEmpty, .headFacts, .drawerLine, .drawerSummary, .drawerHelp, .specIntro, .specNote, .carryName")
+        .forEach((n) => { if (/[A-Za-z]'[A-Za-z]/.test(n.textContent)) out.push(n.textContent.slice(0, 40)); });
+      return out;
+    });
+    ok("no straight apostrophe in shipped copy at " + state, straight.length === 0, JSON.stringify(straight));
+    await page.close();
+  }
+}
+
+/* ── the drawer sits on the same tracking curve as the sheet ──────── */
+{
+  const page = await open("?state=planning");
+  const off = await page.evaluate(() => {
+    const CURVE = { 19: -0.026, 18: -0.022, 15: -0.016, 14: -0.014, 13: -0.010, 12: -0.006, 11: 0, 10: 0.004 };
+    const out = [];
+    document.querySelectorAll(".drawer *").forEach((n) => {
+      if (!n.firstChild || n.firstChild.nodeType !== 3 || !n.textContent.trim()) return;
+      const cs = getComputedStyle(n);
+      if (/mono/i.test(cs.fontFamily)) return;
+      const size = Math.round(parseFloat(cs.fontSize));
+      const want = CURVE[size];
+      if (want === undefined) return;
+      const got = parseFloat(cs.letterSpacing) / parseFloat(cs.fontSize);
+      if (Math.abs((Number.isFinite(got) ? got : 0) - want) > 0.0015) {
+        out.push(n.className + " " + size + "px " + (Number.isFinite(got) ? got.toFixed(4) : "normal"));
+      }
+    });
+    return out;
+  });
+  ok("every line in Planning is on the curve", off.length === 0, JSON.stringify(off.slice(0, 4)));
   await page.close();
 }
 

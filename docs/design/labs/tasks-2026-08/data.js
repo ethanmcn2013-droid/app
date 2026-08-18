@@ -194,11 +194,11 @@ window.DENSE_EXTRA = [
   {
     lane: "waiting",
     heldSince: "2026-07-14",
-    title: "The band's contract for the spring date",
+    title: "The band’s contract for the spring date",
     tag: "Nora & Cian",
     note: "Sent Tuesday, no reply yet.",
   },
-  { lane: "waiting", heldSince: "2026-06-25", title: "Tom's guest number, before we hold the room", tag: "Aisling & Tom" },
+  { lane: "waiting", heldSince: "2026-06-25", title: "Tom’s guest number, before we hold the room", tag: "Aisling & Tom" },
   { lane: "done", completedAt: "2026-07-10", title: "Nora & Cian deposit received", tag: "Nora & Cian" },
   { lane: "done", completedAt: "2026-07-08", title: "First call with Aisling & Tom", tag: "Aisling & Tom" },
   { lane: "done", completedAt: "2026-07-12", title: "Gravel delivered for the top car park", tag: "Venue" },
