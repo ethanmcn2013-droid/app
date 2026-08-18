@@ -63,6 +63,7 @@
   /* ── indigo, at stated alphas ──────────────────────────────── */
   --indigo-ink: var(--indigo);               /* 6.3:1 on white          */
   --indigo-wash: rgba(79, 70, 229, 0.09);
+  --indigo-deep: #4338ca;                    /* the indigo ramp, one step darker */
   --indigo-line: rgba(79, 70, 229, 0.32);
   --indigo-ring: rgba(79, 70, 229, 0.16);
 
@@ -575,6 +576,111 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .cardDots { width: 44px; height: 44px; top: 2px; right: 2px; }
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE DECISION LAYER
+
+   Six design decisions, each isolated on its own root attribute, so a
+   change to one cannot leak into another. The three named variants are
+   nothing more than three preset combinations of these six, which is
+   why every combination stays on-brand: none of them can reach a colour
+   that is not Ink, Indigo or White.
+
+     data-cards    flat | bordered | elevated
+     data-radius   sharp | soft | round
+     data-density  comfortable | compact
+     data-indigo   subtle | forward
+     data-type     calm | expressive
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── card style ────────────────────────────────────────────────── */
+/* Flat: no ring at rest. Space does the separating, and the card only
+   acquires an edge when you point at it. */
+[data-cards="flat"] .card { box-shadow: none; }
+[data-cards="flat"] .card:hover, [data-cards="flat"] .card[data-force="hover"] { box-shadow: none; background: var(--wash); }
+[data-cards="flat"] .card[data-done] { box-shadow: none; background: var(--wash); }
+[data-cards="flat"] .card[data-next] { box-shadow: 0 0 0 1px var(--indigo-line); }
+[data-cards="flat"] .trayBody { gap: 2px; }
+[data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
+
+/* Elevated: the card is an object at rest, and picking it up only
+   deepens something that was already there. */
+[data-cards="elevated"] .card { box-shadow: var(--ring), var(--raise); }
+[data-cards="elevated"] .card:hover, [data-cards="elevated"] .card[data-force="hover"] { box-shadow: var(--ring-strong), var(--float); }
+[data-cards="elevated"] .card[data-done] { box-shadow: 0 0 0 1px var(--line-soft); }
+[data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
+
+/* ── corner radius ─────────────────────────────────────────────── */
+[data-radius="sharp"] {
+  --r-chip: 4px; --r-ctl: 4px; --r-card: 4px; --r-sheet: 8px;
+}
+[data-radius="sharp"] .rail, [data-radius="sharp"] .railTile,
+[data-radius="sharp"] .railAdd { border-radius: 8px; }
+[data-radius="sharp"] .seg, [data-radius="sharp"] .segItem,
+[data-radius="sharp"] .dock, [data-radius="sharp"] .dockField,
+[data-radius="sharp"] .dockPrimary, [data-radius="sharp"] .when,
+[data-radius="sharp"] .late, [data-radius="sharp"] .drawerTab,
+[data-radius="sharp"] .ghost { border-radius: 4px; }
+[data-radius="sharp"] .railAvatar, [data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+
+[data-radius="round"] {
+  --r-chip: 8px; --r-ctl: 12px; --r-card: 16px; --r-sheet: 24px;
+}
+[data-radius="round"] .rail { border-radius: 24px; }
+[data-radius="round"] .railTile, [data-radius="round"] .railAdd { border-radius: 16px; }
+[data-radius="round"] .specStage { border-radius: 16px; }
+
+/* ── density ───────────────────────────────────────────────────── */
+/* Compact is not "the same thing, smaller". Lines that earn their place
+   at comfortable density stop earning it here, so the note clamps to
+   one line and the tray note goes away entirely. */
+[data-density="compact"] .card { padding: 8px 10px 8px 9px; row-gap: 4px; column-gap: 7px; grid-template-columns: 20px minmax(0, 1fr); }
+[data-density="compact"] .cardTitle { font-size: 13px; line-height: 1.32; }
+[data-density="compact"] .cardNote { font-size: 12px; line-height: 1.38; -webkit-line-clamp: 1; }
+[data-density="compact"] .cardFoot { min-height: 0; font-size: 11px; gap: 8px; }
+[data-density="compact"] .trayBody { gap: 5px; }
+[data-density="compact"] .tray { padding: 12px 9px 6px; }
+[data-density="compact"] .trayNote { display: none; }
+[data-density="compact"] .trayHead { padding-bottom: 9px; }
+[data-density="compact"] .head { height: 52px; }
+[data-density="compact"] .views { padding-bottom: 10px; }
+[data-density="compact"] .tick { width: 16px; height: 16px; }
+[data-density="compact"] .tick svg { width: 10px; height: 10px; }
+[data-density="compact"] .when { height: 18px; font-size: 10.5px; padding: 0 7px; }
+[data-density="compact"] .drawerRow { padding: 8px 10px; }
+[data-density="compact"] .loadCard { padding: 9px; gap: 7px; }
+
+/* ── indigo intensity ──────────────────────────────────────────── */
+/* Forward does not add indigo everywhere. It moves the accent from the
+   one dated milestone onto the one thing you are most likely to do
+   next, and lets the spine say which product you are in. */
+/* Indigo marks intent, never status. Forward moves the accent onto the
+   thing you are most likely to do next and onto the product you are in.
+   Overdue stays ink, because a warning is not a brand moment, and done
+   stays ink, because completed work should not be the loudest thing on
+   the board. */
+[data-indigo="forward"] .dockPrimary { background: var(--indigo); }
+[data-indigo="forward"] .dockPrimary:hover { background: var(--indigo-deep); }
+[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
+[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
+[data-indigo="forward"] .segItem[data-active] { color: var(--indigo-ink); }
+[data-indigo="forward"] .card[data-next] { box-shadow: 0 0 0 1.5px var(--indigo); }
+[data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
+[data-indigo="forward"] .trayAdd:hover, [data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
+
+/* ── type scale ────────────────────────────────────────────────── */
+/* Expressive widens the gaps in the scale rather than making everything
+   bigger. The title grows, the supporting lines hold, and the tracking
+   curve steepens so hierarchy is carried by shape, not by size alone. */
+[data-type="expressive"] .headName { font-size: 22px; letter-spacing: -0.034em; }
+[data-type="expressive"] .word { font-size: 19px; }
+[data-type="expressive"] .cardTitle { font-size: 15px; line-height: 1.34; letter-spacing: -0.022em; }
+[data-type="expressive"] .cardNote { font-size: 12.5px; }
+[data-type="expressive"] .trayName { font-size: 11px; letter-spacing: 0.14em; }
+[data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: -0.034em; }
+[data-type="expressive"] .specIntro { font-size: 14px; }
+[data-type="expressive"] .headFacts { font-size: 13px; }
+
 /* ── responsive ────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .board { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(258px, 1fr); }
@@ -635,7 +741,24 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 const params = new URLSearchParams(location.search);
 const state = params.get("state") || "board";
 const variant = params.get("v") || "locked";
-document.documentElement.setAttribute("data-variant", variant);
+
+/* The three finished variants are three preset combinations of the six
+   decisions. Nothing else distinguishes them, which is what guarantees
+   every mix stays on-brand. */
+const PRESETS = {
+  locked: { cards: "bordered", radius: "soft", density: "comfortable", indigo: "subtle", type: "calm" },
+  a: { cards: "flat", radius: "round", density: "comfortable", indigo: "subtle", type: "expressive" },
+  b: { cards: "bordered", radius: "sharp", density: "compact", indigo: "subtle", type: "calm" },
+  c: { cards: "elevated", radius: "soft", density: "comfortable", indigo: "forward", type: "expressive" },
+};
+const DECISIONS = ["cards", "radius", "density", "indigo", "type"];
+
+const root = document.documentElement;
+const preset = PRESETS[variant] || PRESETS.locked;
+root.setAttribute("data-variant", variant);
+for (const key of DECISIONS) {
+  root.setAttribute("data-" + key, params.get(key) || preset[key]);
+}
 
 const B = window.BOARD;
 const I = window.ICON;

@@ -1,172 +1,31 @@
 {
   "viewports": [
-    "390x844",
-    "768x1024",
-    "1280x900",
     "1440x960"
   ],
   "states": [
-    "board",
-    "cards",
-    "dense",
-    "empty",
-    "loading",
-    "planning"
+    "board"
   ],
   "shots": [
     {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "board",
-      "viewport": "390x844",
-      "file": "locked-board--390x844.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "dense",
-      "viewport": "390x844",
-      "file": "locked-dense--390x844.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "empty",
-      "viewport": "390x844",
-      "file": "locked-empty--390x844.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "loading",
-      "viewport": "390x844",
-      "file": "locked-loading--390x844.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "planning",
-      "viewport": "390x844",
-      "file": "locked-planning--390x844.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "board",
-      "viewport": "768x1024",
-      "file": "locked-board--768x1024.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "dense",
-      "viewport": "768x1024",
-      "file": "locked-dense--768x1024.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "empty",
-      "viewport": "768x1024",
-      "file": "locked-empty--768x1024.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "loading",
-      "viewport": "768x1024",
-      "file": "locked-loading--768x1024.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "planning",
-      "viewport": "768x1024",
-      "file": "locked-planning--768x1024.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "board",
-      "viewport": "1280x900",
-      "file": "locked-board--1280x900.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "cards",
-      "viewport": "1280x900",
-      "file": "locked-cards--1280x900.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "dense",
-      "viewport": "1280x900",
-      "file": "locked-dense--1280x900.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "empty",
-      "viewport": "1280x900",
-      "file": "locked-empty--1280x900.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "loading",
-      "viewport": "1280x900",
-      "file": "locked-loading--1280x900.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "planning",
-      "viewport": "1280x900",
-      "file": "locked-planning--1280x900.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
+      "direction": "a",
+      "name": "Variant A · Air",
       "state": "board",
       "viewport": "1440x960",
-      "file": "locked-board--1440x960.png"
+      "file": "a-board--1440x960.png"
     },
     {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "cards",
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "board",
       "viewport": "1440x960",
-      "file": "locked-cards--1440x960.png"
+      "file": "b-board--1440x960.png"
     },
     {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "dense",
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "board",
       "viewport": "1440x960",
-      "file": "locked-dense--1440x960.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "empty",
-      "viewport": "1440x960",
-      "file": "locked-empty--1440x960.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "loading",
-      "viewport": "1440x960",
-      "file": "locked-loading--1440x960.png"
-    },
-    {
-      "direction": "locked",
-      "name": "Studio Floor · locked palette",
-      "state": "planning",
-      "viewport": "1440x960",
-      "file": "locked-planning--1440x960.png"
+      "file": "c-board--1440x960.png"
     }
   ]
 }

@@ -40,7 +40,7 @@ const ALLOWED = [
   { name: "Indigo", rgb: [79, 70, 229] },
   { name: "White", rgb: [255, 255, 255] },
 ];
-const ALLOWED_RADII = [0, 1.5, 4, 5, 6, 8, 12, 16, 999];
+const ALLOWED_RADII = [0, 1.5, 4, 5, 6, 8, 12, 16, 24, 999];
 const ALLOWED_WEIGHTS = [400, 600];
 const ALLOWED_DURATIONS = [0, 0.05, 0.08, 0.14, 0.22, 0.4];
 
