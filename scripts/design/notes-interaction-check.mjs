@@ -169,7 +169,20 @@ const said = (page) => page.locator("#say").textContent();
      is not skipped by its own review flow. */
   ok("T opens the peel inside the hand", (await page.locator(".hand .peel").count()) === 1);
   ok("the queue has not moved yet", (await page.locator(".handOf").textContent()) === ofBefore);
-  ok("and the wording is there to edit", (await page.locator(".peelField").inputValue()).length > 3);
+  /* Nothing is claimed as picked that nobody picked, so the peel opens
+     empty and asks. Picking from the card fills it. */
+  ok("it does not claim words nobody picked", (await page.locator(".peelField").inputValue()) === "");
+  await page.evaluate(() => {
+    const body = document.querySelector(".handBody");
+    const range = document.createRange();
+    range.selectNodeContents(body);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+  await page.waitForTimeout(260);
+  await page.locator(".peelField").fill("Ask about the ballroom from 8am");
+  await page.waitForTimeout(120);
   await page.locator('[data-act="send"]').click();
   await page.waitForTimeout(360);
   ok("sending advances the queue", (await page.locator(".handOf").textContent()) !== ofBefore);
@@ -396,7 +409,7 @@ const said = (page) => page.locator("#say").textContent();
      boundary above the wording and a restatement under the buttons. */
   ok("the boundary is stated", (await page.locator(".peelBoundary").textContent()).includes("the exact words you pick"));
   const promises = await page.evaluate(() =>
-    [...document.querySelectorAll(".top, .peel")].map((n) => n.innerText).join(" ").match(/stays here|still private|nothing else from this note|still yours to edit/g) || []);
+    (document.querySelector(".top").innerText.match(/stays here|still private|nothing else from this note|still yours to edit/g) || []));
   ok("and only once", promises.length <= 1, promises.join(" · "));
   await page.close();
 }
@@ -872,9 +885,9 @@ const said = (page) => page.locator("#say").textContent();
   const filed = await page.evaluate(() => {
     const row = [...document.querySelectorAll(".idxRow")].find((r) => r.textContent.includes("Reprint the welcome"));
     if (!row) return null;
-    let n = row.previousElementSibling;
-    while (n && !n.classList.contains("idxDay")) n = n.previousElementSibling;
-    return n ? n.textContent : null;
+    const section = row.closest(".idxSection");
+    const head = section ? section.querySelector(".idxDay") : null;
+    return head ? head.textContent : null;
   });
   ok("the note a person wrote lands where they filed it", Boolean(filed && filed.includes("The house")), String(filed));
 
@@ -923,7 +936,11 @@ const said = (page) => page.locator("#say").textContent();
   ok("the subject rule is not smaller than the rows it heads", type.rule >= type.row, `${type.rule} vs ${type.row}`);
   ok("it stays with what it heads", type.sticky === "sticky");
   ok("and it is a heading on the tree", type.tag === "H3" && type.level === "3", `${type.tag} ${type.level}`);
-  ok("the rows are items on the tree", (await page.locator('.idxRow[role="listitem"]').count()) > 5);
+  ok("the rows are items on the tree", (await page.locator('.idxItem[role="listitem"]').count()) > 5);
+  ok("and each one is still a button", (await page.evaluate(() => {
+    const b = document.querySelector(".idxRow");
+    return b.tagName === "BUTTON" && !b.hasAttribute("role");
+  })));
   await page.close();
 }
 
@@ -1032,6 +1049,173 @@ const said = (page) => page.locator("#say").textContent();
   ok("the place notes live has one name", !/the pile/i.test(words), (words.match(/[^\n]*pile[^\n]*/i) || [])[0] || "");
   ok("and the crossing has one verb", !/turn into a task/i.test(words), (words.match(/[^\n]*turn into[^\n]*/i) || [])[0] || "");
   await page.close();
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 4
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── a phone can read a note, and act on it ──────────────────────── */
+{
+  const page = await open("", { width: 390, height: 844 });
+  await page.locator(".idxRow").nth(1).click();
+  await page.waitForTimeout(320);
+  ok("tapping a row opens the note", (await page.locator(".phoneSheet").count()) === 1);
+  ok("in full", (await page.locator(".phoneSheet .readBody").textContent()).length > 60);
+  ok("with the pile behind it inert", (await page.locator(".sheet[inert]").count()) === 1);
+  ok("and a way back", (await page.locator('.phoneSheet [data-act="close"]').count()) === 1);
+  ok("it says what the note is about, as a control", (await page.locator('.phoneSheet [data-act="refile"]').count()) === 1);
+  ok(
+    "the primary states its precondition rather than refusing after the press",
+    (await page.locator('.phoneSheetFoot [data-act="peel"]').textContent()).includes("Pick the words"),
+  );
+
+  await page.evaluate(() => {
+    const body = document.querySelector(".phoneSheet .readBody");
+    const range = document.createRange();
+    range.selectNodeContents(body);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+  await page.waitForTimeout(320);
+  ok("picking works on a phone", (await page.locator(".phoneSheet .pickBar").count()) === 1);
+  await page.locator('.phoneSheet .pickBar [data-act="peel"]').click();
+  await page.waitForTimeout(280);
+  ok("and the peel opens in the sheet", (await page.locator(".phoneSheet .peel").count()) === 1);
+  await page.locator('.phoneSheet [data-act="send"]').click();
+  await page.waitForTimeout(320);
+  ok("a note can be crossed into Tasks from a phone", (await page.locator(".phoneSheet [data-receipt]").count()) === 1);
+
+  await page.locator('.phoneSheet [data-act="close-peel"]').click();
+  await page.waitForTimeout(260);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(260);
+  ok("escape puts the note back", (await page.locator(".phoneSheet").count()) === 0);
+  ok("and the pile is live again", (await page.locator("[inert]").count()) === 0);
+  await page.close();
+}
+
+/* ── the note's facts sit beside it, not over it ─────────────────── */
+{
+  const page = await open();
+  await page.locator(".idxRow").nth(1).click();
+  await page.waitForTimeout(280);
+  ok("the desk is a two-column plane", (await page.locator(".top[data-two]").count()) === 1);
+  const shape = await page.evaluate(() => {
+    const body = document.querySelector(".readBody").getBoundingClientRect();
+    const aside = document.querySelector(".deskAside").getBoundingClientRect();
+    return { bodyR: body.right, asideL: aside.left, asideW: aside.width };
+  });
+  ok("with the facts in a margin beside the writing", shape.asideL > shape.bodyR - 4, `${Math.round(shape.bodyR)} then ${Math.round(shape.asideL)}`);
+  ok("and the margin is a real column", shape.asideW > 200, `${Math.round(shape.asideW)}`);
+  await page.close();
+}
+
+/* ── the index has rank ──────────────────────────────────────────── */
+{
+  const page = await open();
+  const t = await page.evaluate(() => {
+    const rule = getComputedStyle(document.querySelector(".idxDay"));
+    const lede = getComputedStyle(document.querySelector(".idxRow .idxText b"));
+    return { rule: parseFloat(rule.fontSize), lede: parseFloat(lede.fontSize) };
+  });
+  ok("the heading outranks the rows beneath it", t.rule > t.lede, `${t.rule} over ${t.lede}`);
+  await page.close();
+}
+
+/* ── the group rules do not stack ────────────────────────────────── */
+{
+  const page = await open("?state=pressure");
+  await page.locator("#index").evaluate((n) => (n.scrollTop = 600));
+  await page.waitForTimeout(240);
+  const stuck = await page.evaluate(() => {
+    const top = document.querySelector("#index").getBoundingClientRect().top;
+    return [...document.querySelectorAll(".idxDay")].filter((h) => Math.abs(h.getBoundingClientRect().top - top) < 2).length;
+  });
+  ok("only one group rule is ever stuck at the top", stuck <= 1, `${stuck} stuck`);
+  await page.close();
+}
+
+/* ── the hand does not bob ───────────────────────────────────────── */
+{
+  const page = await open("?state=review");
+  const tops = [];
+  for (let i = 0; i < 4; i += 1) {
+    tops.push(await page.evaluate(() => Math.round(document.querySelector(".indexWrap").getBoundingClientRect().top)));
+    await page.keyboard.press("k");
+    await page.waitForTimeout(360);
+  }
+  ok("working the queue does not move the plane beneath it", new Set(tops).size === 1, tops.join(" · "));
+  await page.close();
+}
+
+/* ── the signature moment is set in the product's own type ───────── */
+{
+  const page = await open();
+  await page.keyboard.type("A sentence that has to look like the product wrote it.");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(80);
+  const fly = await page.evaluate(() => {
+    const n = document.querySelector(".fly");
+    if (!n) return null;
+    const cs = getComputedStyle(n);
+    return { size: cs.fontSize, lh: cs.lineHeight, ls: cs.letterSpacing, family: cs.fontFamily.split(",")[0] };
+  });
+  ok("the flying words carry a real size", Boolean(fly) && fly.size !== "16px", JSON.stringify(fly));
+  ok("a real leading", Boolean(fly) && fly.lh !== "normal", fly && fly.lh);
+  ok("and the product's typeface", Boolean(fly) && /Geist/.test(fly.family), fly && fly.family);
+
+  const at = [];
+  for (let i = 0; i < 4; i += 1) {
+    at.push(await page.evaluate(() => {
+      const n = document.querySelector(".fly");
+      return n ? Math.round(n.getBoundingClientRect().top) : null;
+    }));
+    await page.waitForTimeout(115);
+  }
+  const moving = at.filter((v, i) => i > 0 && v !== null && at[i - 1] !== null && v !== at[i - 1]).length;
+  ok("the words travel for most of the moment", moving >= 2, at.join(" · "));
+  await page.close();
+}
+
+/* ── the person's words outrank the machine's version ────────────── */
+{
+  const page = await open("?state=seam");
+  const rank = await page.evaluate(() => {
+    const picked = getComputedStyle(document.querySelector(".peelFrom span"));
+    const wording = getComputedStyle(document.querySelector(".peelField"));
+    return { picked: parseFloat(picked.fontSize), wording: parseFloat(wording.fontSize) };
+  });
+  ok("the words a person picked are not demoted beneath the machine's version", rank.picked >= rank.wording, `${rank.picked} vs ${rank.wording}`);
+  await page.close();
+}
+
+/* ── undo in the field is the field's ────────────────────────────── */
+{
+  const page = await open();
+  await page.keyboard.type("Ring the marquee company back about the side panels");
+  await page.waitForTimeout(180);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(180);
+  const after = await page.locator(".topField").inputValue();
+  ok("one undo gives back more than one letter", after.length < 40, `${after.length} characters left`);
+  await page.close();
+}
+
+/* ── no lab vocabulary in product chrome ─────────────────────────── */
+{
+  for (const state of ["notebook", "pressure", "review", "seam"]) {
+    const page = await open(`?state=${state}`);
+    const words = await page.evaluate(() => document.body.innerText);
+    ok(
+      `${state}: no lab vocabulary in the chrome`,
+      !/fixture|exploration|extension of the/i.test(words),
+      (words.match(/[^\n]*(fixture|exploration)[^\n]*/i) || [])[0] || "",
+    );
+    await page.close();
+  }
 }
 
 ok("no console errors anywhere", errors.length === 0, [...new Set(errors)].slice(0, 3).join(" · "));

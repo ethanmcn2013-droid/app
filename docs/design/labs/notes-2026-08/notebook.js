@@ -74,6 +74,37 @@
      wrote was filed silently under The house. */
   let filing = "mara-finn";
   let picker = null;      /* the open subject picker, if any                 */
+  let inputTimer = null;
+
+  /* Everything the capture field's own words change, written on the next
+     tick rather than during the input event. */
+  function applyDraft() {
+    const live = Boolean(draft.trim());
+    const host = mount.querySelector(".top") || mount.querySelector(".dock");
+    if (!host) return;
+    const foot = mount.querySelector(".topFoot, .dockRow[data-verbs]");
+    if (host.hasAttribute("data-live") !== live && foot) {
+      host.toggleAttribute("data-live", live);
+      const commit = foot.querySelector('[data-act="keep"]');
+      if (live && !commit) {
+        foot.insertAdjacentHTML(
+          "beforeend",
+          phone.matches
+            ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span><button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Keep it">${I.check}</button>`
+            : `<span class="topMeta tab" data-count>${draft.length} / 4000</span><button class="act" data-ink type="button" data-act="keep">${I.check}Keep it<kbd>${MOD}+Enter</kbd></button>`,
+        );
+        const idle = [...foot.querySelectorAll(".topMeta")].find((n) => !n.dataset.count && !n.classList.contains("tab"));
+        if (idle) idle.remove();
+      } else if (!live && commit) {
+        commit.remove();
+        for (const n of foot.querySelectorAll("[data-count], .dockCount")) n.remove();
+        if (!phone.matches) foot.insertAdjacentHTML("beforeend", `<span class="topMeta">Nobody else can read this</span>`);
+      }
+    }
+    for (const node of mount.querySelectorAll(".topMeta[data-count], .dockCount")) {
+      node.textContent = node.classList.contains("dockCount") ? String(draft.length) : `${draft.length} / 4000`;
+    }
+  }
 
   const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl";
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -218,7 +249,14 @@
        notebook animates; the thought does. */
     const field = mount.querySelector(phone.matches ? ".phoneField" : ".topField");
     const from = field ? field.getBoundingClientRect() : null;
-    const size = field ? getComputedStyle(field) : null;
+    /* Read the values, not the declaration. getComputedStyle returns a LIVE
+       object, and paint() detaches the field before flyWords reads it — so
+       every property came back empty and the product's signature moment
+       rendered a person's own sentence in browser-default 16px/normal. */
+    const cs = field ? getComputedStyle(field) : null;
+    const size = cs
+      ? { fontSize: cs.fontSize, lineHeight: cs.lineHeight, letterSpacing: cs.letterSpacing, fontWeight: cs.fontWeight }
+      : null;
     arriving = note.id;
     paint();
     /* The words have to land somewhere the eye can follow. Filed under
@@ -228,6 +266,14 @@
     const rowEl = mount.querySelector(`.idxRow[data-id="${CSS.escape(note.id)}"]`);
     if (rowEl) rowEl.scrollIntoView({ block: "center" });
     const row = rowEl ? rowEl.querySelector(".idxText") : null;
+    /* The row holds its breath until the words land on it, so the sentence
+       is never printed in two places at once. */
+    if (row) {
+      row.style.opacity = "0";
+      setTimeout(() => {
+        row.style.opacity = "";
+      }, 470);
+    }
     if (from && row) flyWords(body, from, row.getBoundingClientRect(), size);
     setTimeout(() => {
       arriving = null;
@@ -247,22 +293,29 @@
       `left:${from.left}px`,
       `top:${from.top}px`,
       `width:${from.width}px`,
-      `font-size:${size ? size.fontSize : "17px"}`,
-      `line-height:${size ? size.lineHeight : "1.55"}`,
-      `letter-spacing:${size ? size.letterSpacing : "normal"}`,
+      `font-size:${(size && size.fontSize) || "17px"}`,
+      `line-height:${(size && size.lineHeight) || "1.62"}`,
+      `letter-spacing:${(size && size.letterSpacing) || "-0.021em"}`,
+      `font-weight:${(size && size.fontWeight) || "400"}`,
     ].join(";");
     document.body.appendChild(ghost);
     const dx = to.left - from.left;
     const dy = to.top - from.top;
     const scale = Math.min(1, to.width / Math.max(1, from.width));
     const done = () => ghost.remove();
+    /* The travel IS the moment, so the travel takes the time. It was
+       covering the whole distance in 138ms of a 460ms animation and then
+       hanging motionless for 320ms fading out, which reads as a blur
+       followed by the same sentence printed twice. It arrives at the end
+       now, and it hands over on contact. */
     const animation = ghost.animate(
       [
-        { transform: "translate(0,0) scale(1)", opacity: 1 },
-        { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 0.9, offset: 0.82 },
-        { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 0 },
+        { transform: "translate(0,0) scale(1)", opacity: 1, offset: 0 },
+        { transform: `translate(${dx * 0.55}px, ${dy * 0.55}px) scale(${1 - (1 - scale) * 0.5})`, opacity: 1, offset: 0.55 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 1, offset: 0.9 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, opacity: 0, offset: 1 },
       ],
-      { duration: 460, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" },
+      { duration: 520, easing: "cubic-bezier(0.32, 0.72, 0.24, 1)", fill: "forwards" },
     );
     animation.addEventListener("finish", done);
     animation.addEventListener("cancel", done);
@@ -287,11 +340,15 @@
          peel at all skipped the one promise the product is sold on; taking
          the person out of the queue to do it would cost them their place
          in eight decisions. */
+      /* Nothing is claimed as picked that nobody picked. On this route the
+         card's body is plain text with no mark, so the peel opens empty
+         and asks for the words rather than labelling the machine's guess
+         "the words you picked". */
       peeling = note.id;
-      pickedWords = note.pick || note.title.replace(/[.]$/, "");
-      taskWording = pickedWords.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
+      pickedWords = picked || null;
+      taskWording = picked ? picked.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "") : "";
       sentTask = null;
-      say(`${N.copy.sourceLabel}: ${pickedWords}. ${N.copy.payload}`);
+      say(picked ? `${N.copy.sourceLabel}: ${picked}. ${N.copy.payload}` : N.copy.nothingSelected);
       refocus = { kind: "field", sel: ".peelField" };
       paint();
       return;
@@ -365,10 +422,13 @@
   function pickedRange() {
     const sel = document.getSelection();
     if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
-    const body = mount.querySelector(".readBody");
-    if (!body) return null;
+    /* A note being read and a card being decided are the same thing: the
+       person's own words, with a decision to make about them. Picking
+       works in both. */
+    const bodies = [...mount.querySelectorAll(".readBody, .handBody")];
+    if (!bodies.length) return null;
     const range = sel.getRangeAt(0);
-    if (!body.contains(range.commonAncestorContainer)) return null;
+    if (!bodies.some((b) => b.contains(range.commonAncestorContainer))) return null;
     const text = sel.toString().replace(/\s+/g, " ").trim();
     if (text.length < 3) return null;
     return text;
@@ -496,8 +556,15 @@
     const q = query.toLowerCase();
     return w.filter((n) => n.body.toLowerCase().includes(q));
   }
+  /* The walk follows the order on screen, not the order in the array. The
+     pile is grouped, so the two are different: walking the array jumped
+     from the third row to the fifth, then back UP the page to the fourth. */
+  function walkOrder() {
+    const groups = group === "about" || !listedOpts.noDays ? groupsOf(listed) : [{ rows: listed }];
+    return groups.flatMap((g) => g.rows);
+  }
   function moveCursor(step) {
-    const rows = listed.length ? listed : visible();
+    const rows = walkOrder();
     if (!rows.length) return;
     const at = rows.findIndex((n) => n.id === cursorId);
     const next = at < 0 ? 0 : Math.min(rows.length - 1, Math.max(0, at + step));
@@ -792,24 +859,20 @@
         : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
     if (isPeeling) {
       return deskOf(
-        `<div class="top">
-          <p class="readSrc">
-            ${I[src.icon]}<span>${src.label}</span>
-            <span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>
-            <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}</span>
-          </p>
+        `<div class="top" data-two>
           <p class="readBody">${bodyHtml}</p>
-
+          <div class="deskAside">${peelPanel(note)}</div>
         </div>`,
-        { behind: 1, label: `Turning a note into a task: ${note.title}`, under: peelPanel(note) },
+        { behind: 1, label: `Turning a note into a task: ${note.title}` },
       );
     }
-    return deskOf(
-      `<div class="top">
-        <p class="readSrc">
-          ${I[src.icon]}<span>${src.label}</span>
-          <span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>
-          <span class="sep" aria-hidden="true"></span>
+    /* Everything that is true ABOUT the note lives beside it, not above
+       it: the desk was a thousand pixels wide doing five hundred of work,
+       and the facts were stacked on one line over the writing. */
+    const aside = `
+      <div class="deskAside">
+        <span class="deskFact"><b>How it arrived</b><span>${src.label}, ${esc(note.when)}${note.edited ? ", edited" : ""}</span></span>
+        <span class="deskFact"><b>What it is about</b>
           <span class="filing">
             <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
               aria-label="This note is about ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
@@ -817,16 +880,26 @@
             </button>
             ${picker === "note" ? subjectList("note") : ""}
           </span>
-          ${note.edited ? '<span class="sep" aria-hidden="true"></span><span>edited</span>' : ""}
-          ${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks as <a href="#tasks">${esc(note.task || "a task")}</a></span>` : ""}
-        </p>
+        </span>
+        <span class="deskFact"><b>Length</b><span class="tab">${note.words} words</span></span>
+        ${note.sent ? `<span class="deskFact"><b>In Tasks as</b><span><a href="#tasks">${esc(note.task || "a task")}</a></span></span>` : ""}
+      </div>`;
+    return deskOf(
+      `<div class="top" data-two>
         <p class="readBody"><span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}</p>
-        ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
-        ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
+        ${aside}
+        <div class="pickSlot">
+          ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
+          ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
+        </div>
         <div class="topFoot">
-          <button class="act" data-primary type="button" data-act="peel">${I.tasks}Send to Tasks</button>
-          <button class="act" type="button" data-act="timeline">${I.share}Send to Timeline</button>
-          <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>
+          ${
+            isPeeling
+              ? `<span class="topMeta">Writing the task below.</span>`
+              : `<button class="act" data-primary type="button" data-act="peel">${I.tasks}${picked ? "Send to Tasks" : "Pick the words, then send"}</button>
+                 <button class="act" type="button" data-act="timeline">${I.share}Send to Timeline</button>
+                 <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>`
+          }
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="close">Put it back<kbd>Esc</kbd></button>
         </div>
@@ -851,6 +924,7 @@
      the index had no tabindex="0" at all and thirty tab presses never
      reached a row. */
   let listed = [];
+  let listedOpts = {};
 
   function idxRow(note, opts) {
     const o = opts || {};
@@ -878,14 +952,14 @@
     const open = note.id === openId ? " data-open" : "";
     const arrivingNow = note.id === arriving ? " data-arriving" : "";
     return `
-      <button class="idxRow" type="button" role="listitem" data-id="${attr(note.id)}"${cursor}${open}${arrivingNow}
+      <li class="idxItem" role="listitem"><button class="idxRow" type="button" data-id="${attr(note.id)}"${cursor}${open}${arrivingNow}
         tabindex="${note.id === cursorId ? "0" : "-1"}"
         aria-label="${attr(name)}">
         <span class="idxMark" aria-hidden="true">${crossed ? I.tasks : I[src.icon]}${!crossed && note.pending ? "<i></i>" : ""}</span>
         <span class="idxText" data-full="${attr(crossed ? note.task : `${note.title} ${note.rest || ""}`.trim())}" data-lede="${attr(lede)}"><b>${hl(lede)}</b>${rest ? ` <span>${hl(rest)}</span>` : ""}${crossed ? '<span class="idxFrom">from a note that stayed here</span>' : ""}</span>
         ${tag}
         <span class="idxWhen tab">${esc(when)}</span>
-      </button>`;
+      </button></li>`;
   }
 
   /* The index can be read two ways, and both are true.
@@ -961,19 +1035,19 @@
   function indexOf(notes, opts) {
     const o = opts || {};
     listed = notes;
+    listedOpts = o;
     if (!notes.some((n) => n.id === cursorId)) cursorId = (notes[0] || {}).id || null;
     const rows = [];
     if (o.noDays) {
       for (const note of notes) rows.push(idxRow(note, o));
     } else {
       for (const g of groupsOf(notes)) {
-        /* The subject rules carry the whole structural answer, and on the
-           accessibility tree they resolved to nothing at all. They are
-           headings, because that is what they are. */
+        /* Its own sticky context, so a rule is pushed out by the next one
+           rather than every rule in the pile stacking at the top. */
         rows.push(
-          `<h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>`,
+          `<li class="idxSection"><h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>` +
+            `<ul class="idxGroupRows">${g.rows.map((note) => idxRow(note, o)).join("")}</ul></li>`,
         );
-        for (const note of g.rows) rows.push(idxRow(note, o));
       }
     }
     if (!rows.length) rows.push(o.empty || "");
@@ -984,17 +1058,69 @@
           <span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>
           ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
-        <div class="index" id="index" role="list" aria-label="${attr(o.title || "Your notes")}">${rows.join("")}</div>
+        <ul class="index" id="index" role="list" aria-label="${attr(o.title || "Your notes")}">${rows.join("")}</ul>
       </div>`;
   }
 
   /* ── states ──────────────────────────────────────────────────── */
   const STATES = {};
 
+  /* A note on a phone opens as a sheet over the pile, because there is no
+     desk to lift it onto. Everything the desk can do it can do: read the
+     whole note, see what it is about and change it, pick words, write the
+     task, send it, and go back. */
+  function phoneSheet(note) {
+    const src = N.sources[note.source];
+    const marked = peeling === note.id ? pickedWords : null;
+    const bodyHtml =
+      marked && note.body.includes(marked)
+        ? esc(note.body).replace(esc(marked), `<span class="pick">${esc(marked)}</span>`)
+        : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
+    return `
+      <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(note.title)}">
+        <div class="phoneSheetTop">
+          <button class="act" data-quiet type="button" data-act="close">${I.chevron}Back to your notes</button>
+          <span class="spacer"></span>
+          <span class="filing">
+            <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
+              aria-label="This note is about ${attr(note.about.label)}. Change it.">
+              <span>${esc(note.about.label)}</span>${I.chevron}
+            </button>
+            ${picker === "note" ? subjectList("note") : ""}
+          </span>
+        </div>
+        <div class="phoneSheetBody">
+          <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks</span>` : ""}</p>
+          <p class="readBody">${bodyHtml}</p>
+          <div class="pickSlot">
+            ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
+            ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
+          </div>
+          ${peeling === note.id ? peelPanel(note) : ""}
+        </div>
+        ${
+          peeling === note.id
+            ? ""
+            : `<div class="phoneSheetFoot">
+                 <button class="act" data-primary type="button" data-act="peel">${I.tasks}${picked ? "Send to Tasks" : "Pick the words, then send"}</button>
+                 <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>
+               </div>`
+        }
+      </section>`;
+  }
+
   const notebook = () => {
     const rows = visible();
     const open = openId ? work().find((n) => n.id === openId) : null;
     const c = counts();
+    if (phone.matches) {
+      return {
+        desk: "",
+        body: indexOf(rows, { title: "Your notes", count: `${c.total} notes` }),
+        dock: true,
+        over: open ? phoneSheet(open) : "",
+      };
+    }
     return {
       desk: open ? readSheet(open) : topSheet(),
       body: indexOf(rows, { title: "Your notes", count: `${c.total} notes` }),
@@ -1004,26 +1130,30 @@
   STATES.notebook = notebook;
   STATES.capture = notebook;
   STATES.pressure = () => {
+    /* The long note on this desk has to BE an open note, not a picture of
+       one: with openId null its primary action reached for whatever note
+       happened to be first and crossed the wrong words into Tasks. */
+    if (!openId) {
+      const long = work().find((n) => n.words > 300) || work()[0];
+      if (long) openId = long.id;
+    }
     const open = openId ? work().find((n) => n.id === openId) : null;
     return {
       desk: open
         ? readSheet(open)
         : deskOf(
-            `<div class="top">
-              <p class="readSrc">${I.typed}<span>Written</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(N.long.when)}</span><span class="sep" aria-hidden="true"></span><span>${N.long.words} words</span></p>
+            `<div class="top" data-two>
               <p class="readBody readLong">${esc(N.long.body)}</p>
-              <div class="topFoot">
-                <button class="act" data-primary type="button" data-act="peel">${I.tasks}Send to Tasks</button>
-                <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>
-                <span class="spacer"></span>
-                <button class="act" data-quiet type="button" data-act="close">Put it back<kbd>Esc</kbd></button>
+              <div class="deskAside">
+                <span class="deskFact"><b>How it arrived</b><span>Written, ${esc(N.long.when)}</span></span>
+                <span class="deskFact"><b>Length</b><span class="tab">${N.long.words} words</span></span>
               </div>
             </div>`,
             { behind: 1, label: `Reading: ${N.long.title}` },
           ),
       body: indexOf(visible(), {
         title: "Your notes",
-        count: `${counts().total} notes, peak season, an extension of the fixture`,
+        count: `${counts().total} notes`,
       }),
       dock: true,
     };
@@ -1402,7 +1532,7 @@
        dictation was seventeen tab stops behind a notebook nobody can see,
        and a screen-reader user was reading a pile of notes while the
        microphone was live. */
-    const over = mount.querySelector(".dark");
+    const over = mount.querySelector(".dark, .phoneSheet");
     for (const behindIt of mount.querySelectorAll(".sheet, .rail")) {
       if (over) behindIt.setAttribute("inert", "");
       else behindIt.removeAttribute("inert");
@@ -1419,7 +1549,7 @@
           row.scrollIntoView({ block: "nearest" });
         }
       } else if (refocus.kind === "read") {
-        const close = mount.querySelector('[data-act="close"]');
+        const close = mount.querySelector('.phoneSheet [data-act="close"], [data-act="close"]');
         if (close) close.focus({ preventScroll: true });
       } else if (refocus.kind === "field") {
         const field = mount.querySelector(refocus.sel);
@@ -1446,33 +1576,21 @@
     const field = e.target.closest(".topField, .phoneField");
     if (field) {
       draft = field.value;
-      /* The counter is written straight into its own node. Repainting on
-         every keystroke to update it would be the same defect the search
-         field had: a repaint costs the caret. Repainting only when the
-         sheet crosses from empty to live left the count frozen at whatever
-         it was when the first character landed. */
-      const live = Boolean(draft.trim());
-      const wasLive = mount.querySelector("[data-live]") !== null;
-      if (wasLive !== live) {
-        paint();
-        const again = mount.querySelector(field.className.includes("phoneField") ? ".phoneField" : ".topField");
-        if (again) {
-          again.focus({ preventScroll: true });
-          again.setSelectionRange(field.selectionStart, field.selectionEnd);
-        }
-        return;
-      }
-      for (const node of mount.querySelectorAll(".topMeta[data-count], .dockCount")) {
-        node.textContent = node.classList.contains("dockCount") ? String(draft.length) : `${draft.length} / 4000`;
-      }
+      /* NOTHING is written to the DOM inside the input event. Chromium ends
+         the browser's own typing burst the moment the document is mutated
+         during input, which turned one Ctrl+Z into one character — and
+         undo that gives back a letter at a time is undo that does not
+         work. Both the waking of the sheet and the character count are
+         therefore deferred by a tick, off the input event entirely. */
+      clearTimeout(inputTimer);
+      inputTimer = setTimeout(applyDraft, 0);
       return;
     }
     const q = e.target.closest("#q");
     if (q) {
       /* No refocus here. Setting one focused the field without restoring
-         the caret, which put every new character at index 0 — typing
-         "marquee" produced "eeuqram". The caret path in paint() already
-         re-finds this field by id and restores the range. */
+         the caret, which put every new character at index 0. The caret
+         path in paint() already re-finds this field by id. */
       query = q.value;
       paint();
       return;
@@ -1582,7 +1700,7 @@
     if (a === "timeline" || a === "more" || a === "privacy" || a === "options" || a === "photo" || a === "retry" || a === "destroy") {
       /* Named so the panel can see they are deliberately inert in the lab
          rather than dead: each belongs to a surface outside this master. */
-      say("Not part of this exploration.");
+      say("That is on another screen.");
       return;
     }
     if (a === "keep" || a === "first") {
@@ -1679,7 +1797,11 @@
          reverted the previously saved note and overwrote the draft the
          person was in the middle of writing — undo destroying work is the
          worst possible failure in a capture product. */
-      if (typing && e.target.closest(".topField, .phoneField") && draft.trim()) return;
+      /* Inside the capture field undo belongs to the field, and the file
+         must not repaint underneath it either: repainting on every input
+         event turned one Ctrl+Z into one character, because each repaint
+         reset the field's own undo stack to a single entry. */
+      if (typing && e.target.closest(".topField, .phoneField") && draft.length) return;
       if (doUndo()) e.preventDefault();
       return;
     }
@@ -1803,7 +1925,8 @@
      selectionchange fires on the document, which is why this is not bound
      to the note body. */
   document.addEventListener("selectionchange", () => {
-    if (!openId || peeling) return;
+    if (peeling) return;
+    if (!openId && state !== "review") return;
     clearTimeout(pickTimer);
     pickTimer = setTimeout(offerPick, 120);
   });

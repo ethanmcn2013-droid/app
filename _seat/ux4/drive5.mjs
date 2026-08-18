@@ -1,0 +1,28 @@
+import { chromium } from "@playwright/test";
+const base = "file:///C:/Users/ethan/signal-studio-workspace/_wt-design-notes/docs/design/labs/notes-2026-08/notebook.html";
+const out = "C:/Users/ethan/signal-studio-workspace/_wt-design-notes/_seat/ux4/";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 960 } });
+const LIVE = async () => p.evaluate(()=>[...document.querySelectorAll('[aria-live]')].map(n=>(n.textContent||'').trim()).filter(Boolean));
+const F = async () => p.evaluate(()=>{const a=document.activeElement;return a.tagName+"."+(a.className||"")+" ["+(a.getAttribute("aria-label")||a.value||a.textContent||"").trim().slice(0,60)+"]"});
+await p.goto(base + "?state=readback"); await p.waitForTimeout(400);
+console.log("READBACK:", (await p.evaluate(()=>document.body.innerText)).slice(0,900).replace(/\n/g," | "));
+await p.goto(base + "?state=voice"); await p.waitForTimeout(400);
+console.log("VOICE:", (await p.evaluate(()=>document.body.innerText)).slice(0,900).replace(/\n/g," | "));
+console.log("voice live:", await LIVE(), "focus:", await F());
+await p.goto(base + "?state=nothing"); await p.waitForTimeout(400);
+console.log("NOTHING:", (await p.evaluate(()=>document.body.innerText)).slice(0,1200).replace(/\n/g," | "));
+await p.goto(base + "?state=not-yet"); await p.waitForTimeout(400);
+console.log("NOT-YET:", (await p.evaluate(()=>document.body.innerText)).slice(0,1400).replace(/\n/g," | "));
+// Send to Timeline path
+await p.goto(base + "?state=notebook"); await p.waitForTimeout(400);
+await p.evaluate(()=>{const r=[...document.querySelectorAll('.idxRow')][4]; r.click();});
+await p.waitForTimeout(700);
+const btns = await p.evaluate(()=>[...document.querySelectorAll('.desk button')].map(x=>x.textContent.trim()));
+console.log("desk buttons:", JSON.stringify(btns));
+await p.evaluate(()=>{const x=[...document.querySelectorAll('.desk button')].find(n=>/Timeline/.test(n.textContent)); x&&x.click();});
+await p.waitForTimeout(900);
+console.log("after Send to Timeline live:", await LIVE());
+console.log("after Send to Timeline:", (await p.evaluate(()=>document.body.innerText)).slice(0,800).replace(/\n/g," | "));
+await p.screenshot({path:out+"timeline.png"});
+await b.close();
