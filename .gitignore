@@ -74,3 +74,5 @@ prefs.db*
 # surface. They belong in the session scratchpad; three of them reached a
 # commit before this rule existed.
 *.tmp.mjs
+.tmp-panel/
+scripts/design/r*.txt
