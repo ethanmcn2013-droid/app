@@ -47,6 +47,19 @@
   --sans: "Geist", system-ui, -apple-system, sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
 
+  /* The tracking ladder. With three colours and two weights, tracking is
+     one of the few hierarchy tools left, and it was the one thing set by
+     hand per component: five different values on 11px uppercase mono,
+     and the same 20px string tracked two ways on two surfaces. Six steps
+     and no seventh. */
+  --track-label: 0.16em;      /* uppercase mono micro-labels */
+  --track-labelWide: 0.20em;  /* the ceremonial top line, and only that */
+  --track-data: 0.04em;       /* mono figures and fields */
+  --track-body: -0.015em;     /* sans 15-20px */
+  --track-head: -0.03em;      /* sans 24-38px */
+  --track-title: -0.035em;    /* sans 48px */
+  --track-display: -0.045em;  /* the count, 96 and 148px */
+
   /* The stage is how one page can show a phone artifact, a desk artifact
      and an A4 sheet honestly. Each state declares the medium it belongs
      to; below 430px the stage stops being a frame and becomes the page. */
@@ -136,9 +149,29 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-height: 100%;
   padding: var(--stage-pad);
   line-height: 1.5;
+}
+
+/* The states that are one object on a bare ground sit in the middle of
+   the room. `safe` is doing real work: the moment the content is taller
+   than the viewport it falls back to the top edge, so nothing can ever
+   be centred out of reach. */
+[data-state="publish"] .tl-page,
+[data-state="day"] .tl-page,
+[data-state="ended"] .tl-page,
+[data-state="loading"] .tl-page,
+[data-state="unfurl"] .tl-page { justify-content: safe center; }
+
+/* Visually hidden, still spoken. Used where a column header carries the
+   unit for a figure and the row needs to say it out loud. */
+.tl-vh, .b-vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .tl-stage {
   width: 100%;

@@ -146,6 +146,15 @@
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(settle);
   }
 
+  /* A trim decided at 320px is wrong at 1440px, so the settle has to run
+     again when the box changes. Debounced to a frame so a drag-resize
+     does not re-measure a hundred times. */
+  var pending = 0;
+  window.addEventListener("resize", function () {
+    if (pending) cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(function () { pending = 0; settle(); });
+  });
+
   /* Post-layout work every direction gets for free. Word-safe clamping:
      the full string always stays in title and aria-label, and the visible
      string is rebuilt from the full string every time, so running this
@@ -159,6 +168,33 @@
       var hidden = el.scrollHeight - el.clientHeight > 2 || el.scrollWidth - el.clientWidth > 2;
       el.setAttribute("data-fade", hidden ? "on" : "off");
     }
+    /* Trimming can change a block's height, and in a direction where
+       position means time the rows below it have to be re-placed from
+       the real geometry rather than left on a stale measurement. */
+    var v = window.__TLD[currentVariantKey()];
+    if (v && v.settle) v.settle();
+  }
+
+  function currentVariantKey() { return Object.keys(window.__TLD)[0]; }
+
+  /* Overflow in either axis. The original test compared scrollWidth with
+     clientWidth only, and the thing actually doing the clipping was a
+     two-line -webkit-box, which never overflows horizontally — so this
+     function returned at its first test and had never trimmed a single
+     word in its life while its own comment promised it had. */
+  function over(el) {
+    return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+  }
+
+  /* A trimmed string keeps its whole self in the accessibility tree. An
+     aria-label on a paragraph is dropped — naming is not allowed on the
+     generic role — so the visible remnant leaves the tree and an
+     unclipped copy takes its place beside it. */
+  function unhide(el) {
+    el.removeAttribute("aria-hidden");
+    el.removeAttribute("data-trimmed");
+    var twin = el.nextElementSibling;
+    if (twin && twin.getAttribute("data-clamp-full") === "true") twin.remove();
   }
 
   function clamp(el) {
@@ -166,13 +202,17 @@
     el.setAttribute("data-full", full);
     el.setAttribute("title", full);
     el.textContent = full;
-    if (el.scrollWidth <= el.clientWidth + 1) return;
+    unhide(el);
+    if (!over(el)) return;
     var words = full.split(" ");
-    while (words.length > 1) {
+    while (words.length > 1 && over(el)) {
       words.pop();
       el.textContent = words.join(" ") + "…";
-      if (el.scrollWidth <= el.clientWidth + 1) return;
     }
+    el.setAttribute("aria-hidden", "true");
+    el.setAttribute("data-trimmed", "true");
+    var twin = h("span.tl-vh", { "data-clamp-full": "true", text: full });
+    el.parentNode.insertBefore(twin, el.nextSibling);
   }
 
   window.__TLCORE = { h: h, micro: micro, F: F, rootEl: rootEl, settle: settle, mount: mount };

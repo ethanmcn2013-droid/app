@@ -9,5 +9,61 @@
     "Product taste and emotional resonance",
     "Measured evidence"
   ],
-  "rounds": []
+  "rounds": [
+    {
+      "round": 1,
+      "scores": {
+        "UI composition": 7.3,
+        "Typography": 7.6,
+        "Interaction and states": 6.3,
+        "UX and information design": 6.2,
+        "Brand and copy": 7.5,
+        "Product taste and emotional resonance": 6.4,
+        "Measured evidence": 7.0
+      },
+      "findings": 35,
+      "confirmed": 33,
+      "refuted": 2,
+      "fixed": 33,
+      "headline": "At rest the panel called this studio-grade. Under the hand it was a five, and the same sentence came back from four seats independently: the gesture the whole direction exists for wrote a pixel and a count and left the date, the accessible name and the readout saying something else. One press put two moments on the same pixel; twenty put one seventy days past the wedding, outside the measure, silently. The editor declared an opaque ground and then re-declared it as a six per cent tint four lines later, so three rows of the plan printed straight through the panel in the state an owner lives in. Fifteen named, focus-ringed controls advertised verbs that did not exist, and the reversibility bar announced a change that had never happened and reversed nothing. Fifteen declarations written to make this work on a phone had never applied at any width, because a media query adds no specificity. Everything an owner touches was rebuilt: one writer of position, every fact derived from the date it produces, the editor moved into the rail, and the gate grown from 108 assertions to 262.",
+      "worst": [
+        {
+          "seat": "UI composition",
+          "cost": 1.4,
+          "problem": ".b-edit declared background: var(--back) and re-declared background: var(--fore-06) four lines later in the same rule, so the editor plate computed to rgba(255,255,255,0.06). Three rows of the plan printed straight through it at 1440 and four at 390, with the steppers landing inside the word \"fitting\" — in the one state the owner spends their time in, in all three rooms.",
+          "done": "The plate is one opaque ground with the tint painted as a layer over it, and the editor no longer stands on the measure at all: at desk width it takes the rail beside the plan, and below that it is a sheet on the bottom edge of the screen. Two earlier attempts were rejected by their own refuters and both were right — a vertical band would have added twenty-five phantom days to the gap the owner is looking at, and a gutter inside the measure column starved the titles to 144px."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 1.0,
+          "problem": "Every control on the owner surface except the four steppers was inert. Rows did not open, Done did not close, Escape did nothing, delete removed nothing, and the only way into the editing state was to edit the URL. The visible affordance was also the wrong object: the row was 520x79 and its only button was a 54x28 badge at the bottom of it.",
+          "done": "The row is the control — the badge stays as the visible mark and its hit area covers the row — and it opens on click, Enter and Space. Escape and Done close it and return focus to the row that opened it. Delete removes the moment and reflows the measure. Preview and Publish move the deck. Anything not built lost its button element and became inert text; the gate now fails on any button that does not do something."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.9,
+          "problem": "One press of \"move a week earlier\" put the invitations on the same pixel as the menu tasting and the two rows printed as one unreadable smear. Twenty presses the other way placed an item at 149 days — seventy past the horizon the page is measured to, and 888px below the bottom of the measure — with the count still reading 79 and nothing said.",
+          "done": "place() is now the only thing that decides where an item sits, it runs after every change, and the move is clamped to the day itself with the steppers stating the ceiling rather than absorbing the press. Where two moments land close together the tick and the count stay on the true pixel and only the words are pushed clear, so the measure can never restate one item's distance as another's."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.9,
+          "problem": "After a single press the row printed the count 16 beside its own date line reading SAT 8 AUG, its accessible name still said \"in 23 days\", and the readout dropped the calendar date permanently — so the owner moving a wedding milestone was never again told which date they had landed on. The readout collapsing from 347px to 99px also threw the button they were about to press again 209px sideways.",
+          "done": "setAway() is the single writer of an item's distance and derives one date, from which the count, the date line, the accessible name, the readout and the gap sentence are all rewritten in the same frame. The readout sits on its own line at a fixed measure, and the gate asserts the four stepper boxes are identical before and after every press."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.7,
+          "problem": "The reversibility surface was a still life: it announced \"the invitations moved seven days closer\" into a live region before anything had been touched, never updated after a real move, and neither its button nor the Ctrl+Z printed beside it did anything. All five behaviour-gate assertions guarding it passed on an inert fragment with a disabled button.",
+          "done": "The bar is silent and inert until there is something true to say, then names the change that actually happened with the figure set like every other number on the page. Its button and the advertised key both restore the item and return focus to the control that made the change, and both stay out of the way of native undo inside a text field. The five assertions that certified a prop were replaced with ten that a prop cannot survive."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.6,
+          "problem": "Fifteen declarations written to make this work on a phone had no effect at any width: every one was a bare class fighting a [data-medium] selector, and a media query adds no specificity. At 390 the field kept its 56px desk padding — 29% of the screen — under a comment reading \"a desk padding on a phone is a quarter of the screen\", the measure kept its 124px lane, and the printed page's own margins were dead at every width.",
+          "done": "The phone is now the base and the desk values live inside a min-width query, so the conflict is deleted rather than out-ranked. The two-column threshold moved from 901px to 1280px, where the measure genuinely has a column: at 901 it was still producing three collisions in a band neither gate had ever measured."
+        }
+      ]
+    }
+  ]
 }

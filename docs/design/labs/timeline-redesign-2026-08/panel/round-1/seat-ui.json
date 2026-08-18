@@ -1,0 +1,42 @@
+{
+  "seat": "UI composition",
+  "score": 7.3,
+  "findings": [
+    {
+      "id": "edit-plate-reads-through-three-rows",
+      "element": ".b-edit in owner-editing (b.css ~line 387)",
+      "problem": "The editor plate is not opaque. Its rule declares `background: var(--back)` and then re-declares `background: var(--fore-06)` four lines later in the same block, so the second wins and the computed background is rgba(255,255,255,0.06). Its rect at 1440 is 734-1254 x 656-993 and three later items sit inside it: Final dress fitting (top 761), Choose the evening music (859) and Final guest numbers (957). All three print straight through the panel. The stepper row is the worst of it: '-7' and '-1' sit directly on top of 'SAT 22 AUG', and 'Final dress fitting' runs across the WHEN label, so the primary gesture of the whole direction is illegible in the one state built to show it. The rule's own comment says 'It gets an opaque ground so nothing reads through' - the code contradicts its comment.",
+      "fix": "In b.css `.b-edit`: delete the trailing `background: var(--fore-06);` and change the first declaration to `background: linear-gradient(var(--fore-06), var(--fore-06)), var(--back);` - same tint, opaque plate. Opacity alone then erases three rows instead of double-printing them, so state the occlusion rather than let it happen silently: set `data-editing=\"true\"` on `.b-measure` while the editor is open and add `.b-measure[data-editing=\"true\"] .b-item:not([data-editing=\"true\"]) { opacity: 0.28; pointer-events: none; }`. Leave every item's top position untouched so the measure still cannot move.",
+      "cost": 1.4
+    },
+    {
+      "id": "small-width-header-pile-and-two-fold-hero",
+      "element": ".b-bar and the hero block at 390 and 768",
+      "problem": "The header is a flex row with a `flex: 1` `.b-spacer` and wrapping on. At 390 it wraps into three ragged rows - identity, then two actions, then Publish orphaned alone on row three - and the spacer renders as a visible 102px slot at x=232 that does nothing but force the wrap. Nothing in the hero steps down either, so the block below keeps its 1440 proportions: 'Saturday 3 October / 2026' orphans the year onto its own line and the first item on the plan sits 1038px down an 844px screen. At 768 it is 975px down a 1024px screen and the sticky column is off. The owner scrolls a full screen past their own header before seeing one thing on their timeline, on the device this product is opened on.",
+      "fix": "In b.css, inside the existing `@media (max-width: 700px)` block add: `.b-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; } .b-where, .b-switch { grid-column: 1 / -1; justify-self: start; } .b-spacer { display: none; } .b-act { width: 100%; justify-content: center; }` - identity on two rows, the three actions on one equal row, no orphan. In the same block step the hero down: `.b-num { font-size: clamp(96px, 26vw, 132px); } .b-when { font-size: 26px; }`, and repeat the `.b-when` step in a `@media (max-width: 900px)` rule so 768 gets it too. Target to verify: the first item's top inside the first viewport at both 390 and 768.",
+      "cost": 0.9
+    },
+    {
+      "id": "footer-on-the-wrong-margin",
+      "element": ".b-foot in owner-flight and desk",
+      "problem": "The footer is the last element inside the second grid child, so it spans 610-1254 - the measure column only - while the field's own text margin is 186. The page's closing object therefore starts 424px right of every other left edge on the page. Because the hero column ends at y=650 while the page runs to 1508, the bottom-left of the composition is an empty 424 x 850 rectangle with the footer floating clear of it. It is the largest single void on the surface and it sits directly under the largest object on the surface. This is the undesigned edge, and it is the last thing the eye lands on.",
+      "fix": "In master.html move the `.b-foot` element out of the second `.b-two` child and make it the last child of `.b-field`, after `.b-two`. In b.css give it the field's full measure and three real cells: `.b-foot { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; }` with the third cell `justify-self: end`. It then runs 186-1254 and closes the page on the same margins the header opened it on.",
+      "cost": 0.6
+    },
+    {
+      "id": "short-states-top-anchored-in-a-tall-frame",
+      "element": ".b-press (publish), .b-empty (owner-empty), .b-dayWrap (day)",
+      "problem": "Every single-object state is pinned to the top of a viewport-height frame with nothing balancing the bottom. Measured at 1440x960 with no scroll available: publish has ink from y=115 to y=443 and 517px of empty below it, 54% of the screen. owner-empty ends at 677, 283px empty (29%). day's card ends at 659, 301px empty (31%), and the card is not centred either (94 above it, 301 below). These are the three screens with a single thing to say - the moment the plan becomes theirs, the first empty project, and the morning itself - and on each one that thing is pushed against the ceiling of a room twice its height.",
+      "fix": "In b.css add `.b-press, .b-empty, .b-dayWrap { min-height: calc(100vh - 190px); display: grid; align-content: center; }` where 190px is the deck frame plus the field's own vertical padding. Then land on the optical centre rather than the mathematical one by adding `padding-bottom: 7vh` to the same rule, so each block sits slightly above centre. Keep the existing horizontal padding untouched.",
+      "cost": 0.5
+    },
+    {
+      "id": "grab-chip-hangs-off-the-row-margin",
+      "element": ".b-grab in every measure row (b.css ~line 364)",
+      "problem": "`.b-grab` carries `padding: 0 8px` with no compensating negative margin, so the row's third line starts 8px right of the two lines above it: title at x=734, date at x=734, SHOWN at x=742. It is the only interactive control in the row and it is the one thing in the row that does not sit on the row's left edge. Repeated down seven rows on every owner state it reads as a stray indent rather than a hanging control, and it is the only broken vertical in an otherwise strict column at 1280 and 1440 alike.",
+      "fix": "In b.css `.b-grab` add `margin-left: -8px;`. The chip's ink then starts at x=734 with the title and the date, while its hover ground still extends 8px either side and stays clear of the rail at x=706.",
+      "cost": 0.3
+    }
+  ],
+  "biggestWin": "The measure earns the score. The vertical axis is a real unit - a pixel is a day - and the whole page is built on it, so the eye lands on the 79 first, then falls down a rail where distance is literal and the 200px of empty rule between 23 and 37 is information rather than a gap. That one decision, plus a hierarchy carried entirely by ink density and a single filled accent mark, is the kind of idea Linear or Stripe would build a product on, and it survives on paper and on a phone. Plainly: this is a 7.3, not an 8. The desktop owner and desk frames are genuinely 9-level; what pulls it down is that owner-editing is broken rather than rough - a translucent plate double-printing three rows is not something a studio ships after months of iteration - and that 390 and 768 have had a fraction of the attention 1440 got. Between here and 9.5 sits one real build and three polish jobs: the editor needs a decided answer to what happens to the rows underneath it (about half a day, and it is a design decision, not a CSS fix), while the phone header, the footer margin and the top-anchored short states are an hour each. Nothing here needs the direction rethought."
+}

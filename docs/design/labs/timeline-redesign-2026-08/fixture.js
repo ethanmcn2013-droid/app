@@ -54,6 +54,9 @@
     short: function (iso) { var p = parts(iso); return p.day + " " + p.monthShort; },
     numeral: function (iso) { return String(parts(iso).day); },
     monthShort: function (iso) { return parts(iso).monthShort; },
+    /* "1 days" is the kind of thing that makes a person stop trusting a
+       screen. The plural lives here, once. */
+    dayCount: function (n) { return n + (Math.abs(n) === 1 ? " day" : " days"); },
     weekdayShort: function (iso) { return parts(iso).weekdayShort; },
     year: function (iso) { return String(parts(iso).year); },
   };
@@ -116,6 +119,12 @@
     parts: parts,
     days: days,
     daysTo: function (iso) { return days(TODAY, iso); },
+    /* One place that does date arithmetic. Anything that needs "the date
+       N days from here" asks for it rather than reaching for Date, so a
+       moved milestone and its own label can never disagree. */
+    plusDays: function (iso, n) {
+      return new Date(utc(iso) + n * 86400000).toISOString().slice(0, 10);
+    },
     toDay: function () { return days(TODAY, PROJECT.primaryDate.date); },
     counts: function () {
       return {

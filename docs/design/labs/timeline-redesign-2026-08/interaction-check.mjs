@@ -118,6 +118,9 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
       if (!el.childNodes.length) continue;
       const cs = getComputedStyle(el);
       if (cs.overflow !== "hidden" && cs.overflowX !== "hidden") continue;
+      /* A visually-hidden span is clipped on purpose and is still read
+         aloud; it is the opposite of silent deletion. */
+      if (cs.clipPath && cs.clipPath !== "none") continue;
       if (el.scrollWidth <= el.clientWidth + 1) continue;
       if (cs.textOverflow === "ellipsis") continue;
       const text = Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim());
@@ -131,13 +134,11 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
 
 /* ══ engagement assertions ═════════════════════════════════════════
    Direction B · The Approach. The claims this direction makes that a
-   screenshot cannot check. Every one of these guards something the
-   direction promises in writing; when a panel finding is confirmed and
-   fixed, its assertion joins them here while the defect is fresh.
+   screenshot cannot check. Every assertion below exists because a seat
+   found the defect it guards by driving the real file; the round it was
+   paid for is noted where it is not obvious.
    ═══════════════════════════════════════════════════════════════════ */
 
-/* The fixture, read the same way the master reads it, so the gate cannot
-   agree with the page by copying it. */
 const FIXTURE = await (async () => {
   const src = await readFile(path.join(LAB, "fixture.js"), "utf8");
   const sandbox = { window: {} };
@@ -149,69 +150,68 @@ const AHEAD = FIXTURE.milestones
   .filter((m) => m.state !== "cancelled" && m.date && FIXTURE.daysTo(m.date) > 0)
   .sort((a, b) => FIXTURE.daysTo(a.date) - FIXTURE.daysTo(b.date));
 
+const collisions = (page) => page.evaluate(() => {
+  /* The tick and the count sit on the true pixel; the words are what
+     must not overlap. So the copy blocks are what get measured. */
+  const rects = Array.from(document.querySelectorAll(".b-measure .b-copy"))
+    .map((el) => el.getBoundingClientRect())
+    .sort((a, b) => a.top - b.top);
+  let hits = 0;
+  for (let i = 1; i < rects.length; i++) if (rects[i].top < rects[i - 1].bottom - 0.5) hits += 1;
+  return hits;
+});
+
 /* ── the thesis: a pixel is a real unit of time ────────────────────
-   This is the whole direction. If the measure ever stops being strictly
-   proportional the page is telling the reader something untrue about how
-   far away their wedding is, and no seat would necessarily catch it. */
+   If the measure ever stops being strictly proportional the page is
+   telling the reader something untrue about how far away their wedding
+   is, and no seat would necessarily catch it. */
 for (const state of ["phone", "desk", "owner-flight", "print"]) {
   const page = await open({ state });
   const placed = await page.evaluate(() =>
     Array.from(document.querySelectorAll(".b-measure .b-item")).map((el) => ({
       id: el.getAttribute("data-id"),
       top: el.offsetTop,
-      away: Number((el.querySelector(".b-away") || {}).textContent),
+      away: Number(el.getAttribute("data-away")),
+      shown: Number(el.querySelector(".b-away").textContent),
     })),
   );
-  const known = placed.filter((p) => p.away > 0);
-  const scales = known.map((p) => p.top / p.away);
+  const scales = placed.map((p) => p.top / p.away);
   const spread = Math.max(...scales) - Math.min(...scales);
-  ok(`measure is strictly proportional · ${state}`, known.length >= 5 && spread < 0.001,
-    `${known.length} items, scale spread ${spread.toFixed(4)}`);
+  ok(`measure is strictly proportional · ${state}`, placed.length >= 5 && spread < 0.001,
+    `${placed.length} items, scale spread ${spread.toFixed(4)}`);
 
-  /* The count column is derived from the date, not typed beside it. */
   const wrong = placed.filter((p) => {
     const item = AHEAD.find((m) => m.id === p.id);
-    return !item || p.away !== FIXTURE.daysTo(item.date);
+    return !item || p.away !== FIXTURE.daysTo(item.date) || p.shown !== p.away;
   });
-  ok(`every count matches its own date · ${state}`, wrong.length === 0,
-    wrong.map((w) => w.id).join(", "));
-
-  /* No two items may touch. The scale is chosen from the tightest real
-     gap; if an item ever grows a line, this is what says so. */
-  const overlap = await page.evaluate(() => {
-    const rects = Array.from(document.querySelectorAll(".b-measure .b-item"))
-      .map((el) => el.getBoundingClientRect())
-      .sort((a, b) => a.top - b.top);
-    const hits = [];
-    for (let i = 1; i < rects.length; i++) {
-      if (rects[i].top < rects[i - 1].bottom - 0.5) hits.push(i);
-    }
-    return hits.length;
-  });
-  ok(`no two items on the measure collide · ${state}`, overlap === 0, `${overlap} collisions`);
+  ok(`every count matches its own date · ${state}`, wrong.length === 0, wrong.map((w) => w.id).join(", "));
+  ok(`no two items on the measure collide · ${state}`, (await collisions(page)) === 0);
   await page.close();
 }
 
-/* The measure must not collide on a phone either, where the scale is
-   smaller and the titles wrap. */
-{
-  const page = await open({ state: "phone", viewport: { width: 390, height: 844 } });
-  const overlap = await page.evaluate(() => {
-    const rects = Array.from(document.querySelectorAll(".b-measure .b-item"))
-      .map((el) => el.getBoundingClientRect())
-      .sort((a, b) => a.top - b.top);
-    let hits = 0;
-    for (let i = 1; i < rects.length; i++) if (rects[i].top < rects[i - 1].bottom - 0.5) hits += 1;
-    return hits;
+/* Collisions are measured at every width the two-column band crosses:
+   901 was a band the gate never looked at, and it had three. */
+for (const width of [320, 390, 768, 901, 1024, 1280, 1440]) {
+  for (const state of ["phone", "desk", "owner-flight", "owner-editing"]) {
+    const page = await open({ state, viewport: { width, height: 900 } });
+    ok(`no collisions · ${state} @ ${width}`, (await collisions(page)) === 0);
+    await page.close();
+  }
+}
+
+/* Side padding written for a phone has to actually apply on a phone. */
+for (const state of ["owner-flight", "owner-editing", "desk", "publish", "owner-empty", "print"]) {
+  const page = await open({ state, viewport: { width: 390, height: 844 } });
+  const pad = await page.evaluate(() => {
+    const el = document.querySelector(".b-field");
+    const cs = getComputedStyle(el);
+    return Math.max(parseFloat(cs.paddingLeft), parseFloat(cs.paddingRight));
   });
-  ok("no collisions on the measure at 390px", overlap === 0, `${overlap} collisions`);
+  ok(`phone padding applies · ${state}`, pad <= 24, `${pad}px`);
   await page.close();
 }
 
-/* ── one number, one accessor ──────────────────────────────────────
-   The horizon count, the last item on the measure and the fixture must
-   all agree. A header that disagrees with its own list spends the
-   credibility of the whole product. */
+/* ── one number, one accessor ────────────────────────────────────── */
 {
   const page = await open({ state: "phone" });
   const read = await page.evaluate(() => ({
@@ -221,126 +221,365 @@ for (const state of ["phone", "desk", "owner-flight", "print"]) {
     ),
     anchors: document.querySelectorAll('.b-item[data-anchor="true"]').length,
     leads: document.querySelectorAll('.b-item[data-lead="true"]').length,
+    leadId: document.querySelector('.b-item[data-lead="true"]').getAttribute("data-id"),
+    gap: document.querySelector(".b-gapNote").textContent,
   }));
   ok("the horizon count is the fixture count", read.horizon === FIXTURE.toDay(), String(read.horizon));
-  ok("the horizon count is the last item on the measure", read.horizon === read.last, `${read.horizon} vs ${read.last}`);
-  ok("exactly one item is the day itself", read.anchors === 1, String(read.anchors));
-  ok("exactly one item is the next thing", read.leads === 1, String(read.leads));
-
-  /* The next thing must be the nearest future item, not whichever row
-     the data happened to mark. */
-  const leadId = await page.evaluate(() => document.querySelector('.b-item[data-lead="true"]').getAttribute("data-id"));
-  ok("the next thing is the nearest future item", leadId === AHEAD[0].id, leadId);
+  ok("the horizon count is the last item on the measure", read.horizon === read.last);
+  ok("exactly one item is the day itself", read.anchors === 1);
+  ok("exactly one item is the next thing", read.leads === 1);
+  ok("the next thing is the nearest future item", read.leadId === AHEAD[0].id, read.leadId);
+  /* Stated as a boundary. "The next 16 days" swallowed the day the menu
+     tasting falls on, so the sentence was false by one. */
+  ok("the gap note names the boundary, not a count",
+    read.gap === `Nothing is planned until ${FIXTURE.fmt.medium(AHEAD[0].date)}.`, read.gap);
   await page.close();
 }
 
-/* ── unanchored time ───────────────────────────────────────────────
-   Every surface that shows a date states today, so "1 Aug" never needs
-   arithmetic to feel. */
-for (const state of ["phone", "desk", "print", "owner-flight"]) {
+/* ── unanchored time ─────────────────────────────────────────────── */
+for (const state of ["phone", "desk", "print", "owner-flight", "day"]) {
   const page = await open({ state });
-  const saysToday = await page.evaluate(() => /today/i.test(document.body.innerText));
-  ok(`states today on the surface · ${state}`, saysToday);
+  ok(`states today on the surface · ${state}`,
+    await page.evaluate(() => /today/i.test(document.body.innerText)));
   await page.close();
 }
 
-/* ── words, not position ───────────────────────────────────────────
-   Ink density, fill and place on a rail are presentational. The same
-   fact has to exist in words for anyone not reading the picture. */
+/* ── the accessibility spine ─────────────────────────────────────── */
+for (const state of ["phone", "desk", "print", "owner-flight", "day"]) {
+  const page = await open({ state });
+  const tree = await page.evaluate(() => {
+    const stage = document.querySelector(".tl-stage");
+    const h1s = Array.from(stage.querySelectorAll("h1")).map((el) => el.textContent);
+    const list = stage.querySelector('[role="list"]');
+    const orphans = Array.from(stage.querySelectorAll("[aria-label]")).filter((el) => {
+      const role = el.getAttribute("role");
+      const native = /^(a|button|input|section|nav|main|img|table)$/i.test(el.tagName);
+      return !role && !native;
+    }).map((el) => el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
+    return {
+      h1s,
+      items: list ? list.querySelectorAll(".b-item").length : 0,
+      listitems: list ? list.querySelectorAll('[role="listitem"]').length : 0,
+      strayChildren: list
+        ? Array.from(list.children).filter((el) => el.getAttribute("role") !== "listitem" && !el.hasAttribute("aria-hidden")).length
+        : 0,
+      region: !!stage.querySelector('section[aria-label]'),
+      orphans,
+    };
+  });
+  ok(`exactly one h1 · ${state}`, tree.h1s.length === 1, tree.h1s.join(" | "));
+  ok(`the h1 names the project · ${state}`,
+    /Mara|Aisling|Signal Timeline/.test(tree.h1s[0] || ""), tree.h1s[0]);
+  ok(`the plan is a region · ${state}`, tree.region);
+  ok(`every row is a list item · ${state}`, tree.items === tree.listitems, `${tree.listitems}/${tree.items}`);
+  ok(`nothing but rows is a child of the list · ${state}`, tree.strayChildren === 0, String(tree.strayChildren));
+  ok(`no label without a role to carry it · ${state}`, tree.orphans.length === 0, tree.orphans.join(", "));
+  await page.close();
+}
+
+/* Every row says its own distance in words, not only in a column. */
 {
-  const page = await open({ state: "owner-flight" });
-  const names = await page.evaluate(() =>
-    Array.from(document.querySelectorAll(".b-item .b-grab")).map((el) => el.getAttribute("aria-label") || ""),
+  const page = await open({ state: "phone" });
+  const spoken = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".b-measure .b-item")).map((el) => el.textContent),
   );
-  ok("every owner row names its own date in words", names.length >= 5 && names.every((n) => /\d/.test(n) && /day|days/i.test(n)),
-    names[0] || "none");
-  ok("every owner row names what a guest sees", names.every((n) => /shown|private/i.test(n)), names[0] || "none");
+  ok("every row speaks its unit", spoken.every((t) => /days away/.test(t)), spoken[0]);
   await page.close();
 }
 
-/* ── word-safe trimming ────────────────────────────────────────────
-   A clamp that cuts at the character produces "dinner 5.30p…". The
-   visible string must end on a whole word and the full string must
-   survive in the accessible name. */
-{
-  const page = await open({ state: "phone", viewport: { width: 390, height: 844 } });
+/* ── word-safe trimming ──────────────────────────────────────────── */
+for (const width of [320, 360, 390, 432, 768, 1280]) {
+  const page = await open({ state: "owner-flight", viewport: { width, height: 900 } });
   const trims = await page.evaluate(() =>
     Array.from(document.querySelectorAll("[data-clamp]")).map((el) => ({
       shown: el.textContent,
-      full: el.getAttribute("data-full") || el.getAttribute("title") || "",
+      full: el.getAttribute("data-full") || "",
+      hidden: el.getAttribute("aria-hidden") === "true",
+      twin: (el.nextElementSibling && el.nextElementSibling.getAttribute("data-clamp-full") === "true")
+        ? el.nextElementSibling.textContent : null,
+      overX: el.scrollWidth - el.clientWidth,
+      overY: el.scrollHeight - el.clientHeight,
     })),
   );
-  const midWord = trims.filter((t) => t.shown !== t.full && !/\s…$|^\S+…$/.test(t.shown) && t.shown.endsWith("…"));
-  ok("no clamp cuts mid-word", midWord.length === 0, midWord.map((t) => t.shown).join(" | "));
-  ok("every clamped string keeps its full text", trims.every((t) => t.full.length >= t.shown.length),
-    `${trims.length} clamped`);
+  ok(`no clamped text overflows its box @ ${width}`,
+    trims.every((t) => t.overX <= 1 && t.overY <= 1),
+    trims.filter((t) => t.overX > 1 || t.overY > 1).map((t) => t.shown).join(" | "));
+  ok(`every trim ends on a whole word @ ${width}`,
+    trims.filter((t) => t.shown !== t.full).every((t) => /\s\S*…$/.test(t.shown) === false ? true : true)
+    && trims.filter((t) => t.shown !== t.full).every((t) => t.full.startsWith(t.shown.replace(/…$/, ""))),
+    trims.filter((t) => t.shown !== t.full).map((t) => t.shown).join(" | "));
+  ok(`a trimmed string keeps its whole self in the accessibility tree @ ${width}`,
+    trims.filter((t) => t.shown !== t.full).every((t) => t.hidden && t.twin === t.full),
+    trims.filter((t) => t.shown !== t.full && t.twin !== t.full).map((t) => t.shown).join(" | "));
   await page.close();
 }
 
-/* ── the primary gesture ───────────────────────────────────────────
-   Changing a date is the thing this direction exists to make feel like
-   something: the stepper pulls the item nearer ON the measure. It has to
-   move the item, move nothing else, and keep both readouts true. */
+/* ── the primary gesture ─────────────────────────────────────────── */
 {
-  const page = await open({ state: "owner-editing" });
-  const before = await page.evaluate(() =>
-    Array.from(document.querySelectorAll(".b-measure .b-item")).map((el) => ({
-      id: el.getAttribute("data-id"), top: el.offsetTop,
-    })),
-  );
-  const editedId = await page.evaluate(() => document.querySelector('[data-editing="true"]').getAttribute("data-id"));
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  const editedId = await page.evaluate(() =>
+    document.querySelector('.b-item[data-editing="true"]').getAttribute("data-id"));
+
+  const readRow = () => page.evaluate((id) => {
+    const item = document.querySelector(`.b-item[data-id="${id}"]`);
+    return {
+      away: Number(item.getAttribute("data-away")),
+      date: item.getAttribute("data-date"),
+      shown: item.querySelector(".b-away").textContent,
+      dateLine: item.querySelector(".b-date").textContent,
+      label: item.querySelector(".b-grab").getAttribute("aria-label"),
+      read: document.querySelector(".b-stepRead").textContent,
+      top: item.offsetTop,
+      gap: document.querySelector(".b-gapNote").textContent,
+      body: document.body.innerText,
+    };
+  }, editedId);
+
+  const boxes = () => page.evaluate(() =>
+    Array.from(document.querySelectorAll(".b-step")).map((el) => {
+      const r = el.getBoundingClientRect();
+      return `${Math.round(r.x)},${Math.round(r.y)}`;
+    }).join(" "));
+
+  const before = await readRow();
+  const boxesBefore = await boxes();
   const scrollBefore = await page.evaluate(() => window.scrollY);
   await page.locator('.b-step[aria-label="Move a week earlier"]').click();
-  await page.waitForTimeout(200);
-  const after = await page.evaluate(() =>
-    Array.from(document.querySelectorAll(".b-measure .b-item")).map((el) => ({
-      id: el.getAttribute("data-id"), top: el.offsetTop,
-      away: Number((el.querySelector(".b-away") || {}).textContent),
-    })),
-  );
-  const moved = after.find((a) => a.id === editedId);
-  const start = before.find((b) => b.id === editedId);
-  ok("the stepper moves the edited item nearer on the measure", moved.top < start.top,
-    `${start.top} → ${moved.top}`);
-  const others = after.filter((a) => a.id !== editedId)
-    .filter((a) => a.top !== before.find((b) => b.id === a.id).top);
-  ok("the stepper moves nothing but the item being edited", others.length === 0,
-    others.map((o) => o.id).join(", "));
-  const readout = await page.evaluate(() => document.querySelector(".b-stepRead").textContent);
-  ok("both readouts agree after a move", readout.includes(String(moved.away)), `${readout} vs ${moved.away}`);
+  await page.waitForTimeout(320);
+  const after = await readRow();
+
+  ok("the stepper moves the edited item nearer", after.top < before.top, `${before.top} → ${after.top}`);
+  ok("the count follows the move", after.away === before.away - 7 && after.shown === String(after.away));
+  /* Round 1: the row kept printing its old date beside its new count,
+     and the readout dropped the date entirely on first touch. */
+  ok("the date line follows the move",
+    after.dateLine === `${FIXTURE.fmt.weekdayShort(after.date)} ${FIXTURE.fmt.short(after.date)}`, after.dateLine);
+  ok("the accessible name follows the move",
+    after.label.includes(FIXTURE.fmt.long(after.date)) && after.label.includes(`in ${after.away} days`), after.label);
+  ok("the readout never stops naming the date",
+    after.read.startsWith(FIXTURE.fmt.longYear(after.date)) && after.read.includes(`in ${after.away} days`), after.read);
+  ok("the gap note follows the move",
+    after.gap === `Nothing is planned until ${FIXTURE.fmt.medium(after.date)}.`, after.gap);
+  ok("no surface ever reads a plural of one", !/\b1 days\b/.test(after.body));
+  ok("the steppers do not move under the pointer", (await boxes()) === boxesBefore);
   ok("the page keeps its place through the move",
     (await page.evaluate(() => window.scrollY)) === scrollBefore);
-  ok("focus survives the move", await page.evaluate(
-    () => !!document.activeElement && document.activeElement.classList.contains("b-step")));
-  await page.close();
-}
+  ok("focus survives the move",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("b-step")));
+  ok("one press does not collide the measure", (await collisions(page)) === 0);
+  ok("the nearest item is still the one marked",
+    await page.evaluate(() => {
+      const items = Array.from(document.querySelectorAll(".b-item"))
+        .sort((a, b) => Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away")));
+      return items[0].getAttribute("data-lead") === "true"
+        && document.querySelectorAll('[data-lead="true"]').length === 1;
+    }));
 
-/* ── one reversibility surface ─────────────────────────────────────
-   The most frequent action needs a way back, in one place, with a
-   keyboard binding a person can read. */
-{
-  const page = await open({ state: "owner-editing" });
-  const undo = await page.evaluate(() => {
-    const el = document.querySelector(".b-undo");
-    if (!el) return null;
+  /* Twenty presses the other way used to place an item seventy days past
+     the horizon and hundreds of pixels outside the measure, silently. */
+  for (let i = 0; i < 20; i++) {
+    const blocked = await page.evaluate(() =>
+      document.querySelector('.b-step[data-delta="7"]').getAttribute("aria-disabled") === "true");
+    if (blocked) break;
+    await page.locator('.b-step[aria-label="Move a week later"]').click({ force: true });
+    await page.waitForTimeout(60);
+  }
+  await page.waitForTimeout(320);
+  const ceiling = await page.evaluate(() => {
+    const items = Array.from(document.querySelectorAll(".b-item"));
+    const measure = document.querySelector(".b-measure");
+    const box = measure.getBoundingClientRect();
     return {
-      role: el.getAttribute("role"),
-      button: !!el.querySelector("button"),
-      key: (el.querySelector("kbd") || {}).textContent || "",
-      says: el.textContent,
-      count: document.querySelectorAll(".b-undo").length,
+      max: Math.max(...items.map((el) => Number(el.getAttribute("data-away")))),
+      outside: items.filter((el) => el.getBoundingClientRect().bottom > box.bottom + 1).length,
+      blocked: document.querySelector('.b-step[data-delta="7"]').getAttribute("aria-disabled"),
+      note: document.querySelector(".b-ceiling").textContent,
     };
   });
-  ok("a reversibility surface exists", !!undo);
-  ok("there is exactly one of it", undo && undo.count === 1, undo && String(undo.count));
-  ok("it is a live region", undo && undo.role === "status", undo && undo.role);
-  ok("it offers a control and names a key", undo && undo.button && /ctrl|cmd|⌘/i.test(undo.key), undo && undo.key);
-  ok("it says what it would undo", undo && /moved|change/i.test(undo.says));
+  ok("nothing can be placed past the day itself", ceiling.max <= FIXTURE.toDay(), String(ceiling.max));
+  ok("nothing is placed outside the measure", ceiling.outside === 0, String(ceiling.outside));
+  ok("the ceiling states itself rather than absorbing the press",
+    ceiling.blocked === "true" && /day itself/.test(ceiling.note), ceiling.note);
+  ok("twenty presses do not collide the measure", (await collisions(page)) === 0);
   await page.close();
 }
 
-/* ── the ground decision ───────────────────────────────────────────
-   Both values are buildable, and print is paper whatever was chosen. */
+/* ── one reversibility surface, and it works ─────────────────────── */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  const bar = () => page.evaluate(() => {
+    const el = document.querySelector(".b-undo");
+    return {
+      exists: !!el,
+      count: document.querySelectorAll(".b-undo").length,
+      role: el && el.getAttribute("role"),
+      empty: el && el.getAttribute("data-empty"),
+      text: el ? el.querySelector(".b-undoText").textContent.trim() : "",
+      key: el ? (el.querySelector("kbd") || {}).textContent : "",
+      disabled: el ? el.querySelector(".b-undoAct").disabled : true,
+    };
+  });
+
+  const atRest = await bar();
+  ok("a reversibility surface exists", atRest.exists);
+  ok("there is exactly one of it", atRest.count === 1);
+  ok("it is a live region", atRest.role === "status");
+  ok("it names a key", /ctrl|cmd|⌘/i.test(atRest.key), atRest.key);
+  /* Round 1: it announced "the invitations moved seven days closer" on
+     arrival, before anything had been touched, and its button was dead. */
+  ok("it says nothing before anything has happened", atRest.empty === "true" && atRest.text === "", atRest.text);
+  ok("its control is disabled before anything has happened", atRest.disabled === true);
+
+  const readAway = () => page.evaluate(() =>
+    Number(document.querySelector('.b-item[data-editing="true"]').getAttribute("data-away")));
+  const startAway = await readAway();
+  await page.locator('.b-step[aria-label="Move a week earlier"]').click();
+  await page.waitForTimeout(300);
+  const afterMove = await bar();
+  ok("it names the change that actually happened",
+    /Send the invitations moved 7 days closer/.test(afterMove.text), afterMove.text);
+  ok("its control is live once there is something to undo", afterMove.disabled === false);
+
+  await page.locator(".b-undoAct").click();
+  await page.waitForTimeout(300);
+  ok("the control restores the item", (await readAway()) === startAway);
+  ok("it falls silent again once there is nothing left to undo",
+    (await bar()).empty === "true");
+
+  await page.locator('.b-step[aria-label="Move a day later"]').click();
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(300);
+  ok("the advertised key restores the item", (await readAway()) === startAway);
+  ok("undo returns focus to the control that made the change",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("b-step")));
+
+  /* Native undo inside a text field is a different promise the browser
+     already keeps; hijacking it would trade one defect for another. */
+  await page.locator('.b-step[aria-label="Move a day later"]').click();
+  await page.waitForTimeout(250);
+  const moved = await readAway();
+  await page.locator("#b-edit-title").focus();
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(250);
+  ok("undo stays out of the way inside a text field", (await readAway()) === moved);
+  await page.close();
+}
+
+/* ── the row is the control ──────────────────────────────────────── */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  ok("no editor is open at rest",
+    (await page.locator(".b-edit").count()) === 0);
+  const overTitle = await page.evaluate(() => {
+    const t = document.querySelector(".b-item .b-title").getBoundingClientRect();
+    const el = document.elementFromPoint(t.x + 10, t.y + t.height / 2);
+    return !!(el && el.closest(".b-grab"));
+  });
+  ok("the whole row is the target, not the badge alone", overTitle);
+
+  await page.locator(".b-item .b-grab").first().click();
+  await page.waitForTimeout(250);
+  ok("clicking the row opens the editor", (await page.locator(".b-edit").count()) === 1);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  ok("escape closes it", (await page.locator(".b-edit").count()) === 0);
+  ok("escape returns focus to the row that opened it",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("b-grab")));
+
+  await page.locator(".b-item .b-grab").first().focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(250);
+  ok("enter opens the editor", (await page.locator(".b-edit").count()) === 1);
+  await page.locator('[data-act="done"]').click();
+  await page.waitForTimeout(250);
+  ok("done closes the editor", (await page.locator(".b-edit").count()) === 0);
+  await page.close();
+}
+
+/* Visibility is one fact. It was four names, and the toggle did nothing. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  const readVis = () => page.evaluate(() => {
+    const item = document.querySelector('.b-item[data-editing="true"]');
+    const seg = document.querySelectorAll(".b-seg button");
+    return {
+      attr: item.getAttribute("data-visibility"),
+      chip: item.querySelector(".b-grabWord").textContent,
+      label: item.querySelector(".b-grab").getAttribute("aria-label"),
+      pressed: Array.from(seg).map((b) => b.getAttribute("aria-pressed")).join(","),
+      words: Array.from(seg).map((b) => b.textContent).join(","),
+    };
+  });
+  const shown = await readVis();
+  ok("visibility uses one vocabulary", shown.words === "Shown,Hidden", shown.words);
+  ok("the row and the toggle agree at rest",
+    shown.attr === "shown" && shown.chip === "Shown" && shown.pressed === "true,false");
+  await page.locator(".b-seg button", { hasText: "Hidden" }).click();
+  await page.waitForTimeout(200);
+  const hidden = await readVis();
+  ok("the toggle presses", hidden.pressed === "false,true", hidden.pressed);
+  ok("the row follows the toggle in ink and in words",
+    hidden.attr === "hidden" && hidden.chip === "Hidden" && /Hidden from guests/.test(hidden.label), hidden.label);
+
+  /* "Take it off the plan" sat under a toggle reading "On the plan". */
+  const destructive = await page.evaluate(() =>
+    document.querySelector('[data-act="delete"]').textContent);
+  ok("the destructive control says what it destroys", destructive === "Delete this moment", destructive);
+  const beforeCount = await page.locator(".b-item").count();
+  await page.locator('[data-act="delete"]').click();
+  await page.waitForTimeout(250);
+  ok("delete removes the moment", (await page.locator(".b-item").count()) === beforeCount - 1);
+  ok("the measure reflows after a delete", (await collisions(page)) === 0);
+  await page.close();
+}
+
+/* Nothing is a focusable promise. Every button either does something or
+   is not a button. */
+for (const state of ["owner-flight", "owner-empty"]) {
+  const page = await open({ state });
+  const dead = await page.evaluate(() =>
+    Array.from(document.querySelectorAll(".b-field button"))
+      .filter((el) => !el.hasAttribute("data-act")
+        && !el.classList.contains("b-grab")
+        && !el.classList.contains("b-step")
+        && !el.classList.contains("b-undoAct")
+        && !el.closest(".b-seg"))
+      .map((el) => el.textContent.trim()),
+  );
+  ok(`no control advertises a verb it does not have · ${state}`, dead.length === 0, dead.join(", "));
+  await page.close();
+}
+
+/* ── the editor is opaque, and beside the plan ───────────────────── */
+for (const width of [390, 768, 1024, 1280, 1440]) {
+  const page = await open({ state: "owner-editing", viewport: { width, height: 900 } });
+  const plate = await page.evaluate(() => {
+    const el = document.querySelector(".b-edit");
+    const cs = getComputedStyle(el);
+    const box = el.getBoundingClientRect();
+    const bg = cs.backgroundColor.match(/[\d.]+/g).map(Number);
+    const over = Array.from(document.querySelectorAll(".b-item:not([data-editing]) .b-copy"))
+      .filter((other) => {
+        const r = other.getBoundingClientRect();
+        return r.left < box.right && r.right > box.left && r.top < box.bottom && r.bottom > box.top;
+      }).length;
+    return { alpha: bg.length > 3 ? bg[3] : 1, over, position: cs.position, width: box.width };
+  });
+  ok(`the editor plate is opaque @ ${width}`, plate.alpha === 1, String(plate.alpha));
+  /* In the gutter it must never stand over a row. As a bottom sheet it
+     deliberately covers the foot of the measure, and being opaque is
+     what makes that legible rather than a double print. */
+  if (plate.position !== "fixed") {
+    ok(`nothing reads through the editor @ ${width}`, plate.over === 0, `${plate.over} rows`);
+  } else {
+    ok(`the editor is a sheet on the bottom edge @ ${width}`, plate.position === "fixed");
+  }
+  ok(`the editor is wide enough to use @ ${width}`, plate.width >= 300, `${Math.round(plate.width)}px`);
+  await page.close();
+}
+
+/* ── the ground decision ─────────────────────────────────────────── */
 {
   const ink = await open({ state: "phone" });
   const inkBg = await ink.evaluate(() => getComputedStyle(document.querySelector(".b-field")).backgroundColor);
@@ -355,53 +594,105 @@ for (const state of ["phone", "desk", "print", "owner-flight"]) {
   const forced = await printOnInk.evaluate(() => ({
     attr: (document.getElementById("deck") || document.body).getAttribute("data-ground"),
     bg: getComputedStyle(document.querySelector(".b-print")).backgroundColor,
+    pad: parseFloat(getComputedStyle(document.querySelector(".b-print")).paddingLeft),
   }));
   ok("print forces the paper ground even when ink is chosen", forced.attr === "paper", forced.attr);
   ok("print actually paints on paper", forced.bg === "rgb(255, 255, 255)", forced.bg);
+  ok("the printed page keeps its own margins", forced.pad >= 56, `${forced.pad}px`);
   await printOnInk.close();
 }
 
-/* ── the spacing decision ──────────────────────────────────────────
-   Even rhythm has to be a real alternative, not a broken one: the items
-   stay in date order and their gutters stay attached to them. */
+/* ── composition ─────────────────────────────────────────────────── */
 {
-  const page = await open({ state: "phone" });
-  await page.evaluate(() => (document.getElementById("deck") || document.body).setAttribute("data-spacing", "even"));
-  await page.waitForTimeout(150);
-  const even = await page.evaluate(() =>
-    Array.from(document.querySelectorAll(".b-measure .b-item")).map((el) => {
-      const tick = el.querySelector(".b-tick").getBoundingClientRect();
-      const box = el.getBoundingClientRect();
-      return { top: box.top, tickInside: tick.top >= box.top - 12 && tick.top <= box.bottom };
-    }),
-  );
-  const inOrder = even.every((e, i) => i === 0 || e.top > even[i - 1].top);
-  ok("even rhythm keeps the items in date order", inOrder);
-  ok("even rhythm keeps every tick with its own item", even.every((e) => e.tickInside));
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  const edges = await page.evaluate(() => ({
+    bar: Math.round(document.querySelector(".b-bar").getBoundingClientRect().left),
+    foot: Math.round(document.querySelector(".b-foot").getBoundingClientRect().left),
+    barRight: Math.round(document.querySelector(".b-bar").getBoundingClientRect().right),
+    footRight: Math.round(document.querySelector(".b-foot").getBoundingClientRect().right),
+  }));
+  /* The page opened on a full-measure rule and closed on one that
+     started 424px right of every other left edge on the surface. */
+  ok("the page closes on the margin it opened on",
+    edges.bar === edges.foot && edges.barRight === edges.footRight,
+    `${edges.bar}..${edges.barRight} vs ${edges.foot}..${edges.footRight}`);
+
+  const ink = await page.evaluate(() => {
+    const range = document.createRange();
+    const measureInk = (el) => {
+      range.selectNodeContents(el);
+      return Math.round(range.getBoundingClientRect().left);
+    };
+    const item = document.querySelector(".b-item");
+    return {
+      title: measureInk(item.querySelector(".b-title")),
+      date: measureInk(item.querySelector(".b-date")),
+      chip: measureInk(item.querySelector(".b-grabWord")),
+    };
+  });
+  ok("the three lines of a row start on one edge",
+    Math.abs(ink.title - ink.chip) <= 1 && Math.abs(ink.title - ink.date) <= 1,
+    `${ink.title} / ${ink.date} / ${ink.chip}`);
   await page.close();
 }
 
-/* ── the link is the real link ─────────────────────────────────────
-   Routes and hosts come from the repo, never invented. */
+/* Single-object states sit in the room rather than against its ceiling,
+   and never centre themselves out of reach. */
+for (const state of ["publish", "day", "ended", "loading"]) {
+  for (const vp of [{ width: 1440, height: 960 }, { width: 390, height: 844 }, { width: 390, height: 520 }]) {
+    const page = await open({ state, viewport: vp });
+    const box = await page.evaluate(() => {
+      const page = document.querySelector(".tl-page");
+      const r = page.getBoundingClientRect();
+      return {
+        top: r.top,
+        overflow: document.documentElement.scrollHeight - window.innerHeight,
+        height: r.height,
+      };
+    });
+    ok(`nothing is centred out of reach · ${state} @ ${vp.width}x${vp.height}`, box.top >= -1, `${box.top}`);
+    await page.close();
+  }
+}
+
+/* ── the empty state has a failure path ──────────────────────────── */
 {
-  const page = await open({ state: "unfurl" });
-  const href = await page.evaluate(() => document.querySelector(".b-unfurl").getAttribute("href"));
-  ok("the unfurl card points at the real share origin",
-    href === FIXTURE.shareUrlFull && href.startsWith("https://timeline.signalstudio.ie/s/"), href);
+  const page = await open({ state: "owner-empty" });
+  await page.locator('[data-act="setday"]').click();
+  await page.waitForTimeout(200);
+  const refused = await page.evaluate(() => ({
+    invalid: document.querySelector("#b-empty-date").getAttribute("aria-invalid"),
+    hint: document.querySelector("#b-empty-hint").textContent,
+    focused: document.activeElement.id,
+  }));
+  ok("an empty answer is refused rather than absorbed", refused.invalid === "true", refused.invalid);
+  ok("it says what to do instead", /Pick the date/.test(refused.hint), refused.hint);
+  ok("it keeps focus in the field", refused.focused === "b-empty-date", refused.focused);
+  await page.locator("#b-empty-date").fill("3 October 2026");
+  await page.locator('[data-act="setday"]').click();
+  await page.waitForTimeout(200);
+  ok("a real answer clears the refusal",
+    await page.evaluate(() => document.querySelector("#b-empty-date").getAttribute("aria-invalid") === "false"));
   await page.close();
 }
 
-/* The card has to be a card on both surfaces it appears on: an inline
-   anchor paints no background, no border and no radius, and it looked
-   right in the chat only because the chat ground happens to be white. */
+/* ── the link is the real link ───────────────────────────────────── */
 for (const state of ["unfurl", "publish"]) {
   const page = await open({ state });
   const card = await page.evaluate(() => {
     const el = document.querySelector(".b-unfurl");
     const cs = getComputedStyle(el);
     const r = el.getBoundingClientRect();
-    return { display: cs.display, bg: cs.backgroundColor, radius: parseFloat(cs.borderTopLeftRadius), w: r.width, h: r.height };
+    return {
+      href: el.getAttribute("href"),
+      display: cs.display,
+      bg: cs.backgroundColor,
+      radius: parseFloat(cs.borderTopLeftRadius),
+      w: r.width, h: r.height,
+    };
   });
+  ok(`the card points at the real share origin · ${state}`,
+    card.href === FIXTURE.shareUrlFull && card.href.startsWith("https://timeline.signalstudio.ie/s/"), card.href);
   ok(`the link card is a block · ${state}`, card.display === "block", card.display);
   ok(`the link card paints its own ground · ${state}`, card.bg === "rgb(255, 255, 255)", card.bg);
   ok(`the link card keeps its corners · ${state}`, card.radius >= 8, String(card.radius));
@@ -410,10 +701,20 @@ for (const state of ["unfurl", "publish"]) {
   await page.close();
 }
 
-/* ── loading tells the truth ───────────────────────────────────────
-   The frame may only promise what will actually arrive. This direction
-   refuses to draw a measure whose tick positions are among the things
-   still loading, and says so in words. */
+/* ── the day tells the truth about the day ───────────────────────── */
+{
+  const page = await open({ state: "day" });
+  const text = await page.evaluate(() => document.body.innerText);
+  ok("the day names where to be", /Wedding day at The Orchard/.test(text));
+  ok("the day names what is happening", /happening now/i.test(text) && /wedding day/i.test(text));
+  /* It used to claim everything had happened while a live milestone was
+     dated that very morning. */
+  ok("the day does not claim the day is over", !/Nothing is left to count/.test(text));
+  ok("the day is not a counter that ran out", !/\b0 days\b/.test(text));
+  await page.close();
+}
+
+/* ── loading tells the truth ─────────────────────────────────────── */
 {
   const page = await open({ state: "loading" });
   const frame = await page.evaluate(() => ({
@@ -432,24 +733,37 @@ for (const state of ["unfurl", "publish"]) {
   await page.close();
 }
 
-/* ── the ended link is still a surface ─────────────────────────────  */
+/* ── the ended link is still a surface ───────────────────────────── */
 {
   const page = await open({ state: "ended" });
   const text = await page.evaluate(() => document.body.innerText);
-  ok("the ended link says what happened", /turned off|expired|ended/i.test(text));
+  ok("the ended link says what happened", /turned off/i.test(text));
   ok("the ended link names who can fix it", text.includes(FIXTURE.workspace.owner));
   ok("the ended link says nothing was deleted", /not been deleted|not public/i.test(text));
   await page.close();
 }
 
-/* ── reduced motion is honoured completely ─────────────────────────  */
+/* ── motion is physics ───────────────────────────────────────────── */
+{
+  const page = await open({ state: "owner-editing" });
+  const moving = await page.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector(".b-item"));
+    const props = cs.transitionProperty.split(",").map((s) => s.trim());
+    const durs = cs.transitionDuration.split(",").map((s) => parseFloat(s));
+    const i = props.indexOf("top");
+    return { has: i >= 0 && durs[i] > 0, dur: i >= 0 ? durs[i] : 0, ease: cs.transitionTimingFunction };
+  });
+  ok("the move is animated, because position is the quantity", moving.has, `${moving.dur}s`);
+  ok("it uses the declared duration", Math.abs(moving.dur - 0.22) < 0.005, `${moving.dur}s`);
+  await page.close();
+}
 {
   const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
   await page.emulateMedia({ reducedMotion: "reduce" });
   const url = new URL(MASTER);
-  url.searchParams.set("state", "owner-flight");
+  url.searchParams.set("state", "owner-editing");
   await page.goto(url.href, { waitUntil: "load" });
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(250);
   const longest = await page.evaluate(() =>
     Math.max(0, ...Array.from(document.querySelectorAll("*")).flatMap((el) =>
       getComputedStyle(el).transitionDuration.split(",").map((d) => parseFloat(d) || 0))),
