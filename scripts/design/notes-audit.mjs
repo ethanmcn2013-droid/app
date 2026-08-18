@@ -28,6 +28,7 @@
 //
 // Exit code is 1 when any hard check fails, so this can gate.
 import { chromium } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -67,8 +68,28 @@ const ALLOWED_SIZES = [11, 12, 13, 15, 17, 20, 27, 34];
    rather than being an accident. */
 const ALLOWED_DURATIONS = [0, 0.05, 0.14, 0.22];
 
+/* The leading and tracking ladders are not written down here. They are
+   read out of the master's own :root, so this gate grades the file
+   against what the file declares and cannot drift from it — the exact
+   failure it exists to catch, which is a comment claiming three declared
+   leadings over eleven ratios written by hand. A stylesheet loaded over
+   file:// is opaque to the page's own CSSOM, so the read happens here. */
+const MASTER_CSS = readFileSync(path.join(LAB, "master.css"), "utf8");
+const declaredSteps = (prefix) => {
+  const found = [...MASTER_CSS.matchAll(new RegExp("--" + prefix + "[a-z0-9-]+:\\s*(-?[0-9.]+)e?m?;", "g"))]
+    .map((m) => Number(m[1]))
+    .filter((n) => Number.isFinite(n));
+  const uniq = [...new Set(found)];
+  if (!uniq.length) throw new Error(`no --${prefix}* steps declared in master.css`);
+  return uniq;
+};
+const ALLOWED_LEADING = declaredSteps("lh-");
+const ALLOWED_TRACKING = declaredSteps("tr-");
+
 const AUDIT = `(() => {
   const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], sizes: [], leading: [], counts: {} };
+  const LADDER = ${JSON.stringify(ALLOWED_LEADING)};
+  const CURVE = ${JSON.stringify(ALLOWED_TRACKING)};
 
   const parse = (value) => {
     const m = String(value).match(/rgba?\\(([^)]+)\\)/);
@@ -183,9 +204,35 @@ const AUDIT = `(() => {
       /* 9. leading. A text-bearing element computing line-height: normal
          is an element whose leading the browser chose, which is how a
          baseline drifts by a pixel between a note's words and the facts
-         beside them on every row of a list. */
+         beside them on every row of a list.
+
+         And a ratio that is declared nowhere is the same defect written
+         by hand: the file carried a comment saying "three leadings,
+         declared" over eleven raw ratios. The ladder is read off :root at
+         run time, so the check cannot fall out of step with the tokens
+         it governs. Tracking is held to its own declared curve for the
+         same reason — a var() with a fallback is a token that does not
+         exist. */
       if (cs.lineHeight === "normal") {
-        out.leading.push({ el: describe(el), text: el.textContent.trim().slice(0, 28) });
+        out.leading.push({ el: describe(el), text: el.textContent.trim().slice(0, 28), why: "line-height: normal" });
+      } else {
+        const ratio = parseFloat(cs.lineHeight) / parseFloat(cs.fontSize);
+        if (Number.isFinite(ratio) && !LADDER.some((step) => Math.abs(ratio - step) < 0.012)) {
+          out.leading.push({
+            el: describe(el),
+            text: el.textContent.trim().slice(0, 28),
+            why: "line-height ratio " + ratio.toFixed(3) + " is on no declared --lh-* step",
+          });
+        }
+      }
+      const track = parseFloat(cs.letterSpacing);
+      const em = parseFloat(cs.fontSize);
+      if (Number.isFinite(track) && em > 0 && !CURVE.some((step) => Math.abs(track - step * em) < 0.08)) {
+        out.leading.push({
+          el: describe(el),
+          text: el.textContent.trim().slice(0, 28),
+          why: "letter-spacing " + (track / em).toFixed(4) + "em is on no declared --tr-* step",
+        });
       }
 
       /* 4. contrast, against the real composited backdrop */
@@ -318,7 +365,7 @@ async function run() {
       line("radii", r.radii, (i) => `${i.el} ${i.px}px`);
       line("motion", r.motion, (i) => (i.kind === "duration" ? `${i.el} ${i.duration}s` : `${i.el} ${i.easing}`));
       line("type ramp", r.sizes, (i) => `${i.el} ${i.size}px  "${i.text}"`);
-      line("leading", r.leading, (i) => `${i.el} line-height: normal  "${i.text}"`);
+      line("leading", r.leading, (i) => `${i.el} ${i.why}  "${i.text}"`);
     }
     process.stdout.write(`\nTOTALS  ${JSON.stringify(totals)}\n`);
   }

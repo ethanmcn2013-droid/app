@@ -83,11 +83,16 @@
   --t-11: 11px; --t-12: 12px; --t-13: 13px; --t-15: 15px;
   --t-17: 17px; --t-20: 20px; --t-27: 27px; --t-34: 34px;
 
-  /* Three leadings, declared, because leading left to the browser is
+  /* Five leadings, declared, because leading left to the browser is
      leading that shifts by a pixel between a note's words and the facts
-     beside them on every row of the index. */
+     beside them on every row of the index. Eleven raw ratios had grown up
+     beside the three, which is a ladder in the comment and none in the
+     file. The steps, by job: a display line, a tight one, the working
+     line, a secondary-prose line, and the line a note is read at. */
+  --lh-title: 1.22;
   --lh-tight: 1.28;
   --lh-base: 1.45;
+  --lh-note: 1.55;
   --lh-read: 1.62;
 
   /* One tracking curve, by size, declared once. Every letter-spacing in
@@ -218,7 +223,8 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .railAvatar {
   width: 32px; height: 32px; border-radius: 50%; background: var(--chrome-active);
   box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-1); display: grid; place-items: center;
-  font-size: var(--t-11); font-weight: 600; letter-spacing: 0.04em; margin-top: 8px; cursor: pointer; line-height: var(--lh-tight); }
+  font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-indent: var(--tr-cap);
+  margin-top: 8px; cursor: pointer; line-height: var(--lh-tight); }
 
 /* ── the sheet ─────────────────────────────────────────────────── */
 /* White against ink needs no shadow. Contrast is the elevation. */
@@ -434,8 +440,14 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    same size, same leading, same tracking. The same sentence was rendering
    at four different leadings depending on which surface it happened to be
    on, which is a thing a reader feels and cannot name. */
-.readBody, .handBody, .topField, .pieceField, .peelField, .saidWas {
+.readBody, .handBody, .topField, .pieceField, .peelField, .saidHead {
   font-size: var(--t-17); line-height: var(--lh-read); letter-spacing: var(--tr-18);
+}
+/* The note is the pick surface, so it is a tab stop with a name, and a
+   keyboard walks its sentences. Sealed edges that only seal for people
+   with a mouse are not sealed. */
+.readBody:focus-visible, .handBody:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 6px; border-radius: var(--r-xs);
 }
 .readBody {
   margin: 0; max-width: var(--measure); text-wrap: pretty;
@@ -467,7 +479,7 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .index, .idxGroupRows { list-style: none; margin: 0; padding-inline: 0; }
 .idxItem, .idxSection { list-style: none; display: block; }
 .idxSection { position: relative; }
-.index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; padding: 0 var(--gutter) 132px; scrollbar-width: thin; overflow-anchor: none; }
+.index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; padding: 0 var(--gutter) calc(132px + var(--undo-pad, 0px)); scrollbar-width: thin; overflow-anchor: none; }
 /* A day rule says when you wrote it. A subject rule says what it is
    about, and carries the date the venue is actually facing — which is the
    only thing on this surface that a notebook belonging to somebody else
@@ -488,6 +500,17 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 }
 .idxDay::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-soft);
+}
+/* The rule was opaque across its own band and hard-edged at the foot, so
+   at most resting scroll offsets it cut the row travelling under it
+   horizontally through the x-height: the bottom halves of somebody's own
+   letters, cleanly sliced. The same reasoning the trim already applies on
+   the x axis - a half-sliced letter reads as damage, not as truncation -
+   applied to the y. A row now dissolves into the rule instead. */
+.idxDay::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 15px;
+  background: linear-gradient(to bottom, var(--white), rgba(255, 255, 255, 0));
+  pointer-events: none;
 }
 /* Each group is its own sticky context, so a rule is pushed out by the
    next one instead of every rule in the pile piling up at the top. */
@@ -534,7 +557,12 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .idxRow[data-open] { background: var(--wash); }
 /* The row a keyboard is on. The board has one tab stop; the arrows walk
    it, and the row it is on has to be visible without hovering. */
-.idxRow[data-cursor] { background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line); }
+/* At rest the cursor takes the ink tint the list already owns. Indigo is
+   the colour of a live keyboard, a search hit and words about to cross -
+   at load, before a key is pressed, it was none of those, and it was the
+   loudest object on the paper. It lights only while the pile has focus. */
+.idxRow[data-cursor] { background: var(--wash); scroll-margin-top: 66px; }
+.index:focus-within .idxRow[data-cursor] { background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line); }
 .idxRow[data-cursor]::before, .idxRow[data-cursor] + .idxRow::before { opacity: 0; }
 .idxMark { color: var(--ink-3); display: grid; place-items: center; position: relative; }
 .idxMark svg { width: 15px; height: 15px; }
@@ -542,12 +570,13 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 /* The dot's halo has to be the surface behind it, and on the row the
    keyboard is holding that surface is white under an indigo wash — which
    is two of the three, not a fourth colour mixed by hand. */
-.idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--indigo-wash); }
+.idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--wash); }
+.index:focus-within .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--indigo-wash); }
 /* The trim is measured in the file and cut at a word boundary. The
    ellipsis is the backstop for the case where four words still do not
    fit: without it the browser sliced a letter in half against the status
    pill, which reads as damage rather than as a truncation. */
-.idxText { font-size: var(--t-15); line-height: 1.45; letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.idxText { font-size: var(--t-15); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .idxFrom { display: none; }
 .idxText b { font-weight: 600; }
 .idxText span { color: var(--ink-3); }
@@ -585,7 +614,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .dockGlyph svg { width: 17px; height: 17px; }
 .dockGlyph:hover { color: var(--ink-1); background: var(--wash); }
 .dockRule { width: 1px; height: 20px; background: var(--line); margin: 0 4px; flex: none; }
-.dockAvatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; font-size: var(--t-11); font-weight: 600; letter-spacing: 0.04em; margin: 0 3px 0 1px; cursor: pointer; flex: none; line-height: var(--lh-tight); }
+.dockAvatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-indent: var(--tr-cap); margin: 0 3px 0 1px; cursor: pointer; flex: none; line-height: var(--lh-tight); }
 
 /* ── the way back ──────────────────────────────────────────────── */
 /* The only reversible surface in the product, and it waits while you are
@@ -593,9 +622,12 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    and delete says so before it happens. */
 /* Above the dock and clear of the last row, rather than across the words
    of whatever note happens to be at the foot of the pile. */
-/* Outside the pile's own scroll region, so it can never land on a
-   person's sentences. It was an opaque pill floating inside the index and
-   occluding the middle of whichever row happened to be under it. */
+/* Outside the pile's own scroll region AND with its band reserved. Being
+   outside the scroller was not enough: the pile scrolled under it, so at
+   most offsets the strip still sat on top of a row's words. While it is
+   live the pile is shorter by exactly its height, so the last row ends
+   above it at every scroll position rather than only at the end. */
+.sheet[data-undo] { --undo-pad: 58px; }
 .undo {
   position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
   display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 15px;
@@ -646,7 +678,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    screen covered the whole page including its own controls. */
 .dark { position: absolute; inset: 0; background: var(--ink); color: var(--on-ink-1); z-index: 9; display: flex; flex-direction: column; }
 .darkTop { flex: none; display: flex; align-items: center; gap: 12px; padding: 26px 32px 0; }
-.darkTag { display: inline-flex; align-items: center; gap: 10px; font-size: var(--t-12); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; line-height: var(--lh-base); }
+.darkTag { display: inline-flex; align-items: center; gap: 10px; font-size: var(--t-12); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; line-height: var(--lh-base); }
 .darkTag .rec { width: 8px; height: 8px; border-radius: 50%; background: var(--white); animation: recPulse 1.5s var(--curve) infinite; }
 @keyframes recPulse { 50% { opacity: 0.28; } }
 .darkTime { font-size: var(--t-12); font-weight: 600; color: var(--on-ink-2); letter-spacing: var(--tr-12); line-height: var(--lh-base); }
@@ -654,7 +686,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; overflow: auto; }
 /* The same measure as every other surface a person's words appear on.
    It was running 78 characters against everything else's 69. */
-.darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: 1.38; letter-spacing: var(--tr-34); }
+.darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-tight); letter-spacing: var(--tr-34); }
 .darkWave { max-width: var(--measure); }
 .darkSaid .tail { color: var(--on-ink-3); }
 .darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; width: 100%; margin: 40px auto 0; }
@@ -666,7 +698,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* The one thing on this screen that must be readable is the sentence
    saying the words are leaving the device. At --on-ink-3 it measured
    4.1:1 and failed AA, which for a disclosure is not a nicety. */
-.darkNote { max-width: 62ch; text-wrap: pretty; margin: 0; font-size: var(--t-12); line-height: 1.6; color: var(--on-ink-2); letter-spacing: var(--tr-12); }
+.darkNote { max-width: 62ch; text-wrap: pretty; margin: 0; font-size: var(--t-12); line-height: var(--lh-read); color: var(--on-ink-2); letter-spacing: var(--tr-12); }
 .darkFoot .spacer { flex: 1; }
 .darkAct {
   display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border-radius: var(--r-pill);
@@ -680,11 +712,11 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .dark :focus-visible { outline-color: var(--white); }
 
 /* ── the read-back ─────────────────────────────────────────────── */
-.saidWas {
-  margin: 0 0 4px; max-width: calc(var(--measure) + 6em); padding: 14px 16px; border-radius: var(--r-chip);
-  background: var(--wash); color: var(--ink-2);
-}
-.saidWas b { display: block; font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
+/* One line stating what happened, in the person's own type. It was a
+   panel reprinting the whole transcript above the very fields that hold
+   it, so somebody who had just spoken read their own sentences twice at
+   the exact moment the product is asking to be trusted. */
+.saidHead { margin: 0 0 2px; max-width: var(--measure); color: var(--ink-2); text-wrap: pretty; }
 .pieces { display: grid; gap: 9px; margin-top: 14px; }
 .piece {
   position: relative; max-width: calc(var(--measure) + 4em); padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
@@ -809,7 +841,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   position: relative; z-index: 3; background: var(--white);
   display: flex; align-items: flex-start; gap: 9px; padding: 11px 13px;
   border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--ink-1);
-  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-13, -0.01em);
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-14);
   max-width: var(--measure);
 }
 .nudge svg { width: 15px; height: 15px; flex: none; margin-top: 1px; }
@@ -817,7 +849,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* ── the seam ──────────────────────────────────────────────────── */
 .peelBoundary {
   margin: 11px 0 0; max-width: var(--measure);
-  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-13, -0.01em);
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-14);
 }
 /* The words that were picked, printed above the wording they became, so
    the two can be compared without either being covered. */
@@ -876,10 +908,10 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .picker svg { width: 14px; height: 14px; color: var(--ink-3); }
 .picker b { font-weight: 400; color: var(--ink-3); }
 .peelRow .spacer { flex: 1; }
-.peelWhy { margin: 12px 0 0; max-width: var(--measure); text-wrap: pretty; font-size: var(--t-13); line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); }
+.peelWhy { margin: 12px 0 0; max-width: var(--measure); text-wrap: pretty; font-size: var(--t-13); line-height: var(--lh-note); color: var(--ink-3); letter-spacing: var(--tr-12); }
 .peel[data-receipt] { box-shadow: 0 0 0 1px var(--ink-1), var(--paper); }
 .peel[data-receipt] .peelMark { background: var(--ink); }
-.peelSent { margin: 11px 0 0; max-width: var(--measure); font-size: var(--t-17); font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); }
+.peelSent { margin: 11px 0 0; max-width: var(--measure); font-size: var(--t-17); font-weight: 600; line-height: var(--lh-base); letter-spacing: var(--tr-16); }
 .noHits { padding: 26px 0 0; }
 .stays { display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); margin-top: 12px; line-height: var(--lh-base); }
 .stays svg { width: 13px; height: 13px; }
@@ -903,8 +935,8 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .searchBar .esc::before { content: ""; position: absolute; inset: -12px -10px; }
 
 /* ── every empty ───────────────────────────────────────────────── */
-.emptyTitle { margin: 0; font-size: var(--t-27); font-weight: 600; line-height: 1.22; letter-spacing: var(--tr-27); text-wrap: balance; }
-.emptyBody { margin: 12px 0 0; font-size: var(--t-17); line-height: 1.58; color: var(--ink-2); letter-spacing: var(--tr-16); max-width: var(--measure); text-wrap: pretty; }
+.emptyTitle { margin: 0; font-size: var(--t-27); font-weight: 600; line-height: var(--lh-title); letter-spacing: var(--tr-27); text-wrap: balance; }
+.emptyBody { margin: 12px 0 0; font-size: var(--t-17); line-height: var(--lh-note); color: var(--ink-2); letter-spacing: var(--tr-16); max-width: var(--measure); text-wrap: pretty; }
 .emptyMove { margin-top: 20px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 .specs { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px 0 8px; }
 .spec { border-radius: var(--r-paper); box-shadow: var(--ring); padding: 20px 22px 22px; }
@@ -912,14 +944,14 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .spec .emptyTitle { font-size: var(--t-17); letter-spacing: var(--tr-21); }
 .spec .emptyBody { font-size: var(--t-15); margin-top: 8px; }
 .spec .emptyMove { margin-top: 14px; }
-.specWhy { margin: 13px 0 0; font-size: var(--t-12); line-height: 1.55; color: var(--ink-3); letter-spacing: var(--tr-12); text-wrap: pretty; }
+.specWhy { margin: 13px 0 0; font-size: var(--t-12); line-height: var(--lh-note); color: var(--ink-3); letter-spacing: var(--tr-12); text-wrap: pretty; }
 
 /* ── not yet ───────────────────────────────────────────────────── */
 .states { display: grid; gap: 11px; padding: 4px 0 8px; }
 .state { display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: var(--r-paper); box-shadow: inset 0 0 0 1px var(--line); }
 .state svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--ink-2); }
 .state b { display: block; font-size: var(--t-15); font-weight: 600; letter-spacing: var(--tr-14); line-height: var(--lh-tight); }
-.state p { margin: 5px 0 0; font-size: var(--t-13); line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14); max-width: var(--measure); text-wrap: pretty; }
+.state p { margin: 5px 0 0; font-size: var(--t-13); line-height: var(--lh-note); color: var(--ink-2); letter-spacing: var(--tr-14); max-width: var(--measure); text-wrap: pretty; }
 .state .act { margin-left: auto; align-self: center; }
 /* Held on this device is the product keeping its promise, so it is stated
    in ink at full strength, not in a warning colour. */
@@ -1011,9 +1043,9 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* Expressive raises the read note and the hand, which are the two places
    in Notes where the content is entirely a person's own writing, and
    leaves every label where it was. */
-[data-type="expressive"] .readBody { font-size: var(--t-20); line-height: 1.6; letter-spacing: var(--tr-21); }
-[data-type="expressive"] .readLong { font-size: var(--t-17); line-height: 1.64; }
-[data-type="expressive"] .handBody { font-size: var(--t-20); line-height: 1.56; letter-spacing: var(--tr-21); }
+[data-type="expressive"] .readBody { font-size: var(--t-20); line-height: var(--lh-read); letter-spacing: var(--tr-21); }
+[data-type="expressive"] .readLong { font-size: var(--t-17); line-height: var(--lh-read); }
+[data-type="expressive"] .handBody { font-size: var(--t-20); line-height: var(--lh-note); letter-spacing: var(--tr-21); }
 [data-type="expressive"] .topField { font-size: var(--t-20); }
 [data-type="expressive"] .emptyTitle { font-size: var(--t-27); letter-spacing: var(--tr-34); }
 [data-type="expressive"] .darkSaid { font-size: var(--t-34); }
@@ -1056,21 +1088,39 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   .railAvatar { margin: 0; }
   .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
   .headName { display: none; }
+  /* One row, four objects, no wrapping and a sheet that clips: the couple,
+     the date and the notebook's count were laid out past the sheet's right
+     edge and simply did not print. The head takes two rows on a phone —
+     the wordmark and the acts above, what the house is facing below. */
+  .head {
+    display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto;
+    height: auto; padding: 9px var(--gutter) 7px; row-gap: 1px; column-gap: 10px; align-items: center;
+  }
+  .head .word { grid-column: 1; grid-row: 1; }
+  .head .headRule { display: none; }
+  .head .chip { grid-column: 2; grid-row: 1; justify-self: start; }
+  .head .headActions { grid-column: 3; grid-row: 1; }
+  .head .headNext {
+    grid-column: 1 / -1; grid-row: 2; white-space: normal; overflow: visible;
+    flex-wrap: wrap; column-gap: 7px; row-gap: 0;
+  }
+  .head .headNext b, .head .headNext span { white-space: normal; overflow: visible; }
+  .head .headNext span { font-size: var(--t-12); letter-spacing: var(--tr-12); }
   /* Grafted from direction A. The desk's paper costs most of an 844px
      screen before a single note is visible, so on a phone capture moves
      into the dock, which is where a thumb already is. */
   .desk { display: none; }
   .indexWrap { padding-top: 6px; }
-  .index { padding-bottom: 128px; }
+  .index { padding-bottom: calc(128px + var(--undo-pad, 0px)); }
   .dock { width: calc(100% - var(--gutter) * 2); max-width: none; padding: 6px 6px 6px 14px; align-items: flex-end; }
   .dockCount { align-self: center; font-size: var(--t-11); color: var(--ink-3); letter-spacing: var(--tr-11); padding: 0 4px 10px; flex: none; }
   .indexHead { flex-wrap: wrap; row-gap: 8px; }
   .groupBy { margin-left: 0; }
-  .index { padding-bottom: 148px; }
+  .index { padding-bottom: calc(148px + var(--undo-pad, 0px)); }
   .dockField { display: none; }
   .phoneField {
     display: block; flex: 1; min-width: 0;
-    font: inherit; font-size: var(--t-15); line-height: 1.5; letter-spacing: var(--tr-16); color: var(--ink-1);
+    font: inherit; font-size: var(--t-15); line-height: var(--lh-base); letter-spacing: var(--tr-16); color: var(--ink-1);
     field-sizing: content; min-height: calc(1.5em * 2); max-height: 40vh; padding: 8px 0;
   }
   .phoneField::placeholder { color: var(--ink-3); }
@@ -1162,7 +1212,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   /* The separate capsule stands down; its tiles are in the dock. */
   .rail { display: none; }
   .sheet { height: calc(100dvh - 68px - var(--inset) * 2 - env(safe-area-inset-bottom)); }
-  .index { padding-bottom: 22px; }
+  .index { padding-bottom: calc(22px + var(--undo-pad, 0px)); }
   .undo { bottom: 88px; }
   /* The one place the ramp bends, and it bends by dropping a step rather
      than inventing a value: 34 does not fit a 390 screen. */

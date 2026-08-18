@@ -126,9 +126,27 @@ const said = (page) => page.locator("#say").textContent();
     "focus returns to the row it came from",
     await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("idxRow")),
   );
+  /* Superseded at round 6. The pile is still restored, but a row is now
+     given scroll-margin against the sticky group rule, so returning to a
+     row that was sitting under the rule moves the pile by up to the rule's
+     own height — which is the fix, not a regression. Both facts are
+     asserted: the place is kept, and the row is legible when you get
+     back to it. */
   ok(
     "closing does not annihilate the scroll position either",
-    Math.abs((await scroller.evaluate((n) => n.scrollTop)) - scrollBefore) < 4,
+    Math.abs((await scroller.evaluate((n) => n.scrollTop)) - scrollBefore) <= 70,
+    `${await scroller.evaluate((n) => n.scrollTop)} vs ${scrollBefore}`,
+  );
+  ok(
+    "and the row it returns to is clear of the group rule, not under it",
+    await page.evaluate(() => {
+      const row = document.querySelector(".idxRow[data-cursor]");
+      const rule = document.querySelector(".idxDay");
+      if (!row || !rule) return true;
+      const r = row.getBoundingClientRect();
+      const d = rule.getBoundingClientRect();
+      return r.bottom <= d.top + 1 || r.top >= d.bottom - 1;
+    }),
   );
   await page.close();
 }
@@ -177,11 +195,15 @@ const said = (page) => page.locator("#say").textContent();
   /* T does not send anything on its own. It opens the same peel the
      notebook uses, inside the hand, so the promise the product is sold on
      is not skipped by its own review flow. */
+  /* Superseded at round 6. T used to open an empty peel from the hand
+     while the identical button on the desk refused — one control, one
+     key, two behaviours, and the room you happened to be standing in
+     decided which of the product's promises applied. Both rooms now run
+     the same function, so both obey the same precondition: nothing opens
+     the seam until somebody has picked the words that will cross. With a
+     keyboard route into picking, refusing is no longer a dead end. */
   ok("T opens the peel inside the hand", (await page.locator(".hand .peel").count()) === 1);
   ok("the queue has not moved yet", (await page.locator(".handOf").textContent()) === ofBefore);
-  /* Nothing is claimed as picked that nobody picked, so the peel opens
-     empty and asks. Picking from the card fills it. */
-  ok("it does not claim words nobody picked", (await page.locator(".peelField").inputValue()) === "");
   await page.evaluate(() => {
     const body = document.querySelector(".handBody");
     const range = document.createRange();
@@ -300,7 +322,24 @@ const said = (page) => page.locator("#say").textContent();
   await page.locator('[data-act="voice-stop"]').click();
   await page.waitForTimeout(260);
   ok("stopping reads it back", (await page.locator(".piece").count()) === 2);
-  ok("what was said stays on screen beside what it became", (await page.locator(".saidWas").count()) === 1);
+  /* Superseded at round 6. The transcript was printed above the pieces
+     and again inside them — the same sentences twice, at the exact moment
+     the product is asking to be trusted with somebody's voice. The pieces
+     ARE the record: her words, in the product's type, editable. */
+  ok("what was said comes back once, in the fields she can edit", (await page.locator(".saidWas").count()) === 0);
+  ok(
+    "and the pieces carry her words verbatim",
+    await page.evaluate(() => {
+      const said = document.querySelector(".saidHead");
+      const joined = [...document.querySelectorAll(".pieceField")].map((f) => f.value).join(" ");
+      return Boolean(said) && joined.length > 40 && !said.textContent.includes(joined.slice(0, 30));
+    }),
+  );
+  ok(
+    "and the caret is in the first of them, not on the body",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("pieceField")),
+  );
+  ok("and what came back is spoken in her words, not counted", /came back\. First:/i.test(await said(page)), await said(page));
   ok(
     "every piece is editable and separately named",
     await page.evaluate(() =>
@@ -1316,19 +1355,52 @@ const said = (page) => page.locator("#say").textContent();
 /* ── the queue never scolds, and never refuses silently ──────────── */
 {
   const page = await open("?state=review");
+  /* The first card carries a pick the person made earlier. It is DRAWN on
+     the card, so the primary says what it will do rather than asking for
+     something that is already there — one expression answers what is
+     marked, what the button says, and what the seam receives. */
+  ok("a standing pick is drawn on the card, not held invisibly", (await page.locator(".handBody .pick").count()) === 1);
   ok(
-    "the queue's primary states its precondition at rest",
+    "and the primary reads off the same pick it will send",
+    (await page.locator('.handFoot [data-act="d-task"]').textContent()).includes("Send to Tasks"),
+  );
+  /* Walk on to a card nobody has picked from. */
+  await page.locator('[data-act="d-later"]').click();
+  await page.waitForTimeout(320);
+  ok("a card with no pick states its precondition at rest", (await page.locator(".handBody .pick").count()) === 0);
+  ok(
+    "and its primary says so",
     (await page.locator('.handFoot [data-act="d-task"]').textContent()).includes("Pick the words"),
   );
   await page.keyboard.press("t");
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(320);
+  ok("T with nothing picked does not open the seam from nothing", (await page.locator(".hand .peel").count()) === 0);
+  ok("it invites instead, in the card itself", (await page.locator(".hand .nudge").count()) === 1);
+  ok(
+    "and the press comes back to the control that was pressed",
+    await page.evaluate(() => document.activeElement && document.activeElement.dataset.act === "d-task"),
+  );
   const heard = await said(page);
   ok("pressing it invites rather than reprimands", !/^Highlight/.test(heard), heard);
-  ok("and it says what to do next", /pick words|what the task should say/i.test(heard), heard);
+  ok("and it says what to do next", /pick the words/i.test(heard), heard);
+  ok("and it names both routes into picking, not just the mouse one", /arrow keys/i.test(heard), heard);
+  /* The invitation stays until it is answered. It used to be cleared on a
+     4.2-second clock, so the sentence telling somebody what to do
+     disappeared while they were doing it. */
+  await page.waitForTimeout(4600);
+  ok("and the invitation is still there five seconds later", (await page.locator(".hand .nudge").count()) === 1);
+  ok("and it is not dressed as an error", (await page.locator(".hand .nudge svg").getAttribute("data-i")) !== "alert");
+  await page.locator(".handBody").focus();
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(200);
+  const pickedText = await page.locator(".handBody .pick").textContent();
+  await page.keyboard.press("t");
+  await page.waitForTimeout(320);
+  ok("picking, then pressing, opens the peel", (await page.locator(".hand .peel").count()) === 1);
   ok("the peel asks in its own field", (await page.locator(".peelField").getAttribute("placeholder")).length > 6);
   ok(
-    "and its primary states its precondition too",
-    (await page.locator('.peel [data-act="send"]').textContent()).includes("Write the wording"),
+    "and it carries exactly the words that were picked",
+    (await page.locator(".peelField").inputValue()).toLowerCase().startsWith(pickedText.trim().toLowerCase().slice(0, 24)),
   );
   ok("with the card's own actions stood down", (await page.locator('.handFoot [data-act="d-task"]').count()) === 0);
   await page.close();
@@ -1471,6 +1543,332 @@ const said = (page) => page.locator("#say").textContent();
     !/Timeline/i.test(text),
     text.trim(),
   );
+  await page.close();
+}
+
+/* ── round 6: the second plane has two edges ─────────────────────── */
+{
+  const page = await open("?state=pressure");
+  ok(
+    "the group rule leads out instead of guillotining the row under it",
+    await page.evaluate(() => {
+      const rule = document.querySelector(".idxDay");
+      return getComputedStyle(rule, "::before").backgroundImage.includes("gradient");
+    }),
+  );
+  /* Walking with the keyboard can never park a row half under the rule. */
+  await page.locator(".idxRow").first().focus();
+  for (let i = 0; i < 9; i += 1) {
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(70);
+  }
+  ok(
+    "and the arrows never park a row under it",
+    await page.evaluate(() => {
+      const row = document.querySelector(".idxRow[data-cursor]");
+      const rules = [...document.querySelectorAll(".idxDay")];
+      if (!row) return false;
+      const r = row.getBoundingClientRect();
+      return rules.every((d) => {
+        const b = d.getBoundingClientRect();
+        return r.bottom <= b.top + 1 || r.top >= b.bottom - 1;
+      });
+    }),
+  );
+  await page.close();
+}
+
+/* ── round 6: the resting pile does not wear a keyboard cursor ───── */
+{
+  const page = await open();
+  const wash = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--indigo-wash").trim());
+  ok(
+    "at rest the cursor is ink, not the colour of words about to cross",
+    await page.evaluate((w) => {
+      const row = document.querySelector(".idxRow[data-cursor]");
+      if (!row) return true;
+      const paint = getComputedStyle(row).backgroundColor;
+      const probe = document.createElement("i");
+      probe.style.backgroundColor = w;
+      document.body.appendChild(probe);
+      const indigo = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return paint !== indigo;
+    }, wash),
+  );
+  await page.locator(".idxRow[data-cursor]").focus();
+  await page.waitForTimeout(120);
+  ok(
+    "and it lights the moment the pile has the keyboard",
+    await page.evaluate((w) => {
+      const row = document.querySelector(".idxRow[data-cursor]");
+      const paint = getComputedStyle(row).backgroundColor;
+      const probe = document.createElement("i");
+      probe.style.backgroundColor = w;
+      document.body.appendChild(probe);
+      const indigo = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return paint === indigo;
+    }, wash),
+  );
+  /* And after a capture the emphasis is on the row that just arrived, not
+     on the one the cursor happened to be holding by id. */
+  await page.locator(".topField").fill("Check the chair covers arrived in the right ivory.");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(900);
+  ok(
+    "and after a keep it holds the words that just landed",
+    (await page.locator(".idxRow[data-cursor] .idxText").textContent()).includes("chair covers"),
+  );
+  await page.close();
+}
+
+/* ── round 6: the undo strip never lands on a person's words ─────── */
+{
+  const page = await open();
+  await page.locator(".topField").fill("Confirm the cake table goes by the window, not the door.");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(900);
+  ok("the sheet declares the band spoken for", (await page.locator(".sheet[data-undo]").count()) === 1);
+  await page.evaluate(() => {
+    const idx = document.getElementById("index");
+    idx.scrollTop = idx.scrollHeight;
+  });
+  await page.waitForTimeout(200);
+  ok(
+    "and at the foot of the pile the last row still ends above it",
+    await page.evaluate(() => {
+      const strip = document.querySelector(".undo");
+      const rows = [...document.querySelectorAll(".idxRow")];
+      const s = strip.getBoundingClientRect();
+      return rows.every((r) => {
+        const b = r.getBoundingClientRect();
+        return b.bottom <= s.top + 1 || b.top >= s.bottom - 1;
+      });
+    }),
+  );
+  await page.close();
+}
+
+/* ── round 6: deferring is not deciding ──────────────────────────── */
+{
+  const page = await open("?state=review");
+  const ofBefore = await page.locator(".handOf").textContent();
+  const pendingBefore = await page.locator(".chip").count();
+  await page.locator('[data-act="d-later"]').click();
+  await page.waitForTimeout(320);
+  ok("putting a card to the back does not advance the count", (await page.locator(".handOf").textContent()) === ofBefore, `${ofBefore} then ${await page.locator(".handOf").textContent()}`);
+  ok("and it does not grow the denominator either", !(await page.locator(".handOf").textContent()).includes("of 9"));
+  ok("the strip says what happened, and does not claim a decision", (await page.locator(".undo span").first().textContent()).includes("back"));
+  ok(
+    "and nothing on the card credits a decision nobody made",
+    !(await page.locator(".deckNote").textContent()).includes("decided just now"),
+  );
+  ok("the head's count is unchanged", (await page.locator(".chip").count()) === pendingBefore);
+  await page.close();
+}
+
+/* ── round 6: one count, one scope, one grammar ──────────────────── */
+{
+  const page = await open();
+  const lede = await page.locator(".headNext span").textContent();
+  const chip = await page.locator(".chip").textContent();
+  ok("the head does not print the chip's phrase beside the chip", !lede.includes("still to decide"), `${lede} | ${chip}`);
+  ok(
+    "and the chip names its own scope where it is read aloud",
+    (await page.locator(".chip").getAttribute("aria-label")).includes("across the whole notebook"),
+  );
+  await page.close();
+}
+{
+  const page = await open("?state=review");
+  ok(
+    "the hand's second count says what it counts",
+    (await page.locator(".indexHead .cnt").textContent()).includes("behind this one"),
+  );
+  await page.close();
+}
+
+/* ── round 6: the product's own privacy words, nowhere invented ──── */
+{
+  for (const state of ["notebook", "nothing", "capture"]) {
+    const page = await open(`?state=${state}`);
+    const text = await page.evaluate(() => document.body.innerText);
+    ok(`${state}: no privacy claim stronger than the product's own`, !/Nobody else can read/i.test(text));
+    await page.close();
+  }
+  const page = await open();
+  ok(
+    "and the header chip carries the conditional in its accessible name",
+    (await page.locator('[data-act="privacy"]').getAttribute("aria-label")).includes("until you send something on"),
+  );
+  await page.close();
+}
+
+/* ── round 6: reduced motion holds the arrival, it does not delete it ── */
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+  page.on("pageerror", (e) => errors.push(String(e).split("\n")[0]));
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto(FILE);
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(280);
+  await page.locator(".topField").fill("Ask about the corkage on the second bar.");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(220);
+  ok("reduced motion still marks where the words went", (await page.locator(".idxRow[data-arriving]").count()) === 1);
+  ok(
+    "and brings that row into view",
+    await page.evaluate(() => {
+      const row = document.querySelector(".idxRow[data-arriving]");
+      const idx = document.getElementById("index");
+      const r = row.getBoundingClientRect();
+      const b = idx.getBoundingClientRect();
+      return r.top >= b.top - 1 && r.bottom <= b.bottom + 1;
+    }),
+  );
+  ok(
+    "and nothing is animated to get there",
+    await page.evaluate(() => {
+      const row = document.querySelector(".idxRow[data-arriving]");
+      const d = getComputedStyle(row).animationDuration;
+      return d === "0s" || d === "";
+    }),
+  );
+  await page.waitForTimeout(800);
+  ok("and the mark is released, not left on", (await page.locator(".idxRow[data-arriving]").count()) === 0);
+  await page.close();
+}
+
+/* ── round 6: the head prints on a phone ─────────────────────────── */
+{
+  for (const width of [360, 390, 414]) {
+    const page = await open("", { width, height: 844 });
+    ok(
+      `${width}: what the house is facing prints in the head`,
+      await page.evaluate(() => {
+        const el = document.querySelector(".headNext");
+        if (!el) return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 60 && r.height > 8;
+      }),
+    );
+    ok(
+      `${width}: and nothing in the head is laid out past the sheet's edge`,
+      await page.evaluate(() => {
+        const sheet = document.querySelector(".sheet").getBoundingClientRect();
+        return [...document.querySelectorAll(".head *")].every((n) => {
+          const r = n.getBoundingClientRect();
+          return r.width === 0 || (r.right <= sheet.right + 1 && r.left >= sheet.left - 1);
+        });
+      }),
+    );
+    await page.close();
+  }
+}
+
+/* ── round 6: the filing popup answers a keyboard ────────────────── */
+{
+  const page = await open();
+  await page.locator('[data-act="filing"]').click();
+  await page.waitForTimeout(200);
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(140);
+  ok(
+    "the arrows walk the options, not the pile behind them",
+    await page.evaluate(() => document.activeElement && document.activeElement.getAttribute("role") === "option"),
+  );
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Home");
+  await page.waitForTimeout(140);
+  ok(
+    "and Home reaches the first of them",
+    await page.evaluate(() => {
+      const opts = [...document.querySelectorAll('.pickerPop [role="option"]')];
+      return opts[0] === document.activeElement;
+    }),
+  );
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(200);
+  ok("escape closes it", (await page.locator(".pickerPop").count()) === 0);
+  ok(
+    "and hands the keyboard back to the control that opened it",
+    await page.evaluate(() => document.activeElement && document.activeElement.dataset.act === "filing"),
+  );
+  await page.locator('[data-act="filing"]').click();
+  await page.waitForTimeout(200);
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(140);
+  const chosen = await page.evaluate(() => document.activeElement.textContent.trim());
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(260);
+  ok("and Enter commits the one it is on", (await page.locator(".filingBtn").first().textContent()).includes(chosen.split("No date")[0].trim().slice(0, 10)), chosen);
+  await page.close();
+}
+
+/* ── round 6: the search field drives the selection it paints ────── */
+{
+  const page = await open();
+  /* The caret starts in the capture field, which is where it belongs, so
+     search is opened by its own control rather than by a slash that would
+     land in somebody's sentence. */
+  await page.locator('[data-act="search"]').first().click();
+  await page.waitForTimeout(260);
+  await page.keyboard.type("the");
+  await page.waitForTimeout(320);
+  const first = await page.locator(".idxRow[data-cursor] .idxText").textContent();
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(220);
+  const second = await page.locator(".idxRow[data-cursor] .idxText").textContent();
+  ok("the arrows walk the drawn selection from inside the field", first !== second, `${first.slice(0, 24)} then ${second.slice(0, 24)}`);
+  ok(
+    "and the caret is still in the field",
+    await page.evaluate(() => document.activeElement && document.activeElement.id === "q"),
+  );
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(300);
+  ok("and enter opens the row it is on", (await page.locator(".readBody").count()) === 1);
+  await page.close();
+}
+
+/* ── round 6: picking has a keyboard route ───────────────────────── */
+{
+  const page = await open();
+  await page.locator(".idxRow").nth(2).click();
+  await page.waitForTimeout(260);
+  ok(
+    "the note is a tab stop with a name that says what it is for",
+    (await page.locator(".readBody").getAttribute("aria-label")).toLowerCase().includes("pick the words"),
+  );
+  /* This note may carry a pick made earlier, which is drawn at rest. What
+     is graded is the change the keyboard makes, and that it can be given
+     back to exactly where it started. */
+  const atRest = await page.locator('[data-act="peel"]').textContent();
+  const restPick = (await page.locator(".readBody .pick").count())
+    ? await page.locator(".readBody .pick").textContent()
+    : "";
+  await page.locator(".readBody").focus();
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(240);
+  ok("the arrows pick a whole sentence", (await page.locator(".readBody .pick").count()) === 1);
+  const one = await page.locator(".readBody .pick").textContent();
+  ok("and it is announced in words, not in a colour", /words picked/.test(await said(page)), await said(page));
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.waitForTimeout(240);
+  const two = await page.locator(".readBody .pick").textContent();
+  ok("shift extends it to the next one", two.length > one.length, `${one.length} then ${two.length}`);
+  ok(
+    "and the primary reads off the same pick",
+    (await page.locator('[data-act="peel"]').textContent()).includes("Send to Tasks"),
+  );
+  await page.keyboard.press(" ");
+  await page.waitForTimeout(240);
+  const after = (await page.locator(".readBody .pick").count())
+    ? await page.locator(".readBody .pick").textContent()
+    : "";
+  ok("space gives it back, exactly to where it started", after === restPick, `"${restPick}" then "${after}"`);
+  ok("and the primary says what it said at rest", (await page.locator('[data-act="peel"]').textContent()) === atRest);
   await page.close();
 }
 
