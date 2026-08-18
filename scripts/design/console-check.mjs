@@ -1,0 +1,21 @@
+/* The console must drive the real master, not a copy of it. */
+import { chromium } from "@playwright/test";
+import path from "node:path";
+const URL = "file:///" + path.resolve("docs/design/labs/tasks-2026-08/customizer.html").split("\\").join("/");
+const browser = await chromium.launch();
+const page = await browser.newPage({ viewport: { width: 1500, height: 1000 } });
+const errors = [];
+page.on("pageerror", (e) => errors.push(String(e)));
+page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+await page.goto(URL);
+await page.waitForTimeout(700);
+const line = (k, v) => process.stdout.write("  " + k.padEnd(26) + v + "\n");
+line("cards rendered", await page.locator(".deck .card").count());
+line("page scrolls sideways", await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1));
+await page.locator(".deck .tray .card .tick").first().click();
+await page.waitForTimeout(350);
+line("tick works in the console", (await page.locator('.deck .tray[data-lane="done"] .card').count()));
+line("undo strip appears", await page.locator('.deck [data-act="undo"]').count());
+line("console errors", errors.length ? errors.join(" | ") : "none");
+await browser.close();
+process.exit(errors.length ? 1 : 0);

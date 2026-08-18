@@ -1,0 +1,1054 @@
+{
+  "viewports": [
+    "390x844",
+    "768x1024",
+    "1280x900",
+    "1440x960"
+  ],
+  "states": [
+    "board",
+    "cards",
+    "dense",
+    "empty",
+    "loading",
+    "planning"
+  ],
+  "shots": [
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "board",
+      "viewport": "390x844",
+      "file": "arch-a-board--390x844.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "arch-a-dense--390x844.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "arch-a-empty--390x844.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "arch-a-loading--390x844.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "planning",
+      "viewport": "390x844",
+      "file": "arch-a-planning--390x844.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "board",
+      "viewport": "390x844",
+      "file": "arch-b-board--390x844.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "arch-b-dense--390x844.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "arch-b-empty--390x844.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "arch-b-loading--390x844.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "planning",
+      "viewport": "390x844",
+      "file": "arch-b-planning--390x844.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "board",
+      "viewport": "390x844",
+      "file": "arch-c-board--390x844.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "arch-c-dense--390x844.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "arch-c-empty--390x844.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "arch-c-loading--390x844.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "planning",
+      "viewport": "390x844",
+      "file": "arch-c-planning--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "board",
+      "viewport": "390x844",
+      "file": "locked-board--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "locked-dense--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "locked-empty--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "locked-loading--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "planning",
+      "viewport": "390x844",
+      "file": "locked-planning--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "board",
+      "viewport": "390x844",
+      "file": "a-board--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "a-dense--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "a-empty--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "a-loading--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "planning",
+      "viewport": "390x844",
+      "file": "a-planning--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "board",
+      "viewport": "390x844",
+      "file": "b-board--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "b-dense--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "b-empty--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "b-loading--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "planning",
+      "viewport": "390x844",
+      "file": "b-planning--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "board",
+      "viewport": "390x844",
+      "file": "c-board--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "c-dense--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "c-empty--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "c-loading--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "planning",
+      "viewport": "390x844",
+      "file": "c-planning--390x844.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "board",
+      "viewport": "768x1024",
+      "file": "arch-a-board--768x1024.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "arch-a-dense--768x1024.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "arch-a-empty--768x1024.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "arch-a-loading--768x1024.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "planning",
+      "viewport": "768x1024",
+      "file": "arch-a-planning--768x1024.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "board",
+      "viewport": "768x1024",
+      "file": "arch-b-board--768x1024.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "arch-b-dense--768x1024.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "arch-b-empty--768x1024.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "arch-b-loading--768x1024.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "planning",
+      "viewport": "768x1024",
+      "file": "arch-b-planning--768x1024.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "board",
+      "viewport": "768x1024",
+      "file": "arch-c-board--768x1024.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "arch-c-dense--768x1024.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "arch-c-empty--768x1024.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "arch-c-loading--768x1024.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "planning",
+      "viewport": "768x1024",
+      "file": "arch-c-planning--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "board",
+      "viewport": "768x1024",
+      "file": "locked-board--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "locked-dense--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "locked-empty--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "locked-loading--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "planning",
+      "viewport": "768x1024",
+      "file": "locked-planning--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "board",
+      "viewport": "768x1024",
+      "file": "a-board--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "a-dense--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "a-empty--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "a-loading--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "planning",
+      "viewport": "768x1024",
+      "file": "a-planning--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "board",
+      "viewport": "768x1024",
+      "file": "b-board--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "b-dense--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "b-empty--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "b-loading--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "planning",
+      "viewport": "768x1024",
+      "file": "b-planning--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "board",
+      "viewport": "768x1024",
+      "file": "c-board--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "c-dense--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "c-empty--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "c-loading--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "planning",
+      "viewport": "768x1024",
+      "file": "c-planning--768x1024.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "board",
+      "viewport": "1280x900",
+      "file": "arch-a-board--1280x900.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "arch-a-dense--1280x900.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "arch-a-empty--1280x900.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "arch-a-loading--1280x900.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "planning",
+      "viewport": "1280x900",
+      "file": "arch-a-planning--1280x900.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "board",
+      "viewport": "1280x900",
+      "file": "arch-b-board--1280x900.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "arch-b-dense--1280x900.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "arch-b-empty--1280x900.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "arch-b-loading--1280x900.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "planning",
+      "viewport": "1280x900",
+      "file": "arch-b-planning--1280x900.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "board",
+      "viewport": "1280x900",
+      "file": "arch-c-board--1280x900.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "arch-c-dense--1280x900.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "arch-c-empty--1280x900.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "arch-c-loading--1280x900.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "planning",
+      "viewport": "1280x900",
+      "file": "arch-c-planning--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "board",
+      "viewport": "1280x900",
+      "file": "locked-board--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "cards",
+      "viewport": "1280x900",
+      "file": "locked-cards--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "locked-dense--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "locked-empty--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "locked-loading--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "planning",
+      "viewport": "1280x900",
+      "file": "locked-planning--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "board",
+      "viewport": "1280x900",
+      "file": "a-board--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "cards",
+      "viewport": "1280x900",
+      "file": "a-cards--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "a-dense--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "a-empty--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "a-loading--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "planning",
+      "viewport": "1280x900",
+      "file": "a-planning--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "board",
+      "viewport": "1280x900",
+      "file": "b-board--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "cards",
+      "viewport": "1280x900",
+      "file": "b-cards--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "b-dense--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "b-empty--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "b-loading--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "planning",
+      "viewport": "1280x900",
+      "file": "b-planning--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "board",
+      "viewport": "1280x900",
+      "file": "c-board--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "cards",
+      "viewport": "1280x900",
+      "file": "c-cards--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "c-dense--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "c-empty--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "c-loading--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "planning",
+      "viewport": "1280x900",
+      "file": "c-planning--1280x900.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "board",
+      "viewport": "1440x960",
+      "file": "arch-a-board--1440x960.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "arch-a-dense--1440x960.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "arch-a-empty--1440x960.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "arch-a-loading--1440x960.png"
+    },
+    {
+      "direction": "arch-a",
+      "name": "Ledger",
+      "state": "planning",
+      "viewport": "1440x960",
+      "file": "arch-a-planning--1440x960.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "board",
+      "viewport": "1440x960",
+      "file": "arch-b-board--1440x960.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "arch-b-dense--1440x960.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "arch-b-empty--1440x960.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "arch-b-loading--1440x960.png"
+    },
+    {
+      "direction": "arch-b",
+      "name": "Atelier",
+      "state": "planning",
+      "viewport": "1440x960",
+      "file": "arch-b-planning--1440x960.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "board",
+      "viewport": "1440x960",
+      "file": "arch-c-board--1440x960.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "arch-c-dense--1440x960.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "arch-c-empty--1440x960.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "arch-c-loading--1440x960.png"
+    },
+    {
+      "direction": "arch-c",
+      "name": "Studio Floor",
+      "state": "planning",
+      "viewport": "1440x960",
+      "file": "arch-c-planning--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "board",
+      "viewport": "1440x960",
+      "file": "locked-board--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "cards",
+      "viewport": "1440x960",
+      "file": "locked-cards--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "locked-dense--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "locked-empty--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "locked-loading--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
+      "state": "planning",
+      "viewport": "1440x960",
+      "file": "locked-planning--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "board",
+      "viewport": "1440x960",
+      "file": "a-board--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "cards",
+      "viewport": "1440x960",
+      "file": "a-cards--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "a-dense--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "a-empty--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "a-loading--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "planning",
+      "viewport": "1440x960",
+      "file": "a-planning--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "board",
+      "viewport": "1440x960",
+      "file": "b-board--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "cards",
+      "viewport": "1440x960",
+      "file": "b-cards--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "b-dense--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "b-empty--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "b-loading--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
+      "state": "planning",
+      "viewport": "1440x960",
+      "file": "b-planning--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "board",
+      "viewport": "1440x960",
+      "file": "c-board--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "cards",
+      "viewport": "1440x960",
+      "file": "c-cards--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "c-dense--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "c-empty--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "c-loading--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "planning",
+      "viewport": "1440x960",
+      "file": "c-planning--1440x960.png"
+    }
+  ]
+}

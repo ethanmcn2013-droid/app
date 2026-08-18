@@ -44,6 +44,8 @@ import styles from "../a/option-a.module.css";
  * flashing on a fast connection.
  */
 const BoardView = dynamic(() => import("../a/board-view").then((m) => m.BoardView));
+import { FloorWorkspace } from "@/components/floor/floor-workspace";
+import { useDomain, useWorkspaceMembers } from "@/lib/domain-context";
 const ListView = dynamic(() => import("../a/list-view").then((m) => m.ListView));
 const TimelineView = dynamic(() => import("../a/timeline-view").then((m) => m.TimelineView));
 const BCalendarView = dynamic(() => import("../b/calendar-view").then((m) => m.CalendarView));
@@ -190,7 +192,7 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
       headline={personalization.headline}
       primaryLabel={personalization.firstTaskExample}
     />
-  ) : route.view === "board" ? <BoardView tasks={visibleTasks} />
+  ) : route.view === "board" ? null
     : route.view === "list" ? <ListView columns={columns} group="status" setColumns={setColumns} tasks={visibleTasks} />
       : route.view === "timeline" ? <TimelineView tasks={visibleTasks} />
         : (
@@ -203,120 +205,23 @@ export function OptionHybrid({ route, onRouteChange }: TasksOptionProps) {
 
   const filteredToNothing = wholeProject.length > 0 && visibleTasks.length === 0 && activeFilterCount > 0;
 
+  const domain = useDomain();
+  const members = useWorkspaceMembers();
+  const floorProjectName = domain.boardName ?? domain.workspaceTitle ?? "This project";
+  const operatorInitials = members[0]?.initials ?? "—";
+
   return (
     <WorkspaceBoardColumnsProvider>
-    <div className={styles.optionA} data-nav-hidden={navHidden || undefined} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined}>
-      <section className={styles.workspaceShell}>
-        {/* Project-level actions live on the project band, not the view
-            toolbar: sharing and printing concern the project, and the
-            Planning drawer frames the whole of it. */}
-        <WorkspaceBrief
-          actions={
-            <>
-              {/* md, not lg: sharing is the growth loop and the tablet row
-                  has visible room — it kept retreating to the overflow a
-                  full breakpoint early. (It still lives in the … menu below
-                  md, and redundantly between md and lg — the menu section is
-                  a shared production block gated at lg.) */}
-              <span className="hidden md:inline-flex">
-                <ShareButton variant="band" view={shareView} />
-              </span>
-              <Hint
-                align="end"
-                text={
-                  unscheduledCount > 0
-                    ? `${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date yet`
-                    : "Dates, milestones and what still needs scheduling"
-                }
-              >
-              <button
-                aria-controls="c-planning-rail"
-                aria-expanded={!planningCollapsed}
-                // The visible text hides on phones (chrome yields before the
-                // title truncates), so the accessible name is carried here
-                // and stays whole at every width.
-                aria-label={
-                  unscheduledCount > 0
-                    ? `Planning · ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
-                    : "Planning"
-                }
-                className={briefStyles.planningTrigger}
-                onClick={openPlanningExclusive}
-                // The badge is the band's most prominent unexplained number:
-                // a sighted user got only "Open the planning drawer", which
-                // explains the verb, never the 5. The tooltip now names what
-                // the count counts. Middot, never an em dash (BRAND.md).
-                title={
-                  planningCollapsed
-                    ? unscheduledCount > 0
-                      ? `Open the planning drawer · ${unscheduledCount} ${unscheduledCount === 1 ? "task has" : "tasks have"} no date`
-                      : "Open the planning drawer"
-                    : "Close the planning drawer"
-                }
-                type="button"
-              >
-                <Icon name="panel" size={15} />
-                <span className={briefStyles.planningLabel}>Planning</span>
-                {/* The noun rides at every width, not just where the
-                    label collapses. "Planning" sits in a band that also
-                    says Schedule and Calendar, and a bare figure beside
-                    three time words told a stranger nothing; the count's
-                    noun is what marks this control as a different kind
-                    of thing from the view tabs, none of which ever carry
-                    a number. The word stays outside the mono badge. */}
-                {unscheduledCount > 0 ? (
-                  <strong aria-hidden="true">
-                    {unscheduledCount}
-                    {/* One chip, two voices: the figure keeps the badge's
-                        mono numeral slot, the noun takes the band's sans.
-                        Splitting them into two objects put a pill between
-                        a number and the word it counts. */}
-                    <span className={briefStyles.planningUndated}>undated</span>
-                  </strong>
-                ) : null}
-              </button>
-              </Hint>
-              <span className="inline-flex">
-                <PageActionsOverflow
-                  printPath={`/print/${route.view}`}
-                  shareView={shareView}
-                  showShare
-                  variant="band"
-                />
-              </span>
-            </>
-          }
-          tasks={wholeProject}
-        />
-        <div className={styles.viewBar}>
-          {/* Canonical hrefs make the tabs real links — middle-click and
-              copy-link-address work, and the anchors pick up the designed
-              28px/underline tab spec instead of the button fallback. A
-              plain click still routes client-side through onRouteChange. */}
-          <div className={styles.tabsScroll}><ViewTabs hrefFor={(view) => TASKS_VIEW_PATHS[view]} onRouteChange={(patch) => { setToolPanel(null); onRouteChange(patch); }} route={route} /></div>
-          {/* group, not toolbar: three tab stops need no roving-tabindex
-              contract, and role="toolbar" promises arrow-key navigation
-              this row does not implement. */}
-          <div aria-label="View controls" className={styles.functionalTools} role="group">
-            <ViewToolButtons onToggle={toggleToolPanel} panel={toolPanel} view={route.view} />
-          </div>
-        </div>
-        <ShortcutsDialog onClose={() => setShortcutsOpen(false)} open={shortcutsOpen} view={route.view} />
-        <ViewToolPanels
-          onClose={() => setToolPanel(null)}
-          onShowShortcuts={() => setShortcutsOpen(true)}
-          panel={toolPanel}
-          view={route.view}
-        />
-        <ActiveFilterChips />
-        {filteredToNothing ? (
-          <div className={styles.filterEmptyNotice} role="status">
-            <span>Nothing matches the filters.</span>
-            <button onClick={clearFilters} type="button">Clear filters</button>
-          </div>
-        ) : null}
-        <section aria-label={`${route.view} view`} className={styles.activeView} data-view={route.view} data-work-surface="true">{view}</section>
-      </section>
+    <div className={styles.optionA} data-nav-hidden={navHidden || undefined} data-option="hybrid" data-planning-collapsed={planningCollapsed || undefined} data-floor="true">
+      <FloorWorkspace
+        initials={operatorInitials}
+        onOpenPlanning={openPlanningExclusive}
+        projectName={floorProjectName}
+        tasks={visibleTasks}
+        view={route.view}
+      >
+        {view}
+      </FloorWorkspace>
       <PlanningRail collapsed={planningCollapsed} onSelectedDate={setSelectedDate} onToggle={togglePlanning} selectedDate={selectedDate} tasks={wholeProject} view={route.view} />
     </div>
     </WorkspaceBoardColumnsProvider>

@@ -4,6 +4,44 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-18 · T·149 · redesigns · the board is one sheet, three colours, and it answers the keyboard
+
+**Open Tasks today and there is one spine instead of two, the project's name where
+the app's name used to be, and a board that has stopped shouting. The amber lane
+dot, the green tick and the red overdue line are gone — not tidied, gone. What is
+late is the blackest thing on the screen; what is finished steps back; what is due
+today is outlined and serious and nothing has gone wrong yet. The board says which
+of those it is with ink, and never with a colour.**
+
+Studio Floor is the design, chosen from a four-way exploration and then taken
+through eleven rounds of a seven-seat quality panel — 350 findings raised, 243
+confirmed by an adversarial verifier and fixed. It ships at a stated 8.1–8.7
+against a 9.5 bar, with the remaining two to three days named in the decision
+record rather than hidden. The bar was never lowered to pass.
+
+What changed for a venue manager:
+
+- **One spine.** The top bar and the projects sidebar stand down on Tasks. The
+  capsule rail on the left is the only spine, and the header states the project by
+  name, the day, what is done, what is overdue and what has no date yet.
+- **Three colours.** Ink, Indigo and White. Every time fact is a point in time and
+  the fill states the condition — filled means behind, outlined means today, indigo
+  means the next milestone, a hairline ring means a record.
+- **The whole board is one tab stop.** Arrows walk it, Space picks a card up,
+  arrows place it, Escape puts it back exactly where it came from. It does not grow
+  with the work on it: five stops at rest, five at peak season.
+- **A dock at the foot** carrying search, add and your account, and a strip that
+  says what you just did and offers the way back.
+
+List, Schedule and Calendar keep their existing interior inside the new shell until
+the redesign reaches them. The design master, the eleven-round record and the
+session report are archived in Signal HQ at `/hq/labs/tasks-studio-floor/`; the
+decision is recorded at `content/hq/decisions/tasks-studio-floor-2026-08.md`.
+
+The stylesheet is generated from the design master by
+`scripts/design/extract-floor-css.mjs`, so the shipped surface and the design
+reference cannot drift apart.
+
 ## 2026-08-17 · T·148 · tightens · a link someone sends you stops deciding where you work
 
 **Open a link to a project someone shared, glance at it, close the tab. Until today,

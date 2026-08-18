@@ -78,3 +78,9 @@ prefs.db*
 # commit before this rule existed.
 *.tmp.mjs
 .scratch/
+.tmp-panel/
+scripts/design/r*.txt
+_*.mjs
+m-tmp.mjs
+scripts/design/_*.mjs
+chip-probe*.mjs

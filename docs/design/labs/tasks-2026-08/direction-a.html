@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger · Tasks direction A</title>
+<link rel="stylesheet" href="./foundation.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   DIRECTION A · LEDGER
+
+   Thesis: a venue's Saturday is a ledger, not a whiteboard. The card as
+   an object is retired. Work is written in five columns of ruled lines on
+   one continuous white sheet, and typography carries every distinction
+   that borders and pills used to carry. You see the whole day without
+   scrolling, and nothing on screen is decoration.
+
+   Chrome: the black top rail is gone. The left rail is the one spine,
+   widened 60 → 72px, and it absorbs what the top rail carried — suite
+   identity at its head, the three products, search, inbox, help, account
+   at its foot. On mobile the spine lies down as a bottom bar and the
+   board becomes one vertical ledger with sticky group heads.
+
+   Proposed token changes are declared at the foot of this block. There
+   are two, both additive.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --a-rail: 72px;
+  --a-sidebar: 232px;
+  --a-chrome: #0c0c0d;         /* proposed: --x-studio-chrome moves from
+                                  #111 to #0c0c0d so the spine reads as a
+                                  material, not as ink that leaked. */
+  --a-chrome-ink: rgba(255,255,255,0.62);
+  --a-chrome-ink-strong: #ffffff;
+  --a-rule: var(--hairline);
+  --a-rule-soft: var(--hairline-soft);
+  --a-row: 13px;
+}
+
+body { background: var(--paper); }
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--a-rail) var(--a-sidebar) minmax(0, 1fr);
+  height: 100dvh;
+  position: relative;
+}
+
+/* ── the spine ─────────────────────────────────────────────────── */
+.rail {
+  background: var(--a-chrome);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 0 12px;
+  gap: 2px;
+  position: relative;
+}
+.rail::after {                     /* the spine has an edge, not a border */
+  content: "";
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 1px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(255,255,255,0));
+}
+/* The wordmark lives IN the spine. Same object as the shipped bar
+   wordmark — Geist 600, -0.045em, indigo full stop drawn as the word's
+   own ::after so it can never come apart — only smaller, and turned to
+   face down the rail rather than across a bar that no longer exists. */
+.railWord {
+  display: inline-flex; align-items: baseline;
+  height: 44px;
+  font-size: 16px; font-weight: 600; letter-spacing: -0.045em;
+  color: var(--a-chrome-ink-strong);
+  margin: 0 0 16px;
+}
+.railWord::after {
+  content: "";
+  width: 4.5px; height: 4.5px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-left: 2px;
+  transform: translateY(-0.5px);
+}
+.railGroup { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; }
+.railTile {
+  width: 56px;
+  padding: 9px 0 7px;
+  border-radius: 10px;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  color: var(--a-chrome-ink);
+  transition: color var(--motion-instant) var(--ease-out),
+              background-color var(--motion-instant) var(--ease-out);
+  position: relative;
+}
+.railTile svg { width: 20px; height: 20px; }
+.railTile span { font-size: 10.5px; letter-spacing: -0.005em; line-height: 1; }
+.railTile:hover { color: var(--a-chrome-ink-strong); background: rgba(255,255,255,0.05); }
+.railTile[data-active] { color: var(--a-chrome-ink-strong); }
+.railTile[data-active] { background: rgba(255,255,255,0.07); }
+.railTile[data-active]::before {   /* the spine states where you are in white;
+                                      indigo is spent once, on the board */
+  content: "";
+  position: absolute;
+  right: -8px; top: 50%;
+  transform: translateY(-50%);
+  width: 2px; height: 24px;
+  border-radius: 2px 0 0 2px;
+  background: #fff;
+}
+.railDivider { width: 26px; height: 1px; background: rgba(255,255,255,0.12); margin: 12px 0; }
+.railSpacer { flex: 1; }
+.railUtil {
+  width: 44px; height: 44px;
+  border-radius: 11px;
+  display: grid; place-items: center;
+  color: var(--a-chrome-ink);
+  transition: color var(--motion-instant) var(--ease-out), background-color var(--motion-instant) var(--ease-out);
+}
+.railUtil svg { width: 18px; height: 18px; }
+.railUtil:hover { color: var(--a-chrome-ink-strong); background: rgba(255,255,255,0.05); }
+.railKey {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.3);
+  margin: -6px 0 0;
+}
+.railAvatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: #1b1b1e;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16);
+  color: #fff;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  margin-top: 10px;
+}
+
+/* ── projects sidebar ──────────────────────────────────────────── */
+.side {
+  border-right: 1px solid var(--a-rule);
+  display: flex; flex-direction: column;
+  padding: 0 0 12px;
+  min-width: 0;
+  background: var(--paper);
+}
+.sideHead {
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 12px 0 18px;
+  border-bottom: 1px solid var(--a-rule-soft);
+}
+.sideTitle { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; }
+.sideHead button { color: var(--ink-faint); width: 28px; height: 28px; display: grid; place-items: center; border-radius: var(--radius-sm); }
+.sideHead button svg { width: 17px; height: 17px; }
+.sideList { padding: 10px 10px 0; display: grid; gap: 1px; }
+.sideRow {
+  display: flex; align-items: center; gap: 10px;
+  height: 32px; padding: 0 8px;
+  border-radius: var(--radius-md);
+  font-size: 13px; color: var(--ink-soft);
+  position: relative;
+}
+.sideRow svg { width: 16px; height: 16px; color: var(--ink-faint); flex: none; }
+.sideRow em { font-style: normal; margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+.sideRow:hover { background: var(--paper-soft); color: var(--ink); }
+.sideRow[data-active] { color: var(--ink); font-weight: 500; }
+.sideRow[data-active]::before {
+  content: ""; position: absolute; left: -10px; top: 6px; bottom: 6px;
+  width: 2px; border-radius: 0 2px 2px 0; background: var(--ink);
+}
+.sideEyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 22px 18px 8px;
+}
+.sideAdd { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px; margin: 6px 10px 0; font-size: 12.5px; color: var(--ink-faint); border-radius: var(--radius-md); }
+.sideAdd svg { width: 15px; height: 15px; }
+.sideAdd:hover { color: var(--ink); background: var(--paper-soft); }
+
+/* ── canvas ────────────────────────────────────────────────────── */
+.canvas { display: flex; flex-direction: column; min-width: 0; background: var(--paper); }
+
+.band {
+  height: 52px;
+  flex: none;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 18px 0 24px;
+  border-bottom: 1px solid var(--a-rule-soft);
+}
+/* On a phone the spine lies down and loses its wordmark, so the page
+   picks identity up here. Desktop never shows both. */
+.bandWord { display: none; }
+.bandName {
+  font-size: 17px; font-weight: 620; letter-spacing: -0.025em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* The project's own name outranks every other thing in this row. It
+     never shrinks to nothing to make room for a date range. */
+  flex: 0 1 auto; min-width: 11ch;
+}
+.bandSeason { font-size: 12.5px; color: var(--ink-faint); letter-spacing: -0.005em; white-space: nowrap; }
+.bandFacts {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 13px;
+  font-size: 12.5px; color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.bandFacts b { font-weight: 500; color: var(--ink-soft); }
+.bandFacts .over { color: var(--status-blocked); }
+.bandRule { width: 1px; height: 18px; background: var(--a-rule); flex: none; }
+.ghost {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 9px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px; color: var(--ink-soft);
+  white-space: nowrap;
+}
+.ghost svg { width: 15px; height: 15px; color: var(--ink-faint); }
+.ghost:hover { background: var(--paper-soft); color: var(--ink); }
+.ghost em { font-style: normal; font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint); }
+.primary {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 12px 0 10px;
+  border-radius: var(--radius-md);
+  background: var(--ink); color: var(--paper);
+  font-size: 12.5px; font-weight: 550; letter-spacing: -0.005em;
+  transition: background-color var(--motion-instant) var(--ease-out);
+}
+.primary svg { width: 14px; height: 14px; }
+.primary:hover { background: #000; }
+
+.views {
+  height: 44px; flex: none;
+  display: flex; align-items: center; gap: 2px;
+  padding: 0 18px 0 22px;
+  border-bottom: 1px solid var(--a-rule);
+}
+.view {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 10px;
+  border-radius: var(--radius-md);
+  font-size: 13px; color: var(--ink-faint);
+  position: relative;
+}
+.view svg { width: 15px; height: 15px; }
+.view:hover { color: var(--ink-soft); background: var(--paper-soft); }
+.view[data-active] { color: var(--ink); font-weight: 550; }
+.view[data-active]::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: -13px;
+  height: 2px; background: var(--ink);
+}
+.viewTools { margin-left: auto; display: flex; align-items: center; gap: 2px; }
+
+/* ── the ledger ────────────────────────────────────────────────── */
+.ledger {
+  flex: 1; min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  overflow: auto;
+}
+.lane {
+  min-width: 0;
+  border-right: 1px solid var(--a-rule-soft);
+  display: flex; flex-direction: column;
+  overflow: auto;
+}
+.lane:last-child { border-right: 0; }
+.laneHead {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--paper);
+  padding: 13px 18px 8px;
+  border-bottom: 1px solid var(--a-rule);
+}
+.laneTop { display: flex; align-items: baseline; gap: 8px; }
+.lanePip { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-ghost); flex: none; transform: translateY(-1px); }
+.lane[data-tone="flight"] .lanePip { background: var(--status-flight); }
+.lane[data-tone="done"] .lanePip { background: var(--x-status-done); }
+.laneName { font-size: 12.5px; font-weight: 600; letter-spacing: -0.005em; }
+.laneCount { margin-left: auto; font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-faint); }
+.laneNote { font-size: 11.5px; color: var(--ink-faint); margin-top: 3px; letter-spacing: -0.003em; }
+
+.rows { padding: 2px 0 4px; }
+.row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  padding: 8px 18px 8px 16px;
+  border-bottom: 1px solid var(--a-rule-soft);
+  position: relative;
+  transition: background-color var(--motion-instant) var(--ease-out);
+}
+.row:hover { background: var(--paper-soft); }
+.tick {
+  width: 15px; height: 15px; border-radius: 50%;
+  box-shadow: inset 0 0 0 1.35px var(--ink-ghost);
+  margin-top: 2px;
+  display: grid; place-items: center;
+  color: transparent;
+  transition: box-shadow var(--motion-fast) var(--ease-out);
+}
+.tick svg { width: 10px; height: 10px; stroke-width: 2.4; }
+.row:hover .tick { box-shadow: inset 0 0 0 1.35px var(--ink-faint); }
+.row[data-done] .tick { background: var(--x-status-done); box-shadow: none; color: #fff; }
+.rowBody { min-width: 0; }
+.rowTitle {
+  font-size: var(--a-row); line-height: 1.34; font-weight: 500;
+  letter-spacing: -0.012em; color: var(--ink);
+}
+.row[data-done] .rowTitle { color: var(--ink-faint); font-weight: 450; }
+.rowNote {
+  font-size: 11.5px; line-height: 1.38; color: var(--ink-faint);
+  margin-top: 2px;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+/* Metadata is set in Geist, not in mono. A date is a fact about a
+   Saturday, not a readout — the technical face was making the calmest
+   product in the suite look like a terminal. */
+.rowMeta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 2px 9px;
+  margin-top: 4px;
+  font-size: 11.5px; letter-spacing: -0.003em; line-height: 1.3;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.rowMeta .hi { color: var(--ink-soft); }
+.rowMeta .due-overdue { color: var(--status-blocked); }
+.rowMeta .due-today { color: #a16207; }
+.rowMeta .due-soon { color: var(--ink-soft); }
+.rowMeta .ms { color: var(--accent); display: inline-flex; align-items: center; gap: 4px; }
+.rowMeta .ms svg { width: 9px; height: 9px; stroke-width: 2; }
+.rowMeta .cm { display: inline-flex; align-items: center; gap: 4px; }
+.rowMeta .cm svg { width: 11px; height: 11px; }
+.rowQuiet { color: #a16207; }
+.rowDots {
+  position: absolute; top: 7px; right: 8px;
+  width: 24px; height: 24px; border-radius: var(--radius-sm);
+  display: grid; place-items: center; color: var(--ink-faint);
+  opacity: 0;
+  transition: opacity var(--motion-instant) var(--ease-out);
+}
+.rowDots svg { width: 15px; height: 15px; }
+.row:hover .rowDots { opacity: 1; }
+.rowDots:hover { background: var(--paper-deep); color: var(--ink); }
+
+.laneEmpty { padding: 14px 18px; font-size: 12.5px; color: var(--ink-faint); }
+.laneAdd {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 18px 11px 16px;
+  font-size: 12.5px; color: var(--ink-faint);
+}
+.laneAdd svg { width: 14px; height: 14px; }
+.laneAdd:hover { color: var(--ink); background: var(--paper-soft); }
+
+/* ── planning drawer ───────────────────────────────────────────── */
+/* Planning floats over the board rather than splitting it. Five ruled
+   columns and a 372px panel cannot both be readable under about 1620px,
+   and the columns are the product. Above that width it docks in flow. */
+.drawer {
+  width: 372px; flex: none;
+  border-left: 1px solid var(--a-rule);
+  display: flex; flex-direction: column;
+  background: var(--paper);
+  position: absolute; right: 0; top: 0; bottom: 0;
+  box-shadow: var(--shadow-modal);
+  z-index: 6;
+}
+@media (min-width: 1620px) {
+  .drawer { position: static; box-shadow: none; }
+}
+.drawerHead { padding: 16px 18px 12px; border-bottom: 1px solid var(--a-rule-soft); }
+.drawerTop { display: flex; align-items: center; }
+.drawerKicker {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint);
+}
+.drawerHead h2 { margin: 8px 0 2px; font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.drawerLine { font-size: 12px; color: var(--ink-faint); }
+.axis { margin: 16px 0 6px; height: 3px; background: var(--paper-deep); border-radius: 2px; position: relative; }
+.axis i { position: absolute; left: 0; top: 0; bottom: 0; width: 11.3%; background: var(--ink); border-radius: 2px; }
+.axis b { position: absolute; left: 11.3%; top: 50%; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--paper); }
+.axisEnds { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-faint); }
+.drawerSummary { margin-top: 10px; font-size: 12.5px; color: var(--ink-soft); }
+.drawerTabs { display: flex; gap: 2px; padding: 10px 14px 0; border-bottom: 1px solid var(--a-rule); }
+.drawerTab { height: 32px; padding: 0 10px; font-size: 12.5px; color: var(--ink-faint); position: relative; }
+.drawerTab[data-active] { color: var(--ink); font-weight: 550; }
+.drawerTab[data-active]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -1px; height: 2px; background: var(--ink); }
+.drawerTab em { font-style: normal; font-family: var(--font-mono); font-size: 11px; margin-left: 5px; color: var(--ink-faint); }
+.drawerHelp { padding: 12px 18px 8px; font-size: 12px; color: var(--ink-faint); line-height: 1.45; }
+.drawerHelp a { color: var(--accent); text-decoration: none; float: right; margin-left: 10px; }
+.drawerRows { overflow: auto; }
+.drawerRow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px;
+  border-bottom: 1px solid var(--a-rule-soft);
+  font-size: 12.5px; line-height: 1.4;
+}
+.drawerRow span { min-width: 0; }
+.box { width: 14px; height: 14px; border-radius: 3px; box-shadow: inset 0 0 0 1.3px var(--ink-ghost); flex: none; }
+.drawerRow button { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--ink-soft); }
+.drawerRow button svg { width: 13px; height: 13px; color: var(--ink-faint); }
+.drawerAdd { padding: 12px 18px; font-size: 12.5px; color: var(--ink-faint); display: flex; align-items: center; gap: 8px; }
+.drawerAdd svg { width: 14px; height: 14px; }
+
+/* ── loading ───────────────────────────────────────────────────── */
+.load { flex: 1; display: flex; flex-direction: column; }
+.loadBand { height: 52px; border-bottom: 1px solid var(--a-rule-soft); display: flex; align-items: center; padding: 0 24px; gap: 14px; }
+.loadViews { height: 44px; border-bottom: 1px solid var(--a-rule); display: flex; align-items: center; padding: 0 22px; gap: 14px; }
+.loadLedger { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0,1fr); }
+.loadLane { border-right: 1px solid var(--a-rule-soft); padding: 14px 18px; }
+.loadLane:last-child { border-right: 0; }
+.sk { background: var(--paper-deep); border-radius: 3px; height: 9px; animation: aBreathe 1.6s var(--ease-in-out) infinite; }
+.sk.t { height: 11px; }
+@keyframes aBreathe { 0%,100% { opacity: 1 } 50% { opacity: .48 } }
+.loadRow { padding: 9px 0; border-bottom: 1px solid var(--a-rule-soft); display: grid; gap: 6px; }
+.loadSay { position: absolute; left: 24px; bottom: 22px; font-size: 12.5px; color: var(--ink-faint); }
+
+/* ── responsive ────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .shell { grid-template-columns: var(--a-rail) minmax(0, 1fr); }
+  .side { display: none; }
+  .bandSeason, .band .bandRule:first-of-type { display: none; }
+  .ledger { grid-auto-columns: minmax(272px, 1fr); }
+}
+@media (max-width: 720px) {
+  .shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0,1fr) auto; }
+  .rail {
+    grid-row: 2;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    gap: 0;
+  }
+  .rail::after { inset: 0 0 auto 0; width: auto; height: 1px; background: rgba(255,255,255,0.12); }
+  .railMark, .railWord, .railDivider, .railSpacer, .railTile[data-product="more"] { display: none; }
+  .railGroup { flex-direction: row; justify-content: space-around; }
+  .railTile { width: auto; flex: 1; padding: 6px 0 5px; }
+  .railTile[data-active]::before { right: auto; left: 50%; top: -6px; transform: translateX(-50%); width: 20px; height: 2px; }
+  .railUtil { width: 46px; height: 44px; }
+  .railKey { display: none; }
+  .railAvatar { margin: 0 6px 0 0; }
+  .canvas { grid-row: 1; min-height: 0; }
+
+  .band { height: auto; flex-wrap: wrap; padding: 12px 14px 10px; gap: 4px 10px; }
+  .bandWord {
+    display: inline-flex; align-items: baseline;
+    width: 100%; margin-bottom: 2px;
+    font-size: 15px; font-weight: 600; letter-spacing: -0.045em; color: var(--ink);
+  }
+  .bandWord::after {
+    content: ""; width: 4px; height: 4px; border-radius: 50%;
+    background: var(--accent); margin-left: 1.5px;
+  }
+  .bandName { font-size: 19px; width: 100%; }
+  .bandFacts { margin-left: 0; width: 100%; gap: 10px; font-size: 11px; }
+  .bandActions { width: 100%; display: flex; gap: 4px; margin-top: 6px; }
+  .bandActions .primary { margin-left: auto; }
+  .bandRule, .bandSeason { display: none; }
+  .views { padding: 0 8px; overflow-x: auto; }
+  /* Filter, Sort and Display move into the band's ••• menu rather than
+     competing with the four views for one scrolling row. */
+  .viewTools { display: none; }
+
+  /* one continuous ledger, grouped, sticky heads */
+  .ledger { display: block; overflow: auto; }
+  .lane { border-right: 0; overflow: visible; }
+  .laneHead { padding: 13px 16px 8px; }
+  .row { padding: 11px 16px 11px 14px; }
+  .rowDots { opacity: 1; }
+  .drawer { width: 100%; }
+  .loadLedger { display: block; }
+  .loadLane { border-right: 0; border-bottom: 1px solid var(--a-rule-soft); }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="./data.js"></script>
+<script src="./icons.js"></script>
+<script>
+/* ---------------------------------------------------------------- */
+const state = new URLSearchParams(location.search).get("state") || "board";
+const B = window.BOARD;
+const I = window.ICON;
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+function tasksFor(lane) {
+  if (state === "empty") return [];
+  let all = B.tasks.slice();
+  if (state === "dense") {
+    all = all.concat(window.DENSE_EXTRA.map((t, i) => ({ ...t, id: "x" + i })));
+  }
+  return all.filter((t) => t.lane === lane);
+}
+
+function rail() {
+  const tile = (key, label, active) => `
+    <a class="railTile" data-product="${key}"${active ? " data-active" : ""}>
+      ${I[key]}<span>${label}</span>
+    </a>`;
+  return `
+  <nav class="rail" aria-label="Signal Studio">
+    <a class="railWord" aria-label="Tasks">tasks</a>
+    <div class="railGroup">
+      ${B.rail.products.map((p) => tile(p.key, p.label, p.active)).join("")}
+      ${tile("more", "More", false)}
+    </div>
+    <span class="railDivider"></span>
+    <button class="railUtil" title="Search Signal Studio">${I.search}</button>
+    <p class="railKey">⌘K</p>
+    <span class="railSpacer"></span>
+    <button class="railUtil" title="Inbox">${I.inbox}</button>
+    <button class="railUtil" title="Help and settings">${I.help}</button>
+    <span class="railAvatar" title="${esc(B.operator.role)}">${B.operator.initials}</span>
+  </nav>`;
+}
+
+function sidebar() {
+  return `
+  <aside class="side">
+    <div class="sideHead"><span class="sideTitle">Projects</span><button>${I.panel}</button></div>
+    <div class="sideList">
+      ${B.sidebar.places.map((p) => `
+        <a class="sideRow">${I[p.icon]}<span>${p.label}</span>${p.count ? `<em>${p.count}</em>` : ""}</a>`).join("")}
+    </div>
+    <p class="sideEyebrow">${esc(B.sidebar.folder)}</p>
+    <div class="sideList">
+      ${B.sidebar.projects.map((p) => `
+        <a class="sideRow"${p.active ? " data-active" : ""}>${I.board}<span>${esc(p.label)}</span><em>${p.count}</em></a>`).join("")}
+    </div>
+    <button class="sideAdd">${I.plus}<span>Add project</span></button>
+  </aside>`;
+}
+
+function band() {
+  const p = B.progress;
+  const done = state === "empty" ? 0 : p.done;
+  const total = state === "empty" ? 0 : state === "dense" ? p.total + window.DENSE_EXTRA.length : p.total;
+  return `
+  <header class="band">
+    <span class="bandWord" aria-hidden="true">tasks</span>
+    <h1 class="bandName">${esc(B.workspace)}</h1>
+    <span class="bandRule"></span>
+    <span class="bandSeason">${esc(B.season)} · ${esc(B.period)}</span>
+    <div class="bandFacts">
+      <span><b>${done} of ${total}</b> done</span>
+      ${state === "empty" ? "" : `<span class="over">${p.overdue} overdue</span>`}
+      <span>day ${p.day} of ${p.of}</span>
+    </div>
+    <span class="bandRule"></span>
+    <div class="bandActions" style="display:flex;gap:2px;align-items:center">
+      <button class="ghost">${I.share}<span>Share</span></button>
+      <button class="ghost">${I.planning}<span>Planning</span>${state === "empty" ? "" : `<em>${p.undated}</em>`}</button>
+      <button class="ghost" aria-label="More">${I.dots}</button>
+      <button class="primary">${I.plus}<span>Add task</span></button>
+    </div>
+  </header>`;
+}
+
+function views() {
+  const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
+  return `
+  <div class="views">
+    ${B.views.map((v) => `<a class="view"${v === "Board" ? " data-active" : ""}>${icons[v]}<span>${v}</span></a>`).join("")}
+    <div class="viewTools">
+      <button class="ghost">${I.filter}<span>Filter</span></button>
+      <button class="ghost">${I.sort}<span>Sort</span></button>
+      <button class="ghost">${I.display}<span>Display</span></button>
+    </div>
+  </div>`;
+}
+
+function row(t) {
+  const done = t.lane === "done";
+  const meta = [];
+  if (t.priority && !done) meta.push(`<span class="hi">${esc(t.priority)}</span>`);
+  if (t.milestone) meta.push(`<span class="ms">${I.milestone}${esc(t.milestone)}</span>`);
+  if (t.due) meta.push(`<span class="due-${t.dueTone}">${esc(t.due)}</span>`);
+  if (t.tag) meta.push(`<span>${esc(t.tag)}</span>`);
+  if (t.contact) meta.push(`<span>${esc(t.contact)}</span>`);
+  if (t.comments) meta.push(`<span class="cm">${I.comment}${t.comments}</span>`);
+  if (t.fromNote) meta.push(`<span>from a note</span>`);
+  if (t.quiet) meta.push(`<span class="rowQuiet">${esc(t.quiet)}</span>`);
+  return `
+  <div class="row"${done ? " data-done" : ""}>
+    <span class="tick">${I.check}</span>
+    <div class="rowBody">
+      <p class="rowTitle">${esc(t.title)}</p>
+      ${t.note && !done ? `<p class="rowNote">${esc(t.note)}</p>` : ""}
+      ${meta.length ? `<p class="rowMeta">${meta.join("")}</p>` : ""}
+    </div>
+    <button class="rowDots" aria-label="Task actions">${I.dots}</button>
+  </div>`;
+}
+
+function ledger() {
+  return `
+  <div class="ledger">
+    ${B.columns.map((c) => {
+      const rows = tasksFor(c.id);
+      return `
+      <section class="lane" data-tone="${c.tone}">
+        <div class="laneHead">
+          <div class="laneTop">
+            <span class="lanePip"></span>
+            <span class="laneName">${esc(c.name)}</span>
+            <span class="laneCount">${rows.length}</span>
+          </div>
+          <p class="laneNote">${esc(c.note)}</p>
+        </div>
+        <div class="rows">
+          ${rows.length ? rows.map(row).join("") : `<p class="laneEmpty">${esc(c.empty || "Nothing here yet")}</p>`}
+          <button class="laneAdd">${I.plus}<span>Add task</span></button>
+        </div>
+      </section>`;
+    }).join("")}
+  </div>`;
+}
+
+function drawer() {
+  const p = B.planning;
+  return `
+  <aside class="drawer">
+    <div class="drawerHead">
+      <div class="drawerTop"><span class="drawerKicker">${esc(p.title)}</span><button class="ghost" style="margin-left:auto" aria-label="Close">${I.close}</button></div>
+      <h2>${esc(p.project)}</h2>
+      <p class="drawerLine">${esc(p.line)}</p>
+      <div class="axis"><i></i><b></b></div>
+      <div class="axisEnds"><span>6 Jul</span><span>10 Oct</span></div>
+      <p class="drawerSummary">${esc(p.summary)}</p>
+    </div>
+    <div class="drawerTabs">
+      <button class="drawerTab" data-active>Unscheduled<em>${p.unscheduled.length}</em></button>
+      <button class="drawerTab">Milestones<em>${p.milestones.length}</em></button>
+    </div>
+    <p class="drawerHelp"><a>Select all</a>${esc(p.help)}</p>
+    <div class="drawerRows">
+      ${p.unscheduled.map((t) => `
+        <div class="drawerRow"><span class="box"></span><span>${esc(t)}</span><button>Schedule ${I.chevron}</button></div>`).join("")}
+    </div>
+    <button class="drawerAdd">${I.plus}<span>Add unscheduled task</span></button>
+  </aside>`;
+}
+
+function loading() {
+  const w = (n) => `<span class="sk" style="width:${n}%"></span>`;
+  return `
+  <div class="canvas load" style="position:relative">
+    <div class="loadBand">${w(0)}<span class="sk t" style="width:190px"></span><span class="sk" style="width:120px;margin-left:auto"></span></div>
+    <div class="loadViews"><span class="sk" style="width:64px"></span><span class="sk" style="width:52px"></span><span class="sk" style="width:70px"></span><span class="sk" style="width:74px"></span></div>
+    <div class="loadLedger">
+      ${B.columns.map((c, i) => `
+        <div class="loadLane">
+          <span class="sk t" style="width:${[62, 76, 58, 60, 46][i]}px"></span>
+          <div style="height:8px"></div>
+          <span class="sk" style="width:${[120, 96, 132, 150, 118][i]}px;height:8px"></span>
+          ${[0, 1, 2].slice(0, [3, 3, 2, 0, 3][i]).map((r) => `
+            <div class="loadRow">
+              <span class="sk t" style="width:${[92, 74, 86][r]}%"></span>
+              <span class="sk" style="width:${[54, 66, 44][r]}%;height:8px"></span>
+            </div>`).join("")}
+        </div>`).join("")}
+    </div>
+    <p class="loadSay">Opening the workspace</p>
+  </div>`;
+}
+
+const canvas = state === "loading"
+  ? loading()
+  : `<main class="canvas">${band()}${views()}${ledger()}</main>`;
+
+document.getElementById("root").innerHTML = `
+  <div class="shell" style="${state === "planning" && window.innerWidth >= 1620 ? "grid-template-columns: var(--a-rail) var(--a-sidebar) minmax(0,1fr) auto;" : ""}">
+    ${rail()}
+    ${sidebar()}
+    ${canvas}
+    ${state === "planning" ? drawer() : ""}
+  </div>`;
+</script>
+</body>
+</html>

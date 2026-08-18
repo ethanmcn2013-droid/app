@@ -1,0 +1,843 @@
+{
+  "base": "http://localhost:3510",
+  "viewports": [
+    "390x844",
+    "768x1024",
+    "1280x900",
+    "1440x960"
+  ],
+  "shots": [
+    {
+      "slug": "home",
+      "product": "home",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "home--390x844.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "home-briefing",
+      "product": "home",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "home-briefing--390x844.png",
+      "url": "/app/home/briefing"
+    },
+    {
+      "slug": "home-loading",
+      "product": "home",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "home-loading--390x844.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "tasks-board",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "tasks-board--390x844.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-list",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "tasks-list--390x844.png",
+      "url": "/app/tasks/list"
+    },
+    {
+      "slug": "tasks-schedule",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "tasks-schedule--390x844.png",
+      "url": "/app/tasks/timeline"
+    },
+    {
+      "slug": "tasks-calendar",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "tasks-calendar--390x844.png",
+      "url": "/app/tasks/calendar"
+    },
+    {
+      "slug": "tasks-my-tasks",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "tasks-my-tasks--390x844.png",
+      "url": "/app/my-tasks"
+    },
+    {
+      "slug": "tasks-project",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "tasks-project--390x844.png",
+      "url": "/app/project"
+    },
+    {
+      "slug": "tasks-loading",
+      "product": "tasks",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "tasks-loading--390x844.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-planning",
+      "product": "tasks",
+      "state": "planning-open",
+      "viewport": "390x844",
+      "file": "tasks-board-planning--390x844.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-detail",
+      "product": "tasks",
+      "state": "task-detail",
+      "viewport": "390x844",
+      "file": "tasks-board-detail--390x844.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-palette",
+      "product": "tasks",
+      "state": "command-palette",
+      "viewport": "390x844",
+      "file": "tasks-palette--390x844.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-empty-search",
+      "product": "tasks",
+      "state": "empty-result",
+      "viewport": "390x844",
+      "file": "tasks-board-empty-search--390x844.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "notes-notebook",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "notes-notebook--390x844.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "notes-empty",
+      "product": "notes",
+      "state": "empty",
+      "viewport": "390x844",
+      "file": "notes-empty--390x844.png",
+      "url": "/app/notes?fixture=empty"
+    },
+    {
+      "slug": "notes-dense",
+      "product": "notes",
+      "state": "dense",
+      "viewport": "390x844",
+      "file": "notes-dense--390x844.png",
+      "url": "/app/notes?fixture=dense"
+    },
+    {
+      "slug": "notes-first-use",
+      "product": "notes",
+      "state": "first-use",
+      "viewport": "390x844",
+      "file": "notes-first-use--390x844.png",
+      "url": "/app/notes?fixture=first-use"
+    },
+    {
+      "slug": "notes-long-content",
+      "product": "notes",
+      "state": "long-content",
+      "viewport": "390x844",
+      "file": "notes-long-content--390x844.png",
+      "url": "/app/notes?fixture=long-content"
+    },
+    {
+      "slug": "notes-review",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "notes-review--390x844.png",
+      "url": "/app/notes?view=review"
+    },
+    {
+      "slug": "notes-sent",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "notes-sent--390x844.png",
+      "url": "/app/notes?view=sent"
+    },
+    {
+      "slug": "notes-loading",
+      "product": "notes",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "notes-loading--390x844.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "timeline-owner",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "timeline-owner--390x844.png",
+      "url": "/app/timeline"
+    },
+    {
+      "slug": "timeline-project",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "timeline-project--390x844.png",
+      "url": "/app/timeline/mara-finn"
+    },
+    {
+      "slug": "timeline-audience",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "390x844",
+      "file": "timeline-audience--390x844.png",
+      "url": "/app/timeline/audience"
+    },
+    {
+      "slug": "timeline-loading",
+      "product": "timeline",
+      "state": "loading",
+      "viewport": "390x844",
+      "file": "timeline-loading--390x844.png",
+      "url": "/app/timeline"
+    },
+    {
+      "slug": "home",
+      "product": "home",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "home--768x1024.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "home-briefing",
+      "product": "home",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "home-briefing--768x1024.png",
+      "url": "/app/home/briefing"
+    },
+    {
+      "slug": "home-loading",
+      "product": "home",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "home-loading--768x1024.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "tasks-board",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "tasks-board--768x1024.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-list",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "tasks-list--768x1024.png",
+      "url": "/app/tasks/list"
+    },
+    {
+      "slug": "tasks-schedule",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "tasks-schedule--768x1024.png",
+      "url": "/app/tasks/timeline"
+    },
+    {
+      "slug": "tasks-calendar",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "tasks-calendar--768x1024.png",
+      "url": "/app/tasks/calendar"
+    },
+    {
+      "slug": "tasks-my-tasks",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "tasks-my-tasks--768x1024.png",
+      "url": "/app/my-tasks"
+    },
+    {
+      "slug": "tasks-project",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "tasks-project--768x1024.png",
+      "url": "/app/project"
+    },
+    {
+      "slug": "tasks-loading",
+      "product": "tasks",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "tasks-loading--768x1024.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-planning",
+      "product": "tasks",
+      "state": "planning-open",
+      "viewport": "768x1024",
+      "file": "tasks-board-planning--768x1024.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-detail",
+      "product": "tasks",
+      "state": "task-detail",
+      "viewport": "768x1024",
+      "file": "tasks-board-detail--768x1024.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-palette",
+      "product": "tasks",
+      "state": "command-palette",
+      "viewport": "768x1024",
+      "file": "tasks-palette--768x1024.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-empty-search",
+      "product": "tasks",
+      "state": "empty-result",
+      "viewport": "768x1024",
+      "file": "tasks-board-empty-search--768x1024.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "notes-notebook",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "notes-notebook--768x1024.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "notes-empty",
+      "product": "notes",
+      "state": "empty",
+      "viewport": "768x1024",
+      "file": "notes-empty--768x1024.png",
+      "url": "/app/notes?fixture=empty"
+    },
+    {
+      "slug": "notes-dense",
+      "product": "notes",
+      "state": "dense",
+      "viewport": "768x1024",
+      "file": "notes-dense--768x1024.png",
+      "url": "/app/notes?fixture=dense"
+    },
+    {
+      "slug": "notes-first-use",
+      "product": "notes",
+      "state": "first-use",
+      "viewport": "768x1024",
+      "file": "notes-first-use--768x1024.png",
+      "url": "/app/notes?fixture=first-use"
+    },
+    {
+      "slug": "notes-long-content",
+      "product": "notes",
+      "state": "long-content",
+      "viewport": "768x1024",
+      "file": "notes-long-content--768x1024.png",
+      "url": "/app/notes?fixture=long-content"
+    },
+    {
+      "slug": "notes-review",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "notes-review--768x1024.png",
+      "url": "/app/notes?view=review"
+    },
+    {
+      "slug": "notes-sent",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "notes-sent--768x1024.png",
+      "url": "/app/notes?view=sent"
+    },
+    {
+      "slug": "notes-loading",
+      "product": "notes",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "notes-loading--768x1024.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "timeline-owner",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "timeline-owner--768x1024.png",
+      "url": "/app/timeline"
+    },
+    {
+      "slug": "timeline-project",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "timeline-project--768x1024.png",
+      "url": "/app/timeline/mara-finn"
+    },
+    {
+      "slug": "timeline-audience",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "768x1024",
+      "file": "timeline-audience--768x1024.png",
+      "url": "/app/timeline/audience"
+    },
+    {
+      "slug": "timeline-loading",
+      "product": "timeline",
+      "state": "loading",
+      "viewport": "768x1024",
+      "file": "timeline-loading--768x1024.png",
+      "url": "/app/timeline"
+    },
+    {
+      "slug": "home",
+      "product": "home",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "home--1280x900.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "home-briefing",
+      "product": "home",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "home-briefing--1280x900.png",
+      "url": "/app/home/briefing"
+    },
+    {
+      "slug": "home-loading",
+      "product": "home",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "home-loading--1280x900.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "tasks-board",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "tasks-board--1280x900.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-list",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "tasks-list--1280x900.png",
+      "url": "/app/tasks/list"
+    },
+    {
+      "slug": "tasks-schedule",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "tasks-schedule--1280x900.png",
+      "url": "/app/tasks/timeline"
+    },
+    {
+      "slug": "tasks-calendar",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "tasks-calendar--1280x900.png",
+      "url": "/app/tasks/calendar"
+    },
+    {
+      "slug": "tasks-my-tasks",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "tasks-my-tasks--1280x900.png",
+      "url": "/app/my-tasks"
+    },
+    {
+      "slug": "tasks-project",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "tasks-project--1280x900.png",
+      "url": "/app/project"
+    },
+    {
+      "slug": "tasks-loading",
+      "product": "tasks",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "tasks-loading--1280x900.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-planning",
+      "product": "tasks",
+      "state": "planning-open",
+      "viewport": "1280x900",
+      "file": "tasks-board-planning--1280x900.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-detail",
+      "product": "tasks",
+      "state": "task-detail",
+      "viewport": "1280x900",
+      "file": "tasks-board-detail--1280x900.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-palette",
+      "product": "tasks",
+      "state": "command-palette",
+      "viewport": "1280x900",
+      "file": "tasks-palette--1280x900.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-empty-search",
+      "product": "tasks",
+      "state": "empty-result",
+      "viewport": "1280x900",
+      "file": "tasks-board-empty-search--1280x900.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "notes-notebook",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "notes-notebook--1280x900.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "notes-empty",
+      "product": "notes",
+      "state": "empty",
+      "viewport": "1280x900",
+      "file": "notes-empty--1280x900.png",
+      "url": "/app/notes?fixture=empty"
+    },
+    {
+      "slug": "notes-dense",
+      "product": "notes",
+      "state": "dense",
+      "viewport": "1280x900",
+      "file": "notes-dense--1280x900.png",
+      "url": "/app/notes?fixture=dense"
+    },
+    {
+      "slug": "notes-first-use",
+      "product": "notes",
+      "state": "first-use",
+      "viewport": "1280x900",
+      "file": "notes-first-use--1280x900.png",
+      "url": "/app/notes?fixture=first-use"
+    },
+    {
+      "slug": "notes-long-content",
+      "product": "notes",
+      "state": "long-content",
+      "viewport": "1280x900",
+      "file": "notes-long-content--1280x900.png",
+      "url": "/app/notes?fixture=long-content"
+    },
+    {
+      "slug": "notes-review",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "notes-review--1280x900.png",
+      "url": "/app/notes?view=review"
+    },
+    {
+      "slug": "notes-sent",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "notes-sent--1280x900.png",
+      "url": "/app/notes?view=sent"
+    },
+    {
+      "slug": "notes-loading",
+      "product": "notes",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "notes-loading--1280x900.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "timeline-owner",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "timeline-owner--1280x900.png",
+      "url": "/app/timeline"
+    },
+    {
+      "slug": "timeline-project",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "timeline-project--1280x900.png",
+      "url": "/app/timeline/mara-finn"
+    },
+    {
+      "slug": "timeline-audience",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "1280x900",
+      "file": "timeline-audience--1280x900.png",
+      "url": "/app/timeline/audience"
+    },
+    {
+      "slug": "timeline-loading",
+      "product": "timeline",
+      "state": "loading",
+      "viewport": "1280x900",
+      "file": "timeline-loading--1280x900.png",
+      "url": "/app/timeline"
+    },
+    {
+      "slug": "home",
+      "product": "home",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "home--1440x960.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "home-briefing",
+      "product": "home",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "home-briefing--1440x960.png",
+      "url": "/app/home/briefing"
+    },
+    {
+      "slug": "home-loading",
+      "product": "home",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "home-loading--1440x960.png",
+      "url": "/app/home"
+    },
+    {
+      "slug": "tasks-board",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "tasks-board--1440x960.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-list",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "tasks-list--1440x960.png",
+      "url": "/app/tasks/list"
+    },
+    {
+      "slug": "tasks-schedule",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "tasks-schedule--1440x960.png",
+      "url": "/app/tasks/timeline"
+    },
+    {
+      "slug": "tasks-calendar",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "tasks-calendar--1440x960.png",
+      "url": "/app/tasks/calendar"
+    },
+    {
+      "slug": "tasks-my-tasks",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "tasks-my-tasks--1440x960.png",
+      "url": "/app/my-tasks"
+    },
+    {
+      "slug": "tasks-project",
+      "product": "tasks",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "tasks-project--1440x960.png",
+      "url": "/app/project"
+    },
+    {
+      "slug": "tasks-loading",
+      "product": "tasks",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "tasks-loading--1440x960.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-planning",
+      "product": "tasks",
+      "state": "planning-open",
+      "viewport": "1440x960",
+      "file": "tasks-board-planning--1440x960.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-detail",
+      "product": "tasks",
+      "state": "task-detail",
+      "viewport": "1440x960",
+      "file": "tasks-board-detail--1440x960.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-palette",
+      "product": "tasks",
+      "state": "command-palette",
+      "viewport": "1440x960",
+      "file": "tasks-palette--1440x960.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "tasks-board-empty-search",
+      "product": "tasks",
+      "state": "empty-result",
+      "viewport": "1440x960",
+      "file": "tasks-board-empty-search--1440x960.png",
+      "url": "/app/tasks"
+    },
+    {
+      "slug": "notes-notebook",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "notes-notebook--1440x960.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "notes-empty",
+      "product": "notes",
+      "state": "empty",
+      "viewport": "1440x960",
+      "file": "notes-empty--1440x960.png",
+      "url": "/app/notes?fixture=empty"
+    },
+    {
+      "slug": "notes-dense",
+      "product": "notes",
+      "state": "dense",
+      "viewport": "1440x960",
+      "file": "notes-dense--1440x960.png",
+      "url": "/app/notes?fixture=dense"
+    },
+    {
+      "slug": "notes-first-use",
+      "product": "notes",
+      "state": "first-use",
+      "viewport": "1440x960",
+      "file": "notes-first-use--1440x960.png",
+      "url": "/app/notes?fixture=first-use"
+    },
+    {
+      "slug": "notes-long-content",
+      "product": "notes",
+      "state": "long-content",
+      "viewport": "1440x960",
+      "file": "notes-long-content--1440x960.png",
+      "url": "/app/notes?fixture=long-content"
+    },
+    {
+      "slug": "notes-review",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "notes-review--1440x960.png",
+      "url": "/app/notes?view=review"
+    },
+    {
+      "slug": "notes-sent",
+      "product": "notes",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "notes-sent--1440x960.png",
+      "url": "/app/notes?view=sent"
+    },
+    {
+      "slug": "notes-loading",
+      "product": "notes",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "notes-loading--1440x960.png",
+      "url": "/app/notes"
+    },
+    {
+      "slug": "timeline-owner",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "timeline-owner--1440x960.png",
+      "url": "/app/timeline"
+    },
+    {
+      "slug": "timeline-project",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "timeline-project--1440x960.png",
+      "url": "/app/timeline/mara-finn"
+    },
+    {
+      "slug": "timeline-audience",
+      "product": "timeline",
+      "state": "populated",
+      "viewport": "1440x960",
+      "file": "timeline-audience--1440x960.png",
+      "url": "/app/timeline/audience"
+    },
+    {
+      "slug": "timeline-loading",
+      "product": "timeline",
+      "state": "loading",
+      "viewport": "1440x960",
+      "file": "timeline-loading--1440x960.png",
+      "url": "/app/timeline"
+    }
+  ]
+}

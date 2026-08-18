@@ -14,6 +14,7 @@ import { usePalette } from "@/components/app/palette/command-palette";
 import { useSuiteContext } from "@/components/app/use-suite-context";
 import { RailIcon } from "@/components/studio-bar/rail-icons";
 import { ProjectsSidebar } from "@/components/studio-bar/projects-sidebar";
+import { isFloorPath } from "@/lib/bare-artifact-path";
 import { useCurrentUser } from "@/lib/auth-context";
 import {
   HOME_APP_PATH,
@@ -54,6 +55,10 @@ export function AppSidebar({
 }) {
   const pathname = usePathname();
   const active = activeProp ?? pathname ?? "";
+  // Studio Floor carries one spine and states the project in its own header,
+  // so Tasks does not also wear the projects sidebar. The design's central
+  // claim is that there is exactly one spine; two would deny it.
+  if (isFloorPath(active)) return null;
   return (
     <>
       <MobileTabBar active={active} />

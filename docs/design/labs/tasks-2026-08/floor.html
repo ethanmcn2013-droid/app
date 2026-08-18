@@ -1,0 +1,3182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Studio Floor · Tasks master</title>
+<link rel="stylesheet" href="./foundation.css">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   STUDIO FLOOR — the locked Tasks direction.
+   PHASE 1: the palette is locked to three brand colours and nothing else.
+
+     Ink      #111111   the room, the type, and every weight of emphasis
+     Indigo   #4f46e5   the accent, spent once
+     White    #ffffff   the sheet the work lives on
+
+   Every other value on this screen is one of those three at a stated
+   alpha. There are no other hues anywhere: no red, no amber, no green,
+   no beige, no independent grey. State is expressed by ink DENSITY and
+   FILL rather than by hue, which is the whole reason this palette can
+   be this small.
+
+     overdue          a filled ink chip, white type. The loudest object.
+     due today        an outlined chip, ink at full strength, 600.
+     next milestone   indigo. The one earned accent in the view.
+     everything else  plain.
+
+   Type is Geist at 400 and 600. No other weight appears anywhere.
+
+     ?v=locked | a | b | c
+     ?state=board | cards | dense | empty | loading | planning
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── the three ─────────────────────────────────────────────── */
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  /* ── ink, at stated alphas (over white) ────────────────────── */
+  --ink-1: var(--ink);                       /* primary type       21:1 */
+  --ink-2: rgba(17, 17, 17, 0.72);           /* secondary type    7.4:1 */
+  --ink-3: rgba(17, 17, 17, 0.62);           /* micro labels      5.3:1 */
+  --ink-4: rgba(17, 17, 17, 0.28);           /* decorative only, never type */
+
+  /* The alpha ladder. Four steps for surfaces and rules, and no value is
+     allowed to sit between them. Nothing on a white surface goes above
+     8%: a heavier rule reads as a box, and this product does not draw
+     boxes. 16% exists only for a hover edge. */
+  --wash: rgba(17, 17, 17, 0.04);
+  --line-soft: rgba(17, 17, 17, 0.06);
+  --line: rgba(17, 17, 17, 0.08);
+  --wash-2: rgba(17, 17, 17, 0.08);
+  --line-strong: rgba(17, 17, 17, 0.16);
+
+  /* ── white, at stated alphas (over the ink floor) ──────────── */
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.62);     /* 7.7:1 on ink            */
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  /* ── indigo, at stated alphas ──────────────────────────────── */
+  --indigo-ink: var(--indigo);               /* 6.3:1 on white          */
+  --indigo-wash: rgba(79, 70, 229, 0.09);
+  --indigo-deep: #4338ca;                    /* the indigo ramp, one step darker */
+  --indigo-line: rgba(79, 70, 229, 0.32);
+  --indigo-ring: rgba(79, 70, 229, 0.16);
+
+  /* ── the ladder ────────────────────────────────────────────── */
+  /* 4 - 6 - 8 - 12 - 16 - pill. Six steps, no seventh. */
+  /* One tracking curve, by size, declared once. Every letter-spacing in
+     the file is a token from this ladder — before this there were three
+     values inside the 13px band alone and the curve ran backwards. */
+  --tr-19: -0.026em; --tr-18: -0.022em; --tr-15: -0.016em; --tr-14: -0.014em;
+  --tr-13: -0.010em; --tr-12: -0.006em; --tr-11: 0em; --tr-10: 0.004em;
+  /* One polarity branch on the same curve: reversed out of ink, type needs a
+     hair more room to hold the same colour. */
+  --tr-rev: 0.008em;
+  --r-xs: 4px;
+  --r-chip: 6px;
+  --r-ctl: 8px;
+  --r-card: 12px;
+  --r-sheet: 16px;
+  --r-pill: 999px;
+
+  --inset: 18px; --dock-w: 442px;
+  --rail: 64px;
+  --tap: 44px;
+
+  /* One duration and one curve for the whole product. Any other value
+     has to be argued for in writing. Tooltips are the single exception,
+     and they leave three times faster than they arrive. */
+  --dur: var(--motion-fast);                 /* 140ms                   */
+  --curve: var(--ease-out);
+  --dur-out: 50ms;
+
+  /* Borders are rings, so thickening one on hover cannot move a single
+     pixel of layout. Elevation is stacked micro-shadows plus the ring,
+     never one soft blur. */
+  --ring: 0 0 0 1px var(--line);
+  --ring-strong: 0 0 0 1px var(--line-strong);
+  --raise: 0 1px 1px rgba(17, 17, 17, 0.02), 0 2px 3px rgba(17, 17, 17, 0.03);
+  /* Shadow alphas are their own ladder: 2 - 3 - 6 - 8 - 16. They never
+     mix with the surface ladder because a shadow is not a surface. */
+  --float: 0 1px 1px rgba(17, 17, 17, 0.03), 0 4px 8px rgba(17, 17, 17, 0.03), 0 14px 28px rgba(17, 17, 17, 0.06);
+  /* One heavy shadow exists in this product. It is a card in flight. */
+  --lift: 0 1px 2px rgba(17, 17, 17, 0.06), 0 4px 10px rgba(17, 17, 17, 0.08), 0 22px 44px rgba(17, 17, 17, 0.16);
+}
+
+html { background: var(--ink); color: var(--ink-1); }
+body {
+  background: var(--ink);
+  color: var(--ink-1);
+  font-feature-settings: "ss01", "cv01";
+}
+
+/* Tabular is for digits that stack in a column or tick in place. Prose keeps
+   Geist's proportional figures, which is why "5 of 13 done" reads as a
+   sentence and a tray count reads as a number. */
+.trayCount, .when, .cardFoot .cm, .ghost em, .drawerTab em, .axisEnds, .axis {
+  font-variant-numeric: tabular-nums;
+}
+/* The count belongs to the label beside it, not to the prose. The negative
+   margin absorbs the trailing tracking cell so the digits stay flush with
+   the content edge the name and the note align to. */
+.trayCount {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; margin-right: -0.1em;
+}
+
+/* Visually hidden, but read. Ink density and fill carry severity on screen;
+   this is the same fact for anyone not looking at it. */
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Every interactive thing answers the keyboard the same way. */
+/* Outline only. Setting a radius here overrode every element's own, which
+   squared off the completion circle for keyboard users and nobody else. */
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* The sheet is the positioning context for the carry bar and the dock. */
+.floor {
+  height: 100dvh;
+  padding: var(--inset);
+  padding-left: calc(var(--inset) * 2 + var(--rail));
+  position: relative;
+}
+
+/* ── the spine ─────────────────────────────────────────────────
+   On an ink floor the capsule is a lighter cut in the same material,
+   not an object dropped onto it. */
+.rail {
+  position: absolute;
+  left: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: var(--rail);
+  background: var(--chrome);
+  box-shadow: inset 0 0 0 1px var(--chrome-line);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0;
+  z-index: 4;
+}
+.railMark {
+  width: var(--tap); height: var(--tap);
+  display: grid; place-items: center;
+  color: var(--on-ink-1);
+  position: relative;
+  border-radius: 12px;
+}
+.railMark svg { width: 19px; height: 19px; }
+.railMark i {
+  position: absolute; right: 9px; bottom: 10px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--indigo);
+}
+.railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
+.railGroup, .railUtil { display: grid; gap: 4px; }
+/* Buttons, not href-less anchors. An anchor with no href carries no role,
+   so the whole spine was a row of focusable generics inside a nav that
+   contained no links. The reset below means the change costs no pixels. */
+.railTile, .railMark, .segItem, .railAvatar, .dockAvatar, .late {
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 0; padding: 0;
+  -webkit-appearance: none;
+}
+/* Three things that looked like controls and were spans. The account disc
+   is the only way out of the product; the overdue count is the only filter
+   an operator reaches for on a Saturday. Both now answer the keyboard. */
+.railAvatar, .dockAvatar, .late { cursor: pointer; }
+.railTile {
+  width: var(--tap); height: var(--tap);
+  border-radius: 12px;
+  display: grid; place-items: center;
+  color: var(--on-ink-2);
+  position: relative;
+  cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.railTile svg { width: 19px; height: 19px; }
+.railTile:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+/* The capsule points at the sheet it opened. */
+.railTile[data-active]::after {
+  content: "";
+  position: absolute; right: -12px; top: 50%;
+  width: 7px; height: 7px; margin-top: -3.5px;
+  transform: rotate(45deg);
+  background: var(--chrome);
+  box-shadow: inset -1px 1px 0 var(--chrome-line);
+  border-radius: 1.5px;
+}
+.railSpacer { flex: 1; }
+.railAdd { display: none; }
+.railAvatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--chrome-active);
+  box-shadow: inset 0 0 0 1px var(--chrome-line);
+  color: var(--on-ink-1);
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+  margin-top: 8px;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────
+   White against ink needs no shadow. Contrast is the elevation. */
+.sheet {
+  height: 100%;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column;
+  position: relative; min-width: 0; overflow: hidden;
+}
+/* Where the board runs past the sheet, the last column dissolves instead of
+   being guillotined. Off by default, on wherever the board actually
+   overflows. Same mask idiom as the dock scrim, and no new hue. */
+.sheet::after {
+  content: "";
+  position: absolute; right: 0; top: 118px; bottom: 0;
+  width: 44px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white));
+  opacity: 0; pointer-events: none; z-index: 1;
+  transition: opacity var(--dur) var(--curve);
+}
+.sheet[data-more-right]::after { opacity: 1; }
+/* The mirror. A one-sided signal says nothing about the column behind you. */
+.sheet::before {
+  content: "";
+  position: absolute; left: 0; top: 118px; bottom: 0;
+  width: 44px; z-index: 1;
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0), var(--white));
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) var(--curve);
+}
+.sheet[data-more-left]::before { opacity: 1; }
+
+.head {
+  flex: none;
+  display: flex; align-items: center; gap: 14px;
+  /* 28px is the sheet's one leading edge. The view pill, the tray label
+     and every card's left edge resolve to the same x. */
+  padding: 0 28px; height: 60px;
+}
+.word { font-size: 15px; letter-spacing: var(--tr-15); }
+.word {
+  display: inline-flex; align-items: baseline;
+  font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
+  color: var(--ink-1); flex: none;
+}
+.word::after {
+  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: var(--indigo); margin-left: 2px;
+}
+.headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
+.headName {
+  font-size: 18px; font-weight: 600; letter-spacing: var(--tr-18);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 0 1 auto; min-width: 8ch;
+}
+.headFacts {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 13px; font-weight: 400; color: var(--ink-2);
+  letter-spacing: var(--tr-13); white-space: nowrap;
+}
+.headFacts b { font-weight: 600; color: var(--ink-1); }
+/* The one moment on this board worth a beat of its own. */
+.ratio[data-all] { font-weight: 600; color: var(--ink-1); animation: settleIn 320ms var(--curve); }
+@media (prefers-reduced-motion: reduce) { .ratio[data-all] { animation: none; } }
+/* Overdue reads as the loudest object in the header for the same reason
+   it does on a card: it is filled ink, not a colour. */
+.late {
+  position: relative;
+  display: inline-flex; align-items: center;
+  height: 22px; padding: 0 9px;
+  transition: box-shadow var(--dur) var(--curve);
+  border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white);
+  font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+}
+/* The chip is 22px because that is the size the header wants; the target
+   it answers to is 44, taken behind the two facts either side of it. */
+.late::before { content: ""; position: absolute; inset: -11px -6px; }
+.headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+
+.ghost {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 11px;
+  border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; color: var(--ink-2);
+  letter-spacing: var(--tr-13); white-space: nowrap;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.ghost svg { width: 15px; height: 15px; color: var(--ink-3); }
+.ghost:hover { background: var(--wash); color: var(--ink-1); }
+.ghost:hover svg { color: var(--ink-2); }
+.ghost em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-1); }
+.headSearch { display: none; }
+
+/* 25 on the left because the segmented pill carries its own 3px of optical
+   inset; the two edges then land on the same line as the header and cards. */
+.views { flex: none; display: flex; align-items: center; padding: 0 28px 14px 25px; }
+.seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash); border-radius: var(--r-pill); }
+.segItem {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 14px;
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-13);
+  transition: color var(--dur) var(--curve);
+}
+.segItem svg { width: 15px; height: 15px; }
+.segItem:hover { color: var(--ink-1); }
+.segItem[data-active] {
+  background: var(--white); color: var(--ink-1); font-weight: 600;
+  box-shadow: var(--ring), var(--raise);
+}
+.viewTools { margin-left: auto; display: flex; gap: 2px; }
+
+/* ── trays ─────────────────────────────────────────────────────
+   Ruled columns, not filled boxes. The sheet stays one surface. */
+.board {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(258px, 312px));
+  /* `safe` is load-bearing: a centred grid that overflows puts its leading
+     content out of reach of the scroller, which is exactly what the board
+     becomes below 1100. It centres when it fits and starts when it does not. */
+  justify-content: safe center;
+  grid-auto-rows: 100%;
+  gap: 0;
+  /* The dock's band is real layout, not something masked over. 48px of dock
+     plus 18px of inset plus the float shadow's reach. */
+  /* 18px of clearance above the dock and 18px below it, so the sheet's one
+     floating object sits on the true optical centre of its own band. */
+  padding: 0 16px 84px;
+  /* The board scrolls sideways between columns. Each column scrolls itself
+     vertically, so reaching the foot of one never drags another away. */
+  overflow-x: auto; overflow-y: hidden;
+  border-top: 1px solid var(--line-soft);
+}
+.tray {
+  min-width: 0;
+  display: flex; flex-direction: column;
+  padding: 14px 12px 0;
+  min-height: 0;
+  border-left: 1px solid var(--line-soft);
+  transition: background-color var(--dur) var(--curve);
+}
+.tray:first-child { border-left: 0; }
+
+.trayHead {
+  flex: none; padding: 0 0 12px;
+  background: var(--white);
+}
+.trayTop { display: flex; align-items: center; gap: 8px; }
+.pip { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-4); flex: none; }
+.tray[data-tone="flight"] .pip { background: var(--ink-1); }
+.tray[data-tone="done"] .pip { background: var(--ink-1); box-shadow: inset 0 0 0 1.5px var(--white); }
+/* Every micro-label in the product is one rule: Geist Mono, 11px,
+   uppercase, +0.1em, weight 400. Tracking carries the hierarchy, so a
+   small label is never bolded to make it matter. */
+.trayName {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-1);
+}
+/* One declaration, so the round-7 mono rule above applies as written. */
+.trayCount { margin-left: auto; font-weight: 400; color: var(--ink-3); }
+.trayNote { min-height: 1.4em; }
+.trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: var(--tr-12); }
+/* A column with more in it than fits fades at its own foot, the same mask
+   idiom the sheet's right edge uses. Before this the fourth card was simply
+   cut through the middle of a word with nothing to say there was more. */
+.trayBody {
+  flex: 0 1 auto; min-height: 0;
+  overflow-y: auto;
+  display: grid; gap: 8px; align-content: start;
+  padding: 2px 6px 8px; margin: 0 -6px;
+  /* A column is a list of discrete objects, so it rests on one. `proximity`
+     leaves it resting anywhere, and a 26px ramp over a 19px line box then
+     renders a bold title at about 40% ink — the one thing on this sheet that
+     read as a rendering fault rather than a decision. Snapped, with 20px of
+     scroll padding, a card's ink sits 32px clear of the boundary — its own
+     12px, the 8px gutter, the previous card's 12px — so the ramp can never
+     cross a line of type. */
+  scroll-snap-type: y mandatory; scroll-padding: 20px 0;
+}
+/* A hairline, not a fade. A gradient at the top of a column can be made to
+   land in the gutter by snapping, but the bottom edge falls wherever the
+   column's height puts it — so half the time it rendered a bold title at
+   about 40% ink, which reads as a rendering fault rather than as "there is
+   more this way". A rule says the same thing and never touches a glyph. */
+/* Drawn on the tray, above the cards, because an inset shadow on the
+   scroller is painted under its own content and a card at the foot covers
+   the very line that says there is more of it. */
+.tray { position: relative; }
+.tray::after, .tray::before {
+  content: ""; position: absolute; left: 6px; right: 6px; height: 1px;
+  background: var(--line); z-index: 2; pointer-events: none;
+  opacity: 0; transition: opacity var(--dur) var(--curve);
+}
+.tray::before { top: var(--body-top, 0px); }
+.tray::after { top: var(--body-bottom, 0px); }
+.tray:has(.trayBody[data-above])::before { opacity: 1; }
+.tray:has(.trayBody[data-more])::after { opacity: 1; }
+
+/* ═══ THE CARD ═══════════════════════════════════════════════════
+   One optical baseline: the completion control sits in a fixed gutter,
+   the title starts at a fixed x, and every line under it aligns to that
+   same x. Nothing below the title can move the title. */
+/* Every ring on a card is written to one custom property. Done and Next are
+   states; hover, focus, selection and drag are interactions. Before this the
+   state rules were declared later at equal specificity and silently deleted
+   the focus ring on exactly the cards a keyboard user reaches first. */
+.card {
+  scroll-snap-align: start;
+  position: relative;
+  background: var(--white);
+  border-radius: var(--r-card);
+  /* --card-rest is what the card looks like when nothing is happening to
+     it, and is what a preset may change. --card-ring is what is happening to
+     it, and only the interaction rules may set that. Sharing one property
+     let a preset delete the focus ring. */
+  --card-rest: var(--ring);
+  --card-ring: var(--card-rest);
+  box-shadow: var(--card-ring);
+  padding: 12px 12px 12px 11px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 8px; row-gap: 6px;
+  cursor: grab;
+  transition: box-shadow var(--dur) var(--curve), transform var(--dur) var(--curve);
+}
+/* The buttons inside a card stay buttons. */
+.card .tick, .card .cardDots { cursor: pointer; }
+
+/* Completing a task is the one thing this board exists to do, so the circle
+   is a real control with its own hover, focus, active and keyboard path, not
+   a decorative span that lit up when the pointer was anywhere on the card. */
+.tick {
+  grid-column: 1; grid-row: 1;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 0; padding: 0; font: inherit; -webkit-appearance: none;
+  background: none;
+  box-shadow: inset 0 0 0 1.4px var(--ink-4);
+  margin-top: 1px;
+  display: grid; place-items: center;
+  color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+/* The hit area is 32px without the circle growing by a pixel. */
+.tick::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
+.tick svg { width: 11px; height: 11px; stroke-width: 2.4; }
+/* The card hints. The control itself answers one step darker, so the ring
+   means "you are on it" rather than "you are somewhere near it". */
+.card:hover .tick, .card[data-force="hover"] .tick { background: var(--wash); }
+.tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
+.tick:active { background: var(--line-strong); }
+.tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
+
+/* The top-right of a card belongs to the time fact and nothing else. */
+/* The clamp lives on the row, not on the title. overflow:hidden on the
+   title made it establish its own formatting context, which is a block's
+   instruction to avoid floats rather than flow around them — so the date
+   chip was stealing width from all three lines instead of one. */
+.cardTitleRow:has(.when) .cardTitle { text-wrap: pretty; }
+.cardTitleRow {
+  grid-column: 2; grid-row: 1; min-width: 0;
+  max-height: calc(14px * 1.36 * 3); overflow: hidden;
+}
+.cardTitle {
+  font-size: 14px; line-height: 1.36; font-weight: 600;
+  letter-spacing: var(--tr-14); color: var(--ink-1); margin: 0;
+  min-width: 0;
+  /* Titles are clamped to three lines, so they sit inside the balancer's own
+     line cap. Notes keep `pretty`, which is the right tool for a paragraph. */
+  text-wrap: balance;
+  /* But not around a float: balancing against a chip that only occupies the
+     first line produces a one-word opening line, which is the exact rag it
+     is there to prevent. */
+  overflow-wrap: break-word;
+  /* Three lines, clamped by the row above; the trim happens at a word
+     boundary in the renderer. A character-level clamp is what produces
+     "dinner 5.30p...", which is the difference between typeset copy and
+     text poured into a box. */
+  display: block;
+}
+.cardNote {
+  grid-column: 2; grid-row: 2;
+  margin: 0; font-size: 13px; line-height: 1.45; font-weight: 400;
+  color: var(--ink-2); letter-spacing: var(--tr-13);
+  text-wrap: pretty;
+  display: block; max-height: calc(1.45em * 2); overflow: hidden;
+  transition: color var(--dur) var(--curve);
+}
+.card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
+/* Opened in place. The clipped half of a note is the half that carries the
+   deadline, and the only route to it used to be a hover tooltip: no keyboard,
+   no touch, no iPad on a venue desk. */
+.card[data-open] .cardNote { max-height: none; color: var(--ink-1); }
+/* An open card is being read, not carried, so its words can be taken. */
+.card[data-open] .cardTitle, .card[data-open] .cardNote { user-select: text; cursor: text; }
+.cardFoot {
+  grid-column: 2; grid-row: 3;
+  /* One line, always. Wrapping put the actions button on a second row and
+     left a card with an empty band under its own content. What runs out of
+     room truncates; the button never moves. */
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 10px;
+  min-height: 24px; min-width: 0;
+  font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-12);
+}
+.cardFoot > .who, .cardFoot > .tag, .cardFoot > .hi {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Whose wedding it is never shrinks. Everything else in the row yields
+   first, in a stated order, rather than every token losing pixels in
+   proportion to its own length. */
+.cardFoot > .who { flex: 0 0 auto; position: relative; cursor: pointer; }
+.cardFoot > .who::before { content: ""; position: absolute; inset: -7px; }
+.cardFoot > .who:hover { text-decoration: underline; text-underline-offset: 3px; }
+.cardFoot > .who[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 3px; }
+.cardFoot > .tag { flex: 0 3 auto; }
+.cardFoot > .hi { flex: 0 1 auto; color: var(--ink-2); }
+.cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
+.cardFoot .cm svg { width: 12px; height: 12px; }
+.cardFoot .grow { margin-left: auto; display: inline-flex; flex: none; }
+/* Right-aligning one content glyph to the reserved menu slot left an
+   invisible hole in every card foot, on the sheet whose own caption reads
+   "no empty slots". The row simply reads left to right. */
+.cardFoot .grow { margin-left: 0; flex: none; }
+.cardFoot .grow + .cardDots { margin-left: auto; }
+.cardFoot .cm { flex: none; }
+.cardFoot .grow svg { width: 13px; height: 13px; color: var(--ink-4); }
+/* The menu sits at the end of the foot row, in space that is always
+   reserved for it, so revealing it moves nothing and it can never paint over
+   a title or a date. `visibility` rather than `opacity`, so a hidden control
+   is genuinely out of the tab order rather than an invisible tab stop. */
+.cardDots {
+  position: relative;
+  margin: -3px 0 -3px auto;
+  width: 24px; height: 24px; border-radius: var(--r-chip);
+  display: grid; place-items: center; color: var(--ink-3);
+  background: transparent;
+  visibility: hidden;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+/* A 32px target around a 24px glyph, without the glyph growing. */
+.cardDots::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+.cardDots svg { width: 15px; height: 15px; }
+.card:hover .cardDots, .card[data-force="hover"] .cardDots,
+.card:focus-within .cardDots { visibility: visible; }
+.cardDots:hover { background: var(--wash-2); color: var(--ink-1); }
+
+/* The time fact. Right-aligned on the title's own line, so a tray reads
+   as a column of dates. Severity is fill, never hue. */
+.when {
+  float: right; margin: 0 0 0 9px; max-width: 38%;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 19px; padding: 0 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: var(--tr-11); white-space: nowrap;
+  color: var(--ink-3);
+  background: var(--wash);
+}
+/* Reversed out of ink, on the same curve, one branch. */
+.carry { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
+.late { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
+.dockPrimary { letter-spacing: calc(var(--tr-13) + var(--tr-rev)); }
+.when[data-t="overdue"] { background: var(--ink); color: var(--white); font-weight: 600; letter-spacing: calc(var(--tr-11) + var(--tr-rev)); }
+.when[data-t="today"] { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-1); font-weight: 600; }
+.when[data-t="milestone"] { background: var(--indigo-wash); color: var(--indigo-ink); font-weight: 600; }
+.when[data-t="milestone"] svg { width: 9px; height: 9px; stroke-width: 2.2; }
+.when[data-t="none"] { display: none; }
+/* Not the deadline — the day it was finished. Outlined in the quiet ink, so
+   it reads as a record rather than as something still owed. */
+.when[data-t="done"], .when[data-t="waiting"] {
+  background: none; box-shadow: 0 0 0 1px var(--line); color: var(--ink-3);
+}
+
+/* Two different taxonomies were sharing one slot. Which couple a task
+   belongs to is the question a venue asks on a Saturday; which area of the
+   house it touches is background. They now read at different ranks. */
+.tag {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3); white-space: nowrap;
+}
+.who {
+  font-size: 12px; font-weight: 600; color: var(--ink-1);
+  letter-spacing: var(--tr-12); white-space: nowrap;
+}
+.cardFoot .who + .tag { padding-left: 10px; border-left: 1px solid var(--line); }
+/* Severity is expressed by ink, not by weight. Bolding a 12px token to make
+   it matter is the thing the micro-label rule above exists to prevent. */
+.hi { color: var(--ink-1); font-weight: 400; white-space: nowrap; }
+
+/* Done. Never struck through: the work happened, it was not a mistake. */
+.card[data-done] { background: transparent; --card-rest: 0 0 0 1px var(--line-soft); }
+/* Ink alone carries done — the transparent card, the hairline ring, the
+   suppressed date chip and the filled tick already say it four times over.
+   Dropping the weight as well inverted the card's internal rank and made the
+   partner name outrank the work. The whole card de-escalates together. */
+.card[data-done] .cardTitle { color: var(--ink-2); }
+.card[data-done] .who { font-weight: 400; color: var(--ink-2); }
+.card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
+
+/* The one earned indigo in a resting view. */
+.card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
+
+/* ── interaction, declared after every state ────────────────────── */
+.card:hover, .card[data-force="hover"] { --card-ring: var(--ring-strong), var(--raise); }
+.card:focus-visible, .card[data-force="focus"] {
+  outline: none;
+  --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
+}
+.card[data-force="selected"] { --card-ring: 0 0 0 1.5px var(--indigo); }
+.card[data-force="drag"] {
+  transform: rotate(-1.4deg) scale(1.02);
+  cursor: grabbing;
+  --card-ring: var(--lift);
+}
+/* Picked up by keyboard: the same lift without the tilt, because a card
+   moved with the arrow keys is not being carried by a hand. */
+/* Lifted, not tilted: nothing is carrying it, but it is unmistakably out of
+   the stack and it outranks the resting focus ring. */
+/* Declared after hover, or hover deletes it. An open card is lifted off the
+   tray to be read, which is a rank above the card under the pointer. */
+.card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-1), var(--float); }
+.card[data-force="moving"] {
+  --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
+  transform: scale(1.02);
+}
+@media (prefers-reduced-motion: reduce) { .card[data-force="moving"] { transform: none; } }
+
+/* ── the destination, not just the hand ─────────────────────────── */
+/* Drag is the board's defining gesture, and half of it was undesigned: the
+   card in flight had a lift and the tray it was heading for had nothing. */
+.tray[data-over] { background: var(--wash); }
+.tray[data-over] .trayHead {
+  background: linear-gradient(var(--wash), var(--wash)), var(--white);
+}
+.dropLine { height: 2px; border-radius: 1px; background: var(--ink-1); }
+
+/* ── empty and add ─────────────────────────────────────────────── */
+/* Two lines are always reserved, so the Add task row does not move from
+   column to column with the length of a sentence. */
+.trayEmpty {
+  padding: 8px 4px 4px;
+  font-size: 13px; font-weight: 400; line-height: 1.45;
+  color: var(--ink-2);
+  min-height: calc(1.45em * 2 + 12px);
+}
+/* A column with more in it than fits takes the rest of the tray, so its
+   scroller is as tall as the sheet allows. */
+.trayBody[data-more], .trayBody[data-above] { flex: 1 1 auto; }
+/* On the card's own two verticals: the plus centred on the tick, the label
+   on the title. */
+.trayAdd {
+  display: flex; align-items: center; gap: 13px;
+  height: 36px; padding: 0 8px 0 12px; margin-top: 4px;
+  border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  flex: none;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.trayAdd svg { width: 16px; height: 16px; }
+.trayAdd:hover { color: var(--ink-1); background: var(--wash); }
+
+/* ── the completion moment ─────────────────────────────────────────
+   The board's whole emotional output was a filled ink overdue chip: the
+   only thing designed to be felt was bad news, and finishing work resolved
+   silently. Completing a task now gets one beat of its own — the circle
+   settles, the check draws, the card's ring resolves to done in the same
+   breath. No colour, no bounce, and it yields to reduced motion. */
+@keyframes tickSettle {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(0.86); }
+  100% { transform: scale(1); }
+}
+@keyframes checkDraw {
+  from { stroke-dasharray: 22; stroke-dashoffset: 22; }
+  to   { stroke-dasharray: 22; stroke-dashoffset: 0; }
+}
+@keyframes settleIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: none; }
+}
+.card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
+.card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
+/* The rest of the board answers in the same breath: the card's ring and
+   title resolve to done, and the counts that changed settle in rather than
+   snapping. */
+.card[data-just-done] { transition: box-shadow 320ms var(--curve); }
+.card[data-just-done] .cardTitle { transition: color 320ms var(--curve); }
+.trayCount[data-changed], .headFacts b[data-changed] { animation: settleIn 320ms var(--curve); }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-just-done] .tick,
+  .card[data-just-done] .tick svg path,
+  .trayCount[data-changed],
+  .headFacts b[data-changed] { animation: none; }
+}
+
+/* The card's own menu. Drag is a pointer gesture and Space is a keyboard
+   one; on a touch screen there was no way at all to move a card. */
+.cardMenu {
+  position: absolute; z-index: 8; min-width: 188px;
+  padding: 5px; border-radius: var(--r-ctl);
+  background: var(--white);
+  box-shadow: var(--ring), var(--float);
+  display: grid; gap: 1px;
+}
+.cardMenu p {
+  margin: 0; padding: 8px 9px 6px;
+  font-size: 11px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-mono, ui-monospace, monospace); color: var(--ink-3);
+}
+.cardMenu button {
+  display: flex; align-items: center; gap: 9px;
+  min-height: 34px; padding: 0 9px; border-radius: var(--r-chip);
+  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-1); background: none; border: 0; text-align: left; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.cardMenu button:hover { background: var(--wash); }
+.cardMenu button[aria-current] { font-weight: 600; }
+.cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
+.menuVeil { position: fixed; inset: 0; z-index: 7; }
+
+/* Painted at the same weight as a live control, four view tabs and three
+   tools promised a Schedule and a Calendar that do not exist. They are drawn
+   as what they are — coming, not broken — and they answer the keyboard by
+   saying so rather than by doing nothing. */
+/* Quiet, but legible: ink-4 is decorative by the file's own rule and never
+   type, so the label sits at ink-3 and only the glyph drops to ink-4. */
+[aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+[aria-disabled="true"]:hover { background: none; color: var(--ink-3); }
+[aria-disabled="true"] svg { color: var(--ink-4); }
+/* The spine is ink, so its unavailable controls take the on-ink quiet value;
+   ink-3 on the ink floor is not a quiet control, it is an invisible one. */
+.rail [aria-disabled="true"], .rail [aria-disabled="true"] svg { color: var(--on-ink-2); }
+
+/* The composer is a card, not a dialog: the thing being made looks like the
+   thing it will be, in the column it will live in. */
+.card[data-draft] { --card-ring: 0 0 0 1.5px var(--indigo); cursor: default; }
+/* The draft grows with the sentence and snaps back to the three-line clamp
+   the moment Enter turns it into a card. Safe for float containment: a draft
+   renders no date chip inside the row. */
+.card[data-draft] .cardTitleRow { max-height: none; overflow: visible; }
+.card[data-draft] .cardTitle {
+  outline: none; min-height: 19px; cursor: text;
+  text-wrap: pretty;
+}
+/* ink-4 is decorative by this file's rule and never type. 400 so it cannot
+   be mistaken for a title already written. */
+.card[data-draft] .cardTitle:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3); font-weight: 400;
+}
+/* On a touch screen the hint names two keys the operator does not have, so
+   it becomes the two controls it was describing. */
+.draftHint { gap: 8px; }
+.draftDo { height: 28px; padding: 0 12px; border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600;
+  letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
+.draftDrop { height: 28px; padding: 0 10px; border-radius: var(--r-chip);
+  background: none; color: var(--ink-2); font: inherit; font-size: 12px;
+  letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
+.draftDrop:hover { background: var(--wash); color: var(--ink-1); }
+.draftDo::before, .draftDrop::before { content: ""; position: absolute; inset: -8px -4px; }
+.draftDo, .draftDrop { position: relative; }
+/* The filtered count says what it is showing and out of what. */
+.trayCount .ofAll { color: var(--ink-3); font-weight: 400; }
+.draftHint {
+  grid-column: 2; grid-row: 3;
+  margin: 0; min-height: 24px; display: flex; align-items: center;
+  font-size: 12px; font-weight: 400; letter-spacing: var(--tr-12);
+  color: var(--ink-3);
+}
+
+/* The count of tasks with no day, said in words where a thumb and a screen
+   reader can both reach it. */
+.undated {
+  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-2); background: none; border: 0; padding: 0;
+  cursor: pointer; text-underline-offset: 3px;
+}
+.undated {
+  position: relative;
+  /* A dotted rule at rest says this is a control; the solid one on hover
+     says it is the one under the pointer. */
+  text-decoration: underline dotted currentColor; text-underline-offset: 3px;
+}
+/* A word in a sentence, at the size the sentence is set; the target it
+   answers to is taken behind the facts either side of it. */
+.undated::before { content: ""; position: absolute; inset: -14px -6px; }
+.undated:hover { color: var(--ink-1); text-decoration: underline solid currentColor; }
+
+/* ── the dock ──────────────────────────────────────────────────── */
+.dock {
+  /* The foot is one object in three states, so the strip and the dock share
+     a declared width instead of each arriving at their own. */
+  width: var(--dock-w); box-sizing: border-box;
+  position: absolute; left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px;
+  /* A shrink-to-fit box at left:50% can never be wider than half its
+     container, which is why both labels wrapped on a tablet. */
+  width: max-content; max-width: calc(100% - var(--inset) * 2);
+  background: var(--white);
+  border-radius: var(--r-pill);
+  box-shadow: var(--ring), var(--float);
+  z-index: 3;
+}
+.dockField {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 38px; padding: 0 14px 0 13px;
+  min-width: 196px;
+  border-radius: var(--r-pill);
+  background: var(--wash);
+  white-space: nowrap;
+  font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.dockField:hover { background: var(--wash-2); color: var(--ink-2); }
+.dockField svg { width: 16px; height: 16px; }
+/* One keycap in the product. The two that existed disagreed on size,
+   tracking and radius, which is the kind of drift a design system is for. */
+.dockField kbd, .carry kbd {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: var(--tr-10);
+  border-radius: 5px; padding: 3px 5px;
+}
+.dockField kbd { margin-left: auto; border: 1px solid var(--line); color: var(--ink-3); }
+.carry kbd { background: var(--chrome); color: var(--on-ink-1); }
+/* The one deliberate exception to the tracking curve: mono forces each arrow
+   into a narrow cell, and at 10px the shafts touch. */
+.carry kbd[data-keys="arrows"] { letter-spacing: 0.28em; padding-inline: 6px 3px; }
+.dockPrimary {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 17px 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white);
+  font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
+  white-space: nowrap;
+  transition: transform var(--dur) var(--curve);
+}
+.dockPrimary svg { width: 16px; height: 16px; }
+.dockPrimary:active { transform: scale(0.985); }
+.dockRule { width: 1px; height: 22px; background: var(--line); margin: 0 3px; }
+/* The foot is one object at one width from the first paint to the board; it
+   simply cannot be used yet. */
+.dock[data-idle] { box-shadow: var(--ring); }
+.dock[data-idle] .dockPrimary { background: var(--wash-2); color: var(--ink-3); }
+.dock[data-idle] .dockField, .dock[data-idle] .dockAvatar { color: var(--ink-3); }
+.dock[data-idle] .dockAvatar { background: var(--wash-2); }
+.dockAvatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ink); color: var(--white);
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+}
+
+/* ── planning drawer ───────────────────────────────────────────── */
+/* The sheet moves over to make room, so the ink floor shows through an
+   18px gutter and draws the seam. Before this the drawer was white on
+   white with no edge: it sliced the Waiting column mid-word and erased
+   Done entirely, which read as the board breaking rather than a panel
+   opening. */
+.floor:has(.drawer) .sheet {
+  margin-right: calc(388px + var(--inset));
+  transition: margin-right var(--dur) var(--curve);
+}
+/* A card has one floor, in every state. Squeezing five trays into the
+   narrowed board gave the card a 105px measure, which is half what the
+   specimen sheet designs it at. What does not fit scrolls, snaps and fades
+   at the edge instead. */
+.floor:has(.drawer) .board {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(258px, 1fr);
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 16px;
+}
+.floor:has(.drawer) .tray { scroll-snap-align: start; }
+/* Room is made by dropping the last fact, never by clipping the name of the
+   project the operator is looking at. */
+.floor:has(.drawer) .headFacts > span:last-child { display: none; }
+/* Scoped: unscoped it won everywhere at equal specificity, which killed the
+   floor it was meant to leave alone. */
+.floor:has(.drawer) .headName { min-width: 0; }
+.drawer {
+  position: absolute;
+  right: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: 388px;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column;
+  z-index: 5; overflow: hidden;
+}
+.drawerHead { padding: 20px 22px 18px; }
+.drawerTop { display: flex; align-items: center; }
+.drawerKicker {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.drawerHead h2 { margin: 12px 0 4px; font-size: 19px; font-weight: 600; letter-spacing: var(--tr-19); }
+/* An em value computes at the ancestor's size and inherits as pixels, so a
+   badge that steps down to 11px inside 13px type keeps the 13px tracking
+   unless it is told otherwise. */
+.drawerLine, .drawerSummary, .drawerTab, .drawerAdd,
+.drawerHelp .selectAll { letter-spacing: var(--tr-13); }
+.drawerTab em, .ghost em, .axisEnds span { letter-spacing: var(--tr-11); }
+.drawerHelp, .drawerRow, .drawerRow .sched, .drawerEmpty { letter-spacing: var(--tr-12); }
+.drawerLine { margin: 0; font-size: 13px; font-weight: 400; color: var(--ink-3); }
+.axis { margin: 22px 0 8px; height: 4px; background: var(--wash); border-radius: 2px; position: relative; }
+.axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 2px; }
+.axis b {
+  position: absolute; left: 11.3%; top: 50%;
+  width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; background: var(--indigo);
+  box-shadow: 0 0 0 3px var(--white);
+}
+.axisEnds {
+  display: flex; justify-content: space-between;
+  font-size: 11px; font-weight: 400; letter-spacing: var(--tr-11); color: var(--ink-3);
+}
+.drawerSummary { margin: 14px 0 0; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.drawerTabs { display: flex; gap: 3px; padding: 0 22px 12px; }
+.drawerTab {
+  height: 32px; padding: 0 12px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.drawerTab:hover { color: var(--ink-1); }
+.drawerTab[data-active] { background: var(--wash); color: var(--ink-1); font-weight: 600; }
+.drawerTab em { font-style: normal; font-size: 11px; margin-left: 6px; color: var(--ink-3); }
+.drawerHelp { padding: 0 22px 12px; margin: 0; font-size: 12px; font-weight: 400; color: var(--ink-3); line-height: 1.5; }
+/* Once indigo means "select all", it stops meaning "the next thing that
+   matters". This is the same ink-on-quiet pattern every other control in
+   the file already uses. */
+.drawerHelp .selectAll {
+  color: var(--ink-1);
+  float: right; margin-left: 12px; font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; min-height: 28px;
+}
+.drawerHelp .selectAll:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
+.drawerRows { overflow: auto; padding: 0 12px 16px; display: grid; gap: 4px; align-content: start; }
+.drawerRow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 10px;
+  border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; line-height: 1.4; letter-spacing: var(--tr-13);
+  transition: background-color var(--dur) var(--curve);
+}
+.drawerRow:hover { background: var(--wash); }
+.box {
+  width: 15px; height: 15px; border-radius: 4px;
+  box-shadow: inset 0 0 0 1.4px var(--ink-4);
+  flex: none; padding: 0; position: relative;
+  transition: box-shadow var(--dur) var(--curve);
+}
+.box::before { content: ""; position: absolute; inset: -8px; }
+.box:hover { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
+/* Scoped to the schedule control. Unscoped, this also claimed the row's
+   checkbox and pushed it off the left margin on any row with slack. */
+.drawerRow .sched {
+  margin-left: auto; flex: none;
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 28px; padding: 0 6px; border-radius: var(--r-chip);
+  font-size: 12px; font-weight: 400; color: var(--ink-2);
+  transition: background-color var(--dur) var(--curve);
+}
+.drawerRow .sched:hover { background: var(--wash-2); color: var(--ink-1); }
+.drawerRow .sched svg { width: 13px; height: 13px; color: var(--ink-3); }
+.drawerAdd {
+  margin: 6px 12px 18px; padding: 0 10px;
+  display: flex; align-items: center; gap: 9px;
+  min-height: 34px; border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.drawerAdd:hover { color: var(--ink-1); background: var(--wash); }
+.drawerAdd svg { width: 15px; height: 15px; }
+
+/* ── loading ───────────────────────────────────────────────────── */
+.sk { display: block; background: var(--wash); border-radius: 5px; animation: breathe 1.8s var(--ease-in-out) infinite; }
+/* While a card is in the operator's hand the sheet says what is happening
+   and how to finish it. It is the only instruction in the product, it exists
+   only while the hand is full, and it leaves the moment the card lands. */
+.carry {
+  position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
+  z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap; gap: 10px;
+  width: max-content; min-width: min(var(--dock-w), calc(100% - 36px));
+  max-width: min(760px, calc(100% - 36px)); box-sizing: border-box;
+  min-height: 36px; padding: 0 6px 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink-1); color: var(--on-ink-1);
+  font-size: 12px; letter-spacing: var(--tr-12);
+  box-shadow: var(--lift);
+  animation: carryIn var(--dur) var(--curve);
+}
+/* An Add row stands down only where the strip actually covers it, measured
+   after layout. Before this the board blinked out its primary create
+   affordance, in all five columns, after every single completion. */
+.trayAdd[data-under] { opacity: 0; pointer-events: none; }
+.trayAdd { transition: opacity var(--dur) var(--curve); }
+.carry b { font-weight: 600; }
+.carryName {
+  flex: 0 1 auto; min-width: 24ch; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A hint is one phrase and never breaks. Wrapping put "put it back" in white
+   type outside the black pill on a phone, at the exact instant the operator
+   is holding a card and most needs to trust the board. */
+.carry em { white-space: nowrap; flex: none; }
+.carryDo {
+  flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
+  background: var(--chrome-active); color: var(--on-ink-1);
+  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  border: 0; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.carryDo:hover { background: rgba(255, 255, 255, 0.22); }
+.carryDo { position: relative; }
+.carryDo::before { content: ""; position: absolute; inset: -9px -6px; }
+.carry em {
+  font-style: normal; color: var(--on-ink-2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+@keyframes carryIn { from { opacity: 0; transform: translate(-50%, 6px) } }
+@media (prefers-reduced-motion: reduce) { .carry { animation: none } }
+
+/* A completed card travels from where the eye already is to where it lands,
+   rather than teleporting a thousand pixels to the right. It flies as a
+   fixed-position copy over the whole sheet, because the real node is inside
+   a column scroller that would clip both the card and its shadow. */
+.cardGhost {
+  position: fixed; margin: 0; z-index: 60; pointer-events: none;
+  box-shadow: var(--lift);
+  transition: transform 260ms var(--curve);
+}
+@media (prefers-reduced-motion: reduce) { .cardGhost { transition: none; } }
+
+/* A completed tick still answers the pointer, so putting the work back is
+   as visible as finishing it. The done rule outranked the hover rule, which
+   made un-completing invisible. */
+.card[data-done] .tick:hover, .card[data-done] .tick:focus-visible {
+  box-shadow: 0 0 0 4px var(--wash-2);
+}
+
+/* The filter is a state of the board, and it says so where the board is
+   looked at rather than only in the live region. */
+.late { transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+.late:hover { box-shadow: 0 0 0 3px var(--wash-2); }
+/* Today is serious and nothing has gone wrong yet, so it takes the outlined
+   chip the card already uses for the same fact rather than the filled one. */
+.late[data-soft] { background: none; color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
+.late[data-soft]:hover { box-shadow: inset 0 0 0 1px var(--ink-1), 0 0 0 3px var(--wash-2); }
+.late[data-soft][aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--ink-1), 0 0 0 3px var(--ink-4); }
+.late[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink-4); }
+.late[aria-pressed="true"]:hover { box-shadow: 0 0 0 3px var(--ink-2); }
+.late svg { width: 11px; height: 11px; margin-left: 3px; margin-right: -2px; }
+
+/* In a forced palette the browser throws away every box-shadow, which on
+   this board is the focus ring, the picked-up card, the card's own edge and
+   the entire severity language. Each is restated in system colours. */
+@media (forced-colors: active) {
+  .card { border: 1px solid CanvasText; }
+  .card:focus-visible, .card[data-force="focus"] { outline: 3px solid Highlight; outline-offset: 2px; }
+  .card[data-force="moving"], .card[data-force="drag"] { outline: 3px solid Highlight; outline-offset: 2px; }
+  .card[data-open] { outline: 2px solid CanvasText; outline-offset: 2px; }
+  .when { border: 1px solid CanvasText; }
+  .when[data-t="overdue"] { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  .when[data-t="today"] { border-width: 2px; }
+  .tick { border: 1px solid CanvasText; }
+  /* Colour is how an unfinished tick hides its check, and a forced palette
+     overrides colour — so every card read as done. */
+  .card:not([data-done]) .tick svg { display: none; }
+  .card[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  /* Both are 1px ink at low alpha, which a forced palette resolves to the
+     page background. */
+  .dropLine { forced-color-adjust: none; background: Highlight; }
+  .tray::before, .tray::after { forced-color-adjust: none; background: CanvasText; }
+  .dock, .carry, .cardMenu, .drawer { border: 1px solid CanvasText; }
+  .trayBody[data-above], .trayBody[data-more] { border-block: 1px solid CanvasText; }
+}
+
+@keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: 0.7; } }
+/* The card's own box, so the skeleton and the card cannot drift apart. */
+.loadCard {
+  background: var(--white); box-shadow: var(--ring); border-radius: var(--r-card);
+  padding: 12px 12px 12px 11px;
+  display: grid; grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 8px; row-gap: 6px;
+}
+.loadCard .sk { grid-column: 2; }
+/* 78 is the dock's bottom (18) plus its height (48) plus a 12px gap. */
+.loadSay {
+  position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
+  font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
+  color: var(--ink-3); z-index: 4;
+}
+
+/* ── card specimen sheet ───────────────────────────────────────── */
+.spec { flex: 1; min-height: 0; overflow: auto; padding: 4px 28px 32px; }
+.specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 26px 20px; }
+/* Every caption in a row starts on one baseline, with no hard-coded height
+   to go stale as the specimens change. The page that argues the system is
+   ruled cannot have its own captions on four different lines. */
+.specCell { display: grid; gap: 9px; grid-template-rows: auto 1fr auto; align-content: stretch; }
+.specLabel {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+/* An invisible board, laid out by the real rules, so --tray-card is the
+   width a tray actually gives a card at this viewport rather than a number
+   typed into the stylesheet and left to go stale. */
+.specProbe { position: absolute; visibility: hidden; pointer-events: none; left: 0; right: 0; height: 0; overflow: hidden; }
+.specProbe .board { grid-auto-rows: 0; padding-bottom: 0; }
+.specStage {
+  background: var(--wash); border-radius: var(--r-card);
+  padding: 13px; width: calc(var(--tray-card, 234px) + 26px); max-width: 100%;
+  display: flex; align-items: center;
+}
+.specStage .card { width: var(--tray-card, 234px); max-width: 100%; }
+.specTray { padding: 8px; border-left: 0; width: calc(var(--tray-card, 234px) + 16px); border-radius: var(--r-card); }
+/* The specimen sheet is rendered by the same rules it documents. */
+.specTray .trayBody { padding: 0 6px; margin: 0 -6px; gap: 8px; }
+.specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 268px; }
+.specLabel { max-width: 268px; }
+.specIntro { max-width: 64ch; margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
+
+/* A finger needs 44px. A mouse does not, and inflating every control to
+   44 on a desktop board is how a dense product stops being dense. */
+@media (pointer: coarse) {
+  .cardDots, .ghost, .trayAdd, .drawerTab, .drawerRow button, .drawerAdd, .drawerHelp a {
+    min-height: 44px; min-width: 44px;
+  }
+  /* Permanently present, because a finger never hovers, and quieter than
+     the desktop reveal so it does not compete with the title. The title row
+     reserves the whole 44px column, and the title releases its 62% floor so
+     it can reflow into what is actually left. */
+  /* A finger never hovers, so the menu is simply present, and quieter than
+     the desktop reveal so it does not compete with the title. */
+  .cardDots { visibility: visible; color: var(--ink-4); }
+  .cardDots::before { inset: -10px; }
+  .cardTitle { min-width: 0; }
+  .dockField kbd { display: none; }
+  /* The circle stays 18px; only what a finger can land on grows. */
+  .tick::before { inset: -13px; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE DECISION LAYER
+
+   Six design decisions, each isolated on its own root attribute, so a
+   change to one cannot leak into another. The three named variants are
+   nothing more than three preset combinations of these six, which is
+   why every combination stays on-brand: none of them can reach a colour
+   that is not Ink, Indigo or White.
+
+     data-cards    flat | bordered | elevated
+     data-radius   sharp | soft | round
+     data-density  comfortable | compact
+     data-indigo   subtle | forward
+     data-type     calm | expressive
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── card style ────────────────────────────────────────────────── */
+/* Flat: no ring at rest. Space does the separating, and the card only
+   acquires an edge when you point at it. */
+/* The presets set the RESTING ring, never box-shadow: setting the property
+   outranks the custom property the whole state system is carried in, which
+   deleted the focus ring, the selection ring and the in-hand lift in two of
+   the four variants. */
+[data-cards="flat"] .card { --card-rest: none; }
+[data-cards="flat"] .card:hover, [data-cards="flat"] .card[data-force="hover"] { box-shadow: none; background: var(--wash); }
+[data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
+[data-cards="flat"] .card[data-next] { box-shadow: 0 0 0 1px var(--indigo-line); }
+[data-cards="flat"] .trayBody { gap: 2px; }
+[data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
+
+/* Elevated: the card is an object at rest, and picking it up only
+   deepens something that was already there. */
+[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); }
+[data-cards="elevated"] .card:hover, [data-cards="elevated"] .card[data-force="hover"] { box-shadow: var(--ring-strong), var(--float); }
+[data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); }
+[data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
+
+/* ── corner radius ─────────────────────────────────────────────── */
+[data-radius="sharp"] {
+  --r-chip: 4px; --r-ctl: 4px; --r-card: 4px; --r-sheet: 8px;
+}
+[data-radius="sharp"] .rail, [data-radius="sharp"] .railTile,
+[data-radius="sharp"] .railAdd { border-radius: 8px; }
+[data-radius="sharp"] .seg, [data-radius="sharp"] .segItem,
+[data-radius="sharp"] .dock, [data-radius="sharp"] .dockField,
+[data-radius="sharp"] .dockPrimary, [data-radius="sharp"] .when,
+[data-radius="sharp"] .late, [data-radius="sharp"] .drawerTab,
+[data-radius="sharp"] .ghost { border-radius: 4px; }
+[data-radius="sharp"] .railAvatar, [data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+
+[data-radius="round"] {
+  --r-chip: 8px; --r-ctl: 12px; --r-card: 16px; --r-sheet: 24px;
+}
+[data-radius="round"] .rail { border-radius: 24px; }
+[data-radius="round"] .railTile, [data-radius="round"] .railAdd { border-radius: 16px; }
+[data-radius="round"] .specStage { border-radius: 16px; }
+
+/* ── density ───────────────────────────────────────────────────── */
+/* Compact is not "the same thing, smaller". Lines that earn their place
+   at comfortable density stop earning it here, so the note clamps to
+   one line and the tray note goes away entirely. */
+[data-density="compact"] .card { padding: 8px 10px 8px 9px; row-gap: 4px; column-gap: 7px; grid-template-columns: 20px minmax(0, 1fr); }
+[data-density="compact"] .cardTitle { font-size: 13px; line-height: 1.32; max-height: calc(1.32em * 2); }
+[data-density="compact"] .cardNote { font-size: 12px; line-height: 1.38; max-height: 1.38em; }
+[data-density="compact"] .cardFoot { min-height: 0; font-size: 11px; gap: 8px; }
+[data-density="compact"] .trayBody { gap: 5px; }
+[data-density="compact"] .tray { padding: 12px 9px 6px; }
+[data-density="compact"] .trayNote { display: none; }
+[data-density="compact"] .trayHead { padding-bottom: 9px; }
+[data-density="compact"] .head { height: 52px; }
+[data-density="compact"] .views { padding-bottom: 10px; }
+[data-density="compact"] .tick { width: 16px; height: 16px; }
+[data-density="compact"] .tick svg { width: 10px; height: 10px; }
+[data-density="compact"] .when { height: 18px; font-size: 10.5px; padding: 0 7px; }
+[data-density="compact"] .drawerRow { padding: 8px 10px; }
+[data-density="compact"] .loadCard { padding: 9px; gap: 7px; }
+
+/* ── indigo intensity ──────────────────────────────────────────── */
+/* Forward does not add indigo everywhere. It moves the accent from the
+   one dated milestone onto the one thing you are most likely to do
+   next, and lets the spine say which product you are in. */
+/* Indigo marks intent, never status. Forward moves the accent onto the
+   thing you are most likely to do next and onto the product you are in.
+   Overdue stays ink, because a warning is not a brand moment, and done
+   stays ink, because completed work should not be the loudest thing on
+   the board. */
+[data-indigo="forward"] .dockPrimary { background: var(--indigo); }
+[data-indigo="forward"] .dockPrimary:hover { background: var(--indigo-deep); }
+[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
+[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
+[data-indigo="forward"] .segItem[data-active] { color: var(--indigo-ink); }
+[data-indigo="forward"] .card[data-next] { box-shadow: 0 0 0 1.5px var(--indigo); }
+[data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
+[data-indigo="forward"] .trayAdd:hover, [data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
+
+/* ── type scale ────────────────────────────────────────────────── */
+/* Expressive widens the gaps in the scale rather than making everything
+   bigger. The title grows, the supporting lines hold, and the tracking
+   curve steepens so hierarchy is carried by shape, not by size alone. */
+[data-type="expressive"] .headName { font-size: 22px; letter-spacing: var(--tr-19); }
+[data-type="expressive"] .word { font-size: 19px; }
+[data-type="expressive"] .cardTitle { font-size: 15px; line-height: 1.34; letter-spacing: var(--tr-15); }
+[data-type="expressive"] .cardNote { font-size: 13px; }
+[data-type="expressive"] .trayName { font-size: 11px; letter-spacing: 0.14em; }
+[data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: var(--tr-19); }
+[data-type="expressive"] .specIntro { font-size: 14px; }
+[data-type="expressive"] .headFacts { font-size: 13px; }
+
+/* ── responsive ────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  /* Below this the board is a horizontal scroller, so it gets the edge fade
+     and the snap it needs to read as one. Without them a column is simply
+     sliced at the sheet's straight edge, mid-word. */
+  .board {
+    grid-template-columns: none; grid-auto-flow: column;
+    grid-auto-columns: minmax(258px, 1fr);
+    scroll-snap-type: x proximity; scroll-padding-left: 16px;
+  }
+  .tray { scroll-snap-align: start; }
+  .drawer { width: 364px; }
+  .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+}
+/* The chrome yields before the name of the project does. Visually hidden
+   rather than removed, so the controls keep their accessible names. */
+@media (max-width: 1100px) {
+  .head .ghost > span {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+}
+@media (max-width: 900px) {
+  :root { --inset: 12px; }
+  /* Today's date and the day count can wait for a wider screen. What is
+     done and what is late cannot: for a while the tablet was showing
+     strictly less than the phone. */
+  .headFacts span { display: none; }
+  /* The chip needs inline-flex to centre its own contents. The ratio is a
+     sentence: making it a flex container turns " of " and " done" into
+     anonymous flex items and strips the spaces around them. */
+  .headFacts .late { display: inline-flex; }
+  .headFacts .ratio { display: inline; }
+  .headFacts { gap: 12px; }
+  .dockField { min-width: 148px; }
+  .drawer { left: var(--inset); width: auto; }
+  .floor:has(.drawer) .sheet { margin-right: 0; }
+}
+@media (max-width: 720px) {
+  :root { --inset: 9px; }
+  .floor { padding: var(--inset) var(--inset) 0; }
+  .rail {
+    left: var(--inset); right: var(--inset); top: auto;
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    width: auto; height: 60px;
+    flex-direction: row; justify-content: space-around;
+    border-radius: 18px; padding: 0 8px;
+  }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  .railUtil { display: none; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+  .railAdd {
+    display: grid; place-items: center;
+    width: var(--tap); height: var(--tap); border-radius: 14px;
+    background: var(--white); color: var(--ink-1);
+    margin: 0 2px 0 8px;
+  }
+  .railAdd svg { width: 20px; height: 20px; }
+  .railAvatar { margin: 0; }
+  .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  /* Explicit areas rather than wrap plus order. Wrapping left the wordmark
+     alone on line one with 60% of the row empty beside it. */
+  .head {
+    height: auto; display: grid; padding: 14px 16px 0;
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "word actions" "name name" "facts facts";
+    align-items: center; column-gap: 12px; row-gap: 10px;
+    padding: 14px 16px 0;
+  }
+  .word { grid-area: word; }
+  .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
+  .headName { grid-area: name; width: auto; font-size: 19px; }
+  /* Four facts on a 390 measure wrap onto two lines. Clipping the season
+     line at the sheet edge lost the one fact this product has that no other
+     task board does. */
+  .headFacts {
+    grid-area: facts; display: flex; flex-wrap: wrap;
+    font-size: 13px; column-gap: 12px; row-gap: 7px;
+  }
+  .headFacts > span { display: inline; }
+  .headFacts .late { display: inline-flex; }
+  .headRule { display: none; }
+  .headSearch { display: inline-flex; }
+  /* Only the way out survives, because there is no keyboard here to teach. */
+  .carry em:not(:last-child) { display: none; }
+  /* The switcher loses its icons rather than its fourth view. Cutting
+     "Calendar" mid-word at the sheet edge read as a broken layout. */
+  .views { padding: 14px 16px 12px; }
+  .seg { width: 100%; }
+  .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
+  .segItem svg { display: none; }
+  .viewTools { display: none; }
+  .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
+  /* No dock on a phone, so no clearance to reserve. */
+  .tray { scroll-snap-align: start; padding-bottom: 8px; }
+  .trayBody { padding-bottom: 4px; }
+  .sheet::after, .sheet::before { display: none; }
+  .dock { display: none; }
+  .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
+  .loadSay { bottom: 72px; }
+  .spec { padding: 4px 16px 24px; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="./data.js"></script>
+<script src="./icons.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+let state = params.get("state") || "board";
+const variant = params.get("v") || "locked";
+
+/* The three finished variants are three preset combinations of the six
+   decisions. Nothing else distinguishes them, which is what guarantees
+   every mix stays on-brand. */
+const PRESETS = {
+  locked: { cards: "bordered", radius: "soft", density: "comfortable", indigo: "subtle", type: "calm" },
+  a: { cards: "flat", radius: "round", density: "comfortable", indigo: "subtle", type: "expressive" },
+  b: { cards: "bordered", radius: "sharp", density: "compact", indigo: "subtle", type: "calm" },
+  c: { cards: "elevated", radius: "soft", density: "comfortable", indigo: "forward", type: "expressive" },
+};
+const DECISIONS = ["cards", "radius", "density", "indigo", "type"];
+
+/* Standalone, the decisions live on the document. Inside the customizer
+   they live on the deck element, and the code does not know the
+   difference, which is what keeps one implementation of the board. */
+const root = document.getElementById("deck") || document.documentElement;
+const preset = PRESETS[variant] || PRESETS.locked;
+root.setAttribute("data-variant", variant);
+for (const key of DECISIONS) {
+  root.setAttribute("data-" + key, params.get(key) || preset[key]);
+}
+
+/* ── The interaction layer ────────────────────────────────────────────
+   Everything below is state the operator can change and the renderer reads.
+   There is one source for the board and one render path; a handler mutates
+   a fact and asks for a repaint, never touches the DOM it did not create. */
+let WORK = null;        /* the mutable task set, seeded from the fixture   */
+let focusId = null;     /* the board's single tab stop                     */
+let carriedId = null;   /* the card currently in the operator's hand       */
+let carriedFrom = null; /* where it was picked up, so Escape can undo      */
+let lateOnly = false;   /* the overdue chip, pressed                       */
+let clientOnly = null;  /* one couple, the venue's own way of looking       */
+let todayOnly = false;  /* the question a venue actually opens this to ask  */
+let undone = null;      /* the last reversible act: a completion or a move  */
+let openNoteId = null;  /* the card showing its full note                   */
+let flyId = null;       /* the card that should travel on the next repaint  */
+let refocusPart = null; /* which part of the card to land focus on          */
+let drawerTab = "nodate";
+let drawerFrom = null;  /* the control Planning was opened from              */
+const picked = new Set();
+let draftLane = null;   /* the column currently composing a new task        */
+let draftText = "";     /* held in state, so a repaint cannot eat it        */
+let draftFrom = null;   /* the control the composer was opened from         */
+let seq = 0;
+let undoTimer = null;
+let menuFor = null;     /* the card whose move menu is open                 */
+let menuAt = "";
+let flyFrom = null;     /* where a completed card was, so it can travel     */
+let refocus = false;    /* the last change came from the keyboard          */
+
+/* The keycap says what this keyboard actually has on it. */
+const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "\u2318" : "Ctrl ";
+/* A hint that names two keys is no use to a thumb. */
+const TOUCH = matchMedia("(hover: none)").matches;
+
+const B = window.BOARD;
+const I = window.ICON;
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+/* Every task in the review fixture belongs to Orla, so the assignee disc
+   says nothing and is not drawn. The shipped board's own rule. */
+const UNIFORM_ASSIGNEES = true;
+
+/* The three couples the review fixture names. Everything else in the tag
+   field is an area of the house. */
+const CLIENTS = new Set(["Mara & Finn", "Nora & Cian", "Aisling & Tom"]);
+
+/* One accessor for the rendered set, and every header fact derived from it.
+   Before this the header's total was recomputed for the dense board and its
+   done count was not, so the board said "5 of 32 done" above a Done column
+   labelled 9. A board that contradicts itself on screen is a blocker, not a
+   polish item. */
+/* Newest first in Done: a column of records reads backwards from now. */
+function byCompleted(rows) {
+  return rows.slice().sort((a, b) => String(b.completedAt || "").localeCompare(String(a.completedAt || "")));
+}
+
+function seed() {
+  if (state === "empty") return [];
+  const base = B.tasks.slice();
+  return (state === "dense"
+    ? base.concat(window.DENSE_EXTRA.map((t, i) => ({ ...t, id: "x" + i })))
+    : base
+  ).map((t) => ({ ...t }));
+}
+
+/* The working set is per state, so switching to the empty board and back
+   does not resurrect a card the operator moved. */
+function allTasks() {
+  if (!WORK || WORK.key !== state) WORK = { key: state, rows: seed() };
+  return WORK.rows;
+}
+
+function taskById(id) {
+  return allTasks().find((t) => t.id === id) || null;
+}
+
+/* The header counts the whole project. The board shows what is being looked
+   at. Filtering must never change what "5 of 13 done" means. */
+function tasksFor(lane) {
+  let rows = allTasks().filter((t) => t.lane === lane);
+  if (lane === "done") rows = byCompleted(rows);
+  if (lateOnly) rows = rows.filter((t) => timeOf(t).kind === "overdue");
+  if (todayOnly) rows = rows.filter((t) => timeOf(t).kind === "today");
+  if (clientOnly) rows = rows.filter((t) => t.tag === clientOnly);
+  return rows;
+}
+
+function filtering() { return lateOnly || clientOnly || todayOnly; }
+
+/* The board can be asked more than one question at once, and the sentence is
+   composed from whichever are live rather than branched per filter. */
+function filterSentence() {
+  if (!filtering()) return "Showing all work.";
+  const shown = B.columns.reduce((n, c) => n + tasksFor(c.id).length, 0);
+  const rest = allTasks().length - shown;
+  const what = [
+    clientOnly ? "for " + clientOnly : "",
+    lateOnly ? "overdue" : "",
+    todayOnly ? "due today" : "",
+  ].filter(Boolean).join(", ");
+  return (shown
+    ? "Showing the " + shown + " " + (shown === 1 ? "task" : "tasks") + " " + what + ". "
+    : "Nothing " + what + ". ") +
+    rest + " " + (rest === 1 ? "other is" : "others are") + " hidden.";
+}
+
+/* The board in reading order, which is also the order the arrows walk. */
+function laneIds() {
+  return B.columns.map((c) => c.id);
+}
+function place(id) {
+  const lanes = laneIds();
+  for (let x = 0; x < lanes.length; x += 1) {
+    const rows = tasksFor(lanes[x]);
+    const y = rows.findIndex((t) => t.id === id);
+    if (y !== -1) return { x, y, rows };
+  }
+  return null;
+}
+
+/* One time fact per card, resolved once, in ONE grammar: every chip states
+   the day the work is due. Lateness is carried entirely by the fill, which
+   is the direction's own claim. Before this a single board scan carried an
+   elapsed duration ("2 days late"), a deictic ("Today"), a weekday
+   ("Friday") and a date ("1 Aug") for the same kind of fact, and the header
+   called the same state something else again. */
+const TODAY = "2026-07-16";
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/* Every chip on every card was floating without an anchor: nothing anywhere
+   said what today is, so "14 Jul" could be two days late or two months. */
+function todayLabel() {
+  const today = new Date(Date.UTC(2026, 6, 16));
+  return DAYS[today.getUTCDay()] + " " + today.getUTCDate() + " " + MONTHS[today.getUTCMonth()];
+}
+
+/* The review clock is pinned, so "today" is a fact rather than a guess. */
+function dayLabel(iso) {
+  const parts = String(iso).split("-").map(Number);
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  const today = new Date(Date.UTC(2026, 6, 16));
+  const days = Math.round((date - today) / 86400000);
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days > 1 && days < 7) return DAYS[date.getUTCDay()];
+  return date.getUTCDate() + " " + MONTHS[date.getUTCMonth()];
+}
+
+function daysLate(iso) {
+  const parts = String(iso).split("-").map(Number);
+  const date = Date.UTC(parts[0], parts[1] - 1, parts[2]);
+  const days = Math.round((Date.UTC(2026, 6, 16) - date) / 86400000);
+  return days + (days === 1 ? " day" : " days");
+}
+
+/* The same day-count shape the overdue chip uses, so the two read as one
+   family: "2 days overdue" and "21 days". */
+function heldFor(iso) {
+  const parts = String(iso).split("-").map(Number);
+  const days = Math.round((Date.UTC(2026, 6, 16) - Date.UTC(parts[0], parts[1] - 1, parts[2])) / 86400000);
+  return days + (days === 1 ? " day" : " days");
+}
+
+function bindName(text) {
+  return String(text).replace(/ & /g, "\u00a0&\u00a0");
+}
+
+function timeOf(task) {
+  if (task.lane === "done") {
+    return { kind: "done", label: task.completedAt ? dayLabel(task.completedAt) : "" };
+  }
+  if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
+  /* Only when nothing is owed: a deadline outranks how long it has been out. */
+  if (task.lane === "waiting" && task.heldSince && !task.dueAt) {
+    return { kind: "waiting", label: heldFor(task.heldSince) };
+  }
+  if (!task.dueAt) return { kind: "none", label: "" };
+  const label = dayLabel(task.dueAt);
+  if (task.dueTone === "overdue") return { kind: "overdue", label: dayLabel(task.dueAt) };
+  if (task.dueTone === "today") return { kind: "today", label };
+  return { kind: "soon", label };
+}
+
+/* One tab stop per column, not one per card. Crossing the dense board was
+   ninety-odd tab presses; the arrows walk the column and the roving stop
+   means Tab still crosses the whole board in five. */
+function card(task, force, stop) {
+  const done = task.lane === "done";
+  const next = Boolean(task.milestone);
+  const time = timeOf(task);
+  const show = time.kind !== "none" && time.label !== "";
+  /* The sentence the chip used to print is not lost: it is the chip's
+     accessible name and its tooltip, and the header's own "1 overdue" chip
+     teaches the filled-ink mapping in situ. */
+  const SAID = {
+    overdue: [daysLate(task.dueAt) + " overdue, due " + time.label, "Overdue, due "],
+    today: ["Due today", "Due "],
+    soon: ["Due " + time.label, "Due "],
+    milestone: ["Milestone, due " + time.label, "Milestone "],
+    done: [task.completedAt ? "Completed " + dayLabel(task.completedAt) : "", "Completed "],
+    waiting: ["Held " + time.label + ", since " + dayLabel(task.heldSince), "Held "],
+  };
+  const said = SAID[time.kind] || ["", ""];
+  const label = '<span class="sr">' + said[1] + "</span>" + esc(time.label);
+
+  /* Which couple a task belongs to is the question a venue asks on a
+     Saturday. Which area of the house it touches is background. They were
+     sharing one mono slot and one ink level. */
+  const bits = [];
+  if (task.tag) {
+    bits.push(CLIENTS.has(task.tag)
+      ? '<button type="button" class="who" data-act="client" data-client="' + esc(task.tag) +
+        '" tabindex="' + (stop ? "0" : "-1") + '"' +
+        ' aria-pressed="' + (clientOnly === task.tag ? "true" : "false") +
+        '" title="' + (clientOnly === task.tag ? "Show every couple again" : "Show only " + esc(task.tag)) +
+        '">' + bindName(esc(task.tag)) + "</button>"
+      : '<span class="tag">' + esc(task.tag) + "</span>");
+  }
+  /* One word. The row has to carry whose wedding it is, which room of the
+     house it touches and how urgent it is, in a 254px measure; "priority"
+     is the word in that sentence that no operator needs to read twice. It
+     stays in the accessible name. */
+  if (task.priority && !done) {
+    bits.push('<span class="hi">' + esc(task.priority) + '<span class="sr"> priority</span></span>');
+  }
+  if (task.comments) bits.push('<span class="cm">' + I.comment + task.comments + "</span>");
+
+  return (
+    '<article class="card" data-id="' + esc(task.id) +
+    '" draggable="' + (openNoteId === task.id ? "false" : "true") + '"' +
+    ' aria-label="' + esc(task.title) + '" aria-describedby="cd-' + esc(task.id) + '"' +
+    (task.note ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
+    ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Task, movable"') +
+    ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
+    (task.id === carriedId ? ' aria-grabbed="true"' : "") +
+    (task.id === openNoteId ? " data-open" : "") +
+    (done ? " data-done" : "") + (next ? " data-next" : "") +
+    (force ? ' data-force="' + force + '"' :
+      task.id === carriedId ? ' data-force="moving"' : "") + ">" +
+    '<button type="button" class="tick" data-act="tick" tabindex="' + (stop ? "0" : "-1") +
+      '" role="checkbox" aria-checked="' + (done ? "true" : "false") +
+      '" aria-label="' + (done ? "Mark not done" : "Mark done") + '">' + I.check + "</button>" +
+    '<div class="cardTitleRow">' +
+      (show ? '<span class="when" data-t="' + time.kind + '" title="' + esc(said[0]) + '">' +
+        label + "</span>" : "") +
+      '<p class="cardTitle" id="ct-' + esc(task.id) + '">' + bindName(esc(task.title)) + "</p>" +
+      '<span class="sr" id="cd-' + esc(task.id) + '">' + esc([
+        said[0], task.note, task.tag, task.priority ? task.priority + " priority" : "",
+        task.comments ? task.comments + (task.comments === 1 ? " comment" : " comments") : "",
+      ].filter(Boolean).map((p) => String(p).replace(/\.$/, "")).join(". ")) + ".</span>" +
+    "</div>" +
+    (task.note ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
+    '<div class="cardFoot">' + bits.join("") +
+      (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
+      '<button class="cardDots" data-act="menu" tabindex="' + (stop ? "0" : "-1") +
+        '" aria-haspopup="menu" aria-expanded="' + (menuFor === task.id ? "true" : "false") +
+        '" aria-label="Move this task">' + I.dots + "</button>" +
+    "</div>" +
+    "</article>"
+  );
+}
+
+/* A group of controls is one tab stop and the arrows walk it. Applied to the
+   rail, the view switcher and the tools, the way in costs three presses
+   instead of fifteen, and nothing loses its stated reason. */
+function groupKeys(event) {
+  const group = event.target.closest && event.target.closest("[data-group]");
+  if (!group) return false;
+  const key = event.key;
+  const horizontal = group.dataset.group !== "rail";
+  const next = horizontal ? "ArrowRight" : "ArrowDown";
+  const prev = horizontal ? "ArrowLeft" : "ArrowUp";
+  if (key !== next && key !== prev && key !== "Home" && key !== "End") return false;
+  event.preventDefault();
+  const items = [...group.querySelectorAll("button")].filter((n) => n.offsetParent !== null);
+  const at = items.indexOf(document.activeElement);
+  const to = key === "Home" ? 0
+    : key === "End" ? items.length - 1
+    : (at + (key === next ? 1 : items.length - 1) + items.length) % items.length;
+  items.forEach((n, i) => n.setAttribute("tabindex", i === to ? "0" : "-1"));
+  items[to].focus();
+  return true;
+}
+
+function rail() {
+  let railStop = 0;
+  const tile = (key, label, active) =>
+    '<button type="button" class="railTile" data-key="' + key + '" aria-label="' + label + '"' +
+    ' tabindex="' + (active || (railStop += 1) === 1 && !active ? "0" : "-1") + '"' +
+    (active ? ' data-active aria-current="page" title="' + label + '"'
+      : notYet(RAIL[key] || label)) + ">" + I[key] + "</button>";
+  return (
+    '<nav class="rail" data-group="rail" aria-label="Signal Studio">' +
+    '<button type="button" class="railMark" aria-label="Signal Studio"' +
+      notYet("Every Signal Studio app is here. Not in this release.") + ">" + I.more + "<i></i></button>" +
+    '<span class="railDivider"></span>' +
+    '<div class="railGroup">' + tile("home", "Home", false) +
+      B.rail.products.map((p) => tile(p.key, p.label, p.active)).join("") + "</div>" +
+    '<span class="railSpacer"></span>' +
+    '<div class="railUtil">' + tile("inbox", "Inbox", false) +
+      tile("help", "Help and settings", false) + "</div>" +
+    '<button class="railAdd" data-act="add" data-lane="' + B.columns[0].id +
+      '" aria-label="Add task">' + I.plus + "</button>" +
+    '<button type="button" class="railAvatar" aria-label="' + esc(B.operator.role) + '"' +
+      notYet("Your account lives in Signal Studio.") + ">" + B.operator.initials + "</button>" +
+    "</nav>"
+  );
+}
+
+/* One helper, so an unavailable control cannot be marked one way here and
+   another way there. It stays in the tab order deliberately: a control that
+   cannot be reached never gets to say why it is missing. */
+function notYet(what) {
+  return ' aria-disabled="true" title="' + esc(what) + '"';
+}
+const SOON = "Board is the only view for now.";
+const TOOLS = "Filter, Sort and Display come with the other views.";
+const SEARCH = "Search comes with the other views.";
+/* Named, not templated: a door says what is behind it, then says it is not
+   in this release. */
+const RAIL = {
+  home: "Every project in one list. Not in this release.",
+  notes: "What you wrote down. Not in this release.",
+  timeline: "The dates the season turns on. Not in this release.",
+  inbox: "What came in while you were working. Not in this release.",
+  help: "Help, and how this project is set up. Not in this release.",
+  tasks: "Tasks",
+};
+
+function head() {
+  const p = B.progress;
+  const rows = allTasks();
+  const total = rows.length;
+  const done = rows.filter((t) => t.lane === "done").length;
+  const overdue = rows.filter((t) => timeOf(t).kind === "overdue").length;
+  const dueToday = rows.filter((t) => timeOf(t).kind === "today").length;
+  const undated = rows.filter((t) => timeOf(t).kind === "none").length;
+  return (
+    '<div class="head">' +
+    '<span class="word">tasks</span><span class="headRule"></span>' +
+    '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
+    '<div class="headFacts">' +
+      '<span class="today">' + todayLabel() + "</span>" +
+      (total && done === total ? '<span class="ratio" data-all>Everything is done.</span>' :
+       total ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
+      /* The control survives at zero while the filter is on, or clearing the
+         last overdue task leaves the operator with an empty board and no way
+         back. */
+      (dueToday ? '<button type="button" class="late" data-act="today" data-soft aria-pressed="' +
+        (todayOnly ? "true" : "false") + '" title="' + (todayOnly ? "Show all " + total + " tasks"
+          : "Show only the " + dueToday + " due today") + '">' + dueToday + " today" +
+        (todayOnly ? I.close : "") + "</button>" : "") +
+      (overdue || lateOnly
+        ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") +
+          '" title="' + (lateOnly ? "Show all " + total + " tasks"
+            : "Show only the " + overdue + " overdue " + (overdue === 1 ? "task" : "tasks")) + '">' +
+          overdue + " overdue" + (lateOnly ? I.close : "") + "</button>"
+        : "") +
+      (undated ? '<button type="button" class="undated" data-act="planning" title="Open Planning to give these ' +
+        undated + ' tasks a day">' + undated + " with no date</button>" : "") +
+      "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
+    "</div>" +
+    '<div class="headActions">' +
+      '<button class="ghost headSearch" aria-label="Search"' + notYet(SEARCH) + ">" +
+        I.search + "</button>" +
+      '<button class="ghost"' + notYet("Sharing comes with guest access.") + ">" +
+        I.share + "<span>Share</span></button>" +
+      '<button class="ghost" data-act="planning">' + I.planning + "<span>Planning</span>" +
+        (undated ? "<em>" + undated + "</em>" : "") + "</button>" +
+      '<button class="ghost" aria-label="More"' + notYet("Project settings come with sharing.") + ">" +
+        I.dots + "</button>" +
+    "</div></div>"
+  );
+}
+
+function views() {
+  const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
+  return (
+    '<div class="views"><nav class="seg" data-group="views" role="tablist" aria-label="View">' +
+    /* Painted at the same weight as a control that works, these promised a
+       Schedule and a Calendar nobody has built. Drawn as unavailable they
+       stop lying, and they say why when asked rather than doing nothing. */
+    B.views.map((v) => '<button type="button" role="tab" class="segItem"' +
+      (v === "Board"
+        ? ' data-active aria-current="true"'
+        : notYet(SOON)) +
+      ' tabindex="' + (v === "Board" ? "0" : "-1") + '">' + icons[v] + "<span>" + v + "</span></button>").join("") +
+    '</nav><div class="viewTools" data-group="tools">' +
+      ["Filter", "Sort", "Display"].map((t, i) =>
+        '<button class="ghost" tabindex="' + (i ? "-1" : "0") + '"' + notYet(TOOLS) + ">" +
+        I[t.toLowerCase()] + "<span>" + t + "</span></button>").join("") +
+    "</div></div>"
+  );
+}
+
+function board() {
+  /* One tab stop for the whole board. Without this the dense board cost
+     ninety-odd presses to cross; with it, Tab reaches the board, the arrows
+     walk it, and Tab leaves. */
+  const all = laneIds().flatMap((id) => tasksFor(id).map((t) => t.id));
+  if (!all.includes(focusId)) focusId = all[0] || null;
+  return (
+    '<div class="board" role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
+    B.columns.map((c) => {
+      const rows = tasksFor(c.id);
+      const all = allTasks().filter((t) => t.lane === c.id);
+      /* Under a filter, five columns saying the same sentence read as a
+         rendering fault. The board says it once, in the first column. */
+      /* Under a filter the board states itself once, at the foot. A
+         board-scoped sentence sitting in a column slot reads as a claim
+         about that column. */
+      /* One instruction on the sheet, in the column the work starts in. The
+         other four columns keep their note, so each still teaches what it
+         holds without four of them issuing an order. */
+      const empty = filtering() || (!allTasks().length && c.id !== B.columns[0].id) ? "" : c.empty;
+      return (
+        '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
+          (rows.length ? "" : " data-empty") +
+          ' aria-describedby="tn-' + c.id + '"' +
+          ' role="region" aria-label="' +
+          esc(c.name) + (filtering()
+            ? ", " + rows.length + " of " + all.length + " shown"
+            : rows.length
+            ? ", " + rows.length + (rows.length === 1 ? " task" : " tasks")
+            : ", nothing here yet") + '">' +
+        '<div class="trayHead"><div class="trayTop">' +
+          '<span class="pip" aria-hidden="true"></span>' +
+          '<h2 class="trayName">' + esc(c.name) + "</h2>" +
+          '<span class="trayCount" aria-hidden="true">' + rows.length +
+            (filtering() ? '<span class="ofAll"> of ' + all.length + "</span>" : "") + "</span></div>" +
+          /* Under a filter a column describes what it is showing, not what it
+             normally holds — four notes were false in context. */
+          /* Under a filter the column already carries its name, its count of
+             total, and the foot strip's whole sentence. A note here is the
+             same fact a fourth time. */
+          '<p class="trayNote" id="tn-' + c.id + '">' + esc(filtering() ? "" : c.note) + "</p></div>" +
+        '<div class="trayBody">' +
+          (rows.length ? rows.map((t) => card(t, null, t.id === focusId)).join("")
+            : empty ? '<p class="trayEmpty">' + esc(empty) + "</p>" : "") +
+          (draftLane === c.id ? draft() : "") +
+        "</div>" +
+        /* "Add task" also sits on the dock, ten pixels below, meaning the
+           whole project. This one means this column. */
+        /* One Add row in the tab order — the column the roving stop is in —
+           reached from any card by Tab, like the card's own controls. */
+        '<button class="trayAdd" data-act="add" data-lane="' + c.id +
+          '" tabindex="' + (rows.some((t) => t.id === focusId) || (!focusId && c.id === B.columns[0].id) ? "0" : "-1") +
+          '" aria-label="Add a task to ' + esc(c.name) + '">' +
+          I.plus + "<span>Add here</span></button>" +
+        "</section>"
+      );
+    }).join("") + "</div>"
+  );
+}
+
+function dock() {
+  return (
+    '<div class="dock">' +
+      '<button class="dockField"' + notYet(SEARCH) + ">" + I.search +
+        "<span>Search " + esc(B.workspace) + "</span><kbd>" + MOD + "K</kbd></button>" +
+      '<button class="dockPrimary" data-act="add" data-lane="' + B.columns[0].id + '">' +
+        I.plus + "<span>Add task</span></button>" +
+      '<span class="dockRule"></span>' +
+      '<button type="button" class="dockAvatar" aria-label="' + esc(B.operator.role) + '"' +
+        notYet("Your account lives in Signal Studio.") + ">" + B.operator.initials + "</button>" +
+    "</div>"
+  );
+}
+
+/* The composer. It is a card in the tray it belongs to, with the title as
+   the only field, because a task is a sentence and everything else about it
+   can be decided afterwards on the card itself. */
+function draft() {
+  return (
+    '<article class="card" data-draft>' +
+    '<button type="button" class="tick" tabindex="-1" aria-hidden="true">' + I.check + "</button>" +
+    '<div class="cardTitleRow">' +
+      '<p class="cardTitle" contenteditable="plaintext-only" role="textbox"' +
+      ' aria-label="What has to happen?" data-placeholder="What has to happen?">' +
+      esc(draftText) + "</p>" +
+    "</div>" +
+    '<p class="draftHint">' + (TOUCH
+      ? '<button type="button" class="carryDo draftDo" data-act="commit">Add</button>' +
+        '<button type="button" class="draftDrop" data-act="discard">Discard</button>'
+      : "Enter adds it. Esc discards.") + "</p>" +
+    "</article>"
+  );
+}
+
+/* Titles are short; the pill is wide. Cutting at four words severed
+   sentences after a preposition with hundreds of pixels going spare. */
+function shortTitle(title) {
+  if (title.length <= 48) return title;
+  const words = title.slice(0, 48).split(" ");
+  words.pop();
+  return words.join(" ") + "\u2026";
+}
+
+/* One strip at the foot of the sheet, and the board's only statement of
+   what it is currently doing. In hand beats just-finished beats filtered. */
+function footPill() {
+  const task = carriedId && taskById(carriedId);
+  if (task) {
+    return (
+      '<div class="carry">' +
+      /* The live region already said "Picked up", so the strip leads with
+         the subject rather than repeating the verb. */
+      '<span class="carryName"><b>' + esc(shortTitle(task.title)) + "</b></span>" +
+      '<em><kbd data-keys="arrows">\u2191\u2193\u2190\u2192</kbd> move</em>' +
+      "<em><kbd>Space</kbd> drop</em>" +
+      "<em><kbd>Esc</kbd> cancel</em>" +
+      "</div>"
+    );
+  }
+  if (undone) {
+    const what = undone.kind === "done"
+      ? "<b>" + esc(shortTitle(undone.title)) + "</b> done"
+      : undone.kind === "add"
+      ? "<b>" + esc(shortTitle(undone.title)) + "</b> added to " + esc(laneName(undone.toLane))
+      : "<b>" + esc(shortTitle(undone.title)) + "</b> moved to " + esc(laneName(undone.toLane));
+    return (
+      '<div class="carry">' +
+      '<span class="carryName">' + what + "</span>" +
+      '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
+      (history.length > 1 ? "<em>" + (history.length - 1) + " more</em>" : "") +
+      "<em><kbd>" + MOD + "Z</kbd></em>" +
+      "</div>"
+    );
+  }
+  if (filtering()) {
+    return (
+      '<div class="carry">' +
+      '<span class="carryName">' + esc(filterSentence()) + "</span>" +
+      '<button type="button" class="carryDo" data-act="showall">Show all</button>' +
+      "</div>"
+    );
+  }
+  return "";
+}
+
+/* The menu is the one route to moving a card that a mouse, a finger and a
+   keyboard can all take. Drag is a pointer gesture; Space is a keyboard one;
+   a touch screen had neither. */
+function cardMenu() {
+  if (!menuFor) return "";
+  const task = taskById(menuFor);
+  if (!task) return "";
+  return (
+    '<div class="menuVeil" data-act="closemenu"></div>' +
+    '<div class="cardMenu" role="menu" aria-label="Move ' + esc(task.title) + '" style="' + menuAt + '">' +
+    "<p>Move to</p>" +
+    B.columns.map((c) =>
+      '<button type="button" role="menuitem" data-act="moveto" data-lane="' + c.id + '"' +
+      ' tabindex="' + (c.id === task.lane ? "0" : "-1") + '"' +
+      (c.id === task.lane ? ' aria-current="true"' : "") + ">" + esc(c.name) + "</button>").join("") +
+    "</div>"
+  );
+}
+
+/* Planning is a room, not a picture of one. Its list is derived from the
+   live set, so the header's count and the drawer's count can never disagree,
+   and every control in it either works or says why it does not. */
+function undatedTasks() {
+  return allTasks().filter((t) => timeOf(t).kind === "none");
+}
+function milestoneTasks() {
+  return allTasks().filter((t) => t.milestone);
+}
+
+function drawer() {
+  const p = B.planning;
+  const rows = drawerTab === "milestones" ? milestoneTasks() : undatedTasks();
+  const all = rows.length && rows.every((t) => picked.has(t.id));
+  const tab = (key, label, count) =>
+    '<button type="button" class="drawerTab" role="tab" data-act="drawerTab" data-tab="' + key + '"' +
+    ' tabindex="' + (drawerTab === key ? "0" : "-1") + '"' +
+    ' aria-selected="' + (drawerTab === key ? "true" : "false") + '"' +
+    (drawerTab === key ? " data-active" : "") + ">" + label + "<em>" + count + "</em></button>";
+  return (
+    '<aside class="drawer" role="dialog" aria-modal="false" aria-labelledby="drawerTitle" tabindex="-1">' +
+    '<div class="drawerHead"><div class="drawerTop"><span class="drawerKicker">' + esc(p.title) + "</span>" +
+      '<button class="ghost" data-act="planning" style="margin-left:auto" aria-label="Close Planning">' +
+        I.close + "</button></div>" +
+      '<h2 id="drawerTitle">' + esc(p.project) + "</h2>" +
+      '<p class="drawerLine">' + esc(p.line) + "</p>" +
+      '<div class="axis"><i></i><b></b></div>' +
+      '<div class="axisEnds"><span>6 Jul</span><span>10 Oct</span></div>' +
+      '<p class="drawerSummary">' + esc(p.summary) + "</p></div>" +
+    '<div class="drawerTabs" role="tablist" aria-label="Planning">' +
+      tab("nodate", "No date", undatedTasks().length) +
+      tab("milestones", "Milestones", milestoneTasks().length) + "</div>" +
+    '<p class="drawerHelp">' +
+      (rows.length > 1
+        ? '<button type="button" class="selectAll" data-act="selectAll">' +
+          (all ? "Clear all" : "Select all") + "</button>"
+        : "") +
+      esc(picked.size
+        ? picked.size + (picked.size === 1 ? " task picked." : " tasks picked.")
+        : drawerTab === "milestones" ? "The dates the season turns on."
+        : "Every task here still needs a day.") +
+    "</p>" +
+    '<div class="drawerRows" role="group" aria-label="' +
+      (drawerTab === "milestones" ? "Milestones" : "Tasks with no date") + '">' +
+    (rows.length
+      ? rows.map((t) =>
+        '<div class="drawerRow"' + (picked.has(t.id) ? " data-picked" : "") + ">" +
+        '<button type="button" class="box" data-act="pick" data-id="' + esc(t.id) + '" role="checkbox"' +
+        ' aria-checked="' + (picked.has(t.id) ? "true" : "false") + '" aria-label="Pick ' + esc(t.title) + '"></button>' +
+        "<span>" + bindName(esc(t.title)) + "</span>" +
+        '<button type="button" class="sched" aria-label="Pick a day for ' + esc(t.title) + '"' +
+        notYet("Choosing a day comes with the Schedule view.") + ">Pick a day " + I.chevron + "</button></div>").join("")
+      : '<p class="drawerEmpty">' +
+        (drawerTab === "milestones" ? "No milestones on this project yet." : "Every task has a day.") + "</p>") +
+    "</div>" +
+    '<button class="drawerAdd" data-act="add" data-lane="' + B.columns[0].id + '">' +
+      I.plus + "<span>" + (drawerTab === "milestones" ? "Add a milestone" : "Add a task with no date") +
+      "</span></button></aside>"
+  );
+}
+
+function loading() {
+  return (
+    '<div class="sheet">' +
+    /* The product's own furniture is a constant, not payload. Greying out
+       the workspace chrome, the five column names and the view switcher
+       made the wait look like a bigger outage than it is; what is actually
+       unknown is the work, and only that is drawn as a skeleton. */
+    '<div class="head"><span class="word">tasks</span><span class="headRule"></span>' +
+      '<span class="sk" style="width:164px;height:16px"></span>' +
+      '<span class="sk" style="width:96px;height:11px;margin-left:16px"></span>' +
+      '<span class="sk" style="width:74px;height:11px;margin-left:12px"></span>' +
+      '<div class="headActions"><span class="sk" style="width:92px;height:14px"></span></div></div>' +
+    views() +
+    '<div class="board">' +
+    B.columns.map((c, i) => (
+      '<section class="tray" data-tone="' + c.tone + '"><div class="trayHead">' +
+        '<div class="trayTop"><span class="pip" aria-hidden="true"></span>' +
+        '<h2 class="trayName">' + esc(c.name) + "</h2></div>" +
+        '<p class="trayNote">' + esc(c.note) + "</p></div>" +
+      '<div class="trayBody">' +
+      /* Two per column: honest about not knowing, rather than a specific
+         promise per column that the payload then contradicts. */
+      [0, 1].map(() => (
+        '<div class="loadCard"><span class="sk" style="width:86%;height:12px"></span>' +
+        '<span class="sk" style="width:62%;height:10px"></span>' +
+        '<span class="sk" style="width:34%;height:9px"></span></div>'
+      )).join("") + "</div></section>"
+    )).join("") + "</div>" +
+    '<p class="loadSay">Opening ' + esc(B.workspace) + "</p>" +
+    /* The foot furniture is a constant of the product, so it is present from
+       the first paint. It simply cannot be used yet. */
+    '<div class="dock" aria-hidden="true" data-idle>' +
+      '<span class="dockField">' + I.search + "<span>Search " + esc(B.workspace) + "</span></span>" +
+      '<span class="dockPrimary">' + I.plus + "<span>Add task</span></span>" +
+      '<span class="dockRule"></span>' +
+      '<span class="dockAvatar">' + B.operator.initials + "</span>" +
+    "</div></div>"
+  );
+}
+
+function specimens() {
+  const find = (id) => B.tasks.find((t) => t.id === id);
+  const cells = [
+    ["At rest", find("demo-t-03"), null, "Nothing but the work. No empty slots and no placeholder chips."],
+    ["Hover", find("demo-t-04"), "hover", "The edge darkens and the menu appears. Height never changes."],
+    ["Keyboard focus", find("demo-t-08"), "focus", "A real focus ring in the accent, not a colour change."],
+    ["Selected", find("demo-t-07"), "selected", "Selection is a ring, so it can never be confused with hover."],
+    ["Overdue", find("demo-t-06"), null, "Filled ink, white type. The chip counts the days; the fill says they are behind you."],
+    ["Due today", find("demo-t-05"), null, "Outlined, ink at full strength. Serious, and nothing has gone wrong yet."],
+    ["Next milestone", find("demo-t-02"), null, "The one earned indigo in the whole view. The chip carries the date; the colour carries the fact."],
+    ["Done", find("demo-t-09"), null, "Never struck through. The work happened, it was not a mistake."],
+    ["Long title", { ...find("demo-t-01"), title: "Confirm the marquee sides and the wet-weather plan with the hire company before Thursday" }, null, "Two lines of title, then the note clamps. A card cannot run away."],
+    ["In flight", find("demo-t-03"), "drag", "The card at rest, top left, picked up. The only shadow in the product."],
+    ["Moving by keyboard", find("demo-t-04"), "moving", "Space picks a card up, the arrows walk it between columns. Lifted, but not tilted: nothing is carrying it."],
+    ["Drop target", null, "drop", "The column being moved into warms half a step and draws the line the card will land on. Ink only, like everything else."],
+  ];
+  return (
+    '<div class="sheet">' + head() +
+    '<div class="specProbe" aria-hidden="true"><div class="board">' +
+    '<section class="tray"><div class="trayBody"></div></section>'.repeat(5) + "</div></div>" +
+    '<div class="spec"><p class="specIntro">Every state a card can be in, at the exact width a tray gives it. ' +
+    "The gutter, the title’s left edge and every line beneath it share one optical baseline, and the time fact sits at the head of the title so a tray reads as a column of dates rather than a pile, with the title flowing around it. Every chip carries a value and every fill carries a condition: filled means behind, outlined means today, indigo means the next milestone. Severity is expressed by ink density and fill, never by hue.</p>" +
+    '<div class="specGrid">' +
+    cells.map((c) => (
+      '<div class="specCell"><span class="specLabel">' + c[0] + "</span>" +
+      '<div class="specStage">' +
+        (c[2] === "drop"
+          ? '<div class="tray specTray" data-over><div class="trayBody">' +
+            card(find("demo-t-08"), null, true) + '<span class="dropLine"></span>' +
+            card(find("demo-t-07"), null, true) +
+            "</div></div>"
+          : card(c[1], c[2], true)) +
+      "</div>" +
+      '<p class="specNote">' + c[3] + "</p></div>"
+    )).join("") + "</div></div></div>"
+  );
+}
+
+function renderApp() {
+  const sheet =
+    state === "loading" ? loading()
+    : state === "cards" ? specimens()
+    : '<div class="sheet">' + head() + views() + board() + footPill() + dock() + "</div>";
+  return '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + cardMenu() + "</div>";
+}
+
+/* The live region is created once and never re-rendered. A region that is
+   replaced on every repaint is a new region every time, and a new region
+   announces nothing. */
+function say(words) {
+  const node = document.getElementById("say");
+  if (!node) return;
+  /* Writing the same string twice produces no mutation and therefore no
+     announcement, which is how "Note closed." went silent on a second card. */
+  node.textContent = node.textContent === words ? words + " " : words;
+}
+
+function laneName(id) {
+  const column = B.columns.find((c) => c.id === id);
+  return column ? column.name : id;
+}
+
+function moveTo(id, lane, index) {
+  const rows = allTasks();
+  const from = rows.findIndex((t) => t.id === id);
+  if (from === -1) return;
+  const task = rows[from];
+  const was = task.lane;
+  /* Moving into Done is a completion, wherever it came from. */
+  if (lane === "done" && was !== "done") {
+    task.prevLane = was;
+    task.completedAt = TODAY;
+    const node = document.querySelector('.card[data-id="' + id + '"]');
+    flyFrom = node ? node.getBoundingClientRect() : null;
+    flyId = id;
+  }
+  if (was === "done" && lane !== "done") { task.prevLane = null; task.completedAt = null; }
+  rows.splice(from, 1);
+  task.lane = lane;
+  /* Splice it in beside the card it was placed against, so the order the
+     operator sees is the order that is kept. */
+  const target = tasksFor(lane)[index];
+  const at = target ? rows.findIndex((t) => t.id === target.id) : -1;
+  if (at === -1) rows.push(task);
+  else rows.splice(at, 0, task);
+}
+
+/* Finishing a task was a silent teleport to a column a thousand pixels away,
+   and on a phone to a column that is off screen entirely. The card now
+   travels the distance it actually moved, measured after the repaint. */
+function flyCompleted(target) {
+  const was = flyFrom;
+  const id = flyId;
+  flyFrom = null;
+  flyId = null;
+  if (!was || !id) return 0;
+  const node = target.querySelector('.card[data-id="' + id + '"]');
+  if (!node) return 0;
+  /* The travel is right either way — the card should fly back — but the
+     check only draws on a card that is actually finished. */
+  const land = () => { if (node.hasAttribute("data-done")) node.setAttribute("data-just-done", ""); };
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { land(); return 0; }
+  let now = node.getBoundingClientRect();
+  const board = target.querySelector(".board");
+  if (board) {
+    /* Never past the sheet's own edge: on a phone the destination column is
+       off screen, and a ghost that exits the viewport reads as a bug. */
+    const box = board.getBoundingClientRect();
+    const left = Math.min(Math.max(now.left, box.left + 8), box.right - now.width - 8);
+    if (left !== now.left) now = { left: left, top: now.top, width: now.width, height: now.height };
+  }
+  const dx = was.left - now.left;
+  const dy = was.top - now.top;
+  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { land(); return 0; }
+
+  /* --motion-fast governs a state change; this is a journey across the
+     sheet, and a fixed 260ms reads as a teleport at 1000px and as a lag at
+     120px. Stated here rather than added to the token ladder. */
+  const travel = Math.round(Math.min(460, Math.max(220, 170 + Math.hypot(dx, dy) * 0.22)));
+  const ghost = node.cloneNode(true);
+  ghost.className = node.className + " cardGhost";
+  ghost.removeAttribute("id");
+  ghost.setAttribute("aria-hidden", "true");
+  ghost.style.left = was.left + "px";
+  ghost.style.top = was.top + "px";
+  ghost.style.width = was.width + "px";
+  ghost.style.height = was.height + "px";
+  ghost.style.transitionDuration = travel + "ms";
+  document.body.appendChild(ghost);
+  node.style.opacity = "0";
+  /* A committed frame before the offset is released, or the browser has no
+     before-change style to transition from. */
+  ghost.getBoundingClientRect();
+  ghost.style.transform = "translate(" + -dx + "px," + -dy + "px)";
+  ghost.style.left = was.left + "px";
+
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    ghost.remove();
+    node.style.opacity = "";
+    land();
+  };
+  ghost.addEventListener("transitionend", (event) => {
+    if (event.propertyName === "transform" && event.target === ghost) finish();
+  });
+  /* A transition that never fires must not leave the card invisible. */
+  setTimeout(finish, travel + 140);
+  return travel;
+}
+
+const history = [];
+let undoing = false;
+
+function clearUndo() {
+  clearTimeout(undoTimer);
+  undone = null;
+}
+
+/* One reversible act at a time, with the strip as its face. Arming it here
+   rather than at each call site means every route to a change — the tick,
+   the menu, a drop — inherits the same model. */
+function arm(act) {
+  if (undoing) return;
+  clearTimeout(undoTimer);
+  history.push(act);
+  if (history.length > 10) history.shift();
+  undone = act;
+  /* The strip retires; the record does not. Nothing that used to be true
+     stops being true because six seconds passed. */
+  undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
+}
+
+/* Suspended while the operator is reading or reaching for it — the strip
+   used to vanish mid-decision and drop focus to the top of the document. */
+function holdUndo() { clearTimeout(undoTimer); }
+function releaseUndo() {
+  /* Re-time the strip; do not re-record the act. arm() pushes, so this used
+     to add a phantom entry on every pointer pass over the strip. */
+  if (!undone) return;
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
+}
+
+function toggleDone(id) {
+  const task = taskById(id);
+  if (!task) return;
+  const target = document.getElementById("root") || document.getElementById("deck");
+  const node = target && target.querySelector('.card[data-id="' + id + '"]');
+  flyFrom = node ? node.getBoundingClientRect() : null;
+  flyId = id;
+
+  if (task.lane === "done") {
+    /* Back to where it actually came from, never to the first column. */
+    const back = task.prevLane || B.columns[0].id;
+    task.lane = back;
+    task.prevLane = null;
+    task.completedAt = null;
+    for (let i = history.length - 1; i >= 0; i -= 1) {
+      /* The stack must not go on offering to redo something already undone. */
+      if (history[i].id === id && history[i].kind === "done") history.splice(i, 1);
+    }
+    clearUndo();
+    say(task.title + " is back in " + laneName(back) + ".");
+  } else {
+    task.prevLane = task.lane;
+    task.lane = "done";
+    task.completedAt = TODAY;
+    arm({ kind: "done", id: id, title: task.title });
+    say(task.title + " done. Press " + MOD + "Z to undo.");
+  }
+  /* A checkbox must not move focus off itself on toggle. */
+  refocusPart = document.activeElement && document.activeElement.classList.contains("tick") ? "tick" : null;
+  /* Clearing the last overdue task while filtered used to leave an empty
+     board behind a control that had just disappeared. */
+  if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
+    lateOnly = false;
+    say(task.title + " done. Nothing is overdue, so the filter is off.");
+  }
+  focusId = id;
+  refocus = true;
+  mount();
+}
+
+function undoLast() {
+  const act = history.pop();
+  if (!act) { say("Nothing left to undo."); return; }
+  clearUndo();
+  undoing = true;
+  try { runUndo(act); } finally { undoing = false; }
+  /* The strip now shows whatever is left beneath, so the operator can see
+     the way back is still open. */
+  if (history.length) { undone = history[history.length - 1]; clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { undone = null; mount(); }, 6000); }
+  mount();
+}
+
+function runUndo(act) {
+  if (act.kind === "add") {
+    const rows = allTasks();
+    const at = rows.findIndex((t) => t.id === act.id);
+    if (at !== -1) rows.splice(at, 1);
+    say(act.title + " removed again.");
+    mount();
+    return;
+  }
+  if (act.kind === "done") { toggleDone(act.id); return; }
+  const task = taskById(act.id);
+  flyFrom = document.querySelector('.card[data-id="' + act.id + '"]');
+  flyFrom = flyFrom ? flyFrom.getBoundingClientRect() : null;
+  flyId = act.id;
+  moveTo(act.id, act.lane, act.index);
+  focusId = act.id;
+  refocus = true;
+  say((task ? task.title : "The task") + " is back in " + laneName(act.lane) + ".");
+}
+
+function walk(dx, dy) {
+  const at = place(focusId);
+  if (!at) return;
+  if (dy) {
+    const next = at.rows[at.y + dy];
+    if (next) focusId = next.id;
+    return;
+  }
+  const lanes = laneIds();
+  for (let x = at.x + dx; x >= 0 && x < lanes.length; x += dx) {
+    const rows = tasksFor(lanes[x]);
+    if (rows.length) { focusId = rows[Math.min(at.y, rows.length - 1)].id; return; }
+  }
+}
+
+function carryMove(dx, dy) {
+  const at = place(carriedId);
+  if (!at) return;
+  focusId = carriedId;
+  const lanes = laneIds();
+  if (dy) {
+    const to = Math.max(0, Math.min(at.rows.length - 1, at.y + dy));
+    if (to === at.y) return;
+    moveTo(carriedId, lanes[at.x], to);
+    say("Position " + (to + 1) + " of " + at.rows.length + " in " + laneName(lanes[at.x]) + ".");
+    return;
+  }
+  const x = at.x + dx;
+  if (x < 0 || x >= lanes.length) return;
+  const rows = tasksFor(lanes[x]);
+  moveTo(carriedId, lanes[x], Math.min(at.y, rows.length));
+  say(laneName(lanes[x]) + ", position " + (Math.min(at.y, rows.length) + 1) + " of " + (rows.length + 1) + ".");
+}
+
+/* Every surface that opens gives focus back to what opened it. */
+function returnFromDrawer() {
+  const target = document.getElementById("root") || document.getElementById("deck");
+  const back = drawerFrom && target.querySelector(drawerFrom);
+  drawerFrom = null;
+  picked.clear();
+  if (back) back.focus({ preventScroll: true });
+}
+
+function closeMenu() {
+  if (!menuFor) return false;
+  const id = menuFor;
+  menuFor = null;
+  focusId = id;
+  refocus = true;
+  mount();
+  return true;
+}
+
+/* Every exit puts the operator back on the control they opened it from, or
+   on the board's own tab stop. Nothing may drop them on <body>. */
+function leaveDraft() {
+  const target = document.getElementById("root") || document.getElementById("deck");
+  const back = draftFrom && target.querySelector(draftFrom);
+  draftFrom = null;
+  if (back) back.focus({ preventScroll: true });
+  else {
+    const stop = target.querySelector('.card[tabindex="0"]');
+    if (stop) stop.focus({ preventScroll: true });
+  }
+}
+
+function discardDraft() {
+  draftLane = null;
+  draftText = "";
+  say("Discarded.");
+  mount();
+  leaveDraft();
+}
+
+function commitDraft(field) {
+  const title = (field ? field.textContent : draftText).trim().replace(/\s+/g, " ");
+  const lane = draftLane;
+  draftLane = null;
+  draftText = "";
+  if (!title) { say("Nothing added."); mount(); leaveDraft(); return; }
+  seq += 1;
+  const id = "new-" + seq;
+  const rows = allTasks();
+  const before = tasksFor(lane).length ? tasksFor(lane)[tasksFor(lane).length - 1] : null;
+  const task = { id: id, title: title, lane: lane, tag: "", priority: "", comments: 0 };
+  const at = before ? rows.findIndex((t) => t.id === before.id) + 1 : rows.length;
+  rows.splice(at, 0, task);
+  arm({ kind: "add", id: id, title: title, toLane: lane });
+  focusId = id;
+  refocus = true;
+  if (lateOnly && timeOf(task).kind !== "overdue") {
+    lateOnly = false;
+    say(title + " added to " + laneName(lane) + ". The overdue filter is off so you can see it.");
+  } else {
+    say(title + " added to " + laneName(lane) + ". Press " + MOD + "Z to undo.");
+  }
+  /* The run continues: a fresh line opens under the one just added, caret
+     already in it, so six tasks cost six sentences and one Escape. */
+  draftLane = lane;
+  mount();
+  const next = document.querySelector(".card[data-draft] .cardTitle");
+  if (next) next.focus();
+}
+
+function onKey(event) {
+  const key = event.key;
+  if (groupKeys(event)) return;
+
+  /* A menu is one tab stop and the arrows walk it, which is what role="menu"
+     promises and what this one was not doing. */
+  const menu = event.target.closest && event.target.closest(".cardMenu");
+  if (menu && (key === "ArrowDown" || key === "ArrowUp" || key === "Home" || key === "End")) {
+    event.preventDefault();
+    const items = [...menu.querySelectorAll("button")];
+    const at = items.indexOf(document.activeElement);
+    const next = key === "Home" ? 0
+      : key === "End" ? items.length - 1
+      : (at + (key === "ArrowDown" ? 1 : items.length - 1)) % items.length;
+    items.forEach((n, i) => n.setAttribute("tabindex", i === next ? "0" : "-1"));
+    items[next].focus();
+    return;
+  }
+
+  /* The draft owns Enter and Escape while it is open; nothing else does. */
+  const field = event.target.closest && event.target.closest(".card[data-draft] .cardTitle");
+  if (field) {
+    if (key === "Enter") { event.preventDefault(); commitDraft(field); return; }
+    if (key === "Escape") { event.preventDefault(); discardDraft(); return; }
+    return;
+  }
+
+  /* Board-wide keys, live wherever focus is inside the sheet. */
+  if ((event.metaKey || event.ctrlKey) && (key === "k" || key === "K")) {
+    /* The pill prints this key, so the key has to answer — with the same
+       sentence the pill's own tooltip carries. */
+    event.preventDefault();
+    say("Search arrives with the other views.");
+    return;
+  }
+  if ((event.metaKey || event.ctrlKey) && (key === "z" || key === "Z")) {
+    event.preventDefault();
+    undoLast();
+    return;
+  }
+  if (key === "Escape") {
+    /* Innermost first: menu, carried card, open note, then the filters in
+       the order they were most likely just set, then the drawer. */
+    if (closeMenu()) { event.preventDefault(); return; }
+    if (carriedId) {
+      event.preventDefault();
+      const title = taskById(carriedId).title;
+      moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
+      say("Move cancelled. " + title + " is back in " + laneName(carriedFrom.lane) + ".");
+      carriedId = null; carriedFrom = null;
+      refocus = true; mount(); return;
+    }
+    if (openNoteId) {
+      event.preventDefault();
+      focusId = openNoteId;
+      openNoteId = null;
+      say("Note closed.");
+      refocus = true; mount(); return;
+    }
+    if (clientOnly || lateOnly || todayOnly) {
+      event.preventDefault();
+      if (clientOnly) clientOnly = null;
+      else if (lateOnly) lateOnly = false;
+      else todayOnly = false;
+      say(filterSentence());
+      mount(); return;
+    }
+    if (state === "planning") {
+      event.preventDefault();
+      state = "board";
+      say("Planning closed.");
+      mount();
+      returnFromDrawer();
+      return;
+    }
+
+  }
+
+  const card = event.target.closest && event.target.closest(".card[data-id]");
+  if (!card) return;
+
+  /* The card's own controls answer for themselves. Before this, Space on a
+     checkbox picked the card up and Enter on the actions menu completed the
+     task — a labelled control doing an unrelated, unannounced thing. */
+  if (event.target.closest(".tick, .cardDots, .who") && (key === " " || key === "Spacebar" || key === "Enter")) return;
+
+  const id = card.dataset.id;
+  const DIR = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+
+  /* The tab stop is always the card the operator is on. */
+  focusId = id;
+
+  if (key === " " || key === "Spacebar") {
+    event.preventDefault();
+    if (carriedId === id) {
+      const at = place(id);
+      say(taskById(id).title + " dropped in " + laneName(laneIds()[at.x]) + ".");
+      carriedId = null; carriedFrom = null;
+    } else {
+      const at = place(id);
+      carriedId = id;
+      carriedFrom = { lane: laneIds()[at.x], index: at.y };
+      say("Picked up " + taskById(id).title + ".");
+    }
+    refocus = true; mount(); return;
+  }
+
+  if (key === "Enter") {
+    event.preventDefault();
+    if (!card.hasAttribute("aria-expanded")) { say("There is no note on this task yet."); return; }
+    openNoteId = openNoteId === id ? null : id;
+    say(openNoteId ? "Showing the whole note." : "Note closed.");
+    refocus = true; mount(); return;
+  }
+  if (DIR[key]) {
+    event.preventDefault();
+    if (carriedId === id) carryMove(DIR[key][0], DIR[key][1]);
+    else walk(DIR[key][0], DIR[key][1]);
+    refocus = true; mount();
+  }
+}
+
+function onClick(event) {
+  const off = event.target.closest && event.target.closest('[aria-disabled="true"]');
+  if (off) {
+    /* Hover is not available to a thumb, so the reason is spoken and shown. */
+    event.preventDefault();
+    say(off.getAttribute("title") || "Not in this release.");
+    return;
+  }
+  const act = event.target.closest && event.target.closest("[data-act]");
+  const what = act && act.dataset.act;
+
+  if (what === "tick") {
+    event.preventDefault();
+    toggleDone(act.closest(".card").dataset.id);
+    return;
+  }
+  if (what === "client") {
+    const name = act.dataset.client;
+    clientOnly = clientOnly === name ? null : name;
+    say(filterSentence());
+    mount();
+    return;
+  }
+  if (what === "late") {
+    lateOnly = !lateOnly;
+    say(filterSentence());
+    mount();
+    return;
+  }
+  if (what === "today") {
+    todayOnly = !todayOnly;
+    say(filterSentence());
+    mount();
+    return;
+  }
+  if (what === "showall") {
+    lateOnly = false;
+    clientOnly = null;
+    todayOnly = false;
+    say("Showing all work.");
+    mount();
+    return;
+  }
+  if (what === "undo") { undoLast(); return; }
+  if (what === "planning") {
+    /* The drawer is the only surface where a task can be given a day, and it
+       was reachable only by editing the URL. */
+    const opening = state !== "planning";
+    state = opening ? "planning" : "board";
+    if (opening) {
+      drawerFrom = act.closest(".headActions") ? ".headActions [data-act='planning']"
+        : act.classList.contains("undated") ? ".undated" : null;
+    }
+    say(opening ? "Planning open." : "Planning closed.");
+    mount();
+    if (opening) {
+      const aside = document.querySelector(".drawer");
+      if (aside) aside.focus({ preventScroll: true });
+    } else { returnFromDrawer(); }
+    return;
+  }
+  if (what === "drawerTab") {
+    drawerTab = act.dataset.tab;
+    picked.clear();
+    say(drawerTab === "milestones" ? "Milestones." : "Tasks with no date.");
+    mount();
+    const back = document.querySelector('.drawerTab[data-tab="' + drawerTab + '"]');
+    if (back) back.focus({ preventScroll: true });
+    return;
+  }
+  if (what === "pick") {
+    const id = act.dataset.id;
+    if (picked.has(id)) picked.delete(id); else picked.add(id);
+    mount();
+    const back = document.querySelector('.box[data-id="' + id + '"]');
+    if (back) back.focus({ preventScroll: true });
+    return;
+  }
+  if (what === "selectAll") {
+    const rows = drawerTab === "milestones" ? milestoneTasks() : undatedTasks();
+    const all = rows.length && rows.every((t) => picked.has(t.id));
+    picked.clear();
+    if (!all) rows.forEach((t) => picked.add(t.id));
+    say(picked.size ? picked.size + " picked." : "Nothing picked.");
+    mount();
+    const back = document.querySelector(".selectAll");
+    if (back) back.focus({ preventScroll: true });
+    return;
+  }
+  if (what === "commit") {
+    const field = document.querySelector(".card[data-draft] .cardTitle");
+    if (field) commitDraft(field);
+    return;
+  }
+  if (what === "discard") { discardDraft(); return; }
+  if (what === "add") {
+    draftLane = act.dataset.lane;
+    draftText = "";
+    draftFrom = act.dataset.act === "add" && act.classList.contains("dockPrimary")
+      ? ".dockPrimary" : '.tray[data-lane="' + act.dataset.lane + '"] .trayAdd';
+    openNoteId = null;
+    say("New task in " + laneName(draftLane) + ". Type it, then press Enter.");
+    mount();
+    const field = document.querySelector(".card[data-draft] .cardTitle");
+    if (field) field.focus();
+    return;
+  }
+  if (what === "menu") {
+    const card = act.closest(".card");
+    const box = act.getBoundingClientRect();
+    const host = document.getElementById("root") || document.getElementById("deck");
+    const frame = host.getBoundingClientRect();
+    /* Anchored to the control, kept inside the sheet. */
+    const left = Math.min(box.left - frame.left, frame.width - 200);
+    const top = Math.min(box.bottom - frame.top + 6, frame.height - 250);
+    menuAt = "left:" + Math.max(8, Math.round(left)) + "px;top:" + Math.round(top) + "px";
+    menuFor = menuFor === card.dataset.id ? null : card.dataset.id;
+    focusId = card.dataset.id;
+    mount();
+    const first = document.querySelector(".cardMenu button");
+    if (first) first.focus();
+    return;
+  }
+  if (what === "moveto") {
+    const id = menuFor;
+    const lane = act.dataset.lane;
+    const at = place(id);
+    const task = taskById(id);
+    const from = at ? { lane: laneIds()[at.x], index: at.y } : null;
+    moveTo(id, lane, 0);
+    if (lane === "done") {
+      arm({ kind: "done", id: id, title: task.title });
+      say(task.title + " done. Press " + MOD + "Z to undo.");
+    } else {
+      if (from) arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: lane });
+      say(task.title + " moved to " + laneName(lane) + ".");
+    }
+    menuFor = null;
+    focusId = id;
+    refocus = true;
+    mount();
+    return;
+  }
+
+  if (what === "closemenu") { closeMenu(); return; }
+
+  /* Clicking the card was the obvious thing it looked like and did nothing,
+     while the half of the note that carries the deadline was unreachable by
+     keyboard and on touch. */
+  const card = event.target.closest && event.target.closest(".card[data-id]");
+  if (!card || !card.closest(".board")) return;
+  /* Finishing a selection is not a click on the card. */
+  if (String(getSelection())) return;
+  focusId = card.dataset.id;
+  if (!card.hasAttribute("aria-expanded")) return;
+  openNoteId = openNoteId === card.dataset.id ? null : card.dataset.id;
+  refocus = true;
+  say(openNoteId ? "Showing the whole note." : "Note closed.");
+  mount();
+}
+
+/* The pointer gets the same model as the keyboard: the tray it is over
+   warms half a step and draws the line the card will land on. */
+let overLane = null;
+let edgeFrame = 0;
+let snapWas = null;
+
+/* Holding a card at the edge of the board walks it across. Without this, at
+   768 the reachable targets were the first three columns only, and the
+   board's defining gesture could not finish a task's journey. */
+function edgeScroll(board, x) {
+  const box = board.getBoundingClientRect();
+  const near = 64;
+  const step = x < box.left + near ? -14 : x > box.right - near ? 14 : 0;
+  cancelAnimationFrame(edgeFrame);
+  edgeFrame = 0;
+  if (!step) return;
+  const run = () => {
+    board.scrollLeft += step;
+    edgeFrame = requestAnimationFrame(run);
+  };
+  edgeFrame = requestAnimationFrame(run);
+}
+function stopEdge(board) {
+  cancelAnimationFrame(edgeFrame);
+  edgeFrame = 0;
+  if (board && snapWas !== null) { board.style.scrollSnapType = snapWas; snapWas = null; }
+}
+
+function onDragStart(event) {
+  const card = event.target.closest && event.target.closest(".card[data-id]");
+  if (!card || !card.closest(".board")) return;
+  carriedId = card.dataset.id;
+  holdUndo();
+  const at = place(carriedId);
+  carriedFrom = { lane: laneIds()[at.x], index: at.y };
+  card.setAttribute("data-force", "drag");
+  /* Mandatory snap re-snaps every per-frame nudge back to zero, so it stands
+     down for the length of the gesture. */
+  const board = card.closest(".board");
+  if (board) { snapWas = board.style.scrollSnapType; board.style.scrollSnapType = "none"; }
+  if (event.dataTransfer) { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", carriedId); }
+}
+
+/* The dragged card is about to be spliced out, so it must not be counted
+   when resolving where the line sits. Counting it landed every downward
+   reorder one slot past the line the operator was shown. */
+function dropIndex(body, y) {
+  const cards = [...body.querySelectorAll(".card[data-id]")].filter((c) => c.dataset.id !== carriedId);
+  for (let i = 0; i < cards.length; i += 1) {
+    const box = cards[i].getBoundingClientRect();
+    if (y < box.top + box.height / 2) return i;
+  }
+  return cards.length;
+}
+
+function onDragOver(event) {
+  if (!carriedId) return;
+  /* The edge check runs before the tray guard: the gap between two trays and
+     the sheet's own margin are exactly where the operator holds the card. */
+  const board = event.target.closest && event.target.closest(".board");
+  if (board) { event.preventDefault(); edgeScroll(board, event.clientX); }
+  const tray = event.target.closest && event.target.closest(".tray[data-lane]");
+  if (!tray) return;
+  event.preventDefault();
+  document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
+  document.querySelectorAll(".dropLine").forEach((n) => n.remove());
+  tray.setAttribute("data-over", "");
+  const body = tray.querySelector(".trayBody");
+  overLane = { lane: tray.dataset.lane, index: dropIndex(body, event.clientY) };
+  const line = document.createElement("span");
+  line.className = "dropLine";
+  const cards = [...body.querySelectorAll(".card[data-id]")].filter((c) => c.dataset.id !== carriedId);
+  if (overLane.index >= cards.length) body.appendChild(line);
+  else body.insertBefore(line, cards[overLane.index]);
+}
+
+function onDrop(event) {
+  stopEdge(event.target.closest && event.target.closest(".board"));
+  if (!carriedId || !overLane) return;
+  event.preventDefault();
+  const id = carriedId;
+  /* Picking a card up and putting it back is a non-event. It was arming an
+     undo and announcing a move. */
+  if (overLane.lane === carriedFrom.lane && overLane.index === carriedFrom.index) {
+    carriedId = null; carriedFrom = null; overLane = null;
+    mount();
+    return;
+  }
+  const sameLane = overLane.lane === carriedFrom.lane;
+  const from = carriedFrom;
+  const task = taskById(id);
+  moveTo(id, overLane.lane, overLane.index);
+  /* A drop is the most mis-fireable gesture on a pointer board and had no
+     way back; only a keyboard-carried card had Escape. */
+  if (overLane.lane === "done" && from.lane !== "done") {
+    /* A drop into Done is a completion, exactly as the menu route is. */
+    arm({ kind: "done", id: id, title: task.title });
+  } else if (overLane.lane !== "done") {
+    arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: overLane.lane });
+  }
+  const place = tasksFor(overLane.lane);
+  say(overLane.lane === "done" && from.lane !== "done"
+    ? taskById(id).title + " done. Press " + MOD + "Z to undo."
+    : sameLane
+    ? taskById(id).title + " moved to position " + (overLane.index + 1) + " of " + place.length + " in " + laneName(overLane.lane) + "."
+    : taskById(id).title + " moved to " + laneName(overLane.lane) + ".");
+  focusId = id;
+  carriedId = null; carriedFrom = null; overLane = null;
+  mount();
+}
+
+function onDragEnd() {
+  releaseUndo();
+  stopEdge(document.querySelector(".board"));
+  document.querySelectorAll(".tray[data-over]").forEach((t) => t.removeAttribute("data-over"));
+  document.querySelectorAll(".dropLine").forEach((n) => n.remove());
+  if (carriedId) { carriedId = null; carriedFrom = null; overLane = null; mount(); }
+}
+
+/* A word-safe trim. The browser's own line clamp cuts at the character,
+   which is how a card ends up reading "dinner 5.30p...". This walks back to
+   the last whole word, keeps the full string on the element for the tooltip
+   and for assistive technology, and costs one binary search per clipped
+   line box.
+
+   It must also be idempotent and re-runnable: it used to run once, before
+   the webfont had swapped in, and never again — so a card silently lost its
+   last line, with no ellipsis, at every width but the one it was measured
+   at. Restoring the full string first is what lets a node grow back when
+   its column widens. */
+function trimToWord(node) {
+  /* The title is clipped by its row, because the row is what contains the
+     floated date. Measuring the title itself would always report a fit. */
+  const clip = node.classList.contains("cardTitle") ? node.parentElement : node;
+  const fits = () => clip.scrollHeight <= clip.clientHeight + 1;
+  if (node.dataset.full) node.textContent = node.dataset.full;
+  if (fits()) { node.removeAttribute("title"); return; }
+  const full = node.dataset.full || node.textContent;
+  node.dataset.full = full;
+  node.title = full;
+  const words = full.split(" ");
+  let low = 1;
+  let high = words.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    node.textContent = words.slice(0, mid).join(" ") + "…";
+    if (fits()) low = mid;
+    else high = mid - 1;
+  }
+  node.textContent = tidy(words.slice(0, low)) + "…";
+}
+
+/* The binary search finds the last word that fits; this decides which of
+   those words should be the last one read. Cleanup only ever shortens, so
+   the fit the search proved still holds. */
+function tidy(words) {
+  const kept = words.slice();
+  /* A word left stranded at the start of a sentence the reader never sees. */
+  if (kept.length > 1 && /[.!?]$/.test(kept[kept.length - 2])) kept.pop();
+  let out = kept.join(" ").replace(/[\s,;:.!?\u2013\u2014-]+$/, "");
+  /* A dangling function word promises a clause that does not arrive. */
+  if (kept.length > 1) out = out.replace(/\s+(a|an|the|and|or|but|if|to|of|with|for|in|on|at|by|from|that|which)$/i, "");
+  return out || words[0];
+}
+
+/* A fade that is always on is decoration; a fade that appears exactly when
+   something is hidden in that direction is information. Both masks are
+   measured from distance-to-end, after layout and on every scroll — before
+   this they reported "this scrolls" rather than "there is more", so the last
+   card sat permanently under a white gradient with nothing below it. */
+function measureEdges(target) {
+  target.querySelectorAll(".trayBody").forEach((body) => {
+    body.toggleAttribute("data-above", body.scrollTop > 1);
+    body.toggleAttribute("data-more", body.scrollTop + body.clientHeight < body.scrollHeight - 1);
+    /* The rules sit on the tray, so the tray is told where its own scroller
+       starts and ends rather than the two being kept in step by hand. */
+    const tray = body.closest(".tray");
+    if (!tray) return;
+    tray.style.setProperty("--body-top", body.offsetTop - tray.offsetTop + "px");
+    tray.style.setProperty("--body-bottom", body.offsetTop - tray.offsetTop + body.clientHeight + "px");
+  });
+  const board = target.querySelector(".board");
+  const sheet = target.querySelector(".sheet");
+  if (board && sheet) {
+    sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
+  }
+  if (board && sheet) sheet.toggleAttribute("data-more-left", board.scrollLeft > 1);
+  const strip = target.querySelector(".carry");
+  const bar = strip ? strip.getBoundingClientRect() : null;
+  target.querySelectorAll(".trayAdd").forEach((row) => {
+    if (!bar) { row.removeAttribute("data-under"); return; }
+    const box = row.getBoundingClientRect();
+    const hit = box.left < bar.right && box.right > bar.left &&
+      box.top < bar.bottom && box.bottom > bar.top;
+    row.toggleAttribute("data-under", hit);
+  });
+  const probe = target.querySelector(".specProbe .trayBody");
+  if (probe && sheet) sheet.style.setProperty("--tray-card", Math.round(probe.getBoundingClientRect().width) + "px");
+}
+
+function retrim(target) {
+  target.querySelectorAll(".cardTitle, .cardNote").forEach((node) => {
+    if (node.closest(".card[data-open]") && node.classList.contains("cardNote")) {
+      if (node.dataset.full) node.textContent = node.dataset.full;
+      return;
+    }
+    trimToWord(node);
+  });
+  measureEdges(target);
+}
+
+/* Repainting the whole sheet used to annihilate every scroll position and
+   the focus point with it: one tick on a phone threw the board back to To
+   Do, and any pointer completion dropped focus to <body>, eight tab stops
+   from where the operator was. Place is captured, restored in the same
+   frame, and restored on every path rather than only the keyboard one. */
+/* Where every card was, before the change, so what survives can move rather
+   than jump. Keyed by id because the repaint destroys the DOM. */
+function snapshot(target) {
+  const map = new Map();
+  target.querySelectorAll(".card[data-id]").forEach((n) => {
+    map.set(n.dataset.id, n.getBoundingClientRect());
+  });
+  return map;
+}
+
+function settleRest(target, before, ms) {
+  if (!before || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  target.querySelectorAll(".card[data-id]").forEach((node) => {
+    const was = before.get(node.dataset.id);
+    if (!was) return;
+    const now = node.getBoundingClientRect();
+    const dx = was.left - now.left;
+    const dy = was.top - now.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    node.style.transition = "none";
+    node.style.transform = "translate(" + dx + "px," + dy + "px)";
+    node.getBoundingClientRect();
+    node.style.transition = "transform " + ms + "ms var(--curve)";
+    node.style.transform = "";
+    setTimeout(() => { node.style.transition = ""; }, ms + 40);
+  });
+}
+
+function keepPlace(target) {
+  const scrolls = {};
+  target.querySelectorAll(".tray[data-lane]").forEach((tray) => {
+    const body = tray.querySelector(".trayBody");
+    if (body) scrolls[tray.dataset.lane] = body.scrollTop;
+  });
+  const board = target.querySelector(".board");
+  const active = document.activeElement;
+  const card = active && active.closest && active.closest(".card[data-id]");
+  const chrome = !card && active && active.closest && active.closest("[data-act]");
+  return {
+    scrolls: scrolls,
+    left: board ? board.scrollLeft : 0,
+    id: card ? card.dataset.id : null,
+    act: chrome ? chrome.dataset.act : null,
+    hadFocus: !!(active && active !== document.body && target.contains(active)),
+    part: active && active.classList.contains("tick") ? "tick"
+      : active && active.classList.contains("cardDots") ? "cardDots" : "card",
+  };
+}
+
+function restorePlace(target, kept) {
+  target.querySelectorAll(".tray[data-lane]").forEach((tray) => {
+    const body = tray.querySelector(".trayBody");
+    const top = kept.scrolls[tray.dataset.lane];
+    if (body && top) body.scrollTop = top;
+  });
+  const board = target.querySelector(".board");
+  if (board && kept.left) {
+    /* Mandatory snap re-runs against the fresh layout and drags the board
+       back to the first column, which is why every tick on a phone threw the
+       operator back to To Do. Snap is suspended for the one frame the
+       restore takes. */
+    const snap = board.style.scrollSnapType;
+    board.style.scrollSnapType = "none";
+    void board.scrollWidth;
+    board.scrollLeft = kept.left;
+    requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
+  }
+  /* An open composer owns focus: whatever else the repaint was for, the
+     operator is mid-sentence and that is the worse place to lose. */
+  const field = target.querySelector(".card[data-draft] .cardTitle");
+  if (field) {
+    field.focus({ preventScroll: true });
+    const range = document.createRange();
+    range.selectNodeContents(field);
+    range.collapse(false);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    return;
+  }
+
+  /* Nothing may drop the operator on <body>, eight stops from the board. */
+  const fallback = () => {
+    const stop = target.querySelector('.card[tabindex="0"]') || target.querySelector(".dockPrimary");
+    if (stop) stop.focus({ preventScroll: true });
+  };
+  const wanted = refocus ? focusId : kept.id;
+  if (!wanted) {
+    if (!kept.act) return;
+    const back = target.querySelector('[data-act="' + kept.act + '"]');
+    if (back) back.focus({ preventScroll: true });
+    else if (kept.hadFocus) fallback();
+    return;
+  }
+  const node = target.querySelector('.card[data-id="' + wanted + '"]');
+  if (!node) { if (kept.hadFocus) fallback(); return; }
+  const part = refocusPart || (refocus ? "card" : kept.part);
+  const aim = part === "card" ? node : node.querySelector("." + part) || node;
+  if (!kept.id && !refocus) return;
+  aim.focus({ preventScroll: true });
+  /* Scoped to the column, deliberately: a general scrollIntoView nudges the
+     horizontally snapped board on a phone and undoes the restore above. */
+  const scroller = node.closest(".trayBody");
+  if (!scroller) return;
+  const card = node.getBoundingClientRect();
+  const box = scroller.getBoundingClientRect();
+  /* The column snaps, so an arbitrary offset is pulled back on the next
+     frame. Move to a real snap position instead: the largest one that still
+     brings the whole card into view, which is also the smallest movement. */
+  const top = card.top - box.top + scroller.scrollTop;
+  if (card.top >= box.top + 4 && card.bottom <= box.bottom - 4) return;
+  const stops = [...scroller.querySelectorAll(".card")]
+    .map((n) => n.getBoundingClientRect().top - box.top + scroller.scrollTop - 20);
+  if (card.top < box.top + 4) { scroller.scrollTop = top - 20; return; }
+  const want = top + card.height - scroller.clientHeight + 20;
+  /* The first snap position that scrolls far ENOUGH — under-scrolling by a
+     hair is what leaves the card clipped and snap-locked there. */
+  const fits = stops.filter((v) => v >= want - 0.5);
+  scroller.scrollTop = fits.length ? fits[0] : want;
+}
+
+let bound = null;
+function bindScroll(target) {
+  const scrollers = [target.querySelector(".board"), ...target.querySelectorAll(".trayBody")].filter(Boolean);
+  if (bound) bound.forEach((n) => n.removeEventListener("scroll", onScroll));
+  bound = scrollers;
+  scrollers.forEach((n) => n.addEventListener("scroll", onScroll, { passive: true }));
+}
+let scrollFrame = 0;
+function onScroll() {
+  if (scrollFrame) return;
+  scrollFrame = requestAnimationFrame(() => {
+    scrollFrame = 0;
+    const target = document.getElementById("root") || document.getElementById("deck");
+    if (target) measureEdges(target);
+  });
+}
+
+function mount() {
+  const target = document.getElementById("root") || document.getElementById("deck");
+  if (!target) return;
+  const before = flyId ? snapshot(target) : null;
+  const kept = keepPlace(target);
+  target.innerHTML = renderApp();
+  restorePlace(target, kept);
+  retrim(target);
+  bindScroll(target);
+  const travelled = flyCompleted(target);
+  if (travelled) settleRest(target, before, travelled);
+  refocus = false;
+  refocusPart = null;
+}
+
+/* The customizer drives this same renderer from a control panel rather than
+   from the URL, so the board is never implemented twice. */
+window.__signal = {
+  mount,
+  presets: PRESETS,
+  decisions: DECISIONS,
+  setState(next) {
+    state = next;
+    carriedId = null; focusId = null; lateOnly = false; clientOnly = null;
+    todayOnly = false; menuFor = null;
+    openNoteId = null; flyId = null; flyFrom = null; draftLane = null; draftText = "";
+    drawerTab = "nodate"; picked.clear();
+    history.length = 0;
+    clearUndo();
+  },
+};
+
+/* The region is in the tree before the first paint. Creating it and writing
+   to it in the same frame is the classic pattern a screen reader skips, so
+   the announcement lost was always the first one of the session — the tick
+   or the pick-up that teaches the model. */
+if (!document.getElementById("say")) {
+  const region = document.createElement("p");
+  region.id = "say";
+  region.className = "sr";
+  region.setAttribute("role", "status");
+  region.setAttribute("aria-live", "polite");
+  document.body.appendChild(region);
+}
+
+/* One delegated listener per event, on the container, so a repaint can
+   never leave a handler behind or bind one twice. */
+const host = document.getElementById("root") || document.getElementById("deck");
+if (host) {
+  host.addEventListener("focusin", (e) => { if (e.target.closest(".carry")) holdUndo(); });
+  host.addEventListener("focusout", (e) => { if (e.target.closest(".carry")) releaseUndo(); });
+  host.addEventListener("mouseenter", (e) => { if (e.target.closest && e.target.closest(".carry")) holdUndo(); }, true);
+  host.addEventListener("mouseleave", (e) => { if (e.target.closest && e.target.closest(".carry")) releaseUndo(); }, true);
+  host.addEventListener("input", (event) => {
+    const field = event.target.closest && event.target.closest(".card[data-draft] .cardTitle");
+    if (field) draftText = field.textContent;
+  });
+  host.addEventListener("pointerdown", (event) => {
+    if (state !== "planning") return;
+    if (event.target.closest(".drawer") || event.target.closest("[data-act='planning']")) return;
+    state = "board";
+    say("Planning closed.");
+    mount();
+    returnFromDrawer();
+  });
+  host.addEventListener("click", onClick);
+  document.addEventListener("keydown", onKey);
+  host.addEventListener("dragstart", onDragStart);
+  host.addEventListener("dragover", onDragOver);
+  host.addEventListener("drop", onDrop);
+  host.addEventListener("dragend", onDragEnd);
+}
+addEventListener("resize", () => {
+  const target = document.getElementById("root") || document.getElementById("deck");
+  if (target) retrim(target);
+});
+/* The webfont swaps in after the first paint, which is what made every
+   measured trim wrong on load. */
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    const target = document.getElementById("root") || document.getElementById("deck");
+    if (target) retrim(target);
+  });
+}
+
+mount();
+</script>
+</body>
+</html>
