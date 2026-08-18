@@ -1,0 +1,69 @@
+{
+  "gate": 9.5,
+  "seats": [
+    "UI composition",
+    "Typography",
+    "Interaction and states",
+    "UX and information design",
+    "Brand and copy",
+    "Product taste and emotional resonance",
+    "Measured evidence"
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "scores": {
+        "UI composition": 6.3,
+        "Typography": 7.1,
+        "Interaction and states": 6.3,
+        "UX and information design": 7.2,
+        "Brand and copy": 7.8,
+        "Product taste and emotional resonance": 7.1,
+        "Measured evidence": 6.4
+      },
+      "findings": 35,
+      "confirmed": 20,
+      "refuted": 15,
+      "fixed": 20,
+      "headline": "Two blockers and a keyboard trap. The planning drawer was white on white with no seam, so it sliced the Waiting column mid-word and erased Done entirely. The card's state rules were declared after its interaction rules at equal specificity, so Done and Next cards had no focus ring at all. And the completion circle, the one thing the board exists to do, was a bare span with no keyboard path.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 2.0,
+          "problem": "The completion circle is not a control. It is a span: not focusable, no role, no aria state, no keyboard path, no active state. Its only feedback fires on hover of the whole card, so the circle looks armed while the cursor is 300px away.",
+          "done": "It is now a button with checkbox semantics, named by the task, with a 32px hit area that does not grow the 18px circle, and its own hover, active and focus. The card hints; the control answers one step darker."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 1.6,
+          "problem": "`.card[data-done]` and `.card[data-next]` redeclare box-shadow after `:hover` and `:focus-visible` at equal specificity, so later wins. On the resting board the five Done cards and the milestone card have no hover edge, and because `outline: none` survives, no visible focus ring either.",
+          "done": "Every ring on a card now runs through one `--card-ring` custom property. States set only the token; hover, focus, selection and drag are declared last."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 1.4,
+          "problem": "The planning drawer is white, on the same inset, with the same radius, with no ring, no shadow and no scrim, sitting on a white sheet that does not move. Waiting is cut mid-word, Done and its five cards vanish with no cue they exist.",
+          "done": "The sheet moves over and the ink floor shows through an 18px gutter, which draws the seam with the product's own elevation rule. The board switches to a scrolling track so no column is sliced, and the dock re-centres on the board it serves."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 1.2,
+          "problem": "The dense header reads '5 of 32 done' while the Done tray immediately below it is labelled 9 and renders nine ticked cards. The board contradicts itself by four tasks in the one state that exists to prove it survives peak season.",
+          "done": "Every header fact is derived from the rendered task set. The total, the done count, the overdue count and the unscheduled count now all come from one accessor, and the empty state falls out of the same expression."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 1.5,
+          "problem": "`.cardDots` sits at `opacity: 0` with pointer events live. On desktop a keyboard user tabs into a card and the focus ring paints on an invisible button. On touch, where hover never fires, the coarse rule inflates that invisible button to a 44x44 target.",
+          "done": "A control at zero opacity is now inert. The menu reveals on hover, focus-within and its own focus, and on a coarse pointer it is simply present and quieter."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.9,
+          "problem": "One board scan carried four grammars for one fact: an elapsed duration, a deictic, a weekday and a date. The same state had two names in one frame: the header said '1 overdue', the card said '2 days late'.",
+          "done": "One grammar. Every chip states the day the work is due, formatted from real dates in the fixture against the pinned review clock. Lateness is carried entirely by the fill, which is what the direction claimed all along."
+        }
+      ]
+    }
+  ]
+}

@@ -38,17 +38,11 @@ window.BOARD = {
   },
   views: ["Board", "List", "Schedule", "Calendar"],
   columns: [
-    { id: "todo", name: "To do", tone: "neutral", note: "Agreed and ready to start." },
-    { id: "doing", name: "In progress", tone: "flight", note: "In motion right now." },
-    { id: "review", name: "Review", tone: "neutral", note: "Being checked before it goes out." },
-    {
-      id: "waiting",
-      name: "Waiting",
-      tone: "neutral",
-      note: "Held by a reply, a delivery, or a decision.",
-      empty: "Nothing held up",
-    },
-    { id: "done", name: "Done", tone: "done", note: "Finished work stays visible." },
+    { id: "todo", name: "To do", tone: "neutral", note: "Agreed and ready to start.", empty: "Add the first thing you have to do." },
+    { id: "doing", name: "In progress", tone: "flight", note: "In motion right now.", empty: "Nothing started yet." },
+    { id: "review", name: "Review", tone: "neutral", note: "Being checked before it goes out.", empty: "Nothing to check." },
+    { id: "waiting", name: "Waiting", tone: "neutral", note: "Held by a reply, a delivery, or a decision.", empty: "Nothing held up." },
+    { id: "done", name: "Done", tone: "done", note: "Finished work stays visible.", empty: "Nothing finished yet." },
   ],
   tasks: [
     {
@@ -71,7 +65,7 @@ window.BOARD = {
       id: "demo-t-04",
       lane: "todo",
       title: "Send midweek rate to the June 2027 walk-in couple",
-      note: "~80 guests, budget-conscious. Follow up Friday if no reply.",
+      note: "About 80 guests, budget-conscious. Follow up Friday if no reply.",
       tag: "Enquiry",
     },
     {
@@ -90,7 +84,7 @@ window.BOARD = {
       id: "demo-t-05",
       lane: "doing",
       title: "Build the Saturday run-sheet",
-      note: "Ceremony 2pm orchard, drinks terrace, dinner 5:30. Share with the floor team.",
+      note: "Ceremony 2pm orchard, drinks terrace, dinner 5.30pm. Share with the floor team.",
       tag: "Mara & Finn",
       priority: "High",
       due: "Due today",
@@ -101,7 +95,7 @@ window.BOARD = {
     {
       id: "demo-t-06",
       lane: "doing",
-      title: "Order tonic + the good olives",
+      title: "Order tonic and the good olives",
       note: "Two extra cases of tonic; last olive delivery was short.",
       tag: "Bar",
       due: "Overdue by 2 days",

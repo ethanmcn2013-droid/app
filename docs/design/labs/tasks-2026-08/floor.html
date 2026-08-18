@@ -157,12 +157,20 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
 .railGroup { display: grid; gap: 4px; }
+/* Buttons, not href-less anchors. An anchor with no href carries no role,
+   so the whole spine was a row of focusable generics inside a nav that
+   contained no links. The reset below means the change costs no pixels. */
+.railTile, .railMark, .segItem {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+  -webkit-appearance: none;
+}
 .railTile {
   width: var(--tap); height: var(--tap);
   border-radius: 12px;
   display: grid; place-items: center;
   color: var(--on-ink-2);
   position: relative;
+  cursor: pointer;
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 .railTile svg { width: 19px; height: 19px; }
@@ -199,6 +207,18 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   display: flex; flex-direction: column;
   position: relative; min-width: 0; overflow: hidden;
 }
+/* Where the board runs past the sheet, the last column dissolves instead of
+   being guillotined. Off by default, on wherever the board actually
+   overflows. Same mask idiom as the dock scrim, and no new hue. */
+.sheet::after {
+  content: "";
+  position: absolute; right: 0; top: 118px; bottom: 0;
+  width: 44px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white));
+  opacity: 0; pointer-events: none; z-index: 1;
+  transition: opacity var(--dur) var(--curve);
+}
+.floor:has(.drawer) .sheet::after { opacity: 1; }
 
 .head {
   flex: none;
@@ -258,6 +278,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .segItem {
   display: inline-flex; align-items: center; gap: 7px;
   height: 32px; padding: 0 14px;
+  cursor: pointer;
   border-radius: var(--r-pill);
   font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: -0.008em;
   transition: color var(--dur) var(--curve);
@@ -275,18 +296,19 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .board {
   flex: 1; min-height: 0;
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: 100%;
   gap: 0;
   padding: 0 16px;
-  overflow: auto;
+  /* The board scrolls sideways between columns. Each column scrolls itself
+     vertically, so reaching the foot of one never drags another away. */
+  overflow-x: auto; overflow-y: hidden;
   border-top: 1px solid var(--line-soft);
 }
 .tray {
   min-width: 0;
   display: flex; flex-direction: column;
-  /* The dock's clearance is carried here rather than on the grid, so the
-     column rule runs the full height of the sheet instead of stopping in
-     mid-air 96px above it. */
-  padding: 14px 12px 104px;
+  padding: 14px 12px 0;
+  min-height: 0;
   border-left: 1px solid var(--line-soft);
   transition: background-color var(--dur) var(--curve);
 }
@@ -312,7 +334,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .trayCount { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--ink-3); }
 .trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: -0.003em; }
-.trayBody { overflow: auto; display: grid; gap: 8px; align-content: start; padding: 2px 0 56px; }
+/* The dock's clearance sits at the foot of every column's own scroller,
+   rather than once at the foot of the tallest. */
+.trayBody {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto;
+  display: grid; gap: 8px; align-content: start;
+  padding: 2px 0 104px;
+}
 
 /* ═══ THE CARD ═══════════════════════════════════════════════════
    One optical baseline: the completion control sits in a fixed gutter,
@@ -332,8 +361,11 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr);
   column-gap: 8px; row-gap: 6px;
+  cursor: grab;
   transition: box-shadow var(--dur) var(--curve), transform var(--dur) var(--curve);
 }
+/* The buttons inside a card stay buttons. */
+.card .tick, .card .cardDots { cursor: pointer; }
 
 /* Completing a task is the one thing this board exists to do, so the circle
    is a real control with its own hover, focus, active and keyboard path, not
@@ -361,6 +393,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .tick:active { background: var(--line-strong); }
 .tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
 
+/* The top-right of a card belongs to the time fact and nothing else. */
 .cardTitleRow { grid-column: 2; grid-row: 1; display: flex; align-items: flex-start; gap: 10px; }
 .cardTitle {
   font-size: 14px; line-height: 1.36; font-weight: 600;
@@ -383,26 +416,32 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .cardFoot {
   grid-column: 2; grid-row: 3;
   display: flex; align-items: center; flex-wrap: wrap; gap: 2px 10px;
-  min-height: 18px;
+  min-height: 24px;
   font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: 0;
 }
 .cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
 .cardFoot .cm svg { width: 12px; height: 12px; }
 .cardFoot .grow { margin-left: auto; display: inline-flex; }
+.cardFoot .grow + .cardDots { margin-left: 8px; }
 .cardFoot .grow svg { width: 13px; height: 13px; color: var(--ink-4); }
+/* The menu sits at the end of the foot row, in space that is always
+   reserved for it, so revealing it moves nothing and it can never paint over
+   a title or a date. `visibility` rather than `opacity`, so a hidden control
+   is genuinely out of the tab order rather than an invisible tab stop. */
 .cardDots {
-  position: absolute; top: 6px; right: 6px;
-  width: 28px; height: 28px; border-radius: var(--r-chip);
+  position: relative;
+  margin: -3px 0 -3px auto;
+  width: 24px; height: 24px; border-radius: var(--r-chip);
   display: grid; place-items: center; color: var(--ink-3);
-  background: var(--white);
-  /* House rule: a control at zero opacity is inert. Otherwise a keyboard
-     user's focus ring paints on nothing and a finger taps a ghost. */
-  opacity: 0; pointer-events: none;
-  transition: opacity var(--dur) var(--curve);
+  background: transparent;
+  visibility: hidden;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
+/* A 32px target around a 24px glyph, without the glyph growing. */
+.cardDots::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
 .cardDots svg { width: 15px; height: 15px; }
 .card:hover .cardDots, .card[data-force="hover"] .cardDots,
-.card:focus-within .cardDots, .cardDots:focus-visible { opacity: 1; pointer-events: auto; }
+.card:focus-within .cardDots { visibility: visible; }
 .cardDots:hover { background: var(--wash-2); color: var(--ink-1); }
 
 /* The time fact. Right-aligned on the title's own line, so a tray reads
@@ -458,7 +497,13 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .card[data-force="selected"] { --card-ring: 0 0 0 1.5px var(--indigo); }
 .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
+  cursor: grabbing;
   --card-ring: var(--lift);
+}
+/* Picked up by keyboard: the same lift without the tilt, because a card
+   moved with the arrow keys is not being carried by a hand. */
+.card[data-force="moving"] {
+  --card-ring: 0 0 0 1.5px var(--indigo), var(--raise);
 }
 
 /* ── the destination, not just the hand ─────────────────────────── */
@@ -484,10 +529,32 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   height: 36px; padding: 0 8px; margin-top: 4px;
   border-radius: var(--r-chip);
   font-size: 13px; font-weight: 400; color: var(--ink-3);
+  flex: none;
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 .trayAdd svg { width: 15px; height: 15px; }
 .trayAdd:hover { color: var(--ink-1); background: var(--wash); }
+
+/* ── the completion moment ─────────────────────────────────────────
+   The board's whole emotional output was a filled ink overdue chip: the
+   only thing designed to be felt was bad news, and finishing work resolved
+   silently. Completing a task now gets one beat of its own — the circle
+   settles, the check draws, the card's ring resolves to done in the same
+   breath. No colour, no bounce, and it yields to reduced motion. */
+@keyframes tickSettle {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(0.86); }
+  100% { transform: scale(1); }
+}
+@keyframes checkDraw {
+  from { stroke-dasharray: 22; stroke-dashoffset: 22; }
+  to   { stroke-dasharray: 22; stroke-dashoffset: 0; }
+}
+.card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
+.card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
+@media (prefers-reduced-motion: reduce) {
+  .card[data-just-done] .tick, .card[data-just-done] .tick svg path { animation: none; }
+}
 
 /* ── the dock ──────────────────────────────────────────────────── */
 /* The scrim protects the dock and nothing else. Full bleed dissolved a card
@@ -561,11 +628,18 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   margin-right: calc(388px + var(--inset));
   transition: margin-right var(--dur) var(--curve);
 }
+/* Five trays have to fit the narrowed board, or opening Planning silently
+   deletes a status. 5 x 170 = 850 inside the 884 the drawer leaves at 1440,
+   with the tray gutter tightened to the value the compact preset already
+   ships. What still runs over snaps and fades rather than being cut. */
 .floor:has(.drawer) .board {
   grid-template-columns: none;
   grid-auto-flow: column;
-  grid-auto-columns: minmax(238px, 1fr);
+  grid-auto-columns: minmax(170px, 1fr);
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 16px;
 }
+.floor:has(.drawer) .tray { padding-left: 9px; padding-right: 9px; scroll-snap-align: start; }
 .drawer {
   position: absolute;
   right: var(--inset); top: var(--inset); bottom: var(--inset);
@@ -593,7 +667,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 .axisEnds { display: flex; justify-content: space-between; font-size: 11px; font-weight: 400; color: var(--ink-3); }
 .drawerSummary { margin: 14px 0 0; font-size: 13px; font-weight: 400; color: var(--ink-2); }
-.drawerTabs { display: flex; gap: 3px; padding: 0 18px 12px; }
+.drawerTabs { display: flex; gap: 3px; padding: 0 22px 12px; }
 .drawerTab {
   height: 32px; padding: 0 12px; border-radius: var(--r-pill);
   font-size: 13px; font-weight: 400; color: var(--ink-3);
@@ -612,7 +686,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   display: inline-flex; align-items: center; min-height: 28px;
 }
 .drawerHelp a:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
-.drawerRows { overflow: auto; padding: 0 14px 16px; display: grid; gap: 4px; align-content: start; }
+.drawerRows { overflow: auto; padding: 0 12px 16px; display: grid; gap: 4px; align-content: start; }
 .drawerRow {
   display: flex; align-items: center; gap: 11px;
   padding: 11px 10px;
@@ -632,7 +706,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .drawerRow button:hover { background: var(--wash-2); color: var(--ink-1); }
 .drawerRow button svg { width: 13px; height: 13px; color: var(--ink-3); }
 .drawerAdd {
-  margin: 6px 14px 18px; padding: 0 10px;
+  margin: 6px 12px 18px; padding: 0 10px;
   display: flex; align-items: center; gap: 9px;
   min-height: 34px; border-radius: var(--r-chip);
   font-size: 13px; font-weight: 400; color: var(--ink-3);
@@ -651,16 +725,24 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 }
 
 /* ── card specimen sheet ───────────────────────────────────────── */
-.spec { flex: 1; min-height: 0; overflow: auto; padding: 4px 22px 32px; }
+.spec { flex: 1; min-height: 0; overflow: auto; padding: 4px 28px 32px; }
 .specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(288px, 1fr)); gap: 26px 20px; }
-.specCell { display: grid; gap: 9px; align-content: start; }
+/* Every caption in a row starts on one baseline, with no hard-coded height
+   to go stale as the specimens change. The page that argues the system is
+   ruled cannot have its own captions on four different lines. */
+.specCell { display: grid; gap: 9px; grid-template-rows: auto 1fr auto; align-content: stretch; }
 .specLabel {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
 }
-.specStage { background: var(--wash); border-radius: var(--r-card); padding: 13px; width: 280px; max-width: 100%; }
+.specStage {
+  background: var(--wash); border-radius: var(--r-card);
+  padding: 13px; width: 280px; max-width: 100%;
+  display: flex; align-items: center;
+}
 .specStage .card { max-width: 254px; }
-.specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; }
+.specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 280px; }
+.specLabel { max-width: 280px; }
 .specIntro { max-width: 64ch; margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
 
 /* A finger needs 44px. A mouse does not, and inflating every control to
@@ -670,11 +752,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
     min-height: 44px; min-width: 44px;
   }
   /* Permanently present, because a finger never hovers, and quieter than
+     the desktop reveal so it does not compete with the title. The title row
+     reserves the whole 44px column, and the title releases its 62% floor so
+     it can reflow into what is actually left. */
+  /* A finger never hovers, so the menu is simply present, and quieter than
      the desktop reveal so it does not compete with the title. */
-  .cardDots {
-    width: 44px; height: 44px; top: 0; right: 0;
-    opacity: 1; pointer-events: auto; color: var(--ink-4);
-  }
+  .cardDots { visibility: visible; color: var(--ink-4); }
+  .cardDots::before { inset: -10px; }
+  .cardTitle { min-width: 0; }
   .dockField kbd { display: none; }
   /* The circle stays 18px; only what a finger can land on grows. */
   .tick::before { inset: -13px; }
@@ -787,7 +872,16 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 
 /* ── responsive ────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
-  .board { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(258px, 1fr); }
+  /* Below this the board is a horizontal scroller, so it gets the edge fade
+     and the snap it needs to read as one. Without them a column is simply
+     sliced at the sheet's straight edge, mid-word. */
+  .board {
+    grid-template-columns: none; grid-auto-flow: column;
+    grid-auto-columns: minmax(258px, 1fr);
+    scroll-snap-type: x proximity; scroll-padding-left: 16px;
+  }
+  .tray { scroll-snap-align: start; }
+  .sheet::after { opacity: 1; }
   .drawer { width: 364px; }
   .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
@@ -815,7 +909,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   }
   .railMark, .railDivider, .railSpacer { display: none; }
   .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
-  .railTile[title="Inbox"], .railTile[title="Help and settings"] { display: none; }
+  .railTile[data-key="inbox"], .railTile[data-key="help"] { display: none; }
   .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
   .railAdd {
     display: grid; place-items: center;
@@ -848,6 +942,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   /* No dock on a phone, so no clearance to reserve. */
   .tray { scroll-snap-align: start; padding-bottom: 8px; }
   .trayBody { padding-bottom: 4px; }
+  .sheet::after { display: none; }
   .dock, .dockScrim { display: none; }
   .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
   .loadSay { bottom: 16px; }
@@ -966,7 +1061,8 @@ function card(task, force) {
   if (task.comments) bits.push('<span class="cm">' + I.comment + task.comments + "</span>");
 
   return (
-    '<article class="card" tabindex="0"' +
+    '<article class="card" tabindex="0" aria-roledescription="Task, movable"' +
+    ' aria-keyshortcuts="Space ArrowLeft ArrowRight"' +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
     (force ? ' data-force="' + force + '"' : "") + ">" +
     '<button type="button" class="tick" role="checkbox" aria-checked="' + (done ? "true" : "false") +
@@ -978,18 +1074,19 @@ function card(task, force) {
     (task.note && !done ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
       (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
+      '<button class="cardDots" aria-label="Task actions">' + I.dots + "</button>" +
     "</div>" +
-    '<button class="cardDots" aria-label="Task actions">' + I.dots + "</button>" +
     "</article>"
   );
 }
 
 function rail() {
   const tile = (key, label, active) =>
-    '<a class="railTile" title="' + label + '" tabindex="0"' + (active ? " data-active" : "") + ">" + I[key] + "</a>";
+    '<button type="button" class="railTile" data-key="' + key + '" title="' + label +
+    '" aria-label="' + label + '"' + (active ? ' data-active aria-current="page"' : "") + ">" + I[key] + "</button>";
   return (
     '<nav class="rail" aria-label="Signal Studio">' +
-    '<a class="railMark" title="Signal Studio" tabindex="0">' + I.more + "<i></i></a>" +
+    '<button type="button" class="railMark" title="Signal Studio" aria-label="Signal Studio">' + I.more + "<i></i></button>" +
     '<span class="railDivider"></span>' +
     '<div class="railGroup">' + tile("home", "Home", false) +
       B.rail.products.map((p) => tile(p.key, p.label, p.active)).join("") + "</div>" +
@@ -1031,7 +1128,8 @@ function views() {
   const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
   return (
     '<div class="views"><nav class="seg" aria-label="View">' +
-    B.views.map((v) => '<a class="segItem" tabindex="0"' + (v === "Board" ? " data-active" : "") + ">" + icons[v] + "<span>" + v + "</span></a>").join("") +
+    B.views.map((v) => '<button type="button" class="segItem"' +
+      (v === "Board" ? ' data-active aria-current="true"' : "") + ">" + icons[v] + "<span>" + v + "</span></button>").join("") +
     '</nav><div class="viewTools">' +
       '<button class="ghost">' + I.filter + "<span>Filter</span></button>" +
       '<button class="ghost">' + I.sort + "<span>Sort</span></button>" +
@@ -1039,17 +1137,6 @@ function views() {
     "</div></div>"
   );
 }
-
-/* One source, one string each, and not five sentences opening on the same
-   word. Each line says what the column is for rather than restating the
-   zero the count already gives. */
-const EMPTY_COPY = {
-  todo: "Add the first thing you have to do.",
-  doing: "Move something across when you start it.",
-  review: "Work waiting on a check lands here.",
-  waiting: "Anything held up by a reply or a delivery sits here.",
-  done: "Finished work stays here, so you can see it.",
-};
 
 function board() {
   return (
@@ -1064,7 +1151,7 @@ function board() {
           '<p class="trayNote">' + esc(c.note) + "</p></div>" +
         '<div class="trayBody">' +
           (rows.length ? rows.map((t) => card(t)).join("")
-            : '<p class="trayEmpty">' + esc(EMPTY_COPY[c.id]) + "</p>") +
+            : '<p class="trayEmpty">' + esc(c.empty) + "</p>") +
         "</div>" +
         '<button class="trayAdd">' + I.plus + "<span>Add task</span></button>" +
         "</section>"
@@ -1143,6 +1230,7 @@ function specimens() {
     ["Done", find("demo-t-09"), null, "Never struck through. The work happened, it was not a mistake."],
     ["Long title", { ...find("demo-t-01"), title: "Confirm the marquee sides and the wet-weather plan with the hire company before Thursday" }, null, "Two lines of title, then the note clamps. A card cannot run away."],
     ["In flight", find("demo-t-03"), "drag", "The card at rest, top left, picked up. The only shadow in the product."],
+    ["Moving by keyboard", find("demo-t-04"), "moving", "Space picks a card up, the arrows walk it between columns. Lifted, but not tilted: nothing is carrying it."],
   ];
   return (
     '<div class="sheet">' + head() +
