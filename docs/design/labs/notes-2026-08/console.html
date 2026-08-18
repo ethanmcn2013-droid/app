@@ -332,6 +332,9 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
   --measure: 31em;
 
   
+  --stack: min(100%, 1060px);
+
+  
   --dur: 140ms;
   --dur-out: 50ms;
   --dur-settle: 220ms;
@@ -421,8 +424,8 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .chip::before { content: ""; position: absolute; inset: -9px -6px; }
 .deck .chip:hover { background: #000; }
 .deck .chip[data-off] { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); font-weight: 400; }
-.deck .desk { flex: none; position: relative; padding: 6px var(--gutter) var(--gutter); }
-.deck .pile { position: relative; }
+.deck .desk { flex: none; position: relative; padding: 6px 0 var(--gutter); display: flex; justify-content: center; }
+.deck .pile { position: relative; width: min(calc(100% - var(--gutter) * 2), calc(var(--stack) - var(--gutter) * 2)); }
 .deck .paperStack { position: relative; }
 .deck .behind {
   position: absolute; left: 0; right: 0; top: 0; height: 100%;
@@ -432,9 +435,9 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .behind[data-n="1"] { transform: translateY(11px) scale(0.982); opacity: 0.92; }
 .deck .behind[data-n="2"] { transform: translateY(22px) scale(0.964); opacity: 0.66; }
 .deck .behind[data-n="3"] { transform: translateY(33px) scale(0.946); opacity: 0.4; }
-.deck .top, .deck .behind, .deck .handTop, .deck .handCard { max-width: calc(var(--measure) + 220px); }
 .deck .top {
   position: relative; background: var(--white); border-radius: var(--r-paper);
+  padding-bottom: 14px;
   box-shadow: var(--ring), var(--paper); padding: 22px 24px 14px;
   transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve);
 }
@@ -458,8 +461,8 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .idxRow[data-arriving] { animation: arrive 620ms var(--curve) both; }
 .deck .topField {
   width: 100%; border: 0; outline: 0; background: none; resize: none; display: block;
-  font: inherit; font-size: var(--t-17); line-height: 1.55; letter-spacing: var(--tr-18); color: var(--ink-1);
-  field-sizing: content; min-height: calc(1.55em * 2); max-height: 42vh; overflow: auto;
+  font-family: inherit; font-weight: 400; color: var(--ink-1);
+  field-sizing: content; min-height: calc(var(--lh-read) * 2em); max-height: 42vh; overflow: auto;
   max-width: var(--measure);
 }
 .deck .topField::placeholder { color: var(--ink-3); }
@@ -496,25 +499,38 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .readSrc .sep { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--ink-4); flex: none; }
 .deck .readSrc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
 .deck .readSrc a:hover { color: var(--ink-1); border-color: var(--ink-2); }
+.deck .readBody, .deck .handBody, .deck .topField, .deck .pieceField, .deck .peelField, .deck .saidWas {
+  font-size: var(--t-17); line-height: var(--lh-read); letter-spacing: var(--tr-18);
+}
 .deck .readBody {
   margin: 0; max-width: var(--measure); text-wrap: pretty;
-  font-size: var(--t-17); font-weight: 400; line-height: 1.62; letter-spacing: var(--tr-18); color: var(--ink-1);
+  font-weight: 400; color: var(--ink-1);
 }
 .deck .readBody .lede { font-weight: 600; }
-.deck .readLong { font-size: var(--t-17); line-height: 1.66; max-width: var(--measure); }
-.deck .indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.deck .readLong { max-width: var(--measure); }
+.deck .readBody { max-height: 46vh; overflow: auto; }
+.deck .readBody::-webkit-scrollbar { width: 8px; }
+.deck .indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; }
+.deck .indexWrap { align-items: center; }
 .deck .indexHead {
-  flex: none; display: flex; align-items: center; gap: 12px; padding: 0 var(--gutter) 8px;
+  flex: none; width: var(--stack); display: flex; align-items: center; gap: 12px; padding: 0 var(--gutter) 8px;
   font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
 .deck .indexHead::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
 .deck .indexHead .cnt { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: var(--t-12); white-space: nowrap; line-height: var(--lh-base); }
-.deck .index { flex: 1; min-height: 0; overflow: auto; padding: 0 var(--gutter) 92px; scrollbar-width: thin; overflow-anchor: none; }
+.deck .index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; padding: 0 var(--gutter) 92px; scrollbar-width: thin; overflow-anchor: none; }
 .deck .idxDay {
-  margin: 0; padding: 16px 0 5px; font-size: var(--t-11); font-weight: 600;
-  letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3);
-  display: flex; align-items: baseline; gap: 10px; line-height: var(--lh-base); }
-.deck .idxDayNote { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); line-height: var(--lh-base); }
-.deck[data-group="about"] .idxDay { font-size: var(--t-13); text-transform: none; letter-spacing: var(--tr-13, -0.01em); color: var(--ink-1); padding-top: 20px; }
+  position: sticky; top: 0; z-index: 2; background: var(--white);
+  margin: 0; padding: 20px 0 7px; font-size: var(--t-15); font-weight: 600;
+  letter-spacing: var(--tr-16); text-transform: none; color: var(--ink-1);
+  display: flex; align-items: baseline; gap: 10px; line-height: var(--lh-base);
+}
+.deck .idxDay::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-soft);
+}
+.deck .idxDay[data-soon] { color: var(--ink-1); }
+.deck .idxDay[data-undated] { color: var(--ink-2); }
+.deck .idxDayNote { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: var(--t-13); line-height: var(--lh-base); }
+.deck .idxDay[data-soon] .idxDayNote { color: var(--ink-2); font-weight: 600; }
 .deck .groupBy { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--wash); margin-left: auto; flex: none; }
 .deck .groupBtn {
   position: relative;
@@ -541,7 +557,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .idxMark { color: var(--ink-3); display: grid; place-items: center; position: relative; }
 .deck .idxMark svg { width: 15px; height: 15px; }
 .deck .idxMark i { position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-1); box-shadow: 0 0 0 2px var(--white); }
-.deck .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px #f2f1fd; }
+.deck .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--indigo-wash); }
 .deck .idxText { font-size: var(--t-15); line-height: 1.45; letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .deck .idxFrom { display: none; }
 .deck .idxText b { font-weight: 600; }
@@ -616,18 +632,18 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .dark :focus-visible { outline-color: var(--white); }
 .deck .saidWas {
   margin: 0 0 4px; max-width: calc(var(--measure) + 6em); padding: 14px 16px; border-radius: var(--r-chip);
-  background: var(--wash); font-size: var(--t-13); line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14);
+  background: var(--wash); color: var(--ink-2);
 }
 .deck .saidWas b { display: block; font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
 .deck .pieces { display: grid; gap: 9px; margin-top: 14px; }
 .deck .piece {
   position: relative; max-width: calc(var(--measure) + 4em); padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
   background: var(--white); box-shadow: var(--ring), var(--raise);
-  font-size: var(--t-17); line-height: 1.52; letter-spacing: var(--tr-16); color: var(--ink-1);
+  color: var(--ink-1);
   transition: box-shadow var(--dur) var(--curve);
 }
 .deck .piece:focus-within { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); }
-.deck .pieceField { width: 100%; border: 0; outline: 0; background: none; resize: none; display: block; font: inherit; color: inherit; field-sizing: content; }
+.deck .pieceField { width: 100%; border: 0; outline: 0; background: none; resize: none; display: block; font-family: inherit; font-weight: 400; color: inherit; field-sizing: content; }
 .deck .drop { position: absolute; right: 8px; top: 50%; margin-top: -16px; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
 .deck .drop:hover { color: var(--ink-1); background: var(--wash); }
 .deck .drop svg { width: 15px; height: 15px; }
@@ -652,20 +668,50 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .pips i { width: 15px; height: 3px; border-radius: 2px; background: var(--line-strong); transition: background-color var(--dur) var(--curve); }
 .deck .pips i[data-done] { background: var(--ink-1); }
 .deck .pips i[data-now] { background: var(--indigo); }
-.deck .handBody { margin: 0; max-width: var(--measure); text-wrap: pretty; font-size: var(--t-17); line-height: 1.58; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.deck .handBody { margin: 0; max-width: var(--measure); text-wrap: pretty; color: var(--ink-1); }
 .deck .handFoot { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .deck .handFoot .spacer { flex: 1; }
 .deck .deckNote { margin: 52px 0 0; font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); display: flex; align-items: center; gap: 9px; line-height: var(--lh-base); }
 .deck .deckNote svg { width: 14px; height: 14px; flex: none; }
+.deck .filing { position: relative; display: inline-flex; }
+.deck .filingBtn {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px;
+  border-radius: var(--r-chip); cursor: pointer;
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-14);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.deck .filingBtn:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.deck .filingBtn svg { width: 14px; height: 14px; color: var(--ink-3); }
+.deck .filingBtn svg:last-child { width: 13px; height: 13px; margin-left: -2px; }
+.deck .readSrc .filingBtn { height: 26px; padding: 0 8px; box-shadow: none; font-size: var(--t-12); color: var(--ink-3); }
+.deck .readSrc .filingBtn:hover { box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-1); }
+.deck .pickerPop {
+  position: absolute; left: 0; bottom: calc(100% + 7px); z-index: 8; min-width: 232px;
+  background: var(--white); border-radius: var(--r-card); box-shadow: var(--ring), var(--paper-lift);
+  padding: 5px; display: grid; gap: 1px;
+}
+.deck .readSrc .pickerPop { top: calc(100% + 7px); bottom: auto; }
+.deck .pickerRow {
+  display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--r-chip); cursor: pointer; background: none; border: 0;
+  font-size: var(--t-13); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1);
+}
+.deck .pickerRow em { margin-left: auto; font-style: normal; font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3); white-space: nowrap; }
+.deck .pickerRow:hover { background: var(--wash); }
+.deck .pickerRow[aria-selected="true"] { background: var(--indigo-wash); font-weight: 600; }
 .deck .readBody::selection, .deck .readBody *::selection { background: var(--indigo-wash); }
 .deck .pickBar {
-  display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 10px 12px 10px 14px;
-  border-radius: var(--r-chip); background: var(--wash); box-shadow: inset 0 0 0 1px var(--indigo-line);
+  position: absolute; left: 24px; right: 24px; bottom: 12px; z-index: 3;
+  display: flex; align-items: center; gap: 12px; padding: 9px 10px 9px 14px;
+  border-radius: var(--r-chip); background: var(--white);
+  box-shadow: 0 0 0 1px var(--indigo-line), var(--paper);
 }
 .deck .pickCount { font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-12); }
 .deck .pickBar .act { margin-left: auto; }
 .deck .nudge {
-  display: flex; align-items: flex-start; gap: 9px; margin: 16px 0 0; padding: 11px 13px;
+  position: absolute; left: 24px; right: 24px; bottom: 12px; z-index: 3; background: var(--white);
+  display: flex; align-items: flex-start; gap: 9px; padding: 11px 13px;
   border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--ink-1);
   font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-13, -0.01em);
   max-width: var(--measure);
@@ -676,7 +722,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
   font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-13, -0.01em);
 }
 .deck .peelFrom {
-  margin: 13px 0 0; padding: 10px 13px; border-radius: var(--r-chip);
+  margin: 11px 0 0; padding: 8px 11px; border-radius: var(--r-chip);
   background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line);
   max-width: var(--measure);
 }
@@ -693,8 +739,8 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 }
 .deck .pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); }
 .deck .peel {
-  position: relative; max-width: min(720px, calc(100% - 40px)); margin: 9px 6px 0 34px;
-  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 18px 20px;
+  position: relative; width: min(560px, calc(100% - 72px)); margin: 9px 0 0 56px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 15px 17px 16px;
 }
 .deck .peel::before { content: ""; position: absolute; left: 30px; top: -7px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--white); box-shadow: -1px -1px 0 var(--line); }
 .deck .peelTop { display: flex; align-items: center; gap: 9px; }
@@ -702,11 +748,11 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .peelMark svg { width: 13px; height: 13px; }
 .deck .peelLabel { font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
 .deck .peelField {
-  width: 100%; margin-top: 11px; border: 0; outline: 0; background: none; resize: none; display: block;
-  font: inherit; font-size: var(--t-17); font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); color: var(--ink-1);
+  width: 100%; margin-top: 8px; border: 0; outline: 0; background: none; resize: none; display: block;
+  font-family: inherit; font-weight: 600; color: var(--ink-1);
   field-sizing: content; min-height: 32px; padding: 3px 0; max-width: var(--measure);
 }
-.deck .peelRow { display: flex; align-items: center; gap: 9px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.deck .peelRow { display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .deck .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; line-height: var(--lh-base); }
 .deck .picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
 .deck .picker svg { width: 14px; height: 14px; color: var(--ink-3); }
@@ -719,7 +765,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .noHits { padding: 26px 0 0; }
 .deck .stays { display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); margin-top: 12px; line-height: var(--lh-base); }
 .deck .stays svg { width: 13px; height: 13px; }
-.deck .searchTop { flex: none; padding: 6px var(--gutter) 18px; }
+.deck .searchTop { flex: none; width: var(--stack); margin: 0 auto; padding: 6px var(--gutter) 18px; }
 .deck .searchBar {
   display: flex; align-items: center; gap: 11px;
   background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 14px 18px;
@@ -837,10 +883,57 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
     field-sizing: content; min-height: calc(1.5em * 2); max-height: 40vh; padding: 8px 0;
   }
 .deck[data-w="390"] .phoneField::placeholder { color: var(--ink-3); }
-.deck[data-w="390"] .dockGlyph, .deck[data-w="390"] .dockAvatar { margin-bottom: 3px; }
-.deck[data-w="390"] .dockAvatar { display: none; }
 .deck[data-w="390"] .dock .dockRule { display: none; }
-.deck[data-w="390"] .undo { bottom: 78px; }
+.deck[data-w="390"] .idxRow {
+    grid-template-columns: 20px minmax(0, 1fr);
+    row-gap: 3px; column-gap: 12px; padding: 11px 10px; align-items: start;
+  }
+.deck[data-w="390"] .idxMark { padding-top: 2px; }
+.deck[data-w="390"] .idxText {
+    white-space: normal; text-overflow: clip; overflow: hidden;
+    max-height: calc(var(--lh-base) * 2em);
+  }
+.deck[data-w="390"] .idxText span { color: var(--ink-3); }
+.deck[data-w="390"][data-index="tight"] .idxText span { display: none; }
+.deck[data-w="390"] .idxTag, .deck[data-w="390"] .idxWhen { grid-column: 2; grid-row: 2; font-size: var(--t-12); }
+.deck[data-w="390"] .idxTag { justify-self: start; box-shadow: none; padding: 0; color: var(--ink-3); font-weight: 400; }
+.deck[data-w="390"] .idxWhen { justify-self: end; }
+.deck[data-w="390"][data-index="tight"] .idxText { max-height: calc(var(--lh-base) * 1em); }
+.deck[data-w="390"] .dockWrap {
+    position: fixed; left: var(--inset); right: var(--inset);
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    padding: 0; z-index: 6;
+  }
+.deck[data-w="390"] .dockWrap::before { display: none; }
+.deck[data-w="390"] .dock {
+    width: 100%; border-radius: 18px; padding: 4px 8px 8px;
+    background: var(--ink); box-shadow: none; align-items: center;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 6px;
+  }
+.deck[data-w="390"] .dock .phoneField { grid-column: 1 / -1; padding: 10px 6px 8px; }
+.deck[data-w="390"] .dockRow { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.deck[data-w="390"] .dockRow[data-verbs] { grid-column: 1; }
+.deck[data-w="390"] .dockRow[data-suite] { grid-column: 2; justify-self: end; }
+.deck[data-w="390"] .dock .phoneField { color: var(--on-ink-1); }
+.deck[data-w="390"] .dock .phoneField::placeholder { color: var(--on-ink-2); }
+.deck[data-w="390"] .dock .dockGlyph { color: var(--on-ink-2); }
+.deck[data-w="390"] .dock .dockGlyph:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.deck[data-w="390"] .dock .dockGlyph[data-ink] { background: var(--white); color: var(--ink); }
+.deck[data-w="390"] .dock .dockCount { color: var(--on-ink-2); }
+.deck[data-w="390"] .dock .dockRule { display: block; background: var(--chrome-line); margin: 0 4px; height: 18px; }
+.deck[data-w="390"] .dock:has(.phoneField:focus-visible) { box-shadow: 0 0 0 2px var(--indigo); }
+.deck[data-w="390"] .dock :focus-visible { outline-color: var(--white); }
+.deck[data-w="390"] .dock .railGroup { display: flex; gap: 0; }
+.deck[data-w="390"] .dock .railTile { width: 36px; height: 36px; border-radius: 10px; color: var(--on-ink-2); }
+.deck[data-w="390"] .dock .railTile svg { width: 17px; height: 17px; }
+.deck[data-w="390"] .dock .railTile[data-active] { background: var(--chrome-active); color: var(--on-ink-1); }
+.deck[data-w="390"] .dock .railTile[data-active]::after { display: none; }
+.deck[data-w="390"] .dock .dockAvatar { width: 30px; height: 30px; margin: 0 0 0 4px; background: var(--white); color: var(--ink); }
+.deck[data-w="390"] .dock .dockGlyph, .deck[data-w="390"] .dock .dockCount { margin-bottom: 0; }
+.deck[data-w="390"] .rail { display: none; }
+.deck[data-w="390"] .sheet { height: calc(100% - 68px - var(--inset) * 2 - env(safe-area-inset-bottom)); }
+.deck[data-w="390"] .index { padding-bottom: 22px; }
+.deck[data-w="390"] .undo { bottom: 88px; }
 .deck[data-w="390"] .darkSaid { font-size: var(--t-27); }
 .deck[data-w="390"][data-type="expressive"] .darkSaid { font-size: var(--t-27); }
 .deck[data-w="390"] .darkWave { margin-top: 26px; }
@@ -1519,6 +1612,13 @@ deck.appendChild(boot);
   let picked = null;      /* the words highlighted in a note, right now      */
   let pickedWords = null; /* the words a peel was opened from                */
   let nudge = null;       /* the one sentence asking for a pick              */
+  /* What the next note is about. It opens on whatever the venue is
+     facing, because that is what a person walking the building is almost
+     always writing about. Until this existed the subject axis was a
+     rendering of pre-tagged fixture data: every note anybody actually
+     wrote was filed silently under The house. */
+  let filing = "mara-finn";
+  let picker = null;      /* the open subject picker, if any                 */
 
   const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl";
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1605,6 +1705,7 @@ deck.appendChild(boot);
      took the whole repaint with it. */
   function makeNote(body, opts) {
     const o = opts || {};
+    const about = o.about || filing;
     const title = body.split(/(?<=[.?!”])\s/)[0] || body;
     return {
       id: o.id || `new_${Date.now()}_${Math.round(performance.now())}`,
@@ -1622,8 +1723,8 @@ deck.appendChild(boot);
       edited: false,
       pending: true,
       words: body.trim().split(/\s+/).length,
-      about: N.subjects[o.about || "the-house"],
-      aboutKey: o.about || "the-house",
+      about: N.subjects[about],
+      aboutKey: about,
     };
   }
 
@@ -1638,7 +1739,7 @@ deck.appendChild(boot);
        says what pressing it will do. Written as the post-undo sentence and
        shown before the undo, it told the operator their note had already
        gone back to the sheet while it was sitting safely on the pile. */
-    offerUndo("Kept on the pile.", () => {
+    offerUndo("Kept.", () => {
       WORK = work().filter((n) => n !== note);
       draft = body;
     });
@@ -1665,7 +1766,13 @@ deck.appendChild(boot);
     const size = field ? getComputedStyle(field) : null;
     arriving = note.id;
     paint();
-    const row = mount.querySelector(`.idxRow[data-id="${CSS.escape(note.id)}"] .idxText`);
+    /* The words have to land somewhere the eye can follow. Filed under
+       whatever the capture chip says, the new note could sit fourth group
+       down and below the fold, so the moment the product exists for ended
+       off screen. The pile scrolls to it first, then the words fly. */
+    const rowEl = mount.querySelector(`.idxRow[data-id="${CSS.escape(note.id)}"]`);
+    if (rowEl) rowEl.scrollIntoView({ block: "center" });
+    const row = rowEl ? rowEl.querySelector(".idxText") : null;
     if (from && row) flyWords(body, from, row.getBoundingClientRect(), size);
     setTimeout(() => {
       arriving = null;
@@ -1747,7 +1854,7 @@ deck.appendChild(boot);
     const left = queue().length - (kind === "later" ? queueAt : 0);
     const label =
       kind === "task"
-        ? `Turned into a task. ${left} left.`
+        ? `Sent to Tasks. ${left} left.`
         : kind === "keep"
           ? `Kept in Notes. ${left} left.`
           : kind === "later"
@@ -1760,7 +1867,7 @@ deck.appendChild(boot);
        put back". */
     const strip =
       kind === "task"
-        ? "Turned into a task."
+        ? "Sent to Tasks."
         : kind === "keep"
           ? "Kept in Notes."
           : kind === "later"
@@ -1816,7 +1923,12 @@ deck.appendChild(boot);
     const text = pickedRange();
     if (text === picked) return;
     picked = text;
-    if (text) say(`${text.split(/\s+/).length} words picked. ${N.copy.begin} to make them a task.`);
+    if (text) {
+      /* The sentence asking for a pick cannot survive the pick. Both were
+         on screen at once, twenty pixels apart, contradicting each other. */
+      nudge = null;
+      say(`${text.split(/\s+/).length} words picked. ${N.copy.begin} to make them a task.`);
+    }
     paint();
   }
 
@@ -1876,7 +1988,7 @@ deck.appendChild(boot);
       taskWording = "";
       decided.push({ note, kind: "task", before });
       say(`${N.copy.sentReceipt} ${Math.max(0, queue().length)} left.`);
-      offerUndo("Turned into a task.", () => {
+      offerUndo("Sent to Tasks.", () => {
         if (note && before) Object.assign(note, before);
         decided.pop();
       });
@@ -1930,7 +2042,7 @@ deck.appendChild(boot);
     return w.filter((n) => n.body.toLowerCase().includes(q));
   }
   function moveCursor(step) {
-    const rows = visible();
+    const rows = listed.length ? listed : visible();
     if (!rows.length) return;
     const at = rows.findIndex((n) => n.id === cursorId);
     const next = at < 0 ? 0 : Math.min(rows.length - 1, Math.max(0, at + step));
@@ -1952,6 +2064,9 @@ deck.appendChild(boot);
     for (const row of document.querySelectorAll(".idxRow")) {
       const text = row.querySelector(".idxText");
       if (!text) continue;
+      /* A row that wraps has already solved this in CSS; measuring
+         scrollWidth on it compares the wrong axis. */
+      if (getComputedStyle(text).whiteSpace !== "nowrap") continue;
       const full = text.dataset.full;
       if (!full) continue;
       const lede = text.dataset.lede || "";
@@ -1980,13 +2095,28 @@ deck.appendChild(boot);
   }
 
   /* ── chrome ──────────────────────────────────────────────────── */
+  const SUITE = [
+    ["notes", "Notes"],
+    ["tasks", "Tasks"],
+    ["timeline", "Timeline"],
+    ["more", "More"],
+  ];
+
+  function railTiles(opts) {
+    const o = opts || {};
+    /* On a phone the dock is the only object at the foot, and it has to
+       hold capture, the verbs, the suite and the account in 372px. The
+       fourth tile is a menu that the sheet's own head already carries, so
+       it is the one that stands down. */
+    const tiles = o.tight ? SUITE.filter(([k]) => k !== "more") : SUITE;
+    return `<div class="railGroup">${tiles.map(
+      ([k, name]) =>
+        `<button class="railTile" type="button"${k === "notes" ? ' data-active aria-current="page"' : ""} aria-label="${name}${k === "notes" ? ", the page you are on" : ""}">${I[k]}</button>`,
+    ).join("")}</div>`;
+  }
+
   function rail() {
-    const tiles = [
-      ["notes", "Notes"],
-      ["tasks", "Tasks"],
-      ["timeline", "Timeline"],
-      ["more", "More"],
-    ];
+    const tiles = SUITE;
     return `
       <nav class="rail" aria-label="Signal Studio">
         <span class="railMark" aria-hidden="true">${I.home}<i></i></span>
@@ -2010,7 +2140,7 @@ deck.appendChild(boot);
       state === "review"
         ? ""
         : c.pending > 0
-          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} to decide. Go through the notes waiting on a decision.">${c.pending} to decide</button>`
+          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} still to decide. Go through the notes waiting on a decision.">${c.pending} still to decide</button>`
           : "";
     return `
       <header class="head">
@@ -2033,7 +2163,7 @@ deck.appendChild(boot);
        only way to commit a note was a keyboard chord on a device with no
        keyboard. */
     const commit = live
-      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Put it on the pile">${I.check}</button>`
+      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Keep it">${I.check}</button>`
       : "";
     /* On a wide screen the capture field is on the desk's paper, and
        reading a note replaces it. So the dock carries the way back to
@@ -2049,17 +2179,25 @@ deck.appendChild(boot);
           ${
             phone.matches
               ? `<textarea class="phoneField" rows="2" aria-label="Write a note" placeholder="${attr(N.copy.placeholder)}">${esc(draft)}</textarea>
-                 ${live ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span>` : ""}
-                 ${commit}
+                 <div class="dockRow" data-verbs>
+                   <button class="dockGlyph" type="button" data-act="search" aria-label="Search notebook">${I.search}</button>
+                   <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
+                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                   ${live ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span>` : ""}
+                   ${commit}
+                 </div>
+                 <div class="dockRow" data-suite>
+                   <span class="dockRule" aria-hidden="true"></span>
+                   ${railTiles({ tight: true })}
+                   <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
+                 </div>`
+              : `${backToWriting}<button class="dockField" type="button" data-act="search" aria-label="Search notebook">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>
                  <span class="dockRule" aria-hidden="true"></span>
-                 <button class="dockGlyph" type="button" data-act="search" aria-label="Search notebook">${I.search}</button>`
-              : `${backToWriting}<button class="dockField" type="button" data-act="search" aria-label="Search notebook">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>`
+                 <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
+                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                 <span class="dockRule" aria-hidden="true"></span>
+                 <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>`
           }
-          <span class="dockRule" aria-hidden="true"></span>
-          <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-          <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
-          <span class="dockRule" aria-hidden="true"></span>
-          <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
         </div>
       </div>`;
   }
@@ -2090,6 +2228,38 @@ deck.appendChild(boot);
       </section>`;
   }
 
+  /* One control, in the place the words are written, saying where they
+     will go. It is not a taxonomy the person has to learn: it opens on
+     the thing the house is facing and it is one press to change. */
+  function filingChip() {
+    const about = N.subjects[filing];
+    return `
+      <span class="filing">
+        <button class="filingBtn" type="button" data-act="filing" aria-haspopup="listbox" aria-expanded="${picker === "capture"}"
+          aria-label="Filing this under ${attr(about.label)}${about.when ? `, ${attr(about.when)}` : ""}. Change it.">
+          ${I.keep}<span>${esc(about.label)}</span>${I.chevron}
+        </button>
+        ${picker === "capture" ? subjectList("capture") : ""}
+      </span>`;
+  }
+
+  function subjectList(which) {
+    return `
+      <span class="pickerPop" role="listbox" aria-label="What is this about">
+        ${Object.entries(N.subjects)
+          .sort((a, b) => a[1].stake - b[1].stake || (a[1].days ?? 99) - (b[1].days ?? 99))
+          .map(
+            ([key, about]) => `
+          <button class="pickerRow" type="button" role="option" aria-selected="${key === filing}"
+            data-act="file-${which}" data-key="${attr(key)}">
+            <span>${esc(about.label)}</span>
+            <em>${about.when ? esc(about.when) : "No date"}</em>
+          </button>`,
+          )
+          .join("")}
+      </span>`;
+  }
+
   function topSheet() {
     /* On a phone the desk stands down entirely and the dock carries
        capture, so there is no top sheet to render. */
@@ -2100,13 +2270,14 @@ deck.appendChild(boot);
       `<div class="top"${live}${isSettling}>
         <textarea class="topField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
         <div class="topFoot">
+          ${filingChip()}
           <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
           <button class="verb" type="button" data-act="photo">${I.photo}Read a photo</button>
           <span class="spacer"></span>
           ${
             draft.trim()
               ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
-                 <button class="act" data-ink type="button" data-act="keep">${I.check}Put it on the pile<kbd>${MOD}+Enter</kbd></button>`
+                 <button class="act" data-ink type="button" data-act="keep">${I.check}Keep it<kbd>${MOD}+Enter</kbd></button>`
               : `<span class="topMeta">Nobody else can read this</span>`
           }
         </div>
@@ -2147,7 +2318,6 @@ deck.appendChild(boot);
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
           <button class="act" data-primary type="button" data-act="send">${I.send}${esc(N.copy.send)}</button>
         </div>
-        <p class="peelWhy">${esc(N.copy.payload)}</p>
       </div>`;
   }
 
@@ -2174,7 +2344,7 @@ deck.appendChild(boot);
             <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}</span>
           </p>
           <p class="readBody">${bodyHtml}</p>
-          ${sentTask ? "" : `<p class="stays">${I.lock}${esc(N.copy.stayedPut)}</p>`}
+
         </div>`,
         { behind: 1, label: `Turning a note into a task: ${note.title}`, under: peelPanel(note) },
       );
@@ -2184,7 +2354,14 @@ deck.appendChild(boot);
         <p class="readSrc">
           ${I[src.icon]}<span>${src.label}</span>
           <span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>
-          <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>
+          <span class="sep" aria-hidden="true"></span>
+          <span class="filing">
+            <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
+              aria-label="This note is about ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
+              <span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>${I.chevron}
+            </button>
+            ${picker === "note" ? subjectList("note") : ""}
+          </span>
           ${note.edited ? '<span class="sep" aria-hidden="true"></span><span>edited</span>' : ""}
           ${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks as <a href="#tasks">${esc(note.task || "a task")}</a></span>` : ""}
         </p>
@@ -2192,7 +2369,7 @@ deck.appendChild(boot);
         ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
         ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
         <div class="topFoot">
-          <button class="act" data-primary type="button" data-act="peel">${I.tasks}Turn into a task</button>
+          <button class="act" data-primary type="button" data-act="peel">${I.tasks}Send to Tasks</button>
           <button class="act" type="button" data-act="timeline">${I.share}Send to Timeline</button>
           <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>
           <span class="spacer"></span>
@@ -2214,6 +2391,12 @@ deck.appendChild(boot);
     return safe.replace(new RegExp(`(${needle})`, "gi"), "<mark>$1</mark>");
   }
 
+  /* Whatever list is on screen owns the tab stop. moveCursor walks the
+     notebook, and two states render a different list, so in those states
+     the index had no tabindex="0" at all and thirty tab presses never
+     reached a row. */
+  let listed = [];
+
   function idxRow(note, opts) {
     const o = opts || {};
     const src = N.sources[note.source];
@@ -2228,7 +2411,7 @@ deck.appendChild(boot);
     const name = crossed
       ? `${note.task}. In Tasks, ${note.lane}. Crossed ${when}. The note it came from stayed in Notes.`
       : `${note.title} ${note.rest || ""}`.trim() +
-        `. ${src.label}. ${note.when}.${note.pending ? " To decide." : note.sent ? " In Tasks." : " Kept."}`;
+        `. ${src.label}. ${note.when}.${note.pending ? " Still to decide." : note.sent ? " In Tasks." : " Kept."}`;
     const tag = crossed
       ? `<span class="idxTag">${esc(note.lane)}</span>`
       : note.sent
@@ -2240,7 +2423,7 @@ deck.appendChild(boot);
     const open = note.id === openId ? " data-open" : "";
     const arrivingNow = note.id === arriving ? " data-arriving" : "";
     return `
-      <button class="idxRow" type="button" data-id="${attr(note.id)}"${cursor}${open}${arrivingNow}
+      <button class="idxRow" type="button" role="listitem" data-id="${attr(note.id)}"${cursor}${open}${arrivingNow}
         tabindex="${note.id === cursorId ? "0" : "-1"}"
         aria-label="${attr(name)}">
         <span class="idxMark" aria-hidden="true">${crossed ? I.tasks : I[src.icon]}${!crossed && note.pending ? "<i></i>" : ""}</span>
@@ -2293,7 +2476,9 @@ deck.appendChild(boot);
               : about.days === 0
                 ? `${about.when}, today`
                 : `${about.when}, in ${about.days} day${about.days === 1 ? "" : "s"}`,
-          tail: waiting ? `${waiting} to decide` : "",
+          tail: waiting ? `${waiting} still to decide` : "",
+          soon: about.days !== null && about.days <= 7,
+          undated: about.days === null,
           rows: bag.get(key),
         };
       });
@@ -2320,13 +2505,18 @@ deck.appendChild(boot);
 
   function indexOf(notes, opts) {
     const o = opts || {};
+    listed = notes;
+    if (!notes.some((n) => n.id === cursorId)) cursorId = (notes[0] || {}).id || null;
     const rows = [];
     if (o.noDays) {
       for (const note of notes) rows.push(idxRow(note, o));
     } else {
       for (const g of groupsOf(notes)) {
+        /* The subject rules carry the whole structural answer, and on the
+           accessibility tree they resolved to nothing at all. They are
+           headings, because that is what they are. */
         rows.push(
-          `<p class="idxDay">${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</p>`,
+          `<h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>`,
         );
         for (const note of g.rows) rows.push(idxRow(note, o));
       }
@@ -2335,11 +2525,11 @@ deck.appendChild(boot);
     return `
       <div class="indexWrap">
         <div class="indexHead">
-          <span>${esc(o.title || "The pile")}</span>
+          <span>${esc(o.title || "Your notes")}</span>
           <span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>
           ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
-        <div class="index" id="index" role="list" aria-label="${attr(o.title || "The pile")}">${rows.join("")}</div>
+        <div class="index" id="index" role="list" aria-label="${attr(o.title || "Your notes")}">${rows.join("")}</div>
       </div>`;
   }
 
@@ -2352,7 +2542,7 @@ deck.appendChild(boot);
     const c = counts();
     return {
       desk: open ? readSheet(open) : topSheet(),
-      body: indexOf(rows, { title: "The pile", count: `${c.total} notes` }),
+      body: indexOf(rows, { title: "Your notes", count: `${c.total} notes` }),
       dock: true,
     };
   };
@@ -2368,7 +2558,7 @@ deck.appendChild(boot);
               <p class="readSrc">${I.typed}<span>Written</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(N.long.when)}</span><span class="sep" aria-hidden="true"></span><span>${N.long.words} words</span></p>
               <p class="readBody readLong">${esc(N.long.body)}</p>
               <div class="topFoot">
-                <button class="act" data-primary type="button" data-act="peel">${I.tasks}Turn into a task</button>
+                <button class="act" data-primary type="button" data-act="peel">${I.tasks}Send to Tasks</button>
                 <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>
                 <span class="spacer"></span>
                 <button class="act" data-quiet type="button" data-act="close">Put it back<kbd>Esc</kbd></button>
@@ -2377,9 +2567,8 @@ deck.appendChild(boot);
             { behind: 1, label: `Reading: ${N.long.title}` },
           ),
       body: indexOf(visible(), {
-        title: "The pile",
+        title: "Your notes",
         count: `${counts().total} notes, peak season, an extension of the fixture`,
-        noDays: true,
       }),
       dock: true,
     };
@@ -2403,12 +2592,12 @@ deck.appendChild(boot);
             <p class="emptyBody">${decided.length} notes went through. ${decided.filter((d) => d.kind === "task").length} became tasks and the rest stayed here.</p>
             <div class="emptyMove">
               <button class="act" data-ink type="button" data-act="tasks">${I.tasks}See them in Tasks</button>
-              <button class="act" type="button" data-act="notebook">${I.arrowRight}Back to the pile</button>
+              <button class="act" type="button" data-act="notebook">${I.arrowRight}Back to your notes</button>
             </div>
           </div>`,
           { behind: 0, label: "Nothing left to decide" },
         ),
-        body: indexOf(work().filter((n) => !n.pending).slice(0, 8), { title: "The pile", count: `${counts().total} notes`, noDays: true }),
+        body: indexOf(work().filter((n) => !n.pending).slice(0, 8), { title: "Your notes", count: `${counts().total} notes`, noDays: true }),
         dock: true,
       };
     }
@@ -2429,12 +2618,12 @@ deck.appendChild(boot);
               <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span></p>
               <p class="handBody">${esc(note.body)}</p>
               <div class="handFoot">
-                <button class="act" data-primary type="button" data-act="d-task">${I.tasks}Turn into a task<kbd>T</kbd></button>
+                <button class="act" data-primary type="button" data-act="d-task">${I.tasks}Send to Tasks<kbd>T</kbd></button>
                 <button class="act" type="button" data-act="d-keep">${I.keep}Just keep it<kbd>K</kbd></button>
                 <span class="spacer"></span>
                 <button class="act" data-quiet type="button" data-act="d-later">Decide later</button>
                 <button class="act" data-quiet data-destroy type="button" data-act="d-delete">${I.trash}Delete</button>
-                <button class="act" data-quiet type="button" data-act="notebook">Back to the pile<kbd>Esc</kbd></button>
+                <button class="act" data-quiet type="button" data-act="notebook">Back to your notes<kbd>Esc</kbd></button>
               </div>
             </article>
             </div>
@@ -2446,7 +2635,7 @@ deck.appendChild(boot);
             }</p>
           </div>
         </section>`,
-      body: indexOf(queue().slice(queueAt + 1), { title: "Still in the hand", count: `${Math.max(0, left - 1)} left`, noDays: true }),
+      body: indexOf(queue().slice(queueAt + 1), { title: "Still to decide", count: `${Math.max(0, left - 1)} left`, noDays: true }),
       dock: true,
     };
   };
@@ -2499,12 +2688,12 @@ deck.appendChild(boot);
           <span class="spacer"></span>
           <span class="topMeta">${pieces.length} note${pieces.length === 1 ? "" : "s"}, not one</span>
           <button class="act" data-quiet type="button" data-act="discard-speech">Discard</button>
-          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Put ${pieces.length === 1 ? "it" : "both"} on the pile</button>
+          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Keep ${pieces.length === 1 ? "it" : "both"}</button>
         </div>
       </div>`,
       { behind: 1, label: "What came back" },
     ),
-    body: indexOf(work().slice(0, 8), { title: "The pile", count: `${counts().total} notes` }),
+    body: indexOf(work().slice(0, 8), { title: "Your notes", count: `${counts().total} notes` }),
     dock: true,
   });
 
@@ -2585,7 +2774,7 @@ deck.appendChild(boot);
             }</p>
             <div class="emptyMove">
               ${near ? `<button class="act" data-ink type="button" data-act="nearest" data-id="${attr(near.id)}">${I.arrowRight}Open that one</button>` : ""}
-              <button class="act" ${near ? 'data-quiet' : 'data-ink'} type="button" data-act="clear-search">Back to the pile</button>
+              <button class="act" ${near ? 'data-quiet' : 'data-ink'} type="button" data-act="clear-search">Back to your notes</button>
             </div>
           </div>`,
       }),
@@ -2633,7 +2822,7 @@ deck.appendChild(boot);
             </div>
             <div class="spec">
               <p class="specName">After a clear-out</p>
-              <h3 class="emptyTitle">Your pile is empty again.</h3>
+              <h3 class="emptyTitle">Your notes are empty again.</h3>
               <p class="emptyBody">Fourteen notes went to Tasks or were deleted. Nothing is waiting on you.</p>
               <div class="emptyMove"><button class="act" type="button" data-act="undo-delete">${I.undo}Undo the last delete</button></div>
               <p class="specWhy">An empty that follows an action is a different empty from a first-use one, and it offers the way back.</p>
@@ -2665,7 +2854,7 @@ deck.appendChild(boot);
               ${I.wifiOff}
               <div>
                 <b>Held on this device</b>
-                <p>You are offline, so this one is saved here. Notes will put it on the pile the moment you reconnect. Nothing is lost and nothing has left.</p>
+                <p>You are offline, so this one is saved here. Notes will put it in your notes the moment you reconnect. Nothing is lost and nothing has left.</p>
               </div>
             </div>
             <div class="state">
@@ -2700,7 +2889,7 @@ deck.appendChild(boot);
                     `<div class="skelRow" aria-hidden="true"><div class="sk" style="width:${w}%"></div><div class="sk" style="width:${Math.round(w * 0.6)}%"></div></div>`,
                 )
                 .join("")}
-              <p class="skelSay" role="status">Opening your notebook. Fourteen notes, newest first.</p>
+              <p class="skelSay" role="status">Opening your notes. Fourteen of them, by what each one is about.</p>
             </div>
           </div>
         </div>
@@ -2738,7 +2927,7 @@ deck.appendChild(boot);
     const s = build();
     mount.innerHTML = `
       <div class="floor">
-        ${rail()}
+        ${phone.matches ? "" : rail()}
         <main class="sheet">
           ${head()}
           ${s.desk || ""}
@@ -2843,6 +3032,10 @@ deck.appendChild(boot);
   });
 
   mount.addEventListener("click", (e) => {
+    if (picker && !e.target.closest(".filing")) {
+      picker = null;
+      paint();
+    }
     const row = e.target.closest(".idxRow");
     if (row) {
       openNote(row.dataset.id);
@@ -2851,6 +3044,36 @@ deck.appendChild(boot);
     const act = e.target.closest("[data-act]");
     if (!act) return;
     const a = act.dataset.act;
+    if (a === "filing" || a === "refile") {
+      picker = picker ? null : a === "filing" ? "capture" : "note";
+      refocus = { kind: "act", sel: `[data-act="${a}"]` };
+      paint();
+      return;
+    }
+    if (a === "file-capture" || a === "file-note") {
+      const key = act.dataset.key;
+      const about = N.subjects[key];
+      if (a === "file-capture") {
+        filing = key;
+        say(`Filing under ${about.label}${about.when ? `, ${about.when}` : ""}.`);
+      } else {
+        const note = work().find((n) => n.id === openId);
+        if (note) {
+          const was = note.aboutKey;
+          note.about = about;
+          note.aboutKey = key;
+          say(`Moved to ${about.label}.`);
+          offerUndo(`Moved to ${about.label}.`, () => {
+            note.about = N.subjects[was];
+            note.aboutKey = was;
+          });
+        }
+      }
+      picker = null;
+      refocus = { kind: "act", sel: a === "file-capture" ? '[data-act="filing"]' : '[data-act="refile"]' };
+      paint();
+      return;
+    }
     if (a === "group-day" || a === "group-about") {
       group = a === "group-day" ? "day" : "about";
       say(group === "about" ? "Grouped by what each note is about." : "Grouped by when each note was written.");
@@ -2918,7 +3141,7 @@ deck.appendChild(boot);
     else if (a === "undo") doUndo();
     else if (a === "review") {
       state = "review";
-      say(`${counts().pending} to decide.`);
+      say(`${counts().pending} still to decide.`);
       paint();
     } else if (a === "notebook" || a === "tasks") {
       state = "notebook";
@@ -2977,7 +3200,7 @@ deck.appendChild(boot);
       for (const note of [...made].reverse()) work().unshift(note);
       state = "notebook";
       arriving = made.length ? made[0].id : null;
-      say(`${made.length} note${made.length === 1 ? "" : "s"} on the pile. ${counts().total} in the notebook.`);
+      say(`${made.length} note${made.length === 1 ? "" : "s"} kept. ${counts().total} in the notebook.`);
       offerUndo(`${made.length} kept from what you said.`, () => {
         WORK = work().filter((n) => !made.includes(n));
         state = "readback";
@@ -3023,6 +3246,12 @@ deck.appendChild(boot);
       return;
     }
     if (e.key === "Escape") {
+      if (picker) {
+        e.preventDefault();
+        picker = null;
+        paint();
+        return;
+      }
       if (peeling) {
         e.preventDefault();
         cancelPeel();
@@ -3031,7 +3260,7 @@ deck.appendChild(boot);
       if (state === "review") {
         e.preventDefault();
         state = "notebook";
-        say("Back to the pile.");
+        say("Back to your notes.");
         paint();
         return;
       }

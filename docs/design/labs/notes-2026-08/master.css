@@ -119,6 +119,13 @@
      product whose entire content is somebody's own sentences. */
   --measure: 31em;
 
+  /* One column for both planes. The desk was frozen at 716px from 1100
+     upward while the index grew with the window, so at 1920 the two
+     objects the architecture calls stacked planes shared neither edge and
+     a 1056px void sat beside the paper. --measure still caps the writing
+     lines inside it; --stack is what the two planes agree on. */
+  --stack: min(100%, 1060px);
+
   /* One duration and one curve for the whole product. Any other value
      has to be argued for in writing. The one exception is the paper
      settle, which is the direction's own signature and is declared and
@@ -249,8 +256,12 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .chip[data-off] { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); font-weight: 400; }
 
 /* ── the desk ──────────────────────────────────────────────────── */
-.desk { flex: none; position: relative; padding: 6px var(--gutter) var(--gutter); }
-.pile { position: relative; }
+/* Both planes resolve to one content column. The index carries its gutter
+   as padding inside the stack, so the desk's paper has to be the stack
+   minus that same gutter for the two to share an edge — otherwise the
+   paper sits 30px outside every row beneath it. */
+.desk { flex: none; position: relative; padding: 6px 0 var(--gutter); display: flex; justify-content: center; }
+.pile { position: relative; width: min(calc(100% - var(--gutter) * 2), calc(var(--stack) - var(--gutter) * 2)); }
 /* The paper and the sheets behind it. Anything hung off the paper — the
    task peeled from a note — sits outside this box, so the ghosts cannot
    stretch behind it. */
@@ -272,9 +283,12 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    it is a big empty rectangle with a paragraph in the corner — and it
    made the index, which is full width, out-shout the plane it is meant to
    sit beneath. */
-.top, .behind, .handTop, .handCard { max-width: calc(var(--measure) + 220px); }
+/* The paper fills the stack; the writing on it keeps the measure. A cap
+   on the paper as well produced two competing widths and a dead gutter
+   between them. */
 .top {
   position: relative; background: var(--white); border-radius: var(--r-paper);
+  padding-bottom: 14px;
   box-shadow: var(--ring), var(--paper); padding: 22px 24px 14px;
   transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve);
 }
@@ -314,8 +328,8 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 
 .topField {
   width: 100%; border: 0; outline: 0; background: none; resize: none; display: block;
-  font: inherit; font-size: var(--t-17); line-height: 1.55; letter-spacing: var(--tr-18); color: var(--ink-1);
-  field-sizing: content; min-height: calc(1.55em * 2); max-height: 42vh; overflow: auto;
+  font-family: inherit; font-weight: 400; color: var(--ink-1);
+  field-sizing: content; min-height: calc(var(--lh-read) * 2em); max-height: 42vh; overflow: auto;
   max-width: var(--measure);
 }
 .topField::placeholder { color: var(--ink-3); }
@@ -362,34 +376,62 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .readSrc .sep { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--ink-4); flex: none; }
 .readSrc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
 .readSrc a:hover { color: var(--ink-1); border-color: var(--ink-2); }
+/* Every surface that carries a person's own writing sets it identically:
+   same size, same leading, same tracking. The same sentence was rendering
+   at four different leadings depending on which surface it happened to be
+   on, which is a thing a reader feels and cannot name. */
+.readBody, .handBody, .topField, .pieceField, .peelField, .saidWas {
+  font-size: var(--t-17); line-height: var(--lh-read); letter-spacing: var(--tr-18);
+}
 .readBody {
   margin: 0; max-width: var(--measure); text-wrap: pretty;
-  font-size: var(--t-17); font-weight: 400; line-height: 1.62; letter-spacing: var(--tr-18); color: var(--ink-1);
+  font-weight: 400; color: var(--ink-1);
 }
 .readBody .lede { font-weight: 600; }
-.readLong { font-size: var(--t-17); line-height: 1.66; max-width: var(--measure); }
+.readLong { max-width: var(--measure); }
+/* The desk is capped to its content and content has no ceiling, so one
+   nine-hundred-word note squeezed the index — the second of the two
+   locked planes — to two rows. The paper scrolls inside itself instead. */
+.readBody { max-height: 46vh; overflow: auto; }
+.readBody::-webkit-scrollbar { width: 8px; }
 
 /* ── the index ─────────────────────────────────────────────────── */
-.indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.indexWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; }
+.indexWrap { align-items: center; }
 .indexHead {
-  flex: none; display: flex; align-items: center; gap: 12px; padding: 0 var(--gutter) 8px;
+  flex: none; width: var(--stack); display: flex; align-items: center; gap: 12px; padding: 0 var(--gutter) 8px;
   font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
 .indexHead::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
 .indexHead .cnt { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: var(--t-12); white-space: nowrap; line-height: var(--lh-base); }
 /* The dock floats over the foot of the sheet, so the last row of the pile
    needs clearance rather than being scrimmed out of legibility. Scrolled
    to the end, the oldest note used to sit under solid white. */
-.index { flex: 1; min-height: 0; overflow: auto; padding: 0 var(--gutter) 92px; scrollbar-width: thin; overflow-anchor: none; }
+.index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; padding: 0 var(--gutter) 92px; scrollbar-width: thin; overflow-anchor: none; }
 /* A day rule says when you wrote it. A subject rule says what it is
    about, and carries the date the venue is actually facing — which is the
    only thing on this surface that a notebook belonging to somebody else
    could not also say. */
+/* The subject rule is the one line on this surface that could not belong
+   to any other product, and it was set thirteen percent SMALLER than the
+   rows beneath it, in the same weight and the same ink. It leads now, and
+   it stays with what it heads while the pile scrolls. */
 .idxDay {
-  margin: 0; padding: 16px 0 5px; font-size: var(--t-11); font-weight: 600;
-  letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3);
-  display: flex; align-items: baseline; gap: 10px; line-height: var(--lh-base); }
-.idxDayNote { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); line-height: var(--lh-base); }
-[data-group="about"] .idxDay { font-size: var(--t-13); text-transform: none; letter-spacing: var(--tr-13, -0.01em); color: var(--ink-1); padding-top: 20px; }
+  position: sticky; top: 0; z-index: 2; background: var(--white);
+  margin: 0; padding: 20px 0 7px; font-size: var(--t-15); font-weight: 600;
+  letter-spacing: var(--tr-16); text-transform: none; color: var(--ink-1);
+  display: flex; align-items: baseline; gap: 10px; line-height: var(--lh-base);
+}
+.idxDay::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-soft);
+}
+/* A subject the venue is facing inside the week reads at full ink; one
+   with no date sits back. Density, not colour, exactly as the palette
+   lock requires. */
+.idxDay[data-soon] { color: var(--ink-1); }
+.idxDay[data-undated] { color: var(--ink-2); }
+.idxDayNote { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: var(--t-13); line-height: var(--lh-base); }
+.idxDay[data-soon] .idxDayNote { color: var(--ink-2); font-weight: 600; }
+
 .groupBy { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--wash); margin-left: auto; flex: none; }
 /* The drawn control is 24px because that is the size the index head
    wants beside an 11px label; the thing a pointer lands on is the 40
@@ -428,7 +470,10 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .idxMark { color: var(--ink-3); display: grid; place-items: center; position: relative; }
 .idxMark svg { width: 15px; height: 15px; }
 .idxMark i { position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-1); box-shadow: 0 0 0 2px var(--white); }
-.idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px #f2f1fd; }
+/* The dot's halo has to be the surface behind it, and on the row the
+   keyboard is holding that surface is white under an indigo wash — which
+   is two of the three, not a fourth colour mixed by hand. */
+.idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--indigo-wash); }
 /* The trim is measured in the file and cut at a word boundary. The
    ellipsis is the backstop for the case where four words still do not
    fit: without it the browser sliced a letter in half against the status
@@ -531,18 +576,21 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* ── the read-back ─────────────────────────────────────────────── */
 .saidWas {
   margin: 0 0 4px; max-width: calc(var(--measure) + 6em); padding: 14px 16px; border-radius: var(--r-chip);
-  background: var(--wash); font-size: var(--t-13); line-height: 1.55; color: var(--ink-2); letter-spacing: var(--tr-14);
+  background: var(--wash); color: var(--ink-2);
 }
 .saidWas b { display: block; font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px; }
 .pieces { display: grid; gap: 9px; margin-top: 14px; }
 .piece {
   position: relative; max-width: calc(var(--measure) + 4em); padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
   background: var(--white); box-shadow: var(--ring), var(--raise);
-  font-size: var(--t-17); line-height: 1.52; letter-spacing: var(--tr-16); color: var(--ink-1);
+  color: var(--ink-1);
   transition: box-shadow var(--dur) var(--curve);
 }
 .piece:focus-within { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); }
-.pieceField { width: 100%; border: 0; outline: 0; background: none; resize: none; display: block; font: inherit; color: inherit; field-sizing: content; }
+/* `font: inherit` is a shorthand and it resets size, leading and tracking.
+   Naming the parts leaves the shared writing rule standing — the same
+   defect the phone capture field had, in two more places. */
+.pieceField { width: 100%; border: 0; outline: 0; background: none; resize: none; display: block; font-family: inherit; font-weight: 400; color: inherit; field-sizing: content; }
 .drop { position: absolute; right: 8px; top: 50%; margin-top: -16px; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
 .drop:hover { color: var(--ink-1); background: var(--wash); }
 .drop svg { width: 15px; height: 15px; }
@@ -573,11 +621,44 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .pips i { width: 15px; height: 3px; border-radius: 2px; background: var(--line-strong); transition: background-color var(--dur) var(--curve); }
 .pips i[data-done] { background: var(--ink-1); }
 .pips i[data-now] { background: var(--indigo); }
-.handBody { margin: 0; max-width: var(--measure); text-wrap: pretty; font-size: var(--t-17); line-height: 1.58; letter-spacing: var(--tr-18); color: var(--ink-1); }
+.handBody { margin: 0; max-width: var(--measure); text-wrap: pretty; color: var(--ink-1); }
 .handFoot { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .handFoot .spacer { flex: 1; }
 .deckNote { margin: 52px 0 0; font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); display: flex; align-items: center; gap: 9px; line-height: var(--lh-base); }
 .deckNote svg { width: 14px; height: 14px; flex: none; }
+
+/* ── filing ────────────────────────────────────────────────────── */
+/* One control saying where the words will go, in the place they are
+   written. Before it, the subject axis was a rendering of pre-tagged
+   fixture data and every note a person actually wrote was filed silently
+   under one default. */
+.filing { position: relative; display: inline-flex; }
+.filingBtn {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px;
+  border-radius: var(--r-chip); cursor: pointer;
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-14);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.filingBtn:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.filingBtn svg { width: 14px; height: 14px; color: var(--ink-3); }
+.filingBtn svg:last-child { width: 13px; height: 13px; margin-left: -2px; }
+.readSrc .filingBtn { height: 26px; padding: 0 8px; box-shadow: none; font-size: var(--t-12); color: var(--ink-3); }
+.readSrc .filingBtn:hover { box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-1); }
+.pickerPop {
+  position: absolute; left: 0; bottom: calc(100% + 7px); z-index: 8; min-width: 232px;
+  background: var(--white); border-radius: var(--r-card); box-shadow: var(--ring), var(--paper-lift);
+  padding: 5px; display: grid; gap: 1px;
+}
+.readSrc .pickerPop { top: calc(100% + 7px); bottom: auto; }
+.pickerRow {
+  display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--r-chip); cursor: pointer; background: none; border: 0;
+  font-size: var(--t-13); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1);
+}
+.pickerRow em { margin-left: auto; font-style: normal; font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3); white-space: nowrap; }
+.pickerRow:hover { background: var(--wash); }
+.pickerRow[aria-selected="true"] { background: var(--indigo-wash); font-weight: 600; }
 
 /* ── picking ───────────────────────────────────────────────────── */
 /* Highlighting words in a note raises one control, beside the words, in
@@ -585,14 +666,20 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    affordance appears because of something a person did rather than
    because of where they are. */
 .readBody::selection, .readBody *::selection { background: var(--indigo-wash); }
+/* An overlay, not a layout event. Raising it grew the desk by 72px and
+   pushed the whole index down while the person was still holding a
+   selection, which is the one moment nothing should move. */
 .pickBar {
-  display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 10px 12px 10px 14px;
-  border-radius: var(--r-chip); background: var(--wash); box-shadow: inset 0 0 0 1px var(--indigo-line);
+  position: absolute; left: 24px; right: 24px; bottom: 12px; z-index: 3;
+  display: flex; align-items: center; gap: 12px; padding: 9px 10px 9px 14px;
+  border-radius: var(--r-chip); background: var(--white);
+  box-shadow: 0 0 0 1px var(--indigo-line), var(--paper);
 }
 .pickCount { font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-12); }
 .pickBar .act { margin-left: auto; }
 .nudge {
-  display: flex; align-items: flex-start; gap: 9px; margin: 16px 0 0; padding: 11px 13px;
+  position: absolute; left: 24px; right: 24px; bottom: 12px; z-index: 3; background: var(--white);
+  display: flex; align-items: flex-start; gap: 9px; padding: 11px 13px;
   border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--ink-1);
   font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-13, -0.01em);
   max-width: var(--measure);
@@ -607,7 +694,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* The words that were picked, printed above the wording they became, so
    the two can be compared without either being covered. */
 .peelFrom {
-  margin: 13px 0 0; padding: 10px 13px; border-radius: var(--r-chip);
+  margin: 11px 0 0; padding: 8px 11px; border-radius: var(--r-chip);
   background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line);
   max-width: var(--measure);
 }
@@ -623,9 +710,13 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3);
 }
 .pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); }
+/* The architecture calls this a second, SMALLER piece of paper peeled off
+   the note. It was 4px wider and 2.3 times the area of the note it came
+   from, which made the person's own sentence a strip and the form the
+   room. */
 .peel {
-  position: relative; max-width: min(720px, calc(100% - 40px)); margin: 9px 6px 0 34px;
-  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 18px 20px;
+  position: relative; width: min(560px, calc(100% - 72px)); margin: 9px 0 0 56px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 15px 17px 16px;
 }
 .peel::before { content: ""; position: absolute; left: 30px; top: -7px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--white); box-shadow: -1px -1px 0 var(--line); }
 .peelTop { display: flex; align-items: center; gap: 9px; }
@@ -633,11 +724,11 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .peelMark svg { width: 13px; height: 13px; }
 .peelLabel { font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
 .peelField {
-  width: 100%; margin-top: 11px; border: 0; outline: 0; background: none; resize: none; display: block;
-  font: inherit; font-size: var(--t-17); font-weight: 600; line-height: 1.45; letter-spacing: var(--tr-16); color: var(--ink-1);
+  width: 100%; margin-top: 8px; border: 0; outline: 0; background: none; resize: none; display: block;
+  font-family: inherit; font-weight: 600; color: var(--ink-1);
   field-sizing: content; min-height: 32px; padding: 3px 0; max-width: var(--measure);
 }
-.peelRow { display: flex; align-items: center; gap: 9px; margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+.peelRow { display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; line-height: var(--lh-base); }
 .picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
 .picker svg { width: 14px; height: 14px; color: var(--ink-3); }
@@ -652,7 +743,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .stays svg { width: 13px; height: 13px; }
 
 /* ── search ────────────────────────────────────────────────────── */
-.searchTop { flex: none; padding: 6px var(--gutter) 18px; }
+.searchTop { flex: none; width: var(--stack); margin: 0 auto; padding: 6px var(--gutter) 18px; }
 .searchBar {
   display: flex; align-items: center; gap: 11px;
   background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 14px 18px;
@@ -831,10 +922,80 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
     field-sizing: content; min-height: calc(1.5em * 2); max-height: 40vh; padding: 8px 0;
   }
   .phoneField::placeholder { color: var(--ink-3); }
-  .dockGlyph, .dockAvatar { margin-bottom: 3px; }
-  .dockAvatar { display: none; }
+
   .dock .dockRule { display: none; }
-  .undo { bottom: 78px; }
+  /* The row gives its width to the words. The desktop four-column grid
+     survived verbatim onto a 360px row: 247px of fixed furniture inside
+     it, 113px left for the writing, every note cut to three or four
+     words. The words take the row over two lines; the facts about them
+     take a quiet second line under it. */
+  .idxRow {
+    grid-template-columns: 20px minmax(0, 1fr);
+    row-gap: 3px; column-gap: 12px; padding: 11px 10px; align-items: start;
+  }
+  .idxMark { padding-top: 2px; }
+  /* Two lines of the person's own words. -webkit-box cannot do it here:
+     a grid item's display is blockified, so the clamp is silently
+     discarded and the row collapses back to one line. A max-height of two
+     leadings does the same job and survives being a grid item. */
+  .idxText {
+    white-space: normal; text-overflow: clip; overflow: hidden;
+    max-height: calc(var(--lh-base) * 2em);
+  }
+  .idxText span { color: var(--ink-3); }
+  [data-index="tight"] .idxText span { display: none; }
+  .idxTag, .idxWhen { grid-column: 2; grid-row: 2; font-size: var(--t-12); }
+  .idxTag { justify-self: start; box-shadow: none; padding: 0; color: var(--ink-3); font-weight: 400; }
+  .idxWhen { justify-self: end; }
+  [data-index="tight"] .idxText { max-height: calc(var(--lh-base) * 1em); }
+
+  /* The capsule and the dock are one object, which is the locked
+     behaviour and had not happened: a white capture pill floated inside
+     the sheet with the dark rail as a separate bar below it, two stacked
+     floating objects taking 163px of an 844px screen. Now the dock is
+     ink, the suite tiles ride in it, and there is one thing at the foot
+     of the phone rather than two. */
+  .dockWrap {
+    position: fixed; left: var(--inset); right: var(--inset);
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    padding: 0; z-index: 6;
+  }
+  .dockWrap::before { display: none; }
+  /* One object, two rows. The field a person writes in cannot share a
+     372px line with three verbs, four suite tiles and an account disc —
+     it collapsed to a 40px column wrapping one word per line. The words
+     get the top of the object; everything that acts on them gets the
+     foot of it. */
+  .dock {
+    width: 100%; border-radius: 18px; padding: 4px 8px 8px;
+    background: var(--ink); box-shadow: none; align-items: center;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 6px;
+  }
+  .dock .phoneField { grid-column: 1 / -1; padding: 10px 6px 8px; }
+  .dockRow { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .dockRow[data-verbs] { grid-column: 1; }
+  .dockRow[data-suite] { grid-column: 2; justify-self: end; }
+  .dock .phoneField { color: var(--on-ink-1); }
+  .dock .phoneField::placeholder { color: var(--on-ink-2); }
+  .dock .dockGlyph { color: var(--on-ink-2); }
+  .dock .dockGlyph:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+  .dock .dockGlyph[data-ink] { background: var(--white); color: var(--ink); }
+  .dock .dockCount { color: var(--on-ink-2); }
+  .dock .dockRule { display: block; background: var(--chrome-line); margin: 0 4px; height: 18px; }
+  .dock:has(.phoneField:focus-visible) { box-shadow: 0 0 0 2px var(--indigo); }
+  .dock :focus-visible { outline-color: var(--white); }
+  .dock .railGroup { display: flex; gap: 0; }
+  .dock .railTile { width: 36px; height: 36px; border-radius: 10px; color: var(--on-ink-2); }
+  .dock .railTile svg { width: 17px; height: 17px; }
+  .dock .railTile[data-active] { background: var(--chrome-active); color: var(--on-ink-1); }
+  .dock .railTile[data-active]::after { display: none; }
+  .dock .dockAvatar { width: 30px; height: 30px; margin: 0 0 0 4px; background: var(--white); color: var(--ink); }
+  .dock .dockGlyph, .dock .dockCount { margin-bottom: 0; }
+  /* The separate capsule stands down; its tiles are in the dock. */
+  .rail { display: none; }
+  .sheet { height: calc(100dvh - 68px - var(--inset) * 2 - env(safe-area-inset-bottom)); }
+  .index { padding-bottom: 22px; }
+  .undo { bottom: 88px; }
   /* The one place the ramp bends, and it bends by dropping a step rather
      than inventing a value: 34 does not fit a 390 screen. */
   .darkSaid { font-size: var(--t-27); }

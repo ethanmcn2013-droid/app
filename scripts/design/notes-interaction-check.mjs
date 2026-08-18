@@ -83,7 +83,7 @@ const said = (page) => page.locator("#say").textContent();
   const foot = await page.locator(".indexHead .cnt").textContent();
   const rows = await rowCount(page);
   ok("the head's count and the index agree", foot.trim().startsWith(String(rows)), `${foot.trim()} vs ${rows} rows`);
-  ok("the head states the outstanding decisions", /\d+ to decide/.test(head));
+  ok("the head states the outstanding decisions", /\d+ still to decide/.test(head), head);
   await page.close();
 }
 
@@ -321,13 +321,13 @@ const said = (page) => page.locator("#say").textContent();
 
   /* A trim measured at one width and never re-measured is a lie at every
      other width. */
-  const wideCount = trims.length;
+  const wideChars = await page.evaluate(() =>
+    [...document.querySelectorAll(".idxText")].reduce((n, t) => n + t.textContent.length, 0));
   await page.setViewportSize({ width: 820, height: 960 });
-  await page.waitForTimeout(260);
-  const narrow = await page.evaluate(
-    () => [...document.querySelectorAll(".idxText")].filter((t) => t.textContent.trim() !== t.dataset.full).length,
-  );
-  ok("the trim re-runs on resize", narrow > wideCount, `${wideCount} wide, ${narrow} narrow`);
+  await page.waitForTimeout(300);
+  const narrowChars = await page.evaluate(() =>
+    [...document.querySelectorAll(".idxText")].reduce((n, t) => n + t.textContent.length, 0));
+  ok("the trim re-runs on resize", narrowChars < wideChars, `${wideChars} wide, ${narrowChars} narrow`);
   ok(
     "and nothing overflows its row after it",
     await page.evaluate(() => [...document.querySelectorAll(".idxText")].every((t) => t.scrollWidth <= t.clientWidth + 1)),
@@ -360,7 +360,14 @@ const said = (page) => page.locator("#say").textContent();
     "the one destructive act says what it destroys before it happens",
     (await page.locator('.state[data-tone="destroy"] p').textContent()).includes("undo this"),
   );
-  ok("the loading frame says what is arriving", (await page.locator(".skelSay").textContent()).includes("Fourteen notes"));
+    /* The loading line has to promise the order that actually arrives. It
+     was still promising "newest first" two rounds after the pile stopped
+     being ordered that way. */
+  ok(
+    "the loading frame promises the order that arrives",
+    (await page.locator(".skelSay").textContent()).includes("what each one is about"),
+    await page.locator(".skelSay").textContent(),
+  );
   await page.close();
 }
 
@@ -384,8 +391,13 @@ const said = (page) => page.locator("#say").textContent();
       return p.tagName === "BUTTON" && /Which project/.test(p.getAttribute("aria-label"));
     }),
   );
-  ok("the boundary sentence is on screen", (await page.locator(".peelWhy").textContent()).includes("nothing else from this note"));
-  ok("and the note is promised to stay", (await page.locator(".stays").textContent()).includes("still yours to edit"));
+  /* Once, at the top of the thing it is about. It was on screen four
+     times in four grammars: the header chip, a line under the note, the
+     boundary above the wording and a restatement under the buttons. */
+  ok("the boundary is stated", (await page.locator(".peelBoundary").textContent()).includes("the exact words you pick"));
+  const promises = await page.evaluate(() =>
+    [...document.querySelectorAll(".top, .peel")].map((n) => n.innerText).join(" ").match(/stays here|still private|nothing else from this note|still yours to edit/g) || []);
+  ok("and only once", promises.length <= 1, promises.join(" · "));
   await page.close();
 }
 
@@ -416,10 +428,35 @@ const said = (page) => page.locator("#say").textContent();
 /* ── the phone ───────────────────────────────────────────────────── */
 {
   const page = await open("", { width: 390, height: 844 });
-  ok("the capsule and the dock are the same object", (await page.locator(".rail").boundingBox()).y > 700);
+  /* One object at the foot, carrying capture, the verbs, the suite and
+     the account. Two stacked floating bars was the locked architecture
+     unbuilt, and it cost 163px of an 844px screen. */
+  ok("there is one object at the foot, not two", (await page.locator(".rail").count()) === 0);
+  const dockBox = await page.locator(".dock").boundingBox();
+  ok("and it is at the foot", dockBox.y + dockBox.height > 760, `${Math.round(dockBox.y)}`);
+  ok("it carries the suite", (await page.locator(".dock .railTile").count()) >= 3);
+  ok("it carries the account", await page.locator(".dock .dockAvatar").isVisible());
   ok("the desk stands down and the index takes the screen", await page.locator(".desk").isHidden());
-  ok("capture moves into the dock", await page.locator(".phoneField").isVisible());
-  ok("the account is not offered twice", await page.locator(".dockAvatar").isHidden());
+  ok("capture is in it", await page.locator(".phoneField").isVisible());
+
+  /* And the row gives its width to the person's words. */
+  const rowFacts = await page.evaluate(() => {
+    const row = document.querySelector(".idxRow");
+    const text = row.querySelector(".idxText");
+    return {
+      row: Math.round(row.getBoundingClientRect().width),
+      words: Math.round(text.getBoundingClientRect().width),
+      lines: Math.round(text.getBoundingClientRect().height / parseFloat(getComputedStyle(text).lineHeight)),
+      chars: text.textContent.trim().length,
+    };
+  });
+  ok(
+    "the words get most of the row, not the metadata",
+    rowFacts.words / rowFacts.row > 0.78,
+    `${rowFacts.words} of ${rowFacts.row}`,
+  );
+  ok("over two lines", rowFacts.lines >= 2, `${rowFacts.lines} lines`);
+  ok("so a note is readable rather than a stub", rowFacts.chars > 30, `${rowFacts.chars} characters`);
 
   await page.locator(".phoneField").fill("Bar restock, tonic and the good olives.");
   await page.waitForTimeout(140);
@@ -505,7 +542,7 @@ const said = (page) => page.locator("#say").textContent();
     await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("topField")),
     await page.evaluate(() => document.activeElement.tagName + "." + document.activeElement.className),
   );
-  ok("the undo strip says what happened, in the present", (await page.locator(".undo span").textContent()).trim() === "Kept on the pile.");
+  ok("the undo strip says what happened, in the present", (await page.locator(".undo span").textContent()).trim() === "Kept.", await page.locator(".undo span").textContent());
   await page.close();
 }
 
@@ -518,7 +555,7 @@ const said = (page) => page.locator("#say").textContent();
   await page.waitForTimeout(200);
   const commit = page.locator('.dock [data-act="keep"]');
   ok("a commit control appears in the dock", (await commit.count()) === 1);
-  ok("it says what it does", (await commit.getAttribute("aria-label")) === "Put it on the pile");
+  ok("it says what it does", (await commit.getAttribute("aria-label")) === "Keep it", await commit.getAttribute("aria-label"));
   const box = await commit.boundingBox();
   ok("and a finger can land on it", box.width >= 36 && box.height >= 36, `${Math.round(box.width)}x${Math.round(box.height)}`);
 
@@ -688,7 +725,7 @@ const said = (page) => page.locator("#say").textContent();
   await page.keyboard.press("Escape");
   await page.waitForTimeout(260);
   ok("escape leaves the queue", (await page.locator(".handTop").count()) === 0);
-  ok("and says where you are", (await said(page)).includes("Back to the pile"));
+  ok("and says where you are", (await said(page)).includes("Back to your notes"), await said(page));
   ok("with the notebook underneath", (await page.locator(".topField").count()) === 1);
   await page.close();
 }
@@ -804,6 +841,196 @@ const said = (page) => page.locator("#say").textContent();
   await page.waitForTimeout(1000);
   ok("the words clear themselves", (await page.locator(".fly").count()) === 0);
   ok("and so does the mark", (await page.locator(".idxRow[data-arriving]").count()) === 0);
+  await page.close();
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 3
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the subject is something the product does ───────────────────── */
+{
+  const page = await open();
+  const chip = page.locator('[data-act="filing"]');
+  ok("the capture sheet says where the words will go", (await chip.count()) === 1);
+  ok("and it opens on what the venue is facing", (await chip.textContent()).includes("Mara & Finn"));
+
+  await chip.click();
+  await page.waitForTimeout(180);
+  ok("it opens a real list", (await page.locator('.pickerPop [role="option"]').count()) >= 4);
+  ok("with one of them marked", (await page.locator('[role="option"][aria-selected="true"]').count()) === 1);
+  await page.locator('.pickerPop [data-key="the-house"]').click();
+  await page.waitForTimeout(200);
+  ok("choosing one changes where the words go", (await chip.textContent()).includes("The house"));
+  ok("and says so", (await said(page)).includes("Filing under The house"));
+
+  await page.locator(".topField").click();
+  await page.keyboard.type("Reprint the welcome sign before the open day.");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(700);
+  const filed = await page.evaluate(() => {
+    const row = [...document.querySelectorAll(".idxRow")].find((r) => r.textContent.includes("Reprint the welcome"));
+    if (!row) return null;
+    let n = row.previousElementSibling;
+    while (n && !n.classList.contains("idxDay")) n = n.previousElementSibling;
+    return n ? n.textContent : null;
+  });
+  ok("the note a person wrote lands where they filed it", Boolean(filed && filed.includes("The house")), String(filed));
+
+  const seen = await page.evaluate(() => {
+    const row = [...document.querySelectorAll(".idxRow")].find((r) => r.textContent.includes("Reprint the welcome"));
+    if (!row) return false;
+    const box = row.getBoundingClientRect();
+    const scroller = document.querySelector("#index").getBoundingClientRect();
+    return box.top >= scroller.top - 4 && box.bottom <= scroller.bottom + 4;
+  });
+  ok("and inside the pile the person is looking at", seen);
+  await page.close();
+}
+
+/* ── a note can be re-filed from the note itself ─────────────────── */
+{
+  const page = await open();
+  await page.locator(".idxRow").nth(1).click();
+  await page.waitForTimeout(240);
+  const refile = page.locator('[data-act="refile"]');
+  ok("an open note says what it is about, as a control", (await refile.count()) === 1);
+  await refile.click();
+  await page.waitForTimeout(180);
+  await page.locator('.pickerPop [data-key="the-studio"]').click();
+  await page.waitForTimeout(240);
+  ok("moving it is announced", (await said(page)).includes("Moved to The studio"));
+  ok("and reversible", (await page.locator(".undo").count()) === 1);
+  await page.close();
+}
+
+/* ── the subject rule leads, and stays ───────────────────────────── */
+{
+  const page = await open();
+  const type = await page.evaluate(() => {
+    const rule = document.querySelector(".idxDay");
+    const row = document.querySelector(".idxRow .idxText");
+    const cs = getComputedStyle(rule);
+    return {
+      rule: parseFloat(cs.fontSize),
+      row: parseFloat(getComputedStyle(row).fontSize),
+      sticky: cs.position,
+      tag: rule.tagName,
+      level: rule.getAttribute("aria-level"),
+    };
+  });
+  ok("the subject rule is not smaller than the rows it heads", type.rule >= type.row, `${type.rule} vs ${type.row}`);
+  ok("it stays with what it heads", type.sticky === "sticky");
+  ok("and it is a heading on the tree", type.tag === "H3" && type.level === "3", `${type.tag} ${type.level}`);
+  ok("the rows are items on the tree", (await page.locator('.idxRow[role="listitem"]').count()) > 5);
+  await page.close();
+}
+
+/* ── the grouping survives the density that needs it ─────────────── */
+{
+  const page = await open("?state=pressure");
+  ok("36 notes are still grouped by what they are about", (await page.locator(".idxDay").count()) >= 3);
+  ok("and the control is still there", (await page.locator(".groupBtn").count()) === 2);
+  await page.close();
+}
+
+/* ── the two planes share a column ───────────────────────────────── */
+{
+  for (const width of [1280, 1440, 1920]) {
+    const page = await open("", { width, height: 900 });
+    const edges = await page.evaluate(() => {
+      const paper = document.querySelector(".pile").getBoundingClientRect();
+      const row = document.querySelector(".idxRow").getBoundingClientRect();
+      return { paperL: paper.left, paperR: paper.right, rowL: row.left, rowR: row.right };
+    });
+    ok(
+      `the desk and the index share a column at ${width}`,
+      Math.abs(edges.paperL - (edges.rowL + 10)) < 4 && Math.abs(edges.paperR - (edges.rowR - 10)) < 4,
+      `paper ${Math.round(edges.paperL)}..${Math.round(edges.paperR)} row ${Math.round(edges.rowL)}..${Math.round(edges.rowR)}`,
+    );
+    await page.close();
+  }
+}
+
+/* ── the peel is a smaller piece of paper ────────────────────────── */
+{
+  const page = await open("?state=seam");
+  const sizes = await page.evaluate(() => {
+    const note = document.querySelector(".top").getBoundingClientRect();
+    const peel = document.querySelector(".peel").getBoundingClientRect();
+    return { noteW: note.width, peelW: peel.width, noteA: note.width * note.height, peelA: peel.width * peel.height };
+  });
+  ok("the peel is narrower than the note it came from", sizes.peelW < sizes.noteW - 40, `${Math.round(sizes.peelW)} vs ${Math.round(sizes.noteW)}`);
+  await page.close();
+}
+
+/* ── one sentence, one setting ───────────────────────────────────── */
+{
+  const leadings = new Set();
+  for (const [state, sel] of [["notebook", ".topField"], ["review", ".handBody"], ["readback", ".pieceField"], ["seam", ".peelField"]]) {
+    const p2 = await open(`?state=${state}`);
+    const v = await p2.evaluate((s2) => {
+      const n = document.querySelector(s2);
+      if (!n) return null;
+      const cs = getComputedStyle(n);
+      return `${cs.fontSize}/${cs.lineHeight}/${cs.letterSpacing}`;
+    }, sel);
+    if (v) leadings.add(v);
+    await p2.close();
+  }
+  ok("a person's own words are set identically everywhere", leadings.size === 1, [...leadings].join(" · "));
+}
+
+/* ── picking does not move the page ──────────────────────────────── */
+{
+  const page = await open();
+  await page.locator(".idxRow").nth(2).click();
+  await page.waitForTimeout(240);
+  const before = await page.evaluate(() => document.querySelector(".indexHead").getBoundingClientRect().top);
+  await page.evaluate(() => {
+    const body = document.querySelector(".readBody");
+    const range = document.createRange();
+    range.selectNodeContents(body);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+  await page.waitForTimeout(300);
+  ok("a pick raises a control", (await page.locator(".pickBar").count()) === 1);
+  const after = await page.evaluate(() => document.querySelector(".indexHead").getBoundingClientRect().top);
+  ok("without moving the page under the person's hand", Math.abs(after - before) < 3, `${Math.round(before)} then ${Math.round(after)}`);
+  await page.close();
+}
+
+/* ── the keyboard reaches the list that is on screen ─────────────── */
+{
+  for (const state of ["notebook", "review", "seam", "search", "pressure"]) {
+    const page = await open(`?state=${state}`);
+    const stops = await page.evaluate(() => document.querySelectorAll('.idxRow[tabindex="0"]').length);
+    const rows = await page.locator(".idxRow").count();
+    ok(`${state}: whatever list is on screen owns the tab stop`, rows === 0 || stops === 1, `${stops} stops, ${rows} rows`);
+    await page.close();
+  }
+}
+
+/* ── one long note does not eat the other plane ──────────────────── */
+{
+  const page = await open("?state=pressure");
+  const planes = await page.evaluate(() => ({
+    index: document.querySelector("#index").getBoundingClientRect().height,
+    rows: document.querySelectorAll(".idxRow").length,
+  }));
+  ok("the index survives a nine-hundred-word note", planes.index > 200 && planes.rows > 6, JSON.stringify(planes));
+  await page.close();
+}
+
+/* ── one lexicon ─────────────────────────────────────────────────── */
+{
+  const page = await open();
+  const words = await page.evaluate(() => document.body.innerText);
+  ok("the place notes live has one name", !/the pile/i.test(words), (words.match(/[^\n]*pile[^\n]*/i) || [])[0] || "");
+  ok("and the crossing has one verb", !/turn into a task/i.test(words), (words.match(/[^\n]*turn into[^\n]*/i) || [])[0] || "");
   await page.close();
 }
 

@@ -67,6 +67,13 @@
   let picked = null;      /* the words highlighted in a note, right now      */
   let pickedWords = null; /* the words a peel was opened from                */
   let nudge = null;       /* the one sentence asking for a pick              */
+  /* What the next note is about. It opens on whatever the venue is
+     facing, because that is what a person walking the building is almost
+     always writing about. Until this existed the subject axis was a
+     rendering of pre-tagged fixture data: every note anybody actually
+     wrote was filed silently under The house. */
+  let filing = "mara-finn";
+  let picker = null;      /* the open subject picker, if any                 */
 
   const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl";
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -153,6 +160,7 @@
      took the whole repaint with it. */
   function makeNote(body, opts) {
     const o = opts || {};
+    const about = o.about || filing;
     const title = body.split(/(?<=[.?!”])\s/)[0] || body;
     return {
       id: o.id || `new_${Date.now()}_${Math.round(performance.now())}`,
@@ -170,8 +178,8 @@
       edited: false,
       pending: true,
       words: body.trim().split(/\s+/).length,
-      about: N.subjects[o.about || "the-house"],
-      aboutKey: o.about || "the-house",
+      about: N.subjects[about],
+      aboutKey: about,
     };
   }
 
@@ -186,7 +194,7 @@
        says what pressing it will do. Written as the post-undo sentence and
        shown before the undo, it told the operator their note had already
        gone back to the sheet while it was sitting safely on the pile. */
-    offerUndo("Kept on the pile.", () => {
+    offerUndo("Kept.", () => {
       WORK = work().filter((n) => n !== note);
       draft = body;
     });
@@ -213,7 +221,13 @@
     const size = field ? getComputedStyle(field) : null;
     arriving = note.id;
     paint();
-    const row = mount.querySelector(`.idxRow[data-id="${CSS.escape(note.id)}"] .idxText`);
+    /* The words have to land somewhere the eye can follow. Filed under
+       whatever the capture chip says, the new note could sit fourth group
+       down and below the fold, so the moment the product exists for ended
+       off screen. The pile scrolls to it first, then the words fly. */
+    const rowEl = mount.querySelector(`.idxRow[data-id="${CSS.escape(note.id)}"]`);
+    if (rowEl) rowEl.scrollIntoView({ block: "center" });
+    const row = rowEl ? rowEl.querySelector(".idxText") : null;
     if (from && row) flyWords(body, from, row.getBoundingClientRect(), size);
     setTimeout(() => {
       arriving = null;
@@ -295,7 +309,7 @@
     const left = queue().length - (kind === "later" ? queueAt : 0);
     const label =
       kind === "task"
-        ? `Turned into a task. ${left} left.`
+        ? `Sent to Tasks. ${left} left.`
         : kind === "keep"
           ? `Kept in Notes. ${left} left.`
           : kind === "later"
@@ -308,7 +322,7 @@
        put back". */
     const strip =
       kind === "task"
-        ? "Turned into a task."
+        ? "Sent to Tasks."
         : kind === "keep"
           ? "Kept in Notes."
           : kind === "later"
@@ -364,7 +378,12 @@
     const text = pickedRange();
     if (text === picked) return;
     picked = text;
-    if (text) say(`${text.split(/\s+/).length} words picked. ${N.copy.begin} to make them a task.`);
+    if (text) {
+      /* The sentence asking for a pick cannot survive the pick. Both were
+         on screen at once, twenty pixels apart, contradicting each other. */
+      nudge = null;
+      say(`${text.split(/\s+/).length} words picked. ${N.copy.begin} to make them a task.`);
+    }
     paint();
   }
 
@@ -424,7 +443,7 @@
       taskWording = "";
       decided.push({ note, kind: "task", before });
       say(`${N.copy.sentReceipt} ${Math.max(0, queue().length)} left.`);
-      offerUndo("Turned into a task.", () => {
+      offerUndo("Sent to Tasks.", () => {
         if (note && before) Object.assign(note, before);
         decided.pop();
       });
@@ -478,7 +497,7 @@
     return w.filter((n) => n.body.toLowerCase().includes(q));
   }
   function moveCursor(step) {
-    const rows = visible();
+    const rows = listed.length ? listed : visible();
     if (!rows.length) return;
     const at = rows.findIndex((n) => n.id === cursorId);
     const next = at < 0 ? 0 : Math.min(rows.length - 1, Math.max(0, at + step));
@@ -500,6 +519,9 @@
     for (const row of document.querySelectorAll(".idxRow")) {
       const text = row.querySelector(".idxText");
       if (!text) continue;
+      /* A row that wraps has already solved this in CSS; measuring
+         scrollWidth on it compares the wrong axis. */
+      if (getComputedStyle(text).whiteSpace !== "nowrap") continue;
       const full = text.dataset.full;
       if (!full) continue;
       const lede = text.dataset.lede || "";
@@ -528,13 +550,28 @@
   }
 
   /* ── chrome ──────────────────────────────────────────────────── */
+  const SUITE = [
+    ["notes", "Notes"],
+    ["tasks", "Tasks"],
+    ["timeline", "Timeline"],
+    ["more", "More"],
+  ];
+
+  function railTiles(opts) {
+    const o = opts || {};
+    /* On a phone the dock is the only object at the foot, and it has to
+       hold capture, the verbs, the suite and the account in 372px. The
+       fourth tile is a menu that the sheet's own head already carries, so
+       it is the one that stands down. */
+    const tiles = o.tight ? SUITE.filter(([k]) => k !== "more") : SUITE;
+    return `<div class="railGroup">${tiles.map(
+      ([k, name]) =>
+        `<button class="railTile" type="button"${k === "notes" ? ' data-active aria-current="page"' : ""} aria-label="${name}${k === "notes" ? ", the page you are on" : ""}">${I[k]}</button>`,
+    ).join("")}</div>`;
+  }
+
   function rail() {
-    const tiles = [
-      ["notes", "Notes"],
-      ["tasks", "Tasks"],
-      ["timeline", "Timeline"],
-      ["more", "More"],
-    ];
+    const tiles = SUITE;
     return `
       <nav class="rail" aria-label="Signal Studio">
         <span class="railMark" aria-hidden="true">${I.home}<i></i></span>
@@ -558,7 +595,7 @@
       state === "review"
         ? ""
         : c.pending > 0
-          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} to decide. Go through the notes waiting on a decision.">${c.pending} to decide</button>`
+          ? `<button class="chip" type="button" data-act="review" aria-label="${c.pending} still to decide. Go through the notes waiting on a decision.">${c.pending} still to decide</button>`
           : "";
     return `
       <header class="head">
@@ -581,7 +618,7 @@
        only way to commit a note was a keyboard chord on a device with no
        keyboard. */
     const commit = live
-      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Put it on the pile">${I.check}</button>`
+      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Keep it">${I.check}</button>`
       : "";
     /* On a wide screen the capture field is on the desk's paper, and
        reading a note replaces it. So the dock carries the way back to
@@ -597,17 +634,25 @@
           ${
             phone.matches
               ? `<textarea class="phoneField" rows="2" aria-label="Write a note" placeholder="${attr(N.copy.placeholder)}">${esc(draft)}</textarea>
-                 ${live ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span>` : ""}
-                 ${commit}
+                 <div class="dockRow" data-verbs>
+                   <button class="dockGlyph" type="button" data-act="search" aria-label="Search notebook">${I.search}</button>
+                   <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
+                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                   ${live ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span>` : ""}
+                   ${commit}
+                 </div>
+                 <div class="dockRow" data-suite>
+                   <span class="dockRule" aria-hidden="true"></span>
+                   ${railTiles({ tight: true })}
+                   <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
+                 </div>`
+              : `${backToWriting}<button class="dockField" type="button" data-act="search" aria-label="Search notebook">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>
                  <span class="dockRule" aria-hidden="true"></span>
-                 <button class="dockGlyph" type="button" data-act="search" aria-label="Search notebook">${I.search}</button>`
-              : `${backToWriting}<button class="dockField" type="button" data-act="search" aria-label="Search notebook">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>`
+                 <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
+                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                 <span class="dockRule" aria-hidden="true"></span>
+                 <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>`
           }
-          <span class="dockRule" aria-hidden="true"></span>
-          <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-          <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
-          <span class="dockRule" aria-hidden="true"></span>
-          <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
         </div>
       </div>`;
   }
@@ -638,6 +683,38 @@
       </section>`;
   }
 
+  /* One control, in the place the words are written, saying where they
+     will go. It is not a taxonomy the person has to learn: it opens on
+     the thing the house is facing and it is one press to change. */
+  function filingChip() {
+    const about = N.subjects[filing];
+    return `
+      <span class="filing">
+        <button class="filingBtn" type="button" data-act="filing" aria-haspopup="listbox" aria-expanded="${picker === "capture"}"
+          aria-label="Filing this under ${attr(about.label)}${about.when ? `, ${attr(about.when)}` : ""}. Change it.">
+          ${I.keep}<span>${esc(about.label)}</span>${I.chevron}
+        </button>
+        ${picker === "capture" ? subjectList("capture") : ""}
+      </span>`;
+  }
+
+  function subjectList(which) {
+    return `
+      <span class="pickerPop" role="listbox" aria-label="What is this about">
+        ${Object.entries(N.subjects)
+          .sort((a, b) => a[1].stake - b[1].stake || (a[1].days ?? 99) - (b[1].days ?? 99))
+          .map(
+            ([key, about]) => `
+          <button class="pickerRow" type="button" role="option" aria-selected="${key === filing}"
+            data-act="file-${which}" data-key="${attr(key)}">
+            <span>${esc(about.label)}</span>
+            <em>${about.when ? esc(about.when) : "No date"}</em>
+          </button>`,
+          )
+          .join("")}
+      </span>`;
+  }
+
   function topSheet() {
     /* On a phone the desk stands down entirely and the dock carries
        capture, so there is no top sheet to render. */
@@ -648,13 +725,14 @@
       `<div class="top"${live}${isSettling}>
         <textarea class="topField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
         <div class="topFoot">
+          ${filingChip()}
           <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
           <button class="verb" type="button" data-act="photo">${I.photo}Read a photo</button>
           <span class="spacer"></span>
           ${
             draft.trim()
               ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
-                 <button class="act" data-ink type="button" data-act="keep">${I.check}Put it on the pile<kbd>${MOD}+Enter</kbd></button>`
+                 <button class="act" data-ink type="button" data-act="keep">${I.check}Keep it<kbd>${MOD}+Enter</kbd></button>`
               : `<span class="topMeta">Nobody else can read this</span>`
           }
         </div>
@@ -695,7 +773,6 @@
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
           <button class="act" data-primary type="button" data-act="send">${I.send}${esc(N.copy.send)}</button>
         </div>
-        <p class="peelWhy">${esc(N.copy.payload)}</p>
       </div>`;
   }
 
@@ -722,7 +799,7 @@
             <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}</span>
           </p>
           <p class="readBody">${bodyHtml}</p>
-          ${sentTask ? "" : `<p class="stays">${I.lock}${esc(N.copy.stayedPut)}</p>`}
+
         </div>`,
         { behind: 1, label: `Turning a note into a task: ${note.title}`, under: peelPanel(note) },
       );
@@ -732,7 +809,14 @@
         <p class="readSrc">
           ${I[src.icon]}<span>${src.label}</span>
           <span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>
-          <span class="sep" aria-hidden="true"></span><span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>
+          <span class="sep" aria-hidden="true"></span>
+          <span class="filing">
+            <button class="filingBtn" type="button" data-act="refile" aria-haspopup="listbox" aria-expanded="${picker === "note"}"
+              aria-label="This note is about ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
+              <span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>${I.chevron}
+            </button>
+            ${picker === "note" ? subjectList("note") : ""}
+          </span>
           ${note.edited ? '<span class="sep" aria-hidden="true"></span><span>edited</span>' : ""}
           ${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks as <a href="#tasks">${esc(note.task || "a task")}</a></span>` : ""}
         </p>
@@ -740,7 +824,7 @@
         ${picked ? `<div class="pickBar"><span class="pickCount tab">${picked.split(/\s+/).length} words picked</span><button class="act" data-ink type="button" data-act="peel">${I.tasks}${esc(N.copy.begin)}</button></div>` : ""}
         ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
         <div class="topFoot">
-          <button class="act" data-primary type="button" data-act="peel">${I.tasks}Turn into a task</button>
+          <button class="act" data-primary type="button" data-act="peel">${I.tasks}Send to Tasks</button>
           <button class="act" type="button" data-act="timeline">${I.share}Send to Timeline</button>
           <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>
           <span class="spacer"></span>
@@ -762,6 +846,12 @@
     return safe.replace(new RegExp(`(${needle})`, "gi"), "<mark>$1</mark>");
   }
 
+  /* Whatever list is on screen owns the tab stop. moveCursor walks the
+     notebook, and two states render a different list, so in those states
+     the index had no tabindex="0" at all and thirty tab presses never
+     reached a row. */
+  let listed = [];
+
   function idxRow(note, opts) {
     const o = opts || {};
     const src = N.sources[note.source];
@@ -776,7 +866,7 @@
     const name = crossed
       ? `${note.task}. In Tasks, ${note.lane}. Crossed ${when}. The note it came from stayed in Notes.`
       : `${note.title} ${note.rest || ""}`.trim() +
-        `. ${src.label}. ${note.when}.${note.pending ? " To decide." : note.sent ? " In Tasks." : " Kept."}`;
+        `. ${src.label}. ${note.when}.${note.pending ? " Still to decide." : note.sent ? " In Tasks." : " Kept."}`;
     const tag = crossed
       ? `<span class="idxTag">${esc(note.lane)}</span>`
       : note.sent
@@ -788,7 +878,7 @@
     const open = note.id === openId ? " data-open" : "";
     const arrivingNow = note.id === arriving ? " data-arriving" : "";
     return `
-      <button class="idxRow" type="button" data-id="${attr(note.id)}"${cursor}${open}${arrivingNow}
+      <button class="idxRow" type="button" role="listitem" data-id="${attr(note.id)}"${cursor}${open}${arrivingNow}
         tabindex="${note.id === cursorId ? "0" : "-1"}"
         aria-label="${attr(name)}">
         <span class="idxMark" aria-hidden="true">${crossed ? I.tasks : I[src.icon]}${!crossed && note.pending ? "<i></i>" : ""}</span>
@@ -841,7 +931,9 @@
               : about.days === 0
                 ? `${about.when}, today`
                 : `${about.when}, in ${about.days} day${about.days === 1 ? "" : "s"}`,
-          tail: waiting ? `${waiting} to decide` : "",
+          tail: waiting ? `${waiting} still to decide` : "",
+          soon: about.days !== null && about.days <= 7,
+          undated: about.days === null,
           rows: bag.get(key),
         };
       });
@@ -868,13 +960,18 @@
 
   function indexOf(notes, opts) {
     const o = opts || {};
+    listed = notes;
+    if (!notes.some((n) => n.id === cursorId)) cursorId = (notes[0] || {}).id || null;
     const rows = [];
     if (o.noDays) {
       for (const note of notes) rows.push(idxRow(note, o));
     } else {
       for (const g of groupsOf(notes)) {
+        /* The subject rules carry the whole structural answer, and on the
+           accessibility tree they resolved to nothing at all. They are
+           headings, because that is what they are. */
         rows.push(
-          `<p class="idxDay">${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</p>`,
+          `<h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>`,
         );
         for (const note of g.rows) rows.push(idxRow(note, o));
       }
@@ -883,11 +980,11 @@
     return `
       <div class="indexWrap">
         <div class="indexHead">
-          <span>${esc(o.title || "The pile")}</span>
+          <span>${esc(o.title || "Your notes")}</span>
           <span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>
           ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
-        <div class="index" id="index" role="list" aria-label="${attr(o.title || "The pile")}">${rows.join("")}</div>
+        <div class="index" id="index" role="list" aria-label="${attr(o.title || "Your notes")}">${rows.join("")}</div>
       </div>`;
   }
 
@@ -900,7 +997,7 @@
     const c = counts();
     return {
       desk: open ? readSheet(open) : topSheet(),
-      body: indexOf(rows, { title: "The pile", count: `${c.total} notes` }),
+      body: indexOf(rows, { title: "Your notes", count: `${c.total} notes` }),
       dock: true,
     };
   };
@@ -916,7 +1013,7 @@
               <p class="readSrc">${I.typed}<span>Written</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(N.long.when)}</span><span class="sep" aria-hidden="true"></span><span>${N.long.words} words</span></p>
               <p class="readBody readLong">${esc(N.long.body)}</p>
               <div class="topFoot">
-                <button class="act" data-primary type="button" data-act="peel">${I.tasks}Turn into a task</button>
+                <button class="act" data-primary type="button" data-act="peel">${I.tasks}Send to Tasks</button>
                 <button class="act" data-quiet type="button" data-act="more" aria-label="More actions for this note">${I.dots}</button>
                 <span class="spacer"></span>
                 <button class="act" data-quiet type="button" data-act="close">Put it back<kbd>Esc</kbd></button>
@@ -925,9 +1022,8 @@
             { behind: 1, label: `Reading: ${N.long.title}` },
           ),
       body: indexOf(visible(), {
-        title: "The pile",
+        title: "Your notes",
         count: `${counts().total} notes, peak season, an extension of the fixture`,
-        noDays: true,
       }),
       dock: true,
     };
@@ -951,12 +1047,12 @@
             <p class="emptyBody">${decided.length} notes went through. ${decided.filter((d) => d.kind === "task").length} became tasks and the rest stayed here.</p>
             <div class="emptyMove">
               <button class="act" data-ink type="button" data-act="tasks">${I.tasks}See them in Tasks</button>
-              <button class="act" type="button" data-act="notebook">${I.arrowRight}Back to the pile</button>
+              <button class="act" type="button" data-act="notebook">${I.arrowRight}Back to your notes</button>
             </div>
           </div>`,
           { behind: 0, label: "Nothing left to decide" },
         ),
-        body: indexOf(work().filter((n) => !n.pending).slice(0, 8), { title: "The pile", count: `${counts().total} notes`, noDays: true }),
+        body: indexOf(work().filter((n) => !n.pending).slice(0, 8), { title: "Your notes", count: `${counts().total} notes`, noDays: true }),
         dock: true,
       };
     }
@@ -977,12 +1073,12 @@
               <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span></p>
               <p class="handBody">${esc(note.body)}</p>
               <div class="handFoot">
-                <button class="act" data-primary type="button" data-act="d-task">${I.tasks}Turn into a task<kbd>T</kbd></button>
+                <button class="act" data-primary type="button" data-act="d-task">${I.tasks}Send to Tasks<kbd>T</kbd></button>
                 <button class="act" type="button" data-act="d-keep">${I.keep}Just keep it<kbd>K</kbd></button>
                 <span class="spacer"></span>
                 <button class="act" data-quiet type="button" data-act="d-later">Decide later</button>
                 <button class="act" data-quiet data-destroy type="button" data-act="d-delete">${I.trash}Delete</button>
-                <button class="act" data-quiet type="button" data-act="notebook">Back to the pile<kbd>Esc</kbd></button>
+                <button class="act" data-quiet type="button" data-act="notebook">Back to your notes<kbd>Esc</kbd></button>
               </div>
             </article>
             </div>
@@ -994,7 +1090,7 @@
             }</p>
           </div>
         </section>`,
-      body: indexOf(queue().slice(queueAt + 1), { title: "Still in the hand", count: `${Math.max(0, left - 1)} left`, noDays: true }),
+      body: indexOf(queue().slice(queueAt + 1), { title: "Still to decide", count: `${Math.max(0, left - 1)} left`, noDays: true }),
       dock: true,
     };
   };
@@ -1047,12 +1143,12 @@
           <span class="spacer"></span>
           <span class="topMeta">${pieces.length} note${pieces.length === 1 ? "" : "s"}, not one</span>
           <button class="act" data-quiet type="button" data-act="discard-speech">Discard</button>
-          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Put ${pieces.length === 1 ? "it" : "both"} on the pile</button>
+          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Keep ${pieces.length === 1 ? "it" : "both"}</button>
         </div>
       </div>`,
       { behind: 1, label: "What came back" },
     ),
-    body: indexOf(work().slice(0, 8), { title: "The pile", count: `${counts().total} notes` }),
+    body: indexOf(work().slice(0, 8), { title: "Your notes", count: `${counts().total} notes` }),
     dock: true,
   });
 
@@ -1133,7 +1229,7 @@
             }</p>
             <div class="emptyMove">
               ${near ? `<button class="act" data-ink type="button" data-act="nearest" data-id="${attr(near.id)}">${I.arrowRight}Open that one</button>` : ""}
-              <button class="act" ${near ? 'data-quiet' : 'data-ink'} type="button" data-act="clear-search">Back to the pile</button>
+              <button class="act" ${near ? 'data-quiet' : 'data-ink'} type="button" data-act="clear-search">Back to your notes</button>
             </div>
           </div>`,
       }),
@@ -1181,7 +1277,7 @@
             </div>
             <div class="spec">
               <p class="specName">After a clear-out</p>
-              <h3 class="emptyTitle">Your pile is empty again.</h3>
+              <h3 class="emptyTitle">Your notes are empty again.</h3>
               <p class="emptyBody">Fourteen notes went to Tasks or were deleted. Nothing is waiting on you.</p>
               <div class="emptyMove"><button class="act" type="button" data-act="undo-delete">${I.undo}Undo the last delete</button></div>
               <p class="specWhy">An empty that follows an action is a different empty from a first-use one, and it offers the way back.</p>
@@ -1213,7 +1309,7 @@
               ${I.wifiOff}
               <div>
                 <b>Held on this device</b>
-                <p>You are offline, so this one is saved here. Notes will put it on the pile the moment you reconnect. Nothing is lost and nothing has left.</p>
+                <p>You are offline, so this one is saved here. Notes will put it in your notes the moment you reconnect. Nothing is lost and nothing has left.</p>
               </div>
             </div>
             <div class="state">
@@ -1248,7 +1344,7 @@
                     `<div class="skelRow" aria-hidden="true"><div class="sk" style="width:${w}%"></div><div class="sk" style="width:${Math.round(w * 0.6)}%"></div></div>`,
                 )
                 .join("")}
-              <p class="skelSay" role="status">Opening your notebook. Fourteen notes, newest first.</p>
+              <p class="skelSay" role="status">Opening your notes. Fourteen of them, by what each one is about.</p>
             </div>
           </div>
         </div>
@@ -1286,7 +1382,7 @@
     const s = build();
     mount.innerHTML = `
       <div class="floor">
-        ${rail()}
+        ${phone.matches ? "" : rail()}
         <main class="sheet">
           ${head()}
           ${s.desk || ""}
@@ -1391,6 +1487,10 @@
   });
 
   mount.addEventListener("click", (e) => {
+    if (picker && !e.target.closest(".filing")) {
+      picker = null;
+      paint();
+    }
     const row = e.target.closest(".idxRow");
     if (row) {
       openNote(row.dataset.id);
@@ -1399,6 +1499,36 @@
     const act = e.target.closest("[data-act]");
     if (!act) return;
     const a = act.dataset.act;
+    if (a === "filing" || a === "refile") {
+      picker = picker ? null : a === "filing" ? "capture" : "note";
+      refocus = { kind: "act", sel: `[data-act="${a}"]` };
+      paint();
+      return;
+    }
+    if (a === "file-capture" || a === "file-note") {
+      const key = act.dataset.key;
+      const about = N.subjects[key];
+      if (a === "file-capture") {
+        filing = key;
+        say(`Filing under ${about.label}${about.when ? `, ${about.when}` : ""}.`);
+      } else {
+        const note = work().find((n) => n.id === openId);
+        if (note) {
+          const was = note.aboutKey;
+          note.about = about;
+          note.aboutKey = key;
+          say(`Moved to ${about.label}.`);
+          offerUndo(`Moved to ${about.label}.`, () => {
+            note.about = N.subjects[was];
+            note.aboutKey = was;
+          });
+        }
+      }
+      picker = null;
+      refocus = { kind: "act", sel: a === "file-capture" ? '[data-act="filing"]' : '[data-act="refile"]' };
+      paint();
+      return;
+    }
     if (a === "group-day" || a === "group-about") {
       group = a === "group-day" ? "day" : "about";
       say(group === "about" ? "Grouped by what each note is about." : "Grouped by when each note was written.");
@@ -1466,7 +1596,7 @@
     else if (a === "undo") doUndo();
     else if (a === "review") {
       state = "review";
-      say(`${counts().pending} to decide.`);
+      say(`${counts().pending} still to decide.`);
       paint();
     } else if (a === "notebook" || a === "tasks") {
       state = "notebook";
@@ -1525,7 +1655,7 @@
       for (const note of [...made].reverse()) work().unshift(note);
       state = "notebook";
       arriving = made.length ? made[0].id : null;
-      say(`${made.length} note${made.length === 1 ? "" : "s"} on the pile. ${counts().total} in the notebook.`);
+      say(`${made.length} note${made.length === 1 ? "" : "s"} kept. ${counts().total} in the notebook.`);
       offerUndo(`${made.length} kept from what you said.`, () => {
         WORK = work().filter((n) => !made.includes(n));
         state = "readback";
@@ -1571,6 +1701,12 @@
       return;
     }
     if (e.key === "Escape") {
+      if (picker) {
+        e.preventDefault();
+        picker = null;
+        paint();
+        return;
+      }
       if (peeling) {
         e.preventDefault();
         cancelPeel();
@@ -1579,7 +1715,7 @@
       if (state === "review") {
         e.preventDefault();
         state = "notebook";
-        say("Back to the pile.");
+        say("Back to your notes.");
         paint();
         return;
       }
