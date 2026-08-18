@@ -10,8 +10,10 @@
  * this file renders the same board over the live workspace store.
  *
  * What the direction locks:
- *   · Three colours. Ink #111111, Indigo #4f46e5, White #ffffff, and tints
- *     of those three at stated alpha. Status is carried by ink density and
+ *   · Three colours, all from tokens.css: --ink, --indigo-600 and --paper,
+ *     and tints of those three at stated alpha. The board names no value of
+ *     its own, because a second copy of a colour is a second place it drifts
+ *     from. Status is carried by ink density and
  *     fill, never by hue — so there is no amber lane, no green tick and no
  *     red overdue here on purpose.
  *   · One chip grammar. Every time fact is a point in time; the fill says
@@ -24,11 +26,15 @@
  * existing store's — this file replaces the rendering, nothing else.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
+import { LANE_NOTE } from "./floor-workspace";
 import { labelById } from "@/components/hybrid/fixtures";
 import type { LabTask } from "@/components/hybrid/types";
+import { useFloorPlace } from "./use-floor-place";
+import { useFloorFlight } from "./use-floor-flight";
+import { useFloorUndo, type FloorAct } from "./use-floor-undo";
 import styles from "./floor.module.css";
 
 /** The label registry is module state in the hybrid tree. */
@@ -136,16 +142,23 @@ const Plus = () => (
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
-const Note = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5" />
-  </svg>
-);
 const Comment = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-4.4A8.4 8.4 0 1 1 21 11.5z" />
   </svg>
 );
+
+/** The keycap says what this keyboard actually has on it. */
+const MOD = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
+  ? "⌘"
+  : "Ctrl ";
+
+function shortTitle(title: string): string {
+  if (title.length <= 48) return title;
+  const words = title.slice(0, 48).split(" ");
+  words.pop();
+  return `${words.join(" ")}…`;
+}
 
 /* ── the card ──────────────────────────────────────────────────── */
 
@@ -176,6 +189,7 @@ function FloorCard({
   const priority = task.priority === "high" || task.priority === "urgent"
     ? task.priority === "urgent" ? "Urgent" : "High"
     : null;
+  const bare = !client && !tag && !priority && !task.comments.length;
   const described = [
     time.said,
     task.description,
@@ -199,6 +213,7 @@ function FloorCard({
       {...(open ? { "data-open": "" } : {})}
       {...(done ? { "data-done": "" } : {})}
       {...(task.schedule.kind === "milestone" ? { "data-next": "" } : {})}
+      {...(bare ? { "data-bare": "" } : {})}
     >
       <button
         type="button"
@@ -220,11 +235,11 @@ function FloorCard({
             {time.label}
           </span>
         )}
-        <p className={styles.cardTitle} id={`ft-${task.id}`}>{bindName(task.title)}</p>
+        <p className={styles.cardTitle} data-trim="title" data-clip="row" id={`ft-${task.id}`}>{bindName(task.title)}</p>
         <span className={styles.sr} id={`fd-${task.id}`}>{described}.</span>
       </div>
 
-      {task.description && <p className={styles.cardNote}>{task.description}</p>}
+      {task.description && <p className={styles.cardNote} data-trim="note">{task.description}</p>}
 
       <div className={styles.cardFoot}>
         {client && (
@@ -245,7 +260,6 @@ function FloorCard({
         {task.comments.length > 0 && (
           <span className={styles.cm}><Comment />{task.comments.length}</span>
         )}
-        {task.description && <span className={styles.grow} title="Has a note"><Note /></span>}
         <button
           type="button"
           className={styles.cardDots}
@@ -268,9 +282,15 @@ function FloorCard({
 export type FloorBoardProps = {
   /** The set the view tools have already filtered and sorted. */
   tasks: LabTask[];
+  /** The header's own filters, so the board and the facts agree. */
+  lateOnly?: boolean;
+  todayOnly?: boolean;
+  onClearHeaderFilters?: () => void;
 };
 
-export function FloorBoard({ tasks }: FloorBoardProps) {
+export function FloorBoard({
+  tasks, lateOnly = false, todayOnly = false, onClearHeaderFilters,
+}: FloorBoardProps) {
   const store = useLabStore();
   const columns = useBoardColumns();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -287,7 +307,6 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
   const [draftLane, setDraftLane] = useState<string | null>(null);
   const [draftText, setDraftText] = useState("");
   const overRef = useRef<{ lane: string; index: number } | null>(null);
-
   /* The venue's own grouping. A client is a label that names a couple —
      the board's convention is an ampersand between two given names. */
   const clientOf = useCallback((task: LabTask): string | null => {
@@ -299,19 +318,88 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
     return label && !label.includes("&") ? label : null;
   }, []);
 
-  const filtering = Boolean(clientOnly);
+  /* The board can be asked more than one question at once; the predicate
+     intersects them and the sentence is composed from whichever are live. */
+  const filtering = Boolean(clientOnly) || lateOnly || todayOnly;
 
   const rowsFor = useCallback(
     (column: { key: string; isDone: boolean }) => {
       let rows = tasks.filter((t) => t.status === column.key).sort((a, b) => a.order - b.order);
+      if (lateOnly) rows = rows.filter((t) => timeOf(t, column.isDone, today).kind === "overdue");
+      if (todayOnly) rows = rows.filter((t) => timeOf(t, column.isDone, today).kind === "today");
       if (clientOnly) rows = rows.filter((t) => clientOf(t) === clientOnly);
       return rows;
     },
-    [tasks, clientOnly, clientOf],
+    [tasks, clientOnly, clientOf, lateOnly, todayOnly, today],
   );
 
   const all = tasks;
   const totalShown = columns.reduce((n, c) => n + rowsFor(c).length, 0);
+
+  const snapWas = useRef<string | null>(null);
+  const edgeFrame = useRef(0);
+
+  /* Place, truth and travel are all measured after layout, so they live in
+     their own hooks rather than in the render. */
+  const version = `${tasks.map((t) => `${t.id}:${t.status}:${t.completed ? 1 : 0}`).join()}|${openNoteId}|${carriedId}|${draftLane}|${clientOnly}|${lateOnly}|${todayOnly}`;
+  const place = useFloorPlace(rootRef, version);
+  const flight = useFloorFlight(rootRef, styles.cardGhost, version);
+
+  /* Reversing an act runs through the same paths that made it, so an undone
+     completion travels back exactly as it travelled out. */
+  const undo = useFloorUndo(
+    useCallback((act: FloorAct) => {
+      place.capture();
+      if (act.kind === "done") {
+        flight.arm(act.id);
+        store.toggleComplete(act.id);
+        store.setPreview?.(null);
+      } else if (act.kind === "move") {
+        flight.arm(act.id);
+        store.moveStatus(act.id, act.lane, act.index);
+      } else {
+        store.deleteTask(act.id);
+      }
+      place.wantFocus(act.kind === "add" ? null : act.id);
+      setFocusId(act.kind === "add" ? null : act.id);
+    }, [flight, place, store]),
+  );
+
+  /* Every route to a change goes through these, so no route can be the one
+     that forgets the flight, the record or the operator's place. */
+  const complete = useCallback((id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const done = task.completed || columns.find((c) => c.key === task.status)?.isDone;
+    place.capture();
+    flight.arm(id);
+    store.toggleComplete(id);
+    if (done) undo.forget(id, "done");
+    else undo.arm({ kind: "done", id, title: task.title });
+    place.wantFocus(id);
+    setFocusId(id);
+  }, [tasks, columns, place, flight, store, undo]);
+
+  const move = useCallback((id: string, lane: string, index: number, record = true) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const at = columns.findIndex((c) => c.key === task.status);
+    const from = { lane: task.status, index: Math.max(0, rowsFor(columns[at] ?? columns[0]).findIndex((t) => t.id === id)) };
+    const toDone = columns.find((c) => c.key === lane)?.isDone;
+    place.capture();
+    flight.arm(id);
+    store.moveStatus(id, lane, index);
+    if (!record) return;
+    /* A move into Done is a completion, whichever route took it there. */
+    if (toDone && !columns.find((c) => c.key === from.lane)?.isDone) {
+      undo.arm({ kind: "done", id, title: task.title });
+    } else {
+      undo.arm({ kind: "move", id, title: task.title, lane: from.lane, index: from.index, toLane: lane });
+    }
+    place.wantFocus(id);
+    setFocusId(id);
+  }, [tasks, columns, rowsFor, place, flight, store, undo]);
+
   /* The board's single tab stop. */
   const ordered = columns.flatMap((c) => rowsFor(c).map((t) => t.id));
   const stopId = focusId && ordered.includes(focusId) ? focusId : ordered[0] ?? null;
@@ -319,13 +407,26 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
   const filterSentence = useCallback(() => {
     if (!filtering) return "Showing all work.";
     const rest = all.length - totalShown;
-    const what = `for ${clientOnly}`;
+    const what = [
+      clientOnly ? `for ${clientOnly}` : "",
+      lateOnly ? "overdue" : "",
+      todayOnly ? "due today" : "",
+    ].filter(Boolean).join(", ");
     return `${totalShown
       ? `Showing the ${totalShown} ${totalShown === 1 ? "task" : "tasks"} ${what}. `
       : `Nothing ${what}. `}${rest} ${rest === 1 ? "other is" : "others are"} hidden.`;
-  }, [filtering, all.length, totalShown, clientOnly]);
+  }, [filtering, all.length, totalShown, clientOnly, lateOnly, todayOnly]);
 
-  const clearFilters = useCallback(() => setClientOnly(null), []);
+  /** A lane by the name the operator sees on the column. */
+  const laneName = useCallback(
+    (key: string) => columns.find((c) => c.key === key)?.name ?? key,
+    [columns],
+  );
+
+  const clearFilters = useCallback(() => {
+    setClientOnly(null);
+    onClearHeaderFilters?.();
+  }, [onClearHeaderFilters]);
 
   /* ── keyboard ──────────────────────────────────────────────── */
   const onKeyDown = useCallback(
@@ -333,6 +434,11 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
       const target = event.target as HTMLElement;
       if (target.closest("[contenteditable=true], input, textarea")) return;
 
+      if ((event.metaKey || event.ctrlKey) && (event.key === "z" || event.key === "Z")) {
+        event.preventDefault();
+        undo.undo();
+        return;
+      }
       if (event.key === "Escape") {
         if (menuFor) { event.preventDefault(); setMenuFor(null); return; }
         if (carriedId && carriedFrom.current) {
@@ -352,7 +458,7 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
       if (target.closest("[data-act]") && (event.key === " " || event.key === "Enter")) return;
       setFocusId(id);
 
-      const place = () => {
+      const locate = () => {
         for (let x = 0; x < columns.length; x += 1) {
           const rows = rowsFor(columns[x]);
           const y = rows.findIndex((t) => t.id === id);
@@ -364,7 +470,7 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
       if (event.key === " ") {
         event.preventDefault();
         if (carriedId === id) { setCarriedId(null); carriedFrom.current = null; return; }
-        const at = place();
+        const at = locate();
         if (at) { carriedFrom.current = { status: columns[at.x].key, index: at.y }; setCarriedId(id); }
         return;
       }
@@ -379,17 +485,19 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
       const dir = DIR[event.key];
       if (!dir) return;
       event.preventDefault();
-      const at = place();
+      const at = locate();
       if (!at) return;
       const [dx, dy] = dir;
       if (carriedId === id) {
         if (dy) {
           const to = Math.max(0, Math.min(at.rows.length - 1, at.y + dy));
-          if (to !== at.y) store.moveStatus(id, columns[at.x].key, to);
+          if (to !== at.y) { place.capture(); store.moveStatus(id, columns[at.x].key, to); place.wantFocus(id); }
         } else {
           const x = at.x + dx;
           if (x >= 0 && x < columns.length) {
+            place.capture();
             store.moveStatus(id, columns[x].key, Math.min(at.y, rowsFor(columns[x]).length));
+            place.wantFocus(id);
           }
         }
         return;
@@ -404,31 +512,32 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
         if (rows.length) { setFocusId(rows[Math.min(at.y, rows.length - 1)].id); return; }
       }
     },
-    [menuFor, carriedId, openNoteId, clientOnly, columns, rowsFor, store],
+    [menuFor, carriedId, openNoteId, clientOnly, columns, rowsFor, store, place, undo],
   );
 
-  /* Focus follows the roving stop when the keyboard moved it. */
-  useEffect(() => {
-    if (!stopId) return;
-    const active = document.activeElement as HTMLElement | null;
-    if (!active || !rootRef.current?.contains(active)) return;
-    if (active.closest(`[data-id="${stopId}"]`)) return;
-    const node = rootRef.current.querySelector<HTMLElement>(`[data-id="${stopId}"]`);
-    node?.focus({ preventScroll: true });
-    node?.scrollIntoView({ block: "nearest" });
-  }, [stopId, carriedId]);
+
 
   /* ── pointer drag ──────────────────────────────────────────── */
   const onDragStart = (event: React.DragEvent, id: string) => {
     const at = columns.findIndex((c) => rowsFor(c).some((t) => t.id === id));
     carriedFrom.current = { status: columns[at]?.key ?? columns[0].key, index: 0 };
     setCarriedId(id);
+    undo.hold();
+    /* Mandatory snap re-snaps every per-frame nudge, so it stands down for
+       the length of the gesture. */
+    const board = rootRef.current?.querySelector<HTMLElement>("[data-board]");
+    if (board) {
+      snapWas.current = board.style.scrollSnapType;
+      board.style.scrollSnapType = "none";
+    }
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", id);
   };
   const onDragOver = (event: React.DragEvent, lane: string) => {
     if (!carriedId) return;
     event.preventDefault();
+    const board = rootRef.current?.querySelector<HTMLElement>("[data-board]");
+    if (board) edgeScroll(board, event.clientX);
     const body = (event.currentTarget as HTMLElement).querySelector(`.${styles.trayBody}`);
     let index = 0;
     if (body) {
@@ -442,28 +551,75 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
     overRef.current = { lane, index };
   };
   const onDrop = (event: React.DragEvent) => {
+    stopEdge();
     if (!carriedId || !overRef.current) return;
     event.preventDefault();
-    store.moveStatus(carriedId, overRef.current.lane, overRef.current.index);
-    setFocusId(carriedId);
+    const origin = carriedFrom.current;
+    /* Picking a card up and putting it back is a non-event; it used to arm an
+       undo and announce a move. */
+    if (origin && overRef.current.lane === origin.status && overRef.current.index === origin.index) {
+      setCarriedId(null); carriedFrom.current = null; overRef.current = null;
+      return;
+    }
+    move(carriedId, overRef.current.lane, overRef.current.index);
     setCarriedId(null); carriedFrom.current = null; overRef.current = null;
   };
+
+  /* Holding a card at the edge walks the board across. Without it, at 768
+     three of five columns cannot be reached by drag at all. */
+  const stopEdge = useCallback(() => {
+    cancelAnimationFrame(edgeFrame.current);
+    edgeFrame.current = 0;
+    const board = rootRef.current?.querySelector<HTMLElement>("[data-board]");
+    if (board && snapWas.current !== null) {
+      board.style.scrollSnapType = snapWas.current;
+      snapWas.current = null;
+    }
+  }, []);
+
+  const edgeScroll = useCallback((board: HTMLElement, x: number) => {
+    const box = board.getBoundingClientRect();
+    const step = x < box.left + 64 ? -14 : x > box.right - 64 ? 14 : 0;
+    cancelAnimationFrame(edgeFrame.current);
+    edgeFrame.current = 0;
+    if (!step) return;
+    const run = () => {
+      board.scrollLeft += step;
+      edgeFrame.current = requestAnimationFrame(run);
+    };
+    edgeFrame.current = requestAnimationFrame(run);
+  }, []);
 
   /* ── the composer ──────────────────────────────────────────── */
   const commitDraft = (lane: string) => {
     const title = draftText.trim().replace(/\s+/g, " ");
     setDraftText("");
     if (!title) { setDraftLane(null); return; }
+    const before = new Set(tasks.map((t) => t.id));
     store.addTask(lane, undefined, title);
+    /* A task made under a filter used to be confirmed by name and be nowhere
+       on screen. */
     if (filtering) clearFilters();
+    /* Adding one task is rare; adding six on a Monday morning is the case. */
     setDraftLane(lane);
+    queueMicrotask(() => {
+      const made = store.tasks.find((t) => !before.has(t.id));
+      if (made) undo.arm({ kind: "add", id: made.id, title, toLane: lane });
+    });
   };
 
   return (
-    <div ref={rootRef} className={styles.boardHost} onKeyDown={onKeyDown}>
+    <div
+      ref={rootRef}
+      className={styles.boardHost}
+      onKeyDown={onKeyDown}
+      {...(filtering ? { "data-filtered": "" } : {})}
+    >
       {/* ── the board ─────────────────────────────────────── */}
         <div
           className={styles.board}
+          data-board=""
+          style={{ "--lanes": columns.length } as React.CSSProperties}
           role="application"
           aria-label="Task board, arrow keys to move between tasks, space to pick one up"
           onDrop={onDrop}
@@ -495,18 +651,33 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
                 <div className={styles.trayHead}>
                   <div className={styles.trayTop}>
                     <span className={styles.pip} aria-hidden="true" />
-                    <h2 className={styles.trayName}>{column.name}</h2>
+                    <h2 className={styles.trayName} id={`ln-${column.key}`}>{column.name}</h2>
                     <span className={styles.trayCount} aria-hidden="true">
                       {rows.length}
                       {filtering && <span className={styles.ofAll}> of {laneAll.length}</span>}
                     </span>
                   </div>
                   <p className={styles.trayNote} id={`fn-${column.key}`}>
-                    {filtering ? "" : column.description ?? ""}
+                    {filtering ? "" : column.description ?? LANE_NOTE[column.key] ?? ""}
                   </p>
                 </div>
 
-                <div className={styles.trayBody}>
+                {/* A column that overflows is a scrollable region, and a
+                    scrollable region with no keyboard route is a serious WCAG
+                    failure — one no visual reviewer caught and axe found in a
+                    single pass. The roving stop lives on the cards, so every
+                    column except the one holding it had no way in. Tab reaches
+                    the column; arrows then fall through to native scrolling,
+                    because the board's key handler only acts inside a card.
+                    Labelled by the heading already above it, so this adds a
+                    route without inventing a second name for the column. */}
+                <div
+                  className={styles.trayBody}
+                  data-tray-body=""
+                  tabIndex={0}
+                  role="group"
+                  aria-labelledby={`ln-${column.key}`}
+                >
                   {rows.map((task) => (
                     <FloorCard
                       key={task.id}
@@ -521,7 +692,7 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
                         clientOf={clientOf}
                         tagOf={tagOf}
                         menuOpen={menuFor === task.id}
-                        onTick={(id) => store.toggleComplete(id)}
+                        onTick={complete}
                         onClient={(name) => setClientOnly((p) => (p === name ? null : name))}
                         onMenu={(id, anchor) => {
                           const frame = rootRef.current!.getBoundingClientRect();
@@ -574,14 +745,54 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
           })}
         </div>
 
-        {/* ── the foot strip ────────────────────────────────── */}
-        {filtering && (
+        {all.length === 0 && (
+          <div className={styles.emptyBoard}>
+            <p>
+              <b>Nothing on the board yet.</b>
+              Put the first thing you have to do somewhere you will see it again.
+            </p>
+            <button type="button" onClick={() => { setDraftLane(columns[0]?.key ?? "todo"); setDraftText(""); }}>
+              <Plus />Add the first task
+            </button>
+          </div>
+        )}
+        {filtering && totalShown === 0 && (
+          <div className={styles.emptyBoard}>
+            <p><b>Nothing matches.</b>{filterSentence()}</p>
+            <button type="button" onClick={clearFilters}><Plus />Show all work</button>
+          </div>
+        )}
+
+        {/* ── the foot strip ────────────────────────────────────
+             The board's one statement of what it is doing to you: what is in
+             your hand, what you just did with the way back, or what is being
+             hidden. In that order — the hand always wins. */}
+        {!carriedId && undo.showing && (
+          <div
+            className={styles.carry}
+            onMouseEnter={undo.hold}
+            onMouseLeave={undo.release}
+            onFocus={undo.hold}
+            onBlur={undo.release}
+          >
+            <span className={styles.carryName}>
+              <b>{shortTitle(undo.showing.title)}</b>
+              {undo.showing.kind === "done" ? " done"
+                : undo.showing.kind === "add" ? ` added to ${laneName(undo.showing.toLane)}`
+                : ` moved to ${laneName(undo.showing.toLane)}`}
+            </span>
+            <button type="button" className={styles.carryDo} data-act="undo" onClick={undo.undo}>Undo</button>
+            {undo.depth > 1 && <em>{undo.depth - 1} more</em>}
+            <em><kbd>{MOD}Z</kbd></em>
+          </div>
+        )}
+        {!carriedId && !undo.showing && filtering && (
           <div className={styles.carry}>
             <span className={styles.carryName}>{filterSentence()}</span>
             <button type="button" className={styles.carryDo} onClick={clearFilters}>Show all</button>
           </div>
         )}
-        {!filtering && carriedId && (
+        {carriedId && (
           <div className={styles.carry}>
             <span className={styles.carryName}>
               <b>{store.taskById(carriedId)?.title ?? ""}</b>
@@ -609,7 +820,7 @@ export function FloorBoard({ tasks }: FloorBoardProps) {
                 type="button"
                 role="menuitem"
                 aria-current={store.taskById(menuFor)?.status === c.key ? true : undefined}
-                onClick={() => { store.moveStatus(menuFor, c.key, 0); setFocusId(menuFor); setMenuFor(null); }}
+                onClick={() => { move(menuFor, c.key, 0); setMenuFor(null); }}
               >
                 {c.name}
               </button>
