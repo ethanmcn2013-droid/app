@@ -85,3 +85,6 @@ t[0-9].mjs
 probe-tmp.mjs
 _*.mjs
 chk.mjs
+.seat-tmp/
+_seat/
+drive_tmp.mjs
