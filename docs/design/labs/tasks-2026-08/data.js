@@ -18,7 +18,7 @@ window.BOARD = {
   workspace: "The Orchard, events",
   season: "Wedding season",
   period: "6 Jul – 10 Oct",
-  operator: { name: "Orla", initials: "DO", role: "Demo operator" },
+  operator: { name: "Orla", initials: "OR", role: "Orla, venue manager" },
   progress: { done: 5, total: 13, overdue: 1, day: 11, of: 97, left: 86, undated: 5 },
   sidebar: {
     places: [
@@ -193,11 +193,11 @@ window.DENSE_EXTRA = [
   { lane: "review", title: "Sign off the new drinks list with the bar team", tag: "Bar", priority: "High" },
   {
     lane: "waiting",
-    title: "Waiting on the band's contract for the spring date",
+    title: "The band's contract for the spring date",
     tag: "Nora & Cian",
     note: "Sent Tuesday, no reply yet.",
   },
-  { lane: "waiting", title: "Waiting on Tom's guest number before we hold the room", tag: "Aisling & Tom" },
+  { lane: "waiting", title: "Tom's guest number, before we hold the room", tag: "Aisling & Tom" },
   { lane: "done", title: "Nora & Cian deposit received", tag: "Nora & Cian" },
   { lane: "done", title: "First call with Aisling & Tom", tag: "Aisling & Tom" },
   { lane: "done", title: "Gravel delivered for the top car park", tag: "Venue" },

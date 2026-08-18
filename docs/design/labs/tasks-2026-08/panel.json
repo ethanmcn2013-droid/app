@@ -64,6 +64,61 @@
           "done": "One grammar. Every chip states the day the work is due, formatted from real dates in the fixture against the pinned review clock. Lateness is carried entirely by the fill, which is what the direction claimed all along."
         }
       ]
+    },
+    {
+      "round": 2,
+      "scores": {
+        "UI composition": 7.6,
+        "Typography": 7.2,
+        "Interaction and states": 7.1,
+        "UX and information design": 7.4,
+        "Brand and copy": 7.6,
+        "Product taste and emotional resonance": 7.1,
+        "Measured evidence": 7.2
+      },
+      "findings": 35,
+      "confirmed": 17,
+      "refuted": 18,
+      "fixed": 17,
+      "headline": "Five of the seven seats independently found the same defect: the card's actions button was an opaque white square painting over content. On touch it severed every title mid-word; on hover it whited out most of the date chip, including the filled overdue chip the whole palette argument rests on.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 9.0,
+          "problem": "On coarse pointers the menu is a permanently visible 44x44 button with a white fill, over a title row that reserves no space for it. In the 390px frame all three visible titles are severed mid-word with no ellipsis.",
+          "done": "Reserving a gutter fixed it and cost the title a whole line, so the answer is structural instead. The top-right of a card belongs to the time fact; the menu moved to the end of the foot row where the card's other quiet facts already live. Nothing moves when it appears, and it can never paint on content."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 3.0,
+          "problem": "Drag is the board's defining gesture and it exists only for a pointer. There is no keyboard route for moving a task between columns, and at rest no card says it is draggable at all.",
+          "done": "Cards gained a grab cursor, and the keyboard move is specified, drawn and announced: space picks a card up into a lift without the tilt, the arrows walk it between columns. It has its own specimen on the card sheet."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 2.0,
+          "problem": "Opening Planning silently deletes a status column. Five trays at 238px need 1190px inside the 884px the drawer leaves, so Waiting is sliced mid-word and Done is gone entirely with no cue it exists.",
+          "done": "Five trays now fit the narrowed board, and whatever still runs past the edge snaps and dissolves rather than being guillotined. The same edge treatment turns on wherever the board overflows, which is every width below 1200."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.7,
+          "problem": "The board's grid row sizes to the tallest column, so every tray stretches to it and the tray's own overflow rule can never fire. Columns cannot scroll independently: reaching the foot of To do drags Done out of view.",
+          "done": "Each column is its own scroller now, and the dock's clearance sits at the foot of every one of them rather than once at the foot of the tallest."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.5,
+          "problem": "Every spine item and every view tab is an anchor with no href. An anchor without href carries no role, so the product's entire navigation was a row of focusable generics inside a nav containing no links, and no element carried aria-current.",
+          "done": "They are buttons with accessible names and aria-current, with a reset so the change costs no pixels. The phone rule also stopped hiding tiles by matching their tooltip text."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 1.0,
+          "problem": "Three of five columns state the same fact twice, three lines apart. Done reads 'Finished work stays visible.' then 'Finished work stays here, so you can see it.'",
+          "done": "One source per column. The tray note says what the column is for; the empty line says only that there is nothing in it, and only To do leads with an instruction, so an empty board has exactly one first move."
+        }
+      ]
     }
   ]
 }

@@ -375,6 +375,11 @@ body {
 .deck .trayCount, .deck .when, .deck .cardFoot .cm, .deck .ghost em, .deck .drawerTab em, .deck .axisEnds, .deck .axis {
   font-variant-numeric: tabular-nums;
 }
+.deck .sr {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 .deck a:focus-visible, .deck button:focus-visible, .deck [tabindex]:focus-visible {
   outline: 2px solid var(--indigo);
   outline-offset: 2px;
@@ -534,7 +539,8 @@ body {
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
   grid-auto-rows: 100%;
   gap: 0;
-  padding: 0 16px;
+  
+  padding: 0 16px 76px;
   
   overflow-x: auto; overflow-y: hidden;
   border-top: 1px solid var(--line-soft);
@@ -558,6 +564,7 @@ body {
 .deck .tray[data-tone="flight"] .pip { background: var(--ink-1); }
 .deck .tray[data-tone="done"] .pip { background: var(--ink-1); box-shadow: inset 0 0 0 1.5px var(--white); }
 .deck .trayName {
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase;
@@ -569,7 +576,7 @@ body {
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto;
   display: grid; gap: 8px; align-content: start;
-  padding: 2px 0 104px;
+  padding: 2px 0 8px;
 }
 .deck .card {
   position: relative;
@@ -604,33 +611,40 @@ body {
 .deck .tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
 .deck .tick:active { background: var(--line-strong); }
 .deck .tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
-.deck .cardTitleRow { grid-column: 2; grid-row: 1; display: flex; align-items: flex-start; gap: 10px; }
+.deck .cardTitleRow { grid-column: 2; grid-row: 1; display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
 .deck .cardTitle {
   font-size: 14px; line-height: 1.36; font-weight: 600;
   letter-spacing: -0.02em; color: var(--ink-1); margin: 0;
-  flex: 1 1 auto; min-width: 62%;
   
+  flex: 1 1 auto; min-width: 0;
   text-wrap: pretty;
   overflow-wrap: break-word;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  
+  display: block; max-height: calc(1.36em * 3); overflow: hidden;
 }
 .deck .cardNote {
   grid-column: 2; grid-row: 2;
   margin: 0; font-size: 13px; line-height: 1.45; font-weight: 400;
   color: var(--ink-2); letter-spacing: 0;
   text-wrap: pretty;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: block; max-height: calc(1.45em * 2); overflow: hidden;
 }
 .deck .cardFoot {
   grid-column: 2; grid-row: 3;
-  display: flex; align-items: center; flex-wrap: wrap; gap: 2px 10px;
-  min-height: 24px;
+  
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 10px;
+  min-height: 24px; min-width: 0;
   font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: 0;
+}
+.deck .cardFoot > .who, .deck .cardFoot > .tag, .deck .cardFoot > .hi {
+  flex: 0 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .deck .cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
 .deck .cardFoot .cm svg { width: 12px; height: 12px; }
-.deck .cardFoot .grow { margin-left: auto; display: inline-flex; }
+.deck .cardFoot .grow { margin-left: auto; display: inline-flex; flex: none; }
 .deck .cardFoot .grow + .cardDots { margin-left: 8px; }
+.deck .cardFoot .cm { flex: none; }
 .deck .cardFoot .grow svg { width: 13px; height: 13px; color: var(--ink-4); }
 .deck .cardDots {
   position: relative;
@@ -720,19 +734,17 @@ body {
   from { stroke-dasharray: 22; stroke-dashoffset: 22; }
   to   { stroke-dasharray: 22; stroke-dashoffset: 0; }
 }
+@keyframes settleIn {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: none; }
+}
 .deck .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
 .deck .card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
+.deck .card[data-just-done] { transition: box-shadow 320ms var(--curve); }
+.deck .card[data-just-done] .cardTitle { transition: color 320ms var(--curve); }
+.deck .trayCount[data-changed], .deck .headFacts b[data-changed] { animation: settleIn 320ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {
-.deck .card[data-just-done] .tick, .deck .card[data-just-done] .tick svg path { animation: none; }
-}
-.deck .dockScrim {
-  position: absolute; left: 50%; bottom: 0;
-  transform: translateX(-50%);
-  width: min(760px, 100%); height: 96px;
-  background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.92) 46%, var(--white) 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-  pointer-events: none; z-index: 2;
+.deck .card[data-just-done] .tick, .deck .card[data-just-done] .tick svg path, .deck .trayCount[data-changed], .deck .headFacts b[data-changed] { animation: none; }
 }
 .deck .dock {
   position: absolute; left: 50%; bottom: 18px;
@@ -831,12 +843,12 @@ body {
 .deck .drawerTab[data-active] { background: var(--wash); color: var(--ink-1); font-weight: 600; }
 .deck .drawerTab em { font-style: normal; font-size: 11px; margin-left: 6px; color: var(--ink-3); }
 .deck .drawerHelp { padding: 0 22px 12px; margin: 0; font-size: 12px; font-weight: 400; color: var(--ink-3); line-height: 1.5; }
-.deck .drawerHelp a {
-  color: var(--ink-1); text-decoration: none;
-  float: right; margin-left: 12px; font-weight: 600;
+.deck .drawerHelp .selectAll {
+  color: var(--ink-1);
+  float: right; margin-left: 12px; font-weight: 600; font-size: 13px;
   display: inline-flex; align-items: center; min-height: 28px;
 }
-.deck .drawerHelp a:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
+.deck .drawerHelp .selectAll:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
 .deck .drawerRows { overflow: auto; padding: 0 12px 16px; display: grid; gap: 4px; align-content: start; }
 .deck .drawerRow {
   display: flex; align-items: center; gap: 11px;
@@ -846,7 +858,14 @@ body {
   transition: background-color var(--dur) var(--curve);
 }
 .deck .drawerRow:hover { background: var(--wash); }
-.deck .box { width: 15px; height: 15px; border-radius: 4px; box-shadow: inset 0 0 0 1.4px var(--ink-4); flex: none; }
+.deck .box {
+  width: 15px; height: 15px; border-radius: 4px;
+  box-shadow: inset 0 0 0 1.4px var(--ink-4);
+  flex: none; padding: 0; position: relative;
+  transition: box-shadow var(--dur) var(--curve);
+}
+.deck .box::before { content: ""; position: absolute; inset: -8px; }
+.deck .box:hover { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
 .deck .drawerRow button {
   margin-left: auto; flex: none;
   display: inline-flex; align-items: center; gap: 4px;
@@ -885,6 +904,8 @@ body {
   display: flex; align-items: center;
 }
 .deck .specStage .card { max-width: 254px; }
+.deck .specTray { padding: 8px; border-left: 0; width: 254px; border-radius: var(--r-card); }
+.deck .specTray .trayBody { padding: 0; gap: 8px; overflow: visible; }
 .deck .specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 280px; }
 .deck .specLabel { max-width: 280px; }
 .deck .specIntro { max-width: 64ch; margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
@@ -919,8 +940,8 @@ body {
 .deck[data-radius="round"] .railTile, .deck[data-radius="round"] .railAdd { border-radius: 16px; }
 .deck[data-radius="round"] .specStage { border-radius: 16px; }
 .deck[data-density="compact"] .card { padding: 8px 10px 8px 9px; row-gap: 4px; column-gap: 7px; grid-template-columns: 20px minmax(0, 1fr); }
-.deck[data-density="compact"] .cardTitle { font-size: 13px; line-height: 1.32; }
-.deck[data-density="compact"] .cardNote { font-size: 12px; line-height: 1.38; -webkit-line-clamp: 1; }
+.deck[data-density="compact"] .cardTitle { font-size: 13px; line-height: 1.32; max-height: calc(1.32em * 2); }
+.deck[data-density="compact"] .cardNote { font-size: 12px; line-height: 1.38; max-height: 1.38em; }
 .deck[data-density="compact"] .cardFoot { min-height: 0; font-size: 11px; gap: 8px; }
 .deck[data-density="compact"] .trayBody { gap: 5px; }
 .deck[data-density="compact"] .tray { padding: 12px 9px 6px; }
@@ -969,15 +990,15 @@ body {
 .deck[data-w="390"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 .deck[data-w="768"] { --inset: 12px; }
 .deck[data-w="768"] .headFacts span { display: none; }
-.deck[data-w="768"] .headFacts .late { display: inline-flex; }
-.deck[data-w="768"] .headFacts { gap: 0; }
+.deck[data-w="768"] .headFacts .late, .deck[data-w="768"] .headFacts .ratio { display: inline-flex; }
+.deck[data-w="768"] .headFacts { gap: 12px; }
 .deck[data-w="768"] .dockField { min-width: 148px; }
 .deck[data-w="768"] .drawer { left: var(--inset); width: auto; }
 .deck[data-w="768"] .floor:has(.drawer) .sheet { margin-right: 0; }
 .deck[data-w="390"] { --inset: 12px; }
 .deck[data-w="390"] .headFacts span { display: none; }
-.deck[data-w="390"] .headFacts .late { display: inline-flex; }
-.deck[data-w="390"] .headFacts { gap: 0; }
+.deck[data-w="390"] .headFacts .late, .deck[data-w="390"] .headFacts .ratio { display: inline-flex; }
+.deck[data-w="390"] .headFacts { gap: 12px; }
 .deck[data-w="390"] .dockField { min-width: 148px; }
 .deck[data-w="390"] .drawer { left: var(--inset); width: auto; }
 .deck[data-w="390"] .floor:has(.drawer) .sheet { margin-right: 0; }
@@ -1023,7 +1044,7 @@ body {
 .deck[data-w="390"] .tray { scroll-snap-align: start; padding-bottom: 8px; }
 .deck[data-w="390"] .trayBody { padding-bottom: 4px; }
 .deck[data-w="390"] .sheet::after { display: none; }
-.deck[data-w="390"] .dock, .deck[data-w="390"] .dockScrim { display: none; }
+.deck[data-w="390"] .dock { display: none; }
 .deck[data-w="390"] .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
 .deck[data-w="390"] .loadSay { bottom: 16px; }
 .deck[data-w="390"] .spec { padding: 4px 16px 24px; }
@@ -1095,7 +1116,7 @@ window.BOARD = {
   workspace: "The Orchard, events",
   season: "Wedding season",
   period: "6 Jul – 10 Oct",
-  operator: { name: "Orla", initials: "DO", role: "Demo operator" },
+  operator: { name: "Orla", initials: "OR", role: "Orla, venue manager" },
   progress: { done: 5, total: 13, overdue: 1, day: 11, of: 97, left: 86, undated: 5 },
   sidebar: {
     places: [
@@ -1270,11 +1291,11 @@ window.DENSE_EXTRA = [
   { lane: "review", title: "Sign off the new drinks list with the bar team", tag: "Bar", priority: "High" },
   {
     lane: "waiting",
-    title: "Waiting on the band's contract for the spring date",
+    title: "The band's contract for the spring date",
     tag: "Nora & Cian",
     note: "Sent Tuesday, no reply yet.",
   },
-  { lane: "waiting", title: "Waiting on Tom's guest number before we hold the room", tag: "Aisling & Tom" },
+  { lane: "waiting", title: "Tom's guest number, before we hold the room", tag: "Aisling & Tom" },
   { lane: "done", title: "Nora & Cian deposit received", tag: "Nora & Cian" },
   { lane: "done", title: "First call with Aisling & Tom", tag: "Aisling & Tom" },
   { lane: "done", title: "Gravel delivered for the top car park", tag: "Venue" },
@@ -1387,6 +1408,13 @@ function tasksFor(lane) {
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+/* Every chip on every card was floating without an anchor: nothing anywhere
+   said what today is, so "14 Jul" could be two days late or two months. */
+function todayLabel() {
+  const today = new Date(Date.UTC(2026, 6, 16));
+  return DAYS[today.getUTCDay()] + " " + today.getUTCDate() + " " + MONTHS[today.getUTCMonth()];
+}
+
 /* The review clock is pinned, so "today" is a fact rather than a guess. */
 function dayLabel(iso) {
   const parts = String(iso).split("-").map(Number);
@@ -1409,12 +1437,17 @@ function timeOf(task) {
   return { kind: "soon", label };
 }
 
-function card(task, force) {
+/* One tab stop per column, not one per card. Crossing the dense board was
+   ninety-odd tab presses; the arrows walk the column and the roving stop
+   means Tab still crosses the whole board in five. */
+function card(task, force, first) {
   const done = task.lane === "done";
   const next = Boolean(task.milestone);
   const time = timeOf(task);
   const show = time.kind !== "none" && time.kind !== "done";
-  const label = time.kind === "milestone" ? I.milestone + esc(time.label) : esc(time.label);
+  const SPOKEN = { overdue: "Overdue, was due ", today: "Due ", soon: "Due ", milestone: "Milestone, " };
+  const spoken = '<span class="sr">' + (SPOKEN[time.kind] || "") + "</span>";
+  const label = spoken + (time.kind === "milestone" ? I.milestone : "") + esc(time.label);
 
   /* Which couple a task belongs to is the question a venue asks on a
      Saturday. Which area of the house it touches is background. They were
@@ -1429,8 +1462,8 @@ function card(task, force) {
   if (task.comments) bits.push('<span class="cm">' + I.comment + task.comments + "</span>");
 
   return (
-    '<article class="card" tabindex="0" aria-roledescription="Task, movable"' +
-    ' aria-keyshortcuts="Space ArrowLeft ArrowRight"' +
+    '<article class="card" tabindex="' + (first ? "0" : "-1") + '" aria-roledescription="Task, movable"' +
+    ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (done ? " data-done" : "") + (next ? " data-next" : "") +
     (force ? ' data-force="' + force + '"' : "") + ">" +
     '<button type="button" class="tick" role="checkbox" aria-checked="' + (done ? "true" : "false") +
@@ -1478,9 +1511,10 @@ function head() {
     '<span class="word">tasks</span><span class="headRule"></span>' +
     '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
     '<div class="headFacts">' +
-      (total ? "<span><b>" + done + "</b> of <b>" + total + "</b> done</span>" : "") +
+      '<span class="today">' + todayLabel() + "</span>" +
+      (total ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
       (overdue ? '<span class="late">' + overdue + " overdue</span>" : "") +
-      "<span>day " + p.day + " of " + p.of + "</span>" +
+      "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search">' + I.search + "</button>" +
@@ -1512,13 +1546,15 @@ function board() {
     B.columns.map((c) => {
       const rows = tasksFor(c.id);
       return (
-        '<section class="tray" data-tone="' + c.tone + '">' +
+        '<section class="tray" data-tone="' + c.tone + '" role="region" aria-label="' +
+          esc(c.name) + ", " + rows.length + (rows.length === 1 ? " task" : " tasks") + '">' +
         '<div class="trayHead"><div class="trayTop">' +
-          '<span class="pip"></span><span class="trayName">' + esc(c.name) + "</span>" +
-          '<span class="trayCount">' + rows.length + "</span></div>" +
+          '<span class="pip" aria-hidden="true"></span>' +
+          '<h2 class="trayName">' + esc(c.name) + "</h2>" +
+          '<span class="trayCount" aria-hidden="true">' + rows.length + "</span></div>" +
           '<p class="trayNote">' + esc(c.note) + "</p></div>" +
         '<div class="trayBody">' +
-          (rows.length ? rows.map((t) => card(t)).join("")
+          (rows.length ? rows.map((t, i) => card(t, null, i === 0)).join("")
             : '<p class="trayEmpty">' + esc(c.empty) + "</p>") +
         "</div>" +
         '<button class="trayAdd">' + I.plus + "<span>Add task</span></button>" +
@@ -1530,7 +1566,6 @@ function board() {
 
 function dock() {
   return (
-    '<span class="dockScrim" aria-hidden="true"></span>' +
     '<div class="dock">' +
       '<button class="dockField">' + I.search + "<span>Search this project</span><kbd>⌘K</kbd></button>" +
       '<button class="dockPrimary">' + I.plus + "<span>Add task</span></button>" +
@@ -1554,9 +1589,12 @@ function drawer() {
     '<div class="drawerTabs">' +
       '<button class="drawerTab" data-active>Unscheduled<em>' + p.unscheduled.length + "</em></button>" +
       '<button class="drawerTab">Milestones<em>' + p.milestones.length + "</em></button></div>" +
-    '<p class="drawerHelp"><a>Select all</a>' + esc(p.help) + "</p>" +
-    '<div class="drawerRows">' +
-    p.unscheduled.map((t) => '<div class="drawerRow"><span class="box"></span><span>' + esc(t) + "</span><button>Schedule " + I.chevron + "</button></div>").join("") +
+    '<p class="drawerHelp"><button type="button" class="selectAll">Select all</button>' + esc(p.help) + "</p>" +
+    '<div class="drawerRows" role="group" aria-label="Tasks with no date">' +
+    p.unscheduled.map((t) =>
+      '<div class="drawerRow"><button type="button" class="box" role="checkbox" aria-checked="false" aria-label="Select ' +
+      esc(t) + '"></button><span>' + esc(t) +
+      '</span><button type="button">Schedule ' + I.chevron + "</button></div>").join("") +
     "</div>" +
     '<button class="drawerAdd">' + I.plus + "<span>Add unscheduled task</span></button></aside>"
   );
@@ -1599,6 +1637,7 @@ function specimens() {
     ["Long title", { ...find("demo-t-01"), title: "Confirm the marquee sides and the wet-weather plan with the hire company before Thursday" }, null, "Two lines of title, then the note clamps. A card cannot run away."],
     ["In flight", find("demo-t-03"), "drag", "The card at rest, top left, picked up. The only shadow in the product."],
     ["Moving by keyboard", find("demo-t-04"), "moving", "Space picks a card up, the arrows walk it between columns. Lifted, but not tilted: nothing is carrying it."],
+    ["Drop target", null, "drop", "The column being moved into warms half a step and draws the line the card will land on. Ink only, like everything else."],
   ];
   return (
     '<div class="sheet">' + head() +
@@ -1607,7 +1646,13 @@ function specimens() {
     '<div class="specGrid">' +
     cells.map((c) => (
       '<div class="specCell"><span class="specLabel">' + c[0] + "</span>" +
-      '<div class="specStage">' + card(c[1], c[2]) + "</div>" +
+      '<div class="specStage">' +
+        (c[2] === "drop"
+          ? '<div class="tray specTray" data-over><div class="trayBody">' +
+            card(find("demo-t-08")) + '<span class="dropLine"></span>' + card(find("demo-t-07")) +
+            "</div></div>"
+          : card(c[1], c[2])) +
+      "</div>" +
       '<p class="specNote">' + c[3] + "</p></div>"
     )).join("") + "</div></div></div>"
   );
@@ -1621,9 +1666,33 @@ function renderApp() {
   return '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + "</div>";
 }
 
+/* A word-safe trim. The browser's own line clamp cuts at the character,
+   which is how a card ends up reading "dinner 5.30p...". This walks back to
+   the last whole word, keeps the full string on the element for the tooltip
+   and for assistive technology, and costs one binary search per clipped
+   line box. */
+function trimToWord(node) {
+  if (node.scrollHeight <= node.clientHeight + 1) return;
+  const full = node.dataset.full || node.textContent;
+  node.dataset.full = full;
+  node.title = full;
+  const words = full.split(" ");
+  let low = 1;
+  let high = words.length;
+  while (low < high) {
+    const mid = Math.ceil((low + high) / 2);
+    node.textContent = words.slice(0, mid).join(" ") + "…";
+    if (node.scrollHeight <= node.clientHeight + 1) low = mid;
+    else high = mid - 1;
+  }
+  node.textContent = words.slice(0, low).join(" ") + "…";
+}
+
 function mount() {
   const target = document.getElementById("root") || document.getElementById("deck");
-  if (target) target.innerHTML = renderApp();
+  if (!target) return;
+  target.innerHTML = renderApp();
+  target.querySelectorAll(".cardTitle, .cardNote").forEach(trimToWord);
 }
 
 /* The customizer drives this same renderer from a control panel rather than
