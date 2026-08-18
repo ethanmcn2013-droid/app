@@ -55,9 +55,18 @@
      phone, and exactly one of them is ever rendered. Rendering both and
      hiding one with CSS left an invisible textarea in the document at every
      width, which is a focusable control nobody can see — the exact defect
-     the standing checklist names. */
-  const phone = matchMedia("(max-width: 720px)");
-  phone.addEventListener("change", () => paint());
+     the standing checklist names.
+     The decision is taken from the width of the product's own container,
+     not from the viewport. A viewport query is the wrong question the
+     moment this file is placed inside anything — a console, a split view,
+     a preview — and it answered that wrong question silently. */
+  const PHONE_AT = 720;
+  const phone = { matches: false };
+  function readWidth() {
+    const box = document.getElementById("root");
+    const w = box ? box.getBoundingClientRect().width : 0;
+    return (w || innerWidth) <= PHONE_AT;
+  }
 
   function seed() {
     if (state === "nothing") return [];
@@ -1015,6 +1024,26 @@
   addEventListener("resize", () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(trimRows, 90);
+  });
+
+  /* The container decides, so the container is what is watched. */
+  phone.matches = readWidth();
+  if (typeof ResizeObserver === "function") {
+    const mountEl = document.getElementById("root");
+    new ResizeObserver(() => {
+      const next = readWidth();
+      if (next !== phone.matches) {
+        phone.matches = next;
+        paint();
+      }
+    }).observe(mountEl.parentElement || mountEl);
+  }
+  addEventListener("resize", () => {
+    const next = readWidth();
+    if (next !== phone.matches) {
+      phone.matches = next;
+      paint();
+    }
   });
 
   /* Seed the cursor on the first row so the index always has a tab stop. */

@@ -1,0 +1,355 @@
+<title>Notes Design Console</title>
+<style>
+@font-face{font-family:"Geist";src:url(__FONT_SANS__) format("woff2-variations");font-weight:100 900;font-display:swap;}
+@font-face{font-family:"Geist Mono";src:url(__FONT_MONO__) format("woff2-variations");font-weight:100 900;font-display:swap;}
+
+:root {
+  --bg: #0d0d0e;
+  --panel: #151517;
+  --panel-2: #1b1c1e;
+  --line: rgba(255, 255, 255, 0.10);
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --t1: #ffffff;
+  --t2: rgba(255, 255, 255, 0.66);
+  --t3: rgba(255, 255, 255, 0.44);
+  --t4: rgba(255, 255, 255, 0.28);
+  --acc: #8b83ff;
+  --acc-deep: #4f46e5;
+  --acc-wash: rgba(79, 70, 229, 0.16);
+  --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --dur: 140ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--t1);
+  font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+}
+button, select, input { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.tab { font-variant-numeric: tabular-nums; }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.wrap { max-width: 1560px; margin: 0 auto; padding: 0 24px 90px; }
+
+.mast { padding: 54px 0 30px; }
+.kicker { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--t3); }
+.kicker i { width: 5px; height: 5px; border-radius: 50%; background: var(--acc-deep); }
+h1 { margin: 16px 0 0; font-size: clamp(32px, 4.6vw, 52px); font-weight: 600; line-height: 1.05; letter-spacing: -0.04em; }
+h1 em { font-style: normal; color: var(--t3); }
+.standfirst { margin: 18px 0 0; max-width: 66ch; font-size: 16px; line-height: 1.62; color: var(--t2); letter-spacing: -0.01em; }
+.standfirst b { color: var(--t1); font-weight: 600; }
+
+/* ── the stage ─────────────────────────────────────────────────── */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 316px; gap: 18px; align-items: start; margin-top: 30px; }
+
+.deckWrap { position: relative; }
+.deckFrame {
+  background: #000; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line);
+  padding: 14px; overflow: hidden;
+}
+.deckSizer { margin: 0 auto; transition: width var(--dur) var(--curve); }
+.deck {
+  height: 760px; border-radius: 12px; overflow: hidden;
+  background: #111111; color: #111111;
+  font-family: var(--sans); font-weight: 400; line-height: 1.6; font-size: 15px;
+  transition: height var(--dur) var(--curve);
+}
+.deck[data-w="390"] { height: 812px; }
+.deck[data-w="768"] { height: 900px; }
+.deckBar { display: flex; align-items: center; gap: 10px; padding: 0 2px 11px; flex-wrap: wrap; }
+.deckName { font-size: 13px; font-weight: 600; letter-spacing: -0.014em; }
+.deckWhat { font-size: 12px; color: var(--t3); letter-spacing: -0.006em; }
+.deckBar .spacer { flex: 1; }
+
+/* ── controls ──────────────────────────────────────────────────── */
+.panel { background: var(--panel); border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line-soft); padding: 18px 18px 20px; position: sticky; top: 18px; max-height: calc(100vh - 36px); overflow: auto; }
+.panelTitle { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t4); margin: 0 0 12px; }
+.group + .group { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.groupName { display: flex; align-items: baseline; gap: 8px; margin-bottom: 9px; }
+.groupName b { font-size: 12.5px; font-weight: 600; letter-spacing: -0.01em; }
+.groupName span { font-size: 11px; color: var(--t4); font-family: var(--mono); }
+.opts { display: flex; gap: 4px; flex-wrap: wrap; }
+.opt {
+  flex: 1 1 auto; min-width: 0; height: 32px; padding: 0 10px; border-radius: 8px;
+  font-size: 12.5px; color: var(--t3); letter-spacing: -0.006em; white-space: nowrap;
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve), box-shadow var(--dur) var(--curve);
+}
+.opt:hover { color: var(--t1); box-shadow: inset 0 0 0 1px var(--line); }
+.opt[data-on] { background: var(--t1); color: #111; font-weight: 600; box-shadow: none; }
+.groupWhy { margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--t4); }
+
+.rooms { display: grid; gap: 6px; }
+.room {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 11px; align-items: center;
+  padding: 11px 12px; border-radius: 10px; text-align: left; box-shadow: inset 0 0 0 1px var(--line-soft);
+  transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.room:hover { box-shadow: inset 0 0 0 1px var(--line); }
+.room[data-on] { background: var(--acc-wash); box-shadow: inset 0 0 0 1px var(--acc-deep); }
+.roomDot { grid-row: 1 / span 2; width: 26px; height: 26px; border-radius: 7px; background: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12); display: grid; place-items: center; }
+.roomDot i { width: 12px; height: 12px; border-radius: 3px; background: #111; }
+.room[data-key="press"] .roomDot i { background: #4f46e5; }
+.roomName { font-size: 13px; font-weight: 600; letter-spacing: -0.012em; }
+.roomWhat { font-size: 11.5px; color: var(--t3); line-height: 1.45; }
+
+.states { display: flex; gap: 4px; flex-wrap: wrap; }
+.stateBtn {
+  height: 30px; padding: 0 11px; border-radius: 999px; font-size: 12.5px; color: var(--t3);
+  box-shadow: inset 0 0 0 1px var(--line-soft); white-space: nowrap;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve), box-shadow var(--dur) var(--curve);
+}
+.stateBtn:hover { color: var(--t1); }
+.stateBtn[data-on] { background: var(--t1); color: #111; font-weight: 600; box-shadow: none; }
+
+.hint { margin: 14px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--t4); }
+.hint kbd { font-family: var(--mono); font-size: 10.5px; padding: 1px 5px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--line); color: var(--t3); }
+
+/* ── the receipt ───────────────────────────────────────────────── */
+section { padding: 54px 0 0; }
+.head2 { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
+.h2note { font-size: 13px; color: var(--t3); letter-spacing: -0.008em; }
+.lede { margin: 14px 0 0; max-width: 74ch; font-size: 15px; line-height: 1.62; color: var(--t2); }
+
+.receiptGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(216px, 1fr)); gap: 8px; margin-top: 22px; }
+.tok { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 11px; align-items: center; background: var(--panel); border-radius: 10px; padding: 11px 13px; box-shadow: inset 0 0 0 1px var(--line-soft); }
+.tokChip { grid-row: 1 / span 2; width: 26px; height: 26px; border-radius: 6px; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.tokName { font-family: var(--mono); font-size: 11.5px; color: var(--t1); overflow: hidden; text-overflow: ellipsis; }
+.tokOf { font-size: 11px; color: var(--t3); }
+.tokOf b { color: var(--t2); font-weight: 600; }
+
+.badge { display: inline-flex; align-items: center; gap: 9px; padding: 9px 15px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); font-size: 12.5px; color: var(--t2); }
+.badge b { color: var(--t1); font-weight: 600; }
+.badges { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 22px; }
+
+.foot { margin-top: 58px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.65; color: var(--t4); max-width: 88ch; }
+.foot code { font-family: var(--mono); font-size: 11.5px; color: var(--t3); }
+.foot a { color: var(--acc); }
+
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 0ms !important; animation-duration: 0ms !important; } }
+@media (max-width: 1180px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .panel { position: static; max-height: none; }
+}
+@media (max-width: 620px) { .wrap { padding: 0 14px 70px; } }
+</style>
+<style>
+/*__CSS__*/
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <span class="kicker"><i></i>Signal Studio · Notes · the locked master</span>
+  <h1>The Stack.<br><em>Drive it, do not look at it.</em></h1>
+  <p class="standfirst">
+    This is the real file, not a picture of it. Every control on the right writes the same
+    attribute the product itself reads, and the three rooms are nothing but three preset
+    combinations of five named design decisions. <b>Nothing in this console can reach a fourth
+    colour</b>, because the colours in it are the master's own — the receipt below is generated
+    from the master's stylesheet at build time, not typed by hand.
+  </p>
+</header>
+
+<div class="stage">
+  <div class="deckWrap">
+    <div class="deckBar">
+      <span class="deckName" id="deckName">Locked</span>
+      <span class="deckWhat" id="deckWhat"></span>
+      <span class="spacer"></span>
+      <div class="states" id="widthSeg"></div>
+    </div>
+    <div class="deckFrame">
+      <div class="deckSizer" id="sizer">
+        <div class="deck" id="deck"></div>
+      </div>
+    </div>
+    <p class="hint">
+      Type in the sheet and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>. <kbd>Ctrl</kbd>+<kbd>Z</kbd> reverses anything.
+      Tab into the pile and walk it with the arrows; <kbd>Enter</kbd> opens a note and <kbd>Esc</kbd> puts it back.
+      <kbd>/</kbd> searches. In the hand, <kbd>T</kbd> makes a task and <kbd>K</kbd> keeps it.
+    </p>
+  </div>
+
+  <aside class="panel" aria-label="Design decisions">
+    <p class="panelTitle">The state</p>
+    <div class="states" id="stateSeg"></div>
+
+    <div class="group">
+      <p class="panelTitle" style="margin-top:2px">The three rooms</p>
+      <div class="rooms" id="rooms"></div>
+    </div>
+
+    <div id="groups"></div>
+
+    <p class="hint" style="margin-top:16px">
+      Every combination of the five decisions is buildable and on palette. There are 72 of them
+      and none can reach a colour that is not Ink, Indigo or White.
+    </p>
+  </aside>
+</div>
+
+<section>
+  <div class="head2">
+    <h2>The palette receipt</h2>
+    <span class="h2note">Generated from the master's own stylesheet at build time</span>
+  </div>
+  <p class="lede">
+    Every colour token the file declares, resolved to which of the three it is and at what alpha.
+    The build fails if any token is not Ink, Indigo or White, so this list cannot drift from what
+    the product paints. Status in this product is carried by ink density and fill — a filled dot
+    for a note waiting on you, an outlined chip for one that has crossed into Tasks, filled ink
+    for the single destructive act — and never by hue.
+  </p>
+  <div class="badges" id="badges"></div>
+  <div class="receiptGrid" id="receipt"></div>
+</section>
+
+<p class="foot">
+  Exploration only. Branch <code>design/notes-exploration</code>. No PR, no deploy, no app-code or schema change.
+  Every note in here is the real review fixture — The Orchard, events; Mara &amp; Finn; Orla; the pinned 16 July clock —
+  and every string is the product's own, from <code>notes-copy.ts</code>.
+  The master: <code>docs/design/labs/notes-2026-08/notebook.js</code> and <code>master.css</code>.
+  The gates: <code>scripts/design/notes-audit.mjs</code> and <code>scripts/design/notes-interaction-check.mjs</code>.
+</p>
+
+</div>
+
+<script>/*__DATA__*/</script>
+<script>/*__ICONS__*/</script>
+<script>/*__RECEIPT__*/</script>
+<script>
+const DECISIONS = [
+  { key: "paper", name: "The pile", token: "data-paper", opts: [["flat", "Flat"], ["stacked", "Stacked"], ["deep", "Deep"]],
+    why: "How much of the notebook is behind the sheet you are writing on. Flat gives the signature up and buys the whole sheet." },
+  { key: "index", name: "Index density", token: "data-index", opts: [["airy", "Airy"], ["tight", "Tight"]],
+    why: "Tight is not the same thing smaller: the preview stops earning its place, so the row carries the title alone." },
+  { key: "radius", name: "Corners", token: "data-radius", opts: [["sharp", "Sharp"], ["soft", "Soft"], ["round", "Round"]],
+    why: "One ladder, redefined at the root, so nothing has to be re-drawn per element." },
+  { key: "indigo", name: "The one indigo", token: "data-indigo", opts: [["subtle", "Subtle"], ["forward", "Forward"]],
+    why: "Subtle spends the accent only on the live edge of what you are doing now. Forward spends it on the next move too." },
+  { key: "type", name: "The note's type", token: "data-type", opts: [["calm", "Calm"], ["expressive", "Expressive"]],
+    why: "Raises only the two places where the content is entirely a person's own writing: a note being read, and the hand." },
+];
+
+const ROOMS = [
+  { key: "locked", name: "Locked", what: "the master as it stands", set: { paper: "stacked", index: "airy", radius: "soft", indigo: "subtle", type: "calm" } },
+  { key: "quiet", name: "Quiet Desk", what: "no pile, tight index, sharp corners — an instrument", set: { paper: "flat", index: "tight", radius: "sharp", indigo: "subtle", type: "calm" } },
+  { key: "studio", name: "Studio", what: "round, airy, the writing set larger", set: { paper: "stacked", index: "airy", radius: "round", indigo: "subtle", type: "expressive" } },
+  { key: "press", name: "Press", what: "deep pile, tight index, the accent forward", set: { paper: "deep", index: "tight", radius: "soft", indigo: "forward", type: "expressive" } },
+];
+
+const STATES = [
+  ["notebook", "Notebook"], ["capture", "Capture"], ["voice", "Voice"], ["readback", "Read-back"],
+  ["review", "The hand"], ["seam", "The seam"], ["search", "Search"], ["pressure", "Pressure"],
+  ["nothing", "Nothing"], ["not-yet", "Not yet"],
+];
+
+const WIDTHS = [["1440", "1440"], ["1280", "1280"], ["768", "Tablet"], ["390", "Phone"]];
+
+const el = (id) => document.getElementById(id);
+const deck = el("deck");
+const current = { ...ROOMS[0].set };
+let width = "1440";
+let stateKey = "notebook";
+
+el("stateSeg").innerHTML = STATES.map(([k, n]) =>
+  `<button class="stateBtn" data-state="${k}"${k === stateKey ? " data-on" : ""}>${n}</button>`).join("");
+el("widthSeg").innerHTML = WIDTHS.map(([k, n]) =>
+  `<button class="stateBtn" data-width="${k}"${k === width ? " data-on" : ""}>${n}</button>`).join("");
+el("rooms").innerHTML = ROOMS.map((r) =>
+  `<button class="room" data-key="${r.key}"${r.key === "locked" ? " data-on" : ""}>
+     <span class="roomDot" aria-hidden="true"><i></i></span>
+     <span class="roomName">${r.name}</span>
+     <span class="roomWhat">${r.what}</span>
+   </button>`).join("");
+el("groups").innerHTML = DECISIONS.map((d) => `
+  <div class="group">
+    <div class="groupName"><b>${d.name}</b><span>${d.token}</span></div>
+    <div class="opts" data-key="${d.key}">
+      ${d.opts.map(([v, n]) => `<button class="opt" data-value="${v}"${current[d.key] === v ? " data-on" : ""}>${n}</button>`).join("")}
+    </div>
+    <p class="groupWhy">${d.why}</p>
+  </div>`).join("");
+
+function applyDecisions() {
+  for (const d of DECISIONS) deck.setAttribute("data-" + d.key, current[d.key]);
+  deck.setAttribute("data-w", width);
+  for (const group of document.querySelectorAll(".opts")) {
+    for (const b of group.children) b.toggleAttribute("data-on", current[group.dataset.key] === b.dataset.value);
+  }
+  const room = ROOMS.find((r) => DECISIONS.every((d) => r.set[d.key] === current[d.key]));
+  for (const b of el("rooms").children) b.toggleAttribute("data-on", Boolean(room) && b.dataset.key === room.key);
+  el("deckName").textContent = room ? room.name : "Your mix";
+  el("deckWhat").textContent = room ? room.what : DECISIONS.map((d) => current[d.key]).join(" · ");
+}
+
+/* The renderer reads its decisions from #deck when that element exists, and
+   exports window.NOTEBOOK, so the console drives the real thing with no
+   rewriting at all. A rewritten copy would be a second implementation of the
+   notebook, and a second implementation is how a design system drifts. */
+const boot = document.createElement("div");
+boot.id = "root";
+deck.appendChild(boot);
+</script>
+<script>/*__RENDERER__*/</script>
+<script>
+applyDecisions();
+
+el("stateSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-state]");
+  if (!b) return;
+  stateKey = b.dataset.state;
+  for (const n of el("stateSeg").children) n.toggleAttribute("data-on", n === b);
+  window.NOTEBOOK.setState(stateKey);
+  applyDecisions();
+});
+el("widthSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-width]");
+  if (!b) return;
+  width = b.dataset.width;
+  for (const n of el("widthSeg").children) n.toggleAttribute("data-on", n === b);
+  el("sizer").style.width = width === "1440" ? "100%" : width + "px";
+  applyDecisions();
+});
+el("rooms").addEventListener("click", (e) => {
+  const b = e.target.closest(".room");
+  if (!b) return;
+  Object.assign(current, ROOMS.find((r) => r.key === b.dataset.key).set);
+  applyDecisions();
+});
+el("groups").addEventListener("click", (e) => {
+  const b = e.target.closest(".opt");
+  if (!b) return;
+  current[b.parentElement.dataset.key] = b.dataset.value;
+  applyDecisions();
+});
+
+/* ── the receipt ─────────────────────────────────────────────────── */
+const swatch = (row) => {
+  if (row.of === "alias") return "linear-gradient(135deg,#111 50%,#4f46e5 50%)";
+  const base = row.of === "Ink" ? "17,17,17" : row.of === "Indigo" ? "79,70,229" : "255,255,255";
+  const under = row.of === "White" ? "#111111" : "#ffffff";
+  return `linear-gradient(rgba(${base},${row.alpha}),rgba(${base},${row.alpha})), ${under}`;
+};
+el("receipt").innerHTML = window.RECEIPT.map((row) => `
+  <div class="tok">
+    <span class="tokChip" style="background:${swatch(row)}"></span>
+    <span class="tokName">--${row.name}</span>
+    <span class="tokOf">${row.of === "alias" ? "alias" : `<b>${row.of}</b>${row.alpha < 1 ? ` at ${Math.round(row.alpha * 100)}%` : ""}`}</span>
+  </div>`).join("");
+
+const byHue = window.RECEIPT.reduce((acc, r) => { acc[r.of] = (acc[r.of] || 0) + 1; return acc; }, {});
+el("badges").innerHTML = [
+  `<span class="badge"><b>${window.RECEIPT.length}</b> colour tokens</span>`,
+  ...["Ink", "Indigo", "White", "alias"].filter((k) => byHue[k]).map((k) => `<span class="badge"><b>${byHue[k]}</b> ${k === "alias" ? "aliases" : k}</span>`),
+  `<span class="badge"><b>0</b> other hues</span>`,
+  `<span class="badge">Geist <b>400 / 600</b> only</span>`,
+].join("");
+</script>

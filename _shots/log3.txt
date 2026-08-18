@@ -1,0 +1,26 @@
+A counter: 1 / 4000
+B0 count line: 3 of 14 notes have “orchard” in them
+B1 title: FOUND | cnt: 0 of 14 notes have “rartsiger” in them
+B1 rows: 0
+B2 empty: No note says “arbez”. |  | The closest is one about the hire company, from Thursday. |  | Open that one | Clear the search
+B3 after clicking 'Open that one': rows now 0 | index text: No note says “arbez”. |  | The closest is one about the hire company, from Thursday. |  | Open tha
+C0 deckNote: 8 still to decide. Nothing is decided until you say so, and every decision can be put back.
+C0 idxhead: STILL IN THE HAND | 7 left
+C0 handOf: 1 of 8
+C1 SAY: Turned into a task. 7 left.
+C1 deckNote: 7 still to decide. 1 decided just now, and every one of them can be put back.
+C1 idxhead: STILL IN THE HAND | 6 left
+C2 SAY: Kept in Notes. 6 left.
+D0 SAY: Both notes are on the pile.
+D0 total before undo: 14 notes
+D1 SAY: Undone. Both notes were taken back off the pile.
+D1 total after undo: 14 notes
+E crossed head: WHAT HAS CROSSED INTO TASKS | 3 so far
+E row: Mara asked about a late checkout for the bridal suite, Sunday 11am instead of 9. Said yes in principle, just needs to clear housekeeping. | To decide | Yesterday
+E row: Linen supplier rang, the order now ships Tuesday, not Friday. Fine for Saturday, but tight if anything slips. | To decide | 2 days ago
+E row: Registrar confirmed she can do 2pm but wants the final paperwork a fortnight out. Don’t leave it late this time. | To decide | 4 days ago
+F clip check: [{"sw":186,"cw":118,"txt":"Saturday wedding, Mara &…"},{"sw":141,"cw":139,"txt":"Mara & Finn’s menu…"},{"sw":165,"cw":131,"txt":"Ask the venue whether…"},{"sw":133,"cw":131,"txt":"Idea for the studio…"},{"sw":232,"cw":131,"txt":"Teacher onboarding, three thin"},{"sw":205,"cw":131,"txt":"Course reading for Thursday:…"}]
+F dock after typing: 
+F SAY: Kept. 15 notes, 9 waiting on a decision.
+F undo visible: 1
+DONE

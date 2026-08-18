@@ -1,0 +1,9 @@
+LOADED
+foot: Dictate | Read a photo | 1 / 4000 | Put it on the pile | Ctrl+Enter
+SAY: Kept. 15 notes, 9 waiting on a decision.
+UNDO: The note went back to the sheet. | Undo | Ctrl+Z
+CHIP: 9 to decide
+IDXHEAD: THE PILE | 15 notes
+SAY after undo: Undone. The note went back to the sheet.
+field after undo: "Ring the florist about Saturday delivery"
+DONE

@@ -381,7 +381,12 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .undoAct kbd { font: inherit; font-size: 10px; font-weight: 600; opacity: 0.55; }
 
 /* ── voice: the floor goes to ink ──────────────────────────────── */
-.dark { position: fixed; inset: 0; background: var(--ink); color: var(--on-ink-1); z-index: 9; display: flex; flex-direction: column; }
+/* Absolute inside the floor, not fixed to the viewport. The floor is
+   already the full height of the screen, so standalone the two are
+   identical — but fixed escapes any container the floor is placed in, and
+   the moment the master was compiled into the console the dictation
+   screen covered the whole page including its own controls. */
+.dark { position: absolute; inset: 0; background: var(--ink); color: var(--on-ink-1); z-index: 9; display: flex; flex-direction: column; }
 .darkTop { flex: none; display: flex; align-items: center; gap: 12px; padding: 26px 32px 0; }
 .darkTag { display: inline-flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 .darkTag .rec { width: 8px; height: 8px; border-radius: 50%; background: var(--white); animation: recPulse 1.5s var(--curve) infinite; }
