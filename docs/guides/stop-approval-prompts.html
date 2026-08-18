@@ -1,0 +1,844 @@
+<title>Stop the Approval Prompts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Signal Design System tokens (vendored values, v2.0.1) ──────── */
+  :root {
+    --paper:      #ffffff;
+    --paper-soft: #fafafa;
+    --paper-deep: #f4f4f5;
+
+    --ink:       #111111;
+    --ink-soft:  #3f3f46;
+    --ink-faint: #71717a;
+    --ink-ghost: #d4d4d8;
+
+    --accent:       #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-tint:  #eef2ff;
+    --accent-soft:  rgba(79, 70, 229, 0.12);
+
+    --hairline:      rgba(17, 17, 17, 0.10);
+    --hairline-soft: rgba(17, 17, 17, 0.06);
+
+    --status-done:    #10b981;
+    --status-flight:  #f59e0b;
+    --status-blocked: #ef4444;
+
+    /* Terminal surface — constant across themes; a terminal is a terminal. */
+    --term-bg:   #18181b;
+    --term-ink:  #f4f4f5;
+    --term-dim:  #a1a1aa;
+
+    --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --text-title:   clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
+    --text-section: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+    --text-heading: 1.25rem;
+    --text-body-lg: 1.0625rem;
+    --text-body:    0.9375rem;
+    --text-body-sm: 0.8125rem;
+    --text-caption: 0.75rem;
+    --text-label:   0.6875rem;
+
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+    --space-9: 48px; --space-10: 64px; --space-11: 80px;
+
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-pill: 999px;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --motion-instant: 80ms;
+    --motion-fast: 140ms;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0f0f10;
+      --paper-soft: #161618;
+      --paper-deep: #1d1d20;
+
+      --ink:       #f4f4f5;
+      --ink-soft:  #d4d4d8;
+      --ink-faint: #a1a1aa;
+      --ink-ghost: #3f3f46;
+
+      --accent:       #6366f1;
+      --accent-hover: #818cf8;
+      --accent-tint:  rgba(79, 70, 229, 0.16);
+      --accent-soft:  rgba(79, 70, 229, 0.20);
+
+      --hairline:      rgba(255, 255, 255, 0.10);
+      --hairline-soft: rgba(255, 255, 255, 0.06);
+
+      --term-bg:  #09090b;
+      --term-ink: #f4f4f5;
+      --term-dim: #71717a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0f0f10;
+    --paper-soft: #161618;
+    --paper-deep: #1d1d20;
+
+    --ink:       #f4f4f5;
+    --ink-soft:  #d4d4d8;
+    --ink-faint: #a1a1aa;
+    --ink-ghost: #3f3f46;
+
+    --accent:       #6366f1;
+    --accent-hover: #818cf8;
+    --accent-tint:  rgba(79, 70, 229, 0.16);
+    --accent-soft:  rgba(79, 70, 229, 0.20);
+
+    --hairline:      rgba(255, 255, 255, 0.10);
+    --hairline-soft: rgba(255, 255, 255, 0.06);
+
+    --term-bg:  #09090b;
+    --term-ink: #f4f4f5;
+    --term-dim: #71717a;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root { --motion-instant: 0ms; --motion-fast: 0ms; }
+    * { animation: none !important; transition: none !important; }
+  }
+
+  /* ── Base ───────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-lg);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 47rem;
+    margin: 0 auto;
+    padding: var(--space-10) var(--space-5) var(--space-11);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+  }
+
+  p { margin: 0; }
+  strong { font-weight: 600; color: var(--ink); }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  /* ── Masthead ───────────────────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-bottom: var(--space-8);
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .masthead h1 {
+    margin: 0;
+    font-size: var(--text-title);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+    text-wrap: balance;
+  }
+
+  .standfirst {
+    color: var(--ink-soft);
+    max-width: 34rem;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    margin-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+  }
+  .meta span { display: flex; align-items: center; gap: var(--space-2); }
+  .meta b { font-weight: 500; color: var(--ink-soft); }
+
+  /* ── Panels ─────────────────────────────────────────────────────── */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    background: var(--paper-soft);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+  }
+
+  .panel h2 {
+    margin: 0;
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .panel p { font-size: var(--text-body); color: var(--ink-soft); }
+
+  .checklist {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .checklist li {
+    display: grid;
+    grid-template-columns: 1.25rem 1fr;
+    gap: var(--space-3);
+    align-items: start;
+    font-size: var(--text-body);
+    color: var(--ink-soft);
+  }
+
+  .tick {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 0.15rem;
+  }
+
+  /* ── Section headers ────────────────────────────────────────────── */
+  .section-head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .section-head h2 {
+    margin: 0;
+    font-size: var(--text-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+  .section-head p { color: var(--ink-faint); font-size: var(--text-body); }
+
+  /* ── Steps ──────────────────────────────────────────────────────── */
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-9);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr;
+    gap: var(--space-5);
+    align-items: start;
+  }
+
+  .step-num {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--text-body);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .step-num[data-optional="1"] {
+    background: transparent;
+    color: var(--ink-faint);
+    border: 1px dashed var(--ink-ghost);
+  }
+
+  .step-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+    padding-top: 0.2rem;
+  }
+
+  .step-body h3 {
+    margin: 0;
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .step-body p { color: var(--ink-soft); font-size: var(--text-body); }
+
+  .optional-tag {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-left: var(--space-3);
+    vertical-align: 0.12em;
+  }
+
+  /* ── Command block (the thing you type) ─────────────────────────── */
+  .cmd {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--term-bg);
+  }
+
+  .cmd-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(255, 255, 255, 0.05);
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--term-dim);
+  }
+
+  .copy {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--term-dim);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: var(--radius-sm);
+    padding: 3px var(--space-2);
+    cursor: pointer;
+    transition: color var(--motion-instant) var(--ease-out),
+                border-color var(--motion-instant) var(--ease-out);
+  }
+  .copy:hover { color: var(--term-ink); border-color: rgba(255, 255, 255, 0.34); }
+  .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .copy[data-done="1"] { color: var(--status-done); border-color: var(--status-done); }
+
+  .cmd-text {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    line-height: 1.7;
+    color: var(--term-ink);
+  }
+
+  /* ── Output block (what the computer says back) ─────────────────── */
+  .out {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: var(--paper-deep);
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius-md);
+  }
+
+  .out-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .out-text {
+    margin: 0;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    line-height: 1.7;
+    color: var(--ink-soft);
+  }
+
+  .out em { font-style: normal; color: var(--ink-faint); }
+
+  /* ── Snag (if it goes wrong) ────────────────────────────────────── */
+  .snag {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-left: 2px solid var(--status-flight);
+    background: var(--paper-soft);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+
+  .snag-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--status-flight);
+  }
+
+  .snag p { font-size: var(--text-body-sm); color: var(--ink-soft); }
+  .snag code, .step-body code, .out code, li code, td code, p code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    background: var(--accent-tint);
+    color: var(--accent);
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Table ──────────────────────────────────────────────────────── */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-body-sm);
+    min-width: 30rem;
+  }
+
+  th {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    background: var(--paper-deep);
+    border-bottom: 1px solid var(--hairline);
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--hairline-soft);
+    color: var(--ink-soft);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--ink); font-weight: 500; }
+
+  /* ── Closing note ───────────────────────────────────────────────── */
+  .note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-6);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--accent-tint);
+  }
+  .note h2 { margin: 0; font-size: var(--text-heading); font-weight: 600; }
+  .note p { font-size: var(--text-body); color: var(--ink-soft); }
+
+  .colophon {
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--hairline);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 34rem) {
+    .wrap { padding: var(--space-8) var(--space-4) var(--space-9); gap: var(--space-9); }
+    .step { grid-template-columns: 1.75rem 1fr; gap: var(--space-4); }
+    .step-num { width: 1.75rem; height: 1.75rem; font-size: var(--text-body-sm); }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">Windows · about two minutes</div>
+    <h1>Stop the Approval Prompts</h1>
+    <p class="standfirst">
+      Since the design prompt, Claude Code has stopped to ask permission before
+      nearly every command. That setting is read once, when the session starts,
+      so it cannot be changed from inside the session you are in. These steps
+      close it and open a new one with the asking switched off — keeping the
+      conversation you already have.
+    </p>
+    <div class="meta">
+      <span><b>Where</b> Windows PowerShell</span>
+      <span><b>Takes</b> two minutes</span>
+      <span><b>Keeps</b> your current conversation</span>
+    </div>
+  </header>
+
+  <section class="panel">
+    <h2>Why it started asking</h2>
+    <p>
+      Claude Code checks with you before it runs a command, changes a file, or
+      opens a page on the internet. Ordinary conversation never triggers it.
+      Design work triggers it constantly — reading the token file, listing
+      components, running scripts — and every new <em>shape</em> of command
+      counts as a new question.
+    </p>
+    <p>
+      Clicking <strong>don't ask again</strong> only covers that one exact
+      command, which is why a long task turns into a long queue of yes/no
+      questions rather than settling down after the first few.
+    </p>
+    <p>
+      There is a mode that stops the asking outright. Claude Code reads it once,
+      at launch, and never re-reads it — that is the entire reason this is a
+      restart and not a setting you can flip where you are standing.
+    </p>
+  </section>
+
+  <section class="section-head">
+    <div class="eyebrow">The steps</div>
+    <h2>Four steps, then two optional ones</h2>
+    <p>
+      What you type sits on a dark background; what you should see back sits on
+      a light one. If the two ever look alike, you are reading the wrong block.
+    </p>
+  </section>
+
+  <ol class="steps">
+
+    <li class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Leave the session you are stuck in</h3>
+        <p>
+          In the Claude Code window, type this and press Enter:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">/exit</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">PS C:\Users\you\signal-studio-workspace\app&gt;
+<em>the plain PowerShell prompt — Claude Code has closed</em></pre>
+        </div>
+        <p>
+          Nothing is lost. The conversation is saved on your machine and you
+          open it again in step 3. If <code>/exit</code> does not respond
+          because something is still running, press <strong>Ctrl+C</strong>
+          twice instead.
+        </p>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Check you are in the project folder</h3>
+        <p>
+          Claude Code remembers conversations per folder, so this has to be
+          right before the next step or you will get a blank session.
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">cd $HOME\signal-studio-workspace\app</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text">PS C:\Users\you\signal-studio-workspace\app&gt;
+<em>no message at all — the prompt line simply now ends in \app&gt;</em></pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If it says Cannot find path</div>
+          <p>
+            The folder may still carry its old name from before the repo was
+            renamed. Run <code>dir $HOME\signal-studio-workspace</code> to see
+            what is actually there, and use that name for now — the rename
+            helper in <code>scripts\finish-local-dir-rename.ps1</code> tidies it
+            up later, and must be run from outside the folder.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Reopen it with the asking switched off</h3>
+        <p>
+          This one line does both halves of the job. Type it and press Enter:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">claude --continue --dangerously-skip-permissions</pre>
+        </div>
+        <p>
+          <code>--continue</code> picks your design conversation back up exactly
+          where it stopped. <code>--dangerously-skip-permissions</code> is the
+          part that stops the questions. Starting a clean conversation instead
+          is the same line without <code>--continue</code>.
+        </p>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text"><em>Claude Code opens with your earlier messages above the prompt,
+and a line near the top of the window noting that permission
+prompts are bypassed for this session.</em></pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If PowerShell rejects the line</div>
+          <p>
+            The flag is two hyphens, then <code>dangerously-skip-permissions</code>,
+            all lowercase, hyphens between every word, on the same line as
+            <code>claude</code>. One letter out and you get an unknown-option
+            message rather than a session.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h3>Confirm it actually took</h3>
+        <p>
+          Ask for something small that would normally have stopped to ask. Type
+          this <em>into Claude</em>, not into PowerShell:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">list the files in docs/guides</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">You should see</div>
+          <pre class="out-text"><em>the file list, straight away, with no yes/no question in
+between. That gap where the question used to be is the
+whole difference.</em></pre>
+        </div>
+        <p>
+          If a prompt still appears, the flag did not reach Claude — the table
+          at the bottom of this page names each cause.
+        </p>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num" data-optional="1">5</div>
+      <div class="step-body">
+        <h3>Never type the flag again <span class="optional-tag">Optional</span></h3>
+        <p>
+          The flag lasts one session. To make it the default everywhere, open
+          your personal settings file:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">notepad $HOME\.claude\settings.json</pre>
+        </div>
+        <p>
+          If Notepad offers to create the file, say yes. Put exactly this in it,
+          then save and close:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Paste this</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">{
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}</pre>
+        </div>
+        <div class="out">
+          <div class="out-label">From then on</div>
+          <pre class="out-text">claude
+<em>starts with prompts off, in every project, with no flag to remember</em></pre>
+        </div>
+        <div class="snag">
+          <div class="snag-label">If the file already has text in it</div>
+          <p>
+            Do not replace what is there. Add <code>"permissions"</code> as
+            another entry inside the outermost <code>{ }</code>, and put a comma
+            at the end of the line before it. A missing or spare comma makes
+            Claude Code ignore the whole file silently, which looks exactly like
+            the setting not working.
+          </p>
+        </div>
+      </div>
+    </li>
+
+    <li class="step">
+      <div class="step-num" data-optional="1">6</div>
+      <div class="step-body">
+        <h3>Or stop halfway, if full bypass feels broad <span class="optional-tag">Optional</span></h3>
+        <p>
+          Bypass covers everything, including commands that delete or overwrite.
+          There is a middle setting that stops asking about file edits — most of
+          your design work — while still checking before it runs a command:
+        </p>
+        <div class="cmd">
+          <div class="cmd-label"><span>Type this instead</span><button class="copy" type="button">Copy</button></div>
+          <pre class="cmd-text">claude --continue --permission-mode acceptEdits</pre>
+        </div>
+        <p>
+          This one you can also reach without restarting: inside a running
+          session, press <strong>Shift+Tab</strong> to move between the ordinary
+          mode, accept-edits, and plan mode. Full bypass is the only one that
+          needs a fresh start.
+        </p>
+      </div>
+    </li>
+
+  </ol>
+
+  <section class="panel">
+    <h2>What the flag does, and what it leaves alone</h2>
+    <ul class="checklist">
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>It removes the checkpoint, not a limit.</strong> Claude could
+          already run every one of those commands; it was asking first. What you
+          give up is the pause before each one — so use it in this project
+          folder, where everything is in git, and not somewhere holding files
+          you could not replace.
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>It does not sign you in.</strong> <code>/design-login</code>
+          still opens a browser and still waits for you there. That is
+          authorisation — a different thing from permission, and no flag skips
+          it.
+        </span>
+      </li>
+      <li>
+        <span class="tick" aria-hidden="true">✓</span>
+        <span>
+          <strong>It ends with the window.</strong> Close PowerShell, open a
+          fresh one, type plain <code>claude</code>, and the questions are back
+          — unless you did step 5.
+        </span>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section-head">
+    <div class="eyebrow">Reference</div>
+    <h2>If it still asks</h2>
+    <p>Each row is something you might actually see, and what causes it.</p>
+  </section>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">What you see</th>
+          <th scope="col">What it means</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Still asked after restarting</td>
+          <td>The flag did not reach Claude. Check it sits on the same line as <code>claude</code>, spelled with hyphens throughout and no capitals.</td>
+        </tr>
+        <tr>
+          <td>Unknown option, or an unrecognised-argument error</td>
+          <td>Usually a typo. Occasionally a Claude Code too old to have the flag — <code>npm install -g @anthropic-ai/claude-code</code> updates it.</td>
+        </tr>
+        <tr>
+          <td>A yes/no about trusting the files in this folder</td>
+          <td>A separate, one-time check the first time Claude Code runs anywhere new. Answer yes once; it does not come back.</td>
+        </tr>
+        <tr>
+          <td>A browser window asking you to sign in</td>
+          <td>Authorisation, not permission. Expected during <code>/login</code> and <code>/design-login</code>, and not affected by any of this.</td>
+        </tr>
+        <tr>
+          <td>An empty session where your conversation should be</td>
+          <td>You were in a different folder when you ran <code>--continue</code>. Redo step 2, then step 3.</td>
+        </tr>
+        <tr>
+          <td><code>.claude/settings.local.json</code> in your git status</td>
+          <td>Every <em>don't ask again</em> you clicked was written there. It belongs to your machine, not the project; this branch adds it to <code>.gitignore</code> so it stops appearing.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="note">
+    <h2>The word in the flag is there on purpose</h2>
+    <p>
+      In a folder of files you could not replace, skipping the checkpoint is a
+      real risk. In this one it is a small, bounded one: the project is in git,
+      so an unwanted change is undone with <code>git&nbsp;restore&nbsp;.</code> and the
+      work you care about is already committed and pushed.
+    </p>
+    <p>
+      That is the trade being made — a question before every command, in
+      exchange for a session that simply gets on with it. Worth taking here;
+      worth thinking about again anywhere else.
+    </p>
+  </section>
+
+  <footer class="colophon">
+    Set in Geist and Geist Mono. Colour, spacing and radii taken from
+    signal-design-system v2.0.1 — the same tokens the product ships.
+    Source lives at docs/guides/stop-approval-prompts.html; started from
+    connect-claude-design.html, as the next guide should start from this one.
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var block = btn.closest(".cmd");
+      var text = block.querySelector(".cmd-text").textContent.trim();
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = "Copied";
+        btn.setAttribute("data-done", "1");
+        setTimeout(function () {
+          btn.textContent = "Copy";
+          btn.removeAttribute("data-done");
+        }, 1600);
+      }).catch(function () {
+        btn.textContent = "Select it";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1600);
+      });
+    });
+  });
+</script>
