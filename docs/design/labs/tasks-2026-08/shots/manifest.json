@@ -15,466 +15,158 @@
   ],
   "shots": [
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "board",
       "viewport": "390x844",
-      "file": "linen-board--390x844.png"
+      "file": "locked-board--390x844.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "dense",
       "viewport": "390x844",
-      "file": "linen-dense--390x844.png"
+      "file": "locked-dense--390x844.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "empty",
       "viewport": "390x844",
-      "file": "linen-empty--390x844.png"
+      "file": "locked-empty--390x844.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "390x844",
-      "file": "linen-loading--390x844.png"
+      "file": "locked-loading--390x844.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "planning",
       "viewport": "390x844",
-      "file": "linen-planning--390x844.png"
+      "file": "locked-planning--390x844.png"
     },
     {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "board",
-      "viewport": "390x844",
-      "file": "wash-board--390x844.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "dense",
-      "viewport": "390x844",
-      "file": "wash-dense--390x844.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "empty",
-      "viewport": "390x844",
-      "file": "wash-empty--390x844.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "loading",
-      "viewport": "390x844",
-      "file": "wash-loading--390x844.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "planning",
-      "viewport": "390x844",
-      "file": "wash-planning--390x844.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "board",
-      "viewport": "390x844",
-      "file": "ink-board--390x844.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "dense",
-      "viewport": "390x844",
-      "file": "ink-dense--390x844.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "empty",
-      "viewport": "390x844",
-      "file": "ink-empty--390x844.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "loading",
-      "viewport": "390x844",
-      "file": "ink-loading--390x844.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "planning",
-      "viewport": "390x844",
-      "file": "ink-planning--390x844.png"
-    },
-    {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "board",
       "viewport": "768x1024",
-      "file": "linen-board--768x1024.png"
+      "file": "locked-board--768x1024.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "dense",
       "viewport": "768x1024",
-      "file": "linen-dense--768x1024.png"
+      "file": "locked-dense--768x1024.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "empty",
       "viewport": "768x1024",
-      "file": "linen-empty--768x1024.png"
+      "file": "locked-empty--768x1024.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "768x1024",
-      "file": "linen-loading--768x1024.png"
+      "file": "locked-loading--768x1024.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "planning",
       "viewport": "768x1024",
-      "file": "linen-planning--768x1024.png"
+      "file": "locked-planning--768x1024.png"
     },
     {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "board",
-      "viewport": "768x1024",
-      "file": "wash-board--768x1024.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "dense",
-      "viewport": "768x1024",
-      "file": "wash-dense--768x1024.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "empty",
-      "viewport": "768x1024",
-      "file": "wash-empty--768x1024.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "loading",
-      "viewport": "768x1024",
-      "file": "wash-loading--768x1024.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "planning",
-      "viewport": "768x1024",
-      "file": "wash-planning--768x1024.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "board",
-      "viewport": "768x1024",
-      "file": "ink-board--768x1024.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "dense",
-      "viewport": "768x1024",
-      "file": "ink-dense--768x1024.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "empty",
-      "viewport": "768x1024",
-      "file": "ink-empty--768x1024.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "loading",
-      "viewport": "768x1024",
-      "file": "ink-loading--768x1024.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "planning",
-      "viewport": "768x1024",
-      "file": "ink-planning--768x1024.png"
-    },
-    {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "board",
       "viewport": "1280x900",
-      "file": "linen-board--1280x900.png"
+      "file": "locked-board--1280x900.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "cards",
       "viewport": "1280x900",
-      "file": "linen-cards--1280x900.png"
+      "file": "locked-cards--1280x900.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "dense",
       "viewport": "1280x900",
-      "file": "linen-dense--1280x900.png"
+      "file": "locked-dense--1280x900.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "empty",
       "viewport": "1280x900",
-      "file": "linen-empty--1280x900.png"
+      "file": "locked-empty--1280x900.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "1280x900",
-      "file": "linen-loading--1280x900.png"
+      "file": "locked-loading--1280x900.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "planning",
       "viewport": "1280x900",
-      "file": "linen-planning--1280x900.png"
+      "file": "locked-planning--1280x900.png"
     },
     {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "board",
-      "viewport": "1280x900",
-      "file": "wash-board--1280x900.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "cards",
-      "viewport": "1280x900",
-      "file": "wash-cards--1280x900.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "dense",
-      "viewport": "1280x900",
-      "file": "wash-dense--1280x900.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "empty",
-      "viewport": "1280x900",
-      "file": "wash-empty--1280x900.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "loading",
-      "viewport": "1280x900",
-      "file": "wash-loading--1280x900.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "planning",
-      "viewport": "1280x900",
-      "file": "wash-planning--1280x900.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "board",
-      "viewport": "1280x900",
-      "file": "ink-board--1280x900.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "cards",
-      "viewport": "1280x900",
-      "file": "ink-cards--1280x900.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "dense",
-      "viewport": "1280x900",
-      "file": "ink-dense--1280x900.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "empty",
-      "viewport": "1280x900",
-      "file": "ink-empty--1280x900.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "loading",
-      "viewport": "1280x900",
-      "file": "ink-loading--1280x900.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "planning",
-      "viewport": "1280x900",
-      "file": "ink-planning--1280x900.png"
-    },
-    {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "board",
       "viewport": "1440x960",
-      "file": "linen-board--1440x960.png"
+      "file": "locked-board--1440x960.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "cards",
       "viewport": "1440x960",
-      "file": "linen-cards--1440x960.png"
+      "file": "locked-cards--1440x960.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "dense",
       "viewport": "1440x960",
-      "file": "linen-dense--1440x960.png"
+      "file": "locked-dense--1440x960.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "empty",
       "viewport": "1440x960",
-      "file": "linen-empty--1440x960.png"
+      "file": "locked-empty--1440x960.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "1440x960",
-      "file": "linen-loading--1440x960.png"
+      "file": "locked-loading--1440x960.png"
     },
     {
-      "direction": "linen",
-      "name": "Studio Floor · Linen",
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "planning",
       "viewport": "1440x960",
-      "file": "linen-planning--1440x960.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "board",
-      "viewport": "1440x960",
-      "file": "wash-board--1440x960.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "cards",
-      "viewport": "1440x960",
-      "file": "wash-cards--1440x960.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "dense",
-      "viewport": "1440x960",
-      "file": "wash-dense--1440x960.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "empty",
-      "viewport": "1440x960",
-      "file": "wash-empty--1440x960.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "loading",
-      "viewport": "1440x960",
-      "file": "wash-loading--1440x960.png"
-    },
-    {
-      "direction": "wash",
-      "name": "Studio Floor · Wash",
-      "state": "planning",
-      "viewport": "1440x960",
-      "file": "wash-planning--1440x960.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "board",
-      "viewport": "1440x960",
-      "file": "ink-board--1440x960.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "cards",
-      "viewport": "1440x960",
-      "file": "ink-cards--1440x960.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "dense",
-      "viewport": "1440x960",
-      "file": "ink-dense--1440x960.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "empty",
-      "viewport": "1440x960",
-      "file": "ink-empty--1440x960.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "loading",
-      "viewport": "1440x960",
-      "file": "ink-loading--1440x960.png"
-    },
-    {
-      "direction": "ink",
-      "name": "Studio Floor · Ink Room",
-      "state": "planning",
-      "viewport": "1440x960",
-      "file": "ink-planning--1440x960.png"
+      "file": "locked-planning--1440x960.png"
     }
   ]
 }

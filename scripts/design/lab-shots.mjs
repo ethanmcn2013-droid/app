@@ -44,12 +44,13 @@ const VIEWPORTS = [
    Studio Floor variations are the live work. A `query` rides into the URL so
    one master file can serve all three variations. */
 const DIRECTIONS = [
-  { key: "a", file: "direction-a.html", name: "Ledger" },
-  { key: "b", file: "direction-b.html", name: "Atelier" },
-  { key: "c", file: "direction-c.html", name: "Studio Floor" },
-  { key: "linen", file: "floor.html", name: "Studio Floor · Linen", query: "v=linen" },
-  { key: "wash", file: "floor.html", name: "Studio Floor · Wash", query: "v=wash" },
-  { key: "ink", file: "floor.html", name: "Studio Floor · Ink Room", query: "v=ink" },
+  { key: "arch-a", file: "direction-a.html", name: "Ledger" },
+  { key: "arch-b", file: "direction-b.html", name: "Atelier" },
+  { key: "arch-c", file: "direction-c.html", name: "Studio Floor" },
+  { key: "locked", file: "floor.html", name: "Studio Floor · locked palette", query: "v=locked" },
+  { key: "a", file: "floor.html", name: "Variant A · Air", query: "v=a" },
+  { key: "b", file: "floor.html", name: "Variant B · Frame", query: "v=b" },
+  { key: "c", file: "floor.html", name: "Variant C · Signal", query: "v=c" },
 ];
 
 async function shoot() {
