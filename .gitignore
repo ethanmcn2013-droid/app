@@ -83,3 +83,5 @@ _drive*.mjs
 t[0-9].mjs
 .probe/
 probe-tmp.mjs
+_*.mjs
+chk.mjs
