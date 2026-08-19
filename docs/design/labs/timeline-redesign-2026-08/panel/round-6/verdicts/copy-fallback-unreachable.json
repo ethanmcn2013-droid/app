@@ -1,0 +1,6 @@
+{
+  "id": "copy-fallback-unreachable",
+  "real": true,
+  "reason": "Verified by driving state=publish with clipboard.writeText rejecting. The live region says \"Copy did not work. Select the link and copy it by hand.\" and the tab order is Back to the plan, the preview card, Copy the link, then out of the page. The URL is a bare span, tabindex null, so a keyboard user cannot reach or select the 64-character token. The product states an instruction it does not support. A readonly input is built and functional, so the no-focus-for-unbuilt rule does not bar it, and it needs no fourth hue, third weight or new family.",
+  "sharpenedFix": "In render-b.js:1278 replace the span with <input class=\"b-linkField\" readonly spellcheck=\"false\"> carrying F.shareUrlFull, the exact string the button copies, and reset it to invisibility in b.css: appearance:none, background:transparent, border:0, padding:0, width:100%, font:inherit, color:inherit, so the row stays byte-identical. Call select() on focus and on click. Two things the fix as written misses: the browser's selection highlight is a system hue, so pin ::selection to an ink or indigo tint or the palette lock breaks the moment it works; and the field becomes a new tab stop, so give it the same focus ring as .b-act and re-run audit.mjs for the hit-target rule."
+}

@@ -44,6 +44,10 @@
    Whose day, how far, which day. In that order, because on a phone in
    a dark room the number is what the eye lands on and the number is
    useless without the two facts beside it. */
+/* The size step is already the ceremonial one; the ink was the
+   machine's. The one owner-written string on the page now carries full
+   ink, which is how this palette makes hierarchy - and the count keeps
+   every size it had, so round 2's ruling stands. */
 .b-who {
   font-family: var(--mono);
   font-size: var(--size-labelWide);
@@ -51,16 +55,18 @@
   line-height: var(--lead-label);
   letter-spacing: var(--track-labelWide);
   text-transform: uppercase;
-  color: var(--fore-62);
+  color: var(--fore);
   margin: 0 0 var(--gap-item);
 }
+/* The publish screen's own captions are the machine speaking. */
+.b-press .b-who { color: var(--fore-62); }
 .b-count { display: flex; align-items: baseline; gap: 12px; margin: 0 0 var(--gap-snug); }
 .b-num {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--size-count);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-display-96);
   color: var(--fore);
   /* Optical, not mathematical: the mono numeral carries about 0.05em of
      side bearing, so the largest object on the page was the only thing
@@ -111,6 +117,7 @@
   max-width: 46ch;
   text-wrap: pretty;
 }
+
 
 /* ── the measure ──────────────────────────────────────────────────
    Every position here is written by place() in render-b.js from
@@ -201,7 +208,22 @@
 }
 /* The tick and the count sit on the true pixel, always. Only the words
    are pushed clear when an owner moves two things close together. */
-.b-copy { margin-top: var(--push, 0px); position: relative; }
+/* Bound to the track, the wash behind a moment ran 944px at 1279 and
+   544px at 1280 - a selection whose width was an accident of the
+   window. */
+.b-copy {
+  max-width: 544px; margin-top: var(--push, 0px); position: relative; }/* A guest row carries no control, so a trimmed title's remainder can
+   be reached by nobody: the screen reader gets the whole sentence and
+   the finger gets an ellipsis. Only the owner's rows, which open, may
+   trim. */
+[data-state="phone"] .b-title,
+[data-state="desk"] .b-title,
+[data-state="day"] .b-title,
+[data-state="print"] .b-title {
+  -webkit-line-clamp: none;
+  overflow: visible;
+}
+
 .b-title {
   font-size: var(--size-lead);
   font-weight: 400;
@@ -751,8 +773,18 @@
    deleting a moment from a draft is ordinary editing, and in a palette
    with no red, position is what carries consequence. */
 .b-editDanger { padding: var(--gap-snug) 0 0; border-top: 1px solid var(--fore-16); }
-.b-editDanger .b-act { border-color: transparent; color: var(--fore-72); padding-left: 0; }
-.b-editDanger .b-act:hover { border-color: var(--fore-46); color: var(--fore); padding-left: var(--gap-snug); }
+/* The one destructive control on the surface. Its indent is reserved
+   at rest and the border grows outward, so the label cannot jump
+   sideways under the arriving cursor - and the keyboard gets exactly
+   what the pointer gets, which it did not. */
+.b-editDanger .b-act {
+  border-color: transparent;
+  color: var(--fore-72);
+  padding-left: var(--gap-snug);
+  margin-left: calc(var(--gap-snug) * -1);
+}
+.b-editDanger .b-act:hover,
+.b-editDanger .b-act:focus-visible { border-color: var(--fore-46); color: var(--fore); }
 
 /* One reversibility surface, one node, and it travels to wherever the
    change is being made. It used to render a thousand pixels below the
@@ -874,7 +906,19 @@
   overflow: hidden;
   margin: 0 0 var(--gap-line);
 }
-.b-linkRow span { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+.b-linkRow .b-linkField {
+  display: block;
+  min-width: 0;
+  min-height: 28px;
+  padding: var(--gap-hair) 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  border-radius: 4px;
+  cursor: text;
+}
+/* The selection is a system colour, and this palette does not admit
+   one. */
+::selection { background: var(--fore-16); color: var(--fore); }
 /* The owner's surface was byte-identical before and after publishing,
    so nothing ever told them people were holding a copy of the plan they
    were still editing. */
@@ -960,7 +1004,7 @@
   font-variant-numeric: tabular-nums;
   font-size: var(--size-card);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-display-64);
   color: var(--paper);
   margin: 0 0 0 -0.05em;
 }
@@ -970,7 +1014,7 @@
   font-weight: 600;
   font-size: var(--size-card);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-display-64);
   color: var(--paper);
   margin: 0;
 }
@@ -1006,7 +1050,7 @@
   font-weight: 600;
   font-size: var(--size-count);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-dayCount);
   color: var(--fore);
   margin: 0 0 var(--gap-line);
 }
@@ -1107,6 +1151,13 @@
 }
 /* Nothing may be cut in half by the edge of a page. */
 .b-print .b-item, .b-print .b-behindRow, .b-print .b-behind { break-inside: avoid; }
+/* On paper the past column is 220px, and a wrapping flex row put its
+   three rows on three different left edges. On the sheet the date sits
+   on its own line above the title it dates; on screen the row stays as
+   it is, where it is correct. */
+.b-print .b-behindRow { display: block; }
+.b-print .b-behindDate { display: block; width: auto; }
+.b-print .b-behindState { display: block; margin-left: 0; }
 .b-print { padding: var(--gap-block) var(--gap-item) var(--gap-block); line-height: var(--lead-body); container-type: inline-size; }
 /* Set as data, at the data step, with the case left alone: the token is
    case-sensitive and the footer beside it is uppercase, so the only
@@ -1192,7 +1243,7 @@
   [data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
   /* Its own rule, at the same specificity as the field rule above and
      later in source, so the printed page keeps its own margins. */
-  [data-medium="sheet"] .b-print { padding: var(--gap-major) var(--gap-major) var(--gap-section); }
+  [data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
   [data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 }
 
@@ -1225,7 +1276,7 @@
   [data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
   /* The horizon does not scroll away — but only where it has a column
      of its own. */
-  .b-stick { position: sticky; top: 24px; }
+  .b-stick { position: sticky; top: var(--gap-section); }
   /* In the rail, where there is a column already. */
   .b-editHost .b-edit {
     /* relative, not static: the reversibility bar inside is absolutely
@@ -1240,4 +1291,49 @@
     overflow: visible;
     margin-top: var(--gap-block);
   }
+}
+
+/* Uppercase mono is now exclusive to SECTION HEADS. Twenty-seven of the
+   thirty-two uppercase strings on the owner's screen used to render at
+   one byte-identical spec, so a head, a date, a unit, a state, a
+   control and the wordmark were the same typographic object and a
+   reader had to read every label to learn what kind of thing it was.
+   Data takes the spec the count column already ships - sentence case at
+   the data letterfit - and state and provenance sit one ink step
+   behind it. No new size, weight or hue. */
+.b-date,
+.b-behindDate,
+.b-behindCount,
+.b-unit,
+.b-origin,
+.b-where {
+  text-transform: none;
+  letter-spacing: var(--track-data);
+  color: var(--fore-72);
+}
+.b-hiddenMark,
+.b-behindState,
+.b-keeper,
+.b-foot span {
+  text-transform: none;
+  letter-spacing: var(--track-data);
+  color: var(--fore-62);
+}
+.b-grabWord { text-transform: none; letter-spacing: var(--track-data); }
+
+/* Provenance, said where a stranger looks first. */
+.b-keeper {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  line-height: var(--lead-label);
+  margin: var(--gap-snug) 0 0;
+}
+
+/* Forty-four pixels is the floor for anything a thumb presses, and the
+   file wrote that down and then applied it to one control. Scoped to a
+   coarse pointer, so nothing at desk width moves. */
+@media (pointer: coarse) {
+  .b-act, .b-seg button, .b-step, .b-grab, .b-linkField { min-height: 44px; height: auto; }
+  .b-step { min-width: 52px; }
+  .b-stepBtns, .b-editActs { gap: 14px; }
 }

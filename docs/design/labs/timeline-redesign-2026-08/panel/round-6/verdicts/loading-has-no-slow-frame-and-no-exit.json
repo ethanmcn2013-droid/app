@@ -1,0 +1,6 @@
+{
+  "id": "loading-has-no-slow-frame-and-no-exit",
+  "real": true,
+  "reason": "Measured: loading has zero focusables, but so do phone and ended, the flagship guest states. That count is the read-only register, not a defect, and ended is itself a control-free dead end. What survives is real: driven for nine seconds the frame still says \"Bringing in what is ahead\" and stays aria-busy forever, with no terminal face. The lab already renders ended, an equally server-side condition, as a static frame, so a stalled-load frame is honest and buildable as a branch inside states.loading. The fix's timer and auto-focus are wrong.",
+  "sharpenedFix": "Branch states.loading on a declared twelfth state, loading-slow, so it is shot and gated deterministically. No 8-second JS timer: that would make the loading shot flaky and untestable. Keep the reserved geometry, the real h1 name and the today line byte-identical so nothing hops between faces. Set aria-busy false and role=\"status\" on the field; replace only the sub line. Render one .b-act \"Try again\" but do NOT auto-focus it, a control appearing unbidden and stealing focus is a class lessons.md already records. Match ended's voice: name the condition, then what is still true."
+}

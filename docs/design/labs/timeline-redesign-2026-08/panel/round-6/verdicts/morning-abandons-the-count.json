@@ -1,0 +1,6 @@
+{
+  "id": "morning-abandons-the-count",
+  "real": false,
+  "reason": "The premise is false. Driven at 390, state=day renders .b-dayCount \"Today\" at 96px Geist 600 — the count's own display step, in the count's own slot, at the same phone medium the guest read 79 and 23 in. The slot is not gone; the word occupies it. --size-countWide is unreachable: MEDIUM maps day to phone. The fix also overturns round 2's confirmed word-not-zero ruling and reinstates the DAYS AWAY unit that ruling resolved to nothing; \"0 days away\" is untrue on the day. The derived \"274 days since\" line reinstates the tally voice round 2 refused for received surfaces, and BEHIND YOU already sits last before the footer.",
+  "sharpenedFix": "Nothing to build. If the panel still wants the morning less thin, the only admissible move is naming, not counting: one sentence under the rule drawn from a date that exists — the first recorded moment named and dated, not a span in days — kept in the received voice and set at the body step. Leave .b-dayCount as the word at 96, leave the DAYS AWAY unit absent, and leave the BEHIND YOU disclosure where it is."
+}

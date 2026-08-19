@@ -1,0 +1,35 @@
+{
+  "seat": "Product taste and emotional resonance",
+  "score": 8.4,
+  "findings": [
+    {
+      "id": "morning-abandons-the-count",
+      "element": "state=day (the wedding morning), the whole card",
+      "problem": "Driven at 390 and 1440, the morning is the thinnest screen in the set: one word (\"Today\"), one restated row (\"Wedding day\"), a backward-pointing disclosure (\"Venue walk-through, 19 September\") and one tab stop in the entire surface. The product's signature figure vanishes on the one day it resolves. A guest has watched that number fall from 79 to 23 to 16; on the morning the slot it lived in is simply gone, so the countdown never lands. Every other state is 8.5-plus work and this one is a placeholder, which is the wrong screen to under-build because it is the screen the whole plan was built toward and the one people will screenshot. I am not asking for the running order that was adjudicated out; nothing here needs a field the fixture does not have.",
+      "fix": "Render the arrival in the language already built. Keep the count slot on this surface and set it to 0 at --size-countWide with the same DAYS AWAY label directly under it, so the measure resolves in the place the guest has been reading it, then \"Saturday 3 October 2026\" and \"The day the plan was for.\" beneath. Below the accent rule, close the arc with one derived sentence from dates already in the fixture: the span in days from the earliest recorded moment to today, written as \"274 days since the first thing you wrote down, 2 January.\" Move the BEHIND YOU disclosure below that line so the last thing on the morning is arrival, not the September walk-through.",
+      "cost": 0.4
+    },
+    {
+      "id": "guest-never-sees-the-sender",
+      "element": "state=phone, the received guest surface, footer .b-foot \"KEPT BY ORLA\"",
+      "problem": "Measured at 390: the only attribution on the received plan is \"KEPT BY ORLA\" at 11px, --fore-62, at y=1621 in a 1686px document, i.e. below the entire plan and off the first screen. A guest opens a bare link on a phone, and the first question a human asks of an unexpected link is who sent it. Timeline answers that question last, smallest, faintest, and in a verb (\"kept by\") that a guest has to decode. The unfurl state carries the sender through the message thread, so the page currently borrows trust it never restates once opened. Provenance is emotional, not administrative: it is the difference between a stranger's URL and something Orla made for you.",
+      "fix": "On guest surfaces only (phone, desk, day, print), put the sender above the count in the head block, at --size-body, --fore-72, in plain words: \"Orla is keeping this plan for Mara & Finn.\" Keep MARA & FINN as the mono label above it. Leave the footer to \"SIGNAL TIMELINE\" and \"UPDATED 15 JULY 2026\" and drop the KEPT BY line from the footer so the fact is stated once, at the top, where it is needed.",
+      "cost": 0.3
+    },
+    {
+      "id": "keepsake-past-rows-wrap",
+      "element": "state=print, .b-behindRow in b.css:417-418",
+      "problem": ".b-behindRow is display:flex with flex-wrap:wrap, and .b-behindDate:empty is set to display:none. On the A4 keepsake this produces three rows in three different shapes: \"Fri 2 Jan  We said yes\" sits inline, \"Sat 18 Apr\" drops \"The Orchard reserved\" onto a second line because the title no longer fits, and the cancelled row loses its date cell entirely so the struck title starts at the left margin with \"Not going ahead\" stranded on a line of its own. Nothing aligns to anything. This is the one artifact that gets printed, handled and kept, and its memory column reads as a rendering accident rather than a decision, which is precisely where a discerning stranger stops believing a studio made this.",
+      "fix": "Make .b-behindRow a two-column grid instead of a wrapping flex row: display:grid; grid-template-columns: 96px 1fr; column-gap:14px; align-items:baseline, so every date sits on one left edge and every title wraps inside its own column. Remove the .b-behindDate:empty{display:none} rule so a dateless row keeps its cell and the titles stay on one axis. Put .b-behindState in the title column, on its own line under the title it qualifies, at --size-label, rather than letting it wrap to the row's end.",
+      "cost": 0.2
+    },
+    {
+      "id": "copy-fallback-unreachable",
+      "element": "state=publish, the link string (a bare SPAN containing timeline.signalstudio.ie/s/j7Qm...)",
+      "problem": "Driven with the clipboard write blocked, the surface says the honest thing: \"Copy did not work. Select the link and copy it by hand.\" But the link is a bare SPAN with no tabindex and no tab stop; the tab order on this state is Back to the plan, the preview card, Copy the link, and nothing else. A keyboard user cannot follow the instruction at all, and on a phone it means long-pressing a 60-character monospace string and dragging handles. The single action the whole owner flow funnels into is the one whose failure path dead-ends, and the sentence the product says at that moment is not true for the people most likely to hit it.",
+      "fix": "Render the URL as a readonly input rather than a span: <input class=\"b-linkField\" readonly spellcheck=\"false\" value=\"...\"> keeping the same mono size, box and hairline. Select its whole value on focus and on click (el.select()), so tabbing to it or tapping it once selects the entire link. Then the fallback sentence becomes true as written, and the field also gives the owner a way to check the link they are about to send.",
+      "cost": 0.2
+    }
+  ],
+  "biggestWin": "The win is that one idea is carried the whole way through and it is the right idea: a quantity drawn as a distance survives from the 1440 desk to a 390 phone to A4 paper to the card that lands in a message, the proportions hold at every scale, and the single moment of motion is spent on the one thing worth animating (a moment travelling to its new date). The 79 on the phone is a genuine emotional hit, the voice is exact and unfussy, and three colours with no decoration read as expensive rather than austere. THE SINGLE THING HOLDING MY SEAT BELOW 9.5: the entire emotional arc rises toward the wedding morning and that screen abandons the count at the moment it resolves, so the product's one memorable device never pays off — that is a build of roughly half a day on state=day, not a polish pass and not a different decision."
+}

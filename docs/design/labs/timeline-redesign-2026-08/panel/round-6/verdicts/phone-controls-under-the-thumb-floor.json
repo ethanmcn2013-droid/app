@@ -1,0 +1,6 @@
+{
+  "id": "phone-controls-under-the-thumb-floor",
+  "real": true,
+  "reason": "Measured at 390x844: .b-act 39px (Add a moment/Preview/Publish/Done/Delete/Set the day), .b-seg 37px, .b-step 44x40 at 54px centre-to-centre. Only .b-behindSummary honours the 44px floor its own b.css comment writes down, and that comment names the guest control explicitly. No coarse-pointer query exists anywhere. The gate cannot see this: audit.mjs runs at 1440x960 and its floor is 28. The finding also understates it, .b-grab Edit, the entry to every edit, is 49x28.",
+  "sharpenedFix": "Take the fix, add .b-grab, and enforce it. Under @media (pointer: coarse) only: min-height 44px on .b-act, .b-seg button, .b-step, .b-grab; .b-step min-width 52px; .b-stepBtns and .b-editActs gap 14px; keep the week steps set off by var(--gap-snug) from the day pair. Fine pointer is untouched, so 1440 does not move. Then raise the gate: make audit.mjs's 28px floor 44 when the viewport is <=430 or the pointer is coarse, and add a 390x844 run to the lab check. Measured cost: first moment 765 to 770px, still one above the fold; editor panel 557 to 582px; steppers 54 to 66px apart, fitting 390 with room."
+}

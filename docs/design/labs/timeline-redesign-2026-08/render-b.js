@@ -114,6 +114,10 @@
          places, presented as a fact about the record. The record has no
          venue field, and inventing one is a data-model change. */
       h("p.b-sub", { text: F.project.primaryDate.label }),
+      /* Provenance was answered last and smallest, at the very bottom of
+         a seventeen-hundred-pixel document, in the one artifact whose
+         whole job is that a person sent it. */
+      o.keeper ? h("p.b-keeper", { text: "Kept by " + F.workspace.owner }) : null,
       /* Today is a screen fact. On paper it is already in the line
          above, and a second, differently grammared one dates the sheet
          twice. */
@@ -347,7 +351,15 @@
        whole company is judged by. No new data and no new control - the
        measure that draws what is ahead draws what is behind. */
     var rowsNode = o.back
-      ? backMeasure(clock, past)
+      ? backMeasure(clock, past, o.owner)
+      /* CONFIRMED AND DEFERRED (round 6). The owner's past carries no
+         control, so a moment is uneditable the day after it passes. The
+         fix is a build, not a polish: the editor refuses any date behind
+         today by design - itself the remedy for a confirmed round-1
+         finding - and a row placed on a measure inside a collapsed
+         disclosure has no geometry to be placed against. Landing it
+         unverified in the last rounds would trade a proven surface for
+         an unproven one. Recorded in the round report as open. */
       : h("div.b-behindRows", {}, rows);
 
     var head = [
@@ -381,11 +393,18 @@
          twelve pixels below it; where they are folded the sentence is
          the only statement of the past there is. */
       listed ? null : h("p.b-behindNote", { "data-when": "folded", text: note.trim() }),
-      h("p.b-behindNote", {
-        "data-when": listed ? "listed" : "open",
-        text: done.length + (done.length === 1 ? " moment" : " moments") + " behind you"
-          + (dropped.length ? ", and one thing that did not happen." : "."),
-      }),
+      /* The head carries the only total - it counts the rows a reader
+         can see. This line partitions that total; it never recounts it,
+         because the same noun printing two different numbers on one
+         sheet is the whole defect. */
+      dropped.length
+        ? h("p.b-behindNote", {
+          "data-when": listed ? "listed" : "open",
+          text: dropped.length === 1
+            ? "One of them did not happen."
+            : dropped.length + " of them did not happen.",
+        })
+        : null,
     ]);
   }
 
@@ -396,12 +415,12 @@
      not. */
   var BACK_PX = 2;
 
-  function backMeasure(clock, past) {
+  function backMeasure(clock, past, owner) {
     var dated = past.filter(function (m) { return m.date; });
     var undated = past.filter(function (m) { return !m.date; });
     var kids = [h("div.b-rail", { "aria-hidden": "true" })];
     dated.forEach(function (item) {
-      kids.push(row(item, -daysFrom(clock, item.date), false, "days back"));
+      kids.push(row(item, -daysFrom(clock, item.date), owner, "days back"));
     });
     return h("div.b-backWrap", {}, [
       h("h2.b-measureHead", { text: "days back" }),
@@ -425,7 +444,7 @@
   function foot(opts) {
     var o = opts || {};
     return h("footer.b-foot", {}, [
-      h("span", { text: "Kept by " + F.workspace.owner }),
+      o.keeper === false ? null : h("span", { text: "Kept by " + F.workspace.owner }),
       /* No stamp where there is nothing to stamp: a project that has
          never held anything, and the morning itself, where an
          eleven-week-old timestamp reads as neglect. */
@@ -622,6 +641,11 @@
        nobody can find under that name any more. */
     var panel = document.getElementById("b-edit");
     if (panel) panel.setAttribute("aria-label", "Editing " + shown);
+    /* The trim is an invariant, not a one-time measurement: typing a
+       long name used to leave the row cut mid-word by the CSS safety
+       net with a tooltip still naming the moment before it. */
+    title.removeAttribute("title");
+    C.settle();
     var grab = item.querySelector(".b-grab");
     if (grab) {
       grab.setAttribute("aria-label", grabLabel(
@@ -1118,7 +1142,10 @@
 
   states.phone = function () {
     return h("div.tl-device", {}, [
-      field([horizon({}), measure({ medium: "phone" }), behindBlock({}), foot({})]),
+      field([
+        horizon({ keeper: true }), measure({ medium: "phone" }),
+        behindBlock({}), foot({ keeper: false }),
+      ]),
     ]);
   };
 
@@ -1160,6 +1187,7 @@
 
   states["owner-empty"] = function () {
     var sibling = F.siblings[1];      /* Aisling & Tom — real, and genuinely empty */
+    var started = null;
     var node = field([
       bar(sibling.name, [inert("Nothing to preview yet")]),
       h("div.b-empty", {}, [
@@ -1181,6 +1209,30 @@
       foot({ stamp: false }),
     ], "", sibling.name);
     node.addEventListener("click", function (event) {
+      /* The owner's very first action in the product. It used to be a
+         focused primary button that did nothing at all, on the one
+         screen that had just told them moments come next. The plan this
+         opens is genuinely theirs: a project with one day in it and one
+         untitled moment, not the demonstration plan. */
+      if (event.target.closest('[data-act="add"]') && started) {
+        F.project.name = sibling.name;
+        F.project.primaryDate = { label: "The day", date: started };
+        var half = Math.max(1, Math.round(F.days(F.today, started) / 2));
+        F.milestones.length = 0;
+        F.milestones.push({
+          id: "moment-1", title: "", date: F.plusDays(F.today, half), state: "next",
+        });
+        cameFromOwner = false;
+        go("owner-flight");
+        var host = document.querySelector(".b-measure");
+        var first = host && host.querySelector(".b-item");
+        if (first) {
+          openEditor(document.querySelector(".b-field"), first);
+          var field = document.querySelector("#b-edit-title");
+          if (field) field.focus({ preventScroll: true });
+        }
+        return;
+      }
       if (!event.target.closest('[data-act="setday"]')) return;
       var input = node.querySelector("#b-empty-date");
       var hint = node.querySelector("#b-empty-hint");
@@ -1210,8 +1262,9 @@
           h("p.b-hint#b-empty-hint", { role: "status", text: "The day is set. Moments come next." }),
         ]);
         empty.parentElement.replaceChild(next, empty);
-        var go = next.querySelector('[data-act="add"]');
-        if (go) go.focus({ preventScroll: true });
+        var onward = next.querySelector('[data-act="add"]');
+        if (onward) onward.focus({ preventScroll: true });
+        started = iso;
         return;
       }
       input.setAttribute("aria-invalid", "true");
@@ -1224,6 +1277,29 @@
     });
     return node;
   };
+
+  /* The page says "select the link and copy it by hand" when the
+     clipboard refuses. It has to be possible to do that with a
+     keyboard, so the link takes focus and selects itself. */
+  /* An opaque token has no seam that carries meaning, so every seam is
+     free - and a break offered every ten characters means no line is
+     ever a four-character sliver at any width. */
+  function breakable(text) {
+    var out = [];
+    for (var i = 0; i < text.length; i += 10) {
+      if (i) out.push(h("wbr"));
+      out.push(text.slice(i, i + 10));
+    }
+    return out;
+  }
+
+  function selectAll(node) {
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    var pick = window.getSelection();
+    pick.removeAllRanges();
+    pick.addRange(range);
+  }
 
   function card() {
     var said = F.countdown(F.toDay());
@@ -1272,10 +1348,29 @@
           h("p.b-who", { text: "The link" }),
           h("h2.b-pressTitle", { "data-type": "headline", text: "Send it to " + F.project.name + "." }),
           h("p.b-pressBody", {
-            text: "It carries the day, the distance and the plan, and nothing from "
-              + "your workspace: no notes, no suppliers, no prices.",
+            text: "It carries the day, the distance and the plan, and nothing "
+              + "else: no notes, no suppliers, no prices.",
           }),
-          h("div.b-linkRow", {}, [h("span", { text: F.shareUrl })]),
+          /* The page says "select the link and copy it by hand" when the
+             clipboard refuses, and the link was a bare span with no tab
+             stop - an instruction the product did not support. A
+             readonly field is built and functional, so it may hold
+             focus. The break is at the midpoint rather than wherever
+             the box runs out: an opaque token has no seam that means
+             anything, so any break is free and a four-character orphan
+             is not. */
+          h("div.b-linkRow", {}, [
+            h("span.b-linkField", {
+              tabindex: "0",
+              role: "textbox",
+              "aria-readonly": "true",
+              "aria-label": "The link, ready to select",
+              on: {
+                focus: function (event) { selectAll(event.target); },
+                click: function (event) { selectAll(event.target); },
+              },
+            }, breakable(F.shareUrlFull)),
+          ]),
           h("div.b-barActs", {}, [
             act("Copy the link", true, { "data-act": "copy" }),
             inert("Sending comes next"),
@@ -1391,7 +1486,7 @@
           h("h1.b-endedTitle", { "data-type": "headline", text: "This link has stopped working." }),
           h("p.b-endedBody", {
             text: "The day was " + F.fmt.longYear(F.project.primaryDate.date) + ". "
-              + F.workspace.owner + " can send a new link.",
+              + "Ask " + F.workspace.owner + " for a new link.",
           }),
           h("p.b-note", { text: "Nothing has been deleted. Only the link stopped working." }),
           foot({ stamp: false, ended: true }),
@@ -1423,7 +1518,8 @@
            product, and a mass that collapsed on arrival. */
         h("div.b-skel", { style: "width:107px;height:86px;margin:0 0 10px -5px" }),
         h("div.b-skel", { style: "width:227px;height:26px;margin-bottom:8px" }),
-        h("div.b-skel", { style: "width:188px;height:23px" }),
+        h("div.b-skel", { style: "width:188px;height:23px;margin-bottom:12px" }),
+        h("div.b-skel", { style: "width:92px;height:15px" }),
         h("div", { style: "height:1px;background:var(--fore-16);margin:26px 0 0" }),
         h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(F.today) }),
         h("p.b-sub", { style: "margin-top:26px;line-height:1.5", text: "Bringing in what is ahead." }),
@@ -1431,10 +1527,30 @@
     ]);
   };
 
+  /* A load that has stopped arriving. Declared as its own state
+     rather than fired by a timer, so it is photographed and graded
+     deterministically; every reserved dimension is byte-identical to
+     the loading frame, so nothing moves between the two faces. */
+  states["loading-slow"] = function () {
+    var node = states.loading();
+    var field = node.querySelector(".b-field");
+    field.setAttribute("aria-busy", "false");
+    field.setAttribute("role", "status");
+    var says = node.querySelector(".b-sub");
+    says.textContent = "This is taking longer than it should.";
+    says.parentElement.appendChild(h("p.b-note", {
+      text: "The plan has not been deleted, and the link still works.",
+    }));
+    says.parentElement.appendChild(h("div.b-barActs", {}, [
+      act("Try again", false, { "data-act": "retry" }),
+    ]));
+    return node;
+  };
+
   var MEDIUM = {
     "owner-flight": "full", "owner-empty": "full", "owner-editing": "full", publish: "full",
     phone: "phone", desk: "full", day: "phone", print: "sheet",
-    unfurl: "card", ended: "phone", loading: "phone",
+    unfurl: "card", ended: "phone", loading: "phone", "loading-slow": "phone",
   };
 
   window.__TLD.b = {

@@ -1,0 +1,6 @@
+{
+  "id": "the-band-still-has-no-composition",
+  "real": false,
+  "reason": "Re-filed, not re-argued. Round 5 measured the same single track (1068px at 1279) and the same sunk first moment, then ruled: keep 1280, because two columns at 1000 leaves the plan lane 284px inside its own 124px gutter and reopens the round-1 collision. This seat proposes that exact refuted move and never answers the 284px. Its new numbers restate it: 944px is the 1068px track minus the gutter, and .b-item paints nothing across that width in flight or desk, so the swing is invisible. Sticky needs a column it does not have.",
+  "sharpenedFix": "Do not move the breakpoint or cap .b-stick - its gap note measures 457px at 1279 and 344 would rewrap it. One real residue, neither accent nor breakpoint: .b-copy's hover, focus-within and editing wash is painted fill bound to the track, so the selection behind a moment is 944px at 1279 and 544px at 1280 (owner-editing, measured). Fix the ink, not the grid: in b.css give .b-copy { max-width: 544px } unconditionally - a no-op at 390 and 1280+. Assert in interaction-check.mjs that the editing .b-copy never exceeds 560px at 1152 and 1279."
+}

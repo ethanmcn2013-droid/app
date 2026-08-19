@@ -247,6 +247,13 @@ body {
   --track-head: -0.03em;      
   --track-title: -0.035em;    
   --track-display: -0.045em;  
+  
+  --track-display-148: -0.05em;
+  --track-display-96: -0.04em;
+  --track-display-64: -0.032em;
+  --track-title-64: -0.038em;
+  --track-title-48: -0.032em;
+  --track-dayCount: -0.03em;  
 
   
   --lead-display: 0.9;        
@@ -268,14 +275,15 @@ body {
   --gap-page: 80px;
 
   
-  --size-label: 11px;         
-  --size-labelWide: 12px;     
-  --size-data: 13px;          
-  --size-body: 15px;          
-  --size-lead: 17px;          
-  --size-date: 20px;          
-  --size-head: 24px;          
-  --size-title: 30px;         
+  
+  --size-label: 0.6875rem;    
+  --size-labelWide: 0.75rem;  
+  --size-data: 0.8125rem;     
+  --size-body: 0.9375rem;     
+  --size-lead: 1.0625rem;     
+  --size-date: 1.25rem;       
+  --size-head: 1.5rem;        
+  --size-title: 1.875rem;     
   --size-titleWide: 38px;     
   --size-figure: 48px;        
   --size-card: 64px;          
@@ -342,7 +350,12 @@ body {
   padding: var(--stage-pad);
   line-height: 1.5;
 }
-.deck[data-state="publish"] .tl-page, .deck[data-state="day"] .tl-page, .deck[data-state="ended"] .tl-page, .deck[data-state="loading"] .tl-page, .deck[data-state="unfurl"] .tl-page { justify-content: safe center; }
+.deck[data-state="publish"] .tl-page, .deck[data-state="day"] .tl-page, .deck[data-state="ended"] .tl-page, .deck[data-state="loading"] .tl-page, .deck[data-state="unfurl"] .tl-page {
+  justify-content: safe center;
+  
+  min-height: 100%;
+}
+.deck[data-state="publish"] .tl-page, .deck[data-state="day"] .tl-page, .deck[data-state="ended"] .tl-page, .deck[data-state="loading"] .tl-page { min-height: 100%; }
 .deck .tl-vh, .deck .b-vh {
   position: absolute;
   width: 1px;
@@ -390,6 +403,19 @@ body {
 .deck a { color: inherit; text-decoration: none; }
 .deck button, .deck input, .deck textarea, .deck select { font: inherit; color: inherit; line-height: 1.5; }
 .deck button { cursor: pointer; background: none; border: 0; padding: 0; text-align: left; }
+@media (forced-colors: active) {
+.deck .b-rail { background: CanvasText; }
+.deck .b-todayRule, .deck .b-dayNow { border-color: Highlight; background: Highlight; }
+.deck .b-dayNow { background: none; border-top-color: Highlight; }
+.deck .b-tick { background: Canvas; border-color: CanvasText; }
+.deck .b-item[data-lead="true"] .b-tick, .deck .b-item[data-anchor="true"]::before {
+    background: Highlight;
+    border-color: Highlight;
+    
+    border-width: 3px;
+  }
+.deck .b-back .b-item[data-lead="true"] .b-tick { background: Canvas; border-color: CanvasText; }
+}
 @media (prefers-reduced-motion: reduce) {
 .deck *, .deck *::before, .deck *::after {
     animation-duration: 0.001s !important;
@@ -419,16 +445,17 @@ body {
   line-height: var(--lead-label);
   letter-spacing: var(--track-labelWide);
   text-transform: uppercase;
-  color: var(--fore-62);
+  color: var(--fore);
   margin: 0 0 var(--gap-item);
 }
+.deck .b-press .b-who { color: var(--fore-62); }
 .deck .b-count { display: flex; align-items: baseline; gap: 12px; margin: 0 0 var(--gap-snug); }
 .deck .b-num {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--size-count);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-display-96);
   color: var(--fore);
   
   margin-left: -0.05em;
@@ -543,7 +570,12 @@ body {
   border: 1px solid var(--fore-46);
   background: var(--back);
 }
-.deck .b-copy { margin-top: var(--push, 0px); position: relative; }
+.deck .b-copy {
+  max-width: 544px; margin-top: var(--push, 0px); position: relative; }
+.deck[data-state="phone"] .b-title, .deck[data-state="desk"] .b-title, .deck[data-state="day"] .b-title, .deck[data-state="print"] .b-title {
+  -webkit-line-clamp: none;
+  overflow: visible;
+}
 .deck .b-title {
   font-size: var(--size-lead);
   font-weight: 400;
@@ -971,8 +1003,13 @@ body {
 .deck .b-seg button[aria-pressed="true"] { background: var(--fore); color: var(--back); }
 .deck .b-editActs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .deck .b-editDanger { padding: var(--gap-snug) 0 0; border-top: 1px solid var(--fore-16); }
-.deck .b-editDanger .b-act { border-color: transparent; color: var(--fore-72); padding-left: 0; }
-.deck .b-editDanger .b-act:hover { border-color: var(--fore-46); color: var(--fore); padding-left: var(--gap-snug); }
+.deck .b-editDanger .b-act {
+  border-color: transparent;
+  color: var(--fore-72);
+  padding-left: var(--gap-snug);
+  margin-left: calc(var(--gap-snug) * -1);
+}
+.deck .b-editDanger .b-act:hover, .deck .b-editDanger .b-act:focus-visible { border-color: var(--fore-46); color: var(--fore); }
 .deck .b-undo {
   margin: var(--gap-item) 0 0;
   padding: var(--gap-snug) var(--gap-snug);
@@ -1074,7 +1111,17 @@ body {
   overflow: hidden;
   margin: 0 0 var(--gap-line);
 }
-.deck .b-linkRow span { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+.deck .b-linkRow .b-linkField {
+  display: block;
+  min-width: 0;
+  min-height: 28px;
+  padding: var(--gap-hair) 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  border-radius: 4px;
+  cursor: text;
+}
+.deck ::selection { background: var(--fore-16); color: var(--fore); }
 .deck .b-shared {
   font-size: var(--size-data);
   line-height: var(--lead-body);
@@ -1144,7 +1191,7 @@ body {
   font-variant-numeric: tabular-nums;
   font-size: var(--size-card);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-display-64);
   color: var(--paper);
   margin: 0 0 0 -0.05em;
 }
@@ -1152,7 +1199,7 @@ body {
   font-weight: 600;
   font-size: var(--size-card);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-display-64);
   color: var(--paper);
   margin: 0;
 }
@@ -1174,7 +1221,7 @@ body {
   font-weight: 600;
   font-size: var(--size-count);
   line-height: var(--lead-display);
-  letter-spacing: var(--track-display);
+  letter-spacing: var(--track-dayCount);
   color: var(--fore);
   margin: 0 0 var(--gap-line);
 }
@@ -1244,6 +1291,9 @@ body {
 .deck[data-medium="sheet"] .tl-stage { max-width: none; }
 }
 .deck .b-print .b-item, .deck .b-print .b-behindRow, .deck .b-print .b-behind { break-inside: avoid; }
+.deck .b-print .b-behindRow { display: block; }
+.deck .b-print .b-behindDate { display: block; width: auto; }
+.deck .b-print .b-behindState { display: block; margin-left: 0; }
 .deck .b-print { padding: var(--gap-block) var(--gap-item) var(--gap-block); line-height: var(--lead-body); container-type: inline-size; }
 .deck .b-printLink { margin: var(--gap-section) 0 0; }
 .deck .b-printLinkLabel {
@@ -1311,7 +1361,7 @@ body {
 .deck[data-w="1440"][data-medium="sheet"] .b-ended, .deck[data-w="1440"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1440"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
 .deck[data-w="1440"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
-.deck[data-w="1440"][data-medium="sheet"] .b-print { padding: var(--gap-major) var(--gap-major) var(--gap-section); }
+.deck[data-w="1440"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="1440"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="1280"] .b-ownerField { padding-top: var(--gap-section); }
 .deck[data-w="1280"] .b-ownerField .b-bar { margin-bottom: var(--gap-block); }
@@ -1344,7 +1394,7 @@ body {
 .deck[data-w="1280"][data-medium="sheet"] .b-ended, .deck[data-w="1280"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1280"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
 .deck[data-w="1280"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
-.deck[data-w="1280"][data-medium="sheet"] .b-print { padding: var(--gap-major) var(--gap-major) var(--gap-section); }
+.deck[data-w="1280"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="1280"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="1152"] .b-ownerField { padding-top: var(--gap-section); }
 .deck[data-w="1152"] .b-ownerField .b-bar { margin-bottom: var(--gap-block); }
@@ -1377,7 +1427,7 @@ body {
 .deck[data-w="1152"][data-medium="sheet"] .b-ended, .deck[data-w="1152"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1152"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1152"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
 .deck[data-w="1152"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
-.deck[data-w="1152"][data-medium="sheet"] .b-print { padding: var(--gap-major) var(--gap-major) var(--gap-section); }
+.deck[data-w="1152"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="1152"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="768"] .b-ownerField { padding-top: var(--gap-section); }
 .deck[data-w="768"] .b-ownerField .b-bar { margin-bottom: var(--gap-block); }
@@ -1410,7 +1460,7 @@ body {
 .deck[data-w="768"][data-medium="sheet"] .b-ended, .deck[data-w="768"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="768"][data-medium="sheet"] .b-dayWrap, .deck[data-w="768"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
 .deck[data-w="768"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
-.deck[data-w="768"][data-medium="sheet"] .b-print { padding: var(--gap-major) var(--gap-major) var(--gap-section); }
+.deck[data-w="768"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="768"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="1152"][data-editor-open] { scroll-padding-bottom: var(--b-sheet, 30px); }
 .deck[data-w="1152"][data-medium] .b-field[data-editor-open] { padding-bottom: var(--b-sheet, var(--gap-block)); }
@@ -1447,7 +1497,7 @@ body {
 .deck[data-w="390"][data-undo="true"][data-editor-open] .b-edit { bottom: 76px; }
 .deck[data-w="1440"][data-medium="full"] .b-two { grid-template-columns: 344px minmax(0, 1fr); gap: 56px; align-items: start; }
 .deck[data-w="1440"][data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
-.deck[data-w="1440"] .b-stick { position: sticky; top: 24px; }
+.deck[data-w="1440"] .b-stick { position: sticky; top: var(--gap-section); }
 .deck[data-w="1440"] .b-editHost .b-edit {
     
     position: relative;
@@ -1459,7 +1509,7 @@ body {
   }
 .deck[data-w="1280"][data-medium="full"] .b-two { grid-template-columns: 344px minmax(0, 1fr); gap: 56px; align-items: start; }
 .deck[data-w="1280"][data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
-.deck[data-w="1280"] .b-stick { position: sticky; top: 24px; }
+.deck[data-w="1280"] .b-stick { position: sticky; top: var(--gap-section); }
 .deck[data-w="1280"] .b-editHost .b-edit {
     
     position: relative;
@@ -1469,6 +1519,26 @@ body {
     overflow: visible;
     margin-top: var(--gap-block);
   }
+.deck .b-date, .deck .b-behindDate, .deck .b-behindCount, .deck .b-unit, .deck .b-origin, .deck .b-where {
+  text-transform: none;
+  letter-spacing: var(--track-data);
+  color: var(--fore-72);
+}
+.deck .b-hiddenMark, .deck .b-behindState, .deck .b-keeper, .deck .b-foot span {
+  text-transform: none;
+  letter-spacing: var(--track-data);
+  color: var(--fore-62);
+}
+.deck .b-grabWord { text-transform: none; letter-spacing: var(--track-data); }
+.deck .b-keeper {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  line-height: var(--lead-label);
+  margin: var(--gap-snug) 0 0;
+}
+.deck[data-w="390"] .b-act, .deck .b-seg button, .deck .b-step, .deck .b-grab, .deck .b-linkField { min-height: 44px; height: auto; }
+.deck[data-w="390"] .b-step { min-width: 52px; }
+.deck[data-w="390"] .b-stepBtns, .deck .b-editActs { gap: 14px; }
 .deck { position: relative; overflow: hidden; }
 
 </style>
@@ -1784,6 +1854,7 @@ body {
     ["unfurl", "Unfurl"],
     ["ended", "Ended"],
     ["loading", "Loading"],
+    ["loading-slow", "Loading · slow"],
   ];
 
   var CAPTIONS = {
@@ -1798,6 +1869,7 @@ body {
     unfurl: ["Unfurl", "the link before it is opened"],
     ended: ["Ended", "revoked or expired"],
     loading: ["Loading", "what the frame promises"],
+    "loading-slow": ["Loading", "when it stops arriving"],
   };
 
   function caption(state, variantName) {
@@ -2093,6 +2165,10 @@ body {
          places, presented as a fact about the record. The record has no
          venue field, and inventing one is a data-model change. */
       h("p.b-sub", { text: F.project.primaryDate.label }),
+      /* Provenance was answered last and smallest, at the very bottom of
+         a seventeen-hundred-pixel document, in the one artifact whose
+         whole job is that a person sent it. */
+      o.keeper ? h("p.b-keeper", { text: "Kept by " + F.workspace.owner }) : null,
       /* Today is a screen fact. On paper it is already in the line
          above, and a second, differently grammared one dates the sheet
          twice. */
@@ -2326,7 +2402,15 @@ body {
        whole company is judged by. No new data and no new control - the
        measure that draws what is ahead draws what is behind. */
     var rowsNode = o.back
-      ? backMeasure(clock, past)
+      ? backMeasure(clock, past, o.owner)
+      /* CONFIRMED AND DEFERRED (round 6). The owner's past carries no
+         control, so a moment is uneditable the day after it passes. The
+         fix is a build, not a polish: the editor refuses any date behind
+         today by design - itself the remedy for a confirmed round-1
+         finding - and a row placed on a measure inside a collapsed
+         disclosure has no geometry to be placed against. Landing it
+         unverified in the last rounds would trade a proven surface for
+         an unproven one. Recorded in the round report as open. */
       : h("div.b-behindRows", {}, rows);
 
     var head = [
@@ -2360,11 +2444,18 @@ body {
          twelve pixels below it; where they are folded the sentence is
          the only statement of the past there is. */
       listed ? null : h("p.b-behindNote", { "data-when": "folded", text: note.trim() }),
-      h("p.b-behindNote", {
-        "data-when": listed ? "listed" : "open",
-        text: done.length + (done.length === 1 ? " moment" : " moments") + " behind you"
-          + (dropped.length ? ", and one thing that did not happen." : "."),
-      }),
+      /* The head carries the only total - it counts the rows a reader
+         can see. This line partitions that total; it never recounts it,
+         because the same noun printing two different numbers on one
+         sheet is the whole defect. */
+      dropped.length
+        ? h("p.b-behindNote", {
+          "data-when": listed ? "listed" : "open",
+          text: dropped.length === 1
+            ? "One of them did not happen."
+            : dropped.length + " of them did not happen.",
+        })
+        : null,
     ]);
   }
 
@@ -2375,12 +2466,12 @@ body {
      not. */
   var BACK_PX = 2;
 
-  function backMeasure(clock, past) {
+  function backMeasure(clock, past, owner) {
     var dated = past.filter(function (m) { return m.date; });
     var undated = past.filter(function (m) { return !m.date; });
     var kids = [h("div.b-rail", { "aria-hidden": "true" })];
     dated.forEach(function (item) {
-      kids.push(row(item, -daysFrom(clock, item.date), false, "days back"));
+      kids.push(row(item, -daysFrom(clock, item.date), owner, "days back"));
     });
     return h("div.b-backWrap", {}, [
       h("h2.b-measureHead", { text: "days back" }),
@@ -2404,7 +2495,7 @@ body {
   function foot(opts) {
     var o = opts || {};
     return h("footer.b-foot", {}, [
-      h("span", { text: "Kept by " + F.workspace.owner }),
+      o.keeper === false ? null : h("span", { text: "Kept by " + F.workspace.owner }),
       /* No stamp where there is nothing to stamp: a project that has
          never held anything, and the morning itself, where an
          eleven-week-old timestamp reads as neglect. */
@@ -2601,6 +2692,11 @@ body {
        nobody can find under that name any more. */
     var panel = document.getElementById("b-edit");
     if (panel) panel.setAttribute("aria-label", "Editing " + shown);
+    /* The trim is an invariant, not a one-time measurement: typing a
+       long name used to leave the row cut mid-word by the CSS safety
+       net with a tooltip still naming the moment before it. */
+    title.removeAttribute("title");
+    C.settle();
     var grab = item.querySelector(".b-grab");
     if (grab) {
       grab.setAttribute("aria-label", grabLabel(
@@ -3097,7 +3193,10 @@ body {
 
   states.phone = function () {
     return h("div.tl-device", {}, [
-      field([horizon({}), measure({ medium: "phone" }), behindBlock({}), foot({})]),
+      field([
+        horizon({ keeper: true }), measure({ medium: "phone" }),
+        behindBlock({}), foot({ keeper: false }),
+      ]),
     ]);
   };
 
@@ -3139,6 +3238,7 @@ body {
 
   states["owner-empty"] = function () {
     var sibling = F.siblings[1];      /* Aisling & Tom — real, and genuinely empty */
+    var started = null;
     var node = field([
       bar(sibling.name, [inert("Nothing to preview yet")]),
       h("div.b-empty", {}, [
@@ -3160,6 +3260,30 @@ body {
       foot({ stamp: false }),
     ], "", sibling.name);
     node.addEventListener("click", function (event) {
+      /* The owner's very first action in the product. It used to be a
+         focused primary button that did nothing at all, on the one
+         screen that had just told them moments come next. The plan this
+         opens is genuinely theirs: a project with one day in it and one
+         untitled moment, not the demonstration plan. */
+      if (event.target.closest('[data-act="add"]') && started) {
+        F.project.name = sibling.name;
+        F.project.primaryDate = { label: "The day", date: started };
+        var half = Math.max(1, Math.round(F.days(F.today, started) / 2));
+        F.milestones.length = 0;
+        F.milestones.push({
+          id: "moment-1", title: "", date: F.plusDays(F.today, half), state: "next",
+        });
+        cameFromOwner = false;
+        go("owner-flight");
+        var host = document.querySelector(".b-measure");
+        var first = host && host.querySelector(".b-item");
+        if (first) {
+          openEditor(document.querySelector(".b-field"), first);
+          var field = document.querySelector("#b-edit-title");
+          if (field) field.focus({ preventScroll: true });
+        }
+        return;
+      }
       if (!event.target.closest('[data-act="setday"]')) return;
       var input = node.querySelector("#b-empty-date");
       var hint = node.querySelector("#b-empty-hint");
@@ -3189,8 +3313,9 @@ body {
           h("p.b-hint#b-empty-hint", { role: "status", text: "The day is set. Moments come next." }),
         ]);
         empty.parentElement.replaceChild(next, empty);
-        var go = next.querySelector('[data-act="add"]');
-        if (go) go.focus({ preventScroll: true });
+        var onward = next.querySelector('[data-act="add"]');
+        if (onward) onward.focus({ preventScroll: true });
+        started = iso;
         return;
       }
       input.setAttribute("aria-invalid", "true");
@@ -3203,6 +3328,29 @@ body {
     });
     return node;
   };
+
+  /* The page says "select the link and copy it by hand" when the
+     clipboard refuses. It has to be possible to do that with a
+     keyboard, so the link takes focus and selects itself. */
+  /* An opaque token has no seam that carries meaning, so every seam is
+     free - and a break offered every ten characters means no line is
+     ever a four-character sliver at any width. */
+  function breakable(text) {
+    var out = [];
+    for (var i = 0; i < text.length; i += 10) {
+      if (i) out.push(h("wbr"));
+      out.push(text.slice(i, i + 10));
+    }
+    return out;
+  }
+
+  function selectAll(node) {
+    var range = document.createRange();
+    range.selectNodeContents(node);
+    var pick = window.getSelection();
+    pick.removeAllRanges();
+    pick.addRange(range);
+  }
 
   function card() {
     var said = F.countdown(F.toDay());
@@ -3251,10 +3399,29 @@ body {
           h("p.b-who", { text: "The link" }),
           h("h2.b-pressTitle", { "data-type": "headline", text: "Send it to " + F.project.name + "." }),
           h("p.b-pressBody", {
-            text: "It carries the day, the distance and the plan, and nothing from "
-              + "your workspace: no notes, no suppliers, no prices.",
+            text: "It carries the day, the distance and the plan, and nothing "
+              + "else: no notes, no suppliers, no prices.",
           }),
-          h("div.b-linkRow", {}, [h("span", { text: F.shareUrl })]),
+          /* The page says "select the link and copy it by hand" when the
+             clipboard refuses, and the link was a bare span with no tab
+             stop - an instruction the product did not support. A
+             readonly field is built and functional, so it may hold
+             focus. The break is at the midpoint rather than wherever
+             the box runs out: an opaque token has no seam that means
+             anything, so any break is free and a four-character orphan
+             is not. */
+          h("div.b-linkRow", {}, [
+            h("span.b-linkField", {
+              tabindex: "0",
+              role: "textbox",
+              "aria-readonly": "true",
+              "aria-label": "The link, ready to select",
+              on: {
+                focus: function (event) { selectAll(event.target); },
+                click: function (event) { selectAll(event.target); },
+              },
+            }, breakable(F.shareUrlFull)),
+          ]),
           h("div.b-barActs", {}, [
             act("Copy the link", true, { "data-act": "copy" }),
             inert("Sending comes next"),
@@ -3370,7 +3537,7 @@ body {
           h("h1.b-endedTitle", { "data-type": "headline", text: "This link has stopped working." }),
           h("p.b-endedBody", {
             text: "The day was " + F.fmt.longYear(F.project.primaryDate.date) + ". "
-              + F.workspace.owner + " can send a new link.",
+              + "Ask " + F.workspace.owner + " for a new link.",
           }),
           h("p.b-note", { text: "Nothing has been deleted. Only the link stopped working." }),
           foot({ stamp: false, ended: true }),
@@ -3402,7 +3569,8 @@ body {
            product, and a mass that collapsed on arrival. */
         h("div.b-skel", { style: "width:107px;height:86px;margin:0 0 10px -5px" }),
         h("div.b-skel", { style: "width:227px;height:26px;margin-bottom:8px" }),
-        h("div.b-skel", { style: "width:188px;height:23px" }),
+        h("div.b-skel", { style: "width:188px;height:23px;margin-bottom:12px" }),
+        h("div.b-skel", { style: "width:92px;height:15px" }),
         h("div", { style: "height:1px;background:var(--fore-16);margin:26px 0 0" }),
         h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(F.today) }),
         h("p.b-sub", { style: "margin-top:26px;line-height:1.5", text: "Bringing in what is ahead." }),
@@ -3410,10 +3578,30 @@ body {
     ]);
   };
 
+  /* A load that has stopped arriving. Declared as its own state
+     rather than fired by a timer, so it is photographed and graded
+     deterministically; every reserved dimension is byte-identical to
+     the loading frame, so nothing moves between the two faces. */
+  states["loading-slow"] = function () {
+    var node = states.loading();
+    var field = node.querySelector(".b-field");
+    field.setAttribute("aria-busy", "false");
+    field.setAttribute("role", "status");
+    var says = node.querySelector(".b-sub");
+    says.textContent = "This is taking longer than it should.";
+    says.parentElement.appendChild(h("p.b-note", {
+      text: "The plan has not been deleted, and the link still works.",
+    }));
+    says.parentElement.appendChild(h("div.b-barActs", {}, [
+      act("Try again", false, { "data-act": "retry" }),
+    ]));
+    return node;
+  };
+
   var MEDIUM = {
     "owner-flight": "full", "owner-empty": "full", "owner-editing": "full", publish: "full",
     phone: "phone", desk: "full", day: "phone", print: "sheet",
-    unfurl: "card", ended: "phone", loading: "phone",
+    unfurl: "card", ended: "phone", loading: "phone", "loading-slow": "phone",
   };
 
   window.__TLD.b = {
@@ -3467,7 +3655,7 @@ body {
   window.__TLCORE.mount();
 })();
 </script>
-<script id="meta" type="application/json">{"name":"timeline-redesign","palette":[{"name":"Ink","hex":"#111111"},{"name":"Indigo","hex":"#4f46e5"},{"name":"White","hex":"#ffffff"}],"widths":[1440,1280,1152,768,390],"heights":{"390":844,"768":1024,"1152":800,"1279":800,"1280":900,"1440":960},"states":["owner-flight","owner-empty","owner-editing","publish","phone","desk","day","print","unfurl","ended","loading"]}</script>
+<script id="meta" type="application/json">{"name":"timeline-redesign","palette":[{"name":"Ink","hex":"#111111"},{"name":"Indigo","hex":"#4f46e5"},{"name":"White","hex":"#ffffff"}],"widths":[1440,1280,1152,768,390],"heights":{"390":844,"768":1024,"1152":800,"1279":800,"1280":900,"1440":960},"states":["owner-flight","owner-empty","owner-editing","publish","phone","desk","day","print","unfurl","ended","loading","loading-slow"]}</script>
 <script>
 (function () {
   "use strict";

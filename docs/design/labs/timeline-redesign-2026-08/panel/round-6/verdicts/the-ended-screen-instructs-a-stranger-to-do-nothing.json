@@ -1,0 +1,6 @@
+{
+  "id": "the-ended-screen-instructs-a-stranger-to-do-nothing",
+  "real": false,
+  "reason": "Factually wrong: the same screen already introduces her role \u2014 the foot reads KEPT BY ORLA, verified at 390. The move (ask the keeper) is therefore stated, not withheld. \"No affordance\" is not ended-specific; phone and day also render zero focusables. Round 4 already refuted the mailto as inventing contact the fixture lacks, and the finding concedes it. The rewrite \"Ask Orla, who keeps this plan\" restates the foot verbatim on a four-line screen \u2014 trading a soft grammar for the duplication defect the panel fixed elsewhere.",
+  "sharpenedFix": "Optional, not required to pass. If the panel wants reader-addressed grammar, the only version that invents nothing and does not double the foot is one word: \"Orla can send a new link.\" becomes \"Ask Orla for a new link.\" No apposition, no button, no contact detail, no keeper-role gloss \u2014 the foot keeps that job. Leave the first and third sentences verbatim, and leave interaction-check.mjs alone: it already asserts the ended copy, and a name-matching assertion tests the fixture, not the design."
+}

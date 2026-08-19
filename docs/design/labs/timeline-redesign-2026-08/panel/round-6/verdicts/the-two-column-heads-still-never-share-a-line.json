@@ -1,0 +1,6 @@
+{
+  "id": "the-two-column-heads-still-never-share-a-line",
+  "real": false,
+  "reason": "Re-filed, not re-evidenced. Its premise stays false: driven at 1280/1440 on owner-flight, owner-editing, desk and print, .b-who is 12px/2.4px tracking, left-aligned, 344px; .b-measureHead is 11px/1.76px, right-aligned in an 84px lane. Not the same object. The only new fact is 22px becoming 20px, which now equals .b-who's own margin-bottom token exactly, proving the step is the ladder, not inheritance.",
+  "sharpenedFix": "None. Leave margin-top at var(--gap-item). It mirrors .b-who's margin-bottom and seats the label's box bottom (266.3) against .b-num's top (267.7) in all three two-column mediums at both widths; zeroing it lifts the whole measure column, rail and rows by 20px and trades a clean ladder step for 0.7px-off baselines between 9px and 8px caps. Do not add the interaction-check assertion; it would lock in a false equivalence between two differently specified labels."
+}

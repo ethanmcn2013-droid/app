@@ -1,0 +1,6 @@
+{
+  "id": "centred-states-are-top-aligned",
+  "real": true,
+  "reason": "Verified. .tl-page is a block child of #tl, so its height is its content: 449 unfurl, 454 loading, 569 ended, 630 publish, 833 day at 1440x960. safe center has zero free space to distribute, so all five states pin to the top, leaving 431-551px of dead ground below (I measure 40px above; the seat's 68 includes the card's own inner offset). This is not the safe fallback - that engages only on overflow - it is the rule's own stated intent, 'sit in the middle of the room', never reached at any height I tested.",
+  "sharpenedFix": "Right diagnosis, wrong shape. Scope the height to the five states rather than all of .tl-page - print and the owner states must keep flex-start - by adding min-height: 100dvh to the existing five-selector rule in shell.css. Drop margin-block: auto on .tl-stage: it is redundant with safe center and auto margins are the unsafe form, able to push content out of reach if .tl-page ever gains a fixed height. Gate conditionally: when stage height plus twice stage-pad fits innerHeight, assert |top - (innerHeight - bottom)| <= 2; otherwise assert top equals stage-pad. An unconditional 24px check fails legitimately at 390x844 publish and 1440x700 day."
+}

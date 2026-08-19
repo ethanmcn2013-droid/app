@@ -284,6 +284,61 @@
           "done": "The rail passes its own direction to the row builder, and to the run grouper that rewrites the same phrase on every repaint - otherwise the wrong word came back on the next paint. Graded on the state that actually has the rail."
         }
       ]
+    },
+    {
+      "round": 6,
+      "scores": {
+        "UI composition": 8.2,
+        "Typography": 8.4,
+        "Interaction and states": 8.3,
+        "UX and information design": 8.3,
+        "Brand and copy": 8.2,
+        "Product taste and emotional resonance": 8.4,
+        "Measured evidence": 8.5
+      },
+      "findings": 34,
+      "confirmed": 19,
+      "refuted": 15,
+      "fixed": 18,
+      "headline": "The floor rose 7.8 to 8.2 and the spread closed to three tenths - every seat now sits between 8.2 and 8.5, which is the first round where the panel agreed about where the work stands. Each seat was asked to name the single thing holding it below 9.5, and the answers were specific enough to build from. What they found was mostly regimes the gates had never entered rather than defects in what had been graded. The design carries every status in ink density and fill rather than hue, so a forced-colours desktop did not degrade it - it erased it: the rail painted nothing, today went white on white, and the one indigo mark became indistinguishable from seven ordinary ticks, with 499 assertions passing over a page with no spine. A thumb is not a pointer, and the file wrote 44 pixels down as the floor and then applied it to one control while the measured gate ran at desk width with a floor of 28. Twenty-seven of thirty-two uppercase strings on the owner's screen rendered at one byte-identical spec, so a head, a date, a unit, a state, a control and the wordmark were the same typographic object. Five states declared vertical centring and none of them centred, because the page was a block whose height was its own content. And round 5's own second frame for the first run shipped with a focused primary button that did nothing at all - the owner's first action in the product, dead, on the screen that had just said moments come next. All of that is fixed. One confirmed finding is deliberately NOT fixed and is recorded as open: the owner cannot edit a moment once it has passed, and the fix is a build the last rounds are the wrong place for. The behaviour gate went 499 to 539 assertions and learned to enter two regimes it had never been in - a coarse pointer and a forced palette.",
+      "worst": [
+        {
+          "seat": "Measured evidence",
+          "cost": 0.4,
+          "problem": "There is no forced-colours block anywhere, and because this design carries all status in ink density and fill rather than hue, a forced-colours context flattens the whole hierarchy instead of degrading it. Reproduced: the rail computes white at 16% on a forced white ground and paints nothing across 1530 pixels; the today rule goes white on white; every tick collapses to one fill, the single indigo lead included. Five hundred assertions passed over a page with no spine, no today and no next.",
+          "done": "The design's own logic is mapped onto system colours rather than opted out of them: structure to CanvasText, the accent to Highlight, ordinary ticks hollow against Canvas so filled still means this one - and the lead mark carries a heavier ring as well, because a forced palette may repaint any fill but cannot flatten geometry. The gate can now open a page in a forced palette at all, which it never could."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.4,
+          "problem": "Round 5 built the answered first-run frame and its only control was inert. The state's click handler returned early unless the target was the date button, so the focused primary reading \"Add a moment\" did nothing on one press or two: no row, no editor, no undo - the owner's first action in the product, on the screen that had just told them moments come next, and a breach of the lab's own rule that nothing unbuilt gets a button.",
+          "done": "It opens their plan: the project takes the day they just set, one untitled moment is placed midway to it, and the editor opens on it with the name field focused - the sibling project, not the demonstration one. A shadowed variable made the first attempt throw silently, which is exactly why the assertion now presses the button and counts the row rather than checking the button exists."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.5,
+          "problem": "The sub-fifteen-pixel tier had collapsed into a monoculture: 27 of 32 uppercase strings on the owner's screen rendered at one byte-identical spec, so a section head, a date, a unit, a state, an action and the product wordmark were the same typographic object and a reader had to read every label to learn what kind of thing it was.",
+          "done": "Three roles where there was one, using only steps the ladders already ship. Uppercase mono is now exclusive to section heads. Data takes the spec the count column already used - sentence case at the data letterfit - and state and provenance sit one ink step behind it. A refuter caught that the proposed remedy would have moved heads onto the ceremonial tracking step reserved for the couple's own line, and would have put text on an ink step that fails AA."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.4,
+          "problem": "The master's own comment writes 44 pixels down as the floor for anything a thumb presses, and then applies it to exactly one control. At 390 the primary actions are 39px, the visibility toggle 37, the steppers 40, and the entry to every edit 28. All of it passed automation, because the measured gate runs at desk width with a floor of 28.",
+          "done": "Scoped to a coarse pointer, so nothing at desk width moves: every control a thumb presses is 44 pixels, with the steppers widened and their gaps opened. Measured cost to the owner's phone: five pixels, and the first moment stays above the fold. The behaviour gate now opens a touch context and measures them there."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "Five states declare vertical centring and none of them centres. The page is a block child, so its height is its own content and there is no free space for `safe center` to distribute - leaving between 431 and 551 pixels of dead ground below the one object each of those states exists to show.",
+          "done": "The five states are given a room to sit in. Scoped to them rather than to every page, because print and the owner surfaces must keep their top edge; and the gate asserts the centring only where the object actually fits, since a taller object must stay reachable rather than be centred out of view."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.3,
+          "problem": "On the same A4 sheet the past block's head printed \"3 moments\" and its closing line printed \"2 moments behind you, and one thing that did not happen\" - the head counting everything behind, the sentence counting only what happened. Same noun, same block, two totals, no definitions. The self-contradicting-count class, on paper.",
+          "done": "The head carries the only total, because it counts the rows a reader can see. The line under it partitions that total and never recounts it, and renders nothing at all when there is nothing to partition. A refuter caught that the old template hardcoded \"one thing\" for any number of cancelled moments, so that bug did not get carried forward."
+        }
+      ]
     }
   ]
 }

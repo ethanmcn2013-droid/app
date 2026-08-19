@@ -1,0 +1,6 @@
+{
+  "id": "display-tracking-not-size-graded",
+  "real": true,
+  "reason": "Measured: --track-display is flat -0.045em at 64, 96 and 148px; --track-title flat -0.035em at 48 and 64px. On the day frame 'Today' (Geist 600, 96px) closes to a 0.6px o-d gap and 3.3px d-a - contact at that size; at -0.03em they open to 2.1 and 4.8px. Real, and worst on the frame with the most feeling in it. The ground half is refuted: it argues paper wants tighter yet sets both ends looser, and 1px at 148px is invisible on a keepsake nobody sees beside a screen.",
+  "sharpenedFix": "Take the size grade only. Declare --track-display-148 -0.05em, --track-display-96 -0.04em, --track-display-64 -0.032em, --track-title-64 -0.038em, --track-title-48 -0.032em on :root, and give .b-dayCount its own --track-dayCount -0.03em because it is letters, not tabular figures. No gate work: audit.mjs keys tracking on family+size merged across states and reads every --track-* off :root, so declared tokens pass as-is and sans|96 has one occupant. Keep any sans-64 value equal to .b-emptyTitle's so no new family+size collision opens. Drop the ground axis: redefining --track-* under [data-ground=paper] puts two letterfits on mono|148 across states and turns the tracking check red."
+}

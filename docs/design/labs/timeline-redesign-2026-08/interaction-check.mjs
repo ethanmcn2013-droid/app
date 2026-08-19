@@ -40,9 +40,16 @@ const browser = await (async () => {
 })();
 const pageErrors = [];
 
-async function open({ state, variant, viewport } = {}) {
+async function open({ state, variant, viewport, touch, forcedColors } = {}) {
   const vp = viewport ?? { width: 1440, height: 960 };
-  const page = await browser.newPage({ viewport: vp });
+  const page = await browser.newPage({
+    viewport: vp,
+    /* A thumb is not a pointer and a forced-colours desktop is not this
+       palette: both are regimes the gate has to be able to enter. */
+    hasTouch: Boolean(touch),
+    isMobile: Boolean(touch),
+    forcedColors: forcedColors || undefined,
+  });
   page.on("pageerror", (e) => pageErrors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && pageErrors.push(m.text()));
   const url = new URL(MASTER);
@@ -376,7 +383,7 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
   ok("one press does not collide the measure", (await collisions(page)) === 0);
   ok("the nearest item is still the one marked",
     await page.evaluate(() => {
-      const items = Array.from(document.querySelectorAll(".b-item"))
+      const items = Array.from(document.querySelectorAll(".b-measure:not([data-back]) .b-item"))
         .sort((a, b) => Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away")));
       return items[0].getAttribute("data-lead") === "true"
         && document.querySelectorAll('[data-lead="true"]').length === 1;
@@ -393,8 +400,8 @@ for (const width of [320, 360, 390, 432, 768, 1280]) {
   }
   await page.waitForTimeout(320);
   const ceiling = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll(".b-item"));
-    const measure = document.querySelector(".b-measure");
+    const items = Array.from(document.querySelectorAll(".b-measure:not([data-back]) .b-item"));
+    const measure = document.querySelector(".b-measure:not([data-back])");
     const box = measure.getBoundingClientRect();
     return {
       max: Math.max(...items.map((el) => Number(el.getAttribute("data-away")))),
@@ -843,13 +850,13 @@ for (const state of ["unfurl", "publish"]) {
 {
   const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
   const before = await page.evaluate(() => ({
-    count: document.querySelectorAll(".b-item").length,
+    count: document.querySelectorAll(".b-measure:not([data-back]) .b-item").length,
     titles: Array.from(document.querySelectorAll(".b-title")).map((el) => el.getAttribute("data-full") || el.textContent).join("|"),
   }));
   await page.locator('[data-act="add"]').click();
   await page.waitForTimeout(300);
   const added = await page.evaluate(() => ({
-    count: document.querySelectorAll(".b-item").length,
+    count: document.querySelectorAll(".b-measure:not([data-back]) .b-item").length,
     titles: Array.from(document.querySelectorAll(".b-title")).map((el) => el.getAttribute("data-full") || el.textContent).join("|"),
     focused: document.activeElement.id,
     value: (document.querySelector("#b-edit-title") || {}).value,
@@ -864,7 +871,7 @@ for (const state of ["unfurl", "publish"]) {
   await page.locator(".b-undoAct").click();
   await page.waitForTimeout(250);
   ok("add can be taken back",
-    (await page.evaluate(() => document.querySelectorAll(".b-item").length)) === before.count);
+    (await page.evaluate(() => document.querySelectorAll(".b-measure:not([data-back]) .b-item").length)) === before.count);
   await page.close();
 }
 
@@ -875,11 +882,11 @@ for (const state of ["unfurl", "publish"]) {
   const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
   await page.locator('.b-step[aria-label="Move a week later"]').click();
   await page.waitForTimeout(250);
-  const start = await page.evaluate(() => document.querySelectorAll(".b-item").length);
+  const start = await page.evaluate(() => document.querySelectorAll(".b-measure:not([data-back]) .b-item").length);
   await page.locator('[data-act="delete"]').click();
   await page.waitForTimeout(300);
   const gone = await page.evaluate(() => ({
-    count: document.querySelectorAll(".b-item").length,
+    count: document.querySelectorAll(".b-measure:not([data-back]) .b-item").length,
     undo: document.querySelector(".b-undoText").textContent,
     active: document.activeElement.tagName,
   }));
@@ -889,7 +896,7 @@ for (const state of ["unfurl", "publish"]) {
   await page.locator(".b-undoAct").click();
   await page.waitForTimeout(300);
   ok("delete can be taken back",
-    (await page.evaluate(() => document.querySelectorAll(".b-item").length)) === start);
+    (await page.evaluate(() => document.querySelectorAll(".b-measure:not([data-back]) .b-item").length)) === start);
   ok("the move before the delete is still on the stack",
     /moved 7 days later/.test(await page.evaluate(() => document.querySelector(".b-undoText").textContent)));
   /* The advertised key was bound to the field, so once focus fell to the
@@ -1242,7 +1249,7 @@ for (const width of [390, 768, 1280, 1440]) {
   const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
   await page.waitForTimeout(300);
   const order = async () => page.evaluate(() =>
-    Array.from(document.querySelectorAll(".b-item")).map((el) => Number(el.getAttribute("data-away"))));
+    Array.from(document.querySelectorAll(".b-measure:not([data-back]) .b-item")).map((el) => Number(el.getAttribute("data-away"))));
   for (let i = 0; i < 3; i += 1) {
     await page.locator('.b-step[data-delta="7"]').first().click();
     await page.waitForTimeout(150);
@@ -1727,14 +1734,21 @@ for (const state of ["phone", "day", "owner-flight"]) {
     name: (document.querySelector(".b-who") || {}).textContent,
     widths: Array.from(document.querySelectorAll(".b-skel"))
       .map((el) => Math.round(el.getBoundingClientRect().width)),
-    today: document.querySelector(".b-todayLabel").getBoundingClientRect().top,
+    /* Measured from the head of the field, not from the top of the
+       window: loading is one object in a room and is centred in it,
+       while the arrived plan is a document that starts at the top, so
+       an absolute comparison would be measuring the centring rather
+       than the hop. */
+    today: document.querySelector(".b-todayLabel").getBoundingClientRect().top
+      - document.querySelector(".b-who").getBoundingClientRect().top,
   }));
   await before.close();
   const after = await open({ state: "phone", viewport: { width: 390, height: 844 } });
   await after.waitForTimeout(250);
   const real = await after.evaluate(() => ({
     name: (document.querySelector(".b-who") || {}).textContent,
-    today: document.querySelector(".b-todayLabel").getBoundingClientRect().top,
+    today: document.querySelector(".b-todayLabel").getBoundingClientRect().top
+      - document.querySelector(".b-who").getBoundingClientRect().top,
   }));
   await after.close();
   ok("the loading frame keeps the name the card promised", skel.name === real.name,
@@ -1919,6 +1933,278 @@ for (const width of [390, 1024]) {
   await page.close();
 }
 
+/* ═══ round 6 ══════════════════════════════════════════════════════ */
+
+/* The owner's very first action in the product. It was a focused
+   primary button that did nothing at all, on the screen that had just
+   said moments come next. */
+{
+  const page = await open({ state: "owner-empty", viewport: { width: 1280, height: 900 } });
+  await page.locator("#b-empty-date").fill("3 October 2026");
+  await page.locator('[data-act="setday"]').click();
+  await page.waitForTimeout(250);
+  await page.locator('.b-empty [data-act="add"]').click();
+  await page.waitForTimeout(400);
+  const started = await page.evaluate(() => ({
+    rows: document.querySelectorAll(".b-measure:not([data-back]) .b-item").length,
+    editor: document.querySelectorAll(".b-edit").length,
+    focused: document.activeElement.id,
+    named: (document.querySelector(".b-who") || {}).textContent,
+  }));
+  ok("the first action puts a moment on the plan", started.rows === 1, String(started.rows));
+  ok("and opens it to be named", started.editor === 1 && started.focused === "b-edit-title",
+    started.focused);
+  ok("and it is their plan, not the demonstration",
+    /Aisling/i.test(started.named || ""), String(started.named));
+  await page.close();
+}
+
+/* One noun, one number. The head counts the rows a reader can see; the
+   sentence under it partitions that total and never recounts it. */
+for (const [variant, state] of [["approach", "print"], ["record", "desk"]]) {
+  const page = await open({ state, variant });
+  await page.waitForTimeout(250);
+  const said = await page.evaluate(() => {
+    const head = (document.querySelector(".b-behindCount") || {}).textContent || "";
+    const notes = Array.from(document.querySelectorAll(".b-behindNote"))
+      .filter((n) => n.checkVisibility({ contentVisibilityAuto: true }))
+      .map((n) => n.textContent);
+    const rows = document.querySelectorAll(".b-behindRow").length;
+    return { head, notes, rows };
+  });
+  ok(`the head counts what is on the page · ${variant}/${state}`,
+    said.head === said.rows + " moments", said.head + " vs " + said.rows);
+  ok(`nothing recounts it in the same words · ${variant}/${state}`,
+    !said.notes.some((n) => /\d+ moments/.test(n)), said.notes.join(" | "));
+  await page.close();
+}
+
+/* Provenance, said where a stranger looks first rather than last and
+   smallest — and said once. */
+{
+  const page = await open({ state: "phone", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  const who = await page.evaluate(() => {
+    const all = Array.from(document.querySelectorAll("*"))
+      .filter((el) => el.children.length === 0 && /Kept by/i.test(el.textContent));
+    return { count: all.length, top: all.length ? Math.round(all[0].getBoundingClientRect().top) : -1 };
+  });
+  ok("the sender is named once", who.count === 1, String(who.count));
+  ok("and named on the first screen", who.top > 0 && who.top < 844, String(who.top));
+  await page.close();
+}
+
+/* Uppercase mono is exclusive to section heads. Twenty-seven of
+   thirty-two strings used to render at one byte-identical spec. */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(250);
+  const roles = await page.evaluate(() => {
+    const seen = new Map();
+    for (const el of document.querySelectorAll("*")) {
+      if (el.children.length || !el.textContent.trim()) continue;
+      const cs = getComputedStyle(el);
+      if (cs.textTransform !== "uppercase") continue;
+      if (!el.checkVisibility({ contentVisibilityAuto: true })) continue;
+      /* The caption naming the frame is the lab's furniture, not the
+         artifact - the measured gate exempts it for the same reason. */
+      if (el.closest(".tl-caption")) continue;
+      const key = cs.fontFamily + "|" + cs.fontSize + "|" + cs.letterSpacing + "|" + cs.color;
+      seen.set(key, (seen.get(key) || 0) + 1);
+    }
+    /* Uppercase is now reserved for section heads, so the remaining
+       uppercase strings SHOULD share one spec. What must not be
+       uppercase is anything that is not a head. */
+    const strays = [];
+    for (const sel of [".b-date", ".b-unit", ".b-behindDate", ".b-behindCount",
+      ".b-behindState", ".b-hiddenMark", ".b-keeper", ".b-origin", ".b-where"]) {
+      for (const el of document.querySelectorAll(sel)) {
+        if (getComputedStyle(el).textTransform === "uppercase") strays.push(sel);
+      }
+    }
+    return { specs: seen.size, strays: Array.from(new Set(strays)) };
+  });
+  ok("uppercase is reserved for section heads", roles.strays.length === 0,
+    roles.strays.join(" | "));
+  ok("and the heads are one object", roles.specs <= 3, String(roles.specs));
+  await page.close();
+}
+
+/* A thumb is not a pointer. */
+{
+  const page = await open({
+    state: "owner-editing",
+    viewport: { width: 390, height: 844 },
+    touch: true,
+  });
+  await page.waitForTimeout(300);
+  const small = await page.evaluate(() => {
+    const out = [];
+    for (const el of document.querySelectorAll(".b-act, .b-step, .b-grab, .b-seg button")) {
+      if (!el.checkVisibility({ contentVisibilityAuto: true })) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height < 44) out.push(el.className + " " + Math.round(r.height));
+    }
+    return out;
+  });
+  ok("every control a thumb presses is 44px", small.length === 0, small.slice(0, 3).join(" | "));
+  await page.close();
+}
+
+/* The spine survives a forced-colours context. Every status here is
+   carried in ink density and fill rather than hue, so there is nothing
+   to degrade to unless it is mapped. */
+{
+  const page = await open({ state: "owner-flight", forcedColors: "active" });
+  await page.waitForTimeout(300);
+  const spine = await page.evaluate(() => {
+    const bg = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? getComputedStyle(el).backgroundColor : null;
+    };
+    const ring = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? getComputedStyle(el).borderTopWidth : null;
+    };
+    return {
+      rail: bg(".b-rail"),
+      today: bg(".b-todayRule"),
+      /* A forced palette may repaint any fill, so what has to survive is
+         that the next thing is marked differently at all - here, in
+         geometry, which no palette can flatten. */
+      lead: ring('.b-item[data-lead="true"] .b-tick'),
+      plain: ring('.b-item:not([data-lead="true"]) .b-tick'),
+    };
+  });
+  ok("the rail is drawn in forced colours", spine.rail && spine.rail !== "rgba(0, 0, 0, 0)",
+    String(spine.rail));
+  ok("today is drawn in forced colours", spine.today && spine.today !== "rgba(0, 0, 0, 0)",
+    String(spine.today));
+  ok("the next thing is still the only filled mark", spine.lead !== spine.plain,
+    spine.lead + " vs " + spine.plain);
+  await page.close();
+}
+
+/* Five states are one object in a room and every one of them sat at the
+   top of it. */
+for (const state of ["ended", "unfurl", "loading", "day"]) {
+  const page = await open({ state, viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(250);
+  const room = await page.evaluate(() => {
+    const stage = document.querySelector(".tl-stage");
+    const r = stage.getBoundingClientRect();
+    const pad = parseFloat(getComputedStyle(document.querySelector(".tl-page")).paddingTop);
+    return { top: r.top, bottom: window.innerHeight - r.bottom, fits: r.height + 2 * pad <= window.innerHeight };
+  });
+  ok(`the object sits in the middle of its room · ${state}`,
+    !room.fits || Math.abs(room.top - room.bottom) <= 2,
+    Math.round(room.top) + " / " + Math.round(room.bottom));
+  await page.close();
+}
+
+/* The one destructive control does not move under the arriving cursor,
+   and the keyboard gets what the pointer gets. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(300);
+  const danger = await page.evaluate(() => {
+    const el = document.querySelector('[data-act="delete"]');
+    const rest = el.getBoundingClientRect();
+    return { restLeft: rest.left, cs: getComputedStyle(el).paddingLeft };
+  });
+  await page.hover('[data-act="delete"]');
+  await page.waitForTimeout(250);
+  const hovered = await page.evaluate(() =>
+    document.querySelector('[data-act="delete"]').getBoundingClientRect().left);
+  ok("the destructive control holds still under the cursor",
+    Math.abs(hovered - danger.restLeft) <= 1, danger.restLeft + " → " + hovered);
+  await page.evaluate(() => document.querySelector('[data-act="delete"]').focus());
+  await page.waitForTimeout(200);
+  ok("and the keyboard gets what the pointer gets", await page.evaluate(() => {
+    const cs = getComputedStyle(document.querySelector('[data-act="delete"]'));
+    return cs.borderTopColor !== "rgba(0, 0, 0, 0)" && cs.borderTopColor !== "transparent";
+  }));
+  await page.close();
+}
+
+/* The link can be selected by hand, because the page says so when the
+   clipboard refuses — and it breaks at its own midpoint rather than
+   wherever the box runs out. */
+for (const width of [390, 768]) {
+  const page = await open({ state: "publish", viewport: { width, height: 900 } });
+  await page.waitForTimeout(250);
+  const link = await page.evaluate(() => {
+    const el = document.querySelector(".b-linkField");
+    if (!el) return null;
+    el.focus();
+    const picked = String(window.getSelection());
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const lines = Array.from(range.getClientRects()).filter((r) => r.width > 0);
+    const widest = Math.max.apply(null, lines.map((r) => r.width));
+    return {
+      picked: picked.length,
+      whole: el.textContent.length,
+      last: lines.length < 2 ? 1 : lines[lines.length - 1].width / widest,
+    };
+  });
+  ok(`the link can be selected by keyboard @ ${width}`,
+    !!link && link.picked === link.whole, link ? link.picked + "/" + link.whole : "missing");
+  ok(`the link breaks where it can be read @ ${width}`, !!link && link.last > 0.25,
+    link ? String(Math.round(link.last * 100) / 100) : "missing");
+  await page.close();
+}
+
+/* A guest row carries no control, so its title may never be trimmed out
+   of reach — the finger would get an ellipsis the screen reader does
+   not. */
+for (const state of ["phone", "desk", "day"]) {
+  const page = await open({ state, viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  const long = await page.evaluate(() => {
+    const el = document.querySelector(".b-title");
+    if (!el) return null;
+    const said = "A very long name for a moment that someone typed in full and meant every word of";
+    el.setAttribute("data-full", said);
+    el.textContent = said;
+    window.__TLCORE.settle();
+    return { trimmed: el.getAttribute("data-trimmed"), clamp: getComputedStyle(el).webkitLineClamp };
+  });
+  ok(`a guest title is never trimmed out of reach · ${state}`,
+    !long || long.trimmed !== "true", long ? String(long.trimmed) : "no rows");
+  await page.close();
+}
+
+/* The one word of jargon, and the document's own language. */
+{
+  const page = await open({ state: "publish" });
+  await page.waitForTimeout(200);
+  ok("no state says workspace", !/workspace/i.test(
+    await page.evaluate(() => document.body.innerText)));
+  ok("the document says what language it is in", await page.evaluate(() =>
+    /^[a-z]{2}(-[A-Za-z]{2,})?$/.test(document.documentElement.lang)),
+    await page.evaluate(() => document.documentElement.lang));
+  await page.close();
+}
+
+/* A load that has stopped arriving has a face, and it is the same face
+   with one thing changed. */
+{
+  const page = await open({ state: "loading-slow", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(250);
+  const slow = await page.evaluate(() => ({
+    busy: document.querySelector(".b-field").getAttribute("aria-busy"),
+    says: document.body.innerText,
+    way: document.querySelectorAll('[data-act="retry"]').length,
+    focused: document.activeElement === document.body,
+  }));
+  ok("the stalled load says so", /taking longer/i.test(slow.says));
+  ok("and stops claiming to be busy", slow.busy === "false", String(slow.busy));
+  ok("and offers a way on", slow.way === 1, String(slow.way));
+  ok("and does not steal focus to do it", slow.focused);
+  await page.close();
+}
+
 /* The owner's own phone shows the owner their plan. */
 {
   const page = await open({ state: "owner-flight", viewport: { width: 390, height: 844 } });
@@ -1992,7 +2278,7 @@ for (const width of [390, 1024]) {
   await page.locator('.b-step[aria-label="Move a week earlier"]').click();
   await page.waitForTimeout(400);
   const stacked = await page.evaluate(() => {
-    const items = Array.from(document.querySelectorAll(".b-item"))
+    const items = Array.from(document.querySelectorAll(".b-measure:not([data-back]) .b-item"))
       .filter((el) => el.getAttribute("data-away") === "16");
     return {
       pair: items.length,

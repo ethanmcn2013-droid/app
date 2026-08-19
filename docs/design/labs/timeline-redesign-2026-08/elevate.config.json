@@ -14,7 +14,8 @@
     "print",
     "unfurl",
     "ended",
-    "loading"
+    "loading",
+    "loading-slow"
   ],
   "variants": [
     "approach",

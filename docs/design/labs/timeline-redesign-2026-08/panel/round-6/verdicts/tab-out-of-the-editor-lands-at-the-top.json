@@ -1,0 +1,6 @@
+{
+  "id": "tab-out-of-the-editor-lands-at-the-top",
+  "real": false,
+  "reason": "Driven at 1440 and 1024: .b-editHost sits inside .b-stick, ahead of the list at both widths, so ten panel stops then row 0, with the edited row three presses later — the geometry is as claimed. But that is DOM order behaving, not a defect: the panel is docked, not modal, and Escape is the designed, proven return. Overriding Tab makes the order non-reciprocal (Shift+Tab from the warped row would not come back), which is the focus-order surgery round-5 refused.",
+  "sharpenedFix": "None needed. If the two extra presses are ever revisited, do it without touching Tab: keep DOM order and make the edited row unmissable on arrival. The row already carries data-editing=\"true\"; scrollIntoView({block:'nearest'}) it the first time focus enters the list while the editor is open, so the reader sees where they are rather than being warped there. Any keydown preventDefault on the panel's last control breaks Tab/Shift+Tab reciprocity and rebuilds the modal editor round-5 rejected."
+}

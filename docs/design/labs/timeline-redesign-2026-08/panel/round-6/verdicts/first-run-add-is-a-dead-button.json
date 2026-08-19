@@ -1,0 +1,6 @@
+{
+  "id": "first-run-add-is-a-dead-button",
+  "real": true,
+  "reason": "Confirmed by driving owner-empty at 1440. Typing 3 October 2026 and pressing Set the day yields the answered frame; the focused primary \"Add a moment\" does nothing on one press or two: items stay 0, no editor opens, undo stays silent, the hint is unchanged. Source agrees. The state's only listener returns unless the target is [data-act=\"setday\"] (render-b.js:1184), and the add branch at line 919 belongs to ownerSurface. The owner's first action in the product is dead.",
+  "sharpenedFix": "Wire it. The measure, row, editor and undo already exist; they are bound to F.project/F.milestones, so this is a fixture scope swap, not a build, and the frame has just said \"Moments come next\" and focused the control, so inert text makes first run a dead end. In the setday branch, on [data-act=\"add\"]: point F.project at the sibling and F.milestones at one fresh untitled moment dated midway to the day, then swap in ownerSurface({ open: fresh.id }) with the title focused and remember() posting \"A moment was added.\" Do not fall into owner-flight's eight demo moments. Assert the 0 to 1 row, one editor, live undo in interaction-check.mjs."
+}

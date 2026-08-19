@@ -1,0 +1,6 @@
+{
+  "id": "the-sender-is-filed-in-the-footer",
+  "real": true,
+  "reason": "Verified at 390: document 1686px, \"KEPT BY ORLA\" at y=1621, 11px mono, fore-62, uppercase, and the only instance of the owner anywhere on phone, desk or day. horizon() (render-b.js:104-124) carries no attribution, so round 3's endorsed promotion was never built in rounds 4 or 5. The data is real (fixture.js:121, workspace.owner \"Orla\"), and no gate asserts the footer's keeper span. Provenance is answered last and smallest on the one screen a stranger judges.",
+  "sharpenedFix": "Keep the words. \"Kept by Orla\" is considered canon across rounds 1-3; taste's \"Orla is keeping this plan for Mara & Finn\" invents a sentence and repeats the h1. Do not place it under .b-who either, which splits the count composition. Add it in horizon() as the last line of the head, after .b-sub and before .b-todayRule, reusing foot()'s exact string at the footer's mono label treatment (--size-label, --fore-62). Give foot() a keeper:false flag passed by phone, desk and day so the name is stated once; leave print (no fold, and round 5's running foot) and the owner footer untouched. Gate: exactly one \"Kept by Orla\" per guest state, above y=844 on phone."
+}

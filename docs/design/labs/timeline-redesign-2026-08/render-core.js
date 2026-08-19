@@ -67,6 +67,7 @@
     ["unfurl", "Unfurl"],
     ["ended", "Ended"],
     ["loading", "Loading"],
+    ["loading-slow", "Loading · slow"],
   ];
 
   var CAPTIONS = {
@@ -81,6 +82,7 @@
     unfurl: ["Unfurl", "the link before it is opened"],
     ended: ["Ended", "revoked or expired"],
     loading: ["Loading", "what the frame promises"],
+    "loading-slow": ["Loading", "when it stops arriving"],
   };
 
   function caption(state, variantName) {
