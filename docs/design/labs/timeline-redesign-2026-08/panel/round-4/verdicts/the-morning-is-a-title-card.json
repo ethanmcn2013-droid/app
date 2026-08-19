@@ -1,0 +1,6 @@
+{
+  "id": "the-morning-is-a-title-card",
+  "real": true,
+  "reason": "Verified: states.day renders no measure. 206 characters, one interactive node, a 715px card, and nine past moments in a flat dated table. The absence is real; the fixes are not. A proportional completed measure spans 274 days — ~3,300px at guest scale, with two 105-day voids — and \"terminating at the Today word\" inverts the screen and duplicates the rail's own \"Today, 3 October\" origin under the display word. The interaction seat's running order needs per-moment times the fixture has none of, and 3 October carries one live moment, not two.",
+  "sharpenedFix": "Keep the morning one screen: \"Today\" first at the display step, \"Happening now\" and the footer unchanged, no inversion. Change the disclosure, not the poster. On open, render the nine past moments in render-b.js's own measure grammar — rail, ticks, date in the mono slot, title in .b-title — running downward from the day rule into the closed months, at a new SCALE.closed near 2px/day, so the proportion between gaps stays exact while 274 days is roughly 550px rather than 3,300. Head it \"days back\", marks at --fore-62 with no indigo, cancelled listed in one line beneath. No new data, no new control."
+}

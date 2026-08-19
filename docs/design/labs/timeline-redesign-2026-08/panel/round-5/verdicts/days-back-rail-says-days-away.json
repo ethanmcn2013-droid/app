@@ -1,0 +1,6 @@
+{
+  "id": "days-back-rail-says-days-away",
+  "real": true,
+  "reason": "Verified. In state=day (paper and record rooms too) backMeasure reuses the forward row() builder, so all eight past rows carry the hidden unit \" days away,\" under a \"days back\" heading: a screen reader hears \"14 days away\" for 19 September, already past. Partly wrong, though - the unit is screen-reader-only, not visible, and the gate's row-unit assertion runs on state=phone, which has no past rail, so it certifies nothing here.",
+  "sharpenedFix": "Pass a direction/unit into row() so backMeasure renders \"days back,\" in .b-unitSaid. Also fix closeRun() in place(), which rewrites that same span (\" days away, first of N moments\") and runs over .b-back via the line-1352 sweep - otherwise the wrong word returns on repaint. Keep the trailing comma: the span is clipped, so it never reads as a stray fragment, and the comma is what makes the spoken row a sentence. Extend the gate with a state=day assertion that each row's unit matches its rail's direction; the phone-state check at line 289 cannot see the past rail."
+}

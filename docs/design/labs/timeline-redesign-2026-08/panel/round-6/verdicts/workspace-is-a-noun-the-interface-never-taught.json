@@ -1,0 +1,6 @@
+{
+  "id": "workspace-is-a-noun-the-interface-never-taught",
+  "real": true,
+  "reason": "Verified. \"workspace\" still sits at render-b.js:1276 and is its only appearance across all eleven states, 148px under a bar reading \"The Orchard, events\". Round 4's refuter named the same word as the one genuine piece of jargon and its replacement was never applied. The defect is real. The replacement proposed here is not: naming the planner's business narrows an absolute promise, on a page that has just said \"Send it to Mara & Finn.\"",
+  "sharpenedFix": "Take round 4's line, not this one. render-b.js:1276 becomes: \"It carries the day, the distance and the plan, and nothing else: no notes, no suppliers, no prices.\" \"Nothing else\" is absolute; \"nothing else from The Orchard, events\" invites the question of what rides in from elsewhere, repeats a name already on screen, and collapses when the owner is the couple and the workspace name is the person being sent the link. Keep \"the distance\" \u2014 it is the visible control label in render-core.js. Gate it: assert no state's text matches /workspace/i."
+}

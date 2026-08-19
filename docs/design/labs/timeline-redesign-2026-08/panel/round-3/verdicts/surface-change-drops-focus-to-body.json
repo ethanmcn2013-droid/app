@@ -1,0 +1,6 @@
+{
+  "id": "surface-change-drops-focus-to-body",
+  "real": true,
+  "reason": "Drove it at 1280. Preview, Publish and Back each leave document.activeElement as BODY with scrollY 0, and publish's .b-live stays empty. go() is called only by these three in-surface product buttons, never by the console, so this is product navigation, not harness chrome. One claim is wrong: owner and desk do carry an h1 and publish an h2 \u2014 there is a title to land on \u2014 and Copy the link is three tab stops, not two.",
+  "sharpenedFix": "Add a transition helper called only from go(), so console-driven mounts stay untouched. After C.mount(), set tabindex=\"-1\" on the arrived surface's existing heading (h1.b-who for owner and desk, h2.b-pressTitle for publish) and focus({ preventScroll: true }); do not author tabindex in the state builders \u2014 that would break the guest artifact's byte-identical direct load. Publish still needs the sentence: write it into .b-live after mount so role=status fires. On Back, restore scrollY and refocus the originating control by id."
+}

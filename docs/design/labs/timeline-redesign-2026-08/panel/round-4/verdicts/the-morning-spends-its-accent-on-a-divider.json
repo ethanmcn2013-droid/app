@@ -1,0 +1,6 @@
+{
+  "id": "the-morning-spends-its-accent-on-a-divider",
+  "real": true,
+  "reason": "Driven at 390: indigo appears exactly once on the morning, a 200px hairline hung 40px under the date and 24px over a sentence it has no need to separate. The dayNote-to-dayNow hole measures 70px against 40px everywhere else, and .b-dayNow and .b-behind share the same label class, rule and inset. Moving the mark onto the live block is right. 715px is correct; the fix lands at 640px, not the claimed 620px.",
+  "sharpenedFix": "Ship the fix as written, with three corrections. The morning closes at 640px, not 620px. Keep the medium override in sync: [data-medium=\"sheet\"|\"full\"] .b-dayWrap must become 110px 56px 0, or its 60px bottom padding rebuilds the hole wherever that medium renders. And the accent now hangs on a conditional node, so a day with no live item shows no indigo at all; accept that deliberately, since nothing is happening and there is nothing to mark, rather than moving the rule onto the archive."
+}

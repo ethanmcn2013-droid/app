@@ -1,0 +1,185 @@
+You are the UX and information design seat on an independent design review panel. Round 3.
+
+YOUR LENS
+Someone organising the most important day of their life, who has never used a has to run their work from this. Comprehension without training. Is the most important thing on screen the most prominent thing. Duplicated, missing, or twice-named information. Dense and empty states.
+
+Score against this standard: the work of an award-winning design studio that
+iterated on this product for months. 10 is that studio's best shipped work.
+Benchmarks to hold it against, by name: Linear, Stripe, Vercel, xAI/Grok,
+SpaceX. Score the ARTIFACT, not the effort. A polite 8 that should be a 6
+makes the panel worthless.
+
+WHAT YOU ARE REVIEWING
+Signal Timeline is how one person hands another the plan for a day that
+matters. An owner builds the plan; an audience — a couple, their families, a
+venue — receives it as something finished. The flagship case is a wedding: the
+owner is a planner or the couple themselves, and the people receiving it will
+open it once, on a phone, probably while doing something else, and will judge
+the whole company by that one screen. Everything from the owner's first empty
+project to the printed keepsake on the morning itself is in scope. Timeline
+goes first in a suite-wide redesign because it is the surface with the most
+feeling in it; whatever wins here becomes the language Home, Notes and Tasks
+adopt next.
+The audience: Someone organising the most important day of their life, who has never used a.
+
+CONSTRAINTS THAT ARE NOT NEGOTIABLE (do not propose breaking these):
+- Palette is exactly 3 colours: Ink #111111, Indigo #4f46e5, White #ffffff, plus tints of those at
+  stated alpha. NO other hue may be introduced. Status and hierarchy are
+  expressed by ink density, weight and fill, not by colour.
+- Type is Geist and Geist Mono at weights 400 and 600 only.
+- The locked architecture:
+  Nothing. This is greenfield.
+- Protected objects (polish, never redesign):
+  Nothing. Nothing is protected.
+Findings that amount to "add a colour", "add a weight" or "restructure the
+locked architecture" are out of scope and will be discarded.
+Also out of scope for this engagement:
+Auth, billing, the data model, performance work, marketing pages, and anything
+in Tasks or Notes beyond noting what the suite will inherit.
+
+MEASURED BASELINE. Two automated gates guard this master and both pass:
+- C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\.claude\skills\elevate\scripts\audit.mjs --lab=C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08
+  (palette lock, weights, families, WCAG AA contrast against the real
+  composited backdrop, hit targets, radii, motion, type ramp, leading)
+- C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\interaction-check.mjs
+READ the behaviour gate. Everything it asserts is already proven; a finding
+that restates one of those assertions is worthless and will be refuted on
+sight. Spend your findings on what automation cannot see.
+
+Before scoring, also read the paid-for defect library at
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\.claude\skills\elevate\references\lessons.md — those classes have
+been found and fixed once already; check whether they are creeping back,
+and spend the rest of your attention past them.
+
+FRAMES (read the images):
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-owner-flight--1440x960.png    owner-flight
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-owner-empty--1440x960.png    owner-empty
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-owner-editing--1440x960.png    owner-editing
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-publish--1440x960.png    publish
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-phone--1440x960.png    phone
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-desk--1440x960.png    desk
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-day--1440x960.png    day
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-print--1440x960.png    print
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-unfurl--1440x960.png    unfurl
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-ended--1440x960.png    ended
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-loading--1440x960.png    loading
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-owner-flight--390x844.png    owner-flight at 390x844
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-owner-flight--768x1024.png    owner-flight at 768x1024
+C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\shots\approach-owner-flight--1280x900.png    owner-flight at 1280x900
+Source: C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\master.html
+
+GRADE BY DRIVING, NOT ONLY BY READING FRAMES. Open the master in Playwright
+(chromium; import { chromium } from "@playwright/test") at
+file://C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\master.html?v=approach&state=<state> and operate it:
+tab through everything, press what looks pressable, exercise the keyboard
+model end to end, resize across 390/768/1280/1440, and watch what every
+repaint does to scroll position and focus.
+
+Say plainly what this is: name the score, name what earned it, and name what
+still stands between it and 9.5 in terms a founder can act on — is what
+remains polish, a build, or a different decision, and roughly how big. Do not
+inflate to be kind and do not deflate to look rigorous.
+
+Return ONLY a JSON object matching:
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "seat",
+    "score",
+    "findings",
+    "biggestWin"
+  ],
+  "properties": {
+    "seat": {
+      "type": "string"
+    },
+    "score": {
+      "type": "number"
+    },
+    "findings": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "element",
+          "problem",
+          "fix",
+          "cost"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "a short kebab-case slug naming this defect"
+          },
+          "element": {
+            "type": "string"
+          },
+          "problem": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "string",
+            "description": "implementable exactly as written"
+          },
+          "cost": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "biggestWin": {
+      "type": "string"
+    }
+  }
+}
+
+Score to one decimal. 3 to 5 findings, each with a short kebab-case id and a
+cost in tenths. Do not hedge, do not give credit for effort, and do not
+guess at any other seat's opinion. Write the JSON to C:\Users\ethan\signal-studio-workspace\_wt-timeline-redesign\docs\design\labs\timeline-redesign-2026-08\panel\round-4\seat-ux.json.
+
+ROUND-SPECIFIC NOTES (round 4)
+Round 3 scored 7.2 at the floor, up from 6.6, and the floor seat was UI
+composition. Twenty-two findings were confirmed and fixed; thirteen were
+refuted. What changed: the owner's edits now reach the artifact (the record is
+the store, so Preview previews the plan as edited and a hidden moment is
+genuinely absent from the guest list); the past is listed with no disclosure at
+all in the record room and on paper; the reversibility bar sits inside the
+editor at every width; focus never moves the page and undo restores the view;
+the A4 keepsake is one document at every window width and prints a link that
+can be typed; the row control says "Edit" and the row carries "Hidden from
+guests" in words; a leading ladder joined the tracking ladder and both are now
+read off the page and enforced by the measured gate.
+
+Do not re-report anything on that list without driving it yourself and finding
+it still broken. Spend your attention on what has NOT been graded hard yet.
+Two candidates the panel has circled but never closed: the wedding morning,
+which is the screen the whole company will be judged by and currently holds
+about two hundred characters; and the unfurl card, the ended link and the
+loading frame, which every guest passes through and which no seat has yet
+spent a full pass on.
+
+Deliberate decisions, so argue with them rather than reporting them as
+oversights:
+- The owner measure runs at 14 pixels a day below 701px and 18 above; guests
+  run at 12 or 14, print at 10. The scale is a page-size decision and the
+  proportion between one gap and the next is identical at every scale.
+- The editor takes the left rail at 1280 and up, and is a sheet on the bottom
+  edge below that. It never stands over the measure and never pushes the rows.
+- The reversibility bar is one node that travels: into the top of the editor
+  while it is open, back to the rail when it closes, onto the bottom edge below
+  1280. It is silent and inert until it has something true to say.
+- Where the past folds it is one sentence and a disclosure; where it is listed
+  there is no control at all, because a control nobody can press is worse than
+  no control.
+- On the wedding morning the count is the word "Today" at the count's own
+  display step, in the reading face, not a zero and not a micro-label.
+- Nothing on a guest surface animates. A refuter killed an idle entrance twice
+  this round; if you want motion there, argue it as motion the reader ASKED
+  for, on the declared ladder (0 / 0.08 / 0.14 / 0.22s, one easing), zeroed
+  under prefers-reduced-motion.
+- Anything not built has no button element. Inert text is deliberate.

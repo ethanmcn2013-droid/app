@@ -1,0 +1,6 @@
+{
+  "id": "the-plan-never-says-it-is-shared",
+  "real": true,
+  "reason": "Verified in source and by driving. ownerSurface() builds one static bar, so after the publish round trip the header string is byte-identical and the owner surface never names the link. And it is derivable, not invented: the shipped visibility-line.tsx already carries publication state (state, activeShareCount, publishedAt) and its docblock names this exact defect. The redesign dropped a truth the product already tells.",
+  "sharpenedFix": "Add a publication object to fixture.js mirroring VisibilityState (state, activeShareCount, publishedAt) - real DTO shape, nothing invented. Derive live as published AND activeShareCount > 0, per visibility-line.tsx: link existence alone lies once every share is revoked. In the owner bar render the shipped sentence, not a raw URL: \"Live since 15 July. Anyone holding the link can read it.\" Draft reads \"Only you can see this.\" Keep the control labelled Publish - three publication states exist and the verb is the first-contact affordance."
+}

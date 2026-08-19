@@ -1,0 +1,6 @@
+{
+  "id": "an-untitled-moment-loses-its-name-everywhere-but-the-row",
+  "real": true,
+  "reason": "Verified by driving. render-b.js:436-437 shows the split, and the new add path (fresh.title = \"\") ships an empty accessible name: editor aria-label is \"Editing \" and the new row's button is \"Open . Saturday 25 July, in 9 days. Shown to guests.\" One detail is wrong: clearing the field does not change the editor aria-label, which is set once at open.",
+  "sharpenedFix": "Do not write the placeholder into data (record.title = shown makes \"Untitled moment\" a real saved title). Add one nameOf(record) helper returning record.title.trim() || \"Untitled moment\" and route grabLabel, the move/hide/delete receipts and the editor aria-label through it; leave fresh.title = \"\". Also re-set the editor's aria-label inside setTitle so it tracks live. History line: \"An untitled moment was added.\" Keep the proposed gate assertions."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "the-stuck-horizon-sits-on-an-inset-that-belongs-to-nothing",
+  "real": true,
+  "reason": "Measured both. .b-stick computes top:24px at 1280 and 1440; 24 is the only vertical inset in b.css off the declared nine-step ladder (4/8/12/16/20/28/40/56/80), and the audit's space check reads only margin and padding, so nothing catches it. On state=print the sheet is a single element, .b-print.b-field, at 56/56/40/56 with @page margin:0, so 56 is the head and 40 the foot on the real trim, inverting both the screen card's 40/56 and the canon a held page follows.",
+  "sharpenedFix": "Set .b-stick top to var(--gap-section); the stuck block is 338px tall at 1280 and 1440, so 40 still fits. For the keepsake reject 48/56/64: 48 and 64 are off the very ladder this finding polices, and they add 16px to a sheet already 1230 against A4's 1123, risking a second page. Swap the two tokens instead: [data-medium=\"sheet\"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); } gives 40 head, 56 foot, identical height, and matches the screen card. Gate computed top and print padding-bottom >= padding-top in interaction-check.mjs."
+}

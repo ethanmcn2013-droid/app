@@ -1,0 +1,6 @@
+{
+  "id": "senders-voice-never-reaches-the-artifact",
+  "real": false,
+  "reason": "The fix needs a sentence the real fixture does not carry. src/lib/review-suite-fixture.ts has no owner note, and the audience DTO states it cannot acquire user or note fields — the production path strips exactly this. Rendering F.project.note means hand-rolling the one string whose whole value is that a human wrote it, which the brief forbids. The sender is also already named, in foot().",
+  "sharpenedFix": "If the seat wants the sender above the fold on guest surfaces, do it with data that exists: promote the real F.workspace.owner out of foot() into the hero region of phone, desk and print as the mono micro attribution, and leave the footer stamp alone. That needs no new fixture field and no invented sentence. Ship the publish-side input only alongside a real captured note, never with lab-written copy standing in for one."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "guest-trim-is-unreachable-by-touch",
+  "real": true,
+  "reason": "Verified by driving at 390x844 on phone, desk and day. Guest rows hold zero focusable elements (the whole page returns 0), so a trimmed title's remainder lives only in title= and the .tl-vh twin: a finger cannot reach it while a screen reader gets all of it. Trimming starts at 60 characters, not the 55 the seat quotes, which fits two lines untrimmed. No fixture title trims on any guest state, so the trim assertions do currently pass vacuously.",
+  "sharpenedFix": "Keep the finding, drop the fixture edit; the brief forbids inventing fixture data. In b.css scope -webkit-line-clamp: 2 to [data-state^=\"owner\"] .b-title and give guest titles line-clamp: none with overflow: visible. Do not assume place() absorbs the height: a runtime three-line mutation grew the row 39 to 59px and moved no neighbour, so add the proof. In interaction-check.mjs set data-full and textContent to a 110-character name at runtime, call __TLCORE.settle(), then assert no two .b-item boxes overlap at 390/768/1440 and no guest .b-title carries data-trimmed. Same run should also catch setTitle's stale title attribute, which still names the previous moment while typing."
+}

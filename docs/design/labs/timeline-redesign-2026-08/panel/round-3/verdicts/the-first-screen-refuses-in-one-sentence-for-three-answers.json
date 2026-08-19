@@ -1,0 +1,6 @@
+{
+  "id": "the-first-screen-refuses-in-one-sentence-for-three-answers",
+  "real": true,
+  "reason": "Verified by driving owner-empty: \"banana\" returns aria-invalid true with \"Type the day first…\" (telling a typist to type), and \"1 January 2020\" returns aria-invalid false, \"The day is set.\" The editor at render-b.js:603-607 already refuses in three exact sentences, so the first screen is the weaker voice. Real, specific, cheap.",
+  "sharpenedFix": "In render-b.js states[\"owner-empty\"], branch the setday handler: empty keeps \"Type the day first. For example, 3 October 2026.\" (interaction-check.mjs:659 asserts that string, so do not move it); unparsed reuses \"That is not a date. Try 3 October 2026.\"; F.days(F.today, iso) < 1 reuses \"That day has gone. Pick one still ahead.\". Omit the ceiling sentence, which has no meaning before a day exists. Each refusal sets aria-invalid true, writes #b-empty-hint, refocuses. Add the three gate assertions."
+}

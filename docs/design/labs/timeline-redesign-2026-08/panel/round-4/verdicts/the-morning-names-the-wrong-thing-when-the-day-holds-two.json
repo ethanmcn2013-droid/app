@@ -1,0 +1,6 @@
+{
+  "id": "the-morning-names-the-wrong-thing-when-the-day-holds-two",
+  "real": true,
+  "reason": "Driven at state=day: pushed a ceremony and a dinner onto the primary date; neither title appears anywhere in body text, the screen still reads only \"Wedding day at The Orchard\". render-b.js:1133 renders todayItems[0] alone and behind() excludes anything dated on the clock, so the rest have nowhere to go. commitDate accepts away <= ceiling, so dating a moment to the wedding day is ordinary owner use, not a construction. The count half is weaker: 9 behind is arithmetically right.",
+  "sharpenedFix": "Render every todayItem as a list, not [0]. Keep \"Happening now\" for one; head two or more \"Happening today\" — not \"Today\", which the b-dayCount line already says two rows above. Move \"at The Orchard\" to the venue line instead of appending it to the first title. Order todayItems explicitly; fixture array order is not chronological. Add .b-dayItem/.b-dayAlso to b.css at 20px/600 on the existing --lead-head/--track-head so the type ramp still passes audit. Assert day-listed plus behind-listed equals the live record. Drop the count claim."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "a4-keepsake-is-two-sheets",
+  "real": true,
+  "reason": "Verified by printing, not reading. grep across every css/js/html in the lab returns zero @page, @media print, break-* and mm/pt. At 794x1123 the sheet renders 714 x 1827.7, .b-print's content box measures 584px, grid-template-columns resolves to a single 584px track, scrollHeight 1935; page.pdf({format:'A4'}) returns 2 pages at both default and zero margins. Even the reviewed two-column composition is 794 x 1441.8, 317px over A4. The object the panel graded is not the object that prints.",
+  "sharpenedFix": "Do not lower the threshold. 600px is correct; the 584 is the lab's 40px stage padding leaking onto paper. Add to b.css: @page { size: A4; margin: 0 } and @media print { .tl-page{padding:0} .tl-caption{display:none} [data-medium=\"sheet\"] .tl-stage{max-width:none} }. The .b-print content box then measures 664px, clearing 600 by 64. Keep the sheet's margins on .b-print (56/64/44), never on @page: a 14mm @page margin yields 558px and stacks again, so 560 fails too. Then remove the 317px structurally, not by shrinking type: move the 221px Behind-you block into the left column (395.9 tall against the right's 1194.4) and take SCALE.print 10 to 8. Add break-inside: avoid to .b-item and .b-behindRow, and assert one PDF page in interaction-check.mjs."
+}

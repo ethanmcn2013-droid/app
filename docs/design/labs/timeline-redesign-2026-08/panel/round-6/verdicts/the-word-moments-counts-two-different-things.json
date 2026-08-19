@@ -1,0 +1,6 @@
+{
+  "id": "the-word-moments-counts-two-different-things",
+  "real": true,
+  "reason": "Verified. On ?state=print at 1440 the head prints \"3 moments\" (y 562); 226px below, on the same sheet, over three printed rows, the note reads \"2 moments behind you, and one thing that did not happen.\" (y 788). ?state=phone reproduces the pair once the disclosure opens (1467 vs 1638), as does v=record. Same noun, same block, two totals, no definitions. The head's 3 is the right number: it counts the rows the reader can see.",
+  "sharpenedFix": "Head keeps the only total: past.length + \" moments\". At render-b.js:384 the listed/open note must partition, never recount, so drop \"N moments behind you\" entirely. Render nothing when dropped.length is 0 (each row already carries \"Not going ahead\"); otherwise \"One of them did not happen.\" for 1 and dropped.length + \" of them did not happen.\" above that. The current template hardcodes \"one thing\" for any dropped count, so do not carry that bug forward. Leave the folded note at 383 alone."
+}

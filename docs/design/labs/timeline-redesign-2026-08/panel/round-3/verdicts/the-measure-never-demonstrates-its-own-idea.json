@@ -1,0 +1,6 @@
+{
+  "id": "the-measure-never-demonstrates-its-own-idea",
+  "real": false,
+  "reason": "Wrong on the frames and out of bounds on the fix. The measure holds seven ahead rows, not eight, and spans three intervals, not two: today-to-first is 16 days (224px), against 7 (98px) and 14 (196px), anchored by the labelled 'Today, 16 Jul' origin. Every date is lifted verbatim from src/lib/review-suite-fixture.ts; redistributing them is inventing data to flatter the design, which the brief forbids.",
+  "sharpenedFix": "None on the fixture: those dates are the production review fixture and must stay verbatim. If the concern is that the space reads as unexplained, the legitimate move is not new dates or a caption restating the numerals already in the count column, but a demonstration state driven by real data, such as the print or unfurl surface labelling the origin-to-first span so the 16-day gap is read as measured distance."
+}

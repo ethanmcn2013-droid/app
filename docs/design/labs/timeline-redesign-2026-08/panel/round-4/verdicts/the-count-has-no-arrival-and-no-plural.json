@@ -1,0 +1,6 @@
+{
+  "id": "the-count-has-no-arrival-and-no-plural",
+  "real": true,
+  "reason": "Driven, not read. Patching only the fixture's primaryDate and remounting: phone, desk, owner-flight and print render \"1 DAYS\", \"0 DAYS\" and \"-6 DAYS\"; the unfurl card prints \"1 | days to Friday 17 July 2026\" and \"-6 | days to ...\" with its aria-label unchanged. horizon() (render-b.js:92-95) and card() (1050-51) hardcode the unit and never call F.fmt.dayCount. interaction-check.mjs:370 cannot fail: innerText splits the figure from the CSS-uppercased unit.",
+  "sharpenedFix": "Fix the routing, not the string. One owner for the clock: F.fmt.countdown(n) returning {num,unit} for n>=1 (\"day\" at 1), else a state token. horizon() and card() branch on it: n=0 reuses the designed arrival (\"Today\", .b-dayCount at b.css:903) that states.day already proves; n<0 gets its own past frame, a sentence with no numeral, not the input-refusal string borrowed from owner-empty. A guest must never see a negative. Replace interaction-check.mjs:370 with per-element reads of .b-num/.b-unit across phone, desk, print, publish and unfurl at k=2,1,0,-3; innerText cannot see this."
+}

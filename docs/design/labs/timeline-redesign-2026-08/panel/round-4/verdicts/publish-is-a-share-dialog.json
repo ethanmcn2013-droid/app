@@ -1,0 +1,6 @@
+{
+  "id": "publish-is-a-share-dialog",
+  "real": false,
+  "reason": "The owner/guest line is not the rule the panel used. Round 1 admitted motion only where it renders a quantity; round 3 refused an entrance because it delays the fact. Publish moves no quantity: the same count is already on screen. Measured, the promised settle travels 16px across and 53px down (count block 186,234 to card figure 202,287) - a drift, not a moment. The delayed headline also breaks go() (render-b.js:921-924), which focuses .b-pressTitle on the press. Ceremony, which the stated taste rejects.",
+  "sharpenedFix": "None required; publish is correct as painted. If it is ever revisited, keep it inside the lock: opacity only on the card, 0.14s, var(--ease), no transform, no scale, no cross-fade behind it, no stagger and no delayed text. The headline must be present and focusable at t=0 so go()'s focus and its announcement are not racing a reveal, and shell.css:249 must zero the whole thing under reduced motion. Ship it only if a side-by-side against the flat control shows the handover landing harder; otherwise leave it."
+}

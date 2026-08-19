@@ -1,0 +1,6 @@
+{
+  "id": "two-alignments-on-the-morning-screen",
+  "real": false,
+  "reason": "Measured at 1440 and 390: the 22px is a box edge no eye can see. Every centred line's ink sits on the same axis as the field (centre 720 / 195), the 200px accent rule included, and nothing wraps. There is one axis change, not four: a centred masthead over a left-ranged ledger, the standard title-page-then-column move. The fix would centre a dated ledger, a disclosure count and a footer link, which is worse.",
+  "sharpenedFix": "Refuted; ship as is. The only defensible residue is housekeeping, not composition: .b-dayWrap (b.css 820) doubles the field's own 22px inset, so the masthead measures 300px where the page measures 344px. Set its padding to 56px 0 40px and keep .b-dayRule at width: 200px; margin: 0 auto 24px. Masthead stays centred, ledger and foot stay left-ranged like the rest of the product."
+}

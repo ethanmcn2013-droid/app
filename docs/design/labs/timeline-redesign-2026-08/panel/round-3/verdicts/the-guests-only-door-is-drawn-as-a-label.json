@@ -1,0 +1,6 @@
+{
+  "id": "the-guests-only-door-is-drawn-as-a-label",
+  "real": true,
+  "reason": "Verified at 390 on phone, desk, day and print: the summary is the page's only control, box is exactly 32px, list-style none with the marker suppressed, no ::before/::after content, and hover leaves background rgba(0,0,0,0). In day it renders .b-behindLabel for both \"Happening now\" (caption) and \"How you got here\" (control) — the same class, so they are indistinguishable. audit.mjs:220 matches only button/a/[tabindex]/input/textarea/select, so summary is never measured. One correction: shell.css:226 gives it a global :focus-visible ring; hover and rest-state are the real gaps.",
+  "sharpenedFix": "Use the file's own control idiom rather than a new one. Give .b-behindSummary the .b-grab treatment: hairline underline on the label at rest (fore-16, 1px, 3px offset), hover/focus-within background var(--fore-06) with underline to fore-46. Raise min-height to 44px via padding: 8px; margin: 0 -8px so the band spans the measure. Add a mono ::after \"+\", swapped to \"−\" when [open], for open/closed state — type and ink, no new hue or weight. Extend audit.mjs's interactive selector to include summary so 44px is gated."
+}

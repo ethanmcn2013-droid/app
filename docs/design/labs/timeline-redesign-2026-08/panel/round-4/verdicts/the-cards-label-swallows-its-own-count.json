@@ -1,0 +1,6 @@
+{
+  "id": "the-cards-label-swallows-its-own-count",
+  "real": true,
+  "reason": "Verified by CDP AX tree at 390 and 1440, states unfurl and publish: the link's accessible name is exactly \"Mara & Finn, a wedding timeline\" while its visible text carries \"79\" and \"days to Saturday 3 October 2026\". On unfurl it is the sole focusable element. The floor check (interaction-check.mjs:82-88) tests name presence, not name fidelity, so nothing proves this. Every other label in render-b.js is built from what its control shows.",
+  "sharpenedFix": "Do not simply delete the attribute; the bare subtree name repeats the project name twice and trails the host. In render-b.js:1046 rebuild the label from the same fixture data the card prints: F.project.name + \", \" + F.toDay() + \" days to \" + F.fmt.longYear(F.project.primaryDate.date) + \", a wedding timeline\". Then assert fidelity, not presence: on ?state=unfurl require the computed name to contain String(F.toDay()) and the long date. Keep the new floor rule scoped to labelled elements whose visible text holds a number their label omits."
+}

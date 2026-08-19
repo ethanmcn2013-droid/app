@@ -1,0 +1,7 @@
+{
+  "id": "guest-control-is-invisible-as-a-control",
+  "real": false,
+  "reason": "The press is already answered in the fixed tree: the summary mark flips + to \u2212 and the count goes from fore-62 to full ink, so opening is acknowledged, not silent. What is left is an entrance on the revealed rows \u2014 the class refuted this round. The fix also breaks the lock twice: a 40ms stagger is off the declared ladder (0.08 / 0.14 / 0.22), and shell.css zeroes animation-duration but not animation-delay, so reduced-motion readers still get the cascade. Animation shorthand is invisible to the audit gate, which reads transitions only.",
+  "sharpenedFix": "None required; the reveal is correct as painted. If press feedback is ever revisited, an on-demand reveal is a fair case to argue \u2014 but keep it to opacity only on .b-behindList as one block, 0.14s var(--ease), no transform, no per-row stagger and no animation-delay, and express it as a transition so the audit gate can see the duration. Ship only if a side-by-side on a 390px phone shows the snap actually reading as a fault.",
+  "cost": 0.7
+}

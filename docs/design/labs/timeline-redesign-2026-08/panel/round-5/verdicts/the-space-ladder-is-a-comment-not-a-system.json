@@ -1,0 +1,6 @@
+{
+  "id": "the-space-ladder-is-a-comment-not-a-system",
+  "real": true,
+  "reason": "Reproduced: driving all eleven states at 390 and 1440 returns 49 off-ladder class/property pairs across twenty distinct values, b.css names var(--gap-*) only 19 times, and audit.mjs has no spacing check, so the ladder cannot fail. But the fix is wrong twice. Five parallel tokens make a fourteen-step ladder that admits almost everything it complains about, and a rendered-value gate fails on legitimate derived geometry: .b-copy's JS-set --push (23/60/97/120/157), .b-field's --b-sheet reserve (570), .b-edit's 88px undo band, and 2-3px optical insets.",
+  "sharpenedFix": "Sweep now; it is safe. Re-keying literals to existing tokens preserves every rendered value, and re-keying a compression pair together makes a future move easier, not harder. Do not add five parallel tokens. State the compression once: redeclare the same nine --gap-* values at compressed sizes inside the phone medium block, so each element names one token and the medium sets the scale. Gate the source, not the render: in audit.mjs parse shell.css and b.css for literal px in margin and padding declarations, failing any that is not a var(--gap-*), not a value of 4px or less, and carries no explicit off-ladder annotation. Absolute offsets, --push and --b-sheet are custom properties and out of scope."
+}

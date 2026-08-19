@@ -1,0 +1,6 @@
+{
+  "id": "keepsake-past-rows-wrap",
+  "real": true,
+  "reason": "Measured at true A4 (794px, print media): the past column is only 220px and the three rows land on three left edges - title x=167, x=57 wrapped, x=57 with the state stranded below. Real, and print-only: at desk 1440 and phone 390 every row is one 38.5px line. But the proposed grid is the wrong remedy - measured, it starves titles to 110px, breaks two of three onto two lines and wraps the status label, reopening round 4.",
+  "sharpenedFix": "Keep the flex row and the :empty rule everywhere on screen - measured, they are correct at 390 and 1440. Fix print only, in b.css beside the existing .b-print rules: .b-print .b-behindRow{display:block}; .b-print .b-behindDate{display:block;width:auto}; .b-print .b-behindState{display:block;margin-left:0}. The date sits on its own mono line above the title it dates. Measured at A4: all three rows 53.9px tall, every date, title and state on one 57px left edge, every title one line at the full 220px measure. Nothing is starved and round 4's fix stands."
+}

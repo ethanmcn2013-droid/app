@@ -1,0 +1,6 @@
+{
+  "id": "the-ended-screen-is-inset-twice",
+  "real": true,
+  "reason": "Measured. At 1440 the field carries 22px, and loading's first bar and .b-dayWrap both start at x548. .b-ended starts at x548 but adds a second 22px, putting its ink at x570 on a 300px measure inside a 344px card, and 64+30px under it. That doubling is the exact defect the .b-dayWrap comment records as already fixed.",
+  "sharpenedFix": "Match .b-dayWrap: .b-ended { padding: 56px 0 56px } at b.css:941. Also zero the horizontal inset in the medium rule at b.css:1033 (100px 0 110px), or sheet/full reintroduces the same doubling on top of the field's 56px. Note .b-empty (b.css:741 and 1031) carries the identical double inset on the owner side; outside this finding, but fix it in the same pass or the two screens diverge."
+}

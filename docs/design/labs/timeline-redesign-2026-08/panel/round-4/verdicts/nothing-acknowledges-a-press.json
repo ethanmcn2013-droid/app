@@ -1,0 +1,6 @@
+{
+  "id": "nothing-acknowledges-a-press",
+  "real": true,
+  "reason": "Verified: zero :active rules in b.css against eight :hover; driven at 390, .b-grab paints identically pressed and hovered (fore-06 / full ink, no transform). On touch the only press acknowledgement is the browser default -webkit-tap-highlight-color, computed rgba(51,181,229,0.4) - an unowned fourth hue nobody chose, never overridden. The register expresses state by ink density, so a pressed step is native here, not decoration.",
+  "sharpenedFix": "Take the fix as written (fore-10 on .b-grab/.b-item:active .b-copy with the halo dropped, .b-act and .b-step and .b-behindSummary to fore-10, primary to fore-72) with three corrections. Place every :active after its :hover in b.css or equal specificity loses. Add -webkit-tap-highlight-color: transparent on those controls, else the off-palette teal double-paints the new state. No reduced-motion work is needed: shell.css already zeroes transition-duration globally with !important, and the colour step is state, not motion."
+}

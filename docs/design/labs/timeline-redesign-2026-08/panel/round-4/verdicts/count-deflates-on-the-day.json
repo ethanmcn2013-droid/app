@@ -1,0 +1,6 @@
+{
+  "id": "count-deflates-on-the-day",
+  "real": false,
+  "reason": "The premise is wrong. render-b.js MEDIUM maps day:\"phone\", so state=day renders in a 344px phone card at 390/768/1280/1440 — there is no desk day. The 148px raise is gated on [data-medium=\"sheet\"|\"full\"]; in the phone medium .b-num measures 96px at all four widths, so \"Today\" at 96px already sits at its own count's display step. The fix also breaks: \"Today\" at 148px measures 385px in a 344px content box, overflowing 41px everywhere.",
+  "sharpenedFix": "No change. If a desk-register day is ever built (MEDIUM.day moved off \"phone\"), raise .b-dayCount to 148px in the same [data-medium=\"sheet\"|\"full\"] block that raises .b-num, not before — at phone width it overflows by 41px. Residue worth one line, not a finding: b.css:1034 already raises .b-dayWrap padding for sheet/full, a rule no state can reach today; delete it or let it stand as the hook for that future desk day."
+}

@@ -1,0 +1,7 @@
+{
+  "id": "keepsake-laid-out-by-the-window",
+  "real": true,
+  "reason": "Measured in Chromium at state=print: the stage is 794px A4 from 1024 up, yet at 1024-1279 the sheet is one column and 1634px tall, and at 1280+ it is 300px/316px with .b-copy 192px, two of seven titles wrapping, and the 300px column blank for ~716px under its 367px block. Same paper, two documents. With no @media print, the file that actually prints takes the tall one-column form.",
+  "sharpenedFix": "Seat-ui's shape, not seat-type's. Delete [data-medium=\"sheet\"] .b-two from the @media (min-width: 1280px) block (only state=print uses medium sheet, so nothing else loses a grid) and add unconditionally: .b-print { container-type: inline-size } and @container (min-width: 600px) { .b-print .b-two { grid-template-columns: 220px minmax(0, 1fr); gap: 48px; align-items: start } }. Use 600, not 640: the sheet's content box is 664px and the 768 stage's is 558px, so 600 holds either side of a padding change. Verified identical at 1024/1280/1440: copy 272px, no wrapped titles, 1273px tall. Seat-type's 300px/32px still wraps a title, and its lane and tick surgery is unearned risk.",
+  "cost": 0.5
+}

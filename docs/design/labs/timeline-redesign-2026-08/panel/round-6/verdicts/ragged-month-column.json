@@ -1,0 +1,6 @@
+{
+  "id": "ragged-month-column",
+  "real": false,
+  "reason": "Measured: the month sits at 50.16px or 58.52px inside .b-date on owner-flight, phone, day and print. So the 8.36px step is real, but it is not a defect. .b-date is a left-aligned caption under a variable-length title inside .b-copy, not a column; every date's left edge already aligns on the 3-letter weekday. The column that carries quantity, .b-away, is right-aligned tabular-nums and already true. Ragged right on a two-word caption is taste, not misalignment.",
+  "sharpenedFix": "Do nothing. Both padding routes make it worse: U+2007 moves the inconsistency from the right edge, where no one looks for alignment, into the interior gap between SAT and the figure, where the eye reads the phrase, and 'SAT 01 AUG' stamps a human date as log output, which this product spends effort avoiding. If a month column were genuinely wanted it would have to come from layout, a fixed right-aligned day cell, and that gives the caption a machine-table cadence for no reading gain. Leave the string as the sentence it is."
+}

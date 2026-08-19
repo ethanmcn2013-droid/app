@@ -1,0 +1,42 @@
+{
+  "seat": "Product taste and emotional resonance",
+  "score": 7.6,
+  "findings": [
+    {
+      "id": "the-morning-is-a-title-card",
+      "element": "state=day — the wedding morning, at 390 and at 1440",
+      "problem": "Drove it at both widths. The one screen the whole company is judged by holds 268 characters and throws away the object the product is made of. There is no measure on the morning: the count word, the date, one sentence, then one line — \"Wedding day at The Orchard\" — that is already printed as the subtitle on every other surface, then the past behind a disclosure that opens into a plain dated table with no proportion, no ink hierarchy and no line. At 1440 the whole morning is a 540px card, 37% of the window, on a field of black. A guest handed this 79 days ago has watched a proportional line close for eleven weeks; on the day it was closing toward, the line is gone and what replaces it is a receipt. The count word is the best idea in the engagement and it is standing on an empty stage.",
+      "fix": "On state=day, replace the disclosure with the completed measure: the same proportional line at the guest scale, now spanning \"We said yes, Fri 2 Jan\" to today, carrying all nine live moments as marks with their existing date and title rows, and terminating at the \"Today\" word as its final mark rather than opening above it. Keep the count word at its display step, keep \"Happening now\", keep the footer. The cancelled moment keeps the listed grammar in a single line under the arc. No new data, no new control, one language on every surface including the last one.",
+      "cost": 0.7
+    },
+    {
+      "id": "publish-is-a-share-dialog",
+      "element": "state=publish — pressing Publish from owner-flight",
+      "problem": "The brief names the metaphor: handing someone a finished print. What the owner gets on the press is an instantaneous swap into a two-column form with a monospaced URL field, a Copy button, and 45% of the window empty below it. Grepped the whole stylesheet: the master contains exactly one non-hover transition (top, on a reordered row). The most emotional action an owner ever takes here — a private plan becoming someone else's copy — has no moment at all. This is an owner surface and the owner literally asked for it by pressing the control, so the no-motion-on-guest-surfaces rule does not cover it.",
+      "fix": "On the press, the count block the owner is already looking at settles into the card under \"What lands in the message\": one composed transform of position and scale, 0.22s, cubic-bezier(0.23, 1, 0.32, 1); the card's white footer crosses in behind it at 0.14s; the headline \"Send it to Mara & Finn.\" sets after the card lands, not with it. Nothing else on the screen moves, no idle loop, the whole sequence zeroed under prefers-reduced-motion, and the end state pixel-identical to what ships today.",
+      "cost": 0.5
+    },
+    {
+      "id": "the-plan-never-says-it-is-shared",
+      "element": "owner-flight header, after Publish then Back to the plan",
+      "problem": "Drove the round trip and diffed the owner surface before and after publishing: it is identical apart from one line in the reversibility bar. The control still reads \"Publish\", the header never names the link, and nothing anywhere on the owner's home states that people are now holding a live copy of this plan. The entire promise of the product is that somebody else is looking at this, and the person who sent it is never once told that they are. It also makes the primary control ambiguous — press it again and there is no way to know whether you are sharing or re-sharing.",
+      "fix": "Once a link exists, the owner header carries it in words beside the project chip, at the 11px mono step: \"Shared · timeline.signalstudio.ie/s/j7Qm…\", and the primary control renames from \"Publish\" to \"The link\", opening the same ceremony screen. Before a link exists, both are absent — no disabled control, no placeholder. The reversibility bar is untouched.",
+      "cost": 0.4
+    },
+    {
+      "id": "loading-overpromises-its-mass",
+      "element": "state=loading — the reserve blocks",
+      "problem": "Measured them: the heights and y-positions are exactly the real geometry (17/83/26/23 at y 26/65/162/198, matching the phone artifact to within 3px), which is genuinely honest work. The widths are not. Every block runs the full 346px column, while the strings that land in them are \"Mara & Finn\" at about 80px and \"79\" at about 120px. The guest's first impression of the company is therefore four full-bleed bars that deflate into a sparse left-aligned column the instant the plan arrives. They are also the only filled panels anywhere in the product — white at 10%, 4px radius — in a language otherwise built entirely from hairlines and unfilled ink, so the one frame every guest passes through is the one frame that looks like somebody else's app.",
+      "fix": "Set each reserve to the width the string will actually occupy — the numeral's own advance width for the count, the character count at the mono step for the ident line, the measured width of the date and subtitle strings — left-aligned on the same edge as everything else. Drop the fill from white/10% at radius 4 to ink-tint at radius 0, or replace each block with the hairline the product already uses, sitting on the text baseline.",
+      "cost": 0.2
+    },
+    {
+      "id": "the-past-echoes-itself",
+      "element": ".b-behindNote — the sentence that closes the past block",
+      "problem": "It is a sibling of the disclosure, so it renders whether the rows are hidden or shown. Open \"How you got here\" on the wedding morning and the last row reads \"SAT 19 SEP · Venue walk-through\" with the sentence \"Venue walk-through, 19 September.\" printed directly beneath it, two lines apart. The one sentence written to stand in for what is folded is left standing after the fold is open, and the same echo recurs on every guest surface where the rows are listed rather than folded. It is small, and it is the kind of thing a reader notices and cannot unsee, because it reads as the page repeating itself.",
+      "fix": "Render the last-item sentence only while the rows are hidden: drop it when the details element is open and wherever data-past is \"listed\". Where the rows are visible and a closing sentence is still wanted, switch it to the grammar that is not already on screen — the count form the owner surface already uses, \"Nine moments, the last of them 19 September.\" — so no line on the page is a copy of the line above it.",
+      "cost": 0.1
+    }
+  ],
+  "biggestWin": "The word \"Today\". A count that has been shrinking on a guest's phone for eleven weeks stops being a number and becomes a word, set at the count's own 148px display step in the reading face. That is a real lump-in-the-throat idea, it costs nothing, it is honest, and no benchmark on the list has done it. The proportional measure earns nearly as much: the gaps are the time, so the eight empty weeks after \"Send the invitations\" are felt rather than labelled, and it holds its proportion identically at 10, 12, 14 and 18 pixels a day from the printed sheet to the owner's desk. The copy is the quiet win throughout — \"Nothing has been deleted. Only the link stopped working.\" and \"It carries the day, the distance and the plan, and nothing from your workspace: no notes, no suppliers, no prices.\" are better than most shipped products manage. A discerning stranger would believe a good studio made the phone artifact and the printed keepsake. What stops them believing it of the whole product is that the two moments carrying the most feeling — the handover and the morning — are the two that were left undesigned."
+}

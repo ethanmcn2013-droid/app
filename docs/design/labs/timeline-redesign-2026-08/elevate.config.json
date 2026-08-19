@@ -1,0 +1,205 @@
+{
+  "name": "timeline-redesign",
+  "product": "Signal Timeline — how one person hands another the plan for a day that matters.",
+  "master": "master.html",
+  "gate": 9.5,
+  "states": [
+    "owner-flight",
+    "owner-empty",
+    "owner-editing",
+    "publish",
+    "phone",
+    "desk",
+    "day",
+    "print",
+    "unfurl",
+    "ended",
+    "loading",
+    "loading-slow"
+  ],
+  "variants": [
+    "approach",
+    "paper",
+    "record"
+  ],
+  "defaultVariant": "approach",
+  "viewports": [
+    {
+      "name": "390x844",
+      "width": 390,
+      "height": 844,
+      "isMobile": true
+    },
+    {
+      "name": "768x1024",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "name": "1152x800",
+      "width": 1152,
+      "height": 800
+    },
+    {
+      "name": "1279x800",
+      "width": 1279,
+      "height": 800
+    },
+    {
+      "name": "1280x900",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "name": "1440x960",
+      "width": 1440,
+      "height": 960
+    }
+  ],
+  "palette": [
+    {
+      "name": "Ink",
+      "hex": "#111111"
+    },
+    {
+      "name": "Indigo",
+      "hex": "#4f46e5"
+    },
+    {
+      "name": "White",
+      "hex": "#ffffff"
+    }
+  ],
+  "families": [
+    "Geist",
+    "Geist Mono"
+  ],
+  "weights": [
+    400,
+    600
+  ],
+  "ladders": {
+    "radii": [
+      0,
+      4,
+      6,
+      8,
+      12,
+      16,
+      24,
+      999
+    ],
+    "durations": [
+      0,
+      0.08,
+      0.14,
+      0.22
+    ],
+    "easings": [
+      "cubic-bezier(0.23, 1, 0.32, 1)"
+    ],
+    "typeRamp": [
+      11,
+      12,
+      13,
+      15,
+      17,
+      20,
+      24,
+      30,
+      38,
+      48,
+      64,
+      96,
+      148
+    ]
+  },
+  "console": {
+    "widths": [
+      1440,
+      1280,
+      1152,
+      768,
+      390
+    ],
+    "inline": [
+      "fixture.js",
+      "render-core.js",
+      "render-b.js"
+    ],
+    "fonts": []
+  },
+  "artifacts": {
+    "console": "https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f",
+    "log": "https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19"
+  },
+  "report": {
+    "title": "Timeline Elevation Log",
+    "kicker": "Signal Timeline · direction B, The Approach · August 2026",
+    "consoleTitle": "Timeline Design Console",
+    "consoleSub": "Three directions, eleven states, four widths, live.",
+    "consoleLead": "The real master with a control panel on it, not a picture of one.",
+    "frames": [
+      [
+        "owner-flight",
+        "Owner · in flight"
+      ],
+      [
+        "owner-empty",
+        "Owner · new"
+      ],
+      [
+        "owner-editing",
+        "Owner · editing"
+      ],
+      [
+        "publish",
+        "Publish"
+      ],
+      [
+        "phone",
+        "Received · phone"
+      ],
+      [
+        "desk",
+        "Received · desk"
+      ],
+      [
+        "day",
+        "The day"
+      ],
+      [
+        "print",
+        "Print"
+      ],
+      [
+        "unfurl",
+        "Unfurl"
+      ],
+      [
+        "ended",
+        "Ended"
+      ],
+      [
+        "loading",
+        "Loading"
+      ]
+    ],
+    "footNote": "Exploration only. Branch design/timeline-redesign-2026-08, draft PR #154, no deploy and no app code. Direction B, The Approach, locked 2026-08-18.",
+    "variants": [
+      [
+        "room-approach",
+        "The approach"
+      ],
+      [
+        "room-paper",
+        "On paper"
+      ],
+      [
+        "room-record",
+        "The long view"
+      ]
+    ],
+    "variantsLead": "Three finished rooms of the locked direction, each a combination of the four named decisions rather than a copy. The ground decision is the reversal for the light-lock: the same composition, inverted through the declared ink ladder, with nothing hand-tuned to make the flip work. Print forces paper either way."
+  }
+}

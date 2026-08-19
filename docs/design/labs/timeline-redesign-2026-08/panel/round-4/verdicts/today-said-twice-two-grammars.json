@@ -1,0 +1,6 @@
+{
+  "id": "today-said-twice-two-grammars",
+  "real": false,
+  "reason": "The measurements are wrong. At owner-flight 1440 the two sit in different columns — label left 186 top 478, origin left 710 top 247 — 524px apart with the origin above, not a 104px stacked pair. At 390 the gap is 127px with the 'days away' head between them. .b-origin is aria-hidden: a rail tick, not a second sentence. Deleting .b-todayLabel orphans the indigo rule 7px above it and strands the countdown.",
+  "sharpenedFix": "Delete neither. .b-todayLabel dates the countdown and is the only payoff for .b-todayRule, the page's single indigo moment; .b-origin is an aria-hidden axis label naming the top of the rail, a fix already made once. If the pairing still reads flat in the phone-preview frame, the lever is register, not deletion: keep the header's sentence and shorten .b-origin to bare 'Today' beside its tick, since the date is already stated above it."
+}

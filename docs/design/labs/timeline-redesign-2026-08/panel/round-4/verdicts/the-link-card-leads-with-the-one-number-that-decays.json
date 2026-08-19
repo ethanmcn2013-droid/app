@@ -1,0 +1,6 @@
+{
+  "id": "the-link-card-leads-with-the-one-number-that-decays",
+  "real": true,
+  "reason": "Verified at 390 and 1440: the 300x221 card's 64px display line is \"79\", its accessible name is exactly \"Mara & Finn, a wedding timeline\" (aria-label on an anchor overrides contents, so the count and date are never announced), and the couple's name is printed twice while \"Wedding day at The Orchard\" (render-b.js:95) is absent. Chat clients cache previews at send time; the card sits beside a bubble promising \"It updates itself\". Real on all three counts.",
+  "sharpenedFix": "Keep the countdown, fix the claim. render-b.js:1046 delete the aria-label. render-b.js:1055 set b-unfurlTitle to F.project.primaryDate.label + \" at The Orchard\", as line 95 already builds, so the prose slot says what the day is and the name is printed once. For the display line do not drop the long date into the 64px step (it will not set in 300px): step b-ogNum down to the next ramp size for F.fmt.longYear, and make b-ogDate read \"79 days away when this was sent\"."
+}

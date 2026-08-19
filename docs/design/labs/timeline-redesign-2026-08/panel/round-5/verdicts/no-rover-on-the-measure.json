@@ -1,0 +1,6 @@
+{
+  "id": "no-rover-on-the-measure",
+  "real": false,
+  "reason": "Factually wrong. Drove owner-flight: with a b-grab focused, ArrowDown 0->40, ArrowUp 300->260, PageDown 300->1140, End 300->1176 (horizon), Home 300->0 (today). Every key called a no-op already moves the measure natively; the spatial keyboard move exists. The measure has no inner scroller (overflow visible, 7 rows), the whole surface is 10 focusable elements, and role=list is a structure role, not a composite that takes a rover.",
+  "sharpenedFix": "None; do not build this. Capturing ArrowUp/Down inside div[role=list] would preventDefault the native scroll that is currently the spatial gesture, and swap a working continuous pan for a discrete focus rover on a role ARIA does not give one. If length ever becomes real (30+ moments), the correct answer is a jump control in the bar (origin / today / horizon) plus an anchor link past the measure to the 'Behind you' disclosure, leaving arrow keys scrolling."
+}

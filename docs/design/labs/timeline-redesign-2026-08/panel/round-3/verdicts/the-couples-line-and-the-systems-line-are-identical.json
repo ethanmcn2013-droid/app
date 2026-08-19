@@ -1,0 +1,6 @@
+{
+  "id": "the-couples-line-and-the-systems-line-are-identical",
+  "real": false,
+  "reason": "The two lines are not an undifferentiated pair. render-b.js horizon() puts an indigo .b-todayRule and the mono uppercase .b-todayLabel between them, so .b-gapNote reads as part of the today block below the rule, not a sibling caption. And .b-sub is machine-composed (primaryDate.label + \" at The Orchard\"), not the couple's prose, so the person-outranks-machine rule does not apply to it.",
+  "sharpenedFix": "None needed. Raising .b-sub to 17px/fore-72, and to 20px at sheet and full, would set the caption level with or above .b-when at its base size and flatten the count-date-caption descent that carries the header; it trades a false defect for a real one. If the horizon is revisited later, the lever is the .b-who treatment, which is the only genuinely owner-written string in the block."
+}

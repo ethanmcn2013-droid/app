@@ -1,0 +1,573 @@
+<title>Timeline Elevation Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   The record of a locked design being taken to a gate. It is held to
+   the same palette lock as the product it describes: Ink, Indigo,
+   White and tints of those three, Geist at 400 and 600, and nothing
+   else. A report that broke the rule it is reporting on would be a
+   poor argument for the rule.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --ink-3: rgba(17, 17, 17, 0.62);
+  --ink-4: rgba(17, 17, 17, 0.28);
+  --wash: rgba(17, 17, 17, 0.04);
+  --line-soft: rgba(17, 17, 17, 0.06);
+  --line: rgba(17, 17, 17, 0.08);
+  --line-strong: rgba(17, 17, 17, 0.16);
+  --indigo-wash: rgba(79, 70, 229, 0.09);
+
+  --paper: var(--white);
+  --plate: rgba(17, 17, 17, 0.04);
+
+  --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur: 140ms;
+  --page: 1120px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e0e0f;
+    --ink-1: #f6f6f7;
+    --ink-2: rgba(246, 246, 247, 0.72);
+    --ink-3: rgba(246, 246, 247, 0.6);
+    --ink-4: rgba(246, 246, 247, 0.3);
+    --wash: rgba(255, 255, 255, 0.05);
+    --line-soft: rgba(255, 255, 255, 0.07);
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.2);
+    --indigo: #6f68ee;
+    --indigo-wash: rgba(111, 104, 238, 0.18);
+    --plate: rgba(255, 255, 255, 0.05);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e0e0f;
+  --ink-1: #f6f6f7;
+  --ink-2: rgba(246, 246, 247, 0.72);
+  --ink-3: rgba(246, 246, 247, 0.6);
+  --ink-4: rgba(246, 246, 247, 0.3);
+  --wash: rgba(255, 255, 255, 0.05);
+  --line-soft: rgba(255, 255, 255, 0.07);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.2);
+  --indigo: #6f68ee;
+  --indigo-wash: rgba(111, 104, 238, 0.18);
+  --plate: rgba(255, 255, 255, 0.05);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: var(--indigo); }
+code { font-family: var(--font-mono); font-size: 0.9em; }
+:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; border-radius: 6px; }
+
+.wrap { max-width: var(--page); margin: 0 auto; padding: 0 24px; }
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3); margin: 0;
+}
+
+/* ── masthead ──────────────────────────────────────────────────── */
+.mast { padding: 76px 0 40px; border-bottom: 1px solid var(--ink-1); }
+.mast h1 {
+  margin: 20px 0 0;
+  font-size: clamp(2.4rem, 1.4rem + 3.2vw, 4rem);
+  font-weight: 600; letter-spacing: -0.042em; line-height: 1.02;
+  text-wrap: balance;
+}
+.stand { margin: 22px 0 0; max-width: 62ch; font-size: 17px; line-height: 1.6; color: var(--ink-2); }
+.facts { display: flex; flex-wrap: wrap; gap: 0 40px; margin: 34px 0 0; }
+.fact { display: grid; gap: 4px; }
+.fact b { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.fact span {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+
+.section { padding: 64px 0 0; }
+.sectionHead h2 {
+  margin: 8px 0 0;
+  font-size: clamp(1.55rem, 1.15rem + 1.3vw, 2.1rem);
+  font-weight: 600; letter-spacing: -0.03em; line-height: 1.1;
+}
+.sectionHead p { margin: 12px 0 0; max-width: 62ch; color: var(--ink-2); }
+
+/* ── the score chart ───────────────────────────────────────────── */
+.chart { margin: 32px 0 0; display: grid; gap: 2px; }
+.chartRow {
+  display: grid; grid-template-columns: 210px minmax(0, 1fr) auto;
+  gap: 16px; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--line-soft);
+}
+.chartRow.head { border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.chartRow.head span {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.seat { font-size: 14px; }
+.track { position: relative; height: 22px; }
+.track i { position: absolute; border-radius: 2px; background: var(--ink-4); }
+.track i[data-latest] { background: var(--ink-1); }
+.track b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--indigo); }
+.trackHead { position: relative; height: 14px; }
+.trackHead b { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--indigo); }
+.trackHead em {
+  position: absolute; top: -1px; transform: translateX(-100%);
+  padding-right: 8px; font-style: normal;
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--indigo);
+  white-space: nowrap;
+}
+.scores { display: flex; gap: 10px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.scores span { font-size: 13px; color: var(--ink-4); }
+.scores span:last-child { font-size: 15px; font-weight: 600; color: var(--ink-1); }
+.delta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+
+/* ── rounds ────────────────────────────────────────────────────── */
+.round { padding: 56px 0 0; }
+.roundHead { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-top: 1px solid var(--ink-1); padding-top: 24px; }
+.roundNo {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.roundHead h3 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.03em; }
+.pill {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 24px; padding: 0 10px; border-radius: 999px;
+  background: var(--wash); font-size: 12px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.roundLead { margin: 16px 0 0; max-width: 66ch; color: var(--ink-2); }
+.items { margin: 26px 0 0; display: grid; gap: 0; }
+.item { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 20px; padding: 20px 0; border-top: 1px solid var(--line-soft); }
+.itemMeta { display: grid; gap: 5px; align-content: start; }
+.itemSeat { font-size: 13px; font-weight: 600; }
+.itemCost { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+.item p { margin: 0; color: var(--ink-2); max-width: 64ch; }
+.item p + p { margin-top: 10px; }
+.item .fixed { color: var(--ink-1); }
+.item .fixed::before {
+  content: "Fixed";
+  display: inline-block; margin-right: 9px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--indigo);
+}
+
+/* ── palette table ─────────────────────────────────────────────── */
+.paletteHead { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 30px 0 0; }
+.swatchCard { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.swatchCard i { display: block; height: 92px; }
+.swatchCard div { padding: 12px 14px; display: grid; gap: 2px; }
+.swatchCard b { font-size: 14px; font-weight: 600; }
+.swatchCard span { font-family: var(--font-mono); font-size: 12px; color: var(--ink-3); }
+.tableScroll { overflow-x: auto; margin: 26px 0 0; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 16px 10px 0; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+thead th {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+}
+td.mono { font-family: var(--font-mono); font-size: 12.5px; }
+td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.chipSwatch { display: inline-block; width: 22px; height: 22px; border-radius: 5px; box-shadow: inset 0 0 0 1px var(--line-strong); vertical-align: middle; margin-right: 10px; }
+.checker { background-image: linear-gradient(45deg, var(--wash) 25%, transparent 25%, transparent 75%, var(--wash) 75%), linear-gradient(45deg, var(--wash) 25%, transparent 25%, transparent 75%, var(--wash) 75%); background-size: 10px 10px; background-position: 0 0, 5px 5px; }
+
+/* ── frames ────────────────────────────────────────────────────── */
+.tabs { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash); border-radius: 999px; margin: 28px 0 0; flex-wrap: wrap; }
+.tab { height: 32px; padding: 0 14px; border-radius: 999px; font-size: 13px; color: var(--ink-3); }
+.tab:hover { color: var(--ink-1); }
+.tab[aria-pressed="true"] { background: var(--paper); color: var(--ink-1); font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+.stage { margin: 18px 0 0; background: var(--plate); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.stage img { max-width: 100%; border-radius: 6px; display: block; }
+.stageCap { margin: 12px 0 0; font-size: 13px; color: var(--ink-3); }
+
+.variants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin: 28px 0 0; }
+.variant { display: grid; gap: 8px; margin: 0; }
+.variant button { padding: 0; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--plate); line-height: 0; }
+.variant img { width: 100%; height: 150px; object-fit: cover; object-position: top center; }
+.variant figcaption { font-size: 13px; color: var(--ink-2); }
+.variant b { display: block; color: var(--ink-1); font-weight: 600; margin-bottom: 2px; }
+
+.links { display: grid; gap: 12px; margin: 28px 0 0; }
+.linkCard {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px;
+  text-decoration: none; color: inherit;
+  transition: border-color var(--dur) var(--curve);
+}
+.linkCard:hover { border-color: var(--line-strong); }
+.linkCard b { display: block; font-size: 15px; font-weight: 600; }
+.linkCard span { font-size: 13.5px; color: var(--ink-2); }
+.linkCard em { margin-left: auto; font-style: normal; color: var(--indigo); font-size: 13.5px; white-space: nowrap; }
+
+.box { position: fixed; inset: 0; z-index: 50; background: rgba(17, 17, 17, 0.86); display: none; place-items: center; padding: 26px; }
+.box[data-open] { display: grid; }
+.box img { max-width: 100%; max-height: calc(100dvh - 90px); object-fit: contain; border-radius: 6px; }
+.boxClose { position: fixed; top: 18px; right: 20px; width: 40px; height: 40px; border-radius: 999px; display: grid; place-items: center; background: var(--white); color: var(--ink); }
+
+.foot { margin: 80px 0 0; border-top: 1px solid var(--ink-1); padding: 26px 0 72px; }
+.foot p { margin: 0 0 12px; max-width: 66ch; color: var(--ink-2); font-size: 14px; }
+.foot p:last-child { margin-bottom: 0; }
+
+@media (max-width: 860px) {
+  .chartRow { grid-template-columns: minmax(0, 1fr) auto; }
+  .chartRow .track { display: none; }
+  .chartRow.head { display: none; }
+  .item { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .paletteHead, .variants { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 0ms !important; } }
+</style>
+
+<script id="panel" type="application/json">/*__PANEL__*/</script>
+<script id="palette" type="application/json">/*__PALETTE__*/</script>
+<script id="frames" type="application/json">/*__FRAMES__*/</script>
+<script id="meta" type="application/json">/*__META__*/</script>
+
+<div class="wrap">
+  <header class="mast">
+    <p class="kicker" id="mastKicker"></p>
+    <h1>Taking a locked design to a gate</h1>
+    <p class="stand">
+      The direction is settled and is not being redesigned. This is the record of
+      the elevation: the palette locked, then round after round
+      of an independent seven-seat panel scoring the work against the standard of
+      an award-winning studio that iterated on it for months. Every finding is put
+      to a fresh agent whose job is to refute it, so only what survives gets fixed.
+    </p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <section class="section" id="scores">
+    <div class="sectionHead">
+      <p class="kicker">01 · the gate</p>
+      <h2>Where every seat stands</h2>
+      <p>
+        Seven seats, scored independently, no seat seeing another's opinion. The
+        gate is unanimous: every seat at 9.5 or the panel says plainly what stands
+        between the work and the grade. Faint bars are earlier rounds.
+      </p>
+    </div>
+    <div class="chart" id="chart"></div>
+  </section>
+
+  <section class="section" id="palette">
+    <div class="sectionHead">
+      <p class="kicker">02 · the lock</p>
+      <h2 id="paletteH2">The palette, and the receipt</h2>
+      <p>
+        Every value below is generated from the master's own stylesheet at build
+        time, so this table cannot drift from the file it describes. Status is
+        carried by ink density and fill rather than by hue, which is the whole
+        reason a palette this small can run a working product.
+      </p>
+    </div>
+    <div class="paletteHead" id="paletteSwatches"></div>
+    <div class="tableScroll">
+      <table>
+        <thead><tr><th>Value in use</th><th>Derived from</th><th>Alpha</th><th>Uses</th></tr></thead>
+        <tbody id="paletteRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" id="frames">
+    <div class="sectionHead">
+      <p class="kicker">03 · where it stands</p>
+      <h2>The current build</h2>
+      <p>Every state, at the latest round. Click a frame to open it full size.</p>
+    </div>
+    <div class="tabs" id="frameTabs"></div>
+    <div class="stage"><img id="frameImg" alt=""></div>
+    <p class="stageCap" id="frameCap"></p>
+  </section>
+
+  <div id="rounds"></div>
+
+  <section class="section" id="variants">
+    <div class="sectionHead">
+      <p class="kicker">05 · three finished versions</p>
+      <h2>Same lock, three treatments</h2>
+      <p id="variantsLead"></p>
+    </div>
+    <div class="variants" id="variantRow"></div>
+  </section>
+
+  <section class="section" id="links">
+    <div class="sectionHead">
+      <p class="kicker">06 · go and use it</p>
+      <h2>The console</h2>
+      <p id="consoleLead"></p>
+    </div>
+    <div class="links">
+      <a class="linkCard" id="consoleLink" href="#">
+        <span><b id="consoleTitle"></b><span id="consoleSub"></span></span>
+        <em>Open →</em>
+      </a>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p class="kicker">How the panel works</p>
+    <p>
+      Seven seats run in parallel with no knowledge of one another: UI composition,
+      typography, interaction and states, UX and information design, brand and copy,
+      product taste, and one seat that distrusts opinion and reads the source. Every
+      finding a seat raises is then handed to a fresh agent whose only job is to
+      refute it, and which defaults to refused when uncertain.
+      <span id="footCounts"></span>
+    </p>
+    <p>
+      The measured seat is automated and runs on every change: palette lock, type
+      weights, families, WCAG AA contrast against the real composited backdrop, hit
+      targets including pseudo-element expanders, the radii ladder and the motion
+      tokens, across every state. It has passed every check since the palette was
+      locked, which is why the panel's findings are about things automation cannot
+      see.
+    </p>
+    <p id="footNote"></p>
+  </footer>
+</div>
+
+<div class="box" id="box" role="dialog" aria-modal="true" aria-label="Frame">
+  <button class="boxClose" id="boxClose" aria-label="Close">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/></svg>
+  </button>
+  <img id="boxImg" alt="">
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const PANEL = JSON.parse(document.getElementById("panel").textContent);
+  const PALETTE = JSON.parse(document.getElementById("palette").textContent);
+  const FRAMES = JSON.parse(document.getElementById("frames").textContent);
+  const META = JSON.parse(document.getElementById("meta").textContent);
+  const GATE = (JSON.parse(document.getElementById("panel").textContent).gate) || 9.5;
+
+  document.title = META.title || "Elevation Log";
+  document.getElementById("mastKicker").textContent = META.kicker || "";
+  document.getElementById("consoleLink").href = META.consoleUrl || "#";
+  document.getElementById("consoleLead").textContent = META.consoleLead || "The real product with a control panel on it, not a picture of one.";
+  document.getElementById("consoleTitle").textContent = META.consoleTitle || "Design Console";
+  document.getElementById("consoleSub").textContent = META.consoleSub || "Drive the live master and change its decisions underneath.";
+  document.getElementById("variantsLead").textContent = META.variantsLead || "Each is a preset of the same named design decisions, which is what guarantees every one of them stays on palette. All are live in the console.";
+  document.getElementById("footNote").textContent = META.footNote || "";
+  if (META.palette) {
+    document.getElementById("paletteH2").textContent = META.palette.length + " colours, and the receipt";
+    document.getElementById("paletteSwatches").innerHTML = META.palette.map(function (p) {
+      const light = p.hex.toLowerCase() === "#ffffff";
+      return '<div class="swatchCard"><i style="background:' + p.hex + (light ? ";box-shadow:inset 0 0 0 1px var(--line)" : "") + '"></i><div><b>' + p.name + "</b><span>" + p.hex + "</span></div></div>";
+    }).join("");
+  }
+
+  const rounds = PANEL.rounds;
+  const empty = rounds.length === 0;
+  const latest = rounds[rounds.length - 1] || { scores: {} };
+  const lowest = empty ? NaN : Math.min(...Object.values(latest.scores));
+  const totalFindings = rounds.reduce((n, r) => n + r.findings, 0);
+  const totalFixed = rounds.reduce((n, r) => n + r.fixed, 0);
+  const totalRefuted = rounds.reduce((n, r) => n + r.refuted, 0);
+
+  document.getElementById("footCounts").textContent =
+    "Across " + rounds.length + " round" + (rounds.length === 1 ? "" : "s") +
+    " the panel raised " + totalFindings + " findings and refused " + totalRefuted +
+    " of them, including several that were confidently argued and simply wrong about the code.";
+
+  document.getElementById("facts").innerHTML = [
+    ["" + rounds.length, "rounds"],
+    ["7", "seats each"],
+    ["" + totalFindings, "findings raised"],
+    ["" + totalRefuted, "refused"],
+    ["" + totalFixed, "fixed"],
+    [empty ? "—" : lowest.toFixed(1), "lowest seat"],
+  ].map(function (f) { return '<span class="fact"><b>' + f[0] + "</b><span>" + f[1] + "</span></span>"; }).join("");
+
+  /* ── the chart ───────────────────────────────────────────────── */
+  const chart = document.getElementById("chart");
+  const head = document.createElement("div");
+  head.className = "chartRow head";
+  head.innerHTML = "<span>Seat</span>" +
+    '<span class="trackHead"><b style="left:' + GATE * 10 + '%"></b><em style="left:' + GATE * 10 + '%">gate ' + GATE + '</em></span>' +
+    "<span>" + rounds.map(function (r) { return "R" + r.round; }).join(" · ") + "</span>";
+  chart.appendChild(head);
+
+  if (!empty) PANEL.seats.forEach(function (seat) {
+    const row = document.createElement("div");
+    row.className = "chartRow";
+    /* One lane per round, stacked, so an earlier score sits under the current
+       one rather than hidden behind it. */
+    const lane = Math.max(3, Math.floor(18 / rounds.length) - 2);
+    const bars = rounds.map(function (r, i) {
+      const isLast = i === rounds.length - 1;
+      return '<i style="left:0;width:' + (r.scores[seat] * 10) + "%;top:" + (2 + i * (lane + 2)) +
+        "px;height:" + lane + 'px"' + (isLast ? " data-latest" : "") + "></i>";
+    }).join("");
+    const marks = rounds.map(function (r, i) {
+      const isLast = i === rounds.length - 1;
+      return "<span" + (isLast ? ' style="color:var(--ink-1)"' : "") + ">" + r.scores[seat].toFixed(1) + "</span>";
+    }).join("");
+    const first = rounds[0].scores[seat];
+    const last = latest.scores[seat];
+    const delta = last - first;
+    row.innerHTML =
+      '<span class="seat">' + seat + "</span>" +
+      '<span class="track">' + bars + '<b style="left:' + GATE * 10 + '%"></b></span>' +
+      '<span class="scores">' + marks +
+      (rounds.length > 1 ? '<span class="delta">' + (delta >= 0 ? "+" : "") + delta.toFixed(1) + "</span>" : "") +
+      "</span>";
+    chart.appendChild(row);
+  });
+
+  /* ── palette table ───────────────────────────────────────────── */
+  document.getElementById("paletteRows").innerHTML = PALETTE.map(function (row) {
+    const alpha = row.alpha === 1 ? "opaque" : Math.round(row.alpha * 100) + "%";
+    return "<tr>" +
+      '<td class="mono"><span class="chipSwatch checker" style="background-color:' + row.value + '"></span>' + row.value + "</td>" +
+      "<td>" + (row.base || "unknown") + "</td>" +
+      '<td class="num">' + alpha + "</td>" +
+      '<td class="num">' + row.count + "</td>" +
+      "</tr>";
+  }).join("");
+
+  /* ── frames ──────────────────────────────────────────────────── */
+  const FRAME_TABS = (META.frames && META.frames.length)
+    ? META.frames
+    : Object.keys(FRAMES).map(function (k) { return [k, k.charAt(0).toUpperCase() + k.slice(1)]; });
+  const CAPS = META.captions || {};
+  const tabs = document.getElementById("frameTabs");
+  const img = document.getElementById("frameImg");
+  const cap = document.getElementById("frameCap");
+  let current = FRAME_TABS.length ? FRAME_TABS[0][0] : "";
+
+  /* No packed frames at all (pre-shot state) — the section has nothing to
+     say, and a src-less img would fail the artifact render check. */
+  if (!Object.keys(FRAMES).length) img.closest("section").style.display = "none";
+
+  function paint() {
+    const has = !!FRAMES[current];
+    img.style.display = has ? "" : "none";
+    if (has) img.src = FRAMES[current];
+    img.alt = CAPS[current] || current;
+    cap.textContent = CAPS[current] || "";
+    Array.prototype.forEach.call(tabs.children, function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.frame === current));
+    });
+  }
+  FRAME_TABS.forEach(function (entry) {
+    if (!FRAMES[entry[0]]) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tab";
+    button.dataset.frame = entry[0];
+    button.textContent = entry[1];
+    button.addEventListener("click", function () { current = entry[0]; paint(); });
+    tabs.appendChild(button);
+  });
+  paint();
+
+  /* ── rounds ──────────────────────────────────────────────────── */
+  const host = document.getElementById("rounds");
+  if (empty) {
+    const note = document.createElement("p");
+    note.className = "stand";
+    note.style.padding = "40px 0 0";
+    note.textContent = "No rounds yet. The gates are green and the panel has not sat; the first round writes the first row of this page.";
+    host.appendChild(note);
+  } else {
+  const headBlock = document.createElement("div");
+  headBlock.className = "sectionHead";
+  headBlock.style.paddingTop = "64px";
+  headBlock.innerHTML =
+    '<p class="kicker">04 · the rounds</p><h2>What each round found, and what was done</h2>' +
+    "<p>Newest first. Costs are the points the seat said the defect took off its own score.</p>";
+  host.appendChild(headBlock);
+
+  rounds.slice().reverse().forEach(function (round) {
+    const section = document.createElement("section");
+    section.className = "round";
+    const low = Math.min(...Object.values(round.scores));
+    const high = Math.max(...Object.values(round.scores));
+    section.innerHTML =
+      '<div class="roundHead">' +
+        '<span class="roundNo">Round ' + round.round + "</span>" +
+        "<h3>" + low.toFixed(1) + " to " + high.toFixed(1) + "</h3>" +
+        '<span class="pill">' + round.findings + " raised</span>" +
+        '<span class="pill">' + round.refuted + " refused</span>" +
+        '<span class="pill">' + round.fixed + " fixed</span>" +
+      "</div>" +
+      '<p class="roundLead">' + round.headline + "</p>" +
+      '<div class="items">' +
+        round.worst.map(function (item) {
+          return '<div class="item">' +
+            '<div class="itemMeta"><span class="itemSeat">' + item.seat + "</span>" +
+            '<span class="itemCost">cost ' + item.cost.toFixed(1) + "</span></div>" +
+            "<div><p>" + item.problem + '</p><p class="fixed">' + item.done + "</p></div>" +
+          "</div>";
+        }).join("") +
+      "</div>";
+    host.appendChild(section);
+  });
+  }
+
+  /* ── variants ────────────────────────────────────────────────── */
+  const VARIANTS = META.variants || [];
+  document.getElementById("variantRow").innerHTML = VARIANTS.map(function (v) {
+    if (!FRAMES[v[0]]) return "";
+    return '<figure class="variant"><button type="button" data-frame="' + v[0] + '">' +
+      '<img src="' + FRAMES[v[0]] + '" alt="' + v[1] + '"></button>' +
+      "<figcaption><b>" + v[1] + "</b>" + v[2] + "</figcaption></figure>";
+  }).join("");
+
+  /* ── lightbox ────────────────────────────────────────────────── */
+  const box = document.getElementById("box");
+  const boxImg = document.getElementById("boxImg");
+  function open(key) {
+    if (!FRAMES[key]) return;
+    boxImg.src = FRAMES[key];
+    box.setAttribute("data-open", "");
+  }
+  function close() { box.removeAttribute("data-open"); boxImg.removeAttribute("src"); }
+  document.getElementById("boxClose").addEventListener("click", close);
+  box.addEventListener("click", function (e) { if (e.target === box) close(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
+  img.addEventListener("click", function () { open(current); });
+  img.style.cursor = "zoom-in";
+  document.addEventListener("click", function (e) {
+    const b = e.target.closest("[data-frame]");
+    if (b && b.tagName === "BUTTON" && b.className === "") open(b.dataset.frame);
+    if (b && b.classList.contains("variant")) open(b.dataset.frame);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".variant button"), function (b) {
+    b.addEventListener("click", function () { open(b.dataset.frame); });
+  });
+})();
+</script>

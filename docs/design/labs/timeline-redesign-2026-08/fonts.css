@@ -1,0 +1,18 @@
+/* Two families, three faces, nothing else. Local woff2 so the lab renders
+   identically offline and so the compiled console can inline them — a
+   published artifact reaches no external host. */
+@font-face {
+  font-family: "Geist";
+  src: url("./fonts/Geist-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("./fonts/Geist-SemiBold.woff2") format("woff2");
+  font-weight: 600; font-style: normal; font-display: block;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./fonts/GeistMono-Regular.woff2") format("woff2");
+  font-weight: 400; font-style: normal; font-display: block;
+}

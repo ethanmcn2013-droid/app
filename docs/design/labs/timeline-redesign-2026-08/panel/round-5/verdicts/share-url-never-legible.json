@@ -1,0 +1,6 @@
+{
+  "id": "share-url-never-legible",
+  "real": true,
+  "reason": "Confirmed, with two corrections. On paper at true A4 (584px measure) the URL breaks mid-token after …sD0aG7fJ4, running to three mono lines with no continuation mark — the evidence seat’s break point is exact. On screen it clips only at 390 (320px box, 582px string) and marginally at 768; at 1280/1440 the box is 658px and nothing is cut, so “every viewport” is false. 13px is also not the sheet’s smallest step — 11px appears 19 times. The defect stands on the two narrow widths and on paper.",
+  "sharpenedFix": "Two fixes, not one. Screen: in b.css drop nowrap/ellipsis on .b-linkRow span, set overflow-wrap: anywhere and allow two lines; 1280/1440 already fit on one. Paper: a QR belongs — modules are #111111 on white, functional signage, not decoration — and needs no external asset: the fixture token is deterministic, so inline it as an SVG rect grid (production generates the same). Put a 96px square with an 11px mono caption “Scan for the live plan” and the bare host in the sheet’s empty left rail (798px measured). Reject the short code: a case-insensitive id space is a data-model change, out of scope."
+}

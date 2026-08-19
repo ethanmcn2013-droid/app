@@ -1,0 +1,6 @@
+{
+  "id": "the-past-is-stated-twice-wherever-it-is-listed",
+  "real": true,
+  "reason": "Verified by driving. In record desk/print/phone and approach/paper print the rows and p.b-behindNote render together, 12px apart, and the note echoes a visible row title (\"The Orchard reserved\") plus the cancellation its row already labels NOT GOING AHEAD. Opening the fold repeats it too: day shows \"Venue walk-through\" in row and note. Only the owner count grammar (\"2 done, the last of them 18 April\") echoes nothing.",
+  "sharpenedFix": "Do not just delete it: round 2 fixed this block so it never closes on a cancellation, and the last row is the cancelled one. Swap grammar instead of dropping the line. In behindBlock render both closings as siblings marked data-when=\"folded\"/\"open\", the open one using the count form; choose the count form at render when listed. In b.css hide the wrong one: details.b-behindDetails[open] ~ [data-when=\"folded\"], details:not([open]) ~ [data-when=\"open\"]. Gate: no rendered .b-behindNote substring matches any visible .b-behindTitle."
+}

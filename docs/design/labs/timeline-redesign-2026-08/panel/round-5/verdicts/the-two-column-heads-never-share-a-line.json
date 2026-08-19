@@ -1,0 +1,6 @@
+{
+  "id": "the-two-column-heads-never-share-a-line",
+  "real": false,
+  "reason": "Not the same object: .b-who is a 12px/2.4px-tracked left-aligned project title; .b-measureHead is 11px/1.76px, right-aligned in an 84px numeric lane. The 22px is not stray inheritance — it repeats .b-who's own 22px margin-bottom, seating the label between title and numeral so its box bottom (272.3) meets .b-num's top (273.7) at 1280, 1440, desk, print. The fix's premise is false: at 12 vs 11px, flush tops give 0.7px-off baselines and unequal caps.",
+  "sharpenedFix": "Leave margin-top alone. Driven with margin-top:0 the whole measure column, rail, origin and every row lift 22px, breaking the label-bottom-to-numeral-top meeting that holds in all three two-column mediums at both widths, and it trades a clean 22px step for a 0.7px baseline near-miss between labels whose caps are 9px and 8px. If a relationship is still wanted, align baselines (margin-top:22.7px), not tops — but the current step already reads as composed, so this is a change with no gain."
+}

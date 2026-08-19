@@ -1,0 +1,6 @@
+{
+  "id": "guest-artifact-is-the-owner-page-with-the-buttons-removed",
+  "real": false,
+  "reason": "The premise is factually wrong. Guest and owner differ by more than buttons: desk wraps the artifact in tl-paperEdge, rows drop the visibility control, the behind sentence is authored separately for guests, and the scale differs. Driven at 390, the positive fact (Menu tasting, 16 days) sits at y=540, inside the fold. The fix adds a second display-scale count under 79 DAYS that restates the measure's lead row: two competing numbers, one defect traded for another.",
+  "sharpenedFix": "Do not add a guest hero block; it duplicates the lead row and edges toward reopening B, whose premise is that distance is read off the rail, not announced. The only residue worth taking is placement: keep the gap sentence but print it inside the measure at the pixel of the gap it describes, body step, quieter ink, so the ~180px of bare rail between origin and the first row is labelled where it happens. Horizon, count, date, venue line and the owner surface all unchanged."
+}

@@ -1,0 +1,6 @@
+{
+  "id": "micro-label-monoculture",
+  "real": true,
+  "reason": "Measured at 1440 on owner-flight: 27 of 32 visible uppercase strings share one spec (11px mono 400, 1.76px, fore-62) - not 34 of 39, but an 84% collapse, so the defect stands. Heads, dates, units, a state, a control and the wordmark are one object. The fix is wrong twice: --track-labelWide is reserved by its own comment for the ceremonial top line only, and fore-46 is never used for text (~4.2:1, under AA), so 'one step down the ink ladder' would fail the contrast gate.",
+  "sharpenedFix": "Make uppercase exclusive to section heads and leave their spec untouched: .b-measureHead, .b-behindLabel, .b-todayLabel stay 11px/400/--track-label/fore-62. Do not move them to --track-labelWide; that step belongs to the ceremonial .b-who line. Move DATA onto the spec .b-away already ships - sentence case, --track-data, fore-72: .b-date, .b-behindDate, .b-behindCount, .b-unit, .b-origin, .b-where, footer 'Updated 15 July 2026'. Move STATE and PROVENANCE to sentence case, --track-data, fore-62, one ink step behind data, which is how the palette says hierarchy is made: .b-hiddenMark, .b-behindState, 'Kept by Orla', the wordmark. .b-grabWord joins them, keeping its at-rest fore-16 underline as the only underlined micro-string. Assert in audit.mjs: at most three uppercase mono roles per state."
+}

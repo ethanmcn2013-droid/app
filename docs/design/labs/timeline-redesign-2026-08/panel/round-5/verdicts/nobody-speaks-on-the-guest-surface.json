@@ -1,0 +1,6 @@
+{
+  "id": "nobody-speaks-on-the-guest-surface",
+  "real": false,
+  "reason": "The premise is false. \"The composition already exists on the unfurl\" does not: the bubble is a hard-coded literal in render-b.js:1209 inside a mock messaging app, not fixture data and not part of the plan. No publish-side note field exists, the fixture carries none, and the audience DTO strips exactly those fields. So the fix hand-rolls the one string whose value is that a human wrote it. Round 3 refuted this. The guest surfaces already carry a person: Mara & Finn, \"Kept by Orla\", \"We said yes\".",
+  "sharpenedFix": "Do not promote the bubble; it belongs to the messaging app, not the plan. If the seat wants more warmth on the received artifact, use strings that already exist: print's human closing line (\"2 moments behind you, and one thing that did not happen.\") is absent from phone, which stops at a bare \"3 MOMENTS\" count. Carrying that existing sentence onto phone costs nothing invented. A real dedication is a build, not polish: it needs a publish-time field, DTO carriage and moderation, and must ship only with a genuinely captured note, never lab-written copy standing in for one."
+}

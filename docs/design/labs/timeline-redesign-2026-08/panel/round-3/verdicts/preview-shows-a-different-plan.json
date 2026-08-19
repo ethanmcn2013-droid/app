@@ -1,0 +1,6 @@
+{
+  "id": "preview-shows-a-different-plan",
+  "real": true,
+  "reason": "Driven and confirmed. Add \"Hair trial\": 8 rows, bar says added; Preview shows 7 rows, no Hair trial; Back to the plan returns 7 rows, the undo bar empty, nothing announced. Mark Send the invitations Hidden, Done, Preview: it is still listed. Delete then round-trip and the deleted moment returns. Cause: fixture's live[] is a load-time snapshot, delete and setVisibility write DOM only, and go() remounts every state from the fixture.",
+  "sharpenedFix": "Take the session store, not the refusal fallback: refusing Preview after any edit kills the owner's main loop and still loses work on every other transition. In render-b.js seed a module-level list from F.milestones; make add, delete (with index-restoring undo), setAway, setTitle and setVisibility mutate it; route ahead(), behind(), recordFor() and the publish card's counts through one accessor instead of F.live()/F.counts(). Hidden must filter guest lists only — pass o.owner through measure() and behindBlock() so owners keep seeing hidden rows. Then gate the three cross-state assertions the seat names."
+}

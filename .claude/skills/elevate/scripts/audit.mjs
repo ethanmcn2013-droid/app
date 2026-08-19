@@ -46,7 +46,9 @@ const FAMILY_PATTERN = (config.families ?? ["Geist", "Geist Mono"])
 const TYPE_RAMP = config.ladders?.typeRamp ?? [];
 
 const AUDIT = `(() => {
-  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], counts: {} };
+  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], ramp: [], leading: [], leadingLadder: [], leadingRole: [], tracking: [], trackingLadder: [], counts: {} };
+  const tracks = new Map();
+  const leads = new Map();
 
   const parse = (value) => {
     const m = String(value).match(/rgba?\\(([^)]+)\\)/);
@@ -76,10 +78,25 @@ const AUDIT = `(() => {
     return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
   };
 
+  /* A ground painted as a single-colour gradient IS a ground. Only
+     one-colour gradients are composited: a real multi-stop gradient has
+     no single backdrop, and guessing one would be worse than saying so,
+     so those are reported as unmeasured rather than scored. */
+  const groundOf = (cs) => {
+    const flat = parse(cs.backgroundColor);
+    const stops = cs.backgroundImage.match(/rgba?\\([^)]+\\)/g) || [];
+    if (!stops.length) return flat;
+    const first = stops[0];
+    if (!stops.every((c) => c === first)) return flat;
+    const wash = parse(first);
+    if (!wash) return flat;
+    return flat && flat.a > 0 ? over(wash, flat) : wash;
+  };
+
   const backdropOf = (el) => {
     let node = el, stack = [];
     while (node && node !== document.documentElement) {
-      const bg = parse(getComputedStyle(node).backgroundColor);
+      const bg = groundOf(getComputedStyle(node));
       if (bg && bg.a > 0) { stack.push(bg); if (bg.a === 1) break; }
       node = node.parentElement;
     }
@@ -93,6 +110,29 @@ const AUDIT = `(() => {
     const cls = typeof el.className === "string" && el.className ? "." + el.className.trim().split(/\\s+/).slice(0, 2).join(".") : "";
     return el.tagName.toLowerCase() + cls;
   };
+
+  /* Read off the page, so the gate grades what the file declares rather
+     than a list copied into the script. A lab with no ladder declared
+     simply skips both checks. */
+  const rootCs = getComputedStyle(document.documentElement);
+  const ladder = (prefix) => {
+    const found = [];
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
+      for (const rule of Array.from(rules || [])) {
+        if (!rule.style) continue;
+        for (const name of Array.from(rule.style)) {
+          if (name.indexOf(prefix) === 0) found.push(name);
+        }
+      }
+    }
+    return Array.from(new Set(found))
+      .map((name) => parseFloat(rootCs.getPropertyValue(name)))
+      .filter((v) => Number.isFinite(v));
+  };
+  const LEAD = ladder("--lead-");
+  const TRACK = ladder("--track-");
+  out.counts.ladders = { leading: LEAD.length, tracking: TRACK.length };
 
   const all = Array.from(document.querySelectorAll("*"));
   out.counts.elements = all.length;
@@ -141,6 +181,30 @@ const AUDIT = `(() => {
     }
 
     /* 2 + 3 + 4 + 8 + 9: text checks */
+    /* A placeholder is text a person reads, and it was invisible to
+       this gate: the pseudo scan below is for hit-target expanders, and
+       nothing else looked at ::placeholder. It failed AA on a shipped
+       room for a whole round because of it. */
+    if (el.matches("input, textarea")) {
+      const ps = getComputedStyle(el, "::placeholder");
+      const pc = parse(ps.color);
+      if (pc && pc.a > 0 && el.getAttribute("placeholder")) {
+        if (!near(pc)) out.colors.push({ el: describe(el) + "::placeholder", prop: "color", value: ps.color });
+        const pbg = backdropOf(el);
+        const pcomp = over(pc, pbg);
+        const psize = parseFloat(ps.fontSize) || parseFloat(cs.fontSize);
+        const pweight = parseInt(ps.fontWeight, 10) || parseInt(cs.fontWeight, 10);
+        const plarge = psize >= 24 || (psize >= 18.66 && pweight >= 600);
+        const pgot = ratio(pcomp, pbg);
+        if (pgot < (plarge ? 3 : 4.5)) {
+          out.contrast.push({
+            el: describe(el) + "::placeholder", text: el.getAttribute("placeholder").slice(0, 36),
+            size: psize, weight: pweight, ratio: Math.round(pgot * 100) / 100, need: plarge ? 3 : 4.5,
+          });
+        }
+      }
+    }
+
     if (hasText && visible) {
       const weight = parseInt(cs.fontWeight, 10);
       if (!${JSON.stringify(ALLOWED_WEIGHTS)}.includes(weight)) out.weights.push({ el: describe(el), weight, text: el.textContent.trim().slice(0, 32) });
@@ -154,6 +218,79 @@ const AUDIT = `(() => {
       }
       if (cs.lineHeight === "normal") {
         out.leading.push({ el: describe(el), text: el.textContent.trim().slice(0, 32) });
+      }
+      /* And a declared leading still has to be ON the declared ladder.
+         Comparing each family and size only with itself let a seventh
+         undeclared value ship clean, and it could never see the same
+         object carrying two baselines on two different states. */
+      else if (LEAD.length && size > 0) {
+        /* On the ladder is not the same as bound to the role. One
+           setting - 11px mono uppercase at the label track - rendered at
+           three different leadings across four hundred instances, and
+           the same object stood on two baselines on two states, all of
+           it inside the declared steps. The role is what a leading
+           belongs to, so the role is what it is keyed on. */
+        const isControl = el.matches("button, a, summary, input, textarea, select, [tabindex]");
+        const upperMono = /mono|geist mono/i.test(family) && cs.textTransform === "uppercase";
+        /* An element may DECLARE its role, and where it does that wins:
+           a moment title and a paragraph of prose can sit at the same
+           size and still be two different things, and a check keyed on
+           rendered size can never tell them apart. */
+        const role = el.getAttribute("data-type") || (size >= 48 ? "display"
+          : (upperMono && size <= 12 ? "label"
+            : (isControl ? "control" : (size >= 20 ? "head" : "body"))));
+        const roleKey = family + "|" + Math.round(size * 10) / 10 + "|" + role;
+        const leadNow = Math.round((parseFloat(cs.lineHeight) / size) * 100) / 100;
+        if (!(el.closest(".tl-caption") || cs.clipPath !== "none")) {
+          if (!leads.has(roleKey)) leads.set(roleKey, new Map());
+          if (!leads.get(roleKey).has(String(leadNow))) {
+            leads.get(roleKey).set(String(leadNow), describe(el) + ' "' + el.textContent.trim().slice(0, 18) + '"');
+          }
+        }
+      }
+      if (false) {
+        const furniture0 = el.closest(".tl-caption") || cs.clipPath !== "none";
+        const ratioNow = parseFloat(cs.lineHeight) / size;
+        if (!furniture0 && Number.isFinite(ratioNow)
+          && !LEAD.some((v) => Math.abs(v - ratioNow) < 0.015)) {
+          out.leadingLadder.push({
+            el: describe(el),
+            size: Math.round(size * 10) / 10,
+            lead: Math.round(ratioNow * 1000) / 1000,
+            text: el.textContent.trim().slice(0, 24),
+          });
+        }
+      }
+
+      /* One size, one letterfit. A tracking ladder that is declared and
+         then applied by hand drifts: the same face at the same size ends
+         up rendering at two different values on two surfaces, and no
+         reader can name why one of them feels wrong. */
+      /* Lab furniture and screen-reader-only text are not the artifact:
+         a caption naming the frame, and a span that exists to speak a
+         unit, must not decide the system's letterfit. */
+      const furniture = el.closest(".tl-caption") || cs.clipPath !== "none";
+      /* The same for tracking: on the ladder, not merely self-consistent
+         within one state. */
+      if (!furniture && TRACK.length && size > 0) {
+        const spaceNow = cs.letterSpacing === "normal" ? 0 : parseFloat(cs.letterSpacing);
+        if (Number.isFinite(spaceNow)
+          && !TRACK.some((em) => Math.abs(em * size - spaceNow) < 0.02)) {
+          out.trackingLadder.push({
+            el: describe(el),
+            size: Math.round(size * 10) / 10,
+            track: Math.round((spaceNow / size) * 10000) / 10000 + "em",
+            text: el.textContent.trim().slice(0, 24),
+          });
+        }
+      }
+      const trackKey = furniture ? null : family + "|" + Math.round(size * 10) / 10;
+      if (trackKey !== null) {
+      const space = cs.letterSpacing === "normal" ? "0px" : cs.letterSpacing;
+      if (!tracks.has(trackKey)) tracks.set(trackKey, new Map());
+      if (!tracks.get(trackKey).has(space)) {
+        tracks.get(trackKey).set(space, describe(el) + ' "' + el.textContent.trim().slice(0, 20) + '"');
+      }
       }
 
       const fg = parse(cs.color);
@@ -175,7 +312,7 @@ const AUDIT = `(() => {
     /* 5. hit targets — a control may carry a larger hit area than its
        drawn box via an absolutely positioned pseudo-element with negative
        insets; that is the correct technique, so measure the union. */
-    const interactive = el.matches("button, a, [tabindex], input, textarea, select");
+    const interactive = el.matches("button, a, summary, [tabindex], input, textarea, select");
     if (interactive && visible && rect.width >= 1) {
       let grow = 0;
       for (const pseudo of ["::before", "::after"]) {
@@ -242,6 +379,20 @@ const AUDIT = `(() => {
   out.contrast = dedupe(out.contrast, (i) => i.el + i.ratio);
   out.ramp = dedupe(out.ramp, (i) => i.el + i.size);
   out.leading = dedupe(out.leading, (i) => i.el);
+  out.leadingLadder = dedupe(out.leadingLadder, (i) => i.el + i.lead);
+  out.trackingLadder = dedupe(out.trackingLadder, (i) => i.el + i.track);
+  /* Emitted as raw pairs and merged across every state by the runner:
+     these are properties of the whole matrix, and a map rebuilt per
+     state can never see the same object standing on two baselines on
+     two different screens. */
+  out.leadPairs = [];
+  for (const [key, seen] of leads) {
+    for (const [value, where] of seen) out.leadPairs.push([key, value, where]);
+  }
+  out.trackPairs = [];
+  for (const [key, seen] of tracks) {
+    for (const [value, where] of seen) out.trackPairs.push([key, value, where]);
+  }
   return out;
 })()`;
 
@@ -258,11 +409,78 @@ for (const state of STATES) {
 }
 await browser.close();
 
-const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading"];
+const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading", "leadingLadder", "leadingRole", "tracking", "trackingLadder"];
 const totals = Object.fromEntries(KEYS.map((k) => [k, 0]));
 for (const state of Object.keys(report.states)) {
   for (const key of KEYS) totals[key] += report.states[state][key].length;
 }
+/* Merge the type pairs across every state before grading them. */
+const merge = (field) => {
+  const map = new Map();
+  for (const state of Object.keys(report.states)) {
+    for (const [key, value, where] of report.states[state][field] || []) {
+      if (!map.has(key)) map.set(key, new Map());
+      if (!map.get(key).has(value)) map.get(key).set(value, where);
+    }
+  }
+  const out = [];
+  for (const [key, seen] of map) {
+    if (seen.size < 2) continue;
+    out.push({
+      key,
+      values: Array.from(seen.keys()).join(" vs "),
+      where: Array.from(seen.values()).join(" | ").slice(0, 120),
+    });
+  }
+  return out;
+};
+const acrossStates = { leadingRole: merge("leadPairs"), tracking: merge("trackPairs") };
+for (const state of Object.keys(report.states)) {
+  report.states[state].leadingRole = [];
+  report.states[state].tracking = [];
+}
+const firstState = Object.keys(report.states)[0];
+report.states[firstState].leadingRole = acrossStates.leadingRole;
+report.states[firstState].tracking = acrossStates.tracking;
+
+/* 14 + 15 · the ladders enforced at the SOURCE. A declared ladder that
+   is bypassed by a literal is a comment: type size was seventy-one
+   literals and vertical space forty-nine off-ladder values, both under
+   headings promising a system. Read the stylesheets, not the render -
+   the render cannot tell a token from the number it resolves to. */
+report.source = { size: [], space: [] };
+{
+  const { readFile, readdir } = await import("node:fs/promises");
+  const path = await import("node:path");
+  /* Only the stylesheets the master is actually built from. A lab keeps
+     its discarded directions as the record of the exploration, and
+     history is not held to the standard of the thing that shipped. */
+  const build = await readFile(path.join(lab, "build.mjs"), "utf8").catch(() => "");
+  const declared = (build.match(/const CSS = \[([^\]]+)\]/) || [])[1];
+  const files = declared
+    ? declared.split(",").map((f) => f.trim().replace(/["']/g, "")).filter(Boolean)
+    : (await readdir(lab)).filter((f) => f.endsWith(".css"));
+  for (const file of files) {
+    const text = await readFile(path.join(lab, file), "utf8");
+    text.split("\n").forEach((line, i) => {
+      const bare = line.split("/*")[0];
+      if (/font-size:\s*[0-9]/.test(bare)) {
+        report.source.size.push({ file, line: i + 1, text: bare.trim().slice(0, 70) });
+      }
+      /* Four pixels and under is an optical inset, not a step on a
+         ladder, and a line may say so for itself with an annotation. */
+      const space = bare.match(/(?:^|[\s;{])(?:margin|padding)(?:-(?:top|right|bottom|left))?:\s*([^;}]+)/);
+      if (space && !/off-ladder/.test(line)) {
+        const values = space[1].match(/-?\d+px/g) || [];
+        if (values.some((v) => Math.abs(parseInt(v, 10)) > 4)) {
+          report.source.space.push({ file, line: i + 1, text: bare.trim().slice(0, 70) });
+        }
+      }
+    });
+  }
+}
+totals.sizeLadder = report.source.size.length;
+totals.spaceLadder = report.source.space.length;
 report.totals = totals;
 
 if (AS_JSON) {
@@ -284,9 +502,18 @@ if (AS_JSON) {
     line("motion", r.motion, (i) => (i.kind === "duration" ? `${i.el} ${i.duration}s` : `${i.el} ${i.easing}`));
     line("type ramp", r.ramp, (i) => `${i.el} ${i.size}px  "${i.text}"`);
     line("leading", r.leading, (i) => `${i.el} line-height normal  "${i.text}"`);
+    line("lead role", r.leadingRole, (i) => `${i.key} → ${i.values}   ${i.where}`);
+    line("lead ladder", r.leadingLadder, (i) => `${i.el} ${i.size}px at ${i.lead}  "${i.text}"`);
+    line("tracking", r.tracking, (i) => `${i.key} → ${i.values}   ${i.where}`);
+    if (state === firstState) {
+      line("size ladder", report.source.size, (i) => `${i.file}:${i.line}  ${i.text}`);
+      line("space ladder", report.source.space, (i) => `${i.file}:${i.line}  ${i.text}`);
+    }
+    line("track ladder", r.trackingLadder, (i) => `${i.el} ${i.size}px at ${i.track}  "${i.text}"`);
   }
   process.stdout.write(`\nTOTALS  ${JSON.stringify(totals)}\n`);
   if (!TYPE_RAMP.length) process.stdout.write(`note: type-ramp check skipped — fill ladders.typeRamp at the palette lock\n`);
 }
 
-process.exit(KEYS.reduce((sum, k) => sum + totals[k], 0) > 0 ? 1 : 0);
+process.exit(KEYS.reduce((sum, k) => sum + totals[k], 0)
+  + totals.sizeLadder + totals.spaceLadder > 0 ? 1 : 0);

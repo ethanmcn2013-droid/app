@@ -1,0 +1,6 @@
+{
+  "id": "the-owner-can-never-touch-the-past",
+  "real": true,
+  "reason": "Verified. The round-3 no-control decision is gated on `listed` (data-past=\"listed\" or print) — the record room and paper. The owner gets the folded form: driven, owner-flight and owner-editing render data-past=\"folded\", a details disclosure, 3 .b-behindRow, and zero focusable elements inside .b-behind even when opened, while the measure beside it carries 7 Edit grabs. So the decision that covers guests does not cover the owner's copy, and a moment is uneditable the day after it passes.",
+  "sharpenedFix": "The fix is right to reuse the row control but wrong that the editor already takes a past date: commitDate refuses away<1 (\"That day has gone\") and setAway clamps to Math.max(1,...). So: render owner past rows through the existing row() with owner=true (backMeasure already draws them, passing false), giving the same .b-grab and openEditor; then widen the floor so a moment already behind may sit at a negative away down to the project's first day, keeping \"tomorrow is the soonest\" only for moments still ahead. Gate on o.owner, never on listed. Assert re-dating forward returns it to the measure."
+}

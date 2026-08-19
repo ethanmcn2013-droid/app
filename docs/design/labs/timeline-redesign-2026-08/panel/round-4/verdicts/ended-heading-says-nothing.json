@@ -1,0 +1,6 @@
+{
+  "id": "ended-heading-says-nothing",
+  "real": true,
+  "reason": "Verified at 390: ended's h1 is \"Signal Timeline\"; phone and day give h1 to \"Mara & Finn\". Ended's own region aria-label already reads \"The plan for Mara & Finn\", so the name is disclosed regardless \u2014 the privacy defence fails and visible/announced headings merely disagree. Copy asserts \"turned off\" though render-core.js:82 names the state \"revoked or expired\". Refuted parts: zero focusables is not ended-specific (phone and day have none), and the mailto fix invents contact the fixture lacks.",
+  "sharpenedFix": "In render-b.js states.ended: demote .b-who to a p kicker carrying F.project.name, promote the message to the h1 as \"This link has stopped working\" (true whether revoked or expired), and close the block with a .b-foot line carrying only \"Signal Timeline\". Body becomes \"Orla can send a new one.\" \u2014 delete the \"no longer shared here\" restatement. Before .b-note add one sentence naming the day's date from the fixture. Drop the mailto and focus-on-load. Update interaction-check.mjs:744 to /stopped working/i."
+}

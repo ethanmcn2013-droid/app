@@ -1,0 +1,350 @@
+/* ═══════════════════════════════════════════════════════════════════
+   The shared foundation — everything all three directions agree on.
+   If a direction needs to break one of these, it overrides it in its
+   own file and says why in a comment there. The point of this file is
+   that the three directions are arguments about the SAME product, not
+   three unrelated skins.
+
+   Palette lock: Ink #111111 · Paper #ffffff · Indigo #4f46e5, and tints
+   of those three. Nothing else paints anywhere in this lab.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --ink: #111111;
+  --paper: #ffffff;
+  --accent: #4f46e5;
+
+  /* The ink ladder. Seven declared steps and no eighth: every secondary
+     tone in the lab is one of these, so "slightly greyer" is not a thing
+     anyone can reach for. */
+  --ink-90: rgba(17, 17, 17, 0.90);
+  --ink-72: rgba(17, 17, 17, 0.72);
+  --ink-62: rgba(17, 17, 17, 0.62);
+  --ink-46: rgba(17, 17, 17, 0.46);
+  --ink-28: rgba(17, 17, 17, 0.28);
+  --ink-16: rgba(17, 17, 17, 0.16);
+  --ink-10: rgba(17, 17, 17, 0.10);
+  --ink-06: rgba(17, 17, 17, 0.06);
+  --ink-04: rgba(17, 17, 17, 0.04);
+
+  /* The paper ladder, for the directions that stand on ink. */
+  --paper-90: rgba(255, 255, 255, 0.90);
+  --paper-72: rgba(255, 255, 255, 0.72);
+  --paper-62: rgba(255, 255, 255, 0.62);
+  --paper-46: rgba(255, 255, 255, 0.46);
+  --paper-28: rgba(255, 255, 255, 0.28);
+  --paper-16: rgba(255, 255, 255, 0.16);
+  --paper-10: rgba(255, 255, 255, 0.10);
+  --paper-06: rgba(255, 255, 255, 0.06);
+  --paper-04: rgba(255, 255, 255, 0.04);
+
+  /* Motion is physics. One easing family, three durations, and a
+     reduced-motion escape that is honoured completely below. */
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --t-fast: 0.08s;
+  --t-base: 0.14s;
+  --t-slow: 0.22s;
+
+  --sans: "Geist", system-ui, -apple-system, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* The tracking ladder. With three colours and two weights, tracking is
+     one of the few hierarchy tools left, and it was the one thing set by
+     hand per component: five different values on 11px uppercase mono,
+     and the same 20px string tracked two ways on two surfaces. Six steps
+     and no seventh. */
+  --track-label: 0.16em;      /* uppercase mono micro-labels */
+  --track-labelWide: 0.20em;  /* the ceremonial top line, and only that */
+  --track-data: 0.04em;       /* mono figures and fields */
+  --track-body: -0.015em;     /* sans 15-20px */
+  --track-head: -0.03em;      /* sans 24-38px */
+  --track-title: -0.035em;    /* sans 48px */
+  --track-display: -0.045em;  /* the count, 96 and 148px */
+  /* One letterfit across 64, 96 and 148 is one letterfit too few: at 96
+     the word on the wedding morning closed to a six-tenths-of-a-pixel
+     gap between its first two letters. Graded by size, and the word
+     gets its own step because it is letters, not tabular figures. */
+  --track-display-148: -0.05em;
+  --track-display-96: -0.04em;
+  --track-display-64: -0.032em;
+  --track-title-64: -0.038em;
+  --track-title-48: -0.032em;
+  --track-dayCount: -0.03em;  /* letters at the display step */
+
+  /* The leading ladder. Tracking was declared and then applied by hand,
+     and it drifted into five settings for one size until the gate was
+     taught to grade it. Leading is the same axis and had never been
+     declared at all: eleven states rendered thirteen ratios, with the
+     same object carrying two baselines on the two screens it exists on.
+     Six steps, bound by role, and audit.mjs fails a leading that is not
+     one of them. */
+  --lead-display: 0.9;        /* the count and the word that replaces it */
+  --lead-title: 1.06;         /* 48px and up */
+  --lead-head: 1.2;           /* 24, 30, 38px */
+  --lead-date: 1.3;           /* the ceremonial date line */
+  --lead-body: 1.5;           /* all prose, 13 to 20px */
+  --lead-label: 1.4;          /* mono micro-labels and single-line controls */
+
+  /* The space ladder. Radii, motion, type, tracking and leading are all
+     declared and all gated; vertical space never was, and it drifted to
+     twenty-six distinct values with one element carrying four different
+     margins in four contexts. Nine steps, and the one rhythm the file
+     already declared out loud - a rule, twenty above the words, forty
+     below the block before it - is now a pair of tokens rather than a
+     number retyped per section. */
+  --gap-hair: 4px;
+  --gap-tight: 8px;
+  --gap-snug: 12px;
+  --gap-line: 16px;
+  --gap-item: 20px;
+  --gap-block: 28px;
+  --gap-section: 40px;
+  --gap-major: 56px;
+  --gap-page: 80px;
+
+  /* The size ladder, and with it the last unnamed axis. Ink, tracking,
+     leading, space and motion were each declared, commented and gated;
+     type SIZE was seventy-one raw literals across thirteen values, so a
+     second product could only learn the ramp by grepping this one. The
+     names are ROLES, and they are the same roles the leading and
+     tracking ladders are bound to, so a component picks one word and
+     gets its size, its letterfit and its leading together. */
+  /* The READING half of the ladder is in rem, so a reader who has set
+     a larger text size in their browser gets one. The display half
+     stays in pixels: those objects are composed against a fixed stage
+     and a rem count at a 24px root clips the day, the sheet and the
+     phone. At the default root every value below is byte-identical to
+     the pixels it replaces. */
+  --size-label: 0.6875rem;    /* mono micro-labels · 11px */
+  --size-labelWide: 0.75rem;  /* the ceremonial top line · 12px */
+  --size-data: 0.8125rem;     /* mono figures and fields · 13px */
+  --size-body: 0.9375rem;     /* prose, and single-line controls · 15px */
+  --size-lead: 1.0625rem;     /* the opening paragraph of a block · 17px */
+  --size-date: 1.25rem;       /* the ceremonial date line · 20px */
+  --size-head: 1.5rem;        /* a moment title at desk width · 24px */
+  --size-title: 1.875rem;     /* a screen's own headline · 30px */
+  --size-titleWide: 38px;     /* the publish headline */
+  --size-figure: 48px;        /* a figure that is not the count */
+  --size-card: 64px;          /* the count on the unfurl card */
+  --size-count: 96px;         /* the count on a phone */
+  --size-countWide: 148px;    /* the count at desk width */
+
+  /* The stage is how one page can show a phone artifact, a desk artifact
+     and an A4 sheet honestly. Each state declares the medium it belongs
+     to; below 430px the stage stops being a frame and becomes the page. */
+  --stage-w: 1180px;
+  --stage-pad: 40px;
+}
+
+/* ═══ the fore / back ladder ══════════════════════════════════════
+   Two grounds, one set of names. `--back` is whatever the surface
+   stands on and `--fore` is the ink laid on it, at the same nine
+   declared alphas either way. Everything downstream is written against
+   these, so flipping the ground is nine lines rather than a parallel
+   stylesheet — and there is no way for one of them to be forgotten,
+   which is exactly how the first attempt at this left two controls
+   painting white on white.
+
+   The two ladders are not mirror images in what they permit. Over
+   paper, ink at 0.62 is 5.34:1 and is the floor for type. Over ink,
+   paper at 0.46 is 4.65:1 and is the floor. Below those, both ladders
+   draw rules and never letters. */
+:root, [data-ground="ink"] {
+  --back: var(--ink);
+  --fore: var(--paper);
+  --fore-90: var(--paper-90);
+  --fore-72: var(--paper-72);
+  --fore-62: var(--paper-62);
+  --fore-46: var(--paper-46);
+  --fore-28: var(--paper-28);
+  --fore-16: var(--paper-16);
+  --fore-10: var(--paper-10);
+  --fore-06: var(--paper-06);
+  --fore-04: var(--paper-04);
+}
+[data-ground="paper"] {
+  --back: var(--paper);
+  --fore: var(--ink);
+  --fore-90: var(--ink-90);
+  --fore-72: var(--ink-72);
+  --fore-62: var(--ink-62);
+  --fore-46: var(--ink-46);
+  --fore-28: var(--ink-28);
+  --fore-16: var(--ink-16);
+  --fore-10: var(--ink-10);
+  --fore-06: var(--ink-06);
+  --fore-04: var(--ink-04);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  /* The page ground is painted as a tint LAID OVER paper, never as the
+   tint alone. An alpha ground has no opinion about what is behind it:
+   opened as a file it composites over the browser white and looks
+   right, and compiled into the console it composites over the console
+   ink and turns black. Both backgrounds stay on palette — the colour
+   is Paper, the image is one of the declared ink tints. */
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--page-wash, var(--ink-04)), var(--page-wash, var(--ink-04)));
+
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: var(--size-lead);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Tabular figures everywhere a number can change under the reader. A
+   countdown that reflows as it counts is a countdown nobody trusts. */
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+#tl { display: block; min-height: 100%; }
+
+.tl-page {
+  /* The page ground is painted as a tint LAID OVER paper, never as the
+   tint alone. An alpha ground has no opinion about what is behind it:
+   opened as a file it composites over the browser white and looks
+   right, and compiled into the console it composites over the console
+   ink and turns black. Both backgrounds stay on palette — the colour
+   is Paper, the image is one of the declared ink tints. */
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--page-wash, var(--ink-04)), var(--page-wash, var(--ink-04)));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--stage-pad);
+  line-height: 1.5;
+}
+
+/* The states that are one object on a bare ground sit in the middle of
+   the room. `safe` is doing real work: the moment the content is taller
+   than the viewport it falls back to the top edge, so nothing can ever
+   be centred out of reach. */
+[data-state="publish"] .tl-page,
+[data-state="day"] .tl-page,
+[data-state="ended"] .tl-page,
+[data-state="loading"] .tl-page,
+[data-state="unfurl"] .tl-page {
+  justify-content: safe center;
+  /* These five states are one object in a room, and every one of them
+     sat at the top of it: .tl-page is a block child, so its height was
+     its own content and `safe center` had nothing to distribute. */
+  min-height: 100dvh;
+}
+[data-state="publish"] .tl-page,
+[data-state="day"] .tl-page,
+[data-state="ended"] .tl-page,
+[data-state="loading"] .tl-page { min-height: 100dvh; }
+
+/* Visually hidden, still spoken. Used where a column header carries the
+   unit for a figure and the row needs to say it out loud. */
+.tl-vh, .b-vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.tl-stage {
+  width: 100%;
+  max-width: var(--stage-w);
+  line-height: 1.5;
+}
+
+/* Media the stage can be set to. These are the only four. */
+[data-medium="phone"] .tl-stage { max-width: 390px; }
+[data-medium="card"] .tl-stage { max-width: 560px; }
+[data-medium="sheet"] .tl-stage { max-width: 794px; }   /* A4 at 96dpi */
+[data-medium="full"] .tl-stage { max-width: 1180px; }
+
+/* A device is drawn only when there is room to draw one. At phone width
+   the artifact IS the page — a bezel around a 390px viewport inside a
+   390px viewport is a lie about what the reader is holding. */
+.tl-device {
+  border: 1px solid var(--ink-16);
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--paper);
+  line-height: 1.5;
+}
+.tl-paperEdge {
+  border: 1px solid var(--ink-10);
+  background: var(--paper);
+  line-height: 1.5;
+}
+
+/* The caption that names what medium you are looking at. It is lab
+   furniture, not product, so it is set as quietly as it can be and still
+   pass AA. */
+.tl-caption {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  line-height: 1.4;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fore-62);
+  margin: 0 0 var(--gap-snug);
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.tl-caption b { font-weight: 400; color: var(--fore); }
+
+/* One focus treatment for the whole lab, routed through a custom property
+   so a component can change its colour without redeclaring the rule.
+   This rule sets outline and nothing else: a global focus rule that also
+   sets border or background silently restyles every control it touches. */
+:focus-visible { outline: 2px solid var(--focus, var(--accent)); outline-offset: 2px; }
+
+/* A link inside a composed object is the object, not a blue word. The
+   underline and the user-agent colour are both decisions this lab makes
+   deliberately, per component, never by default. */
+a { color: inherit; text-decoration: none; }
+button, input, textarea, select { font: inherit; color: inherit; line-height: 1.5; }
+button { cursor: pointer; background: none; border: 0; padding: 0; text-align: left; }
+
+/* This design carries every status in ink density and fill rather than
+   in hue, so a forced-colours context does not degrade it - it flattens
+   it. The rail painted nothing, today went white on white, and the one
+   indigo mark became indistinguishable from seven ordinary ticks. The
+   logic is mapped onto system colours rather than opted out of them. */
+@media (forced-colors: active) {
+  .b-rail { background: CanvasText; }
+  .b-todayRule, .b-dayNow { border-color: Highlight; background: Highlight; }
+  .b-dayNow { background: none; border-top-color: Highlight; }
+  .b-tick { background: Canvas; border-color: CanvasText; }
+  .b-item[data-lead="true"] .b-tick,
+  .b-item[data-anchor="true"]::before {
+    background: Highlight;
+    border-color: Highlight;
+    /* A forced palette may repaint any fill, so the mark that means
+       "this one" is carried in geometry too - a ring nothing else has. */
+    border-width: 3px;
+  }
+  .b-back .b-item[data-lead="true"] .b-tick { background: Canvas; border-color: CanvasText; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001s !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 430px) {
+  :root { --stage-pad: 0px; }
+  .tl-page { padding: 0; }
+  .tl-stage, [data-medium="phone"] .tl-stage, [data-medium="card"] .tl-stage,
+  [data-medium="sheet"] .tl-stage, [data-medium="full"] .tl-stage { max-width: 100%; }
+  .tl-device { border: 0; border-radius: 0; }
+  .tl-caption { display: none; }
+}

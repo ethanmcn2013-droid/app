@@ -1,0 +1,6 @@
+{
+  "id": "share-url-orphan-at-768",
+  "real": true,
+  "reason": "Measured at 768: the row wraps 66 + 4, a 0.06 last-line ratio, and the gate checks widows only on .b-note/.b-stepRead, owner-editing, 1280, so it cannot see it. An opaque token is the easiest string to balance: no seam carries meaning, so any break point is free. But the fix is wrong twice. overflow-wrap: anywhere is already set (b.css:877), and the string is 70 characters, not 61.",
+  "sharpenedFix": "Leave b.css:877 alone and cap no width: a static 32ch forces a needless second line from 1024 up, where all 70 characters fit on one. In render-b.js's .b-linkRow (and render-c.js's), split the URL at its midpoint with a <wbr> between the halves. Verified: 35/35 at 390 and 768, one line at 1024/1279/1280/1440, no breakpoint arithmetic. Then extend interaction-check.mjs's widow assertion to long unbreakable data strings at all four widths, not to every text node, where short prose last lines would false-fail."
+}

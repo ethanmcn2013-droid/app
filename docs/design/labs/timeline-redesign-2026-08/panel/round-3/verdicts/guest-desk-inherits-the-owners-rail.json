@@ -1,0 +1,6 @@
+{
+  "id": "guest-desk-inherits-the-owners-rail",
+  "real": false,
+  "reason": "Geometry checks out, the premise does not. On desk that column is not the owner's editor slot, it is the audience's own sticky horizon: measured at 1440 .b-stick stays pinned at top:24 the whole scroll; at 1279 it exits at -784. Removing the track deletes the one thing desk gives that a phone cannot, and makes the guest scroll 2041px instead of 1680. Whitespace beside a sticky rail is composition, not a defect.",
+  "sharpenedFix": "Keep the two-track guest composition and the sticky horizon; treat the rest state as proportion, not as a column to delete. Round 2's lever still stands: on the audience surfaces narrow [data-medium=\"full\"] .b-two's first track toward the placard (about 340px, above the 336px where the date wraps) and reduce the 64px gap, so the horizon column reads as sized to what it holds. If the void still offends the panel, answer it by giving the rail a present-tense object, never by collapsing the track."
+}

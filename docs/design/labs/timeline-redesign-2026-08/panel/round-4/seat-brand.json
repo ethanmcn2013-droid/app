@@ -1,0 +1,42 @@
+{
+  "seat": "brand",
+  "score": 7.6,
+  "findings": [
+    {
+      "id": "morning-addresses-the-wrong-reader",
+      "element": "state=day — .b-dayNote, .b-behindLabel (\"How you got here\"), .b-behindNote, and the record variant's past list",
+      "problem": "Driven at 390 the wedding morning holds 197 characters, and the words it spends them on are aimed at the wrong person in the wrong tense. \".b-dayNote\" reads \"This is the day the plan was for.\" — past tense, at 8am, which retires the day before it starts; every other surface in the product speaks in the present or the future. The past block is renamed here from \"Behind you\" (render-b.js:306) to \"How you got here\", which addresses a guest as though they did the planning, and then lists \"We said yes\" — the couple's first person — underneath it, so one block carries two people's voices and the plan carries two names for one thing. The fold summarises nine months with \".b-behindNote\" = \"Venue walk-through, 19 September.\", a bare fragment naming an admin task, while the same note on phone/desk/print is a full two-sentence line. In the record variant the morning also prints \"City hotel shortlist — Not going ahead\": on the wedding morning the guest is shown a venue the couple abandoned. Nothing here is a missing feature; it is the one screen the company will be judged by, written as an epitaph and addressed to the wrong reader.",
+      "fix": "In render-b.js: set .b-dayNote to \"Everything from here happens today.\"; keep the past block's single name — use \"Behind you\" on the day exactly as on the other guest surfaces, deleting the dayOf ternary at line 306; change the day's .b-behindNote to open on the first past moment rather than the last, reading \"It started on 2 January, when they said yes.\"; and in the record variant filter items with state \"Not going ahead\" out of the day's past list, leaving them on the owner surfaces only. No new fact and no new field: the same nine moments, re-addressed.",
+      "cost": 0.7
+    },
+    {
+      "id": "count-deflates-on-the-day",
+      "element": "state=day — .b-dayCount (\"Today\")",
+      "problem": "The countdown is the product's crescendo: .b-num runs 96px on a phone and 148px from 701px up, so the number grows as the screen grows. \"Today\" does not — measured at 390, 768, 1280 and 1440 it is 96px at every one of them. On a desk the wedding morning's headline is set at exactly the size the wait carried on a phone the day before, so the one morning the whole plan was counting toward reads smaller than yesterday's number. The declared decision says the word sits \"at the count's own display step\"; on any screen above 701px it does not.",
+      "fix": "Give .b-dayCount the same responsive step as .b-num: 96px below 701px, 148px at 701px and above. Nothing else changes — same face, same weight, same ramp value.",
+      "cost": 0.3
+    },
+    {
+      "id": "today-said-twice-two-grammars",
+      "element": ".b-todayLabel (\"Today is 16 July\") and .b-origin (\"Today, 16 July\") — visible together on owner-flight, owner-editing, phone, desk, print",
+      "problem": "One fact, stated twice on one screen, in two grammars. Measured at 390 the two sit 103px apart (top 249 and top 352), and at 1440 104px apart (342 and 446) — both 11px Geist Mono, both rgba(255,255,255,0.62), identical in every visual property, differing only in that one uses a verb and the other a comma. The reader cannot tell why there are two, so they look for a difference that is not there. This is the \"one grammar per fact\" class the defect library already charged once, back on the surface the guest sees.",
+      "fix": "Delete .b-todayLabel from the header block on every state that also renders the measure, and keep .b-origin as the single anchor, restated to match the header's own grammar: \"Today, 16 July\". Keep .b-todayLabel only where there is no measure to anchor — the loading frame.",
+      "cost": 0.2
+    },
+    {
+      "id": "ended-takes-the-heading-the-couple-owns",
+      "element": "state=ended — h1.b-who, .b-endedTitle, .b-endedBody",
+      "problem": "On every other guest surface the h1 is \"Mara & Finn\" and \"Signal Timeline\" is a quiet foot signature; on ended the h1 is \"Signal Timeline\" while the section's accessible name still says \"The plan for Mara & Finn\". The one screen where something has gone wrong is the one screen where the company puts its own name in the heading slot the couple owns, and the visible name and the announced name disagree. The body then restates the heading — \"This link has been turned off.\" / \"The plan for Mara & Finn is no longer shared here.\" is one fact twice — and closes with \"Orla can send a new link whenever they want to\", which is filler and puts a plural pronoun on a named person. The guest is left holding a first name with no way to reach her.",
+      "fix": "Set h1.b-who on ended to \"Mara & Finn\" and move \"Signal Timeline\" to the same foot signature the other guest states use. Replace .b-endedBody with \"Orla, who keeps this plan, can send a new link.\" and leave .b-note as it stands. Delete the redundant middle sentence entirely.",
+      "cost": 0.3
+    },
+    {
+      "id": "product-vocabulary-on-the-guest-transit",
+      "element": "state=unfurl / publish — .b-unfurlTitle, .b-unfurlHost; state=loading — .b-sub; state=publish — .b-pressBody",
+      "problem": "The three frames a guest crosses before the plan appears all speak the product's language rather than the couple's. The unfurl card — the single string the company is judged by before anyone taps — reads \"Mara & Finn, a wedding timeline\": a comma splice that hands the reader the product's word for itself in the place where the day belongs, above a host that reads like software (timeline.signalstudio.ie). The loading frame then drops the name the card just promised: at 390 it holds exactly \"TODAY IS 16 JULY | Bringing in what is ahead.\" — an unnamed grey box narrating itself in a register nothing else in the product uses. And on the owner's most anxious sentence, .b-pressBody promises \"nothing from your workspace\" and \"the distance\": \"workspace\" is software's word, not a planner's, and \"the distance\" is the product's private coinage for the number. Voice holds beautifully on the owner's plan and slips on every surface a stranger sees.",
+      "fix": "Set .b-unfurlTitle to \"Mara & Finn · Saturday 3 October 2026\". In the loading frame, render the project name above the skeleton in the same .b-who treatment the other guest states use, and set .b-sub to \"Opening the plan.\" In .b-pressBody, replace \"the distance\" with \"the count\" and \"nothing from your workspace\" with \"nothing else\", giving: \"It carries the day, the count and the plan, and nothing else: no notes, no suppliers, no prices.\"",
+      "cost": 0.4
+    }
+  ],
+  "biggestWin": "The owner's voice is already at the bar. \"Nothing is planned until 1 August.\", \"2 done, the last of them 18 April. One thing is not going ahead.\", \"When is the day? / Everything on this page is measured from it, so it is the only thing needed to start.\", and \"You can turn the link off at any time. Anyone holding it then sees that it has ended.\" are declarative, concrete, unhedged and entirely free of jargon — sentences a good studio would have arrived at after months, not a first draft dressed up. The palette is spent rather than obeyed: indigo appears once per screen and always on the thing that is next, so the restraint reads as confidence instead of poverty. What stands between this and 9.5 is not the owner's product, it is the guest's five minutes with it — the unfurl, the loading frame, the ended link and above all the wedding morning. Four of my five findings are copy edits inside existing elements, roughly a day of work; only the morning is a real decision, and the decision is whether the plan's grain stays one moment per day, because if it does the morning will always be a card and should be written as the best card in the world rather than a thin version of the plan."
+}

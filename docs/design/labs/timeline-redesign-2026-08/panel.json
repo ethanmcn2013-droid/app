@@ -1,0 +1,344 @@
+{
+  "gate": 9.5,
+  "seats": [
+    "UI composition",
+    "Typography",
+    "Interaction and states",
+    "UX and information design",
+    "Brand and copy",
+    "Product taste and emotional resonance",
+    "Measured evidence"
+  ],
+  "rounds": [
+    {
+      "round": 1,
+      "scores": {
+        "UI composition": 7.3,
+        "Typography": 7.6,
+        "Interaction and states": 6.3,
+        "UX and information design": 6.2,
+        "Brand and copy": 7.5,
+        "Product taste and emotional resonance": 6.4,
+        "Measured evidence": 7.0
+      },
+      "findings": 35,
+      "confirmed": 33,
+      "refuted": 2,
+      "fixed": 33,
+      "headline": "At rest the panel called this studio-grade. Under the hand it was a five, and the same sentence came back from four seats independently: the gesture the whole direction exists for wrote a pixel and a count and left the date, the accessible name and the readout saying something else. One press put two moments on the same pixel; twenty put one seventy days past the wedding, outside the measure, silently. The editor declared an opaque ground and then re-declared it as a six per cent tint four lines later, so three rows of the plan printed straight through the panel in the state an owner lives in. Fifteen named, focus-ringed controls advertised verbs that did not exist, and the reversibility bar announced a change that had never happened and reversed nothing. Fifteen declarations written to make this work on a phone had never applied at any width, because a media query adds no specificity. Everything an owner touches was rebuilt: one writer of position, every fact derived from the date it produces, the editor moved into the rail, and the gate grown from 108 assertions to 262.",
+      "worst": [
+        {
+          "seat": "UI composition",
+          "cost": 1.4,
+          "problem": ".b-edit declared background: var(--back) and re-declared background: var(--fore-06) four lines later in the same rule, so the editor plate computed to rgba(255,255,255,0.06). Three rows of the plan printed straight through it at 1440 and four at 390, with the steppers landing inside the word \"fitting\" — in the one state the owner spends their time in, in all three rooms.",
+          "done": "The plate is one opaque ground with the tint painted as a layer over it, and the editor no longer stands on the measure at all: at desk width it takes the rail beside the plan, and below that it is a sheet on the bottom edge of the screen. Two earlier attempts were rejected by their own refuters and both were right — a vertical band would have added twenty-five phantom days to the gap the owner is looking at, and a gutter inside the measure column starved the titles to 144px."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 1.0,
+          "problem": "Every control on the owner surface except the four steppers was inert. Rows did not open, Done did not close, Escape did nothing, delete removed nothing, and the only way into the editing state was to edit the URL. The visible affordance was also the wrong object: the row was 520x79 and its only button was a 54x28 badge at the bottom of it.",
+          "done": "The row is the control — the badge stays as the visible mark and its hit area covers the row — and it opens on click, Enter and Space. Escape and Done close it and return focus to the row that opened it. Delete removes the moment and reflows the measure. Preview and Publish move the deck. Anything not built lost its button element and became inert text; the gate now fails on any button that does not do something."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.9,
+          "problem": "One press of \"move a week earlier\" put the invitations on the same pixel as the menu tasting and the two rows printed as one unreadable smear. Twenty presses the other way placed an item at 149 days — seventy past the horizon the page is measured to, and 888px below the bottom of the measure — with the count still reading 79 and nothing said.",
+          "done": "place() is now the only thing that decides where an item sits, it runs after every change, and the move is clamped to the day itself with the steppers stating the ceiling rather than absorbing the press. Where two moments land close together the tick and the count stay on the true pixel and only the words are pushed clear, so the measure can never restate one item's distance as another's."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.9,
+          "problem": "After a single press the row printed the count 16 beside its own date line reading SAT 8 AUG, its accessible name still said \"in 23 days\", and the readout dropped the calendar date permanently — so the owner moving a wedding milestone was never again told which date they had landed on. The readout collapsing from 347px to 99px also threw the button they were about to press again 209px sideways.",
+          "done": "setAway() is the single writer of an item's distance and derives one date, from which the count, the date line, the accessible name, the readout and the gap sentence are all rewritten in the same frame. The readout sits on its own line at a fixed measure, and the gate asserts the four stepper boxes are identical before and after every press."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.7,
+          "problem": "The reversibility surface was a still life: it announced \"the invitations moved seven days closer\" into a live region before anything had been touched, never updated after a real move, and neither its button nor the Ctrl+Z printed beside it did anything. All five behaviour-gate assertions guarding it passed on an inert fragment with a disabled button.",
+          "done": "The bar is silent and inert until there is something true to say, then names the change that actually happened with the figure set like every other number on the page. Its button and the advertised key both restore the item and return focus to the control that made the change, and both stay out of the way of native undo inside a text field. The five assertions that certified a prop were replaced with ten that a prop cannot survive."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.6,
+          "problem": "Fifteen declarations written to make this work on a phone had no effect at any width: every one was a bare class fighting a [data-medium] selector, and a media query adds no specificity. At 390 the field kept its 56px desk padding — 29% of the screen — under a comment reading \"a desk padding on a phone is a quarter of the screen\", the measure kept its 124px lane, and the printed page's own margins were dead at every width.",
+          "done": "The phone is now the base and the desk values live inside a min-width query, so the conflict is deleted rather than out-ranked. The two-column threshold moved from 901px to 1280px, where the measure genuinely has a column: at 901 it was still producing three collisions in a band neither gate had ever measured."
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "scores": {
+        "UI composition": 7.4,
+        "Typography": 7.4,
+        "Interaction and states": 7.3,
+        "UX and information design": 6.6,
+        "Brand and copy": 7.2,
+        "Product taste and emotional resonance": 7.4,
+        "Measured evidence": 7.4
+      },
+      "findings": 35,
+      "confirmed": 33,
+      "refuted": 2,
+      "fixed": 33,
+      "headline": "The gesture held. Every seat that graded it said so, two of them in the same words, and the floor rose to 6.6 while Brand and Typography FELL — the panel looking harder at things it had passed. What it found was that the gesture was the only thing in the owner's panel that had been built. The create verb opened the editor on somebody else's moment. The title field, on a surface whose whole subject is a person's own words, discarded everything typed into it. Delete removed a moment with no way back, dropped focus to the body, killed the advertised key for the rest of the session, and left the reversibility bar offering to restore a row that no longer existed — an offer that, pressed, restored nothing and cleared itself as though it had worked. The bar itself rendered a thousand pixels below the button that filled it. The publish ceremony carried two buttons and neither did anything, on the screen the product exists for. And three of the 262 gate assertions were tautologies, one of them covering that live defect. Everything an owner can now do joins one history stack with its own undo closure; the gate went to 357 assertions and learned to grade placeholders and the tracking ladder.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 0.9,
+          "problem": "The owner's only creation verb created nothing: \"Add a moment\" opened the editor on the first existing moment with its title pre-filled, and the title field wrote nowhere, so there was no path in the whole direction by which an owner could put a new moment on the plan or name one.",
+          "done": "Add builds a real moment, inserts it in date order, opens the panel on it with an empty focused field, and joins the history so Ctrl+Z removes it. The title field writes through to the record, the row, the word-safe trim and the accessible name, and a rename is itself undoable. A refuter caught that the first version of this fix would have thrown on the new row, because the editor resolves its record through the fixture."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.7,
+          "problem": "Delete was the one destructive act on the surface and the only action outside the reversibility system that already guarded a one-day move. It dropped focus to the body, which — because the key handler was bound to the field — killed the advertised Ctrl+Z for the rest of the session, and the bar kept a live offer to undo the move before it.",
+          "done": "Every change now carries its own undo closure on one stack, and undo peeks before it pops, so a press that cannot restore anything no longer clears the bar as though it had. Delete keeps the live node rather than its markup — the owner's edits live on the DOM, so rebuilding from the record would have restored a moment they never had — puts focus on the next row, and the key handler moved to the document."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.7,
+          "problem": "The move is the one animated thing in the product, and below 1280 it happened off screen: the edited row opened 152px below the fold with the sheet covering the lower half of the phone, so the owner pressed, every fact updated correctly, and they saw nothing move.",
+          "done": "The row is scrolled into the band between the top of the screen and the sheet, on open and after any press that would take it out — gated on the sheet being a sheet rather than on a width, so where the editor is the static rail the scroll path is unreachable and the page keeps its place exactly as round 1 asserted. The sheet now reserves its own band in layout, so the last rows can no longer be stranded under it at maximum scroll."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.3,
+          "problem": "Three of the 262 assertions were true by construction: one whose predicate was a literal tautology, one whose exemption list emptied its own array, and one whose else branch restated its if. The second was covering a live defect — the two publish buttons — because its state loop never visited that state.",
+          "done": "The trim assertion tests a word boundary rather than a prefix. The dead-control check now presses every button in seven states and requires the page, the state or the focus to change, so a control that does nothing fails by construction. The sheet assertion asserts what the sheet owes instead of restating its own condition."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.6,
+          "problem": "The wedding morning was the worst-written screen in the set: it printed the fact it exists for twice, closed on a cancelled hotel search, and carried an eleven-week-old timestamp. The count — the whole composition on every other screen — was demoted to a 12px micro-label while the couple's name was promoted into the display register.",
+          "done": "The morning states its one fact once, drops the stamp, names how you got here rather than what did not happen, and the arrived countdown takes the count's own slot at the display step. Two refuters disagreed about whether to delete the closing line; the one that measured the screen won, and it stayed."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.7,
+          "problem": "The tracking ladder was declared and then applied by hand, so it did not hold: 24px sans rendered at two different letterfits, 30px at two more, eight prose blocks carried no tracking at all, and every size raised at desk width kept the phone's tracking.",
+          "done": "Every font-size in the file now carries its step on the same rule, and the ladder is enforced mechanically: audit.mjs grades it, failing when one family at one size renders at two letterfits anywhere in the state matrix. Two sizes moved so the ladder is unambiguous — the ceremonial label is a step up in size as well as tracking, and a share token is data, not a label."
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "scores": {
+        "UI composition": 7.2,
+        "Typography": 8.1,
+        "Interaction and states": 7.4,
+        "UX and information design": 7.5,
+        "Brand and copy": 7.8,
+        "Product taste and emotional resonance": 7.3,
+        "Measured evidence": 7.6
+      },
+      "findings": 35,
+      "confirmed": 22,
+      "refuted": 13,
+      "fixed": 22,
+      "headline": "The floor rose from 6.6 to 7.2 and the panel turned on the half of the product it had barely graded. Six of the seven seats said a version of the same thing: the owner's fifteen seconds are finished, and everything the owner hands over is not. Preview previewed a different plan from the one on screen - an added moment vanished, a moment marked Hidden was still listed, and Back to the plan destroyed the edit in silence - because every state remounted from a load-time snapshot and the control titled \"What guests see\" wrote to a DOM attribute and nothing else. The record room and the printed keepsake, whose entire subject is the past, showed none of it: a CSS rule took the disclosure away and took the heading, the count and every row with it, and the one assertion guarding that surface PASSED by proving the control was gone. The reversibility bar, moved into the editor last round, had no positioned ancestor at the owner's own two widths and painted across the 148px count. And the measured gate could not see the ground it was grading: a page whose ground is a composited wash reported white, so an invisible way out of the preview scored clean. Both gates were rebuilt around what they had missed - the contrast check now composites the real ground, tracking and leading are read off the page and enforced against it, <summary> counts as a control, and the behaviour gate went from 357 assertions to 424.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 0.7,
+          "problem": "The record room and the printed keepsake showed none of the past. [data-past=\"listed\"] hid the <summary>, and because the heading and the count lived inside it they were deleted too; the two rules meant to compensate were inert, because Chromium hides a closed <details> through ::details-content and display on a child cannot override it. Driven at 1440, zero of three rows passed checkVisibility. The gate's only assertion for that surface passed by proving the control was gone - the very thing causing the loss.",
+          "done": "Where the past is listed there is now no disclosure at all: the renderer emits a plain head and the rows, and print forces it whichever room made the sheet. The two dead CSS rules are gone. Four assertions replaced the one, over both rooms at print, desk and phone, requiring every row to pass checkVisibility, the heading to be visible, the count to equal the rows rendered, and no <summary> to exist where nothing folds."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.7,
+          "problem": "At 1280 and 1440 the reversibility bar painted on top of the count. The bar is absolutely positioned inside the editor, and the rule that puts the editor in the rail reset it to position: static, so there was no positioned ancestor and the bar escaped to the sticky column - landing at (202, 83-153) across a numeral occupying 106-233, and taking the pointer there too. The editor meanwhile held 78px of reserve the bar never entered. Below 1280 the sheet was correct, which is why every phone frame looked right.",
+          "done": "position: relative with inset: auto, so the panel sits exactly where static put it and the bar lands in its own reserved band, raised to 88px against a measured 85px. A refuter caught that relative alone would have reactivated the base rule's fixed offsets and shifted the panel 12px out of its column. Eight assertions now require the bar to sit inside the editor and never to intersect the count, at four widths."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.5,
+          "problem": "Press Hidden and the row, its badge and its accessible name all said hidden; press Preview, three hundred pixels away, and the guest still saw it. Visibility was written to a DOM attribute only, the fixture's live list was a snapshot taken at load, and every state remounts from the fixture - so a moment added never reached a guest, a moment deleted came back, and Back to the plan silently destroyed the owner's work. Six assertions covered the toggle and every one of them stopped at the owner's own DOM.",
+          "done": "The record is the store. add, delete, the date and the visibility toggle all write through to it, the derived lists are computed on call rather than once at load, and the guest lists are filtered in one place by one flag - so an owner still sees what they hid and a guest does not. Three cross-state assertions now carry an edit through Preview and back."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.5,
+          "problem": "Delete threw the page up to 638px away with no motion connecting the two positions, and undo restored the moment without restoring the place, so the way back left the owner exactly as lost. The cause was focus: the browser scrolls to whatever takes it, and the row that inherited focus after a removal was handed it plainly. The behaviour gate never saw it - it visited 390, 768, 1280 and 1440, and the worst of it is at 320 and 1024.",
+          "done": "One function hands focus over and it never moves the page: preventScroll everywhere, then a nudge only where the target is genuinely off screen, using the same band math the editor already had. Every history entry records the view it happened at and undo restores it. The gate now drives delete and undo at 320, 768, 1024 and 1280 and measures the picture on screen rather than the scroll offset, because removing a row changes the document height and the browser's own scroll anchoring moves scrollY by design."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.4,
+          "problem": "Two thirds of a calendar broke in half in the record. The date lane is a hard 76px and an 11px mono uppercase date at 0.16em needs about 84px, so SAT 18 APR, SAT 22 AUG, SAT 29 AUG and SAT 19 SEP all wrapped, severing the weekday from the day it belongs to and leaving the rows alternating 39px and 55px. It was invisible in every shot because the disclosure is closed by default, and invisible to the tracking gate because the letterfit was correct - the lane was simply too narrow for it.",
+          "done": "96px and nowrap, so a future overrun is a visible collision the gate can catch rather than a silent second line, and the leading joins the ladder. Two assertions drive the open disclosure at 390 in both rooms and require every date box to be a single line."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.3,
+          "problem": "The gate could not see the ground it was grading. This lab paints its page ground as an opaque colour plus a composited wash - a deliberate decision, documented twice - and the contrast check walked backgroundColor only, so everything outside the artifact was measured against white while the pixels were ink. A live control was hiding behind it: the strip carrying the owner's only way out of a preview was written in literal ink on the ink ground, 1:1, and passed in every room. The tracking check had the matching hole - it compared each family and size only with itself, so a seventh undeclared value could ship clean.",
+          "done": "The backdrop composites single-colour gradients and reports anything else as unmeasured rather than guessing. The preview strip is painted from the fore ladder, as is the lab's own caption, which had the same defect. Both ladders are now read off the page and enforced against it, and leading joined tracking as a declared, graded axis - six steps, bound by role, with sixty hand-set values routed onto them."
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "scores": {
+        "UI composition": 8.1,
+        "Typography": 8.3,
+        "Interaction and states": 7.5,
+        "UX and information design": 8.1,
+        "Brand and copy": 7.6,
+        "Product taste and emotional resonance": 7.6,
+        "Measured evidence": 7.8
+      },
+      "findings": 35,
+      "confirmed": 22,
+      "refuted": 13,
+      "fixed": 22,
+      "headline": "The floor rose again, 7.2 to 7.5, and four seats rose by half a point or more - but the round belongs to one sentence five of the seven seats wrote independently: the wedding morning is a title card. The best idea in the direction, real days at real distance, was absent from the one screen the whole company is judged by; the past opened there into a flat dated table, and a second moment dated on the wedding day made the wedding itself vanish from its own screen. Underneath it the measured seat found the countdown had no arrival branch and no plural: a wedding one day out rendered \"1 DAYS\" at ninety-six pixels, the morning \"0 DAYS\", the week after \"-6 DAYS\", on every guest surface and on the card that lands in the chat - and the assertion written to guard it could not see it, because CSS uppercases the unit. The venue a guest is told to go to was a string literal typed into the renderer twice, from a record that has no venue field. The link card announced neither its figure nor its date to a screen reader, and painted its own ground from a ladder a rasterised asset can never follow - white on white in one room, ink on ink in another. The past said the same thing twice wherever round 3 had opened it. And nothing in the product answered a press: eight hover rules, zero active rules, and on a phone the only acknowledgement was the browser's own tap highlight, an unowned fourth hue nobody chose. The morning now draws its past in the product's own language at two pixels a day; the countdown has one owner and three states; leading is bound to its role and space has a declared ladder. The behaviour gate went 424 to 454 assertions.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 0.8,
+          "problem": "The wedding morning was 206 characters, one control, and a 715px card against 1674px in the received artifact: the measure - the whole thesis of the direction - was absent on the one day it is about, and its past opened into a flat dated table. Five of the seven seats raised it independently.",
+          "done": "The morning draws its past in the product's own language: the same rail, the same ticks, the same mono date beside the person's words, running downward from today into the closed months at two pixels a day, headed \"days back\" and carrying no accent, because nothing behind you is the next thing. No new data, no new control, and the same place() that positions what is ahead positions what is behind. Two refuters shaped it: a completed forward measure would have spanned 3,300 pixels with two hundred-day voids, and inverting the screen would have duplicated the rail's own origin under the display word."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.5,
+          "problem": "The countdown had no arrival branch and no plural. Driven, not read: a wedding one day out renders \"1 DAYS\" at 96px on a phone and 148px at a desk, the morning renders \"0 DAYS\", a week after renders \"-6 DAYS\", and the card that lands in the chat does the same. The fixture already carried an accessor written for exactly this, and the two biggest numbers in the design were the only ones that never called it. The guarding assertion could not fail: CSS uppercases the unit, so the page says \"1 DAYS\" while the regex looks for \"1 days\".",
+          "done": "One owner for the clock, answering with a state rather than a string, because the three cases are three compositions: a figure and its unit while the day is ahead, the word the morning is already built on when it arrives, and a sentence with no numeral once it has gone. A guest can no longer be shown a negative. Graded at two days out, one day out, the day itself and three days past, reading the figure and the unit as separate elements because innerText cannot see this."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.5,
+          "problem": "A second moment dated on the wedding day made the wedding itself vanish from its own screen: the morning rendered only the first item on the clock, and anything else dated that day was in neither the ahead list nor the behind list, so it existed nowhere. Reached by typing a date the editor itself accepts.",
+          "done": "The morning names everything dated on it, ordered explicitly rather than by fixture order, and heads the block \"Happening today\" when it holds more than one. Asserted against the record rather than against a literal: every live moment dated on the clock must appear in the text of the screen."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "The unfurl card painted its ground from the fore ladder, so the one artifact that gets rasterised and lands in somebody else's chat client followed a room it can never be in: white on white in the paper room, and #111 on #111 on the publish screen, where the owner previews what lands in the message. Separately its accessible name replaced its own contents, so the 64px figure and the date were announced to nobody.",
+          "done": "The card has one ground, written in fixed tokens that are still on the palette, and it is shown on a hairline plate wherever it is previewed. Its name is built from what it shows, and it now says when the figure was true - a chat client caches a preview at the moment it is sent, and the bubble beside it promises the plan updates itself."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.4,
+          "problem": "Nothing in the product answered a press: eight hover rules and zero active rules, so on a phone - where hover does not exist - the primary gesture had no acknowledgement at all until the sheet arrived, and the only thing marking a touch was the browser's own tap highlight, an unowned teal nobody chose and nothing overrode.",
+          "done": "State here is ink density, so a press is one step denser than a hover, declared after the hover rules so equal specificity cannot lose, with the tap highlight taken off the controls that now own their own press. No motion work needed: the reduced-motion block already zeroes every transition, and a colour step is state rather than motion."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.3,
+          "problem": "The venue - the only fact telling a guest where to go - was a string literal typed into the renderer in two places and presented as a fact about the record, which has no venue field. The gate proved it by matching the same literal.",
+          "done": "Removed rather than invented: a place field is a data-model change and out of scope, and writing one into the fixture would be exactly the hand-rolled data the brief forbids. The milestone titles that genuinely name the venue are real record content and are untouched. The gate now asserts the page does NOT claim a venue."
+        }
+      ]
+    },
+    {
+      "round": 5,
+      "scores": {
+        "UI composition": 7.8,
+        "Typography": 8.4,
+        "Interaction and states": 7.9,
+        "UX and information design": 7.9,
+        "Brand and copy": 7.9,
+        "Product taste and emotional resonance": 7.9,
+        "Measured evidence": 8.0
+      },
+      "findings": 35,
+      "confirmed": 24,
+      "refuted": 11,
+      "fixed": 24,
+      "headline": "The floor rose 7.5 to 7.8 and the spread closed to six tenths - but the round was decided by two things the panel had never been asked to grade, and all seven seats failed both. The printed keepsake was not A4. It declared 1123 pixels and rendered up to 1935; there was no @page rule, no print media block, no break rule and no millimetre anywhere in the stylesheets; and the sharpest finding of the engagement was that the two-column sheet every reviewed frame showed NEVER OCCURS ON PAPER - the lab's own stage padding took the sheet's content box under the threshold that gives it two columns, so the object the panel graded and the object that prints were different documents. It printed as two pages, the second carrying an orphaned rail stub, the link and the footer, naming neither the couple nor the day. The second was extractability: the brief requires the winner to come out as a small named language, and five ladders were declared, commented and gated while type SIZE was seventy-one raw literals across thirteen values, vertical space was forty-nine off-ladder values under a heading promising a system, and the four real inventions - the row is the control, the travelling reversibility node, the stepper that states its ceiling, position is the quantity - existed only as class names and gate assertions. Both are now built. The sheet is a real A4 page, verified by rendering the PDF and counting its pages. The size and space ladders are declared and enforced AT THE SOURCE, because a render cannot tell a token from the number it resolves to. Leading and tracking are now graded across the whole state matrix rather than per state, which immediately caught the same date standing on two baselines on two screens. And the language has a name and a page: Measure. The measured gate went from thirteen categories to fifteen; the behaviour gate from 454 assertions to 499.",
+      "worst": [
+        {
+          "seat": "UI composition",
+          "cost": 0.6,
+          "problem": "The keepsake is the only artifact this product makes that cannot be reflowed after it exists, and it was never a page. Rendered at true A4 it was 714 by 1828 in a single stacked column, and page.pdf returned two sheets. Zero @page, zero @media print, zero break rules, zero mm or pt in any stylesheet. And the two-column composition in every frame the panel had reviewed for five rounds was a screen picture of a document no printer produces: the lab's 40px stage padding was leaking onto the paper and taking the content box 16px under the container threshold.",
+          "done": "The sheet is told it is 210 by 297 millimetres. A print media block takes the lab's furniture and its stage padding off the paper, which lifts the content box to 680 and restores the two columns on paper for the first time. The composition was re-cut so it fits rather than shrunk: the past moved under the horizon into the left column, which held 396 pixels against 1194 on the right, and the sheet's scale dropped from ten pixels a day to eight. Nothing may be cut in half by a page edge. Measured: 1003 pixels inside 1123, and the PDF is one page - now an assertion that renders the real PDF and counts them."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.5,
+          "problem": "Ink, leading, tracking, space and motion each had a named, commented, mechanically gated ladder. Type SIZE had none: seventy-one raw pixel literals across thirteen values with no role names, so a second product could only learn the ramp by grepping this one. The config's ramp was an inventory ratified after the fact, not a scale.",
+          "done": "Thirteen role-named size tokens, paired to the leading and tracking roles so a component picks one word and gets its size, its letterfit and its leading together, with every literal routed onto them and no pixel moved. And the gate learned to read the SOURCE, not the render: a render cannot tell a token from the number it resolves to, so a declared ladder bypassed by a literal scored clean. Any untokenised font-size now fails the build."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.4,
+          "problem": "Below 1280 the editor is a fixed panel, and a fixed panel is invisible to the browser's own scrolling - a row underneath it counts as on screen. So tabbing past the last control in the panel landed focus on row buttons the keyboard owner could not see, and pressed things they could not see.",
+          "done": "Focus is followed, not fenced. The panel is docked rather than modal - a refuter was clear that a scrim, a body lock and a tab wrap would build a second, modal editor and strand the reserved band - so instead anything that takes focus while standing behind the sheet is brought out from behind it. Graded by tabbing five stops past Delete at two widths and hit-testing the centre of whatever holds focus."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.5,
+          "problem": "A whole band of widths had never been drawn. From 701 to 1279 the field is one wide track, and the single indigo mark on the owner's screen is bound to it - so today ran 344 pixels at 1280 and 1068 pixels full-bleed at 1279, reading as a divider rather than as a mark. The shot matrix rendered 390, 768, 1280 and 1440, which is why four rounds never saw it.",
+          "done": "Today is held to one constant width - a no-op on a phone and at the two-column widths, a correction across the whole band. The breakpoint itself did not move: a refuter showed that two columns at 1000 pixels leaves the plan lane 284 wide inside its own gutter and reopens the collision the 1280 threshold was raised to close. The band now renders in both the shot matrix and the console, so it cannot go unseen again."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.3,
+          "problem": "Nothing gave the language a name, so there was nothing for the next product to ask for. The materials transferred cleanly; the compositions did not, and the four real inventions - the row is the control, the travelling reversibility node, the stepper that states its ceiling, position is the quantity - existed only as .b-prefixed classes with their contracts living inside gate assertions. Notes could inherit by copying Timeline and deleting the wedding, and no other way.",
+          "done": "The language is called Measure, and LANGUAGE.md states it: the six ladders, the four rules, and the four behaviours written as contracts - each with its states, its keyboard model, its focus-return rule, the assertion that proves it and the class implementing it today. It also states plainly what a second product does NOT inherit, and records the two jobs deliberately deferred rather than swept late in an engagement: splitting the .b- prefix into a neutral layer, and collapsing thirteen size steps to fewer. Both move pixels."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.3,
+          "problem": "The morning's past rail, built last round, reused the forward row builder - so every row on it said \"14 days away\" under a heading reading \"days back\", in the accessible name a screen reader hears. The gate could not see it: its unit assertion runs on a state that has no past rail.",
+          "done": "The rail passes its own direction to the row builder, and to the run grouper that rewrites the same phrase on every repaint - otherwise the wrong word came back on the next paint. Graded on the state that actually has the rail."
+        }
+      ]
+    },
+    {
+      "round": 6,
+      "scores": {
+        "UI composition": 8.2,
+        "Typography": 8.4,
+        "Interaction and states": 8.3,
+        "UX and information design": 8.3,
+        "Brand and copy": 8.2,
+        "Product taste and emotional resonance": 8.4,
+        "Measured evidence": 8.5
+      },
+      "findings": 34,
+      "confirmed": 19,
+      "refuted": 15,
+      "fixed": 18,
+      "headline": "The floor rose 7.8 to 8.2 and the spread closed to three tenths - every seat now sits between 8.2 and 8.5, which is the first round where the panel agreed about where the work stands. Each seat was asked to name the single thing holding it below 9.5, and the answers were specific enough to build from. What they found was mostly regimes the gates had never entered rather than defects in what had been graded. The design carries every status in ink density and fill rather than hue, so a forced-colours desktop did not degrade it - it erased it: the rail painted nothing, today went white on white, and the one indigo mark became indistinguishable from seven ordinary ticks, with 499 assertions passing over a page with no spine. A thumb is not a pointer, and the file wrote 44 pixels down as the floor and then applied it to one control while the measured gate ran at desk width with a floor of 28. Twenty-seven of thirty-two uppercase strings on the owner's screen rendered at one byte-identical spec, so a head, a date, a unit, a state, a control and the wordmark were the same typographic object. Five states declared vertical centring and none of them centred, because the page was a block whose height was its own content. And round 5's own second frame for the first run shipped with a focused primary button that did nothing at all - the owner's first action in the product, dead, on the screen that had just said moments come next. All of that is fixed. One confirmed finding is deliberately NOT fixed and is recorded as open: the owner cannot edit a moment once it has passed, and the fix is a build the last rounds are the wrong place for. The behaviour gate went 499 to 539 assertions and learned to enter two regimes it had never been in - a coarse pointer and a forced palette.",
+      "worst": [
+        {
+          "seat": "Measured evidence",
+          "cost": 0.4,
+          "problem": "There is no forced-colours block anywhere, and because this design carries all status in ink density and fill rather than hue, a forced-colours context flattens the whole hierarchy instead of degrading it. Reproduced: the rail computes white at 16% on a forced white ground and paints nothing across 1530 pixels; the today rule goes white on white; every tick collapses to one fill, the single indigo lead included. Five hundred assertions passed over a page with no spine, no today and no next.",
+          "done": "The design's own logic is mapped onto system colours rather than opted out of them: structure to CanvasText, the accent to Highlight, ordinary ticks hollow against Canvas so filled still means this one - and the lead mark carries a heavier ring as well, because a forced palette may repaint any fill but cannot flatten geometry. The gate can now open a page in a forced palette at all, which it never could."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.4,
+          "problem": "Round 5 built the answered first-run frame and its only control was inert. The state's click handler returned early unless the target was the date button, so the focused primary reading \"Add a moment\" did nothing on one press or two: no row, no editor, no undo - the owner's first action in the product, on the screen that had just told them moments come next, and a breach of the lab's own rule that nothing unbuilt gets a button.",
+          "done": "It opens their plan: the project takes the day they just set, one untitled moment is placed midway to it, and the editor opens on it with the name field focused - the sibling project, not the demonstration one. A shadowed variable made the first attempt throw silently, which is exactly why the assertion now presses the button and counts the row rather than checking the button exists."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.5,
+          "problem": "The sub-fifteen-pixel tier had collapsed into a monoculture: 27 of 32 uppercase strings on the owner's screen rendered at one byte-identical spec, so a section head, a date, a unit, a state, an action and the product wordmark were the same typographic object and a reader had to read every label to learn what kind of thing it was.",
+          "done": "Three roles where there was one, using only steps the ladders already ship. Uppercase mono is now exclusive to section heads. Data takes the spec the count column already used - sentence case at the data letterfit - and state and provenance sit one ink step behind it. A refuter caught that the proposed remedy would have moved heads onto the ceremonial tracking step reserved for the couple's own line, and would have put text on an ink step that fails AA."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.4,
+          "problem": "The master's own comment writes 44 pixels down as the floor for anything a thumb presses, and then applies it to exactly one control. At 390 the primary actions are 39px, the visibility toggle 37, the steppers 40, and the entry to every edit 28. All of it passed automation, because the measured gate runs at desk width with a floor of 28.",
+          "done": "Scoped to a coarse pointer, so nothing at desk width moves: every control a thumb presses is 44 pixels, with the steppers widened and their gaps opened. Measured cost to the owner's phone: five pixels, and the first moment stays above the fold. The behaviour gate now opens a touch context and measures them there."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "Five states declare vertical centring and none of them centres. The page is a block child, so its height is its own content and there is no free space for `safe center` to distribute - leaving between 431 and 551 pixels of dead ground below the one object each of those states exists to show.",
+          "done": "The five states are given a room to sit in. Scoped to them rather than to every page, because print and the owner surfaces must keep their top edge; and the gate asserts the centring only where the object actually fits, since a taller object must stay reachable rather than be centred out of view."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.3,
+          "problem": "On the same A4 sheet the past block's head printed \"3 moments\" and its closing line printed \"2 moments behind you, and one thing that did not happen\" - the head counting everything behind, the sentence counting only what happened. Same noun, same block, two totals, no definitions. The self-contradicting-count class, on paper.",
+          "done": "The head carries the only total, because it counts the rows a reader can see. The line under it partitions that total and never recounts it, and renders nothing at all when there is nothing to partition. A refuter caught that the old template hardcoded \"one thing\" for any number of cancelled moments, so that bug did not get carried forward."
+        }
+      ]
+    }
+  ]
+}

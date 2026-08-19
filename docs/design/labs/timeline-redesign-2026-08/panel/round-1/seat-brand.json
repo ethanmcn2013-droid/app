@@ -1,0 +1,42 @@
+{
+  "seat": "Brand and copy",
+  "score": 7.5,
+  "findings": [
+    {
+      "id": "admin-voice-on-the-received-artifact",
+      "element": "The received artifact on phone, desk and print — the gap sentence and the \"Behind you\" block (render-b.js line 49 and behindBlock)",
+      "problem": "The screen the brief says decides everything opens, at 390px, with a negation and closes with bookkeeping. Under the count a guest reads \"Nothing is planned for the next 16 days.\", then 240px of empty measure, then at the foot \"Behind you — 2 done, the last of them 18 April. One thing is not going ahead.\" Three things are wrong for this reader. \"Behind you\" addresses a wedding guest as if they were the person doing the work. \"2 done\" is tracker vocabulary aimed at an audience defined as someone who has never used a project-management tool and never will. And \"One thing is not going ahead\" is an unnamed negative — the fixture knows it is \"City hotel shortlist\", a detail nobody would mind — so it reads as withheld bad news. Meanwhile the fixture holds the two best strings in the engagement, \"We said yes\" (2 January) and \"The Orchard reserved\" (18 April), in the couple's own voice, and the folded past discards both to print the machine's tally instead. The identical block prints on the A4 keepsake.",
+      "fix": "In render-b.js give the received surfaces their own past block. Label it \"Already done\" and render the covered milestones as their own titles and dates rather than a count: \"We said yes · 2 January\" and \"The Orchard reserved · 18 April\". Name the cancelled item instead of alluding to it: \"The city hotel shortlist is not going ahead.\" Keep the counting sentence \"2 done, the last of them 18 April\" on the owner surfaces only, where the reader is the person doing the work.",
+      "cost": 0.7
+    },
+    {
+      "id": "the-day-reads-as-a-closed-ticket",
+      "element": "state=day — .b-dayNote, \"Everything on the plan has happened. Nothing is left to count.\"",
+      "problem": "The wedding morning is the emotional peak of the product and it is the emptiest, coldest screen in the set: an eyebrow, two names, a date, a rule, and one past-tense sentence telling the couple their queue is empty. \"Nothing is left to count\" is the language of a drained backlog, and on the morning it is also untrue — the day has not happened yet. The screen states nothing useful either: no venue, no time, nothing to be at, where every other state manages to say where to be. This is the one frame a couple will screenshot, and it currently congratulates them on having no work items outstanding.",
+      "fix": "In render-b.js states.day, replace the sentence with present tense addressed to the morning — \"Today is the day.\" — under the indigo rule, and add beneath it the locating line every other state carries, \"Wedding day at The Orchard\", built from F.project.primaryDate.label. Delete \"Nothing is left to count\" from the product; counting is the owner's grammar, never the day's.",
+      "cost": 0.5
+    },
+    {
+      "id": "the-plan-means-two-opposite-things",
+      "element": "The editing card (render-b.js lines 255-262) and the ended link (lines 356-360) against the publish note (line 287)",
+      "problem": "One fact carries several names, and one phrase carries two opposite meanings. Visibility is called four things inside a single card: the row chip says \"shown\", the section label says \"What guests see\", the toggle says \"On the plan / Kept private\", and the accessible name says \"Shown to guests\". Worse, \"On the plan\" (a guest can see this) sits 30px above \"Take it off the plan\" (this ceases to exist), so the same three words carry opposite meanings in adjacent controls and the owner cannot tell whether the destructive button hides or deletes. The object itself is a \"moment\" in the header, a \"line\" in the editing eyebrow and a \"thing\" in the past sentence. The same drift crosses states: publish promises the guest \"sees that it has ended\", then the ended screen says \"turned off\" in the headline, \"no longer shared here\" in the body and \"not public any more\" in the footnote — three names for the one event the owner was given one name for.",
+      "fix": "One name per fact in render-b.js. Visibility: the toggle becomes \"Shown\" and \"Hidden\", the row chip \"Shown\"/\"Hidden\", the accessible name \"Shown to guests.\"/\"Hidden from guests.\", section label unchanged. Rename the destructive control to \"Delete this moment\" so \"the plan\" stops meaning two things. Call the object a moment everywhere: change the owner-editing eyebrow to \"Changing one moment\". Make the ended headline \"This link has ended.\" and cut the last paragraph to \"Nothing you saw before has been deleted.\", so publish and ended use the same word.",
+      "cost": 0.3
+    },
+    {
+      "id": "undo-narrates-a-change-that-never-happened",
+      "element": "state=owner-editing — the reversibility bar .b-undo, \"Last change: the invitations moved seven days closer.\"",
+      "problem": "The sentence is hard-coded and paints on first load, before the owner has touched anything: open owner-editing and the surface already claims a change was made. Drive the steppers and it never updates. Press its own Undo button, or the Ctrl+Z it advertises, and the item does not move — offsetTop 224 before and after both. The only reversibility surface in the product therefore states a fact that is not true and offers a control that reverses nothing, on the one screen where the owner is being asked to trust the tool with their dates. The prose also breaks the number grammar: \"seven days\" spelled out beside steppers labelled −7/+7 and a readout reading \"in 23 days\".",
+      "fix": "Hold the last move in state in render-b.js. Render the bar only after a move has happened, build its sentence from the same accessor the steppers use — \"Last change: \" + title + \" moved \" + n + \" days closer.\" / \" days later.\", figures not words — and wire both the Undo button and the advertised Ctrl+Z to restore the previous date and repaint the measure. Until it reverses something it is a caption, not a reversibility surface, and must not claim to be one.",
+      "cost": 0.3
+    },
+    {
+      "id": "nothing-is-planned-is-off-by-one",
+      "element": ".b-gapNote on owner-flight, phone, desk and print (render-b.js line 49)",
+      "problem": "The string is built as \"Nothing is planned for the next \" + F.daysTo(ahead()[0].date) + \" days.\" The nearest item falls on that very day, so it renders \"Nothing is planned for the next 16 days.\" directly above a measure whose first tick reads \"16 · Menu tasting at The Orchard · Sat 1 Aug\". The sentence is false by exactly one day, it is the third line of the artifact, it repeats the figure 16 immediately under \"Today is 16 July\" where the two 16s mean different things, and it prints on the keepsake. A direction whose whole claim is that a pixel is an honest unit of time cannot carry a headline sentence that is arithmetically wrong.",
+      "fix": "Lead with what is next rather than what is missing. Replace the string with \"Next: \" + ahead()[0].title + \", \" + F.fmt.long(ahead()[0].date) + \".\" so the first sentence on the received artifact names something instead of naming an absence. If the negative form is kept for the owner, subtract one: F.daysTo(ahead()[0].date) - 1.",
+      "cost": 0.2
+    }
+  ],
+  "biggestWin": "The count is the composition, and the accent is spent exactly once. \"79 / days / Saturday 3 October 2026 / Wedding day at The Orchard\", one indigo rule beneath it and one indigo tick on the nearest thing, is a confident piece of writing and typography that holds identically on a phone, at desk width, in the unfurl card and in print — and \"Kept by Orla · Updated 15 July 2026 · Signal Timeline\" is exactly the right amount of company to put on somebody else's day. The ended and loading screens are the best-written wait and failure states in this suite: \"Nothing you saw before has been deleted\" and \"Bringing in what is ahead\" both tell the truth without apologising for it. That hero block and those two states are the extractable language Home, Notes and Tasks should inherit unchanged."
+}

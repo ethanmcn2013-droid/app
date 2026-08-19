@@ -1,0 +1,6 @@
+{
+  "id": "position-has-no-direct-manipulation",
+  "real": false,
+  "reason": "The observations hold (no pointer bindings, cursor:pointer, arrows inert) but the defect does not. Position is not untouchable: Enter on the row opens the editor, the steppers commit whole-day moves with a live readout, both ceilings, an announcement and an undo entry, all gated. On a 14px/day rail a 3px slip is a date change, so drag trades a precise, reversible model for an imprecise one for a first-time wedding organiser, and needs its own snap, cancel, touch, collision and undo rules — a build, not polish. The class name .b-grab is a source identifier; the label reads Edit.",
+  "sharpenedFix": "No fix. Residue, in order: (1) the keyboard path is long — from a focused row a one-day move costs Enter plus five Tabs plus Enter; if anything is cheap here it is landing focus on the −1 stepper when the editor opens, not adding a gesture. (2) Rename .b-grab to .b-edit in b.css and render-b.js so the source stops promising a verb the artifact deliberately does not offer. (3) If direct manipulation is ever wanted, it is a separate engagement with its own gate: snap to whole days off the render's pixels-per-day constant, Escape to cancel, long-press to lift on touch so page scroll survives, and commit through setAway so history stays one stack."
+}

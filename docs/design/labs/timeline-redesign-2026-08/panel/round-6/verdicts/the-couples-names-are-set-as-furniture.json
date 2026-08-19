@@ -1,0 +1,6 @@
+{
+  "id": "the-couples-names-are-set-as-furniture",
+  "real": true,
+  "reason": "Half wrong, half real. Measured at 390 and 1440: .b-who is 12px with 2.4px tracking (--size-labelWide, the ladder's declared ceremonial step), not the 11px/1.76px stamp step that sets \"days\", \"Kept by Orla\", \"Updated 15 July 2026\" and \"Today is 16 July\". So \"byte-identical\" and \"--size-label\" are both false, and the size lever is already pulled. What is true is the ink: the one owner-written string carries the machine's 0.62 alpha. Fix the density, not the size. Round 2's count lock stands.",
+  "sharpenedFix": "Do not move the size step: 12px labelWide is the ceremonial step, and the next declared step, 13px --size-data, is the mono-figures register, a sideways move. Change one line, b.css:47, .b-who colour --fore-62 to --fore. That puts the couple's name in the full-ink group with the count and the date, using a step the ladder already ships, while every size stays put so the 96/148 count is not demoted. Then scope the machine-written captions back down with .b-press .b-who { color: var(--fore-62); } so publish's \"What lands in the message\" and \"The link\" keep stamp density."
+}

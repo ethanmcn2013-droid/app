@@ -1,0 +1,6 @@
+{
+  "id": "the-keepsake-prints-a-link-nobody-can-type",
+  "real": true,
+  "reason": "Verified. render-b.js:1028 passes F.shareUrl into .b-foot, which sets text-transform: uppercase (b.css:402). Driving state=print renders TIMELINE.SIGNALSTUDIO.IE/S/J7QM2VK4XR9BT1NL6YH3CW8PZ5SD0AG7FJ4UE2RN9TM against a case-sensitive 43-char token. The publish state already gets this right via .b-linkRow, so print is an unhandled inconsistency, not taste. No gate covers it.",
+  "sharpenedFix": "Do not print a half-link: a bare domain is a dead end. Change states.print to foot({}) so the footer closes on \"Signal Timeline\", and if the sheet must carry a route back, render it above the footer as a sentence in a case-preserving node (text-transform: none; letter-spacing: 0; word-break: break-all). Add one interaction-check assertion on state=print: body innerText must not contain F.token.toUpperCase()."
+}

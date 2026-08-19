@@ -1,0 +1,6 @@
+{
+  "id": "first-run-has-no-second-frame",
+  "real": true,
+  "reason": "Driven and confirmed: after a valid date, render-b.js only rewrites #b-empty-hint. The heading still asks \"When is the day?\", the primary still reads \"Set the day\", and \"Moments come next\" points at nothing pressable. A success state that contradicts its own question and offers no next action is a dead end, not taste. The behaviour gate asserts only aria-invalid=false, so this is not gate-restated.",
+  "sharpenedFix": "Do not add a twelfth state; owner-empty is already one of the eleven graded states and the answered form is an interaction inside it, not a new state. In render-b.js's setday success branch, re-render .b-empty in place: heading becomes the horizon (count from F.days(F.today, iso) plus the long-form date), the form is replaced by one primary \"Add a moment\", and an empty measure carries a single line saying nothing sits between today and the day yet. Move focus to the new primary and keep the role=status announcement. Recapture the existing owner-empty frames only if the unanswered form changes."
+}

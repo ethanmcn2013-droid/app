@@ -1,0 +1,6 @@
+{
+  "id": "the-card-follows-a-room-it-can-never-be-in",
+  "real": true,
+  "reason": "Measured and reproduced. b.css:849 .b-og uses var(--back) while .b-chat/.b-unfurl are deliberately literal var(--paper). At ?v=paper&state=unfurl the og paints rgb(255,255,255) inside a white unfurl on a white chat: the image panel vanishes. At approach/record state=publish it paints rgb(17,17,17) on a .b-field of rgb(17,17,17), with no .b-chat plate (hasChatAncestor false). An OG asset is fixed and cannot follow a room.",
+  "sharpenedFix": "Take b.css:849 off the ladder: .b-og { background: var(--ink) }, .b-ogWho { color: var(--paper-62) }, .b-ogNum { color: var(--paper) }, .b-ogDate { color: var(--paper-72) } - all declared tokens, palette lock untouched. Add the plate in render-b.js states.publish. But a bare .b-chat is white-on-white in the paper room, trading one invisible surface for another: give the publish wrapper a hairline, h(\"div.b-chat\", { style: \"max-width:332px;border-radius:12px;border:1px solid var(--fore-16)\" }, [card()]), so the landing surface reads in both rooms."
+}
