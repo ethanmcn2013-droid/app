@@ -4,6 +4,37 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-22 · T·150 · ships · the board locks to A·Air, and the design fences come down
+
+**Open Tasks today and the board is exactly the configuration the founder chose
+in the design console — flat cards, soft radius, compact density, subtle indigo,
+calm type — and the standing design gates retire with it. What governs the
+surface now is `docs/design/FLOOR_CANON.md`, the north star, and taste.**
+
+The five axes were already built: the floor ships option CSS for every console
+combination behind five data-attributes. This pass makes the founder's choice
+the only one — a single named constant (`FLOOR_PRESET`) instead of two hardcoded
+defaults that differed from it. A computed-style probe against the design master
+at the same configuration matches production value for value on every measured
+axis: card padding, radius, shadow (none), row gaps, title/note/foot metrics,
+tick and chip sizes, tray rhythm, head height, sheet and dock.
+
+Retired by founder decision, with their enforcement chains: the ds-check hex and
+easing ratchet with its grandfather manifest, the chrome and loading geometry
+contracts, the motion contract, the delight catalog ground rules, the board
+pass-3 styling contract, and the Wave-0 B0 external council baseline. Business
+contracts stand untouched: URLs and naming, the database release gate, HQ sync.
+The quality council stays fully active in receipt-pending mode and reports NOT
+CERTIFIED honestly until the receipt set lands.
+
+Two honest edges, both fixed or named: compact density crushed the stacked
+mobile header at 390px — an inheritance from the design master itself, which
+breaks identically — now fixed in the port and recorded upstream as a master
+finding; and the loading tracing plus empty-state ghost were re-targeted to the
+flat card so the waiting surface promises what arrives. Evidence: 132/132
+critical experiences green on the production build, validate clean, materiality
+review recorded for the changed surface.
+
 ## 2026-08-18 · T·149 · redesigns · the board is one sheet, three colours, and it answers the keyboard
 
 **Open Tasks today and there is one spine instead of two, the project's name where
