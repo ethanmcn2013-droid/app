@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from "node:crypto";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import {
   existsSync,
   lstatSync,
@@ -399,26 +399,17 @@ function validateGitCommit(repoRoot, commit, label, errors, skipGit) {
     return;
   }
   if (skipGit) return;
-  const checks = [
-    ["cat-file", "-e", `${commit}^{commit}`],
-    ["merge-base", "--is-ancestor", commit, "HEAD"],
-  ];
-  for (const argv of checks) {
-    const ran = spawnSync("git", argv, { cwd: repoRoot, encoding: "utf8" });
-    if (ran.status === 0) continue;
-    const probeHead = spawnSync("git", ["log", "-1", "--format=%H %P"], { cwd: repoRoot, encoding: "utf8" });
-    const probeBase = spawnSync("git", ["merge-base", commit, "HEAD"], { cwd: repoRoot, encoding: "utf8" });
-    const probeCount = spawnSync("git", ["rev-list", "--count", `${commit}..HEAD`], { cwd: repoRoot, encoding: "utf8" });
-    const detail = JSON.stringify({
-      argv,
-      status: ran.status,
-      err: String(ran.stderr || "").slice(0, 200),
-      head: String(probeHead.stdout || "").trim().slice(0, 140),
-      mergeBase: String(probeBase.stdout || "").trim().slice(0, 45) || String(probeBase.stderr || "").trim().slice(0, 80),
-      countAtoHead: String(probeCount.stdout || "").trim() || String(probeCount.stderr || "").trim().slice(0, 80),
+  try {
+    execFileSync("git", ["cat-file", "-e", `${commit}^{commit}`], {
+      cwd: repoRoot,
+      stdio: "ignore",
     });
-    errors.push(`${label}: sourceGitCommitSha must be a commit reachable from HEAD (git ${detail})`);
-    return;
+    execFileSync("git", ["merge-base", "--is-ancestor", commit, "HEAD"], {
+      cwd: repoRoot,
+      stdio: "ignore",
+    });
+  } catch {
+    errors.push(`${label}: sourceGitCommitSha must be a commit reachable from HEAD`);
   }
 }
 
