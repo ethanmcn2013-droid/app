@@ -402,14 +402,13 @@ function validateGitCommit(repoRoot, commit, label, errors, skipGit) {
   try {
     execFileSync("git", ["cat-file", "-e", `${commit}^{commit}`], {
       cwd: repoRoot,
-      stdio: "ignore",
     });
     execFileSync("git", ["merge-base", "--is-ancestor", commit, "HEAD"], {
       cwd: repoRoot,
-      stdio: "ignore",
     });
-  } catch {
-    errors.push(`${label}: sourceGitCommitSha must be a commit reachable from HEAD`);
+  } catch (error) {
+    const detail = String((error && (error.stderr || error.message)) || "").replace(/\s+/g, " ").trim().slice(0, 300);
+    errors.push(`${label}: sourceGitCommitSha must be a commit reachable from HEAD (git: ${detail || "no output"})`);
   }
 }
 
