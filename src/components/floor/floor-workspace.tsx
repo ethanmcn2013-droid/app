@@ -26,6 +26,7 @@ import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
 import type { LabTask, LabView } from "@/components/hybrid/types";
 import { FloorBoard, timeOf, todayStamp } from "./floor-board";
+import { FLOOR_PRESET } from "./floor-preset";
 import { useDayIsKnown } from "./use-floor-place";
 import styles from "./floor.module.css";
 
@@ -226,11 +227,11 @@ export function FloorWorkspace({
   return (
     <div
       className={styles.root}
-      data-cards="bordered"
-      data-radius="soft"
-      data-density="comfortable"
-      data-indigo="subtle"
-      data-type="calm"
+      data-cards={FLOOR_PRESET.cards}
+      data-radius={FLOOR_PRESET.radius}
+      data-density={FLOOR_PRESET.density}
+      data-indigo={FLOOR_PRESET.indigo}
+      data-type={FLOOR_PRESET.type}
     >
       {/* ── the spine ─────────────────────────────────────────── */}
       <nav className={styles.rail} data-group="rail" aria-label="Signal Studio">

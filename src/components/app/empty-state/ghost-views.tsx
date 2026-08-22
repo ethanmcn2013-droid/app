@@ -44,10 +44,10 @@ export function BoardGhost() {
 
 function GhostCard() {
   return (
-    <div className="rounded-[10px] border border-line-soft bg-white/80 px-3 py-2.5">
+    <div className="rounded-[12px] bg-bg-sunken/60 px-3 py-2">
       <div className="h-2 w-3/4 rounded-full bg-bg-sunken" />
-      <div className="mt-2 h-2 w-1/2 rounded-full bg-bg-sunken/70" />
-      <div className="mt-3 flex items-center justify-between gap-2">
+      <div className="mt-1.5 h-2 w-1/2 rounded-full bg-bg-sunken/70" />
+      <div className="mt-2 flex items-center justify-between gap-2">
         <div className="h-3 w-12 rounded bg-bg-sunken/70" />
         <div className="flex -space-x-1.5">
           <span className="block h-3.5 w-3.5 rounded-full bg-bg-sunken" />

@@ -20,8 +20,8 @@ Three priorities govern everything front-facing, in this order:
 
 1. **Experience.** Using the product should feel considered end to end,
    and in the right moments delightful. Delight is deliberate: candidate
-   moments are appended to `docs/DELIGHT_CATALOG.md` for an
-   animate-or-restrained verdict — never sprinkled ad hoc.
+   moments get an explicit animate-or-restrained verdict — never sprinkled
+   ad hoc.
 2. **Design.** Every front-facing surface ships at the standard of the
    best studios working today — spacing, type, motion, empty, loading,
    and error states, microcopy, all deliberate, nothing default. The bar

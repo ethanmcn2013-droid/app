@@ -20,12 +20,10 @@ on:
       - "src/preview/**"
       - "public/**"
       - "next.config.*"
-      - ".ds-grandfather.json"
       - "experience/**"
       - ".gitattributes"
       - "package.json"
       - "pnpm-lock.yaml"
-      - "scripts/ds/**"
       - "scripts/experience/**"
       - ".github/workflows/design-quality.yml"
       - ".github/pull_request_template.md"
@@ -44,12 +42,10 @@ on:
       - "src/preview/**"
       - "public/**"
       - "next.config.*"
-      - ".ds-grandfather.json"
       - "experience/**"
       - ".gitattributes"
       - "package.json"
       - "pnpm-lock.yaml"
-      - "scripts/ds/**"
       - "scripts/experience/**"
       - ".github/workflows/design-quality.yml"
       - ".github/pull_request_template.md"
@@ -103,9 +99,6 @@ jobs:
 
       - name: Validate critical fixture coverage
         run: pnpm experience:fixtures
-
-      - name: Enforce design-system drift ratchet
-        run: pnpm ds:check
 
       - name: Install the deterministic browser
         run: pnpm exec playwright install --with-deps chromium

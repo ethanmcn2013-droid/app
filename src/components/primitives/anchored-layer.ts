@@ -1,8 +1,7 @@
 /**
  * anchored-layer — the one entrance every menu, picker and popover uses.
  *
- * The motion contract (docs/design/TASKS_DELIGHT_MOTION_CONTRACT.md) names an
- * "Anchored layer" primitive: *origin-aware scale from 0.98 plus opacity;
+ * The anchored-layer primitive: *origin-aware scale from 0.98 plus opacity;
  * 140ms in, faster out; opacity-only reduced*. This module is the JavaScript
  * half of it, for layers built on motion/react. The CSS half is
  * `context-actions.module.css`, which the Radix menus use — the two are kept

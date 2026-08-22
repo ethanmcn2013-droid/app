@@ -1798,7 +1798,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "fa7bd263a217acf9"
+      "materialityHash": "cda5bc88934c27de"
     },
     {
       "id": "tasks.surface.empty-workspace",
@@ -3559,10 +3559,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-12",
+      "lastReviewedAt": "2026-08-22",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "757683270ea80beb"
+      "materialityHash": "3b115a4fbf764125",
+      "materialityReview": {
+        "materialityHash": "3b115a4fbf764125",
+        "reviewedAt": "2026-08-22",
+        "evidence": "experience/reviews/tasks.state.app-tasks-loading-2026-08-22-floor-air.json"
+      }
     },
     {
       "id": "tasks.state.app-tasks-error",
