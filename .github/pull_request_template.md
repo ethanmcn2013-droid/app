@@ -30,5 +30,4 @@
 
 - [ ] `node scripts/experience/validate.mjs --self-test`
 - [ ] `node scripts/experience/validate.mjs`
-- [ ] `node scripts/ds/ds-check.mjs`
 - [ ] Relevant typecheck, tests, build, and browser checks

@@ -219,8 +219,7 @@ function useTaskFacets(tasks: Task[]): ScopeFacet[] {
 // Palette UI
 // ────────────────────────────────────────────────────────────────────
 
-// Anchored-layer entrance per docs/design/TASKS_DELIGHT_MOTION_CONTRACT.md:
-// scale from 0.98 plus opacity, 140ms in (--motion-fast), faster out
+// Anchored-layer entrance: scale from 0.98 plus opacity, 140ms in (--motion-fast), faster out
 // (--motion-instant), --ease-out (cubic-bezier(0.23,1,0.32,1)); opacity-only
 // when reduced. Values are hardcoded (not imported from src/lib/motion.ts)
 // because that file's EASE_OUT constant has drifted from the CSS token of

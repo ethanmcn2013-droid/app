@@ -218,8 +218,8 @@ function PeriodFact({ label, detail }: { label: string; detail: string }) {
 }
 
 /**
- * The band's two earned moments (DELIGHT_CATALOG S9 · S10, founder
- * verdict 2026-08-12: animate, restrained).
+ * The band's two earned moments (founder verdict 2026-08-12: animate,
+ * restrained).
  *
  * S9 — `advanced`: the completed count went UP. The receipts figure takes
  * a single accent-tint pass, the calendar's shipped placement-receipt

@@ -48,15 +48,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      # SDS 2.0 drift gate — banned colours, system-token redefinition,
-      # non-Geist fonts hard-fail; hex/easing debt ratchets via
-      # .ds-grandfather.json (may only shrink).
-      - name: Design-system drift gate
-        run: pnpm run ds:check
-
       # The D-022 access-term differential test (venue-access-term.test.ts)
       # hard-fails in CI without a live studio checkout to compare against.
-      # Checked out here, after typecheck and ds:check, so no other gate
+      # Checked out here, after typecheck, so no other gate
       # ever scans a second repository's sources.
       - name: Checkout studio for access-term parity
         uses: actions/checkout@v4

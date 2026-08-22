@@ -19,11 +19,11 @@ type Props = {
  *   strokes in over 220ms — the contract's "local routine settle".
  * - Unchecking: fades back to outline.
  *
- * Restraint is deliberate (TASKS_DELIGHT_MOTION_CONTRACT): the journey's
+ * Restraint is deliberate: the journey's
  * ONE expressive signature is the first-ever completion
  * (FirstCompletionMoment). This control used to spend a 1.18x bounce and
  * a six-dot glow burst on every completion — celebration on repeat, which
- * the contract's budget and the catalog's ground rules both refuse.
+ * the motion budget and ground rules both refuse.
  *
  * Shape is intentionally a CIRCLE (not a square Linear-style box): circle
  * means "mark done", square means "select", everywhere in the product.

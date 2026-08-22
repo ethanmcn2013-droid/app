@@ -350,8 +350,8 @@
    brightest.
 
    Rules kept here, deliberately:
-     · no system token is redefined (ds-check enforces it), only
-       --x- extensions and repo-local aliases;
+      · no system token is redefined, only
+        --x- extensions and repo-local aliases;
      · no raw hex — every value is a var() or a color-mix of one,
        so the dark palette cannot drift from the light one;
      · derivations that already mix toward var(--ink) or

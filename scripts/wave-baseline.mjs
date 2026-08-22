@@ -22,7 +22,6 @@ const CHECKS = [
   "db:check",
   "db:contract",
   "db:integrity",
-  "ds:check",
   "first-contact:language",
   "journey:coverage",
   "perf:budgets",

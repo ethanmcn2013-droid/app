@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "signal-materiality-review/2",
+  "experienceId": "tasks.state.app-tasks-loading",
+  "source": "tasks/src/app/app/tasks/loading.tsx",
+  "materialityHash": "3b115a4fbf764125",
+  "reviewedAt": "2026-08-22",
+  "reviewer": "ox-alpha (opencode), A·Air lock-in pass — loading tracing retargeted to the flat/compact board; flat/soft/compact/subtle/calm verified against the design master by computed-style probe in this session's browser run",
+  "playwrightEvidence": {
+    "attestationPath": "experience/evidence-runs/tasks-playwright-45b0a6c89756d6eb76c5daf5-c1f23696fd89112e.json",
+    "attestationSha256": "77bf13ad19f938d66c5f61d5a1c48b9df0b49a47a26d0f14009aa250f0c4de9a",
+    "runId": "tasks-playwright-45b0a6c89756d6eb76c5daf5",
+    "canonicalEvidenceSha256": "45b0a6c89756d6eb76c5daf59a768e981cbe7f313c39b323e48dd2ce509aca57",
+    "rawArtifactSha256": "c1f23696fd89112ee330ddcd0f5b1f864b7b6ea4924136107893d1e1615f9639",
+    "artifactPath": "experience/output/critical-evidence.json",
+    "fixtureId": "tasks.page.app",
+    "caseName": "front door lands on Home",
+    "projects": [
+      "mobile",
+      "tablet",
+      "desktop",
+      "wide"
+    ]
+  },
+  "reviewedChange": "A·Air lock-in: the board's appearance is locked to FLOOR_PRESET (flat cards, soft radius, compact density, subtle indigo, calm type); the loading tracing was retargeted to a flat compact card (wash fill, no border, 12px radius, 64px) so the settled surface matches what arrives; mobile header stacking fixed against the compact head height clamp; standing design gates retired by founder decision (FLOOR_CANON.md)",
+  "decision": "approved"
+}

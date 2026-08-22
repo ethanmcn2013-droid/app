@@ -57,9 +57,9 @@ export default function TasksLoading() {
       </div>
       <div
         style={{
-          height: 74,
-          borderRadius: 10,
-          border: "1px solid var(--hairline, rgba(17,17,17,0.10))",
+          height: 64,
+          borderRadius: 12,
+          background: "var(--wash, rgba(20,21,26,0.04))",
         }}
       />
     </div>

@@ -197,9 +197,8 @@ function renderTasks(tasks: KeepsakeTask[]): string {
  *   --ink-ghost   rgb(212 212 216)
  *   --hairline    rgb(17 17 17 / 0.10)
  *
- * Written in rgb() rather than hex deliberately: `ds:check`'s raw-hex ratchet
- * is right to hold every other file to tokens, and this file should not be
- * added to the grandfather manifest to buy an exception it does not need.
+ * Written in rgb() rather than hex deliberately: this file should not need
+ * a token exception to render its one-off printable artifact.
  * Geist is named first so a reader who has it gets it, and the stack falls
  * back to the reader's own system fonts rather than fetching anything.
  */
