@@ -45,8 +45,12 @@ export type BoardColumn = {
 };
 
 /** The default fifth column's stable key. Also the value legacy rows hold
- *  as raw `lane` text, which is what lets both worlds resolve identically. */
-export const WAITING_COLUMN_KEY = "waiting";
+ *  as raw `lane` text, which is what lets both worlds resolve identically.
+ *  The constant itself lives in board-config (the pure-model module) so the
+ *  legacy-config repair there can use it; imported and re-exported here so
+ *  every existing importer keeps working. */
+import { WAITING_COLUMN_KEY } from "@/lib/board-config";
+export { WAITING_COLUMN_KEY };
 
 /** Default subtext for the default columns. Editable per workspace; an
  *  explicit "" clears them. The sentences are the shipped group notes. */

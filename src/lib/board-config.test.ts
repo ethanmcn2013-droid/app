@@ -18,16 +18,39 @@ test("emptyConfig has all four system lanes in canonical order", () => {
   assert.deepEqual(c.descriptions, {});
 });
 
-test("safe mapping: legacy Record<LaneId,string> parses to a system-only config", () => {
+test("safe mapping: legacy Record<LaneId,string> parses onto the shipped five-column board", () => {
   // An older board stored only lane-name overrides. It must map forward
-  // without losing data (no tasks, no columns dropped).
+  // without losing data (no tasks, no columns dropped) — and because a
+  // legacy config predates custom columns entirely, no workspace ever chose
+  // to remove Waiting through this shape, so the shipped fifth column comes
+  // back instead of leaving a four-lane board with dead margins.
   const legacy = JSON.stringify({ todo: "Backlog", done: "Shipped" });
   const cfg = parseColumnConfig(legacy);
   assert.ok(cfg);
   assert.equal(cfg!.system.todo, "Backlog");
   assert.equal(cfg!.system.done, "Shipped");
-  assert.deepEqual(cfg!.custom, []);
-  assert.deepEqual(cfg!.order, ["todo", "doing", "review", "done"]);
+  assert.deepEqual(cfg!.custom, [{ key: "waiting", name: "Waiting" }]);
+  assert.deepEqual(cfg!.order, ["todo", "doing", "review", "waiting", "done"]);
+});
+
+test("blank overrides and junk customs never reach the board", () => {
+  // An empty-string rename must fall through to the lane's own name (the
+  // resolver's ?? cannot see through ""), and a custom column without a
+  // usable name is junk that would render as a headerless void.
+  const stored = JSON.stringify({
+    system: { review: "" },
+    custom: [
+      { key: "", name: "Keyless" },
+      { key: "col-blank-x1", name: "   " },
+      { key: "col-ok-x2", name: "Staging" },
+      { key: "col-ok-x2", name: "Duplicate" },
+    ],
+    order: ["todo", "doing", "review", "col-ok-x2", "done"],
+  });
+  const cfg = parseColumnConfig(stored);
+  assert.ok(cfg);
+  assert.equal(cfg!.system.review, undefined);
+  assert.deepEqual(cfg!.custom, [{ key: "col-ok-x2", name: "Staging" }]);
 });
 
 test("new format parses custom columns, colours (incl neutral), descriptions", () => {
