@@ -4,6 +4,28 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-22 · T·151 · tightens · a four-lane board fills its sheet again, and legacy boards get their lane back
+
+**The founder's live board came back from A·Air with dead margins down both
+sides and a lane missing. Both causes are fixed: the floor honours the
+fit-columns preference again, and legacy configs resolve onto the shipped
+five-column board instead of four.**
+
+Two compounding defects, one visible symptom. The floor port dropped the old
+board's fit-columns preference, so any workspace whose column count multiplied
+below the sheet's width floated narrow centred tracks in a void — at 1917px,
+a four-lane board lost ~285px to empty paper on each side. And that workspace
+had four lanes because its config was written before columns existed: a flat
+rename record parsed onto `emptyConfig`, which carries no Waiting. Nothing had
+ever deleted the fifth lane; the parse just never knew about it.
+
+Legacy configs now resolve onto the shipped five columns with renames riding
+on top (nothing chose to remove Waiting through that shape), blank system
+renames and nameless custom columns are dropped at parse so no headerless void
+can render, and fit-columns is once again the default with fixed-width mode
+preserved behind it. Verified at the founder's own viewport: four lanes fill
+edge to edge, sixteen pixels of air, nothing floating.
+
 ## 2026-08-22 · T·150 · ships · the board locks to A·Air, and the design fences come down
 
 **Open Tasks today and the board is exactly the configuration the founder chose
