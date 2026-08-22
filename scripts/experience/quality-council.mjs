@@ -406,11 +406,16 @@ function validateGitCommit(repoRoot, commit, label, errors, skipGit) {
   for (const argv of checks) {
     const ran = spawnSync("git", argv, { cwd: repoRoot, encoding: "utf8" });
     if (ran.status === 0) continue;
+    const probeHead = spawnSync("git", ["log", "-1", "--format=%H %P"], { cwd: repoRoot, encoding: "utf8" });
+    const probeBase = spawnSync("git", ["merge-base", commit, "HEAD"], { cwd: repoRoot, encoding: "utf8" });
+    const probeCount = spawnSync("git", ["rev-list", "--count", `${commit}..HEAD`], { cwd: repoRoot, encoding: "utf8" });
     const detail = JSON.stringify({
       argv,
       status: ran.status,
       err: String(ran.stderr || "").slice(0, 200),
-      out: String(ran.stdout || "").slice(0, 80),
+      head: String(probeHead.stdout || "").trim().slice(0, 140),
+      mergeBase: String(probeBase.stdout || "").trim().slice(0, 45) || String(probeBase.stderr || "").trim().slice(0, 80),
+      countAtoHead: String(probeCount.stdout || "").trim() || String(probeCount.stderr || "").trim().slice(0, 80),
     });
     errors.push(`${label}: sourceGitCommitSha must be a commit reachable from HEAD (git ${detail})`);
     return;
