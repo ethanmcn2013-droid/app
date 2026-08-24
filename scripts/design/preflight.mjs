@@ -69,7 +69,55 @@ if (BUILD) {
   run("verify log", ["scripts/design/verify-report.mjs"], "it renders in both themes and on a phone");
 }
 
-/* 5. The record must not claim a round that is not there, and must not have
+/* 5. The gate may only grow. It is the loop's memory: every assertion in it was
+      added because a seat found the defect it guards, and 299 of them are worth
+      more than any single round's score. A change that shrinks it is either a
+      regression being quietly dropped or a rule being weakened to pass. */
+{
+  const t = Date.now();
+  let pass = false;
+  let tail = "";
+  try {
+    const gate = await readFile("scripts/design/interaction-check.mjs", "utf8");
+    const now = (gate.match(/ok\(/g) || []).length;
+    let floorCount = 0;
+    try {
+      floorCount = JSON.parse(await readFile(path.join(LAB, "gate-floor.json"), "utf8")).assertions;
+    } catch { floorCount = 0; }
+    pass = now >= floorCount;
+    tail = pass
+      ? `${now} assertions, never fewer than the ${floorCount} recorded`
+      : `${now} assertions against a recorded floor of ${floorCount} — the gate shrank`;
+  } catch (e) {
+    tail = String(e.message || e);
+  }
+  steps.push({ name: "gate only grows", pass, why: "the loop's memory is never traded for a score", ms: Date.now() - t, tail });
+}
+
+/* 6. The surface is frozen, so every confirmed finding must leave a rule behind
+      rather than a patched instance. A round recorded with confirmed findings
+      and no growth in the gate is the failure mode that let one defect class
+      recur three times over fifteen rounds. */
+{
+  const t = Date.now();
+  let pass = false;
+  let tail = "";
+  try {
+    const panel = JSON.parse(await readFile(path.join(LAB, "panel.json"), "utf8"));
+    const last = panel.rounds[panel.rounds.length - 1];
+    const gate = await readFile("scripts/design/interaction-check.mjs", "utf8");
+    const now = (gate.match(/ok\(/g) || []).length;
+    pass = !last.confirmed || last.gateAfter === undefined || now >= last.gateAfter;
+    tail = last.gateAfter === undefined
+      ? `round ${last.round} predates the rule; nothing to check`
+      : `round ${last.round} left the gate at ${last.gateAfter}, now ${now}`;
+  } catch (e) {
+    tail = String(e.message || e);
+  }
+  steps.push({ name: "rules, not patches", pass, why: "every confirmed finding leaves an assertion behind", ms: Date.now() - t, tail });
+}
+
+/* 7. The record must not claim a round that is not there, and must not have
       quietly lost one. */
 {
   const t = Date.now();

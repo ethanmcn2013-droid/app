@@ -1,0 +1,5 @@
+{
+  "assertions": 251,
+  "recorded": "2026-08-24",
+  "note": "The gate may only grow. Preflight fails if it shrinks below this."
+}

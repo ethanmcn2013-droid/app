@@ -22,7 +22,11 @@ const args = new Map(
 
 const LAB = path.resolve("docs/design/labs/tasks-2026-08");
 const OUT = args.get("out") ?? path.join(LAB, "shots");
-const ONLY = args.get("only")?.split(",").map((v) => v.trim().toLowerCase()) ?? null;
+/* The founder locked one configuration on 2026-08-24, so `locked` is the only
+   direction still being worked. The other six stay capturable for the record —
+   `--only=arch-a,a,b,c` brings them back — but re-shooting them every round was
+   138 of 164 frames spent on work nobody is doing. */
+const ONLY = args.get("only")?.split(",").map((v) => v.trim().toLowerCase()) ?? ["locked"];
 const STATES = args.get("states")?.split(",").map((v) => v.trim()) ?? [
   "board",
   "cards",

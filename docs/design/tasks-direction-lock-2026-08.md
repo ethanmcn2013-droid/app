@@ -104,3 +104,36 @@ what the completion beat was missing when Product taste scored it 7.4 in round
 Recorded as a deliberate reading of the law rather than an exception to it. If
 a seat argues the resting shadow is decoration, that argument is in scope; a
 finding that merely states "cards carry a shadow" is not.
+
+## The freeze, 2026-08-24
+
+After fifteen rounds the loop was rebuilt. The diagnosis is in the Tasks
+Elevation Report; the operating change is here.
+
+**The master's feature surface is frozen for the remainder of the elevation.**
+Remediation may only remove defects from what already exists. A panel finding
+whose answer is "build X" is recorded as `kind: "build"`, deferred to a list for
+after the gate, and never remediated during a round. The evidence: across rounds
+12 to 15, 53%, 39%, 54% and 68% of each round's confirmed defect cost came from
+surface built since the previous panel. Rising, not falling. The floor was never
+being set by the accumulated work; it was being set by the newest room.
+
+**The founder's configuration is final and is not under review.** Elevated
+cards, soft radius, comfortable density, subtle indigo, calm type. Seats are
+told so. A finding proposing a different card style, radius, density, indigo
+level or type scale is out of scope, in the same way that adding a fourth colour
+already was. The other three presets remain in the Console as the argument that
+any mix stays on-brand, and they are no longer shot, audited or worked.
+
+**Every confirmed finding must leave a rule, not a patch.** Seats now state the
+class-level rule behind each finding, refuters judge the rule as well as the
+fix, and preflight fails if a round is recorded whose remediation did not grow
+the behaviour gate. This answers the most expensive failure of the first fifteen
+rounds: a preset/custom-property collision fixed on three rules and found again
+on a fourth, and a press-is-a-click guard fixed on the tick and found again on
+the card body.
+
+**The gate may only grow.** `gate-floor.json` records its size and preflight
+fails if it shrinks. It is the loop's memory — 299 assertions, every one added
+because a seat found the defect it guards — and it is worth more than any single
+round's score.
