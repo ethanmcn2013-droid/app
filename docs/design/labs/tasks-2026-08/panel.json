@@ -692,6 +692,66 @@
           "done": "The law states all six kinds or it is not a teaching surface. Two specimens were added from the peak-season set, a held card and a due-soon card, and the at-rest cell now says it carries no date. Done and waiting had been rendering pixel-identical — same ground, same ink, same hairline, same weight — so finished work and an ageing blocker looked the same on a Saturday scan: done keeps the hairline as a record, waiting drops its ring entirely and puts the verb back in front of its number. Measured at 1280 and 1440 before shipping it, which is how the same treatment was ruled out for Done: “Completed 15 Jul” overruns the chip's share of the card measure, and a clipped date is worse than a quiet one."
         }
       ]
+    },
+    {
+      "round": 13,
+      "presetLocked": {
+        "date": "2026-08-24",
+        "combination": "elevated cards, soft radius, comfortable density, subtle indigo, calm type",
+        "note": "The founder worked the six decisions in the Console and locked one combination as the product's default: A · Air as the starting point, then Elevated cards, Soft radius and Calm type. This round is the first graded against it."
+      },
+      "scores": {
+        "UI composition": 8.2,
+        "Typography": 8.7,
+        "Interaction and states": 7.4,
+        "UX and information design": 8.3,
+        "Brand and copy": 8.9,
+        "Product taste and emotional resonance": 8.2,
+        "Measured evidence": 8.4
+      },
+      "findings": 35,
+      "confirmed": 22,
+      "refuted": 13,
+      "fixed": 22,
+      "headline": "The first round graded against the founder's locked default, and the default is what set the floor. Elevated cards were introduced by writing box-shadow directly in the preset, at a specificity above the custom property the entire card state system runs through — so the moment a pointer touched a card it deleted that card's keyboard focus ring, its open-note ring, its in-hand lift and the milestone's indigo edge. This is the same defect round 11 found and fixed, returning through a door round 11 left open: that fix rewrote the three offending rules and never made the rule itself. Beside it, the harshest seat found something older and worse. The whole card is draggable, so Chromium's 4px drag threshold was silently eating any press that travelled — measured, a tick with 4px of movement produced no completion, no flight, no undo strip and no announcement, and an ordinary trackpad tap travels 2 to 6px. The board's defining gesture has been intermittently dead on real hardware for thirteen rounds, invisible to 232 assertions because every one of them clicked with a teleport. Both are now gated: presets may own tokens and never states, proven by walking the live stylesheet, and the tick is asserted against real pointer travel at 0, 4, 6 and 10px. Brand and copy reached 8.9, the highest single seat of the whole engagement. The gate grew from 232 assertions to 255.",
+      "worst": [
+        {
+          "seat": "Measured evidence",
+          "cost": 9,
+          "problem": "The locked default introduced elevated cards by setting box-shadow directly on `[data-cards=\"elevated\"] .card:hover`, which outranks `.card { box-shadow: var(--card-ring) }` — the one property the entire state system is carried in. Measured: a Tab-focused card computes the indigo ring, and the instant the pointer rests on it that ring is gone. The same for a card carried by Space, an open card, and a pointer-dragged card, which Chromium keeps :hover latched on for the whole gesture. The comment three lines above the base hover rule warns about exactly this failure.",
+          "done": "The fix is the rule, not the instances. A preset now owns two tokens — what a card looks like at rest and what it looks like under the pointer — and may not select on state at all. That distinction matters: rewriting the preset to set --card-ring instead of box-shadow was measured and still erased the ring, one layer deeper, because a preset selector outranks an interaction selector on the custom property too. The gate now walks the live stylesheet and fails if any preset selector writes box-shadow on a card, so the third recurrence cannot reach a panel."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 5,
+          "problem": "The whole card is draggable, so any press and release carrying 4px or more of pointer travel is consumed by the browser's drag threshold and produces nothing at all. Measured deterministically: 0, 2 and 3px tick the card; 4, 5 and 8px leave Done unchanged, with no undo strip, nothing in the live region and no visual acknowledgement whatsoever. Chromium's threshold is 4px and an ordinary trackpad tap routinely travels 2 to 6px, so on real hardware the one gesture this board exists for has been intermittently dead — silently — for the whole engagement. Clicking a card to open its note fails identically.",
+          "done": "A control inside a card is a control, not a drag handle. The control the press began on is recorded at pointerdown and the drag is cancelled if there was one — the test has to be the press, because dragstart's target is the draggable card itself and never the button inside it, so asking the drag event was always going to answer null. For the card body, which must stay draggable, a press and release within 8px on the same card opens the note whether or not the click survives. The gate now drives the tick with real pointer travel at 0, 4, 6 and 10px, because locator.click() teleports with zero travel and passed against the bug for thirteen rounds."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 7,
+          "problem": "Of the four doors into a completion, one spoke. Ticking the last overdue card said \"Nothing is overdue\"; moving the same task to Done from the card's menu, dropping it there by hand, or walking it in with the arrow keys all said only \"Press Ctrl Z to undo\" and let the overdue chip vanish from the header — the exact behaviour the beat was written to replace. Worse on the pointer route: dropping the last overdue card while the filter was on left the chip pressed and reading \"0 overdue\", the board emptied to \"All 13 are hidden\", and the operator who had just done the most satisfying thing on the board was staring at a blank sheet.",
+          "done": "moveTo reports what it did and does not act on it, because runUndo and a keyboard carry both call it and a card walked through Done with the arrows must not fire a completion. One shared tail arms the receipt, says the sentence and releases a filter that now matches nothing, and all four doors call it. The gate asserts the same sentence from all four gestures."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 6,
+          "problem": "The card menu marks the column a card is already in with the word \"here\". Clicking that item spliced the card to index 0 of its own column, announced a move nobody asked for and armed an undo for it — so opening the menu to check where a card sits and dismissing it the obvious way silently lost that card's place. The menu also opened focus onto the first item rather than the one it marks as current, so Enter straight after opening meant \"move to the first column\".",
+          "done": "The same-lane case dismisses through the existing close path, so the operator lands back on the control they opened it from. The menu opens onto the item it marks as current, so the declared roving stop and the actual focus agree and Enter immediately after opening is a no-op rather than a silent move."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.6,
+          "problem": "The board never scrolled to the destination, so the product's one memorable moment only existed at 1440. Measured: at 1280 the Done tray had 114px inside the scroller, at 768 it was 380px off the right edge, at 390 it was 837px off. The card flew into the edge fade and evaporated, leaving a grey Add row where a task used to be.",
+          "done": "Width-honest rather than uniform. Where the origin column and Done can both be on screen the board scrolls first and the card flies to a place that exists — 1280 now lands it fully visible. Where they cannot, at 768 and 390, it deliberately does not scroll: sweeping the operator a thousand pixels away from the column they are working in, for one tick, is the worse answer. The strip carries the acknowledgement there instead, and on a phone it now keeps the sentence rather than spending 46px of a 336px strip on a keycap that cannot be pressed."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.25,
+          "problem": "The two time chips sit adjacent and compose as an intersection against a single-valued field, so turning both on can never return a task. Driven live the board emptied every time and printed \"No task is overdue and due today. All 13 are hidden.\" — a logical impossibility stated as though it were a result, under two controls that both look available.",
+          "done": "They are one two-position question now. Turning on due-today turns off overdue and the mirror, so the pair can no longer produce a guaranteed-empty board, and the couple filter stays the dimension that genuinely composes with time. The sentence announces the swap, so the operator is told why the chip they had on went dark."
+        }
+      ]
     }
   ]
 }

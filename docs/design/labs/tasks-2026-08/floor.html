@@ -286,7 +286,11 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    it was the first thing to go: "The Orcha…" at 1240 while the season line
    beside it kept every character. The band stacks instead. */
 .headName {
-  font-size: 18px; font-weight: 600; letter-spacing: var(--tr-18);
+  /* The sheet's own title is the largest thing on it. Four sizes inside a 2px
+     band, all at 600, gave the top of the scale no rank at all — and with
+     Planning open the drawer's h2 was setting the same venue name larger than
+     the board's own h1. */
+  font-size: 20px; font-weight: 600; letter-spacing: var(--tr-19);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   flex: 0 0 auto; min-width: 0;
 }
@@ -295,7 +299,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   font-size: 13px; font-weight: 400; color: var(--ink-2);
   letter-spacing: var(--tr-13); white-space: nowrap; min-width: 0;
 }
-.headFacts b { font-weight: 600; color: var(--ink-1); }
+/* The one number that changes in place while the operator watches it. Left
+   proportional, the whole band jittered on every tick. */
+.headFacts b { font-weight: 600; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 /* The band had six facts at one size, one weight and one colour, so the eye
    had nowhere to land first and the row read as a ticker. Three ranks now,
    and no new size or weight to get them: today's date and the season are
@@ -347,6 +353,17 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .sheet[data-head="stack"] .headFacts > span { display: inline; }
 .sheet[data-head="stack"] .headFacts .late { display: inline-flex; }
 .sheet[data-head="stack"] .headRule { display: none; }
+/* The switcher capsule sat flush against the filled ink chip above it: the
+   fact row's bottom edge and the capsule's top edge measured the same pixel.
+   18px, so the band-to-switcher separation reads larger than the 22px rhythm
+   inside the band itself, and so the chips' own 11px overhang clears it. */
+.sheet[data-head="stack"] .views { padding-top: 18px; }
+/* When the row cannot fit, the tools keep their glyph and drop their word. */
+.views[data-fold] .viewTools .ghost > span {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.views[data-fold="gone"] .viewTools { display: none; }
 
 .ghost {
   display: inline-flex; align-items: center; gap: 7px;
@@ -443,6 +460,13 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 /* One declaration, so the round-7 mono rule above applies as written. */
 .trayCount { margin-left: auto; font-weight: 400; color: var(--ink-3); }
 .trayNote { min-height: 1.4em; }
+/* Five rules declared a size with no tracking beside it and computed to 0em,
+   against a file whose token block claims every letter-spacing is on the
+   ladder. "Add here" sat four pixels under a card note at the same size and
+   a different tracking, five times in every frame. */
+.trayAdd, .trayEmpty { letter-spacing: var(--tr-13); }
+.specNote { letter-spacing: var(--tr-12); }
+.emptyBoard button { letter-spacing: var(--tr-14); }
 .trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: var(--tr-12); }
 /* A column with more in it than fits fades at its own foot, the same mask
    idiom the sheet's right edge uses. Before this the fourth card was simply
@@ -498,6 +522,14 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
      it, and only the interaction rules may set that. Sharing one property
      let a preset delete the focus ring. */
   --card-rest: var(--ring);
+  /* A preset owns two things and only two: what a card looks like at rest,
+     and what it looks like under the pointer. Both are tokens. The moment a
+     preset selects on :hover directly it wins the cascade against every
+     interaction rule, whatever property it writes — measured: rewriting the
+     preset to set --card-ring instead of box-shadow still erased the focus
+     ring, one layer deeper, because (0,3,0) outranks (0,2,0). Presets do not
+     select on state. */
+  --card-hover: var(--ring-strong), var(--raise);
   --card-ring: var(--card-rest);
   box-shadow: var(--card-ring);
   padding: 12px 12px 12px 11px;
@@ -699,12 +731,11 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
 
 /* ── interaction, declared after every state ────────────────────── */
-.card:hover, .card[data-force="hover"] { --card-ring: var(--ring-strong), var(--raise); }
+.card:hover, .card[data-force="hover"] { --card-ring: var(--card-hover); }
 .card:focus-visible, .card[data-force="focus"] {
   outline: none;
   --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
 }
-.card[data-force="selected"] { --card-ring: 0 0 0 1.5px var(--indigo); }
 .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
   cursor: grabbing;
@@ -1005,7 +1036,10 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
 }
-.drawerHead h2 { margin: 12px 0 4px; font-size: 19px; font-weight: 600; letter-spacing: var(--tr-19); }
+/* 16, not 19: the mono PLANNING kicker above it already says this is a panel,
+   and at 19 the drawer was setting the venue name larger than the board's own
+   h1 — the same string, twice on screen, the side panel winning. */
+.drawerHead h2 { margin: 12px 0 4px; font-size: 16px; font-weight: 600; letter-spacing: var(--tr-15); }
 /* An em value computes at the ancestor's size and inherits as pixels, so a
    badge that steps down to 11px inside 13px type keeps the 13px tracking
    unless it is told otherwise. */
@@ -1250,11 +1284,17 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .specTray .trayBody { padding: 0 6px; margin: 0 -6px; gap: 8px; }
 .specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 268px; }
 .specLabel { max-width: 268px; }
-.specIntro { max-width: 64ch; margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
+/* ch is the advance of the zero glyph, not a character: 64ch measured 92 to
+   99 characters a line on the only block of running prose in the product. */
+.specIntro { max-width: 46ch; letter-spacing: var(--tr-13); margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
 
 /* A finger needs 44px. A mouse does not, and inflating every control to
    44 on a desktop board is how a dense product stops being dense. */
 @media (pointer: coarse) {
+  /* A couple's name is a filter, and it said so only by underlining on hover
+     — which a phone does not have. It declares itself on the surfaces with no
+     hover and no tooltip, and nowhere else. */
+  .cardFoot > .who { text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
   .cardDots, .ghost, .trayAdd, .drawerTab, .drawerRow button, .drawerAdd, .drawerHelp a {
     min-height: 44px; min-width: 44px;
   }
@@ -1296,17 +1336,17 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    outranks the custom property the whole state system is carried in, which
    deleted the focus ring, the selection ring and the in-hand lift in two of
    the four variants. */
-[data-cards="flat"] .card { --card-rest: none; }
-[data-cards="flat"] .card:hover, [data-cards="flat"] .card[data-force="hover"] { box-shadow: none; background: var(--wash); }
+[data-cards="flat"] .card { --card-rest: none; --card-hover: none; }
+/* Background is not part of the ring system, so a preset may still say it. */
+[data-cards="flat"] .card:hover, [data-cards="flat"] .card[data-force="hover"] { background: var(--wash); }
 [data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
-[data-cards="flat"] .card[data-next] { box-shadow: 0 0 0 1px var(--indigo-line); }
+[data-cards="flat"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
 [data-cards="flat"] .trayBody { gap: 2px; }
 [data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
 
 /* Elevated: the card is an object at rest, and picking it up only
    deepens something that was already there. */
-[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); }
-[data-cards="elevated"] .card:hover, [data-cards="elevated"] .card[data-force="hover"] { box-shadow: var(--ring-strong), var(--float); }
+[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); --card-hover: var(--ring-strong), var(--float); }
 [data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); }
 [data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
 
@@ -1364,7 +1404,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 [data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
 [data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
 [data-indigo="forward"] .segItem[data-active] { color: var(--indigo-ink); }
-[data-indigo="forward"] .card[data-next] { box-shadow: 0 0 0 1.5px var(--indigo); }
+[data-indigo="forward"] .card[data-next] { --card-rest: 0 0 0 1.5px var(--indigo); }
 [data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
 [data-indigo="forward"] .trayAdd:hover, [data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
 
@@ -1440,8 +1480,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   color: var(--ink-2); text-wrap: balance;
 }
 .emptyBoard b {
-  display: block; font-size: 18px; font-weight: 600;
-  letter-spacing: var(--tr-18); color: var(--ink-1); margin-bottom: 6px;
+  /* A message inside the board, not a second page title. */
+  display: block; font-size: 16px; font-weight: 600;
+  letter-spacing: var(--tr-15); color: var(--ink-1); margin-bottom: 6px;
 }
 .emptyBoard button {
   pointer-events: auto;
@@ -1538,7 +1579,12 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   .sheet[data-head="stack"] .headName { font-size: 19px; }
   .headSearch { display: inline-flex; }
   /* Only the way out survives, because there is no keyboard here to teach. */
-  .carry em:not(:last-child) { display: none; }
+  /* The shortcut hint goes; the depth ("1 more") stays, because it is the
+     only signal a second undo is waiting. A keycap on a touch device spent
+     46px of a 336px strip on a key the operator cannot press, and cost the
+     best sentence in the product to an ellipsis. */
+  .carry kbd { display: none; }
+  .carry em:empty { display: none; }
   /* The switcher loses its icons rather than its fourth view. Cutting
      "Calendar" mid-word at the sheet edge read as a broken layout. */
   .views { padding: 14px 16px 12px; }
@@ -1616,6 +1662,7 @@ let todayOnly = false;  /* the question a venue actually opens this to ask  */
 let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
 let flyId = null;       /* the card that should travel on the next repaint  */
+let pressedControl = null; /* the control a pointer press began on, if any   */
 let refocusPart = null; /* which part of the card to land focus on          */
 let drawerTab = "nodate";
 let drawerFrom = null;  /* the control Planning was opened from              */
@@ -1753,6 +1800,13 @@ function todayLabel() {
 }
 
 /* The review clock is pinned, so "today" is a fact rather than a guess. */
+/* The absolute day, with no deictic. */
+function dateLabel(iso) {
+  const parts = String(iso).split("-").map(Number);
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+  return date.getUTCDate() + " " + MONTHS[date.getUTCMonth()];
+}
+
 function dayLabel(iso) {
   const parts = String(iso).split("-").map(Number);
   const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
@@ -1787,7 +1841,11 @@ function bindName(text) {
 
 function timeOf(task) {
   if (task.lane === "done") {
-    return { kind: "done", label: task.completedAt ? dayLabel(task.completedAt) : "" };
+    /* A finished card said "Today" directly above four cards reading 15 Jul,
+       14 Jul, 9 Jul — one word carrying a debt in one column and a receipt in
+       another. The Done column speaks calendar dates only, which reserves
+       "Today" and "Tomorrow" board-wide for what is still owed. */
+    return { kind: "done", label: task.completedAt ? dateLabel(task.completedAt) : "" };
   }
   if (task.milestone) return { kind: "milestone", label: task.milestone.replace("Milestone due ", "") };
   /* Only when nothing is owed: a deadline outranks how long it has been out. */
@@ -1971,7 +2029,7 @@ const RAIL = {
   notes: "What you wrote down. Not here yet.",
   timeline: "The dates the season turns on. Not here yet.",
   inbox: "What came in while you were working. Not here yet.",
-  help: "Help, and how this project is set up. Not here yet.",
+  help: "Guides and support. Not here yet.",
   tasks: "Tasks",
 };
 
@@ -2015,7 +2073,7 @@ function head() {
         I.share + "<span>Share</span></button>" +
       '<button class="ghost" data-act="planning">' + I.planning + "<span>Planning</span>" +
         (undated ? "<em>" + undated + "</em>" : "") + "</button>" +
-      '<button class="ghost" aria-label="More"' + notYet("How this project is set up. Not here yet.") + ">" +
+      '<button class="ghost" aria-label="More"' + notYet("Project settings come with your account.") + ">" +
         I.dots + "</button>" +
     "</div></div>"
   );
@@ -2137,7 +2195,7 @@ function dock() {
   return (
     '<div class="dock">' +
       '<button class="dockField"' + notYet(SEARCH) + ">" + I.search +
-        "<span>Search " + esc(B.workspace) + "</span><kbd>" + MOD + "K</kbd></button>" +
+        "<span>Search " + esc(B.workspace) + "</span></button>" +
       '<button class="dockPrimary" data-act="add" data-lane="' + B.columns[0].id + '">' +
         I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
@@ -2313,10 +2371,15 @@ function loading() {
        the workspace chrome, the five column names and the view switcher
        made the wait look like a bigger outage than it is; what is actually
        unknown is the work, and only that is drawn as a skeleton. */
+    /* The skeleton used to grey out the workspace name while the same frame
+       printed it twice in full ink. What is known at first paint is shown:
+       the name, and today's date, which comes from the clock and not the
+       payload. What is genuinely in flight stays a bar. */
     '<div class="head"><span class="word">tasks</span><span class="headRule"></span>' +
-      '<span class="sk" style="width:164px;height:16px"></span>' +
-      '<span class="sk" style="width:96px;height:11px;margin-left:16px"></span>' +
-      '<span class="sk" style="width:74px;height:11px;margin-left:12px"></span>' +
+      '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
+      '<div class="headFacts"><span class="today">' + todayLabel() + "</span>" +
+      '<span class="sk" style="width:96px;height:11px"></span>' +
+      '<span class="sk" style="width:74px;height:11px"></span></div>' +
       '<div class="headActions"><span class="sk" style="width:92px;height:14px"></span></div></div>' +
     views() +
     '<div class="board">' +
@@ -2350,7 +2413,7 @@ function loading() {
           '<span class="sk" style="width:' + meta + '%;height:9px"></span></div>';
       }).join("") + "</div></section>"
     )).join("") + "</div>" +
-    '<p class="loadSay">Opening ' + esc(B.workspace) + "</p>" +
+    '<p class="loadSay">Opening the board</p>' +
     /* The foot furniture is a constant of the product, so it is present from
        the first paint. It simply cannot be used yet. */
     '<div class="dock" aria-hidden="true" data-idle>' +
@@ -2372,7 +2435,6 @@ function specimens() {
     ["At rest", find("demo-t-03"), null, "Nothing but the work, and no date on it. No empty slots and no placeholder chips."],
     ["Hover", find("demo-t-04"), "hover", "The edge darkens and the menu appears. Height never changes."],
     ["Keyboard focus", find("demo-t-08"), "focus", "A real focus ring in the accent, not a colour change."],
-    ["Selected", find("demo-t-07"), "selected", "Selection is a ring, so it can never be confused with hover."],
     ["Overdue", find("demo-t-06"), null, "Filled ink, white type. The chip counts the days; the fill says they are behind you."],
     ["Due today", find("demo-t-05"), null, "Outlined, ink at full strength. Serious, and nothing has gone wrong yet."],
     ["Due soon", like(/florist/), null, "A wash, not a fill. The date is ahead of you and nothing is wrong."],
@@ -2439,13 +2501,19 @@ function moveTo(id, lane, index) {
   if (from === -1) return;
   const task = rows[from];
   const was = task.lane;
-  /* Moving into Done is a completion, wherever it came from. */
+  /* Moving into Done is a completion, wherever it came from. moveTo reports
+     the fact and does not act on it: runUndo and a keyboard carry both call
+     this, and a card walked through Done with the arrow keys must not fire a
+     completion. The callers that mean it opt in by calling completed(). */
+  let report = { completed: false, cleared: false };
   if (lane === "done" && was !== "done") {
+    const wasLate = timeOf(task).kind === "overdue";
     task.prevLane = was;
     task.completedAt = TODAY;
     const node = document.querySelector('.card[data-id="' + id + '"]');
     flyFrom = node ? node.getBoundingClientRect() : null;
     flyId = id;
+    report = { completed: true, wasLate: wasLate };
   }
   if (was === "done" && lane !== "done") { task.prevLane = null; task.completedAt = null; }
   rows.splice(from, 1);
@@ -2456,6 +2524,28 @@ function moveTo(id, lane, index) {
   const at = target ? rows.findIndex((t) => t.id === target.id) : -1;
   if (at === -1) rows.push(task);
   else rows.splice(at, 0, task);
+  if (report.completed) {
+    report.cleared = report.wasLate && !allTasks().some((t) => timeOf(t).kind === "overdue");
+  }
+  return report;
+}
+
+/* The tail every completion shares, whichever door it came through. There
+   were three doors and only one of them spoke: a tick said "Nothing is
+   overdue", while the same task moved by the menu or dropped by hand said
+   nothing and let the chip vanish silently — which is the exact behaviour
+   the beat was written to replace. One receipt, one sentence, one release of
+   the filter, called from every route that finishes work. */
+function completed(task, cleared) {
+  arm({ kind: "done", id: task.id, title: task.title, cleared: cleared });
+  if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
+    lateOnly = false;
+    say(task.title + " done. Nothing is overdue, so the filter is off.");
+    return;
+  }
+  say(cleared
+    ? task.title + " done. Nothing is overdue."
+    : task.title + " done. Press " + MOD + "Z to undo.");
 }
 
 /* Finishing a task was a silent teleport to a column a thousand pixels away,
@@ -2475,6 +2565,24 @@ function flyCompleted(target) {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) { land(); return 0; }
   let now = node.getBoundingClientRect();
   const board = target.querySelector(".board");
+  /* The board never scrolled to the destination, so below 1360 the card flew
+     into the fade and evaporated: at 1280 only 114px of Done was inside the
+     scroller. Where the origin column and Done can both be on screen at once,
+     the board scrolls first and the card flies to a place that exists. Where
+     they cannot — 768 and 390, measured — it does not, because sweeping the
+     operator a thousand pixels away from the column they are working in, for
+     one tick, is a worse answer than a short flight. */
+  if (board && board.scrollWidth > board.clientWidth) {
+    const gap = board.scrollWidth - board.clientWidth;
+    const box = board.getBoundingClientRect();
+    const needed = now.right - (box.right - 8);
+    /* The origin must still be on screen after the scroll — partly is enough,
+       the operator needs to see where the card came from, not all of it. */
+    if (needed > 0 && was.left - needed + was.width > box.left + 24) {
+      board.scrollLeft = Math.min(board.scrollLeft + needed, gap);
+      now = node.getBoundingClientRect();
+    }
+  }
   if (board) {
     /* Never past the sheet's own edge: on a phone the destination column is
        off screen, and a ghost that exits the viewport reads as a bug. */
@@ -2627,14 +2735,9 @@ function toggleDone(id) {
     task.completedAt = TODAY;
     /* The one fact on this board with any weight behind it is what is late.
        Clearing the last of it is the moment a venue operator is actually
-       working toward on a Saturday, and until now the board marked it by
-       silently removing a chip. It says it, once, in the furniture that is
-       already on screen — no new object, no celebration, no colour. */
-    const cleared = wasLate && !allTasks().some((t) => timeOf(t).kind === "overdue");
-    arm({ kind: "done", id: id, title: task.title, cleared: cleared });
-    say(cleared
-      ? task.title + " done. Nothing is overdue."
-      : task.title + " done. Press " + MOD + "Z to undo.");
+       working toward on a Saturday, and the board used to mark it by silently
+       removing a chip. It says it, once, in furniture already on screen. */
+    completed(task, wasLate && !allTasks().some((t) => timeOf(t).kind === "overdue"));
   }
   /* A checkbox must not move focus off itself on toggle. */
   refocusPart = document.activeElement && document.activeElement.classList.contains("tick") ? "tick" : null;
@@ -2909,7 +3012,17 @@ function onKey(event) {
     event.preventDefault();
     if (carriedId === id) {
       const at = place(id);
-      say(taskById(id).title + " dropped in " + laneName(laneIds()[at.x]) + ".");
+      const task = taskById(id);
+      const lane = laneIds()[at.x];
+      /* The fourth door into a completion. Walking a card into Done with the
+         arrows and dropping it there finishes the work exactly as the tick
+         does, so it earns the same receipt and the same sentence — it used
+         to say only "dropped in Done." */
+      if (lane === "done" && carriedFrom.lane !== "done") {
+        completed(task, !allTasks().some((t) => timeOf(t).kind === "overdue"));
+      } else {
+        say(task.title + " dropped in " + laneName(lane) + ".");
+      }
       carriedId = null; carriedFrom = null;
     } else {
       const at = place(id);
@@ -2960,12 +3073,18 @@ function onClick(event) {
   }
   if (what === "late") {
     lateOnly = !lateOnly;
+    if (lateOnly) todayOnly = false;
     say(filterSentence());
     mount();
     return;
   }
   if (what === "today") {
+    /* The two time chips interrogate one single-valued field, so composing
+       them could only ever return the empty set — the board emptied itself
+       and stated a logical impossibility as if it were a result. They are one
+       two-position question. The couple stays the dimension that composes. */
     todayOnly = !todayOnly;
+    if (todayOnly) lateOnly = false;
     say(filterSentence());
     mount();
     return;
@@ -3054,20 +3173,29 @@ function onClick(event) {
     menuFor = menuFor === card.dataset.id ? null : card.dataset.id;
     focusId = card.dataset.id;
     mount();
-    const first = document.querySelector(".cardMenu button");
+    /* The declared roving stop and the actual focus must agree, or Enter
+       straight after opening means "move to the first column". */
+    const first = document.querySelector(".cardMenu button[aria-current]") ||
+      document.querySelector(".cardMenu button");
     if (first) first.focus();
     return;
   }
   if (what === "moveto") {
     const id = menuFor;
     const lane = act.dataset.lane;
+    /* The item marked "here" is the one that says the card is already where
+       it is. Clicking it used to splice the card to the top of its own
+       column, announce a move nobody asked for and arm an undo for it — so
+       opening the menu to check a card's place, then dismissing it the
+       obvious way, silently lost that place. It dismisses. */
+    const standing = taskById(id);
+    if (standing && standing.lane === lane) { closeMenu(); return; }
     const at = place(id);
     const task = taskById(id);
     const from = at ? { lane: laneIds()[at.x], index: at.y } : null;
-    moveTo(id, lane, 0);
+    const did = moveTo(id, lane, 0);
     if (lane === "done") {
-      arm({ kind: "done", id: id, title: task.title });
-      say(task.title + " done. Press " + MOD + "Z to undo.");
+      completed(task, did && did.cleared);
     } else {
       if (from) arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: lane });
       say(task.title + " moved to " + laneName(lane) + ".");
@@ -3127,6 +3255,19 @@ function stopEdge(board) {
 function onDragStart(event) {
   const card = event.target.closest && event.target.closest(".card[data-id]");
   if (!card || !card.closest(".board")) return;
+  /* The whole card is draggable, so the browser's 4px drag threshold was
+     eating the product's two defining gestures. Measured: a press and release
+     with 4px of travel on the completion circle produced nothing at all — no
+     tick, no flight, no undo strip, no announcement — and an ordinary
+     trackpad tap routinely travels 2 to 6px. A control inside a card is a
+     control, not a drag handle.
+     The test is the control the PRESS began on, recorded at pointerdown:
+     dragstart's target is the draggable card itself, never the button inside
+     it, so asking the drag event was always going to answer null. */
+  if (pressedControl) {
+    event.preventDefault();
+    return;
+  }
   carriedId = card.dataset.id;
   holdUndo();
   const at = place(carriedId);
@@ -3187,19 +3328,21 @@ function onDrop(event) {
   const sameLane = overLane.lane === carriedFrom.lane;
   const from = carriedFrom;
   const task = taskById(id);
-  moveTo(id, overLane.lane, overLane.index);
+  const did = moveTo(id, overLane.lane, overLane.index);
   /* A drop is the most mis-fireable gesture on a pointer board and had no
      way back; only a keyboard-carried card had Escape. */
-  if (overLane.lane === "done" && from.lane !== "done") {
-    /* A drop into Done is a completion, exactly as the menu route is. */
-    arm({ kind: "done", id: id, title: task.title });
+  const finishing = overLane.lane === "done" && from.lane !== "done";
+  if (finishing) {
+    /* A drop into Done is a completion, exactly as the tick is — including
+       the sentence and the release of a filter that now matches nothing.
+       Dropping the last overdue card used to leave the operator staring at
+       "All 13 are hidden." behind a chip reading "0 overdue". */
+    completed(task, did && did.cleared);
   } else if (overLane.lane !== "done") {
     arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: overLane.lane });
   }
   const place = tasksFor(overLane.lane);
-  say(overLane.lane === "done" && from.lane !== "done"
-    ? taskById(id).title + " done. Press " + MOD + "Z to undo."
-    : sameLane
+  if (!finishing) say(sameLane
     ? taskById(id).title + " moved to position " + (overLane.index + 1) + " of " + place.length + " in " + laneName(overLane.lane) + "."
     : taskById(id).title + " moved to " + laneName(overLane.lane) + ".");
   focusId = id;
@@ -3298,6 +3441,29 @@ function measureEdges(target) {
   if (sheet) {
     if (sheet.clientWidth < 1200) sheet.setAttribute("data-head", "stack");
     else sheet.removeAttribute("data-head");
+    /* The band was taught to stack and the row beneath it was not, so with
+       the drawer open "Display" rendered past the sheet's own edge and was
+       cut through by it. Measured rather than guessed at a number: when the
+       row wants more width than it has, the three tools keep their glyphs
+       and drop their words, which is the same trade the header already makes
+       and costs no vertical band. */
+    /* Measured against the sheet's own edge, because the row does not
+       overflow its own box — it overflows the surface, and the sheet clips. */
+    /* Two steps, each measured after the one before it rather than guessed:
+       the tools drop their words, and if the row still runs past the sheet
+       they leave it altogether. Nothing is lost — every one of them is
+       unavailable in this build and says so, and the switcher is the row's
+       actual job. */
+    const views = target.querySelector(".views");
+    const tools = target.querySelector(".viewTools");
+    if (views && tools) {
+      const edge = () => sheet.getBoundingClientRect().right - 8;
+      views.removeAttribute("data-fold");
+      if (tools.getBoundingClientRect().right > edge()) {
+        views.setAttribute("data-fold", "words");
+        if (tools.getBoundingClientRect().right > edge()) views.setAttribute("data-fold", "gone");
+      }
+    }
   }
   if (board && sheet) {
     sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
@@ -3548,6 +3714,38 @@ if (host) {
     say("Planning closed.");
     mount();
     returnFromDrawer();
+  });
+  /* The card body must stay draggable, so its click cannot be trusted: 4px of
+     travel and the browser suppresses it. A press and release that stayed
+     within 8px on the same card is a click, whatever the drag machinery
+     thinks, and it opens the note the press began on. */
+  let pressAt = null;
+  host.addEventListener("pointerdown", (event) => {
+    const card = event.target.closest && event.target.closest(".card[data-id]");
+    const control = event.target.closest && event.target.closest(".tick, .cardDots, .who, [data-act]");
+    pressedControl = card && card.closest(".board") ? control : null;
+    pressAt = card && card.closest(".board") && !control
+      ? { id: card.dataset.id, x: event.clientX, y: event.clientY }
+      : null;
+  });
+  host.addEventListener("pointerup", (event) => {
+    const was = pressAt;
+    pressAt = null;
+    pressedControl = null;
+    if (!was || carriedId) return;
+    if (Math.hypot(event.clientX - was.x, event.clientY - was.y) >= 8) return;
+    const card = event.target.closest && event.target.closest(".card[data-id]");
+    if (!card || card.dataset.id !== was.id) return;
+    if (String(getSelection())) return;
+    if (!card.hasAttribute("aria-expanded")) return;
+    /* The click may or may not survive; whichever fires first wins and the
+       other finds the state already settled on the same card. */
+    if (openNoteId === was.id) return;
+    focusId = was.id;
+    openNoteId = was.id;
+    refocus = true;
+    say("Showing the whole note.");
+    mount();
   });
   host.addEventListener("click", onClick);
   document.addEventListener("keydown", onKey);

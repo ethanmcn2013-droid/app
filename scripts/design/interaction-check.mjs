@@ -1469,6 +1469,221 @@ for (const [q, w, label] of [["", 1440, "1440"], ["", 1280, "1280"], ["?state=pl
   await page.close();
 }
 
+/* == a press is a click, whatever the drag machinery thinks ======== */
+/* The whole card is draggable, so Chromium's 4px drag threshold silently ate
+   the two gestures this product exists for. An ordinary trackpad tap travels
+   2 to 6px. Use mouse.move/down/up — locator.click() teleports with zero
+   travel and would pass against the bug. */
+for (const travel of [0, 4, 6, 10]) {
+  const page = await open();
+  const before = await counts(page);
+  const box = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + travel, box.y + box.height / 2 + travel, { steps: 3 });
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+  ok("the tick answers a press that travelled " + travel + "px",
+    (await counts(page)).done === before.done + 1, JSON.stringify(await counts(page)));
+  await page.close();
+}
+
+/* == a preset owns tokens, never states =========================== */
+/* Round 11 fixed this for three card presets by rewriting the instances.
+   Round 13 found it again, reintroduced by a fourth. The rule is the fix: no
+   selector outside the card's own state block may write box-shadow on a card,
+   because whatever property it writes it wins the cascade against every
+   interaction rule. */
+{
+  const page = await open();
+  const writers = await page.evaluate(() => {
+    const bad = [];
+    for (const sheet of document.styleSheets) {
+      let rules;
+      try { rules = sheet.cssRules; } catch { continue; }
+      const walk = (list) => {
+        for (const r of list) {
+          if (r.cssRules) { walk(r.cssRules); continue; }
+          if (!r.selectorText || !r.style) continue;
+          const sel = r.selectorText;
+          if (!/\.card(?![A-Za-z])/.test(sel)) continue;
+          if (!/^\[data-(cards|indigo|radius|density|type)=/.test(sel.trim())) continue;
+          if (r.style.getPropertyValue("box-shadow")) bad.push(sel);
+        }
+      };
+      walk(rules);
+    }
+    return bad;
+  });
+  ok("no preset writes box-shadow on a card", writers.length === 0, JSON.stringify(writers));
+
+  /* And the consequence the rule exists to protect. */
+  await page.locator('.board .card[tabindex="0"]').focus();
+  await page.locator('.board .card[tabindex="0"]').hover();
+  await page.waitForTimeout(250);
+  const ring = await page.evaluate(() => {
+    const n = document.querySelector(".card:focus-visible");
+    return n ? getComputedStyle(n).boxShadow : "";
+  });
+  ok("the keyboard focus ring survives the pointer resting on it",
+    /79, 70, 229/.test(ring), ring.slice(0, 70));
+  await page.close();
+}
+
+/* == every door into a completion says the same thing ============== */
+/* There are four, and for a round only one of them spoke: a tick said
+   "Nothing is overdue" while the same task moved by menu, dropped by hand or
+   walked in by keyboard said nothing and let the chip vanish silently. */
+for (const route of ["tick", "menu", "drag", "keyboard"]) {
+  const page = await open();
+  const sel = '.card:has(.when[data-t="overdue"])';
+  if (route === "tick") await page.locator(sel + " .tick").click();
+  if (route === "menu") {
+    await page.locator(sel).hover();
+    await page.locator(sel + " .cardDots").click();
+    await page.waitForTimeout(150);
+    await page.locator('.cardMenu [data-lane="done"]').click();
+  }
+  if (route === "drag") await page.dragAndDrop(sel, '.tray[data-lane="done"] .trayBody');
+  if (route === "keyboard") {
+    await page.locator(sel).focus();
+    await page.keyboard.press(" ");
+    for (let i = 0; i < 4; i += 1) await page.keyboard.press("ArrowRight");
+    await page.keyboard.press(" ");
+  }
+  await page.waitForTimeout(800);
+  const said = await page.locator("#say").textContent();
+  ok("clearing the last overdue task by " + route + " says so",
+    /Nothing is overdue/.test(said), JSON.stringify(said));
+  await page.close();
+}
+
+/* == and a filtered board is never left matching nothing =========== */
+{
+  const page = await open();
+  await page.locator('[data-act="late"]').click();
+  await page.waitForTimeout(250);
+  /* Under the filter the Done column is collapsed to its head, so the head is
+     the drop target — which is itself worth asserting: a filtered board must
+     still accept a drop into a column that is showing nothing. */
+  await page.dragAndDrop('.card:has(.when[data-t="overdue"])', '.tray[data-lane="done"] .trayHead');
+  await page.waitForTimeout(800);
+  ok("dropping the last overdue card releases the filter it emptied",
+    (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 0);
+  ok("and leaves the operator their board back",
+    (await page.locator(".board .card").count()) > 5,
+    String(await page.locator(".board .card").count()));
+  await page.close();
+}
+
+/* == the two time chips are one question ========================== */
+/* They interrogate a single-valued field, so composing them could only ever
+   return the empty set — the board emptied itself and printed a logical
+   impossibility as though it were a result. */
+{
+  const page = await open("?state=dense");
+  await page.locator('[data-act="late"]').click();
+  await page.waitForTimeout(200);
+  await page.locator('[data-act="today"]').click();
+  await page.waitForTimeout(250);
+  ok("turning on due-today turns off overdue rather than emptying the board",
+    (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 0 &&
+    (await page.locator(".board .card").count()) > 0);
+  await page.close();
+}
+
+/* == the menu item that says "here" dismisses ====================== */
+{
+  const page = await open();
+  const order = () => page.$$eval('.tray[data-lane="todo"] .cardTitle', (n) => n.map((x) => x.textContent.slice(0, 12)));
+  const before = await order();
+  await page.locator('.tray[data-lane="todo"] .card').nth(1).hover();
+  await page.locator('.tray[data-lane="todo"] .card').nth(1).locator(".cardDots").click();
+  await page.waitForTimeout(150);
+  ok("the menu opens onto the column the card is already in",
+    await page.evaluate(() => document.activeElement.hasAttribute("aria-current")));
+  await page.locator(".cardMenu button[aria-current]").click();
+  await page.waitForTimeout(250);
+  ok("clicking it dismisses rather than reordering", JSON.stringify(await order()) === JSON.stringify(before),
+    JSON.stringify(await order()));
+  ok("and closes the menu", (await page.locator(".cardMenu").count()) === 0);
+  await page.close();
+}
+
+/* == the tools row never crosses the sheet's edge ================== */
+/* The band learned to stack and the row beneath it did not, so with Planning
+   open "Display" rendered past the sheet and was cut through by it. */
+{
+  const page = await open("?state=planning");
+  let spilled = null;
+  for (let w = 1440; w >= 900; w -= 20) {
+    await page.setViewportSize({ width: w, height: 960 });
+    await page.waitForTimeout(70);
+    const over = await page.evaluate(() => {
+      const edge = document.querySelector(".sheet").getBoundingClientRect().right - 8;
+      return [...document.querySelectorAll(".viewTools > *, .seg")]
+        .filter((n) => n.offsetParent !== null && n.getBoundingClientRect().right > edge)
+        .map((n) => (n.textContent || "").trim().slice(0, 10));
+    });
+    if (over.length && !spilled) spilled = w + ": " + over.join(",");
+  }
+  ok("no part of the view row leaves the sheet, drawer open, 1440 to 900", spilled === null, spilled);
+  await page.close();
+}
+
+/* == the completion lands somewhere that exists ==================== */
+/* The board never scrolled to the destination, so below 1360 the card flew
+   into the edge fade and evaporated. Where the origin and Done can both be on
+   screen the board scrolls first; where they cannot, it deliberately does
+   not, because sweeping the operator a thousand pixels away for one tick is
+   the worse answer. 1280 is the width that must now resolve. */
+for (const w of [1440, 1280]) {
+  const page = await open("", { width: w, height: 960 });
+  await page.locator(".board .card .tick").first().click();
+  await page.waitForTimeout(900);
+  const pct = await page.evaluate(() => {
+    const n = document.querySelector('.tray[data-lane="done"] .card[data-just-done]') ||
+      document.querySelector('.tray[data-lane="done"] .card');
+    const b = document.querySelector(".board").getBoundingClientRect();
+    const r = n.getBoundingClientRect();
+    return Math.round(Math.max(0, Math.min(r.right, b.right) - Math.max(r.left, b.left)) / r.width * 100);
+  });
+  ok("the finished card is fully on screen at " + w, pct >= 99, pct + "% visible");
+  await page.close();
+}
+
+/* == Done speaks calendar dates, never a deictic =================== */
+/* A freshly ticked card read "Today" directly above 15 Jul, 14 Jul, 9 Jul —
+   one word carrying a debt in one column and a receipt in another. */
+{
+  const page = await open();
+  await page.locator(".board .card .tick").first().click();
+  await page.waitForTimeout(800);
+  const chips = await page.$$eval('.tray[data-lane="done"] .when', (n) => n.map((x) => x.textContent.trim()));
+  ok("no finished card says Today or Tomorrow", !chips.some((c) => /Today|Tomorrow/.test(c)),
+    JSON.stringify(chips));
+  await page.close();
+}
+
+/* == the loading frame does not hide what it is printing =========== */
+{
+  const page = await open("?state=loading");
+  const shown = await page.evaluate(() => document.body.innerText);
+  ok("the loading header names the workspace it is opening", /The Orchard, events/.test(shown));
+  ok("and does not print that name three times",
+    (shown.match(/The Orchard, events/g) || []).length <= 2,
+    String((shown.match(/The Orchard, events/g) || []).length));
+  await page.close();
+}
+
+/* == no keycap on a control that cannot answer ==================== */
+{
+  const page = await open();
+  ok("the inert search field prints no shortcut",
+    (await page.locator(".dockField kbd").count()) === 0);
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
 
 await browser.close();

@@ -259,7 +259,11 @@
    it was the first thing to go: "The Orcha…" at 1240 while the season line
    beside it kept every character. The band stacks instead. */
 .headName {
-  font-size: 18px; font-weight: 600; letter-spacing: var(--tr-18);
+  /* The sheet's own title is the largest thing on it. Four sizes inside a 2px
+     band, all at 600, gave the top of the scale no rank at all — and with
+     Planning open the drawer's h2 was setting the same venue name larger than
+     the board's own h1. */
+  font-size: 20px; font-weight: 600; letter-spacing: var(--tr-19);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   flex: 0 0 auto; min-width: 0;
 }
@@ -268,7 +272,9 @@
   font-size: 13px; font-weight: 400; color: var(--ink-2);
   letter-spacing: var(--tr-13); white-space: nowrap; min-width: 0;
 }
-.headFacts b { font-weight: 600; color: var(--ink-1); }
+/* The one number that changes in place while the operator watches it. Left
+   proportional, the whole band jittered on every tick. */
+.headFacts b { font-weight: 600; color: var(--ink-1); font-variant-numeric: tabular-nums; }
 /* The band had six facts at one size, one weight and one colour, so the eye
    had nowhere to land first and the row read as a ticker. Three ranks now,
    and no new size or weight to get them: today's date and the season are
@@ -322,6 +328,17 @@
 .sheet[data-head="stack"] .headFacts > span { display: inline; }
 .sheet[data-head="stack"] .headFacts .late { display: inline-flex; }
 .sheet[data-head="stack"] .headRule { display: none; }
+/* The switcher capsule sat flush against the filled ink chip above it: the
+   fact row's bottom edge and the capsule's top edge measured the same pixel.
+   18px, so the band-to-switcher separation reads larger than the 22px rhythm
+   inside the band itself, and so the chips' own 11px overhang clears it. */
+.sheet[data-head="stack"] .views { padding-top: 18px; }
+/* When the row cannot fit, the tools keep their glyph and drop their word. */
+.views[data-fold] .viewTools .ghost > span {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+.views[data-fold="gone"] .viewTools { display: none; }
 
 .ghost {
   display: inline-flex; align-items: center; gap: 7px;
@@ -418,6 +435,12 @@
 /* One declaration, so the round-7 mono rule above applies as written. */
 .trayCount { margin-left: auto; font-weight: 400; color: var(--ink-3); }
 .trayNote { min-height: 1.4em; }
+/* Five rules declared a size with no tracking beside it and computed to 0em,
+   against a file whose token block claims every letter-spacing is on the
+   ladder. "Add here" sat four pixels under a card note at the same size and
+   a different tracking, five times in every frame. */
+.trayAdd, .trayEmpty { letter-spacing: var(--tr-13); }
+.emptyBoard button { letter-spacing: var(--tr-14); }
 .trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: var(--tr-12); }
 /* A column with more in it than fits fades at its own foot, the same mask
    idiom the sheet's right edge uses. Before this the fourth card was simply
@@ -473,6 +496,14 @@
      it, and only the interaction rules may set that. Sharing one property
      let a preset delete the focus ring. */
   --card-rest: var(--ring);
+  /* A preset owns two things and only two: what a card looks like at rest,
+     and what it looks like under the pointer. Both are tokens. The moment a
+     preset selects on :hover directly it wins the cascade against every
+     interaction rule, whatever property it writes — measured: rewriting the
+     preset to set --card-ring instead of box-shadow still erased the focus
+     ring, one layer deeper, because (0,3,0) outranks (0,2,0). Presets do not
+     select on state. */
+  --card-hover: var(--ring-strong), var(--raise);
   --card-ring: var(--card-rest);
   box-shadow: var(--card-ring);
   padding: 12px 12px 12px 11px;
@@ -673,12 +704,11 @@
 .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
 
 /* ── interaction, declared after every state ────────────────────── */
-.card:hover, .card[data-force="hover"] { --card-ring: var(--ring-strong), var(--raise); }
+.card:hover, .card[data-force="hover"] { --card-ring: var(--card-hover); }
 .card:focus-visible, .card[data-force="focus"] {
   outline: none;
   --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
 }
-.card[data-force="selected"] { --card-ring: 0 0 0 1.5px var(--indigo); }
 .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
   cursor: grabbing;
@@ -983,7 +1013,10 @@
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
 }
-.drawerHead h2 { margin: 12px 0 4px; font-size: 19px; font-weight: 600; letter-spacing: var(--tr-19); }
+/* 16, not 19: the mono PLANNING kicker above it already says this is a panel,
+   and at 19 the drawer was setting the venue name larger than the board's own
+   h1 — the same string, twice on screen, the side panel winning. */
+.drawerHead h2 { margin: 12px 0 4px; font-size: 16px; font-weight: 600; letter-spacing: var(--tr-15); }
 /* An em value computes at the ancestor's size and inherits as pixels, so a
    badge that steps down to 11px inside 13px type keeps the 13px tracking
    unless it is told otherwise. */
@@ -1218,6 +1251,10 @@
 /* A finger needs 44px. A mouse does not, and inflating every control to
    44 on a desktop board is how a dense product stops being dense. */
 @media (pointer: coarse) {
+  /* A couple's name is a filter, and it said so only by underlining on hover
+     — which a phone does not have. It declares itself on the surfaces with no
+     hover and no tooltip, and nowhere else. */
+  .cardFoot > .who { text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
   .cardDots, .ghost, .trayAdd, .drawerTab, .drawerRow button, .drawerAdd, .drawerHelp a {
     min-height: 44px; min-width: 44px;
   }
@@ -1260,17 +1297,17 @@
    outranks the custom property the whole state system is carried in, which
    deleted the focus ring, the selection ring and the in-hand lift in two of
    the four variants. */
-.root[data-cards="flat"] .card { --card-rest: none; }
-.root[data-cards="flat"] .card:hover, .root[data-cards="flat"] .card[data-force="hover"] { box-shadow: none; background: var(--wash); }
+.root[data-cards="flat"] .card { --card-rest: none; --card-hover: none; }
+/* Background is not part of the ring system, so a preset may still say it. */
+.root[data-cards="flat"] .card:hover, .root[data-cards="flat"] .card[data-force="hover"] { background: var(--wash); }
 .root[data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
-.root[data-cards="flat"] .card[data-next] { box-shadow: 0 0 0 1px var(--indigo-line); }
+.root[data-cards="flat"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
 .root[data-cards="flat"] .trayBody { gap: 2px; }
 .root[data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
 
 /* Elevated: the card is an object at rest, and picking it up only
    deepens something that was already there. */
-.root[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); }
-.root[data-cards="elevated"] .card:hover, .root[data-cards="elevated"] .card[data-force="hover"] { box-shadow: var(--ring-strong), var(--float); }
+.root[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); --card-hover: var(--ring-strong), var(--float); }
 .root[data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); }
 .root[data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
 
@@ -1323,7 +1360,7 @@
 .root[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
 .root[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
 .root[data-indigo="forward"] .segItem[data-active] { color: var(--indigo-ink); }
-.root[data-indigo="forward"] .card[data-next] { box-shadow: 0 0 0 1.5px var(--indigo); }
+.root[data-indigo="forward"] .card[data-next] { --card-rest: 0 0 0 1.5px var(--indigo); }
 .root[data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
 .root[data-indigo="forward"] .trayAdd:hover, .root[data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
 
@@ -1398,8 +1435,9 @@
   color: var(--ink-2); text-wrap: balance;
 }
 .emptyBoard b {
-  display: block; font-size: 18px; font-weight: 600;
-  letter-spacing: var(--tr-18); color: var(--ink-1); margin-bottom: 6px;
+  /* A message inside the board, not a second page title. */
+  display: block; font-size: 16px; font-weight: 600;
+  letter-spacing: var(--tr-15); color: var(--ink-1); margin-bottom: 6px;
 }
 .emptyBoard button {
   pointer-events: auto;
@@ -1499,7 +1537,12 @@
   .sheet[data-head="stack"] .headName { font-size: 19px; }
   .headSearch { display: inline-flex; }
   /* Only the way out survives, because there is no keyboard here to teach. */
-  .carry em:not(:last-child) { display: none; }
+  /* The shortcut hint goes; the depth ("1 more") stays, because it is the
+     only signal a second undo is waiting. A keycap on a touch device spent
+     46px of a 336px strip on a key the operator cannot press, and cost the
+     best sentence in the product to an ellipsis. */
+  .carry kbd { display: none; }
+  .carry em:empty { display: none; }
   /* The switcher loses its icons rather than its fourth view. Cutting
      "Calendar" mid-word at the sheet edge read as a broken layout. */
   .views { padding: 14px 16px 12px; }
