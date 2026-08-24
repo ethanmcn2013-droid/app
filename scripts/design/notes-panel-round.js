@@ -15,8 +15,8 @@ const PRIOR = (args && args.prior) || ''
 const BAR = `
 Score against this standard: the work of an award-winning design studio that
 iterated on this product for months. 10 is that studio's best shipped work.
-Benchmarks to hold it against, by name: Linear, Stripe, Vercel, Things,
-Bear, iA Writer. Score the ARTIFACT, not the effort. A polite 8 that should
+Benchmarks to hold it against, by name: Linear, Stripe, Vercel, xAI/Grok,
+SpaceX. Score the ARTIFACT, not the effort. A polite 8 that should
 be a 6 makes the panel worthless.
 
 WHAT YOU ARE REVIEWING
