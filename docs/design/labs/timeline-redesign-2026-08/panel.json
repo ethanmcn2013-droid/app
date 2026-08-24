@@ -449,6 +449,61 @@
           "done": "The static note is no longer restored after a failed retry: the live region carries that clause in the voice that is actually new, and it is stated once. The refuter killed the seat's own fix first - trimming the announcement would have silenced the reassurance for the screen-reader user it exists for, and broken a passing assertion. Measured cost: the button moves 8px up rather than the 19px down it moved before."
         }
       ]
+    },
+    {
+      "round": 9,
+      "scores": {
+        "UI composition": 8.7,
+        "Typography": 8.6,
+        "Interaction and states": 8.9,
+        "UX and information design": 7.2,
+        "Brand and copy": 8.4,
+        "Product taste and emotional resonance": 9,
+        "Measured evidence": 8.6
+      },
+      "findings": 33,
+      "confirmed": 16,
+      "refuted": 17,
+      "fixed": 16,
+      "headline": "The floor FELL 8.2 to 7.2 and the spread tripled to 1.8 - the panel did not converge, it found new ground, and the round that looked like the end was not. Three seats independently arrived at the same subject from three directions: the day the whole product counts to was never treated as a thing in its own right. It had no name a person wrote - the product invented the string 'The day' for a plan the owner had just made and then spent it as a fact in four render sites, including the card that lands in the couple's message and the tautology 'The day is the last day'. It was handed the ordinary moment editor, so the wedding day could be hidden from guests or deleted outright while the horizon four hundred pixels away went on counting seventy-nine days to it. And a plan built through the product had no row for it at all: the measure ran to a rail end with nothing on it. The largest single finding of the engagement - a full point, that the day's name is never authored - was REFUTED, and refuted properly: the refuter went into the shipped app source and found the field is authored at onboarding, persisted to workspaces.primary_date_label and validated as a required string, so the lab's literal is a stand-in for an off-screen value exactly as the project name is; the seat had read a prototype seam as a missing capability, its inventory was wrong three times in four, and its fix would have planted an owner control inside the guest artifact. The narrower framing of the same subject survived and is what got built. Underneath that, the round found silent data loss: ids minted from the array's length ran backwards after a delete and reissued live ones, so an owner's typed name landed on another moment and two rows swapped identity in four actions on a new project. The lock's three-face limit was being broken by a synthesised Geist Mono 600 the gate could not see, because it checked families and weights on separate lists. The trimmer ate seven of seven titles at a large root size. And round 8's own two-pane desk gained a frame with no edge, slicing titles mid-glyph at the fold. Seventeen of thirty-three died under refutation, two of them proving the proposed fix would have broken a currently green gate. 604 to 630 assertions.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 0.7,
+          "problem": "The renderer already knew which row was the day - it stamped data-anchor on it and a gate assertion asserted 'exactly one item is the day itself' - and then handed that row the ordinary moment editor: 'What guests see: Shown | Hidden', and 'Delete this moment'. Press Delete and the wedding day left the measure while the horizon four hundred pixels to the left still printed 79 and still printed Saturday 3 October 2026. The anchor was also stamped by date collision, so a second moment scheduled on the day would have claimed to be the day too and broken the gate's own count.",
+          "done": "The day is resolved by identity against the project's record, not by any row that shares its date, so a second moment on 3 October cannot claim to be it. Its editor is the day's: a name, a date, and the standing sentence 'Everything on this plan is measured from this day' - no visibility segment, because hiding it would hide the thing every figure is measured from, and no Delete. Renaming it writes the project's own label and repaints the horizon in the same frame, so the row and the horizon can never carry two names for one day."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.2,
+          "problem": "Moment ids were minted from the array's current length, and the array shrinks on every delete and every undo of an add, so the counter ran backwards and reissued ids that were still in use. Driven: add, add, delete the first, add - and the owner's typed name landed on a different record. 'Hair trial' was destroyed silently; preview and return remounted from records and the two rows swapped identity with the name gone; the editor announced one title over a row displaying another; and undo's focus restore, which resolves by id, landed on the wrong row. Four owner actions on a new project. Neither gate ran add/delete/add at all.",
+          "done": "A monotonic counter for the life of the project, reset with the array when a new plan is started so a fresh project still reads moment-1, moment-2, moment-3. The gate now drives that exact sequence and asserts two things: that no two moments share an id, and - the one that would actually have caught this - that after typing a name, exactly one record carries it."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.3,
+          "problem": "A plan the owner built through the product had a day with no name, because the product wrote one for them: states owner-empty set label 'The day' and no control ever wrote that field again. It was then spent as a fact in four places - the horizon subtitle, the unfurl card that lands in the couple's message ('The day, Saturday 3 October 2026'), and both ceiling sentences, which read 'This is as far as it goes. The day is the last day' - a tautology nobody wrote. A string the product invented must never come back as something the record says.",
+          "done": "The label is empty until a person writes one. Both consumers guard it: the horizon renders that line only when there is something to render, and the card carries the date alone rather than announcing a placeholder. The ceiling sentence stops printing the label at all and states the rule instead - 'Nothing can sit after the day itself' - which is true on every project including the seeded one. The wider version of this finding, costed at a full point, was refuted on the app's own source."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.45,
+          "problem": "The word-safe trimmer's overflow test compared a two-line -webkit-box against its own content box, which is always taller once the box has two lines. At a 24px root every owner title was trimmed to one word - seven of seven - and on the guest surfaces, where b.css switches the clamp off by name and nothing is ever hidden, it ran anyway and trimmed there too. The machinery built two rounds ago to keep the full string in the accessibility tree was faithfully preserving text that should never have been cut.",
+          "done": "The predicate reads the clamp as what it is - a line budget - and compares against lines rather than pixels; where there is no clamp and overflow is visible, nothing is hidden, so it does not run at all. Measured at a 24px root: nought of seven trimmed on the owner surface, nought on phone, desk and print, and a hundred-character title still clamps to exactly two lines at 390."
+        },
+        {
+          "seat": "Typography",
+          "cost": 0.35,
+          "problem": "The lock permits three faces and no third weight. The project-position label inherited weight 600 from its parent while asking for Geist Mono, and no Geist Mono 600 file exists - so the browser synthesised one. A fourth face, in a system capped at three, invisible to the measured gate because it checks families against one list and weights against another and never the pair.",
+          "done": "One line: the label declares 400 explicitly. Measured cost nil - the advance is byte-identical at both weights, so nothing reflowed - and the string is now property-for-property identical to its two siblings in the same register."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.3,
+          "problem": "Round 8 gave the owner's desk surface two panes and no edge: no fade, no gutter, nothing marking where content is cut. At 1366x768 the fold halved the title 'Send the invitations' and its count; at 1280x800 it halved a date line; at 1920x1080 and 1024x700 it left a still-clickable half-height Edit control. 1063px of plan hidden at 1440x960 with two of seven moments on screen. The defect library names this exactly: overflow is designed or it is a guillotine.",
+          "done": "Each pane says where it is cut, and only when it is actually cutting something - the mask is written from a measurement after layout and removed when nothing is hidden, so a fade always means content rather than decoration. Focus is kept clear of the band, because the browser scrolls a focused control flush to the pane edge, which would have parked it under the very gradient meant to say it was on its way out."
+        }
+      ]
     }
   ]
 }

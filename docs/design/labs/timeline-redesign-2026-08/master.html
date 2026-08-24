@@ -87,8 +87,6 @@
   --track-data: 0.04em;       /* mono figures and fields */
   --track-body: -0.015em;     /* sans 15-20px */
   --track-head: -0.03em;      /* sans 24-38px */
-  --track-title: -0.035em;    /* sans 48px */
-  --track-display: -0.045em;  /* the count, 96 and 148px */
   /* One letterfit across 64, 96 and 148 is one letterfit too few: at 96
      the word on the wedding morning closed to a six-tenths-of-a-pixel
      gap between its first two letters. Graded by size, and the word
@@ -262,13 +260,18 @@ body {
    the room. `safe` is doing real work: the moment the content is taller
    than the viewport it falls back to the top edge, so nothing can ever
    be centred out of reach. */
+/* Loading is NOT in this list. A loading face is a promise about the
+   page that follows it, and centring it in the room put its heading
+   236px below where the arrived page puts the same heading - so the
+   screen jumped on arrival, which is the one thing a loading state
+   exists to prevent. loading-slow was already top-aligned, by accident
+   of a selector; the two faces now agree by decision. */
 [data-state="publish"] .tl-page,
 [data-state="day"] .tl-page,
 [data-state="ended"] .tl-page,
-[data-state="loading"] .tl-page,
 [data-state="unfurl"] .tl-page {
   justify-content: safe center;
-  /* These five states are one object in a room, and every one of them
+  /* These four states are one object in a room, and every one of them
      sat at the top of it: .tl-page is a block child, so its height was
      its own content and `safe center` had nothing to distribute. */
   min-height: 100dvh;
@@ -1022,6 +1025,12 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 }
 .b-switch span {
   font-family: var(--mono);
+  /* 400, explicitly. It inherited 600 from .b-switch and there is no
+     Geist Mono 600 file, so the browser synthesised one - a fourth face
+     in a system the lock caps at three. The gate checked families and
+     weights on separate lists and so could not see the pair. Zero
+     visual cost: the advance is byte-identical at both weights. */
+  font-weight: 400;
   font-size: var(--size-label);
   line-height: var(--lead-label);
   letter-spacing: var(--track-label);
@@ -1189,7 +1198,15 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   min-height: 20px;
   max-width: 46ch;
 }
-.b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; overflow: hidden; }
+/* No overflow clip: the buttons fill this plate edge to edge, so a
+   focus ring drawn outside a button landed inside the clip and was
+   never painted at all - the visibility control had no visible focus
+   for a keyboard owner. The corners move to the children instead; 5px
+   matches the plate, because 5 is not a step on the declared radii
+   ladder and the ladder is a mechanical lock, not a preference. */
+.b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; }
+.b-seg button:first-child { border-radius: 6px 0 0 6px; }
+.b-seg button:last-child { border-radius: 0 6px 6px 0; }
 .b-seg button {
   min-height: 34px;
   padding: var(--gap-tight) var(--gap-snug);
@@ -1670,10 +1687,22 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   .b-bar .b-barActs { display: flex; width: auto; gap: var(--gap-control); }
   .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
   [data-medium="sheet"] .b-field, [data-medium="full"] .b-field { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
-  [data-medium="sheet"] .b-num, [data-medium="full"] .b-num { font-size: var(--size-countWide); }
+  /* The size steps and the letterfit steps with it. Raising the count
+     to 148 while leaving the 96px step on it meant the largest object
+     in the product wore the wrong grade everywhere it matters most. */
+  [data-medium="sheet"] .b-num, [data-medium="full"] .b-num {
+    font-size: var(--size-countWide);
+    letter-spacing: var(--track-display-148);
+  }
   [data-medium="sheet"] .b-when, [data-medium="full"] .b-when { font-size: var(--size-title); letter-spacing: var(--track-head); }
   [data-medium="sheet"] .b-measure, [data-medium="full"] .b-measure { padding-left: 124px; }  /* off-ladder: measure geometry */
   [data-medium="sheet"] .b-measureHead, [data-medium="full"] .b-measureHead { width: 84px; }
+  /* The 20px above this head is the only air between the gap note and
+     the measure when the field is ONE track, so it is taken back only
+     where the columns actually stand side by side - scoped to the
+     column's own first block, because the head's parent is the wrapper
+     measure() returns and at desk that wrapper carries no class. */
+  [data-medium="full"] .b-two > * > *:first-child > .b-measureHead { margin-top: 0; }
   [data-medium="sheet"] .b-rail, [data-medium="full"] .b-rail { left: 100px; }
   [data-medium="sheet"] .b-item, [data-medium="full"] .b-item { left: 124px; }
   [data-medium="sheet"] .b-origin, [data-medium="full"] .b-origin { left: 124px; }
@@ -1690,10 +1719,10 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
      and the foot below it stand on. */
   [data-medium="sheet"] .b-empty, [data-medium="full"] .b-empty { padding: 110px 0 120px; }  /* off-ladder: measure geometry */
   [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { max-width: 20ch; }
-  [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title); }
+  [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title-64); }
   [data-medium="sheet"] .b-ended, [data-medium="full"] .b-ended { padding: 100px 56px 110px; }  /* off-ladder: measure geometry */
   [data-medium="sheet"] .b-dayWrap, [data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
-  [data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
+  [data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title-48); }
   /* Its own rule, at the same specificity as the field rule above and
      later in source, so the printed page keeps its own margins. */
   [data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
@@ -1790,6 +1819,33 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
+    /* A pane that can hide something says so at the edge that hides it.
+       The mask is written by script only when there is actually
+       something past the fold, so a fade always means content, never
+       decoration. */
+  }
+  /* The gutter is reserved on the PLAN only. On the rail it would take
+     ten pixels out of a column the lock fixes at 344, and the today
+     rule is capped to that number and asserted at it - a ratified
+     geometry is not something a scrollbar preference gets to move. */
+  [data-medium="full"] .b-plan {
+    scrollbar-gutter: stable;
+    /* The browser scrolls a focused control flush to the pane edge -
+       i.e. under the fade meant to say "this is on its way out". This
+       stops focus inside the band. */
+    scroll-padding-block: var(--gap-section);
+  }
+  [data-medium="full"] .b-ownerField .b-stick[data-fold="below"],
+  [data-medium="full"] .b-plan[data-fold="below"] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+  }
+  [data-medium="full"] .b-ownerField .b-stick[data-fold="above"],
+  [data-medium="full"] .b-plan[data-fold="above"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px);
+  }
+  [data-medium="full"] .b-ownerField .b-stick[data-fold="both"],
+  [data-medium="full"] .b-plan[data-fold="both"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 48px), transparent);
   }
   [data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
   /* The horizon does not scroll away — but only where it has a column

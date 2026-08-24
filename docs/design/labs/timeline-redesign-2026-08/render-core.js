@@ -189,7 +189,22 @@
      function returned at its first test and had never trimmed a single
      word in its life while its own comment promised it had. */
   function over(el) {
-    return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+    if (el.scrollWidth > el.clientWidth + 1) return true;
+    var cs = getComputedStyle(el);
+    var lh = parseFloat(cs.lineHeight);
+    var max = parseInt(cs.webkitLineClamp, 10);
+    /* No usable leading: fall back to the box comparison. */
+    if (!(lh > 0)) return el.scrollHeight > el.clientHeight + 1;
+    /* A clamp is a LINE budget, so the test is lines, not pixels. The
+       box comparison trimmed a legitimately two-line title because a
+       two-line -webkit-box is taller than its own content box - at a
+       24px root that took seven of seven owner titles down to one word
+       each. */
+    if (max > 0) return el.scrollHeight > (max + 0.5) * lh;
+    /* No clamp and visible overflow means nothing is hidden, so there
+       is nothing to trim for. The guest surfaces switch the clamp off
+       by name (b.css) and were being trimmed regardless. */
+    return false;
   }
 
   /* A trimmed string keeps its whole self in the accessibility tree. An

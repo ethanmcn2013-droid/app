@@ -1972,7 +1972,7 @@ for (const width of [390, 1024]) {
   await page.locator('.b-empty [data-act="add"]').click();
   await page.waitForTimeout(400);
   const started = await page.evaluate(() => ({
-    rows: document.querySelectorAll(".b-measure:not([data-back]) .b-item").length,
+    rows: document.querySelectorAll(".b-measure:not([data-back]) .b-item:not([data-terminus])").length,
     editor: document.querySelectorAll(".b-edit").length,
     focused: document.activeElement.id,
     named: (document.querySelector(".b-who") || {}).textContent,
@@ -2111,9 +2111,13 @@ for (const [variant, state] of [["approach", "print"], ["record", "desk"]]) {
   await page.close();
 }
 
-/* Five states are one object in a room and every one of them sat at the
-   top of it. */
-for (const state of ["ended", "unfurl", "loading", "day"]) {
+/* These states are one object in a room and every one of them sat at
+   the top of it. Loading is NOT among them: a loading face is a promise
+   about the page that follows, and centring it put its heading 236px
+   below where the arrived page puts the same heading, so the screen
+   jumped on arrival - the one thing a loading state exists to prevent.
+   It is asserted against the arrived page instead, below. */
+for (const state of ["ended", "unfurl", "day"]) {
   const page = await open({ state, viewport: { width: 1440, height: 960 } });
   await page.waitForTimeout(250);
   const room = await page.evaluate(() => {
@@ -2677,6 +2681,284 @@ for (const width of [768, 1023]) {
     `"${moved}" vs "${back}"`);
   await page.close();
 }
+
+
+
+/* ── round 9 · what the panel found, made unrepeatable ────────────── */
+const flat9 = (x) => String(x).replace(/ /g, " ").trim();
+async function firstRun(page) {
+  await page.fill("#b-empty-date", "3 October 2026");
+  await page.click('[data-act="setday"]');
+  await page.waitForTimeout(350);
+  await page.click('[data-act="add"]');
+  await page.waitForTimeout(500);
+}
+/* the day is never a placeholder read back as a fact */
+{
+  const page = await open({ state: "owner-empty", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  await firstRun(page);
+  const r = await page.evaluate(() => ({
+    body: document.querySelector(".b-field").innerText,
+    sub: !!document.querySelector(".b-sub"),
+    label: window.__TLCORE.F.project.primaryDate.label,
+    card: (document.querySelector(".b-unfurlTitle") || {}).textContent || "",
+  }));
+  ok("a plan the owner made carries no invented day-name", r.label === "" && !r.sub, `label "${r.label}" sub ${r.sub}`);
+  /* The form may name the concept ("The day is set.") — what must never
+     happen is the product printing its own placeholder back as though
+     the owner had written it. */
+  ok("and no surface prints a day-name the owner never wrote",
+    !/The day is the last day/.test(flat9(r.body)) && !/^The day,/.test(flat9(r.card)),
+    flat9(r.card).slice(0, 60) || "(no card on this state)");
+  await page.close();
+}
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const ceil = await page.evaluate(async () => {
+    const g = document.querySelector(".b-item[data-anchor='true'] .b-grab") || document.querySelector(".b-grab");
+    g.click();
+    await new Promise((r) => setTimeout(r, 300));
+    for (let i = 0; i < 90; i++) document.querySelector('.b-step[data-delta="7"]').click();
+    await new Promise((r) => setTimeout(r, 300));
+    return (document.querySelector(".b-ceiling") || {}).textContent || "";
+  });
+  ok("the ceiling sentence is not a tautology", /Nothing can sit after the day itself/.test(ceil), ceil.slice(0, 70));
+  await page.close();
+}
+
+/* the day is not edited as a moment */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    const row = document.querySelector('.b-item[data-anchor="true"]');
+    if (!row) return { none: true };
+    row.querySelector(".b-grab").click();
+    await new Promise((r2) => setTimeout(r2, 350));
+    return {
+      anchors: document.querySelectorAll('.b-item[data-anchor="true"]').length,
+      seg: !!document.querySelector(".b-edit .b-seg"),
+      del: !!document.querySelector('.b-edit [data-act="delete"]'),
+      name: document.querySelector(".b-edit").getAttribute("aria-label"),
+      standing: (document.querySelector(".b-edit .b-standing") || {}).textContent || "",
+    };
+  });
+  ok("exactly one row is the day", r.anchors === 1, String(r.anchors));
+  ok("the day cannot be hidden from guests", !r.seg);
+  ok("the day cannot be deleted as a moment", !r.del);
+  ok("the day's editor says what it is", /measured from this day/.test(r.standing), r.standing);
+  await page.close();
+}
+
+/* renaming the day writes the one record the horizon reads */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    document.querySelector('.b-item[data-anchor="true"] .b-grab').click();
+    await new Promise((r2) => setTimeout(r2, 350));
+    const f = document.querySelector("#b-edit-title");
+    f.value = "The ceremony";
+    f.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((r2) => setTimeout(r2, 250));
+    return {
+      label: window.__TLCORE.F.project.primaryDate.label,
+      sub: (document.querySelector(".b-sub") || {}).textContent || "",
+    };
+  });
+  ok("renaming the day renames it everywhere", r.label === "The ceremony" && flat9(r.sub) === "The ceremony",
+    `${r.label} / ${flat9(r.sub)}`);
+  await page.close();
+}
+
+/* the plan ends on the day it counts to */
+{
+  const page = await open({ state: "owner-empty", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  await firstRun(page);
+  const r = await page.evaluate(() => {
+    const t = document.querySelector('.b-item[data-terminus="true"]');
+    return {
+      has: !!t,
+      away: t ? t.getAttribute("data-away") : null,
+      last: t ? t === [...document.querySelectorAll(".b-measure .b-item")].pop() : false,
+      grab: t ? !!t.querySelector(".b-grab") : true,
+    };
+  });
+  ok("a new plan ends on its own day", r.has && r.last, JSON.stringify(r));
+  ok("the day at the end is not an editable moment", r.has && !r.grab);
+  await page.close();
+}
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const dup = await page.evaluate(() => document.querySelectorAll('.b-item[data-terminus="true"]').length);
+  ok("the seeded plan does not draw its day twice", dup === 0, String(dup));
+  await page.close();
+}
+
+/* ids are monotonic; a typed name lands on the row typed into */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    const F = window.__TLCORE.F;
+    const press = async (sel) => { document.querySelector(sel).click(); await new Promise((r2) => setTimeout(r2, 260)); };
+    await press('[data-act="add"]');
+    await press('[data-act="done"]');
+    await press('[data-act="add"]');
+    await press('[data-act="done"]');
+    const first = document.querySelector(".b-measure .b-item .b-grab");
+    first.click(); await new Promise((r2) => setTimeout(r2, 260));
+    await press('[data-act="delete"]');
+    await press('[data-act="add"]');
+    const f = document.querySelector("#b-edit-title");
+    f.value = "Rehearsal dinner";
+    f.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((r2) => setTimeout(r2, 260));
+    const ids = F.milestones.map((m) => m.id);
+    const named = F.milestones.filter((m) => m.title === "Rehearsal dinner").length;
+    return { ids, dup: ids.length !== new Set(ids).size, named };
+  });
+  ok("no two moments share an id", !r.dup, r.ids.join(","));
+  ok("a typed name lands on exactly one record", r.named === 1, String(r.named));
+  await page.close();
+}
+
+/* place() is a fixed point: a stacked pair is right on the first render */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    document.querySelector('.b-step[data-delta="-7"]').click();
+    await new Promise((r2) => setTimeout(r2, 400));
+    const lead = document.querySelector('.b-item[data-stack="lead"] .b-copy');
+    const foll = document.querySelector('.b-item[data-stack="follow"] .b-copy');
+    if (!lead || !foll) return { none: true };
+    const gap = foll.getBoundingClientRect().top - lead.getBoundingClientRect().bottom;
+    const before = [...document.querySelectorAll(".b-item")].map((i) => i.style.getPropertyValue("--push"));
+    window.__TLD.b.settle();
+    await new Promise((r2) => setTimeout(r2, 150));
+    const after = [...document.querySelectorAll(".b-item")].map((i) => i.style.getPropertyValue("--push"));
+    return { gap: Math.round(gap), same: before.join("|") === after.join("|") };
+  });
+  ok("a stacked pair does not overlap on the render that forms it", !r.none && r.gap > 0, JSON.stringify(r));
+  ok("place() is a fixed point", r.same === true);
+  await page.close();
+}
+
+/* the follower says its own number */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const said = await page.evaluate(async () => {
+    document.querySelector('.b-step[data-delta="-7"]').click();
+    await new Promise((r2) => setTimeout(r2, 400));
+    const f = document.querySelector('.b-item[data-stack="follow"] .b-unitSaid');
+    const l = document.querySelector('.b-item[data-stack="lead"] .b-unitSaid');
+    return { follow: f ? f.textContent : "", lead: l ? l.textContent : "" };
+  });
+  ok("the follower never speaks a unit with no number",
+    !/^\s*days away/.test(said.follow) && /the second of 2/.test(said.follow), flat9(said.follow));
+  ok("the lead takes a real ordinal", /the first of 2/.test(said.lead), flat9(said.lead));
+  await page.close();
+}
+
+/* a plan with every moment removed still ends on its day */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    const rows = () => [...document.querySelectorAll(".b-measure .b-item")];
+    const spare = () => rows().filter((x) => !x.hasAttribute("data-anchor"));
+    for (let n = 0; n < 14 && spare().length; n++) {
+      spare()[0].querySelector(".b-grab").click();
+      await new Promise((r2) => setTimeout(r2, 220));
+      const d = document.querySelector('[data-act="delete"]');
+      if (!d) {
+        const done = document.querySelector('[data-act="done"]');
+        if (done) done.click();
+        await new Promise((r2) => setTimeout(r2, 200));
+        continue;
+      }
+      d.click();
+      await new Promise((r2) => setTimeout(r2, 240));
+    }
+    const all = rows();
+    return {
+      spare: spare().length,
+      total: all.length,
+      lastIsDay: all.length ? all[all.length - 1].hasAttribute("data-anchor") : false,
+      note: (document.querySelector(".b-gapNote") || {}).textContent || "",
+      measureH: Math.round(document.querySelector(".b-measure").getBoundingClientRect().height),
+      body: document.querySelector(".b-field").innerText.slice(0, 200),
+    };
+  });
+  
+  ok("every moment can be removed", r.spare === 0, String(r.spare));
+  ok("and the plan is never a bare rule - it still ends on its day",
+    r.total === 1 && r.lastIsDay, JSON.stringify({ total: r.total, lastIsDay: r.lastIsDay }));
+  ok("and the horizon sentence is true of what is left",
+    /nothing is planned until 3 october/i.test(flat9(r.note)), flat9(r.note));
+  await page.close();
+}
+
+/* draft commits; taking the link publishes */
+{
+  const page = await open({ state: "owner-draft", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    document.querySelector('[data-act="publish"]').click();
+    await new Promise((r2) => setTimeout(r2, 400));
+    return {
+      head: (document.querySelector(".b-pressTitle") || {}).textContent || "",
+      live: (document.querySelector(".b-live") || {}).textContent || "",
+    };
+  });
+  ok("publishing a draft does not claim a past it never had",
+    /Send it to/.test(r.head) && !/have had this since/.test(r.head), flat9(r.head));
+  await page.close();
+}
+
+/* the panes say where they are cut */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    const pane = document.querySelector(".b-plan");
+    const at0 = pane.getAttribute("data-fold");
+    pane.scrollTop = Math.round(pane.scrollHeight / 2);
+    pane.dispatchEvent(new Event("scroll"));
+    await new Promise((r2) => setTimeout(r2, 250));
+    const mid = pane.getAttribute("data-fold");
+    pane.scrollTop = pane.scrollHeight;
+    pane.dispatchEvent(new Event("scroll"));
+    await new Promise((r2) => setTimeout(r2, 250));
+    return { at0, mid, end: pane.getAttribute("data-fold"), masked: getComputedStyle(pane).maskImage !== "none" };
+  });
+  ok("a pane says when something is below its edge", r.at0 === "below", String(r.at0));
+  ok("and when it is cut at both edges", r.mid === "both", String(r.mid));
+  ok("and stops saying it at the end", r.end === "above", String(r.end));
+  ok("the edge is painted, not declared", r.masked === true);
+  await page.close();
+}
+
+/* titles survive a large root size */
+{
+  const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 960 } });
+  await page.addStyleTag({ content: "html{font-size:24px}" });
+  await page.waitForTimeout(700);
+  const trimmed = await page.evaluate(() => {
+    window.__TLCORE.settle();
+    return [...document.querySelectorAll(".b-title")]
+      .filter((t) => (t.getAttribute("data-full") || "") !== t.textContent).length;
+  });
+  ok("no title is eaten at a large root size", trimmed === 0, `${trimmed} trimmed`);
+  await page.close();
+}
+
 
 
 await browser.close();

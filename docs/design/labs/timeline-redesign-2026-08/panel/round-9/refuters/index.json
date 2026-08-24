@@ -1,0 +1,200 @@
+[
+ {
+  "seat": "ui",
+  "id": "pane-fold-unmanaged",
+  "cost": 0.3,
+  "out": "verdicts/ui--pane-fold-unmanaged.json"
+ },
+ {
+  "seat": "ui",
+  "id": "received-desk-readout-goes-stale",
+  "cost": 0.3,
+  "out": "verdicts/ui--received-desk-readout-goes-stale.json"
+ },
+ {
+  "seat": "ui",
+  "id": "column-heads-off-baseline",
+  "cost": 0.1,
+  "out": "verdicts/ui--column-heads-off-baseline.json"
+ },
+ {
+  "seat": "ui",
+  "id": "unfurl-plate-padding",
+  "cost": 0.1,
+  "out": "verdicts/ui--unfurl-plate-padding.json"
+ },
+ {
+  "seat": "type",
+  "id": "mono-semibold-is-a-synthesised-fourth-face",
+  "cost": 0.35,
+  "out": "verdicts/type--mono-semibold-is-a-synthesised-fourth-face.json"
+ },
+ {
+  "seat": "type",
+  "id": "title-clamp-eats-the-plan-at-large-text",
+  "cost": 0.45,
+  "out": "verdicts/type--title-clamp-eats-the-plan-at-large-text.json"
+ },
+ {
+  "seat": "type",
+  "id": "display-letterfit-grade-only-half-landed",
+  "cost": 0.25,
+  "out": "verdicts/type--display-letterfit-grade-only-half-landed.json"
+ },
+ {
+  "seat": "type",
+  "id": "head-leading-is-set-under-the-font-box",
+  "cost": 0.15,
+  "out": "verdicts/type--head-leading-is-set-under-the-font-box.json"
+ },
+ {
+  "seat": "type",
+  "id": "the-unit-is-not-graded-with-its-figure",
+  "cost": 0.1,
+  "out": "verdicts/type--the-unit-is-not-graded-with-its-figure.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "emptied-plan-is-a-bare-rule",
+  "cost": 0.4,
+  "out": "verdicts/interaction--emptied-plan-is-a-bare-rule.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "count-and-tick-light-up-and-refuse",
+  "cost": 0.2,
+  "out": "verdicts/interaction--count-and-tick-light-up-and-refuse.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "one-move-two-announcements",
+  "cost": 0.2,
+  "out": "verdicts/interaction--one-move-two-announcements.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "loading-stands-236px-low",
+  "cost": 0.2,
+  "out": "verdicts/interaction--loading-stands-236px-low.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "retry-does-not-say-it-is-working",
+  "cost": 0.1,
+  "out": "verdicts/interaction--retry-does-not-say-it-is-working.json"
+ },
+ {
+  "seat": "ux",
+  "id": "the-day-has-no-name-the-owner-can-write",
+  "cost": 1,
+  "out": "verdicts/ux--the-day-has-no-name-the-owner-can-write.json"
+ },
+ {
+  "seat": "ux",
+  "id": "the-day-is-edited-as-if-it-were-a-moment",
+  "cost": 0.7,
+  "out": "verdicts/ux--the-day-is-edited-as-if-it-were-a-moment.json"
+ },
+ {
+  "seat": "ux",
+  "id": "the-pinned-line-and-the-lead-tick-name-nothing",
+  "cost": 0.6,
+  "out": "verdicts/ux--the-pinned-line-and-the-lead-tick-name-nothing.json"
+ },
+ {
+  "seat": "ux",
+  "id": "done-is-doing-two-jobs-on-one-screen",
+  "cost": 0.3,
+  "out": "verdicts/ux--done-is-doing-two-jobs-on-one-screen.json"
+ },
+ {
+  "seat": "ux",
+  "id": "the-second-moment-on-a-day-announces-an-orphaned-unit",
+  "cost": 0.2,
+  "out": "verdicts/ux--the-second-moment-on-a-day-announces-an-orphaned-unit.json"
+ },
+ {
+  "seat": "brand",
+  "id": "the-day-has-no-name",
+  "cost": 0.3,
+  "out": "verdicts/brand--the-day-has-no-name.json"
+ },
+ {
+  "seat": "brand",
+  "id": "draft-publishes-a-date-before-the-draft",
+  "cost": 0.3,
+  "out": "verdicts/brand--draft-publishes-a-date-before-the-draft.json"
+ },
+ {
+  "seat": "brand",
+  "id": "cancelled-said-three-ways",
+  "cost": 0.2,
+  "out": "verdicts/brand--cancelled-said-three-ways.json"
+ },
+ {
+  "seat": "brand",
+  "id": "the-undo-bar-has-four-grammars",
+  "cost": 0.2,
+  "out": "verdicts/brand--the-undo-bar-has-four-grammars.json"
+ },
+ {
+  "seat": "brand",
+  "id": "the-received-plan-opens-on-an-absence",
+  "cost": 0.1,
+  "out": "verdicts/brand--the-received-plan-opens-on-an-absence.json"
+ },
+ {
+  "seat": "taste",
+  "id": "the-day-is-missing-from-a-new-plan",
+  "cost": 0.3,
+  "out": "verdicts/taste--the-day-is-missing-from-a-new-plan.json"
+ },
+ {
+  "seat": "taste",
+  "id": "the-arrival-is-a-row",
+  "cost": 0.3,
+  "out": "verdicts/taste--the-arrival-is-a-row.json"
+ },
+ {
+  "seat": "taste",
+  "id": "publish-claims-a-past-that-never-happened",
+  "cost": 0.2,
+  "out": "verdicts/taste--publish-claims-a-past-that-never-happened.json"
+ },
+ {
+  "seat": "taste",
+  "id": "the-guest-is-left-holding-nothing",
+  "cost": 0.2,
+  "out": "verdicts/taste--the-guest-is-left-holding-nothing.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "desk-frame-still-scrolls",
+  "cost": 0.4,
+  "out": "verdicts/evidence--desk-frame-still-scrolls.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "stack-gap-one-render-late",
+  "cost": 0.3,
+  "out": "verdicts/evidence--stack-gap-one-render-late.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "seg-focus-ring-clipped",
+  "cost": 0.3,
+  "out": "verdicts/evidence--seg-focus-ring-clipped.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "draft-branch-restored-before-it-is-used",
+  "cost": 0.3,
+  "out": "verdicts/evidence--draft-branch-restored-before-it-is-used.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "moment-ids-from-array-length",
+  "cost": 0.2,
+  "out": "verdicts/evidence--moment-ids-from-array-length.json"
+ }
+]

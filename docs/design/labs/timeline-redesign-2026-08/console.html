@@ -245,8 +245,6 @@ body {
   --track-data: 0.04em;       
   --track-body: -0.015em;     
   --track-head: -0.03em;      
-  --track-title: -0.035em;    
-  --track-display: -0.045em;  
   
   --track-display-148: -0.05em;
   --track-display-96: -0.04em;
@@ -352,7 +350,7 @@ body {
   padding: var(--stage-pad);
   line-height: 1.5;
 }
-.deck[data-state="publish"] .tl-page, .deck[data-state="day"] .tl-page, .deck[data-state="ended"] .tl-page, .deck[data-state="loading"] .tl-page, .deck[data-state="unfurl"] .tl-page {
+.deck[data-state="publish"] .tl-page, .deck[data-state="day"] .tl-page, .deck[data-state="ended"] .tl-page, .deck[data-state="unfurl"] .tl-page {
   justify-content: safe center;
   
   min-height: 100%;
@@ -860,6 +858,8 @@ body {
 }
 .deck .b-switch span {
   font-family: var(--mono);
+  
+  font-weight: 400;
   font-size: var(--size-label);
   line-height: var(--lead-label);
   letter-spacing: var(--track-label);
@@ -993,7 +993,9 @@ body {
   min-height: 20px;
   max-width: 46ch;
 }
-.deck .b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; overflow: hidden; }
+.deck .b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; }
+.deck .b-seg button:first-child { border-radius: 6px 0 0 6px; }
+.deck .b-seg button:last-child { border-radius: 0 6px 6px 0; }
 .deck .b-seg button {
   min-height: 34px;
   padding: var(--gap-tight) var(--gap-snug);
@@ -1347,10 +1349,14 @@ body {
 .deck[data-w="1440"] .b-bar .b-barActs { display: flex; width: auto; gap: var(--gap-control); }
 .deck[data-w="1440"] .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
 .deck[data-w="1440"][data-medium="sheet"] .b-field, .deck[data-w="1440"][data-medium="full"] .b-field { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
-.deck[data-w="1440"][data-medium="sheet"] .b-num, .deck[data-w="1440"][data-medium="full"] .b-num { font-size: var(--size-countWide); }
+.deck[data-w="1440"][data-medium="sheet"] .b-num, .deck[data-w="1440"][data-medium="full"] .b-num {
+    font-size: var(--size-countWide);
+    letter-spacing: var(--track-display-148);
+  }
 .deck[data-w="1440"][data-medium="sheet"] .b-when, .deck[data-w="1440"][data-medium="full"] .b-when { font-size: var(--size-title); letter-spacing: var(--track-head); }
 .deck[data-w="1440"][data-medium="sheet"] .b-measure, .deck[data-w="1440"][data-medium="full"] .b-measure { padding-left: 124px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-measureHead, .deck[data-w="1440"][data-medium="full"] .b-measureHead { width: 84px; }
+.deck[data-w="1440"][data-medium="full"] .b-two > * > *:first-child > .b-measureHead { margin-top: 0; }
 .deck[data-w="1440"][data-medium="sheet"] .b-rail, .deck[data-w="1440"][data-medium="full"] .b-rail { left: 100px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-item, .deck[data-w="1440"][data-medium="full"] .b-item { left: 124px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-origin, .deck[data-w="1440"][data-medium="full"] .b-origin { left: 124px; }
@@ -1362,10 +1368,10 @@ body {
 .deck[data-w="1440"][data-medium="sheet"] .b-title, .deck[data-w="1440"][data-medium="full"] .b-title { font-size: var(--size-head); letter-spacing: var(--track-head); }
 .deck[data-w="1440"][data-medium="sheet"] .b-empty, .deck[data-w="1440"][data-medium="full"] .b-empty { padding: 110px 0 120px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1440"][data-medium="full"] .b-emptyTitle { max-width: 20ch; }
-.deck[data-w="1440"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1440"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title); }
+.deck[data-w="1440"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1440"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title-64); }
 .deck[data-w="1440"][data-medium="sheet"] .b-ended, .deck[data-w="1440"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1440"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1440"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
-.deck[data-w="1440"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
+.deck[data-w="1440"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title-48); }
 .deck[data-w="1440"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="1440"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="1440"][data-medium="sheet"] .b-print .b-away { font-size: var(--size-body); }
@@ -1382,10 +1388,14 @@ body {
 .deck[data-w="1280"] .b-bar .b-barActs { display: flex; width: auto; gap: var(--gap-control); }
 .deck[data-w="1280"] .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
 .deck[data-w="1280"][data-medium="sheet"] .b-field, .deck[data-w="1280"][data-medium="full"] .b-field { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
-.deck[data-w="1280"][data-medium="sheet"] .b-num, .deck[data-w="1280"][data-medium="full"] .b-num { font-size: var(--size-countWide); }
+.deck[data-w="1280"][data-medium="sheet"] .b-num, .deck[data-w="1280"][data-medium="full"] .b-num {
+    font-size: var(--size-countWide);
+    letter-spacing: var(--track-display-148);
+  }
 .deck[data-w="1280"][data-medium="sheet"] .b-when, .deck[data-w="1280"][data-medium="full"] .b-when { font-size: var(--size-title); letter-spacing: var(--track-head); }
 .deck[data-w="1280"][data-medium="sheet"] .b-measure, .deck[data-w="1280"][data-medium="full"] .b-measure { padding-left: 124px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-measureHead, .deck[data-w="1280"][data-medium="full"] .b-measureHead { width: 84px; }
+.deck[data-w="1280"][data-medium="full"] .b-two > * > *:first-child > .b-measureHead { margin-top: 0; }
 .deck[data-w="1280"][data-medium="sheet"] .b-rail, .deck[data-w="1280"][data-medium="full"] .b-rail { left: 100px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-item, .deck[data-w="1280"][data-medium="full"] .b-item { left: 124px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-origin, .deck[data-w="1280"][data-medium="full"] .b-origin { left: 124px; }
@@ -1397,10 +1407,10 @@ body {
 .deck[data-w="1280"][data-medium="sheet"] .b-title, .deck[data-w="1280"][data-medium="full"] .b-title { font-size: var(--size-head); letter-spacing: var(--track-head); }
 .deck[data-w="1280"][data-medium="sheet"] .b-empty, .deck[data-w="1280"][data-medium="full"] .b-empty { padding: 110px 0 120px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1280"][data-medium="full"] .b-emptyTitle { max-width: 20ch; }
-.deck[data-w="1280"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1280"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title); }
+.deck[data-w="1280"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1280"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title-64); }
 .deck[data-w="1280"][data-medium="sheet"] .b-ended, .deck[data-w="1280"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1280"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1280"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
-.deck[data-w="1280"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
+.deck[data-w="1280"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title-48); }
 .deck[data-w="1280"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="1280"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="1280"][data-medium="sheet"] .b-print .b-away { font-size: var(--size-body); }
@@ -1417,10 +1427,14 @@ body {
 .deck[data-w="1152"] .b-bar .b-barActs { display: flex; width: auto; gap: var(--gap-control); }
 .deck[data-w="1152"] .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
 .deck[data-w="1152"][data-medium="sheet"] .b-field, .deck[data-w="1152"][data-medium="full"] .b-field { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
-.deck[data-w="1152"][data-medium="sheet"] .b-num, .deck[data-w="1152"][data-medium="full"] .b-num { font-size: var(--size-countWide); }
+.deck[data-w="1152"][data-medium="sheet"] .b-num, .deck[data-w="1152"][data-medium="full"] .b-num {
+    font-size: var(--size-countWide);
+    letter-spacing: var(--track-display-148);
+  }
 .deck[data-w="1152"][data-medium="sheet"] .b-when, .deck[data-w="1152"][data-medium="full"] .b-when { font-size: var(--size-title); letter-spacing: var(--track-head); }
 .deck[data-w="1152"][data-medium="sheet"] .b-measure, .deck[data-w="1152"][data-medium="full"] .b-measure { padding-left: 124px; }
 .deck[data-w="1152"][data-medium="sheet"] .b-measureHead, .deck[data-w="1152"][data-medium="full"] .b-measureHead { width: 84px; }
+.deck[data-w="1152"][data-medium="full"] .b-two > * > *:first-child > .b-measureHead { margin-top: 0; }
 .deck[data-w="1152"][data-medium="sheet"] .b-rail, .deck[data-w="1152"][data-medium="full"] .b-rail { left: 100px; }
 .deck[data-w="1152"][data-medium="sheet"] .b-item, .deck[data-w="1152"][data-medium="full"] .b-item { left: 124px; }
 .deck[data-w="1152"][data-medium="sheet"] .b-origin, .deck[data-w="1152"][data-medium="full"] .b-origin { left: 124px; }
@@ -1432,10 +1446,10 @@ body {
 .deck[data-w="1152"][data-medium="sheet"] .b-title, .deck[data-w="1152"][data-medium="full"] .b-title { font-size: var(--size-head); letter-spacing: var(--track-head); }
 .deck[data-w="1152"][data-medium="sheet"] .b-empty, .deck[data-w="1152"][data-medium="full"] .b-empty { padding: 110px 0 120px; }
 .deck[data-w="1152"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1152"][data-medium="full"] .b-emptyTitle { max-width: 20ch; }
-.deck[data-w="1152"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1152"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title); }
+.deck[data-w="1152"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="1152"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title-64); }
 .deck[data-w="1152"][data-medium="sheet"] .b-ended, .deck[data-w="1152"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="1152"][data-medium="sheet"] .b-dayWrap, .deck[data-w="1152"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
-.deck[data-w="1152"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
+.deck[data-w="1152"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title-48); }
 .deck[data-w="1152"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="1152"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="1152"][data-medium="sheet"] .b-print .b-away { font-size: var(--size-body); }
@@ -1452,10 +1466,14 @@ body {
 .deck[data-w="768"] .b-bar .b-barActs { display: flex; width: auto; gap: var(--gap-control); }
 .deck[data-w="768"] .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
 .deck[data-w="768"][data-medium="sheet"] .b-field, .deck[data-w="768"][data-medium="full"] .b-field { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
-.deck[data-w="768"][data-medium="sheet"] .b-num, .deck[data-w="768"][data-medium="full"] .b-num { font-size: var(--size-countWide); }
+.deck[data-w="768"][data-medium="sheet"] .b-num, .deck[data-w="768"][data-medium="full"] .b-num {
+    font-size: var(--size-countWide);
+    letter-spacing: var(--track-display-148);
+  }
 .deck[data-w="768"][data-medium="sheet"] .b-when, .deck[data-w="768"][data-medium="full"] .b-when { font-size: var(--size-title); letter-spacing: var(--track-head); }
 .deck[data-w="768"][data-medium="sheet"] .b-measure, .deck[data-w="768"][data-medium="full"] .b-measure { padding-left: 124px; }
 .deck[data-w="768"][data-medium="sheet"] .b-measureHead, .deck[data-w="768"][data-medium="full"] .b-measureHead { width: 84px; }
+.deck[data-w="768"][data-medium="full"] .b-two > * > *:first-child > .b-measureHead { margin-top: 0; }
 .deck[data-w="768"][data-medium="sheet"] .b-rail, .deck[data-w="768"][data-medium="full"] .b-rail { left: 100px; }
 .deck[data-w="768"][data-medium="sheet"] .b-item, .deck[data-w="768"][data-medium="full"] .b-item { left: 124px; }
 .deck[data-w="768"][data-medium="sheet"] .b-origin, .deck[data-w="768"][data-medium="full"] .b-origin { left: 124px; }
@@ -1467,10 +1485,10 @@ body {
 .deck[data-w="768"][data-medium="sheet"] .b-title, .deck[data-w="768"][data-medium="full"] .b-title { font-size: var(--size-head); letter-spacing: var(--track-head); }
 .deck[data-w="768"][data-medium="sheet"] .b-empty, .deck[data-w="768"][data-medium="full"] .b-empty { padding: 110px 0 120px; }
 .deck[data-w="768"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="768"][data-medium="full"] .b-emptyTitle { max-width: 20ch; }
-.deck[data-w="768"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="768"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title); }
+.deck[data-w="768"][data-medium="sheet"] .b-emptyTitle, .deck[data-w="768"][data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title-64); }
 .deck[data-w="768"][data-medium="sheet"] .b-ended, .deck[data-w="768"][data-medium="full"] .b-ended { padding: 100px 56px 110px; }
 .deck[data-w="768"][data-medium="sheet"] .b-dayWrap, .deck[data-w="768"][data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
-.deck[data-w="768"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title); }
+.deck[data-w="768"][data-medium="full"] .b-pressTitle { font-size: var(--size-figure); letter-spacing: var(--track-title-48); }
 .deck[data-w="768"][data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
 .deck[data-w="768"][data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .deck[data-w="768"][data-medium="sheet"] .b-print .b-away { font-size: var(--size-body); }
@@ -1528,6 +1546,21 @@ body {
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
+    
+  }
+.deck[data-w="1440"][data-medium="full"] .b-plan {
+    scrollbar-gutter: stable;
+    
+    scroll-padding-block: var(--gap-section);
+  }
+.deck[data-w="1440"][data-medium="full"] .b-ownerField .b-stick[data-fold="below"], .deck[data-w="1440"][data-medium="full"] .b-plan[data-fold="below"] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+  }
+.deck[data-w="1440"][data-medium="full"] .b-ownerField .b-stick[data-fold="above"], .deck[data-w="1440"][data-medium="full"] .b-plan[data-fold="above"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px);
+  }
+.deck[data-w="1440"][data-medium="full"] .b-ownerField .b-stick[data-fold="both"], .deck[data-w="1440"][data-medium="full"] .b-plan[data-fold="both"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 48px), transparent);
   }
 .deck[data-w="1440"][data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
 .deck[data-w="1440"] .b-stick { position: sticky; top: var(--gap-section); }
@@ -1556,6 +1589,21 @@ body {
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
+    
+  }
+.deck[data-w="1280"][data-medium="full"] .b-plan {
+    scrollbar-gutter: stable;
+    
+    scroll-padding-block: var(--gap-section);
+  }
+.deck[data-w="1280"][data-medium="full"] .b-ownerField .b-stick[data-fold="below"], .deck[data-w="1280"][data-medium="full"] .b-plan[data-fold="below"] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+  }
+.deck[data-w="1280"][data-medium="full"] .b-ownerField .b-stick[data-fold="above"], .deck[data-w="1280"][data-medium="full"] .b-plan[data-fold="above"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px);
+  }
+.deck[data-w="1280"][data-medium="full"] .b-ownerField .b-stick[data-fold="both"], .deck[data-w="1280"][data-medium="full"] .b-plan[data-fold="both"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 48px), transparent);
   }
 .deck[data-w="1280"][data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
 .deck[data-w="1280"] .b-stick { position: sticky; top: var(--gap-section); }
@@ -1584,6 +1632,21 @@ body {
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: thin;
+    
+  }
+.deck[data-w="1152"][data-medium="full"] .b-plan {
+    scrollbar-gutter: stable;
+    
+    scroll-padding-block: var(--gap-section);
+  }
+.deck[data-w="1152"][data-medium="full"] .b-ownerField .b-stick[data-fold="below"], .deck[data-w="1152"][data-medium="full"] .b-plan[data-fold="below"] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 48px), transparent);
+  }
+.deck[data-w="1152"][data-medium="full"] .b-ownerField .b-stick[data-fold="above"], .deck[data-w="1152"][data-medium="full"] .b-plan[data-fold="above"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px);
+  }
+.deck[data-w="1152"][data-medium="full"] .b-ownerField .b-stick[data-fold="both"], .deck[data-w="1152"][data-medium="full"] .b-plan[data-fold="both"] {
+    mask-image: linear-gradient(to bottom, transparent, #000 48px, #000 calc(100% - 48px), transparent);
   }
 .deck[data-w="1152"][data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
 .deck[data-w="1152"] .b-stick { position: sticky; top: var(--gap-section); }
@@ -2070,7 +2133,22 @@ body {
      function returned at its first test and had never trimmed a single
      word in its life while its own comment promised it had. */
   function over(el) {
-    return el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+    if (el.scrollWidth > el.clientWidth + 1) return true;
+    var cs = getComputedStyle(el);
+    var lh = parseFloat(cs.lineHeight);
+    var max = parseInt(cs.webkitLineClamp, 10);
+    /* No usable leading: fall back to the box comparison. */
+    if (!(lh > 0)) return el.scrollHeight > el.clientHeight + 1;
+    /* A clamp is a LINE budget, so the test is lines, not pixels. The
+       box comparison trimmed a legitimately two-line title because a
+       two-line -webkit-box is taller than its own content box - at a
+       24px root that took seven of seven owner titles down to one word
+       each. */
+    if (max > 0) return el.scrollHeight > (max + 0.5) * lh;
+    /* No clamp and visible overflow means nothing is hidden, so there
+       is nothing to trim for. The guest surfaces switch the clamp off
+       by name (b.css) and were being trimmed regardless. */
+    return false;
   }
 
   /* A trimmed string keeps its whole self in the accessibility tree. An
@@ -2257,7 +2335,12 @@ body {
       /* The venue was a string literal typed into the renderer, in two
          places, presented as a fact about the record. The record has no
          venue field, and inventing one is a data-model change. */
-      h("p.b-sub", { text: F.project.primaryDate.label }),
+      /* Rendered only when there is something to render. .b-sub carries
+         margin 0 and the rule below brings its own top margin, so the
+         line simply is not there when the day has no name. */
+      F.project.primaryDate.label
+        ? h("p.b-sub", { text: F.project.primaryDate.label })
+        : null,
       /* Provenance was answered last and smallest, at the very bottom of
          a seventeen-hundred-pixel document, in the one artifact whose
          whole job is that a person sent it. */
@@ -2281,10 +2364,29 @@ body {
   /* The unit the row speaks. The past rail reuses this builder, and a
      row on it read "14 days away" under a heading saying "days back" -
      in the visible text and in the accessible name both. */
+  /* The day is the project's, not a moment that happens to sit on it.
+     The fixture seeds a milestone for it, so identity is resolved by
+     that milestone's id where one exists and by the date otherwise -
+     and never by a date match alone, which any second moment on the
+     day would also satisfy. */
+  function theDayRecord() {
+    for (var i = 0; i < F.milestones.length; i++) {
+      if (F.milestones[i].date === F.project.primaryDate.date) return F.milestones[i];
+    }
+    return null;
+  }
+  function isTheDay(item) {
+    var day = theDayRecord();
+    return !!(day && item && item.id === day.id);
+  }
+
   function row(item, away, owner, unit) {
     return h("div.b-item", {
       role: "listitem",
-      "data-anchor": item.date === F.project.primaryDate.date ? "true" : null,
+      /* Identity, not collision. Stamped from the project's own day
+         record rather than from any row that shares its date, so a
+         second moment on the same day cannot claim to be the day. */
+      "data-anchor": isTheDay(item) ? "true" : null,
       "data-id": item.id,
       "data-away": String(away),
       "data-date": item.date,
@@ -2334,6 +2436,27 @@ body {
       if (item.hidden) setVisibility(node, true);
       kids.push(node);
     });
+    /* The measure ends ON the day. A plan the owner built has no
+       milestone for it - the fixture seeds one and would otherwise be
+       drawn twice - so the terminus is rendered from the project's own
+       record, through the same row builder, and is not a moment: no
+       control, no editor, and its own unit so a listener hears why the
+       list ends where it does. */
+    /* Only while the day is still ahead. A terminus drawn for a day
+       that has already gone printed a negative figure on a guest
+       surface - the exact class an earlier round paid for - and a
+       measure of what is ahead has nothing to say about it. */
+    var toDay0 = F.project.primaryDate.date ? daysFrom(clock, F.project.primaryDate.date) : 0;
+    if (!theDayRecord() && F.project.primaryDate.date && toDay0 >= 1) {
+      var end = row({
+        id: "the-day",
+        title: F.project.primaryDate.label || "The day itself",
+        date: F.project.primaryDate.date,
+      }, toDay0, false, "days away, the day itself,");
+      end.setAttribute("data-anchor", "true");
+      end.setAttribute("data-terminus", "true");
+      kids.push(end);
+    }
     return h("div", { style: "line-height:1.5" }, [
       h("h2.b-measureHead", { text: "days away" }),
       h("div.b-measure", {
@@ -2392,19 +2515,36 @@ body {
     }
 
     var unit = back ? "days back" : "days away";
-    var bottom = -Infinity, lastBottom = 0, run = [];
-    function closeRun() {
-      run.forEach(function (el, i) {
-        el.setAttribute("data-stack", run.length === 1 ? "" : (i === 0 ? "lead" : "follow"));
-        var said = el.querySelector(".b-unitSaid");
-        if (said) {
-          said.textContent = run.length === 1
+    var bottom = -Infinity, lastBottom = 0;
+
+    /* Grouping happens BEFORE anything is measured. It used to run as a
+       row was passed, so the render that first formed a stacked pair
+       measured the leader without the padding its lead state was about
+       to give it, and the pair overlapped by a pixel until some later
+       repaint corrected it. place() has to be a fixed point. */
+    var ORDINAL = ["first", "second", "third", "fourth", "fifth"];
+    function nth(i) { return ORDINAL[i] || (i + 1) + "th"; }
+    for (var g = 0; g < items.length;) {
+      var day = items[g].getAttribute("data-away");
+      var end = g;
+      while (end < items.length && items[end].getAttribute("data-away") === day) end++;
+      var runLen = end - g;
+      for (var k = g; k < end; k++) {
+        var el0 = items[k], i0 = k - g;
+        el0.setAttribute("data-stack", runLen === 1 ? "" : (i0 === 0 ? "lead" : "follow"));
+        var said0 = el0.querySelector(".b-unitSaid");
+        if (said0) {
+          /* The follower's numeral is hidden in the gutter, so it says
+             the figure here or a listener gets a unit with no number in
+             front of it - and both members take a real ordinal, because
+             "then of 2" is not English in any register. */
+          said0.textContent = runLen === 1
             ? " " + unit + ","
-            : " " + unit + ", " + (i === 0 ? "first" : "then") + " of "
-              + run.length + " moments on this day,";
+            : (i0 === 0 ? " " : " " + day + " ")
+              + unit + ", the " + nth(i0) + " of " + runLen + " moments on this day,";
         }
-      });
-      run = [];
+      }
+      g = end;
     }
 
     items.forEach(function (el, index) {
@@ -2412,9 +2552,6 @@ body {
       var top = away * px;
       el.style.top = top + "px";
       el.removeAttribute("data-lead");
-
-      if (run.length && Number(run[0].getAttribute("data-away")) !== away) closeRun();
-      run.push(el);
 
       var copy = el.querySelector(".b-copy");
       /* --push belongs to the ROW, not to the words alone. It used to be
@@ -2437,15 +2574,30 @@ body {
       lastBottom = bottom;
       if (index === 0) el.setAttribute("data-lead", "true");
     });
-    closeRun();
 
     var field = measureEl.closest(".b-field");
     var note = field && field.querySelector(".b-gapNote");
-    if (note && items.length) note.textContent = gapSentence(items[0].getAttribute("data-date"));
+    /* The guard, not the wording of one instance: with no rows at all
+       the sentence used to freeze on whatever it last said - after
+       deleting farthest-first it went on naming a date that now holds
+       nothing, which is a plain falsehood rather than a stale phrasing. */
+    if (note) {
+      note.textContent = items.length
+        ? gapSentence(items[0].getAttribute("data-date"))
+        : "Nothing is planned yet.";
+    }
     /* The measure is at least the horizon, and taller if the words at
        the foot of it need the room. A rail that ends above its own last
        row is the undesigned edge a panel looks for first. */
-    measureEl.style.height = Math.max(horizonDays * px + ROW, Math.ceil(lastBottom + 24)) + "px";
+    /* An empty measure is sized to what it holds, which is nothing. The
+       horizon floor is what a plan is measured against, not a reason to
+       draw 1198px of bare rule under a plan with no moments in it. */
+    measureEl.style.height = items.length
+      ? Math.max(horizonDays * px + ROW, Math.ceil(lastBottom + 24)) + "px"
+      : "0px";
+    var host0 = measureEl.closest(".b-plan");
+    if (host0 && !items.length) host0.scrollTop = 0;
+    markFolds(measureEl.closest(".b-field"));
   }
 
   /* ── behind you ───────────────────────────────────────────────── */
@@ -2647,6 +2799,10 @@ body {
      offer to restore a row that no longer existed, and pressing it
      restored nothing and cleared itself as though it had worked. */
   var history = [];
+  /* Monotonic for the life of the project. Minting from milestones.length
+     reissued live ids after a delete, which silently wrote one moment's
+     name onto another and made undo restore the wrong row. */
+  var minted = F.milestones.length;
 
   function undoBar() {
     return h("div.b-undo", { role: "status", "data-empty": "true" }, [
@@ -2792,7 +2948,7 @@ body {
     var ceilingNote = root.querySelector(".b-ceiling");
     if (ceilingNote) {
       ceilingNote.textContent = away >= ceiling
-        ? "This is as far as it goes. " + F.project.primaryDate.label + " is the last day."
+        ? "This is as far as it goes. Nothing can sit after the day itself."
         : (away <= 1 ? "This is as near as it goes. Tomorrow is the soonest." : "");
     }
     place(measureEl);
@@ -2809,6 +2965,27 @@ body {
      rail the steppers cannot move under the hand, so the scroll path is
      unreachable there and the page keeps its place exactly as before. */
   /* The pane, but only while it is actually the thing that scrolls. */
+  /* An edge that means something. The panes were given a frame and no
+     edge, so a title or a control could be sliced mid-glyph at the fold
+     with nothing saying so. Measured after layout, per pane, and
+     removed when nothing is hidden - a permanent gradient would be the
+     always-on decoration the defect library forbids. */
+  function markFold(el) {
+    if (!el) return;
+    if (getComputedStyle(el).overflowY !== "auto") { el.removeAttribute("data-fold"); return; }
+    var above = el.scrollTop > 2;
+    var below = el.scrollTop + el.clientHeight < el.scrollHeight - 2;
+    if (above && below) el.setAttribute("data-fold", "both");
+    else if (below) el.setAttribute("data-fold", "below");
+    else if (above) el.setAttribute("data-fold", "above");
+    else el.removeAttribute("data-fold");
+  }
+  function markFolds(root) {
+    var scope = root || document;
+    markFold(scope.querySelector(".b-plan"));
+    markFold(scope.querySelector(".b-ownerField .b-stick"));
+  }
+
   function paneOf(root) {
     var pane = root && root.querySelector(".b-plan");
     if (!pane || getComputedStyle(pane).overflowY !== "auto") return null;
@@ -2871,6 +3048,19 @@ body {
   }
 
   function setTitle(item, value) {
+    /* One accessor. When the row being renamed IS the day, the project's
+       own label is what the horizon, the card and the sheet all read, so
+       it is written here and the two can never disagree. */
+    var rec0 = recordFor(item.getAttribute("data-id"));
+    if (rec0 && isTheDay(rec0)) {
+      F.project.primaryDate.label = value;
+      /* The horizon reads this label, so it is repainted in the same
+         frame - otherwise the row and the horizon carry two names for
+         one day, which is the defect this branch exists to close. */
+      var field0 = item.closest(".b-field");
+      var sub0 = field0 && field0.querySelector(".b-sub");
+      if (sub0) sub0.textContent = value;
+    }
     var record = recordFor(item.getAttribute("data-id"));
     record.title = value.trim();
     var shown = nameOf(record);
@@ -2906,6 +3096,8 @@ body {
     var iso = item.getAttribute("data-date");
     var hidden = item.getAttribute("data-visibility") === "hidden";
     var titleAtOpen = record.title;
+    /* Resolved once, by identity rather than by date collision. */
+    var theDay = isTheDay(record);
 
     function step(delta, label) {
       return h("button.b-step", {
@@ -2975,7 +3167,7 @@ body {
     return h("div.b-edit#b-edit", {
       role: "group",
       tabindex: "-1",
-      "aria-label": "Editing " + nameOf(record),
+      "aria-label": theDay ? "Editing the day itself" : "Editing " + nameOf(record),
     }, [
       h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
         h("label.b-label", { for: "b-edit-title", text: "What it is" }),
@@ -3034,16 +3226,24 @@ body {
         ]),
         h("p.b-ceiling#b-edit-when-hint", { text: "" }),
       ]),
-      h("div", { style: "display:grid;gap:6px;line-height:1.5" }, [
+      /* The day is not a moment and does not get a moment's controls.
+         Hiding it would hide the thing every figure on the page is
+         measured from, and deleting it took it out of the measure while
+         the horizon four hundred pixels away went on counting to it.
+         What remains is what the day actually has: a name and a date. */
+      theDay ? null : h("div.b-editGroup", {}, [
         h("span.b-label", { id: "b-vis", text: "What guests see" }),
         h("div.b-seg", { role: "group", "aria-labelledby": "b-vis" }, [
           visButton("Shown", false), visButton("Hidden", true),
         ]),
       ]),
+      theDay ? h("p.b-ceiling.b-standing", {
+        text: "Everything on this plan is measured from this day.",
+      }) : null,
       h("div.b-editActs", {}, [act("Done", true, { "data-act": "done" })]),
       /* On its own line, after a rule. It used to sit ten pixels to the
          right of the safe action at two and a half times its width. */
-      h("div.b-editDanger", {}, [
+      theDay ? null : h("div.b-editDanger", {}, [
         act("Delete this moment", false, { "data-act": "delete" }),
       ]),
     ]);
@@ -3063,7 +3263,7 @@ body {
     var away = daysFrom(clock, iso);
     if (away < 1) return refuse("That day has gone. Pick one still ahead.");
     if (away > ceiling) {
-      return refuse("This is as far as it goes. " + F.project.primaryDate.label + " is the last day.");
+      return refuse("This is as far as it goes. Nothing can sit after the day itself.");
     }
     input.setAttribute("aria-invalid", "false");
     if (hint) hint.textContent = "";
@@ -3258,7 +3458,7 @@ body {
         var first = ahead(clock)[0];
         var away = Math.max(1, (first ? daysFrom(clock, first.date) : 8) - 7);
         var fresh = {
-          id: "moment-" + (F.milestones.length + 1),
+          id: "moment-" + (++minted),
           title: "",
           date: F.plusDays(clock, away),
           state: "next",
@@ -3388,6 +3588,11 @@ body {
       };
       window.addEventListener("scroll", onScroll, { passive: true });
       if (pane) pane.addEventListener("scroll", onScroll, { passive: true });
+      var rail = root.querySelector(".b-stick");
+      var onFold = function () { markFolds(root); };
+      if (pane) pane.addEventListener("scroll", onFold, { passive: true });
+      if (rail) rail.addEventListener("scroll", onFold, { passive: true });
+      requestAnimationFrame(onFold);
     }
 
     /* The editor is docked, not modal: the page may scroll under it, and
@@ -3571,12 +3776,16 @@ body {
      status line, the primary verb, the press heading and strap - had
      never been rendered in any graded state. */
   states["owner-draft"] = function () {
-    var was = F.publication, wasLabel = F.updatedLabel;
+    /* Committed, not borrowed. Handing the record back before anyone
+       could press anything made the draft branch true only until it was
+       touched - pressing Publish from here landed on "Mara & Finn have
+       had this since 15 July", the wording reserved for a plan somebody
+       is already holding. Every state is entered by a fresh load, so a
+       committed mutation cannot leak into another graded frame; this is
+       exactly what the first-run path already does. */
     F.publication = { state: "draft", publishedAt: null };
     F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
-    var node = ownerSurface({});
-    F.publication = was; F.updatedLabel = wasLabel;
-    return node;
+    return ownerSurface({});
   };
 
   /* Editing, one move in, with the way back showing. */
@@ -3615,7 +3824,10 @@ body {
          untitled moment, not the demonstration plan. */
       if (event.target.closest('[data-act="add"]') && started) {
         F.project.name = sibling.name;
-        F.project.primaryDate = { label: "The day", date: started };
+        /* No invented label. An empty string is the honest value for a
+           day nobody has named, and every consumer now guards it rather
+           than printing a placeholder as though the owner wrote it. */
+        F.project.primaryDate = { label: "", date: started };
         /* A plan created two seconds ago has never been handed to
            anyone. The publication record is fixture-wide, so without
            this the owner's first screen claimed "Live since 15 July",
@@ -3626,6 +3838,10 @@ body {
         F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
         var half = Math.max(1, Math.round(F.days(F.today, started) / 2));
         F.milestones.length = 0;
+        /* The counter resets with the array, so a fresh project reads
+           moment-1, moment-2, moment-3 rather than continuing from the
+           demonstration fixture is length. */
+        minted = 1;
         F.milestones.push({
           id: "moment-1", title: "", date: F.plusDays(F.today, half), state: "next",
         });
@@ -3745,8 +3961,13 @@ body {
            number - "Wedding day, Saturday" / "3 October 2026" - on the
            preview of the card that is the product's first impression
            inside a message. */
+        /* The card that lands in someone's message names the day only
+           if the day has a name; otherwise the date carries it alone,
+           rather than announcing "The day, Saturday 3 October 2026". */
         h("p.b-unfurlTitle", {}, [
-          document.createTextNode(F.project.primaryDate.label + ", "),
+          F.project.primaryDate.label
+            ? document.createTextNode(F.project.primaryDate.label + ", ")
+            : document.createTextNode(""),
           h("span", { style: "white-space:nowrap", text: when }),
         ]),
         h("p.b-unfurlHost", { text: "timeline.signalstudio.ie" }),
@@ -4048,6 +4269,7 @@ body {
          window narrowed while the editor is open cannot dock the sheet
          over a column that reserved nothing for it. */
       reserve(document.querySelector("[data-editor-open]"));
+      markFolds(document.querySelector(".b-field"));
     },
   };
 })();

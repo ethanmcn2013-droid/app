@@ -57,8 +57,6 @@
   --track-data: 0.04em;       /* mono figures and fields */
   --track-body: -0.015em;     /* sans 15-20px */
   --track-head: -0.03em;      /* sans 24-38px */
-  --track-title: -0.035em;    /* sans 48px */
-  --track-display: -0.045em;  /* the count, 96 and 148px */
   /* One letterfit across 64, 96 and 148 is one letterfit too few: at 96
      the word on the wedding morning closed to a six-tenths-of-a-pixel
      gap between its first two letters. Graded by size, and the word
@@ -232,13 +230,18 @@ body {
    the room. `safe` is doing real work: the moment the content is taller
    than the viewport it falls back to the top edge, so nothing can ever
    be centred out of reach. */
+/* Loading is NOT in this list. A loading face is a promise about the
+   page that follows it, and centring it in the room put its heading
+   236px below where the arrived page puts the same heading - so the
+   screen jumped on arrival, which is the one thing a loading state
+   exists to prevent. loading-slow was already top-aligned, by accident
+   of a selector; the two faces now agree by decision. */
 [data-state="publish"] .tl-page,
 [data-state="day"] .tl-page,
 [data-state="ended"] .tl-page,
-[data-state="loading"] .tl-page,
 [data-state="unfurl"] .tl-page {
   justify-content: safe center;
-  /* These five states are one object in a room, and every one of them
+  /* These four states are one object in a room, and every one of them
      sat at the top of it: .tl-page is a block child, so its height was
      its own content and `safe center` had nothing to distribute. */
   min-height: 100dvh;
