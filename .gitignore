@@ -88,4 +88,5 @@ probe_*.mjs
 probe-*.mjs
 .probe/
 .tmp-*/
+.scratch-*
 docs/design/labs/tasks-2026-08/shots/_*.png
