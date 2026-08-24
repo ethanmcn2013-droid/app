@@ -4,6 +4,70 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-22 · T·152 · tightens · design tokens now come from the package, not a copy
+
+**The app's system tokens are imported from the `signal-ds` npm package
+instead of the vendored `src/ds/` copies, closing the drift risk between
+what the app ships and what the design system publishes.** `globals.css`
+imports `signal-ds/tokens.css` and `signal-ds/tailwind.css`; the two
+vendored files are deleted and the app-owned `theme-overrides.css` stays.
+Zero visual change by construction — same 2.1.0 token values, one source.
+Part of the founder-approved ds-foundation pivot (tokens-first contract,
+2026-08-22); studio and signal-motion swaps land alongside.
+
+## 2026-08-22 · T·151 · tightens · a four-lane board fills its sheet again, and legacy boards get their lane back
+
+**The founder's live board came back from A·Air with dead margins down both
+sides and a lane missing. Both causes are fixed: the floor honours the
+fit-columns preference again, and legacy configs resolve onto the shipped
+five-column board instead of four.**
+
+Two compounding defects, one visible symptom. The floor port dropped the old
+board's fit-columns preference, so any workspace whose column count multiplied
+below the sheet's width floated narrow centred tracks in a void — at 1917px,
+a four-lane board lost ~285px to empty paper on each side. And that workspace
+had four lanes because its config was written before columns existed: a flat
+rename record parsed onto `emptyConfig`, which carries no Waiting. Nothing had
+ever deleted the fifth lane; the parse just never knew about it.
+
+Legacy configs now resolve onto the shipped five columns with renames riding
+on top (nothing chose to remove Waiting through that shape), blank system
+renames and nameless custom columns are dropped at parse so no headerless void
+can render, and fit-columns is once again the default with fixed-width mode
+preserved behind it. Verified at the founder's own viewport: four lanes fill
+edge to edge, sixteen pixels of air, nothing floating.
+
+## 2026-08-22 · T·150 · ships · the board locks to A·Air, and the design fences come down
+
+**Open Tasks today and the board is exactly the configuration the founder chose
+in the design console — flat cards, soft radius, compact density, subtle indigo,
+calm type — and the standing design gates retire with it. What governs the
+surface now is `docs/design/FLOOR_CANON.md`, the north star, and taste.**
+
+The five axes were already built: the floor ships option CSS for every console
+combination behind five data-attributes. This pass makes the founder's choice
+the only one — a single named constant (`FLOOR_PRESET`) instead of two hardcoded
+defaults that differed from it. A computed-style probe against the design master
+at the same configuration matches production value for value on every measured
+axis: card padding, radius, shadow (none), row gaps, title/note/foot metrics,
+tick and chip sizes, tray rhythm, head height, sheet and dock.
+
+Retired by founder decision, with their enforcement chains: the ds-check hex and
+easing ratchet with its grandfather manifest, the chrome and loading geometry
+contracts, the motion contract, the delight catalog ground rules, the board
+pass-3 styling contract, and the Wave-0 B0 external council baseline. Business
+contracts stand untouched: URLs and naming, the database release gate, HQ sync.
+The quality council stays fully active in receipt-pending mode and reports NOT
+CERTIFIED honestly until the receipt set lands.
+
+Two honest edges, both fixed or named: compact density crushed the stacked
+mobile header at 390px — an inheritance from the design master itself, which
+breaks identically — now fixed in the port and recorded upstream as a master
+finding; and the loading tracing plus empty-state ghost were re-targeted to the
+flat card so the waiting surface promises what arrives. Evidence: 132/132
+critical experiences green on the production build, validate clean, materiality
+review recorded for the changed surface.
+
 ## 2026-08-18 · T·149 · redesigns · the board is one sheet, three colours, and it answers the keyboard
 
 **Open Tasks today and there is one spine instead of two, the project's name where

@@ -1,15 +1,15 @@
 @import "tailwindcss";
-@import "../ds/tokens.css";
+@import "signal-ds/tokens.css";
 @import "../ds/theme-overrides.css";
-@import "../ds/tailwind.css";
+@import "signal-ds/tailwind.css";
 
 /* ────────────────────────────────────────────────────────────
    Signal Design System 2.0 (Wave 3, 2026-07-02)
-   System tokens live in the vendored src/ds/tokens.css — never
-   here. This :root is repo-local only: legacy v0.2 aliases on
+   System tokens live in signal-ds/tokens.css (npm package,
+   tokens-first pivot 2026-08-22; was the vendored src/ds copy) —
+   never here. This :root is repo-local only: legacy v0.2 aliases on
    the burn-down path + Tasks-specific palettes (lanes, roadmap
-   pills, audiences under the --x- extension prefix). ds-check
-   enforces the split. */
+   pills, audiences under the --x- extension prefix). */
 :root {
   /* Marker underline accent on display headlines — the earned indigo. */
   --highlight:  var(--accent);
@@ -350,8 +350,8 @@
    brightest.
 
    Rules kept here, deliberately:
-     · no system token is redefined (ds-check enforces it), only
-       --x- extensions and repo-local aliases;
+      · no system token is redefined, only
+        --x- extensions and repo-local aliases;
      · no raw hex — every value is a var() or a color-mix of one,
        so the dark palette cannot drift from the light one;
      · derivations that already mix toward var(--ink) or

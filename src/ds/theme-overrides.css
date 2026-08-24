@@ -25,8 +25,7 @@
  *
  * Repo-local dark work — the --x- extensions and the v0.2 aliases that
  * encode a light assumption — lives in src/app/globals.css, not here:
- * this path is for system tokens, and ds-check only permits system
- * tokens to be redeclared under src/ds/.
+ * this path is for system tokens only.
  */
 
 /* Light is the :root default; no overrides needed. */

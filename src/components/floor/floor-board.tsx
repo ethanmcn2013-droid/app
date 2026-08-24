@@ -29,6 +29,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useLabStore } from "@/components/hybrid/store";
 import { useBoardColumns } from "@/components/hybrid/columns-context";
+import { useFitColumns } from "@/components/hybrid/view-prefs";
 import { LANE_NOTE } from "./floor-workspace";
 import { labelById } from "@/components/hybrid/fixtures";
 import type { LabTask } from "@/components/hybrid/types";
@@ -298,6 +299,13 @@ export function FloorBoard({
 }: FloorBoardProps) {
   const store = useLabStore();
   const columns = useBoardColumns();
+  /* Fit columns (the long-standing default) lets the lanes share the spare
+     board width, so a workspace with four lanes — or nine — fills the sheet
+     edge to edge instead of floating narrow columns in a void. "Fixed" keeps
+     every lane at its base width and lets the track scroll instead. The old
+     board honoured this preference; the floor port dropped it, which is how
+     four-lane boards came back centred with dead space down both sides. */
+  const [fitColumns] = useFitColumns();
   const rootRef = useRef<HTMLDivElement>(null);
 
   const today = useMemo(() => todayStamp(), []);
@@ -637,6 +645,7 @@ export function FloorBoard({
         <div
           className={styles.board}
           data-board=""
+          {...(fitColumns ? { "data-fit": "" } : { "data-fixed-columns": "" })}
           {...(filtering ? { "data-filtered": "" } : {})}
           {...(all.length ? {} : { "data-blank": "" })}
           style={{ "--lanes": columns.length } as React.CSSProperties}

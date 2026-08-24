@@ -1380,8 +1380,10 @@
   .railAvatar { margin: 0; }
   .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
   /* Explicit areas rather than wrap plus order. Wrapping left the wordmark
-     alone on line one with 60% of the row empty beside it. */
-  .head {
+     alone on line one with 60% of the row empty beside it. The density
+     prefix keeps this ahead of the compact head's fixed 52px height, which
+     otherwise out-specifies this block and crushes the stacked header. */
+  .head, .root[data-density] .head {
     height: auto; display: grid; padding: 14px 16px 0;
     grid-template-columns: auto 1fr;
     grid-template-areas: "word actions" "name name" "facts facts";
@@ -1406,14 +1408,14 @@
   .carry em:not(:last-child) { display: none; }
   /* The switcher loses its icons rather than its fourth view. Cutting
      "Calendar" mid-word at the sheet edge read as a broken layout. */
-  .views { padding: 14px 16px 12px; }
+  .views, .root[data-density] .views { padding: 14px 16px 12px; }
   .seg { width: 100%; }
   .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
   .segItem svg { display: none; }
   .viewTools { display: none; }
   .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
   /* No dock on a phone, so no clearance to reserve. */
-  .tray { scroll-snap-align: start; padding-bottom: 8px; }
+  .tray, .root[data-density] .tray { scroll-snap-align: start; padding-bottom: 8px; }
   .trayBody { padding-bottom: 4px; }
   .sheet::after, .sheet::before { display: none; }
   .dock { display: none; }
@@ -1465,6 +1467,18 @@
  * workspace with four columns then rendered a fifth empty 312px track, which
  * is the dead sheet to the right of Done. The count comes from the render. */
 .root .board { grid-template-columns: repeat(var(--lanes, 5), minmax(258px, 312px)); }
+
+/* Fit columns — the long-standing default preference, which the floor port
+ * dropped. With it on, the lanes share the spare sheet width, so a four-lane
+ * workspace fills the board edge to edge instead of floating narrow columns
+ * in a void of dead margins. "Fixed" keeps the master's base width and lets
+ * the track scroll or centre instead. Scoped above 1200 because below it the
+ * board is already an auto-flow scroller and this must not out-rank it. */
+@media (min-width: 1201px) {
+  .root .board[data-fit] {
+    grid-template-columns: repeat(var(--lanes, 5), minmax(258px, 1fr));
+  }
+}
 
 /* A card that has nothing to say says nothing.
  *

@@ -25,8 +25,8 @@
  * not the 44px it means in stock Tailwind — an 80px control inside this 56px
  * bar overflows it top and bottom. Below md, use h-[44px] / min-h-[44px].
  *
- * Contract: content/hq/decisions/product-header-contract.md +
- * scripts/check-chrome-contract.mjs. The bar stays at z-40; only overlays
+ * Contract: content/hq/decisions/product-header-contract.md.
+ * The bar stays at z-40; only overlays
  * float above. The contract tokens (h-10, --x-studio-chrome, z-40,
  * w-[60px] mark cell, w-[248px] identity cell, signal-pulse slot) are all
  * preserved. The command-led treatment is the selected Signal Frame B

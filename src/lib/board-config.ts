@@ -13,6 +13,11 @@ import { isColumnColorKey, type ColumnColorKey } from "@/lib/board-colors";
 
 export type CustomColumn = { key: string; name: string };
 
+/** The default fifth column's stable key. Defined here — the pure-model
+ *  module — so the legacy-config repair below can use it without importing
+ *  from board-columns (which imports from here). board-columns re-exports. */
+export const WAITING_COLUMN_KEY = "waiting";
+
 /**
  * Full column configuration for a board.
  *
@@ -140,11 +145,21 @@ export function parseColumnConfig(raw: string): ColumnConfig | null {
       "limits" in obj ||
       "doneKeys" in obj
     ) {
-      const system = (obj.system as Partial<Record<LaneId, string>>) ?? {};
+      const systemEntries = Object.entries(
+        (obj.system as Partial<Record<LaneId, string>>) ?? {},
+      ).filter(([, value]) => typeof value === "string" && value.trim().length > 0);
+      const system = Object.fromEntries(systemEntries) as Partial<Record<LaneId, string>>;
       const custom = Array.isArray(obj.custom)
-        ? (obj.custom as CustomColumn[]).filter(
-            (c) => c && typeof c.key === "string" && typeof c.name === "string",
-          )
+        ? (obj.custom as CustomColumn[])
+            .filter(
+              (c) =>
+                c &&
+                typeof c.key === "string" &&
+                c.key.trim().length > 0 &&
+                typeof c.name === "string" &&
+                c.name.trim().length > 0,
+            )
+            .filter((c, i, all) => all.findIndex((d) => d.key === c.key) === i)
         : [];
       const order = Array.isArray(obj.order)
         ? (obj.order as string[]).filter((k) => typeof k === "string")
@@ -165,9 +180,20 @@ export function parseColumnConfig(raw: string): ColumnConfig | null {
     if (!hasLane) return null;
     const system = {} as Partial<Record<LaneId, string>>;
     for (const id of LANE_ORDER) {
-      if (typeof obj[id] === "string") system[id] = obj[id] as string;
+      const value = obj[id];
+      if (typeof value === "string" && value.trim().length > 0) system[id] = value;
     }
-    return { ...emptyConfig(), system };
+    // A legacy config predates custom columns entirely — no workspace ever
+    // chose to remove Waiting through this shape — so it resolves onto the
+    // shipped five-column board with the rename overrides riding on top.
+    // Basing it on emptyConfig instead is how four-lane boards lost their
+    // fifth lane and came back with dead margins down both sides.
+    return {
+      ...emptyConfig(),
+      custom: [{ key: WAITING_COLUMN_KEY, name: "Waiting" }],
+      order: [...LANE_ORDER.slice(0, 3), WAITING_COLUMN_KEY, ...LANE_ORDER.slice(3)],
+      system,
+    };
   } catch {
     return null;
   }
