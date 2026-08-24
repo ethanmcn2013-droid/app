@@ -82,13 +82,13 @@ const ACTIVE: Seed[] = [
   },
   {
     id: "demo_n_photo_01",
-    body: "Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand a job to someone without chasing it, and something that works on a phone at the back of a classroom.",
+    body: "Saturday team, three things they kept asking for: one place to see who is on which room, a way to hand a job over without chasing it, and something that works on a phone out at the marquee.",
     ago: 6 * HOUR,
     source: "photo",
   },
   {
     id: "demo_n_voice_02",
-    body: "Student launch pricing needs one simple annual option. Two prices and a discount code is already too many decisions for someone signing up between lectures.",
+    body: "Midweek pricing needs one simple off-season rate. Two rates and a seasonal supplement is already too many decisions for someone enquiring about a Tuesday in February.",
     ago: 1 * DAY + 1 * HOUR,
     source: "voice",
     reviewedAgo: 22 * HOUR,

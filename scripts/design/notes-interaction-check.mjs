@@ -117,9 +117,30 @@ const said = (page) => page.locator("#say").textContent();
     Math.abs((await scroller.evaluate((n) => n.scrollTop)) - scrollBefore) < 4,
     `${await scroller.evaluate((n) => n.scrollTop)} vs ${scrollBefore}`,
   );
+  /* Round 8 inverted this. It asserted that arrival parked the keyboard
+     on the dismiss control, which meant the first Enter after opening a
+     note closed it again, and the body's accessible name — the
+     instruction the person needs — was never read. Escape is still the
+     way back and is still drawn on the button. */
   ok(
-    "focus lands on the way back out, never on the body",
-    await page.evaluate(() => document.activeElement && document.activeElement.dataset.act === "close"),
+    "arrival lands on the note itself, not on the way out of it",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("readBody")),
+    await page.evaluate(() => (document.activeElement || {}).className || "none"),
+  );
+  ok(
+    "and the instruction on the note is what gets read on arrival",
+    await page.evaluate(() => {
+      const a = document.activeElement;
+      return !!(a && (a.getAttribute("aria-label") || "").includes("Pick the words"));
+    }),
+  );
+  ok(
+    "arrow keys on arrival pick a sentence rather than ejecting into the index",
+    await (async () => {
+      await page.keyboard.press("ArrowRight");
+      await page.waitForTimeout(180);
+      return await page.evaluate(() => !!document.querySelector(".readBody .pick"));
+    })(),
   );
 
   await page.keyboard.press("Escape");
@@ -713,7 +734,10 @@ const said = (page) => page.locator("#say").textContent();
   await page.keyboard.press("Escape");
   await page.waitForTimeout(240);
   ok("escape leaves the seam without sending", (await page.locator(".peel").count()) === 0);
-  ok("and says nothing crossed", (await said(page)).includes("Nothing crossed"));
+  /* Round 8: the master said "crossed" twelve times in visible text and
+     accessible names, a verb notes-copy.ts never uses. The promise is
+     the same; the words are the product's own. */
+  ok("and says nothing was sent", (await said(page)).includes("Nothing was sent"));
   await page.close();
 }
 
@@ -1379,9 +1403,14 @@ const said = (page) => page.locator("#say").textContent();
   await page.waitForTimeout(320);
   ok("T with nothing picked does not open the seam from nothing", (await page.locator(".hand .peel").count()) === 0);
   ok("it invites instead, in the card itself", (await page.locator(".hand .nudge").count()) === 1);
+  /* Round 8 inverted this. The invitation names the arrow keys inside
+     the note, so it stands the person inside the note rather than back
+     on the button they pressed — the ring lands on the thing the
+     sentence is about, and the keys it names work on the next press. */
   ok(
-    "and the press comes back to the control that was pressed",
-    await page.evaluate(() => document.activeElement && document.activeElement.dataset.act === "d-task"),
+    "and the press stands you inside the note the instruction is about",
+    await page.evaluate(() => document.activeElement && document.activeElement.classList.contains("handBody")),
+    await page.evaluate(() => (document.activeElement || {}).className || "none"),
   );
   const heard = await said(page);
   ok("pressing it invites rather than reprimands", !/^Highlight/.test(heard), heard);
@@ -1687,9 +1716,30 @@ const said = (page) => page.locator("#say").textContent();
   const lede = await page.locator(".headNext span").textContent();
   const chip = await page.locator(".chip").textContent();
   ok("the head does not print the chip's phrase beside the chip", !lede.includes("still to decide"), `${lede} | ${chip}`);
+  /* Round 6 asserted the scope was named where it is READ ALOUD. Round 8
+     found the inversion that left behind: the name was right and the
+     screen was ambiguous, so the pill read as the subject's count and
+     the group below it said a different number. The visible text and
+     the name now state the same scope in the same words. */
   ok(
-    "and the chip names its own scope where it is read aloud",
-    (await page.locator(".chip").getAttribute("aria-label")).includes("across the whole notebook"),
+    "the chip names its own scope on screen, not only in its name",
+    (await page.locator(".chip").textContent()).includes("in the notebook"),
+    await page.locator(".chip").textContent(),
+  );
+  ok(
+    "and the name says it in the same words the screen does",
+    (await page.locator(".chip").getAttribute("aria-label")).includes("in the notebook"),
+    await page.locator(".chip").getAttribute("aria-label"),
+  );
+  ok(
+    "and no index group rule reproduces the head's label, date and count together",
+    await page.evaluate(() => {
+      const name = document.querySelector(".headName");
+      const label = name ? name.textContent.trim() : "";
+      return [...document.querySelectorAll(".idxDay")].every(
+        (d) => !(d.textContent.includes(label) && /still to decide/i.test(d.textContent)),
+      );
+    }),
   );
   await page.close();
 }
@@ -1897,6 +1947,25 @@ const said = (page) => page.locator("#say").textContent();
     [/\bKept\. \d+ notes/, "capture saves; the hand keeps"],
     [/Nobody else can read/i, "no privacy claim stronger than the product's own"],
     [/direction [ABC]|hybrid|specimen room|artboard/i, "no lab vocabulary in product chrome"],
+    /* Round 8. The persona is a venue manager, and three of her fourteen
+       notes were a software founder's product backlog — onboarding
+       teachers, launch pricing, a lecturer — with two of the four groups
+       in the resting frame existing to carry them. A whitelist of venue
+       words fails on Aoife, northlight and the Hendersons, so this is a
+       blocklist of the vendor lexicon instead. "lecturer" is deliberately not in it: the
+       course note stays, because a venue manager taking a cash-flow
+       course is her own life and not a vendor's backlog, and it is the
+       one note showing the notebook holds more than events. */
+    [
+      /\b(teacher onboarding|launch pricing|annual option|discount code|sign-?up|classroom)\b/i,
+      "no vendor vocabulary in the demo notebook",
+    ],
+    /* Round 8. "Crossed" is the founder's architecture word for the
+       sealed edge and belongs in the source comments. notes-copy.ts
+       never says it, and the master said it twelve times in visible
+       text and accessible names — one promise in three grammars across
+       three screens. */
+    [/\bcross(ed|es|ing)?\b/i, "the crossing verb never reaches a visible string"],
   ];
   for (const state of ["notebook", "capture", "review", "search", "seam", "readback", "voice", "pressure", "nothing", "not-yet"]) {
     const page = await open(`?state=${state}`);
@@ -1982,10 +2051,32 @@ const said = (page) => page.locator("#say").textContent();
       return first.textContent.trim().length > 3;
     }),
   );
+  /* Round 8. The lane assertion above only ever ran on the RESTING
+     ledger, so the one row a person is actually looking for — the row
+     she just made — was the only row never checked, and it carried a
+     project name into a column of Tasks lanes. Re-run after the send,
+     and assert no tag is a workspace, so the two kinds of fact can
+     never swap places again. */
+  {
+    const after = await page.locator(".indexWrap .idxTag").allTextContents();
+    ok(
+      "every row STILL carries a lane after the send, the new one included",
+      after.every((t) => ["To do", "In progress", "Waiting"].includes(t.trim())),
+      after.join(" · "),
+    );
+    ok(
+      "and no row's lane slot holds a project name",
+      await page.evaluate(() => {
+        const shops = new Set((window.N ? window.N.notes : []).map((n) => n.workspace).filter(Boolean));
+        return [...document.querySelectorAll(".indexWrap .idxTag")].every((t) => !shops.has(t.textContent.trim()));
+      }),
+      after.join(" · "),
+    );
+  }
   await page.keyboard.press("Control+z");
   await page.waitForTimeout(360);
   ok("taking it back removes the row again", (await page.locator(".idxRow").count()) === rowsBefore);
-  ok("and says where you now are, not what was reversed", /Nothing crossed into Tasks/.test(await said(page)), await said(page));
+  ok("and says where you now are, not what was reversed", /Nothing went to Tasks/.test(await said(page)), await said(page));
   await page.close();
 }
 
@@ -2117,13 +2208,71 @@ const said = (page) => page.locator("#say").textContent();
   await page.close();
 }
 
+/* ── round 8: the commit row holds only things you can press ────── */
+{
+  const page = await open("?state=readback");
+  ok(
+    "the row where the commit and the destroy live holds no prose",
+    await page.evaluate(() =>
+      [...document.querySelectorAll(".topFoot")].every((f) =>
+        [...f.children].every((c) => c.tagName === "BUTTON" || c.classList.contains("spacer")),
+      ),
+    ),
+    await page.evaluate(() =>
+      [...document.querySelectorAll(".topFoot")]
+        .flatMap((f) => [...f.children])
+        .filter((c) => c.tagName !== "BUTTON" && !c.classList.contains("spacer"))
+        .map((c) => c.tagName + "." + c.className)
+        .join(" · "),
+    ),
+  );
+  ok(
+    "and the hint sits on the fields it describes",
+    (await page.locator(".saidHint").count()) === 1,
+  );
+  ok(
+    "the hint and the primary agree on how many pieces there are",
+    await page.evaluate(() => {
+      const hint = document.querySelector(".saidHint").textContent;
+      const primary = document.querySelector('[data-act="keep-both"]').textContent;
+      const n = document.querySelectorAll(".pieceField").length;
+      const tail = n === 1 ? "it" : n === 2 ? "both" : "them";
+      return hint.includes("keep " + tail) && primary.includes("Keep " + tail);
+    }),
+  );
+  ok(
+    "and Add another actually adds another",
+    await (async () => {
+      const before = await page.locator(".pieceField").count();
+      await page.locator('[data-act="add-piece"]').click();
+      await page.waitForTimeout(300);
+      return (await page.locator(".pieceField").count()) === before + 1;
+    })(),
+  );
+  await page.close();
+}
+
 /* ── round 7: nothing in the product is unreversible except delete ── */
 {
   const page = await open("?state=readback");
   await page.locator('[data-act="discard-speech"]').click();
   await page.waitForTimeout(340);
   ok("discarding what you said can be taken back", (await page.locator(".undo").count()) === 1);
-  ok("and says so out loud", /Undo for 30 seconds/.test(await said(page)), await said(page));
+  /* Round 8: one guarantee, one carrier. The window was stated three
+     ways — "for 30s" in the strip, "thirty seconds" on the delete card,
+     "Undo for 30 seconds" in this announcement. The strip owns it and
+     counts it down; the announcement states what happened. */
+  ok("and says what happened, without a second grammar for the window", /Discarded\. Nothing was kept\./.test(await said(page)), await said(page));
+  ok("the strip carries the window", /for \d+s/.test(await page.locator(".undoFor").textContent()), await page.locator(".undoFor").textContent());
+  ok(
+    "and the window actually moves",
+    await (async () => {
+      const first = await page.locator(".undoFor").textContent();
+      await page.waitForTimeout(2100);
+      const second = await page.locator(".undoFor").textContent();
+      return first !== second;
+    })(),
+  );
   await page.keyboard.press("Control+z");
   await page.waitForTimeout(340);
   ok("and the pieces come back", (await page.locator(".pieceField").count()) === 2);

@@ -88,6 +88,11 @@ chk.mjs
 .seat-tmp/
 _seat/
 drive_tmp.mjs
+# round 8: a seat left m-probe.mjs and a fix script left _fixre.py, neither
+# of which any existing pattern caught.
+*-probe.mjs
+_*.py
+_*.cjs
 peelcheck*.mjs
 _rf_*.png
 _rf_*.mjs

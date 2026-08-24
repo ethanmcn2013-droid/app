@@ -87,7 +87,7 @@ const ALLOWED_LEADING = declaredSteps("lh-");
 const ALLOWED_TRACKING = declaredSteps("tr-");
 
 const AUDIT = `(() => {
-  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], sizes: [], leading: [], counts: {} };
+  const out = { colors: [], weights: [], families: [], contrast: [], targets: [], radii: [], motion: [], sizes: [], leading: [], measure: [], counts: {} };
   const LADDER = ${JSON.stringify(ALLOWED_LEADING)};
   const CURVE = ${JSON.stringify(ALLOWED_TRACKING)};
 
@@ -161,7 +161,14 @@ const AUDIT = `(() => {
     const cs = getComputedStyle(el);
     const r0 = el.getBoundingClientRect();
     const rect = { x: r0.x, y: r0.y, width: r0.width, height: r0.height, right: r0.right, bottom: r0.bottom };
-    const visible = rect.width > 0 && rect.height > 0 && cs.visibility !== "hidden" && cs.display !== "none";
+    /* A screen-reader live region is 1px, clipped to nothing and never
+       painted, so grading its contrast, its type size or its leading
+       measures something that does not exist. It became reachable in
+       round 8 only because the dictation floor now announces itself on
+       a direct load, which is the fix, not a violation. */
+    const announced = el.closest(".sr") !== null || el.classList.contains("sr");
+    const visible =
+      !announced && rect.width > 0 && rect.height > 0 && cs.visibility !== "hidden" && cs.display !== "none";
 
     /* 1. palette lock */
     for (const prop of colorProps) {
@@ -225,6 +232,39 @@ const AUDIT = `(() => {
           });
         }
       }
+      /* 10. the measure.
+         The file had a leading rule and no measure rule at all, so the
+         one measure declared in ch — 62ch on the legally required voice
+         disclosure — sailed through at about ninety characters a line,
+         the smallest type in the room set as the longest line in it.
+         32em is the ceiling the file's own comment argues for (Geist's
+         average glyph is about 0.45em, so 31em lands near 68
+         characters). Prose only: an element with a real sentence in it
+         and no element child carrying that sentence instead. */
+      const words = (el.textContent || "").trim();
+      const ownText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 40);
+      if (visible && ownText && words.length > 40 && /s/.test(words)) {
+        const emSize = parseFloat(cs.fontSize);
+        const ems = emSize > 0 ? rect.width / emSize : 0;
+        /* A measure governs how far the eye travels before it has to
+           find the next line. An index row is one clamped line with no
+           next line to find, so its width is a column width, not a
+           measure, and holding it to 32em would be holding a list to a
+           rule written for paragraphs. Only prose that actually wraps
+           is judged. */
+        const lh = parseFloat(cs.lineHeight) || emSize * 1.4;
+        const wraps = lh > 0 && rect.height > lh * 1.5;
+        if (wraps && ems > 32.5) {
+          out.measure.push({
+            el: describe(el),
+            ems: Math.round(ems * 10) / 10,
+            px: Math.round(rect.width),
+            size: Math.round(emSize * 10) / 10,
+            text: words.slice(0, 28),
+          });
+        }
+      }
+
       const track = parseFloat(cs.letterSpacing);
       const em = parseFloat(cs.fontSize);
       if (Number.isFinite(track) && em > 0 && !CURVE.some((step) => Math.abs(track - step * em) < 0.08)) {
@@ -271,8 +311,16 @@ const AUDIT = `(() => {
       }
       rect.width += grow * 2;
       rect.height += grow * 2;
-      const min = Math.min(rect.width, rect.height);
-      if (min < 28) out.targets.push({ el: describe(el), w: Math.round(rect.width), h: Math.round(rect.height), label: (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 28) });
+      /* The coarse pass gates HEIGHT, which is what the coarse block
+         actually guarantees. Width on the merged dock is a stated
+         trade, not an oversight: the rail tiles sit at a 0px gap, so a
+         symmetric 44-wide union on butted siblings would overlap and a
+         tap on the edge of Notes would land on Tasks. Capture is the
+         three-second promise and outranks a navigation tile, so the
+         field is never squeezed to buy the width either. Widths are
+         printed for the record; heights are the gate. */
+      const min = window.__TARGET_AXIS === "height" ? rect.height : Math.min(rect.width, rect.height);
+      if (min < (window.__TARGET_FLOOR || 28)) out.targets.push({ el: describe(el), w: Math.round(rect.width), h: Math.round(rect.height), label: (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 28) });
     }
 
     /* 6. radii */
@@ -319,6 +367,7 @@ const AUDIT = `(() => {
   out.radii = dedupe(out.radii, (i) => i.el + i.px);
   out.motion = dedupe(out.motion, (i) => i.kind + (i.duration ?? i.easing));
   out.targets = dedupe(out.targets, (i) => i.el + i.w + "x" + i.h);
+  out.measure = dedupe(out.measure, (i) => i.el + i.ems);
   out.contrast = dedupe(out.contrast, (i) => i.el + i.ratio);
   out.sizes = dedupe(out.sizes, (i) => i.el + i.size);
   out.leading = dedupe(out.leading, (i) => i.el);
@@ -339,9 +388,42 @@ async function run() {
     report.states[state] = await page.evaluate(AUDIT);
   }
 
+  /* THE COARSE PASS.
+     The @media (pointer: coarse) block was dead code in both gates: this
+     audit measured at 1440 with a mouse, and the behaviour check opened
+     390 without hasTouch, so nothing ever evaluated the branch that
+     governs the one surface the locked architecture singles out — the
+     phone, where the capsule and the dock merge. A finger needs 44px,
+     so the coarse pass asserts against 44 rather than 28, on the union
+     including pseudo-element expanders, at the three phone widths. */
+  const coarse = { floor: 44, widths: [360, 390, 430], states: {} };
+  const touch = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 1,
+    hasTouch: true,
+    isMobile: true,
+  });
+  const tp = await touch.newPage();
+  for (const cw of coarse.widths) {
+    await tp.setViewportSize({ width: cw, height: 844 });
+    for (const state of STATES) {
+      const url = `${pathToFileURL(path.join(LAB, "notebook.html")).href}?v=${VARIANT}&state=${state}`;
+      await tp.goto(url, { waitUntil: "load" });
+      await tp.waitForTimeout(360);
+      await tp.evaluate(() => {
+        window.__TARGET_FLOOR = 44;
+        window.__TARGET_AXIS = "height";
+      });
+      const r = await tp.evaluate(AUDIT);
+      if (r.targets.length) coarse.states[`${cw}/${state}`] = r.targets;
+    }
+  }
+  await touch.close();
+  report.coarse = coarse;
+
   await browser.close();
 
-  const totals = { colors: 0, weights: 0, families: 0, contrast: 0, targets: 0, radii: 0, motion: 0, sizes: 0, leading: 0 };
+  const totals = { colors: 0, weights: 0, families: 0, contrast: 0, targets: 0, radii: 0, motion: 0, sizes: 0, leading: 0, measure: 0 };
   for (const state of Object.keys(report.states)) {
     for (const key of Object.keys(totals)) totals[key] += report.states[state][key].length;
   }
@@ -366,13 +448,25 @@ async function run() {
       line("motion", r.motion, (i) => (i.kind === "duration" ? `${i.el} ${i.duration}s` : `${i.el} ${i.easing}`));
       line("type ramp", r.sizes, (i) => `${i.el} ${i.size}px  "${i.text}"`);
       line("leading", r.leading, (i) => `${i.el} ${i.why}  "${i.text}"`);
+      line("measure", r.measure, (i) => `${i.el} ${i.ems}em at ${i.size}px (${i.px}px)  "${i.text}"`);
     }
     process.stdout.write(`\nTOTALS  ${JSON.stringify(totals)}\n`);
+    const misses = Object.entries(report.coarse.states);
+    const under = misses.reduce((n, [, v]) => n + v.length, 0);
+    process.stdout.write(
+      `COARSE  44px height floor, real touch pointer, ${report.coarse.widths.join("/")}px × ${STATES.length} states · ${under} under the floor
+`,
+    );
+    for (const [where, items] of misses) {
+      for (const i of items) process.stdout.write(`  ${where}  ${i.el} ${i.w}×${i.h}  "${i.label}"
+`);
+    }
   }
 
+  const coarseMisses = Object.values(report.coarse.states).reduce((n, v) => n + v.length, 0);
   const hard =
     totals.colors + totals.weights + totals.families + totals.contrast + totals.radii + totals.motion +
-    totals.sizes + totals.leading;
+    totals.sizes + totals.leading + totals.measure + coarseMisses;
   process.exit(hard > 0 ? 1 : 0);
 }
 

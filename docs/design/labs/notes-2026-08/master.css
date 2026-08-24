@@ -343,6 +343,13 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 }
 .top[data-two] > .deskWrite { grid-column: 1; grid-row: 1; min-width: 0; }
 .top[data-two] > .deskAside { grid-column: 2; grid-row: 1; }
+/* The foot was auto-placed into column one, so the read-mode action row
+   ran out of a 496px track and wrapped "Put it back Esc" onto its own
+   line at 1280, 1440 and 1600 alike. The foot belongs to the paper, not
+   to the writing column. Spanning it also gives the desk back the
+   height the wrap was costing, which is where the index's extra rows
+   come from. */
+.top[data-two] > .topFoot { grid-column: 1 / -1; }
 .deskAside {
   align-self: start; padding-left: 30px; box-shadow: inset 1px 0 0 var(--line-soft);
   display: grid; align-content: start; gap: 13px;
@@ -485,13 +492,50 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .readLong { max-width: var(--measure); }
 /* The desk is capped to its content and content has no ceiling, so one
    nine-hundred-word note squeezed the index — the second of the two
-   locked planes — to two rows. The paper scrolls inside itself instead. */
-.readBody { max-height: 46vh; overflow: auto; }
-/* Two hundred words on one desk took 655 of 960 pixels and left the index
-   152 — a plane the whole direction rests on, reduced to three rows,
-   by one long note. The paper scrolls inside itself; the plane below it
-   keeps its share. */
-.readLong { max-height: 31vh; }
+   locked planes — to two rows. The paper scrolls inside itself instead.
+
+   The cap used to be a flat 46vh, with a SECOND flat cap of 31vh for
+   any note over 150 words, so a long note was given a smaller window
+   than a short one and the pressure room — the room built to prove long
+   notes survive — was the room where four lines of a debrief were cut
+   away above three lines of blank paper. One window now, and it is not
+   a fraction of the viewport but the room the desk actually has: the
+   height the sheet's own chrome takes, plus the floor the index is
+   owed, subtracted from the screen. A short screen therefore clips
+   sooner rather than eating the plane below, and what clips says so. */
+.readBody {
+  /* measured, not guessed: 311px is the sheet, head, foot and dock the
+     desk carries around the writing at read (measured at 1280, its
+     widest); 224px is five index rows
+     and their heading, the floor the second plane is owed. */
+  --desk-chrome: 311px;
+  --index-floor: 224px;
+  max-height: max(200px, calc(100vh - var(--desk-chrome) - var(--index-floor)));
+  overflow: auto;
+}
+/* This clamp was once 31vh, against 46vh for every shorter note, so a
+   150-word note got a SMALLER window than a 149-word one and the panel
+   read four lines of a debrief cut away above three lines of blank
+   paper. One window for every note the desk lifts: the length of a note
+   may decide whether it scrolls, never how much of it you are given.
+   The plane below keeps its share because the foot now spans the paper
+   and the pick band no longer reserves itself before there is a pick. */
+/* .readLong now carries no height of its own. The length of a note
+   decides whether it scrolls, never how much of it you are given. */
+/* A fade is a measurement, not a decoration. notebook.js sets
+   data-clipped only when the body genuinely overflows, and clears it at
+   the end of the scroll, so this gradient never claims there is more to
+   read when there is not. */
+.readBody[data-clipped], .handBody[data-clipped] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+/* And the fade gets words, because a gradient is not a fact. */
+.clipLine {
+  margin: 6px 0 0; font-size: var(--t-12); line-height: var(--lh-note);
+  letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400;
+}
+.clipLine[hidden] { display: none; }
 .readBody::-webkit-scrollbar { width: 8px; }
 
 /* ── the index ─────────────────────────────────────────────────── */
@@ -527,8 +571,16 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    it were byte-identical type — 15px, 600, full ink, both — so the surface
    a venue owner spends her whole session in had no rank at all, only
    indentation and a hairline. The heading takes the step above. */
+/* The lower plane got a ground of its own last round, and the one
+   element that stays on screen while that plane scrolls kept painting
+   white on it: a band inset ten pixels from the rows with hard edges,
+   reading as a white card floating on grey with grey slivers at both
+   ends. Two stacked layers of the plane's own token over white
+   composite to exactly the value the plane renders, so the band
+   disappears and no fourth colour is introduced. */
 .idxDay {
-  position: sticky; top: 0; z-index: 2; background: var(--white);
+  position: sticky; top: 0; z-index: 2;
+  background: linear-gradient(var(--ground), var(--ground)), var(--white);
   margin: 0; padding: 20px 0 7px; font-size: var(--t-17); font-weight: 600;
   letter-spacing: var(--tr-18); text-transform: none; color: var(--ink-1);
   display: flex; align-items: baseline; gap: 10px; line-height: var(--lh-base);
@@ -544,7 +596,8 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
    applied to the y. A row now dissolves into the rule instead. */
 .idxDay::before {
   content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 15px;
-  background: linear-gradient(to bottom, var(--white), rgba(255, 255, 255, 0));
+  background: linear-gradient(to bottom, var(--ground), rgba(17, 17, 17, 0)),
+              linear-gradient(to bottom, var(--white), rgba(255, 255, 255, 0));
   pointer-events: none;
 }
 /* Each group is its own sticky context, so a rule is pushed out by the
@@ -699,6 +752,8 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   background: var(--white); color: var(--ink); font-size: var(--t-13); font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; flex: none; line-height: var(--lh-base); }
 .undoAct svg { width: 13px; height: 13px; }
 .undoAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; opacity: 0.55; }
+/* The chord that reaches the index, printed where the index is named. */
+.headKbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 8px; color: var(--ink-3); }
 .undoFor { font-size: var(--t-11); line-height: var(--lh-base); color: var(--on-ink-2); letter-spacing: var(--tr-11); flex: none; }
 .confirm { display: inline-flex; align-items: center; gap: 9px; font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-14); }
 .confirm svg { width: 15px; height: 15px; color: var(--ink-2); }
@@ -757,7 +812,13 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* The one thing on this screen that must be readable is the sentence
    saying the words are leaving the device. At --on-ink-3 it measured
    4.1:1 and failed AA, which for a disclosure is not a nicety. */
-.darkNote { max-width: 62ch; text-wrap: pretty; margin: 0; font-size: var(--t-12); line-height: var(--lh-read); color: var(--on-ink-2); letter-spacing: var(--tr-12); }
+/* 62ch was the one measure in the file declared in ch, and it resolved
+   to about ninety characters — the legally required disclosure set as
+   the smallest type in the room AND the longest line in it, which is
+   how you set something to be skipped. The tint is deliberate and stays
+   (raised once already from a value that failed AA); the line length
+   was what made it unread. */
+.darkNote { max-width: var(--measure); text-wrap: pretty; margin: 0; font-size: var(--t-12); line-height: var(--lh-read); color: var(--on-ink-2); letter-spacing: var(--tr-12); }
 .darkFoot .spacer { flex: 1; }
 .darkAct {
   display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border-radius: var(--r-pill);
@@ -765,6 +826,10 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   color: var(--on-ink-2); box-shadow: inset 0 0 0 1px var(--chrome-line);
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); line-height: var(--lh-base); }
 .darkAct svg { width: 17px; height: 17px; }
+/* The floor advertises its two keys now, so its keycaps need the same
+   rule every other keycap in the product has, or they arrive in the
+   browser's monospace and break the type lock. */
+.darkAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; margin-left: 7px; }
 .darkAct:hover { color: var(--on-ink-1); background: var(--chrome); }
 .darkAct[data-primary] { background: var(--white); color: var(--ink); box-shadow: none; font-weight: 600; }
 .darkAct[data-primary]:hover { background: #f2f2f2; }
@@ -776,6 +841,13 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    it, so somebody who had just spoken read their own sentences twice at
    the exact moment the product is asking to be trusted. */
 .saidHead { margin: 0 0 2px; max-width: var(--measure); color: var(--ink-2); text-wrap: pretty; }
+/* The hint sits on the fields it describes, at the heading's own left
+   edge, rather than in the row where the commit and the destroy live.
+   Its own class, because .topMeta is a row token. */
+.saidHint {
+  margin: 0; max-width: var(--measure); font-size: var(--t-12); line-height: var(--lh-note);
+  letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400;
+}
 .pieces { display: grid; gap: 9px; margin-top: 14px; }
 .piece {
   position: relative; max-width: calc(var(--measure) + 4em); padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
@@ -823,6 +895,15 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   position: relative; background: var(--white); border-radius: var(--r-paper);
   box-shadow: var(--ring), var(--paper-lift); padding: 24px 26px 18px;
   width: min(100%, calc(var(--measure) + 276px + 34px + 48px));
+  /* Fixed at 272px, the card could not hold its own contents: pressing
+     T — the key the card itself advertises — inserted the pick hint and
+     pushed the action row clean off the paper onto the grey, where it
+     painted over "Nothing is decided until you say so, and every
+     decision can be put back". The product's reassurance line, covered
+     by its own buttons, in the queue whose whole job is reassurance.
+     The 272px stays as a FLOOR, which is what stopped the second plane
+     bobbing from card to card; only a card that has grown a hint grows,
+     and it grows downward into a band that is already reserved. */
   height: 272px; display: flex; flex-direction: column;
   transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
 }
@@ -830,7 +911,16 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    the body's flex share down to a single line, so on a short note the
    words being decided about were the smallest thing on the card. */
 .handTop .handBody { flex: 1; overflow: auto; min-height: calc(var(--lh-read) * 3em); }
-.handCard { height: 272px; width: min(100%, calc(var(--measure) + 276px + 34px + 48px)); }
+/* ONLY the card that has grown a hint grows. Making the height
+   automatic for every card let the plane bob between cards — measured
+   459, then 501 — which is the exact thing the fixed height was bought
+   to stop. The resting queue is still one still frame; a refused card
+   grows by the hint's own height and the cards behind track it, so the
+   foot stays on the paper instead of landing on the grey over the line
+   that promises every decision can be put back. */
+.handTop:has(.nudge), .handTop:has(.handConfirm) { height: auto; min-height: 272px; }
+.handCard { height: 100%; width: min(100%, calc(var(--measure) + 276px + 34px + 48px)); }
+.handStack { min-height: 272px; }
 .handTop[data-settling] { transform: translateY(-14px) scale(0.985); opacity: 0; }
 .handQ { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .handTitle { margin: 0; font-size: var(--t-20); font-weight: 600; letter-spacing: var(--tr-21); line-height: var(--lh-tight); }
@@ -892,7 +982,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    controls. */
 /* The slot is always there, so raising the control costs no layout and
    the page cannot move under the hand holding a selection. */
+/* The band was reserved at all times so the foot would not jump when a
+   pick landed. At rest that put 54px of blank paper directly under the
+   cut of a clipped note, and the composition then asserted that the
+   note ended mid-sentence with room to spare. It reserves itself when
+   it has something to hold, and the foot's jump is bought back by the
+   foot spanning the paper instead of half of it. */
 .pickSlot { min-height: 54px; margin-top: 10px; }
+/* :empty does not match: the template leaves whitespace between the two
+   conditional children. :has() asks the question that is actually being
+   asked — does this band hold a pick bar or a nudge. */
+.pickSlot:not(:has(*)) { min-height: 0; margin-top: 0; }
 /* It states what is picked and what will happen to it. It used to carry
    its own filled primary beside the note's filled primary, two ink
    buttons live at the same instant with nothing saying which honoured
@@ -1019,7 +1119,9 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .spec .emptyTitle { font-size: var(--t-17); letter-spacing: var(--tr-21); }
 .spec .emptyBody { font-size: var(--t-15); margin-top: 8px; }
 .spec .emptyMove { margin-top: 14px; }
-.specWhy { margin: 13px 0 0; font-size: var(--t-12); line-height: var(--lh-note); color: var(--ink-3); letter-spacing: var(--tr-12); text-wrap: pretty; }
+/* A caption ran a longer line at 12px than the 15px body directly above
+   it, in all four cards, because it carried no measure at all. */
+.specWhy { max-width: var(--measure); margin: 13px 0 0; font-size: var(--t-12); line-height: var(--lh-note); color: var(--ink-3); letter-spacing: var(--tr-12); text-wrap: pretty; }
 
 /* ── not yet ───────────────────────────────────────────────────── */
 .states { display: grid; gap: 11px; padding: 4px 0 8px; }
@@ -1041,7 +1143,10 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .sk { height: 11px; border-radius: 2px; background: var(--wash); }
 .sk + .sk { margin-top: 9px; }
 .skelRow { padding: 12px 0; border-top: 1px solid var(--line-soft); }
-.skelSay { text-align: center; padding: 20px 0 0; margin: 0; font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); line-height: var(--lh-base); }
+/* Found by the measure rule the moment it existed: the sentence that
+   tells you what is loading ran the full 1000px of the sheet, 77em at
+   13px, which is more than twice the ceiling the file argues for. */
+.skelSay { max-width: var(--measure); text-align: center; padding: 20px 0 0; margin: 0 auto; font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); line-height: var(--lh-base); }
 
 /* ═══════════════════════════════════════════════════════════════════
    THE DECISION LAYER
@@ -1328,7 +1433,39 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   .chip { padding: 0 14px; }
   .idxRow { padding-top: 12px; padding-bottom: 12px; }
   [data-index="tight"] .idxRow { padding-top: 10px; padding-bottom: 10px; }
-  .dockField kbd, .topMeta kbd, .act kbd, .undoAct kbd { display: none; }
+  .dockField kbd, .topMeta kbd, .act kbd, .undoAct kbd, .darkAct kbd, .headKbd { display: none; }
+
+  /* This block set a height on seven selectors and never touched the
+     merged dock's own contents, which is the one surface the locked
+     architecture singles out for the phone. Measured at 390 with a real
+     touch pointer: the suite navigation was 36x36, the avatar 30x30,
+     the product's single reversibility control 76x30, and the filing
+     button inside the phone read sheet 34 tall. Neither gate could see
+     it — the audit measures at 1440 with a mouse and the behaviour
+     check opens 390 without hasTouch — so the whole branch was dead
+     code in both. It is measured now; see the coarse pass in
+     notes-audit.mjs. */
+  .dock .railTile, .dockAvatar, .groupBtn, .undoAct, .readSrc .filingBtn { min-height: 44px; }
+  /* Where the drawn box has to stay small, the target grows underneath
+     it rather than redrawing it — the technique .chip and the search
+     bar's Esc already use. Vertical only: the rail tiles sit at a 0px
+     gap and the glyphs at 2px, so a symmetric 44-wide union on butted
+     siblings would overlap, and a tap on the edge of Notes landing on
+     Tasks is worse than a 36px target. */
+  .dock .railTile, .dockAvatar { position: relative; }
+  .dock .railTile::before, .dockAvatar::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 44px; margin-top: -22px;
+  }
+  /* Width is bought in real layout instead, by letting the dock's own
+     padding give it up. Capture is the three-second promise and outranks
+     a navigation tile, so the field is never squeezed for this. */
+  .dock[data-suite] .railTile, .dock .dockRow[data-suite] .railTile { min-width: 44px; }
+  /* Found by the coarse pass the moment it existed: on a phone the
+     search field itself was 31px tall and its Esc 42px — the field a
+     person types their query into, below the floor, in the one state
+     where the keyboard is already up. */
+  .searchBar input, .searchBar .esc { min-height: 44px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

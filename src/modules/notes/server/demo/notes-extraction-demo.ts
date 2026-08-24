@@ -21,9 +21,9 @@ import {
  * the only caller, and production never reaches this file.
  */
 
-/** The whiteboard the demo notebook's owner photographed at the teacher onboarding. */
+/** The whiteboard the demo notebook's owner photographed with the Saturday team. */
 const DEMO_PHOTO_NOTES = [
-  "Teacher onboarding, three things they kept asking for: one place to see the term, a way to hand a job to someone without chasing it, and something that works on a phone at the back of a classroom.",
+  "Saturday team, three things they kept asking for: one place to see who is on which room, a way to hand a job over without chasing it, and something that works on a phone out at the marquee.",
   "Sinead offered to run the second session if we give her the slides a week ahead.",
   "Room 4 has no plug near the board. Bring the long lead or move to Room 2.",
 ];

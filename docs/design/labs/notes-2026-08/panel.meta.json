@@ -16,13 +16,13 @@
       "file": "notes-audit.mjs",
       "score": "0",
       "unit": "violations",
-      "what": "Palette lock, type weights, type families, WCAG AA contrast against the real composited backdrop, hit targets including pseudo-element expanders, the radii ladder, motion tokens, the eight-step type ramp and a declared leading on every text-bearing element \u2014 across ten states and four rooms."
+      "what": "Palette lock, type weights, type families, WCAG AA contrast against the real composited backdrop, hit targets including pseudo-element expanders, the radii ladder, motion tokens, the eight-step type ramp, a declared leading on every text-bearing element, and — new at round 8 — a measure ceiling on every wrapping paragraph and a 44px pass driven with a real touch pointer at three phone widths, which is the first time the coarse-pointer branch has been measured rather than assumed."
     },
     {
       "file": "notes-interaction-check.mjs",
-      "score": "276",
+      "score": "457",
       "unit": "assertions, 0 failing",
-      "what": "Capture and undo, place-keeping across every repaint, the index's single tab stop, the hand's keyboard model, search and its no-result state, the voice takeover and its disclosure, word-safe trims, the honesty states carrying no warning hue, and no sideways scroll at six widths."
+      "what": "Capture and undo, place-keeping across every repaint including the reading plane, the index's single tab stop and its four new landing keys, the chord out of the writing field, the hand's keyboard model and the keys it now owns while it holds the floor, search and its no-result state, the voice takeover, its commit chord and its disclosure, word-safe trims, the honesty states carrying no warning hue, one lexicon across ten states in body text and accessible names, and no sideways scroll at six widths."
     },
     {
       "file": "notes-verify-console.mjs",
