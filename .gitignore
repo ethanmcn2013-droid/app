@@ -106,3 +106,8 @@ _rf_*.mjs
 sc_*.mjs
 sc_*.png
 m_tmp.mjs
+
+# seat scratch, any depth
+**/_m9/
+**/_seat*/
+**/_probe*/
