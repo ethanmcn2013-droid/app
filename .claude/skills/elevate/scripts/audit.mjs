@@ -100,10 +100,49 @@ const AUDIT = `(() => {
       if (bg && bg.a > 0) { stack.push(bg); if (bg.a === 1) break; }
       node = node.parentElement;
     }
-    if (!stack.length) return { r: 255, g: 255, b: 255, a: 1 };
-    let base = stack[stack.length - 1];
-    for (let i = stack.length - 2; i >= 0; i--) base = over(stack[i], base);
-    return base;
+    /* The real composited backdrop is PAINT ORDER, not ancestry: anything
+       painted between the element and its ancestors' ground occludes them
+       (in SVG an ink card painted after the page ground sits under its own
+       labels but OVER that ground - an ancestor-only walk reads white and
+       reports a false 1:1 forever). Collect sibling paints TOP-DOWN from
+       just below the element until an OPAQUE layer closes the stack, then
+       compose the full bottom-up column: ancestor washes beneath all. */
+    const layers = []; /* bottom-up */
+    const bb = el.getBoundingClientRect();
+    if (bb.width > 0 && bb.height > 0) {
+      const anc = new Set();
+      for (let n2 = el; n2; n2 = n2.parentElement) anc.add(n2);
+      const cxp = bb.left + bb.width / 2, cyp = bb.top + bb.height / 2;
+      const hit = document.elementsFromPoint(cxp, cyp);
+      const at = hit.indexOf(el);
+      const below = at >= 0 ? hit.slice(at + 1) : hit.filter((n2) => !anc.has(n2));
+      for (let i = stack.length - 1; i >= 0; i--) layers.push(stack[i]);
+      const seen = [];
+      for (const n2 of below) {
+        if (anc.has(n2)) continue;
+        if (n2.contains(el) || el.contains(n2)) continue;
+        const cs2 = getComputedStyle(n2);
+        const tag = n2.tagName.toLowerCase();
+        let cand = null;
+        if (/^(path|circle|rect|line|polygon|polyline|ellipse)$/.test(tag)) {
+          if (cs2.fill && cs2.fill !== "none") cand = parse(cs2.fill);
+          if ((!cand || cand.a === 0) && cs2.stroke && cs2.stroke !== "none") cand = parse(cs2.stroke);
+        } else if (tag !== "g" && tag !== "defs" && tag !== "svg") {
+          cand = parse(cs2.backgroundColor);
+        }
+        if (!cand || cand.a <= 0) continue;
+        seen.push(cand);
+        if (cand.a >= 1) break;
+      }
+      for (let i = seen.length - 1; i >= 0; i--) layers.push(seen[i]);
+    } else {
+      for (let i = stack.length - 1; i >= 0; i--) layers.push(stack[i]);
+    }
+    let acc = { r: 255, g: 255, b: 255, a: 0 };
+    for (const layer of layers) acc = over(layer, acc);
+    if (acc.a === 0) return { r: 255, g: 255, b: 255, a: 1 };
+    if (acc.a < 1) acc = over(acc, { r: 255, g: 255, b: 255, a: 1 });
+    return acc;
   };
 
   const describe = (el) => {
@@ -216,14 +255,14 @@ const AUDIT = `(() => {
       if (RAMP.length && !RAMP.some((step) => Math.abs(size - step) < 0.35)) {
         out.ramp.push({ el: describe(el), size, text: el.textContent.trim().slice(0, 32) });
       }
-      if (cs.lineHeight === "normal") {
+      if (!el.ownerSVGElement && cs.lineHeight === "normal") {
         out.leading.push({ el: describe(el), text: el.textContent.trim().slice(0, 32) });
       }
       /* And a declared leading still has to be ON the declared ladder.
          Comparing each family and size only with itself let a seventh
          undeclared value ship clean, and it could never see the same
          object carrying two baselines on two different states. */
-      else if (LEAD.length && size > 0) {
+      else if (!el.ownerSVGElement && LEAD.length && size > 0) {
         /* On the ladder is not the same as bound to the role. One
            setting - 11px mono uppercase at the label track - rendered at
            three different leadings across four hundred instances, and
@@ -410,10 +449,6 @@ for (const state of STATES) {
 await browser.close();
 
 const KEYS = ["colors", "weights", "families", "contrast", "targets", "radii", "motion", "ramp", "leading", "leadingLadder", "leadingRole", "tracking", "trackingLadder"];
-const totals = Object.fromEntries(KEYS.map((k) => [k, 0]));
-for (const state of Object.keys(report.states)) {
-  for (const key of KEYS) totals[key] += report.states[state][key].length;
-}
 /* Merge the type pairs across every state before grading them. */
 const merge = (field) => {
   const map = new Map();
@@ -443,6 +478,15 @@ const firstState = Object.keys(report.states)[0];
 report.states[firstState].leadingRole = acrossStates.leadingRole;
 report.states[firstState].tracking = acrossStates.tracking;
 
+/* Totals are computed AFTER the cross-state merge: leadingRole and
+   tracking are properties of the whole matrix, and summing before the
+   merge let real drift display on screen while never reaching TOTALS
+   or the exit code - letterfit drift could not fail a build. */
+const totals = Object.fromEntries(KEYS.map((k) => [k, 0]));
+for (const state of Object.keys(report.states)) {
+  for (const key of KEYS) totals[key] += report.states[state][key].length;
+}
+
 /* 14 + 15 · the ladders enforced at the SOURCE. A declared ladder that
    is bypassed by a literal is a comment: type size was seventy-one
    literals and vertical space forty-nine off-ladder values, both under
@@ -460,12 +504,24 @@ report.source = { size: [], space: [] };
   const files = declared
     ? declared.split(",").map((f) => f.trim().replace(/["']/g, "")).filter(Boolean)
     : (await readdir(lab)).filter((f) => f.endsWith(".css"));
+  /* A single-file lab keeps its stylesheet inline in the master; the
+     source ladders must still look at it or they pass vacuously - a
+     literal typed into the master would never be seen. */
+  if (!files.length && config.master) files.push(config.master);
   for (const file of files) {
     const text = await readFile(path.join(lab, file), "utf8");
     text.split("\n").forEach((line, i) => {
       const bare = line.split("/*")[0];
       if (/font-size:\s*[0-9]/.test(bare)) {
-        report.source.size.push({ file, line: i + 1, text: bare.trim().slice(0, 70) });
+        /* A source literal is drift only when it is OFF the declared ramp:
+           single-file labs declare their system in the master's own
+           stylesheet, and those declarations ARE the ladder. */
+        const mpx = bare.match(/font-size:\s*([0-9.]+)px/);
+        const onRamp = !mpx || (TYPE_RAMP.length > 0
+          && TYPE_RAMP.some((step) => Math.abs(parseFloat(mpx[1]) - step) < 0.35));
+        if (!onRamp) {
+          report.source.size.push({ file, line: i + 1, text: bare.trim().slice(0, 70) });
+        }
       }
       /* Four pixels and under is an optical inset, not a step on a
          ladder, and a line may say so for itself with an annotation. */
