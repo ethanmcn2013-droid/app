@@ -394,6 +394,61 @@
           "done": "The tense follows the clock through the accessor already in the file. The headline is the word publish already used, equally true of a revoked and an expired link but naming a state rather than a fault. The third line is one sentence, because the clause that walked it back existed only for an alarm no longer raised. Three gate assertions encoded the old copy and moved with it, plus a new one that fails if the tense and the clock ever disagree - the assertion that would have caught this."
         }
       ]
+    },
+    {
+      "round": 8,
+      "scores": {
+        "UI composition": 8.7,
+        "Typography": 8.8,
+        "Interaction and states": 8.2,
+        "UX and information design": 8.5,
+        "Brand and copy": 8.8,
+        "Product taste and emotional resonance": 8.6,
+        "Measured evidence": 8.7
+      },
+      "findings": 35,
+      "confirmed": 12,
+      "refuted": 23,
+      "fixed": 12,
+      "headline": "The floor rose 7.6 to 8.2 and two thirds of the round died under refutation - 23 of 35, the highest rate of the engagement, with the largest surviving finding costing 0.6 against round 7's 1.1 spread. The panel is running out of new ground, and most of what it did find was the wake of round 7's own fixes. Moving the two-column boundary to 1024 left the desk GEOMETRY still starting at 701, and capping the docked sheet's contents to a measure left them flush against a full-bleed plate - both raised, both judged, both refuted on measurement. What survived was harder. Putting two moments on one day made the earlier row's Edit control stop answering the pointer entirely at every width: the row box is pinned to its true pixel while its words are pushed clear, so a crowded row's empty upper band lay across its neighbour and, being later in the DOM, swallowed the press. Round 6's forced-colours map - recorded as done, and the headline fix of that round - was INERT: build.mjs concatenates shell.css before b.css, so every rule in it lost at equal specificity and a forced palette still erased the design rather than degrading it. A plan created two seconds ago announced 'Live since 15 July', offered to fetch a link and carried a stamp predating its own existence, because the publication record is fixture-wide and nothing had ever rendered the draft half of that branch. The reversibility bar, fixed to the bottom edge below 1024, reserved its band only while the editor was open - so after a delete it sat over the footer with no scroll left to free it. And the second screen a new owner ever sees stated a countdown, a ceremonial date and no today at all. The owner's desk surface is now two panes in a fixed frame rather than a page that scrolls: the moment being moved stays in front of the owner through six presses and the stepper under their hand never moves - which is what a prior round refused to buy with a window scroll, correctly. The gate went 597 to 605 assertions and learned to open a forced palette in two rooms, to press every Edit control on a stacked day, and to drive whichever thing actually scrolls.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 0.6,
+          "problem": "Put a second moment on a day that already has one - one press of -7 does it - and the earlier row's Edit control stops responding to the pointer at 390, 768, 1024, 1152, 1279, 1280 and 1440. Not the wrong editor: nothing at all, the click dies silently. .b-item is absolutely positioned at its true pixel while --push moves only its words clear, so the crowded row's empty upper band lies across the row above it and, being later in the DOM, takes the press. Both gates were blind to it: nothing asserted that a control resolves to itself under elementFromPoint.",
+          "done": "The row box is not a target; the things drawn inside it are. .b-item takes pointer-events: none and the count, the tick and the copy take it back - unscoped deliberately, because push is written by script after layout and a rule keyed on [data-crowded] could fall out of step with it. The gate now forms the stack and presses every visible Edit control, requiring each to resolve inside its own row, at 390 and 1440, with the editor open and closed."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.3,
+          "problem": "Round 6's forced-colours mapping - its headline fix, recorded as done - never applied. build.mjs concatenates fonts.css, shell.css, b.css in that order, so the block in shell.css landed at master.html line 356 while b.css's base paint landed at 491, 536, 601 and 678: same specificity, later in the sheet, and a media query adds none. Driven with forcedColors active, .b-rail computed rgba(255,255,255,0.16) rather than CanvasText - so a forced palette still erased the page instead of degrading it, and the assertion written to guard it passed by testing 'not transparent'.",
+          "done": "The block moved to the foot of b.css, after every rule it overrides. Two things the finding would have missed were caught by its refuter and folded in: the record room paints the rail from the accent at (0,2,0) and needed its own line, and the lead ring declared a border width with no style, so the geometry that survives a repaint drew nothing. The gate now opens a forced palette in two rooms and checks the resolved system colour rather than mere opacity."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.4,
+          "problem": "Drive the real first run - set a day, add a moment - and the brand-new project, created two seconds ago and never shared with anyone, renders 'Live since 15 July · anyone with the link can read it', a primary control reading 'Get the link', and a footer stamp reading 'Updated 15 July 2026'. The publication record is fixture-wide, so the draft half of every publication branch had never been rendered in any graded state - and round 7's own verb fix made the contradiction louder by branching on it.",
+          "done": "The first run sets the record to draft before the surface renders, so the status line, the verb and the stamp all speak from one fact. Taking the link is what publishes: the three flip together, once, at the moment the plan becomes someone else's. The publish strap became a function, because it was evaluated at module load and would have announced the published wording to an owner still in draft. A fourteenth state, owner-draft, puts that branch inside the graded perimeter."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.3,
+          "problem": "At 1440x960 the edited row sits at y=696; one press of +7 puts it at 822, a second at 948 with the viewport 960 tall, and it keeps going to 1200 while scrollY stays 0 throughout. The owner goes on pressing a control whose whole purpose is to move a thing along a scale, while the thing has been off the bottom of the screen for three presses. Round 7 refuted the obvious fix - scrolling the window moves the steppers under the hand, because the rail drifts 191px before it sticks.",
+          "done": "The owner's desk surface is two panes in a fixed frame and the page does not scroll at all, which is what the lock asked for: the horizon never moves at desk width. The plan scrolls, the rail is not inside it, and the steppers cannot move under the hand - measured across six presses at 1024, 1280 and 1440. Capping the plan alone was not enough and the gate caught it: it handed the document's height to the rail, so opening and closing the editor changed the page height and clamped the view out from under a delete. Place-keeping now records the pane's scroll as well as the window's."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.3,
+          "problem": "Below 1024 the reversibility bar is fixed to the bottom edge - 77px at 390, 54px at 768 - and nothing reserved its band, because both the reserve and the scroll-padding were scoped to [data-editor-open] while the bar can be filled with no editor open at all: after a delete, or after Escape. At maximum scroll the entire footer sat under it with no scroll left to free it, and the fourth Tab parked an Edit control beneath it. The same measurement exposed a second shortfall: a filled bar raises the sheet 76px that --b-sheet, written as height plus 24, never knew about.",
+          "done": "The bar reserves its own band by the same mechanism the sheet uses, measured where it is actually painted rather than where it was built - and the two guards take max() rather than a fallback chain, because the bar and the sheet co-exist and a chain silently drops the larger. The sheet's reserve is now derived from its real top edge, closing the 52px gap. The gate tabs the surface with the bar filled and the editor closed, and requires the foot to clear it at maximum scroll."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.3,
+          "problem": "Round 7 wired the stalled load's Try again and gave it a live region. Pressed, waited out, the screen then read three stacked paragraphs where the second and third carried the identical ten-word clause one line apart, both visible: 'The plan has not been deleted, and the link still works.' followed by 'Still not arriving. The plan has not been deleted, and the link still works.' A fix I shipped last round, on the one screen where the audience meets failure.",
+          "done": "The static note is no longer restored after a failed retry: the live region carries that clause in the voice that is actually new, and it is stated once. The refuter killed the seat's own fix first - trimming the announcement would have silenced the reassurance for the screen-reader user it exists for, and broken a passing assertion. Measured cost: the button moves 8px up rather than the 19px down it moved before."
+        }
+      ]
     }
   ]
 }

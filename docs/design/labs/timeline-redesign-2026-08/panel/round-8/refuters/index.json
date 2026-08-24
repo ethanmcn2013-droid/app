@@ -1,0 +1,247 @@
+[
+ {
+  "seat": "ui",
+  "id": "ceremonial-date-fits-one-string",
+  "cost": 0.4,
+  "file": "refuters/ui--ceremonial-date-fits-one-string.md",
+  "out": "verdicts/ui--ceremonial-date-fits-one-string.json"
+ },
+ {
+  "seat": "ui",
+  "id": "docked-sheet-flush-left",
+  "cost": 0.4,
+  "file": "refuters/ui--docked-sheet-flush-left.md",
+  "out": "verdicts/ui--docked-sheet-flush-left.json"
+ },
+ {
+  "seat": "ui",
+  "id": "editor-reserve-is-a-void",
+  "cost": 0.3,
+  "file": "refuters/ui--editor-reserve-is-a-void.md",
+  "out": "verdicts/ui--editor-reserve-is-a-void.json"
+ },
+ {
+  "seat": "ui",
+  "id": "empty-project-off-margin-and-off-window",
+  "cost": 0.3,
+  "file": "refuters/ui--empty-project-off-margin-and-off-window.md",
+  "out": "verdicts/ui--empty-project-off-margin-and-off-window.json"
+ },
+ {
+  "seat": "ui",
+  "id": "row-plate-crosses-the-right-margin",
+  "cost": 0.2,
+  "file": "refuters/ui--row-plate-crosses-the-right-margin.md",
+  "out": "verdicts/ui--row-plate-crosses-the-right-margin.json"
+ },
+ {
+  "seat": "type",
+  "id": "away-figure-off-title-baseline",
+  "cost": 0.2,
+  "file": "refuters/type--away-figure-off-title-baseline.md",
+  "out": "verdicts/type--away-figure-off-title-baseline.json"
+ },
+ {
+  "seat": "type",
+  "id": "printed-url-severs-the-host",
+  "cost": 0.2,
+  "file": "refuters/type--printed-url-severs-the-host.md",
+  "out": "verdicts/type--printed-url-severs-the-host.json"
+ },
+ {
+  "seat": "type",
+  "id": "stepread-never-fits-its-measure",
+  "cost": 0.15,
+  "file": "refuters/type--stepread-never-fits-its-measure.md",
+  "out": "verdicts/type--stepread-never-fits-its-measure.json"
+ },
+ {
+  "seat": "type",
+  "id": "stranded-function-words-in-generated-prose",
+  "cost": 0.15,
+  "file": "refuters/type--stranded-function-words-in-generated-prose.md",
+  "out": "verdicts/type--stranded-function-words-in-generated-prose.json"
+ },
+ {
+  "seat": "type",
+  "id": "sheet-type-keyed-to-the-window",
+  "cost": 0.1,
+  "file": "refuters/type--sheet-type-keyed-to-the-window.md",
+  "out": "verdicts/type--sheet-type-keyed-to-the-window.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "stacked-row-swallows-the-row-above",
+  "cost": 0.6,
+  "file": "refuters/interaction--stacked-row-swallows-the-row-above.md",
+  "out": "verdicts/interaction--stacked-row-swallows-the-row-above.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "desk-editor-opens-with-its-foot-off-screen",
+  "cost": 0.4,
+  "file": "refuters/interaction--desk-editor-opens-with-its-foot-off-screen.md",
+  "out": "verdicts/interaction--desk-editor-opens-with-its-foot-off-screen.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "forced-colours-map-never-applies",
+  "cost": 0.3,
+  "file": "refuters/interaction--forced-colours-map-never-applies.md",
+  "out": "verdicts/interaction--forced-colours-map-never-applies.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "undo-dock-reserves-no-band",
+  "cost": 0.3,
+  "file": "refuters/interaction--undo-dock-reserves-no-band.md",
+  "out": "verdicts/interaction--undo-dock-reserves-no-band.json"
+ },
+ {
+  "seat": "interaction",
+  "id": "hover-answers-the-wrong-rows",
+  "cost": 0.2,
+  "file": "refuters/interaction--hover-answers-the-wrong-rows.md",
+  "out": "verdicts/interaction--hover-answers-the-wrong-rows.json"
+ },
+ {
+  "seat": "ux",
+  "id": "new-plan-claims-it-is-already-public",
+  "cost": 0.4,
+  "file": "refuters/ux--new-plan-claims-it-is-already-public.md",
+  "out": "verdicts/ux--new-plan-claims-it-is-already-public.json"
+ },
+ {
+  "seat": "ux",
+  "id": "past-rail-orphans-its-own-marks",
+  "cost": 0.4,
+  "file": "refuters/ux--past-rail-orphans-its-own-marks.md",
+  "out": "verdicts/ux--past-rail-orphans-its-own-marks.json"
+ },
+ {
+  "seat": "ux",
+  "id": "the-moved-moment-leaves-the-screen-at-desk-width",
+  "cost": 0.3,
+  "file": "refuters/ux--the-moved-moment-leaves-the-screen-at-desk-width.md",
+  "out": "verdicts/ux--the-moved-moment-leaves-the-screen-at-desk-width.json"
+ },
+ {
+  "seat": "ux",
+  "id": "the-day-is-set-screen-states-no-today",
+  "cost": 0.2,
+  "file": "refuters/ux--the-day-is-set-screen-states-no-today.md",
+  "out": "verdicts/ux--the-day-is-set-screen-states-no-today.json"
+ },
+ {
+  "seat": "ux",
+  "id": "add-invents-a-date-and-never-says-so",
+  "cost": 0.2,
+  "file": "refuters/ux--add-invents-a-date-and-never-says-so.md",
+  "out": "verdicts/ux--add-invents-a-date-and-never-says-so.json"
+ },
+ {
+  "seat": "brand",
+  "id": "retry-repeats-its-own-sentence",
+  "cost": 0.3,
+  "file": "refuters/brand--retry-repeats-its-own-sentence.md",
+  "out": "verdicts/brand--retry-repeats-its-own-sentence.json"
+ },
+ {
+  "seat": "brand",
+  "id": "undo-node-speaks-six-grammars",
+  "cost": 0.3,
+  "file": "refuters/brand--undo-node-speaks-six-grammars.md",
+  "out": "verdicts/brand--undo-node-speaks-six-grammars.json"
+ },
+ {
+  "seat": "brand",
+  "id": "publish-contradicts-its-own-headline",
+  "cost": 0.2,
+  "file": "refuters/brand--publish-contradicts-its-own-headline.md",
+  "out": "verdicts/brand--publish-contradicts-its-own-headline.json"
+ },
+ {
+  "seat": "brand",
+  "id": "one-of-three-has-no-noun",
+  "cost": 0.2,
+  "file": "refuters/brand--one-of-three-has-no-noun.md",
+  "out": "verdicts/brand--one-of-three-has-no-noun.json"
+ },
+ {
+  "seat": "brand",
+  "id": "untitled-moment-and-the-double-prompt",
+  "cost": 0.2,
+  "file": "refuters/brand--untitled-moment-and-the-double-prompt.md",
+  "out": "verdicts/brand--untitled-moment-and-the-double-prompt.json"
+ },
+ {
+  "seat": "taste",
+  "id": "no-arrival-for-the-audience",
+  "cost": 0.3,
+  "file": "refuters/taste--no-arrival-for-the-audience.md",
+  "out": "verdicts/taste--no-arrival-for-the-audience.json"
+ },
+ {
+  "seat": "taste",
+  "id": "the-morning-never-states-the-distance",
+  "cost": 0.2,
+  "file": "refuters/taste--the-morning-never-states-the-distance.md",
+  "out": "verdicts/taste--the-morning-never-states-the-distance.json"
+ },
+ {
+  "seat": "taste",
+  "id": "cancelled-past-row-breaks-the-column",
+  "cost": 0.15,
+  "file": "refuters/taste--cancelled-past-row-breaks-the-column.md",
+  "out": "verdicts/taste--cancelled-past-row-breaks-the-column.json"
+ },
+ {
+  "seat": "taste",
+  "id": "loading-frame-speaks-a-foreign-language",
+  "cost": 0.15,
+  "file": "refuters/taste--loading-frame-speaks-a-foreign-language.md",
+  "out": "verdicts/taste--loading-frame-speaks-a-foreign-language.json"
+ },
+ {
+  "seat": "taste",
+  "id": "pinned-label-stops-naming-what-is-under-it",
+  "cost": 0.1,
+  "file": "refuters/taste--pinned-label-stops-naming-what-is-under-it.md",
+  "out": "verdicts/taste--pinned-label-stops-naming-what-is-under-it.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "editor-opens-below-the-fold-at-desk",
+  "cost": 0.4,
+  "file": "refuters/evidence--editor-opens-below-the-fold-at-desk.md",
+  "out": "verdicts/evidence--editor-opens-below-the-fold-at-desk.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "editor-resize-loses-its-reserved-band",
+  "cost": 0.4,
+  "file": "refuters/evidence--editor-resize-loses-its-reserved-band.md",
+  "out": "verdicts/evidence--editor-resize-loses-its-reserved-band.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "tablet-band-is-the-blown-up-phone-stack",
+  "cost": 0.4,
+  "file": "refuters/evidence--tablet-band-is-the-blown-up-phone-stack.md",
+  "out": "verdicts/evidence--tablet-band-is-the-blown-up-phone-stack.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "stalled-load-makes-the-whole-screen-a-live-region",
+  "cost": 0.3,
+  "file": "refuters/evidence--stalled-load-makes-the-whole-screen-a-live-region.md",
+  "out": "verdicts/evidence--stalled-load-makes-the-whole-screen-a-live-region.json"
+ },
+ {
+  "seat": "evidence",
+  "id": "print-count-is-set-to-the-couples-own-size",
+  "cost": 0.2,
+  "file": "refuters/evidence--print-count-is-set-to-the-couples-own-size.md",
+  "out": "verdicts/evidence--print-count-is-set-to-the-couples-own-size.json"
+ }
+]

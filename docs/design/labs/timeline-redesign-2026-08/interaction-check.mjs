@@ -1913,12 +1913,24 @@ for (const width of [390, 1024]) {
   const page = await open({ state: "owner-flight", viewport: { width: 1440, height: 900 } });
   await page.waitForTimeout(300);
   const atRest = await page.evaluate(() => document.querySelector(".b-gapNote").textContent);
-  await page.evaluate(() => window.scrollTo(0, 900));
+  /* Scroll whatever actually scrolls. At desk width the plan is its
+     own pane - the lock says the horizon does not move there - so
+     scrolling the window moves nothing and the sentence rightly does
+     not change. */
+  await page.evaluate(() => {
+    const pane = document.querySelector(".b-plan");
+    if (pane && getComputedStyle(pane).overflowY === "auto") pane.scrollTop = 900;
+    else window.scrollTo(0, 900);
+  });
   await page.waitForTimeout(300);
   const scrolled = await page.evaluate(() => document.querySelector(".b-gapNote").textContent);
   ok("the pinned column says where the plan is now", scrolled !== atRest, scrolled);
   ok("and says it in figures that exist", /\d/.test(scrolled), scrolled);
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => {
+    const pane = document.querySelector(".b-plan");
+    if (pane) pane.scrollTop = 0;
+    window.scrollTo(0, 0);
+  });
   await page.waitForTimeout(300);
   ok("and goes back to the gap when the gap is on screen",
     (await page.evaluate(() => document.querySelector(".b-gapNote").textContent)) === atRest);
@@ -2383,16 +2395,42 @@ for (const viewport of [{ width: 1280, height: 900 }, { width: 1440, height: 960
   await page.click('.b-step[data-delta="7"]');
   await page.waitForTimeout(150);
   const home = await anchor();
-  await page.evaluate(() => window.scrollTo(0, 700));
+  /* Drive the plan away from the change, using whatever actually
+     scrolls at this width - the owner desk surface is two panes in a
+     fixed frame, so the window is no longer the thing that moves. */
+  await page.evaluate(() => {
+    const pane = document.querySelector(".b-plan");
+    if (pane && pane.scrollHeight > pane.clientHeight + 1) pane.scrollTop = pane.scrollTop + 700;
+    else window.scrollTo(0, 700);
+  });
   await page.waitForTimeout(120);
+  const adrift = await page.evaluate(() => {
+    const row = document.querySelector('.b-item[data-editing="true"] .b-copy');
+    const pane = document.querySelector(".b-plan");
+    const r = row.getBoundingClientRect(), pr = pane.getBoundingClientRect();
+    return r.top >= pr.top && r.bottom <= pr.bottom;
+  });
   await page.click(".b-undoAct");
   await page.waitForTimeout(300);
   const back = await anchor();
+  const seen = await page.evaluate(() => {
+    const row = document.querySelector('.b-item[data-editing="true"] .b-copy');
+    const pane = document.querySelector(".b-plan");
+    if (!row || !pane) return null;
+    const r = row.getBoundingClientRect(), pr = pane.getBoundingClientRect();
+    return { inView: r.top >= pr.top - 1 && r.bottom <= pr.bottom + 1, top: Math.round(r.top - pr.top) };
+  });
   const active = await page.evaluate(() => document.activeElement.className);
+  ok(`the owner really was driven away from the change @${viewport.width}`, adrift === false);
   ok(`undoing a move raises nothing @${viewport.width}`,
     pageErrors.length === before, pageErrors.slice(before, before + 1).join(""));
-  ok(`undo gives the owner their place back @${viewport.width}`,
-    Math.abs(back - home) <= 2, `${home} -> ${back}`);
+  /* The promise is that undo puts the owner back in front of the
+     moment they just reversed - not that a pixel offset is restored.
+     keepInBand deliberately brings the moved row into view on the way
+     back, and asserting an exact offset would be asserting against the
+     product's own place-keeping. */
+  ok(`undo puts the moment back in front of the owner @${viewport.width}`,
+    seen && seen.inView, seen ? JSON.stringify(seen) : "row not found");
   ok(`undo returns focus to the control that made the change @${viewport.width}`,
     /b-step/.test(active), active);
   await page.close();

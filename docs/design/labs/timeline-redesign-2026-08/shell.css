@@ -322,21 +322,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    it. The rail painted nothing, today went white on white, and the one
    indigo mark became indistinguishable from seven ordinary ticks. The
    logic is mapped onto system colours rather than opted out of them. */
-@media (forced-colors: active) {
-  .b-rail { background: CanvasText; }
-  .b-todayRule, .b-dayNow { border-color: Highlight; background: Highlight; }
-  .b-dayNow { background: none; border-top-color: Highlight; }
-  .b-tick { background: Canvas; border-color: CanvasText; }
-  .b-item[data-lead="true"] .b-tick,
-  .b-item[data-anchor="true"]::before {
-    background: Highlight;
-    border-color: Highlight;
-    /* A forced palette may repaint any fill, so the mark that means
-       "this one" is carried in geometry too - a ring nothing else has. */
-    border-width: 3px;
-  }
-  .b-back .b-item[data-lead="true"] .b-tick { background: Canvas; border-color: CanvasText; }
-}
+/* The forced-colours mapping lives at the FOOT OF b.css, not here.
+   Concatenated in front of b.css it lost every contest at equal
+   specificity - a media query adds none - so the whole map was inert
+   and a forced palette erased the design instead of degrading it. */
+
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

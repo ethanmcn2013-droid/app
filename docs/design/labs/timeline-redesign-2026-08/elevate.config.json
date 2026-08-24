@@ -8,6 +8,7 @@
     "owner-empty",
     "owner-editing",
     "owner-undone",
+    "owner-draft",
     "publish",
     "phone",
     "desk",
@@ -156,6 +157,10 @@
       [
         "owner-undone",
         "Owner · one move back"
+      ],
+      [
+        "owner-draft",
+        "Owner · not yet handed over"
       ],
       [
         "publish",

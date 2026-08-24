@@ -464,7 +464,7 @@
       /* No stamp where there is nothing to stamp: a project that has
          never held anything, and the morning itself, where an
          eleven-week-old timestamp reads as neglect. */
-      o.stamp === false ? null : h("span", { text: "Updated " + F.updatedLabel }),
+      o.stamp === false ? null : h("span.b-stamp", { text: "Updated " + F.updatedLabel }),
       h("span", { text: o.link || "Signal Timeline" }),
     ]);
   }
@@ -524,6 +524,7 @@
       button.disabled = true;
       button.setAttribute("tabindex", "-1");
       root.removeAttribute("data-undo");
+      root.style.removeProperty("--b-undo");
       return;
     }
     bar.setAttribute("data-empty", "false");
@@ -535,12 +536,20 @@
     button.disabled = false;
     button.removeAttribute("tabindex");
     root.setAttribute("data-undo", "true");
+    /* Below the two-column boundary the bar is fixed to the bottom edge
+       and can be filled with no editor open - after a delete, or after
+       Escape. Its band was reserved by nothing, so it covered the foot
+       and the last Edit controls with no scroll left to free them. It
+       wraps to two lines at 390 and one at 768, so it is measured. */
+    reserveUndo(root);
   }
 
   function remember(root, entry) {
     /* The place the owner was looking at is part of the change. Undo
        used to restore the moment and leave them a screen away from it. */
     entry.at = window.scrollY;
+    var pane = paneOf(root);
+    entry.paneAt = pane ? pane.scrollTop : null;
     history.push(entry);
     paintUndo(root);
   }
@@ -576,6 +585,10 @@
       }
     } finally {
       if (typeof top.at === "number") window.scrollTo(0, top.at);
+      if (typeof top.paneAt === "number") {
+        var back = paneOf(root);
+        if (back) back.scrollTop = top.paneAt;
+      }
     }
   }
 
@@ -651,10 +664,35 @@
      Gated on the sheet, not on a width: where the editor is the static
      rail the steppers cannot move under the hand, so the scroll path is
      unreachable there and the page keeps its place exactly as before. */
+  /* The pane, but only while it is actually the thing that scrolls. */
+  function paneOf(root) {
+    var pane = root && root.querySelector(".b-plan");
+    if (!pane || getComputedStyle(pane).overflowY !== "auto") return null;
+    return pane.scrollHeight > pane.clientHeight + 1 ? pane : null;
+  }
+
+  /* Removing or restoring a row changes the pane's content height, and
+     a scroller re-anchors on its own terms - so the picture is held
+     explicitly across the mutation rather than left to the browser. */
+  function holdingPlace(root, fn) {
+    var pane = paneOf(root);
+    var at = pane ? pane.scrollTop : null;
+    fn();
+    if (pane && pane.isConnected) pane.scrollTop = at;
+  }
+
   function keepInBand(root, item) {
     var panel = root.querySelector(".b-edit");
-    if (!panel || getComputedStyle(panel).position !== "fixed") return;
-    var free = panel.getBoundingClientRect().top - 16;
+    var pane = root.querySelector(".b-plan");
+    var paneScrolls = pane && pane.scrollHeight > pane.clientHeight + 1
+      && getComputedStyle(pane).overflowY === "auto";
+    var fixed = panel && getComputedStyle(panel).position === "fixed";
+    /* Two bands, one law. Under a docked sheet the free band is the
+       window above it; in the pane the free band is the pane, and the
+       rail with the steppers in it is outside the pane entirely, so
+       following the moment cannot move the control being pressed. */
+    if (!fixed && !paneScrolls) return;
+    var free = fixed ? panel.getBoundingClientRect().top - 16 : pane.clientHeight - 16;
     var copy = item.querySelector(".b-copy");
     /* Where the row WILL be, not where it is mid-flight. The move is
        animated, so a rect read during the transition is the position the
@@ -666,8 +704,11 @@
     var push = parseFloat(getComputedStyle(copy).getPropertyValue("--push")) || 0;
     var height = copy.getBoundingClientRect().height;
     var top = measureEl.getBoundingClientRect().top + away * px + push;
+    if (!fixed) top -= pane.getBoundingClientRect().top;
     if (top >= 16 && top + height <= free) return;
-    window.scrollBy(0, Math.round(top - Math.max(16, (free - height) / 2)));
+    var delta = Math.round(top - Math.max(16, (free - height) / 2));
+    if (fixed) window.scrollBy(0, delta);
+    else pane.scrollTop += delta;
   }
 
   function setVisibility(item, hidden) {
@@ -907,6 +948,24 @@
     });
   }
 
+  /* Everything that states whether anyone is holding a copy, written
+     from the one record, in one place. */
+  function paintPublication(root) {
+    if (!root) return;
+    var live = F.publication.state === "published";
+    var shared = root.querySelector(".b-shared");
+    if (shared) {
+      shared.textContent = live
+        ? "Live since " + F.fmt.medium(F.publication.publishedAt)
+          + " \u00b7 anyone with the link can read it"
+        : "Only you can see this";
+    }
+    var verb = root.querySelector('[data-act="publish"]');
+    if (verb) verb.textContent = live ? "Get the link" : "Publish";
+    var stamp = root.querySelector(".b-stamp");
+    if (stamp) stamp.textContent = "Updated " + F.updatedLabel;
+  }
+
   function moveUndoBar(root, into) {
     var bar = root.querySelector(".b-undo");
     if (!bar) return;
@@ -915,6 +974,19 @@
       var host = root.querySelector(".b-undoHome") || root;
       host.appendChild(bar);
     }
+  }
+
+  /* Called wherever the bar changes host or fill: its band can only be
+     measured once it is where it will be painted. */
+  function reserveUndo(root) {
+    if (!root) return;
+    var bar = root.querySelector(".b-undo");
+    if (!bar || bar.getAttribute("data-empty") === "true"
+      || getComputedStyle(bar).position !== "fixed") {
+      root.style.removeProperty("--b-undo");
+      return;
+    }
+    root.style.setProperty("--b-undo", (bar.offsetHeight + 24) + "px");
   }
 
   function closeEditor(root, focusBack) {
@@ -932,7 +1004,29 @@
     var grab = open.querySelector(".b-grab");
     if (grab) grab.setAttribute("aria-expanded", "false");
     place(root.querySelector(".b-measure"));
+    /* The bar has just come home to a different host, so its band is
+       re-measured where it now sits. */
+    reserveUndo(root);
     if (focusBack && grab) land(grab, root);
+  }
+
+  /* A fixed sheet stands outside layout, so the column it covers has to
+     be given the room back or the last rows are unreachable at maximum
+     scroll. Measured from the sheet's real top rather than its height,
+     because a filled undo bar raises the sheet 76px and the height alone
+     left the reserve 52px short of the band actually covered. Called on
+     open AND on every settle, so narrowing a window while the editor is
+     open cannot dock the sheet over an unreserved column. */
+  function reserve(root) {
+    if (!root) return;
+    var node = root.querySelector(".b-edit");
+    if (!node) { root.style.removeProperty("--b-sheet"); return; }
+    if (getComputedStyle(node).position !== "fixed") {
+      root.style.removeProperty("--b-sheet");
+      return;
+    }
+    var top = node.getBoundingClientRect().top;
+    root.style.setProperty("--b-sheet", Math.max(0, Math.ceil(window.innerHeight - top + 24)) + "px");
   }
 
   function openEditor(root, item) {
@@ -946,11 +1040,7 @@
     var grab = item.querySelector(".b-grab");
     if (grab) grab.setAttribute("aria-expanded", "true");
     place(root.querySelector(".b-measure"));
-    /* A fixed sheet stands outside layout, so the column it covers has
-       to be given the room back or the last rows are unreachable. */
-    if (getComputedStyle(node).position === "fixed") {
-      root.style.setProperty("--b-sheet", (node.offsetHeight + 24) + "px");
-    }
+    reserve(root);
     keepInBand(root, item);
     node.focus({ preventScroll: true });
   }
@@ -995,9 +1085,11 @@
         var index = F.milestones.indexOf(record);
         var next = item.nextElementSibling;
         closeEditor(root, false);
-        item.remove();
-        if (index >= 0) F.milestones.splice(index, 1);
-        place(measureEl);
+        holdingPlace(root, function () {
+          item.remove();
+          if (index >= 0) F.milestones.splice(index, 1);
+          place(measureEl);
+        });
         focusAfterRemoval(root, next);
         /* The live node is kept, not its markup: setAway writes the
            owner's edits to the DOM, so rebuilding from the record would
@@ -1006,9 +1098,11 @@
           id: record.id,
           say: [nameOf(record) + " was removed."],
           undo: function () {
-            if (index >= 0) F.milestones.splice(index, 0, record);
-            measureEl.insertBefore(item, next && next.isConnected ? next : null);
-            place(measureEl);
+            holdingPlace(root, function () {
+              if (index >= 0) F.milestones.splice(index, 0, record);
+              measureEl.insertBefore(item, next && next.isConnected ? next : null);
+              place(measureEl);
+            });
             land(item.querySelector(".b-grab"), root);
           },
         });
@@ -1025,6 +1119,14 @@
           date: F.plusDays(clock, away),
           state: "next",
         };
+        /* A plan the owner has just started has never been handed to
+           anyone. The publication record is fixture-wide, so without
+           this the first moment ever added rendered "Live since 15
+           July", a "Get the link" verb and a stamp predating the
+           project. */
+        F.publication = { state: "draft", publishedAt: null };
+        F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
+        paintPublication(root);
         F.milestones.push(fresh);
         var node = row(fresh, away, true);
         host.insertBefore(node, host.querySelector(".b-item"));
@@ -1048,6 +1150,13 @@
         var live = root.querySelector(".b-live");
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(F.shareUrlFull).then(function () {
+            /* Taking the link IS the publish in this model, so the verb,
+               the status line and the press heading flip once, together,
+               at the moment it becomes someone else's. */
+            if (F.publication.state !== "published") {
+              F.publication = { state: "published", publishedAt: F.today };
+              paintPublication(document.querySelector(".b-field"));
+            }
             action.textContent = "Copied";
             if (live) live.textContent = "Link copied.";
             setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
@@ -1098,14 +1207,22 @@
     var note = root.querySelector(".b-gapNote");
     if (note) {
       var stick = root.querySelector(".b-stick");
+      var pane = root.querySelector(".b-plan");
       var pending = false;
       var speak = function () {
         pending = false;
         if (!stick || getComputedStyle(stick).position !== "sticky") return;
         var rows = root.querySelectorAll(".b-measure .b-item");
+        /* Against the PANE's own top edge, not the viewport's. Once the
+           plan became a pane the window stopped scrolling, so a
+           viewport-relative test named a row that had been scrolled out
+           of the pane - the horizon reporting a moment nobody could
+           see. */
+        var edge = pane && getComputedStyle(pane).overflowY === "auto"
+          ? pane.getBoundingClientRect().top : 0;
         var top = null;
         for (var i = 0; i < rows.length; i++) {
-          if (rows[i].getBoundingClientRect().top >= 0) { top = rows[i]; break; }
+          if (rows[i].getBoundingClientRect().top >= edge) { top = rows[i]; break; }
         }
         /* Read the sentence live, never from a snapshot. This used to
            restore the string captured when the surface was wired, so
@@ -1120,11 +1237,13 @@
             + F.fmt.dayCount(Number(top.getAttribute("data-away"))) + " away";
         if (note.textContent !== said) note.textContent = said;
       };
-      window.addEventListener("scroll", function () {
+      var onScroll = function () {
         if (pending) return;
         pending = true;
         requestAnimationFrame(speak);
-      }, { passive: true });
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+      if (pane) pane.addEventListener("scroll", onScroll, { passive: true });
     }
 
     /* The editor is docked, not modal: the page may scroll under it, and
@@ -1180,7 +1299,9 @@
     desk: "The plan as guests will see it.",
     /* "Ready to send" contradicted the plan's own status line and the
        card beside it, both of which say it went out on 15 July. */
-    publish: F_PUBLISHED() ? "The link is below." : "Ready to send. The link is below.",
+    publish: function () {
+      return F_PUBLISHED() ? "The link is below." : "Ready to send. The link is below.";
+    },
     "owner-flight": "Back to the plan.",
   };
 
@@ -1200,7 +1321,11 @@
       head.focus({ preventScroll: true });
     }
     var live = document.querySelector(".b-live");
-    if (live && SAID[state]) live.textContent = SAID[state];
+    /* A value may be a function, because the publish strap depends on
+       whether anyone is holding a copy YET - read at load time it
+       announced the published wording to an owner still in draft. */
+    var said = SAID[state];
+    if (live && said) live.textContent = typeof said === "function" ? said() : said;
   }
 
   /* ── the states ───────────────────────────────────────────────── */
@@ -1234,7 +1359,15 @@
         h("div.b-stick", { style: "line-height:1.5" }, [
           horizon({}), h("div.b-editHost"), h("div.b-undoHome", {}, [undoBar()]),
         ]),
-        h("div", { style: "line-height:1.5" }, [
+        /* The owner's plan is its own pane at desk width. The lock says
+           the horizon never moves and stops scrolling there; done with
+           sticky alone the rail still drifted 191px before it stuck,
+           which is why a prior round refused to scroll the window at
+           all - and the moment being moved then walked off the bottom
+           of the screen after two presses while the owner kept pressing.
+           A pane the rail is not inside solves both: the plan scrolls,
+           the steppers never move under the hand. */
+        h("div.b-plan", { style: "line-height:1.5" }, [
           measure({ owner: true }), behindBlock({ owner: true }),
         ]),
       ]),
@@ -1289,6 +1422,19 @@
     return ownerSurface({ open: "demo-audience-item-invitations" });
   };
 
+  /* A plan nobody is holding yet. The publication record is
+     fixture-wide, so the draft half of every publication branch - the
+     status line, the primary verb, the press heading and strap - had
+     never been rendered in any graded state. */
+  states["owner-draft"] = function () {
+    var was = F.publication, wasLabel = F.updatedLabel;
+    F.publication = { state: "draft", publishedAt: null };
+    F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
+    var node = ownerSurface({});
+    F.publication = was; F.updatedLabel = wasLabel;
+    return node;
+  };
+
   /* Editing, one move in, with the way back showing. */
   states["owner-undone"] = function () {
     return ownerSurface({ open: "demo-audience-item-invitations", undone: true });
@@ -1326,6 +1472,14 @@
       if (event.target.closest('[data-act="add"]') && started) {
         F.project.name = sibling.name;
         F.project.primaryDate = { label: "The day", date: started };
+        /* A plan created two seconds ago has never been handed to
+           anyone. The publication record is fixture-wide, so without
+           this the owner's first screen claimed "Live since 15 July",
+           offered "Get the link" and carried a stamp from before the
+           project existed. Set before go(), so the surface renders the
+           draft branch rather than being corrected after the fact. */
+        F.publication = { state: "draft", publishedAt: null };
+        F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
         var half = Math.max(1, Math.round(F.days(F.today, started) / 2));
         F.milestones.length = 0;
         F.milestones.push({
@@ -1363,6 +1517,12 @@
           h("h1.b-who", { text: sibling.name }),
           countBlock(away),
           h("p.b-when", { "data-type": "date", text: F.fmt.longYear(iso) }),
+          /* The second screen a new owner ever sees showed a count and a
+             ceremonial date and stated today NOWHERE - the unanchored-time
+             class, on the one screen with nothing else on it to read the
+             date against. Same rule and same label the horizon uses. */
+          h("div.b-todayRule"),
+          h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(F.today) }),
           h("p.b-emptyBody", {
             text: "Nothing sits between today and the day yet. "
               + "Everything you add is measured from it.",
@@ -1467,7 +1627,7 @@
              plan is already live the fact is the headline - the card
              beside it already says "when this was sent" - and the act
              on offer is the one that is actually available. */
-          h("h2.b-pressTitle", { "data-type": "headline",
+          h("h1.b-pressTitle", { "data-type": "headline",
             text: F.publication.state === "published"
               ? F.project.name + " have had this since " + F.fmt.medium(F.publication.publishedAt) + "."
               : "Send it to " + F.project.name + "." }),
@@ -1671,7 +1831,6 @@
     var node = states.loading();
     var field = node.querySelector(".b-field");
     field.setAttribute("aria-busy", "false");
-    field.setAttribute("role", "status");
     var says = node.querySelector(".b-sub");
     var STALLED = "This is taking longer than it should.";
     says.textContent = STALLED;
@@ -1704,7 +1863,9 @@
         trying = false;
         field.setAttribute("aria-busy", "false");
         says.textContent = STALLED;
-        note.style.display = "";
+        /* The note is NOT restored: the live region below now carries
+           that clause in the voice that is actually new, and restoring
+           it printed the same ten words twice, one line apart. */
         live.textContent = "Still not arriving. The plan has not been deleted, and the link still works.";
       }, 1400);
     });
@@ -1714,7 +1875,7 @@
 
   var MEDIUM = {
     "owner-flight": "full", "owner-empty": "full", "owner-editing": "full",
-    "owner-undone": "full", publish: "full",
+    "owner-undone": "full", "owner-draft": "full", publish: "full",
     phone: "phone", desk: "full", day: "phone", print: "sheet",
     unfurl: "card", ended: "phone", loading: "phone", "loading-slow": "phone",
   };
@@ -1738,6 +1899,11 @@
     settle: function () {
       var all = document.querySelectorAll(".b-measure");
       for (var i = 0; i < all.length; i++) place(all[i]);
+      /* The reserve is recomputed on every settle - render-core already
+         runs this on the debounced resize and on fonts.ready - so a
+         window narrowed while the editor is open cannot dock the sheet
+         over a column that reserved nothing for it. */
+      reserve(document.querySelector("[data-editor-open]"));
     },
   };
 })();

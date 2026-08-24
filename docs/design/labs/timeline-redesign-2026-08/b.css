@@ -246,7 +246,17 @@
    544px at 1280 - a selection whose width was an accident of the
    window. */
 .b-copy {
-  max-width: 544px; margin-top: var(--push, 0px); position: relative; }/* A guest row carries no control, so a trimmed title's remainder can
+  max-width: 544px; margin-top: var(--push, 0px); position: relative; }
+/* The row BOX is not a target; the things drawn inside it are. .b-item
+   is pinned to its true pixel while --push moves its words clear, so a
+   crowded row's empty upper band lay across the row above it and, being
+   later in the DOM, swallowed that row's Edit control - one press of -7
+   to put two moments on a day and the earlier row stopped answering the
+   pointer at every width. Unscoped deliberately: push is written by
+   script after layout, and a rule keyed on [data-crowded] could fall
+   out of step with it. */
+.b-item { pointer-events: none; }
+.b-item .b-copy, .b-item .b-away, .b-item .b-tick { pointer-events: auto; }/* A guest row carries no control, so a trimmed title's remainder can
    be reached by nobody: the screen reader gets the whole sentence and
    the finger gets an ellipsis. Only the owner's rows, which open, may
    trim. */
@@ -362,7 +372,13 @@
   background: var(--fore-06);
   text-decoration-color: var(--fore-46);
 }
-.b-item:hover .b-copy, .b-item:focus-within .b-copy {
+/* Only a row that OPENS may answer the pointer. The guest surfaces -
+   the screens the company is judged by - drew a halo under every row,
+   none of which carries a control or does anything when pressed, so the
+   one place the product promises nothing was the place it promised
+   most. :focus-within is already dead on a guest row; :hover and
+   :active were the whole lie. */
+.b-item:has(.b-grab):hover .b-copy, .b-item:has(.b-grab):focus-within .b-copy {
   background: var(--fore-04);
   box-shadow: 0 0 0 12px var(--fore-04);
   border-radius: 4px;
@@ -685,7 +701,9 @@
 .b-step,
 .b-behindSummary,
 .b-undoAct { -webkit-tap-highlight-color: transparent; }
-.b-item:active .b-copy,
+/* Press is scoped the same way, and given the ring its plate always
+   had: a pressed row used to paint a 10% plate inside a 4% halo. */
+.b-item:has(.b-grab):active .b-copy { background: var(--fore-10); box-shadow: 0 0 0 12px var(--fore-10); }
 .b-grab:active { background: var(--fore-10); }
 .b-act:active,
 .b-step:active,
@@ -1252,7 +1270,6 @@
   .b-print .b-two { grid-template-columns: 220px minmax(0, 1fr); gap: var(--gap-section); align-items: start; }
 }
 .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
-.b-print .b-away { font-size: var(--size-body); }
 
 /* ═══ desk and up ═════════════════════════════════════════════════
    Everything above is the phone. These are the only rules that raise
@@ -1288,7 +1305,11 @@
   [data-medium="sheet"] .b-item[data-anchor="true"]::before,
   [data-medium="full"] .b-item[data-anchor="true"]::before { left: -27px; }
   [data-medium="sheet"] .b-title, [data-medium="full"] .b-title { font-size: var(--size-head); letter-spacing: var(--track-head); }
-  [data-medium="sheet"] .b-empty, [data-medium="full"] .b-empty { padding: 110px 56px 120px; }  /* off-ladder: measure geometry */
+  /* No side padding: the empty block is the only thing on the page and
+     it used to be indented 56px from the very margin the bar above it
+     and the foot below it stand on. */
+  [data-medium="sheet"] .b-empty, [data-medium="full"] .b-empty { padding: 110px 0 120px; }  /* off-ladder: measure geometry */
+  [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { max-width: 20ch; }
   [data-medium="sheet"] .b-emptyTitle, [data-medium="full"] .b-emptyTitle { font-size: var(--size-card); letter-spacing: var(--track-title); }
   [data-medium="sheet"] .b-ended, [data-medium="full"] .b-ended { padding: 100px 56px 110px; }  /* off-ladder: measure geometry */
   [data-medium="sheet"] .b-dayWrap, [data-medium="full"] .b-dayWrap { padding: var(--gap-page) 0 0; }
@@ -1297,6 +1318,10 @@
      later in source, so the printed page keeps its own margins. */
   [data-medium="sheet"] .b-print { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
   [data-medium="sheet"] .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
+  /* The gutter figure keeps the phone step on paper, per the print
+     comment above. Declared HERE because the base .b-print rule sat
+     earlier in source at equal specificity and could never win. */
+  [data-medium="sheet"] .b-print .b-away { font-size: var(--size-body); }
 }
 
 /* Below the gutter width the editor is a sheet on the bottom edge, and
@@ -1319,11 +1344,19 @@
      the browser's own focus scrolling could park a control beneath it,
      so a keyboard owner pressed things they could not see. The scroll
      root is told how much of the bottom edge is spoken for. */
-  [data-editor-open] { scroll-padding-bottom: var(--b-sheet, 30px); }
+  /* max(), not a fallback chain: the two can co-exist - the bar is
+     filled while the editor is open - and a chain silently drops
+     whichever band is larger. */
+  [data-editor-open], [data-undo="true"] {
+    scroll-padding-bottom: max(var(--b-sheet, 0px), var(--b-undo, 0px), 30px);
+  }
   /* Later in source and one selector heavier than the desk padding rule
      above, or the reserve loses to it at 768 and the last rows are
      stranded under the sheet with no scroll left to free them. */
-  [data-medium] .b-field[data-editor-open] { padding-bottom: var(--b-sheet, var(--gap-block)); }
+  [data-medium] .b-field[data-editor-open],
+  [data-medium] .b-field[data-undo="true"] {
+    padding-bottom: max(var(--b-sheet, 0px), var(--b-undo, 0px), var(--gap-block));
+  }
   [data-undo="true"] .b-undoHome .b-undo {
     position: fixed;
     left: 12px;
@@ -1350,6 +1383,34 @@
 
 @media (min-width: 1024px) {
   [data-medium="full"] .b-two { grid-template-columns: 344px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
+  /* The owner's desk surface is two panes in a fixed frame, and the
+     PAGE does not scroll at all. The lock says the horizon never moves
+     at desk width; sticky alone let the rail drift 191px before it
+     stuck, which is why a prior round rightly refused to scroll the
+     window - and the moment being moved then walked off the bottom of
+     the screen after two presses with the owner still pressing.
+     Capping the plan alone was not enough: it handed the document's
+     height to the rail, so opening and closing the editor changed the
+     page height and the browser clamped the view out from under a
+     delete. With the frame fixed, the height is constant, each column
+     scrolls its own content, and nothing the hand rests on can move. */
+  [data-medium="full"] .b-ownerField {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  [data-medium="full"] .b-ownerField .b-two {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+  [data-medium="full"] .b-ownerField .b-stick,
+  [data-medium="full"] .b-plan {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
   [data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
   /* The horizon does not scroll away — but only where it has a column
      of its own. */
@@ -1420,4 +1481,34 @@
      bar's measured bottom goes 81.4 to 97.4, so the hand-measured 88
      above would let the bar's hairline cross the panel's first label. */
   .b-edit { padding-top: 104px; }  /* off-ladder: measure geometry */
+}
+
+/* ═══ forced colours ══════════════════════════════════════════════
+   LAST IN THE SHEET, deliberately. This lived in shell.css, which
+   build.mjs concatenates BEFORE b.css, so every rule here lost to the
+   base paint at equal specificity and the map never applied at all:
+   the rail painted nothing, today went white on white, and the one
+   indigo mark was indistinguishable from seven ordinary ticks - with
+   five hundred assertions passing over a page that had no spine.
+   Anything that overrides these must be declared above them. */
+@media (forced-colors: active) {
+  /* The record room paints the rail from the accent at (0,2,0), which
+     beats a bare .b-rail no matter how late it sits. */
+  [data-accent="structure"] .b-rail { background: CanvasText; opacity: 1; }
+  .b-rail { background: CanvasText; }
+  .b-todayRule, .b-dayNow { border-color: Highlight; background: Highlight; }
+  .b-dayNow { background: none; border-top-color: Highlight; }
+  .b-tick { background: Canvas; border-color: CanvasText; }
+  .b-item[data-lead="true"] .b-tick,
+  .b-item[data-anchor="true"]::before {
+    background: Highlight;
+    border-color: Highlight;
+    /* A forced palette may repaint any fill, so the mark that means
+       "this one" is carried in geometry too - a ring nothing else has. */
+    border-width: 3px;
+    /* The base rule declares no border-style, so a width alone drew
+       nothing - the geometry that survives a repaint needs both. */
+    border-style: solid;
+  }
+  .b-back .b-item[data-lead="true"] .b-tick { background: Canvas; border-color: CanvasText; }
 }
