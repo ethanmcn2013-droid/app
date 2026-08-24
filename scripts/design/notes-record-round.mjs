@@ -28,6 +28,15 @@ const round = {
   headline: headline || "",
   body: body || "",
   scores: result.scores,
+  /* From round 10 the gate round returns a sign-off per seat, the floor
+     and which seats are binding. The sign-off tally is the number that
+     actually says whether the programme is finished, and it was being
+     dropped on the floor here. */
+  signOffs: result.signOffs || null,
+  verdicts: result.verdicts || null,
+  floor: result.floor ?? (result.scores ? Math.min(...Object.values(result.scores)) : null),
+  binding: result.binding || null,
+  gateMet: result.gateMet ?? null,
   wins: result.wins || [],
   confirmed: (result.confirmed || []).map((f) => ({
     seat: f.seat,
