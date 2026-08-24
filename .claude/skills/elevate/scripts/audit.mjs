@@ -323,7 +323,24 @@ const AUDIT = `(() => {
           });
         }
       }
-      const trackKey = furniture ? null : family + "|" + Math.round(size * 10) / 10;
+      /* Letterfit belongs to the ROLE, exactly as leading does, and for
+         the same reason. Keyed on family+size alone this check does not
+         merely miss drift - it FORBIDS the remedy: the confirmed round-6
+         finding was that twenty-seven of thirty-two uppercase strings on
+         the owner's screen rendered at one byte-identical spec, so a
+         head, a date, a unit, a state, a control and the wordmark were
+         one typographic object. The fix was to give the sub-fifteen tier
+         three roles at one size, which a family|size key can only ever
+         report as drift. A check that fails its own product's confirmed
+         fix is mandating the monoculture that cost the half point. Same
+         derivation as leading, same declared-role override, so the two
+         checks cannot disagree about what a thing is. */
+      const isControlT = el.matches("button, a, summary, input, textarea, select, [tabindex]");
+      const upperMonoT = /mono|geist mono/i.test(family) && cs.textTransform === "uppercase";
+      const roleT = el.getAttribute("data-type") || (size >= 48 ? "display"
+        : (upperMonoT && size <= 12 ? "label"
+          : (isControlT ? "control" : (size >= 20 ? "head" : "body"))));
+      const trackKey = furniture ? null : family + "|" + Math.round(size * 10) / 10 + "|" + roleT;
       if (trackKey !== null) {
       const space = cs.letterSpacing === "normal" ? "0px" : cs.letterSpacing;
       if (!tracks.has(trackKey)) tracks.set(trackKey, new Map());
