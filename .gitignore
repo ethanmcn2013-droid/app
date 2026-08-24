@@ -91,6 +91,13 @@ drive_tmp.mjs
 # round 8: a seat left m-probe.mjs and a fix script left _fixre.py, neither
 # of which any existing pattern caught.
 *-probe.mjs
+_seat*/
+_typo/
+_ref_*.png
+_r9block.js
+.tmp-verify/
+_m9_*.png
+_*.cjs
 _*.py
 _*.cjs
 peelcheck*.mjs

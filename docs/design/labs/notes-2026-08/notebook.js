@@ -91,6 +91,12 @@
   let picker = null;      /* the open subject picker, if any                 */
   let inputTimer = null;
   let confirming = null;   /* the note delete is asking about              */
+  let searchSaid = null;   /* debounce for what search says out loud        */
+  /* The seam's destination, seeded from the note and living only as long
+     as the peel. It used to be read from N.projects — a workspace string
+     that is not one of the listbox's five options, so the control's own
+     current value was absent from its own list. */
+  let destination = null;
 
   /* Everything the capture field's own words change, written on the next
      tick rather than during the input event. */
@@ -115,7 +121,15 @@
           "beforeend",
           phone.matches
             ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span><button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`
-            : `<span class="topMeta tab" data-count>${draft.length} / 4000</span><button class="act" data-ink type="button" data-act="keep">${I.check}Save it<kbd>${MOD}+Enter</kbd></button>`,
+            /* The spacer was missing here and present in the template,
+               so the commit control rendered hard against the character
+               counter at the paper left edge and snapped 270px right on
+               the next repaint. applyDraft is the ONLY path a real typist
+               takes, so the designed right-aligned position never existed
+               while anybody was actually writing — the shipped frame does
+               not depict the state. Same children, same order, both
+               paths, and the assertion below holds them together. */
+            : `<span class="topMeta tab" data-count>${draft.length} / 4000</span><span class="spacer"></span><button class="act" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>`,
         );
         const idle = [...foot.querySelectorAll(".topMeta")].find((n) => !n.dataset.count && !n.classList.contains("tab"));
         if (idle) idle.remove();
@@ -213,8 +227,11 @@
      which also removes a live-region redundancy, since both nodes are
      role=status and a screen reader heard two near-identical sentences
      for one press. */
+  /* "Use the arrow keys inside the note, or drag across it" was false
+     on a phone, which is where a couple planning a wedding actually
+     reads. One gesture that is true everywhere. */
   const NUDGE_PICK =
-    "Pick the words in the note that should become the task. Use the arrow keys inside the note, or drag across it. Only those words go to Tasks.";
+    "Pick the words in the note that should become the task. Tap a sentence to pick it, drag across the words you want, or walk them with the arrow keys. Only those words go to Tasks.";
   const UNDO_SECONDS = 30;
   let undoTick = null;
   let undoLeft = UNDO_SECONDS;
@@ -243,7 +260,7 @@
         clearInterval(undoTick);
         return;
       }
-      el.textContent = `for ${undoLeft}s`;
+      el.textContent = `for ${undoLeft} seconds`;
     }, 1000);
     undoTimer = setTimeout(() => {
       /* A clock nobody started must not move the keyboard. Repainting on
@@ -298,13 +315,12 @@
      lead, with something left after it to lead into. Anything else has no
      lede at all and renders whole at 400 — the honest treatment, and the
      one the `lede === false` path already gives. */
-  const LEDE_MAX = 48;
-  function ledeOf(body) {
-    const stop = body.search(/(?<=[.?!”])\s/);
-    if (stop <= 0 || stop + 1 > LEDE_MAX) return null;
-    const head = body.slice(0, stop + 1).trim();
-    return body.slice(head.length).trim() ? head : null;
-  }
+  /* The budget lives in data.js, beside the notes it shapes, and this
+     file reads it. Two copies of one rule is how thirteen of the
+     fourteen shipped notes came to ignore a budget this file declared,
+     and how a thirty-eight-word note came to render entirely in 600. */
+  const LEDE_MAX = N.LEDE_MAX;
+  const ledeOf = N.ledeOf;
 
   function makeNote(body, opts) {
     const o = opts || {};
@@ -496,7 +512,10 @@
          say the same number. */
       confirming = note.id;
       say(`Delete this note? It has not been sent anywhere, so this deletes it everywhere. You can undo this for ${UNDO_SECONDS} seconds.`);
-      refocus = { kind: "act", sel: '[data-act="d-delete-yes"]' };
+      /* The confirmation used to open with the keyboard on Delete —
+         the destroy button — so the very next Enter destroyed the note
+         the question was asking about. It opens on the safe half. */
+      refocus = { kind: "act", sel: '[data-act="d-delete-no"]' };
       paint();
       return;
     }
@@ -588,7 +607,34 @@
     if (!bodies.length) return null;
     const range = sel.getRangeAt(0);
     if (!bodies.some((b) => b.contains(range.commonAncestorContainer))) return null;
-    const text = sel.toString().replace(/\s+/g, " ").trim();
+    /* WORD-SAFE, because the promise is the exact words. A drag takes
+       raw character offsets, so beginning inside "photographs" crossed
+       "hotographs until the room settled" — a beheaded word at the
+       start and a severed one at the end — and the seam then read those
+       back to her as her own words. The index solved this class rounds
+       ago with its trims; the seam never inherited it. Each endpoint is
+       walked outward only when it lands strictly INSIDE a word, so a
+       drag already ending on a boundary does not swallow the next. */
+    const host = bodies.find((h) => h.contains(range.commonAncestorContainer));
+    const whole = host ? host.textContent : "";
+    let text = sel.toString();
+    if (whole) {
+      const at = whole.indexOf(text);
+      if (at >= 0) {
+        let from = at;
+        let to = at + text.length;
+        const word = (ch) => ch !== undefined && /[^\s]/.test(ch);
+        while (from > 0 && word(whole[from - 1]) && word(whole[from])) from -= 1;
+        while (to < whole.length && word(whole[to]) && word(whole[to - 1])) to += 1;
+        text = whole.slice(from, to);
+        /* The snap is deliberately NOT re-applied to the live selection.
+           This runs from selectionchange, so calling setBaseAndExtent
+           here re-enters offerPick, and the repaint that follows wipes
+           the native highlight anyway — the mark the reader actually
+           sees is drawn from `picked`, which is now the snapped string. */
+      }
+    }
+    text = text.replace(/\s+/g, " ").trim();
     if (text.length < 3) return null;
     return text;
   }
@@ -607,6 +653,46 @@
     }
     return out.length ? out : [body];
   }
+  /* THE NOTE IS AN INSTRUMENT.
+     Clicking a sentence did nothing: the computed cursor on the body was
+     `auto`, so the note offered no pointer affordance at all, and on a
+     phone — no arrow keys, no other control — the product's promise
+     reduced to "the exact words the machine picked for you". The
+     sentences the arrow model already walks are now real spans, so the
+     drawn pick, the keyboard pick and the pointer pick share one
+     accessor. The mark is applied by character offset across those
+     spans, which also survives a drag that does not align to a sentence
+     — the string replace it used to do could not. */
+  function bodyHtmlOf(note, mark) {
+    const body = note.body;
+    const parts = sentencesOf(body);
+    let at = mark ? body.indexOf(mark) : -1;
+    const from = at;
+    const to = at >= 0 ? at + mark.length : -1;
+    let cursor = 0;
+    let out = "";
+    parts.forEach((part, i) => {
+      const start = cursor;
+      const end = cursor + part.length;
+      cursor = end;
+      const classes = ["sent"];
+      if (i === 0 && note.lede !== false) classes.push("lede");
+      let inner = "";
+      if (from < 0 || to <= start || from >= end) {
+        inner = esc(part);
+      } else {
+        const a2 = Math.max(start, from) - start;
+        const b2 = Math.min(end, to) - start;
+        inner =
+          esc(part.slice(0, a2)) +
+          `<span class="pick">${esc(part.slice(a2, b2))}</span>` +
+          esc(part.slice(b2));
+      }
+      out += `<span class="${classes.join(" ")}" data-i="${i}">${inner}</span>`;
+    });
+    return out;
+  }
+
   function sentenceText(body, from, to) {
     const parts = sentencesOf(body);
     return parts.slice(from, to + 1).join("").trim();
@@ -694,10 +780,15 @@
      seam's destination was hardcoded to the first project in the fixture,
      so the most consequential control in the product ignored the filing
      the person had just done on the same screen. */
+  /* One answer. The N.projects[0] fallback returned a workspace string
+     that is not one of the picker's options, and the crossesTo guard was
+     dead, so a note filed under a dateless subject reported a place the
+     listbox could never show. While a peel is open this reads the
+     seam's own value; otherwise it reads the note's subject. */
   function destinationOf(note) {
-    const about = note && note.about;
-    if (about && about.crossesTo !== false && about.when) return about.label;
-    return N.projects[0];
+    const key = peeling && peeling === (note && note.id) ? destination : note && note.aboutKey;
+    const about = (key && N.subjects[key]) || (note && note.about);
+    return about ? about.label : N.subjects["the-house"].label;
   }
 
   function offerPick() {
@@ -751,7 +842,15 @@
     openId = note.id;
     sentTask = null;
     taskWording = words.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
-    say(`${N.copy.sourceLabel}: ${words}. ${N.copy.payload}`);
+    /* The seam's destination starts as the note's own subject, which is
+       one of the listbox's own options, so the control's current value
+       can always be found in its own list. */
+    destination = note.aboutKey || null;
+    /* Read back what the field actually holds, character for character.
+       This announced the raw picked words while the field held the
+       sentence-cased version, so the seam stated one fact in two
+       spellings at the moment it promises the exact words. */
+    say(`${N.copy.sourceLabel}: ${taskWording}. ${N.copy.payload}`);
     refocus = { kind: "field", sel: ".peelField" };
     paint();
   }
@@ -760,6 +859,7 @@
     peeling = null;
     pickedWords = null;
     sentTask = null;
+    destination = null;
     say("Nothing was sent. Your note is unchanged.");
     refocus = { kind: "act", sel: state === "review" ? '[data-act="d-task"]' : '[data-act="peel"]' };
     paint();
@@ -1191,6 +1291,13 @@
 
   function head() {
     const c = counts();
+    /* The loudest object in every room — solid ink, 600, top of the
+       sheet — was a count of how far behind you are, with the verb
+       hidden in the accessible name and the phrase "still to decide"
+       said twice in one string. Unscoped it is the verb it actually is,
+       which also stops it naming the room it is standing in and takes
+       the 390 head off a wrapped, orphaned "days". Scoped it keeps the
+       full phrase, because there the scope word is doing real work. */
     const chip =
       state === "review"
         ? ""
@@ -1202,7 +1309,11 @@
                the inversion: the credibility of every other number on
                the surface, spent to save three words. Same accessor,
                same words, on screen and in the name. */
-            `<button class="chip" type="button" data-act="review" aria-label="${c.pending} still to decide ${scope ? `in ${attr(scopeLabel())}` : "in the notebook"}. Go through the notes still to decide.">${c.pending} still to decide ${scope ? `in ${esc(scopeLabel())}` : "in the notebook"}</button>`
+            `<button class="chip" type="button" data-act="review" aria-label="${
+              scope
+                ? `${c.pending} still to decide in ${attr(scopeLabel())}. Go through them.`
+                : `Go through the ${c.pending} notes still to decide.`
+            }">${scope ? `${c.pending} still to decide in ${esc(scopeLabel())}` : `Go through ${c.pending}`}</button>`
           : "";
     return `
       <header class="head">
@@ -1283,7 +1394,7 @@
       <div class="undo" role="status">
         <span>${esc(undone.label)}</span>
         <button class="undoAct" type="button" data-act="undo">${I.undo}Undo<kbd>${MOD}+Z</kbd></button>
-        <span class="undoFor tab">for ${Math.max(1, undoLeft)}s</span>
+        <span class="undoFor tab">for ${Math.max(1, undoLeft)} seconds</span>
       </div>`;
   }
 
@@ -1315,18 +1426,23 @@
           aria-label="Filing this under ${attr(about.label)}${about.when ? `, ${attr(about.when)}` : ""}. Change it.">
           ${I.keep}<span>${esc(about.label)}</span>${I.chevron}
         </button>
-        ${picker === "capture" ? subjectList("capture") : ""}
+        ${picker === "capture" ? subjectList("capture", filing) : ""}
       </span>`;
   }
 
-  function subjectList(which) {
+  /* Every caller passed nothing, so every listbox in the product marked
+     itself against `filing` — the CAPTURE chip's state. At the seam that
+     produced three answers to one question: the button read one place,
+     the note's aside read a second, and the option marked selected was a
+     third. A listbox now says what the control that opened it holds. */
+  function subjectList(which, current) {
     return `
       <span class="pickerPop" role="listbox" aria-label="What is this about">
         ${Object.entries(N.subjects)
           .sort((a, b) => a[1].stake - b[1].stake || (a[1].days ?? 99) - (b[1].days ?? 99))
           .map(
             ([key, about]) => `
-          <button class="pickerRow" type="button" role="option" aria-selected="${key === filing}"
+          <button class="pickerRow" type="button" role="option" aria-selected="${key === current}"
             data-act="file-${which}" data-key="${attr(key)}">
             <span>${esc(about.label)}</span>
             <em>${about.when ? esc(about.when) : "No date"}</em>
@@ -1415,7 +1531,7 @@
         <div class="peelRow">
           <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
             aria-label="${attr(N.copy.destinationLabel)}: ${attr(destinationOf(note))}. Change it."><b>To</b>${esc(destinationOf(note))}${I.chevron}</button>
-          ${picker === "peel" ? subjectList("peel") : ""}
+          ${picker === "peel" ? subjectList("peel", destination) : ""}
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="cancel-peel">${esc(N.copy.cancel)}</button>
           <button class="act" data-primary type="button" data-act="send"${taskWording.trim() ? "" : " aria-disabled=\"true\""}>${I.send}${taskWording.trim() ? esc(N.copy.send) : "Write the wording, then send"}</button>
@@ -1438,11 +1554,7 @@
        appeared. */
     const mark = isPeeling ? pickedWords : standingPick(note);
     const bodyHtml =
-      mark && note.body.includes(mark)
-        ? esc(note.body).replace(esc(mark), `<span class="pick">${esc(mark)}</span>`)
-        : note.lede === false
-          ? esc(note.body)
-          : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
+      bodyHtmlOf(note, mark && note.body.includes(mark) ? mark : null);
     /* Everything that is true ABOUT the note lives beside it, not above
        it: the desk was a thousand pixels wide doing five hundred of work,
        and the facts were stacked on one line over the writing. */
@@ -1455,11 +1567,17 @@
               aria-label="This note is about ${attr(note.about.label)}${note.about.when ? `, ${attr(note.about.when)}` : ""}. Change it.">
               <span>${esc(note.about.label)}${note.about.when ? `, ${esc(note.about.when)}` : ""}</span>${I.chevron}
             </button>
-            ${picker === "note" ? subjectList("note") : ""}
+            ${picker === "note" ? subjectList("note", note.aboutKey) : ""}
           </span>
         </span>
         <span class="deskFact"><b>Length</b><span class="tab">${note.words} words</span></span>
-        ${note.sent ? `<span class="deskFact"><b>In Tasks as</b><span><a href="#tasks">${esc(note.task || "a task")}</a></span></span>` : ""}
+        ${/* How to take words out of this note is a fact ABOUT the note,
+             so it lives in the margin with the others rather than under
+             the writing column, where it cost the desk fifty-four pixels
+             of height and the index paid for them. It stands down the
+             moment a pick exists, because then the pick bar says it. */ ""}
+        ${standingPick(note) ? "" : `<span class="deskFact"><b>${esc(N.copy.pickLabel)}</b><span class="pickHint">${esc(N.copy.pickHint)}</span></span>`}
+        ${note.sent ? `<span class="deskFact"><b>In Tasks as</b><span><button class="deskFactLink" type="button" data-act="open-task" aria-label="${attr(`Open in Tasks: ${note.task || "a task"}. Your note stays here.`)}">${esc(note.task || "a task")}</button></span></span>` : ""}
       </div>`;
     if (isPeeling) {
       /* The product's signature promise is that the note never leaves and
@@ -1691,7 +1809,7 @@
     return `
       <div class="indexWrap">
         <div class="indexHead">
-          <span>${esc(o.title || "Your notes")}</span><kbd class="headKbd">${MOD === "⌘" ? "⌘↓" : "Ctrl ↓"}</kbd>
+          <span>${esc(o.title || "Your notes")}</span>${o.mode === "crossed" || o.noDays ? "" : `<kbd class="headKbd">${MOD === "⌘" ? "⌘↓" : "Ctrl ↓"}</kbd>`}
           <span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>
           ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
@@ -1709,10 +1827,9 @@
   function phoneSheet(note) {
     const src = N.sources[note.source];
     const marked = peeling === note.id ? pickedWords : standingPick(note);
-    const bodyHtml =
-      marked && note.body.includes(marked)
-        ? esc(note.body).replace(esc(marked), `<span class="pick">${esc(marked)}</span>`)
-        : `<span class="lede">${esc(note.title)}</span>${note.rest ? ` ${esc(note.rest)}` : ""}`;
+    /* Same one renderer the desk and the hand use, so all three readers
+       draw sentences a finger can reach and a mark that survives a drag. */
+    const bodyHtml = bodyHtmlOf(note, marked && note.body.includes(marked) ? marked : null);
     return `
       <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(note.title)}">
         <div class="phoneSheetTop">
@@ -1723,7 +1840,7 @@
               aria-label="This note is about ${attr(note.about.label)}. Change it.">
               <span>${esc(note.about.label)}</span>${I.chevron}
             </button>
-            ${picker === "note" ? subjectList("note") : ""}
+            ${picker === "note" ? subjectList("note", note.aboutKey) : ""}
           </span>
         </div>
         <div class="phoneSheetBody">
@@ -1821,12 +1938,17 @@
       };
     }
     const depth = Math.min(3, Math.max(0, left - 1));
+    /* A confirmation belongs to ONE card and must not outlive it. Escape
+       was only one of the routes that left it armed — Decide later, an
+       undo, and anything else that advances the queue did the same, so a
+       later card could arrive already asking "Delete it everywhere?"
+       about a note nobody had touched. Tying it to the card that is
+       actually on the table closes every one of those routes at once. */
+    if (confirming && confirming !== note.id) confirming = null;
     const src = N.sources[note.source];
     const handMark = peeling === note.id ? pickedWords : standingPick(note);
     const handHtml =
-      handMark && note.body.includes(handMark)
-        ? esc(note.body).replace(esc(handMark), `<span class="pick">${esc(handMark)}</span>`)
-        : esc(note.body);
+      bodyHtmlOf(note, handMark && note.body.includes(handMark) ? handMark : null);
     return {
       desk: `
         <section class="desk" aria-label="Notes still to decide">
@@ -1848,8 +1970,8 @@
                     ? `<span class="topMeta">Writing the task below.</span><span class="spacer"></span>`
                     : confirming === note.id
                       ? `<span class="confirm" role="status">${I.trash}<span>Delete it everywhere?</span>
-                           <button class="act" data-ink type="button" data-act="d-delete-yes">Delete</button>
-                           <button class="act" data-quiet type="button" data-act="d-delete-no">Keep it</button></span><span class="spacer"></span>`
+                           <button class="act" type="button" data-act="d-delete-yes">Delete</button>
+                           <button class="act" data-ink type="button" data-act="d-delete-no">Keep it</button></span><span class="spacer"></span>`
                       : `<button class="act" data-primary type="button" data-act="d-task">${I.tasks}${standingPick(note) ? "Send to Tasks" : "Pick the words, then send"}<kbd>T</kbd></button>
                          <button class="act" type="button" data-act="d-keep">${I.keep}Just keep it<kbd>K</kbd></button>
                          <span class="spacer"></span>
@@ -1863,7 +1985,7 @@
             ${peeling === note.id ? peelPanel(note) : ""}
             <p class="deckNote">${I.undo}<span data-left>${left} still to decide.</span> ${
               decided.length
-                ? `${decided.length} decided just now, and every one of them can be put back.`
+                ? `${decided.length === 1 ? "One decided just now, and you can put it back." : `${decided.length} decided just now, and you can put any of them back.`}`
                 : "Nothing is decided until you say so, and every decision can be put back."
             }</p>
           </div>
@@ -1960,6 +2082,10 @@
       peeling = note.id;
       seamTouched = true;
     }
+    /* This room opens the peel directly rather than through startPeel(),
+       so it has to seed the seam's destination the same way, or the
+       control opens with nothing marked in its own list. */
+    if (peeling && !destination) destination = note.aboutKey || null;
     if (!pickedWords) pickedWords = note.pick || note.title.replace(/[.]$/, "");
     if (!taskWording) {
       taskWording = pickedWords.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
@@ -2096,7 +2222,7 @@
       `<div class="top" data-live>
         <p class="readBody">Written while the connection was down.</p>
         <div class="topFoot">
-          <span class="topMeta">Held on this device. Nothing is lost.</span>
+          <span class="topMeta">Held on this device.</span>
           <span class="spacer"></span>
           <button class="act" type="button" data-act="retry">${I.undo}Try now</button>
         </div>
@@ -2112,7 +2238,7 @@
               ${I.wifiOff}
               <div>
                 <b>Held on this device</b>
-                <p>You are offline, so this one is saved here. Notes will put it in your notes the moment you reconnect. Nothing is lost and nothing has left.</p>
+                <p>You are offline, so this one is held here. It joins the rest the moment you reconnect. Nothing is lost and nothing has left Notes.</p>
               </div>
             </div>
             <div class="state">
@@ -2388,6 +2514,30 @@
          path in paint() already re-finds this field by id. */
       query = q.value;
       paint();
+      /* Search filtered in total silence: opening it announced itself
+         once and then nothing changed the live region again, so typing
+         a query that took the pile from fourteen rows to one, and then
+         to none, said nothing at all. The no-result panel is one of the
+         best-written things in this file — it names what was searched
+         for, the nearest note and two ways out — and a person using it
+         by ear never learned it was there. Spoken from the strings the
+         room already draws, so the ear and the eye cannot drift, and
+         debounced past per-character echo. */
+      clearTimeout(searchSaid);
+      searchSaid = setTimeout(() => {
+        const head = mount.querySelector(".indexHead .cnt");
+        const hits = mount.querySelectorAll(".idxRow").length;
+        if (!query.trim()) return;
+        if (hits) {
+          const cursor = mount.querySelector(".idxRow[data-cursor] .idxText");
+          say(`${head ? head.textContent.trim() : `${hits} found`}${cursor ? `. 1 of ${hits}. ${cursor.textContent.trim()}` : ""}`);
+        } else {
+          const title = mount.querySelector(".noHits .emptyTitle");
+          const body = mount.querySelector(".noHits .emptyBody");
+          const moves = [...mount.querySelectorAll(".noHits .emptyMove .act")].map((n) => n.textContent.trim());
+          say(`${title ? title.textContent.trim() : ""} ${body ? body.textContent.trim() : ""} ${moves.join(", or ")}.`);
+        }
+      }, 350);
       return;
     }
     const piece = e.target.closest(".pieceField");
@@ -2416,6 +2566,26 @@
       picker = null;
       paint();
     }
+    /* Picking had no pointer instrument at all: clicking a sentence did
+       nothing, and a phone had no route in, so the promise reduced to
+       "the exact words the machine picked for you". The spans the arrow
+       model already walks are the targets now, so pointer and keyboard
+       write the same sentAt and the same picked string. Shift extends,
+       which is the contract shift-arrow already has. */
+    const sent = e.target.closest(".sent");
+    if (sent && sent.closest(".readBody, .handBody")) {
+      const target = pickTarget();
+      if (target) {
+        const i = Number(sent.dataset.i);
+        if (e.shiftKey && sentAt) {
+          sentAt = [Math.min(sentAt[0], i), Math.max(sentAt[1], i)];
+        } else {
+          sentAt = [i, i];
+        }
+        setPick(sentenceText(target.body, sentAt[0], sentAt[1]));
+        return;
+      }
+    }
     const row = e.target.closest(".idxRow");
     if (row) {
       openNote(row.dataset.id);
@@ -2436,11 +2606,13 @@
       return;
     }
     if (a === "file-peel") {
+      /* This branch used to write note.about and note.aboutKey — so the
+         one surface whose printed promise is "Your note stays here" was
+         the only place in the build that edited the note, and the only
+         mutation with no way back. It sets where the TASK goes. */
       const about = N.subjects[act.dataset.key];
-      const note = work().find((n) => n.id === peeling);
-      if (note && about) {
-        note.about = about;
-        note.aboutKey = act.dataset.key;
+      if (about) {
+        destination = act.dataset.key;
         say(`This one goes to ${about.label}.`);
       }
       picker = null;
@@ -2484,10 +2656,19 @@
     if (a === "cancel-peel") { cancelPeel(); return; }
     if (a === "send") { sendPeel(); return; }
     if (a === "close-peel" || a === "open-task") {
+      /* The resting desk used to offer this journey as <a href="#tasks">
+         — underlined, a tab stop, and completely dead: no such id
+         exists, nothing changed, nothing was announced. The receipt
+         inside the peel already had the live control, so the product
+         shipped two controls for one journey and the dead one was the
+         one an operator meets first. One control now; but the peel's
+         landing is wrong for a press that came from the aside, where
+         it would throw focus off the control and across the sheet. */
+      const fromDesk = !peeling;
       peeling = null;
       sentTask = null;
       say(a === "open-task" ? "Opening Tasks. Your note stayed here." : "Done. Your note stayed here.");
-      refocus = { kind: "read" };
+      refocus = fromDesk ? { kind: "act", sel: '[data-act="open-task"]' } : { kind: "read" };
       paint();
       return;
     }
@@ -2797,6 +2978,20 @@
         return;
       }
       if (state === "review") {
+        /* Escape is the universal cancel and it was skipping straight
+           past a live delete confirmation to leave the room, without
+           ever clearing `confirming` — so the queue re-armed the
+           destructive prompt on a later visit where nobody had asked to
+           delete anything. Same wording and same landing as the Keep it
+           button, so the key and the control are one behaviour. */
+        if (confirming) {
+          e.preventDefault();
+          confirming = null;
+          say("Nothing was deleted.");
+          refocus = { kind: "act", sel: '[data-act="d-delete"]' };
+          paint();
+          return;
+        }
         e.preventDefault();
         state = "notebook";
         sentAt = null;
@@ -2897,6 +3092,21 @@
         e.preventDefault();
         jumpSentence(e.key === "Home" ? "first" : "last", e.shiftKey);
         return;
+      }
+      /* The body announced "5 words picked. Use these words to make them
+         a task" and named no way forward, because none existed: Enter
+         here was completely inert. Gated on a standing pick so Enter on
+         arrival stays inert rather than firing the nudge at somebody who
+         has only just opened the note, and routed through the same
+         startPeel the hand's T uses so the two rooms cannot drift into
+         two preconditions. */
+      if (e.key === "Enter") {
+        const target = pickTarget();
+        if (target && standingPick(target)) {
+          e.preventDefault();
+          startPeel(target.id);
+          return;
+        }
       }
       if (e.key === " ") {
         e.preventDefault();

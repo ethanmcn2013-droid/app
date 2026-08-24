@@ -40,6 +40,21 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
 }
 
 const rowCount = (page) => page.locator(".idxRow").count();
+/* Round 9 made the note sentence spans, so a pick crossing a sentence
+   boundary is drawn in more than one .pick. The mark is the ink, not the
+   element count: this reads what the page actually spells. */
+const markText = (page, sel = ".readBody") =>
+  page.evaluate(
+    (s) =>
+      [...document.querySelectorAll(`${s} .pick`)]
+        .map((m) => m.textContent)
+        .join("")
+        .replace(/\s+/g, " ")
+        .trim(),
+    sel,
+  );
+const markCount = (page, sel = ".readBody") =>
+  page.evaluate((s) => (document.querySelectorAll(`${s} .pick`).length ? 1 : 0), sel);
 const said = (page) => page.locator("#say").textContent();
 
 /* ── capture: the whole promise ──────────────────────────────────── */
@@ -96,7 +111,11 @@ const said = (page) => page.locator("#say").textContent();
   const foot = await page.locator(".indexHead .cnt").textContent();
   const rows = await rowCount(page);
   ok("the head's count and the index agree", foot.trim().startsWith(String(rows)), `${foot.trim()} vs ${rows} rows`);
-  ok("the head states the outstanding decisions", /\d+ still to decide/.test(head), head);
+  /* Round 9: unscoped, the entrance to the queue is a verb carrying its
+     count ("Go through 8") rather than a bare statistic of how far
+     behind you are. The count is still on the head and still resolves
+     from the same accessor; only the grammar changed. */
+  ok("the head states the outstanding decisions", /\d+ still to decide|Go through \d+/.test(head), head);
   await page.close();
 }
 
@@ -461,7 +480,7 @@ const said = (page) => page.locator("#say").textContent();
 {
   const page = await open("?state=seam");
   ok("the note it came from is never covered", (await page.locator(".readBody").count()) === 1);
-  ok("the words that cross are marked inside the person's own sentence", (await page.locator(".pick").count()) === 1);
+  ok("the words that cross are marked inside the person's own sentence", (await markCount(page, ".readBody, .handBody")) === 1);
   ok(
     "the wording field is labelled by the label above it",
     await page.evaluate(() => {
@@ -637,7 +656,10 @@ const said = (page) => page.locator("#say").textContent();
     (await page.locator(".undo span").first().textContent()).trim() === "Saved.",
     await page.locator(".undo span").first().textContent(),
   );
-  ok("and how long the way back lasts", (await page.locator(".undoFor").textContent()).includes("30s"));
+  /* Round 9: "30s" was the only abbreviation in a product that writes
+     "280 characters or fewer" in full, and the delete card three inches
+     away already said "thirty seconds". One fact, one grammar. */
+  ok("and how long the way back lasts", (await page.locator(".undoFor").textContent()).includes("30 seconds"));
   await page.close();
 }
 
@@ -712,8 +734,8 @@ const said = (page) => page.locator("#say").textContent();
 {
   const page = await open("?state=seam");
   ok("the note it came from is on screen", (await page.locator(".readBody").count()) === 1);
-  ok("the words that will cross are marked inside it", (await page.locator(".readBody .pick").count()) === 1);
-  const picked = (await page.locator(".readBody .pick").textContent()).trim();
+  ok("the words that will cross are marked inside it", (await markCount(page)) === 1);
+  const picked = await markText(page);
   ok("and the wording is seeded from exactly those words", (await page.locator(".peelField").inputValue()).includes(picked.replace(/[.]$/, "").split(" ").slice(0, 4).join(" ")) || (await page.locator(".peelField").inputValue()).length > 0);
 
   await page.locator(".peelField").click();
@@ -1100,7 +1122,23 @@ const said = (page) => page.locator("#say").textContent();
   });
   await page.waitForTimeout(300);
   ok("a pick raises a statement of what will cross", (await page.locator(".pickBar").count()) === 1);
-  ok("and marks the words in the note", (await page.locator(".readBody .pick").count()) === 1);
+  /* Round 9: the note is sentence spans now, so a pick that crosses a
+     sentence boundary is marked in more than one span. Counting spans
+     asserted the old markup; what actually matters is that the ink on
+     the page spells the picked string exactly. */
+  ok(
+    "and marks the words in the note, exactly",
+    await page.evaluate(() => {
+      const marks = [...document.querySelectorAll(".readBody .pick")];
+      if (!marks.length) return false;
+      const drawn = marks.map((m) => m.textContent).join("").replace(/s+/g, " ").trim();
+      const body = document.querySelector(".readBody").textContent.replace(/s+/g, " ");
+      return drawn.length > 2 && body.includes(drawn);
+    }),
+    await page.evaluate(() =>
+      [...document.querySelectorAll(".readBody .pick")].map((m) => m.textContent).join("|"),
+    ),
+  );
   const after = await page.evaluate(() => document.querySelector(".indexHead").getBoundingClientRect().top);
   ok("without moving the page under the person's hand", Math.abs(after - before) < 3, `${Math.round(before)} then ${Math.round(after)}`);
   await page.close();
@@ -1207,10 +1245,19 @@ const said = (page) => page.locator("#say").textContent();
   const page = await open();
   const t = await page.evaluate(() => {
     const rule = getComputedStyle(document.querySelector(".idxDay"));
-    const lede = getComputedStyle(document.querySelector(".idxRow .idxText b"));
-    return { rule: parseFloat(rule.fontSize), lede: parseFloat(lede.fontSize) };
+    /* Round 9: with the lede budget finally enforced on the seeded
+       notes, no shipped note earns a lede, so there is no <b> in the
+       index to measure. That is the point of the change — the machine
+       stops re-weighting a person's prose — so the rank this asserts is
+       the one that actually carries it: the day rule over the row. */
+    const row = getComputedStyle(document.querySelector(".idxRow .idxText"));
+    const bolds = document.querySelectorAll(".idxRow .idxText b").length;
+    const overBudget = [...document.querySelectorAll(".idxRow .idxText b")]
+      .filter((n) => n.textContent.trim().length > 48).length;
+    return { rule: parseFloat(rule.fontSize), row: parseFloat(row.fontSize), bolds, overBudget };
   });
-  ok("the heading outranks the rows beneath it", t.rule > t.lede, `${t.rule} over ${t.lede}`);
+  ok("the heading outranks the rows beneath it", t.rule > t.row, `${t.rule} over ${t.row}`);
+  ok("and no row spends the lede weight past its declared budget", t.overBudget === 0, `${t.bolds} ledes, ${t.overBudget} over 48`);
   await page.close();
 }
 
@@ -1386,7 +1433,7 @@ const said = (page) => page.locator("#say").textContent();
      the card, so the primary says what it will do rather than asking for
      something that is already there — one expression answers what is
      marked, what the button says, and what the seam receives. */
-  ok("a standing pick is drawn on the card, not held invisibly", (await page.locator(".handBody .pick").count()) === 1);
+  ok("a standing pick is drawn on the card, not held invisibly", (await markCount(page, ".handBody")) === 1);
   ok(
     "and the primary reads off the same pick it will send",
     (await page.locator('.handFoot [data-act="d-task"]').textContent()).includes("Send to Tasks"),
@@ -1394,7 +1441,7 @@ const said = (page) => page.locator("#say").textContent();
   /* Walk on to a card nobody has picked from. */
   await page.locator('[data-act="d-later"]').click();
   await page.waitForTimeout(320);
-  ok("a card with no pick states its precondition at rest", (await page.locator(".handBody .pick").count()) === 0);
+  ok("a card with no pick states its precondition at rest", (await markCount(page, ".handBody")) === 0);
   ok(
     "and its primary says so",
     (await page.locator('.handFoot [data-act="d-task"]').textContent()).includes("Pick the words"),
@@ -1415,7 +1462,9 @@ const said = (page) => page.locator("#say").textContent();
   const heard = await said(page);
   ok("pressing it invites rather than reprimands", !/^Highlight/.test(heard), heard);
   ok("and it says what to do next", /pick the words/i.test(heard), heard);
-  ok("and it names both routes into picking, not just the mouse one", /arrow keys/i.test(heard), heard);
+  /* Round 9 added a third route — tapping a sentence — because a phone
+     had neither of the other two. All three are named. */
+  ok("and it names every route into picking, not just the mouse one", /arrow keys/i.test(heard) && /tap a sentence/i.test(heard), heard);
   /* The invitation stays until it is answered. It used to be cleared on a
      4.2-second clock, so the sentence telling somebody what to do
      disappeared while they were doing it. */
@@ -1425,7 +1474,7 @@ const said = (page) => page.locator("#say").textContent();
   await page.locator(".handBody").focus();
   await page.keyboard.press("ArrowRight");
   await page.waitForTimeout(200);
-  const pickedText = await page.locator(".handBody .pick").textContent();
+  const pickedText = await markText(page, ".handBody");
   await page.keyboard.press("t");
   await page.waitForTimeout(320);
   ok("picking, then pressing, opens the peel", (await page.locator(".hand .peel").count()) === 1);
@@ -1455,7 +1504,7 @@ const said = (page) => page.locator("#say").textContent();
   await page.locator('[data-act="d-delete-yes"]').click();
   await page.waitForTimeout(320);
   ok("saying yes deletes it", (await page.locator(".handOf").textContent()) !== before);
-  ok("and the way back says how long it lasts", (await page.locator(".undoFor").textContent()).includes("30s"));
+  ok("and the way back says how long it lasts", (await page.locator(".undoFor").textContent()).includes("30 seconds"));
   await page.close();
 }
 
@@ -1721,16 +1770,39 @@ const said = (page) => page.locator("#say").textContent();
      screen was ambiguous, so the pill read as the subject's count and
      the group below it said a different number. The visible text and
      the name now state the same scope in the same words. */
+  /* Round 9 replaced the unscoped half. "8 still to decide in the
+     notebook" named the room it was standing in, and was the loudest
+     string in the product saying how far behind you are. Unscoped it is
+     now a verb with its count, which cannot be read as the adjacent
+     couple's figure the way a bare count could — so the scope wording is
+     asserted where it does real work, on the scoped chip. */
   ok(
-    "the chip names its own scope on screen, not only in its name",
-    (await page.locator(".chip").textContent()).includes("in the notebook"),
+    "unscoped, the chip is the act it performs and carries its count",
+    /^Go through \d+$/.test((await page.locator(".chip").textContent()).trim()),
     await page.locator(".chip").textContent(),
   );
   ok(
-    "and the name says it in the same words the screen does",
-    (await page.locator(".chip").getAttribute("aria-label")).includes("in the notebook"),
+    "and its name says the same thing in the same words",
+    /Go through the \d+ notes still to decide/.test(await page.locator(".chip").getAttribute("aria-label")),
     await page.locator(".chip").getAttribute("aria-label"),
   );
+  {
+    await page.locator(".headNext").click();
+    await page.waitForTimeout(260);
+    const scoped = (await page.locator('.chip[data-act="review"]').textContent()).trim();
+    ok(
+      "scoped, it names the subject it counts, on screen",
+      /still to decide in /.test(scoped),
+      scoped,
+    );
+    ok(
+      "and its name says that in the same words too",
+      (await page.locator('.chip[data-act="review"]').getAttribute("aria-label")).includes("still to decide in "),
+      await page.locator('.chip[data-act="review"]').getAttribute("aria-label"),
+    );
+    await page.locator('[data-act="unscope"]').click();
+    await page.waitForTimeout(220);
+  }
   ok(
     "and no index group rule reproduces the head's label, date and count together",
     await page.evaluate(() => {
@@ -1908,18 +1980,18 @@ const said = (page) => page.locator("#say").textContent();
      is graded is the change the keyboard makes, and that it can be given
      back to exactly where it started. */
   const atRest = await page.locator('[data-act="peel"]').textContent();
-  const restPick = (await page.locator(".readBody .pick").count())
-    ? await page.locator(".readBody .pick").textContent()
+  const restPick = (await markCount(page))
+    ? await markText(page)
     : "";
   await page.locator(".readBody").focus();
   await page.keyboard.press("ArrowRight");
   await page.waitForTimeout(240);
-  ok("the arrows pick a whole sentence", (await page.locator(".readBody .pick").count()) === 1);
-  const one = await page.locator(".readBody .pick").textContent();
+  ok("the arrows pick a whole sentence", (await markCount(page)) === 1);
+  const one = await markText(page);
   ok("and it is announced in words, not in a colour", /words picked/.test(await said(page)), await said(page));
   await page.keyboard.press("Shift+ArrowRight");
   await page.waitForTimeout(240);
-  const two = await page.locator(".readBody .pick").textContent();
+  const two = await markText(page);
   ok("shift extends it to the next one", two.length > one.length, `${one.length} then ${two.length}`);
   ok(
     "and the primary reads off the same pick",
@@ -1927,8 +1999,8 @@ const said = (page) => page.locator("#say").textContent();
   );
   await page.keyboard.press(" ");
   await page.waitForTimeout(240);
-  const after = (await page.locator(".readBody .pick").count())
-    ? await page.locator(".readBody .pick").textContent()
+  const after = (await markCount(page))
+    ? await markText(page)
     : "";
   ok("space gives it back, exactly to where it started", after === restPick, `"${restPick}" then "${after}"`);
   ok("and the primary says what it said at rest", (await page.locator('[data-act="peel"]').textContent()) === atRest);
@@ -2263,7 +2335,7 @@ const said = (page) => page.locator("#say").textContent();
      "Undo for 30 seconds" in this announcement. The strip owns it and
      counts it down; the announcement states what happened. */
   ok("and says what happened, without a second grammar for the window", /Discarded\. Nothing was kept\./.test(await said(page)), await said(page));
-  ok("the strip carries the window", /for \d+s/.test(await page.locator(".undoFor").textContent()), await page.locator(".undoFor").textContent());
+  ok("the strip carries the window", /for \d+ seconds/.test(await page.locator(".undoFor").textContent()), await page.locator(".undoFor").textContent());
   ok(
     "and the window actually moves",
     await (async () => {
@@ -2352,12 +2424,237 @@ const said = (page) => page.locator("#say").textContent();
   await page.locator(".readBody").focus();
   await page.keyboard.press("End");
   await page.waitForTimeout(260);
-  const last = await page.locator(".readBody .pick").textContent();
+  const last = await markText(page);
   await page.keyboard.press("Home");
   await page.waitForTimeout(260);
-  const first = await page.locator(".readBody .pick").textContent();
+  const first = await markText(page);
   ok("end reaches its last sentence and home its first", last !== first && first.length > 3, `"${first.slice(0, 24)}" / "${last.slice(0, 24)}"`);
   await page.close();
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 9
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the note is an instrument, on every device ──────────────────── */
+{
+  const page = await open("?state=pressure");
+  ok("the note is made of sentences a pointer can reach", (await page.locator(".readBody .sent").count()) > 1);
+  ok(
+    "and each one says it is pressable",
+    await page.evaluate(() => getComputedStyle(document.querySelector(".readBody .sent")).cursor === "pointer"),
+  );
+  const before = await markText(page);
+  await page.locator(".readBody .sent").nth(1).click();
+  await page.waitForTimeout(320);
+  const after = await markText(page);
+  ok("pressing a sentence picks it", Boolean(after) && after !== before, `"${before}" then "${after}"`);
+  await page.close();
+}
+{
+  const page = await open("?state=notebook", { width: 390, height: 844, hasTouch: true, isMobile: true });
+  await page.locator(".idxRow").nth(1).click();
+  await page.waitForTimeout(420);
+  ok("a phone reader gets the same instrument", (await page.locator(".phoneSheet .sent").count()) >= 1);
+  const before = await markText(page, ".phoneSheet");
+  await page.locator(".phoneSheet .sent").nth(1).click();
+  await page.waitForTimeout(420);
+  const after = await markText(page, ".phoneSheet");
+  ok("and a tap picks a sentence, which is the only route a phone has", Boolean(after) && after !== before, `"${before}" then "${after}"`);
+  await page.close();
+}
+
+/* ── only the exact words, which means whole ones ─────────────────── */
+{
+  const page = await open("?state=pressure");
+  await page.evaluate(() => {
+    const body = document.querySelector(".readBody");
+    const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT);
+    const n = walker.nextNode();
+    const t = n.textContent;
+    const a = Math.max(1, t.indexOf(" ", 8) - 3);
+    const b = Math.max(a + 12, t.indexOf(" ", 40) - 2);
+    const range = document.createRange();
+    range.setStart(n, a);
+    range.setEnd(n, Math.min(b, t.length - 1));
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  });
+  await page.waitForTimeout(420);
+  const drawn = await markText(page);
+  ok("a drag that starts and ends mid-word still picks whole words", drawn.length > 3, drawn);
+  ok(
+    "and both ends of it are whole words from the note",
+    await page.evaluate((d) => {
+      const body = document.querySelector(".readBody").textContent.replace(/\s+/g, " ");
+      const at = body.indexOf(d);
+      if (at < 0) return false;
+      const before = at === 0 ? " " : body[at - 1];
+      const after = at + d.length >= body.length ? " " : body[at + d.length];
+      return /\s/.test(before) && /\s/.test(after);
+    }, drawn),
+    drawn,
+  );
+  await page.close();
+}
+
+/* ── the seam answers one question once ──────────────────────────── */
+{
+  const page = await open("?state=seam");
+  ok(
+    "the peel is paper, not a callout with a caret",
+    await page.evaluate(() => getComputedStyle(document.querySelector(".peel"), "::before").content === "none"),
+  );
+  const subjectBefore = await page.locator('.deskAside [data-act="refile"]').textContent();
+  await page.locator('[data-act="destination"]').click();
+  await page.waitForTimeout(300);
+  const seam = await page.evaluate(() => {
+    const btn = document.querySelector('[data-act="destination"]').textContent.replace(/^To/, "").trim();
+    const opts = [...document.querySelectorAll('.pickerPop [role="option"]')];
+    const marked = opts
+      .filter((o) => o.getAttribute("aria-selected") === "true")
+      .map((o) => o.querySelector("span").textContent);
+    return { btn, marked, inList: opts.some((o) => o.querySelector("span").textContent === btn) };
+  });
+  ok("the destination it shows is one of the options it offers", seam.inList, seam.btn);
+  ok(
+    "and exactly one option is marked, the one it shows",
+    seam.marked.length === 1 && seam.marked[0] === seam.btn,
+    JSON.stringify(seam),
+  );
+  await page.locator('.pickerPop [role="option"]').nth(2).click();
+  await page.waitForTimeout(280);
+  await page.locator('[data-act="cancel-peel"]').click();
+  await page.waitForTimeout(380);
+  const subjectAfter = await page.locator('.deskAside [data-act="refile"]').textContent();
+  ok(
+    "and choosing a destination never edits the note, which is what the seam promises out loud",
+    subjectAfter === subjectBefore,
+    `${subjectBefore} then ${subjectAfter}`,
+  );
+  await page.close();
+}
+
+/* ── the commit control is reachable by pointer ──────────────────── */
+{
+  for (const size of [
+    { width: 1440, height: 960 },
+    { width: 1440, height: 800 },
+    { width: 1280, height: 800 },
+  ]) {
+    const page = await open("?state=seam", size);
+    ok(
+      `the send is not under the dock at ${size.width}x${size.height}`,
+      await page.evaluate(() => {
+        const send = document.querySelector('.peel [data-act="send"]');
+        if (!send) return false;
+        const r = send.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return Boolean(hit && hit.closest('[data-act="send"]'));
+      }),
+    );
+    await page.close();
+  }
+}
+
+/* ── the way forward from a pick, and the way out of a confirm ───── */
+{
+  const page = await open("?state=pressure");
+  await page.locator(".readBody").focus();
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(400);
+  ok("Enter on a standing pick opens the seam", (await page.locator(".peel").count()) === 1);
+  await page.close();
+}
+{
+  const page = await open("?state=review");
+  await page.locator('[data-act="d-delete"]').click();
+  await page.waitForTimeout(320);
+  ok(
+    "the confirmation opens on the safe half",
+    await page.evaluate(() => document.activeElement.dataset.act === "d-delete-no"),
+  );
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(340);
+  ok("escape cancels the confirmation rather than leaving the room", (await page.locator('[data-act="d-delete-yes"]').count()) === 0);
+  ok("and it is still the room it was", (await page.locator(".hand").count()) === 1);
+  await page.keyboard.press("l");
+  await page.waitForTimeout(320);
+  ok("and a later card never arrives already armed", (await page.locator('[data-act="d-delete-yes"]').count()) === 0);
+  await page.close();
+}
+
+/* ── search says what it did ─────────────────────────────────────── */
+{
+  const page = await open("?state=search");
+  const open0 = await said(page);
+  await page.locator("#q").fill("");
+  await page.keyboard.type("florist", { delay: 18 });
+  await page.waitForTimeout(900);
+  const hit = await said(page);
+  ok("filtering says how many it found", hit !== open0 && /notes? ha(s|ve)/.test(hit), hit.slice(0, 80));
+  await page.locator("#q").fill("");
+  await page.keyboard.type("zzzqqwob", { delay: 18 });
+  await page.waitForTimeout(900);
+  const miss = await said(page);
+  ok(
+    "and the way out of a dead end is spoken, not only drawn",
+    /No note says/.test(miss) && /Back to your notes/.test(miss),
+    miss.slice(0, 110),
+  );
+  await page.close();
+}
+
+/* ── the commit control does not move while you type ─────────────── */
+{
+  const page = await open();
+  await page.locator(".topField").click();
+  await page.keyboard.type("Ring the marquee company about the side panels", { delay: 22 });
+  await page.waitForTimeout(760);
+  const typed = await page.evaluate(() => {
+    const b = document.querySelector('.topFoot [data-act="keep"]');
+    return {
+      right: Math.round(b.getBoundingClientRect().right),
+      kids: [...b.parentNode.children].map((c) => c.className.split(" ")[0]).join("|"),
+    };
+  });
+  await page.close();
+  const t2 = await open("?state=capture");
+  const tmpl = await t2.evaluate(() => {
+    const b = document.querySelector('.topFoot [data-act="keep"]');
+    return {
+      right: Math.round(b.getBoundingClientRect().right),
+      kids: [...b.parentNode.children].map((c) => c.className.split(" ")[0]).join("|"),
+    };
+  });
+  ok("the foot a typist sees is the foot the template draws", typed.kids === tmpl.kids, `${typed.kids} vs ${tmpl.kids}`);
+  ok("and the commit control is in the same place in both", Math.abs(typed.right - tmpl.right) < 2, `${typed.right} vs ${tmpl.right}`);
+  await t2.close();
+}
+
+/* ── the lede budget holds on the notes actually shipped ─────────── */
+{
+  for (const room of ["?state=notebook", "?state=pressure"]) {
+    const page = await open(room);
+    ok(
+      `${room}: no rendered row spends the lede weight past its budget`,
+      await page.evaluate(() => [...document.querySelectorAll(".idxRow .idxText b")].every((n) => n.textContent.trim().length <= 48)),
+    );
+    ok(
+      `${room}: and no note is set entirely in the lede weight`,
+      await page.evaluate(() =>
+        [...document.querySelectorAll(".idxRow .idxText")].every((t) => {
+          const b = t.querySelector("b");
+          return !b || b.textContent.trim().length < t.textContent.trim().length * 0.8;
+        }),
+      ),
+    );
+    await page.close();
+  }
 }
 
 ok("no console errors anywhere", errors.length === 0, [...new Set(errors)].slice(0, 3).join(" · "));

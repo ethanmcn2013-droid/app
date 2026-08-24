@@ -236,15 +236,40 @@ window.NOTES = (function () {
     },
   ];
 
+  /* THE LEDE BUDGET, and the only copy of it.
+     notebook.js declared LEDE_MAX = 48 — "a COMPLETE sentence, short
+     enough to lead, with something left after it to lead into" — and
+     applied it only to notes captured at run time. Every seeded note
+     was shaped here by a bare sentence split with no budget at all, so
+     thirteen of the fourteen shipped notes carried a lede over budget:
+     lengths ran to 189 characters, and opening one rendered the whole
+     thirty-eight-word note in semibold — four full lines of a person's
+     own writing re-weighted by the machine, in the resting room, on the
+     default data. That is the exact failure the 48 was bought to fix.
+     The rule lives here now and notebook.js reads it, so the fixture is
+     fixed through the rule rather than the rule bent around it. */
+  const LEDE_MAX = 48;
+  function ledeOf(body) {
+    const stop = body.search(/(?<=[.?!”])s/);
+    if (stop <= 0 || stop + 1 > LEDE_MAX) return null;
+    const head = body.slice(0, stop + 1).trim();
+    return body.slice(head.length).trim() ? head : null;
+  }
+
   function build(seed) {
     const about = SUBJECTS[seed.about] || SUBJECTS["the-house"];
-    const title = seed.body.split(/(?<=[.?!”])\s/)[0] || seed.body;
-    const rest = seed.body.slice(title.length).trim();
+    const lede = ledeOf(seed.body);
+    const title = lede || seed.body;
+    const rest = lede ? seed.body.slice(lede.length).trim() : "";
     return {
       id: seed.id,
       body: seed.body,
       title,
       rest,
+      /* False means: this note has no lede and is set whole at 400.
+         Thirteen of fourteen take that path now, which is the honest
+         one and the one the renderers already had. */
+      lede: Boolean(lede),
       source: seed.source || "typed",
       when: ago(seed.ago),
       day: dayOf(seed.ago),
@@ -338,6 +363,11 @@ window.NOTES = (function () {
       sourceLabel: "The words you picked",
       destinationLabel: "Which project",
       wordingLabel: "The task wording",
+      /* Shown in the pick band at rest, so the mechanism is visible
+         before the black button is pressed rather than only after a
+         refused press. Short, because it sits under a note. */
+      pickLabel: "To make a task",
+      pickHint: "Tap a sentence, drag across the words, or walk them with the arrow keys.",
       payload:
         "Tasks receives these words and nothing else from this note. The rest of what you wrote stays private here.",
       cancel: "Never mind",
@@ -374,5 +404,10 @@ window.NOTES = (function () {
     },
 
     projects: ["The Orchard, events", "Mara & Finn", "Studio"],
+
+    /* The lede budget, so notebook.js reads the same rule that shaped
+       these notes rather than keeping a second copy of it. */
+    ledeOf,
+    LEDE_MAX,
   };
 })();

@@ -372,9 +372,13 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .deskFact span { font-size: var(--t-13); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1); }
 /* The link out to the task the note became. The drawn rule is the
    underline; the thing a pointer lands on is the 28 behind it. */
-.deskFact a { position: relative; display: inline-block; color: var(--ink-1); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
-.deskFact a::before { content: ""; position: absolute; inset: -8px -6px; }
-.deskFact a:hover { border-color: var(--ink-2); }
+/* This was an <a> with no working href — no role, no behaviour, and a
+   tab stop. It is a button now, which leaves zero anchors in the
+   document; the expander and the underline are kept verbatim so the
+   audit's hit-target and contrast rows do not move. */
+.deskFactLink { position: relative; display: inline-block; color: var(--ink-1); text-decoration: none; border-bottom: 1px solid var(--line-strong); background: none; border-left: 0; border-right: 0; border-top: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; }
+.deskFactLink::before { content: ""; position: absolute; inset: -8px -6px; }
+.deskFactLink:hover { border-bottom-color: var(--ink-2); }
 .deskFact .filingBtn { justify-self: start; margin-left: -10px; }
 
 .top {
@@ -776,7 +780,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .phoneSheetBody { flex: 1; min-height: 0; overflow: auto; padding: 16px var(--gutter) 24px; }
 .phoneSheetBody .readBody { max-height: none; }
 .phoneSheetBody .peel { width: 100%; margin: 12px 0 0; }
-.phoneSheetBody .peel::before { display: none; }
+.phoneSheetBody .peel { margin-top: 12px; padding-top: 15px; }
 .phoneSheetFoot {
   flex: none; display: flex; align-items: center; gap: 8px;
   padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom));
@@ -1044,21 +1048,50 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3);
 }
 .pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); }
+/* A sentence is the instrument. It carries the pick treatment at rest
+   on hover, so what a press will do is visible before the press —
+   the same wash and the same hairline, no new colour. */
+.readBody .sent, .handBody .sent { cursor: pointer; border-radius: var(--r-xs); transition: background-color var(--dur) var(--curve); }
+.readBody .sent:hover, .handBody .sent:hover { background: var(--indigo-wash); }
+.readBody .sent:hover .pick, .handBody .sent:hover .pick { background: none; }
+/* The instruction under the note, in the band the pick bar will take. */
+.pickHint { margin: 0; font-size: var(--t-12); line-height: var(--lh-note); letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400; max-width: var(--measure); }
 /* The architecture calls this a second, SMALLER piece of paper peeled off
    the note. It was 4px wider and 2.3 times the area of the note it came
    from, which made the person's own sentence a strip and the form the
    room. */
+/* THE CARET IS GONE.
+   `.peel::before` was a 13px square rotated 45 degrees pinned above the
+   box: a tooltip caret, and the only carted object anywhere in the
+   product. Everything else on this sheet commits to paper — the desk
+   has real depth, the pile has a ground — and then the one surface
+   carrying the reason this product exists borrowed a software-tool
+   pattern. The architecture calls it a second, smaller piece of paper
+   peeled off the note, and paper does not point at what it came from;
+   it comes out from under it. So the smaller sheet tucks UNDER the
+   note's own edge, which also satisfies the lock literally: the note is
+   never covered, the peel is. */
 .peel {
-  position: relative; width: min(560px, calc(100% - 72px)); margin: 9px 0 0 56px;
-  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 15px 17px 16px;
+  position: relative; width: min(560px, calc(100% - 72px)); margin: -10px 0 0 56px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 25px 17px 16px;
 }
-.peel::before { content: ""; position: absolute; left: 30px; top: -7px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--white); box-shadow: -1px -1px 0 var(--line); }
+/* Both are position:relative with z-index:auto, so the later sibling was
+   painting over the note. The note wins its own edge. */
+.paperStack { z-index: 1; }
 /* It arrives, because a piece of paper being peeled off another one is
    the single gesture this product is named for. */
+/* The product is named for this gesture and the file did not perform
+   it: nine pixels and 0.35 degrees, which at 560px wide is about three
+   pixels of corner lift — below the threshold at which anybody reads
+   rotation as a physical event, so driven live it looked identical to a
+   dropdown fading in. It hinges from the corner that is still attached
+   now, and 2.2 degrees carries the far corner about twenty-one pixels,
+   which reads as a sheet swinging down. */
 @keyframes peelIn {
-  from { opacity: 0; transform: translateY(-9px) rotate(-0.35deg); }
+  from { opacity: 0; transform: rotate(-2.2deg) translateY(-14px); }
   to { opacity: 1; transform: none; }
 }
+.pile > .peel { transform-origin: 32px 0; }
 .pile > .peel { animation: peelIn var(--dur-settle) var(--curve) both; }
 @media (prefers-reduced-motion: reduce) { .pile > .peel { animation: none; } }
 .deskAside .peelFrom { margin-top: 0; }
@@ -1077,7 +1110,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 }
 .peelField:focus-visible { box-shadow: inset 0 0 0 1px var(--indigo); outline: none; }
 .peelField::placeholder { color: var(--ink-3); font-weight: 400; }
-.peelRow { display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+/* Off a long note the commit row was laid out underneath the floating
+   dock, and the sheet does not scroll, so the product's second promise
+   was unreachable by pointer in the room built to prove long notes
+   survive — a real click at its centre hit the dock's search field. It
+   sticks to the foot of the peel's own box, so it can never be laid out
+   somewhere the peel cannot show it. */
+.peelRow {
+  display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px;
+  border-top: 1px solid var(--line-soft); flex-wrap: wrap;
+  position: sticky; bottom: 0; background: var(--white); padding-bottom: 2px; z-index: 1;
+}
 .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; line-height: var(--lh-base); }
 .picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
 .picker svg { width: 14px; height: 14px; color: var(--ink-3); }
