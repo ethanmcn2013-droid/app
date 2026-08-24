@@ -266,6 +266,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 }
 
 .deck {
+  --scrim-h: 96px;
   
   --ink: #111111;
   --indigo: #4f46e5;
@@ -514,6 +515,13 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .topField::placeholder { color: var(--ink-3); }
 .deck .topFoot { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .deck .topFoot .spacer { flex: 1; }
+.deck .topFoot { position: relative; }
+.deck .topFoot .restPart {
+  visibility: var(--rest-vis, visible);
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+}
+.deck .topFoot .commitPart, .deck .dock .commitPart { visibility: var(--commit-vis, hidden); }
+.deck .dockCount { font-variant-numeric: tabular-nums; }
 .deck .topMeta { font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; line-height: var(--lh-base); }
 .deck .topMeta kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 7px; }
 .deck .verb {
@@ -561,7 +569,10 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
   
   --desk-chrome: 311px;
   --index-floor: 224px;
-  max-height: max(200px, calc(100vh - var(--desk-chrome) - var(--index-floor)));
+  
+  --note-min: 120px;
+  
+  max-height: max(var(--note-min), calc(100vh - var(--desk-chrome) - var(--index-floor) - var(--peel-h, 0px)));
   overflow: auto;
 }
 .deck .readBody[data-clipped], .deck .handBody[data-clipped] {
@@ -586,7 +597,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .index, .deck .idxGroupRows { list-style: none; margin: 0; padding-inline: 0; }
 .deck .idxItem, .deck .idxSection { list-style: none; display: block; }
 .deck .idxSection { position: relative; }
-.deck .index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; padding: 0 var(--gutter) 132px; scrollbar-width: thin; overflow-anchor: none; }
+.deck .index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; scroll-padding-bottom: var(--walk-reserve, 160px); padding: 0 var(--gutter) 132px; scrollbar-width: thin; overflow-anchor: none; }
 .deck .idxDay {
   position: sticky; top: 0; z-index: 2;
   background: linear-gradient(var(--ground), var(--ground)), var(--white);
@@ -654,7 +665,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); color: inherit; padding: 0 1px; }
 .deck .dockWrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 18px; display: flex; justify-content: center; pointer-events: none; z-index: 3; }
 .deck .dockWrap::before {
-  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: 96px;
+  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: var(--scrim-h, 96px);
   background: linear-gradient(to top, var(--white) 66%, rgba(255, 255, 255, 0)); pointer-events: none;
 }
 .deck .dock {
@@ -724,7 +735,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .darkTime { font-size: var(--t-12); font-weight: 600; color: var(--on-ink-2); letter-spacing: var(--tr-12); line-height: var(--lh-base); }
 .deck .darkTop .spacer { flex: 1; }
 .deck .darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; overflow: auto; }
-.deck .darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-tight); letter-spacing: var(--tr-34); }
+.deck .darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-base); letter-spacing: var(--tr-34); text-wrap: pretty; }
 .deck .darkWave { max-width: var(--measure); }
 .deck .darkSaid .tail { color: var(--on-ink-3); }
 .deck .darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; width: 100%; margin: 40px auto 0; }
@@ -867,13 +878,18 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
   margin-left: auto; text-transform: none; letter-spacing: var(--tr-12); font-weight: 400;
   font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3);
 }
-.deck .pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); }
+.deck .pick {
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background: var(--indigo-wash); box-shadow: inset 0 -1px 0 var(--indigo-line);
+  border-radius: var(--r-xs); padding: 0 3px; margin: 0 -3px;
+}
 .deck .readBody .sent, .deck .handBody .sent { cursor: pointer; border-radius: var(--r-xs); transition: background-color var(--dur) var(--curve); }
 .deck .readBody .sent:hover, .deck .handBody .sent:hover { background: var(--indigo-wash); }
 .deck .readBody .sent:hover .pick, .deck .handBody .sent:hover .pick { background: none; }
 .deck .pickHint { margin: 0; font-size: var(--t-12); line-height: var(--lh-note); letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400; max-width: var(--measure); }
 .deck .peel {
-  position: relative; width: min(560px, calc(100% - 72px)); margin: -10px 0 0 56px;
+  
+  position: relative; width: min(var(--measure), calc(100% - 48px)); margin: -10px 0 0 24px;
   background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 25px 17px 16px;
 }
 .deck .paperStack { z-index: 1; }
@@ -882,6 +898,10 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
   to { opacity: 1; transform: none; }
 }
 .deck .pile > .peel { transform-origin: 32px 0; }
+.deck .pile > .peel {
+  max-height: calc(100vh - var(--desk-chrome, 311px) - var(--index-floor, 224px) - var(--note-min, 120px));
+  overflow: auto;
+}
 .deck .pile > .peel { animation: peelIn var(--dur-settle) var(--curve) both; }
 @media (prefers-reduced-motion: reduce) {
 .deck .pile > .peel { animation: none; }
@@ -1082,7 +1102,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
     bottom: calc(var(--inset) + env(safe-area-inset-bottom));
     padding: 0; z-index: 6;
   }
-.deck[data-w="390"] .dockWrap::before { display: none; }
+.deck[data-w="390"] .dockWrap::before { display: block; height: 40px; bottom: 100%; }
 .deck[data-w="390"] .dock {
     width: 100%; border-radius: 18px; padding: 4px 8px 8px;
     background: var(--ink); box-shadow: none; align-items: center;
@@ -1474,7 +1494,7 @@ window.NOTES = (function () {
      fixed through the rule rather than the rule bent around it. */
   const LEDE_MAX = 48;
   function ledeOf(body) {
-    const stop = body.search(/(?<=[.?!”])s/);
+    const stop = body.search(/(?<=[.?!”])\s/);
     if (stop <= 0 || stop + 1 > LEDE_MAX) return null;
     const head = body.slice(0, stop + 1).trim();
     return body.slice(head.length).trim() ? head : null;
@@ -1491,7 +1511,7 @@ window.NOTES = (function () {
       title,
       rest,
       /* False means: this note has no lede and is set whole at 400.
-         Thirteen of fourteen take that path now, which is the honest
+         Thirteen of fourteen take that path, which is the honest
          one and the one the renderers already had. */
       lede: Boolean(lede),
       source: seed.source || "typed",
@@ -1864,6 +1884,12 @@ deck.appendChild(boot);
   let inputTimer = null;
   let confirming = null;   /* the note delete is asking about              */
   let searchSaid = null;   /* debounce for what search says out loud        */
+  /* Where a press began, so a drag can be told from a tap. Without it
+     the sentence-click handler fired at the end of every drag whose ends
+     landed in one span, threw the dragged phrase away and picked the
+     whole sentence — which made the word-safe snap unreachable by the
+     one gesture it was written for. */
+  let pressAt = null;
   /* The seam's destination, seeded from the note and living only as long
      as the peel. It used to be read from N.projects — a workspace string
      that is not one of the listbox's five options, so the control's own
@@ -1876,41 +1902,33 @@ deck.appendChild(boot);
      it is made without touching the document: a CSS custom property on
      the root, which the stylesheet reads. Nothing in the tree changes, so
      the browser's typing history is untouched. */
+  /* The commit control used to be INSERTED by applyDraft on a 450ms
+     debounce, so for the whole of the three seconds this product is
+     named for the affordance that makes a thought safe was not on
+     screen — and on a phone, where there is no chord, there was no way
+     to keep the note at all while typing steadily. The debounce was
+     protecting the browser's typing history from a mid-burst DOM
+     mutation, which is the right problem and the wrong fix: it solved
+     it by removing a control. The control is now always in the tree and
+     this swaps visibility instead — no node created or destroyed during
+     input, and visibility:hidden takes it out of the tab order too, so
+     nothing is ever invisible-but-focusable. */
   function wakeSheet(live) {
     root.style.setProperty("--writing", live ? "1" : "0");
+    root.style.setProperty("--commit-vis", live ? "visible" : "hidden");
+    root.style.setProperty("--rest-vis", live ? "hidden" : "visible");
   }
 
   function applyDraft() {
+    /* Nothing is inserted or removed here any more. The commit control
+       and the resting privacy line are both always in the tree and
+       wakeSheet swaps their visibility during the input event, so the
+       affordance exists from the first character. All that is left to
+       defer is the counter TEXT, which nobody needs mid-burst and which
+       is the only write that must stay off the typing history. */
     const live = Boolean(draft.trim());
     const host = mount.querySelector(".top") || mount.querySelector(".dock");
-    if (!host) return;
-    const foot = mount.querySelector(".topFoot, .dockRow[data-verbs]");
-    if (host.hasAttribute("data-live") !== live && foot) {
-      host.toggleAttribute("data-live", live);
-      const commit = foot.querySelector('[data-act="keep"]');
-      if (live && !commit) {
-        foot.insertAdjacentHTML(
-          "beforeend",
-          phone.matches
-            ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span><button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`
-            /* The spacer was missing here and present in the template,
-               so the commit control rendered hard against the character
-               counter at the paper left edge and snapped 270px right on
-               the next repaint. applyDraft is the ONLY path a real typist
-               takes, so the designed right-aligned position never existed
-               while anybody was actually writing — the shipped frame does
-               not depict the state. Same children, same order, both
-               paths, and the assertion below holds them together. */
-            : `<span class="topMeta tab" data-count>${draft.length} / 4000</span><span class="spacer"></span><button class="act" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>`,
-        );
-        const idle = [...foot.querySelectorAll(".topMeta")].find((n) => !n.dataset.count && !n.classList.contains("tab"));
-        if (idle) idle.remove();
-      } else if (!live && commit) {
-        commit.remove();
-        for (const n of foot.querySelectorAll("[data-count], .dockCount")) n.remove();
-        if (!phone.matches) foot.insertAdjacentHTML("beforeend", `<span class="topMeta">${esc(N.copy.privacyLong)}</span>`);
-      }
-    }
+    if (host) host.toggleAttribute("data-live", live);
     for (const node of mount.querySelectorAll(".topMeta[data-count], .dockCount")) {
       node.textContent = node.classList.contains("dockCount") ? String(draft.length) : `${draft.length} / 4000`;
     }
@@ -2717,9 +2735,14 @@ deck.appendChild(boot);
   let voiceWave = null;
   let waveLevel = 0.4;
   const LISTENING = "Listening. Speak whenever you are ready. Stop when you are done.";
+  /* A frame counter rather than a clock, so two runs of the shot
+     harness produce the same wave and a changed frame means changed
+     work. */
+  let waveFrame = 0;
   function startListening() {
     stopListening();
     voiceSeconds = 0;
+    waveFrame = 0;
     /* The floor announced itself once and then never again, so with your
        eyes off the screen there was no way to know it was still
        listening or how long it had heard you. The clock and the wave are
@@ -2742,10 +2765,15 @@ deck.appendChild(boot);
       if (!bars.length) return;
       /* One amplitude, smoothed, so the bars move together the way a voice
          moves them rather than twenty-eight independent flickers. */
-      waveLevel = Math.min(1, Math.max(0.12, waveLevel + (Math.random() - 0.5) * 0.34));
+      /* Was Math.random(), which made the dictation frames differ
+         between any two runs, so every round committed four changed
+         PNGs that recorded nothing. It still moves the way a voice
+         moves it; it just moves the same way twice. */
+      waveFrame += 1;
+      waveLevel = Math.min(1, Math.max(0.12, 0.55 + 0.42 * Math.sin(waveFrame * 0.21)));
       for (let i = 0; i < bars.length; i += 1) {
         const shape = 0.45 + 0.55 * Math.abs(Math.sin(i * 0.7 + voiceSeconds));
-        const h = 6 + Math.round(34 * waveLevel * shape * (0.7 + Math.random() * 0.6));
+        const h = 6 + Math.round(34 * waveLevel * shape * (0.7 + 0.6 * Math.abs(Math.sin(i * 2.3 + waveFrame * 0.11))));
         bars[i].style.height = `${Math.min(40, h)}px`;
       }
     };
@@ -3108,9 +3136,12 @@ deck.appendChild(boot);
        a thought is safe in three seconds — was unreachable by touch: the
        only way to commit a note was a keyboard chord on a device with no
        keyboard. */
-    const commit = live
-      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`
-      : "";
+    /* Always in the tree, for the same reason as the desk: a phone has
+       no chord, so this IS the way to keep a note, and it was absent
+       for the whole time anybody was typing one. */
+    const commit =
+      `<span class="dockCount tab commitPart">${draft.length} / 4000</span>` +
+      `<button class="dockGlyph commitPart" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`;
     /* On a wide screen the capture field is on the desk's paper, and
        reading a note replaces it. So the dock carries the way back to
        writing, which is otherwise off the screen entirely. */
@@ -3243,13 +3274,10 @@ deck.appendChild(boot);
         <div class="deskWrite">
           <textarea class="topField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
           <div class="topFoot">
-            ${
-              draft.trim()
-                ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
-                   <span class="spacer"></span>
-                   <button class="act" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>`
-                : `<span class="topMeta">${esc(N.copy.privacyLong)}</span>`
-            }
+            <span class="topMeta restPart">${esc(N.copy.privacyLong)}</span>
+            <span class="topMeta tab commitPart" data-count>${draft.length} / 4000</span>
+            <span class="spacer commitPart"></span>
+            <button class="act commitPart" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>
           </div>
         </div>
         <div class="deskAside">
@@ -3549,7 +3577,7 @@ deck.appendChild(boot);
 
   function groupControl() {
     return `
-      <span class="groupBy" role="group" aria-label="How the pile is grouped">
+      <span class="groupBy" role="group" aria-label="How your notes are grouped">
         <button class="groupBtn" type="button" data-act="group-about"${group === "about" ? " data-on" : ""} aria-pressed="${group === "about"}">What it is about</button>
         <button class="groupBtn" type="button" data-act="group-day"${group === "day" ? " data-on" : ""} aria-pressed="${group === "day"}">When</button>
       </span>`;
@@ -4163,6 +4191,30 @@ deck.appendChild(boot);
     const readAfter = mount.querySelector(".readBody, .handBody");
     if (readAfter && readScroll) readAfter.scrollTop = readScroll;
     trimRows();
+    /* The desk budget is written in terms the CSS can read, so the note
+       yields to the peel before the second plane does. Zero when no
+       peel is open, so the resting frame is untouched. */
+    const peelEl = mount.querySelector(".pile > .peel");
+    document.documentElement.style.setProperty(
+      "--peel-h",
+      peelEl ? Math.round(peelEl.getBoundingClientRect().height) + "px" : "0px",
+    );
+    /* How far above its own bottom edge the index must land a walked row
+       for that row to clear the scrim as well as the dock. The scrollport
+       runs 64px behind the dock, so reserving the dock height alone left
+       the row sitting in the fade at about 65% white — clear of the pill,
+       erased anyway, and the fix would have been recorded as done.
+       Measured rather than guessed, because both edges move. */
+    const idxEl = document.getElementById("index");
+    const wrapEl = mount.querySelector(".dockWrap");
+    if (idxEl && wrapEl) {
+      const scrim = parseFloat(getComputedStyle(root).getPropertyValue("--scrim-h")) || 96;
+      const reserve = Math.max(
+        0,
+        Math.round(idxEl.getBoundingClientRect().bottom - (wrapEl.getBoundingClientRect().top - scrim)),
+      );
+      root.style.setProperty("--walk-reserve", reserve + "px");
+    }
     measureClip();
     /* A picked sentence must never be off screen while the primary reads
        "Send to Tasks". From the fourth arrow press down, the mark sat
@@ -4194,6 +4246,21 @@ deck.appendChild(boot);
         if (row) {
           row.focus({ preventScroll: true });
           row.scrollIntoView({ block: "nearest" });
+          /* block:"nearest" lands a row flush with the scrollport bottom,
+             and the scrollport runs behind the dock and its 96px scrim,
+             so every arrow press past the first screenful parked the
+             focused row in the fade or under the slab. scroll-padding is
+             declared and is not enough here, so the landing is measured
+             and corrected: a row a person is standing on has to be a row
+             a person can read. */
+          const box = document.getElementById("index");
+          const wrap = mount.querySelector(".dockWrap");
+          if (box && wrap) {
+            const scrim = parseFloat(getComputedStyle(root).getPropertyValue("--scrim-h")) || 96;
+            const floor = wrap.getBoundingClientRect().top - scrim - 4;
+            const over = row.getBoundingClientRect().bottom - floor;
+            if (over > 0) box.scrollTop += over;
+          }
         }
       } else if (refocus.kind === "read") {
         /* Reading a note lifted it onto the desk and then parked the
@@ -4333,6 +4400,14 @@ deck.appendChild(boot);
     }
   });
 
+  mount.addEventListener("pointerdown", (e) => {
+    pressAt = { x: e.clientX, y: e.clientY };
+  });
+  /* A cancelled touch must not leave a stale coordinate behind, or the
+     next genuine tap looks like a drag. */
+  mount.addEventListener("pointercancel", () => {
+    pressAt = null;
+  });
   mount.addEventListener("click", (e) => {
     if (picker && !e.target.closest(".filing")) {
       picker = null;
@@ -4346,7 +4421,22 @@ deck.appendChild(boot);
        which is the contract shift-arrow already has. */
     const sent = e.target.closest(".sent");
     if (sent && sent.closest(".readBody, .handBody")) {
-      const target = pickTarget();
+      /* Click fires at the end of a drag too. If this press MOVED and
+         left a real selection inside the same body, the gesture was a
+         drag: stand down entirely and let the selectionchange path
+         write the snapped string, rather than adding a fourth route
+         into one pick. Shift is exempt, because shift-click extends
+         from the caret and is non-collapsed by definition. */
+      const sel = document.getSelection();
+      const moved = pressAt ? Math.hypot(e.clientX - pressAt.x, e.clientY - pressAt.y) : 0;
+      const dragged =
+        !e.shiftKey &&
+        moved > 4 &&
+        sel &&
+        !sel.isCollapsed &&
+        sel.anchorNode &&
+        sent.closest(".readBody, .handBody").contains(sel.anchorNode);
+      const target = dragged ? null : pickTarget();
       if (target) {
         const i = Number(sent.dataset.i);
         if (e.shiftKey && sentAt) {

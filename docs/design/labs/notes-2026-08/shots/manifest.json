@@ -1,9 +1,21 @@
 {
   "viewports": [
+    "390x844",
+    "768x1024",
+    "1280x900",
     "1440x960"
   ],
   "states": [
-    "voice"
+    "notebook",
+    "capture",
+    "voice",
+    "readback",
+    "review",
+    "seam",
+    "search",
+    "pressure",
+    "nothing",
+    "not-yet"
   ],
   "directions": [
     {
@@ -16,9 +28,282 @@
     {
       "direction": "locked",
       "name": "Locked master",
+      "state": "notebook",
+      "viewport": "390x844",
+      "file": "locked-notebook--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "capture",
+      "viewport": "390x844",
+      "file": "locked-capture--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "voice",
+      "viewport": "390x844",
+      "file": "locked-voice--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "readback",
+      "viewport": "390x844",
+      "file": "locked-readback--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "review",
+      "viewport": "390x844",
+      "file": "locked-review--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "seam",
+      "viewport": "390x844",
+      "file": "locked-seam--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "search",
+      "viewport": "390x844",
+      "file": "locked-search--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "pressure",
+      "viewport": "390x844",
+      "file": "locked-pressure--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "nothing",
+      "viewport": "390x844",
+      "file": "locked-nothing--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "not-yet",
+      "viewport": "390x844",
+      "file": "locked-not-yet--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "notebook",
+      "viewport": "768x1024",
+      "file": "locked-notebook--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "capture",
+      "viewport": "768x1024",
+      "file": "locked-capture--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "voice",
+      "viewport": "768x1024",
+      "file": "locked-voice--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "readback",
+      "viewport": "768x1024",
+      "file": "locked-readback--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "review",
+      "viewport": "768x1024",
+      "file": "locked-review--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "seam",
+      "viewport": "768x1024",
+      "file": "locked-seam--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "search",
+      "viewport": "768x1024",
+      "file": "locked-search--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "pressure",
+      "viewport": "768x1024",
+      "file": "locked-pressure--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "nothing",
+      "viewport": "768x1024",
+      "file": "locked-nothing--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "not-yet",
+      "viewport": "768x1024",
+      "file": "locked-not-yet--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "notebook",
+      "viewport": "1280x900",
+      "file": "locked-notebook--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "capture",
+      "viewport": "1280x900",
+      "file": "locked-capture--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "voice",
+      "viewport": "1280x900",
+      "file": "locked-voice--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "readback",
+      "viewport": "1280x900",
+      "file": "locked-readback--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "review",
+      "viewport": "1280x900",
+      "file": "locked-review--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "seam",
+      "viewport": "1280x900",
+      "file": "locked-seam--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "search",
+      "viewport": "1280x900",
+      "file": "locked-search--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "pressure",
+      "viewport": "1280x900",
+      "file": "locked-pressure--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "nothing",
+      "viewport": "1280x900",
+      "file": "locked-nothing--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "not-yet",
+      "viewport": "1280x900",
+      "file": "locked-not-yet--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "notebook",
+      "viewport": "1440x960",
+      "file": "locked-notebook--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "capture",
+      "viewport": "1440x960",
+      "file": "locked-capture--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
       "state": "voice",
       "viewport": "1440x960",
       "file": "locked-voice--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "readback",
+      "viewport": "1440x960",
+      "file": "locked-readback--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "review",
+      "viewport": "1440x960",
+      "file": "locked-review--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "seam",
+      "viewport": "1440x960",
+      "file": "locked-seam--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "search",
+      "viewport": "1440x960",
+      "file": "locked-search--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "pressure",
+      "viewport": "1440x960",
+      "file": "locked-pressure--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "nothing",
+      "viewport": "1440x960",
+      "file": "locked-nothing--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Locked master",
+      "state": "not-yet",
+      "viewport": "1440x960",
+      "file": "locked-not-yet--1440x960.png"
     }
   ]
 }

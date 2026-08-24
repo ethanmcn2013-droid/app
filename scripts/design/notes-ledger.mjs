@@ -22,7 +22,12 @@ const panel = JSON.parse(await readFile(path.join(LAB, "panel.json"), "utf8"));
 const ids = [];
 const byRound = [];
 for (const round of panel.rounds || []) {
-  const fixed = (round.confirmed || []).map((f) => f.id);
+  /* Only what is actually CLOSED. Round 9 recorded twelve fixed, four
+     partly and four still open; telling a seat that an open blocker is
+     closed would be worse than telling it nothing. */
+  const fixed = (round.confirmed || [])
+    .filter((f) => f.done && !/partly/i.test(f.done))
+    .map((f) => f.id);
   byRound.push({ round: round.round, fixed });
   for (const id of fixed) if (!ids.includes(id)) ids.push(id);
 }
