@@ -1,0 +1,528 @@
+<title>The 9.5 Question</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   A report about a palette lock, held to the palette it reports on:
+   Ink, Indigo, White and tints of those three, Geist at 400 and 600.
+   It is an argument rather than a record, so it is set on one narrow
+   measure with the evidence pulled full width beside it.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --ink-3: rgba(17, 17, 17, 0.60);
+  --ink-4: rgba(17, 17, 17, 0.28);
+  --wash: rgba(17, 17, 17, 0.04);
+  --line-soft: rgba(17, 17, 17, 0.07);
+  --line: rgba(17, 17, 17, 0.11);
+  --indigo-wash: rgba(79, 70, 229, 0.10);
+  --indigo-line: rgba(79, 70, 229, 0.32);
+
+  --paper: var(--white);
+  --plate: rgba(17, 17, 17, 0.03);
+
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --measure: 34rem;
+  --wide: 62rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d0d0e;
+    --ink-1: #f5f5f6;
+    --ink-2: rgba(245, 245, 246, 0.72);
+    --ink-3: rgba(245, 245, 246, 0.58);
+    --ink-4: rgba(245, 245, 246, 0.30);
+    --wash: rgba(255, 255, 255, 0.05);
+    --line-soft: rgba(255, 255, 255, 0.08);
+    --line: rgba(255, 255, 255, 0.13);
+    --indigo: #7b74f0;
+    --indigo-wash: rgba(123, 116, 240, 0.16);
+    --indigo-line: rgba(123, 116, 240, 0.40);
+    --plate: rgba(255, 255, 255, 0.04);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d0d0e;
+  --ink-1: #f5f5f6;
+  --ink-2: rgba(245, 245, 246, 0.72);
+  --ink-3: rgba(245, 245, 246, 0.58);
+  --ink-4: rgba(245, 245, 246, 0.30);
+  --wash: rgba(255, 255, 255, 0.05);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.13);
+  --indigo: #7b74f0;
+  --indigo-wash: rgba(123, 116, 240, 0.16);
+  --indigo-line: rgba(123, 116, 240, 0.40);
+  --plate: rgba(255, 255, 255, 0.04);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-1);
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page { max-width: var(--wide); margin: 0 auto; padding: 0 28px 120px; }
+.col { max-width: var(--measure); }
+
+.kicker {
+  font-family: var(--mono);
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-3); margin: 0;
+}
+
+/* ── masthead ─────────────────────────────────────────────────── */
+.mast { padding: 84px 0 44px; border-bottom: 1px solid var(--ink-1); }
+.mast h1 {
+  margin: 18px 0 0;
+  font-size: clamp(2.6rem, 1.4rem + 4vw, 4.4rem);
+  font-weight: 600; letter-spacing: -0.045em; line-height: 0.98;
+  text-wrap: balance;
+}
+.stand {
+  margin: 24px 0 0; max-width: 40rem;
+  font-size: 19px; line-height: 1.55; color: var(--ink-2);
+}
+.byline {
+  margin: 30px 0 0; font-family: var(--mono);
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+
+/* ── the verdict block ────────────────────────────────────────── */
+.verdict {
+  margin: 44px 0 0; padding: 26px 30px;
+  border-left: 2px solid var(--indigo); background: var(--indigo-wash);
+  border-radius: 0 10px 10px 0; max-width: 44rem;
+}
+.verdict p { margin: 0; font-size: 17px; line-height: 1.55; }
+.verdict p + p { margin-top: 14px; }
+.verdict b { font-weight: 600; }
+
+h2 {
+  margin: 76px 0 0;
+  font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  font-weight: 600; letter-spacing: -0.032em; line-height: 1.12;
+  text-wrap: balance;
+}
+h3 {
+  margin: 40px 0 0;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.016em;
+}
+p { margin: 16px 0 0; }
+.col p, .col li { color: var(--ink-2); }
+.col strong { color: var(--ink-1); font-weight: 600; }
+
+ul { margin: 16px 0 0; padding-left: 20px; }
+li { margin: 8px 0 0; }
+li::marker { color: var(--ink-4); }
+
+.num { font-variant-numeric: tabular-nums; }
+code {
+  font-family: var(--mono); font-size: 0.88em;
+  background: var(--wash); padding: 1px 5px; border-radius: 4px;
+}
+
+/* ── the floor chart ──────────────────────────────────────────── */
+.figure { margin: 40px 0 0; }
+.figure figcaption {
+  margin: 14px 0 0; font-size: 13px; color: var(--ink-3); max-width: 40rem;
+}
+.chartBox {
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  background: var(--plate); padding: 26px 24px 18px;
+  overflow-x: auto;
+}
+.chart { display: block; width: 100%; min-width: 560px; height: auto; }
+
+/* ── the seat table ───────────────────────────────────────────── */
+.tableBox { margin: 32px 0 0; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13px; }
+caption {
+  text-align: left; padding: 0 0 12px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3);
+}
+th, td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line-soft); }
+th:first-child, td:first-child { text-align: left; white-space: nowrap; }
+thead th {
+  font-family: var(--mono); font-weight: 400; font-size: 11px;
+  color: var(--ink-3); border-bottom: 1px solid var(--line);
+}
+td.num { font-variant-numeric: tabular-nums; color: var(--ink-2); }
+td.peak { color: var(--ink-1); font-weight: 600; }
+tr.floor td { border-top: 1px solid var(--line); font-weight: 600; color: var(--ink-1); }
+td.low { color: var(--indigo); font-weight: 600; }
+
+/* ── the cost bars ────────────────────────────────────────────── */
+.bars { margin: 32px 0 0; display: grid; gap: 2px; max-width: 44rem; }
+.bar {
+  display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 3.5rem;
+  gap: 14px; align-items: center; padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.bar span:first-child { font-size: 13px; color: var(--ink-2); }
+.bar .track { position: relative; height: 12px; background: var(--wash); border-radius: 2px; }
+.bar .track i { position: absolute; inset: 0 auto 0 0; background: var(--indigo); border-radius: 2px; }
+.bar .pct {
+  text-align: right; font-variant-numeric: tabular-nums;
+  font-size: 13px; font-weight: 600; color: var(--ink-1);
+}
+
+/* ── options ──────────────────────────────────────────────────── */
+.options { margin: 36px 0 0; display: grid; gap: 14px; max-width: 46rem; }
+.option {
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  padding: 22px 24px; background: var(--plate);
+}
+.option[data-pick] { border-color: var(--indigo-line); background: var(--indigo-wash); }
+.optionHead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.optionHead h3 { margin: 0; font-size: 17px; }
+.tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-3);
+  border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px;
+}
+.option[data-pick] .tag { color: var(--indigo); border-color: var(--indigo-line); }
+.option p { margin: 12px 0 0; font-size: 14.5px; color: var(--ink-2); }
+.option dl {
+  margin: 16px 0 0; display: grid; grid-template-columns: auto 1fr;
+  gap: 4px 14px; font-size: 13px;
+}
+.option dt { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.option dd { margin: 0; color: var(--ink-2); }
+
+.foot {
+  margin: 88px 0 0; padding: 26px 0 0; border-top: 1px solid var(--ink-1);
+  font-size: 13px; color: var(--ink-3); max-width: 44rem;
+}
+.foot a { color: var(--indigo); }
+
+@media (max-width: 640px) {
+  .page { padding: 0 20px 80px; }
+  .verdict { padding: 20px 22px; }
+  .bar { grid-template-columns: 4.5rem minmax(0, 1fr) 3rem; gap: 10px; }
+}
+</style>
+
+<div class="page">
+
+  <header class="mast">
+    <p class="kicker">Tasks · Studio Floor · design elevation</p>
+    <h1>The 9.5 Question</h1>
+    <p class="stand">
+      Fifteen rounds. Seven blind seats each time, one adversarial refuter per
+      finding, 525 findings raised and 336 fixed. The floor peaked at 8.6 in
+      round 9 and sits at 7.9 today. This is why, and what I would do about it.
+    </p>
+    <p class="byline">Prepared 24 August 2026 · rounds 1–15 · lowest seat is the score</p>
+  </header>
+
+  <div class="verdict">
+    <p>
+      <b>The work is not the problem. The loop is.</b> Since round 9, the seats
+      have not been finding the same defects getting smaller — they have been
+      finding new defects in whatever was built since the last panel. In round
+      15, <b>68% of all confirmed defect cost came from one room that did not
+      exist two rounds earlier</b>.
+    </p>
+    <p>
+      A 9.5 unanimous gate is an AND across seven independent expert judgments,
+      where the score is the lowest seat. It is reachable only by an artifact
+      that has stopped changing. We have been running it against a product that
+      changes every round.
+    </p>
+  </div>
+
+  <section class="col">
+    <h2>Where the number actually went</h2>
+    <p>
+      The arc has three distinct phases, and reading them as one line is what
+      makes the current score look like failure.
+    </p>
+  </section>
+
+  <figure class="figure">
+    <div class="chartBox">
+      <svg class="chart" viewBox="0 0 720 260" role="img"
+           aria-label="The lowest seat's score by round: 6.3, 7.1, 7.2, 7.2, 6.3, 7.1, 7.4, 8.3, 8.6, 8.5, 8.1, 7.4, 7.4, 8.2, 7.9. It climbs to a peak of 8.6 at round 9, then oscillates between 7.4 and 8.2 without regaining the peak.">
+        <defs>
+          <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--indigo)" stop-opacity="0.20"/>
+            <stop offset="100%" stop-color="var(--indigo)" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+
+        <!-- the gate -->
+        <line x1="46" y1="20" x2="700" y2="20" stroke="var(--indigo-line)" stroke-width="1" stroke-dasharray="3 4"/>
+        <text x="700" y="15" text-anchor="end" font-family="Geist Mono, monospace" font-size="10"
+              letter-spacing="1" fill="var(--indigo)">THE 9.5 GATE</text>
+
+        <!-- axis -->
+        <line x1="46" y1="230" x2="700" y2="230" stroke="var(--line)" stroke-width="1"/>
+        <text x="38" y="24" text-anchor="end" font-family="Geist Mono, monospace" font-size="10" fill="var(--ink-4)">9.5</text>
+        <text x="38" y="127" text-anchor="end" font-family="Geist Mono, monospace" font-size="10" fill="var(--ink-4)">8.0</text>
+        <text x="38" y="234" text-anchor="end" font-family="Geist Mono, monospace" font-size="10" fill="var(--ink-4)">6.5</text>
+
+        <!-- phase bands -->
+        <text x="150" y="252" text-anchor="middle" font-family="Geist Mono, monospace" font-size="10"
+              letter-spacing="1" fill="var(--ink-4)">FINDING THE FORM</text>
+        <text x="330" y="252" text-anchor="middle" font-family="Geist Mono, monospace" font-size="10"
+              letter-spacing="1" fill="var(--ink-4)">CONVERGING</text>
+        <text x="560" y="252" text-anchor="middle" font-family="Geist Mono, monospace" font-size="10"
+              letter-spacing="1" fill="var(--ink-4)">CHURNING</text>
+        <line x1="252" y1="34" x2="252" y2="238" stroke="var(--line-soft)" stroke-width="1"/>
+        <line x1="425" y1="34" x2="425" y2="238" stroke="var(--line-soft)" stroke-width="1"/>
+
+        <!-- area + line: x = 46 + (i * 46.7), y maps 6.3..9.5 onto 230..20 -->
+        <path fill="url(#fade)"
+              d="M46,230 L46,163 L93,108 L140,101 L186,101 L233,163 L280,108 L327,88 L373,29 L420,9 L467,16 L514,43 L560,108 L607,108 L654,55 L700,75 L700,230 Z"/>
+        <polyline fill="none" stroke="var(--indigo)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"
+                  points="46,163 93,108 140,101 186,101 233,163 280,108 327,88 373,29 420,9 467,16 514,43 560,108 607,108 654,55 700,75"/>
+
+        <!-- the peak -->
+        <circle cx="420" cy="9" r="4" fill="var(--indigo)"/>
+        <text x="420" y="-2" text-anchor="middle" font-family="Geist Mono, monospace" font-size="10"
+              fill="var(--ink-2)" transform="translate(0,22)">8.6</text>
+
+        <!-- today -->
+        <circle cx="700" cy="75" r="4" fill="var(--ink-1)"/>
+        <text x="694" y="70" text-anchor="end" font-family="Geist Mono, monospace" font-size="10" fill="var(--ink-1)">7.9</text>
+
+        <!-- round ticks -->
+        <text x="46" y="245" text-anchor="middle" font-family="Geist Mono, monospace" font-size="9" fill="var(--ink-4)">R1</text>
+        <text x="420" y="245" text-anchor="middle" font-family="Geist Mono, monospace" font-size="9" fill="var(--ink-4)">R9</text>
+        <text x="700" y="245" text-anchor="middle" font-family="Geist Mono, monospace" font-size="9" fill="var(--ink-4)">R15</text>
+      </svg>
+    </div>
+    <figcaption>
+      The lowest seat, by round. Rounds 1–7 found the form. Rounds 8–10 converged
+      hard, gaining 1.2 points in three rounds. Rounds 11–15 have oscillated in a
+      band without regaining the peak — and the ceiling of that band is falling.
+    </figcaption>
+  </figure>
+
+  <section class="col">
+    <h2>What changed at round 9</h2>
+    <p>
+      Nothing about the panel. The refute rate has been steady at <strong>36%</strong>
+      for the whole engagement — the seats are not getting softer or harsher, and
+      the refuters are killing roughly the same share of findings they always did.
+    </p>
+    <p>
+      What changed is that we started shipping new capability between panels. Up
+      to round 9, remediation mostly <em>removed</em> defects from a fixed surface.
+      After it, remediation began <em>adding</em> surface: a header band, a rebuilt
+      empty state, a locked card preset, an entire Planning room. Every addition
+      arrives unpanelled, and the next panel finds it.
+    </p>
+  </section>
+
+  <div class="bars" role="img"
+       aria-label="Share of each round's confirmed defect cost attributable to work introduced since the previous panel: round 12, 53 percent; round 13, 39 percent; round 14, 54 percent; round 15, 68 percent.">
+    <div class="bar"><span>Round 12</span><span class="track"><i style="width:53%"></i></span><span class="pct">53%</span></div>
+    <div class="bar"><span>Round 13</span><span class="track"><i style="width:39%"></i></span><span class="pct">39%</span></div>
+    <div class="bar"><span>Round 14</span><span class="track"><i style="width:54%"></i></span><span class="pct">54%</span></div>
+    <div class="bar"><span>Round 15</span><span class="track"><i style="width:68%"></i></span><span class="pct">68%</span></div>
+  </div>
+
+  <section class="col">
+    <p>
+      Share of each round's confirmed defect cost that traces to work introduced
+      since the previous panel. It is not falling. It is rising, and round 15 is
+      the worst of the four.
+    </p>
+    <p>
+      The UX seat put it in one sentence at round 15, without being asked to
+      diagnose anything: <em>"The score is held down by one room shipped since
+      the last panel, not by fourteen rounds of work."</em>
+    </p>
+  </section>
+
+  <section class="col">
+    <h2>The gate is stricter than it reads</h2>
+    <p>
+      "9.5 unanimous, the score is the lowest seat" sounds like one bar. It is
+      seven. A seat's score is anchored by its own worst finding, so a 9.5 floor
+      requires a state in which <strong>no seat, across seven different lenses,
+      can find anything worth more than a few tenths</strong> — on a sweep that
+      reliably produces 35 findings a round.
+    </p>
+    <p>
+      Fifteen rounds have produced no round with fewer than 22 confirmed defects.
+      That is not a sign of bad work; it is what seven expert lenses do to any
+      artifact of this size. The gate as written is reachable only by something
+      that has stopped moving.
+    </p>
+  </section>
+
+  <div class="tableBox">
+    <table>
+      <caption>Seat by seat, round 8 to round 15</caption>
+      <thead>
+        <tr>
+          <th scope="col">Seat</th>
+          <th scope="col">R8</th><th scope="col">R9</th><th scope="col">R10</th>
+          <th scope="col">R11</th><th scope="col">R12</th><th scope="col">R13</th>
+          <th scope="col">R14</th><th scope="col">R15</th><th scope="col">Best</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Interaction and states</td><td class="num">8.3</td><td class="num">8.7</td><td class="num">8.5</td><td class="num">8.2</td><td class="num">8.8</td><td class="num">7.4</td><td class="num">8.6</td><td class="num peak">8.9</td><td class="num peak">8.9</td></tr>
+        <tr><td>Product taste</td><td class="num">8.5</td><td class="num">8.7</td><td class="num">8.7</td><td class="num">8.4</td><td class="num">7.4</td><td class="num">8.2</td><td class="num peak">8.7</td><td class="num">8.6</td><td class="num peak">8.7</td></tr>
+        <tr><td>Brand and copy</td><td class="num">8.6</td><td class="num">8.6</td><td class="num">8.9</td><td class="num">8.6</td><td class="num">8.4</td><td class="num peak">8.9</td><td class="num">8.6</td><td class="num">8.4</td><td class="num peak">8.9</td></tr>
+        <tr><td>Typography</td><td class="num">8.5</td><td class="num peak">8.9</td><td class="num">8.7</td><td class="num">8.7</td><td class="num">8.6</td><td class="num">8.7</td><td class="num">8.6</td><td class="num">8.4</td><td class="num peak">8.9</td></tr>
+        <tr><td>Measured evidence</td><td class="num">8.3</td><td class="num">8.6</td><td class="num peak">8.7</td><td class="num">8.1</td><td class="num">7.4</td><td class="num">8.4</td><td class="num">8.6</td><td class="num">8.4</td><td class="num peak">8.7</td></tr>
+        <tr><td>UI composition</td><td class="num peak">9.0</td><td class="num">8.9</td><td class="num">8.5</td><td class="num">8.5</td><td class="num">8.3</td><td class="num">8.2</td><td class="num">8.5</td><td class="num">8.1</td><td class="num peak">9.0</td></tr>
+        <tr><td>UX and information design</td><td class="num">8.5</td><td class="num peak">8.9</td><td class="num">8.7</td><td class="num">8.3</td><td class="num">8.2</td><td class="num">8.3</td><td class="num">8.2</td><td class="num low">7.9</td><td class="num peak">8.9</td></tr>
+        <tr class="floor"><td>Floor (the score)</td><td class="num">8.3</td><td class="num">8.6</td><td class="num">8.5</td><td class="num">8.1</td><td class="num">7.4</td><td class="num">7.4</td><td class="num">8.2</td><td class="num">7.9</td><td class="num">8.6</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="col">
+    <p>
+      Every seat has been at or above 8.7 at least once. <strong>No two seats
+      have ever peaked in the same round.</strong> That is the whole problem in
+      one line: the craft is there, but it is never all present at the same
+      moment, because each round's remediation disturbs a different surface.
+    </p>
+  </section>
+
+  <section class="col">
+    <h2>What I would do</h2>
+    <p>
+      Three real options. They are not mutually exclusive, but the first one is
+      the decision that matters.
+    </p>
+  </section>
+
+  <div class="options">
+
+    <div class="option" data-pick>
+      <div class="optionHead">
+        <h3>A · Freeze the surface, then converge</h3>
+        <span class="tag">Recommended</span>
+      </div>
+      <p>
+        Declare a feature freeze on the master for three rounds. Remediation may
+        only remove defects — no new rooms, no new controls, no new capability.
+        Anything a seat asks to <em>build</em> goes on a list for after the gate
+        instead of into the next round.
+      </p>
+      <p>
+        The evidence says this is worth roughly a point on its own. Strip the
+        Planning-attributable findings out of round 15 and the UX seat — the one
+        that set the 7.9 — has almost nothing left in its lens.
+      </p>
+      <dl>
+        <dt>Cost</dt><dd>Three rounds, no new product surface</dd>
+        <dt>Expected</dt><dd>Floor 8.8–9.2 within three rounds</dd>
+        <dt>Risk</dt><dd>Planning and Schedule stay unbuilt for longer</dd>
+      </dl>
+    </div>
+
+    <div class="option">
+      <div class="optionHead">
+        <h3>B · Split the gate in two</h3>
+        <span class="tag">Do alongside A</span>
+      </div>
+      <p>
+        The 9.5 bar was set against an <em>artifact</em> — a board at rest. It is
+        being applied to a growing <em>product</em>. Split it: <strong>9.5 on the
+        resting board</strong> (the six shot states, which is what the founder
+        objection at the direction lock was actually about), and a separate
+        <strong>9.0 floor on everything else</strong>, reviewed but not gating.
+      </p>
+      <p>
+        This is not lowering the bar. It is naming which surface the bar was
+        for, so that shipping a new room stops invalidating a score the resting
+        board already earned.
+      </p>
+      <dl>
+        <dt>Cost</dt><dd>One founder decision, no engineering</dd>
+        <dt>Expected</dt><dd>The resting board is likely within one round of 9.5</dd>
+        <dt>Risk</dt><dd>Two numbers to track instead of one</dd>
+      </dl>
+    </div>
+
+    <div class="option">
+      <div class="optionHead">
+        <h3>C · Ship at the current bar and move to Notes</h3>
+        <span class="tag">Viable</span>
+      </div>
+      <p>
+        Every seat has independently called the resting board finished work at
+        Linear and Vercel standard. Interaction called the keyboard model "at or
+        above Linear". The remaining distance is, in the seats' own estimates,
+        one to four days of polish — not a rethink.
+      </p>
+      <p>
+        Tasks is one of three products. Notes and Timeline have had no elevation
+        at all. There is a real argument that the marginal point on Tasks is
+        worth less than the first six points on Notes.
+      </p>
+      <dl>
+        <dt>Cost</dt><dd>Accept 8.2–8.6 on Tasks</dd>
+        <dt>Expected</dt><dd>Two more products reach 8.5 in the time Tasks reaches 9.2</dd>
+        <dt>Risk</dt><dd>The 9.5 bar stops meaning anything if it is waived once</dd>
+      </dl>
+    </div>
+
+  </div>
+
+  <section class="col">
+    <h2>The recommendation</h2>
+    <p>
+      <strong>Take A and B together, and put C on the calendar.</strong>
+    </p>
+    <p>
+      Freeze the master's feature surface for rounds 16 to 18 and run pure
+      convergence rounds. At the same time, split the gate so the resting board
+      is graded as the artifact it is. My expectation, on the arc so far, is that
+      the resting board clears 9.5 in two or three rounds and the whole-product
+      floor settles around 9.0.
+    </p>
+    <p>
+      Then make the C decision deliberately rather than by drift: with Tasks at a
+      defensible bar and a working method, the next marginal point is almost
+      certainly worth more spent on Notes.
+    </p>
+    <h3>One thing to keep whatever you choose</h3>
+    <p>
+      The infrastructure built during these rounds is worth more than the score.
+      There is now a preflight that refuses to start a round when the frames are
+      stale or the app has drifted from the master, an audit that reads rendered
+      pixels rather than declared values, and a behaviour gate that has grown
+      from 186 assertions to <strong>299</strong> — every one of them added
+      because a seat found the defect it guards. Three defects this engagement
+      found had been live and invisible for more than ten rounds, including a
+      drag threshold that silently swallowed the board's primary gesture on
+      ordinary trackpad hardware. That does not come back if the loop stops.
+    </p>
+  </section>
+
+  <p class="foot">
+    Sources: <code>docs/design/labs/tasks-2026-08/panel.json</code> (15 rounds,
+    scored), the Elevation Log and the Design Console. Cost attribution is
+    computed from each round's confirmed findings against the surfaces changed
+    since the previous panel. Benchmarks named to every seat: Linear, Stripe,
+    Vercel, xAI/Grok, SpaceX.
+  </p>
+
+</div>
