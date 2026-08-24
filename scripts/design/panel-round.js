@@ -78,7 +78,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 255 assertions, all passing. READ IT. Everything it asserts is already
+with 285 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -110,28 +110,24 @@ LIVE AND WORTH DRIVING, from the rounds before this one:
 
 CHANGED SINCE THE LAST PANEL SAW THIS FILE, and the most likely place for a
 new defect, so drive these first:
-- A PRESS IS NOW A CLICK. The whole card is draggable and the browser's 4px
-  drag threshold had been silently eating any press that travelled — a tick
-  with 4px of movement did nothing at all. Drive the tick and the card body
-  with real pointer travel (mouse.move/down/move/up), not locator.click(),
-  which teleports and proves nothing.
-- A preset owns two tokens, --card-rest and --card-hover, and may not select
-  on state. Check that the keyboard focus ring, the open-note ring, the
-  in-hand lift and the milestone edge all survive a pointer resting on them.
-- All four doors into a completion — tick, card menu, pointer drop, keyboard
-  carry — say the same sentence and release a filter they emptied.
-- The completion flight scrolls its destination into view where the origin and
-  Done can both be on screen, and deliberately does not where they cannot.
-- The two time chips are one two-position question, not a pair that could only
-  ever return the empty set.
-- Done speaks calendar dates, so "Today" stays a debt rather than a receipt.
-- The view/tools row folds its words and then leaves, rather than crossing the
-  sheet's edge with the drawer open.
-- The type scale has a head: the sheet's own title is the largest thing on it.
+- PLANNING IS A ROOM NOW. Every row on the no-date tab has a live day menu
+  (Today / Tomorrow / This weekend / Next week), a picked set reveals one verb,
+  a picked row paints in filled ink, and giving a day is reversible with the
+  same strip and the same Ctrl+Z as everything else. Open ?state=planning and
+  actually give tasks a day, alone and in bulk, then undo it.
+- The drawer no longer eats the pointer. With it open, a press on a card's
+  tick completes the task and the drawer stays open.
+- A press on the CARD BODY is a click up to 8px of travel and a drag beyond it.
+  Drive it with mouse.move/down/move/up, not locator.click().
+- A finished card does not lift under the pointer; a live one does.
+- The milestone card carries the one earned indigo in every preset.
+- The column scroller is no longer a tab stop.
+- A half-written task is committed, not stranded, when focus falls to nothing.
+- Every spoken lane mention takes one shape ("in the review column").
 
 THIS ROUND IS NOT THE LAST. Remediation follows it, so report the defect
 rather than softening it because the work is nearly done. Equally, do not mark
-it down to look rigorous: this has had thirteen rounds of work and some of it is
+it down to look rigorous: this has had fourteen rounds of work and some of it is
 genuinely finished.
 
 SCORES ARE ALLOWED TO FALL. If this is worse than a finished artifact should

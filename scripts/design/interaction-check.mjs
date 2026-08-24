@@ -504,7 +504,7 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.keyboard.press("Enter");
   await page.waitForTimeout(250);
   ok("enter adds it", (await counts(page)).todo === before.todo + 1, JSON.stringify(await counts(page)));
-  ok("and it says so", /added in the to do column/.test(await page.locator("#say").textContent()),
+  ok("and it says so", /added to the to do column/.test(await page.locator("#say").textContent()),
     await page.locator("#say").textContent());
   /* Adding one task is rare; adding six on a Monday morning is the case. */
   ok("and opens a fresh line for the next one", (await page.locator(".card[data-draft]").count()) === 1);
@@ -1864,6 +1864,149 @@ for (const [q, w, h, label] of [["?state=dense", 1440, 960, "dense"], ["?state=d
   said.push(await page.locator("#say").textContent());
   ok("no sentence ever says a lane name twice", !said.some((t) => /in In |in To |in Review Review/i.test(t)),
     JSON.stringify(said));
+  await page.close();
+}
+
+/* == a day given is the day it says ============================== */
+/* The state used to come from an authored field, so a task the operator
+   scheduled for today wore a "Today" chip in the wash that means nothing is
+   wrong yet, was missing from the header count, and was hidden by the today
+   filter that then called it one of the others. */
+{
+  const page = await open("?state=planning");
+  const headBefore = await page.locator('[data-act="today"]').textContent().catch(() => "0 today");
+  await page.locator('.sched[data-act="day"]').first().click();
+  await page.waitForTimeout(250);
+  await page.locator('.dayMenu [data-when="today"]').click();
+  await page.waitForTimeout(500);
+  const headAfter = await page.locator('[data-act="today"]').textContent().catch(() => "0 today");
+  ok("giving a task today puts it in the today count",
+    parseInt(headAfter, 10) === parseInt(headBefore, 10) + 1, headBefore + " -> " + headAfter);
+  ok("and the card wears the today chip",
+    (await page.locator('.when[data-t="today"]').count()) >= 1);
+  await page.close();
+}
+{
+  const page = await open("?state=planning");
+  await page.locator('.sched[data-act="day"]').first().click();
+  await page.waitForTimeout(250);
+  await page.locator('.dayMenu [data-when="weekend"]').click();
+  await page.waitForTimeout(500);
+  /* +3 from the pinned Thursday landed on Sunday, and a venue's weekend work
+     is due before the Saturday it is for. */
+  const chips = await page.$$eval(".board .when", (n) => n.map((x) => x.textContent.trim()));
+  ok("this weekend lands on the Saturday, not after it",
+    chips.some((c) => /Sat/.test(c)) && !chips.some((c) => /Sun/.test(c)), JSON.stringify(chips));
+  await page.close();
+}
+
+/* == the day menu is reachable on every row ====================== */
+/* It was a child of the drawer's own scroller, which clipped it: on the last
+   of five rows only a 13px sliver rendered. */
+{
+  const page = await open("?state=planning");
+  const rows = await page.locator('.sched[data-act="day"]').count();
+  let worst = 100;
+  for (let i = 0; i < rows; i += 1) {
+    await page.locator('.sched[data-act="day"]').nth(i).click();
+    await page.waitForTimeout(220);
+    const vis = await page.evaluate(() => {
+      const m = document.querySelector(".dayMenu");
+      if (!m) return 0;
+      const r = m.getBoundingClientRect();
+      return Math.round(Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0)) / r.height * 100);
+    });
+    worst = Math.min(worst, vis);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(120);
+  }
+  ok("every row's day menu is fully on screen", worst >= 99, worst + "% on the worst row");
+  await page.close();
+}
+
+/* == the room stops contradicting itself when it empties ========= */
+{
+  const page = await open("?state=planning");
+  await page.locator(".selectAll").click();
+  await page.waitForTimeout(200);
+  await page.locator(".drawerDo").click();
+  await page.waitForTimeout(200);
+  await page.locator('.dayMenu [data-when="today"]').click();
+  await page.waitForTimeout(500);
+  const said = await page.$$eval(".drawerHelp, .drawerEmpty", (n) => n.map((x) => x.textContent.trim()));
+  ok("an emptied room says one thing, not two that disagree", said.length === 1, JSON.stringify(said));
+  await page.close();
+}
+
+/* == the hand is exclusive ====================================== */
+/* Nothing ended a keyboard carry: Tab away, complete another card, open a
+   composer or the drawer, and it ran on — two indigo rings on two cards at
+   once, and a completion refused its Undo strip because the pill owned it. */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card').first().focus();
+  await page.keyboard.press(" ");
+  ok("a card is in hand", (await page.locator(".carry").count()) === 1);
+  const box = await page.locator('.tray[data-lane="doing"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+  ok("completing another card ends the carry",
+    (await page.locator('.card[data-force="moving"]').count()) === 0);
+  ok("and the completion gets the strip the carry was holding",
+    (await page.locator('.carry [data-act="undo"]').count()) === 1);
+  await page.close();
+}
+
+/* == the edge fade starts where the board starts ================= */
+/* 118px was the board's top only while the header was one line. Stacked, a
+   96px white gradient rose above the board and washed the tools row, so a
+   live control read as disabled. */
+for (const [q, w, label] of [["", 1280, "1280"], ["", 768, "768"], ["?state=planning", 1440, "drawer open"]]) {
+  const page = await open(q, { width: w, height: 960 });
+  const over = await page.evaluate(() => {
+    const sheet = document.querySelector(".sheet");
+    const board = document.querySelector(".board");
+    const top = parseFloat(getComputedStyle(sheet).getPropertyValue("--fade-top")) || 118;
+    const boardTop = board.getBoundingClientRect().top - sheet.getBoundingClientRect().top;
+    return Math.round(boardTop - top);
+  });
+  /* 6px below the board's border-top is deliberate: it is what keeps the 1px
+     rule running unbroken to the sheet edge. What matters is that the fade
+     tracks the board rather than a number that was only ever right unstacked. */
+  ok("the fade starts at the board's own top at " + label, over >= -8 && over <= 2, over + "px from it");
+  await page.close();
+}
+
+/* == a press on a card with no note says so ====================== */
+{
+  const page = await open();
+  const bare = await page.evaluate(() => {
+    const n = [...document.querySelectorAll(".card[data-id]")].find((c) => !c.hasAttribute("aria-expanded"));
+    return n ? n.dataset.id : null;
+  });
+  if (bare) {
+    const box = await page.locator('.card[data-id="' + bare + '"] .cardTitle').boundingBox();
+    await page.mouse.move(box.x + 20, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.up();
+    await page.waitForTimeout(400);
+    ok("a press on a card with no note is answered, not silent",
+      /no note/.test(await page.locator("#say").textContent()),
+      await page.locator("#say").textContent());
+  }
+  await page.close();
+}
+
+/* == the view switcher announces what is selected ================ */
+{
+  const page = await open();
+  ok("the active view tab is selected", await page.evaluate(() =>
+    document.querySelector('.segItem[data-active]').getAttribute("aria-selected") === "true"));
+  ok("and the others say they are not", await page.evaluate(() =>
+    [...document.querySelectorAll(".segItem:not([data-active])")]
+      .every((n) => n.getAttribute("aria-selected") === "false")));
   await page.close();
 }
 

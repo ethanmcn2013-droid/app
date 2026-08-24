@@ -246,7 +246,12 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    overflows. Same mask idiom as the dock scrim, and no new hue. */
 .sheet::after {
   content: "";
-  position: absolute; right: 0; top: 118px; bottom: 0;
+  /* 118 was the board's top only while the header was one line. The header
+     stacks under 1200px of sheet, which pushes the board down ~100px, so a
+     96px white gradient was rising above the board and washing the right end
+     of the tools row — "Display" rendered paler than "Sort" beside it, and a
+     live control read as disabled. Measured, not assumed. */
+  position: absolute; right: 0; top: var(--fade-top, 118px); bottom: 0;
   /* 44px against a 258px column left roughly 150px of sliced card at full
      opacity before the fade began, so every truncated word stayed legible
      against a hard edge. 96px dissolves the cut characters; past ~104 it
@@ -260,7 +265,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 /* The mirror. A one-sided signal says nothing about the column behind you. */
 .sheet::before {
   content: "";
-  position: absolute; left: 0; top: 118px; bottom: 0;
+  position: absolute; left: 0; top: var(--fade-top, 118px); bottom: 0;
   width: 96px; z-index: 1;
   background: linear-gradient(270deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 46%, var(--white) 100%);
   opacity: 0; pointer-events: none;
@@ -411,7 +416,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   /* `safe` is load-bearing: a centred grid that overflows puts its leading
      content out of reach of the scroller, which is exactly what the board
      becomes below 1100. It centres when it fits and starts when it does not. */
-  justify-content: safe center;
+  /* The sheet has one leading edge and everything resolves to it. Centring
+     the grid abandoned it the moment the columns did not fill the width. */
+  justify-content: safe start;
   grid-auto-rows: 100%;
   gap: 0;
   /* The dock's band is real layout, not something masked over. 48px of dock
@@ -577,7 +584,11 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    title made it establish its own formatting context, which is a block's
    instruction to avoid floats rather than flow around them — so the date
    chip was stealing width from all three lines instead of one. */
-.cardTitleRow:has(.when) .cardTitle { text-wrap: pretty; }
+/* `pretty` fights the float exclusion: measured, it opened titles on two
+   words beside a chip and pushed two-line titles to three. Plain greedy
+   wrapping beside a float is the right tool, and it fires only when a chip is
+   present so nothing without one can regress. */
+.cardTitleRow:has(.when) .cardTitle { text-wrap: wrap; }
 .cardTitleRow {
   grid-column: 2; grid-row: 1; min-width: 0;
   max-height: calc(14px * 1.36 * 3); overflow: hidden;
@@ -684,7 +695,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    chip is ink on white, like .when[data-t="today"] on a card, and falls
    through to the base tr-12 the way the same condition does there. */
 .late:not([data-soft]) { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
-.dockPrimary { letter-spacing: calc(var(--tr-13) + var(--tr-rev)); }
+/* The idle dock paints ink on wash, which is not reversed out, so the
+   branch is scoped to the state it describes. */
+.dock:not([data-idle]) .dockPrimary { letter-spacing: calc(var(--tr-13) + var(--tr-rev)); }
 .when[data-t="overdue"] { background: var(--ink); color: var(--white); font-weight: 600; letter-spacing: calc(var(--tr-11) + var(--tr-rev)); }
 .when[data-t="today"] { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-1); font-weight: 600; }
 .when[data-t="milestone"] { background: var(--indigo-wash); color: var(--indigo-ink); font-weight: 600; }
@@ -756,7 +769,12 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    the stack and it outranks the resting focus ring. */
 /* Declared after hover, or hover deletes it. An open card is lifted off the
    tray to be read, which is a rank above the card under the pointer. */
-.card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-1), var(--float); }
+/* A card you are merely reading was drawn in full-strength ink and the
+   product's heaviest shadow — a firmer edge than an overdue card, for the
+   least urgent state on the board. It steps onto the existing ladder: 1.5px
+   at ink-4 is still firmer and darker than hover's 1px at 0.16, so the rank
+   survives without spending the alarm. */
+.card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-4), var(--float); }
 .card[data-force="moving"] {
   --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
   transform: scale(1.02);
@@ -1133,8 +1151,12 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 /* The day menu is the card menu's idiom, because there should be one anchored
    menu in this product and not two. */
 .drawerRow { position: relative; }
+/* The menu is a child of the drawer's own scroller, which clips it: on the
+   last of five rows only a 13px sliver rendered. It is positioned against the
+   viewport from its trigger's measured rect, the way the card menu already
+   is, so it cannot be clipped by the box it opened from. */
 .dayMenu {
-  position: absolute; z-index: 9; right: 0; top: calc(100% + 4px); min-width: 168px;
+  position: fixed; z-index: 20; min-width: 168px;
   padding: 5px; border-radius: var(--r-ctl);
   background: var(--white); box-shadow: var(--ring), var(--float);
   display: grid; gap: 1px;
@@ -1158,8 +1180,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
 .drawerDo svg { width: 13px; height: 13px; }
-.drawerBulk .dayMenu { left: 16px; right: 16px; bottom: calc(100% + 6px); top: auto; }
-.drawerRow .dayMenu[data-up] { top: auto; bottom: calc(100% + 4px); }
+
 .drawerAdd {
   margin: 6px 12px 18px; padding: 0 10px;
   display: flex; align-items: center; gap: 9px;
@@ -1925,8 +1946,16 @@ function timeOf(task) {
   }
   if (!task.dueAt) return { kind: "none", label: "" };
   const label = dayLabel(task.dueAt);
-  if (task.dueTone === "overdue") return { kind: "overdue", label: dayLabel(task.dueAt) };
-  if (task.dueTone === "today") return { kind: "today", label };
+    /* The state comes from the date, not from a field an author typed. The
+       Planning room writes dueAt and nothing else, so a task the operator
+       scheduled for today wore a "Today" chip in the wash that means nothing
+       is wrong yet, was missing from the header's "1 today" count, and was
+       hidden by the today filter that then called it one of the others. One
+       derivation makes the chip, the count, the filter and the silhouette
+       agree, because every one of them already reads through here. */
+    if (task.dueAt < TODAY) return { kind: "overdue", label: label };
+    if (task.dueAt === TODAY) return { kind: "today", label: label };
+    return { kind: "soon", label: label };
   return { kind: "soon", label };
 }
 
@@ -2137,7 +2166,7 @@ function head() {
           overdue + " overdue" + (lateOnly ? I.close : "") + "</button>"
         : "") +
       (undated ? '<button type="button" class="undated" data-act="planning" title="Open Planning to see the ' +
-        undated + ' tasks with no day">' + undated + " with no date</button>" : "") +
+        undated + ' tasks with no day">' + undated + " with no day</button>" : "") +
       "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
     "</div>" +
     '<div class="headActions">' +
@@ -2165,9 +2194,11 @@ function views() {
        Schedule and a Calendar nobody has built. Drawn as unavailable they
        stop lying, and they say why when asked rather than doing nothing. */
     B.views.map((v) => '<button type="button" role="tab" class="segItem"' +
+      /* A tablist whose active tab computes selected=false announces the
+         product's primary view switcher as four unselected tabs. */
       (v === "Board"
-        ? ' data-active aria-current="true"'
-        : notYet(SOON)) +
+        ? ' data-active aria-current="true" aria-selected="true"'
+        : ' aria-selected="false"' + notYet(SOON)) +
       ' tabindex="' + (v === "Board" ? "0" : "-1") + '">' + icons[v] + "<span>" + v + "</span></button>").join("") +
     '</nav><div class="viewTools" data-group="tools">' +
       ["Filter", "Sort", "Display"].map((t, i) =>
@@ -2417,15 +2448,23 @@ function drawer() {
     '<div class="drawerHead"><div class="drawerTop"><span class="drawerKicker">' + esc(p.title) + "</span>" +
       '<button class="ghost" data-act="planning" style="margin-left:auto" aria-label="Close Planning">' +
         I.close + "</button></div>" +
-      '<h2 id="drawerTitle">' + esc(p.project) + "</h2>" +
+            /* The board's own h1 is 928px away on the same screen, at the same
+         weight and colour. The panel is named by what it does, and the
+         accessible name it lends the dialog says so too. */
+      '<h2 id="drawerTitle">' + (drawerTab === "milestones" ? "Milestones" : "Tasks with no day") + "</h2>" +
       '<p class="drawerLine">' + esc(p.line) + "</p>" +
       '<div class="axis"><i></i><b></b></div>' +
       '<div class="axisEnds"><span>6 Jul</span><span>10 Oct</span></div>' +
       '<p class="drawerSummary">' + esc(p.summary) + "</p></div>" +
     '<div class="drawerTabs" role="tablist" aria-label="Planning">' +
-      tab("nodate", "No date", undatedTasks().length) +
+      tab("nodate", "No day", undatedTasks().length) +
       tab("milestones", "Milestones", milestoneTasks().length) + "</div>" +
-    '<p class="drawerHelp">' +
+    /* When the list empties, the room used to print "Every task here still
+       needs a day." directly above "Every task has a day." — two sentences
+       60px apart contradicting each other, in the moment the operator had
+       just done what the room asked. At zero rows the empty state is the only
+       sentence in the body. The milestones tab had the same shape. */
+    (rows.length ? '<p class="drawerHelp">' +
       (rows.length > 1
         ? '<button type="button" class="selectAll" data-act="selectAll">' +
           (all ? "Clear all" : "Select all") + "</button>"
@@ -2434,7 +2473,7 @@ function drawer() {
         ? picked.size + (picked.size === 1 ? " task picked." : " tasks picked.")
         : drawerTab === "milestones" ? "The dates the season turns on."
         : "Every task here still needs a day.") +
-    "</p>" +
+    "</p>" : "") +
     '<div class="drawerRows" role="group" aria-label="' +
       (drawerTab === "milestones" ? "Milestones" : "Tasks with no date") + '">' +
     (rows.length
@@ -2454,7 +2493,7 @@ function drawer() {
           ? '<span class="schedDate">' + esc(t.date || "No date yet") + "</span>"
           : '<button type="button" class="sched" data-act="day" data-id="' + esc(t.id) +
             '" aria-haspopup="menu" aria-expanded="' + (dayFor === t.id ? "true" : "false") +
-            '" aria-label="Give ' + esc(t.title) + ' a day">Pick a day ' + I.chevron + "</button>" +
+            '" aria-label="Pick a day for ' + esc(t.title) + '">Pick a day ' + I.chevron + "</button>" +
             (dayFor === t.id ? dayMenu(t.id) : "")) +
         "</div>").join("")
       : '<p class="drawerEmpty">' +
@@ -2471,7 +2510,7 @@ function drawer() {
       : "") +
     '<button class="drawerAdd" data-act="add" data-lane="' + B.columns[0].id + '"' +
       (drawerTab === "milestones" ? notYet("Setting a milestone comes with the Schedule view.") : "") + ">" +
-      I.plus + "<span>" + (drawerTab === "milestones" ? "Add a milestone" : "Add a task with no date") +
+      I.plus + "<span>" + (drawerTab === "milestones" ? "Add a milestone" : "Add a task with no day") +
       "</span></button></aside>"
   );
 }
@@ -2482,17 +2521,23 @@ function drawer() {
 const DAYS_OFFER = [
   ["today", "Today", 0],
   ["tomorrow", "Tomorrow", 1],
-  ["weekend", "This weekend", 3],
+  /* Resolved, not a fixed offset: +3 from the pinned Thursday landed on
+     Sunday, and a venue's weekend work is due before the Saturday it is for.
+     A Saturday operator's "this weekend" means today, not a week out. */
+  ["weekend", "This weekend", null],
   ["week", "Next week", 7],
 ];
 
 function dayMenu(forId) {
   return (
-    '<div class="dayMenu" role="menu">' +
-    DAYS_OFFER.map((d) =>
-      '<button type="button" role="menuitem" data-act="setday" data-when="' + d[0] +
+    /* role="menu" is a contract, not a label: one tab stop, the arrows walk
+       it, and it is named. The card menu already honours it; this declared it
+       and honoured none of it. */
+    '<div class="dayMenu" role="menu" data-group="day" aria-label="Give a day">' +
+    DAYS_OFFER.map((d, i) =>
+      '<button type="button" role="menuitem" tabindex="' + (i ? "-1" : "0") + '" data-act="setday" data-when="' + d[0] +
       '" data-id="' + esc(forId) + '">' + d[1] + "</button>").join("") +
-    '<button type="button" role="menuitem"' + notYet("Choosing an exact date comes with the Schedule view.") +
+    '<button type="button" role="menuitem" tabindex="-1"' + notYet("Choosing an exact date comes with the Schedule view.") +
     ">A date " + I.chevron + "</button>" +
     "</div>"
   );
@@ -2502,7 +2547,8 @@ function dayMenu(forId) {
    calendar every other fact on this board is measured against. */
 function dayFrom(when) {
   const base = Date.UTC(2026, 6, 16);
-  const add = (DAYS_OFFER.find((d) => d[0] === when) || ["", "", 0])[2];
+  const offset = (DAYS_OFFER.find((d) => d[0] === when) || ["", "", 0])[2];
+  const add = offset === null ? (6 - new Date(base).getUTCDay() + 7) % 7 : offset;
   const d = new Date(base + add * 86400000);
   return d.toISOString().slice(0, 10);
 }
@@ -2654,6 +2700,12 @@ function laneMid(id) {
    rather than only at the six that happened to double. */
 function inLane(id) {
   return "in the " + laneMid(id) + " column";
+}
+
+/* A verb of motion needs "to", not "in": "moved in the in progress column" is
+   not a sentence anyone writes. The preposition travels with the verb. */
+function toLane(id) {
+  return "to the " + laneMid(id) + " column";
 }
 
 function moveTo(id, lane, index) {
@@ -2990,6 +3042,22 @@ function walk(dx, dy) {
   }
 }
 
+/* One card in hand is the product's most stateful moment and nothing ended it:
+   Tab away, complete another card with the pointer, open the composer or the
+   Planning drawer, and the carry ran on — two identical indigo rings on two
+   cards at once, a foot pill printing instructions that no longer worked, and
+   a completion refused its Undo strip because the pill still owned the slot.
+   The hand ends where the operator's attention goes. */
+function endCarry() {
+  if (!carriedId) return false;
+  const task = taskById(carriedId);
+  const at = place(carriedId);
+  const lane = at ? laneIds()[at.x] : null;
+  carriedId = null; carriedFrom = null; overLane = null;
+  if (task && lane) say(task.title + " put down " + inLane(lane) + ".");
+  return true;
+}
+
 function carryMove(dx, dy) {
   const at = place(carriedId);
   if (!at) return;
@@ -3074,9 +3142,9 @@ function commitDraft(field, repeat) {
   refocus = true;
   if (lateOnly && timeOf(task).kind !== "overdue") {
     lateOnly = false;
-    say(title + " added " + inLane(lane) + ". The overdue filter is off so you can see it.");
+    say(title + " added " + toLane(lane) + ". The overdue filter is off so you can see it.");
   } else {
-    say(title + " added " + inLane(lane) + ". Press " + MOD + "Z to undo.");
+    say(title + " added " + toLane(lane) + ". Press " + MOD + "Z to undo.");
   }
   /* The run continues: a fresh line opens under the one just added, caret
      already in it, so six tasks cost six sentences and one Escape. A commit
@@ -3274,6 +3342,7 @@ function onClick(event) {
   }
   if (what === "undo") { undoLast(); return; }
   if (what === "planning") {
+    endCarry();
     /* The drawer is the only surface where a task can be given a day, and it
        was reachable only by editing the URL. */
     const opening = state !== "planning";
@@ -3403,7 +3472,7 @@ function onClick(event) {
       completed(task, did && did.cleared);
     } else {
       if (from) arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: lane });
-      say(task.title + " moved " + inLane(lane) + ".");
+      say(task.title + " moved " + toLane(lane) + ".");
     }
     menuFor = null;
     focusId = id;
@@ -3422,7 +3491,7 @@ function onClick(event) {
   /* Finishing a selection is not a click on the card. */
   if (String(getSelection())) return;
   focusId = card.dataset.id;
-  if (!card.hasAttribute("aria-expanded")) return;
+  if (!card.hasAttribute("aria-expanded")) { say("There is no note on this task yet."); return; }
   openNoteId = openNoteId === card.dataset.id ? null : card.dataset.id;
   refocus = true;
   say(openNoteId ? "Showing the whole note." : "Note closed.");
@@ -3534,6 +3603,7 @@ function onDrop(event) {
     pressAt = null;
     carriedId = null; carriedFrom = null; overLane = null;
     const node = document.querySelector('.card[data-id="' + id2 + '"]');
+    if (node && !node.hasAttribute("aria-expanded")) say("There is no note on this task yet.");
     if (node && node.hasAttribute("aria-expanded") && !String(getSelection())) {
       focusId = id2;
       openNoteId = openNoteId === id2 ? null : id2;
@@ -3572,7 +3642,7 @@ function onDrop(event) {
   const place = tasksFor(overLane.lane);
   if (!finishing) say(sameLane
     ? taskById(id).title + " moved to position " + (overLane.index + 1) + " of " + place.length + " " + inLane(overLane.lane) + "."
-    : taskById(id).title + " moved " + inLane(overLane.lane) + ".");
+    : taskById(id).title + " moved " + toLane(overLane.lane) + ".");
   focusId = id;
   carriedId = null; carriedFrom = null; overLane = null;
   mount();
@@ -3694,6 +3764,9 @@ function measureEdges(target) {
     }
   }
   if (board && sheet) {
+    /* The fades start where the board starts, whatever the header did. */
+    sheet.style.setProperty("--fade-top",
+      Math.round(board.getBoundingClientRect().top - sheet.getBoundingClientRect().top + 6) + "px");
     sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
   }
   if (board && sheet) sheet.toggleAttribute("data-more-left", board.scrollLeft > 1);
@@ -3713,15 +3786,20 @@ function measureEdges(target) {
      only above one. Visibility is not knowable while the markup is a string,
      so it is settled here, after layout: exactly one visible stop, and if the
      remembered one is not on screen the active product takes it back. */
-  /* An anchored menu near the foot of the drawer ran off the bottom of it.
-     Measured after layout, like every other edge in this file, and flipped
-     above its trigger when it does not fit below. */
-  const dayMenu = target.querySelector(".drawerRow .dayMenu");
+  /* The menu is fixed to the viewport, so it is placed from its trigger's
+     measured rect after layout — below when there is room, above when there
+     is not. Anchoring it inside the row put it inside the drawer's own
+     scroller, which clipped it to a sliver on the lower rows. */
+  const dayMenu = target.querySelector(".dayMenu");
   if (dayMenu) {
-    const room = target.querySelector(".drawer");
-    dayMenu.removeAttribute("data-up");
-    if (room && dayMenu.getBoundingClientRect().bottom > room.getBoundingClientRect().bottom - 12) {
-      dayMenu.setAttribute("data-up", "");
+    const trigger = target.querySelector('[data-act="day"][aria-expanded="true"]');
+    if (trigger) {
+      const t = trigger.getBoundingClientRect();
+      const m = dayMenu.getBoundingClientRect();
+      const below = t.bottom + 4;
+      const fits = below + m.height <= innerHeight - 12;
+      dayMenu.style.top = (fits ? below : Math.max(12, t.top - 4 - m.height)) + "px";
+      dayMenu.style.left = Math.max(12, Math.min(t.right - m.width, innerWidth - m.width - 12)) + "px";
     }
   }
   const rail = target.querySelector(".rail");
@@ -3959,6 +4037,13 @@ if (host) {
      thinks, and it opens the note the press began on. */
   host.addEventListener("pointerdown", (event) => {
     const card = event.target.closest && event.target.closest(".card[data-id]");
+    /* The repaint waits for the click. Repainting here destroys the control
+       the press landed on before its click can fire, so ending the carry
+       would have eaten the very completion it was meant to make room for. */
+    if (carriedId && (!card || card.dataset.id !== carriedId)) {
+      endCarry();
+      setTimeout(() => { if (!carriedId) mount(); }, 0);
+    }
     const control = event.target.closest && event.target.closest(".tick, .cardDots, .who, [data-act]");
     pressedControl = card && card.closest(".board") ? control : null;
     pressAt = card && card.closest(".board") && !control
@@ -3974,7 +4059,7 @@ if (host) {
     const card = event.target.closest && event.target.closest(".card[data-id]");
     if (!card || card.dataset.id !== was.id) return;
     if (String(getSelection())) return;
-    if (!card.hasAttribute("aria-expanded")) return;
+    if (!card.hasAttribute("aria-expanded")) { say("There is no note on this task yet."); return; }
     /* The click may or may not survive; whichever fires first wins and the
        other finds the state already settled on the same card. */
     if (openNoteId === was.id) return;

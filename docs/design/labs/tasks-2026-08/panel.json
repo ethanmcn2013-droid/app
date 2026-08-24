@@ -814,6 +814,62 @@
           "done": "The light-dismiss handler is gone and the assertion that guarded it is replaced by its inverse: with the drawer open, a real press on a tick completes the task and the drawer stays open. It declares aria-modal=\"false\" and sits beside the sheet rather than over it, so the board is live behind it and says so."
         }
       ]
+    },
+    {
+      "round": 15,
+      "scores": {
+        "UI composition": 8.1,
+        "Typography": 8.4,
+        "Interaction and states": 8.9,
+        "UX and information design": 7.9,
+        "Brand and copy": 8.4,
+        "Product taste and emotional resonance": 8.6,
+        "Measured evidence": 8.4
+      },
+      "findings": 35,
+      "confirmed": 23,
+      "refuted": 12,
+      "fixed": 23,
+      "note": "Run twice. The first pass lost the Brand seat to an API fault, which is not a round under this method; it was resumed and completed in full, and the complete run is what is recorded.",
+      "headline": "The floor falls 8.2 to 7.9, and for the fourth round running the newest work is what set it. Every one of the five most costly findings is inside the Planning room built one round earlier. The worst is not a matter of craft: a task the operator scheduled for today wore a Today chip drawn in the wash that means nothing is wrong yet, was missing from the header's own today count, and was then hidden by the today filter which told them it was one of twelve others. The room wrote a date and the board read an authored field, so the two never met. \"This weekend\" was a fixed +3 that landed on Sunday, after the Saturday the work was for. The day menu was a child of the drawer's own scroller and was clipped to a 13px sliver on the last of five rows. And when the room emptied it printed \"Every task here still needs a day\" directly above \"Every task has a day\" — two sentences 60px apart contradicting each other in the moment the operator had just done what it asked. The UX seat, at 7.9, said it plainly: the score is held down by one room shipped since the last panel, not by fourteen rounds of work. Interaction reached 8.9, the highest that seat has ever scored here. All 23 confirmed findings are fixed; the gate grew from 285 assertions to 299.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 5,
+          "problem": "The board's time state came from an authored field rather than from the date. The Planning room writes a date and nothing else, so a task scheduled for today fell through every branch to \"soon\": it wore a Today chip in the wash that means nothing is wrong yet, was absent from the header's \"1 today\" count, and was hidden by the today filter, which then described it as one of the others. The newest room in the product was a way to lose work.",
+          "done": "The state is derived from the date. Every chip, every count and every filter already read through the same function, so one derivation makes the chip, the count, the filter and the card's silhouette agree. The gate asserts that giving a task today moves the header count and puts the today chip on the card."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 4,
+          "problem": "\"This weekend\" was a hardcoded three days. From the pinned Thursday it resolved to Sunday — after the Saturday the work is for. The first row in the room is \"Confirm marquee sides with the hire company\", whose own note reads \"Mara & Finn, Saturday\": the product offered to schedule it for the day after the wedding it is for.",
+          "done": "It resolves to the coming Saturday rather than adding a fixed offset, and on a Saturday it means that day rather than pushing a week out. The gate asserts the landed chip reads Sat and never Sun."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 4,
+          "problem": "One card in hand is the product's most stateful moment and nothing ended it. Tab away, complete another card with the pointer, open the composer or the Planning drawer, and the carry ran on: two identical indigo rings on two cards at once, a foot pill printing instructions that no longer worked, a carried card silently abandoned by the next Space, and a completion refused its Undo strip because the pill still owned the slot.",
+          "done": "The hand ends where the operator's attention goes — a press outside the carried card, or opening Planning — and says where the card was put down. The repaint waits a tick for the click, because repainting on pointerdown destroys the control the press landed on and would have eaten the very completion the change was meant to make room for."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 3,
+          "problem": "When the no-date list emptied, the drawer printed \"Every task here still needs a day.\" directly above \"Every task has a day.\" — two sentences 60px apart contradicting each other, in the moment the operator had just done what the room asked. The milestones tab had the same shape.",
+          "done": "The helper line is gated on there being rows to help with, on both tabs, so at zero rows the empty state is the only sentence in the body."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.6,
+          "problem": "The day menu — the headline feature of the previous round — was rendered inside the drawer's own scrolling list, which clipped it. Measured on the default five rows at 1440: 100, 100, 70, 40 and 7 percent visible. On the last row one item of five was drawn.",
+          "done": "It is positioned against the viewport from its trigger's measured rect, the way the card menu already is, so the box it opened from cannot clip it. It flips above the trigger when there is no room below. The gate walks every row and fails under 99% visible on any of them."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.5,
+          "problem": "The two edge fades were pinned to a hardcoded 118px, which was the board's top only while the header was one line. The header stacks under 1200px of sheet, which pushes the board down about 100px — so a 96px white gradient rose above the board and washed the right end of the tools row. \"Display\" rendered measurably paler than \"Sort\" beside it, so a live control read as disabled, at 768, 1024, 1280 and at 1440 with Planning open: more real viewport states than it was right in.",
+          "done": "The fades start where the board starts, stamped from the measured board offset in the same pass that stacks the header. The 6px overlap that keeps the column rule running unbroken to the sheet edge is preserved deliberately, and the gate asserts the relationship rather than the number."
+        }
+      ]
     }
   ]
 }
