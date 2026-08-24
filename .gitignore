@@ -111,3 +111,14 @@ m_tmp.mjs
 **/_m9/
 **/_seat*/
 **/_probe*/
+
+# Seat and probe scratch. Every round since round 1 has leaked a
+# different name for the same thing (_m9_, _ux10_, _typo/, _ref_read.png,
+# _seat9/), and each one cost a commit to clean up. Scoped to the two
+# places seats actually write, NOT repo-wide: src/modules/signal/lib/
+# triggers/_helpers.ts and drizzle*/meta/_journal.json are real source
+# and a blanket rule would have hidden them.
+/_*
+!/_wt-*
+docs/design/labs/notes-2026-08/_*
+scripts/design/_*
