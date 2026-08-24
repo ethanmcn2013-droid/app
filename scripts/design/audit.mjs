@@ -185,7 +185,11 @@ const AUDIT = `(() => {
        via an absolutely positioned pseudo-element with negative insets. That
        is the correct technique for a small circular control, so the audit
        measures the union rather than punishing it. */
-    const interactive = el.matches("button, a, [tabindex], input, textarea, select");
+    /* A negative tabindex is a programmatic focus target, not a control: it is
+       not in the tab order and nobody points at it. Counting it as a hit target
+       made a scroller that was deliberately taken OUT of the tab order fail for
+       being too short. */
+    const interactive = el.matches('button, a, [tabindex]:not([tabindex="-1"]), input, textarea, select');
     if (interactive && visible && rect.width >= 1) {
       let grow = 0;
       for (const pseudo of ["::before", "::after"]) {

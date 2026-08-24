@@ -752,6 +752,68 @@
           "done": "They are one two-position question now. Turning on due-today turns off overdue and the mirror, so the pair can no longer produce a guaranteed-empty board, and the couple filter stays the dimension that genuinely composes with time. The sentence announces the swap, so the operator is told why the chip they had on went dark."
         }
       ]
+    },
+    {
+      "round": 14,
+      "scores": {
+        "UI composition": 8.5,
+        "Typography": 8.6,
+        "Interaction and states": 8.6,
+        "UX and information design": 8.2,
+        "Brand and copy": 8.6,
+        "Product taste and emotional resonance": 8.7,
+        "Measured evidence": 8.6
+      },
+      "findings": 35,
+      "confirmed": 24,
+      "refuted": 11,
+      "fixed": 24,
+      "note": "This round was run twice. The first pass lost a seat and sixteen refuters to a session limit and a network fault, which is not a round under this method — seven blind seats and one refuter per finding, or it does not count. It was resumed and completed in full, and the complete run is what is recorded here.",
+      "headline": "The floor recovers from 7.4 to 8.2, and the spread closes: six of the seven seats now sit between 8.5 and 8.7. What sets the floor is no longer a defect in the craft — it is a room that cannot do its job. Planning has said 'Every task here still needs a day' on its own face for fourteen rounds, with every control that would give one disabled, while the header sent the operator there twice and promised in its own tooltip that the room would do it. Two seats independently named that as their single biggest win. It is a room now: each row has a live day menu, a picked set has a verb, giving a day is reversible with the same sentence and the same Ctrl+Z as everything else, and the milestones tab states its dates rather than offering to set them. Beside it, two consequences of the locked default that round 13 did not reach: the preset was deleting the one earned indigo from the milestone card in the only combination that ships — while the specimen sheet printed a caption asserting it under a card that did not have it — and hover was state-blind, so a settled Done card lifted under the pointer exactly as a live one did, contradicting the reading the founder's own preset was locked for. Round 13's press-is-a-click fix turned out to cover the tick and not the card body: between 4 and 8px the browser fires pointerdown, dragstart, drop and never sends a pointerup, so the guard was watching an event that never arrived. The gate grew from 255 assertions to 285, and now asserts the 8px threshold in both directions so it is a contract rather than an accident.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 5,
+          "problem": "The Planning drawer's stated job is on its own face — \"Every task here still needs a day\" — and it could not do it. All five day controls were disabled with \"Choosing a day comes with the Schedule view\", and the Schedule view said \"Board is the only view for now\". Select all picked five rows, flipped its label, announced \"5 tasks picked\" and produced no verb anywhere: a control that did work and returned nothing. The header sent the operator into that room twice, under two different names, promising in its own tooltip that the room would give those tasks a day. With 17 of 32 tasks routed through it at peak season, it was the largest gap between what the board claimed and what it did.",
+          "done": "It is a room now. Every row on the no-date tab carries a live day menu — Today, Tomorrow, This weekend, Next week — built from the same anchored-menu idiom the card already uses, so there is one menu pattern in the product and not two. A picked set reveals one verb reading \"Give N tasks a day\", and a picked row is visibly picked in the product's own filled ink with the same check the tick draws. Giving a day writes the dueAt every chip, count and filter already derives from, arms the same receipt as every other act, and reverses with the same Ctrl+Z. The milestones tab states its dates instead of offering to set them. The header chip stops promising what is behind the door and names what is."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 8,
+          "problem": "The whole card is draggable, and round 13's press-is-a-click fix covered the tick but not the card body. Driven with real pointer travel and every event logged: 0, 2 and 3px opened the note; 4, 5, 6, 7 and 10px opened nothing at all, said nothing, and armed no undo. The log at 4px reads pointerdown, dragstart, drop — pointerup never reaches the host, so the guard written on pointerup was watching for an event the browser had already decided not to send.",
+          "done": "The drop is where a short press actually arrives, so the test lives there too — and it has to run before the no-move early returns, because a press that barely travelled is exactly the case those returns discard. The gate now asserts the threshold in both directions: 0, 4 and 6px open the note, 12px does not, so 8px is a contract rather than an accident nobody wrote down."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 8,
+          "problem": "The preset and .card[data-next] are both specificity (0,2,0) and the preset is declared later, so the locked default won and deleted the one earned indigo from the milestone card entirely. Measured across all four combinations, only the three nobody ships carried it. The direction's whole colour argument is that status is ink density and fill with exactly one earned accent — and in the combination that ships, that accent was not drawn, while the specimen sheet printed a caption asserting it directly under a card that did not have it.",
+          "done": "The preset carries the milestone pair explicitly, at rest and under the pointer, in every combination. The gate now walks all four presets and fails if the milestone card is not carrying indigo in any of them, so the artifact cannot again fail to render its own thesis."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 6,
+          "problem": "There was one hover value for every card, whatever the card was. Measured with the pointer resting on it, a Done card computed a shadow byte-for-byte identical to a live To do card — the same lift, the same float tier. The locked default was chosen for the reading that live work floats and finished work has settled; the pointer was contradicting it on every Done card on the board.",
+          "done": "Hover is a token the preset branches, not a rule it writes. A finished card's hairline firms from 6% ink to 16% and nothing rises, so the set-down holds under the pointer. The gate asserts that a live card and a finished card do not resolve the same hover value."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 6,
+          "problem": "Pressing Tab on a dense board landed on an unnamed, unroled div: the column scroller, tabindex null, role null, aria-label null, painting the accent focus ring. Two extra stops on the dense board, and it was not confined to dense — any viewport where a column overflows produced them. A ring on it made the accident look deliberate.",
+          "done": "The scroller is taken out of the tab order at every render site, and the focus ring goes with its reasoning rather than being left to make the next round re-add it. The route into a column's hidden cards is the roving card the arrows walk, which is a better route than focusing a box and pressing Down. The audit was corrected in the same pass: it had been counting a negative tabindex as an interactive hit target, which made a scroller deliberately removed from the tab order fail for being too short."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.4,
+          "problem": "A half-written task was stranded by any click on empty sheet. Typed into the composer, clicked away: focus fell to nothing, the draft stayed on the board still holding the words, and the instruction under it — \"Enter adds it. Esc discards it.\" — no longer worked, because nothing had focus to receive either key. It is the only defect in the set that loses a person's own writing.",
+          "done": "Focus moving to a real control keeps the composer alive. Focus falling to nothing commits what was typed and discards what was not. A commit that came from looking away does not open a fresh line the way Enter does — the operator has gone, and opening a composer behind them is how a board ends up holding a draft nobody asked for."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.35,
+          "problem": "One panel ran two contradictory input models. To the keyboard the drawer was a non-modal sibling with two ways out; to the pointer it was modal and ate the click. A real press on a card's tick with the drawer open closed the drawer and did not complete the task. Reversing a day given in that room closed the room it was given in, because the undo strip lives outside the drawer.",
+          "done": "The light-dismiss handler is gone and the assertion that guarded it is replaced by its inverse: with the drawer open, a real press on a tick completes the task and the drawer stays open. It declares aria-modal=\"false\" and sits beside the sheet rather than over it, so the board is live behind it and says so."
+        }
+      ]
     }
   ]
 }

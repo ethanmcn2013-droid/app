@@ -78,7 +78,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 232 assertions, all passing. READ IT. Everything it asserts is already
+with 255 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -110,26 +110,28 @@ LIVE AND WORTH DRIVING, from the rounds before this one:
 
 CHANGED SINCE THE LAST PANEL SAW THIS FILE, and the most likely place for a
 new defect, so drive these first:
-- THE DEFAULT CHANGED. Cards are elevated now, not bordered. Every open card
-  rests on the product's light raise; every Done card is flat. Judge whether
-  that reads as one system or as two.
-- The header band stacks below 1200px of SHEET, measured after layout rather
-  than by media query, so an open drawer at 1440 gets the same treatment as a
-  1100px window. Resize it, and open Planning at 1440 and resize again.
-- The filtered board collapses the columns that did not answer to their heads
-  and steps back with ink rather than opacity.
-- The blank board drops its interior rules, is centred on the region it fills,
-  carries one concrete example, and retires its instruction when it is obeyed.
-- The completion flight grows into the card it becomes and arcs a shadow: it
-  lifts, travels, and sets down flat into Done. Clearing the LAST overdue task
-  says so in the foot strip. Drive it: tick "Order tonic and the good olives".
-- Six kinds of time chip now have six silhouettes, and the specimen sheet
-  states the law for all six.
-- The rail is one roving tab stop that survives a repaint.
+- A PRESS IS NOW A CLICK. The whole card is draggable and the browser's 4px
+  drag threshold had been silently eating any press that travelled — a tick
+  with 4px of movement did nothing at all. Drive the tick and the card body
+  with real pointer travel (mouse.move/down/move/up), not locator.click(),
+  which teleports and proves nothing.
+- A preset owns two tokens, --card-rest and --card-hover, and may not select
+  on state. Check that the keyboard focus ring, the open-note ring, the
+  in-hand lift and the milestone edge all survive a pointer resting on them.
+- All four doors into a completion — tick, card menu, pointer drop, keyboard
+  carry — say the same sentence and release a filter they emptied.
+- The completion flight scrolls its destination into view where the origin and
+  Done can both be on screen, and deliberately does not where they cannot.
+- The two time chips are one two-position question, not a pair that could only
+  ever return the empty set.
+- Done speaks calendar dates, so "Today" stays a debt rather than a receipt.
+- The view/tools row folds its words and then leaves, rather than crossing the
+  sheet's edge with the drawer open.
+- The type scale has a head: the sheet's own title is the largest thing on it.
 
 THIS ROUND IS NOT THE LAST. Remediation follows it, so report the defect
 rather than softening it because the work is nearly done. Equally, do not mark
-it down to look rigorous: this has had twelve rounds of work and some of it is
+it down to look rigorous: this has had thirteen rounds of work and some of it is
 genuinely finished.
 
 SCORES ARE ALLOWED TO FALL. If this is worse than a finished artifact should

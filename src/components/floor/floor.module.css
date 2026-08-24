@@ -91,7 +91,10 @@
 /* Tabular is for digits that stack in a column or tick in place. Prose keeps
    Geist's proportional figures, which is why "5 of 13 done" reads as a
    sentence and a tray count reads as a number. */
-.trayCount, .when, .cardFoot .cm, .ghost em, .drawerTab em, .axisEnds, .axis {
+/* A header chip is a number that ticks in place, which is the rule this
+   list exists for: at eleven overdue, completing one shoved every fact
+   beside it by 3.39px. */
+.late, .undated, .trayCount, .when, .cardFoot .cm, .ghost em, .drawerTab em, .axisEnds, .axis {
   font-variant-numeric: tabular-nums;
 }
 /* The count belongs to the label beside it, not to the prose. The negative
@@ -685,6 +688,11 @@
   font-size: 12px; font-weight: 600; color: var(--ink-1);
   letter-spacing: var(--tr-12); white-space: nowrap;
 }
+/* The board's most useful filter looked exactly like the inert label beside
+   it: no underline, no border, ink at full strength. A dotted rule at rest
+   says this is a control; the solid one on hover says it is the one under the
+   pointer. Every pointer type, not only the ones without hover. */
+.cardFoot > .who { text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
 .cardFoot .who + .tag { padding-left: 10px; border-left: 1px solid var(--line); }
 /* Severity is expressed by ink, not by weight. Bolding a 12px token to make
    it matter is the thing the micro-label rule above exists to prevent. */
@@ -701,7 +709,7 @@
 .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
 
 /* The one earned indigo in a resting view. */
-.card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
+.card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo), var(--float); }
 
 /* ── interaction, declared after every state ────────────────────── */
 .card:hover, .card[data-force="hover"] { --card-ring: var(--card-hover); }
@@ -1023,6 +1031,9 @@
 .drawerLine, .drawerSummary, .drawerTab, .drawerAdd, .drawerHelp .selectAll { letter-spacing: var(--tr-13); }
 .drawerTab em, .ghost em, .axisEnds span { letter-spacing: var(--tr-11); }
 .drawerHelp, .drawerRow, .drawerRow .sched, .drawerEmpty { letter-spacing: var(--tr-12); }
+/* A drawer row is a short clamped title, not a paragraph, so it takes the
+   balancer like .cardTitle rather than pretty like a note. */
+.drawerRow > span { text-wrap: balance; }
 .drawerLine { margin: 0; font-size: 13px; font-weight: 400; color: var(--ink-3); }
 .axis { margin: 22px 0 8px; height: 4px; background: var(--wash); border-radius: 2px; position: relative; }
 .axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 2px; }
@@ -1072,7 +1083,14 @@
   transition: box-shadow var(--dur) var(--curve);
 }
 .box::before { content: ""; position: absolute; inset: -8px; }
-.box:hover { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
+/* A picked row changed zero pixels: the attribute was emitted and never
+   styled, so five picked rows were confirmed only by a line of type. It takes
+   the product's own filled-ink mark and the same check the card's tick draws. */
+.box[aria-checked="true"] { background: var(--ink); box-shadow: none; color: var(--white); }
+.box[aria-checked="true"] svg { display: block; }
+.box svg { display: none; width: 11px; height: 11px; }
+.drawerRow[data-picked] { background: var(--wash); }
+.box:not([aria-checked="true"]):hover { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
 /* Scoped to the schedule control. Unscoped, this also claimed the row's
    checkbox and pushed it off the left margin on any row with slack. */
 .drawerRow .sched {
@@ -1084,6 +1102,39 @@
 }
 .drawerRow .sched:hover { background: var(--wash-2); color: var(--ink-1); }
 .drawerRow .sched svg { width: 13px; height: 13px; color: var(--ink-3); }
+.drawerRow .sched[aria-expanded="true"] { background: var(--wash-2); color: var(--ink-1); }
+/* A milestone row states its date rather than offering to set one. */
+.drawerRow .schedDate { font-size: 12px; letter-spacing: var(--tr-12); color: var(--ink-3); white-space: nowrap; }
+/* The day menu is the card menu's idiom, because there should be one anchored
+   menu in this product and not two. */
+.drawerRow { position: relative; }
+.dayMenu {
+  position: absolute; z-index: 9; right: 0; top: calc(100% + 4px); min-width: 168px;
+  padding: 5px; border-radius: var(--r-ctl);
+  background: var(--white); box-shadow: var(--ring), var(--float);
+  display: grid; gap: 1px;
+}
+.dayMenu button {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1);
+  text-align: left; padding: 0 9px; min-height: 34px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.dayMenu button:hover { background: var(--wash); }
+.dayMenu button[aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+.dayMenu button svg { width: 13px; height: 13px; color: var(--ink-3); }
+/* The verb appears only when there is a picked set to apply it to. */
+.drawerBulk { position: relative; padding: 10px 16px 0; }
+.drawerDo {
+  appearance: none; border: 0; cursor: pointer; font: inherit;
+  width: 100%; min-height: 40px; padding: 0 14px; border-radius: var(--r-ctl);
+  background: var(--ink); color: var(--white);
+  font-size: 13px; font-weight: 600; letter-spacing: calc(var(--tr-13) + var(--tr-rev));
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.drawerDo svg { width: 13px; height: 13px; }
+.drawerBulk .dayMenu { left: 16px; right: 16px; bottom: calc(100% + 6px); top: auto; }
+.drawerRow .dayMenu[data-up] { top: auto; bottom: calc(100% + 4px); }
 .drawerAdd {
   margin: 6px 12px 18px; padding: 0 10px;
   display: flex; align-items: center; gap: 9px;
@@ -1251,10 +1302,6 @@
 /* A finger needs 44px. A mouse does not, and inflating every control to
    44 on a desktop board is how a dense product stops being dense. */
 @media (pointer: coarse) {
-  /* A couple's name is a filter, and it said so only by underlining on hover
-     — which a phone does not have. It declares itself on the surfaces with no
-     hover and no tooltip, and nowhere else. */
-  .cardFoot > .who { text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
   .cardDots, .ghost, .trayAdd, .drawerTab, .drawerRow button, .drawerAdd, .drawerHelp a {
     min-height: 44px; min-width: 44px;
   }
@@ -1301,14 +1348,26 @@
 /* Background is not part of the ring system, so a preset may still say it. */
 .root[data-cards="flat"] .card:hover, .root[data-cards="flat"] .card[data-force="hover"] { background: var(--wash); }
 .root[data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
-.root[data-cards="flat"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); }
+.root[data-cards="flat"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo); }
 .root[data-cards="flat"] .trayBody { gap: 2px; }
 .root[data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
 
 /* Elevated: the card is an object at rest, and picking it up only
    deepens something that was already there. */
 .root[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); --card-hover: var(--ring-strong), var(--float); }
-.root[data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); }
+/* A finished card does not lift under the pointer. It has settled — that is
+   the whole reading the locked default makes true — so its hairline firms and
+   nothing rises. One hover value for every card meant a Done card and a live
+   To do card computed a byte-identical shadow. */
+.root[data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); --card-hover: 0 0 0 1px var(--line-strong); }
+/* The preset and .card[data-next] are both (0,2,0) and the preset is declared
+   later, so elevated was deleting the one earned indigo from the only
+   combination that ships — while the specimen sheet printed a caption
+   asserting it under a card that did not have it. */
+.root[data-cards="elevated"] .card[data-next] {
+  --card-rest: 0 0 0 1px var(--indigo-line), var(--raise);
+  --card-hover: 0 0 0 1px var(--indigo), var(--float);
+}
 .root[data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
 
 /* ── corner radius ─────────────────────────────────────────────── */
@@ -1360,7 +1419,7 @@
 .root[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
 .root[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
 .root[data-indigo="forward"] .segItem[data-active] { color: var(--indigo-ink); }
-.root[data-indigo="forward"] .card[data-next] { --card-rest: 0 0 0 1.5px var(--indigo); }
+.root[data-indigo="forward"] .card[data-next] { --card-rest: 0 0 0 1.5px var(--indigo); --card-hover: 0 0 0 1.5px var(--indigo), var(--float); }
 .root[data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
 .root[data-indigo="forward"] .trayAdd:hover, .root[data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
 
@@ -1388,7 +1447,12 @@
    both ways, the short rules read as a header row of five cells and keep each
    count tied to its own name; without them the counts drift against the next
    column's title. */
-.board[data-filtered] .tray[data-empty] { align-self: start; }
+/* Every tray tops out at its own content, not at the tallest one, so the
+   answering column stops running 500px of hairline past its last card into
+   blank sheet. max-height is load-bearing: .board is grid-auto-rows:100% with
+   overflow-y hidden, so without it a filter returning ten cards would grow
+   past the row and be clipped with no scroll route. */
+.board[data-filtered] .tray { align-self: start; max-height: 100%; }
 .board[data-filtered] .tray[data-empty] .trayBody, .board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
 .board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
 /* The step back is drawn with the ink ladder, not with element opacity.
@@ -1400,11 +1464,14 @@
 .board[data-filtered] .tray[data-empty] .trayCount { color: var(--ink-3); }
 .board[data-filtered] .tray[data-empty] .pip { background: rgba(17, 17, 17, 0.14); }
 
-/* Accessibility · a column that overflows is a scrollable region, and axe
-   rates one with no keyboard route as a serious failure. It is a stop now, so
-   it needs a ring — drawn inside its own box, because it marks a region the
-   eye should read as bounded, not an object sitting on the board. */
-.trayBody:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; border-radius: 4px; }
+/* The column scroller is NOT a tab stop. It was one by accident — an unnamed,
+   unroled div taking focus and painting the accent ring, two stops on a dense
+   board — and the ring here made that look deliberate. The keyboard route into
+   a column's hidden cards is the roving card itself: the arrows walk it and
+   the board scrolls to follow, which is a better route than focusing a box
+   and pressing Down. axe still reports scrollable-region-focusable; that is a
+   known and deliberate divergence, answered by the roving model rather than
+   by a focusable div nobody can name. */
 
 /* A blank board makes its one offer once. Five Add rows behind a centred
    "Add the first task" is the same offer six times. */

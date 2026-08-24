@@ -324,7 +324,10 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.locator('.tray[data-lane="done"] .card .tick').first().click();
   await page.waitForTimeout(400);
   const said = await page.locator("#say").textContent();
-  ok("un-completing names the lane it came from", said.indexOf("Review") !== -1, said);
+  /* One convention for every spoken lane mention: the column noun, so a
+     preposition in front of a sentence-case name can never read "in In
+     progress" again. */
+  ok("un-completing names the lane it came from", /in the review column/.test(said), said);
   await page.close();
 }
 
@@ -501,7 +504,8 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.keyboard.press("Enter");
   await page.waitForTimeout(250);
   ok("enter adds it", (await counts(page)).todo === before.todo + 1, JSON.stringify(await counts(page)));
-  ok("and it says so", (await page.locator("#say").textContent()).indexOf("added to To do") !== -1);
+  ok("and it says so", /added in the to do column/.test(await page.locator("#say").textContent()),
+    await page.locator("#say").textContent());
   /* Adding one task is rare; adding six on a Monday morning is the case. */
   ok("and opens a fresh line for the next one", (await page.locator(".card[data-draft]").count()) === 1);
   ok("with the caret still in it",
@@ -868,11 +872,26 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.waitForTimeout(250);
   ok("the close button closes it", (await page.locator(".drawer").count()) === 0);
 
+  /* The drawer used to be modal to the pointer and non-modal to the keyboard:
+     a real press on a card's tick with the drawer open closed the drawer and
+     did not complete the task. It declares aria-modal="false" and sits beside
+     the sheet, so the board stays live behind it. The X and Escape are the
+     ways out. */
   await page.locator('.headActions [data-act="planning"]').click();
+  await page.waitForTimeout(300);
+  const beforeDone = (await counts(page)).done;
+  const tickBox = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(tickBox.x + tickBox.width / 2, tickBox.y + tickBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(tickBox.x + tickBox.width / 2 + 2, tickBox.y + tickBox.height / 2 + 2);
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+  ok("the board stays live behind the drawer", (await counts(page)).done === beforeDone + 1,
+    JSON.stringify(await counts(page)));
+  ok("and the drawer is still open", (await page.locator(".drawer").count()) === 1);
+  await page.keyboard.press("Escape");
   await page.waitForTimeout(250);
-  await page.locator(".board").click({ position: { x: 40, y: 400 } });
-  await page.waitForTimeout(250);
-  ok("clicking away closes it", (await page.locator(".drawer").count()) === 0);
+  ok("escape is a way out", (await page.locator(".drawer").count()) === 0);
   await page.close();
 }
 
@@ -1681,6 +1700,170 @@ for (const w of [1440, 1280]) {
   const page = await open();
   ok("the inert search field prints no shortcut",
     (await page.locator(".dockField kbd").count()) === 0);
+  await page.close();
+}
+
+/* == a press is a click on the card body too ====================== */
+/* Round 13 fixed the tick and left the body: between 4 and 8px the browser
+   fires pointerdown -> dragstart -> drop and never sends a pointerup, so the
+   guard that lived on pointerup could not see the press it was written for. */
+/* 8px is the line: under it the operator meant to press, over it they meant to
+   drag. The 12px case is asserted to do the opposite, so the threshold is a
+   contract rather than an accident. */
+for (const [travel, opens] of [[0, true], [4, true], [6, true], [12, false]]) {
+  const page = await open();
+  const box = await page.locator('.tray[data-lane="todo"] .card .cardTitle').first().boundingBox();
+  await page.mouse.move(box.x + 20, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 20 + travel, box.y + box.height / 2 + travel, { steps: 3 });
+  await page.mouse.up();
+  await page.waitForTimeout(500);
+  ok((opens ? "the card body answers a press that travelled " : "and a press that travelled ") + travel + "px" + (opens ? "" : " is a drag, not a press"),
+    ((await page.locator(".card[data-open]").count()) === 1) === opens,
+    await page.locator("#say").textContent());
+  await page.close();
+}
+
+/* == the one earned indigo survives the shipped preset =========== */
+/* The preset and .card[data-next] are both (0,2,0) and the preset is declared
+   later, so the locked default was deleting the milestone edge from the only
+   combination that ships — while the specimen sheet printed a caption
+   asserting it under a card that did not have it. */
+for (const v of ["locked", "a", "b", "c"]) {
+  const page = await open("?v=" + v);
+  const rest = await page.evaluate(() => {
+    const n = document.querySelector(".card[data-next]");
+    return n ? getComputedStyle(n).getPropertyValue("--card-rest") : "";
+  });
+  ok("the milestone card carries indigo in preset " + v, /79, ?70, ?229|4f46e5/i.test(rest), rest.slice(0, 60));
+  await page.close();
+}
+
+/* == hover knows what it is over ================================= */
+{
+  const page = await open();
+  const live = await page.evaluate(() => getComputedStyle(document.querySelector(".card:not([data-done])")).getPropertyValue("--card-hover"));
+  const done = await page.evaluate(() => getComputedStyle(document.querySelector(".card[data-done]")).getPropertyValue("--card-hover"));
+  ok("a finished card does not lift under the pointer like a live one",
+    live.trim() !== done.trim(), JSON.stringify({ live: live.trim().slice(0, 40), done: done.trim().slice(0, 40) }));
+  await page.close();
+}
+
+/* == the column scroller is not a tab stop ======================= */
+/* An unnamed, unroled div was taking focus and painting the accent ring —
+   two extra stops on a dense board. The keyboard route into a column's
+   hidden cards is the roving card, which the arrows walk. */
+for (const [q, w, h, label] of [["?state=dense", 1440, 960, "dense"], ["?state=dense", 1440, 700, "dense short"], ["", 390, 844, "phone"]]) {
+  const page = await open(q, { width: w, height: h });
+  const stops = await page.evaluate(() => {
+    const out = [];
+    document.querySelectorAll(".trayBody").forEach((n) => {
+      if (n.getAttribute("tabindex") !== "-1") out.push(n.className);
+    });
+    return out;
+  });
+  ok("no column scroller is a tab stop at " + label, stops.length === 0, JSON.stringify(stops));
+  await page.close();
+}
+
+/* == Planning can do the one thing it is for ===================== */
+/* For fourteen rounds the room's own face said "Every task here still needs a
+   day" and every control that would give one was disabled, while the header
+   sent the operator there twice to be told so. */
+{
+  const page = await open("?state=planning");
+  const rows = await page.locator(".drawerRow").count();
+  ok("every row on the no-date tab can be given a day",
+    (await page.locator('.sched[data-act="day"]').count()) === rows, String(rows));
+  await page.locator('.sched[data-act="day"]').first().click();
+  await page.waitForTimeout(250);
+  ok("and the day menu opens", (await page.locator(".dayMenu").count()) === 1);
+  await page.locator('.dayMenu [data-when="tomorrow"]').click();
+  await page.waitForTimeout(400);
+  ok("giving a day removes the task from the no-date list",
+    (await page.locator(".drawerRow").count()) === rows - 1);
+  ok("and says so", /is due tomorrow/.test(await page.locator("#say").textContent()),
+    await page.locator("#say").textContent());
+  ok("and it is reversible like everything else",
+    (await page.locator('.carry [data-act="undo"]').count()) === 1);
+  await page.locator('.carry [data-act="undo"]').click();
+  await page.waitForTimeout(400);
+  ok("undo puts the day back", (await page.locator(".drawerRow").count()) === rows);
+  ok("and reversing it does not close the room it happened in",
+    (await page.locator(".drawer").count()) === 1);
+
+  /* A picked set that returns nothing is a control that does work and gives
+     nothing back. */
+  ok("a picked row is visibly picked", await page.evaluate(() => {
+    const b = document.querySelector(".box");
+    b.click();
+    return true;
+  }));
+  await page.waitForTimeout(300);
+  const picked = await page.evaluate(() => {
+    const b = document.querySelector('.box[aria-checked="true"]');
+    return b ? getComputedStyle(b).backgroundColor : "";
+  });
+  ok("with the product's own filled ink", /rgb\(17, 17, 17\)/.test(picked), picked);
+  ok("and the picked set has a verb", (await page.locator(".drawerDo").count()) === 1,
+    await page.locator(".drawerDo").textContent().catch(() => "none"));
+  await page.close();
+}
+
+/* == the drawer runs one input model ============================= */
+{
+  const page = await open("?state=planning");
+  ok("the milestones tab states its dates rather than offering to set one",
+    await page.evaluate(() => {
+      const tabs = [...document.querySelectorAll(".drawerTab")];
+      const ms = tabs.find((t) => /Milestone/i.test(t.textContent));
+      if (ms) ms.click();
+      return true;
+    }));
+  await page.waitForTimeout(300);
+  ok("and its add control does not promise a task",
+    (await page.locator('.drawerAdd[aria-disabled="true"]').count()) === 1);
+  await page.close();
+}
+
+/* == a half-written task is never stranded ====================== */
+{
+  const page = await open();
+  await page.locator(".trayAdd:visible").first().click();
+  await page.waitForTimeout(200);
+  await page.keyboard.type("Call the florist about the arch");
+  await page.locator(".sheet").click({ position: { x: 700, y: 900 } });
+  await page.waitForTimeout(400);
+  ok("clicking away commits the words rather than stranding them",
+    (await page.locator(".board .cardTitle", { hasText: "Call the florist" }).count()) === 1);
+  ok("and no draft is left holding them",
+    (await page.locator("[data-draft]").count()) === 0);
+  await page.close();
+}
+{
+  const page = await open();
+  await page.locator(".trayAdd:visible").first().click();
+  await page.waitForTimeout(200);
+  const before = await counts(page);
+  await page.locator(".sheet").click({ position: { x: 700, y: 900 } });
+  await page.waitForTimeout(400);
+  ok("an empty composer clicked away simply leaves",
+    (await page.locator("[data-draft]").count()) === 0 && (await counts(page)).todo === before.todo);
+  await page.close();
+}
+
+/* == one voice for every spoken lane ============================ */
+{
+  const page = await open();
+  const said = [];
+  await page.locator('.tray[data-lane="todo"] .card').first().focus();
+  await page.keyboard.press(" ");
+  await page.keyboard.press("ArrowRight");
+  said.push(await page.locator("#say").textContent());
+  await page.keyboard.press(" ");
+  said.push(await page.locator("#say").textContent());
+  ok("no sentence ever says a lane name twice", !said.some((t) => /in In |in To |in Review Review/i.test(t)),
+    JSON.stringify(said));
   await page.close();
 }
 
