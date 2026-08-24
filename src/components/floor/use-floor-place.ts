@@ -249,11 +249,29 @@ export function measureEdges(root: HTMLElement) {
     body.toggleAttribute("data-more", body.scrollTop + body.clientHeight < body.scrollHeight - 1);
     const tray = body.closest<HTMLElement>("[data-lane]");
     if (!tray) return;
-    tray.style.setProperty("--body-top", `${body.offsetTop - tray.offsetTop}px`);
-    tray.style.setProperty("--body-bottom", `${body.offsetTop - tray.offsetTop + body.clientHeight}px`);
+    /* offsetTop is already relative to the tray, which is the offset parent.
+       Subtracting the tray's own offset as well put the fold rule 112px above
+       the foot of the scroller, where it read as a section divider inside Done
+       rather than as a cue that there is more below. Read defensively so a
+       change to the sheet's positioning context cannot re-open it. */
+    const top = body.offsetParent === tray
+      ? body.offsetTop
+      : Math.round(body.getBoundingClientRect().top - tray.getBoundingClientRect().top);
+    tray.style.setProperty("--body-top", `${top}px`);
+    tray.style.setProperty("--body-bottom", `${top + body.clientHeight}px`);
   });
   const board = root.querySelector<HTMLElement>("[data-board]");
   const sheet = root.querySelector<HTMLElement>("[data-sheet]");
+  /* The header stacks on the width of the SHEET, not the width of the window.
+     The single-row band ran Planning and More past the sheet's right edge from
+     about 1120px down, where overflow:hidden cut them off the screen; and the
+     drawer-open board at 1440 is the same width of sheet as a 1100px window,
+     so a media query could never have caught both. Stacking changes the
+     header's height and not the sheet's width, so this cannot oscillate. */
+  if (sheet) {
+    if (sheet.clientWidth < 1200) sheet.setAttribute("data-head", "stack");
+    else sheet.removeAttribute("data-head");
+  }
   if (board && sheet) {
     sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
     sheet.toggleAttribute("data-more-left", board.scrollLeft > 1);

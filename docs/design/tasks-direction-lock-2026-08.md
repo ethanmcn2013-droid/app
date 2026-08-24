@@ -62,3 +62,45 @@ rewriting at implementation. Neither is touched during exploration.
 Three elevated variations of Studio Floor, differing in ground material and in
 card anatomy, are at `docs/design/labs/tasks-2026-08/floor.html`. One of them
 becomes the master. After that: Notes, then Timeline, then implementation.
+
+## The default combination, locked 2026-08-24
+
+The founder worked the six decisions in the Design Console and locked one
+combination as the product's default and preferred option:
+
+| Decision | Value |
+|---|---|
+| Preset it started from | A · Air |
+| Card style | **Elevated** (changed from Air's flat) |
+| Corner radius | **Soft** (changed from Air's round) |
+| Density | Comfortable |
+| Indigo | Subtle accents |
+| Type scale | **Calm** (changed from Air's expressive) |
+
+This is now the `locked` preset in `floor.html` — the master every panel seat
+reviews and the shape the app is generated from. A · Air, B · Frame and
+C · Signal are unchanged: the console's whole argument is that any mix of the
+six decisions stays on-brand, and a preset that quietly followed the default
+would stop proving it.
+
+### What this does to the shadow law, and why it is not a breach
+
+Design-system law 2 was already narrowed at the lock: *only objects that
+genuinely float carry a shadow — the sheet, the capsule, the dock, and a card
+in flight.* An elevated card resting on the sheet appears to widen that.
+
+It does not, on the reading this combination makes true: **an open task is live
+work and floats; a finished task has settled and lies flat.** `[data-cards=
+"elevated"]` gives a resting card `--ring, --raise` and explicitly returns
+`.card[data-done]` to a flat hairline. So the shadow is not decoration applied
+to every card — it is the board's statement of which work is still in the air.
+
+The consequence is that completing a task is now a *set-down*. The card lifts
+to the product's one heavy shadow for the journey and loses its shadow entirely
+as it lands in Done. The metaphor and the mechanic are the same thing, which is
+what the completion beat was missing when Product taste scored it 7.4 in round
+12 and called the board "admirable and cold".
+
+Recorded as a deliberate reading of the law rather than an exception to it. If
+a seat argues the resting shadow is decoration, that argument is in scope; a
+finding that merely states "cards carry a shadow" is not.

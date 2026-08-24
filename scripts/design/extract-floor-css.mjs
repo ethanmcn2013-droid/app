@@ -201,6 +201,39 @@ const sheet = alias((head + tokens + "\n" + kept.join("") + host)
   .replace(/(^|[\s,(])\.floor\b/g, "$1.root"),
 );
 
+/* `--check` makes this a gate rather than a generator.
+ *
+ * The master is the source of the board's stylesheet, and re-running this was
+ * a step somebody had to remember. Nobody did: round 12 opened with the app
+ * carrying round-11 CSS, 209 lines behind the master it is supposed to be
+ * generated from, and nothing anywhere said so. A gate says so. */
+if (process.argv.includes("--check")) {
+  let current = "";
+  try {
+    current = await readFile(OUT, "utf8");
+  } catch {
+    process.stdout.write(`${OUT} does not exist. Run: node scripts/design/extract-floor-css.mjs\n`);
+    process.exit(1);
+  }
+  if (current === sheet) {
+    process.stdout.write(`in sync  ${OUT} matches the master\n`);
+    process.exit(0);
+  }
+  const a = current.split("\n");
+  const b = sheet.split("\n");
+  let first = 0;
+  while (first < a.length && first < b.length && a[first] === b[first]) first += 1;
+  process.stdout.write(
+    `OUT OF SYNC  ${OUT} is not what the master would generate.\n` +
+    `  first difference at line ${first + 1}\n` +
+    `    shipped: ${JSON.stringify((a[first] || "").trim().slice(0, 76))}\n` +
+    `    master : ${JSON.stringify((b[first] || "").trim().slice(0, 76))}\n` +
+    `  ${Math.abs(a.length - b.length)} lines of length difference\n` +
+    "  Run: node scripts/design/extract-floor-css.mjs\n",
+  );
+  process.exit(1);
+}
+
 await writeFile(OUT, sheet, "utf8");
 process.stdout.write(`${OUT}\n  tokens: ${tokens ? "yes" : "MISSING"}  kept: ${kept.length}  dropped: ${dropped}\n`);
 

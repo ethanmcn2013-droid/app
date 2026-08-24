@@ -1087,6 +1087,7 @@ body {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .deck .carry em { white-space: nowrap; flex: none; }
+.deck .carry .clearNote { color: var(--on-ink-1); }
 .deck .carryDo {
   flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
   background: var(--chrome-active); color: var(--on-ink-1);
@@ -1662,8 +1663,15 @@ const variant = params.get("v") || "locked";
 /* The three finished variants are three preset combinations of the six
    decisions. Nothing else distinguishes them, which is what guarantees
    every mix stays on-brand. */
+/* `locked` is the founder's own combination, chosen in the Design Console on
+   2026-08-24 and locked as the default: A · Air taken as the starting point,
+   then the card raised off the sheet, the corner softened and the type set
+   calm. It is Air's air with a card that is an object rather than an outline.
+   The other three stay exactly as they were, because the console's whole
+   argument is that any mix of the six decisions is on-brand, and a preset
+   that quietly followed the default would stop proving it. */
 const PRESETS = {
-  locked: { cards: "bordered", radius: "soft", density: "comfortable", indigo: "subtle", type: "calm" },
+  locked: { cards: "elevated", radius: "soft", density: "comfortable", indigo: "subtle", type: "calm" },
   a: { cards: "flat", radius: "round", density: "comfortable", indigo: "subtle", type: "expressive" },
   b: { cards: "bordered", radius: "sharp", density: "compact", indigo: "subtle", type: "calm" },
   c: { cards: "elevated", radius: "soft", density: "comfortable", indigo: "forward", type: "expressive" },
@@ -2278,7 +2286,8 @@ function footPill() {
   }
   if (undone) {
     const what = undone.kind === "done"
-      ? "<b>" + esc(shortTitle(undone.title)) + "</b> done"
+      ? "<b>" + esc(shortTitle(undone.title)) + "</b> done" +
+        (undone.cleared ? '. <em class="clearNote">Nothing is overdue.</em>' : "")
       : undone.kind === "undone"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> reopened"
       : undone.kind === "add"
@@ -2704,11 +2713,20 @@ function toggleDone(id) {
       ? task.title + " is back in " + laneName(back) + "."
       : task.title + " is no longer done. It is in " + laneName(back) + ".");
   } else {
+    const wasLate = timeOf(task).kind === "overdue";
     task.prevLane = task.lane;
     task.lane = "done";
     task.completedAt = TODAY;
-    arm({ kind: "done", id: id, title: task.title });
-    say(task.title + " done. Press " + MOD + "Z to undo.");
+    /* The one fact on this board with any weight behind it is what is late.
+       Clearing the last of it is the moment a venue operator is actually
+       working toward on a Saturday, and until now the board marked it by
+       silently removing a chip. It says it, once, in the furniture that is
+       already on screen — no new object, no celebration, no colour. */
+    const cleared = wasLate && !allTasks().some((t) => timeOf(t).kind === "overdue");
+    arm({ kind: "done", id: id, title: task.title, cleared: cleared });
+    say(cleared
+      ? task.title + " done. Nothing is overdue."
+      : task.title + " done. Press " + MOD + "Z to undo.");
   }
   /* A checkbox must not move focus off itself on toggle. */
   refocusPart = document.activeElement && document.activeElement.classList.contains("tick") ? "tick" : null;

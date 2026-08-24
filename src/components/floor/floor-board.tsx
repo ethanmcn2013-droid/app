@@ -420,17 +420,22 @@ export function FloorBoard({
        qualifier, and both sit behind it. One comma list gave "Showing the 2
        tasks overdue", and putting them all in front gave "the 4 due today
        tasks" — neither is a sentence anyone writes. */
-    const adjective = lateOnly ? "overdue " : "";
-    const tail = `${todayOnly ? " due today" : ""}${clientOnly ? ` for ${clientOnly}` : ""}`;
-    const noun = totalShown === 1 ? "task" : "tasks";
+    /* The conditions join with "and" rather than a comma, because two of them
+       at once produced "Nothing overdue, due today." — which parses as
+       "nothing is overdue, something is due today" when it means neither. The
+       couple stays a trailing prepositional phrase: "overdue and for Mara &
+       Finn" reads worse than leaving it behind the noun. */
+    const cond = [lateOnly ? "overdue" : "", todayOnly ? "due today" : ""].filter(Boolean).join(" and ");
+    const scope = clientOnly ? ` for ${clientOnly}` : "";
     /* Nothing shown means there are no OTHERS — there is only the whole
        board, hidden. Saying "13 others are hidden" implies a fourteenth. */
-    const remainder = totalShown
-      ? `${rest} ${rest === 1 ? "other is" : "others are"} hidden.`
-      : `All ${rest} ${rest === 1 ? "task is" : "tasks are"} hidden.`;
-    return `${totalShown
-      ? `Showing the ${totalShown} ${adjective}${noun}${tail}. `
-      : `Nothing ${adjective}${tail.trim() || (adjective ? "" : "matches")}. `.replace(/\s+/g, " ")}${remainder}`;
+    if (!totalShown) {
+      const none = cond ? `No task is ${cond}${scope}.` : `Nothing on the board is${scope}.`;
+      return `${none} All ${all.length} ${all.length === 1 ? "is" : "are"} hidden.`;
+    }
+    const noun = totalShown === 1 ? "task" : "tasks";
+    return `Showing ${totalShown} ${noun}${cond ? ` ${cond}` : ""}${scope}. ` +
+      `${rest} ${rest === 1 ? "other is" : "others are"} hidden.`;
   }, [filtering, all.length, totalShown, clientOnly, lateOnly, todayOnly]);
 
   /** A lane by the name the operator sees on the column. */

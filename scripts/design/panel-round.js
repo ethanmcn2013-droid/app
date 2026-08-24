@@ -36,6 +36,13 @@ CONSTRAINTS THAT ARE NOT NEGOTIABLE (do not propose breaking these):
   indigo. Done = filled ink tick.
 - Type is Geist at weights 400 and 600 only.
 - The architecture above.
+- The DEFAULT COMBINATION is the founder's own, locked 2026-08-24: elevated
+  cards, soft radius, comfortable density, subtle indigo, calm type. An open
+  card therefore rests with a shadow and a Done card is returned to a flat
+  hairline. This is a deliberate reading of the shadow law, not an oversight:
+  live work floats, finished work has settled, and completing a task is a
+  set-down. Arguing that the resting shadow is decoration is in scope. A
+  finding that merely states "cards carry a shadow" is not.
 Findings that amount to "add a colour", "add a weight" or "restructure the
 layout" are out of scope and will be discarded. Everything else is in scope.
 
@@ -71,7 +78,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 193 assertions, all passing. READ IT. Everything it asserts is already
+with 232 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -101,23 +108,29 @@ LIVE AND WORTH DRIVING, from the rounds before this one:
 - A drop into Done is a completion, with the flight and the undo.
 - An open card's words can be selected. Forced-colors mode is supported.
 
-CHANGED SINCE THE LAST PANEL SAW THIS FILE. Two commits landed on the master
-after the previous round closed, and no seat has ever graded them. They are
-the most likely place for a new defect, so drive them first:
-- A header band above the board, and a copy pass over every visible string.
-- The empty board and the filtered board were both rebuilt. The empty board
-  leads with one instruction rather than four identical rows. Under a filter,
-  columns with no answer step back instead of repeating the same sentence
-  five times, and the board states the filter once, at the foot. Both are now
-  reachable directly: ?state=empty and ?state=filtered.
-- The composer takes the caret when it opens.
+CHANGED SINCE THE LAST PANEL SAW THIS FILE, and the most likely place for a
+new defect, so drive these first:
+- THE DEFAULT CHANGED. Cards are elevated now, not bordered. Every open card
+  rests on the product's light raise; every Done card is flat. Judge whether
+  that reads as one system or as two.
+- The header band stacks below 1200px of SHEET, measured after layout rather
+  than by media query, so an open drawer at 1440 gets the same treatment as a
+  1100px window. Resize it, and open Planning at 1440 and resize again.
+- The filtered board collapses the columns that did not answer to their heads
+  and steps back with ink rather than opacity.
+- The blank board drops its interior rules, is centred on the region it fills,
+  carries one concrete example, and retires its instruction when it is obeyed.
+- The completion flight grows into the card it becomes and arcs a shadow: it
+  lifts, travels, and sets down flat into Done. Clearing the LAST overdue task
+  says so in the foot strip. Drive it: tick "Order tonic and the good olives".
+- Six kinds of time chip now have six silhouettes, and the specimen sheet
+  states the law for all six.
+- The rail is one roving tab stop that survives a repaint.
 
-THIS ROUND IS NOT THE LAST. A previous round was recorded as final and the
-engagement was closed; the founder chose to continue rather than close at
-that score. Remediation follows this round, so report the defect rather than
-softening it because the work is nearly done. Equally, do not mark it down to
-look rigorous: it has had eleven rounds of work and some of it is genuinely
-finished.
+THIS ROUND IS NOT THE LAST. Remediation follows it, so report the defect
+rather than softening it because the work is nearly done. Equally, do not mark
+it down to look rigorous: this has had twelve rounds of work and some of it is
+genuinely finished.
 
 SCORES ARE ALLOWED TO FALL. If this is worse than a finished artifact should
 be, say the number that is true. Nothing about the record obliges the line to

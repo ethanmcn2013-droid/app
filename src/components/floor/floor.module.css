@@ -216,8 +216,12 @@
 .sheet::after {
   content: "";
   position: absolute; right: 0; top: 118px; bottom: 0;
-  width: 44px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white));
+  /* 44px against a 258px column left roughly 150px of sliced card at full
+     opacity before the fade began, so every truncated word stayed legible
+     against a hard edge. 96px dissolves the cut characters; past ~104 it
+     starts eating a legible card on the left edge once scrollLeft > 0. */
+  width: 96px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 46%, var(--white) 100%);
   opacity: 0; pointer-events: none; z-index: 1;
   transition: opacity var(--dur) var(--curve);
 }
@@ -226,8 +230,8 @@
 .sheet::before {
   content: "";
   position: absolute; left: 0; top: 118px; bottom: 0;
-  width: 44px; z-index: 1;
-  background: linear-gradient(270deg, rgba(255, 255, 255, 0), var(--white));
+  width: 96px; z-index: 1;
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 46%, var(--white) 100%);
   opacity: 0; pointer-events: none;
   transition: opacity var(--dur) var(--curve);
 }
@@ -251,17 +255,28 @@
   background: var(--indigo); margin-left: 2px;
 }
 .headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
+/* The name does not shrink. It was the only thing in the row allowed to, so
+   it was the first thing to go: "The Orcha…" at 1240 while the season line
+   beside it kept every character. The band stacks instead. */
 .headName {
   font-size: 18px; font-weight: 600; letter-spacing: var(--tr-18);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 0 1 auto; min-width: 8ch;
+  flex: 0 0 auto; min-width: 0;
 }
 .headFacts {
   display: flex; align-items: center; gap: 14px;
   font-size: 13px; font-weight: 400; color: var(--ink-2);
-  letter-spacing: var(--tr-13); white-space: nowrap;
+  letter-spacing: var(--tr-13); white-space: nowrap; min-width: 0;
 }
 .headFacts b { font-weight: 600; color: var(--ink-1); }
+/* The band had six facts at one size, one weight and one colour, so the eye
+   had nowhere to land first and the row read as a ticker. Three ranks now,
+   and no new size or weight to get them: today's date and the season are
+   context and step back to ink-3; the counts keep ink-2 with their figures at
+   ink-1; the two chips and the one link stay the only things in the row that
+   look like something you can press. */
+.headFacts .today, .headFacts > span:last-child { color: var(--ink-3); }
+.headFacts .ratio { color: var(--ink-2); }
 /* The one moment on this board worth a beat of its own. */
 .ratio[data-all] { font-weight: 600; color: var(--ink-1); animation: settleIn 320ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {
@@ -283,6 +298,30 @@
    it answers to is 44, taken behind the two facts either side of it. */
 .late::before { content: ""; position: absolute; inset: -11px -6px; }
 .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+
+/* ── the header, stacked ───────────────────────────────────────────
+   Below 1200px of sheet the band stops being one line. The name takes a line
+   of its own and the facts wrap beneath it, which is the same shape the phone
+   has always used — so the tablet stops being the one breakpoint that shows
+   strictly less than the phone, and no control can be pushed off the sheet.
+   Nothing is dropped: once the name has its own line, all six facts fit at
+   every width down to 720. The stamp comes from measureEdges. */
+.sheet[data-head="stack"] .head {
+  height: auto; display: grid; padding: 14px 28px 0;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "word actions" "name name" "facts facts";
+  align-items: center; column-gap: 12px; row-gap: 10px;
+}
+.sheet[data-head="stack"] .word { grid-area: word; }
+.sheet[data-head="stack"] .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
+.sheet[data-head="stack"] .headName { grid-area: name; width: auto; min-width: 0; }
+.sheet[data-head="stack"] .headFacts {
+  grid-area: facts; display: flex; flex-wrap: wrap;
+  font-size: 13px; column-gap: 12px; row-gap: 7px;
+}
+.sheet[data-head="stack"] .headFacts > span { display: inline; }
+.sheet[data-head="stack"] .headFacts .late { display: inline-flex; }
+.sheet[data-head="stack"] .headRule { display: none; }
 
 .ghost {
   display: inline-flex; align-items: center; gap: 7px;
@@ -337,8 +376,17 @@
   /* The board scrolls sideways between columns. Each column scrolls itself
      vertically, so reaching the foot of one never drags another away. */
   overflow-x: auto; overflow-y: hidden;
+  /* The board is a scroller from 1439 down, so the snap belongs to it at
+     every width rather than below a threshold 239px late. */
+  scroll-snap-type: x proximity; scroll-padding-left: 16px;
   border-top: 1px solid var(--line-soft);
 }
+.tray { scroll-snap-align: start; }
+/* A `start` target alone gives the 1201-1439 band nowhere to resolve to: the
+   fifth column can be reached but never sit flush. With an `end` target on the
+   last tray the frame settles on a whole column at either end instead of
+   resting permanently on a slice. */
+.tray:last-child { scroll-snap-align: end; }
 .tray {
   min-width: 0;
   display: flex; flex-direction: column;
@@ -570,17 +618,27 @@
 }
 /* Reversed out of ink, on the same curve, one branch. */
 .carry { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
-.late { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
+/* The reversed branch belongs to the filled chip only. The outlined "N today"
+   chip is ink on white, like .when[data-t="today"] on a card, and falls
+   through to the base tr-12 the way the same condition does there. */
+.late:not([data-soft]) { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
 .dockPrimary { letter-spacing: calc(var(--tr-13) + var(--tr-rev)); }
 .when[data-t="overdue"] { background: var(--ink); color: var(--white); font-weight: 600; letter-spacing: calc(var(--tr-11) + var(--tr-rev)); }
 .when[data-t="today"] { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-1); font-weight: 600; }
 .when[data-t="milestone"] { background: var(--indigo-wash); color: var(--indigo-ink); font-weight: 600; }
-.when[data-t="milestone"] svg { width: 9px; height: 9px; stroke-width: 2.2; }
 .when[data-t="none"] { display: none; }
-/* Not the deadline — the day it was finished. Outlined in the quiet ink, so
-   it reads as a record rather than as something still owed. */
-.when[data-t="done"], .when[data-t="waiting"] {
+/* Done and waiting used to render pixel-identical — same transparent ground,
+   same ink-3, same hairline ring, same weight — so finished work and an
+   ageing blocker were the same object on a Saturday-morning scan. They are
+   two silhouettes now. Done keeps the hairline: it is a record, a closed box.
+   Waiting drops the ring entirely and is bare text on the card's own ground:
+   nothing is owed by the operator, so nothing is drawn around it. No new
+   mark, no new colour, and no second tick on a card that already has one. */
+.when[data-t="done"] {
   background: none; box-shadow: 0 0 0 1px var(--line); color: var(--ink-3);
+}
+.when[data-t="waiting"] {
+  background: none; box-shadow: none; padding: 0; color: var(--ink-3);
 }
 
 /* Two different taxonomies were sharing one slot. Which couple a task
@@ -780,7 +838,16 @@
 .draftDo::before, .draftDrop::before { content: ""; position: absolute; inset: -8px -4px; }
 .draftDo, .draftDrop { position: relative; }
 /* The filtered count says what it is showing and out of what. */
-.trayCount .ofAll { color: var(--ink-3); font-weight: 400; }
+/* "1 of 3" put the only lowercase word in the product inside a tracked mono
+   cell, where 0.1em makes "of" read as code, and it flattened the slot: the
+   figure the operator wants shared its rank with a denominator and a
+   preposition. Figures and a solidus only, the numerator carrying the darker
+   ink and the denominator stepping back.
+   The denominator steps back to ink-3 and not to ink-4: measured, ink-4 on a
+   white sheet is 1.89:1 at 11px, which is a rank the operator cannot read.
+   The rank comes from the numerator stepping forward instead. */
+.trayCount .ofAll { color: var(--ink-3); letter-spacing: 0.04em; }
+.board[data-filtered] .tray:not([data-empty]) .trayCount { color: var(--ink-1); }
 .draftHint {
   grid-column: 2; grid-row: 3;
   margin: 0; min-height: 24px; display: flex; align-items: center;
@@ -791,7 +858,7 @@
 /* The count of tasks with no day, said in words where a thumb and a screen
    reader can both reach it. */
 .undated {
-  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  font: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
   color: var(--ink-2); background: none; border: 0; padding: 0;
   cursor: pointer; text-underline-offset: 3px;
 }
@@ -894,12 +961,13 @@
   scroll-padding-left: 16px;
 }
 .root:has(.drawer) .tray { scroll-snap-align: start; }
-/* Room is made by dropping the last fact, never by clipping the name of the
-   project the operator is looking at. */
-.root:has(.drawer) .headFacts > span:last-child { display: none; }
-/* Scoped: unscoped it won everywhere at equal specificity, which killed the
-   floor it was meant to leave alone. */
-.root:has(.drawer) .headName { min-width: 0; }
+/* Both of the rules that used to sit here — dropping the season fact when the
+   drawer opened, and letting the name shrink to nothing with it — are gone.
+   Opening the drawer takes the sheet under 1200, so the header stacks and
+   there is room for the name and every fact at once. Room is made by giving
+   the name its own line, never by clipping the name of the project the
+   operator is looking at, and never by spending the one fact this product has
+   that no other task board does. */
 .drawer {
   position: absolute;
   right: var(--inset); top: var(--inset); bottom: var(--inset);
@@ -1026,6 +1094,11 @@
    type outside the black pill on a phone, at the exact instant the operator
    is holding a card and most needs to trust the board. */
 .carry em { white-space: nowrap; flex: none; }
+/* The one sentence on this board worth reading twice. It is set in the strip's
+   own full-strength ink rather than its quiet one, because it is the answer
+   and not the shortcut hint beside it. Nothing else changes: no colour, no
+   motion of its own, no object that was not already on screen. */
+.carry .clearNote { color: var(--on-ink-1); }
 .carryDo {
   flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
   background: var(--chrome-active); color: var(--on-ink-1);
@@ -1054,13 +1127,14 @@
    rather than teleporting a thousand pixels to the right. It flies as a
    fixed-position copy over the whole sheet, because the real node is inside
    a column scroller that would clip both the card and its shadow. */
+/* The shell carries the distance; the card inside it carries the lift. */
+.cardFly { position: fixed; margin: 0; z-index: 60; pointer-events: none; }
 .cardGhost {
-  position: fixed; margin: 0; z-index: 60; pointer-events: none;
-  box-shadow: var(--lift);
-  transition: transform 260ms var(--curve);
+  position: static; margin: 0; width: 100%; height: 100%;
+  pointer-events: none; box-shadow: var(--card-rest);
 }
 @media (prefers-reduced-motion: reduce) {
-  .cardGhost { transition: none; }
+  .cardFly, .cardGhost { animation: none !important; transition: none; }
 }
 
 
@@ -1126,6 +1200,14 @@
   column-gap: 8px; row-gap: 6px;
 }
 .loadCard .sk { grid-column: 2; }
+/* The card the payload brings leads with an 18px circle in a reserved
+   gutter. A skeleton that does not reserve it promises a different object. */
+.loadCard .skTick {
+  grid-column: 1; grid-row: 1 / span 2;
+  width: 18px; height: 18px; border-radius: 50%; align-self: start;
+}
+.loadCard { min-height: 98px; align-content: start; }
+.loadCard[data-tall] { min-height: 124px; }
 /* 78 is the dock's bottom (18) plus its height (48) plus a 12px gap. */
 .loadSay {
   position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
@@ -1260,11 +1342,26 @@
 
 /* ── responsive ────────────────────────────────────────────────── */
 /* UI composition · the filtered board was one card marooned in a field of
-   full-height empty rules. A column that answered collapses to its head, so
-   the answer is what the eye lands on. */
-.board[data-filtered] .tray[data-empty] { flex: 0 1 auto; opacity: 0.5; }
+   full-height empty rules. A column that did not answer collapses to its head,
+   so the answer is what the eye lands on.
+   `flex: 0 1 auto` was written here and never worked: .board is a grid, and a
+   flex shorthand on a grid item does nothing. `align-self: start` is the grid
+   mechanism that does what the line above always claimed.
+   The rule stays on the collapsed head rather than being dropped. Rendered
+   both ways, the short rules read as a header row of five cells and keep each
+   count tied to its own name; without them the counts drift against the next
+   column's title. */
+.board[data-filtered] .tray[data-empty] { align-self: start; }
 .board[data-filtered] .tray[data-empty] .trayBody, .board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
 .board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
+/* The step back is drawn with the ink ladder, not with element opacity.
+   Opacity composites the declared colour, so the audit read #111 and passed
+   while the pixel rendered #888 — 3.54:1, under AA — and it halved the tray's
+   own hairline at the same time, drawing the four column rules at three
+   different weights. Ink keeps the recession legible and the rules even. */
+.board[data-filtered] .tray[data-empty] .trayName { color: var(--ink-2); }
+.board[data-filtered] .tray[data-empty] .trayCount { color: var(--ink-3); }
+.board[data-filtered] .tray[data-empty] .pip { background: rgba(17, 17, 17, 0.14); }
 
 /* Accessibility · a column that overflows is a scrollable region, and axe
    rates one with no keyboard route as a serious failure. It is a stop now, so
@@ -1279,10 +1376,20 @@
 /* Taste · emptiness is the state this board spends most of its life in, and
    it had no design. One centred sentence and one action, inside the sheet,
    instead of four identical Add rows over a white void. */
+/* On a blank board the interior rules had nothing to rule between, and the
+   one instruction landed dead inside them: the hairlines at 632 and 890 ran
+   18px off each shoulder of the sentence, so it read as "Review is empty"
+   rather than "the board is empty". The rules go, the five heads stay, and
+   the sentence is parented to the sheet because nothing else is drawn on it. */
+.board[data-blank] .tray { border-left-color: transparent; }
 .emptyBoard {
-  position: absolute; inset: 0 0 84px;
+  /* Centred on the region it fills, not on the sheet: the old `inset: 0`
+     included the 60px band and the 52px switcher, which put the block 82px
+     above the optical centre of the void it sits in. The extra padding biases
+     it up deliberately rather than by accident. */
+  position: absolute; inset: 130px 0 84px;
   display: grid; place-content: center; justify-items: center;
-  gap: 14px; text-align: center; padding: 0 24px;
+  gap: 14px; text-align: center; padding: 0 24px 44px;
   pointer-events: none;
 }
 .emptyBoard p {
@@ -1304,17 +1411,22 @@
 }
 .emptyBoard button:hover { background: var(--wash); }
 .emptyBoard button svg { width: 16px; height: 16px; }
+/* Quieter than the instruction it follows: an example, not a second ask. */
+.emptyBoard .emptyEg {
+  font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-3); max-width: 40ch; margin-top: -2px;
+}
 
 @media (max-width: 1200px) {
-  /* Below this the board is a horizontal scroller, so it gets the edge fade
-     and the snap it needs to read as one. Without them a column is simply
-     sliced at the sheet's straight edge, mid-word. */
+  /* The board becomes a horizontal scroller at 1439, not at 1200: five 258px
+     columns total 1290px of content, which fits in exactly one viewport. What
+     changes here is only the column sizing. The snap that stops a column
+     being sliced at the sheet's straight edge, mid-word, is on .board
+     unconditionally — leaving it here left a 239px band with none. */
   .board {
     grid-template-columns: none; grid-auto-flow: column;
     grid-auto-columns: minmax(258px, 1fr);
-    scroll-snap-type: x proximity; scroll-padding-left: 16px;
   }
-  .tray { scroll-snap-align: start; }
   .drawer { width: 364px; }
   .root:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
@@ -1341,10 +1453,10 @@
 
 @media (max-width: 900px) {
   .root :root { --inset: 12px; }
-  /* Today's date and the day count can wait for a wider screen. What is
-     done and what is late cannot: for a while the tablet was showing
-     strictly less than the phone. */
-  .headFacts span { display: none; }
+  /* The date and the day count used to be dropped here, on the reasoning that
+     they could wait for a wider screen. With the name on a line of its own
+     there is no wider screen to wait for: the facts wrap instead, and the
+     tablet keeps the anchor that makes every "14 Jul" on a card legible. */
   /* The chip needs inline-flex to centre its own contents. The ratio is a
      sentence: making it a flex container turns " of " and " done" into
      anonymous flex items and strips the spaces around them. */
@@ -1379,28 +1491,12 @@
   .railAdd svg { width: 20px; height: 20px; }
   .railAvatar { margin: 0; }
   .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
-  /* Explicit areas rather than wrap plus order. Wrapping left the wordmark
-     alone on line one with 60% of the row empty beside it. */
-  .head {
-    height: auto; display: grid; padding: 14px 16px 0;
-    grid-template-columns: auto 1fr;
-    grid-template-areas: "word actions" "name name" "facts facts";
-    align-items: center; column-gap: 12px; row-gap: 10px;
-    padding: 14px 16px 0;
-  }
-  .word { grid-area: word; }
-  .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
-  .headName { grid-area: name; width: auto; font-size: 19px; }
-  /* Four facts on a 390 measure wrap onto two lines. Clipping the season
-     line at the sheet edge lost the one fact this product has that no other
-     task board does. */
-  .headFacts {
-    grid-area: facts; display: flex; flex-wrap: wrap;
-    font-size: 13px; column-gap: 12px; row-gap: 7px;
-  }
-  .headFacts > span { display: inline; }
-  .headFacts .late { display: inline-flex; }
-  .headRule { display: none; }
+  /* The stacked header itself is shared now — the sheet is under 1200 long
+     before the phone is reached, so it is already in the grid shape. What is
+     left here is only what is genuinely phone: a tighter leading edge and a
+     name set one step larger, because a 390 measure can carry it. */
+  .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
+  .sheet[data-head="stack"] .headName { font-size: 19px; }
   .headSearch { display: inline-flex; }
   /* Only the way out survives, because there is no keyboard here to teach. */
   .carry em:not(:last-child) { display: none; }
