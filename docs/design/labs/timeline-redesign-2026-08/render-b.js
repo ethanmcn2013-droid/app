@@ -177,7 +177,13 @@
        column, four hundred pixels away. */
     kids.push(h("p.b-origin", {
       "aria-hidden": "true",
-      text: "Today, " + (o.medium === "print" ? F.fmt.longYear(clock) : F.fmt.medium(clock)),
+      /* One ceremonial date per sheet. The dateline under the count
+         already carries "79 days away on Thursday 16 July 2026"; the
+         origin said the same day again in the same full form 200px
+         away, and on paper both always print together. The origin
+         keeps its anchoring job at the short form its own column
+         speaks on every other medium. */
+      text: "Today, " + F.fmt.medium(clock),
     }));
     ahead(clock, o.owner).forEach(function (item) {
       var node = row(item, daysFrom(clock, item.date), o.owner);
@@ -267,11 +273,21 @@
       run.push(el);
 
       var copy = el.querySelector(".b-copy");
-      copy.style.setProperty("--push", "0px");
+      /* --push belongs to the ROW, not to the words alone. It used to be
+         set on .b-copy, whose siblings inherit nothing from it, so when
+         two moments fell closer than a row is tall the words were pushed
+         clear and the count was left behind on the true pixel - beside
+         somebody else's title. On the compressed past rail, where a week
+         is 14px and a row of type is 39px, six of eight rows crowd at
+         once: three numerals stacked against one title, and three titles
+         with no numeral anywhere near them. The tick stays on the true
+         pixel because the tick IS the position; the count is a readout
+         of the row and travels with the words it names. */
+      el.style.setProperty("--push", "0px");
       var height = copy.getBoundingClientRect().height;
       var gap = el.getAttribute("data-stack") === "follow" ? 1 : 10;
       var push = bottom > top ? Math.ceil(bottom - top) : 0;
-      copy.style.setProperty("--push", push + "px");
+      el.style.setProperty("--push", push + "px");
       el.setAttribute("data-crowded", push > 0 ? "true" : "false");
       bottom = top + push + height + gap;
       lastBottom = bottom;
@@ -536,9 +552,31 @@
     /* Peek, then pop. Popping first is how pressing Undo after a delete
        used to restore nothing and empty the bar as though it had. */
     if (restored !== false) history.pop();
+    /* Was the owner standing on the Undo control itself? paintUndo is
+       about to disable it when the stack empties, and disabling the
+       focused element drops focus to the body. */
+    var stoodOnUndo = document.activeElement === root.querySelector(".b-undoAct");
     paintUndo(root);
-    if (top.focus) top.focus();
-    if (typeof top.at === "number") window.scrollTo(0, top.at);
+    /* The place restore cannot be stranded by the focus restore. It used
+       to sit after an unguarded call, so one throw inside a closure took
+       the scroll with it. Every focus call here passes preventScroll,
+       which is what makes restoring scroll first safe. */
+    try {
+      if (top.focus) top.focus();
+      else if (stoodOnUndo) {
+        /* Only the stepper entry carries a focus closure. Every other
+           reversal - rename, hide, delete - left a keyboard owner on the
+           body once the control they pressed went away. */
+        var back = (top.id && root.querySelector('.b-item[data-id="' + top.id + '"] .b-grab'))
+          || root.querySelector(".b-edit") || root.querySelector(".b-undoAct");
+        if (back && back.isConnected) {
+          if (!back.hasAttribute("tabindex") && back.tagName !== "BUTTON") back.setAttribute("tabindex", "-1");
+          back.focus({ preventScroll: true });
+        }
+      }
+    } finally {
+      if (typeof top.at === "number") window.scrollTo(0, top.at);
+    }
   }
 
   /* ── the primary gesture ──────────────────────────────────────── */
@@ -568,7 +606,25 @@
     if (grab) grab.setAttribute("aria-label", grabLabel(record, iso, away, hidden));
 
     var read = root.querySelector(".b-stepRead");
-    if (read) read.textContent = F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away);
+    if (read) read.textContent = F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away);
+
+    /* The field is the FIFTH consumer of this date, not a rival source
+       of it. It used to be seeded once when the editor opened and never
+       written again, so three presses of +7 left the largest, most
+       authoritative, most editable statement of the date on the panel
+       reading the value it had before any of them - and a bare Enter in
+       that untouched field then committed the stale string and dragged
+       the moment back twenty-one days. The guard is focus, not equality:
+       a stepper press moves focus to the button, so the stepper can
+       never lose to a half-typed value, and a half-typed value is never
+       yanked out from under the typist. */
+    var when = root.querySelector("#b-edit-date");
+    if (when && document.activeElement !== when) {
+      when.value = F.fmt.medium(iso) + " " + F.fmt.year(iso);
+      when.setAttribute("aria-invalid", "false");
+      var refusal = root.querySelector(".b-ceiling");
+      if (refusal && /not a date|has gone/.test(refusal.textContent)) refusal.textContent = "";
+    }
 
     var steps = root.querySelectorAll(".b-step");
     for (var i = 0; i < steps.length; i++) {
@@ -675,7 +731,15 @@
         text: (delta > 0 ? "+" : "−") + Math.abs(delta),
         on: {
           click: function (event) {
-            if (event.currentTarget.getAttribute("aria-disabled") === "true") return;
+            /* Capture the NODE, not the event. currentTarget is nulled
+               the moment dispatch finishes, so a closure that read it
+               later threw on every undo of a move - the product's most
+               frequent reversal - and the throw landed between the
+               repaint and the line that gives the owner their place
+               back, so undo annihilated both focus and scroll on the
+               one action an owner takes all day. */
+            var pressed = event.currentTarget;
+            if (pressed.getAttribute("aria-disabled") === "true") return;
             var from = Number(item.getAttribute("data-away"));
             var to = setAway(root, item, from + delta);
             if (to === from) return;
@@ -685,7 +749,9 @@
               say: [nameOf(record) + " moved ", moved, moved === 1 ? " day " : " days ",
                 to < from ? "earlier." : "later."],
               undo: function () { setAway(root, item, from); },
-              focus: function () { event.currentTarget.focus({ preventScroll: true }); },
+              focus: function () {
+                if (pressed && pressed.isConnected) pressed.focus({ preventScroll: true });
+              },
             });
           },
         },
@@ -778,7 +844,7 @@
              about to press again two hundred pixels sideways. */
           h("span.b-stepRead.num", {
             role: "status",
-            text: F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away),
+            text: F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away),
           }),
         ]),
         h("p.b-ceiling#b-edit-when-hint", { text: "" }),
@@ -818,6 +884,14 @@
     if (hint) hint.textContent = "";
     var record = recordFor(item.getAttribute("data-id"));
     var from = Number(item.getAttribute("data-away"));
+    /* A confirm on an unchanged field is a no-op, and it returns BEFORE
+       setAway rather than after the move. Pressing Enter in a field
+       nobody had typed in used to run the whole writer, relaying the
+       measure and nudging the band for a date that had not changed. */
+    if (away === from) {
+      input.value = F.fmt.medium(iso) + " " + F.fmt.year(iso);
+      return;
+    }
     var to = setAway(root, item, away);
     input.value = F.fmt.medium(F.plusDays(clock, to)) + " " + F.fmt.year(F.plusDays(clock, to));
     if (to === from) return;
@@ -826,10 +900,10 @@
       id: record.id,
       say: [nameOf(record) + " moved ", moved, moved === 1 ? " day " : " days ",
         to < from ? "earlier." : "later."],
-      undo: function () {
-        setAway(root, item, from);
-        input.value = F.fmt.medium(F.plusDays(clock, from)) + " " + F.fmt.year(F.plusDays(clock, from));
-      },
+      /* setAway writes the field now, and on this path focus is on the
+         Undo control rather than the field, so its guard lets the write
+         through. One writer, not two. */
+      undo: function () { setAway(root, item, from); },
     });
   }
 
@@ -1023,7 +1097,6 @@
        from the same accessors every other figure comes from. */
     var note = root.querySelector(".b-gapNote");
     if (note) {
-      var atRest = note.textContent;
       var stick = root.querySelector(".b-stick");
       var pending = false;
       var speak = function () {
@@ -1034,8 +1107,15 @@
         for (var i = 0; i < rows.length; i++) {
           if (rows[i].getBoundingClientRect().top >= 0) { top = rows[i]; break; }
         }
+        /* Read the sentence live, never from a snapshot. This used to
+           restore the string captured when the surface was wired, so
+           moving the first moment and then scrolling down and back
+           repainted a sentence that was no longer true. Both writers of
+           this node now derive from gapSentence(), so it cannot outlive
+           the fact it describes. */
+        if (!rows.length) return;
         var said = !top || top === rows[0]
-          ? atRest
+          ? gapSentence(rows[0].getAttribute("data-date"))
           : F.fmt.medium(top.getAttribute("data-date")) + " \u00b7 "
             + F.fmt.dayCount(Number(top.getAttribute("data-away"))) + " away";
         if (note.textContent !== said) note.textContent = said;
@@ -1074,15 +1154,33 @@
     if (o.open) {
       requestAnimationFrame(function () {
         var target = root.querySelector('.b-item[data-id="' + o.open + '"]');
-        if (target) openEditor(root, target);
+        if (!target) return;
+        openEditor(root, target);
+        /* The one surface the measured gate could never see. The
+           reversibility bar is display:none or visibility:hidden in
+           every other state, so nothing about the product's way out
+           of a mistake - its hit target, its letterfit, its contrast
+           - had ever been graded, and both defects found there this
+           round were found by hand. This state pushes one real entry
+           so the bar renders filled on load and stands inside the
+           measured perimeter from now on. */
+        if (o.undone) {
+          requestAnimationFrame(function () {
+            var step = root.querySelector('.b-step[data-delta="7"]');
+            if (step) step.click();
+          });
+        }
       });
     }
   }
 
   var cameFromOwner = false;
+  function F_PUBLISHED() { return F.publication.state === "published"; }
   var SAID = {
     desk: "The plan as guests will see it.",
-    publish: "Ready to send. The link is below.",
+    /* "Ready to send" contradicted the plan's own status line and the
+       card beside it, both of which say it went out on 15 July. */
+    publish: F_PUBLISHED() ? "The link is below." : "Ready to send. The link is below.",
     "owner-flight": "Back to the plan.",
   };
 
@@ -1114,7 +1212,13 @@
       bar(F.project.name, [
         act("Add a moment", false, { "data-act": "add" }),
         act("Preview", false, { "data-act": "preview" }),
-        act("Publish", true, { "data-act": "publish" }),
+        /* The verb branches on whether anyone is already holding a copy.
+           On a plan whose own line four pixels below reads "Live since
+           15 July", the primary control said "Publish" - offering to do
+           a thing that had already been done, on the screen where the
+           owner is closest to giving the plan away. */
+        act(F.publication.state === "published" ? "Get the link" : "Publish",
+          true, { "data-act": "publish" }),
       ]),
       h("p.b-live.b-vh", { role: "status", text: "" }),
       /* The owner was never told anyone was holding a copy of the plan
@@ -1183,6 +1287,11 @@
   states["owner-flight"] = function () { return ownerSurface({}); };
   states["owner-editing"] = function () {
     return ownerSurface({ open: "demo-audience-item-invitations" });
+  };
+
+  /* Editing, one move in, with the way back showing. */
+  states["owner-undone"] = function () {
+    return ownerSurface({ open: "demo-audience-item-invitations", undone: true });
   };
 
   states["owner-empty"] = function () {
@@ -1327,7 +1436,15 @@
         h("div", { style: "line-height:var(--lead-display)" }, figure),
       ]),
       h("div.b-unfurlMeta", {}, [
-        h("p.b-unfurlTitle", { text: F.project.primaryDate.label + ", " + when }),
+        /* The break may fall after the comma and nowhere else. Left to
+           itself it split the date between the weekday and the day
+           number - "Wedding day, Saturday" / "3 October 2026" - on the
+           preview of the card that is the product's first impression
+           inside a message. */
+        h("p.b-unfurlTitle", {}, [
+          document.createTextNode(F.project.primaryDate.label + ", "),
+          h("span", { style: "white-space:nowrap", text: when }),
+        ]),
         h("p.b-unfurlHost", { text: "timeline.signalstudio.ie" }),
       ]),
     ]);
@@ -1346,7 +1463,14 @@
         ]),
         h("div", { style: "line-height:1.5" }, [
           h("p.b-who", { text: "The link" }),
-          h("h2.b-pressTitle", { "data-type": "headline", text: "Send it to " + F.project.name + "." }),
+          /* The screen stops pretending this is a first send. When the
+             plan is already live the fact is the headline - the card
+             beside it already says "when this was sent" - and the act
+             on offer is the one that is actually available. */
+          h("h2.b-pressTitle", { "data-type": "headline",
+            text: F.publication.state === "published"
+              ? F.project.name + " have had this since " + F.fmt.medium(F.publication.publishedAt) + "."
+              : "Send it to " + F.project.name + "." }),
           h("p.b-pressBody", {
             text: "It carries the day, the distance and the plan, and nothing "
               + "else: no notes, no suppliers, no prices.",
@@ -1483,12 +1607,24 @@
           /* True whether the link was turned off or simply ran out -
              the surface cannot tell the two apart and used to assert
              one of them. */
-          h("h1.b-endedTitle", { "data-type": "headline", text: "This link has stopped working." }),
+          /* Names the state rather than a malfunction, and uses the word
+             publish already used for it one screen earlier - so the two
+             surfaces stop carrying two names for one thing, and the
+             product stops shipping the harsher of them. Still true
+             whether the link was turned off or ran out. */
+          h("h1.b-endedTitle", { "data-type": "headline", text: "This link has ended." }),
+          /* The tense follows the clock. This was hardcoded past, so a
+             link switched off in July told the couple's family that the
+             most important day of their life was over - three months
+             before it. */
           h("p.b-endedBody", {
-            text: "The day was " + F.fmt.longYear(F.project.primaryDate.date) + ". "
+            text: (F.toDay() > 0 ? "The day is " : "The day was ")
+              + F.fmt.longYear(F.project.primaryDate.date) + ". "
               + "Ask " + F.workspace.owner + " for a new link.",
           }),
-          h("p.b-note", { text: "Nothing has been deleted. Only the link stopped working." }),
+          /* One sentence, not two. The second clause existed only to
+             walk back an alarm the headline no longer raises. */
+          h("p.b-note", { text: "Nothing has been deleted." }),
           foot({ stamp: false, ended: true }),
         ]),
       ]),
@@ -1537,18 +1673,48 @@
     field.setAttribute("aria-busy", "false");
     field.setAttribute("role", "status");
     var says = node.querySelector(".b-sub");
-    says.textContent = "This is taking longer than it should.";
-    says.parentElement.appendChild(h("p.b-note", {
+    var STALLED = "This is taking longer than it should.";
+    says.textContent = STALLED;
+    var note = h("p.b-note", {
       text: "The plan has not been deleted, and the link still works.",
-    }));
-    says.parentElement.appendChild(h("div.b-barActs", {}, [
-      act("Try again", false, { "data-act": "retry" }),
-    ]));
+    });
+    says.parentElement.appendChild(note);
+    /* A live region of its own. The .b-field cannot serve as one: it
+       contains the button being pressed, so announcing through it
+       re-reads the whole screen back at the person who pressed it. */
+    var live = h("p.b-live", { role: "status", "aria-live": "polite", text: "" });
+    says.parentElement.appendChild(live);
+    /* The only control on the only screen where the audience meets
+       failure, and it did nothing at all - no row, no announcement, not
+       even an acknowledgement that the product had tried. A guest
+       pressing it in the evening on a phone had no way to tell whether
+       anything happened. It now goes back to the honest loading face,
+       says so, and comes back to the stalled face still telling the
+       truth about what is and is not lost. */
+    var button = act("Try again", false, { "data-act": "retry" });
+    var trying = false;
+    button.addEventListener("click", function () {
+      if (trying) return;
+      trying = true;
+      field.setAttribute("aria-busy", "true");
+      says.textContent = "Bringing in what is ahead.";
+      note.style.display = "none";
+      live.textContent = "Trying again.";
+      window.setTimeout(function () {
+        trying = false;
+        field.setAttribute("aria-busy", "false");
+        says.textContent = STALLED;
+        note.style.display = "";
+        live.textContent = "Still not arriving. The plan has not been deleted, and the link still works.";
+      }, 1400);
+    });
+    says.parentElement.appendChild(h("div.b-barActs", {}, [button]));
     return node;
   };
 
   var MEDIUM = {
-    "owner-flight": "full", "owner-empty": "full", "owner-editing": "full", publish: "full",
+    "owner-flight": "full", "owner-empty": "full", "owner-editing": "full",
+    "owner-undone": "full", publish: "full",
     phone: "phone", desk: "full", day: "phone", print: "sheet",
     unfurl: "card", ended: "phone", loading: "phone", "loading-slow": "phone",
   };

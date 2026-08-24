@@ -59,6 +59,7 @@
     ["owner-flight", "Owner · in flight"],
     ["owner-empty", "Owner · new"],
     ["owner-editing", "Owner · editing"],
+    ["owner-undone", "Owner · one move back"],
     ["publish", "Publish"],
     ["phone", "Received · phone"],
     ["desk", "Received · desk"],
@@ -74,6 +75,7 @@
     "owner-flight": ["Owner", "Mara &amp; Finn in full flight"],
     "owner-empty": ["Owner", "a project with nothing in it yet"],
     "owner-editing": ["Owner", "changing one line"],
+    "owner-undone": ["Owner", "the way back, showing"],
     publish: ["Publish", "the moment it becomes theirs"],
     phone: ["Received", "390px, the screen that decides"],
     desk: ["Received", "desk width"],
@@ -224,13 +226,13 @@
     setState: function (state) { rootEl().setAttribute("data-state", state); },
     mount: mount,
 
-    /* Three finished rooms. Each is a combination of the four named
+    /* Three finished rooms. Each is a combination of the three named
        decisions below, never a copy: start from one, then change anything
        underneath and every combination you land on is buildable. */
     presets: {
-      approach: { ground: "ink", past: "folded", accent: "once", spacing: "measured" },
-      paper: { ground: "paper", past: "folded", accent: "once", spacing: "measured" },
-      record: { ground: "ink", past: "listed", accent: "structure", spacing: "measured" },
+      approach: { ground: "ink", past: "folded", accent: "once" },
+      paper: { ground: "paper", past: "folded", accent: "once" },
+      record: { ground: "ink", past: "listed", accent: "structure" },
     },
     presetCopy: {
       approach: { name: "The approach", note: "The direction as drawn: ink, and a measure you fall down." },
@@ -242,11 +244,6 @@
         key: "ground", label: "The ground",
         help: "Ink is the direction as drawn. Paper is the same composition inverted through the ink ladder, and it is the reversal for the light-lock. Print is always paper either way.",
         options: [["ink", "Ink"], ["paper", "Paper"]],
-      },
-      {
-        key: "spacing", label: "The measure",
-        help: "Measured means a pixel is a real unit of time, so a fortnight of nothing looks like a fortnight of nothing. Even sets the same items at one rhythm. The honest cost of measured is holes.",
-        options: [["measured", "Real distance"], ["even", "Even rhythm"]],
       },
       {
         key: "past", label: "The past",

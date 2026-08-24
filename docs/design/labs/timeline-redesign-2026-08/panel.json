@@ -19,7 +19,7 @@
         "UX and information design": 6.2,
         "Brand and copy": 7.5,
         "Product taste and emotional resonance": 6.4,
-        "Measured evidence": 7.0
+        "Measured evidence": 7
       },
       "findings": 35,
       "confirmed": 33,
@@ -35,7 +35,7 @@
         },
         {
           "seat": "UX and information design",
-          "cost": 1.0,
+          "cost": 1,
           "problem": "Every control on the owner surface except the four steppers was inert. Rows did not open, Done did not close, Escape did nothing, delete removed nothing, and the only way into the editing state was to edit the URL. The visible affordance was also the wrong object: the row was 520x79 and its only button was a 54x28 badge at the bottom of it.",
           "done": "The row is the control — the badge stays as the visible mark and its hit area covers the row — and it opens on click, Enter and Space. Escape and Done close it and return focus to the row that opened it. Delete removes the moment and reflows the measure. Preview and Publish move the deck. Anything not built lost its button element and became inert text; the gate now fails on any button that does not do something."
         },
@@ -239,7 +239,7 @@
         "UX and information design": 7.9,
         "Brand and copy": 7.9,
         "Product taste and emotional resonance": 7.9,
-        "Measured evidence": 8.0
+        "Measured evidence": 8
       },
       "findings": 35,
       "confirmed": 24,
@@ -337,6 +337,61 @@
           "cost": 0.3,
           "problem": "On the same A4 sheet the past block's head printed \"3 moments\" and its closing line printed \"2 moments behind you, and one thing that did not happen\" - the head counting everything behind, the sentence counting only what happened. Same noun, same block, two totals, no definitions. The self-contradicting-count class, on paper.",
           "done": "The head carries the only total, because it counts the rows a reader can see. The line under it partitions that total and never recounts it, and renders nothing at all when there is nothing to partition. A refuter caught that the old template hardcoded \"one thing\" for any number of cancelled moments, so that bug did not get carried forward."
+        }
+      ]
+    },
+    {
+      "round": 7,
+      "scores": {
+        "UI composition": 7.6,
+        "Typography": 8.6,
+        "Interaction and states": 8.2,
+        "UX and information design": 8.4,
+        "Brand and copy": 8.3,
+        "Product taste and emotional resonance": 8.7,
+        "Measured evidence": 7.9
+      },
+      "findings": 35,
+      "confirmed": 18,
+      "refuted": 17,
+      "fixed": 18,
+      "headline": "The floor FELL, 8.2 to 7.6, and the round opened with the measured gate red before a seat had run: its letterfit check was keyed on family and size alone, so it could only read round 6's own confirmed remedy - three roles at one size - as drift, and a check that fails its product's fix is mandating the monoculture that cost the half point. Then the panel went at the two things it had been circling. Three seats independently found that the field labelled WHEN is a rival source of truth: seeded once when the editor opens and never written again, so three presses of the product's signature gesture left the largest, most authoritative statement of the date showing the value from before any of them - and a bare Enter in that untouched field then committed the stale string and dragged the moment back twenty-one days. Two more found that undo of a move threw an uncaught TypeError on every press at every width, because a closure read event.currentTarget after dispatch had nulled it; the throw landed between the repaint and the line that gives the owner their place back, so the one reversibility surface annihilated both focus and scroll on the action an owner takes all day, and the assertion written to guard it passed vacuously by pressing Ctrl+Z with focus already on the stepper. Three found one mechanism from three angles: --push was set on the words and not the row, so when two moments fall closer than a row is tall the count is left on the true pixel beside somebody else's title - on the compressed past rail, six of eight rows at once, three numerals stacked against one moment and three moments with no numeral at all, on the wedding morning, invisible to both gates because every frame was shot with the disclosure closed. The 13-inch laptop was never designed: 1024 to 1279 rendered the plan as the phone stack blown up, 456px of dead field beside every row and no moment above the fold. And the console published a fourth named decision that nothing anywhere read. Seventeen of thirty-five findings died under refutation - the highest rate yet - including one whose central measurement was out by 307px and whose fix would have seated Delete under a repeat-press point. Two refuters found real defects while disproving the findings they were killing. The gate learned to grade the property that actually does the spacing, and gained a thirteenth state whose only job is to render the reversibility bar filled, which immediately caught leading drift on the one control no audit had ever been able to see. 539 assertions to 597.",
+      "worst": [
+        {
+          "seat": "Measured evidence",
+          "cost": 0.6,
+          "problem": "setAway's own header comment calls it the ONLY writer of an item's distance, and it wrote the count, the date line, the accessible name and the readout - but never #b-edit-date, the one field the owner is looking at. Driven at 1440: the field opens reading 8 August 2026; after three presses of +7 the readout says Saturday 29 August 2026, the row says Sat 29 Aug, data-away is 44, and the field still says 8 August. Two controls 6px apart stating two dates, and the wrong one is the editable one. Then Enter in that untouched field fired commitDate on the stale string and silently dragged the moment back 21 days. Found independently by three seats, confirmed by three separate refuters.",
+          "done": "The field is the fifth consumer of the one date rather than a rival source of it: setAway writes it, guarded on focus rather than on equality, so a stepper press can never lose to a half-typed value and a half-typed value is never yanked from under the typist. commitDate's own duplicate write and the undo closure's were deleted, so there is one writer and not three, and a confirm on an unchanged field now returns before the writer instead of after it. The horizon sentence beside it had the same shape of bug - a snapshot captured at wire time and restored on scroll - and now reads live from the accessor that writes it."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.5,
+          "problem": "Every undo of a move threw Uncaught TypeError: Cannot read properties of null (reading 'focus') - reproduced at 390, 768, 1152, 1279, 1280 and 1440, on both the clicked control and Ctrl+Z. The closure read event.currentTarget after dispatch had nulled it. The throw landed one line above window.scrollTo, so the line written expressly so undo could not leave the owner a screen from their own change never ran: at 1440 the view went 251 to -449 and stayed there. The gate's assertion that undo returns focus to the control that made the change passed only because it pressed Ctrl+Z with focus already sitting on the stepper, and zero-console-errors was only ever measured on a fresh load.",
+          "done": "The node is captured in the handler instead of the event being read in the closure, and the place restore is in a finally so no future closure can strand it. The general case went with it: the stepper carried the only focus closure in the file, so rename, hide and delete left a keyboard owner on the body - they now land on the moment they just reversed. The gate presses the visible control at 1280 and 1440 with the page 700px adrift and requires the anchor back within 2px."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.5,
+          "problem": "On the wedding morning, the count column stops naming the row beside it. The past rail runs at 2px per day while a row of type is 39px, and place() pushed only the words clear, leaving the tick and the numeral on the true pixel. Measured at 390 and 1440 alike: 14 pairs correctly, then 28/35/42 stack beside a single title and 56/63 beside another, while three moments run down the page with no figure anywhere near them. Five of eight rows show a figure belonging to a different moment or none at all. The measure is the whole instrument of this design and here it silently reported the wrong reading - invisible to both gates, because the disclosure is closed at rest and every frame was shot closed.",
+          "done": "--push belongs to the row, not to the words: the count takes it as a transform and travels with the title it names, while the tick holds the true pixel because the tick is the position. Where a row is pushed, a leader now runs down the rail's own line at a heavier ink step to say which mark belongs to which row - geometry rather than a fill, so a forced palette cannot flatten it. A first attempt gave the count a transition the words do not have, which put the pair 8px apart for the length of every move; the gate caught it because it measures after every press rather than only the last."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.5,
+          "problem": "The two-column grid existed only above 1280, so at 1024, 1100, 1152 and 1279 the plan rendered as the phone stack blown up to desk width: rail at x=206, every title ending at 774, and 456px - 37% of the page - empty beside every row. It cost 371px of height across one pixel of window and put the first moment at y=941, below an 800px fold, so an owner opening their own plan on a 13-inch laptop saw a counter, a gap note and an empty rail and not one moment. The behaviour gate checked the fold at 390 only, and the config lists 1152 and 1279 as first-class viewports - the band was photographed but never designed.",
+          "done": "The boundary moved to 1024 and the geometry did not move at all - 344px column, 56px gutter, 124px count lane, exactly as the passing assertions already measured them. The refuter killed the seat's own fix first: its clamp would have made the today rule 344/300/333/333/344 and broken a currently passing assertion, and shrunk the shipping 1280 rule as well. The paired sheet block moved with it, since the two boundaries are one decision. First moment back to y=570 at every width from 1024 up."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 0.4,
+          "problem": "Three things presented themselves as operable and were not. loading-slow - the state whose whole subject is failure, on a phone, in the evening - offered one control, Try again, and nothing anywhere handled it: no row, no announcement, no acknowledgement that the product had tried. data-spacing is one of the four named decisions, written into the body, carried by all three room presets and published in the Design Console as a live two-option control with a paragraph of help copy, and not one rule or line of JS read it - the console the founder shows people shipped a dead knob. And .b-switch carried the same border, radius and height band as the real buttons 560px away, so the bar read as four controls of which one was inert.",
+          "done": "Retry is wired to a live region the state did not have, because the field cannot announce through itself while containing the button being pressed; it returns to the honest loading face, keeps the press where it was, and comes back still saying nothing is lost. data-spacing is deleted rather than faked - implementing it is a second geometry engine that argues against the direction's own thesis, and the console now publishes three named decisions and means all three. The false pill is text. The gate visits loading-slow now, and no longer counts a moved focus as a control having acted."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.5,
+          "problem": "The screen an audience reaches when a link is turned off was the only factually wrong screen in the product: 'The day was Saturday 3 October 2026.' is hardcoded past tense with no reference to the clock, so a link revoked in July told the couple's family that the most important day of their life was over, three months before it. The headline named a malfunction rather than a state, contradicting the promise publish had given the owner one screen earlier - 'anyone holding it then sees that it has ended' - so one state carried two names and the product shipped the harsher. It then spent its third sentence walking the alarm back, repeating 'stopped working' a second time in four lines.",
+          "done": "The tense follows the clock through the accessor already in the file. The headline is the word publish already used, equally true of a revoked and an expired link but naming a state rather than a fault. The third line is one sentence, because the clause that walked it back existed only for an alarm no longer raised. Three gate assertions encoded the old copy and moved with it, plus a new one that fails if the tense and the clock ever disagree - the assertion that would have caught this."
         }
       ]
     }

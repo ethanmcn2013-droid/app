@@ -44,7 +44,7 @@ const page = `<!doctype html>
 <style>
 ${css.join("\n\n")}
 </style>
-<body data-state="owner-flight" data-v="approach" data-ground="ink" data-past="folded" data-accent="once" data-spacing="measured">
+<body data-state="owner-flight" data-v="approach" data-ground="ink" data-past="folded" data-accent="once">
 <div id="tl"></div>
 ${JS.map((f) => `<script src="./${f}"></script>`).join("\n")}
 <script>
@@ -66,7 +66,7 @@ ${JS.map((f) => `<script src="./${f}"></script>`).join("\n")}
       root.setAttribute("data-" + key, presets[room][key]);
     });
   }
-  ["state", "v", "ground", "past", "accent", "spacing"].forEach(function (key) {
+  ["state", "v", "ground", "past", "accent"].forEach(function (key) {
     var value = q.get(key);
     if (value) root.setAttribute("data-" + key, value);
   });

@@ -7,6 +7,7 @@
     "owner-flight",
     "owner-empty",
     "owner-editing",
+    "owner-undone",
     "publish",
     "phone",
     "desk",
@@ -151,6 +152,10 @@
       [
         "owner-editing",
         "Owner · editing"
+      ],
+      [
+        "owner-undone",
+        "Owner · one move back"
       ],
       [
         "publish",

@@ -130,6 +130,13 @@
   --gap-section: 40px;
   --gap-major: 56px;
   --gap-page: 80px;
+  /* One name for the relationship between controls standing in a row.
+     Nine sites carried it as a literal 10px and the coarse-pointer rule
+     then RE-declared it as 14px, so the same relationship existed at two
+     sizes under two numbers and neither was on the ladder. Named once
+     and stepped once: the touch rule moves this token and nothing
+     redefines it. Both values are declared steps. */
+  --gap-control: var(--gap-snug);
 
   /* The size ladder, and with it the last unnamed axis. Ink, tracking,
      leading, space and motion were each declared, commented and gated;
@@ -321,7 +328,7 @@ body {
   color: var(--fore-62);
   margin: 0 0 var(--gap-snug);
   display: flex;
-  gap: 10px;
+  gap: var(--gap-control);
   align-items: baseline;
   flex-wrap: wrap;
 }
@@ -443,7 +450,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 }
 /* The publish screen's own captions are the machine speaking. */
 .b-press .b-who { color: var(--fore-62); }
-.b-count { display: flex; align-items: baseline; gap: 12px; margin: 0 0 var(--gap-snug); }
+.b-count { display: flex; align-items: baseline; gap: var(--gap-snug); margin: 0 0 var(--gap-snug); }
 .b-num {
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
@@ -578,6 +585,18 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   line-height: var(--lead-label);
   letter-spacing: var(--track-data);
   color: var(--fore-72);
+  /* The count is a readout of the row, so it travels with the words it
+     names. A transform rather than a margin: this element is absolutely
+     positioned, so a margin would resolve against the containing block
+     and the number would stay put.
+     Deliberately NOT transitioned. The row's own top is animated
+     because position is the quantity; the push is collision avoidance,
+     not a quantity, and .b-copy takes it as an untransitioned margin.
+     Giving the count a duration the words do not have put the pair 8px
+     apart for the length of every move - the same defect this fix
+     exists to remove, wearing a nicer easing. They move as one object
+     or they are not one object. */
+  transform: translateY(var(--push, 0px));
 }
 .b-tick {
   position: absolute;
@@ -589,8 +608,30 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   border: 1px solid var(--fore-46);
   background: var(--back);
 }
-/* The tick and the count sit on the true pixel, always. Only the words
-   are pushed clear when an owner moves two things close together. */
+/* The TICK sits on the true pixel, always, because the tick is the
+   position. The count is a label on the words and goes with them; when
+   the two are more than a hair apart a leader says which mark belongs to
+   which row, drawn as a brighter stretch of the rail itself rather than
+   a second line beside it - the rail-to-copy gutter is 20px and a
+   vertical of up to 157px standing in it reads as a second rail. */
+.b-item[data-crowded="true"]::after {
+  content: "";
+  position: absolute;
+  left: -20px;
+  top: 9px;
+  width: 1px;
+  height: var(--push, 0px);
+  background: linear-gradient(to bottom, var(--fore-46), var(--fore-16));
+  pointer-events: none;
+}
+[data-medium="sheet"] .b-item[data-crowded="true"]::after,
+[data-medium="full"] .b-item[data-crowded="true"]::after { left: -24px; }
+/* The leader is geometry, and a forced palette may repaint a fill but
+   cannot flatten it. It says nothing a reader has not already been
+   told in words, so it never reaches the accessibility tree. */
+@media (forced-colors: active) {
+  .b-item[data-crowded="true"]::after { background: CanvasText; }
+}
 /* Bound to the track, the wash behind a moment ran 944px at 1279 and
    544px at 1280 - a selection whose width was an accident of the
    window. */
@@ -737,7 +778,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 .b-behindSummary {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--gap-snug);
   /* 44px is the floor for a thing a thumb presses, and this is the only
      control a guest is given. The negative margin lets the pressable
      band run the full width of the measure without moving the text. */
@@ -810,7 +851,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 .b-behindHead {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--gap-snug);
   min-height: 44px;
   padding: var(--gap-tight) 0;
 }
@@ -819,7 +860,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 /* A cancelled row has no date, and the empty lane went on reserving
    96px, so the machine's status label took 125px while the couple's own
    words were starved to 96 and broke to a one-word second line. */
-.b-behindRow { display: flex; flex-wrap: wrap; gap: var(--gap-snug) 14px; align-items: baseline; padding: var(--gap-tight) 0; line-height: var(--lead-body); }
+.b-behindRow { display: flex; flex-wrap: wrap; gap: var(--gap-snug) var(--gap-line); align-items: baseline; padding: var(--gap-tight) 0; line-height: var(--lead-body); }
 .b-behindDate:empty { display: none; }
 .b-behindDate {
   font-family: var(--mono);
@@ -924,7 +965,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   border-top: 1px solid var(--fore-16);
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 18px;
+  gap: var(--gap-hair) var(--gap-item);
   justify-content: space-between;
   font-family: var(--mono);
   font-size: var(--size-label);
@@ -934,14 +975,14 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   color: var(--fore-62);
 }
 
-.b-two { display: grid; gap: 32px; }
+.b-two { display: grid; gap: var(--gap-block); }
 
 /* ── owner chrome ─────────────────────────────────────────────────
    Stacked on a phone, a row where there is room. */
 .b-bar {
   display: grid;
   justify-items: start;
-  gap: 10px;
+  gap: var(--gap-control);
   padding: 0 0 var(--gap-line);
   margin: 0 0 var(--gap-item);
   border-bottom: 1px solid var(--fore-16);
@@ -957,14 +998,16 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   text-transform: uppercase;
   color: var(--fore-62);
 }
+/* Text, not a pill. It carried the same border colour, radius and
+   height band as .b-act and sat beside three real buttons drawn
+   identically, so the bar read as four controls of which one was dead -
+   and on the 390 stack the false one sat 43px above the three true
+   ones. Stripped of the chrome it reads as what it is: the place, then
+   the project, then the actions. */
 .b-switch {
   display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  padding: 4px var(--gap-snug);
-  border: 1px solid var(--fore-16);
-  border-radius: 6px;
+  align-items: baseline;
+  gap: var(--gap-tight);
   font-size: var(--size-body);
   font-weight: 600;
   line-height: var(--lead-body);
@@ -980,7 +1023,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   color: var(--fore-62);
 }
 .b-spacer { flex: 1 1 auto; }
-.b-barActs { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; line-height: var(--lead-body); }
+.b-barActs { display: flex; gap: var(--gap-control); flex-wrap: wrap; align-items: center; line-height: var(--lead-body); }
 .b-act {
   min-height: 32px;
   padding: var(--gap-tight) var(--gap-snug);
@@ -1010,7 +1053,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--gap-snug);
   padding: 0 0 var(--gap-line);
   margin: 0 0 var(--gap-line);
   border-bottom: 1px solid var(--fore-16);
@@ -1059,7 +1102,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   background-color: var(--back);
   background-image: linear-gradient(var(--fore-06), var(--fore-06));
   display: grid;
-  gap: 12px;
+  gap: var(--gap-snug);
   line-height: var(--lead-body);
 }
 .b-edit:focus-visible { outline-offset: -2px; }
@@ -1099,8 +1142,8 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   min-height: 20px;
 }
 
-.b-stepRow { display: grid; gap: 10px; }
-.b-stepBtns { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.b-stepRow { display: grid; gap: var(--gap-control); }
+.b-stepBtns { display: flex; align-items: center; gap: var(--gap-control); flex-wrap: wrap; }
 .b-step {
   min-width: 44px;
   min-height: 40px;
@@ -1150,7 +1193,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 }
 .b-seg button + button { border-left: 1px solid var(--fore-28); }
 .b-seg button[aria-pressed="true"] { background: var(--fore); color: var(--back); }
-.b-editActs { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.b-editActs { display: flex; gap: var(--gap-control); align-items: center; flex-wrap: wrap; }
 /* On its own line, after a rule. It sat ten pixels to the right of the
    safe action at two and a half times its width. Separated, not hidden:
    deleting a moment from a draft is ordinary editing, and in a palette
@@ -1180,7 +1223,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   background-color: var(--back);
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 14px;
+  gap: var(--gap-tight) var(--gap-line);
   align-items: center;
   font-size: var(--size-body);
   line-height: var(--lead-body);
@@ -1217,14 +1260,25 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   padding: 2px var(--gap-tight);
   border-radius: 4px;
   font-size: var(--size-body);
-  line-height: var(--lead-body);
+  /* The leading its six sibling controls carry. This stood at 1.5
+     against their 1.4 and no gate could reach it: the bar is invisible
+     in every state the measured audit used to visit. The owner-undone
+     state put it inside the perimeter and this was the first thing the
+     perimeter found. */
+  line-height: var(--lead-label);
   letter-spacing: var(--track-body);
   color: var(--fore);
   text-decoration: underline;
   text-decoration-color: var(--fore-28);
   text-underline-offset: 3px;
 }
-.b-undo kbd { font-family: var(--mono); font-size: var(--size-label); line-height: var(--lead-label); letter-spacing: var(--track-label); color: var(--fore-62); }
+/* The keycap joins the data register its six neighbours were moved to
+   in round 6. It was the one string left on the section-head letterfit
+   while sitting in sentence case, which is a setting that exists
+   nowhere else in the product - and it sat where the measured gate has
+   never been able to look, because the bar is invisible in all twelve
+   states the audit visits. */
+.b-undo kbd { font-family: var(--mono); font-size: var(--size-label); line-height: var(--lead-label); letter-spacing: var(--track-data); color: var(--fore-62); }
 
 /* ── the empty field ──────────────────────────────────────────────  */
 .b-empty { padding: var(--gap-major) 0 var(--gap-major); }
@@ -1237,6 +1291,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   margin: 0 0 var(--gap-snug);
   text-wrap: balance;
 }
+/* balance, not pretty: pretty only suppresses a widow and never
+   evens the rag, so these two- and three-line leads ragged 381/226,
+   481/220 and 326/140. Every one of them is four lines or fewer,
+   which is exactly where balance applies. The print gap note stays
+   pretty - it is one line and balance would do nothing. */
 .b-emptyBody {
   font-size: var(--size-lead);
   line-height: var(--lead-body);
@@ -1244,12 +1303,12 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   color: var(--fore-62);
   margin: 0 0 var(--gap-block);
   max-width: 34ch;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
-.b-emptyForm { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.b-emptyForm { display: flex; flex-wrap: wrap; gap: var(--gap-control); align-items: center; }
 
 /* ── publish ──────────────────────────────────────────────────────  */
-.b-press { display: grid; gap: 28px; }
+.b-press { display: grid; gap: var(--gap-block); }
 /* A 43-character share token cannot shrink, so every box between it and
    the grid has to be told it may be narrower than its contents. */
 .b-press > * { min-width: 0; }
@@ -1269,12 +1328,12 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   color: var(--fore-62);
   margin: 0 0 var(--gap-item);
   max-width: 46ch;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 .b-linkRow {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--gap-control);
   min-width: 0;
   padding: var(--gap-snug) var(--gap-snug);
   border: 1px solid var(--fore-16);
@@ -1467,7 +1526,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   letter-spacing: var(--track-body);
   color: var(--fore-62);
   margin: 0;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 /* The morning's live block carries the one indigo on the screen. It
    used to be spent on a 200px hairline dividing two lines of the same
@@ -1508,7 +1567,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   color: var(--fore-62);
   margin: 0 0 var(--gap-item);
   max-width: 40ch;
-  text-wrap: pretty;
+  text-wrap: balance;
 }
 
 /* ── loading ──────────────────────────────────────────────────────  */
@@ -1580,7 +1639,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 .b-ownerField .b-measure { margin-top: var(--gap-snug); }
 
 @container (min-width: 600px) {
-  .b-print .b-two { grid-template-columns: 220px minmax(0, 1fr); gap: 48px; align-items: start; }
+  .b-print .b-two { grid-template-columns: 220px minmax(0, 1fr); gap: var(--gap-section); align-items: start; }
 }
 .b-print .b-title { font-size: var(--size-lead); letter-spacing: var(--track-body); }
 .b-print .b-away { font-size: var(--size-body); }
@@ -1599,9 +1658,9 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   .b-ownerField .b-todayLabel { margin-top: var(--gap-tight); }
   .b-ownerField .b-gapNote { margin-top: var(--gap-line); }
   .b-ownerField .b-measure { margin-top: var(--gap-line); }
-  .b-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  .b-bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-tight) var(--gap-line); }
   .b-bar .b-spacer { display: block; flex: 1 1 auto; }
-  .b-bar .b-barActs { display: flex; width: auto; gap: 10px; }
+  .b-bar .b-barActs { display: flex; width: auto; gap: var(--gap-control); }
   .b-bar .b-barActs .b-act[data-primary="true"] { grid-column: auto; }
   [data-medium="sheet"] .b-field, [data-medium="full"] .b-field { padding: var(--gap-section) var(--gap-major) var(--gap-major); }
   [data-medium="sheet"] .b-num, [data-medium="full"] .b-num { font-size: var(--size-countWide); }
@@ -1633,7 +1692,19 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
 /* Below the gutter width the editor is a sheet on the bottom edge, and
    the reversibility bar rides the same edge when the sheet is closed,
    so the offer to take a change back is never off screen. */
-@media (max-width: 1279px) {
+/* The two-column composition begins at 1024, not 1280. It used to start
+   only at desk width, so every 13-inch laptop - 1024, 1100, 1152, 1279 -
+   rendered the plan as the phone stack blown up: the rail at x=206,
+   every title ending at 774, and 456px of empty field beside each row.
+   It cost 371px of height across one pixel of window and put the first
+   moment at y=941, below an 800px fold, so an owner opening their own
+   plan on a laptop saw a counter, a gap note and an empty rail, and not
+   one moment. The geometry is unchanged - 344px, 56px gutter, 124px
+   count lane - because those are numbers a passing gate already
+   measures; only the boundary moves, and its pair below moves with it,
+   or the undo bar stays fixed to the bottom edge while the editor sits
+   in the rail. */
+@media (max-width: 1023px) {
   /* The editor is docked, not modal: the page may scroll under it. But
      the browser's own focus scrolling could park a control beneath it,
      so a keyboard owner pressed things they could not see. The scroll
@@ -1652,11 +1723,24 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
     margin: 0;
   }
   [data-undo="true"][data-editor-open] .b-edit { bottom: 76px; }
+  /* The docked sheet is full-bleed and nothing inside it was capped, so
+     every control inflated to the page: a date field holding
+     "25 July 2026" drawn 1221px across at 1279, and a Shown/Hidden
+     plate 1221px wide holding 142px of buttons at its left end. The
+     docked edge is right - only the contents need a measure. The
+     absolutely-positioned bar cannot take max-width alone, because it
+     is stretched by its own left/right insets. */
+  .b-edit { justify-items: start; }
+  .b-edit > * { max-width: 480px; width: 100%; }
+  .b-edit .b-undo { right: auto; width: min(480px, calc(100% - 32px)); max-width: none; }
+  /* justify-self is what actually stops the stretch: the plate is
+     already inline-flex and is being blockified as a grid item. */
+  .b-edit .b-seg { justify-self: start; width: auto; }
 }
 
-@media (min-width: 1280px) {
-  [data-medium="full"] .b-two { grid-template-columns: 344px minmax(0, 1fr); gap: 56px; align-items: start; }
-  [data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: 64px; align-items: start; }
+@media (min-width: 1024px) {
+  [data-medium="full"] .b-two { grid-template-columns: 344px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
+  [data-medium="full"] .b-press { grid-template-columns: 320px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
   /* The horizon does not scroll away — but only where it has a column
      of its own. */
   .b-stick { position: sticky; top: var(--gap-section); }
@@ -1716,12 +1800,19 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    file wrote that down and then applied it to one control. Scoped to a
    coarse pointer, so nothing at desk width moves. */
 @media (pointer: coarse) {
-  .b-act, .b-seg button, .b-step, .b-grab, .b-linkField { min-height: 44px; height: auto; }
+  /* .b-undoAct was omitted the first time this was written, so the one
+     control that takes a change back measured 51x28 - the smallest
+     target in the product was the way out of a mistake. */
+  .b-act, .b-seg button, .b-step, .b-grab, .b-linkField, .b-undoAct { min-height: 44px; height: auto; }
   .b-step { min-width: 52px; }
-  .b-stepBtns, .b-editActs { gap: 14px; }
+  :root { --gap-control: var(--gap-line); }
+  /* The reserve must move with the button it reserves for. At 44 the
+     bar's measured bottom goes 81.4 to 97.4, so the hand-measured 88
+     above would let the bar's hairline cross the panel's first label. */
+  .b-edit { padding-top: 104px; }  /* off-ladder: measure geometry */
 }
 </style>
-<body data-state="owner-flight" data-v="approach" data-ground="ink" data-past="folded" data-accent="once" data-spacing="measured">
+<body data-state="owner-flight" data-v="approach" data-ground="ink" data-past="folded" data-accent="once">
 <div id="tl"></div>
 <script src="./fixture.js"></script>
 <script src="./render-core.js"></script>
@@ -1745,7 +1836,7 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
       root.setAttribute("data-" + key, presets[room][key]);
     });
   }
-  ["state", "v", "ground", "past", "accent", "spacing"].forEach(function (key) {
+  ["state", "v", "ground", "past", "accent"].forEach(function (key) {
     var value = q.get(key);
     if (value) root.setAttribute("data-" + key, value);
   });

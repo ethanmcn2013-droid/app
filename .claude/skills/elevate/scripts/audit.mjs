@@ -542,7 +542,14 @@ report.source = { size: [], space: [] };
       }
       /* Four pixels and under is an optical inset, not a step on a
          ladder, and a line may say so for itself with an annotation. */
-      const space = bare.match(/(?:^|[\s;{])(?:margin|padding)(?:-(?:top|right|bottom|left))?:\s*([^;}]+)/);
+      /* gap is the property that actually spaces a flex or grid surface,
+         and it was outside the ladder the ladder was declared for. With
+         margin and padding tokenised the check read as clean while the
+         real rhythm carried twelve distinct values across twenty-three
+         declarations, seven of them off the declared steps - the drift
+         the ladder was written to kill had simply moved to the property
+         the gate did not read. */
+      const space = bare.match(/(?:^|[\s;{])(?:margin|padding|gap|row-gap|column-gap)(?:-(?:top|right|bottom|left))?:\s*([^;}]+)/);
       if (space && !/off-ladder/.test(line)) {
         const values = space[1].match(/-?\d+px/g) || [];
         if (values.some((v) => Math.abs(parseInt(v, 10)) > 4)) {

@@ -1,0 +1,282 @@
+[
+ {
+  "seat": "ui",
+  "seatName": "ui",
+  "id": "past-rail-marks-leave-their-rows",
+  "cost": 0.5,
+  "file": "refuters/ui--past-rail-marks-leave-their-rows.md",
+  "out": "verdicts/ui--past-rail-marks-leave-their-rows.json"
+ },
+ {
+  "seat": "ui",
+  "seatName": "ui",
+  "id": "band-1000-1279-is-the-phone-stretched",
+  "cost": 0.5,
+  "file": "refuters/ui--band-1000-1279-is-the-phone-stretched.md",
+  "out": "verdicts/ui--band-1000-1279-is-the-phone-stretched.json"
+ },
+ {
+  "seat": "ui",
+  "seatName": "ui",
+  "id": "docked-editor-has-no-measure",
+  "cost": 0.4,
+  "file": "refuters/ui--docked-editor-has-no-measure.md",
+  "out": "verdicts/ui--docked-editor-has-no-measure.json"
+ },
+ {
+  "seat": "ui",
+  "seatName": "ui",
+  "id": "editor-opens-on-an-empty-88px-band",
+  "cost": 0.3,
+  "file": "refuters/ui--editor-opens-on-an-empty-88px-band.md",
+  "out": "verdicts/ui--editor-opens-on-an-empty-88px-band.json"
+ },
+ {
+  "seat": "ui",
+  "seatName": "ui",
+  "id": "today-rule-is-a-hardcoded-344px-stub",
+  "cost": 0.2,
+  "file": "refuters/ui--today-rule-is-a-hardcoded-344px-stub.md",
+  "out": "verdicts/ui--today-rule-is-a-hardcoded-344px-stub.json"
+ },
+ {
+  "seat": "type",
+  "seatName": "type",
+  "id": "head-register-leaks-to-state-and-wordmark",
+  "cost": 0.4,
+  "file": "refuters/type--head-register-leaks-to-state-and-wordmark.md",
+  "out": "verdicts/type--head-register-leaks-to-state-and-wordmark.json"
+ },
+ {
+  "seat": "type",
+  "seatName": "type",
+  "id": "keepsake-loses-the-baseline-and-the-measure-floor",
+  "cost": 0.3,
+  "file": "refuters/type--keepsake-loses-the-baseline-and-the-measure-floor.md",
+  "out": "verdicts/type--keepsake-loses-the-baseline-and-the-measure-floor.json"
+ },
+ {
+  "seat": "type",
+  "seatName": "type",
+  "id": "type-frozen-across-the-391-766-band",
+  "cost": 0.3,
+  "file": "refuters/type--type-frozen-across-the-391-766-band.md",
+  "out": "verdicts/type--type-frozen-across-the-391-766-band.json"
+ },
+ {
+  "seat": "type",
+  "seatName": "type",
+  "id": "edit-field-is-not-the-type-it-edits",
+  "cost": 0.2,
+  "file": "refuters/type--edit-field-is-not-the-type-it-edits.md",
+  "out": "verdicts/type--edit-field-is-not-the-type-it-edits.json"
+ },
+ {
+  "seat": "type",
+  "seatName": "type",
+  "id": "breaks-that-split-a-date-and-open-a-line-on-a-connector",
+  "cost": 0.2,
+  "file": "refuters/type--breaks-that-split-a-date-and-open-a-line-on-a-connector.md",
+  "out": "verdicts/type--breaks-that-split-a-date-and-open-a-line-on-a-connector.json"
+ },
+ {
+  "seat": "interaction",
+  "seatName": "Interaction and states",
+  "id": "undo-throws-on-the-move",
+  "cost": 0.5,
+  "file": "refuters/interaction--undo-throws-on-the-move.md",
+  "out": "verdicts/interaction--undo-throws-on-the-move.json"
+ },
+ {
+  "seat": "interaction",
+  "seatName": "Interaction and states",
+  "id": "the-move-is-off-screen-at-desk",
+  "cost": 0.4,
+  "file": "refuters/interaction--the-move-is-off-screen-at-desk.md",
+  "out": "verdicts/interaction--the-move-is-off-screen-at-desk.json"
+ },
+ {
+  "seat": "interaction",
+  "seatName": "Interaction and states",
+  "id": "try-again-is-a-dead-control",
+  "cost": 0.35,
+  "file": "refuters/interaction--try-again-is-a-dead-control.md",
+  "out": "verdicts/interaction--try-again-is-a-dead-control.json"
+ },
+ {
+  "seat": "interaction",
+  "seatName": "Interaction and states",
+  "id": "the-count-lands-beside-another-moment",
+  "cost": 0.3,
+  "file": "refuters/interaction--the-count-lands-beside-another-moment.md",
+  "out": "verdicts/interaction--the-count-lands-beside-another-moment.json"
+ },
+ {
+  "seat": "interaction",
+  "seatName": "Interaction and states",
+  "id": "the-editor-opens-on-an-empty-band",
+  "cost": 0.25,
+  "file": "refuters/interaction--the-editor-opens-on-an-empty-band.md",
+  "out": "verdicts/interaction--the-editor-opens-on-an-empty-band.json"
+ },
+ {
+  "seat": "ux",
+  "seatName": "ux",
+  "id": "past-rail-numeral-decoupled-from-its-moment",
+  "cost": 0.5,
+  "file": "refuters/ux--past-rail-numeral-decoupled-from-its-moment.md",
+  "out": "verdicts/ux--past-rail-numeral-decoupled-from-its-moment.json"
+ },
+ {
+  "seat": "ux",
+  "seatName": "ux",
+  "id": "when-field-contradicts-the-moment-and-enter-reverts-it",
+  "cost": 0.4,
+  "file": "refuters/ux--when-field-contradicts-the-moment-and-enter-reverts-it.md",
+  "out": "verdicts/ux--when-field-contradicts-the-moment-and-enter-reverts-it.json"
+ },
+ {
+  "seat": "ux",
+  "seatName": "ux",
+  "id": "freshness-stamp-is-decoration",
+  "cost": 0.3,
+  "file": "refuters/ux--freshness-stamp-is-decoration.md",
+  "out": "verdicts/ux--freshness-stamp-is-decoration.json"
+ },
+ {
+  "seat": "ux",
+  "seatName": "ux",
+  "id": "the-keepsake-has-no-door",
+  "cost": 0.2,
+  "file": "refuters/ux--the-keepsake-has-no-door.md",
+  "out": "verdicts/ux--the-keepsake-has-no-door.json"
+ },
+ {
+  "seat": "ux",
+  "seatName": "ux",
+  "id": "the-sheet-says-three-facts-twice",
+  "cost": 0.2,
+  "file": "refuters/ux--the-sheet-says-three-facts-twice.md",
+  "out": "verdicts/ux--the-sheet-says-three-facts-twice.json"
+ },
+ {
+  "seat": "brand",
+  "seatName": "Brand and copy",
+  "id": "ended-screen-says-the-day-was",
+  "cost": 0.5,
+  "file": "refuters/brand--ended-screen-says-the-day-was.md",
+  "out": "verdicts/brand--ended-screen-says-the-day-was.json"
+ },
+ {
+  "seat": "brand",
+  "seatName": "Brand and copy",
+  "id": "accent-spent-twice-never-on-the-event",
+  "cost": 0.4,
+  "file": "refuters/brand--accent-spent-twice-never-on-the-event.md",
+  "out": "verdicts/brand--accent-spent-twice-never-on-the-event.json"
+ },
+ {
+  "seat": "brand",
+  "seatName": "Brand and copy",
+  "id": "today-stated-twice-in-two-grammars",
+  "cost": 0.3,
+  "file": "refuters/brand--today-stated-twice-in-two-grammars.md",
+  "out": "verdicts/brand--today-stated-twice-in-two-grammars.json"
+ },
+ {
+  "seat": "brand",
+  "seatName": "Brand and copy",
+  "id": "one-cancelled-moment-said-four-ways",
+  "cost": 0.3,
+  "file": "refuters/brand--one-cancelled-moment-said-four-ways.md",
+  "out": "verdicts/brand--one-cancelled-moment-said-four-ways.json"
+ },
+ {
+  "seat": "brand",
+  "seatName": "Brand and copy",
+  "id": "new-project-instructed-three-times",
+  "cost": 0.2,
+  "file": "refuters/brand--new-project-instructed-three-times.md",
+  "out": "verdicts/brand--new-project-instructed-three-times.json"
+ },
+ {
+  "seat": "taste",
+  "seatName": "Product taste and emotional resonance",
+  "id": "publish-is-not-a-ceremony",
+  "cost": 0.4,
+  "file": "refuters/taste--publish-is-not-a-ceremony.md",
+  "out": "verdicts/taste--publish-is-not-a-ceremony.json"
+ },
+ {
+  "seat": "taste",
+  "seatName": "Product taste and emotional resonance",
+  "id": "when-field-contradicts-the-move",
+  "cost": 0.3,
+  "file": "refuters/taste--when-field-contradicts-the-move.md",
+  "out": "verdicts/taste--when-field-contradicts-the-move.json"
+ },
+ {
+  "seat": "taste",
+  "seatName": "Product taste and emotional resonance",
+  "id": "the-guest-never-sees-anything-move",
+  "cost": 0.3,
+  "file": "refuters/taste--the-guest-never-sees-anything-move.md",
+  "out": "verdicts/taste--the-guest-never-sees-anything-move.json"
+ },
+ {
+  "seat": "taste",
+  "seatName": "Product taste and emotional resonance",
+  "id": "editor-opens-on-a-hole",
+  "cost": 0.2,
+  "file": "refuters/taste--editor-opens-on-a-hole.md",
+  "out": "verdicts/taste--editor-opens-on-a-hole.json"
+ },
+ {
+  "seat": "taste",
+  "seatName": "Product taste and emotional resonance",
+  "id": "the-morning-closes-on-an-errand",
+  "cost": 0.1,
+  "file": "refuters/taste--the-morning-closes-on-an-errand.md",
+  "out": "verdicts/taste--the-morning-closes-on-an-errand.json"
+ },
+ {
+  "seat": "evidence",
+  "seatName": "evidence",
+  "id": "stale-when-field-reverts-the-edit",
+  "cost": 0.6,
+  "file": "refuters/evidence--stale-when-field-reverts-the-edit.md",
+  "out": "verdicts/evidence--stale-when-field-reverts-the-edit.json"
+ },
+ {
+  "seat": "evidence",
+  "seatName": "evidence",
+  "id": "undo-throws-and-loses-place",
+  "cost": 0.5,
+  "file": "refuters/evidence--undo-throws-and-loses-place.md",
+  "out": "verdicts/evidence--undo-throws-and-loses-place.json"
+ },
+ {
+  "seat": "evidence",
+  "seatName": "evidence",
+  "id": "affordances-that-are-not-wired",
+  "cost": 0.4,
+  "file": "refuters/evidence--affordances-that-are-not-wired.md",
+  "out": "verdicts/evidence--affordances-that-are-not-wired.json"
+ },
+ {
+  "seat": "evidence",
+  "seatName": "evidence",
+  "id": "space-ladder-does-not-cover-the-property-that-spaces",
+  "cost": 0.3,
+  "file": "refuters/evidence--space-ladder-does-not-cover-the-property-that-spaces.md",
+  "out": "verdicts/evidence--space-ladder-does-not-cover-the-property-that-spaces.json"
+ },
+ {
+  "seat": "evidence",
+  "seatName": "evidence",
+  "id": "reversibility-bar-has-never-been-measured",
+  "cost": 0.3,
+  "file": "refuters/evidence--reversibility-bar-has-never-been-measured.md",
+  "out": "verdicts/evidence--reversibility-bar-has-never-been-measured.json"
+ }
+]

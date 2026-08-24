@@ -769,7 +769,12 @@ for (const state of ["unfurl", "publish"]) {
   const text = await page.evaluate(() => document.body.innerText);
   /* True whether the link was revoked or simply ran out. The surface
      cannot tell the two apart and used to assert one of them. */
-  ok("the ended link says what happened", /stopped working/i.test(text));
+  ok("the ended link says what happened", /has ended/i.test(text));
+  /* The tense follows the clock. This was hardcoded past, so a link
+     switched off in July told the couple's family that the most
+     important day of their life was over, three months before it. */
+  ok("the ended link keeps the day in the tense the clock is in",
+    FIXTURE.toDay() > 0 ? /the day is/i.test(text) : /the day was/i.test(text), text.slice(0,120));
   ok("the ended link does not assert a cause it cannot know",
     !/turned off\./i.test(text));
   ok("the ended link names the plan it belonged to",
@@ -778,7 +783,12 @@ for (const state of ["unfurl", "publish"]) {
     text.includes(String(new Date(FIXTURE.project.primaryDate.date).getUTCFullYear())));
   ok("the ended link names who can fix it", text.includes(FIXTURE.workspace.owner));
   ok("the news is the heading", await page.evaluate(() =>
-    /stopped working/i.test((document.querySelector("h1") || {}).textContent || "")));
+    /has ended/i.test((document.querySelector("h1") || {}).textContent || "")));
+  /* One name per state across the product: publish promises the reader
+     "sees that it has ended", so this screen may not say something
+     harsher for the same fact. */
+  ok("the ended link names a state, not a malfunction", !/stopped working/i.test(text));
+  ok("the ended link says it once", (text.match(/nothing has been deleted/gi) || []).length === 1);
   ok("the ended link says nothing was deleted", /nothing has been deleted/i.test(text));
   await page.close();
 }
@@ -1807,7 +1817,11 @@ for (const state of ["phone", "day", "owner-flight"]) {
   }));
   ok("the sheet dates its own figure", /away on .*20\d\d/.test(said.unit), said.unit);
   ok("the sheet states today once", !said.today);
-  ok("the rail's origin carries the year on paper", /20\d\d/.test(said.origin), said.origin);
+  /* One ceremonial date per sheet. The dateline under the count owns the
+     full form; the origin said the same day again in the same full form
+     200px away, and on paper the two always print together. */
+  ok("the sheet carries one ceremonial date, not two",
+    !/20\d\d/.test(said.origin), said.origin);
   ok("the sheet carries a link that can be typed",
     !!said.link && said.link.indexOf("https://") === 0, String(said.link));
   await page.close();
@@ -2298,6 +2312,334 @@ for (const state of ["phone", "desk", "day"]) {
   ok("nothing else collides", (await collisions(page)) === 0);
   await page.close();
 }
+
+/* ── round 7 · what the panel found, made unrepeatable ─────────────
+   One block per fixed defect class, each placed where the defect
+   actually lived rather than where it was convenient to test. */
+
+/* The WHEN field is a consumer of the one date, never a rival source.
+   Three seats found this independently and all three were confirmed:
+   the field was seeded once when the editor opened and never written
+   again, so three presses of +7 left the most authoritative statement
+   of the date on the panel showing the value from before any of them -
+   and a bare Enter in that untouched field then committed the stale
+   string and dragged the moment back twenty-one days. */
+{
+  const page = await open({ state: "owner-editing" });
+  const flat = (s) => String(s).replace(/ /g, " ").trim();
+  const read = () => page.evaluate(() => ({
+    field: document.querySelector("#b-edit-date").value,
+    readout: document.querySelector(".b-stepRead").textContent,
+    away: document.querySelector('.b-item[data-editing="true"]').getAttribute("data-away"),
+    date: document.querySelector('.b-item[data-editing="true"]').getAttribute("data-date"),
+    undo: (document.querySelector(".b-undoText") || {}).textContent || "",
+  }));
+  const first = await read();
+  for (let i = 0; i < 3; i++) {
+    await page.click('.b-step[data-delta="7"]');
+    await page.waitForTimeout(120);
+    const now = await read();
+    ok(`the field follows the move · press ${i + 1}`,
+      flat(now.readout).includes(flat(now.field)),
+      `field "${flat(now.field)}" vs readout "${flat(now.readout)}"`);
+  }
+  const moved = await read();
+  ok("three presses moved the moment", Number(moved.away) === Number(first.away) + 21,
+    `${first.away} -> ${moved.away}`);
+  /* The defect that cost the most: confirming a field nobody typed in.
+     It must touch neither the model, the history, nor the live region. */
+  await page.focus("#b-edit-date");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(150);
+  const after = await read();
+  ok("a bare Enter on an untouched field changes nothing",
+    after.away === moved.away && after.date === moved.date,
+    `${moved.away}/${moved.date} -> ${after.away}/${after.date}`);
+  ok("a bare Enter writes no history", after.undo === moved.undo,
+    `"${moved.undo}" -> "${after.undo}"`);
+  /* Undo runs through the same single writer, so the field comes back
+     with everything else. */
+  await page.click(".b-undoAct");
+  await page.waitForTimeout(200);
+  const undone = await read();
+  ok("undo brings the field back with the moment",
+    flat(undone.readout).includes(flat(undone.field)),
+    `field "${flat(undone.field)}" vs readout "${flat(undone.readout)}"`);
+  await page.close();
+}
+
+/* Undo of a move: no throw, focus back on the control that made the
+   change, and the place given back. The old closure read
+   event.currentTarget after dispatch had nulled it, so every undo of
+   the product's most frequent action threw - and the throw landed
+   between the repaint and the line that restores scroll. The assertion
+   that was supposed to guard this passed vacuously, because it pressed
+   Ctrl+Z with focus already sitting on the stepper. */
+for (const viewport of [{ width: 1280, height: 900 }, { width: 1440, height: 960 }]) {
+  const page = await open({ state: "owner-editing", viewport });
+  const before = pageErrors.length;
+  const anchor = () => page.evaluate(() =>
+    Math.round(document.querySelector(".b-measureHead").getBoundingClientRect().top));
+  await page.click('.b-step[data-delta="7"]');
+  await page.waitForTimeout(150);
+  const home = await anchor();
+  await page.evaluate(() => window.scrollTo(0, 700));
+  await page.waitForTimeout(120);
+  await page.click(".b-undoAct");
+  await page.waitForTimeout(300);
+  const back = await anchor();
+  const active = await page.evaluate(() => document.activeElement.className);
+  ok(`undoing a move raises nothing @${viewport.width}`,
+    pageErrors.length === before, pageErrors.slice(before, before + 1).join(""));
+  ok(`undo gives the owner their place back @${viewport.width}`,
+    Math.abs(back - home) <= 2, `${home} -> ${back}`);
+  ok(`undo returns focus to the control that made the change @${viewport.width}`,
+    /b-step/.test(active), active);
+  await page.close();
+}
+
+/* Every count stands beside the words it names. --push used to be set
+   on .b-copy, whose siblings inherit nothing from it, so when two
+   moments fell closer than a row is tall the words moved clear and the
+   number stayed on the true pixel beside somebody else's title. The
+   collision window is transient - it opens around the fifth press and
+   closes again - so this asserts after EVERY press, not only the last. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  const drift = () => page.evaluate(() => {
+    const bad = [];
+    for (const it of document.querySelectorAll(".b-item")) {
+      if (it.getAttribute("data-stack") === "follow") continue;
+      const a = it.querySelector(".b-away"), c = it.querySelector(".b-copy");
+      if (!a || !c) continue;
+      const ar = a.getBoundingClientRect(), cr = c.getBoundingClientRect();
+      if (!ar.height || !cr.height) continue;
+      if (Math.abs(ar.top - cr.top) > 4) {
+        bad.push(((it.querySelector(".b-title") || {}).textContent || "?") + "@" + Math.round(Math.abs(ar.top - cr.top)));
+      }
+    }
+    return bad;
+  });
+  let worst = [];
+  for (let i = 0; i < 20; i++) {
+    await page.click('.b-step[data-delta="-1"]');
+    await page.waitForTimeout(40);
+    const d = await drift();
+    if (d.length) worst = d;
+  }
+  ok("no count is ever left beside another moment's words",
+    worst.length === 0, worst.join(" | "));
+  await page.close();
+}
+
+/* The count and the mark must never give a reader a false reading on
+   the compressed past rail, where a week is 14px and a row of type is
+   39px. Six of eight rows crowd at once there, and both gates were
+   blind to it because the disclosure is closed at rest and every frame
+   was shot closed. */
+{
+  const page = await open({ state: "day", viewport: { width: 390, height: 844 } });
+  await page.evaluate(() => {
+    const d = document.querySelector(".b-back summary, summary");
+    if (d) d.click();
+  });
+  await page.waitForTimeout(400);
+  const back = await page.evaluate(() => {
+    const bad = [];
+    const rows = [...document.querySelectorAll(".b-back .b-item")];
+    for (const it of rows) {
+      if (it.getAttribute("data-stack") === "follow") continue;
+      const a = it.querySelector(".b-away"), c = it.querySelector(".b-copy");
+      if (!a || !c) continue;
+      const ar = a.getBoundingClientRect(), cr = c.getBoundingClientRect();
+      if (!ar.height || !cr.height) continue;
+      if (Math.abs(ar.top - cr.top) > 4) bad.push(Math.round(Math.abs(ar.top - cr.top)) + "px");
+    }
+    return { rows: rows.length, bad };
+  });
+  ok("the past rail has rows to grade", back.rows > 0, String(back.rows));
+  ok("every figure behind you stands beside its own moment",
+    back.bad.length === 0, back.bad.join(","));
+  await page.close();
+}
+
+/* The laptop band. The two-column composition used to begin only at
+   1280, so 1024 through 1279 rendered the plan as the phone stack blown
+   up - 456px of dead field beside every row, and the first moment
+   pushed below an 800px fold. The gate checked the fold at 390 only. */
+for (const width of [1024, 1152, 1279]) {
+  const page = await open({ state: "owner-flight", viewport: { width, height: 800 } });
+  const m = await page.evaluate(() => {
+    const first = document.querySelector(".b-measure .b-item");
+    return {
+      columns: getComputedStyle(document.querySelector(".b-two")).gridTemplateColumns.split(" ").length,
+      firstTop: first ? Math.round(first.getBoundingClientRect().top) : -1,
+      rule: Math.round(document.querySelector(".b-todayRule").getBoundingClientRect().width),
+      overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    };
+  });
+  ok(`the plan is composed in two columns @${width}`, m.columns === 2, String(m.columns));
+  ok(`the owner sees a moment without scrolling @${width}`,
+    m.firstTop > 0 && m.firstTop < 800, String(m.firstTop));
+  ok(`today is one mark at ${width}`, m.rule === 344, `${m.rule}px`);
+  ok(`nothing overflows sideways @${width}`, m.overflow <= 0, String(m.overflow));
+  await page.close();
+}
+
+/* The docked sheet has a measure. Below the two-column boundary nothing
+   inside it was capped, so a date field holding "25 July 2026" drew
+   1221px across and the Shown/Hidden plate framed 1079px of nothing. */
+for (const width of [768, 1023]) {
+  const page = await open({ state: "owner-editing", viewport: { width, height: 900 } });
+  const m = await page.evaluate(() => ({
+    field: Math.round(document.querySelector("#b-edit-date").getBoundingClientRect().width),
+    plate: Math.round(document.querySelector(".b-seg").getBoundingClientRect().width),
+  }));
+  ok(`the docked field keeps a measure @${width}`, m.field <= 480, `${m.field}px`);
+  ok(`the segmented plate wraps its own buttons @${width}`, m.plate <= 260, `${m.plate}px`);
+  await page.close();
+}
+
+/* The only control on the only screen where the audience meets failure.
+   It had no handler at all: no row, no announcement, not even an
+   acknowledgement that the product had tried. The gate counted the
+   button's existence and the every-control-does-something loop never
+   visited this state. */
+{
+  const page = await open({ state: "loading-slow", viewport: { width: 390, height: 844 } });
+  const before = pageErrors.length;
+  const say = () => page.evaluate(() => ({
+    busy: document.querySelector(".b-field").getAttribute("aria-busy"),
+    live: (document.querySelector(".b-live") || {}).textContent || "",
+    sub: document.querySelector(".b-sub").textContent,
+    focus: document.activeElement.getAttribute("data-act"),
+  }));
+  const rest = await say();
+  await page.click('[data-act="retry"]');
+  await page.waitForTimeout(180);
+  const trying = await say();
+  ok("try again marks the region busy", trying.busy === "true", String(trying.busy));
+  ok("try again says so in a live region of its own",
+    trying.live.trim().length > 0, `"${trying.live}"`);
+  ok("try again really goes back to the loading face",
+    trying.sub !== rest.sub, `"${rest.sub}" -> "${trying.sub}"`);
+  ok("try again keeps the press where it was", trying.focus === "retry", String(trying.focus));
+  await page.waitForTimeout(1500);
+  const settled = await say();
+  ok("a second failure is announced, not left silent",
+    /still not arriving/i.test(settled.live), `"${settled.live}"`);
+  ok("a second failure still says nothing is lost",
+    /link still works/i.test(settled.live), `"${settled.live}"`);
+  ok("try again raises nothing", pageErrors.length === before,
+    pageErrors.slice(before, before + 1).join(""));
+  await page.close();
+}
+
+/* Nothing on the owner's bar may be drawn as a control and be inert,
+   and no named decision may be published in the console with nothing
+   behind it. */
+{
+  const page = await open({ state: "owner-flight" });
+  const m = await page.evaluate(() => {
+    const s = document.querySelector(".b-switch");
+    const cs = getComputedStyle(s);
+    return {
+      border: parseFloat(cs.borderTopWidth),
+      radius: parseFloat(cs.borderTopLeftRadius),
+      spacing: document.body.hasAttribute("data-spacing"),
+      publish: (document.querySelector('[data-act="publish"]') || {}).textContent || "",
+    };
+  });
+  ok("the project name is not drawn as a button it is not",
+    m.border === 0 && m.radius === 0, `border ${m.border}, radius ${m.radius}`);
+  ok("no decision is published with nothing behind it", !m.spacing);
+  /* On a plan that is already live, the primary control may not offer
+     to do the thing that has already been done. */
+  ok("the publish verb knows whether anyone is holding a copy",
+    FIXTURE.publication.state === "published"
+      ? /get the link/i.test(m.publish)
+      : /publish/i.test(m.publish), m.publish);
+  await page.close();
+}
+
+/* The reversibility bar, now inside the measured perimeter. Nothing
+   about the product's way out of a mistake had ever been graded,
+   because the bar is display:none or visibility:hidden in every state
+   the audit visits. */
+{
+  const page = await open({ state: "owner-undone" });
+  const m = await page.evaluate(() => {
+    const bar = document.querySelector(".b-edit .b-undo");
+    const kbd = bar && bar.querySelector("kbd");
+    const label = document.querySelector(".b-edit .b-label");
+    return {
+      shown: bar ? getComputedStyle(bar).visibility : "missing",
+      empty: bar ? bar.getAttribute("data-empty") : "missing",
+      track: kbd ? getComputedStyle(kbd).letterSpacing : "missing",
+      lead: kbd ? getComputedStyle(bar.querySelector(".b-undoAct")).lineHeight : "missing",
+      barBottom: bar ? Math.round(bar.getBoundingClientRect().bottom) : 0,
+      labelTop: label ? Math.round(label.getBoundingClientRect().top) : 0,
+    };
+  });
+  ok("the way back is on screen and filled in this state",
+    m.shown === "visible" && m.empty === "false", JSON.stringify(m));
+  ok("the keycap sits in the data register with its neighbours",
+    m.track === "0.44px", m.track);
+  ok("the filled bar never paints over the panel's first label",
+    m.barBottom <= m.labelTop, `bar ${m.barBottom} vs label ${m.labelTop}`);
+  await page.close();
+}
+{
+  const page = await open({ state: "owner-undone", viewport: { width: 390, height: 844 }, touch: true });
+  const h = await page.evaluate(() => {
+    const el = document.querySelector(".b-undoAct");
+    return el ? Math.round(el.getBoundingClientRect().height) : 0;
+  });
+  ok("the way back is a thumb target like everything else", h >= 44, `${h}px`);
+  await page.close();
+}
+
+/* Breaks. A date may not be split between its weekday and its day
+   number on the card that is the product's first impression, and a
+   connector may not open a line. */
+{
+  const page = await open({ state: "unfurl", viewport: { width: 1440, height: 960 } });
+  const m = await page.evaluate(() => {
+    const span = document.querySelector(".b-unfurlTitle span");
+    return { rects: span ? span.getClientRects().length : -1 };
+  });
+  ok("the unfurl date is never split across lines", m.rects === 1, String(m.rects));
+  await page.close();
+}
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  const bound = await page.evaluate(() => {
+    const t = document.querySelector(".b-stepRead").textContent;
+    const i = t.indexOf("·");
+    return i > 0 && t.charCodeAt(i - 1) === 0x00a0;
+  });
+  ok("the connector cannot start a line", bound);
+  await page.close();
+}
+
+/* The horizon sentence cannot outlive the fact it describes. It used to
+   be restored from a snapshot captured when the surface was wired. */
+{
+  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
+  await page.click('.b-step[data-delta="-7"]');
+  await page.click('.b-step[data-delta="-7"]');
+  await page.waitForTimeout(200);
+  const moved = await page.evaluate(() => document.querySelector(".b-gapNote").textContent);
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  await page.waitForTimeout(180);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(300);
+  const back = await page.evaluate(() => document.querySelector(".b-gapNote").textContent);
+  ok("the horizon sentence cannot outlive its own fact", moved === back,
+    `"${moved}" vs "${back}"`);
+  await page.close();
+}
+
 
 await browser.close();
 process.stdout.write(`\n${results.length} assertions, ${failures} failing\n`);
