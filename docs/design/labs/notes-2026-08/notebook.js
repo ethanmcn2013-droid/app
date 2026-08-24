@@ -943,9 +943,14 @@
   let voiceWave = null;
   let waveLevel = 0.4;
   const LISTENING = "Listening. Speak whenever you are ready. Stop when you are done.";
+  /* A frame counter rather than a clock, so two runs of the shot
+     harness produce the same wave and a changed frame means changed
+     work. */
+  let waveFrame = 0;
   function startListening() {
     stopListening();
     voiceSeconds = 0;
+    waveFrame = 0;
     /* The floor announced itself once and then never again, so with your
        eyes off the screen there was no way to know it was still
        listening or how long it had heard you. The clock and the wave are
@@ -968,10 +973,15 @@
       if (!bars.length) return;
       /* One amplitude, smoothed, so the bars move together the way a voice
          moves them rather than twenty-eight independent flickers. */
-      waveLevel = Math.min(1, Math.max(0.12, waveLevel + (Math.random() - 0.5) * 0.34));
+      /* Was Math.random(), which made the dictation frames differ
+         between any two runs, so every round committed four changed
+         PNGs that recorded nothing. It still moves the way a voice
+         moves it; it just moves the same way twice. */
+      waveFrame += 1;
+      waveLevel = Math.min(1, Math.max(0.12, 0.55 + 0.42 * Math.sin(waveFrame * 0.21)));
       for (let i = 0; i < bars.length; i += 1) {
         const shape = 0.45 + 0.55 * Math.abs(Math.sin(i * 0.7 + voiceSeconds));
-        const h = 6 + Math.round(34 * waveLevel * shape * (0.7 + Math.random() * 0.6));
+        const h = 6 + Math.round(34 * waveLevel * shape * (0.7 + 0.6 * Math.abs(Math.sin(i * 2.3 + waveFrame * 0.11))));
         bars[i].style.height = `${Math.min(40, h)}px`;
       }
     };

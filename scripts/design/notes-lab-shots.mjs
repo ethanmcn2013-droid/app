@@ -56,9 +56,15 @@ const DIRECTIONS = [
   { key: "c", file: "direction-c.html", name: "C · The Stack" },
   /* Phases C and D photograph the master through the same harness. */
   { key: "locked", file: "notebook.html", name: "Locked master", query: "v=locked", optional: true },
-  { key: "r1", file: "notebook.html", name: "Room 1", query: "v=a", optional: true },
-  { key: "r2", file: "notebook.html", name: "Room 2", query: "v=b", optional: true },
-  { key: "r3", file: "notebook.html", name: "Room 3", query: "v=c", optional: true },
+  /* r1, r2 and r3 were removed after round 9. They passed v=a, v=b and
+     v=c, none of which is a key in PRESETS, so all three fell back to
+     the locked preset — and no CSS keys off data-variant. Verified by
+     checksum: 36 of each room's 40 frames were byte-identical to the
+     locked frames, and the four that differed were the dictation ones,
+     which differ between any two runs because the waveform was random.
+     Every round shot and committed 120 duplicate PNGs, 26MB, for three
+     rooms the founder has not chosen. The locked configuration is the
+     product now. */
 ];
 
 async function shoot() {
