@@ -732,8 +732,11 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   const notes = await page.$$eval(".trayNote", (n) => n.map((x) => x.textContent.trim()));
   ok("no column describes what it is not showing", notes.every((t) => t === ""), JSON.stringify(notes));
   const labels = await page.$$eval(".tray[data-lane]", (n) => n.map((x) => x.getAttribute("aria-label")));
+  /* A lane that was already empty is exempt: it has no proportion to state,
+     and "0 of 0 shown" is a ratio of nothing to nothing. */
   ok("but each one says what it is showing, out of what",
-    labels.every((t) => / \d+ of \d+ shown$/.test(t)), JSON.stringify(labels));
+    labels.every((t) => / \d+ of \d+ shown$/.test(t) || /nothing here yet$/.test(t)),
+    JSON.stringify(labels));
   const count = await page.locator('.tray[data-lane="todo"] .trayCount').textContent();
   /* Figures and a solidus, never a lowercase word in a tracked mono cell. */
   ok("the count states filtered of total", /^\d+\/\d+$/.test(count.trim()), JSON.stringify(count));
@@ -2007,6 +2010,196 @@ for (const [q, w, label] of [["", 1280, "1280"], ["", 768, "768"], ["?state=plan
   ok("and the others say they are not", await page.evaluate(() =>
     [...document.querySelectorAll(".segItem:not([data-active])")]
       .every((n) => n.getAttribute("aria-selected") === "false")));
+  await page.close();
+}
+
+/* == a measure pass never resizes what it measures ================ */
+/* THE RULE. The fold flag was computed from the scroller's own height and then
+   grew that scroller, so the pass could not converge: one completion left a
+   column pinned at 623px against 252px of live content, drawing a "more below"
+   fold over nothing and throwing its Add row to the foot of the tray, for six
+   seconds, on the most common act in the product. This asserts the class, not
+   the instance: after any completion, on any board, every column's fold flag
+   must agree with its own content. */
+for (const [q, lane, label] of [["", "todo", "resting board"], ["?state=dense", "review", "peak season"]]) {
+  const page = await open(q);
+  const read = () => page.evaluate((ln) => {
+    const tray = document.querySelector(`.tray[data-lane="${ln}"]`);
+    const body = tray.querySelector(".trayBody");
+    const last = body.lastElementChild;
+    const extent = last ? last.offsetTop - body.offsetTop + last.offsetHeight : 0;
+    return {
+      more: body.hasAttribute("data-more"),
+      overflowing: extent > body.clientHeight + 1,
+      addY: Math.round(tray.querySelector(".trayAdd").getBoundingClientRect().top),
+      bodyBottom: Math.round(body.getBoundingClientRect().bottom),
+    };
+  }, lane);
+  const before = await read();
+  const box = await page.locator(`.tray[data-lane="${lane}"] .card .tick`).first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(900);
+  const after = await read();
+  ok("the fold flag tells the truth after a completion at " + label,
+    after.more === after.overflowing, JSON.stringify(after));
+  await page.waitForTimeout(1200);
+  const later = await read();
+  ok("and it is still true once everything settles at " + label,
+    later.more === later.overflowing, JSON.stringify(later));
+  ok("and the Add row follows the last card rather than the tray foot at " + label,
+    later.addY <= later.bodyBottom + 60, JSON.stringify({ addY: later.addY, bodyBottom: later.bodyBottom }));
+  if (label === "resting board") {
+    ok("and a column that shed a card gets shorter, not taller",
+      after.addY < before.addY, before.addY + " -> " + after.addY);
+  }
+  await page.close();
+}
+
+/* == a lane that sorts itself never names a position ============== */
+/* THE RULE, in both channels. Done re-sorts by completion date on every
+   render, so the drop line named an index the card never landed on and the
+   live region announced that index too. */
+{
+  const page = await open();
+  const order = () => page.$$eval('.tray[data-lane="done"] .cardTitle', (n) => n.map((x) => x.textContent.slice(0, 14)));
+  const before = await order();
+  const src = await page.locator('.tray[data-lane="done"] .card').last().boundingBox();
+  const dst = await page.locator('.tray[data-lane="done"] .card').first().boundingBox();
+  await page.mouse.move(src.x + 40, src.y + 20);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i += 1) {
+    await page.mouse.move(src.x + 40, src.y + 20 + (dst.y - src.y) * (i / 8));
+  }
+  const lines = await page.locator(".dropLine").count();
+  ok("a sorted lane draws no per-position drop line", lines === 0, String(lines));
+  ok("but it still shows it is the lane being dropped into",
+    (await page.locator('.tray[data-lane="done"][data-over]').count()) === 1);
+  await page.mouse.up();
+  await page.waitForTimeout(500);
+  const said = await page.locator("#say").textContent();
+  ok("and it never announces a position it will not honour",
+    !/position \d+ of \d+/.test(said), JSON.stringify(said));
+  ok("and the order it reports is the order it renders",
+    JSON.stringify(await order()) === JSON.stringify(before), JSON.stringify(await order()));
+  await page.close();
+}
+
+/* == the lift is on the node that moves =========================== */
+{
+  const page = await open();
+  const box = await page.locator('.tray[data-lane="todo"] .card').first().boundingBox();
+  await page.mouse.move(box.x + 40, box.y + 20);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i += 1) await page.mouse.move(box.x + 40 + i * 40, box.y + 20);
+  const src = await page.evaluate(() => {
+    const n = document.querySelector('.card[data-force="drag"]');
+    if (!n) return null;
+    const cs = getComputedStyle(n);
+    return { vacated: n.hasAttribute("data-vacated"), transform: cs.transform, opacity: cs.opacity };
+  });
+  ok("the card left behind reads as a vacancy, not as the object in flight",
+    Boolean(src) && src.vacated && src.transform === "none", JSON.stringify(src));
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  ok("and the vacancy is cleared when the gesture ends",
+    (await page.locator("[data-vacated]").count()) === 0);
+  await page.close();
+}
+
+/* == a lane that states a duration owns its clock ================= */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card').first().hover();
+  await page.locator('.tray[data-lane="todo"] .cardDots').first().click();
+  await page.waitForTimeout(150);
+  await page.locator('.cardMenu [data-lane="waiting"]').click();
+  await page.waitForTimeout(400);
+  const chip = await page.evaluate(() => {
+    const n = document.querySelector('.tray[data-lane="waiting"] .card .when');
+    return n ? n.textContent.trim() : null;
+  });
+  ok("a card moved into Waiting arrives with a clock", /^Held /.test(chip || ""), JSON.stringify(chip));
+  await page.close();
+}
+{
+  const page = await open();
+  const was = await page.evaluate(() => {
+    const n = document.querySelector('.tray[data-lane="done"] .card .when');
+    return n ? n.textContent.trim() : null;
+  });
+  await page.dragAndDrop('.tray[data-lane="done"] .card', '.tray[data-lane="todo"] .trayBody');
+  await page.waitForTimeout(500);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(500);
+  const back = await page.evaluate(() => {
+    const n = document.querySelector('.tray[data-lane="done"] .card .when');
+    return n ? n.textContent.trim() : null;
+  });
+  ok("and undoing a move out of Done restores the day it was finished",
+    back === was, JSON.stringify(was) + " -> " + JSON.stringify(back));
+  await page.close();
+}
+
+/* == the product's prose stays in the product's type ============== */
+/* THE RULE: no visible product prose may be re-served through a native title
+   attribute, where the OS repaints it in its own font at its own size. */
+{
+  const page = await open("?state=dense");
+  const leaked = await page.evaluate(() =>
+    [...document.querySelectorAll(".cardTitle[title], .cardNote[title]")].map((n) => n.className));
+  ok("no card's own prose is handed to an OS tooltip", leaked.length === 0, JSON.stringify(leaked));
+  await page.close();
+}
+
+/* == no ratio without a denominator =============================== */
+{
+  const page = await open("?state=filtered");
+  const counts = await page.$$eval(".trayCount", (n) => n.map((x) => x.textContent.trim()));
+  ok("no column head prints a proportion of nothing",
+    !counts.some((c) => /^0\/0$/.test(c)), JSON.stringify(counts));
+  const names = await page.$$eval(".tray[data-lane]", (n) => n.map((x) => x.getAttribute("aria-label")));
+  ok("and no region name says it either",
+    !names.some((t) => /0 of 0/.test(t || "")), JSON.stringify(names));
+  await page.close();
+}
+
+/* == one tracking inside one number =============================== */
+{
+  const page = await open("?state=filtered");
+  const two = await page.evaluate(() => {
+    const cell = document.querySelector(".trayCount");
+    const part = cell && cell.querySelector(".ofAll");
+    if (!part) return null;
+    return { cell: getComputedStyle(cell).letterSpacing, part: getComputedStyle(part).letterSpacing };
+  });
+  ok("a figure is set on one tracking, not two", !two || two.cell === two.part, JSON.stringify(two));
+  await page.close();
+}
+
+/* == the numeral contract survives the font shorthand ============= */
+/* `font: inherit` sets every font longhand including font-variant-numeric, so
+   it silently wiped tabular figures from the controls that carry live counts. */
+{
+  const page = await open();
+  const wiped = await page.evaluate(() =>
+    [...document.querySelectorAll(".late, .undated, .trayCount, .when")]
+      .filter((n) => n.offsetParent !== null && !/tabular-nums/.test(getComputedStyle(n).fontVariantNumeric))
+      .map((n) => n.className));
+  ok("every live counter still has tabular figures", wiped.length === 0, JSON.stringify(wiped));
+  await page.close();
+}
+
+/* == the product has one landmark ================================= */
+{
+  const page = await open();
+  ok("the sheet is a main landmark", (await page.locator("main.sheet").count()) === 1);
+  await page.close();
+}
+{
+  const page = await open("?state=loading");
+  ok("and it is one in the loading state too", (await page.locator("main.sheet").count()) === 1);
   await page.close();
 }
 

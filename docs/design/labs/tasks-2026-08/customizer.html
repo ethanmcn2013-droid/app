@@ -426,7 +426,7 @@ body {
 .deck .railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
 .deck .railGroup, .deck .railUtil { display: grid; gap: 4px; }
 .deck .railTile, .deck .railMark, .deck .segItem, .deck .railAvatar, .deck .dockAvatar, .deck .late {
-  font: inherit; letter-spacing: inherit; color: inherit;
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit;
   background: none; border: 0; padding: 0;
   -webkit-appearance: none;
 }
@@ -677,7 +677,7 @@ body {
 .deck .tick {
   grid-column: 1; grid-row: 1;
   width: 18px; height: 18px; border-radius: 50%;
-  border: 0; padding: 0; font: inherit; -webkit-appearance: none;
+  border: 0; padding: 0; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; -webkit-appearance: none;
   background: none;
   box-shadow: inset 0 0 0 1.4px var(--ink-4);
   margin-top: 1px;
@@ -693,7 +693,7 @@ body {
 .deck .tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
 .deck .tick:active { background: var(--line-strong); }
 .deck .tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
-.deck .cardTitleRow:has(.when) .cardTitle { text-wrap: wrap; }
+.deck .cardTitleRow:has(.when) .cardTitle { text-wrap: pretty; }
 .deck .cardTitleRow {
   grid-column: 2; grid-row: 1; min-width: 0;
   max-height: calc(14px * 1.36 * 3); overflow: hidden;
@@ -803,6 +803,11 @@ body {
   outline: none;
   --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
 }
+.deck .card[data-vacated] {
+  transform: none !important;
+  --card-ring: 0 0 0 1px var(--line-soft);
+  opacity: 0.4;
+}
 .deck .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
   cursor: grabbing;
@@ -827,7 +832,6 @@ body {
   color: var(--ink-2);
   min-height: calc(1.45em * 2 + 12px);
 }
-.deck .trayBody[data-more], .deck .trayBody[data-above] { flex: 1 1 auto; }
 .deck .trayAdd {
   display: flex; align-items: center; gap: 13px;
   height: 36px; padding: 0 8px 0 12px; margin-top: 4px;
@@ -874,7 +878,7 @@ body {
 .deck .cardMenu button {
   display: flex; align-items: center; gap: 9px;
   min-height: 34px; padding: 0 9px; border-radius: var(--r-chip);
-  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13);
   color: var(--ink-1); background: none; border: 0; text-align: left; cursor: pointer;
   transition: background-color var(--dur) var(--curve);
 }
@@ -901,12 +905,12 @@ body {
   background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600;
   letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
 .deck .draftDrop { height: 28px; padding: 0 10px; border-radius: var(--r-chip);
-  background: none; color: var(--ink-2); font: inherit; font-size: 12px;
+  background: none; color: var(--ink-2); font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px;
   letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
 .deck .draftDrop:hover { background: var(--wash); color: var(--ink-1); }
 .deck .draftDo::before, .deck .draftDrop::before { content: ""; position: absolute; inset: -8px -4px; }
 .deck .draftDo, .deck .draftDrop { position: relative; }
-.deck .trayCount .ofAll { color: var(--ink-3); letter-spacing: 0.04em; }
+.deck .trayCount .ofAll { color: var(--ink-3); }
 .deck .board[data-filtered] .tray:not([data-empty]) .trayCount { color: var(--ink-1); }
 .deck .draftHint {
   grid-column: 2; grid-row: 3;
@@ -915,7 +919,7 @@ body {
   color: var(--ink-3);
 }
 .deck .undated {
-  font: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
   color: var(--ink-2); background: none; border: 0; padding: 0;
   cursor: pointer; text-underline-offset: 3px;
 }
@@ -1085,7 +1089,7 @@ body {
 }
 .deck .dayMenu button {
   appearance: none; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1);
   text-align: left; padding: 0 9px; min-height: 34px; border-radius: 6px;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
@@ -1094,7 +1098,7 @@ body {
 .deck .dayMenu button svg { width: 13px; height: 13px; color: var(--ink-3); }
 .deck .drawerBulk { position: relative; padding: 10px 16px 0; }
 .deck .drawerDo {
-  appearance: none; border: 0; cursor: pointer; font: inherit;
+  appearance: none; border: 0; cursor: pointer; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit;
   width: 100%; min-height: 40px; padding: 0 14px; border-radius: var(--r-ctl);
   background: var(--ink); color: var(--white);
   font-size: 13px; font-weight: 600; letter-spacing: calc(var(--tr-13) + var(--tr-rev));
@@ -1137,7 +1141,7 @@ body {
 .deck .carryDo {
   flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
   background: var(--chrome-active); color: var(--on-ink-1);
-  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
   border: 0; cursor: pointer;
   transition: background-color var(--dur) var(--curve);
 }
@@ -1323,7 +1327,7 @@ body {
   display: inline-flex; align-items: center; gap: 8px;
   min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
   border: 1px solid var(--line-strong); background: var(--white);
-  font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
   cursor: pointer; transition: background var(--motion-fast) var(--curve);
 }
 .deck .emptyBoard button:hover { background: var(--wash); }
@@ -1928,8 +1932,11 @@ function daysLate(iso) {
    overdue" chip label — described a label the product stopped printing when
    the chip started carrying the value and the fill carrying the condition. */
 function heldFor(iso) {
+  /* Day zero is "today", not "0 days" — a card held since this morning has not
+     been held for no time. */
   const parts = String(iso).split("-").map(Number);
   const days = Math.round((Date.UTC(2026, 6, 16) - Date.UTC(parts[0], parts[1] - 1, parts[2])) / 86400000);
+  if (days <= 0) return "today";
   return days + (days === 1 ? " day" : " days");
 }
 
@@ -2245,7 +2252,11 @@ function board() {
           (rows.length || draftLane === c.id ? "" : " data-empty") +
           ' aria-describedby="tn-' + c.id + '"' +
           ' role="region" aria-label="' +
-          esc(c.name) + (filtering()
+          /* A lane that was already empty has no proportion to state, filtered
+             or not: "0 of 0 shown" is a ratio of nothing to nothing. Both
+             channels take the same branch, because closing only the visible
+             one leaves a screen reader hearing what the screen stopped saying. */
+          esc(c.name) + (filtering() && all.length
             ? ", " + rows.length + " of " + all.length + " shown"
             : rows.length
             ? ", " + rows.length + (rows.length === 1 ? " task" : " tasks")
@@ -2254,7 +2265,7 @@ function board() {
           '<span class="pip" aria-hidden="true"></span>' +
           '<h2 class="trayName">' + esc(c.name) + "</h2>" +
           '<span class="trayCount" aria-hidden="true">' + rows.length +
-            (filtering() ? '<span class="ofAll">/' + all.length + "</span>" : "") + "</span></div>" +
+            (filtering() && all.length ? '<span class="ofAll">/' + all.length + "</span>" : "") + "</span></div>" +
           /* Under a filter a column describes what it is showing, not what it
              normally holds — four notes were false in context. */
           /* Under a filter the column already carries its name, its count of
@@ -2561,7 +2572,7 @@ function dayFrom(when) {
 
 function loading() {
   return (
-    '<div class="sheet">' +
+    '<main class="sheet">' +
     /* The product's own furniture is a constant, not payload. Greying out
        the workspace chrome, the five column names and the view switcher
        made the wait look like a bigger outage than it is; what is actually
@@ -2616,7 +2627,7 @@ function loading() {
       '<span class="dockPrimary">' + I.plus + "<span>Add task</span></span>" +
       '<span class="dockRule"></span>' +
       '<span class="dockAvatar">' + B.operator.initials + "</span>" +
-    "</div></div>"
+    "</div></main>"
   );
 }
 
@@ -2642,7 +2653,7 @@ function specimens() {
     ["Drop target", null, "drop", "The column being moved into warms half a step and draws the line the card will land on. Ink only, like everything else."],
   ];
   return (
-    '<div class="sheet">' + head() +
+    '<main class="sheet">' + head() +
     '<div class="specProbe" aria-hidden="true"><div class="board">' +
     '<section class="tray"><div class="trayBody" tabindex="-1"></div></section>'.repeat(5) + "</div></div>" +
     '<div class="spec"><p class="specIntro">Every state a card can be in, at the exact width a tray gives it. ' +
@@ -2662,7 +2673,7 @@ function specimens() {
           : card(c[1], c[2], true)) +
       "</div>" +
       '<p class="specNote">' + c[3] + "</p></div>"
-    )).join("") + "</div></div></div>"
+    )).join("") + "</div></div></main>"
   );
 }
 
@@ -2670,7 +2681,7 @@ function renderApp() {
   const sheet =
     state === "loading" ? loading()
     : state === "cards" ? specimens()
-    : '<div class="sheet">' + head() + views() + board() + footPill() + dock() + "</div>";
+    : '<main class="sheet">' + head() + views() + board() + footPill() + dock() + "</main>";
   return '<div class="floor">' + rail() + sheet + (state === "planning" ? drawer() : "") + cardMenu() + "</div>";
 }
 
@@ -2714,6 +2725,16 @@ function toLane(id) {
   return "to the " + laneMid(id) + " column";
 }
 
+/* A lane whose render path imposes its own ordering cannot honour a position
+   the operator aimed at. Done re-sorts by completion date on every render, so
+   the drop line named an index the card never landed on — and the live region
+   announced that index too, telling a screen-reader operator a move had
+   succeeded that never happened.
+   THE RULE: any lane that sorts itself may not name a position in ANY channel.
+   Read from the sort branch rather than declared twice, so the two cannot
+   drift apart. */
+function laneSorts(lane) { return lane === "done"; }
+
 function moveTo(id, lane, index) {
   const rows = allTasks();
   const from = rows.findIndex((t) => t.id === id);
@@ -2735,6 +2756,13 @@ function moveTo(id, lane, index) {
     report = { completed: true, wasLate: wasLate };
   }
   if (was === "done" && lane !== "done") { task.prevLane = null; task.completedAt = null; }
+  /* Waiting exists to say how long something has been held, and a card moved
+     into it arrived with no clock at all — the lane's whole reason for being,
+     absent on every card that got there by hand.
+     THE RULE: a lane whose card states a duration owns the fact that duration
+     is measured from, and sets it on entry and clears it on exit. */
+  if (lane === "waiting" && was !== "waiting") task.heldSince = TODAY;
+  if (was === "waiting" && lane !== "waiting") task.heldSince = null;
   rows.splice(from, 1);
   task.lane = lane;
   /* Splice it in beside the card it was placed against, so the order the
@@ -3028,6 +3056,10 @@ function runUndo(act) {
   flyFrom = flyFrom ? flyFrom.getBoundingClientRect() : null;
   flyId = act.id;
   moveTo(act.id, act.lane, act.index);
+  /* Restored after the move, because moveTo re-stamps both on entry. */
+  const back = taskById(act.id);
+  if (back && act.wasHeldSince !== undefined) back.heldSince = act.wasHeldSince;
+  if (back && act.wasCompletedAt !== undefined) back.completedAt = act.wasCompletedAt;
   focusId = act.id;
   refocus = true;
   say((task ? task.title : "The task") + " is back " + inLane(act.lane) + ".");
@@ -3553,6 +3585,23 @@ function onDragStart(event) {
   const at = place(carriedId);
   carriedFrom = { lane: laneIds()[at.x], index: at.y };
   card.setAttribute("data-force", "drag");
+  /* The product's lift was being painted on the card that STAYS, while the
+     object actually moving under the hand was the browser's default drag
+     bitmap, composited by the OS outside the palette. The engine snapshots the
+     node as it is at this instant, so the lift is pinned into that bitmap here,
+     and the node left behind becomes the vacancy it actually is next frame.
+     THE RULE: the lift is drawn on exactly one node at a time, and only on the
+     node that is moving. */
+  if (event.dataTransfer && event.dataTransfer.setDragImage) {
+    const box = card.getBoundingClientRect();
+    try {
+      event.dataTransfer.setDragImage(card, event.clientX - box.left, event.clientY - box.top);
+    } catch (e) { /* an engine that draws its own is no worse than before */ }
+  }
+  requestAnimationFrame(() => {
+    const still = document.querySelector('.card[data-force="drag"]');
+    if (still) still.setAttribute("data-vacated", "");
+  });
   /* Mandatory snap re-snaps every per-frame nudge back to zero, so it stands
      down for the length of the gesture. */
   const board = card.closest(".board");
@@ -3586,6 +3635,9 @@ function onDragOver(event) {
   tray.setAttribute("data-over", "");
   const body = tray.querySelector(".trayBody");
   overLane = { lane: tray.dataset.lane, index: dropIndex(body, event.clientY) };
+  /* A sorted lane gets the lane-level wash it already has and no line, because
+     a line here would name a position the lane is about to overrule. */
+  if (laneSorts(overLane.lane)) return;
   const line = document.createElement("span");
   line.className = "dropLine";
   const cards = [...body.querySelectorAll(".card[data-id]")].filter((c) => c.dataset.id !== carriedId);
@@ -3632,6 +3684,8 @@ function onDrop(event) {
   const sameLane = overLane.lane === carriedFrom.lane;
   const from = carriedFrom;
   const task = taskById(id);
+  const heldWas = task ? task.heldSince : null;
+  const doneWas = task ? task.completedAt : null;
   const did = moveTo(id, overLane.lane, overLane.index);
   /* A drop is the most mis-fireable gesture on a pointer board and had no
      way back; only a keyboard-carried card had Escape. */
@@ -3643,10 +3697,19 @@ function onDrop(event) {
        "All 13 are hidden." behind a chip reading "0 overdue". */
     completed(task, did && did.cleared);
   } else if (overLane.lane !== "done") {
-    arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: overLane.lane });
+    /* moveTo re-stamps heldSince and completedAt on entry, so a receipt that
+       does not carry the old values cannot restore them — undoing a card
+       dragged out of Done used to rewrite "Completed 15 Jul" to today. */
+    arm({ kind: "move", id: id, title: task.title, lane: from.lane, index: from.index, toLane: overLane.lane,
+          wasHeldSince: heldWas, wasCompletedAt: doneWas });
   }
   const place = tasksFor(overLane.lane);
-  if (!finishing) say(sameLane
+  /* The same law in the spoken channel: a sorted lane never announces an index.
+     Dragging within Done used to say "moved to position 1 of 5" for a move the
+     sort discarded. */
+  if (!finishing && laneSorts(overLane ? overLane.lane : from.lane)) {
+    say(taskById(id).title + " is in the done column, newest first.");
+  } else if (!finishing) say(sameLane
     ? taskById(id).title + " moved to position " + (overLane.index + 1) + " of " + place.length + " " + inLane(overLane.lane) + "."
     : taskById(id).title + " moved " + toLane(overLane.lane) + ".");
   focusId = id;
@@ -3679,10 +3742,16 @@ function trimToWord(node) {
   const clip = node.classList.contains("cardTitle") ? node.parentElement : node;
   const fits = () => clip.scrollHeight <= clip.clientHeight + 1;
   if (node.dataset.full) node.textContent = node.dataset.full;
-  if (fits()) { node.removeAttribute("title"); return; }
+  if (fits()) return;
   const full = node.dataset.full || node.textContent;
   node.dataset.full = full;
-  node.title = full;
+  /* The trimmed sentence used to be handed to the operating system, which
+     re-served 13px Geist as Segoe UI at OS size in an OS box - the one place
+     the product's own prose left its own type system. The full string stays on
+     the dataset for the regrow path, and assistive technology already has it
+     through the card's aria-describedby.
+     THE RULE: no visible product prose may be re-served through a native
+     title attribute. */
   const words = full.split(" ");
   let low = 1;
   let high = words.length;
@@ -3715,8 +3784,14 @@ function tidy(words) {
    card sat permanently under a white gradient with nothing below it. */
 function measureEdges(target) {
   target.querySelectorAll(".trayBody").forEach((body) => {
+    /* Read the content's own extent from offset geometry, which ignores
+       transforms. scrollHeight includes the FLIP settle still running after a
+       completion, so a column that had just shed a card measured as overflowing
+       and latched a fold over nothing. */
+    const last = body.lastElementChild;
+    const extent = last ? last.offsetTop - body.offsetTop + last.offsetHeight : 0;
     body.toggleAttribute("data-above", body.scrollTop > 1);
-    body.toggleAttribute("data-more", body.scrollTop + body.clientHeight < body.scrollHeight - 1);
+    body.toggleAttribute("data-more", body.scrollTop + body.clientHeight < extent - 1);
     /* The rules sit on the tray, so the tray is told where its own scroller
        starts and ends rather than the two being kept in step by hand. */
     const tray = body.closest(".tray");

@@ -162,7 +162,7 @@
    so the whole spine was a row of focusable generics inside a nav that
    contained no links. The reset below means the change costs no pixels. */
 .railTile, .railMark, .segItem, .railAvatar, .dockAvatar, .late {
-  font: inherit; letter-spacing: inherit; color: inherit;
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit;
   background: none; border: 0; padding: 0;
   -webkit-appearance: none;
 }
@@ -532,7 +532,7 @@
 .tick {
   grid-column: 1; grid-row: 1;
   width: 18px; height: 18px; border-radius: 50%;
-  border: 0; padding: 0; font: inherit; -webkit-appearance: none;
+  border: 0; padding: 0; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; -webkit-appearance: none;
   background: none;
   box-shadow: inset 0 0 0 1.4px var(--ink-4);
   margin-top: 1px;
@@ -557,11 +557,14 @@
    title made it establish its own formatting context, which is a block's
    instruction to avoid floats rather than flow around them — so the date
    chip was stealing width from all three lines instead of one. */
-/* `pretty` fights the float exclusion: measured, it opened titles on two
-   words beside a chip and pushed two-line titles to three. Plain greedy
-   wrapping beside a float is the right tool, and it fires only when a chip is
-   present so nothing without one can regress. */
-.cardTitleRow:has(.when) .cardTitle { text-wrap: wrap; }
+/* Re-measured at round 16 across board, dense and filtered: `pretty` beside
+   the float now removes 14 of the product's one-word last lines and leaves the
+   three-line count unchanged at 21, with nothing pushed past the clamp. The
+   earlier reading that it made things worse was taken before the chip geometry
+   settled. Greedy `wrap` was the only text in the file with no widow control
+   at all, which is the real objection.
+   THE RULE: no text block may have two wrapping laws switched by a sibling. */
+.cardTitleRow:has(.when) .cardTitle { text-wrap: pretty; }
 .cardTitleRow {
   grid-column: 2; grid-row: 1; min-width: 0;
   max-height: calc(14px * 1.36 * 3); overflow: hidden;
@@ -730,6 +733,14 @@
   outline: none;
   --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
 }
+/* The slot the card came out of, while the card is elsewhere. It keeps its
+   shape so the board does not reflow under the hand, and loses everything that
+   made it read as an object. */
+.card[data-vacated] {
+  transform: none !important;
+  --card-ring: 0 0 0 1px var(--line-soft);
+  opacity: 0.4;
+}
 .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
   cursor: grabbing;
@@ -776,7 +787,18 @@
 }
 /* A column with more in it than fits takes the rest of the tray, so its
    scroller is as tall as the sheet allows. */
-.trayBody[data-more], .trayBody[data-above] { flex: 1 1 auto; }
+/* There used to be a rule here growing the scroller whenever the fold flag was
+   set — and the fold flag is computed from the scroller's own height. A measure
+   pass that resizes the box it measures cannot converge: after one completion
+   the source column stayed pinned at 623px against 252px of live content, drew
+   a "more below" fold over nothing, and threw its Add row to the foot of the
+   tray, holding that for six seconds on the most common act in the product.
+   The coupling is gone rather than inverted: making the growth unconditional
+   fixed the lie and cost every resting column its content-hugging height, which
+   is worse. The body hugs its content and scrolls when the tray runs out, both
+   from `flex: 0 1 auto` alone, and the flag is now purely presentational.
+   THE RULE: no attribute a measure pass writes may participate in the layout
+   that same pass measures. */
 /* On the card's own two verticals: the plus centred on the tick, the label
    on the title. */
 .trayAdd {
@@ -842,7 +864,7 @@
 .cardMenu button {
   display: flex; align-items: center; gap: 9px;
   min-height: 34px; padding: 0 9px; border-radius: var(--r-chip);
-  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13);
   color: var(--ink-1); background: none; border: 0; text-align: left; cursor: pointer;
   transition: background-color var(--dur) var(--curve);
 }
@@ -888,7 +910,7 @@
   background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600;
   letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
 .draftDrop { height: 28px; padding: 0 10px; border-radius: var(--r-chip);
-  background: none; color: var(--ink-2); font: inherit; font-size: 12px;
+  background: none; color: var(--ink-2); font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px;
   letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
 .draftDrop:hover { background: var(--wash); color: var(--ink-1); }
 .draftDo::before, .draftDrop::before { content: ""; position: absolute; inset: -8px -4px; }
@@ -902,7 +924,10 @@
    The denominator steps back to ink-3 and not to ink-4: measured, ink-4 on a
    white sheet is 1.89:1 at 11px, which is a rank the operator cannot read.
    The rank comes from the numerator stepping forward instead. */
-.trayCount .ofAll { color: var(--ink-3); letter-spacing: 0.04em; }
+/* Two trackings inside one figure put the numerator on 0.1em and the
+   denominator on 0.04em, so the number's own ink edge moved when a filter came
+   on. It inherits the cell's tracking. */
+.trayCount .ofAll { color: var(--ink-3); }
 .board[data-filtered] .tray:not([data-empty]) .trayCount { color: var(--ink-1); }
 .draftHint {
   grid-column: 2; grid-row: 3;
@@ -914,7 +939,7 @@
 /* The count of tasks with no day, said in words where a thumb and a screen
    reader can both reach it. */
 .undated {
-  font: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
   color: var(--ink-2); background: none; border: 0; padding: 0;
   cursor: pointer; text-underline-offset: 3px;
 }
@@ -1138,7 +1163,7 @@
 }
 .dayMenu button {
   appearance: none; border: 0; background: none; cursor: pointer;
-  font: inherit; font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1);
   text-align: left; padding: 0 9px; min-height: 34px; border-radius: 6px;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
@@ -1148,7 +1173,7 @@
 /* The verb appears only when there is a picked set to apply it to. */
 .drawerBulk { position: relative; padding: 10px 16px 0; }
 .drawerDo {
-  appearance: none; border: 0; cursor: pointer; font: inherit;
+  appearance: none; border: 0; cursor: pointer; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit;
   width: 100%; min-height: 40px; padding: 0 14px; border-radius: var(--r-ctl);
   background: var(--ink); color: var(--white);
   font-size: 13px; font-weight: 600; letter-spacing: calc(var(--tr-13) + var(--tr-rev));
@@ -1207,7 +1232,7 @@
 .carryDo {
   flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
   background: var(--chrome-active); color: var(--on-ink-1);
-  font: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
   border: 0; cursor: pointer;
   transition: background-color var(--dur) var(--curve);
 }
@@ -1532,7 +1557,7 @@
   display: inline-flex; align-items: center; gap: 8px;
   min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
   border: 1px solid var(--line-strong); background: var(--white);
-  font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
   cursor: pointer; transition: background var(--motion-fast) var(--curve);
 }
 .emptyBoard button:hover { background: var(--wash); }

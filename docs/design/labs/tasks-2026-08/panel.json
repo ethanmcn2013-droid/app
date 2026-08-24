@@ -870,6 +870,77 @@
           "done": "The fades start where the board starts, stamped from the measured board offset in the same pass that stacks the header. The 6px overlap that keeps the column rule running unbroken to the sheet edge is preserved deliberately, and the gate asserts the relationship rather than the number."
         }
       ]
+    },
+    {
+      "round": 16,
+      "mode": "converge",
+      "frozen": true,
+      "loopRebuilt": {
+        "date": "2026-08-24",
+        "note": "First round on the rebuilt loop. The surface is frozen, seats state a class-level rule per finding, the gate's proven claims go into the brief, verification is spent individually only on findings at or above 1.0, and every seat reports the score it would give if its own findings were fixed. Five seats instead of seven, 18 agents instead of 42, 1.45M tokens instead of about 2.8M."
+      },
+      "scores": {
+        "Interaction and states": 8.3,
+        "UX and information design": 8.5,
+        "Product taste and emotional resonance": 8.4,
+        "Measured evidence": 8.5,
+        "Typography": 8.6
+      },
+      "headroom": {
+        "Interaction and states": 9.2,
+        "UX and information design": 9.1,
+        "Product taste and emotional resonance": 9.1,
+        "Measured evidence": 9.1,
+        "Typography": 9.2
+      },
+      "predicted": 9.1,
+      "findings": 24,
+      "confirmed": 16,
+      "refuted": 8,
+      "fixed": 16,
+      "deferredBuilds": 1,
+      "gateAfter": 270,
+      "headline": "The floor rises 7.9 to 8.3 at 48% of the previous round's cost, and the shape of the round is different from any of the fifteen before it. The worst finding is a 3, where rounds 12 and 13 opened with 9s. Every seat lands between 8.3 and 8.6 — the tightest spread of the engagement — and every seat puts its own headroom at 9.1 or 9.2, so the panel agrees on where remediation lands. Exactly one finding asked for new capability and was deferred rather than built, which is the freeze doing its work: in round 15, 68% of confirmed defect cost came from surface built since the previous panel; here it is effectively none. Two findings share one root — a measure pass that resized the box it was measuring, so a completed task left its column pinned at 623px against 252px of live content, drawing a fold over nothing and throwing the Add row to the foot of the tray for six seconds, on the most common act in the product. Batched verification refuted 8 of 24, a 33% rate against the 36% the old loop paid a full agent per finding to get, and two of those refutations corrected measurement errors in the seat's own geometry. The gate grew from 299 assertions to 270.",
+      "worst": [
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 3,
+          "problem": "Completing a task is the act this product exists for, and it ended by lying about the column it left. From about 270ms to six seconds after a tick, the source tray stayed pinned at the scroller maximum — 623px against 252px of live content — carrying the fold flag, so the column drew the product's own \"there is more below\" hairline over nothing and threw its Add row to the foot of the tray. The cause was a rule that grew the scroller when the fold flag was set, while the fold flag was computed from the scroller's own height.",
+          "done": "The coupling is gone rather than inverted — making the growth unconditional fixed the lie and cost every resting column its content-hugging height, which is worse. The body hugs its content and scrolls when the tray runs out, both from one flex value, and the flag is purely presentational. The fold is measured from the content's own offset geometry, which ignores the settle transforms that were inflating scrollHeight straight after a completion. THE RULE, now asserted on both the resting and the peak board: no attribute a measure pass writes may participate in the layout that same pass measures."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 3,
+          "problem": "On a pointer drag the product painted its lift — the scale, the tilt, the one heavy shadow — onto the card that STAYS in the source slot, and handed the object actually moving under the hand to the browser's default drag bitmap, composited by the OS outside the palette. The board's defining gesture was the one thing on screen the product was not drawing.",
+          "done": "The lift is pinned into the drag bitmap at the moment the engine snapshots it, and on the next frame the node left behind becomes the vacancy it actually is: shape kept so the board does not reflow under the hand, everything that made it read as an object gone. THE RULE: the lift is drawn on exactly one node at a time, and only on the node that is moving."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 2,
+          "problem": "Done re-sorts by completion date on every render, and the board still drew a per-gap drop line in it. Dragging a card into the gap between rows 3 and 4 drew the line there and landed the card at index 0; dragging the oldest Done card to the top drew the line and changed nothing at all. The refuter found it worse than reported: the live region announced the same false index, so a screen-reader operator was told a move had succeeded that never happened.",
+          "done": "A sorted lane draws no per-position indicator and announces no position. It keeps the lane-level wash it already had, so the operator still sees which column will take the card. THE RULE, closing both channels: any lane whose render path imposes its own ordering may not name a position in ANY channel — read from the sort branch itself rather than declared twice, so the two cannot drift apart."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 2,
+          "problem": "Waiting exists to say how long something has been held — its whole column note is \"Held by a reply, a delivery, or a decision.\" A card moved into it by hand arrived with no clock and no chip at all, so the lane's entire reason for being was absent on every card that got there by any route except the seed.",
+          "done": "The lane owns the fact its cards state: entering Waiting sets the held date, leaving clears it, and day zero reads \"Held today\" rather than \"Held 0 days\". The move receipt now carries the time facts the move overwrites, which also repairs a sibling the seat did not report: undoing a card dragged out of Done used to rewrite the day the work was finished to today. THE RULE: a lane whose card states a duration owns the fact that duration is measured from."
+        },
+        {
+          "seat": "Typography",
+          "cost": 1.5,
+          "problem": "The word-safe trim is the best piece of typesetting in the file, and it then handed the sentence it had just trimmed to the operating system. A native title attribute re-served the card's own 13px Geist prose as the OS font at OS size in an OS box — the one place the product's writing left its own type system.",
+          "done": "The title is gone; the full string stays on the dataset for the regrow path, and assistive technology already had it through the card's own description. THE RULE: no visible product prose may be re-served through a native title attribute."
+        }
+      ],
+      "deferred": [
+        {
+          "seat": "Product taste and emotional resonance",
+          "id": "no-single-memorable-moment",
+          "cost": 4,
+          "note": "The highest-cost item in the round, and correctly not built. Asked to name the one moment a stranger would remember, the seat could not. Its own proposal is to spend it on the set-down the founder's configuration already names — the shadow collapsing to flat as a card settles into Done, with the count arriving on the landing frame — and it notes the tilt already in the pointer lift is the second half of that gesture and currently goes unseen. Every seat's headroom is 9.1 or 9.2, which is consistent with the freeze topping out just under the gate and this being the thing that closes the rest."
+        }
+      ]
     }
   ]
 }
