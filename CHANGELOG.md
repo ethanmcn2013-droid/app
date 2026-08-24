@@ -4,6 +4,17 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-08-22 · T·152 · tightens · design tokens now come from the package, not a copy
+
+**The app's system tokens are imported from the `signal-ds` npm package
+instead of the vendored `src/ds/` copies, closing the drift risk between
+what the app ships and what the design system publishes.** `globals.css`
+imports `signal-ds/tokens.css` and `signal-ds/tailwind.css`; the two
+vendored files are deleted and the app-owned `theme-overrides.css` stays.
+Zero visual change by construction — same 2.1.0 token values, one source.
+Part of the founder-approved ds-foundation pivot (tokens-first contract,
+2026-08-22); studio and signal-motion swaps land alongside.
+
 ## 2026-08-22 · T·151 · tightens · a four-lane board fills its sheet again, and legacy boards get their lane back
 
 **The founder's live board came back from A·Air with dead margins down both
