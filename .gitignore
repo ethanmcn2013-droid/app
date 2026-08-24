@@ -84,4 +84,6 @@ m-tmp.mjs
 scripts/design/_*.mjs
 chip-probe*.mjs
 m-probe*.mjs
+probe_*.mjs
+probe-*.mjs
 docs/design/labs/tasks-2026-08/shots/_*.png
