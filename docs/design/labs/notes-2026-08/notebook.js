@@ -138,7 +138,7 @@
     const host = mount.querySelector(".top") || mount.querySelector(".dock");
     if (host) host.toggleAttribute("data-live", live);
     for (const node of mount.querySelectorAll(".topMeta[data-count], .dockCount")) {
-      node.textContent = node.classList.contains("dockCount") ? String(draft.length) : `${draft.length} / 4000`;
+      node.textContent = `${draft.length} / 4000`;
     }
   }
 
@@ -1348,7 +1348,14 @@
        no chord, so this IS the way to keep a note, and it was absent
        for the whole time anybody was typing one. */
     const commit =
-      `<span class="dockCount tab commitPart">${draft.length} / 4000</span>` +
+      /* Was "n / 4000" here AND a bare aria-hidden n in the verbs row:
+         one number, printed twice, in two grammars, eating 37px of a
+         326px foot at 360 — where it pushed the commit control out
+         from under the suite row and left it with nine live pixels of
+         thirty-six. The count appears when it is worth knowing. */
+      (draft.length >= 3600
+        ? `<span class="dockCount tab commitPart">${draft.length} / 4000</span>`
+        : "") +
       `<button class="dockGlyph commitPart" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`;
     /* On a wide screen the capture field is on the desk's paper, and
        reading a note replaces it. So the dock carries the way back to
@@ -1368,7 +1375,6 @@
                    <button class="dockGlyph" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}</button>
                    <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
                    <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
-                   ${live ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span>` : ""}
                    ${commit}
                  </div>
                  <div class="dockRow" data-suite>
@@ -2422,6 +2428,20 @@
         Math.round(idxEl.getBoundingClientRect().bottom - (wrapEl.getBoundingClientRect().top - scrim)),
       );
       root.style.setProperty("--walk-reserve", reserve + "px");
+    }
+    /* The band the undo strip actually occupies, measured rather than
+       guessed at 140px. With a real touch pointer the coarse block makes
+       an index row 88px instead of 64, so a row straddled the strip at
+       390 — invisible for nine rounds because this file opened phone
+       widths with a mouse. */
+    const stripEl = mount.querySelector(".undo");
+    const sheetEl = mount.querySelector(".sheet");
+    if (stripEl && sheetEl) {
+      const band = Math.max(
+        0,
+        Math.round(sheetEl.getBoundingClientRect().bottom - stripEl.getBoundingClientRect().top) + 10,
+      );
+      root.style.setProperty("--undo-band", band + "px");
     }
     measureClip();
     /* A picked sentence must never be off screen while the primary reads

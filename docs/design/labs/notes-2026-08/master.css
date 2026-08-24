@@ -1509,6 +1509,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   .dock .railTile[data-active]::after { display: none; }
   .dock .dockAvatar { width: 30px; height: 30px; margin: 0 0 0 4px; background: var(--white); color: var(--ink); }
   .dock .dockGlyph, .dock .dockCount { margin-bottom: 0; }
+  /* At 360 the two dock rows want 330px of a 326px foot, so the suite
+     row was painted over the right third of the commit control and a
+     real tap at the white check silently failed to save — nine live
+     pixels of thirty-six, no error, no announcement, the thought just
+     not captured. The decorative divider is the thing that gives: it
+     separates two groups that a 4px gap already separates, and it is
+     the only item in the foot that is not a target. */
+  @media (max-width: 380px) {
+    .dock .dockRule { display: none; }
+    .dock .dockAvatar { margin-left: 2px; }
+  }
   /* The separate capsule stands down; its tiles are in the dock. */
   .rail { display: none; }
   .sheet { height: calc(100dvh - 68px - var(--inset) * 2 - env(safe-area-inset-bottom)); }
@@ -1518,7 +1529,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
      and writes --dock-h; the pile reserves exactly that. */
   .index { padding-bottom: calc(var(--dock-h, 103px) + 16px); scroll-padding-bottom: calc(var(--dock-h, 103px) + 16px); }
   .undo { bottom: 88px; }
-  .sheet[data-undo] .indexWrap { padding-bottom: 140px; }
+  .sheet[data-undo] .indexWrap { padding-bottom: var(--undo-band, 140px); }
   .sheet[data-undo] .index { padding-bottom: 12px; }
   /* The one place the ramp bends, and it bends by dropping a step rather
      than inventing a value: 34 does not fit a 390 screen. */

@@ -29,8 +29,23 @@ function ok(name, pass, detail) {
 
 const browser = await chromium.launch();
 
+/* PHONE WIDTHS GET A REAL PHONE.
+   Round 10: every phone assertion in this file was opening a narrow
+   viewport with a MOUSE, so the @media (pointer: coarse) branch — the
+   one that governs the surface the locked architecture singles out —
+   was never evaluated by any of them. The blocker that exposed it was a
+   Save control with nine live pixels of thirty-six at 360, silently
+   failing to capture a note, which this file could not see because
+   getBoundingClientRect was 36x44 the whole time. Anything under 500
+   CSS px is driven as a touch device now. */
 async function open(query = "", viewport = { width: 1440, height: 960 }) {
-  const page = await browser.newPage({ viewport });
+  const phone = viewport.width < 500;
+  const context = await browser.newContext({
+    viewport,
+    hasTouch: phone,
+    isMobile: phone,
+  });
+  const page = await context.newPage();
   page.on("pageerror", (e) => errors.push(String(e).split("\n")[0]));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   await page.goto(FILE + query);
@@ -2689,6 +2704,138 @@ const said = (page) => page.locator("#say").textContent();
     );
     await page.close();
   }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 10
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the phone can actually reach the control that keeps the note ── */
+{
+  /* The Save control had nine live pixels of thirty-six at 360: the
+     suite row was painted over it, a real tap at the white check left
+     the field full and said nothing, and the thought was silently not
+     captured. getBoundingClientRect saw 36x44 the whole time, which is
+     why the audit's touch pass could not see it either. This asserts
+     the composited hit area, not the box. */
+  for (const width of [360, 375, 390, 414, 430]) {
+    for (const len of [1, 100, 3999]) {
+      const page = await open("", { width, height: 844 });
+      await page.evaluate((n) => {
+        const f = document.querySelector(".phoneField");
+        f.value = "x".repeat(n);
+        f.dispatchEvent(new Event("input", { bubbles: true }));
+      }, len);
+      await page.waitForTimeout(620);
+      const hit = await page.evaluate(() => {
+        const k = document.querySelector('.dock [data-act="keep"]');
+        if (!k) return { absent: true };
+        const kb = k.getBoundingClientRect();
+        const db = document.querySelector(".dock").getBoundingClientRect();
+        const cy = Math.round(kb.top + kb.height / 2);
+        const cx = Math.round(kb.left + kb.width / 2);
+        let run = 0;
+        for (let x = Math.ceil(kb.left); x <= Math.floor(kb.right); x += 1) {
+          const el = document.elementFromPoint(x, cy);
+          if (el && el.closest('[data-act="keep"]')) run += 1;
+        }
+        let down = 0;
+        for (let y = Math.ceil(kb.top); y <= Math.floor(kb.bottom); y += 1) {
+          const el = document.elementFromPoint(cx, y);
+          if (el && el.closest('[data-act="keep"]')) down += 1;
+        }
+        return {
+          across: run,
+          downward: down,
+          w: Math.round(kb.width),
+          inside: kb.left >= db.left - 1 && kb.right <= db.right + 1,
+        };
+      });
+      ok(
+        `${width} @${len} chars: every drawn pixel of the commit is the commit`,
+        !hit.absent && hit.across >= hit.w - 1,
+        `${hit.across}/${hit.w} live`,
+      );
+      ok(`${width} @${len} chars: and it sits inside the dock`, !hit.absent && hit.inside);
+      await page.close();
+    }
+  }
+}
+{
+  /* And the gesture itself, with a real finger rather than a click. */
+  for (const width of [360, 390, 430]) {
+    const page = await open("", { width, height: 844 });
+    await page.locator(".phoneField").click();
+    await page.keyboard.type("Ring the marquee company about the side panels", { delay: 0 });
+    await page.waitForTimeout(620);
+    const box = await page.locator('.dock [data-act="keep"]').boundingBox();
+    await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(620);
+    ok(
+      `${width}: a real tap at the visual centre of Save keeps the note`,
+      (await page.locator(".phoneField").inputValue()) === "",
+      await page.locator(".phoneField").inputValue(),
+    );
+    ok(`${width}: and it says so`, /Saved\./.test(await said(page)), (await said(page)).slice(0, 40));
+    await page.close();
+  }
+}
+{
+  /* The inverse, because raising the commit's stacking without removing
+     the overflow would have traded a silent non-save for a silent
+     wrong-save, which is worse. Every other control in the foot must
+     answer its own tap. */
+  const page = await open("", { width: 360, height: 844 });
+  const wrong = await page.evaluate(() => {
+    const out = [];
+    for (const el of document.querySelectorAll(".dock .railTile, .dock .dockAvatar, .dock .dockGlyph")) {
+      const b = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(Math.round(b.left + b.width / 2), Math.round(b.top + b.height / 2));
+      if (!hit || !el.contains(hit)) {
+        if (hit && hit.closest('[data-act="keep"]')) out.push(el.getAttribute("aria-label") || el.className);
+      }
+    }
+    return out;
+  });
+  ok("at 360 no other dock control's own centre reaches the commit instead", wrong.length === 0, wrong.join(" · "));
+  await page.close();
+}
+
+/* ── the dock does not change height while somebody is typing ────── */
+{
+  /* The counter used to be printed twice, in two grammars, and widened
+     the foot mid-draft. paint() measures the dock into --dock-h, which
+     drives the pile's reserve, so a dock that grows as the count crosses
+     a threshold heaves the pile under the person's thumb. */
+  for (const width of [360, 390]) {
+    const page = await open("", { width, height: 844 });
+    const heights = [];
+    for (const n of [3599, 3600, 3601]) {
+      await page.evaluate((len) => {
+        const f = document.querySelector(".phoneField");
+        f.value = "x".repeat(len);
+        f.dispatchEvent(new Event("input", { bubbles: true }));
+      }, n);
+      await page.waitForTimeout(620);
+      heights.push(await page.evaluate(() => Math.round(document.querySelector(".dock").getBoundingClientRect().height)));
+    }
+    ok(
+      `${width}: the counter appearing does not move the dock`,
+      heights[0] === heights[1] && heights[1] === heights[2],
+      heights.join("/"),
+    );
+    await page.close();
+  }
+}
+{
+  /* One number, once. It was printed as a bare aria-hidden count in the
+     verbs row AND as "n / 4000" beside the commit. */
+  const page = await open("", { width: 390, height: 844 });
+  await page.locator(".phoneField").fill("Confirm the second bar has its own float.");
+  await page.waitForTimeout(620);
+  ok("the phone prints the draft length once, or not at all", (await page.locator(".dockCount").count()) <= 1);
+  await page.close();
 }
 
 ok("no console errors anywhere", errors.length === 0, [...new Set(errors)].slice(0, 3).join(" · "));
