@@ -30,7 +30,7 @@ const args = new Map(
 
 const LAB = path.resolve("docs/design/labs/tasks-2026-08");
 const VARIANT = args.get("v") ?? "locked";
-const STATES = (args.get("states") ?? "board,cards,dense,empty,planning").split(",");
+const STATES = (args.get("states") ?? "board,cards,dense,empty,filtered,planning").split(",");
 const VIEWPORT = args.get("viewport") ?? "1440x960";
 const AS_JSON = args.get("json") === "true";
 
@@ -151,9 +151,20 @@ const AUDIT = `(() => {
       const family = cs.fontFamily.split(",")[0].replace(/["']/g, "").trim();
       if (!/^Geist( Mono)?$/.test(family)) out.families.push({ el: describe(el), family });
 
-      /* 4. contrast, against the real composited backdrop */
+      /* 4. contrast, against the real composited backdrop.
+         Element opacity composites the declared colour rather than replacing
+         it, so a tray at opacity .5 rendered #111 as #888 — 3.54:1 — while
+         this pass read the declared #111 and certified it. Every ancestor's
+         opacity is multiplied into the foreground alpha before the ratio is
+         taken, so the gate reads the pixel rather than the stylesheet. */
       const fg = parse(cs.color);
       if (fg && fg.a > 0) {
+        let dimmed = 1;
+        for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+          const o = parseFloat(getComputedStyle(n).opacity);
+          if (Number.isFinite(o) && o < 1) dimmed *= o;
+        }
+        fg.a *= dimmed;
         const bg = backdropOf(el);
         const composited = over(fg, bg);
         const size = parseFloat(cs.fontSize);

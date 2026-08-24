@@ -90,6 +90,7 @@ const FRAMES = [
   ["cards", "locked-cards--1440x960.png", 1180],
   ["dense", "locked-dense--1440x960.png", 1180],
   ["empty", "locked-empty--1440x960.png", 1180],
+  ["filtered", "locked-filtered--1440x960.png", 1180],
   ["loading", "locked-loading--1440x960.png", 1180],
   ["planning", "locked-planning--1440x960.png", 1180],
   ["tablet", "locked-board--768x1024.png", 768],

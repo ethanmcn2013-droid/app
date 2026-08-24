@@ -473,8 +473,9 @@ body {
 .deck .sheet::after {
   content: "";
   position: absolute; right: 0; top: 118px; bottom: 0;
-  width: 44px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), var(--white));
+  
+  width: 96px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 46%, var(--white) 100%);
   opacity: 0; pointer-events: none; z-index: 1;
   transition: opacity var(--dur) var(--curve);
 }
@@ -482,8 +483,8 @@ body {
 .deck .sheet::before {
   content: "";
   position: absolute; left: 0; top: 118px; bottom: 0;
-  width: 44px; z-index: 1;
-  background: linear-gradient(270deg, rgba(255, 255, 255, 0), var(--white));
+  width: 96px; z-index: 1;
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 46%, var(--white) 100%);
   opacity: 0; pointer-events: none;
   transition: opacity var(--dur) var(--curve);
 }
@@ -508,14 +509,16 @@ body {
 .deck .headName {
   font-size: 18px; font-weight: 600; letter-spacing: var(--tr-18);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 0 1 auto; min-width: 8ch;
+  flex: 0 0 auto; min-width: 0;
 }
 .deck .headFacts {
   display: flex; align-items: center; gap: 14px;
   font-size: 13px; font-weight: 400; color: var(--ink-2);
-  letter-spacing: var(--tr-13); white-space: nowrap;
+  letter-spacing: var(--tr-13); white-space: nowrap; min-width: 0;
 }
 .deck .headFacts b { font-weight: 600; color: var(--ink-1); }
+.deck .headFacts .today, .deck .headFacts > span:last-child { color: var(--ink-3); }
+.deck .headFacts .ratio { color: var(--ink-2); }
 .deck .ratio[data-all] { font-weight: 600; color: var(--ink-1); animation: settleIn 320ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {
 .deck .ratio[data-all] { animation: none; }
@@ -531,6 +534,22 @@ body {
 }
 .deck .late::before { content: ""; position: absolute; inset: -11px -6px; }
 .deck .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+.deck .sheet[data-head="stack"] .head {
+  height: auto; display: grid; padding: 14px 28px 0;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "word actions" "name name" "facts facts";
+  align-items: center; column-gap: 12px; row-gap: 10px;
+}
+.deck .sheet[data-head="stack"] .word { grid-area: word; }
+.deck .sheet[data-head="stack"] .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
+.deck .sheet[data-head="stack"] .headName { grid-area: name; width: auto; min-width: 0; }
+.deck .sheet[data-head="stack"] .headFacts {
+  grid-area: facts; display: flex; flex-wrap: wrap;
+  font-size: 13px; column-gap: 12px; row-gap: 7px;
+}
+.deck .sheet[data-head="stack"] .headFacts > span { display: inline; }
+.deck .sheet[data-head="stack"] .headFacts .late { display: inline-flex; }
+.deck .sheet[data-head="stack"] .headRule { display: none; }
 .deck .ghost {
   display: inline-flex; align-items: center; gap: 7px;
   height: 34px; padding: 0 11px;
@@ -573,8 +592,12 @@ body {
   padding: 0 16px 84px;
   
   overflow-x: auto; overflow-y: hidden;
+  
+  scroll-snap-type: x proximity; scroll-padding-left: 16px;
   border-top: 1px solid var(--line-soft);
 }
+.deck .tray { scroll-snap-align: start; }
+.deck .tray:last-child { scroll-snap-align: end; }
 .deck .tray {
   min-width: 0;
   display: flex; flex-direction: column;
@@ -731,15 +754,17 @@ body {
   background: var(--wash);
 }
 .deck .carry { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
-.deck .late { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
+.deck .late:not([data-soft]) { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
 .deck .dockPrimary { letter-spacing: calc(var(--tr-13) + var(--tr-rev)); }
 .deck .when[data-t="overdue"] { background: var(--ink); color: var(--white); font-weight: 600; letter-spacing: calc(var(--tr-11) + var(--tr-rev)); }
 .deck .when[data-t="today"] { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-1); font-weight: 600; }
 .deck .when[data-t="milestone"] { background: var(--indigo-wash); color: var(--indigo-ink); font-weight: 600; }
-.deck .when[data-t="milestone"] svg { width: 9px; height: 9px; stroke-width: 2.2; }
 .deck .when[data-t="none"] { display: none; }
-.deck .when[data-t="done"], .deck .when[data-t="waiting"] {
+.deck .when[data-t="done"] {
   background: none; box-shadow: 0 0 0 1px var(--line); color: var(--ink-3);
+}
+.deck .when[data-t="waiting"] {
+  background: none; box-shadow: none; padding: 0; color: var(--ink-3);
 }
 .deck .tag {
   font-family: var(--font-mono);
@@ -867,7 +892,8 @@ body {
 .deck .draftDrop:hover { background: var(--wash); color: var(--ink-1); }
 .deck .draftDo::before, .deck .draftDrop::before { content: ""; position: absolute; inset: -8px -4px; }
 .deck .draftDo, .deck .draftDrop { position: relative; }
-.deck .trayCount .ofAll { color: var(--ink-3); font-weight: 400; }
+.deck .trayCount .ofAll { color: var(--ink-3); letter-spacing: 0.04em; }
+.deck .board[data-filtered] .tray:not([data-empty]) .trayCount { color: var(--ink-1); }
 .deck .draftHint {
   grid-column: 2; grid-row: 3;
   margin: 0; min-height: 24px; display: flex; align-items: center;
@@ -875,7 +901,7 @@ body {
   color: var(--ink-3);
 }
 .deck .undated {
-  font: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  font: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
   color: var(--ink-2); background: none; border: 0; padding: 0;
   cursor: pointer; text-underline-offset: 3px;
 }
@@ -954,8 +980,6 @@ body {
   scroll-padding-left: 16px;
 }
 .deck .floor:has(.drawer) .tray { scroll-snap-align: start; }
-.deck .floor:has(.drawer) .headFacts > span:last-child { display: none; }
-.deck .floor:has(.drawer) .headName { min-width: 0; }
 .deck .drawer {
   position: absolute;
   right: var(--inset); top: var(--inset); bottom: var(--inset);
@@ -1081,13 +1105,13 @@ body {
 @media (prefers-reduced-motion: reduce) {
 .deck .carry { animation: none }
 }
+.deck .cardFly { position: fixed; margin: 0; z-index: 60; pointer-events: none; }
 .deck .cardGhost {
-  position: fixed; margin: 0; z-index: 60; pointer-events: none;
-  box-shadow: var(--lift);
-  transition: transform 260ms var(--curve);
+  position: static; margin: 0; width: 100%; height: 100%;
+  pointer-events: none; box-shadow: var(--card-rest);
 }
 @media (prefers-reduced-motion: reduce) {
-.deck .cardGhost { transition: none; }
+.deck .cardFly, .deck .cardGhost { animation: none !important; transition: none; }
 }
 .deck .card[data-done] .tick:hover, .deck .card[data-done] .tick:focus-visible {
   box-shadow: 0 0 0 4px var(--wash-2);
@@ -1127,6 +1151,12 @@ body {
   column-gap: 8px; row-gap: 6px;
 }
 .deck .loadCard .sk { grid-column: 2; }
+.deck .loadCard .skTick {
+  grid-column: 1; grid-row: 1 / span 2;
+  width: 18px; height: 18px; border-radius: 50%; align-self: start;
+}
+.deck .loadCard { min-height: 98px; align-content: start; }
+.deck .loadCard[data-tall] { min-height: 124px; }
 .deck .loadSay {
   position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
   font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
@@ -1213,32 +1243,68 @@ body {
 .deck[data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: var(--tr-19); }
 .deck[data-type="expressive"] .specIntro { font-size: 14px; }
 .deck[data-type="expressive"] .headFacts { font-size: 13px; }
+.deck .board[data-filtered] .tray[data-empty] { align-self: start; }
+.deck .board[data-filtered] .tray[data-empty] .trayBody, .deck .board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
+.deck .board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
+.deck .board[data-filtered] .tray[data-empty] .trayName { color: var(--ink-2); }
+.deck .board[data-filtered] .tray[data-empty] .trayCount { color: var(--ink-3); }
+.deck .board[data-filtered] .tray[data-empty] .pip { background: rgba(17, 17, 17, 0.14); }
+.deck .trayBody:focus-visible { outline: 2px solid var(--indigo); outline-offset: -2px; border-radius: 4px; }
+.deck .board[data-blank] .trayAdd, .deck .board[data-blank] .trayEmpty { display: none; }
+.deck .board[data-blank] .tray { border-left-color: transparent; }
+.deck .emptyBoard {
+  
+  position: absolute; inset: 130px 0 84px;
+  display: grid; place-content: center; justify-items: center;
+  gap: 14px; text-align: center; padding: 0 24px 44px;
+  pointer-events: none;
+}
+.deck .emptyBoard p {
+  margin: 0; max-width: 34ch;
+  font-size: 15px; font-weight: 400; letter-spacing: var(--tr-15);
+  color: var(--ink-2); text-wrap: balance;
+}
+.deck .emptyBoard b {
+  display: block; font-size: 18px; font-weight: 600;
+  letter-spacing: var(--tr-18); color: var(--ink-1); margin-bottom: 6px;
+}
+.deck .emptyBoard button {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong); background: var(--white);
+  font: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
+  cursor: pointer; transition: background var(--motion-fast) var(--curve);
+}
+.deck .emptyBoard button:hover { background: var(--wash); }
+.deck .emptyBoard button svg { width: 16px; height: 16px; }
+.deck .emptyBoard .emptyEg {
+  font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-3); max-width: 40ch; margin-top: -2px;
+}
 .deck[data-w="768"] .board {
     grid-template-columns: none; grid-auto-flow: column;
     grid-auto-columns: minmax(258px, 1fr);
-    scroll-snap-type: x proximity; scroll-padding-left: 16px;
   }
-.deck[data-w="768"] .tray { scroll-snap-align: start; }
 .deck[data-w="768"] .drawer { width: 364px; }
 .deck[data-w="768"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 .deck[data-w="390"] .board {
     grid-template-columns: none; grid-auto-flow: column;
     grid-auto-columns: minmax(258px, 1fr);
-    scroll-snap-type: x proximity; scroll-padding-left: 16px;
   }
-.deck[data-w="390"] .tray { scroll-snap-align: start; }
 .deck[data-w="390"] .drawer { width: 364px; }
 .deck[data-w="390"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 .deck[data-w="768"] .head .ghost > span {
     position: absolute; width: 1px; height: 1px;
     overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
+.deck[data-w="768"] .head .ghost > em { display: none; }
 .deck[data-w="390"] .head .ghost > span {
     position: absolute; width: 1px; height: 1px;
     overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
+.deck[data-w="390"] .head .ghost > em { display: none; }
 .deck[data-w="768"] { --inset: 12px; }
-.deck[data-w="768"] .headFacts span { display: none; }
 .deck[data-w="768"] .headFacts .late { display: inline-flex; }
 .deck[data-w="768"] .headFacts .ratio { display: inline; }
 .deck[data-w="768"] .headFacts { gap: 12px; }
@@ -1246,7 +1312,6 @@ body {
 .deck[data-w="768"] .drawer { left: var(--inset); width: auto; }
 .deck[data-w="768"] .floor:has(.drawer) .sheet { margin-right: 0; }
 .deck[data-w="390"] { --inset: 12px; }
-.deck[data-w="390"] .headFacts span { display: none; }
 .deck[data-w="390"] .headFacts .late { display: inline-flex; }
 .deck[data-w="390"] .headFacts .ratio { display: inline; }
 .deck[data-w="390"] .headFacts { gap: 12px; }
@@ -1275,23 +1340,8 @@ body {
 .deck[data-w="390"] .railAdd svg { width: 20px; height: 20px; }
 .deck[data-w="390"] .railAvatar { margin: 0; }
 .deck[data-w="390"] .sheet { height: calc(100% - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
-.deck[data-w="390"] .head {
-    height: auto; display: grid; padding: 14px 16px 0;
-    grid-template-columns: auto 1fr;
-    grid-template-areas: "word actions" "name name" "facts facts";
-    align-items: center; column-gap: 12px; row-gap: 10px;
-    padding: 14px 16px 0;
-  }
-.deck[data-w="390"] .word { grid-area: word; }
-.deck[data-w="390"] .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
-.deck[data-w="390"] .headName { grid-area: name; width: auto; font-size: 19px; }
-.deck[data-w="390"] .headFacts {
-    grid-area: facts; display: flex; flex-wrap: wrap;
-    font-size: 13px; column-gap: 12px; row-gap: 7px;
-  }
-.deck[data-w="390"] .headFacts > span { display: inline; }
-.deck[data-w="390"] .headFacts .late { display: inline-flex; }
-.deck[data-w="390"] .headRule { display: none; }
+.deck[data-w="390"] .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
+.deck[data-w="390"] .sheet[data-head="stack"] .headName { font-size: 19px; }
 .deck[data-w="390"] .headSearch { display: inline-flex; }
 .deck[data-w="390"] .carry em:not(:last-child) { display: none; }
 .deck[data-w="390"] .views { padding: 14px 16px 12px; }
@@ -1638,7 +1688,13 @@ let WORK = null;        /* the mutable task set, seeded from the fixture   */
 let focusId = null;     /* the board's single tab stop                     */
 let carriedId = null;   /* the card currently in the operator's hand       */
 let carriedFrom = null; /* where it was picked up, so Escape can undo      */
-let lateOnly = false;   /* the overdue chip, pressed                       */
+/* `?state=filtered` is the overdue chip pressed before the first paint. The
+   filtered board is a real screen the panel has judged, and it was only ever
+   reachable by clicking, so the shot harness could not photograph it. This
+   opens the same door the chip opens and then hands the render back to the
+   board, which is the branch a filtered board already takes. */
+let lateOnly = state === "filtered";
+if (state === "filtered") state = "board";
 let clientOnly = null;  /* one couple, the venue's own way of looking       */
 let todayOnly = false;  /* the question a venue actually opens this to ask  */
 let undone = null;      /* the last reversible act: a completion or a move  */
@@ -1720,18 +1776,32 @@ function filtering() { return lateOnly || clientOnly || todayOnly; }
 
 /* The board can be asked more than one question at once, and the sentence is
    composed from whichever are live rather than branched per filter. */
+/* The sentence was assembled rather than written, and it came apart the
+   moment two filters were on: "Nothing for Mara & Finn, overdue, due today.
+   13 others are hidden." — a comma list with no conjunction, and an "others"
+   count when nothing was shown for them to be other than.
+   Conditions are joined with "and" and stay in front of the noun; the couple
+   is a trailing prepositional phrase, because "overdue and for Mara & Finn"
+   reads worse than what it replaces. When nothing matches there are no
+   others, so the remainder is stated as its own fact. */
 function filterSentence() {
   if (!filtering()) return "Showing all work.";
   const shown = B.columns.reduce((n, c) => n + tasksFor(c.id).length, 0);
-  const rest = allTasks().length - shown;
-  const what = [
-    clientOnly ? "for " + clientOnly : "",
+  const all = allTasks().length;
+  const rest = all - shown;
+  const cond = [
     lateOnly ? "overdue" : "",
     todayOnly ? "due today" : "",
-  ].filter(Boolean).join(", ");
-  return (shown
-    ? "Showing the " + shown + " " + (shown === 1 ? "task" : "tasks") + " " + what + ". "
-    : "Nothing " + what + ". ") +
+  ].filter(Boolean).join(" and ");
+  const scope = clientOnly ? " for " + clientOnly : "";
+  if (!shown) {
+    return (cond
+      ? "No task is " + cond + scope + "."
+      : "Nothing on the board is" + scope + ".") +
+      " All " + all + " " + (all === 1 ? "is" : "are") + " hidden.";
+  }
+  return "Showing " + shown + " " + (shown === 1 ? "task" : "tasks") +
+    (cond ? " " + cond : "") + scope + ". " +
     rest + " " + (rest === 1 ? "other is" : "others are") + " hidden.";
 }
 
@@ -1785,8 +1855,10 @@ function daysLate(iso) {
   return days + (days === 1 ? " day" : " days");
 }
 
-/* The same day-count shape the overdue chip uses, so the two read as one
-   family: "2 days overdue" and "21 days". */
+/* A count of days, which the chip now puts a verb in front of: "Held 21
+   days". The rationale this comment used to give — matching a "2 days
+   overdue" chip label — described a label the product stopped printing when
+   the chip started carrying the value and the fill carrying the condition. */
 function heldFor(iso) {
   const parts = String(iso).split("-").map(Number);
   const days = Math.round((Date.UTC(2026, 6, 16) - Date.UTC(parts[0], parts[1] - 1, parts[2])) / 86400000);
@@ -1833,7 +1905,16 @@ function card(task, force, stop) {
     waiting: ["Held " + time.label + ", since " + dayLabel(task.heldSince), "Held "],
   };
   const said = SAID[time.kind] || ["", ""];
-  const label = '<span class="sr">' + said[1] + "</span>" + esc(time.label);
+  /* Waiting carries its verb on screen. A bare "21 days" parses just as
+     easily as "due in 21 days", which is the opposite of what it means.
+     Done does not: measured at 1280 and 1440, "Completed 15 Jul" overruns the
+     chip's 38% of the card measure, and a clipped date is worse than a quiet
+     one. Its hairline ring, its filled tick and its column already say the
+     work is finished, and the spoken name still says "Completed". */
+  const SHOWN = { waiting: "Held " };
+  const label = SHOWN[time.kind]
+    ? SHOWN[time.kind] + esc(time.label)
+    : '<span class="sr">' + said[1] + "</span>" + esc(time.label);
 
   /* Which couple a task belongs to is the question a venue asks on a
      Saturday. Which area of the house it touches is background. They were
@@ -1862,7 +1943,7 @@ function card(task, force, stop) {
     '" draggable="' + (openNoteId === task.id ? "false" : "true") + '"' +
     ' aria-label="' + esc(task.title) + '" aria-describedby="cd-' + esc(task.id) + '"' +
     (task.note ? ' aria-expanded="' + (openNoteId === task.id ? "true" : "false") + '"' : "") +
-    ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Task, movable"') +
+    ' tabindex="' + (stop ? "0" : "-1") + '"' + (done ? "" : ' aria-roledescription="Movable task"') +
     ' aria-keyshortcuts="Space ArrowUp ArrowDown ArrowLeft ArrowRight"' +
     (task.id === carriedId ? ' aria-grabbed="true"' : "") +
     (task.id === openNoteId ? " data-open" : "") +
@@ -1910,30 +1991,47 @@ function groupKeys(event) {
     : key === "End" ? items.length - 1
     : (at + (key === next ? 1 : items.length - 1) + items.length) % items.length;
   items.forEach((n, i) => n.setAttribute("tabindex", i === to ? "0" : "-1"));
+  /* The rail is the one group that survives a repaint, so where its index
+     moved to has to be remembered rather than re-derived from the active
+     product on every mount. */
+  if (group.dataset.group === "rail" && items[to].dataset.key) railCurrent = items[to].dataset.key;
   items[to].focus();
   return true;
 }
 
+/* The rail is one stop the arrows walk, and for eleven rounds it was four.
+   The mark and the avatar carried no tabindex at all, so they were natural
+   stops; and the tile expression short-circuited before it incremented, so
+   Home took the "first tile" zero and Tasks took the "active" zero — two
+   zeros in one roving group. The keyboard handler repaired it on the first
+   arrow press and every repaint threw the repair away.
+   One piece of state now says where the group's index is, every button in the
+   rail is addressed by the same key, and the position survives a repaint. */
+let railCurrent = null;
+
 function rail() {
-  let railStop = 0;
-  const tile = (key, label, active) =>
+  const active = (B.rail.products.find((p) => p.active) || {}).key || "tasks";
+  if (!railCurrent) railCurrent = active;
+  const stop = (key) => ' tabindex="' + (key === railCurrent ? "0" : "-1") + '"';
+  const tile = (key, label, isActive) =>
     '<button type="button" class="railTile" data-key="' + key + '" aria-label="' + label + '"' +
-    ' tabindex="' + (active || (railStop += 1) === 1 && !active ? "0" : "-1") + '"' +
-    (active ? ' data-active aria-current="page" title="' + label + '"'
+    stop(key) +
+    (isActive ? ' data-active aria-current="page" title="' + label + '"'
       : notYet(RAIL[key] || label)) + ">" + I[key] + "</button>";
   return (
     '<nav class="rail" data-group="rail" aria-label="Signal Studio">' +
-    '<button type="button" class="railMark" aria-label="Signal Studio"' +
-      notYet("Every Signal Studio app is here. Not in this release.") + ">" + I.more + "<i></i></button>" +
+    '<button type="button" class="railMark" data-key="mark" aria-label="Signal Studio"' + stop("mark") +
+      notYet("Every Signal Studio app is here. Not here yet.") + ">" + I.more + "<i></i></button>" +
     '<span class="railDivider"></span>' +
     '<div class="railGroup">' + tile("home", "Home", false) +
       B.rail.products.map((p) => tile(p.key, p.label, p.active)).join("") + "</div>" +
     '<span class="railSpacer"></span>' +
     '<div class="railUtil">' + tile("inbox", "Inbox", false) +
       tile("help", "Help and settings", false) + "</div>" +
-    '<button class="railAdd" data-act="add" data-lane="' + B.columns[0].id +
-      '" aria-label="Add task">' + I.plus + "</button>" +
-    '<button type="button" class="railAvatar" aria-label="' + esc(B.operator.role) + '"' +
+    '<button class="railAdd" data-key="add" data-act="add" data-lane="' + B.columns[0].id +
+      '"' + stop("add") + ' aria-label="Add task">' + I.plus + "</button>" +
+    '<button type="button" class="railAvatar" data-key="me" aria-label="' + esc(B.operator.role) + '"' +
+      stop("me") +
       notYet("Your account lives in Signal Studio.") + ">" + B.operator.initials + "</button>" +
     "</nav>"
   );
@@ -1949,13 +2047,15 @@ const SOON = "Board is the only view for now.";
 const TOOLS = "Filter, Sort and Display come with the other views.";
 const SEARCH = "Search comes with the other views.";
 /* Named, not templated: a door says what is behind it, then says it is not
-   in this release. */
+   here yet. "Release" was a software vendor's word in a product whose bar is
+   that a venue manager with no project-management background understands it
+   unaided; nothing else on this board speaks that language. */
 const RAIL = {
-  home: "Every project in one list. Not in this release.",
-  notes: "What you wrote down. Not in this release.",
-  timeline: "The dates the season turns on. Not in this release.",
-  inbox: "What came in while you were working. Not in this release.",
-  help: "Help, and how this project is set up. Not in this release.",
+  home: "Every project in one list. Not here yet.",
+  notes: "What you wrote down. Not here yet.",
+  timeline: "The dates the season turns on. Not here yet.",
+  inbox: "What came in while you were working. Not here yet.",
+  help: "Help, and how this project is set up. Not here yet.",
   tasks: "Tasks",
 };
 
@@ -1995,11 +2095,11 @@ function head() {
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search"' + notYet(SEARCH) + ">" +
         I.search + "</button>" +
-      '<button class="ghost"' + notYet("Sharing comes with guest access.") + ">" +
+      '<button class="ghost"' + notYet("Sharing arrives when you can invite the couple and your suppliers in.") + ">" +
         I.share + "<span>Share</span></button>" +
       '<button class="ghost" data-act="planning">' + I.planning + "<span>Planning</span>" +
         (undated ? "<em>" + undated + "</em>" : "") + "</button>" +
-      '<button class="ghost" aria-label="More"' + notYet("Project settings come with sharing.") + ">" +
+      '<button class="ghost" aria-label="More"' + notYet("How this project is set up. Not here yet.") + ">" +
         I.dots + "</button>" +
     "</div></div>"
   );
@@ -2032,7 +2132,9 @@ function board() {
   const all = laneIds().flatMap((id) => tasksFor(id).map((t) => t.id));
   if (!all.includes(focusId)) focusId = all[0] || null;
   return (
-    '<div class="board" role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
+    '<div class="board"' + (filtering() ? " data-filtered" : "") +
+      (allTasks().length ? "" : " data-blank") +
+      ' role="application" aria-label="Task board, arrow keys to move between tasks, space to pick one up">' +
     B.columns.map((c) => {
       const rows = tasksFor(c.id);
       const all = allTasks().filter((t) => t.lane === c.id);
@@ -2044,10 +2146,14 @@ function board() {
       /* One instruction on the sheet, in the column the work starts in. The
          other four columns keep their note, so each still teaches what it
          holds without four of them issuing an order. */
-      const empty = filtering() || (!allTasks().length && c.id !== B.columns[0].id) ? "" : c.empty;
+      const empty = filtering() || !allTasks().length ? "" : c.empty;
       return (
         '<section class="tray" data-lane="' + c.id + '" data-tone="' + c.tone + '"' +
-          (rows.length ? "" : " data-empty") +
+          /* A column holding the open composer is not an empty column — it is
+             where the operator is working. Collapsing it under a filter took
+             the ground away mid-sentence and dropped focus off the Add row it
+             came from. */
+          (rows.length || draftLane === c.id ? "" : " data-empty") +
           ' aria-describedby="tn-' + c.id + '"' +
           ' role="region" aria-label="' +
           esc(c.name) + (filtering()
@@ -2059,7 +2165,7 @@ function board() {
           '<span class="pip" aria-hidden="true"></span>' +
           '<h2 class="trayName">' + esc(c.name) + "</h2>" +
           '<span class="trayCount" aria-hidden="true">' + rows.length +
-            (filtering() ? '<span class="ofAll"> of ' + all.length + "</span>" : "") + "</span></div>" +
+            (filtering() ? '<span class="ofAll">/' + all.length + "</span>" : "") + "</span></div>" +
           /* Under a filter a column describes what it is showing, not what it
              normally holds — four notes were false in context. */
           /* Under a filter the column already carries its name, its count of
@@ -2081,7 +2187,33 @@ function board() {
           I.plus + "<span>Add here</span></button>" +
         "</section>"
       );
-    }).join("") + "</div>"
+    }).join("") + "</div>" +
+    /* Emptiness is the state this board spends most of its life in, and for
+       ten rounds it had no design — four identical Add rows over a white
+       void. One centred sentence and one action, inside the sheet. */
+    /* The block leaves the moment it is obeyed. It used to go on asserting
+       "Nothing on the board yet." in full ink while a live composer with a
+       caret in it sat two columns away — the one instruction the rebuild
+       leads with, made false by following it. */
+    (!allTasks().length && !draftLane
+      ? '<div class="emptyBoard"><p><b>Nothing on the board yet.</b>' +
+        "Put the first thing you have to do somewhere you will see it again." +
+        '</p><button type="button" data-act="add" data-lane="' + B.columns[0].id + '">' +
+        I.plus + "Add the first task</button>" +
+        /* The one line on this screen that says wedding venue rather than
+           software team. A blank board teaches nothing about what belongs
+           on it; an example does. */
+        '<p class="emptyEg">Something like: Confirm marquee sides with the hire company.</p>' +
+        "</div>"
+      : filtering() && !laneIds().flatMap((id) => tasksFor(id)).length
+      /* The block used to say "Every task on the board is hidden by the
+         filter you have on" without ever naming the filter. It names it now,
+         in the same sentence the strip used to carry, so nothing was lost
+         when the strip stood down. */
+      ? '<div class="emptyBoard"><p><b>Nothing matches.</b>' +
+        esc(filterSentence()) +
+        '</p><button type="button" data-act="clear">Show all work</button></div>'
+      : "")
   );
 }
 
@@ -2114,7 +2246,7 @@ function draft() {
     '<p class="draftHint">' + (TOUCH
       ? '<button type="button" class="carryDo draftDo" data-act="commit">Add</button>' +
         '<button type="button" class="draftDrop" data-act="discard">Discard</button>'
-      : "Enter adds it. Esc discards.") + "</p>" +
+      : "Enter adds it. Esc discards it.") + "</p>" +
     "</article>"
   );
 }
@@ -2147,6 +2279,8 @@ function footPill() {
   if (undone) {
     const what = undone.kind === "done"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> done"
+      : undone.kind === "undone"
+      ? "<b>" + esc(shortTitle(undone.title)) + "</b> reopened"
       : undone.kind === "add"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> added to " + esc(laneName(undone.toLane))
       : "<b>" + esc(shortTitle(undone.title)) + "</b> moved to " + esc(laneName(undone.toLane));
@@ -2159,11 +2293,16 @@ function footPill() {
       "</div>"
     );
   }
-  if (filtering()) {
+  /* When nothing matches, the centred block on the sheet says it — and it now
+     names which filters are on, which is the only thing the strip carried
+     that the block did not. Two statements of one fact 60px apart, under two
+     different labels for one action, was the whole defect. The strip stands
+     down and the block is the single answer. */
+  if (filtering() && laneIds().flatMap((id) => tasksFor(id)).length) {
     return (
       '<div class="carry">' +
       '<span class="carryName">' + esc(filterSentence()) + "</span>" +
-      '<button type="button" class="carryDo" data-act="showall">Show all</button>' +
+      '<button type="button" class="carryDo" data-act="showall">Show all work</button>' +
       "</div>"
     );
   }
@@ -2271,12 +2410,28 @@ function loading() {
         '<p class="trayNote">' + esc(c.note) + "</p></div>" +
       '<div class="trayBody">' +
       /* Two per column: honest about not knowing, rather than a specific
-         promise per column that the payload then contradicts. */
-      [0, 1].map(() => (
-        '<div class="loadCard"><span class="sk" style="width:86%;height:12px"></span>' +
-        '<span class="sk" style="width:62%;height:10px"></span>' +
-        '<span class="sk" style="width:34%;height:9px"></span></div>'
-      )).join("") + "</div></section>"
+         promise per column that the payload then contradicts.
+         The heights were the part that lied. Ten identical 67px blocks with
+         no tick became ragged cards of 98 to 136px each leading with a
+         circle, so the arrival was a jump rather than a resolve. The block is
+         built from the real card's own line boxes now — the tick in its
+         reserved gutter, a two-line title, the note, the meta row — and the
+         bar widths vary from a fixed seed so a tray reads as ten different
+         unknown cards rather than one tile repeated. */
+      [0, 1].map((n) => {
+        const seed = (i * 2 + n) % 3;
+        const title = [92, 78, 86][seed];
+        const note = [64, 48, 58][seed];
+        const meta = [30, 38, 34][seed];
+        /* The real board runs 98 to 136. The first block in a tray takes the
+           tall form and the second the short one, so the ladder the payload
+           brings is foreshadowed rather than contradicted. */
+        return '<div class="loadCard"' + (n === 0 ? ' data-tall' : "") + '><span class="sk skTick"></span>' +
+          '<span class="sk" style="width:' + title + '%;height:12px"></span>' +
+          '<span class="sk" style="width:' + Math.round(title * 0.6) + '%;height:12px"></span>' +
+          '<span class="sk" style="width:' + note + '%;height:10px"></span>' +
+          '<span class="sk" style="width:' + meta + '%;height:9px"></span></div>';
+      }).join("") + "</div></section>"
     )).join("") + "</div>" +
     '<p class="loadSay">Opening ' + esc(B.workspace) + "</p>" +
     /* The foot furniture is a constant of the product, so it is present from
@@ -2292,15 +2447,21 @@ function loading() {
 
 function specimens() {
   const find = (id) => B.tasks.find((t) => t.id === id);
+  /* The two quiet kinds live in the peak-season set, not the base thirteen.
+     The sheet promises every state a card can be in, so it reaches for them
+     rather than teaching a rule it then does not demonstrate. */
+  const like = (re) => (window.DENSE_EXTRA || []).find((t) => re.test(t.title || ""));
   const cells = [
-    ["At rest", find("demo-t-03"), null, "Nothing but the work. No empty slots and no placeholder chips."],
+    ["At rest", find("demo-t-03"), null, "Nothing but the work, and no date on it. No empty slots and no placeholder chips."],
     ["Hover", find("demo-t-04"), "hover", "The edge darkens and the menu appears. Height never changes."],
     ["Keyboard focus", find("demo-t-08"), "focus", "A real focus ring in the accent, not a colour change."],
     ["Selected", find("demo-t-07"), "selected", "Selection is a ring, so it can never be confused with hover."],
     ["Overdue", find("demo-t-06"), null, "Filled ink, white type. The chip counts the days; the fill says they are behind you."],
     ["Due today", find("demo-t-05"), null, "Outlined, ink at full strength. Serious, and nothing has gone wrong yet."],
+    ["Due soon", like(/florist/), null, "A wash, not a fill. The date is ahead of you and nothing is wrong."],
     ["Next milestone", find("demo-t-02"), null, "The one earned indigo in the whole view. The chip carries the date; the colour carries the fact."],
-    ["Done", find("demo-t-09"), null, "Never struck through. The work happened, it was not a mistake."],
+    ["Held", like(/band/), null, "No ring at all, and it says what it is. Nothing is owed by you; something is owed to you."],
+    ["Done", find("demo-t-09"), null, "A hairline outline is a record, not a debt. Never struck through: the work happened, it was not a mistake."],
     ["Long title", { ...find("demo-t-01"), title: "Confirm the marquee sides and the wet-weather plan with the hire company before Thursday" }, null, "Two lines of title, then the note clamps. A card cannot run away."],
     ["In flight", find("demo-t-03"), "drag", "The card at rest, top left, picked up. The only shadow in the product."],
     ["Moving by keyboard", find("demo-t-04"), "moving", "Space picks a card up, the arrows walk it between columns. Lifted, but not tilted: nothing is carrying it."],
@@ -2311,7 +2472,10 @@ function specimens() {
     '<div class="specProbe" aria-hidden="true"><div class="board">' +
     '<section class="tray"><div class="trayBody"></div></section>'.repeat(5) + "</div></div>" +
     '<div class="spec"><p class="specIntro">Every state a card can be in, at the exact width a tray gives it. ' +
-    "The gutter, the title’s left edge and every line beneath it share one optical baseline, and the time fact sits at the head of the title so a tray reads as a column of dates rather than a pile, with the title flowing around it. Every chip carries a value and every fill carries a condition: filled means behind, outlined means today, indigo means the next milestone. Severity is expressed by ink density and fill, never by hue.</p>" +
+    /* The old sentence taught three rules and the board shipped six kinds, so
+       two of them broke the law on every board that had a Done column in it.
+       It states all six now, or it is not a teaching surface. */
+    "The gutter, the title’s left edge and every line beneath it share one optical baseline, and the time fact sits at the head of the title so a tray reads as a column of dates rather than a pile, with the title flowing around it. Each chip carries a value, and its fill carries the condition. Filled ink means behind. A firm outline means due today. Indigo means the next milestone. A soft wash is a date still ahead. A hairline outline is a record rather than a debt: the day the work was finished. No outline at all, and a verb in front of the value, is time you are waiting on somebody else. Severity is expressed by ink density and fill, never by hue.</p>" +
     '<div class="specGrid">' +
     cells.map((c) => (
       '<div class="specCell"><span class="specLabel">' + c[0] + "</span>" +
@@ -2409,35 +2573,71 @@ function flyCompleted(target) {
      sheet, and a fixed 260ms reads as a teleport at 1000px and as a lag at
      120px. Stated here rather than added to the token ladder. */
   const travel = Math.round(Math.min(460, Math.max(220, 170 + Math.hypot(dx, dy) * 0.22)));
+
+  /* The journey and the weight are two animations on two elements, because
+     they want different easings and both want `transform`. The shell carries
+     the distance on the product's own curve; the card inside it carries the
+     lift. Sampled at 16ms the old flight was a rigid rectangle sliding
+     dead-level with a constant shadow — nothing lifted, nothing arrived.
+     The shell also grows from the size the card was to the size it will be:
+     a 234x136 ghost handing off to a 233x155 node put a 19px snap on the one
+     frame that matters. */
+  const shell = document.createElement("div");
+  shell.className = "cardFly";
+  shell.setAttribute("aria-hidden", "true");
+  shell.style.left = was.left + "px";
+  shell.style.top = was.top + "px";
+  shell.style.width = was.width + "px";
+  shell.style.height = was.height + "px";
   const ghost = node.cloneNode(true);
   ghost.className = node.className + " cardGhost";
   ghost.removeAttribute("id");
-  ghost.setAttribute("aria-hidden", "true");
-  ghost.style.left = was.left + "px";
-  ghost.style.top = was.top + "px";
-  ghost.style.width = was.width + "px";
-  ghost.style.height = was.height + "px";
-  ghost.style.transitionDuration = travel + "ms";
-  document.body.appendChild(ghost);
+  shell.appendChild(ghost);
+  document.body.appendChild(shell);
   node.style.opacity = "0";
-  /* A committed frame before the offset is released, or the browser has no
-     before-change style to transition from. */
-  ghost.getBoundingClientRect();
-  ghost.style.transform = "translate(" + -dx + "px," + -dy + "px)";
-  ghost.style.left = was.left + "px";
+
+  const journey = shell.animate(
+    [
+      { transform: "translate(0px, 0px)", width: was.width + "px", height: was.height + "px" },
+      { transform: "translate(" + -dx + "px," + -dy + "px)", width: now.width + "px", height: now.height + "px" },
+    ],
+    { duration: travel, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" },
+  );
+  /* 1.03 sits beside the 1.02 a dragged card already uses, so the lift stays
+     inside the product's own vocabulary. No drop and no bounce: the beat was
+     written under a rule that says no colour and no bounce, and a constant
+     downward drop would be a lie on any move that does not change row. */
+  ghost.animate(
+    [
+      { transform: "scale(1)", boxShadow: "var(--card-rest)", offset: 0 },
+      { transform: "scale(1.03)", boxShadow: "var(--lift)", offset: 0.2 },
+      { transform: "scale(1.03)", boxShadow: "var(--lift)", offset: 0.78 },
+      { transform: "scale(1)", boxShadow: "0 0 0 1px var(--line-soft)", offset: 1 },
+    ],
+    { duration: travel, easing: "linear", fill: "forwards" },
+  );
 
   let done = false;
   const finish = () => {
     if (done) return;
     done = true;
-    ghost.remove();
+    shell.remove();
     node.style.opacity = "";
     land();
+    /* The board's answer arrives with the card, not 400ms before it. The
+       count used to flip at take-off while the check drew on landing, which
+       is what made the two read as unrelated events. */
+    const scope = document.getElementById("root") || document.getElementById("deck");
+    if (scope) {
+      const beat = scope.querySelector('.tray[data-lane="done"] .trayCount');
+      if (beat) { beat.removeAttribute("data-changed"); beat.getBoundingClientRect(); beat.setAttribute("data-changed", ""); }
+      scope.querySelectorAll(".headFacts .ratio b").forEach((b) => {
+        b.removeAttribute("data-changed"); b.getBoundingClientRect(); b.setAttribute("data-changed", "");
+      });
+    }
   };
-  ghost.addEventListener("transitionend", (event) => {
-    if (event.propertyName === "transform" && event.target === ghost) finish();
-  });
-  /* A transition that never fires must not leave the card invisible. */
+  journey.addEventListener("finish", finish);
+  /* An animation that never fires must not leave the card invisible. */
   setTimeout(finish, travel + 140);
   return travel;
 }
@@ -2485,7 +2685,9 @@ function toggleDone(id) {
 
   if (task.lane === "done") {
     /* Back to where it actually came from, never to the first column. */
+    const known = Boolean(task.prevLane);
     const back = task.prevLane || B.columns[0].id;
+    const wasCompletedAt = task.completedAt;
     task.lane = back;
     task.prevLane = null;
     task.completedAt = null;
@@ -2493,8 +2695,14 @@ function toggleDone(id) {
       /* The stack must not go on offering to redo something already undone. */
       if (history[i].id === id && history[i].kind === "done") history.splice(i, 1);
     }
-    clearUndo();
-    say(task.title + " is back in " + laneName(back) + ".");
+    /* Every card that was already Done when the board opened has no prevLane,
+       so the fallback put it in column one and the product announced "is back
+       in To do" about a card that had never been there. It only claims a
+       return when there is a return to claim. */
+    arm({ kind: "undone", id: id, title: task.title, lane: back, wasCompletedAt: wasCompletedAt });
+    say(known
+      ? task.title + " is back in " + laneName(back) + "."
+      : task.title + " is no longer done. It is in " + laneName(back) + ".");
   } else {
     task.prevLane = task.lane;
     task.lane = "done";
@@ -2538,6 +2746,26 @@ function runUndo(act) {
     return;
   }
   if (act.kind === "done") { toggleDone(act.id); return; }
+  /* Reopening was the one act with no way back, so the only route was the
+     tick — which stamped today's date over the day the work was actually
+     finished. The original date rides in the receipt and is put back. */
+  if (act.kind === "undone") {
+    const row = taskById(act.id);
+    if (row) {
+      const node = document.querySelector('.card[data-id="' + act.id + '"]');
+      flyFrom = node ? node.getBoundingClientRect() : null;
+      flyId = act.id;
+      row.lane = "done";
+      row.prevLane = act.lane;
+      row.completedAt = act.wasCompletedAt;
+    }
+    clearUndo();
+    focusId = act.id;
+    refocus = true;
+    say((row ? row.title : "The task") + " is done again.");
+    mount();
+    return;
+  }
   const task = taskById(act.id);
   flyFrom = document.querySelector('.card[data-id="' + act.id + '"]');
   flyFrom = flyFrom ? flyFrom.getBoundingClientRect() : null;
@@ -2605,8 +2833,15 @@ function closeMenu() {
    on the board's own tab stop. Nothing may drop them on <body>. */
 function leaveDraft() {
   const target = document.getElementById("root") || document.getElementById("deck");
-  const back = draftFrom && target.querySelector(draftFrom);
+  let back = draftFrom && target.querySelector(draftFrom);
   draftFrom = null;
+  /* Closing the composer is what empties the column, and under a filter an
+     empty column collapses — so the very control focus is returning to can
+     vanish in the same repaint, dropping the operator on <body>. Focus goes
+     to the nearest control still on screen instead. */
+  if (back && !back.offsetParent) {
+    back = [...target.querySelectorAll(".trayAdd")].find((n) => n.offsetParent) || null;
+  }
   if (back) back.focus({ preventScroll: true });
   else {
     const stop = target.querySelector('.card[tabindex="0"]');
@@ -2779,7 +3014,7 @@ function onClick(event) {
   if (off) {
     /* Hover is not available to a thumb, so the reason is spoken and shown. */
     event.preventDefault();
-    say(off.getAttribute("title") || "Not in this release.");
+    say(off.getAttribute("title") || "Not here yet.");
     return;
   }
   const act = event.target.closest && event.target.closest("[data-act]");
@@ -3113,11 +3348,31 @@ function measureEdges(target) {
        starts and ends rather than the two being kept in step by hand. */
     const tray = body.closest(".tray");
     if (!tray) return;
-    tray.style.setProperty("--body-top", body.offsetTop - tray.offsetTop + "px");
-    tray.style.setProperty("--body-bottom", body.offsetTop - tray.offsetTop + body.clientHeight + "px");
+    /* offsetTop is already relative to the tray, which is the offset parent.
+       Subtracting the tray's own offset as well put the fold rule 112px above
+       the foot of the scroller, where it read as a section divider inside
+       Done rather than as a cue that there is more below. Read defensively so
+       a future change to the sheet's positioning context cannot re-open it. */
+    const top = body.offsetParent === tray
+      ? body.offsetTop
+      : Math.round(body.getBoundingClientRect().top - tray.getBoundingClientRect().top);
+    tray.style.setProperty("--body-top", top + "px");
+    tray.style.setProperty("--body-bottom", top + body.clientHeight + "px");
   });
   const board = target.querySelector(".board");
   const sheet = target.querySelector(".sheet");
+  /* The header stacks on the width of the SHEET, not the width of the window.
+     Driven at every 20px from 1440 to 780, the single-row header ran the
+     Planning and More buttons past the sheet's right edge from about 1120
+     down, where overflow:hidden cut them off the screen entirely — and the
+     drawer-open board at 1440 is the same width of sheet as a 1100px window,
+     so a viewport media query could never have caught both. Measuring the
+     sheet catches them with one threshold. Stacking changes the header's
+     height and not the sheet's width, so this cannot oscillate. */
+  if (sheet) {
+    if (sheet.clientWidth < 1200) sheet.setAttribute("data-head", "stack");
+    else sheet.removeAttribute("data-head");
+  }
   if (board && sheet) {
     sheet.toggleAttribute("data-more-right", board.scrollLeft + board.clientWidth < board.scrollWidth - 1);
   }
@@ -3133,6 +3388,20 @@ function measureEdges(target) {
   });
   const probe = target.querySelector(".specProbe .trayBody");
   if (probe && sheet) sheet.style.setProperty("--tray-card", Math.round(probe.getBoundingClientRect().width) + "px");
+  /* The rail's remembered index can point at a button this width does not
+     draw — the add tile only exists on a phone, the mark and the utilities
+     only above one. Visibility is not knowable while the markup is a string,
+     so it is settled here, after layout: exactly one visible stop, and if the
+     remembered one is not on screen the active product takes it back. */
+  const rail = target.querySelector(".rail");
+  if (rail) {
+    const seen = [...rail.querySelectorAll("button")].filter((n) => n.offsetParent !== null);
+    if (seen.length && !seen.some((n) => n.getAttribute("tabindex") === "0")) {
+      const home = seen.find((n) => n.hasAttribute("data-active")) || seen[0];
+      railCurrent = home.dataset.key || railCurrent;
+      seen.forEach((n) => n.setAttribute("tabindex", n === home ? "0" : "-1"));
+    }
+  }
 }
 
 function retrim(target) {

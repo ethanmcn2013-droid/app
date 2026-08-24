@@ -731,7 +731,8 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   ok("but each one says what it is showing, out of what",
     labels.every((t) => / \d+ of \d+ shown$/.test(t)), JSON.stringify(labels));
   const count = await page.locator('.tray[data-lane="todo"] .trayCount').textContent();
-  ok("the count states filtered of total", count.indexOf(" of ") !== -1, JSON.stringify(count));
+  /* Figures and a solidus, never a lowercase word in a tracked mono cell. */
+  ok("the count states filtered of total", /^\d+\/\d+$/.test(count.trim()), JSON.stringify(count));
   await page.close();
 }
 
@@ -1017,9 +1018,26 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   await page.waitForTimeout(250);
   ok("an overdue filter does not silently cancel the couple",
     (await page.locator('[data-act="late"][aria-pressed="true"]').count()) === 1);
-  const strip = await page.locator(".carryName").textContent();
-  ok("and the strip states both", /overdue/.test(strip) && /for /.test(strip), JSON.stringify(strip));
-  ok("with the noun in place", / tasks? /.test(strip) || /Nothing/.test(strip), JSON.stringify(strip));
+  /* Composing these two on the dense board matches nothing, and the board
+     answers in one place. The sentence lives wherever the board is speaking
+     from: the strip while something is shown, the centred block when nothing
+     is. Both name every live filter. */
+  const shown = await page.locator(".board .card:not([data-draft])").count();
+  const voice = shown
+    ? await page.locator(".carryName").textContent()
+    : await page.locator(".emptyBoard p").textContent();
+  ok("and the board states both filters", /overdue/.test(voice) && /for /.test(voice), JSON.stringify(voice));
+  ok("with the noun in place", / tasks? /.test(voice) || /No task/.test(voice), JSON.stringify(voice));
+  /* The defect this replaces: two statements of one fact 60px apart, under
+     two different labels for one action. */
+  ok("nothing that matches nothing is said twice",
+    (await page.locator(".carryName").count()) + (await page.locator(".emptyBoard p").count()) === 1);
+  ok("and there is exactly one way back",
+    (await page.locator('[data-act="showall"], [data-act="clear"]').count()) === 1);
+  ok("a board that shows nothing never claims others are hidden",
+    shown ? true : !/other/.test(voice), JSON.stringify(voice));
+  ok("and it does not read as a comma-separated query log",
+    !/, (due today|overdue)\./.test(voice), JSON.stringify(voice));
 
   /* Escape unwinds one layer at a time, innermost first. */
   await page.keyboard.press("Escape");
@@ -1113,7 +1131,7 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   const tips = await page.$$eval("[title]", (n) => n.map((x) => x.getAttribute("title")));
   const templated = tips.filter((t) => / is (a room|not built)/.test(t));
   ok("no tooltip is generated from a label", templated.length === 0, JSON.stringify(templated));
-  const unpunctuated = tips.filter((t) => /(comes with|Not in this release|lives in)/.test(t) && !/[.?]$/.test(t));
+  const unpunctuated = tips.filter((t) => /(comes with|Not here yet|arrives when|lives in)/.test(t) && !/[.?]$/.test(t));
   ok("every one is a sentence", unpunctuated.length === 0, JSON.stringify(unpunctuated));
   await page.close();
 }
@@ -1202,6 +1220,252 @@ async function open(query = "", viewport = { width: 1440, height: 960 }) {
   }
   ok("passing over the strip does not inflate the history", (await depth()) === before,
     before + " -> " + (await depth()));
+  await page.close();
+}
+
+/* == the band never spends the name, and never spills ============== */
+/* Round 12: from about 1120px down the single-row header pushed Planning and
+   More past the sheet's right edge, where overflow:hidden cut them off the
+   screen; and from 1240 down the venue's own name was the only thing allowed
+   to shrink, so it read "The Orcha..." while the season line beside it kept
+   every character. The band stacks on the width of the SHEET now, which is
+   why the drawer-open case is swept here too: an open drawer at 1440 is the
+   same width of sheet as a 1100px window. */
+for (const query of ["", "?state=planning"]) {
+  const page = await open(query);
+  let spilled = null;
+  let clipped = null;
+  let leastFacts = 99;
+  for (let w = 1440; w >= 780; w -= 20) {
+    await page.setViewportSize({ width: w, height: 960 });
+    await page.waitForTimeout(60);
+    const r = await page.evaluate(() => {
+      const sheet = document.querySelector(".sheet");
+      const edge = sheet.getBoundingClientRect().right - 28;
+      const name = document.querySelector(".headName");
+      const past = [...document.querySelectorAll(".headActions > *")]
+        .filter((n) => n.getBoundingClientRect().right > edge + 0.5)
+        .map((n) => (n.textContent || n.getAttribute("aria-label") || "").trim().slice(0, 10));
+      return {
+        past,
+        cut: name.scrollWidth > name.clientWidth + 1,
+        facts: [...document.querySelectorAll(".headFacts > *")].filter((n) => n.offsetParent !== null).length,
+      };
+    });
+    if (r.past.length && !spilled) spilled = w + ": " + r.past.join(",");
+    if (r.cut && !clipped) clipped = String(w);
+    leastFacts = Math.min(leastFacts, r.facts);
+  }
+  const where = query ? "with the drawer open" : "on the plain board";
+  ok("no control leaves the sheet at any width " + where, spilled === null, spilled);
+  ok("and the venue name is never truncated " + where, clipped === null, clipped);
+  ok("and no fact is spent to make the room " + where, leastFacts === 6, "fewest facts " + leastFacts);
+  await page.close();
+}
+
+/* == a column that did not answer collapses to its head ============ */
+/* The rule that claimed this was `flex: 0 1 auto` on a grid item, which is
+   inert, so the filtered board stayed one card marooned in a field of
+   full-height empty rules. */
+for (const [w, label] of [[1440, "1440"], [1280, "1280"]]) {
+  const page = await open("?state=filtered", { width: w, height: 960 });
+  const t = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll(".tray[data-lane]")].map((n) => ({
+      empty: n.hasAttribute("data-empty"),
+      h: Math.round(n.getBoundingClientRect().height),
+    }));
+    return {
+      live: Math.max(...rows.filter((r) => !r.empty).map((r) => r.h)),
+      dead: Math.max(...rows.filter((r) => r.empty).map((r) => r.h)),
+    };
+  });
+  ok("an unanswering column collapses to its head at " + label,
+    t.dead < t.live / 4, "empty " + t.dead + " against " + t.live);
+  /* The step back is ink, not opacity: opacity halved the tray's own hairline
+     with it and drew the four column rules at three different weights. */
+  const rules = await page.evaluate(() =>
+    [...document.querySelectorAll(".tray[data-lane]")].slice(1)
+      .map((n) => getComputedStyle(n).borderLeftColor));
+  ok("and every column rule is still drawn at one weight at " + label,
+    new Set(rules).size === 1, JSON.stringify(rules));
+  await page.close();
+}
+
+/* == the filtered board is legible, not merely dimmed ============== */
+{
+  const page = await open("?state=filtered");
+  const worst = await page.evaluate(() => {
+    const lum = (c) => {
+      const v = c.map((x) => {
+        const u = x / 255;
+        return u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2];
+    };
+    let low = 99;
+    let who = "";
+    document.querySelectorAll(".tray[data-empty] .trayName, .tray[data-empty] .trayCount").forEach((n) => {
+      let dim = 1;
+      for (let p = n; p && p !== document.documentElement; p = p.parentElement) {
+        const o = parseFloat(getComputedStyle(p).opacity);
+        if (Number.isFinite(o) && o < 1) dim *= o;
+      }
+      const m = getComputedStyle(n).color.match(/[\d.]+/g).map(Number);
+      const a = (m[3] === undefined ? 1 : m[3]) * dim;
+      const fg = [0, 1, 2].map((i) => m[i] * a + 255 * (1 - a));
+      const r = (lum([255, 255, 255]) + 0.05) / (lum(fg) + 0.05);
+      if (r < low) { low = r; who = n.className + " " + n.textContent.trim(); }
+    });
+    return { low: Math.round(low * 100) / 100, who };
+  });
+  ok("a stepped-back column head still clears AA", worst.low >= 4.5,
+    worst.who + " at " + worst.low + ":1");
+  await page.close();
+}
+
+/* == the rail is one stop, and stays one across a repaint ========== */
+/* It was four: the mark and the avatar carried no tabindex at all, and the
+   tile expression short-circuited so Home and Tasks both rendered a zero. */
+for (const [w, h, label] of [[1440, 960, "1440"], [390, 844, "390"]]) {
+  const page = await open("", { width: w, height: h });
+  const railStops = () => page.evaluate(() =>
+    [...document.querySelectorAll(".rail a, .rail button, .rail [tabindex]")]
+      .filter((n) => n.offsetParent !== null && n.getAttribute("tabindex") !== "-1").length);
+  ok("the rail is one tab stop at rest at " + label, (await railStops()) === 1, String(await railStops()));
+  await page.evaluate(() => document.querySelector('.rail button[tabindex="0"]').focus());
+  await page.keyboard.press("ArrowDown");
+  await page.waitForTimeout(80);
+  ok("and one after the arrows walk it at " + label, (await railStops()) === 1, String(await railStops()));
+  const moved = await page.evaluate(() => document.activeElement.dataset.key);
+  await page.locator(".board .card .tick").first().click();
+  await page.waitForTimeout(500);
+  ok("and one after a completion repaints the sheet at " + label, (await railStops()) === 1, String(await railStops()));
+  const now = await page.evaluate(() => document.querySelector('.rail button[tabindex="0"]').dataset.key);
+  ok("and the walked position survives that repaint at " + label, now === moved, moved + " -> " + now);
+  await page.close();
+}
+
+/* == the fold rule marks the fold ================================== */
+/* A spurious offset term put it 112px above the foot of the scroller, where
+   it read as a section divider inside Done rather than as "there is more". */
+for (const [q, w, label] of [["", 1440, "1440"], ["", 1280, "1280"], ["?state=planning", 1440, "drawer open"], ["?state=dense", 1440, "peak season"]]) {
+  const page = await open(q, { width: w, height: 960 });
+  const off = await page.evaluate(() => {
+    let worst = 0;
+    document.querySelectorAll(".tray[data-lane]").forEach((t) => {
+      const body = t.querySelector(".trayBody");
+      if (!body) return;
+      const tb = t.getBoundingClientRect();
+      const bb = body.getBoundingClientRect();
+      const top = parseFloat(getComputedStyle(t).getPropertyValue("--body-top")) || 0;
+      const bot = parseFloat(getComputedStyle(t).getPropertyValue("--body-bottom")) || 0;
+      worst = Math.max(worst, Math.abs(tb.top + top - bb.top), Math.abs(tb.top + bot - bb.bottom));
+    });
+    return Math.round(worst);
+  });
+  ok("both fold rules sit on the scroller own edges at " + label, off <= 1, off + "px out");
+  await page.close();
+}
+
+/* == the completion arrives instead of snapping ==================== */
+{
+  const page = await open();
+  await page.evaluate(() => {
+    window.__fly = [];
+    const t = setInterval(() => {
+      const s = document.querySelector(".cardFly");
+      if (!s) return;
+      const r = s.getBoundingClientRect();
+      window.__fly.push([Math.round(r.width), Math.round(r.height)]);
+    }, 16);
+    setTimeout(() => clearInterval(t), 1500);
+  });
+  await page.locator(".board .card .tick").first().click();
+  await page.waitForTimeout(900);
+  const f = await page.evaluate(() => {
+    const s = window.__fly;
+    const node = document.querySelector(".card[data-just-done]");
+    return {
+      first: s[0], last: s[s.length - 1], frames: s.length,
+      dest: node ? [Math.round(node.getBoundingClientRect().width), Math.round(node.getBoundingClientRect().height)] : null,
+    };
+  });
+  ok("the flight grows into the card it becomes", f.frames > 4 && f.first[1] !== f.last[1],
+    JSON.stringify(f.first) + " -> " + JSON.stringify(f.last));
+  ok("and hands off with no snap on the landing frame",
+    Boolean(f.dest) && Math.abs(f.last[1] - f.dest[1]) <= 2 && Math.abs(f.last[0] - f.dest[0]) <= 2,
+    JSON.stringify(f.last) + " against " + JSON.stringify(f.dest));
+  /* The board answer used to flip at take-off, 400ms before the card landed,
+     which is what made the two read as unrelated events. */
+  ok("and the count settles on the frame the card lands",
+    (await page.locator("[data-changed]").count()) > 0);
+  await page.close();
+}
+
+/* == reopening a task does not invent a history ==================== */
+{
+  const page = await open();
+  /* Every seeded Done card has no prevLane, so the old fallback dropped it
+     into column one and announced a return to a column it had never been in. */
+  await page.locator('.tray[data-lane="done"] .card .tick').first().click();
+  await page.waitForTimeout(400);
+  const said = await page.locator("#say").textContent();
+  ok("a card that was never in To do is not said to be back in it",
+    !/is back in/.test(said), JSON.stringify(said));
+  ok("and reopening is reversible like everything else",
+    (await page.locator('.carry [data-act="undo"]').count()) === 1);
+  const when = await page.evaluate(() => {
+    const n = document.querySelector('.tray[data-lane="done"] .card .when');
+    return n ? n.textContent.trim() : null;
+  });
+  await page.locator('.carry [data-act="undo"]').click();
+  await page.waitForTimeout(400);
+  const back = await page.evaluate(() => {
+    const n = document.querySelector('.tray[data-lane="done"] .card .when');
+    return n ? n.textContent.trim() : null;
+  });
+  ok("and the day the work was finished survives the round trip", back === when,
+    JSON.stringify(when) + " -> " + JSON.stringify(back));
+  await page.close();
+}
+
+/* == the chip is six kinds, not four looks ========================= */
+{
+  const page = await open("?state=dense");
+  const kinds = await page.evaluate(() => {
+    const seen = {};
+    document.querySelectorAll(".when").forEach((c) => {
+      const s = getComputedStyle(c);
+      seen[c.dataset.t] = [s.backgroundColor, s.color, s.boxShadow.slice(0, 24), s.fontWeight].join("|");
+    });
+    return seen;
+  });
+  const looks = Object.values(kinds);
+  ok("every kind of time chip has its own silhouette",
+    new Set(looks).size === looks.length, JSON.stringify(kinds, null, 1));
+  const held = await page.evaluate(() => {
+    const n = document.querySelector('.when[data-t="waiting"]');
+    return n ? n.textContent.trim() : null;
+  });
+  ok("and a waiting chip says what its number means", /^Held /.test(held || ""), JSON.stringify(held));
+  await page.close();
+}
+
+/* == the empty board leaves when it is obeyed ====================== */
+{
+  const page = await open("?state=empty");
+  ok("the blank board draws no interior rules to be framed by", await page.evaluate(() =>
+    [...document.querySelectorAll(".tray")].every((t) => {
+      const c = getComputedStyle(t).borderLeftColor;
+      return c === "rgba(0, 0, 0, 0)" || c === "transparent";
+    })));
+  ok("and it teaches what a task here looks like",
+    (await page.locator(".emptyEg").count()) === 1);
+  await page.locator('.emptyBoard button[data-act="add"]').click();
+  await page.waitForTimeout(300);
+  ok("pressing the one instruction retires it", (await page.locator(".emptyBoard").count()) === 0);
+  ok("and opens a composer with the caret in it",
+    await page.evaluate(() => Boolean(document.activeElement.closest("[data-draft], .draft"))));
   await page.close();
 }
 

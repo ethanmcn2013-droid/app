@@ -28,6 +28,7 @@ const STATES = args.get("states")?.split(",").map((v) => v.trim()) ?? [
   "cards",
   "dense",
   "empty",
+  "filtered",
   "loading",
   "planning",
 ];
@@ -81,6 +82,9 @@ async function shoot() {
     for (const direction of directions) {
       for (const state of STATES) {
         if (state === "cards" && (viewport.width < 1000 || !direction.query)) continue;
+        /* The three archived directions predate both the specimen sheet and
+           the filter, so they have no such screen to photograph. */
+        if (state === "filtered" && !direction.query) continue;
         const url = `${pathToFileURL(path.join(LAB, direction.file)).href}?state=${state}` +
           (direction.query ? `&${direction.query}` : "");
         await page.goto(url, { waitUntil: "load" });

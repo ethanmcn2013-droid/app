@@ -164,6 +164,15 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
   font-variant-numeric: tabular-nums;
 }
 .roundLead { margin: 16px 0 0; max-width: 66ch; color: var(--ink-2); }
+/* A round that was closed and then re-opened says so on its own card. The
+   indigo edge is the one accent, spent on the one fact a reader of this log
+   would otherwise get wrong. */
+.superseded {
+  margin: 14px 0 0; max-width: 66ch; padding: 12px 16px;
+  border-left: 2px solid var(--indigo); background: var(--wash);
+  border-radius: 0 8px 8px 0; color: var(--ink-2); font-size: 14px;
+}
+.superseded b { color: var(--ink-1); font-weight: 600; }
 .items { margin: 26px 0 0; display: grid; gap: 0; }
 .item { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 20px; padding: 20px 0; border-top: 1px solid var(--line-soft); }
 .itemMeta { display: grid; gap: 5px; align-content: start; }
@@ -457,6 +466,7 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     ["cards", "Card states"],
     ["dense", "Peak season"],
     ["empty", "Empty"],
+    ["filtered", "Filtered"],
     ["loading", "Loading"],
     ["planning", "Planning"],
     ["tablet", "Tablet"],
@@ -467,6 +477,7 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     cards: "The specimen sheet: every state a card can be in, at the exact width a tray gives it, with the reasoning under each.",
     dense: "Thirty-two tasks. Each column scrolls on its own, so reaching the foot of one never drags another away.",
     empty: "The empty board. One column leads with an instruction and the rest simply say there is nothing in them.",
+    filtered: "The board with the overdue filter on. Columns with no answer step back rather than repeat themselves, and the board states the filter once, at the foot.",
     loading: "The loading frame shows the shape of the board that is arriving, and says what is being opened.",
     planning: "Planning docks beside the board rather than over it. The ink floor showing through the gutter is the seam.",
     tablet: "768. The board scrolls sideways, snaps, and fades at the edge so a cut column reads as more to come.",
@@ -521,6 +532,14 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
         '<span class="pill">' + round.fixed + " fixed</span>" +
       "</div>" +
       '<p class="roundLead">' + round.headline + "</p>" +
+      (round.supersededBy
+        ? '<p class="superseded"><b>Superseded by round ' + round.supersededBy.round +
+          ", " + round.supersededBy.date + ".</b> " + round.supersededBy.reason + "</p>"
+        : "") +
+      (round.reopened
+        ? '<p class="superseded"><b>The engagement re-opened here, ' + round.reopened.date +
+          ".</b> " + round.reopened.note + "</p>"
+        : "") +
       '<div class="items">' +
         round.worst.map(function (item) {
           return '<div class="item">' +

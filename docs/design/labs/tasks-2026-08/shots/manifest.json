@@ -10,6 +10,7 @@
     "cards",
     "dense",
     "empty",
+    "filtered",
     "loading",
     "planning"
   ],
@@ -143,6 +144,13 @@
     {
       "direction": "locked",
       "name": "Studio Floor · locked palette",
+      "state": "filtered",
+      "viewport": "390x844",
+      "file": "locked-filtered--390x844.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "390x844",
       "file": "locked-loading--390x844.png"
@@ -174,6 +182,13 @@
       "state": "empty",
       "viewport": "390x844",
       "file": "a-empty--390x844.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "filtered",
+      "viewport": "390x844",
+      "file": "a-filtered--390x844.png"
     },
     {
       "direction": "a",
@@ -213,6 +228,13 @@
     {
       "direction": "b",
       "name": "Variant B · Frame",
+      "state": "filtered",
+      "viewport": "390x844",
+      "file": "b-filtered--390x844.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
       "state": "loading",
       "viewport": "390x844",
       "file": "b-loading--390x844.png"
@@ -244,6 +266,13 @@
       "state": "empty",
       "viewport": "390x844",
       "file": "c-empty--390x844.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "filtered",
+      "viewport": "390x844",
+      "file": "c-filtered--390x844.png"
     },
     {
       "direction": "c",
@@ -388,6 +417,13 @@
     {
       "direction": "locked",
       "name": "Studio Floor · locked palette",
+      "state": "filtered",
+      "viewport": "768x1024",
+      "file": "locked-filtered--768x1024.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "768x1024",
       "file": "locked-loading--768x1024.png"
@@ -419,6 +455,13 @@
       "state": "empty",
       "viewport": "768x1024",
       "file": "a-empty--768x1024.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "filtered",
+      "viewport": "768x1024",
+      "file": "a-filtered--768x1024.png"
     },
     {
       "direction": "a",
@@ -458,6 +501,13 @@
     {
       "direction": "b",
       "name": "Variant B · Frame",
+      "state": "filtered",
+      "viewport": "768x1024",
+      "file": "b-filtered--768x1024.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
       "state": "loading",
       "viewport": "768x1024",
       "file": "b-loading--768x1024.png"
@@ -489,6 +539,13 @@
       "state": "empty",
       "viewport": "768x1024",
       "file": "c-empty--768x1024.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "filtered",
+      "viewport": "768x1024",
+      "file": "c-filtered--768x1024.png"
     },
     {
       "direction": "c",
@@ -640,6 +697,13 @@
     {
       "direction": "locked",
       "name": "Studio Floor · locked palette",
+      "state": "filtered",
+      "viewport": "1280x900",
+      "file": "locked-filtered--1280x900.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "1280x900",
       "file": "locked-loading--1280x900.png"
@@ -678,6 +742,13 @@
       "state": "empty",
       "viewport": "1280x900",
       "file": "a-empty--1280x900.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "filtered",
+      "viewport": "1280x900",
+      "file": "a-filtered--1280x900.png"
     },
     {
       "direction": "a",
@@ -724,6 +795,13 @@
     {
       "direction": "b",
       "name": "Variant B · Frame",
+      "state": "filtered",
+      "viewport": "1280x900",
+      "file": "b-filtered--1280x900.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
       "state": "loading",
       "viewport": "1280x900",
       "file": "b-loading--1280x900.png"
@@ -762,6 +840,13 @@
       "state": "empty",
       "viewport": "1280x900",
       "file": "c-empty--1280x900.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "filtered",
+      "viewport": "1280x900",
+      "file": "c-filtered--1280x900.png"
     },
     {
       "direction": "c",
@@ -913,6 +998,13 @@
     {
       "direction": "locked",
       "name": "Studio Floor · locked palette",
+      "state": "filtered",
+      "viewport": "1440x960",
+      "file": "locked-filtered--1440x960.png"
+    },
+    {
+      "direction": "locked",
+      "name": "Studio Floor · locked palette",
       "state": "loading",
       "viewport": "1440x960",
       "file": "locked-loading--1440x960.png"
@@ -951,6 +1043,13 @@
       "state": "empty",
       "viewport": "1440x960",
       "file": "a-empty--1440x960.png"
+    },
+    {
+      "direction": "a",
+      "name": "Variant A · Air",
+      "state": "filtered",
+      "viewport": "1440x960",
+      "file": "a-filtered--1440x960.png"
     },
     {
       "direction": "a",
@@ -997,6 +1096,13 @@
     {
       "direction": "b",
       "name": "Variant B · Frame",
+      "state": "filtered",
+      "viewport": "1440x960",
+      "file": "b-filtered--1440x960.png"
+    },
+    {
+      "direction": "b",
+      "name": "Variant B · Frame",
       "state": "loading",
       "viewport": "1440x960",
       "file": "b-loading--1440x960.png"
@@ -1035,6 +1141,13 @@
       "state": "empty",
       "viewport": "1440x960",
       "file": "c-empty--1440x960.png"
+    },
+    {
+      "direction": "c",
+      "name": "Variant C · Signal",
+      "state": "filtered",
+      "viewport": "1440x960",
+      "file": "c-filtered--1440x960.png"
     },
     {
       "direction": "c",

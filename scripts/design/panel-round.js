@@ -1,11 +1,15 @@
 export const meta = {
-  name: 'tasks-panel-round-11-final',
+  name: 'tasks-panel-round',
   description: 'Seven fresh independent seats re-grade the Tasks master against a 9.5 bar',
   phases: [
     { title: 'Review' },
     { title: 'Verify' },
   ],
 }
+
+/* The round number rides in on args so the runner stops being rewritten for
+   each round. `Workflow({ scriptPath, args: { round: 12 } })`. */
+const ROUND = (typeof args !== 'undefined' && args && args.round) || 12
 
 const SHOTS = 'C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/docs/design/labs/tasks-2026-08/shots'
 const SRC = 'C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/docs/design/labs/tasks-2026-08/floor.html'
@@ -35,24 +39,25 @@ CONSTRAINTS THAT ARE NOT NEGOTIABLE (do not propose breaking these):
 Findings that amount to "add a colour", "add a weight" or "restructure the
 layout" are out of scope and will be discarded. Everything else is in scope.
 
-MEASURED BASELINE (verified by an automated audit, all passing): palette lock
-0 violations, weights 0, families 0, WCAG AA contrast 0 failures across 5
-states, hit targets 0, radii ladder 0, motion tokens 0. Do not spend findings
-on those. Find what automation cannot see.
+MEASURED BASELINE (verified by an automated audit re-run against this exact
+file, all passing): palette lock 0 violations, weights 0, families 0, WCAG AA
+contrast 0 failures across 6 states, hit targets 0, radii ladder 0, motion
+tokens 0. Do not spend findings on those. Find what automation cannot see.
 
 FRAMES (read the images):
 ${SHOTS}/locked-board--1440x960.png    the board, populated
 ${SHOTS}/locked-cards--1440x960.png    card specimen sheet, every card state
 ${SHOTS}/locked-dense--1440x960.png    32 tasks, peak season
 ${SHOTS}/locked-empty--1440x960.png    empty board
+${SHOTS}/locked-filtered--1440x960.png the board with the overdue filter on
 ${SHOTS}/locked-loading--1440x960.png  loading
 ${SHOTS}/locked-planning--1440x960.png planning drawer open
 ${SHOTS}/locked-board--768x1024.png    tablet
 ${SHOTS}/locked-board--390x844.png     phone
 Source: ${SRC}
 
-THE BOARD IS NOW LIVE, NOT A PICTURE. As of this round the artifact
-implements a real interaction layer, and you are expected to DRIVE it, not
+THE BOARD IS LIVE, NOT A PICTURE. The artifact implements a real interaction
+layer, and you are expected to DRIVE it, not
 only look at frames. Open the file in Playwright (chromium, already installed
 in this repo; import { chromium } from "@playwright/test")
 and operate it:
@@ -66,7 +71,7 @@ and operate it:
 - Resize and watch the two edge fades, which are measured after layout.
 There is now a behaviour gate at
 C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/design/interaction-check.mjs
-with 186 assertions, all passing. READ IT. Everything it asserts is already
+with 193 assertions, all passing. READ IT. Everything it asserts is already
 proven, so a finding that restates one of those assertions is worthless.
 Spend your findings on what it does not cover.
 
@@ -84,20 +89,39 @@ Also live, and worth driving before you score:
   This is a deliberate reversal of round 5 on measured rag evidence; argue
   with it if you disagree, but do not report it as an oversight.
 
-NEW SINCE THE LAST ROUND, all live and all worth driving:
-- The board really is one roving group now: five tab stops at rest and five
-  at peak season, and the rail, the view switcher and the tools are each one
-  stop the arrows walk.
+LIVE AND WORTH DRIVING, from the rounds before this one:
+- The board is one roving group: five tab stops at rest and five at peak
+  season, and the rail, the view switcher and the tools are each one stop the
+  arrows walk.
 - The card column has a floor as well as a ceiling, so the card holds its
   documented measure at 1280 as well as 1440. Check both.
-- The overdue chip, a couple's name and the new "N today" chip COMPOSE — two
-  or three filters at once — and Escape unwinds them one layer at a time.
+- The overdue chip, a couple's name and the "N today" chip COMPOSE — two or
+  three filters at once — and Escape unwinds them one layer at a time.
 - The composer repeats: Enter commits and opens a fresh line beneath.
 - A drop into Done is a completion, with the flight and the undo.
 - An open card's words can be selected. Forced-colors mode is supported.
 
-THIS IS THE FINAL ROUND. There will be no further remediation, so your score
-is the number that goes on the record. Grade it as the finished artifact.
+CHANGED SINCE THE LAST PANEL SAW THIS FILE. Two commits landed on the master
+after the previous round closed, and no seat has ever graded them. They are
+the most likely place for a new defect, so drive them first:
+- A header band above the board, and a copy pass over every visible string.
+- The empty board and the filtered board were both rebuilt. The empty board
+  leads with one instruction rather than four identical rows. Under a filter,
+  columns with no answer step back instead of repeating the same sentence
+  five times, and the board states the filter once, at the foot. Both are now
+  reachable directly: ?state=empty and ?state=filtered.
+- The composer takes the caret when it opens.
+
+THIS ROUND IS NOT THE LAST. A previous round was recorded as final and the
+engagement was closed; the founder chose to continue rather than close at
+that score. Remediation follows this round, so report the defect rather than
+softening it because the work is nearly done. Equally, do not mark it down to
+look rigorous: it has had eleven rounds of work and some of it is genuinely
+finished.
+
+SCORES ARE ALLOWED TO FALL. If this is worse than a finished artifact should
+be, say the number that is true. Nothing about the record obliges the line to
+go up.
 
 Say plainly what this is: name the score, name what earned it, and name what
 still stands between it and 9.5 in terms a founder can act on — is what
@@ -144,7 +168,7 @@ const SEATS = [
 phase('Review')
 const reviews = await parallel(SEATS.map((seat) => () =>
   agent(
-    `You are the ${seat.name} seat on an independent design review panel. Round 2.\n\n` +
+    `You are the ${seat.name} seat on an independent design review panel. Round ${ROUND}.\n\n` +
     `YOUR LENS\n${seat.lens}\n\n${BAR}\n\n` +
     `Return your score to one decimal, your 3 to 5 most costly defects, and the single change that would raise the score most. ` +
     `Give every finding a short kebab-case id. Do not hedge, do not give credit for effort, and do not guess at any other seat's opinion.`,
@@ -196,10 +220,10 @@ for (const verdict of checked) {
   else refuted.push(row)
 }
 
-log(`round 2: ${alive.length} seats, ${checked.length} verdicts, ${confirmed.length} confirmed, ${refuted.length} refuted`)
+log(`round ${ROUND}: ${alive.length} seats, ${checked.length} verdicts, ${confirmed.length} confirmed, ${refuted.length} refuted`)
 
 return {
-  round: 2,
+  round: ROUND,
   scores: alive.map((r) => ({ seat: r.seat, score: r.score, biggestWin: r.biggestWin })),
   confirmed,
   refuted: refuted.map((r) => ({ seat: r.seat, id: r.id, problem: r.problem, why: r.verdict })),
