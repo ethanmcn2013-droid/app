@@ -129,3 +129,63 @@ than take the lab's word for it.
 Both gates were green before round 1: the measured gate across three rooms
 × eleven states, and 108 behaviour assertions. The loop then runs to a
 unanimous 9.5 or to an itemised honest distance.
+
+---
+
+## The room, chosen by the founder · 2026-08-24
+
+The comparison surface ran three rooms for nine rounds. The founder has
+picked one, verbatim:
+
+> *"this is my fav config preset — The approach / the ground **Paper**
+> (changed) / the past **Folded to a line** / the indigo **Next thing and
+> the rail** (changed) … i need us to focus in on just this config and
+> getting just this config up to the 9.5 gate now, we will also of course
+> need to have a darkmode version"*
+
+So the engagement now grades **one configuration and its ground-flipped
+twin**, and nothing else:
+
+| Room | ground | spacing | past | accent |
+|---|---|---|---|---|
+| **On paper** — what ships | paper | measured | folded | **structure** |
+| **After dark** — the same room at night | ink | measured | folded | **structure** |
+
+Two things this changes, both deliberate:
+
+- **The accent is now `structure`, not `once`.** Indigo marks the next
+  thing AND draws the part of the rail that is still ahead. The lock's
+  standing rule holds unchanged — indigo is still a rule and a filled
+  tick and nothing else, and still never sets type on ink at 2.99:1.
+- **Paper is the primary, not the reversal.** The light-lock argument in
+  the original lock is unaffected: ink is still fully built, still shot,
+  still audited, and print still forces paper — which now agrees with the
+  shipping room instead of diverging from it.
+
+`approach` (ink/folded/once) and `record` (ink/listed/structure) are
+retired from the grading matrix. Their files and frames remain as the
+record; nothing is deleted.
+
+## The loop, redesigned · 2026-08-24
+
+Nine rounds established that the gate as originally defined could not be
+reached, for a mechanical reason recorded in full at
+`.claude/skills/elevate/references/panel.md` — "The quota that cannot
+converge". In short: the seat schema required three findings per seat, so
+seven seats produced 33–35 findings every round regardless of quality,
+and the floor — the lowest seat — was set by the largest of a fixed
+supply. The ceiling climbed 7.6 to 9.0 monotonically; the floor could
+not. The founder approved the redesign on 2026-08-24.
+
+What changed, all now non-negotiables in the skill:
+
+1. **No finding quota.** A seat that finds nothing says so.
+2. **The ending is mechanical.** Two consecutive rounds with no confirmed
+   finding at or above 0.3, both gates green, on the shipping rooms.
+   Scores are still reported; they are no longer the trigger.
+3. **One configuration and its twin** are graded, not three rooms.
+4. **Triage before refutation** — settled ledger first, batch under 0.2.
+5. **Structure freezes.** Architectural change goes on a build list for
+   the founder to schedule rather than being made mid-round.
+6. **Red-green fixes.** Every fix ships with its gate assertion written
+   first and failing.

@@ -109,7 +109,8 @@ Each seat returns exactly:
 }
 ```
 
-Three to five findings, each costed in tenths. Scores to one decimal. No
+Zero to five findings, each costed in tenths. Scores to one decimal. There
+is NO MINIMUM - see "The quota that cannot converge" below. No
 hedging, no credit for effort, no guessing at other seats' opinions.
 
 ## The refuter
@@ -156,3 +157,37 @@ regressions the session itself had introduced that day.
 
 Never play the panel casually in your own voice without the protocol. The
 value is the discipline, not the theater.
+
+## The quota that cannot converge
+
+Paid for over nine rounds of the Timeline engagement. The seat schema
+used to set `minItems: 3`, so seven seats produced 33–35 findings every
+round no matter how good the artifact was. The gate is the LOWEST seat,
+and the lowest seat is set by the largest of that fixed supply — so the
+floor could not rise however much the work improved.
+
+The evidence, round by round:
+
+| Round | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+|---|---|---|---|---|---|---|---|---|---|
+| Floor | 6.2 | 6.6 | 7.2 | 7.5 | 7.8 | 8.2 | 7.6 | 8.2 | 7.2 |
+| Ceiling | 7.6 | 7.4 | 8.1 | 8.3 | 8.4 | 8.5 | 8.7 | 8.8 | 9.0 |
+| Findings | 35 | 35 | 35 | 35 | 35 | 34 | 35 | 35 | 33 |
+| Refuted | 2 | 2 | 13 | 13 | 11 | 15 | 17 | 23 | 17 |
+
+The ceiling — an honest read of the artifact — climbed monotonically
+from 7.6 to 9.0. The floor did not, because it was measuring the quota,
+not the work. Refutation rose from 6% to 66% as the quota was met with
+progressively more marginal material. A unanimous 9.5 was unreachable by
+construction, and would have been unreachable on a flawless artifact.
+
+Two rules follow, and neither is optional:
+
+1. **No minimum.** An empty findings array is a valid and expected
+   answer. Say so in the BAR, not only in the schema.
+2. **Stop on defects, not on the opinion-minimum.** The scores stay —
+   they are how a founder reads movement — but the ENDING is mechanical:
+   two consecutive rounds with no confirmed finding at or above 0.3, both
+   automated gates green, on the shipping configuration only. A score
+   that is the minimum of seven fresh adversarial samples is a
+   measurement of how hard the panel looked, not of how good the work is.

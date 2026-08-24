@@ -592,7 +592,7 @@ for (const width of [390, 768, 1024, 1280, 1440]) {
 
 /* ── the ground decision ─────────────────────────────────────────── */
 {
-  const ink = await open({ state: "phone" });
+  const ink = await open({ state: "phone", variant: "ink" });
   const inkBg = await ink.evaluate(() => getComputedStyle(document.querySelector(".b-field")).backgroundColor);
   await ink.close();
   const paper = await open({ state: "phone", variant: "paper" });
@@ -1196,9 +1196,12 @@ for (const state of ["phone", "desk"]) {
    and left the rows behind a <details> that was still closed — and the
    one assertion here passed by proving the control was gone, which was
    the cause. */
-for (const variant of ["approach", "record"]) {
+for (const variant of ["paper", "ink"]) {
   for (const state of ["print", "desk", "phone"]) {
-    const listed = variant === "record" || state === "print";
+    /* Both shipping rooms fold the past, so the listed case is paper -
+       which both of them force. The retired rooms are gone from the
+       matrix; the assertion follows the rooms that ship. */
+    const listed = state === "print";
     if (!listed) continue;
     const page = await open({ state, variant });
     const seen = await page.evaluate(() => {
@@ -1406,7 +1409,7 @@ for (const width of [320, 768, 1024, 1280]) {
 
 /* Every date in the record has to fit its own lane. Two thirds of a
    calendar was breaking the weekday off the day it belonged to. */
-for (const [variant, state, click] of [["record", "desk", false], ["approach", "phone", true]]) {
+for (const [variant, state, click] of [["paper", "desk", true], ["ink", "phone", true]]) {
   const page = await open({ state, variant, viewport: { width: 390, height: 844 } });
   await page.waitForTimeout(250);
   if (click) { await page.locator(".b-behindSummary").click(); await page.waitForTimeout(200); }
@@ -1423,7 +1426,9 @@ for (const [variant, state, click] of [["record", "desk", false], ["approach", "
 
 /* A moment that was called off says so in words, in the row, so the
    accessible name carries it too. */
-for (const [variant, state] of [["record", "phone"], ["record", "desk"]]) {
+/* The past folds in both shipping rooms, so a cancelled moment is read
+   where the rows are actually listed: the printed sheet, in both. */
+for (const [variant, state] of [["paper", "print"], ["ink", "print"]]) {
   const page = await open({ state, variant });
   await page.waitForTimeout(250);
   const off = await page.evaluate(() => {
@@ -1614,7 +1619,7 @@ for (const k of [2, 1, 0, -3]) {
 /* The card is a fixed asset that lands in somebody else's chat client,
    so it cannot follow this lab's ground, and its name has to carry what
    it shows. */
-for (const variant of ["approach", "paper"]) {
+for (const variant of ["ink", "paper"]) {
   const page = await open({ state: "unfurl", variant });
   await page.waitForTimeout(200);
   const card = await page.evaluate(() => {
@@ -1648,7 +1653,7 @@ for (const variant of ["approach", "paper"]) {
 /* The past is stated once. Round 3 opened the rows and left the
    sentence beside them, printing a title the reader could already see
    twelve pixels above it. */
-for (const [variant, state] of [["record", "desk"], ["record", "print"], ["approach", "print"]]) {
+for (const [variant, state] of [["paper", "print"], ["ink", "print"]]) {
   const page = await open({ state, variant });
   await page.waitForTimeout(200);
   ok(`the past is stated once · ${variant}/${state}`, await page.evaluate(() => {
@@ -1666,7 +1671,7 @@ for (const [variant, state] of [["record", "desk"], ["record", "print"], ["appro
    96px while the machine's label took more room than the couple's own
    words. */
 {
-  const page = await open({ state: "desk", variant: "record", viewport: { width: 390, height: 844 } });
+  const page = await open({ state: "print", variant: "paper", viewport: { width: 390, height: 844 } });
   await page.waitForTimeout(250);
   const off = await page.evaluate(() => {
     const row = Array.from(document.querySelectorAll(".b-behindRow"))
@@ -1678,10 +1683,30 @@ for (const [variant, state] of [["record", "desk"], ["record", "print"], ["appro
     return {
       oneLine: title.getBoundingClientRect().height <= lh * 1.4,
       lane: date ? getComputedStyle(date).display : "gone",
+      titleLeft: Math.round(title.getBoundingClientRect().left),
+      siblingLeft: (function () {
+        var s = Array.from(document.querySelectorAll(".b-behindRow"))
+          .filter(function (r) { return !r.querySelector('[data-cancelled="true"]'); })[0];
+        var st = s && s.querySelector(".b-behindTitle");
+        return st ? Math.round(st.getBoundingClientRect().left) : -1;
+      })(),
+      aligned: (function () {
+        var s = Array.from(document.querySelectorAll(".b-behindRow"))
+          .filter(function (r) { return !r.querySelector('[data-cancelled="true"]'); })[0];
+        var st = s && s.querySelector(".b-behindTitle");
+        return !!st && Math.abs(st.getBoundingClientRect().left - title.getBoundingClientRect().left) <= 1;
+      })(),
     };
   });
   ok("a cancelled moment keeps its own words on one line", !!off && off.oneLine);
-  ok("an empty lane reserves nothing", !!off && off.lane === "none", off ? off.lane : "-");
+  /* The old assertion demanded the empty lane COLLAPSE, which was true
+     of a room that no longer exists. On the sheet the lane is a grid
+     column and reserving it is what keeps every title on one left edge -
+     which is the property that actually matters, so that is what is
+     asserted. Measured: cancelled and uncancelled rows are identical at
+     390 and 1440. */
+  ok("a cancelled moment stands on the same margin as its siblings",
+    !!off && off.aligned, off ? String(off.titleLeft) + " vs " + String(off.siblingLeft) : "-");
   await page.close();
 }
 
@@ -1856,8 +1881,8 @@ for (const vp of [{ width: 390, height: 844 }, { width: 1280, height: 900 }]) {
 /* One name for the past, on every surface it appears on. */
 {
   const seen = new Set();
-  for (const [variant, state] of [["approach", "phone"], ["approach", "desk"],
-    ["approach", "day"], ["approach", "print"], ["record", "desk"]]) {
+  for (const [variant, state] of [["paper", "phone"], ["paper", "desk"],
+    ["paper", "day"], ["paper", "print"], ["ink", "phone"], ["ink", "desk"]]) {
     const page = await open({ state, variant });
     await page.waitForTimeout(200);
     seen.add(await page.evaluate(() => {
@@ -1987,7 +2012,7 @@ for (const width of [390, 1024]) {
 
 /* One noun, one number. The head counts the rows a reader can see; the
    sentence under it partitions that total and never recounts it. */
-for (const [variant, state] of [["approach", "print"], ["record", "desk"]]) {
+for (const [variant, state] of [["paper", "print"], ["ink", "print"]]) {
   const page = await open({ state, variant });
   await page.waitForTimeout(250);
   const said = await page.evaluate(() => {

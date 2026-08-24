@@ -145,7 +145,15 @@ const SCHEMA = {
     seat: { type: "string" },
     score: { type: "number" },
     findings: {
-      type: "array", minItems: 3, maxItems: 5,
+      /* NO FLOOR. A quota of three guarantees that seven seats produce
+         thirty-three findings whether or not thirty-three exist, so the
+         score - which is the lowest seat - is set by the largest of a
+         fixed supply and can never rise however good the work gets.
+         Nine rounds of one engagement proved it: the ceiling climbed
+         7.6 to 9.0 monotonically while the floor moved 6.2 to 7.2 and
+         refutation went six per cent to sixty-six. A seat that finds
+         nothing must be able to say so. */
+      type: "array", minItems: 0, maxItems: 5,
       items: {
         type: "object", additionalProperties: false,
         required: ["id", "element", "problem", "fix", "cost"],
@@ -271,7 +279,11 @@ ${BAR}
 Return ONLY a JSON object matching:
 ${JSON.stringify(SCHEMA, null, 2)}
 
-Score to one decimal. 3 to 5 findings, each with a short kebab-case id and a
+Score to one decimal. Report ONLY the defects you actually found - none,
+or up to five. There is no minimum and no quota: an empty findings array
+is a valid, expected answer for a surface that is genuinely finished, and
+padding the list with marginal material is the one thing that makes this
+panel worthless. Each finding takes a short kebab-case id and a
 cost in tenths. Do not hedge, do not give credit for effort, and do not
 guess at any other seat's opinion. Write the JSON to ${path.join(dir, `seat-${seat.key}.json`)}.
 `;

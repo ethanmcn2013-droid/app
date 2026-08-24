@@ -44,7 +44,7 @@ const page = `<!doctype html>
 <style>
 ${css.join("\n\n")}
 </style>
-<body data-state="owner-flight" data-v="approach" data-ground="ink" data-past="folded" data-accent="once">
+<body data-state="owner-flight" data-v="paper" data-ground="paper" data-past="folded" data-accent="structure">
 <div id="tl"></div>
 ${JS.map((f) => `<script src="./${f}"></script>`).join("\n")}
 <script>

@@ -246,15 +246,16 @@
     /* Three finished rooms. Each is a combination of the three named
        decisions below, never a copy: start from one, then change anything
        underneath and every combination you land on is buildable. */
+    /* Two rooms, one design. Paper is what ships; ink is the same four
+       decisions read in the dark. They are not alternatives to choose
+       between - every fix has to land in both, and the gate grades both. */
     presets: {
-      approach: { ground: "ink", past: "folded", accent: "once" },
-      paper: { ground: "paper", past: "folded", accent: "once" },
-      record: { ground: "ink", past: "listed", accent: "structure" },
+      paper: { ground: "paper", past: "folded", accent: "structure" },
+      ink: { ground: "ink", past: "folded", accent: "structure" },
     },
     presetCopy: {
-      approach: { name: "The approach", note: "The direction as drawn: ink, and a measure you fall down." },
-      paper: { name: "On paper", note: "The same composition inverted, for the light-lock." },
-      record: { name: "The long view", note: "Everything that happened, and today drawn on the rail." },
+      paper: { name: "On paper", note: "The room as it ships: ink on white, and today drawn down the rail." },
+      ink: { name: "After dark", note: "The same four decisions with the ground flipped. Not a theme - the same room at night." },
     },
     controls: [
       {

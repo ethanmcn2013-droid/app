@@ -20,11 +20,10 @@
     "loading-slow"
   ],
   "variants": [
-    "approach",
     "paper",
-    "record"
+    "ink"
   ],
-  "defaultVariant": "approach",
+  "defaultVariant": "paper",
   "viewports": [
     {
       "name": "390x844",
@@ -198,18 +197,14 @@
     "footNote": "Exploration only. Branch design/timeline-redesign-2026-08, draft PR #154, no deploy and no app code. Direction B, The Approach, locked 2026-08-18.",
     "variants": [
       [
-        "room-approach",
-        "The approach"
-      ],
-      [
         "room-paper",
         "On paper"
       ],
       [
-        "room-record",
-        "The long view"
+        "room-ink",
+        "After dark"
       ]
     ],
-    "variantsLead": "Three finished rooms of the locked direction, each a combination of the four named decisions rather than a copy. The ground decision is the reversal for the light-lock: the same composition, inverted through the declared ink ladder, with nothing hand-tuned to make the flip work. Print forces paper either way."
+    "variantsLead": "One configuration ships and it has a dark twin. Paper is the room as the founder picked it - ink on white, the past folded to a line, and indigo spent on the next thing AND the rail that is still ahead. Ink is the same four decisions with the ground flipped through the declared ladder: not a theme laid over the work, the same room read at night. Every fix lands in both, and both are graded every round. Print forces paper, which is now the room it already is."
   }
 }

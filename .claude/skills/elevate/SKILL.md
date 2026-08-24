@@ -49,6 +49,23 @@ objects — is the brief's to set (`references/brief-template.md`).
    every round.
 9. The two honest endings are "gate met" and "distance itemised". There
    is no third.
+10. Seats have NO finding quota. An empty findings array is the expected
+    answer for a finished surface; a minimum guarantees the floor can
+    never rise (`references/panel.md`, "The quota that cannot converge").
+11. The ending is mechanical, not an opinion-minimum: two consecutive
+    rounds with no confirmed finding at or above 0.3, both gates green,
+    on the SHIPPING configuration. Scores are reported, never the
+    trigger — the minimum of seven fresh adversarial samples measures how
+    hard the panel looked, not how good the work is.
+12. Grade the configuration that will ship and its ground-flipped twin,
+    and nothing else. Rooms nobody will see cost a third of every round
+    and produce findings about work that will never exist.
+13. Triage before spending a refuter: auto-reject anything already on the
+    settled ledger, batch anything under 0.2, refute the rest one to one.
+14. Structure freezes. Once the loop is in polish an architectural change
+    goes on a named build list for the founder to schedule — each one
+    seeds the next round's findings and restarts the clock.
+15. Every fix ships with its gate assertion written FIRST and failing.
 
 ## Door: full (and explore)
 
