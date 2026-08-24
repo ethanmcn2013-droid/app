@@ -228,7 +228,8 @@ td.low { color: var(--indigo); font-weight: 600; }
     <p class="stand">
       Fifteen rounds. Seven blind seats each time, one adversarial refuter per
       finding, 525 findings raised and 336 fixed. The floor peaked at 8.6 in
-      round 9 and sits at 7.9 today. This is why, and what I would do about it.
+      round 9 and sits at 7.9 today. This is why, what I would do about it, and
+      the loop I have rebuilt to do it.
     </p>
     <p class="byline">Prepared 24 August 2026 · rounds 1–15 · lowest seat is the score</p>
   </header>
@@ -516,6 +517,75 @@ td.low { color: var(--indigo); font-weight: 600; }
       ordinary trackpad hardware. That does not come back if the loop stops.
     </p>
   </section>
+
+  <section class="col">
+    <h2>The new loop, in operation</h2>
+    <p>
+      Recommendation A and B are built and pushed. Five changes, each answering
+      a specific failure the record shows rather than a hunch.
+    </p>
+
+    <h3>1 · The surface is frozen</h3>
+    <p>
+      A finding whose answer is "build X" is now marked <code>build</code>,
+      recorded, deferred to a list for after the gate, and never remediated
+      during a round. Seats are told the freeze exists so they do not spend
+      findings on it. This is the change that addresses the 68%.
+    </p>
+
+    <h3>2 · Rules, not patches</h3>
+    <p>
+      Every finding must now carry a <strong>class-level rule</strong>, phrased
+      so it could be checked mechanically, and the refuter judges the rule as
+      well as the fix. Preflight fails if a round is recorded whose remediation
+      did not grow the gate. This is the answer to the same defect class
+      recurring three times: fixed on three preset rules, found on a fourth;
+      fixed on the tick, found on the card body.
+    </p>
+
+    <h3>3 · Seats are handed what is already proven</h3>
+    <p>
+      The gate's claims now go into the brief by name. 189 findings were refuted
+      over fifteen rounds, many of them re-raising settled ground. Nine kilobytes
+      of assertion names is the cheapest fix available to this loop.
+    </p>
+
+    <h3>4 · Verification is spent where it decides the score</h3>
+    <p>
+      Findings at or above 1.0 keep their own adversarial refuter. Everything
+      below is batched per seat, judged independently. A 0.15 typography note
+      cannot move a floor and was costing a full agent to refute.
+    </p>
+
+    <h3>5 · Headroom</h3>
+    <p>
+      Every seat now reports the score it would give <em>if its own findings were
+      fixed exactly as written</em>. That is a prediction the next round checks.
+      If a round's floor lands well below the previous round's predicted floor,
+      the loop is churning, not converging — and we will know in one round
+      instead of three.
+    </p>
+
+    <h3>What it costs</h3>
+    <p>
+      Converge rounds run five seats: the four that have set the floor most
+      often, plus one rotating so no lens goes unwatched. Gate rounds run all
+      seven, and only when a converge round leaves no seat under 9.3, because a
+      unanimous bar cannot be certified by a subset. Roughly <strong>18 agents a
+      round against 42</strong>, and 26 frames instead of 164 now that only the
+      locked configuration is shot.
+    </p>
+  </section>
+
+  <div class="verdict">
+    <p>
+      <b>What I expect.</b> Three frozen convergence rounds, 16 to 18, then a
+      gate round. On the arc so far I expect the floor at 8.8–9.2 by round 18
+      and the resting board through 9.5 shortly after. If round 16's floor comes
+      in below round 15's predicted headroom, the diagnosis was wrong and I will
+      say so rather than run three more rounds to find out.
+    </p>
+  </div>
 
   <p class="foot">
     Sources: <code>docs/design/labs/tasks-2026-08/panel.json</code> (15 rounds,
