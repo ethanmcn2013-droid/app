@@ -88,3 +88,5 @@ chip-probe*.mjs
 .tmp-seat-*.mjs
 .ui7-*.mjs
 _*.txt
+_*.png
+_*.pdf
