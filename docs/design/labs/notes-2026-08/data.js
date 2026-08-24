@@ -250,7 +250,7 @@ window.NOTES = (function () {
      fixed through the rule rather than the rule bent around it. */
   const LEDE_MAX = 48;
   function ledeOf(body) {
-    const stop = body.search(/(?<=[.?!”])s/);
+    const stop = body.search(/(?<=[.?!”])\s/);
     if (stop <= 0 || stop + 1 > LEDE_MAX) return null;
     const head = body.slice(0, stop + 1).trim();
     return body.slice(head.length).trim() ? head : null;
@@ -267,7 +267,7 @@ window.NOTES = (function () {
       title,
       rest,
       /* False means: this note has no lede and is set whole at 400.
-         Thirteen of fourteen take that path now, which is the honest
+         Thirteen of fourteen take that path, which is the honest
          one and the one the renderers already had. */
       lede: Boolean(lede),
       source: seed.source || "typed",

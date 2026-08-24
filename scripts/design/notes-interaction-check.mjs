@@ -516,7 +516,18 @@ const said = (page) => page.locator("#say").textContent();
         if (el.tabIndex < 0) continue;
         const cs = getComputedStyle(el);
         const r = el.getBoundingClientRect();
-        if (cs.display === "none" || cs.visibility === "hidden" || r.width === 0 || r.height === 0) {
+        /* Round 9 sharpened this. The rule existed for the paid-for
+           defect "a control at zero opacity must be inert" — a keyboard
+           user tabbing onto an invisible button is lost. display:none
+           and visibility:hidden are BOTH genuinely inert: driven in
+           Chromium, Tab skips a visibility:hidden button and does NOT
+           skip an opacity:0 one. Conflating them made the correct
+           technique for hiding a control without touching the DOM
+           during a typing burst look like the defect, while the actual
+           defect — opacity:0 — went unchecked. Both are checked now,
+           and the one that is really reachable is the one that fails. */
+        if (cs.display === "none" || cs.visibility === "hidden") continue;
+        if (Number(cs.opacity) === 0 || r.width === 0 || r.height === 0) {
           out.invisible.push(el.className || el.tagName);
           continue;
         }
@@ -666,7 +677,30 @@ const said = (page) => page.locator("#say").textContent();
 /* ── the phone can commit a note by touch ────────────────────────── */
 {
   const page = await open("", { width: 390, height: 844 });
-  ok("there is no commit control before there is anything to commit", (await page.locator('[data-act="keep"]').count()) === 0);
+  /* Round 9: the control is always in the tree now, because inserting
+     it 450ms after the first keystroke meant it did not exist for the
+     whole of the three seconds the product is named for. What must
+     still be true is that it is not offered before there is anything to
+     commit — not visible, and not reachable by Tab. */
+  ok(
+    "the commit is not offered before there is anything to commit",
+    await page.evaluate(() => {
+      const k = document.querySelector('[data-act="keep"]');
+      return !k || getComputedStyle(k).visibility === "hidden";
+    }),
+  );
+  ok(
+    "and it is on screen from the very first character, not after a pause",
+    await (async () => {
+      await page.locator(".phoneField").click();
+      await page.keyboard.type("R", { delay: 0 });
+      await page.waitForTimeout(70);
+      return await page.evaluate(() => {
+        const k = document.querySelector('[data-act="keep"]');
+        return Boolean(k) && getComputedStyle(k).visibility === "visible";
+      });
+    })(),
+  );
   await page.locator(".phoneField").click();
   await page.keyboard.type("Bar restock, tonic and the good olives.");
   await page.waitForTimeout(560);

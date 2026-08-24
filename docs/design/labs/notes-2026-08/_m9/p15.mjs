@@ -1,0 +1,22 @@
+import { chromium } from "@playwright/test";
+const BASE = "file:///C:/Users/ethan/signal-studio-workspace/_wt-design-notes/docs/design/labs/notes-2026-08/notebook.html";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 960 } });
+await p.goto(BASE + "?state=notebook"); await p.waitForTimeout(500);
+await p.locator(".idxRow").first().focus();
+await p.keyboard.press("/"); await p.waitForTimeout(350);
+console.log("after / from index, focus:", await p.evaluate(()=>document.activeElement.id||document.activeElement.className));
+await p.keyboard.press("Control+k"); await p.waitForTimeout(350);
+console.log("after ctrl+k, focus:", await p.evaluate(()=>document.activeElement.id||document.activeElement.className));
+await p.keyboard.type("florist",{delay:25}); await p.waitForTimeout(600);
+const dump = async(tag)=>console.log(tag, "rows",await p.locator(".idxRow").count(), "| head:", (await p.locator(".indexHead").innerText()).replace(/\n/g," | "), "| live:", await p.evaluate(()=>[...document.querySelectorAll('[aria-live]')].map(e=>e.textContent.trim())));
+await dump("florist");
+await p.keyboard.type("zzzz"); await p.waitForTimeout(800);
+await dump("no hits");
+console.log("noHits panel:", (await p.locator(".noHits").innerText().catch(()=>"none")).replace(/\n/g," | "));
+await p.screenshot({path:"docs/design/labs/notes-2026-08/_m9/search-dead.png"});
+// escape out
+await p.keyboard.press("Escape"); await p.waitForTimeout(400);
+await dump("after esc");
+console.log("focus after esc:", await p.evaluate(()=>document.activeElement.id||document.activeElement.className));
+await b.close();

@@ -92,6 +92,12 @@
   let inputTimer = null;
   let confirming = null;   /* the note delete is asking about              */
   let searchSaid = null;   /* debounce for what search says out loud        */
+  /* Where a press began, so a drag can be told from a tap. Without it
+     the sentence-click handler fired at the end of every drag whose ends
+     landed in one span, threw the dragged phrase away and picked the
+     whole sentence — which made the word-safe snap unreachable by the
+     one gesture it was written for. */
+  let pressAt = null;
   /* The seam's destination, seeded from the note and living only as long
      as the peel. It used to be read from N.projects — a workspace string
      that is not one of the listbox's five options, so the control's own
@@ -104,41 +110,33 @@
      it is made without touching the document: a CSS custom property on
      the root, which the stylesheet reads. Nothing in the tree changes, so
      the browser's typing history is untouched. */
+  /* The commit control used to be INSERTED by applyDraft on a 450ms
+     debounce, so for the whole of the three seconds this product is
+     named for the affordance that makes a thought safe was not on
+     screen — and on a phone, where there is no chord, there was no way
+     to keep the note at all while typing steadily. The debounce was
+     protecting the browser's typing history from a mid-burst DOM
+     mutation, which is the right problem and the wrong fix: it solved
+     it by removing a control. The control is now always in the tree and
+     this swaps visibility instead — no node created or destroyed during
+     input, and visibility:hidden takes it out of the tab order too, so
+     nothing is ever invisible-but-focusable. */
   function wakeSheet(live) {
     root.style.setProperty("--writing", live ? "1" : "0");
+    root.style.setProperty("--commit-vis", live ? "visible" : "hidden");
+    root.style.setProperty("--rest-vis", live ? "hidden" : "visible");
   }
 
   function applyDraft() {
+    /* Nothing is inserted or removed here any more. The commit control
+       and the resting privacy line are both always in the tree and
+       wakeSheet swaps their visibility during the input event, so the
+       affordance exists from the first character. All that is left to
+       defer is the counter TEXT, which nobody needs mid-burst and which
+       is the only write that must stay off the typing history. */
     const live = Boolean(draft.trim());
     const host = mount.querySelector(".top") || mount.querySelector(".dock");
-    if (!host) return;
-    const foot = mount.querySelector(".topFoot, .dockRow[data-verbs]");
-    if (host.hasAttribute("data-live") !== live && foot) {
-      host.toggleAttribute("data-live", live);
-      const commit = foot.querySelector('[data-act="keep"]');
-      if (live && !commit) {
-        foot.insertAdjacentHTML(
-          "beforeend",
-          phone.matches
-            ? `<span class="dockCount tab" aria-hidden="true">${draft.length}</span><button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`
-            /* The spacer was missing here and present in the template,
-               so the commit control rendered hard against the character
-               counter at the paper left edge and snapped 270px right on
-               the next repaint. applyDraft is the ONLY path a real typist
-               takes, so the designed right-aligned position never existed
-               while anybody was actually writing — the shipped frame does
-               not depict the state. Same children, same order, both
-               paths, and the assertion below holds them together. */
-            : `<span class="topMeta tab" data-count>${draft.length} / 4000</span><span class="spacer"></span><button class="act" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>`,
-        );
-        const idle = [...foot.querySelectorAll(".topMeta")].find((n) => !n.dataset.count && !n.classList.contains("tab"));
-        if (idle) idle.remove();
-      } else if (!live && commit) {
-        commit.remove();
-        for (const n of foot.querySelectorAll("[data-count], .dockCount")) n.remove();
-        if (!phone.matches) foot.insertAdjacentHTML("beforeend", `<span class="topMeta">${esc(N.copy.privacyLong)}</span>`);
-      }
-    }
+    if (host) host.toggleAttribute("data-live", live);
     for (const node of mount.querySelectorAll(".topMeta[data-count], .dockCount")) {
       node.textContent = node.classList.contains("dockCount") ? String(draft.length) : `${draft.length} / 4000`;
     }
@@ -1336,9 +1334,12 @@
        a thought is safe in three seconds — was unreachable by touch: the
        only way to commit a note was a keyboard chord on a device with no
        keyboard. */
-    const commit = live
-      ? `<button class="dockGlyph" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`
-      : "";
+    /* Always in the tree, for the same reason as the desk: a phone has
+       no chord, so this IS the way to keep a note, and it was absent
+       for the whole time anybody was typing one. */
+    const commit =
+      `<span class="dockCount tab commitPart">${draft.length} / 4000</span>` +
+      `<button class="dockGlyph commitPart" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`;
     /* On a wide screen the capture field is on the desk's paper, and
        reading a note replaces it. So the dock carries the way back to
        writing, which is otherwise off the screen entirely. */
@@ -1471,13 +1472,10 @@
         <div class="deskWrite">
           <textarea class="topField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
           <div class="topFoot">
-            ${
-              draft.trim()
-                ? `<span class="topMeta tab" data-count>${draft.length} / 4000</span>
-                   <span class="spacer"></span>
-                   <button class="act" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>`
-                : `<span class="topMeta">${esc(N.copy.privacyLong)}</span>`
-            }
+            <span class="topMeta restPart">${esc(N.copy.privacyLong)}</span>
+            <span class="topMeta tab commitPart" data-count>${draft.length} / 4000</span>
+            <span class="spacer commitPart"></span>
+            <button class="act commitPart" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>
           </div>
         </div>
         <div class="deskAside">
@@ -1777,7 +1775,7 @@
 
   function groupControl() {
     return `
-      <span class="groupBy" role="group" aria-label="How the pile is grouped">
+      <span class="groupBy" role="group" aria-label="How your notes are grouped">
         <button class="groupBtn" type="button" data-act="group-about"${group === "about" ? " data-on" : ""} aria-pressed="${group === "about"}">What it is about</button>
         <button class="groupBtn" type="button" data-act="group-day"${group === "day" ? " data-on" : ""} aria-pressed="${group === "day"}">When</button>
       </span>`;
@@ -2391,6 +2389,30 @@
     const readAfter = mount.querySelector(".readBody, .handBody");
     if (readAfter && readScroll) readAfter.scrollTop = readScroll;
     trimRows();
+    /* The desk budget is written in terms the CSS can read, so the note
+       yields to the peel before the second plane does. Zero when no
+       peel is open, so the resting frame is untouched. */
+    const peelEl = mount.querySelector(".pile > .peel");
+    document.documentElement.style.setProperty(
+      "--peel-h",
+      peelEl ? Math.round(peelEl.getBoundingClientRect().height) + "px" : "0px",
+    );
+    /* How far above its own bottom edge the index must land a walked row
+       for that row to clear the scrim as well as the dock. The scrollport
+       runs 64px behind the dock, so reserving the dock height alone left
+       the row sitting in the fade at about 65% white — clear of the pill,
+       erased anyway, and the fix would have been recorded as done.
+       Measured rather than guessed, because both edges move. */
+    const idxEl = document.getElementById("index");
+    const wrapEl = mount.querySelector(".dockWrap");
+    if (idxEl && wrapEl) {
+      const scrim = parseFloat(getComputedStyle(root).getPropertyValue("--scrim-h")) || 96;
+      const reserve = Math.max(
+        0,
+        Math.round(idxEl.getBoundingClientRect().bottom - (wrapEl.getBoundingClientRect().top - scrim)),
+      );
+      root.style.setProperty("--walk-reserve", reserve + "px");
+    }
     measureClip();
     /* A picked sentence must never be off screen while the primary reads
        "Send to Tasks". From the fourth arrow press down, the mark sat
@@ -2422,6 +2444,21 @@
         if (row) {
           row.focus({ preventScroll: true });
           row.scrollIntoView({ block: "nearest" });
+          /* block:"nearest" lands a row flush with the scrollport bottom,
+             and the scrollport runs behind the dock and its 96px scrim,
+             so every arrow press past the first screenful parked the
+             focused row in the fade or under the slab. scroll-padding is
+             declared and is not enough here, so the landing is measured
+             and corrected: a row a person is standing on has to be a row
+             a person can read. */
+          const box = document.getElementById("index");
+          const wrap = mount.querySelector(".dockWrap");
+          if (box && wrap) {
+            const scrim = parseFloat(getComputedStyle(root).getPropertyValue("--scrim-h")) || 96;
+            const floor = wrap.getBoundingClientRect().top - scrim - 4;
+            const over = row.getBoundingClientRect().bottom - floor;
+            if (over > 0) box.scrollTop += over;
+          }
         }
       } else if (refocus.kind === "read") {
         /* Reading a note lifted it onto the desk and then parked the
@@ -2561,6 +2598,14 @@
     }
   });
 
+  mount.addEventListener("pointerdown", (e) => {
+    pressAt = { x: e.clientX, y: e.clientY };
+  });
+  /* A cancelled touch must not leave a stale coordinate behind, or the
+     next genuine tap looks like a drag. */
+  mount.addEventListener("pointercancel", () => {
+    pressAt = null;
+  });
   mount.addEventListener("click", (e) => {
     if (picker && !e.target.closest(".filing")) {
       picker = null;
@@ -2574,7 +2619,22 @@
        which is the contract shift-arrow already has. */
     const sent = e.target.closest(".sent");
     if (sent && sent.closest(".readBody, .handBody")) {
-      const target = pickTarget();
+      /* Click fires at the end of a drag too. If this press MOVED and
+         left a real selection inside the same body, the gesture was a
+         drag: stand down entirely and let the selectionchange path
+         write the snapped string, rather than adding a fourth route
+         into one pick. Shift is exempt, because shift-click extends
+         from the caret and is non-collapsed by definition. */
+      const sel = document.getSelection();
+      const moved = pressAt ? Math.hypot(e.clientX - pressAt.x, e.clientY - pressAt.y) : 0;
+      const dragged =
+        !e.shiftKey &&
+        moved > 4 &&
+        sel &&
+        !sel.isCollapsed &&
+        sel.anchorNode &&
+        sent.closest(".readBody, .handBody").contains(sel.anchorNode);
+      const target = dragged ? null : pickTarget();
       if (target) {
         const i = Number(sent.dataset.i);
         if (e.shiftKey && sentAt) {

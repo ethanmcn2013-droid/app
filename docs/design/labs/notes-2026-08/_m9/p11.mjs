@@ -1,0 +1,16 @@
+import { chromium } from "@playwright/test";
+const BASE = "file:///C:/Users/ethan/signal-studio-workspace/_wt-design-notes/docs/design/labs/notes-2026-08/notebook.html";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 390, height: 844 }, hasTouch:true, isMobile:true });
+await p.goto(BASE + "?state=notebook"); await p.waitForTimeout(600);
+const st = () => p.evaluate(()=>document.querySelector("#index").scrollTop);
+await p.evaluate(()=>{const i=document.querySelector("#index"); i.scrollTop=400;});
+await p.locator(".phoneField").click(); await p.waitForTimeout(300);
+console.log("scrollTop after tap field:", await st());
+await p.keyboard.type("Ask the band to arrive by five");
+await p.waitForTimeout(600);
+console.log("scrollTop after typing:", await st());
+console.log("dock html:", (await p.locator(".dock").innerHTML()).replace(/\s+/g," ").slice(0,1200));
+console.log("save count:", await p.locator("[aria-label='Save it']").count());
+await p.screenshot({path:"docs/design/labs/notes-2026-08/_m9/phone-capture2.png", fullPage:false});
+await b.close();

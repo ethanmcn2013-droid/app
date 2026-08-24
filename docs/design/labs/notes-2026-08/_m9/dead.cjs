@@ -1,0 +1,14 @@
+const fs=require("fs");
+const D="C:/Users/ethan/signal-studio-workspace/_wt-design-notes/docs/design/labs/notes-2026-08/";
+const css=fs.readFileSync(D+"master.css","utf8");
+const js=fs.readFileSync(D+"notebook.js","utf8")+fs.readFileSync(D+"data.js","utf8")+fs.readFileSync(D+"icons.js","utf8");
+const stripped=css.replace(/\/\*[\s\S]*?\*\//g,"");
+const cls=new Set();
+for(const m of stripped.matchAll(/\.([A-Za-z][A-Za-z0-9_-]*)/g)) cls.add(m[1]);
+const dead=[...cls].filter(c=>!new RegExp("[\"'\s.\[>]"+c+"\b").test(js));
+console.log("css classes:",cls.size,"| never emitted by js:",dead.length);
+console.log(dead.join(" "));
+const attrs=new Set();
+for(const m of stripped.matchAll(/\[data-([a-z-]+)/g)) attrs.add(m[1]);
+const deadA=[...attrs].filter(a=>!js.includes("data-"+a));
+console.log("data attrs in css:",attrs.size,"| dead:",deadA.join(" "));

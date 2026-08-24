@@ -1,0 +1,22 @@
+import { chromium } from "@playwright/test";
+const BASE = "file:///C:/Users/ethan/signal-studio-workspace/_wt-design-notes/docs/design/labs/notes-2026-08/notebook.html";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 960 } });
+const errs=[]; p.on("pageerror",e=>errs.push(e.message));
+const live = () => p.evaluate(()=>[...document.querySelectorAll('[aria-live]')].map(e=>e.textContent.trim()).join(" || "));
+await p.goto(BASE + "?state=review"); await p.waitForTimeout(500);
+console.log("hand:", (await p.locator(".desk").innerText()).replace(/\n/g," | ").slice(0,300));
+console.log("pips:", await p.locator(".pips").getAttribute("aria-label"));
+await p.keyboard.press("t"); await p.waitForTimeout(400);
+console.log("after T:", await live(), "| peel?", await p.locator(".peel").count());
+console.log("focus:", await p.evaluate(()=>document.activeElement.className));
+await p.keyboard.press("Escape"); await p.waitForTimeout(300);
+await p.keyboard.press("k"); await p.waitForTimeout(400);
+console.log("after K:", await live());
+console.log("hand now:", (await p.locator(".desk").innerText()).replace(/\n/g," | ").slice(0,220));
+// undo of K?
+console.log("undo present:", await p.locator(".undo").count(), await p.locator(".undo").allInnerTexts());
+await p.keyboard.press("Control+z"); await p.waitForTimeout(300);
+console.log("after ctrl+z:", (await p.locator(".desk").innerText()).replace(/\n/g," | ").slice(0,220), "|| live:", await live());
+console.log("ERR",errs);
+await b.close();

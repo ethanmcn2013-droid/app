@@ -28,6 +28,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 :root {
+  --scrim-h: 96px;
   /* ── the three ─────────────────────────────────────────────── */
   --ink: #111111;
   --indigo: #4f46e5;
@@ -434,6 +435,26 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .topField::placeholder { color: var(--ink-3); }
 .topFoot { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
 .topFoot .spacer { flex: 1; }
+/* THE COMMIT IS ALWAYS THERE.
+   It used to be inserted 450ms after the first keystroke, so the control
+   that makes a thought safe was missing for the whole of the three
+   seconds this product is named for, and on a phone, which has no
+   chord, that was the only way to keep a note. Both states are in the
+   tree now and only visibility changes, written during the input event
+   as a custom property. visibility:hidden also leaves the tab order, so
+   nothing is ever invisible-but-focusable. The resting line is taken
+   out of flow so the live row keeps its designed geometry either way
+   and nothing reflows on the first character. */
+.topFoot { position: relative; }
+.topFoot .restPart {
+  visibility: var(--rest-vis, visible);
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+}
+.topFoot .commitPart, .dock .commitPart { visibility: var(--commit-vis, hidden); }
+/* The dock counter carries the same fact in the same grammar as the
+   desk. It used to be a bare number, aria-hidden, so on a phone the
+   limit did not exist and nobody was told how close they were. */
+.dockCount { font-variant-numeric: tabular-nums; }
 .topMeta { font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; line-height: var(--lh-base); }
 .topMeta kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 7px; }
 
@@ -514,7 +535,20 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
      and their heading, the floor the second plane is owed. */
   --desk-chrome: 311px;
   --index-floor: 224px;
-  max-height: max(200px, calc(100vh - var(--desk-chrome) - var(--index-floor)));
+  /* The smallest window a note may be given before the peel starts
+     yielding instead. Lower than the old hard 200px arm, because the
+     measured fade and the counting line already declare a clip
+     honestly, and because a floor that outranks the second plane is
+     not a floor for the second plane. */
+  --note-min: 120px;
+  /* Nothing in this sum used to account for the peel, so opening the
+     seam — the signature gesture — added about 248px to the desk and
+     drove the index to 13px at 1280x800 and to nothing at all at
+     1440x960: thirty-seven notes still counted in the header with no
+     pointer route to any of them. The architecture is locked as two
+     planes; the gesture deleted one. paint() measures the open peel
+     and writes --peel-h, so the note yields first. */
+  max-height: max(var(--note-min), calc(100vh - var(--desk-chrome) - var(--index-floor) - var(--peel-h, 0px)));
   overflow: auto;
 }
 /* This clamp was once 31vh, against 46vh for every shorter note, so a
@@ -562,7 +596,10 @@ input:focus-visible, textarea:focus-visible, [contenteditable]:focus-visible {
 .index, .idxGroupRows { list-style: none; margin: 0; padding-inline: 0; }
 .idxItem, .idxSection { list-style: none; display: block; }
 .idxSection { position: relative; }
-.index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; padding: 0 var(--gutter) 132px; scrollbar-width: thin; overflow-anchor: none; }
+/* Every arrow press past the first screenful used to park the focused
+   row completely behind the floating dock — block:"nearest" aligns it
+   flush to the scrollport bottom, which is below the scrim. */
+.index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; scroll-padding-bottom: var(--walk-reserve, 160px); padding: 0 var(--gutter) 132px; scrollbar-width: thin; overflow-anchor: none; }
 /* A day rule says when you wrote it. A subject rule says what it is
    about, and carries the date the venue is actually facing — which is the
    only thing on this surface that a notebook belonging to somebody else
@@ -698,8 +735,13 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 
 /* ── the dock ──────────────────────────────────────────────────── */
 .dockWrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 18px; display: flex; justify-content: center; pointer-events: none; z-index: 3; }
+/* The scrim is what actually erases a row, so it is a token and the
+   things that must clear it read that token rather than guessing from
+   the dock height. Reserving --dock-h alone parked a walked row at 65%
+   white wash: clear of the pill, still inside the fade, and the fix
+   would have been recorded as done. */
 .dockWrap::before {
-  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: 96px;
+  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: var(--scrim-h, 96px);
   background: linear-gradient(to top, var(--white) 66%, rgba(255, 255, 255, 0)); pointer-events: none;
 }
 .dock {
@@ -804,7 +846,10 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; overflow: auto; }
 /* The same measure as every other surface a person's words appear on.
    It was running 78 characters against everything else's 69. */
-.darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-tight); letter-spacing: var(--tr-34); }
+/* 1.28 is display leading, which the ladder reserves for a tight one.
+   The same sentence got 1.62 on the desk and 1.28 on ink, at the one
+   moment a person is least able to look carefully. */
+.darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-base); letter-spacing: var(--tr-34); text-wrap: pretty; }
 .darkWave { max-width: var(--measure); }
 .darkSaid .tail { color: var(--on-ink-3); }
 .darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; width: 100%; margin: 40px auto 0; }
@@ -1047,7 +1092,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   margin-left: auto; text-transform: none; letter-spacing: var(--tr-12); font-weight: 400;
   font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3);
 }
-.pick { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); }
+/* A pick that wraps used to render as four disjoint fragments with a
+   full ring on each, so the interior ones carried a hairline above AND
+   below the whole measure and the passage read as struck through — on
+   the one object this product exists to render. It clones across line
+   boxes now and the mark rides the baseline. Horizontal padding only:
+   vertical padding tightened the stack to 3.5px of air. */
+.pick {
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background: var(--indigo-wash); box-shadow: inset 0 -1px 0 var(--indigo-line);
+  border-radius: var(--r-xs); padding: 0 3px; margin: 0 -3px;
+}
 /* A sentence is the instrument. It carries the pick treatment at rest
    on hover, so what a press will do is visible before the press —
    the same wash and the same hairline, no new colour. */
@@ -1072,7 +1127,12 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    note's own edge, which also satisfies the lock literally: the note is
    never covered, the peel is. */
 .peel {
-  position: relative; width: min(560px, calc(100% - 72px)); margin: -10px 0 0 56px;
+  /* 560 and 56 were on no ladder in this file: the peel started 32px
+     right of the note it came from and ended 62px inside the aside,
+     aligning with nothing. Bound to the footprint of the words it
+     carries — 24px is the paper own padding, so its left edge lands on
+     the note first character and its right edge on the note last. */
+  position: relative; width: min(var(--measure), calc(100% - 48px)); margin: -10px 0 0 24px;
   background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 25px 17px 16px;
 }
 /* Both are position:relative with z-index:auto, so the later sibling was
@@ -1092,6 +1152,16 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   to { opacity: 1; transform: none; }
 }
 .pile > .peel { transform-origin: 32px 0; }
+/* The peel carries its own budget too. Subtracting it from the note
+   alone was not enough: on the ordinary path the note is far shorter
+   than its cap, so there was nothing to reclaim and the peel ate the
+   plane regardless. It scrolls inside itself, and because its commit
+   row is already sticky the send, the cancel and the destination stay
+   reachable at any height — only the wording region moves. */
+.pile > .peel {
+  max-height: calc(100vh - var(--desk-chrome, 311px) - var(--index-floor, 224px) - var(--note-min, 120px));
+  overflow: auto;
+}
 .pile > .peel { animation: peelIn var(--dur-settle) var(--curve) both; }
 @media (prefers-reduced-motion: reduce) { .pile > .peel { animation: none; } }
 .deskAside .peelFrom { margin-top: 0; }
@@ -1404,7 +1474,11 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
     bottom: calc(var(--inset) + env(safe-area-inset-bottom));
     padding: 0; z-index: 6;
   }
-  .dockWrap::before { display: none; }
+  /* The fade was 96px tall and painted UNDER a 118px opaque dock, so
+     the edge a person actually sees on the device where the index is
+     scrolled most was a hard cut through a row. Keyed to the dock top
+     rather than to the scroller bottom, so it fades what is visible. */
+  .dockWrap::before { display: block; height: 40px; bottom: 100%; }
   /* One object, two rows. The field a person writes in cannot share a
      372px line with three verbs, four suite tiles and an account disc —
      it collapsed to a 40px column wrapping one word per line. The words
