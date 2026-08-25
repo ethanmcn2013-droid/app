@@ -2478,6 +2478,133 @@ for (const [q, lane, label] of [["", "todo", "resting board"], ["?state=dense", 
   await page.close();
 }
 
+/* == the hole is held where the card LEFT ========================= */
+/* Round 19, three seats at cost 9 each: the placeholder was resolved from the
+   flying node's parent AFTER the repaint, so it landed at the top of the
+   DESTINATION. The origin collapsed on frame one exactly as before, and the
+   destination was held 18px low for the whole flight and snapped back. */
+for (const [w, h, label] of [[1440, 960, "1440"], [390, 844, "390"]]) {
+  const page = await open("", { width: w, height: h });
+  await page.evaluate(() => {
+    window.__hole = [];
+    const t = setInterval(() => {
+      const n = document.querySelector("[data-hole]");
+      const tray = n ? n.closest(".tray[data-lane]") : null;
+      if (n) window.__hole.push(tray ? tray.dataset.lane : "none");
+    }, 16);
+    setTimeout(() => clearInterval(t), 1500);
+  });
+  const box = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(1200);
+  const lanes = await page.evaluate(() => [...new Set(window.__hole)]);
+  ok("the hole is held in the column the card left at " + label,
+    lanes.length === 1 && lanes[0] === "todo", JSON.stringify(lanes));
+  ok("and nothing is left holding a hole once it lands at " + label,
+    (await page.locator("[data-hole]").count()) === 0);
+  await page.close();
+}
+
+/* == the beat exists at every width =============================== */
+/* Below about 1290 the destination column is off the sheet; the card used to
+   be clamped to the edge and evaporate into the fade, so the product's one
+   designed moment simply did not exist on a phone. It sets down where the
+   hand is instead. */
+for (const [w, h] of [[390, 844], [768, 1024], [1280, 900], [1440, 960]]) {
+  const page = await open("", { width: w, height: h });
+  await page.evaluate(() => {
+    window.__vis = [];
+    const t = setInterval(() => {
+      const s = document.querySelector(".cardFly");
+      if (!s) return;
+      const r = s.getBoundingClientRect();
+      const b = document.querySelector(".board").getBoundingClientRect();
+      const seen = Math.max(0, Math.min(r.right, Math.min(b.right, innerWidth)) - Math.max(r.left, Math.max(b.left, 0)));
+      window.__vis.push(Math.round(seen / r.width * 100));
+    }, 16);
+    setTimeout(() => clearInterval(t), 1300);
+  });
+  const box = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(1100);
+  const v = await page.evaluate(() => window.__vis);
+  ok("the completion has a visible beat at " + w, v.length > 4, v.length + " frames");
+  ok("and the card never leaves the screen during it at " + w,
+    v.length > 0 && Math.min(...v) >= 95, "least on screen " + (v.length ? Math.min(...v) : 0) + "%");
+  await page.close();
+}
+
+/* == a preview is not a commit =================================== */
+/* A card walked through Done by the arrow keys fired a full false completion
+   mid-gesture — flight, receipt and all — for work not yet put down. */
+{
+  const page = await open();
+  const before = await counts(page);
+  await page.locator('.tray[data-lane="todo"] .card').first().focus();
+  await page.keyboard.press(" ");
+  for (let i = 0; i < 4; i += 1) await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(300);
+  ok("walking a carried card through Done fires no completion",
+    (await page.locator(".cardFly").count()) === 0 &&
+    (await page.locator('.carry [data-act="undo"]').count()) === 0);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(250);
+  ok("and putting it back leaves the board where it was",
+    (await counts(page)).done === before.done, JSON.stringify(await counts(page)));
+  await page.close();
+}
+
+/* == one answer, and it arrives with the card ==================== */
+{
+  const page = await open();
+  await page.evaluate(() => {
+    window.__ans = [];
+    const t = setInterval(() => {
+      const strip = document.querySelector(".carry");
+      window.__ans.push({
+        flying: Boolean(document.querySelector(".cardFly")),
+        stripSeen: Boolean(strip) && getComputedStyle(strip).opacity !== "0",
+        facts: (document.querySelector(".headFacts") || {}).textContent || "",
+      });
+    }, 16);
+    setTimeout(() => clearInterval(t), 1500);
+  });
+  const box = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(1300);
+  const a = await page.evaluate(() => {
+    const f = window.__ans.filter((x) => x.flying);
+    return {
+      stripDuring: f.some((x) => x.stripSeen),
+      factsDuring: [...new Set(f.map((x) => x.facts))].length,
+    };
+  });
+  ok("the strip does not answer before the card lands", a.stripDuring === false);
+  ok("and the fact row says one thing for the whole flight", a.factsDuring <= 1, String(a.factsDuring));
+  await page.close();
+}
+
+/* == a completion never costs the operator their place =========== */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card .tick').first().focus();
+  await page.keyboard.press(" ");
+  await page.waitForTimeout(200);
+  const mid = await page.evaluate(() => ({
+    tag: document.activeElement.tagName + "." + (document.activeElement.className || ""),
+    ringOnGhost: Boolean(document.querySelector(".cardGhost[data-carries-focus]")),
+  }));
+  ok("focus is not lost while the card travels", /tick/.test(mid.tag), JSON.stringify(mid));
+  ok("and the ring travels with it", mid.ringOnGhost || !(await page.locator(".cardFly").count()));
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
 
 await browser.close();

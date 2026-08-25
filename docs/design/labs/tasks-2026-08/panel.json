@@ -1073,6 +1073,78 @@
           "done": "Both chips survive at zero while their filter is on. THE RULE: a chrome control that can be filtered on holds its box at zero."
         }
       ]
+    },
+    {
+      "round": 19,
+      "mode": "gate",
+      "frozen": true,
+      "scores": {
+        "Interaction and states": 7.3,
+        "UX and information design": 8.3,
+        "Product taste and emotional resonance": 8.2,
+        "Measured evidence": 8.4,
+        "UI composition": 8.3,
+        "Typography": 8.4,
+        "Brand and copy": 8.6
+      },
+      "headroom": {
+        "Interaction and states": 8.7,
+        "UX and information design": 9.2,
+        "Product taste and emotional resonance": 9.1,
+        "Measured evidence": 9.1,
+        "UI composition": 9.1,
+        "Typography": 9.1,
+        "Brand and copy": 9.2
+      },
+      "predicted": 8.7,
+      "findings": 33,
+      "confirmed": 29,
+      "refuted": 4,
+      "fixed": 29,
+      "deferredBuilds": 0,
+      "gateAfter": 301,
+      "selfInflicted": {
+        "note": "The floor fell 8.2 to 7.3 and the cause was mine. Round 18's remediation introduced a new defect: the placeholder meant to hold the origin column open was resolved from the flying node's parent AFTER the repaint, so it was inserted at the top of the DESTINATION. Three seats found it independently at cost 9 each — the highest-cost finding of the entire engagement, and the second consecutive round in which the moment's own remediation was the round's largest defect."
+      },
+      "headline": "The floor falls 8.2 to 7.3, and for the second round running the largest defect in the round is one I introduced fixing the last one. Round 18's placeholder — meant to hold the origin column open so cards below it do not leap under a resting pointer — was resolved from the flying node's parent after the repaint, by which time that node is already in Done. So it was inserted at the top of the destination: the origin still collapsed on frame one, and the destination was now held 18px low for the whole flight and snapped back unanimated on the exact frame the moment exists for. Three seats found it at cost 9 each. Two more found that below about 1290px the destination column is off the sheet entirely, so the flight clamped to the edge and the card evaporated into the fade — the product's one designed moment did not exist on a phone at all. That is now answered the way UI composition argued for: where the destination cannot be seen, the card sets down where the hand is. The eye is on the tick; the beat belongs there, and it needs no transport to exist. All 29 confirmed findings are fixed and the beat now holds at 390, 768, 1280 and 1440 with the card fully on screen throughout. Gate 301.",
+      "worst": [
+        {
+          "seat": "Interaction and states",
+          "cost": 9,
+          "problem": "The completion placeholder was inserted into the destination column, not the origin. Measured at 1440 the hole sat at x=1161 (Done) while the origin was at x=180; at 390 it was entirely off screen. So the origin collapsed on frame one — the next card leapt 126px within 84ms of the press, exactly the leap the code comment claimed to prevent — and every card in Done was held 18px low for 456ms and jumped back unanimated on the landing frame.",
+          "done": "The origin is captured as a lane and an index before the mutation, and resolved in the fresh DOM after the repaint, because the element captured beforehand no longer exists. Both flight paths hold it and both release it. THE RULE: a placeholder standing in for a moved element is inserted into the container it LEFT, from an identity captured before the state change."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 9,
+          "problem": "Because the origin collapsed instantly, the next card's tick landed on the exact pixel the completed card's tick had occupied, and a second press at a pointer that had not moved completed a different task.",
+          "done": "Closed by the same fix, and already guarded by the two-press assertion added in round 18 — which passed only because the hole existed at all, not because it was in the right place. The gate now asserts the hole's lane."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 8,
+          "problem": "Below about 1290px the destination column is off the sheet, so the flight clamped the card to the board's edge and it evaporated into the fade. At 390 the Done tray sits 828px outside the viewport. The product's one designed moment did not exist on a phone.",
+          "done": "Where the destination cannot be brought on screen the card sets down where the hand is: it lifts, tilts, and settles onto its own hairline at the origin. The eye is on the tick, so the beat is unmissable at every width and needs no transport to exist. Asserted at 390, 768, 1280 and 1440 — the card is never less than 95% on screen during it."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 7,
+          "problem": "Only two selectors were held during the flight, so the chips, the undated count and the filter answered at take-off while the counts waited for the landing — three staggered answers to one act. Worse, a filter cleared by the completion was replayed over a board that no longer had it, so the header insisted work was hidden while the work was visibly back.",
+          "done": "The whole fact row and every tray count are held together, and nothing is held over a board whose shape changed underneath. THE RULE: everything the board says about a gesture is held together, or none of it is."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 6,
+          "problem": "After a keyboard completion, focus is restored to the tick inside the real card, which the flight hides with opacity 0 — so the focus ring was invisible for the whole flight while focus was genuinely there.",
+          "done": "Opacity, never visibility, because visibility:hidden blurs what is inside it and a completion must never cost the operator their place. When focus is inside the card the ring travels on the ghost, so the operator sees where they are on the object that is moving."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.35,
+          "problem": "A card walked through the Done column by the arrow keys fired a full false completion mid-gesture — flight, receipt and all — for work the operator had not put down yet.",
+          "done": "A preview is not a commit. The keyboard carry says so explicitly and the beat only arms on a commit."
+        }
+      ]
     }
   ]
 }

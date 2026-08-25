@@ -889,9 +889,11 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
   from { stroke-dasharray: 22; stroke-dashoffset: 22; }
   to   { stroke-dasharray: 22; stroke-dashoffset: 0; }
 }
-@keyframes settleIn {
-  from { opacity: 0; transform: translateY(2px); }
-  to   { opacity: 1; transform: none; }
+/* It used to fade from opacity 0, so on the exact landing frame the header
+   read " of  done" with two holes in it and the digits re-entered lighter than
+   the words around them — hierarchy inverted for 150ms in the one moment the
+   freeze was lifted for. It settles in place. */
+@keyframes settleIn { from { transform: translateY(2px); } }  to   { opacity: 1; transform: none; }
 }
 .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
 .card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
@@ -1261,6 +1263,8 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    only while the hand is full, and it leaves the moment the card lands. */
 .carry {
   min-width: 0;
+  /* Held back until the act it reports has finished. */
+  transition: opacity var(--dur) var(--curve);
   position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
   z-index: 6;
   display: flex; align-items: center; justify-content: center;
@@ -1280,6 +1284,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
 .trayAdd[data-under] { opacity: 0; pointer-events: none; }
 .trayAdd { transition: opacity var(--dur) var(--curve); }
 .carry b { font-weight: 600; }
+.carry[data-waiting] { opacity: 0; pointer-events: none; }
 .carryName {
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   flex: 0 1 auto; min-width: 24ch; text-align: left;
@@ -1323,6 +1328,9 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    into an overlay.
    THE RULE: anything lifted off the sheet carries its own opaque surface. */
 .card.cardGhost { background: var(--white); }
+/* The ring rides with the card so a keyboard operator can see where they are
+   while it travels. */
+.cardGhost[data-carries-focus] { outline: 2px solid var(--indigo); outline-offset: 2px; }
 .cardGhost {
   position: static; margin: 0; width: 100%; height: 100%;
   pointer-events: none; box-shadow: var(--card-rest);
@@ -1825,6 +1833,7 @@ let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
 let flyWas = null;      /* the card as it looked BEFORE it was finished        */
+let flyHome = null;     /* the slot it left, captured before the repaint       */
 let flyCounts = null;   /* the tallies as they read before it was finished     */
 let refocusPart = null; /* which part of the card to land focus on          */
 let drawerTab = "nodate";
@@ -2445,6 +2454,9 @@ function footPill() {
       "</div>"
     );
   }
+  /* The strip used to fade in at 200ms while the card was still in the air, so
+     the black bar answered a quarter of a second before the gesture finished
+     and the numbers then answered again. It waits for the landing. */
   if (undone) {
     if (undone.kind === "day") {
       return (
@@ -2820,7 +2832,11 @@ function applyLaneFacts(task, from, to) {
   if (from === "waiting" && to !== "waiting") task.heldSince = null;
 }
 
-function moveTo(id, lane, index) {
+/* `preview` is a card being walked through columns by the arrow keys, which is
+   not a commitment to anything. Arming the beat on the lane change alone fired
+   a full false completion mid-gesture for a card the operator had not put down
+   yet. A drop and a menu move are commits and pass nothing. */
+function moveTo(id, lane, index, preview) {
   const rows = allTasks();
   const from = rows.findIndex((t) => t.id === id);
   if (from === -1) return;
@@ -2831,13 +2847,22 @@ function moveTo(id, lane, index) {
      this, and a card walked through Done with the arrow keys must not fire a
      completion. The callers that mean it opt in by calling completed(). */
   let report = { completed: false, cleared: false };
-  if (lane === "done" && was !== "done") {
+  /* A card carried by the arrow keys passes THROUGH columns. Arming the beat
+     on the lane change fired a full false completion mid-gesture — flight,
+     receipt and all — for a card the operator had not put down yet. */
+  if (lane === "done" && was !== "done" && !preview) {
     const wasLate = timeOf(task).kind === "overdue";
     task.prevLane = was;
     const node = document.querySelector('.card[data-id="' + id + '"]');
     flyFrom = node ? node.getBoundingClientRect() : null;
     flyId = id;
     flyWas = node ? node.cloneNode(true) : null;
+    flyHome = (() => {
+      if (!node || !node.parentElement) return null;
+      const tray = node.closest(".tray[data-lane]");
+      const kin = [...node.parentElement.children].filter((n) => n.classList.contains("card"));
+      return tray ? { lane: tray.dataset.lane, index: kin.indexOf(node), height: flyFrom ? flyFrom.height : 0 } : null;
+    })();
     flyCounts = readTallies(document.getElementById("root") || document.getElementById("deck"));
     report = { completed: true, wasLate: wasLate };
   }
@@ -2879,13 +2904,35 @@ function completed(task, cleared) {
    travels the distance it actually moved, measured after the repaint. */
 /* The numbers as they read at this instant, so the board can go on saying them
    while the card is still in the air. */
+/* The whole answer, not two selectors' worth. Holding only .trayCount and the
+   ratio left the chips, the undated count and the filter state answering at
+   take-off while the counts waited for the landing — three staggered answers
+   to one act, and a filter that cleared mid-flight replayed a board that no
+   longer existed.
+   THE RULE: everything the board says about a gesture is held together, or
+   none of it is. */
 function readTallies(scope) {
   if (!scope) return null;
-  const out = [];
-  scope.querySelectorAll(".trayCount, .headFacts .ratio").forEach((n) => {
-    out.push({ lane: n.closest("[data-lane]") ? n.closest("[data-lane]").dataset.lane : "ratio", html: n.innerHTML });
-  });
-  return out;
+  const facts = scope.querySelector(".headFacts");
+  return {
+    facts: facts ? facts.innerHTML : null,
+    counts: [...scope.querySelectorAll(".trayCount")].map((n) => n.innerHTML),
+    /* The shape of the board this answer belongs to. Holding an answer over a
+       board that has changed shape underneath replays a filter that is no
+       longer on, so the header insists work is hidden while the work is
+       visibly back. */
+    filtered: filtering(),
+  };
+}
+
+function writeTallies(scope, t) {
+  if (!scope || !t) return;
+  const facts = scope.querySelector(".headFacts");
+  if (facts && t.facts !== null && facts.innerHTML !== t.facts) facts.innerHTML = t.facts;
+  const counts = [...scope.querySelectorAll(".trayCount")];
+  if (counts.length === t.counts.length) {
+    counts.forEach((n, i) => { if (n.innerHTML !== t.counts[i]) n.innerHTML = t.counts[i]; });
+  }
 }
 
 function flyCompleted(target) {
@@ -2946,9 +2993,77 @@ function flyCompleted(target) {
     const left = Math.min(Math.max(now.left, box.left + 8), box.right - now.width - 8);
     if (left !== now.left) now = { left: left, top: now.top, width: now.width, height: now.height };
   }
+  /* The strip is rendered with everything else and held back visually, so the
+     black bar stops answering a quarter of a second before the gesture that
+     caused it has finished. */
+  const strip = target.querySelector(".carry");
+  if (strip) strip.setAttribute("data-waiting", "");
+  /* The column the card left holds its hole open until the card is somewhere
+     else — whether it travels there or sets down where it is. Resolved in the
+     FRESH dom by lane and index, because the element captured before the
+     repaint no longer exists: innerHTML replaced it. */
+  const home = flyHome;
+  flyHome = null;
+  const hole = document.createElement("div");
+  hole.setAttribute("data-hole", "");
+  hole.style.height = was.height + "px";
+  if (home) {
+    const body = target.querySelector('.tray[data-lane="' + home.lane + '"] .trayBody');
+    if (body) {
+      const kin = [...body.children].filter((n) => n.classList.contains("card"));
+      body.insertBefore(hole, kin[home.index] || null);
+    }
+  }
+  const releaseHole = () => { hole.remove(); if (strip) strip.removeAttribute("data-waiting"); };
+
   const dx = was.left - now.left;
   const dy = was.top - now.top;
-  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { land(); return 0; }
+  if (Math.abs(dx) < 1 && Math.abs(dy) < 1) { releaseHole(); land(); return 0; }
+  /* When the destination column cannot be brought on screen — a phone, or any
+     board narrow enough that Done is off the sheet — the card used to be
+     clamped to the edge and evaporate into the fade, so the one designed
+     moment in the product simply did not exist below 1290px. It sets down
+     where the hand is instead. The eye is on the tick; the beat belongs there,
+     and it needs no transport to exist. */
+  const seen = board && now.left >= board.getBoundingClientRect().left - 1 &&
+    now.right <= board.getBoundingClientRect().right + 1;
+  if (board && !seen) {
+    const inPlace = document.createElement("div");
+    inPlace.className = "cardFly";
+    inPlace.style.left = was.left + "px";
+    inPlace.style.top = was.top + "px";
+    inPlace.style.width = was.width + "px";
+    inPlace.style.height = was.height + "px";
+    const still = (flyWas || node).cloneNode(true);
+    flyWas = null;
+    still.className = node.className.replace(/ ?data-[a-z-]+/g, "") + " cardGhost";
+    still.removeAttribute("data-done");
+    still.removeAttribute("id");
+    inPlace.appendChild(still);
+    document.body.appendChild(inPlace);
+    node.style.opacity = "0";
+    still.animate(
+      [
+        { transform: "scale(1) rotate(0deg)", boxShadow: "var(--card-rest)", offset: 0 },
+        { transform: "scale(1.03) rotate(-1.4deg)", boxShadow: "var(--lift)", offset: 0.28 },
+        { transform: "scale(1) rotate(0deg)", boxShadow: "0 0 0 1px var(--line-soft)", offset: 1 },
+      ],
+      { duration: 380, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" },
+    ).addEventListener("finish", () => {
+      inPlace.remove();
+      node.style.opacity = "";
+      releaseHole();
+      land();
+    });
+    setTimeout(() => {
+      if (!inPlace.isConnected) return;
+      inPlace.remove();
+      node.style.opacity = "";
+      releaseHole();
+      land();
+    }, 520);
+    return 380;
+  }
 
   /* --motion-fast governs a state change; this is a journey across the
      sheet, and a fixed 260ms reads as a teleport at 1000px and as a lag at
@@ -2979,6 +3094,12 @@ function flyCompleted(target) {
   ghost.removeAttribute("id");
   shell.appendChild(ghost);
   document.body.appendChild(shell);
+  /* opacity, never visibility: visibility:hidden blurs whatever is inside it,
+     and a completion must never cost the operator their place. An opacity-0
+     ancestor does take the focus ring with it, so when focus is inside the
+     card the RING travels on the ghost instead — the operator sees where they
+     are, on the object that is moving. */
+  if (node.contains(document.activeElement)) ghost.setAttribute("data-carries-focus", "");
   node.style.opacity = "0";
   /* The board used to publish the whole result on frame zero and then spend
      400ms transporting an object that was already finished — a lap of honour
@@ -2991,18 +3112,13 @@ function flyCompleted(target) {
   /* The true values are read before the old ones are written over them —
      re-reading afterwards would only find what was just put there. */
   const truth = held ? readTallies(target) : null;
-  if (held) {
-    target.querySelectorAll(".trayCount, .headFacts .ratio").forEach((n, i) => {
-      if (held[i]) n.innerHTML = held[i].html;
-    });
-  }
-  /* And the column it left keeps the hole open until then, so the cards below
-     it do not leap up under a pointer that has not moved — which made a second
-     press land on a different task's tick and complete the wrong work. */
-  const hole = document.createElement("div");
-  hole.setAttribute("data-hole", "");
-  hole.style.height = was.height + "px";
-  if (node.parentElement) node.parentElement.insertBefore(hole, node);
+  /* Only replayed when the board's shape has not changed underneath: a filter
+     that cleared on this very tick would otherwise be re-drawn over a board
+     that no longer has it. */
+  const sameShape = held && truth &&
+    held.counts.length === truth.counts.length &&
+    held.filtered === truth.filtered;
+  if (sameShape) writeTallies(target, held);
 
   const journey = shell.animate(
     [
@@ -3045,14 +3161,10 @@ function flyCompleted(target) {
     if (done) return;
     done = true;
     shell.remove();
-    hole.remove();
+    releaseHole();
     node.style.opacity = "";
     /* The result arrives with the card. */
-    if (truth) {
-      target.querySelectorAll(".trayCount, .headFacts .ratio").forEach((n, i) => {
-        if (truth[i] && n.innerHTML !== truth[i].html) n.innerHTML = truth[i].html;
-      });
-    }
+    if (sameShape) writeTallies(target, truth);
     land();
     /* The board's answer arrives with the card, not 400ms before it. The
        count used to flip at take-off while the check drew on landing, which
@@ -3119,6 +3231,20 @@ function toggleDone(id) {
      redrew, so the climax frame was a blank black disc.
      THE RULE: a node cloned into an overlay renders the state it is LEAVING. */
   flyWas = node ? node.cloneNode(true) : null;
+  /* Where it left FROM. Resolved after the repaint, node.parentElement is the
+     column it has already arrived in, so the placeholder meant to hold the
+     origin open was being inserted at the top of the destination — the origin
+     collapsed on frame one exactly as before, and the destination was held
+     18px low for the whole flight and snapped back on the landing frame.
+     THE RULE: a placeholder standing in for a moved element is inserted into
+     the container it LEFT, from a parent and sibling captured before the
+     state change and before the re-render. */
+  flyHome = (() => {
+    if (!node || !node.parentElement) return null;
+    const tray = node.closest(".tray[data-lane]");
+    const kin = [...node.parentElement.children].filter((n) => n.classList.contains("card"));
+    return tray ? { lane: tray.dataset.lane, index: kin.indexOf(node), height: flyFrom ? flyFrom.height : 0 } : null;
+  })();
   flyCounts = readTallies(target);
 
   if (task.lane === "done") {
@@ -3270,14 +3396,14 @@ function carryMove(dx, dy) {
   if (dy) {
     const to = Math.max(0, Math.min(at.rows.length - 1, at.y + dy));
     if (to === at.y) return;
-    moveTo(carriedId, lanes[at.x], to);
+    moveTo(carriedId, lanes[at.x], to, true);
     say("Position " + (to + 1) + " of " + at.rows.length + " " + inLane(lanes[at.x]) + ".");
     return;
   }
   const x = at.x + dx;
   if (x < 0 || x >= lanes.length) return;
   const rows = tasksFor(lanes[x]);
-  moveTo(carriedId, lanes[x], Math.min(at.y, rows.length));
+  moveTo(carriedId, lanes[x], Math.min(at.y, rows.length), true);
   say(laneName(lanes[x]) + ", position " + (Math.min(at.y, rows.length) + 1) + " of " + (rows.length + 1) + ".");
 }
 
