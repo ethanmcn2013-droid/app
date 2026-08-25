@@ -872,6 +872,7 @@
    title resolve to done, and the counts that changed settle in rather than
    snapping. */
 .card[data-just-done] { transition: box-shadow 320ms var(--curve); }
+
 .card[data-just-done] .cardTitle { transition: color 320ms var(--curve); }
 .trayCount[data-changed], .headFacts b[data-changed] { animation: settleIn 320ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {

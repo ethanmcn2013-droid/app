@@ -2823,7 +2823,26 @@ function flyCompleted(target) {
   if (!node) return 0;
   /* The travel is right either way — the card should fly back — but the
      check only draws on a card that is actually finished. */
-  const land = () => { if (node.hasAttribute("data-done")) node.setAttribute("data-just-done", ""); };
+  /* The second half of the gesture, on the real card: it arrives still carrying
+     the lift it travelled with, and sets down onto its own flat hairline. */
+  const land = () => {
+    if (!node.hasAttribute("data-done")) return;
+    node.setAttribute("data-just-done", "");
+    /* Animated rather than transitioned. A transition needs a committed
+       before-change frame, and inside the landing frame there is not one to be
+       had — the card snapped flat every time. The same mechanism the journey
+       uses, so the whole gesture is driven one way. */
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cs = getComputedStyle(node);
+    const lift = cs.getPropertyValue("--lift").trim();
+    const rest = cs.getPropertyValue("--card-rest").trim();
+    if (lift && rest) {
+      node.animate(
+        [{ boxShadow: lift }, { boxShadow: rest }],
+        { duration: 320, easing: "cubic-bezier(0.23, 1, 0.32, 1)" },
+      );
+    }
+  };
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) { land(); return 0; }
   let now = node.getBoundingClientRect();
   const board = target.querySelector(".board");
@@ -2890,16 +2909,25 @@ function flyCompleted(target) {
     ],
     { duration: travel, easing: "cubic-bezier(0.23, 1, 0.32, 1)", fill: "forwards" },
   );
-  /* 1.03 sits beside the 1.02 a dragged card already uses, so the lift stays
-     inside the product's own vocabulary. No drop and no bounce: the beat was
-     written under a rule that says no colour and no bounce, and a constant
-     downward drop would be a lie on any move that does not change row. */
+  /* THE SET-DOWN.
+     The product's one memorable moment, and the only place the founder's own
+     configuration is spoken out loud: an open card floats, a finished card has
+     settled. Work in motion is carried and slightly askew — the -1.4deg a
+     pointer-dragged card already uses — and finished work squares up and comes
+     to rest flat.
+     So the card leaves lifted and tilted, straightens through the last fifth of
+     the journey, and lands square. It does NOT land flat: the shadow it still
+     carries at the moment of arrival is what the real card then sets down from,
+     in place, so the settle happens on the object the operator is looking at
+     rather than on a ghost that is removed. No colour, no bounce, no
+     celebration, one duration and one curve — the motion contract is intact and
+     this spends nothing it did not already own. */
   ghost.animate(
     [
-      { transform: "scale(1)", boxShadow: "var(--card-rest)", offset: 0 },
-      { transform: "scale(1.03)", boxShadow: "var(--lift)", offset: 0.2 },
-      { transform: "scale(1.03)", boxShadow: "var(--lift)", offset: 0.78 },
-      { transform: "scale(1)", boxShadow: "0 0 0 1px var(--line-soft)", offset: 1 },
+      { transform: "scale(1) rotate(0deg)", boxShadow: "var(--card-rest)", offset: 0 },
+      { transform: "scale(1.03) rotate(-1.4deg)", boxShadow: "var(--lift)", offset: 0.2 },
+      { transform: "scale(1.03) rotate(-1.4deg)", boxShadow: "var(--lift)", offset: 0.78 },
+      { transform: "scale(1) rotate(0deg)", boxShadow: "var(--lift)", offset: 1 },
     ],
     { duration: travel, easing: "linear", fill: "forwards" },
   );

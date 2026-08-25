@@ -63,7 +63,7 @@ const GATE = 'C:/Users/ethan/signal-studio-workspace/_wt-design-tasks/scripts/de
 /* The gate's own claims, by name. Handed to every seat so the round is not
    spent re-finding what is already proven and guarded. */
 const PROVEN = `
-ALREADY PROVEN AND GUARDED — 299 assertions in the behaviour gate, every one
+ALREADY PROVEN AND GUARDED — 334 assertions in the behaviour gate, every one
 checked on every run and passing. A finding that restates one of these is worth
 nothing, and a finding that contradicts one is almost certainly wrong about the
 artifact. Read this before you spend a finding:
@@ -139,6 +139,19 @@ CONSTRAINTS THAT ARE NOT NEGOTIABLE (do not propose breaking these):
   outlined chip. Milestone = the one indigo. Done = filled ink tick.
 - Type is Geist at weights 400 and 600 only.
 - The architecture and the configuration above.
+
+ONE BUILD WAS MADE, AND THE SURFACE IS FROZEN AGAIN.
+The founder lifted the freeze for exactly one thing and nothing else: the
+completion beat, because for fifteen rounds this panel asked for a memorable
+moment and got defect fixes. It is built, catalogued and gated. Drive it — tick
+a card and watch — and judge it as a designed moment rather than as a diff:
+work in motion is carried and slightly askew (the same -1.4deg a dragged card
+already used, never before seen at the moment it meant something), and finished
+work squares up and comes to rest, the real card settling from the lift it
+arrived with onto its own flat hairline while the check draws and the Done count
+arrives on the same frame. No colour, no bounce, no second gesture anywhere.
+If it does not move you, say so plainly and say what would — that is the finding
+this round most needs.
 
 THE SURFACE IS FROZEN.
 This is the decisive change from earlier rounds. No new capability is being

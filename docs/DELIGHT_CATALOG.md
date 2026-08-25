@@ -303,3 +303,46 @@ Three sites the wave-6 panel named, none of them a family question.
 | Loader → surface hand-off | **animate** — one whole-surface opacity settle at `--motion-fast` on the product canvas, applied after the swap has landed, on an element interactive from its first frame. Not a per-card stagger (forbidden), not a slide. `src/components/system/arrival-settle.tsx` carries both hand-off paths, because a boundary is torn down by two different mechanics and only one of them is React's. |
 | Theme change on a live document | **animate** — `.theme-resolving` on `<html>` lends the document one scoped colour transition (background-color, color, border-color, fill — never `all`) for `--motion-fast`, then takes it back. Measured: 870 transitions at 140ms during the crossing, 2 before it, class gone by 450ms. Never on first paint, never on the streamed preference correction, never under reduced motion (measured: class not added, everything cuts). |
 | Timeline artifact entrance on re-entry | **restrained** — the choreography plays once per session and is skipped on return. Backwards navigation is not a performance; a viewer who has seen the rail draw does not need to watch it draw again to understand where they are. |
+
+## The set-down — Tasks, round 18
+
+One site, and the only one this product ever gets. Fifteen rounds of panel
+asked for a memorable moment and were answered with defect fixes; round 16's
+Product taste seat put it plainly, having been asked to name the moment a
+stranger would remember: *"I cannot. Nothing here produces relief, calm or
+delight; it produces respect."* The founder lifted the elevation freeze for
+exactly this and nothing else.
+
+| Site | Verdict |
+|---|---|
+| A task being completed | **animate** — the set-down. |
+
+It is not a new idea and it introduces nothing. It is the founder's own locked
+configuration spoken out loud: an open card rests on a shadow, a Done card is
+flat. So **work in motion is carried and slightly askew, and finished work
+squares up and comes to rest.**
+
+The gesture, in one movement and two halves:
+
+- **Carried.** The card leaves at `scale(1.03)` and `rotate(-1.4deg)` on the
+  product's one heavy shadow. The tilt is not invented — it is the exact angle
+  a pointer-dragged card already uses, which until now was the only place in
+  the product it appeared and was never seen at the moment it meant something.
+- **Set down.** Through the last fifth of the journey the card straightens to
+  square and lands still carrying its lift. The real card — not the ghost, which
+  is removed — then settles from that lift onto its own flat hairline over
+  320ms on `--ease-out`, while the check draws and the Done count arrives on
+  the same frame.
+
+Driven by the Web Animations API rather than a transition, because a transition
+needs a committed before-change frame and inside the landing frame there is not
+one to be had: the card snapped flat every time. The journey already uses the
+same mechanism, so the whole gesture is driven one way.
+
+No colour, no bounce, no celebration, no second moment anywhere. One duration
+and one curve, both already in the ladder. Under `prefers-reduced-motion` the
+flight does not run and the settle is not scheduled: the card is simply done.
+
+**Do not sprinkle a second one.** The panel's own reasoning for this site is
+that it is the act an operator performs forty times a week, and the argument
+collapses the moment a second gesture competes with it.

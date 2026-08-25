@@ -2339,6 +2339,59 @@ for (const [q, lane, label] of [["", "todo", "resting board"], ["?state=dense", 
   await page.close();
 }
 
+/* == the set-down ================================================= */
+/* The product's one memorable moment, built in round 18 and catalogued in
+   docs/DELIGHT_CATALOG.md. Work in motion is carried and askew; finished work
+   squares up and comes to rest. Asserted so it cannot silently flatten back
+   into a slide. */
+{
+  const page = await open();
+  await page.evaluate(() => {
+    window.__set = [];
+    const t = setInterval(() => {
+      const g = document.querySelector(".cardGhost");
+      const landed = document.querySelector(".card[data-just-done]");
+      if (g) window.__set.push({ p: "fly", t: getComputedStyle(g).transform });
+      else if (landed) window.__set.push({ p: "land", s: getComputedStyle(landed).boxShadow });
+    }, 16);
+    setTimeout(() => clearInterval(t), 1600);
+  });
+  const box = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(1400);
+  const beat = await page.evaluate(() => {
+    const deg = (t) => {
+      const m = /matrix\(([-\d.]+), *([-\d.]+)/.exec(t);
+      return m ? Math.atan2(Number(m[2]), Number(m[1])) * 180 / Math.PI : 0;
+    };
+    const fly = window.__set.filter((x) => x.p === "fly").map((x) => deg(x.t));
+    const land = window.__set.filter((x) => x.p === "land").map((x) => x.s);
+    return {
+      tiltMax: fly.length ? Math.min(...fly) : 0,
+      tiltEnd: fly.length ? fly[fly.length - 1] : 0,
+      settleSteps: new Set(land).size,
+    };
+  });
+  ok("the card is carried askew", beat.tiltMax < -0.8, "max tilt " + beat.tiltMax.toFixed(2) + "deg");
+  ok("and squares up before it lands", Math.abs(beat.tiltEnd) < 0.6, "end tilt " + beat.tiltEnd.toFixed(2) + "deg");
+  ok("and the shadow settles rather than snapping", beat.settleSteps >= 4,
+    beat.settleSteps + " distinct shadows on the landed card");
+  await page.close();
+}
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 960 }, reducedMotion: "reduce" });
+  await page.goto(URL);
+  await page.waitForTimeout(350);
+  const before = await counts(page);
+  await page.locator('.tray[data-lane="todo"] .card .tick').first().click();
+  await page.waitForTimeout(500);
+  ok("under reduced motion the task is simply done", (await counts(page)).done === before.done + 1);
+  ok("and nothing is left flying", (await page.locator(".cardFly").count()) === 0);
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
 
 await browser.close();
