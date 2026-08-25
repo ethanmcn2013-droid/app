@@ -527,8 +527,22 @@ report.source = { size: [], space: [] };
   if (!files.length && config.master) files.push(config.master);
   for (const file of files) {
     const text = await readFile(path.join(lab, file), "utf8");
+    /* Block comments span lines, and only the OPENING line carries a
+       /*, so every continuation line was read as code. A comment
+       explaining a spacing defect could therefore fail the spacing
+       gate — a gate grading its own prose. */
+    let inComment = false;
     text.split("\n").forEach((line, i) => {
-      const bare = line.split("/*")[0];
+      let bare = line;
+      if (inComment) {
+        const close = bare.indexOf("*/");
+        if (close < 0) return;
+        bare = bare.slice(close + 2);
+        inComment = false;
+      }
+      const open = bare.lastIndexOf("/*");
+      if (open >= 0 && bare.indexOf("*/", open) < 0) inComment = true;
+      bare = bare.split("/*")[0];
       if (/font-size:\s*[0-9]/.test(bare)) {
         /* A source literal is drift only when it is OFF the declared ramp:
            single-file labs declare their system in the master's own

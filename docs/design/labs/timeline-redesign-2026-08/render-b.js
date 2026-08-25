@@ -360,9 +360,17 @@
        deleting farthest-first it went on naming a date that now holds
        nothing, which is a plain falsehood rather than a stale phrasing. */
     if (note) {
-      note.textContent = items.length
+      /* ONE WRITER. place() used to paint the at-rest sentence on every
+         repaint while speak() painted the scrolled one only on scroll,
+         so a move, a resize, fonts.ready or a keystroke snapped the line
+         back to a fact about the top of a plan the owner was not looking
+         at. place() computes; speak() paints. */
+      var atRest = items.length
         ? gapSentence(items[0].getAttribute("data-date"))
         : "Nothing is planned yet.";
+      if (field) field.__gapAtRest = atRest;
+      if (field && field.__gapSpeak) field.__gapSpeak();
+      else note.textContent = atRest;
     }
     /* The measure is at least the horizon, and taller if the words at
        the foot of it need the room. A rail that ends above its own last
@@ -576,6 +584,10 @@
      a stack that only knew how to move a date: a delete left a live
      offer to restore a row that no longer existed, and pressing it
      restored nothing and cleared itself as though it had worked. */
+  /* The undo handler has always accepted either modifier; the keycap
+     named only one of them. */
+  var MAC_KEYS = /Mac|iPhone|iPad/.test(
+    (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "");
   var history = [];
   /* Monotonic for the life of the project. Minting from milestones.length
      reissued live ids after a delete, which silently wrote one moment's
@@ -586,7 +598,7 @@
     return h("div.b-undo", { role: "status", "data-empty": "true" }, [
       h("span.b-undoText", { text: "" }),
       h("button.b-undoAct", { type: "button", disabled: "disabled", tabindex: "-1", text: "Undo" }),
-      h("kbd", { text: "Ctrl Z" }),
+      h("kbd", { text: MAC_KEYS ? "⌘ Z" : "Ctrl Z" }),
     ]);
   }
 
@@ -1241,12 +1253,10 @@
           date: F.plusDays(clock, away),
           state: "next",
         };
-        /* A plan the owner has just started has never been handed to
-           anyone. The publication record is fixture-wide, so without
-           this the first moment ever added rendered "Live since 15
-           July", a "Get the link" verb and a stamp predating the
-           project. */
-        F.publication = { state: "draft", publishedAt: null };
+        /* The stamp moves, because the plan just changed. The
+           publication record does NOT: adding a moment to a plan people
+           are already holding cannot un-hand it to them. A brand-new
+           plan is made a draft where it is created, before go(). */
         F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
         paintPublication(root);
         F.milestones.push(fresh);
@@ -1272,13 +1282,6 @@
         var live = root.querySelector(".b-live");
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(F.shareUrlFull).then(function () {
-            /* Taking the link IS the publish in this model, so the verb,
-               the status line and the press heading flip once, together,
-               at the moment it becomes someone else's. */
-            if (F.publication.state !== "published") {
-              F.publication = { state: "published", publishedAt: F.today };
-              paintPublication(document.querySelector(".b-field"));
-            }
             action.textContent = "Copied";
             if (live) live.textContent = "Link copied.";
             setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
@@ -1333,7 +1336,16 @@
       var pending = false;
       var speak = function () {
         pending = false;
-        if (!stick || getComputedStyle(stick).position !== "sticky") return;
+        /* Where there is no pinned column there is no scrolled
+           reading, but this is still the only writer of the node - so
+           it paints the at-rest sentence rather than returning and
+           leaving whatever was there last. */
+        if (!stick || getComputedStyle(stick).position !== "sticky") {
+          if (root.__gapAtRest && note.textContent !== root.__gapAtRest) {
+            note.textContent = root.__gapAtRest;
+          }
+          return;
+        }
         var rows = root.querySelectorAll(".b-measure .b-item");
         /* Against the PANE's own top edge, not the viewport's. Once the
            plan became a pane the window stopped scrolling, so a
@@ -1354,10 +1366,17 @@
            the fact it describes. */
         if (!rows.length) return;
         var said = !top || top === rows[0]
-          ? gapSentence(rows[0].getAttribute("data-date"))
+          ? (root.__gapAtRest || gapSentence(rows[0].getAttribute("data-date")))
           : F.fmt.medium(top.getAttribute("data-date")) + " \u00b7 "
             + F.fmt.dayCount(Number(top.getAttribute("data-away"))) + " away";
         if (note.textContent !== said) note.textContent = said;
+      };
+      /* place() repaints this node; it needs the scrolled reading back. */
+      root.__gapSpeak = function () {
+        speak();
+        /* keepInBand moves the pane on the NEXT frame after a repaint,
+           so the reading is taken again once it has settled. */
+        requestAnimationFrame(speak);
       };
       var onScroll = function () {
         if (pending) return;
@@ -1426,8 +1445,13 @@
     desk: "The plan as guests will see it.",
     /* "Ready to send" contradicted the plan's own status line and the
        card beside it, both of which say it went out on 15 July. */
+    /* It said "below" while the link sat a hundred pixels ABOVE it, on
+       the one screen where the owner is looking for exactly that. The
+       line names the act instead of the direction. */
     publish: function () {
-      return F_PUBLISHED() ? "The link is below." : "Ready to send. The link is below.";
+      return F_PUBLISHED()
+        ? "Ready to copy."
+        : "Ready to send. Copy the link to hand it over.";
     },
     "owner-flight": "Back to the plan.",
   };
@@ -1571,6 +1595,25 @@
     return ownerSurface({ open: "demo-audience-item-invitations", undone: true });
   };
 
+  /* Enter commits the day. It is the first field the product ever
+     offers and the return key did nothing in it, while the same key
+     commits in the editor's date field. Delegated to the button so every
+     refusal sentence, the aria-invalid write, the screen replacement and
+     the focus move are inherited rather than duplicated; event.repeat
+     stops a held key committing and then pressing what it focuses. */
+  function wireFirstField(node) {
+    var input = node.querySelector("#b-empty-date");
+    if (!input || input.__wired) return;
+    input.__wired = true;
+    input.setAttribute("enterkeyhint", "go");
+    input.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" || event.repeat || event.isComposing) return;
+      event.preventDefault();
+      var press = node.querySelector('[data-act="setday"]');
+      if (press) press.click();
+    });
+  }
+
   states["owner-empty"] = function () {
     var sibling = F.siblings[1];      /* Aisling & Tom — real, and genuinely empty */
     var started = null;
@@ -1594,6 +1637,7 @@
       ]),
       foot({ stamp: false }),
     ], "", sibling.name);
+    wireFirstField(node);
     node.addEventListener("click", function (event) {
       /* The owner's very first action in the product. It used to be a
          focused primary button that did nothing at all, on the one
@@ -1625,6 +1669,11 @@
         });
         cameFromOwner = false;
         go("owner-flight");
+        /* Keyed to the transition, not the destination: this owner has
+           no plan to be back to. Same string the same action uses on a
+           plan that already exists. */
+        var live0 = document.querySelector(".b-live");
+        if (live0) live0.textContent = "A moment was added.";
         var host = document.querySelector(".b-measure");
         var first = host && host.querySelector(".b-item");
         if (first) {
@@ -1720,14 +1769,20 @@
         h("p.b-ogDate", { text: said.unit + " away when this was sent" })]
       : [h("p.b-ogWord", { text: said.state === "today" ? said.word : "The day" }),
         h("p.b-ogDate", { text: when })];
+    /* Named with the very strings it paints, so the name and the picture
+       cannot drift: the figure carried "when this was sent" on screen
+       while the name said "79 days to", dropping the one qualifier that
+       keeps a cached preview honest a month later. */
+    var figureSaid = said.state === "ahead"
+      ? said.num + " " + said.unit + " away when this was sent"
+      : (said.state === "today" ? said.word : "The day");
     return h("a.b-unfurl", {
       href: F.shareUrlFull,
       /* Built from what the card shows. An aria-label on an anchor
          REPLACES its contents, so the 64px figure and the date were
          announced to nobody. */
-      "aria-label": F.project.name + ", " + (said.state === "ahead"
-        ? said.num + " " + said.unit + " to " + when
-        : when),
+      "aria-label": F.project.name + ", " + figureSaid + ". "
+        + (F.project.primaryDate.label ? F.project.primaryDate.label + ", " : "") + when,
     }, [
       h("div.b-og", {}, [
         h("p.b-ogWho", { text: F.project.name }),
@@ -1751,6 +1806,20 @@
         h("p.b-unfurlHost", { text: "timeline.signalstudio.ie" }),
       ]),
     ]);
+  }
+
+  /* One writer. Taking the link IS the handover in this model, so the
+     record, the heading the owner is looking at, and everything the
+     owner surface paints on return all move together, once. */
+  function takeTheLink(node) {
+    if (F.publication.state === "published") return false;
+    F.publication = { state: "published", publishedAt: F.today };
+    var head = node && node.querySelector(".b-pressTitle");
+    if (head) {
+      head.textContent = F.project.name + " have had this since "
+        + F.fmt.medium(F.publication.publishedAt) + ".";
+    }
+    return true;
   }
 
   states.publish = function () {
@@ -1815,8 +1884,14 @@
       var live = node.querySelector(".b-live");
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(F.shareUrlFull).then(function () {
+          var first = takeTheLink(node);
           action.textContent = "Copied";
-          live.textContent = "Link copied.";
+          /* The heading changes silently — it is already focused, so a
+             rewrite announces nothing. The one live region on this
+             screen carries the fact instead. */
+          live.textContent = first
+            ? "Link copied. " + F.project.name + " can open this now."
+            : "Link copied.";
           setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
         }, function () {
           live.textContent = "Copy did not work. Select the link and copy it by hand.";
@@ -1959,7 +2034,9 @@
         h("div.b-skel", { style: "width:227px;height:26px;margin-bottom:8px" }),
         h("div.b-skel", { style: "width:188px;height:23px;margin-bottom:12px" }),
         h("div.b-skel", { style: "width:92px;height:15px" }),
-        h("div", { style: "height:1px;background:var(--fore-16);margin:26px 0 0" }),
+        /* The same object, the same token, the same width as the page
+           this frame is promising - not a hairline that resembles it. */
+        h("div.b-todayRule", { style: "margin:26px 0 0" }),
         h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(F.today) }),
         h("p.b-sub", { style: "margin-top:26px;line-height:1.5", text: "Bringing in what is ahead." }),
       ]),

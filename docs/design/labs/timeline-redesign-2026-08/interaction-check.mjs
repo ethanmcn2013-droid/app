@@ -40,7 +40,7 @@ const browser = await (async () => {
 })();
 const pageErrors = [];
 
-async function open({ state, variant, viewport, touch, forcedColors } = {}) {
+async function open({ state, variant, viewport, touch, forcedColors, clipboard } = {}) {
   const vp = viewport ?? { width: 1440, height: 960 };
   const page = await browser.newPage({
     viewport: vp,
@@ -49,6 +49,10 @@ async function open({ state, variant, viewport, touch, forcedColors } = {}) {
     hasTouch: Boolean(touch),
     isMobile: Boolean(touch),
     forcedColors: forcedColors || undefined,
+    /* Taking the link is the act that publishes, so the gate has to be
+       able to actually take it - without the grant writeText rejects
+       and only the failure path is ever driven. */
+    permissions: clipboard ? ["clipboard-read", "clipboard-write"] : undefined,
   });
   page.on("pageerror", (e) => pageErrors.push(String(e)));
   page.on("console", (m) => m.type() === "error" && pageErrors.push(m.text()));
@@ -2984,6 +2988,262 @@ async function firstRun(page) {
   await page.close();
 }
 
+
+
+
+/* ── round 10 · the room that ships, graded on both grounds ─────────
+   The founder picked paper / folded / structure and its ink twin. Every
+   assertion below runs on BOTH grounds, because the two ladders do not
+   permit the same token and a fix that lands in one room and not the
+   other is a defect in itself. */
+const flat10 = (x) => String(x).replace(/ /g, " ").trim();
+
+/* Indigo marks what is still AHEAD. The rule was unscoped and .b-back is
+   a .b-measure, so on the wedding morning — which has no forward measure
+   at all — the only indigo rail drew the PAST. Three seats found it. */
+for (const room of ["paper", "ink"]) {
+  const page = await open({ state: "day", variant: room, viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(() => {
+    const back = document.querySelector(".b-back .b-rail");
+    return back ? getComputedStyle(back).backgroundColor : null;
+  });
+  ok(`the past rail is never the accent · ${room}`,
+    !!r && !/79,\s*70,\s*229|111,\s*104,\s*238/.test(r), String(r));
+  await page.close();
+}
+/* And the forward rail IS the accent — at an alpha chosen per ground,
+   because one value cannot read on both. */
+for (const room of ["paper", "ink"]) {
+  const page = await open({ state: "owner-flight", variant: room, viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(() => {
+    const fwd = document.querySelector(".b-measure:not(.b-back) .b-rail");
+    const cs = getComputedStyle(fwd);
+    return { bg: cs.backgroundColor, op: parseFloat(cs.opacity) };
+  });
+  ok(`the forward rail carries the accent · ${room}`,
+    /79,\s*70,\s*229|111,\s*104,\s*238/.test(r.bg), r.bg);
+  ok(`at an alpha on the declared ladder · ${room}`,
+    [0.46, 1].some((a) => Math.abs(r.op - a) < 0.01), String(r.op));
+  await page.close();
+}
+
+/* Adding a moment to a plan people already hold cannot un-hand it. */
+{
+  const page = await open({ state: "owner-flight", variant: "paper", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    const before = window.__TLCORE.F.publication.state;
+    document.querySelector('[data-act="add"]').click();
+    await new Promise((r2) => setTimeout(r2, 400));
+    return {
+      before, after: window.__TLCORE.F.publication.state,
+      shared: (document.querySelector(".b-shared") || {}).textContent || "",
+    };
+  });
+  ok("adding a moment does not unpublish a live plan",
+    r.before === "published" && r.after === "published" && /anyone with the link/i.test(r.shared),
+    `${r.before} -> ${r.after} · "${flat10(r.shared)}"`);
+  await page.close();
+}
+
+/* Taking the link IS the handover: the record, the heading the owner is
+   standing on, and the surface they come back to all move together. */
+{
+  const page = await open({ state: "owner-draft", variant: "paper", viewport: { width: 1440, height: 960 }, clipboard: true });
+  await page.waitForTimeout(400);
+  const r = await page.evaluate(async () => {
+    document.querySelector('[data-act="publish"]').click();
+    await new Promise((r2) => setTimeout(r2, 400));
+    const headBefore = (document.querySelector(".b-pressTitle") || {}).textContent || "";
+    document.querySelector('[data-act="copy"]').click();
+    await new Promise((r2) => setTimeout(r2, 700));
+    const headAfter = (document.querySelector(".b-pressTitle") || {}).textContent || "";
+    const back = document.querySelector('[data-act="owner"]');
+    if (back) back.click();
+    await new Promise((r2) => setTimeout(r2, 500));
+    return {
+      headBefore, headAfter,
+      state: window.__TLCORE.F.publication.state,
+      shared: (document.querySelector(".b-shared") || {}).textContent || "",
+      verb: (document.querySelector('[data-act="publish"]') || {}).textContent || "",
+    };
+  });
+  ok("taking the link changes the screen the owner is standing on",
+    r.headBefore !== r.headAfter, `"${flat10(r.headBefore)}" -> "${flat10(r.headAfter)}"`);
+  ok("and the plan is theirs when the owner returns",
+    r.state === "published" && /anyone with the link/i.test(r.shared) && /get the link/i.test(r.verb),
+    `${r.state} · "${flat10(r.shared)}" · "${flat10(r.verb)}"`);
+  await page.close();
+}
+
+/* Enter commits in the first field the product ever offers. */
+for (const room of ["paper", "ink"]) {
+  const page = await open({ state: "owner-empty", variant: room, viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(400);
+  await page.fill("#b-empty-date", "3 October 2026");
+  await page.press("#b-empty-date", "Enter");
+  await page.waitForTimeout(450);
+  const gone = await page.evaluate(() => !document.querySelector("#b-empty-date"));
+  ok(`Enter sets the day in the first field · ${room}`, gone);
+  await page.close();
+}
+
+/* Every label in the editor clears its own control. */
+for (const room of ["paper", "ink"]) {
+  const page = await open({ state: "owner-editing", variant: room, viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const gaps = await page.evaluate(() => {
+    const out2 = [];
+    for (const g of document.querySelectorAll(".b-editGroup")) {
+      const label = g.querySelector(".b-label");
+      const ctrl = g.querySelector(".b-seg, input, .b-stepBtns");
+      if (!label || !ctrl) continue;
+      out2.push(Math.round(ctrl.getBoundingClientRect().left - label.getBoundingClientRect().right));
+    }
+    return out2;
+  });
+  ok(`every editor label clears its control · ${room}`,
+    gaps.length > 0 && gaps.every((g) => g >= 8), gaps.join(","));
+  await page.close();
+}
+
+/* ONE WRITER for the pinned line. place() used to paint the at-rest
+   sentence on every repaint while speak() painted the scrolled one only
+   on scroll, so a resize, fonts.ready or a keystroke snapped the line
+   back to a fact about the top of a plan nobody was looking at. */
+{
+  const page = await open({ state: "owner-editing", variant: "paper", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(420);
+  const r = await page.evaluate(async () => {
+    const pane = document.querySelector(".b-plan");
+    pane.scrollTop = 600;
+    pane.dispatchEvent(new Event("scroll"));
+    await new Promise((r2) => setTimeout(r2, 350));
+    const scrolled = document.querySelector(".b-gapNote").textContent;
+    window.__TLCORE.settle();
+    await new Promise((r2) => setTimeout(r2, 350));
+    const afterSettle = document.querySelector(".b-gapNote").textContent;
+    const f = document.querySelector("#b-edit-title");
+    if (f) { f.value = f.value + "x"; f.dispatchEvent(new Event("input", { bubbles: true })); }
+    await new Promise((r2) => setTimeout(r2, 350));
+    return { scrolled, afterSettle, afterType: document.querySelector(".b-gapNote").textContent };
+  });
+  ok("a repaint does not revert the pinned readout",
+    r.afterSettle === r.scrolled, `${flat10(r.scrolled)} -> ${flat10(r.afterSettle)}`);
+  ok("nor does a keystroke in the title",
+    r.afterType === r.scrolled, `${flat10(r.scrolled)} -> ${flat10(r.afterType)}`);
+  await page.close();
+}
+
+/* Which segment is chosen survives a forced palette. It was carried by
+   fill alone, and a forced palette repaints exactly that — measured, the
+   chosen fill came back equal to the page ground. */
+for (const room of ["paper", "ink"]) {
+  const page = await open({
+    state: "owner-editing", variant: room,
+    viewport: { width: 1440, height: 960 }, forcedColors: "active",
+  });
+  await page.waitForTimeout(500);
+  const r = await page.evaluate(() => {
+    const btns = [...document.querySelectorAll(".b-seg button")];
+    if (btns.length < 2) return null;
+    const ground = getComputedStyle(document.querySelector(".b-field")).backgroundColor;
+    const on = btns.find((x) => x.getAttribute("aria-pressed") === "true");
+    const off = btns.find((x) => x.getAttribute("aria-pressed") !== "true");
+    const mark = (e) => {
+      const a = getComputedStyle(e, "::after");
+      return a.content !== "none" && parseFloat(a.height) > 0;
+    };
+    return {
+      ground,
+      onBg: getComputedStyle(on).backgroundColor,
+      offBg: getComputedStyle(off).backgroundColor,
+      onMark: mark(on), offMark: mark(off),
+    };
+  });
+  /* A fill equal to the ground is not a mark. */
+  const distinct = !!r && ((r.onBg !== r.ground && r.onBg !== r.offBg) || (r.onMark && !r.offMark));
+  ok(`the chosen segment is visibly chosen in a forced palette · ${room}`,
+    distinct, JSON.stringify(r));
+  await page.close();
+}
+
+/* The card names itself with the words it paints — including the one
+   qualifier that keeps a cached preview honest a month later. */
+for (const room of ["paper", "ink"]) {
+  const page = await open({ state: "unfurl", variant: room, viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  const named = await page.evaluate(() => {
+    const a = [...document.querySelectorAll("[aria-label]")].map((e) => e.getAttribute("aria-label"));
+    return a.find((l) => /when this was sent|the day/i.test(l)) || a.join(" | ");
+  });
+  ok(`the card says what it paints · ${room}`,
+    /when this was sent/i.test(flat10(named)) || /the day/i.test(flat10(named)),
+    flat10(named).slice(0, 80));
+  await page.close();
+}
+
+/* The disclosure does not speak its own typographic mark: generated
+   content joins the accessible name, on a role that already exposes its
+   own state. */
+for (const room of ["paper", "ink"]) {
+  const page = await open({ state: "phone", variant: room, viewport: { width: 390, height: 844 } });
+  await page.waitForTimeout(400);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Accessibility.enable");
+  const { nodes } = await cdp.send("Accessibility.getFullAXTree");
+  const d = nodes.find((n) => /disclosure|button/i.test(n.role?.value || "")
+    && /behind you/i.test(n.name?.value || ""));
+  ok(`the disclosure does not announce its own mark · ${room}`,
+    !!d && !/[+−–-]\s*$/.test((d.name?.value || "").trim()),
+    d ? d.name.value : "not found");
+  await page.close();
+}
+
+/* The strap does not point below at a link that is above it. */
+{
+  const page = await open({ state: "owner-flight", variant: "paper", viewport: { width: 1440, height: 960 } });
+  await page.waitForTimeout(400);
+  await page.click('[data-act="publish"]');
+  await page.waitForTimeout(500);
+  const r = await page.evaluate(() => {
+    const live = document.querySelector(".b-live");
+    const field = document.querySelector(".b-linkField");
+    if (!live || !field) return null;
+    return {
+      text: live.textContent,
+      liveTop: Math.round(live.getBoundingClientRect().top),
+      fieldTop: Math.round(field.getBoundingClientRect().top),
+    };
+  });
+  const saysBelow = r && /below/i.test(r.text);
+  ok("the strap does not say 'below' when the link is above it",
+    !!r && (!saysBelow || r.fieldTop > r.liveTop),
+    r ? `"${flat10(r.text)}" live@${r.liveTop} link@${r.fieldTop}` : "missing");
+  await page.close();
+}
+
+/* The forced palette's "this one" ring belongs to what is next, never to
+   the past. */
+{
+  const page = await open({
+    state: "day", variant: "paper",
+    viewport: { width: 390, height: 844 }, forcedColors: "active",
+  });
+  await page.waitForTimeout(400);
+  const widths = await page.evaluate(async () => {
+    const d = document.querySelector(".b-back summary, summary");
+    if (d) d.click();
+    await new Promise((r2) => setTimeout(r2, 400));
+    return [...document.querySelectorAll(".b-back .b-tick")]
+      .map((t) => getComputedStyle(t).borderTopWidth);
+  });
+  ok("the past carries no ring that means 'this one'",
+    widths.length > 0 && new Set(widths).size === 1, widths.join(","));
+  await page.close();
+}
 
 
 await browser.close();

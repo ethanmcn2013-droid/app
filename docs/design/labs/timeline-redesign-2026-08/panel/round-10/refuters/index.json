@@ -1,0 +1,100 @@
+[
+ {
+  "key": "ui--add-unpublishes-a-live-plan",
+  "id": "add-unpublishes-a-live-plan",
+  "seat": "ui",
+  "cost": 0.4,
+  "covers": []
+ },
+ {
+  "key": "ui--guests-label-touches-its-control",
+  "id": "guests-label-touches-its-control",
+  "seat": "ui",
+  "cost": 0.3,
+  "covers": [
+   "evidence--guests-see-label-abuts-its-own-control"
+  ]
+ },
+ {
+  "key": "type--moment-title-measure-collapses-at-1024",
+  "id": "moment-title-measure-collapses-at-1024",
+  "seat": "type",
+  "cost": 0.3,
+  "covers": []
+ },
+ {
+  "key": "interaction--enter-is-dead-on-the-very-first-field",
+  "id": "enter-is-dead-on-the-very-first-field",
+  "seat": "interaction",
+  "cost": 0.3,
+  "covers": []
+ },
+ {
+  "key": "interaction--visibility-selection-vanishes-in-forced-colours",
+  "id": "visibility-selection-vanishes-in-forced-colours",
+  "seat": "interaction",
+  "cost": 0.3,
+  "covers": []
+ },
+ {
+  "key": "interaction--pinned-readout-reverts-on-every-move",
+  "id": "pinned-readout-reverts-on-every-move",
+  "seat": "interaction",
+  "cost": 0.3,
+  "covers": []
+ },
+ {
+  "key": "ux--taking-the-link-never-makes-the-plan-theirs",
+  "id": "taking-the-link-never-makes-the-plan-theirs",
+  "seat": "ux",
+  "cost": 0.5,
+  "covers": [
+   "brand--taking-the-link-leaves-the-plan-saying-nobody-has-it"
+  ]
+ },
+ {
+  "key": "ux--preview-erases-the-way-back",
+  "id": "preview-erases-the-way-back",
+  "seat": "ux",
+  "cost": 0.2,
+  "covers": []
+ },
+ {
+  "key": "brand--the-card-name-drops-when-this-was-sent",
+  "id": "the-card-name-drops-when-this-was-sent",
+  "seat": "brand",
+  "cost": 0.2,
+  "covers": []
+ },
+ {
+  "key": "taste--the-handover-ends-on-a-line-that-points-the-wrong-way",
+  "id": "the-handover-ends-on-a-line-that-points-the-wrong-way",
+  "seat": "taste",
+  "cost": 0.2,
+  "covers": []
+ },
+ {
+  "key": "evidence--structure-rail-is-a-hairline-on-ink",
+  "id": "structure-rail-is-a-hairline-on-ink",
+  "seat": "evidence",
+  "cost": 0.4,
+  "covers": []
+ },
+ {
+  "key": "evidence--the-accent-draws-the-past-rail",
+  "id": "the-accent-draws-the-past-rail",
+  "seat": "evidence",
+  "cost": 0.4,
+  "covers": [
+   "brand--the-accent-draws-the-past-on-the-morning",
+   "ui--past-rail-wears-the-forward-accent"
+  ]
+ },
+ {
+  "key": "evidence--disclosure-announces-its-own-plus-sign",
+  "id": "disclosure-announces-its-own-plus-sign",
+  "seat": "evidence",
+  "cost": 0.2,
+  "covers": []
+ }
+]

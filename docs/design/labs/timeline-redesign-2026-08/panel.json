@@ -504,6 +504,61 @@
           "done": "Each pane says where it is cut, and only when it is actually cutting something - the mask is written from a measurement after layout and removed when nothing is hidden, so a fade always means content rather than decoration. Focus is kept clear of the band, because the browser scrolls a focused control flush to the pane edge, which would have parked it under the very gradient meant to say it was on its way out."
         }
       ]
+    },
+    {
+      "round": 10,
+      "scores": {
+        "UI composition": 9.1,
+        "Typography": 9.2,
+        "Interaction and states": 9,
+        "UX and information design": 8.6,
+        "Brand and copy": 8.6,
+        "Product taste and emotional resonance": 9.2,
+        "Measured evidence": 9.2
+      },
+      "findings": 22,
+      "confirmed": 20,
+      "refuted": 2,
+      "fixed": 20,
+      "headline": "The first round under the redesigned loop, and the pattern of nine rounds broke: the floor rose 7.2 to 8.6, the spread closed 1.8 to 0.6, EVERY seat rose, and five of seven now sit at or above 9.0. The change that did it was removing the finding quota. The seat schema had required three findings each, so seven seats produced 33 to 35 findings every round whether or not 33 defects existed - and since the gate is the lowest seat, the floor measured the quota rather than the work. With the minimum gone the panel filed 22, Typography filed ONE and scored 9.2, and refutation fell from 52 per cent to 12. Thirteen refuters were spent instead of thirty-three, because three seats found one accent defect and two found one publish defect, and a single verdict was made to rule on every framing. The founder's own room was graded as the primary for the first time - paper ground, past folded, indigo on the next thing AND the rail - with ink as its twin, and that is exactly where the defects were. The accent rule was unscoped, so on the wedding morning, which has no forward measure at all, the only indigo rail drew the PAST; three seats found it independently. Its alpha was ground-blind, one value serving both rooms and surviving on only one, which is the precise trap the lock warns of when it says the two ladders do not permit the same token. Neither was findable before the shipping room became the subject. Two more were mine from round 9: adding a moment unconditionally downgraded a live plan to draft, and taking the link never made the plan theirs. The gate went 621 to 644 assertions, every one of them run on both grounds, and learned to grant a clipboard so the act that publishes can actually be driven.",
+      "worst": [
+        {
+          "seat": "Measured evidence",
+          "cost": 0.4,
+          "problem": "The one decision this round changed was spent through a single ground-blind alpha and survived on only one of the two grounds. `[data-accent=\"structure\"] .b-rail` was also unscoped, and .b-back is a .b-measure, so the rule painted the PAST rail as well - on state=day, the wedding morning, there is no forward measure at all, so the only indigo rail on the screen the company is judged by drew what had already happened. Three seats found the scoping half independently; the evidence seat found the ground-blindness, which is the trap the lock names in as many words: a token chosen for one ground is a token that fails on the other.",
+          "done": "The accent is scoped to the forward measure and carries a per-ground alpha - 0.46 on paper, full strength on ink, which is the weight the today rule and the lead tick already have there. 0.5 was not a step on the declared ladder at all; 0.46 is. The past rail takes the ordinary hairline, which is what \"the part that is still ahead\" actually means. The forced-colours pair was raised to the same specificity or the palette would have stopped winning the moment the rules were scoped."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.5,
+          "problem": "Round 9 made taking the link the act that publishes. It put the flip in a handler the publish screen never reaches, so the link genuinely reached the clipboard, the heading the owner was standing on did not change, the record stayed a draft however many times it was taken, and pressing Back to the plan returned to a surface still saying only you can see this. Two seats found it independently. The gate could not have caught it: it had never been able to grant a clipboard, so only the failure path was ever driven.",
+          "done": "One writer. takeTheLink() sets the record and rewrites the heading in place, on the screen the owner is looking at, and the dead branch is gone - so the status line, the verb and the stamp all follow on return with no second call. The heading rewrite is silent to assistive tech because that node already holds focus, so the live region carries the fact instead. The gate can now grant a clipboard and drives the whole path end to end."
+        },
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "Round 9 made a brand-new plan a draft so it would stop claiming to be live. The same line downgraded EVERY plan: an owner adding a moment to something fifty people were already holding was told only they could see it, the right-anchored bar narrowed so all three controls slid 28px inward under the cursor, and Undo never put the record back. The gate proved only first paint.",
+          "done": "The write is gone from the add branch entirely. A brand-new plan is already made a draft where it is actually created, before the surface renders; adding a moment moves the stamp, because the plan changed, and touches nothing else. Adding to a plan people hold cannot un-hand it to them."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.3,
+          "problem": "Two writers owned the pinned horizon line and one of them ignored where the plan pane was. place() painted the at-rest sentence on every repaint while speak() painted the scrolled reading only on scroll events - so a resize, fonts.ready, or any keystroke in the title field snapped the line back to a fact about the top of a plan the owner was not looking at. This node has now been fixed in four consecutive rounds, each time for a different reason.",
+          "done": "place() computes; speak() paints, at every width - including the phone, where there is no pinned column and speak() used to return without writing anything at all, which would have left the line stale the moment place() stopped writing it. A stepper press is deliberately NOT covered by the assertion: keepInBand scrolls the moved row into view and the at-rest reading is then true, which was measured rather than assumed."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.3,
+          "problem": "Which visibility segment is chosen was carried by fill alone - background: var(--fore), color: var(--back) - and a forced palette repaints exactly that. Measured with a forced palette active on both grounds, the chosen segment's fill came back equal to the page ground: the control said nothing at all about which option was live.",
+          "done": "Chosen is carried by the system's own selected pair AND by geometry, because a forced palette may repaint any fill but cannot flatten a shape. Opting out of the forced colours returns the focus ring to author indigo, so the ring is given back a system colour explicitly in the same rule."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.2,
+          "problem": "The card that lands in the couple's message painted \"79\" over \"days away when this was sent\" - the qualifier that keeps a cached chat preview honest a month later, and the renderer's own comment explains why it is there. The accessible name said \"79 days to Saturday 3 October 2026\", dropping the qualifier entirely, so the one reader who cannot see the card got the one version of the figure that goes stale.",
+          "done": "The name is built from the very strings the card paints, both branches, hoisted so the two cannot drift again. It reads \"Mara & Finn, 79 days away when this was sent. Wedding day, Saturday 3 October 2026\", and keeps the empty-label guard, because a plan the owner has just made has no day-name until a person writes one."
+        }
+      ]
     }
   ]
 }

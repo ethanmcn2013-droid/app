@@ -430,6 +430,7 @@
    strength so the mark separates from the label beside it. */
 .b-behindSummary::after {
   content: "+";
+  content: "+" / "";
   font-family: var(--mono);
   font-size: var(--size-label);
   line-height: var(--lead-label);
@@ -437,7 +438,7 @@
   color: var(--fore);
   margin-left: auto;
 }
-.b-behindDetails[open] .b-behindSummary::after { content: "\2212"; }
+.b-behindDetails[open] .b-behindSummary::after { content: "\2212"; content: "\2212" / ""; }
 .b-behindLabel {
   font-family: var(--mono);
   font-weight: 400;
@@ -581,7 +582,17 @@
 }
 
 /* accent=structure spends the indigo a second time, on the rail. */
-[data-accent="structure"] .b-rail { background: var(--accent); opacity: 0.5; }
+[data-accent="structure"] .b-measure:not(.b-back) .b-rail {
+  background: var(--accent);
+  /* 0.46 is a declared step; 0.5 was not on the ladder at all. */
+  opacity: 0.46;
+}
+/* Indigo is 6.31:1 on paper and 2.99:1 on ink, so the same alpha cannot
+   read on both. On ink it goes to full strength — the weight the today
+   rule and the lead tick already carry there. */
+[data-ground="ink"][data-accent="structure"] .b-measure:not(.b-back) .b-rail { opacity: 1; }
+/* What is behind you is not what is ahead of you. */
+[data-accent="structure"] .b-back .b-rail { background: var(--fore-16); opacity: 1; }
 
 /* The page opens on a full-measure rule and has to close on one. */
 .b-foot {
@@ -822,6 +833,7 @@
    matches the plate, because 5 is not a step on the declared radii
    ladder and the ladder is a mechanical lock, not a preference. */
 .b-seg { display: inline-flex; border: 1px solid var(--fore-28); border-radius: 6px; }
+.b-seg button { position: relative; }
 .b-seg button:first-child { border-radius: 6px 0 0 6px; }
 .b-seg button:last-child { border-radius: 0 6px 6px 0; }
 .b-seg button {
@@ -835,6 +847,11 @@
 }
 .b-seg button + button { border-left: 1px solid var(--fore-28); }
 .b-seg button[aria-pressed="true"] { background: var(--fore); color: var(--back); }
+/* Round 9 lifted the visibility group off an inline
+   inline grid style and onto this class without ever writing
+   the class, so its label sat 1px from its own control while the other
+   two groups kept their air. */
+.b-editGroup { display: flex; align-items: center; gap: var(--gap-control); flex-wrap: wrap; }
 .b-editActs { display: flex; gap: var(--gap-control); align-items: center; flex-wrap: wrap; }
 /* On its own line, after a rule. It sat ten pixels to the right of the
    safe action at two and a half times its width. Separated, not hidden:
@@ -1391,7 +1408,12 @@
     z-index: 4;
     margin: 0;
   }
-  [data-undo="true"][data-editor-open] .b-edit { bottom: 76px; }
+  /* No lift. This reserved a band for the undo bar that is only ever
+     occupied when the editor is CLOSED - on Escape the bar moves home
+     and becomes fixed - so with the editor open it merely threw the
+     whole sheet 64px up the screen on the first press and filled the
+     gap with half a row. The closed case is already reserved by the
+     dock rule below and the padding above it. */
   /* The docked sheet is full-bleed and nothing inside it was capped, so
      every control inflated to the page: a date field holding
      "25 July 2026" drawn 1221px across at 1279, and a Shown/Hidden
@@ -1547,7 +1569,29 @@
 @media (forced-colors: active) {
   /* The record room paints the rail from the accent at (0,2,0), which
      beats a bare .b-rail no matter how late it sits. */
-  [data-accent="structure"] .b-rail { background: CanvasText; opacity: 1; }
+  /* Raised to the same specificity as the rules above, or the forced
+     palette stops winning the moment those are scoped. */
+  [data-accent="structure"] .b-measure:not(.b-back) .b-rail { background: CanvasText; opacity: 1; }
+  [data-accent="structure"] .b-back .b-rail { background: CanvasText; opacity: 1; }
+  /* Chosen is carried by the system's own selected pair AND by geometry,
+     because a forced palette may repaint any fill but cannot flatten a
+     shape. Opting out returns the focus ring to author indigo, so it is
+     given back a system colour explicitly. */
+  .b-seg button[aria-pressed="true"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+  }
+  .b-seg button[aria-pressed="true"]:focus-visible { outline-color: CanvasText; }
+  .b-seg button[aria-pressed="true"]::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 3px;
+    height: 2px;
+    background: currentColor;
+  }
   .b-rail { background: CanvasText; }
   .b-todayRule, .b-dayNow { border-color: Highlight; background: Highlight; }
   .b-dayNow { background: none; border-top-color: Highlight; }
@@ -1563,5 +1607,11 @@
        nothing - the geometry that survives a repaint needs both. */
     border-style: solid;
   }
-  .b-back .b-item[data-lead="true"] .b-tick { background: Canvas; border-color: CanvasText; }
+  /* The reset has to include the GEOMETRY, or the past's nearest mark
+     keeps the 3px ring the block gives the one thing that is next. */
+  .b-back .b-item[data-lead="true"] .b-tick {
+    background: Canvas;
+    border-color: CanvasText;
+    border-width: 1px;
+  }
 }

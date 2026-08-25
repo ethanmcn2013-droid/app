@@ -1,0 +1,161 @@
+{
+ "refute": [
+  {
+   "seat": "ux",
+   "id": "taking-the-link-never-makes-the-plan-theirs",
+   "cost": 0.5,
+   "raw": 0.5,
+   "settled": false
+  },
+  {
+   "seat": "ui",
+   "id": "add-unpublishes-a-live-plan",
+   "cost": 0.4,
+   "raw": 0.4,
+   "settled": false
+  },
+  {
+   "seat": "brand",
+   "id": "taking-the-link-leaves-the-plan-saying-nobody-has-it",
+   "cost": 0.4,
+   "raw": 0.4,
+   "settled": false
+  },
+  {
+   "seat": "evidence",
+   "id": "structure-rail-is-a-hairline-on-ink",
+   "cost": 0.4,
+   "raw": 0.4,
+   "settled": false
+  },
+  {
+   "seat": "evidence",
+   "id": "the-accent-draws-the-past-rail",
+   "cost": 0.4,
+   "raw": 0.4,
+   "settled": false
+  },
+  {
+   "seat": "ui",
+   "id": "guests-label-touches-its-control",
+   "cost": 0.3,
+   "raw": 0.3,
+   "settled": false
+  },
+  {
+   "seat": "type",
+   "id": "moment-title-measure-collapses-at-1024",
+   "cost": 0.3,
+   "raw": 3,
+   "settled": false
+  },
+  {
+   "seat": "interaction",
+   "id": "enter-is-dead-on-the-very-first-field",
+   "cost": 0.3,
+   "raw": 0.3,
+   "settled": false
+  },
+  {
+   "seat": "interaction",
+   "id": "visibility-selection-vanishes-in-forced-colours",
+   "cost": 0.3,
+   "raw": 0.3,
+   "settled": false
+  },
+  {
+   "seat": "interaction",
+   "id": "pinned-readout-reverts-on-every-move",
+   "cost": 0.3,
+   "raw": 0.3,
+   "settled": false
+  },
+  {
+   "seat": "brand",
+   "id": "the-accent-draws-the-past-on-the-morning",
+   "cost": 0.3,
+   "raw": 0.3,
+   "settled": false
+  },
+  {
+   "seat": "evidence",
+   "id": "guests-see-label-abuts-its-own-control",
+   "cost": 0.3,
+   "raw": 0.3,
+   "settled": false
+  },
+  {
+   "seat": "ui",
+   "id": "past-rail-wears-the-forward-accent",
+   "cost": 0.2,
+   "raw": 0.2,
+   "settled": false
+  },
+  {
+   "seat": "ux",
+   "id": "preview-erases-the-way-back",
+   "cost": 0.2,
+   "raw": 0.2,
+   "settled": false
+  },
+  {
+   "seat": "brand",
+   "id": "the-card-name-drops-when-this-was-sent",
+   "cost": 0.2,
+   "raw": 0.2,
+   "settled": false
+  },
+  {
+   "seat": "taste",
+   "id": "the-handover-ends-on-a-line-that-points-the-wrong-way",
+   "cost": 0.2,
+   "raw": 0.2,
+   "settled": false
+  },
+  {
+   "seat": "evidence",
+   "id": "disclosure-announces-its-own-plus-sign",
+   "cost": 0.2,
+   "raw": 0.2,
+   "settled": false
+  }
+ ],
+ "batch": [
+  {
+   "seat": "ux",
+   "id": "first-moment-announced-as-a-return",
+   "cost": 0.1,
+   "raw": 0.1,
+   "settled": false
+  },
+  {
+   "seat": "ux",
+   "id": "loading-draws-the-today-rule-as-pending",
+   "cost": 0.1,
+   "raw": 0.1,
+   "settled": false
+  },
+  {
+   "seat": "brand",
+   "id": "the-keycap-names-a-key-half-the-owners-do-not-have",
+   "cost": 0.1,
+   "raw": 0.1,
+   "settled": false
+  },
+  {
+   "seat": "taste",
+   "id": "editor-lifts-onto-a-bisected-row",
+   "cost": 0.1,
+   "raw": 0.1,
+   "settled": false
+  },
+  {
+   "seat": "evidence",
+   "id": "forced-colours-gives-the-past-the-this-one-ring",
+   "cost": 0.1,
+   "raw": 0.1,
+   "settled": false
+  }
+ ],
+ "dropped": []
+}
