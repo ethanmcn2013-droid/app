@@ -100,6 +100,27 @@ frame now means changed work.
 `node scripts/design/notes-gates.mjs` between each — all three gates,
 one command, one line. Not twenty fixes and one gate run at the end.
 
+## Added at round 12: every fix leaves an assertion behind
+
+`seam-pick-desync` was recorded as fixed at round 9 and had never
+landed. The patch script threw before writing, the gates passed because
+nothing asserted it, and the panel found it again at round 12 as *the
+peel answers a pick it will not make* — three rounds later, having been
+counted as closed the whole time.
+
+The lessons file this programme seeds its own seats with names that
+exact failure: *"verify each fix rendered; one fix aimed at the wrong
+file was recorded as done and double-billed the next round."* Running
+the gates after a fix is not the same as proving the fix exists, because
+a gate with no assertion for it passes either way.
+
+So: **a finding is only marked closed when something asserts it.**
+`notes-record-round.mjs` now takes the behaviour gate's assertion count
+as its fourth argument, stores it on the round, and says so out loud if
+a round closes findings without the gate growing. It does not block the
+record — a round can legitimately close something the gate cannot
+express — but it can no longer happen silently.
+
 ## What is unchanged
 
 The direction lock, the architecture, the three-colour lock, Geist

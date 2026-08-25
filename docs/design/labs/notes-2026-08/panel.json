@@ -3182,7 +3182,8 @@
       "binding": [
         "Interaction and states"
       ],
-      "gateMet": false
+      "gateMet": false,
+      "assertions": 528
     },
     {
       "round": 11,
@@ -3293,7 +3294,8 @@
           "done": "round 11"
         }
       ],
-      "refuted": []
+      "refuted": [],
+      "assertions": 564
     },
     {
       "round": 12,
@@ -3421,7 +3423,8 @@
           "problem": "clearPick() has exactly one caller in the file, the Space key. At 390 with a real touch context both phone rooms open with a restored mark: 14 words drawn in indigo, the primary reading \"Send to Tasks\", and the strip reading \"14 words picked. Picked before, and still here. Press space to release them.\" — a keyboard instruction on a device with no keyboard up and no focusable field in either room. I drove real taps at the mark, at the strip, and in the body gutter: the mark is only ever REPLACED (the strip flips to \"Send to Tasks will use exactly these\" over the same 14 words), never released. The complete non-inert control set is Back to your notes / Send to Tasks / Just keep it / Decide later / Delete this note (review) and Back to your notes / About / Send to Tasks / More actions (read, and `more` is deliberately inert). So on the surface the architecture singles out, the primary stands armed with words the person did not pick in this session, the product prints the way to let them go, and that way does not exist. Round 11 closed a-pick-nobody-made-cannot-be-released with \"releasable by every route\"; on desktop Space does release (verified: strip gone, say = \"Nothing picked.\"), but the assertion that proves it, notes-interaction-check.mjs:3010 \"and space lets it go\", runs only at 1440 and reaches the surface by calling `.handBody.focus()` in script — a route no phone tap can produce.",
           "why": "REFUTED — the blocker's load-bearing measurement is wrong. Its claim is \"I drove real taps at the mark, at the strip, and in the body gutter: the mark is only ever REPLACED ... never released\" and \"that way does not exist.\" I drove exactly that, with real page.touchscreen.tap in a hasTouch context, at the locked preset (?v=locked&paper=stacked&index=airy&radius=soft&type=calm), at both 390x844 and 360x844, in both cited rooms. A single real tap on the strip releases the restored mark.\n\nPhone review room (?state=review), rest: .pick count 1, strip \"14 words picked. Picked before, and still here. Press space to release them.\", primary \"Send to Tasks\". One touchscreen.tap at the right end of .pickBar → .pick count 0, .pickBar gone, primary reads \"Pick the words, then send\". Identical at 360. A tap at (195,300), off the sentences, does the same at both widths.\n\nPhone read sheet (tap the \"Ask the venue…\" index row at 390): rest 1 pick, same restored strip, primary \"Send to Tasks\". One tap on .pickBar → 0 picks, strip gone, primary back to \"Pick the words, then send\".\n\nThe mechanism is in the source the blocker read but did not follow: clearPick() is not the only release path. A real tap collapses the document selection, selectionchange fires (notebook.js:3449) into offerPick (:840), and because a restored mark has sentAt === null the early return `if (!text && sentAt) return;` does not fire — picked becomes null and the primary disarms. That is why taps that land on a .sent replace (the click handler at :2801 writes sentAt), and taps that land anywhere else release. The blocker tested only the replacing half and generalised.\n\nSo \"phone cannot release a mark nobody made\" is false: the phone releases it with the most ordinary gesture on the surface, in both rooms, at both widths. What survives is much smaller than a blocker — the strip names a key (\"Press space\") that a touch phone does not have, and the tap route releases silently (#say still held the arrival sentence, not \"Nothing picked.\"). That is a copy-and-announcement defect on a working release, not a missing capability, and it does not stand between this artifact and 9.5.\n\nThe fix is also worse than the problem. It adds a fourth route into a pick that already has three (drag, tap, keys) — precisely the failure mode round 9 paid for — and it puts a 44px interactive control inside `<p class=\"pickBar\" role=\"status\">`. That strip already measures 55.7px tall at y=232 in an 844px phone sheet; a 44px button pushes it to roughly 100px and re-opens pickbar-buries-the-note-it-serves, closed earlier in this programme. A focusable control inside a live region that paint() rebuilds on every act is also the \"invisible-but-focusable\" and repaint-eats-focus class this checklist already prices.\n\nOne thing the blocker missed that is real and would defeat its own fix: pickRestored is never cleared on the `picked = text` branch of setPick (:770). After a real tap on a fresh sentence the strip reads \"16 words picked. Picked before, and still here. Press space to release them.\" for a pick the person made one second ago. A release button gated on `pickRestored` would therefore render on picks nobody restored, carrying restored-provenance copy."
         }
-      ]
+      ],
+      "assertions": 578
     }
   ],
   "logUrl": "https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25"
