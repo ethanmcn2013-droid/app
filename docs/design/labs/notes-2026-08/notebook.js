@@ -746,6 +746,12 @@
   function pickTarget() {
     if (state === "review") return queue()[queueAt] || null;
     if (openId) return work().find((n) => n.id === openId) || null;
+    /* A peel open over a note makes that note the pick surface, even
+       where the room set `peeling` without ever setting `openId`. This
+       returned null there, so the note stayed a fully live-LOOKING pick
+       surface — a tab stop, named as the instrument, drawing the mark —
+       whose every pointer and key press did nothing at all. */
+    if (peeling) return work().find((n) => n.id === peeling) || null;
     return null;
   }
   function setPick(text, acted) {
@@ -762,11 +768,13 @@
       /* Same words, but the person just pressed a key: answer them, and
          the mark is theirs now rather than one the fixture restored. */
       pickRestored = false;
+      couplePeel(text);
       say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
       paint();
       return;
     }
     picked = text;
+    couplePeel(text);
     if (text) {
       nudge = null;
       say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
@@ -837,6 +845,24 @@
     return about ? about.label : N.subjects["the-house"].label;
   }
 
+  /* WHAT THE PEEL WILL SEND IS WHAT IS MARKED.
+     With the peel open the note stays a live pick surface — a tab stop,
+     named as the instrument, still drawing the mark — but the render
+     reads pickedWords while every pick route writes `picked`. So a drag
+     or a press announced "6 words picked. The task will use these
+     words." and the seam then sent the old ones. Both routes go through
+     here. An edited wording survives a re-pick, and .peelFrom then
+     prints the source line on its own because wording no longer equals
+     pickedWords. */
+  function couplePeel(text) {
+    const target = pickTarget();
+    if (!text || !peeling || !target || peeling !== target.id) return;
+    const edited =
+      taskWording.trim() && pickedWords && taskWording.trim() !== pickedWords.replace(/[.]$/, "");
+    pickedWords = text;
+    if (!edited) taskWording = text.replace(/^[a-z]/, (ch) => ch.toUpperCase()).replace(/[.]$/, "");
+  }
+
   function offerPick() {
     const text = pickedRange();
     /* A keyboard pick is drawn, not selected, so the document reports no
@@ -847,10 +873,21 @@
     if (text) sentAt = null;
     if (text === picked) return;
     picked = text;
+    couplePeel(text);
     if (text) {
       /* The sentence asking for a pick cannot survive the pick. Both were
          on screen at once, twenty pixels apart, contradicting each other. */
       nudge = null;
+      /* A drag was the one pick route that never claimed the keyboard,
+         so a real mouse pick left activeElement on BODY once the repaint
+         landed — and then the arrow keys the margin advertises in the
+         same sentence were inert, and Space, the documented release key,
+         did nothing. Deliberately INSIDE this branch: offerPick also
+         runs on release with text null, and arming the body there would
+         yank the caret out of search or the capture field 120ms after a
+         click opened it, which is the class search-caret-reset and
+         capture-lands-where-you-cannot-see-it already paid for. */
+      refocus = { kind: "act", sel: state === "review" ? ".handBody" : ".readBody" };
       say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
     }
     paint();
@@ -1702,7 +1739,7 @@
         <div class="deskWrite">
           <p class="readBody${note.words >= 150 ? " readLong" : ""}" tabindex="0" role="group" aria-label="The note. Pick the words that should become the task, with the arrow keys.">${bodyHtml}</p>
         <div class="pickSlot">
-          ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? "Picked before, and still here. Press space to release them." : "Send to Tasks will use exactly these."}</span></p>` : ""}
+          ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? `Picked before, and still here. ${phone.matches ? "Tap it to let it go." : "Press space to let it go."}` : "Send to Tasks will use exactly these."}</span></p>` : ""}
           ${nudge ? `<p class="nudge" role="status">${I.tasks}${esc(nudge)}</p>` : ""}
         </div>
         </div>
@@ -1926,7 +1963,7 @@
           <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks</span>` : ""}</p>
           <p class="readBody" tabindex="0" role="group" aria-label="The note. Pick the words that should become the task, with the arrow keys.">${bodyHtml}</p>
           <div class="pickSlot">
-            ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? "Picked before, and still here. Press space to release them." : "Send to Tasks will use exactly these."}</span></p>` : ""}
+            ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? `Picked before, and still here. ${phone.matches ? "Tap it to let it go." : "Press space to let it go."}` : "Send to Tasks will use exactly these."}</span></p>` : ""}
             ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
           </div>
           ${peeling === note.id ? peelPanel(note) : ""}
@@ -2053,7 +2090,7 @@
               <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span></p>
               <p class="handBody" tabindex="0" role="group" aria-label="The note. Pick the words that should become the task, with the arrow keys.">${handHtml}</p>
               <div class="pickSlot">
-                ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? "Picked before, and still here. Press space to release them." : "Send to Tasks will use exactly these."}</span></p>` : ""}
+                ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? `Picked before, and still here. ${phone.matches ? "Tap it to let it go." : "Press space to let it go."}` : "Send to Tasks will use exactly these."}</span></p>` : ""}
                 ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
               </div>
               ${peeling === note.id ? peelPanel(note) : ""}
@@ -2821,6 +2858,16 @@
         if (e.shiftKey && sentAt) {
           sentAt = [Math.min(sentAt[0], i), Math.max(sentAt[1], i)];
         } else {
+          /* Pressing the sentence that IS the pick lets it go. A phone
+             has no space key, and the strip tells a phone to tap it to
+             let it go — so the gesture has to be true, or the strip is a
+             string that states a falsehood. It is also the obvious thing
+             to try with a pointer on any device. */
+          const whole = sentenceText(target.body, i, i);
+          if (picked && whole.trim() === picked.trim()) {
+            clearPick();
+            return;
+          }
           sentAt = [i, i];
         }
         setPick(sentenceText(target.body, sentAt[0], sentAt[1]), true);
@@ -3447,8 +3494,18 @@
      selectionchange fires on the document, which is why this is not bound
      to the note body. */
   document.addEventListener("selectionchange", () => {
-    if (peeling) return;
-    if (!openId && state !== "review") return;
+    /* This was a blanket `if (peeling) return`, which shut the DRAG
+       route off completely while the peel was open — so the note stayed
+       a live-looking pick surface that a drag could not move. Dropping
+       the guard outright is worse: pickedRange() is scoped to the note
+       bodies, so a caret move inside the wording textarea returns null
+       and offerPick would rebuild the whole tree on a 120ms debounce
+       while somebody is typing, which is the caret-loss class this
+       programme has already paid for twice. So: while peeling, act only
+       on a real selection inside a note body, and otherwise do nothing
+       at all. */
+    if (peeling && !pickedRange()) return;
+    if (!openId && state !== "review" && !peeling) return;
     clearTimeout(pickTimer);
     pickTimer = setTimeout(offerPick, 120);
   });

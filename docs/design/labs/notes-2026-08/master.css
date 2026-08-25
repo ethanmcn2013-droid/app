@@ -875,6 +875,22 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   color: var(--on-ink-2); box-shadow: inset 0 0 0 1px var(--chrome-line);
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); line-height: var(--lh-base); }
 .darkAct svg { width: 17px; height: 17px; }
+/* THE READBACK LIVES ON INK NOW.
+   Round 11 moved the phone readback into the .dark overlay — the right
+   room, because the words came out of it — and left every line wearing
+   its light-room tint. Measured at 390: .saidHead, .saidHint and
+   .pieceField all sat at contrast 1.00 against rgb(17,17,17). The
+   person's own dictated words were invisible. The audit could not see
+   it because its contrast pass only ever ran at 1440, where this room
+   is a white sheet; the coarse pass at 360/390 measures targets only. */
+.dark .saidHead { color: var(--on-ink-1); }
+.dark .saidHint { color: var(--on-ink-2); }
+.dark .piece { background: var(--chrome); box-shadow: none; }
+.dark .pieceField { color: var(--on-ink-1); }
+.dark .piece::before { background: var(--on-ink-2); }
+.dark .drop { color: var(--on-ink-2); }
+.dark .drop:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+
 /* The floor advertises its two keys now, so its keycaps need the same
    rule every other keycap in the product has, or they arrive in the
    browser's monospace and break the type lock. */

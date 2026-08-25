@@ -415,7 +415,16 @@ async function run() {
         window.__TARGET_AXIS = "height";
       });
       const r = await tp.evaluate(AUDIT);
-      if (r.targets.length) coarse.states[`${cw}/${state}`] = r.targets;
+      /* Contrast at phone widths too, not just targets. Round 11 moved
+         the readback into the ink overlay and left every line wearing
+         its light-room tint: .saidHead, .saidHint and .pieceField all at
+         contrast 1.00 against rgb(17,17,17) — the person's own dictated
+         words, invisible — and this file could not see it, because the
+         contrast pass only ever ran at 1440 where that room is a white
+         sheet. Whole rooms only exist below 720px; they have to be
+         measured there. */
+      const bad = [...r.targets, ...r.contrast];
+      if (bad.length) coarse.states[`${cw}/${state}`] = bad;
     }
   }
   await touch.close();
@@ -454,12 +463,17 @@ async function run() {
     const misses = Object.entries(report.coarse.states);
     const under = misses.reduce((n, [, v]) => n + v.length, 0);
     process.stdout.write(
-      `COARSE  44px height floor, real touch pointer, ${report.coarse.widths.join("/")}px × ${STATES.length} states · ${under} under the floor
+      `COARSE  44px height floor + AA contrast, real touch pointer, ${report.coarse.widths.join("/")}px × ${STATES.length} states · ${under} failing
 `,
     );
     for (const [where, items] of misses) {
-      for (const i of items) process.stdout.write(`  ${where}  ${i.el} ${i.w}×${i.h}  "${i.label}"
+      /* Targets and contrast are different shapes; print each as what it
+         is rather than as undefined×undefined. */
+      for (const i of items) {
+        const what = i.ratio !== undefined ? `${i.ratio}:1 (needs ${i.needs})` : `${i.w}×${i.h}`;
+        process.stdout.write(`  ${where}  ${i.el} ${what}  "${i.label ?? i.text ?? ""}"
 `);
+      }
     }
   }
 

@@ -3051,6 +3051,168 @@ const said = (page) => page.locator("#say").textContent();
   await page.close();
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 12
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the peel sends the words that are marked ────────────────────── */
+{
+  /* With the peel open the note stayed a fully live-LOOKING pick surface
+     — a tab stop, named as the instrument, still drawing the mark — and
+     every pick route wrote a variable the peel does not read, so it
+     announced "6 words picked. The task will use these words." and then
+     sent the old ones. Two causes: pickTarget() returned null in a room
+     that sets `peeling` without `openId`, and offerPick was never coupled
+     at all. Recorded as fixed at round 9; it was not, because the patch
+     threw before writing and nobody re-drove it. */
+  const agree = async (page) =>
+    page.evaluate(() => {
+      const mark = [...document.querySelectorAll(".readBody .pick")].map((m) => m.textContent).join("").trim();
+      const field = document.querySelector(".peelField").value.trim();
+      const norm = (t) => t.toLowerCase().replace(/[.]$/, "");
+      return { mark, field, agree: norm(mark) === norm(field) };
+    });
+  {
+    const page = await open("?state=seam");
+    await page.locator(".readBody .sent").nth(2).click();
+    await page.waitForTimeout(480);
+    const r = await agree(page);
+    ok("pressing another sentence moves what the peel will send", r.agree, `${r.mark.slice(0, 30)} vs ${r.field.slice(0, 30)}`);
+    ok(
+      "and what it says matches what it will send",
+      /words picked/.test(await said(page)) && /task will use these words/.test(await said(page)),
+      (await said(page)).slice(0, 60),
+    );
+    await page.close();
+  }
+  {
+    const page = await open("?state=seam");
+    const box = await page.locator(".readBody .sent").first().boundingBox();
+    await page.mouse.move(box.x + 20, box.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 170, box.y + 8, { steps: 10 });
+    await page.mouse.up();
+    await page.waitForTimeout(560);
+    const r = await agree(page);
+    ok("a real drag moves what the peel will send too", r.agree, `${r.mark.slice(0, 30)} vs ${r.field.slice(0, 30)}`);
+    /* And the guard that makes that safe: a caret move inside the wording
+       field must not drive a repaint, or typing the task loses its
+       place. */
+    await page.locator(".peelField").click();
+    await page.keyboard.type(" and tell Aoife", { delay: 10 });
+    await page.waitForTimeout(420);
+    ok(
+      "and typing the wording keeps its caret",
+      (await page.locator(".peelField").inputValue()).includes("Aoife") &&
+        (await page.evaluate(() => document.activeElement.classList.contains("peelField"))),
+    );
+    await page.close();
+  }
+}
+
+/* ── a drag keeps the keyboard it advertises ─────────────────────── */
+{
+  /* offerPick was the only pick route that never set refocus, so a real
+     mouse pick left activeElement on BODY once the repaint landed — and
+     then the arrow keys the margin advertises in the same sentence were
+     inert, and Space, the documented release key, did nothing. */
+  for (const [state, sel] of [
+    ["pressure", ".readBody"],
+    ["review", ".handBody"],
+  ]) {
+    const page = await open(`?state=${state}`);
+    const box = await page.locator(`${sel} .sent`).first().boundingBox();
+    await page.mouse.move(box.x + 30, box.y + 8);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 200, box.y + 8, { steps: 10 });
+    await page.mouse.up();
+    await page.waitForTimeout(520);
+    ok(
+      `${state}: a real drag leaves the keyboard on the note it picked in`,
+      await page.evaluate((s) => document.activeElement.matches(s), sel),
+      await page.evaluate(() => (document.activeElement.className || document.activeElement.tagName).split(" ")[0]),
+    );
+    const before = await markText(page, sel);
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(320);
+    ok(`${state}: so the arrows it advertises actually answer`, (await markText(page, sel)) !== before);
+    await page.close();
+  }
+}
+{
+  /* The adjacent break that guard exists to prevent: offerPick also runs
+     on release with no text, and arming the note body there would yank
+     the caret out of whatever a click had just opened, 120ms later. */
+  const page = await open("?state=pressure");
+  await page.locator(".readBody .sent").first().click();
+  await page.waitForTimeout(320);
+  await page.locator('[data-act="search"]').first().click();
+  await page.waitForTimeout(700);
+  ok(
+    "and releasing a pick by clicking away does not steal the caret",
+    await page.evaluate(() => document.activeElement.id === "q"),
+    await page.evaluate(() => document.activeElement.id || document.activeElement.className.split(" ")[0]),
+  );
+  await page.close();
+}
+
+/* ── a phone can let go of a mark it did not make ────────────────── */
+{
+  /* Round 11's strip told a phone to press space. A phone has no space
+     key, so the string stated a falsehood; pressing the sentence that IS
+     the pick now lets it go, on every device. */
+  const page = await open("?state=review", { width: 390, height: 844 });
+  const strip = await page.locator(".pickBar").textContent();
+  ok("the strip names a gesture the device has", !/press space/i.test(strip) || /tap/i.test(strip), strip.trim().slice(0, 70));
+  const mark = await page.locator(".handBody .pick").first().boundingBox();
+  await page.touchscreen.tap(mark.x + mark.width / 2, mark.y + mark.height / 2);
+  await page.waitForTimeout(520);
+  ok("and a real tap on the mark lets it go", (await markCount(page, ".handBody")) === 0);
+  ok("and says so", /Nothing picked/.test(await said(page)), (await said(page)).slice(0, 30));
+  await page.close();
+}
+
+/* ── the ink room is legible ─────────────────────────────────────── */
+{
+  /* Round 11 moved the phone readback into the .dark overlay and left
+     every line wearing its light-room tint: .saidHead, .saidHint and
+     .pieceField all at contrast 1.00 against rgb(17,17,17). The person's
+     own dictated words were invisible. The audit could not see it
+     because its contrast pass only ran at 1440, where that room is a
+     white sheet; it measures phone widths now, and this is the
+     behavioural half. */
+  const page = await open("?state=readback", { width: 390, height: 844 });
+  const legible = await page.evaluate(() => {
+    const lum = (c) => {
+      const [r, g, b] = c
+        .match(/[\d.]+/g)
+        .slice(0, 3)
+        .map(Number)
+        .map((v) => {
+          v /= 255;
+          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const room = document.querySelector(".dark");
+    if (!room) return { noRoom: true };
+    const bg = getComputedStyle(room).backgroundColor;
+    const out = {};
+    for (const sel of [".saidHead", ".pieceField"]) {
+      const el = room.querySelector(sel);
+      if (!el) continue;
+      const l1 = lum(getComputedStyle(el).color);
+      const l2 = lum(bg);
+      out[sel] = Number(((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)).toFixed(2));
+    }
+    return out;
+  });
+  ok("the dictated words are visible on the ink floor", (legible[".pieceField"] || 0) >= 4.5, JSON.stringify(legible));
+  ok("and so is the line that explains them", (legible[".saidHead"] || 0) >= 4.5, JSON.stringify(legible));
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, [...new Set(errors)].slice(0, 3).join(" · "));
 
 await browser.close();

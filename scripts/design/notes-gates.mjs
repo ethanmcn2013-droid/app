@@ -39,12 +39,12 @@ for (const gate of GATES) {
      gate it is reporting. */
   const assertions = (out.match(/(\d+) assertions · (\d+) failing/) || []).slice(1);
   const totals = (out.match(/TOTALS\s+(\{[^}]*\})/) || [])[1];
-  const coarse = (out.match(/COARSE[^\n]*?(\d+) under the floor/) || [])[1];
+  const coarse = (out.match(/COARSE[^\n]*?(\d+) (?:under the floor|failing)/) || [])[1];
   let detail;
   if (assertions.length) detail = `${assertions[0]} assertions, ${assertions[1]} failing`;
   else if (totals) {
     const sum = Object.values(JSON.parse(totals)).reduce((a, b) => a + b, 0);
-    detail = `${sum} violations, ${coarse ?? "?"} under the coarse floor`;
+    detail = `${sum} violations, ${coarse ?? "?"} failing on a phone`;
   } else detail = code === 0 ? "pass" : "fail";
   results.push({ name: gate.name, code, detail, out });
 }
