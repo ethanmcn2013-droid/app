@@ -2051,8 +2051,36 @@ const said = (page) => page.locator("#say").textContent();
   const after = (await markCount(page))
     ? await markText(page)
     : "";
-  ok("space gives it back, exactly to where it started", after === restPick, `"${restPick}" then "${after}"`);
-  ok("and the primary says what it said at rest", (await page.locator('[data-act="peel"]').textContent()) === atRest);
+  /* ROUND 11 INVERTED THESE.
+     They asserted that Space gives a restored mark BACK — which is what
+     the old standingPick() did, falling through to the fixture's
+     note.pick on every read. The panel measured that as the defect it
+     is: the product announced "Nothing picked." while fourteen words
+     stayed drawn in indigo, the bar still read "14 words picked. Send to
+     Tasks will use exactly these", and the primary stayed armed — under
+     a heading whose whole promise is that only picked words cross. A
+     mark nobody made must be releasable, and releasing it must stick. */
+  ok("space releases the mark", after === "", `"${restPick}" then "${after}"`);
+  ok(
+    "and it stays released rather than being restored by the next repaint",
+    await (async () => {
+      await page.keyboard.press("Escape");
+      await page.waitForTimeout(240);
+      await page.locator(".idxRow").nth(2).click();
+      await page.waitForTimeout(300);
+      return (await markCount(page)) === 0;
+    })(),
+  );
+  ok(
+    "and the primary stops claiming there is something to send",
+    !(await page.locator('[data-act="peel"]').textContent()).includes("Send to Tasks"),
+    await page.locator('[data-act="peel"]').textContent(),
+  );
+  ok(
+    "a restored mark says it was picked before, not just that it is picked",
+    atRest.includes("Send to Tasks"),
+    atRest,
+  );
   await page.close();
 }
 
@@ -2835,6 +2863,191 @@ const said = (page) => page.locator("#say").textContent();
   await page.locator(".phoneField").fill("Confirm the second bar has its own float.");
   await page.waitForTimeout(620);
   ok("the phone prints the draft length once, or not at all", (await page.locator(".dockCount").count()) <= 1);
+  await page.close();
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 11
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── every room exists on a phone ────────────────────────────────── */
+{
+  /* Only `notebook` had a phone branch, so every other state rendered
+     into .desk, which is display:none under 720px. A real tap on the
+     head chip — the product's own primary call to action — entered a
+     room with six invisible-but-focusable controls, no card, and no way
+     back. Dictation was worse: the ink floor closed into a white sheet
+     that does not exist on a phone, and the words a person had just
+     spoken were nowhere. */
+  for (const width of [360, 390]) {
+    for (const state of ["review", "readback"]) {
+      const page = await open(`?state=${state}`, { width, height: 844 });
+      const room = await page.evaluate(() => {
+        const dlg = document.querySelector(".phoneSheet, .dark");
+        if (!dlg) return { none: true };
+        const buttons = [...dlg.querySelectorAll("button")];
+        const words = dlg.querySelector(".handBody, .pieceField");
+        return {
+          kind: dlg.className.split(" ")[0],
+          controls: buttons.length,
+          tooSmall: buttons.filter((el) => el.getBoundingClientRect().height < 44).length,
+          wordsVisible: words ? words.getBoundingClientRect().height > 0 : false,
+          exit: buttons.some((el) => /notebook|discard-speech/.test(el.dataset.act || "")),
+        };
+      });
+      ok(`${width} ${state}: the room renders at all`, !room.none, JSON.stringify(room));
+      ok(`${width} ${state}: and its words are on screen`, room.wordsVisible === true);
+      ok(`${width} ${state}: every control in it takes a finger`, room.tooSmall === 0, `${room.tooSmall} under 44px`);
+      ok(`${width} ${state}: and there is a visible way out, not just Escape`, room.exit === true);
+      const blind = await page.evaluate(() => {
+        const out = [];
+        for (const el of document.querySelectorAll("button, [tabindex]")) {
+          if (el.tabIndex < 0) continue;
+          const cs = getComputedStyle(el);
+          if (cs.display === "none" || cs.visibility === "hidden") continue;
+          const r = el.getBoundingClientRect();
+          if (r.width === 0 || r.height === 0) out.push(el.dataset.act || el.className);
+        }
+        return out;
+      });
+      ok(`${width} ${state}: nothing focusable is drawn at nothing`, blind.length === 0, blind.slice(0, 4).join(" · "));
+      await page.close();
+    }
+  }
+}
+{
+  /* The way out has to work by finger, and land where the next thought
+     goes. */
+  const page = await open("?state=review", { width: 390, height: 844 });
+  const box = await page.locator('.phoneSheet [data-act="notebook"]').boundingBox();
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await page.waitForTimeout(620);
+  ok("a real tap on the way out closes the phone hand", (await page.locator(".phoneSheet").count()) === 0);
+  ok(
+    "and the caret is where the next thought goes",
+    await page.evaluate(() => document.activeElement.classList.contains("phoneField")),
+  );
+  await page.close();
+}
+{
+  /* Keys pressed inside the dialog must not drive the plane behind it.
+     hand-arrows-drive-the-index-behind is on the closed list and this is
+     a new surface for it. */
+  const page = await open("?state=review", { width: 390, height: 844 });
+  const before = await page.evaluate(() => ({
+    top: document.getElementById("index")?.scrollTop ?? null,
+    cursor: document.querySelector(".idxRow[data-cursor]")?.dataset.id ?? null,
+  }));
+  await page.locator(".handBody").focus();
+  for (const key of ["ArrowDown", "ArrowUp", "j"]) {
+    await page.keyboard.press(key);
+    await page.waitForTimeout(140);
+  }
+  const after = await page.evaluate(() => ({
+    top: document.getElementById("index")?.scrollTop ?? null,
+    cursor: document.querySelector(".idxRow[data-cursor]")?.dataset.id ?? null,
+  }));
+  ok(
+    "navigation keys inside the phone hand leave the index alone",
+    before.top === after.top && before.cursor === after.cursor,
+    `${JSON.stringify(before)} then ${JSON.stringify(after)}`,
+  );
+  await page.close();
+}
+
+/* ── leaving a room gives the keyboard back ──────────────────────── */
+{
+  /* The file states the rule at keepDraft and set it in exactly one
+     branch; every other exit dropped the caret on document.body, so the
+     next sentence typed after leaving review, search, voice or the
+     readback went nowhere. Typed, not filled — fill hides a caret at
+     index zero. */
+  const exits = [
+    ["review", "Escape", null],
+    ["voice", "Escape", null],
+    ["readback", "Escape", null],
+    ["readback", null, '[data-act="keep-both"]'],
+    ["readback", null, '[data-act="discard-speech"]'],
+  ];
+  for (const [state, key, sel] of exits) {
+    const page = await open(`?state=${state}`);
+    if (key) await page.keyboard.press(key);
+    else await page.locator(sel).click();
+    await page.waitForTimeout(900);
+    await page.keyboard.type("Order two more cases of tonic.", { delay: 0 });
+    await page.waitForTimeout(320);
+    ok(
+      `leaving ${state} by ${key || sel.match(/"(.*)"/)[1]} leaves the caret where the next thought goes`,
+      (await page.locator(".topField").inputValue()).includes("tonic"),
+      await page.evaluate(() => (document.activeElement.className || document.activeElement.tagName).split(" ")[0]),
+    );
+    await page.close();
+  }
+}
+
+/* ── a mark nobody made can be let go ────────────────────────────── */
+{
+  /* standingPick() fell through to the fixture's note.pick on every
+     read, so three notes opened already marked under a heading whose
+     whole promise is that only picked words cross — and the documented
+     clear key could not touch it: the product announced "Nothing
+     picked." while the words stayed drawn and the primary stayed armed. */
+  const page = await open("?state=review");
+  const armed = await page.evaluate(() => ({
+    marked: document.querySelectorAll(".handBody .pick").length > 0,
+    primary: document.querySelector('[data-act="d-task"]').textContent.trim(),
+  }));
+  ok("a restored mark is drawn at rest", armed.marked === true);
+  await page.locator(".handBody").focus();
+  await page.keyboard.press(" ");
+  await page.waitForTimeout(420);
+  const released = await page.evaluate(() => ({
+    marked: document.querySelectorAll(".handBody .pick").length > 0,
+    primary: document.querySelector('[data-act="d-task"]').textContent.trim(),
+    said: document.querySelector(".sr")?.textContent || "",
+  }));
+  ok("and space lets it go", released.marked === false, JSON.stringify(released));
+  ok(
+    "and the primary stops claiming there is something to send",
+    !released.primary.includes("Send to Tasks"),
+    released.primary,
+  );
+  ok("and what is said matches what is drawn", /Nothing picked/.test(released.said), released.said.slice(0, 40));
+  await page.close();
+}
+
+/* ── the sheet goes back to rest after the act it exists for ─────── */
+{
+  /* Round 10 seated the commit permanently and drove its visibility from
+     wakeSheet(), which only ran from the input listener — so after a
+     save the field was empty and the sheet still wore a filled Save with
+     the privacy line gone, for the rest of the session. Three seats
+     reported it independently. */
+  const page = await open();
+  const look = () =>
+    page.evaluate(() => {
+      const k = document.querySelector('.topFoot [data-act="keep"]');
+      const r = document.querySelector(".topFoot .restPart");
+      return {
+        field: document.querySelector(".topField").value,
+        keep: k ? getComputedStyle(k).visibility : "absent",
+        promise: r ? getComputedStyle(r).visibility : "absent",
+      };
+    });
+  await page.locator(".topField").click();
+  await page.keyboard.type("Ring the florist about the second arch.", { delay: 0 });
+  await page.waitForTimeout(620);
+  const writing = await look();
+  ok("while writing, the commit is offered", writing.keep === "visible" && writing.promise === "hidden");
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(900);
+  const rest = await look();
+  ok(
+    "and after the save the sheet is back at rest",
+    rest.field === "" && rest.keep === "hidden" && rest.promise === "visible",
+    JSON.stringify(rest),
+  );
   await page.close();
 }
 

@@ -3183,6 +3183,117 @@
         "Interaction and states"
       ],
       "gateMet": false
+    },
+    {
+      "round": 11,
+      "headline": "Every room exists on a phone now, and a mark nobody made can be let go",
+      "body": "Floor 6.2, Interaction, and it named three things. All three are closed, and a fourth that no seat raised as a blocker but three named in their verdicts turned out to be mine.\n\nOnly the notebook had a phone branch. Every other state rendered into the desk, which is display:none under 720px, so a real tap on the head chip — the product's own primary call to action — entered a room with six invisible-but-focusable controls, no card and no way back, and dictation closed its ink floor into a white sheet that does not exist on a phone, leaving the words somebody had just spoken nowhere. The review hand is a dialog over the live index now, reusing the shell whose focus trap and 44px controls are already measured, and the readback stays in the ink room the words came out of. Both carry a visible way out, because Escape is not a control on a phone. Zero focusable elements drawn at nothing, at 360 and 390, verified with a real touch pointer.\n\nstandingPick fell through to the fixture's note.pick on every read, so three notes opened already marked — fourteen words in indigo, the bar reading that Tasks would use exactly these, the primary armed — before anybody had picked anything, under a heading whose whole promise is that only picked words cross. Worse, the documented clear key could not touch it: the product announced Nothing picked while the words stayed drawn and the primary stayed armed. A restored mark is promoted once, on arrival, so every route that releases a pick releases it, and it stays released. It says so too: picked before, and still here.\n\nThe file states its own caret rule at keepDraft and set it in exactly one branch. Every other exit dropped focus on the body, so the sentence typed after leaving review, search, voice or the readback went nowhere. One helper now, and the two journeys that shared a branch are two journeys: leaving for Tasks is not arriving to write.\n\nThe fourth was mine. Round 10 seated the commit permanently and drove its visibility from wakeSheet, which only runs from the input listener, so after the product's core act the field was empty and the sheet still wore a filled Save with the privacy line gone, for the rest of the session. Three seats reported it independently and no blocker had to be spent on it. The resting look follows the draft now, not the keystroke.",
+      "scores": {
+        "UI composition": 8.2,
+        "Typography": 9.2,
+        "Interaction and states": 6.2,
+        "UX and information design": 7.4,
+        "Brand and copy": 8.9,
+        "Product taste and emotional resonance": 8.6,
+        "Measured evidence": 8.3
+      },
+      "signOffs": {
+        "UI composition": false,
+        "Typography": false,
+        "Interaction and states": false,
+        "UX and information design": false,
+        "Brand and copy": false,
+        "Product taste and emotional resonance": false,
+        "Measured evidence": false
+      },
+      "verdicts": {
+        "UI composition": "The static composition is at the bar — one 1000px column holds identically at 768, 1280, 1440 and 1920, the two planes read as two planes on a 2.7% tint plus the paper's own lift, and the peel now sits exactly on the writing column — but the room's weight is wrong after the commonest act (the desk never returns to rest, so an ink-filled dead primary is the heaviest mark on the sheet for the rest of the session) and the architecture's own verb, reading lifting a note onto the desk, is still delivered as a one-frame 169px teleport of the entire second plane.",
+        "Typography": "The type system underneath this is genuinely studio-grade — eight steps and no ninth, five declared leadings with nothing on `normal`, one tracking curve, a 31em measure calibrated in em so it self-scales, and the person's own words set identically at 17/1.62 in the field, the read body, the readback pieces and the hand card, which is the hardest thing in the discipline and is right — but two live composition defects stand in the way: the read plane's instruction is styled by a dead rule and outranks the note's own facts with a one-word widow at every desktop width, and the phone head breaks its date in half and centres the remainder at 360.",
+        "Interaction and states": "On a desktop this is close to the bar — the capture loop is zero-action, the index keyboard is complete, undo is on screen — but a real tap on \"Go through 8\" or on Dictate puts a phone into a room that renders at 0x0 with five focusable controls nobody can see and no visible way out, a mark the person never made cannot be released even after the product announces \"Nothing picked\", and leaving any room drops the caret on document.body so the next thing typed is swallowed.",
+        "UX and information design": "On a laptop this reads as a finished, self-explaining product with an unusually honest seam; on a phone the product's own primary call to action leads to a screen with no card, no decisions and no way back, and dictation quietly returns one thought as two notes with no rule and no way to rejoin them.",
+        "Brand and copy": "The voice is genuinely premium and the three colours are spent rather than obeyed, but the payoff screen of the product's second promise is written in a machine's grammar and armed with a primary that points at nothing, and the queue's first card shows words picked by no one under a heading promising only picked words cross.",
+        "Product taste and emotional resonance": "A discerning stranger would believe a top studio made this and would pay for it, and the pick band is a genuine, product-specific moment of relief, but the desk permanently loses its promise line after your first save and the review queue tells you that you picked words you never picked.",
+        "Measured evidence": "The file is measurably clean where the two gates look — zero non-token font-sizes, leadings and trackings, no overflow at any of 22 widths from 1920 to 360, no console error in any of the ten states, both planes survive pressure and the peel, and the drag pick and the phone touch commit are real — but `wakeSheet()` is written only inside the `input` listener, so after the product's core act the resting sheet wears a filled Save over an empty field with the promise line gone, and `doUndo()` repaints without a refocus, so the one reversibility control drops the keyboard and the next words typed are lost."
+      },
+      "floor": 6.2,
+      "binding": [
+        "Interaction and states"
+      ],
+      "gateMet": false,
+      "wins": [
+        {
+          "seat": "UI composition",
+          "score": 8.2,
+          "signOff": false,
+          "biggestWin": "The static composition is at the bar — one 1000px column holds identically at 768, 1280, 1440 and 1920, the two planes read as two planes on a 2.7% tint plus the paper's own lift, and the peel now sits exactly on the writing column — but the room's weight is wrong after the commonest act (the desk never returns to rest, so an ink-filled dead primary is the heaviest mark on the sheet for the rest of the session) and the architecture's own verb, reading lifting a note onto the desk, is still delivered as a one-frame 169px teleport of the entire second plane."
+        },
+        {
+          "seat": "Typography",
+          "score": 9.2,
+          "signOff": false,
+          "biggestWin": "The type system underneath this is genuinely studio-grade — eight steps and no ninth, five declared leadings with nothing on `normal`, one tracking curve, a 31em measure calibrated in em so it self-scales, and the person's own words set identically at 17/1.62 in the field, the read body, the readback pieces and the hand card, which is the hardest thing in the discipline and is right — but two live composition defects stand in the way: the read plane's instruction is styled by a dead rule and outranks the note's own facts with a one-word widow at every desktop width, and the phone head breaks its date in half and centres the remainder at 360."
+        },
+        {
+          "seat": "Interaction and states",
+          "score": 6.2,
+          "signOff": false,
+          "biggestWin": "On a desktop this is close to the bar — the capture loop is zero-action, the index keyboard is complete, undo is on screen — but a real tap on \"Go through 8\" or on Dictate puts a phone into a room that renders at 0x0 with five focusable controls nobody can see and no visible way out, a mark the person never made cannot be released even after the product announces \"Nothing picked\", and leaving any room drops the caret on document.body so the next thing typed is swallowed."
+        },
+        {
+          "seat": "UX and information design",
+          "score": 7.4,
+          "signOff": false,
+          "biggestWin": "On a laptop this reads as a finished, self-explaining product with an unusually honest seam; on a phone the product's own primary call to action leads to a screen with no card, no decisions and no way back, and dictation quietly returns one thought as two notes with no rule and no way to rejoin them."
+        },
+        {
+          "seat": "Brand and copy",
+          "score": 8.9,
+          "signOff": false,
+          "biggestWin": "The voice is genuinely premium and the three colours are spent rather than obeyed, but the payoff screen of the product's second promise is written in a machine's grammar and armed with a primary that points at nothing, and the queue's first card shows words picked by no one under a heading promising only picked words cross."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "score": 8.6,
+          "signOff": false,
+          "biggestWin": "A discerning stranger would believe a top studio made this and would pay for it, and the pick band is a genuine, product-specific moment of relief, but the desk permanently loses its promise line after your first save and the review queue tells you that you picked words you never picked."
+        },
+        {
+          "seat": "Measured evidence",
+          "score": 8.3,
+          "signOff": false,
+          "biggestWin": "The file is measurably clean where the two gates look — zero non-token font-sizes, leadings and trackings, no overflow at any of 22 widths from 1920 to 360, no console error in any of the ten states, both planes survive pressure and the peel, and the drag pick and the phone touch commit are real — but `wakeSheet()` is written only inside the `input` listener, so after the product's core act the resting sheet wears a filled Save over an empty field with the promise line gone, and `doUndo()` repaints without a refocus, so the one reversibility control drops the keyboard and the next words typed are lost."
+        }
+      ],
+      "confirmed": [
+        {
+          "seat": "Interaction and states",
+          "id": "phone-has-no-review-and-no-readback",
+          "element": "390x844 and 360x800, real touch. state=review and state=readback; .desk / .top / .handBody / .pieces",
+          "problem": "Only `notebook` has a phone branch (notebook.js:1884). Every other state renders into `.desk`, which master.css:1408 sets to `display:none` under 720px. Measured at 390 with hasTouch: a real tap on the visible 101x44 head chip [data-act=\"review\"] enters review and .handBody measures 0x0; d-task, d-keep, d-later, d-delete and [data-act=\"notebook\"] all measure 0x0 yet are still Tab-reachable — six invisible-but-focusable controls, and no visible way back (Escape needs a hardware keyboard; tapping an index row does nothing). A real tap on the dock's Dictate then on Stop and read it back is worse: the ink floor closes, .pieces, keep-both, discard-speech and add-piece all measure 0x0, .saidHead measures 0x0, the count still reads 14 notes, and the screen reader is told \"2 notes came back. First: ... Edit either one, or keep both\" while nothing about the spoken words is on screen. Dictation is the phone's headline capture route and it loses the words. The gate never enters voice or review below 1440; the assertion that is lying is the phone section's \"the desk stands down and the index takes the screen\" (notes-interaction-check.mjs:569), which asserts `.desk` is hidden as a virtue and thereby guarantees these rooms are invisible.",
+          "fix": "Build both phone branches; do NOT ship the fix's second clause. Disabling the Dictate glyph below 720px would amputate the phone's headline capture route, contradict the locked \"dictating takes the whole floor to ink\", and remove a control the 44px real-touch audit and the dock's suite-row composition both measure — that clause makes the work worse, and the ink floor already works correctly at 390 (voice-cancel 86x44, voice-stop 215x44), so only the readback panel is missing. Do it in two pieces. (1) READBACK: keep the .dark floor open through readback on the phone rather than closing it into a white sheet — the words came out of an ink room and the person is still inside it; render .saidHead, .pieces and the three acts into that same overlay, which already has the working focus trap at notebook.js:2462 and already sizes to 390x844. (2) REVIEW: reuse .phoneSheet as proposed, but note it is role=\"dialog\" aria-modal=\"true\" and it is rendered as `over:` on top of a live index — the hand is not the read sheet, and three closed findings live exactly on that seam. Also give both states a visible pointer exit; Escape is not a control on a phone. What must be re-measured after this lands, all at 390 and 360 with hasTouch: (a) hand-arrows-drive-the-index-behind and index-keyboard-dies-in-review-and-seam — arrow keys and T/K/L inside the sheet must not walk the index underneath it; (b) hand-peel-is-not-modal and every-act-rebuilds-the-world — the peel opened from inside a phoneSheet-hosted hand, and whether advancing a card annihilates scroll or focus in the index behind; (c) the notes-audit passes at these two widths for the new surfaces specifically — 44px real-touch targets on keep-both, discard-speech, add-piece, drop-piece and the four d-* verbs; the 32em measure ceiling and a declared leading on .saidHead, the pieceField textareas and the readBody (spoken-words-break-the-measure and transcript-at-display-leading both regress here first); (d) discard-speech-is-the-one-irreversible-act and voice-keep-both-announces-a-lie, since both acts now reach a thumb for the first time; (e) phone-dock-guillotines-the-index and phone-dock-clips-last-row — the .index bottom reserve of 128/148px must still clear the dock with the sheet open; (f) a zero-rect sweep asserting no focusable element in any state at 390 has a 0x0 rect, which is the assertion that would have caught this and does not exist. And extend the gate so every state, not just notebook, opens at 390 with hasTouch — the thirteen controls found here were invisible for as long as they were only ever opened at 1440.",
+          "cost": 2,
+          "done": "round 11"
+        },
+        {
+          "seat": "Interaction and states",
+          "id": "a-pick-nobody-made-cannot-be-released",
+          "element": "state=review .handBody and the desk's .readBody on notes 3, 11 and 12; .pickBar, [data-act=\"d-task\"], [data-act=\"peel\"]",
+          "problem": "standingPick() (notebook.js:772) falls back to the fixture's `note.pick`, so those notes open already marked: 14 words in indigo, `.pickBar` reading \"14 words picked. Send to Tasks will use exactly these.\" and the primary armed at \"Send to Tasks\" before anyone has picked anything. clearPick() (notebook.js:759) returns early on `if (!picked)`, so the documented clear key cannot touch it. Measured: focus .handBody, press Space twice — the product announces \"Nothing picked.\" while the sentence is still drawn marked, .pickBar still reads \"14 words picked. Send to Tasks will use exactly these.\" and the primary still reads \"Send to Tasks\". Press T at that moment and the peel opens on the sentence the product just said was not picked, under the line \"Tasks only ever receives the exact words you pick and check below\". Three surfaces state the same fact in two opposite grammars, and there is no control anywhere that removes the mark: [data-act*=\"clear\"] and [data-act*=\"unpick\"] return zero elements.",
+          "fix": "Keep the `released` mechanism, reject the placement.\n\n1. Fix the source, not just the getter. The clean version is to promote the seeded pick once on open — when a note is lifted onto the desk or dealt into the hand, set `picked = note.pick` if `picked` is null — so one variable answers what is marked and every existing clear path already works. If you keep two sources, then `released` must be honoured in THREE places, not one: standingPick (772), clearPick (759, which must stop early-returning on `!picked` and instead release whenever standingPick(pickTarget()) is truthy), and notebook.js:2103 (`if (!pickedWords) pickedWords = note.pick || note.title…`), which is the seam room seeding directly rather than through startPeel — leave that untouched and entering the seam resurrects a released pick. startPeel's own guard (811-820) already refuses on a null standingPick, so that half comes free.\n\n2. Do NOT put a Clear button inside `.pickBar`. Two reasons. notes-interaction-check.mjs:1259 asserts `.phoneSheet .pickBar button` count === 0, with the deliberate rationale \"the pick bar states; the note's own primary acts. Two ink buttons live at the same instant is what this replaced\" — the proposed fix breaks a shipped assertion that exists to prevent a defect this programme already paid for. And `.pickBar` carries `role=\"status\"`; an interactive control inside a live region re-announces its own label on every repaint, and this file repaints on every act.\n\n3. Put the release in the action row instead, where the other quiet verbs already live: a `data-quiet` button beside the primary in `.deskFoot` (1649), the phone sheet foot (1873), and — the one the proposal omits — `.handFoot` (1989). Review is the room the blocker leads with and it has no `.pickBar` to host anything, so \"put it in the pickBar at 1640 and 1864\" leaves the hand with a mark nobody made and still no way back. Word it from notes-copy.ts, sentence case, no new noun.\n\n4. A Clear button does not close the arrival half. The card still opens armed with a pick nobody made. Either the copy names who picked it, or the fixture stops seeding `pick` on the review-queue notes (n03, n11, n14) — otherwise you have shipped a way to undo a decision the person was never shown making.",
+          "cost": 0.8,
+          "done": "round 11"
+        },
+        {
+          "seat": "Interaction and states",
+          "id": "leaving-a-room-drops-the-caret",
+          "element": "1440x960. Escape from review, [data-act=\"notebook\"], Escape from search, Escape from voice, [data-act=\"keep-both\"], [data-act=\"discard-speech\"]",
+          "problem": "The file states the rule itself at notebook.js:369 — \"The capture field is where the next thought goes, so that is where the caret goes. Without this, keeping by mouse dropped focus to the body and the next thing typed went nowhere\" — and sets that refocus in exactly one place, keepDraft. Measured document.activeElement after each exit, at 300ms, 900ms, 1800ms and 3000ms: BODY in every case, stable. Typing \"Order two more cases of tonic.\" immediately after each of them leaves .topField empty — the whole sentence is swallowed. That is keystroke loss on the six most common exits in the product, worst in the dictation flow, where the person has just finished speaking and is by definition not looking at the screen. For a keyboard user it also means the next Tab restarts from the top of the document. Escaping an open note is the one exit that gets this right (focus returns to its .idxRow). The gate asserts \"focus comes back to the capture field\" only after a pointer keep (notes-interaction-check.mjs:676) and never after any room exit.",
+          "fix": "Do not paste the same assignment into five branches; that copy-paste is how five of the six drifted away from line 369 in the first place. Route every return to the notebook through one exit helper that sets state, says its line, and sets refocus = { kind: \"field\", sel: phone.matches ? \".phoneField\" : \".topField\" }, then have the Escape branches for review, search and voice press the control the room already draws, exactly as readback's Escape already presses [data-act=\"discard-speech\"] and Ctrl+Enter presses [data-act=\"keep-both\"] — the file's own rule that the key and the button are one behaviour. Two adjacent breaks the naive patch causes. (1) The [data-act=\"notebook\"] branch is shared with a === \"tasks\", which is \"See them in Tasks\" on the queue-exhausted panel at notebook.js:1944 — a different journey that currently announces nothing; giving it the capture-field caret silently makes leaving for Tasks look like arriving to write. Split that branch before touching it. (2) keep-both fires a deferred paint() at 600ms to clear `arriving`, with refocus null; the caret only survives it via the TEXTAREA/INPUT capture at ~2373, so that path must be proven, not assumed. Re-measure after it lands: activeElement AND a real keyboard.type landing in the field (never fill, which hides a caret-at-index-0 defect) after all six exits at 1440x960; the same after the keep-both 600ms repaint and after the 30-second undo-strip expiry, whose focus guard at ~272 only acts when focus is inside the strip; that Escape from voice still lands after paint() strips inert from .sheet/.rail rather than before it; that Escape from review leaves the index cursor row marked and still in view under preventScroll; that \"See them in Tasks\" keeps its own landing; and at 390 with a real touch pointer, that landing in .phoneField after an exit does not move dock height or eat the pile reserve the last round just fixed.",
+          "cost": 0.5,
+          "done": "round 11"
+        }
+      ],
+      "refuted": []
     }
   ],
   "logUrl": "https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25"

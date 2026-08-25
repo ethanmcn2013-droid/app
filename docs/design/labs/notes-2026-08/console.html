@@ -1890,6 +1890,17 @@ deck.appendChild(boot);
      whole sentence — which made the word-safe snap unreachable by the
      one gesture it was written for. */
   let pressAt = null;
+  /* True when the mark on screen was restored from a previous session
+     rather than made just now. The heading promises only picked words
+     cross; a mark nobody made must say so. */
+  let pickRestored = false;
+  /* Which note the restored mark has already been offered for. */
+  let promotedFor = null;
+  /* "1 words picked." came off a bare split().length in four places. */
+  const wordsPicked = (t) => {
+    const n = String(t || "").trim().split(/\s+/).filter(Boolean).length;
+    return n === 1 ? "1 word picked." : n + " words picked.";
+  };
   /* The seam's destination, seeded from the note and living only as long
      as the peel. It used to be read from N.projects — a workspace string
      that is not one of the listbox's five options, so the control's own
@@ -2508,7 +2519,7 @@ deck.appendChild(boot);
       to = from;
     }
     sentAt = [from, to];
-    setPick(sentenceText(note.body, from, to));
+    setPick(sentenceText(note.body, from, to), true);
     return true;
   }
   /* Forty presses to reach the last sentence of a long note is not a
@@ -2521,7 +2532,7 @@ deck.appendChild(boot);
     const from = where === "first" ? 0 : extend ? at[0] : parts.length - 1;
     const to = where === "first" ? (extend ? at[1] : 0) : parts.length - 1;
     sentAt = [Math.min(from, to), Math.max(from, to)];
-    setPick(sentenceText(note.body, sentAt[0], sentAt[1]));
+    setPick(sentenceText(note.body, sentAt[0], sentAt[1]), true);
     return true;
   }
   function pickTarget() {
@@ -2529,20 +2540,28 @@ deck.appendChild(boot);
     if (openId) return work().find((n) => n.id === openId) || null;
     return null;
   }
-  function setPick(text) {
+  function setPick(text, acted) {
     /* paint() rebuilds the tree, and the pick surface is not a field, so
        nothing in the caret path brings it back. Without this the first
        arrow picked a sentence and dropped the keyboard on the document
        body, which made the second arrow do nothing at all. */
     refocus = { kind: "act", sel: state === "review" ? ".handBody" : ".readBody" };
+    if (text === picked && !acted) {
+      paint();
+      return;
+    }
     if (text === picked) {
+      /* Same words, but the person just pressed a key: answer them, and
+         the mark is theirs now rather than one the fixture restored. */
+      pickRestored = false;
+      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
       paint();
       return;
     }
     picked = text;
     if (text) {
       nudge = null;
-      say(`${text.split(/\s+/).length} words picked. ${N.copy.begin} to make them a task.`);
+      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
     } else {
       say("Nothing picked.");
     }
@@ -2550,6 +2569,7 @@ deck.appendChild(boot);
   }
   function clearPick() {
     sentAt = null;
+    pickRestored = false;
     if (!picked) return false;
     setPick(null);
     return true;
@@ -2561,9 +2581,37 @@ deck.appendChild(boot);
      could not see, and the hand and the desk disagreed about which. One
      expression now answers three questions: what is drawn, what the
      primary says, and what the seam receives. */
+  /* ONE variable answers what is marked. This used to fall back to the
+     fixture's note.pick, so three notes opened already marked — fourteen
+     words in indigo, the bar reading "14 words picked. Send to Tasks
+     will use exactly these" and the primary armed — before anyone had
+     picked anything, and the documented clear key could not touch it:
+     clearPick returns early on !picked, so the product announced
+     "Nothing picked." while the sentence stayed drawn and the primary
+     stayed armed. A restored pick is a real product state; it is
+     promoted into `picked` when the note is opened, so it is releasable
+     by every route that releases any other pick. */
   function standingPick(note) {
-    if (!note) return picked;
-    return picked || note.pick || null;
+    return note ? picked : picked;
+  }
+  /* Promote ONCE per note, and never again — the render calls this on
+     every repaint, so without the guard releasing the mark just
+     resurrected it on the next frame and the clear key could never win. */
+  function promotePick(note) {
+    if (!note || promotedFor === note.id) return;
+    /* A restored mark belongs to the note it was restored from. Without
+       this it followed you to the next card, so a card with no pick of
+       its own arrived armed with somebody else's. A pick the PERSON made
+       is theirs and persists, exactly as it did before. */
+    if (pickRestored) {
+      picked = null;
+      pickRestored = false;
+    }
+    promotedFor = note.id;
+    if (picked === null && note.pick) {
+      picked = note.pick;
+      pickRestored = true;
+    }
   }
 
   /* Where a thought belongs is answered once, by the note itself. The
@@ -2595,7 +2643,7 @@ deck.appendChild(boot);
       /* The sentence asking for a pick cannot survive the pick. Both were
          on screen at once, twenty pixels apart, contradicting each other. */
       nudge = null;
-      say(`${text.split(/\s+/).length} words picked. ${N.copy.begin} to make them a task.`);
+      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
     }
     paint();
   }
@@ -2734,6 +2782,22 @@ deck.appendChild(boot);
   let voiceClock = null;
   let voiceWave = null;
   let waveLevel = 0.4;
+  /* THE WAY BACK TO WRITING, in one place.
+     notebook.js states the rule at keepDraft — "the capture field is
+     where the next thought goes, so that is where the caret goes" — and
+     set it in exactly one branch. Every other exit dropped the caret on
+     document.body, so the next sentence typed after leaving review,
+     search, voice or the readback went nowhere. Measured at 300ms, 900,
+     1800 and 3000: BODY every time, stable, on the six commonest exits
+     in the product. Pasting the assignment into five branches is how the
+     five drifted apart to begin with. */
+  function backToNotes(line) {
+    state = "notebook";
+    if (line) say(line);
+    refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
+    paint();
+  }
+
   const LISTENING = "Listening. Speak whenever you are ready. Stop when you are done.";
   /* A frame counter rather than a clock, so two runs of the shot
      harness produce the same wave and a changed frame means changed
@@ -2807,6 +2871,7 @@ deck.appendChild(boot);
     openId = id;
     cursorId = id;
     const note = work().find((n) => n.id === id);
+    promotePick(note);
     if (note) say(`Open. ${note.title}`);
     refocus = { kind: "read" };
     paint();
@@ -3429,7 +3494,7 @@ deck.appendChild(boot);
         <div class="deskWrite">
           <p class="readBody${note.words >= 150 ? " readLong" : ""}" tabindex="0" role="group" aria-label="The note. Pick the words that should become the task, with the arrow keys.">${bodyHtml}</p>
         <div class="pickSlot">
-          ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${standingPick(note).split(/\s+/).length} words picked.</span> <span>Send to Tasks will use exactly these.</span></p>` : ""}
+          ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? "Picked before, and still here. Press space to release them." : "Send to Tasks will use exactly these."}</span></p>` : ""}
           ${nudge ? `<p class="nudge" role="status">${I.tasks}${esc(nudge)}</p>` : ""}
         </div>
         </div>
@@ -3653,7 +3718,7 @@ deck.appendChild(boot);
           <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span>${note.sent ? `<span class="sep" aria-hidden="true"></span><span>In Tasks</span>` : ""}</p>
           <p class="readBody" tabindex="0" role="group" aria-label="The note. Pick the words that should become the task, with the arrow keys.">${bodyHtml}</p>
           <div class="pickSlot">
-            ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${standingPick(note).split(/\s+/).length} words picked.</span> <span>Send to Tasks will use exactly these.</span></p>` : ""}
+            ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? "Picked before, and still here. Press space to release them." : "Send to Tasks will use exactly these."}</span></p>` : ""}
             ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
           </div>
           ${peeling === note.id ? peelPanel(note) : ""}
@@ -3751,10 +3816,53 @@ deck.appendChild(boot);
        about a note nobody had touched. Tying it to the card that is
        actually on the table closes every one of those routes at once. */
     if (confirming && confirming !== note.id) confirming = null;
+    /* The dealt card gets the same treatment the desk gives a lifted
+       note: a restored mark is promoted once so it is releasable. */
+    promotePick(note);
     const src = N.sources[note.source];
     const handMark = peeling === note.id ? pickedWords : standingPick(note);
     const handHtml =
       bodyHtmlOf(note, handMark && note.body.includes(handMark) ? handMark : null);
+    if (phone.matches) {
+      /* The hand is a dialog over the live index here, not a plane on a
+         desk that has stood down. It reuses .phoneSheet so the shell,
+         its focus trap and its 44px controls are the ones already
+         measured, and it carries a VISIBLE way out, because Escape is
+         not a control on a phone. */
+      return {
+        desk: "",
+        body: indexOf(rest, { title: "Still to decide", count: `${rest.length} behind this one`, noDays: true }),
+        dock: true,
+        over: `
+          <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(`Deciding: ` + note.title)}">
+            <div class="phoneSheetTop">
+              <button class="act" data-quiet type="button" data-act="notebook">${I.chevron}Back to your notes</button>
+              <span class="spacer"></span>
+              <span class="handOf tab">${decided.length + 1} of ${total}</span>
+            </div>
+            <div class="phoneSheetBody">
+              <h2 class="handTitle">Worth doing something about?</h2>
+              <p class="readSrc">${I[src.icon]}<span>${src.label}</span><span class="sep" aria-hidden="true"></span><span class="tab">${esc(note.when)}</span></p>
+              <p class="handBody" tabindex="0" role="group" aria-label="The note. Pick the words that should become the task, with the arrow keys.">${handHtml}</p>
+              <div class="pickSlot">
+                ${standingPick(note) ? `<p class="pickBar" role="status">${I.check}<span class="pickCount tab">${wordsPicked(standingPick(note))}</span> <span>${pickRestored ? "Picked before, and still here. Press space to release them." : "Send to Tasks will use exactly these."}</span></p>` : ""}
+                ${nudge ? `<p class="nudge" role="status">${I.alert}${esc(nudge)}</p>` : ""}
+              </div>
+              ${peeling === note.id ? peelPanel(note) : ""}
+            </div>
+            ${
+              peeling === note.id
+                ? ""
+                : `<div class="phoneSheetFoot" data-hand>
+                     <button class="act" data-primary type="button" data-act="d-task">${I.tasks}${standingPick(note) ? "Send to Tasks" : "Pick the words, then send"}</button>
+                     <button class="act" type="button" data-act="d-keep">${I.keep}Just keep it</button>
+                     <button class="act" data-quiet type="button" data-act="d-later">Decide later</button>
+                     <button class="act" data-quiet type="button" data-act="d-delete" aria-label="Delete this note">${I.trash}</button>
+                   </div>`
+            }
+          </section>`,
+      };
+    }
     return {
       desk: `
         <section class="desk" aria-label="Notes still to decide">
@@ -3838,7 +3946,38 @@ deck.appendChild(boot);
     };
   };
 
-  STATES.readback = () => ({
+  STATES.readback = () => {
+    if (phone.matches) {
+      const base = notebook();
+      return {
+        ...base,
+        over: `
+          <section class="dark" aria-label="What came back">
+            <div class="darkBody">
+              <p class="saidHead">What came back, in ${pieces.length === 1 ? "one note" : `${pieces.length} notes`}.</p>
+              <p class="saidHint">Edit ${editEither(pieces.length)} before you keep ${keepWhich(pieces.length)}.</p>
+              <div class="pieces">
+                ${pieces
+                  .map(
+                    (p, i) => `
+                  <div class="piece">
+                    <textarea class="pieceField" rows="1" data-i="${i}" aria-label="Note ${i + 1} of ${pieces.length}">${esc(p)}</textarea>
+                    <button class="drop" type="button" data-act="drop-piece" data-i="${i}" aria-label="Drop note ${i + 1}">${I.close}</button>
+                  </div>`,
+                  )
+                  .join("")}
+              </div>
+            </div>
+            <div class="darkFoot">
+              <button class="darkAct" type="button" data-act="add-piece">${I.plus}Add another</button>
+              <span class="spacer"></span>
+              <button class="darkAct" type="button" data-act="discard-speech">Discard</button>
+              <button class="darkAct" data-primary type="button" data-act="keep-both">${I.check}Keep ${keepWhich(pieces.length)}</button>
+            </div>
+          </section>`,
+      };
+    }
+    return {
     desk: deskOf(
       `<div class="top">
         <!-- The transcript was printed above the pieces and again inside
@@ -3877,7 +4016,8 @@ deck.appendChild(boot);
     ),
     body: indexOf(work().slice(0, 8), { title: "Your notes", count: `${counts().total} notes` }),
     dock: true,
-  });
+    };
+  };
 
   STATES.seam = () => {
     const note = work().find((n) => n.id === peeling) || work()[13] || N.notes[13];
@@ -3892,7 +4032,8 @@ deck.appendChild(boot);
        so it has to seed the seam's destination the same way, or the
        control opens with nothing marked in its own list. */
     if (peeling && !destination) destination = note.aboutKey || null;
-    if (!pickedWords) pickedWords = note.pick || note.title.replace(/[.]$/, "");
+    promotePick(note);
+    if (!pickedWords) pickedWords = picked || note.title.replace(/[.]$/, "");
     if (!taskWording) {
       taskWording = pickedWords.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
     }
@@ -4226,6 +4367,16 @@ deck.appendChild(boot);
        an index row 88px instead of 64, so a row straddled the strip at
        390 — invisible for nine rounds because this file opened phone
        widths with a mouse. */
+    /* The sheet's resting look is a fact about the draft, not about the
+       input event. Round 10 seated the commit permanently and drove its
+       visibility from wakeSheet(), which is only called while somebody
+       is typing — so after the product's core act the field was empty
+       and the sheet still wore a filled Save with the privacy line gone,
+       for the rest of the session. Every path that changes the draft
+       ends in a repaint, so the truth is written here as well.
+       Three seats reported it independently. */
+    wakeSheet(Boolean(draft.trim()));
+
     const stripEl = mount.querySelector(".undo");
     const sheetEl = mount.querySelector(".sheet");
     if (stripEl && sheetEl) {
@@ -4464,7 +4615,7 @@ deck.appendChild(boot);
         } else {
           sentAt = [i, i];
         }
-        setPick(sentenceText(target.body, sentAt[0], sentAt[1]));
+        setPick(sentenceText(target.body, sentAt[0], sentAt[1]), true);
         return;
       }
     }
@@ -4609,6 +4760,7 @@ deck.appendChild(boot);
         pieces = spoken;
         state = "readback";
       });
+      refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
       paint();
       return;
     }
@@ -4639,8 +4791,14 @@ deck.appendChild(boot);
       say(first ? `${counts().pending} still to decide. First, ${first.title}` : "Nothing left to decide.");
       refocus = { kind: "act", sel: ".handBody" };
       paint();
-    } else if (a === "notebook" || a === "tasks") {
+    } else if (a === "notebook") {
+      backToNotes();
+    } else if (a === "tasks") {
+      /* A different journey: leaving for Tasks is not arriving to write,
+         so it does not take the capture caret, and it says where it is
+         going, which it never did. */
       state = "notebook";
+      say("Opening Tasks. Your notes stayed here.");
       paint();
     } else if (a === "d-task") decide("task");
     else if (a === "d-keep") decide("keep");
@@ -4730,9 +4888,15 @@ deck.appendChild(boot);
         WORK = work().filter((n) => !made.includes(n));
         state = "readback";
       });
+      /* Somebody who has just finished speaking is by definition not
+         looking at the screen, and this dropped the caret on the body. */
+      refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
       paint();
       setTimeout(() => {
         arriving = null;
+        /* The deferred repaint has to keep it too, or the caret survives
+           600ms and then goes. */
+        refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
         paint();
       }, 600);
     }
@@ -4875,12 +5039,10 @@ deck.appendChild(boot);
           return;
         }
         e.preventDefault();
-        state = "notebook";
         sentAt = null;
         picked = null;
         nudge = null;
-        say("Back to your notes.");
-        paint();
+        backToNotes("Back to your notes.");
         return;
       }
       if (state === "readback") {
@@ -4893,9 +5055,7 @@ deck.appendChild(boot);
         return;
       }
       if (state === "voice") {
-        state = "notebook";
-        say("Nothing was kept.");
-        paint();
+        backToNotes("Nothing was kept.");
         return;
       }
       if (state === "search") {
@@ -4904,8 +5064,7 @@ deck.appendChild(boot);
           refocus = { kind: "field", sel: "#q" };
           paint();
         } else {
-          state = "notebook";
-          paint();
+          backToNotes();
         }
         return;
       }
