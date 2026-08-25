@@ -211,6 +211,11 @@
 
 /* ── the sheet ─────────────────────────────────────────────────
    White against ink needs no shadow. Contrast is the elevation. */
+/* Above the reference width the columns stop growing and the grid was left
+   packed to one side, so the head, the view row and the board no longer shared
+   an edge. The sheet is capped at the width five full columns need and centres
+   on the floor, so every edge stays one edge. */
+.sheet { max-width: 1592px; margin-inline: auto; }
 .sheet {
   height: 100%;
   background: var(--white);
@@ -1294,6 +1299,11 @@
    a column scroller that would clip both the card and its shadow. */
 /* The shell carries the distance; the card inside it carries the lift. */
 .cardFly { position: fixed; margin: 0; z-index: 60; pointer-events: none; }
+/* The flying card paints its own ground. A finished card is transparent because
+   the white sheet is behind it, which stops being true the moment it is lifted
+   into an overlay.
+   THE RULE: anything lifted off the sheet carries its own opaque surface. */
+.card.cardGhost { background: var(--white); }
 .cardGhost {
   position: static; margin: 0; width: 100%; height: 100%;
   pointer-events: none; box-shadow: var(--card-rest);

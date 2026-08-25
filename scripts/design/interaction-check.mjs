@@ -2392,6 +2392,92 @@ for (const [q, lane, label] of [["", "todo", "resting board"], ["?state=dense", 
   await page.close();
 }
 
+/* == the beat is an act, not a receipt ============================ */
+/* Round 18, all seven seats: the choreography was right and the execution was
+   backwards. The card flew as the finished thing it had already become — a
+   see-through rectangle under the heaviest shadow, check already drawn — while
+   every count had published the result 400ms before it arrived. */
+{
+  const page = await open();
+  await page.evaluate(() => {
+    window.__a = [];
+    const t = setInterval(() => {
+      const g = document.querySelector(".cardGhost");
+      const shell = document.querySelector(".cardFly");
+      const done = document.querySelector('.tray[data-lane="done"] .trayCount');
+      window.__a.push({
+        fly: Boolean(g && shell),
+        bg: g ? getComputedStyle(g).backgroundColor : null,
+        wasDone: g ? g.hasAttribute("data-done") : null,
+        x: shell ? Math.round(shell.getBoundingClientRect().left) : null,
+        tilt: g ? (() => {
+          const m = /matrix\(([-\d.]+), *([-\d.]+)/.exec(getComputedStyle(g).transform);
+          return m ? Math.atan2(Number(m[2]), Number(m[1])) * 180 / Math.PI : 0;
+        })() : null,
+        count: done ? done.textContent.trim() : null,
+        hole: Boolean(document.querySelector("[data-hole]")),
+      });
+    }, 16);
+    setTimeout(() => clearInterval(t), 1800);
+  });
+  const box = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(1500);
+  const beat = await page.evaluate(() => {
+    const f = window.__a.filter((x) => x.fly);
+    const x0 = f.length ? f[0].x : 0;
+    const span = Math.abs((f.length ? f[f.length - 1].x : 0) - x0) || 1;
+    const at = (frac) => f.find((x) => Math.abs(x.x - x0) / span >= frac);
+    return {
+      grounds: [...new Set(f.map((x) => x.bg))],
+      arrivedState: f.some((x) => x.wasDone),
+      countsInFlight: [...new Set(f.map((x) => x.count))],
+      countAfter: window.__a[window.__a.length - 1].count,
+      tiltQuarter: at(0.25) ? at(0.25).tilt : null,
+      tiltThreeQuarter: at(0.75) ? at(0.75).tilt : null,
+      tiltEnd: f.length ? f[f.length - 1].tilt : null,
+      holeFrames: window.__a.filter((x) => x.hole).length,
+    };
+  });
+  ok("the card in flight paints its own opaque ground",
+    beat.grounds.every((c) => c === "rgb(255, 255, 255)"), JSON.stringify(beat.grounds));
+  ok("and it flies as the card it was, not the one it becomes",
+    beat.arrivedState === false, "carried data-done: " + beat.arrivedState);
+  ok("the board says nothing until the card lands",
+    beat.countsInFlight.length === 1, JSON.stringify(beat.countsInFlight));
+  ok("and the tally arrives with it",
+    beat.countAfter !== beat.countsInFlight[0],
+    beat.countsInFlight[0] + " -> " + beat.countAfter);
+  ok("the card is carried askew while it is actually travelling",
+    beat.tiltQuarter < -0.8 && beat.tiltThreeQuarter < -0.8,
+    "25%: " + beat.tiltQuarter + "  75%: " + beat.tiltThreeQuarter);
+  ok("and squares up by the time it arrives", Math.abs(beat.tiltEnd) < 0.4, String(beat.tiltEnd));
+  ok("the column it left holds the hole open until then", beat.holeFrames > 3,
+    beat.holeFrames + " frames");
+  await page.close();
+}
+
+/* == two presses at a still pointer cannot finish two tasks ======= */
+/* The column used to collapse on the frame the card left, so the next card's
+   tick landed on the pixel the last one occupied. */
+{
+  const page = await open();
+  const before = await counts(page);
+  const box = await page.locator('.tray[data-lane="todo"] .card .tick').first().boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(120);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(900);
+  ok("a second press at the same pixel does not complete a second task",
+    (await counts(page)).done <= before.done + 1, JSON.stringify(await counts(page)));
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
 
 await browser.close();

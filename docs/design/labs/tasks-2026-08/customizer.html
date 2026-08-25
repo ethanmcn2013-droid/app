@@ -463,6 +463,7 @@ body {
   font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
   margin-top: 8px;
 }
+.deck .sheet { max-width: 1592px; margin-inline: auto; }
 .deck .sheet {
   height: 100%;
   background: var(--white);
@@ -1164,6 +1165,7 @@ body {
 .deck .carry { animation: none }
 }
 .deck .cardFly { position: fixed; margin: 0; z-index: 60; pointer-events: none; }
+.deck .card.cardGhost { background: var(--white); }
 .deck .cardGhost {
   position: static; margin: 0; width: 100%; height: 100%;
   pointer-events: none; box-shadow: var(--card-rest);
@@ -1511,7 +1513,7 @@ window.BOARD = {
     { id: "doing", name: "In progress", tone: "flight", note: "In motion right now.", empty: "Move something across when you start it." },
     { id: "review", name: "Review", tone: "neutral", note: "Being checked before it goes out.", empty: "Nothing to check yet." },
     { id: "waiting", name: "Waiting", tone: "neutral", note: "Held by a reply, a delivery, or a decision.", empty: "Nothing held up." },
-    { id: "done", name: "Done", tone: "done", note: "Work that is finished and settled.", empty: "The first thing you finish lands here." },
+    { id: "done", name: "Done", tone: "done", note: "Finished and put away.", empty: "The first thing you finish lands here." },
   ],
   tasks: [
     {
@@ -1771,6 +1773,8 @@ let openNoteId = null;  /* the card showing its full note                   */
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
+let flyWas = null;      /* the card as it looked BEFORE it was finished        */
+let flyCounts = null;   /* the tallies as they read before it was finished     */
 let refocusPart = null; /* which part of the card to land focus on          */
 let drawerTab = "nodate";
 let drawerFrom = null;  /* the control Planning was opened from              */
@@ -2119,7 +2123,7 @@ function rail() {
   return (
     '<nav class="rail" data-group="rail" aria-label="Signal Studio">' +
     '<button type="button" class="railMark" data-key="mark" aria-label="Signal Studio"' + stop("mark") +
-      notYet("Every Signal Studio app is here. Not here yet.") + ">" + I.more + "<i></i></button>" +
+      notYet("Every Signal Studio app in one place. Not here yet.") + ">" + I.more + "<i></i></button>" +
     '<span class="railDivider"></span>' +
     '<div class="railGroup">' + tile("home", "Home", false) +
       B.rail.products.map((p) => tile(p.key, p.label, p.active)).join("") + "</div>" +
@@ -2130,7 +2134,7 @@ function rail() {
       '"' + stop("add") + ' aria-label="Add task">' + I.plus + "</button>" +
     '<button type="button" class="railAvatar" data-key="me" aria-label="' + esc(B.operator.role) + '"' +
       stop("me") +
-      notYet("Your account lives in Signal Studio.") + ">" + B.operator.initials + "</button>" +
+      notYet("Your account, in Signal Studio. Not here yet.") + ">" + B.operator.initials + "</button>" +
     "</nav>"
   );
 }
@@ -2176,7 +2180,11 @@ function head() {
       /* The control survives at zero while the filter is on, or clearing the
          last overdue task leaves the operator with an empty board and no way
          back. */
-      (dueToday ? '<button type="button" class="late" data-act="today" data-soft aria-pressed="' +
+      /* The overdue chip already survives at zero while its filter is on; its
+         twin did not, so clearing the last due-today task removed the chip and
+         slid its neighbour into the exact box the pointer was resting on.
+         THE RULE: a chrome control that can be filtered on survives at zero. */
+      (dueToday || todayOnly ? '<button type="button" class="late" data-act="today" data-soft aria-pressed="' +
         (todayOnly ? "true" : "false") + '" title="' + (todayOnly ? "Show all " + total + " tasks"
           : "Show only the " + dueToday + " " + (dueToday === 1 ? "task" : "tasks") + " due today") + '">' + dueToday + " today" +
         (todayOnly ? I.close : "") + "</button>" : "") +
@@ -2334,7 +2342,7 @@ function dock() {
         I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
       '<button type="button" class="dockAvatar" aria-label="' + esc(B.operator.role) + '"' +
-        notYet("Your account lives in Signal Studio.") + ">" + B.operator.initials + "</button>" +
+        notYet("Your account, in Signal Studio. Not here yet.") + ">" + B.operator.initials + "</button>" +
     "</div>"
   );
 }
@@ -2403,7 +2411,10 @@ function footPill() {
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> done" +
         (undone.cleared ? '. <em class="clearNote">Nothing is overdue.</em>' : "")
       : undone.kind === "undone"
-      ? "<b>" + esc(shortTitle(undone.title)) + "</b> reopened"
+      /* The strip printed "reopened" while the live region said "is no longer
+         done" — one act in two vocabularies, in the same breath. The strip
+         takes the verb the spoken branch already chose. */
+      ? "<b>" + esc(shortTitle(undone.title)) + "</b> is not done"
       : undone.kind === "add"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> added to " + esc(laneName(undone.toLane))
       : "<b>" + esc(shortTitle(undone.title)) + "</b> moved to " + esc(laneName(undone.toLane));
@@ -2775,6 +2786,8 @@ function moveTo(id, lane, index) {
     const node = document.querySelector('.card[data-id="' + id + '"]');
     flyFrom = node ? node.getBoundingClientRect() : null;
     flyId = id;
+    flyWas = node ? node.cloneNode(true) : null;
+    flyCounts = readTallies(document.getElementById("root") || document.getElementById("deck"));
     report = { completed: true, wasLate: wasLate };
   }
   applyLaneFacts(task, was, lane);
@@ -2813,6 +2826,17 @@ function completed(task, cleared) {
 /* Finishing a task was a silent teleport to a column a thousand pixels away,
    and on a phone to a column that is off screen entirely. The card now
    travels the distance it actually moved, measured after the repaint. */
+/* The numbers as they read at this instant, so the board can go on saying them
+   while the card is still in the air. */
+function readTallies(scope) {
+  if (!scope) return null;
+  const out = [];
+  scope.querySelectorAll(".trayCount, .headFacts .ratio").forEach((n) => {
+    out.push({ lane: n.closest("[data-lane]") ? n.closest("[data-lane]").dataset.lane : "ratio", html: n.innerHTML });
+  });
+  return out;
+}
+
 function flyCompleted(target) {
   const was = flyFrom;
   const id = flyId;
@@ -2895,12 +2919,39 @@ function flyCompleted(target) {
   shell.style.top = was.top + "px";
   shell.style.width = was.width + "px";
   shell.style.height = was.height + "px";
-  const ghost = node.cloneNode(true);
-  ghost.className = node.className + " cardGhost";
+  /* The card it was, not the card it has become. */
+  const ghost = (flyWas || node).cloneNode(true);
+  flyWas = null;
+  ghost.className = node.className.replace(/ ?data-[a-z-]+/g, "") + " cardGhost";
+  ghost.removeAttribute("data-done");
+  ghost.removeAttribute("data-just-done");
   ghost.removeAttribute("id");
   shell.appendChild(ghost);
   document.body.appendChild(shell);
   node.style.opacity = "0";
+  /* The board used to publish the whole result on frame zero and then spend
+     400ms transporting an object that was already finished — a lap of honour
+     delivering news it had already announced. Every tally goes back to what it
+     said before the tick and stays there until the card arrives.
+     THE RULE: no consequence of a gesture is shown before the gesture that
+     causes it has finished. */
+  const held = flyCounts;
+  flyCounts = null;
+  /* The true values are read before the old ones are written over them —
+     re-reading afterwards would only find what was just put there. */
+  const truth = held ? readTallies(target) : null;
+  if (held) {
+    target.querySelectorAll(".trayCount, .headFacts .ratio").forEach((n, i) => {
+      if (held[i]) n.innerHTML = held[i].html;
+    });
+  }
+  /* And the column it left keeps the hole open until then, so the cards below
+     it do not leap up under a pointer that has not moved — which made a second
+     press land on a different task's tick and complete the wrong work. */
+  const hole = document.createElement("div");
+  hole.setAttribute("data-hole", "");
+  hole.style.height = was.height + "px";
+  if (node.parentElement) node.parentElement.insertBefore(hole, node);
 
   const journey = shell.animate(
     [
@@ -2924,9 +2975,15 @@ function flyCompleted(target) {
      this spends nothing it did not already own. */
   ghost.animate(
     [
+      /* Offsets are chosen against the DISTANCE the journey covers, not the
+         clock. Its ease-out puts 70% of the travel in the first fifth of the
+         time, so a tilt held to 20-78% of the clock only reached full angle
+         once the card had effectively arrived, and read as a wobble at the
+         destination rather than as something being carried. */
       { transform: "scale(1) rotate(0deg)", boxShadow: "var(--card-rest)", offset: 0 },
-      { transform: "scale(1.03) rotate(-1.4deg)", boxShadow: "var(--lift)", offset: 0.2 },
-      { transform: "scale(1.03) rotate(-1.4deg)", boxShadow: "var(--lift)", offset: 0.78 },
+      { transform: "scale(1.03) rotate(-1.4deg)", boxShadow: "var(--lift)", offset: 0.05 },
+      { transform: "scale(1.03) rotate(-1.4deg)", boxShadow: "var(--lift)", offset: 0.25 },
+      { transform: "scale(1) rotate(0deg)", boxShadow: "var(--lift)", offset: 0.62 },
       { transform: "scale(1) rotate(0deg)", boxShadow: "var(--lift)", offset: 1 },
     ],
     { duration: travel, easing: "linear", fill: "forwards" },
@@ -2937,7 +2994,14 @@ function flyCompleted(target) {
     if (done) return;
     done = true;
     shell.remove();
+    hole.remove();
     node.style.opacity = "";
+    /* The result arrives with the card. */
+    if (truth) {
+      target.querySelectorAll(".trayCount, .headFacts .ratio").forEach((n, i) => {
+        if (truth[i] && n.innerHTML !== truth[i].html) n.innerHTML = truth[i].html;
+      });
+    }
     land();
     /* The board's answer arrives with the card, not 400ms before it. The
        count used to flip at take-off while the check drew on landing, which
@@ -2997,6 +3061,14 @@ function toggleDone(id) {
   const node = target && target.querySelector('.card[data-id="' + id + '"]');
   flyFrom = node ? node.getBoundingClientRect() : null;
   flyId = id;
+  /* The clone is taken here, BEFORE the state changes. Taken after, it carried
+     the arrival state: it inherited `background: transparent` from a finished
+     card and flew as a see-through rectangle under the product's heaviest
+     shadow, with its check already drawn — which the landing then un-drew and
+     redrew, so the climax frame was a blank black disc.
+     THE RULE: a node cloned into an overlay renders the state it is LEAVING. */
+  flyWas = node ? node.cloneNode(true) : null;
+  flyCounts = readTallies(target);
 
   if (task.lane === "done") {
     /* Back to where it actually came from, never to the first column. */

@@ -1005,6 +1005,74 @@
           "done": "The pill can measure itself, so it elides in CSS at the measure it actually has and the printed and spoken sentences agree. THE RULE: no string is truncated at a character count when the box that holds it can measure itself."
         }
       ]
+    },
+    {
+      "round": 18,
+      "mode": "gate",
+      "frozen": true,
+      "build": {
+        "what": "The set-down — the completion beat",
+        "why": "The freeze was lifted for exactly one thing. Fifteen rounds asked for a memorable moment and got defect fixes; every seat's headroom had sat at 9.1-9.2 for three rounds, the panel saying in its own numbers that defect work tops out under the gate.",
+        "catalogued": "docs/DELIGHT_CATALOG.md"
+      },
+      "scores": {
+        "Interaction and states": 8.3,
+        "UX and information design": 8.2,
+        "Product taste and emotional resonance": 8.2,
+        "Measured evidence": 8.5,
+        "UI composition": 8.2,
+        "Typography": 8.7,
+        "Brand and copy": 8.6
+      },
+      "headroom": {
+        "Interaction and states": 9,
+        "UX and information design": 9,
+        "Product taste and emotional resonance": 9.2,
+        "Measured evidence": 9.3,
+        "UI composition": 9,
+        "Typography": 9.3,
+        "Brand and copy": 9.2
+      },
+      "predicted": 9,
+      "findings": 33,
+      "confirmed": 23,
+      "refuted": 10,
+      "fixed": 23,
+      "deferredBuilds": 0,
+      "gateAfter": 291,
+      "headline": "The most useful round of the engagement, and the floor did not move: 8.2, with seven seats between 8.2 and 8.7. What makes it useful is that five of the seven independently found the same thing, and it was not a defect in the old work — it was the new build. The verdict on the set-down was unanimous in shape: the choreography is right and the execution was backwards. UI composition put it exactly — \"the choreography is right, carried askew at the drag's own -1.4deg, squaring through the last fifth, setting down in place onto its own hairline while the check draws and the Done count arrives on the same frame, but the object performing it is transparent\". Three root causes, all mine, all now fixed: the ghost was cloned AFTER the state changed, so it flew as a finished card, inheriting `background: transparent` from a rule that is only safe while a card sits on the white sheet, under the product's heaviest shadow, with its check already drawn — which the landing then un-drew and redrew, making the climax frame a blank black disc. The board published the entire result on frame zero and then spent 400ms transporting an object that was already done, so the flight was a lap of honour delivering news it had already announced. And the tilt was timed against the clock while the journey's ease-out puts 70% of the distance in the first fifth of the time, so the card only reached full angle once it had effectively arrived and the tilt read as a wobble at the destination. The card now flies as the open card it was, opaque, carried askew through the travel it actually makes; every tally holds its pre-tick value until the card lands; and the column it left holds the hole open, which also closed the round's most costly finding — the collapse was fast enough that a second press at a pointer that never moved completed a different task. Gate 291.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 3,
+          "problem": "The origin column collapsed on the frame the card left, so the two cards below it jumped 126px instantly. Measured: the next card's tick lands on the exact pixel the completed card's tick occupied, and elementFromPoint returns it at 250, 450, 700 and 1200ms. A second press at a pointer that had not moved completed a different task.",
+          "done": "The column holds the departing card's hole open for the length of the flight and closes it when the card lands. The gate presses twice at the same pixel and fails if two tasks finish."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 2,
+          "problem": "The flight clone was taken after the state change, so it flew as a finished card: computed background transparent on every one of 25 sampled frames, inherited from a rule that is only safe while a card sits on the sheet, under the one heavy shadow — and with its check already drawn, which the landing reset to undrawn and redrew, so the arrival frame was a solid black disc with no check in it.",
+          "done": "The clone is taken before the mutation and flies as the open card it was; the ghost paints its own opaque ground. THE RULE: a node cloned into an overlay renders the state it is LEAVING, and anything lifted off the sheet carries its own surface."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 2,
+          "problem": "The Done count flipped at take-off, held the new value at full opacity for 380ms while the card was still in the air, then dropped to opacity 0 on the landing frame and faded back in — so the board announced the result, then blinked it.",
+          "done": "Every tally holds its pre-tick value for the length of the flight and the true value is written on the landing frame. THE RULE: no consequence of a gesture is shown before the gesture that causes it has finished."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 2,
+          "problem": "Un-ticking a card printed \"reopened\" in the strip while the live region said \"is no longer done\" — one act in two vocabularies, in the same breath.",
+          "done": "The strip takes the verb the spoken branch already chose."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 1,
+          "problem": "The overdue chip survives at zero while its filter is on; its due-today twin did not. Clearing the last due-today task removed the chip entirely and slid the overdue chip into the pixel-identical box the pointer was resting on.",
+          "done": "Both chips survive at zero while their filter is on. THE RULE: a chrome control that can be filtered on holds its box at zero."
+        }
+      ]
     }
   ]
 }

@@ -42,7 +42,7 @@ window.BOARD = {
     { id: "doing", name: "In progress", tone: "flight", note: "In motion right now.", empty: "Move something across when you start it." },
     { id: "review", name: "Review", tone: "neutral", note: "Being checked before it goes out.", empty: "Nothing to check yet." },
     { id: "waiting", name: "Waiting", tone: "neutral", note: "Held by a reply, a delivery, or a decision.", empty: "Nothing held up." },
-    { id: "done", name: "Done", tone: "done", note: "Work that is finished and settled.", empty: "The first thing you finish lands here." },
+    { id: "done", name: "Done", tone: "done", note: "Finished and put away.", empty: "The first thing you finish lands here." },
   ],
   tasks: [
     {
