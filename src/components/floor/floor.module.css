@@ -151,10 +151,15 @@
   border-radius: 12px;
 }
 .railMark svg { width: 19px; height: 19px; }
+/* The sheet's own caption says indigo means the next milestone. Spending it on
+   a rail dot and a wordmark full stop made that claim false in two places
+   before the operator reached a card. On the ink rail the mark reads in the
+   chrome's own strong ink.
+   THE RULE: the accent is spent only on what the specimen sheet says it means. */
 .railMark i {
   position: absolute; right: 9px; bottom: 10px;
   width: 5px; height: 5px; border-radius: 50%;
-  background: var(--indigo);
+  background: var(--on-ink-1);
 }
 .railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
 .railGroup, .railUtil { display: grid; gap: 4px; }
@@ -180,7 +185,7 @@
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 .railTile svg { width: 19px; height: 19px; }
-.railTile:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.railTile:not([aria-disabled="true"]):hover { color: var(--on-ink-1); background: var(--chrome-active); }
 .railTile[data-active] { color: var(--ink-1); background: var(--white); }
 /* The capsule points at the sheet it opened. */
 .railTile[data-active]::after {
@@ -258,9 +263,12 @@
   font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
   color: var(--ink-1); flex: none;
 }
+/* The sheet's own claim is that indigo means the next milestone. Spending it
+   on a wordmark full stop and a rail dot made the claim false in two places
+   before the operator reached a card. */
 .word::after {
   content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
-  background: var(--indigo); margin-left: 2px;
+  background: var(--ink-1); margin-left: 2px;
 }
 .headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
 /* The name does not shrink. It was the only thing in the row allowed to, so
@@ -299,9 +307,19 @@
 
 /* Overdue reads as the loudest object in the header for the same reason
    it does on a card: it is filled ink, not a colour. */
+/* A control in persistent chrome may not change its x because a sibling was
+   added, removed or widened. Pressing the overdue chip widened it and slid its
+   neighbour 12px; clearing the last overdue task removed it and slid the
+   neighbour 89px — so a pointer resting on the chip's own centre was left
+   sitting on a different control with a different consequence.
+   The chip reserves the box its widest form needs, so pressing it cannot
+   widen it and its neighbours cannot be pushed.
+   THE RULE: no chrome control's box may change because of a sibling's value or
+   presence. */
 .late {
   position: relative;
-  display: inline-flex; align-items: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 92px;
   height: 22px; padding: 0 9px;
   transition: box-shadow var(--dur) var(--curve);
   border-radius: var(--r-pill);
@@ -357,8 +375,8 @@
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
 .ghost svg { width: 15px; height: 15px; color: var(--ink-3); }
-.ghost:hover { background: var(--wash); color: var(--ink-1); }
-.ghost:hover svg { color: var(--ink-2); }
+.ghost:not([aria-disabled="true"]):hover { background: var(--wash); color: var(--ink-1); }
+.ghost:not([aria-disabled="true"]):hover svg { color: var(--ink-2); }
 .ghost em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-1); }
 .headSearch { display: none; }
 
@@ -375,7 +393,7 @@
   transition: color var(--dur) var(--curve);
 }
 .segItem svg { width: 15px; height: 15px; }
-.segItem:hover { color: var(--ink-1); }
+.segItem:not([aria-disabled="true"]):hover { color: var(--ink-1); }
 .segItem[data-active] {
   background: var(--white); color: var(--ink-1); font-weight: 600;
   box-shadow: var(--ring), var(--raise);
@@ -549,7 +567,9 @@
    means "you are on it" rather than "you are somewhere near it". */
 .card:hover .tick, .card[data-force="hover"] .tick { background: var(--wash); }
 .tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
-.tick:active { background: var(--line-strong); }
+/* The card-level hover wash outranked the tick's own pressed state, so the
+   most-pressed control in the product had no active state inside a card. */
+.card .tick:active, .card[data-force="hover"] .tick:active { background: var(--line-strong); }
 .tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
 
 /* The top-right of a card belongs to the time fact and nothing else. */
@@ -729,23 +749,35 @@
 
 /* ── interaction, declared after every state ────────────────────── */
 .card:hover, .card[data-force="hover"] { --card-ring: var(--card-hover); }
+/* An open card outranks the focus ring on the custom property, so a card
+   opened by keyboard had no focus indicator at all. The ring is drawn as a
+   real outline, which no card state can overwrite, and the property keeps only
+   the halo — so focus survives whatever the card is doing.
+   THE RULE: keyboard focus is never carried by a property another state may
+   set. */
 .card:focus-visible, .card[data-force="focus"] {
-  outline: none;
-  --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
+  --card-ring: 0 0 0 4px var(--indigo-ring);
 }
-/* The slot the card came out of, while the card is elsewhere. It keeps its
-   shape so the board does not reflow under the hand, and loses everything that
-   made it read as an object. */
-.card[data-vacated] {
-  transform: none !important;
-  --card-ring: 0 0 0 1px var(--line-soft);
-  opacity: 0.4;
+.card[data-force="focus"], .card[data-force="moving"] {
+  outline: 2px solid var(--indigo); outline-offset: 2px;
 }
 .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
   cursor: grabbing;
   --card-ring: var(--lift);
 }
+/* The slot the card came out of, while the card is elsewhere. Declared after
+   the drag block so it actually wins: it kept the lift for a round because it
+   was declared before it. It reads as a hole rather than a ghosted card —
+   inset edge, no fill, no shadow — and keeps its shape so the board does not
+   reflow under the hand. */
+.card[data-vacated] {
+  transform: none;
+  background: none;
+  --card-ring: inset 0 0 0 1px var(--line-strong);
+  opacity: 1;
+}
+.card[data-vacated] > * { opacity: 0.25; }
 /* Picked up by keyboard: the same lift without the tilt, because a card
    moved with the arrow keys is not being carried by a hand. */
 /* Lifted, not tilted: nothing is carrying it, but it is unmistakably out of
@@ -981,7 +1013,7 @@
   font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
-.dockField:hover { background: var(--wash-2); color: var(--ink-2); }
+.dockField:not([aria-disabled="true"]):hover { background: var(--wash-2); color: var(--ink-2); }
 .dockField svg { width: 16px; height: 16px; }
 /* One keycap in the product. The two that existed disagreed on size,
    tracking and radius, which is the kind of drift a design system is for. */
@@ -1167,7 +1199,7 @@
   text-align: left; padding: 0 9px; min-height: 34px; border-radius: 6px;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.dayMenu button:hover { background: var(--wash); }
+.dayMenu button:not([aria-disabled="true"]):hover { background: var(--wash); }
 .dayMenu button[aria-disabled="true"] { color: var(--ink-3); cursor: default; }
 .dayMenu button svg { width: 13px; height: 13px; color: var(--ink-3); }
 /* The verb appears only when there is a picked set to apply it to. */
@@ -1197,6 +1229,7 @@
    and how to finish it. It is the only instruction in the product, it exists
    only while the hand is full, and it leaves the moment the card lands. */
 .carry {
+  min-width: 0;
   position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
   z-index: 6;
   display: flex; align-items: center; justify-content: center;
@@ -1217,6 +1250,7 @@
 .trayAdd { transition: opacity var(--dur) var(--curve); }
 .carry b { font-weight: 600; }
 .carryName {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   flex: 0 1 auto; min-width: 24ch; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }

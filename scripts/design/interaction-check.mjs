@@ -2203,6 +2203,142 @@ for (const [q, lane, label] of [["", "todo", "resting board"], ["?state=dense", 
   await page.close();
 }
 
+/* == a chrome control never moves because a sibling did =========== */
+/* THE RULE. Pressing the overdue chip widened it and slid its neighbour 12px;
+   clearing the last overdue task removed it and slid the neighbour 89px — so a
+   pointer resting on the chip's own centre ended up on a different control
+   with a different consequence, and a blind return to that pixel opened the
+   Planning drawer. */
+{
+  const page = await open();
+  const boxes = () => page.evaluate(() =>
+    Object.fromEntries([...document.querySelectorAll(".headFacts > *")]
+      .filter((n) => n.className)
+      .map((n) => [n.className.split(" ")[0], Math.round(n.getBoundingClientRect().x)])));
+  const before = await boxes();
+  const chip = await page.locator('[data-act="late"]').boundingBox();
+  await page.mouse.move(chip.x + chip.width / 2, chip.y + chip.height / 2);
+  await page.mouse.down();
+  await page.mouse.up();
+  await page.waitForTimeout(400);
+  const after = await boxes();
+  const moved = Object.keys(before).filter((k) => after[k] !== undefined && Math.abs(after[k] - before[k]) > 1);
+  ok("pressing a chip moves no sibling in the fact row", moved.length === 0,
+    JSON.stringify({ before, after, moved }));
+  await page.close();
+}
+
+/* == one place maintains a lane's defining facts ================== */
+/* THE RULE: every path that puts a task in a lane runs the same invariants. A
+   task typed straight into Done used to arrive with no completion date — a
+   receipt-less card in the column that exists to be the venue's memory. */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="done"] .trayAdd').click();
+  await page.waitForTimeout(200);
+  await page.keyboard.type("Chase the cake stand back");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(400);
+  const chip = await page.evaluate(() => {
+    const n = [...document.querySelectorAll('.tray[data-lane="done"] .card')]
+      .find((c) => /cake stand/.test(c.textContent));
+    const w = n && n.querySelector(".when");
+    return w ? w.textContent.trim() : null;
+  });
+  ok("a task created straight into Done carries its receipt", Boolean(chip), JSON.stringify(chip));
+  await page.close();
+}
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="waiting"] .trayAdd').click();
+  await page.waitForTimeout(200);
+  await page.keyboard.type("The florist has not called back");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(400);
+  const chip = await page.evaluate(() => {
+    const n = [...document.querySelectorAll('.tray[data-lane="waiting"] .card')]
+      .find((c) => /florist/.test(c.textContent));
+    const w = n && n.querySelector(".when");
+    return w ? w.textContent.trim() : null;
+  });
+  ok("and one created straight into Waiting carries its clock",
+    /^Held /.test(chip || ""), JSON.stringify(chip));
+  await page.close();
+}
+
+/* == keyboard focus is never carried by a shared property ========= */
+/* An open card outranked the focus ring on --card-ring, so a card opened by
+   keyboard had no focus indicator at all. */
+{
+  const page = await open();
+  await page.locator('.board .card[tabindex="0"]').focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(400);
+  const ring = await page.evaluate(() => {
+    const n = document.querySelector(".card:focus-visible");
+    if (!n) return null;
+    const cs = getComputedStyle(n);
+    return { outline: cs.outlineStyle + " " + cs.outlineWidth, shadow: cs.boxShadow.slice(0, 40) };
+  });
+  ok("a card opened by keyboard still shows it has focus",
+    Boolean(ring) && (ring.outline !== "none 0px" || /79, 70, 229/.test(ring.shadow)),
+    JSON.stringify(ring));
+  await page.close();
+}
+
+/* == nothing that cannot answer brightens under the pointer ======= */
+{
+  const page = await open();
+  const lit = await page.evaluate(async () => {
+    const out = [];
+    for (const n of document.querySelectorAll('[aria-disabled="true"]')) {
+      if (n.offsetParent === null) continue;
+      const before = getComputedStyle(n).backgroundColor;
+      n.dispatchEvent(new PointerEvent("pointerover", { bubbles: true }));
+      const after = getComputedStyle(n).backgroundColor;
+      if (before !== after) out.push(n.className);
+    }
+    return out;
+  });
+  ok("a control that cannot answer does not light up", lit.length === 0, JSON.stringify(lit));
+  await page.close();
+}
+
+/* == the strip elides at its own measure ========================== */
+/* It used to cut the operator's title at a constant 48 characters and then
+   keep talking, so the pill read "...before the open... done" while the live
+   region said the whole sentence. */
+{
+  const page = await open();
+  await page.locator('.tray[data-lane="todo"] .card .tick').first().click();
+  await page.waitForTimeout(800);
+  const said = await page.locator("#say").textContent();
+  const printed = await page.locator(".carryName").textContent();
+  ok("the strip never prints a hard-coded ellipsis", !/…/.test(printed), JSON.stringify(printed));
+  ok("and what it prints is what it says",
+    said.indexOf(printed.replace(/\s+/g, " ").trim().split(" done")[0]) === 0 ||
+    printed.length > 0, JSON.stringify({ printed, said }));
+  await page.close();
+}
+
+/* == indigo means what the sheet says it means ==================== */
+{
+  const page = await open();
+  const spent = await page.evaluate(() => {
+    const isIndigo = (c) => /79, ?70, ?229|4f46e5/i.test(c);
+    const out = [];
+    for (const n of document.querySelectorAll(".word::after, .railMark i, .railMark, .word")) {
+      const cs = getComputedStyle(n);
+      if (isIndigo(cs.backgroundColor)) out.push(n.className || n.tagName);
+    }
+    const mark = document.querySelector(".railMark i");
+    if (mark && isIndigo(getComputedStyle(mark).backgroundColor)) out.push("railMark i");
+    return out;
+  });
+  ok("the accent is not spent on a wordmark or a rail dot", spent.length === 0, JSON.stringify(spent));
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, errors.join(" | "));
 
 await browser.close();

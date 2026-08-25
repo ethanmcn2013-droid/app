@@ -941,6 +941,70 @@
           "note": "The highest-cost item in the round, and correctly not built. Asked to name the one moment a stranger would remember, the seat could not. Its own proposal is to spend it on the set-down the founder's configuration already names — the shadow collapsing to flat as a card settles into Done, with the count arriving on the landing frame — and it notes the tilt already in the pointer lift is the second half of that gesture and currently goes unseen. Every seat's headroom is 9.1 or 9.2, which is consistent with the freeze topping out just under the gate and this being the thing that closes the rest."
         }
       ]
+    },
+    {
+      "round": 17,
+      "mode": "converge",
+      "frozen": true,
+      "scores": {
+        "Interaction and states": 8.2,
+        "UX and information design": 8.5,
+        "Product taste and emotional resonance": 8.5,
+        "Measured evidence": 8.6,
+        "Brand and copy": 8.4
+      },
+      "headroom": {
+        "Interaction and states": 9.1,
+        "UX and information design": 9.1,
+        "Product taste and emotional resonance": 9.2,
+        "Measured evidence": 9.1,
+        "Brand and copy": 9.1
+      },
+      "predicted": 9.1,
+      "findings": 24,
+      "confirmed": 17,
+      "refuted": 7,
+      "fixed": 17,
+      "deferredBuilds": 0,
+      "gateAfter": 278,
+      "predictionCheck": {
+        "previousPredicted": 9.1,
+        "actual": 8.2,
+        "verdict": "The prediction failed, and the instrument is why. Headroom asks a seat what it would give if ITS OWN list were fixed. It is not a forecast of the next round, because the next round's seats are fresh and find a different list. Two frozen rounds now read 8.3 and 8.2 — flat within noise, not converging. The freeze stopped the decline; it has not produced a climb."
+      },
+      "headline": "Second frozen round, and the floor is flat: 8.3 then 8.2, which is noise rather than movement. The severity is genuinely converging — the worst finding has fallen 12, 9, 8, 5, 3, 3 across the last six rounds, and no finding this round is worth more than 3 — but the floor is not following it down. Five fresh expert seats keep landing between 8.2 and 8.6 while listing only small defects, which means the number is a holistic judgment of the artifact rather than a sum of its faults. The defect supply is also not depleting: 17 rounds and 370 fixes in, five seats still find 24 new things, none of them repeats. What they found this round is real and now fixed — a fact row whose chips slid under a resting pointer so a blind second press opened the wrong room, a create path that skipped the invariants moveTo maintains so a task typed into Done arrived with no receipt, a focus ring an open card could overwrite, seventeen dead controls that brightened under the pointer like live ones, and the accent spent on a wordmark and a rail dot while the specimen sheet claimed it meant the next milestone. Zero builds were deferred this round, which is the freeze holding. The gate grew to 278.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 3,
+          "problem": "The fact row is a left-packed flow whose membership depends on the data. Pressing the overdue chip widened it and slid its neighbour 12px; ticking the last overdue card removed the chip and slid the neighbour 89px. Measured: elementFromPoint at the chip's own former centre returned the Planning button, so an operator returning to a remembered pixel opened a room instead of clearing a filter.",
+          "done": "The chips reserve the box their widest form needs, so pressing one cannot widen it and its neighbours cannot be pushed. THE RULE, now asserted: no chrome control's box may change because of a sibling's value or presence."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 3,
+          "problem": "Seventeen controls carry aria-disabled and every one of them brightened under the pointer exactly like a live control, because the hover rules never excluded them.",
+          "done": "Every chrome hover rule is scoped away from anything that cannot answer, and the gate now walks every disabled control and fails if a pointer changes its ground."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 2,
+          "problem": "moveTo is the single place that maintains a lane's defining facts, and the create path did not call it. A task typed straight into Done arrived with no completion date — a receipt-less card in the column that exists to be the venue's memory — and one typed into Waiting arrived with no clock.",
+          "done": "The invariants are one function that every path into a lane runs. THE RULE: no caller may maintain a lane's defining facts on its own."
+        },
+        {
+          "seat": "Measured evidence",
+          "cost": 1.5,
+          "problem": "Focus was restored after a repaint by matching data-act alone, and no data-act value is unique. By keyboard, opening a day menu in Planning anchored the menu to row five and put focus on row one, so the operator's next Enter re-targeted a different task in the only room that can give a task a day.",
+          "done": "Focus is restored by an identity stamped at render time rather than by a class of control, so the restore selector matches exactly one node."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.5,
+          "problem": "The most-printed sentence in the product cut the operator's own title at a constant 48 characters and then kept talking: the pill read \"Reprint the faded welcome sign before the open... done\" while the live region said the whole thing.",
+          "done": "The pill can measure itself, so it elides in CSS at the measure it actually has and the printed and spoken sentences agree. THE RULE: no string is truncated at a character count when the box that holds it can measure itself."
+        }
+      ]
     }
   ]
 }

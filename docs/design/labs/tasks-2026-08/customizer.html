@@ -421,7 +421,7 @@ body {
 .deck .railMark i {
   position: absolute; right: 9px; bottom: 10px;
   width: 5px; height: 5px; border-radius: 50%;
-  background: var(--indigo);
+  background: var(--on-ink-1);
 }
 .deck .railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
 .deck .railGroup, .deck .railUtil { display: grid; gap: 4px; }
@@ -441,7 +441,7 @@ body {
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 .deck .railTile svg { width: 19px; height: 19px; }
-.deck .railTile:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.deck .railTile:not([aria-disabled="true"]):hover { color: var(--on-ink-1); background: var(--chrome-active); }
 .deck .railTile[data-active] { color: var(--ink-1); background: var(--white); }
 .deck .railTile[data-active]::after {
   content: "";
@@ -504,7 +504,7 @@ body {
 }
 .deck .word::after {
   content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
-  background: var(--indigo); margin-left: 2px;
+  background: var(--ink-1); margin-left: 2px;
 }
 .deck .headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
 .deck .headName {
@@ -527,7 +527,8 @@ body {
 }
 .deck .late {
   position: relative;
-  display: inline-flex; align-items: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 92px;
   height: 22px; padding: 0 9px;
   transition: box-shadow var(--dur) var(--curve);
   border-radius: var(--r-pill);
@@ -567,8 +568,8 @@ body {
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
 .deck .ghost svg { width: 15px; height: 15px; color: var(--ink-3); }
-.deck .ghost:hover { background: var(--wash); color: var(--ink-1); }
-.deck .ghost:hover svg { color: var(--ink-2); }
+.deck .ghost:not([aria-disabled="true"]):hover { background: var(--wash); color: var(--ink-1); }
+.deck .ghost:not([aria-disabled="true"]):hover svg { color: var(--ink-2); }
 .deck .ghost em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-1); }
 .deck .headSearch { display: none; }
 .deck .views { flex: none; display: flex; align-items: center; padding: 0 28px 14px 25px; }
@@ -582,7 +583,7 @@ body {
   transition: color var(--dur) var(--curve);
 }
 .deck .segItem svg { width: 15px; height: 15px; }
-.deck .segItem:hover { color: var(--ink-1); }
+.deck .segItem:not([aria-disabled="true"]):hover { color: var(--ink-1); }
 .deck .segItem[data-active] {
   background: var(--white); color: var(--ink-1); font-weight: 600;
   box-shadow: var(--ring), var(--raise);
@@ -691,7 +692,7 @@ body {
 .deck .tick svg { width: 11px; height: 11px; stroke-width: 2.4; }
 .deck .card:hover .tick, .deck .card[data-force="hover"] .tick { background: var(--wash); }
 .deck .tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
-.deck .tick:active { background: var(--line-strong); }
+.deck .card .tick:active, .deck .card[data-force="hover"] .tick:active { background: var(--line-strong); }
 .deck .tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
 .deck .cardTitleRow:has(.when) .cardTitle { text-wrap: pretty; }
 .deck .cardTitleRow {
@@ -800,19 +801,23 @@ body {
 .deck .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo), var(--float); }
 .deck .card:hover, .deck .card[data-force="hover"] { --card-ring: var(--card-hover); }
 .deck .card:focus-visible, .deck .card[data-force="focus"] {
-  outline: none;
-  --card-ring: 0 0 0 1px var(--indigo), 0 0 0 4px var(--indigo-ring);
+  --card-ring: 0 0 0 4px var(--indigo-ring);
 }
-.deck .card[data-vacated] {
-  transform: none !important;
-  --card-ring: 0 0 0 1px var(--line-soft);
-  opacity: 0.4;
+.deck .card[data-force="focus"], .deck .card[data-force="moving"] {
+  outline: 2px solid var(--indigo); outline-offset: 2px;
 }
 .deck .card[data-force="drag"] {
   transform: rotate(-1.4deg) scale(1.02);
   cursor: grabbing;
   --card-ring: var(--lift);
 }
+.deck .card[data-vacated] {
+  transform: none;
+  background: none;
+  --card-ring: inset 0 0 0 1px var(--line-strong);
+  opacity: 1;
+}
+.deck .card[data-vacated] > * { opacity: 0.25; }
 .deck .card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-4), var(--float); }
 .deck .card[data-force="moving"] {
   --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
@@ -954,7 +959,7 @@ body {
   font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
-.deck .dockField:hover { background: var(--wash-2); color: var(--ink-2); }
+.deck .dockField:not([aria-disabled="true"]):hover { background: var(--wash-2); color: var(--ink-2); }
 .deck .dockField svg { width: 16px; height: 16px; }
 .deck .dockField kbd, .deck .carry kbd {
   font-family: var(--font-mono); font-size: 10px; font-weight: 400;
@@ -1093,7 +1098,7 @@ body {
   text-align: left; padding: 0 9px; min-height: 34px; border-radius: 6px;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
 }
-.deck .dayMenu button:hover { background: var(--wash); }
+.deck .dayMenu button:not([aria-disabled="true"]):hover { background: var(--wash); }
 .deck .dayMenu button[aria-disabled="true"] { color: var(--ink-3); cursor: default; }
 .deck .dayMenu button svg { width: 13px; height: 13px; color: var(--ink-3); }
 .deck .drawerBulk { position: relative; padding: 10px 16px 0; }
@@ -1116,6 +1121,7 @@ body {
 .deck .drawerAdd svg { width: 15px; height: 15px; }
 .deck .sk { display: block; background: var(--wash); border-radius: 5px; animation: breathe 1.8s var(--ease-in-out) infinite; }
 .deck .carry {
+  min-width: 0;
   position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
   z-index: 6;
   display: flex; align-items: center; justify-content: center;
@@ -1133,6 +1139,7 @@ body {
 .deck .trayAdd { transition: opacity var(--dur) var(--curve); }
 .deck .carry b { font-weight: 600; }
 .deck .carryName {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   flex: 0 1 auto; min-width: 24ch; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -1854,18 +1861,19 @@ function filterSentence() {
   const shown = B.columns.reduce((n, c) => n + tasksFor(c.id).length, 0);
   const all = allTasks().length;
   const rest = all - shown;
-  const cond = [
-    lateOnly ? "overdue" : "",
-    todayOnly ? "due today" : "",
-  ].filter(Boolean).join(" and ");
+  /* "overdue" is an adjective and sits in front of the noun; "due today" is a
+     predicate and sits behind it. One modifier used to take three positions
+     across the sentence, the tooltip and the chip. */
+  const adj = lateOnly ? "overdue " : "";
+  const cond = todayOnly ? "due today" : "";
   const scope = clientOnly ? " for " + clientOnly : "";
   if (!shown) {
-    return (cond
-      ? "No task is " + cond + scope + "."
+    return (adj || cond
+      ? "No " + adj + "task is " + (cond || "on the board") + scope + "."
       : "Nothing on the board is" + scope + ".") +
       " All " + all + " " + (all === 1 ? "is" : "are") + " hidden.";
   }
-  return "Showing " + shown + " " + (shown === 1 ? "task" : "tasks") +
+  return "Showing " + shown + " " + adj + (shown === 1 ? "task" : "tasks") +
     (cond ? " " + cond : "") + scope + ". " +
     rest + " " + (rest === 1 ? "other is" : "others are") + " hidden.";
 }
@@ -2353,12 +2361,14 @@ function draft() {
 
 /* Titles are short; the pill is wide. Cutting at four words severed
    sentences after a preposition with hundreds of pixels going spare. */
-function shortTitle(title) {
-  if (title.length <= 48) return title;
-  const words = title.slice(0, 48).split(" ");
-  words.pop();
-  return words.join(" ") + "\u2026";
-}
+/* The strip used to cut the operator's own title at a constant 48 characters
+   and then keep talking, so the most-printed sentence in the product read
+   "Reprint the faded welcome sign before the open... done" while the live
+   region said the whole thing. The pill can measure itself, so it elides in
+   CSS at the measure it actually has.
+   THE RULE: no string is truncated at a character count when the box that
+   holds it can measure itself. */
+function shortTitle(title) { return title || ""; }
 
 /* One strip at the foot of the sheet, and the board's only statement of
    what it is currently doing. In hand beats just-finished beats filtered. */
@@ -2492,7 +2502,7 @@ function drawer() {
         : "Every task here still needs a day.") +
     "</p>" : "") +
     '<div class="drawerRows" role="group" aria-label="' +
-      (drawerTab === "milestones" ? "Milestones" : "Tasks with no date") + '">' +
+      (drawerTab === "milestones" ? "Milestones" : "Tasks with no day") + '">' +
     (rows.length
       ? rows.map((t) =>
         '<div class="drawerRow"' + (picked.has(t.id) ? " data-picked" : "") + ">" +
@@ -2554,8 +2564,8 @@ function dayMenu(forId) {
     DAYS_OFFER.map((d, i) =>
       '<button type="button" role="menuitem" tabindex="' + (i ? "-1" : "0") + '" data-act="setday" data-when="' + d[0] +
       '" data-id="' + esc(forId) + '">' + d[1] + "</button>").join("") +
-    '<button type="button" role="menuitem" tabindex="-1"' + notYet("Choosing an exact date comes with the Schedule view.") +
-    ">A date " + I.chevron + "</button>" +
+    '<button type="button" role="menuitem" tabindex="-1"' + notYet("Choosing a specific day comes with the Schedule view.") +
+    ">A specific day " + I.chevron + "</button>" +
     "</div>"
   );
 }
@@ -2735,6 +2745,19 @@ function toLane(id) {
    drift apart. */
 function laneSorts(lane) { return lane === "done"; }
 
+/* The facts a lane's own cards state, maintained in ONE place. moveTo kept
+   them and the create path did not, so a task typed straight into Done or
+   Waiting arrived with no completion date and no clock — a Done card with no
+   receipt, in the column whose whole job is to be the venue's memory.
+   THE RULE: every path that puts a task in a lane runs the same invariants;
+   no caller may maintain a lane's defining facts on its own. */
+function applyLaneFacts(task, from, to) {
+  if (to === "done" && from !== "done") task.completedAt = TODAY;
+  if (from === "done" && to !== "done") { task.completedAt = null; task.prevLane = null; }
+  if (to === "waiting" && from !== "waiting") task.heldSince = TODAY;
+  if (from === "waiting" && to !== "waiting") task.heldSince = null;
+}
+
 function moveTo(id, lane, index) {
   const rows = allTasks();
   const from = rows.findIndex((t) => t.id === id);
@@ -2749,20 +2772,12 @@ function moveTo(id, lane, index) {
   if (lane === "done" && was !== "done") {
     const wasLate = timeOf(task).kind === "overdue";
     task.prevLane = was;
-    task.completedAt = TODAY;
     const node = document.querySelector('.card[data-id="' + id + '"]');
     flyFrom = node ? node.getBoundingClientRect() : null;
     flyId = id;
     report = { completed: true, wasLate: wasLate };
   }
-  if (was === "done" && lane !== "done") { task.prevLane = null; task.completedAt = null; }
-  /* Waiting exists to say how long something has been held, and a card moved
-     into it arrived with no clock at all — the lane's whole reason for being,
-     absent on every card that got there by hand.
-     THE RULE: a lane whose card states a duration owns the fact that duration
-     is measured from, and sets it on entry and clears it on exit. */
-  if (lane === "waiting" && was !== "waiting") task.heldSince = TODAY;
-  if (was === "waiting" && lane !== "waiting") task.heldSince = null;
+  applyLaneFacts(task, was, lane);
   rows.splice(from, 1);
   task.lane = lane;
   /* Splice it in beside the card it was placed against, so the order the
@@ -3173,6 +3188,10 @@ function commitDraft(field, repeat) {
   const rows = allTasks();
   const before = tasksFor(lane).length ? tasksFor(lane)[tasksFor(lane).length - 1] : null;
   const task = { id: id, title: title, lane: lane, tag: "", priority: "", comments: 0 };
+  /* The create path used to skip the lane's own facts, so a task typed
+     straight into Done arrived with no completion date — a receipt-less card
+     in the column that exists to be the venue's memory. */
+  applyLaneFacts(task, null, lane);
   const at = before ? rows.findIndex((t) => t.id === before.id) + 1 : rows.length;
   rows.splice(at, 0, task);
   arm({ kind: "add", id: id, title: title, toLane: lane });
@@ -3641,7 +3660,11 @@ function onDragOver(event) {
   const line = document.createElement("span");
   line.className = "dropLine";
   const cards = [...body.querySelectorAll(".card[data-id]")].filter((c) => c.dataset.id !== carriedId);
-  if (overLane.index >= cards.length) body.appendChild(line);
+  /* An empty lane renders a paragraph before its cards, so appending put the
+     line under the copy rather than where the card lands. */
+  const first = body.querySelector(".card[data-id]") || body.querySelector(".trayEmpty");
+  if (!cards.length && first) body.insertBefore(line, first);
+  else if (overLane.index >= cards.length) body.appendChild(line);
   else body.insertBefore(line, cards[overLane.index]);
 }
 
