@@ -276,16 +276,23 @@ body {
 /* A device is drawn only when there is room to draw one. At phone width
    the artifact IS the page — a bezel around a 390px viewport inside a
    390px viewport is a lie about what the reader is holding. */
+/* Laddered, not literal. These were the last two objects in the lab
+   written against ink and paper directly, and an alpha edge composites
+   over the box's OWN background - so a white box threw the ladder step
+   away and the ink room's loudest line became the frame around the
+   artifact: 13.4:1 for the phone's bezel and 18.9:1 for the sheet's,
+   against an indigo rail at 3.0:1. Print forces the paper ground, so
+   --back is still white there. */
 .tl-device {
-  border: 1px solid var(--ink-16);
+  border: 1px solid var(--fore-16);
   border-radius: 24px;
   overflow: hidden;
-  background: var(--paper);
+  background: var(--back);
   line-height: 1.5;
 }
 .tl-paperEdge {
-  border: 1px solid var(--ink-10);
-  background: var(--paper);
+  border: 1px solid var(--fore-10);
+  background: var(--back);
   line-height: 1.5;
 }
 

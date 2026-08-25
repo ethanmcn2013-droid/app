@@ -1,16 +1,15 @@
 # The settled ledger
 
 Every finding the panel raised and a refuter killed, with the reason it
-died. From round 10 this is a TRIAGE FILTER rather than a reading list:
-a finding matching one of these is rejected before a refuter is spent on
-it, unless it brings new evidence that meets the stated objection.
+died. This is a TRIAGE FILTER, not a reading list: a finding matching one
+of these is rejected before a refuter is spent on it, unless it brings new
+evidence that meets the stated objection.
 
-Three of these were raised in three consecutive rounds with three
-different fixes and refuted every time — the editor's reserved band, the
-desk editor's foot below the fold, and an arrival animation for the
-audience. Those are closed.
+Raised and refuted in three consecutive rounds each, now closed: the
+editor's reserved band, the desk editor's foot below the fold, and an
+arrival animation for the audience.
 
-**57 settled items, rounds 7–9.**
+**59 settled items, rounds 7–10.**
 
 ## accent-spent-twice-never-on-the-event
 `brand` · refuted in round 7
@@ -122,6 +121,11 @@ The load-bearing claim is a measurement error. Driving master.html?state=print i
 
 The premise is factually false and the fix, driven, is worse. (1) The slabs are not "the only filled rectangles in a system otherwise built entirely from hairlines": b.css draws the row plate filled at --fore-04 with border-radius 4px on hover (l.366), at --fore-06 with 4px while editing (l.373-374), at --back with 4px when crowded (l.371), and every press state in the product - .b-item:active .b-copy, .b-grab:active, .b-act:active, .b-step:active, .b-behindSummary:active, .b-undoAct:active (l.688-693) - is background: var(--fore-10). The skeleton is background: var(--fore-10); border-radius: 4px (l.1184): the exact tint and the exact radius the product already uses for a pressed surface, an […]
 
+## moment-title-measure-collapses-at-1024
+`type` · refuted in round 10
+
+Every geometry number reproduces exactly and the finding still dies - on two factual errors, on an overstated harm, and on a fix that misses half the surface it names and regresses the half it reaches. VERIFIED: driving master.html at 768/900/1000/1023/1024/1080/1152/1179/1180/1279/1280/1440/1920 on paper and ink, .b-plan .b-title is 452/544/544/544px through 1023 and 298px at 1024 on owner-flight, 306px on desk, climbing to a 534px (owner) / 542px (desk) cap. 22.67em -> 12.42em at one pixel is real, and the cap never regains the 544. FACTUAL ERROR 1: 'same trim' on desk is false. b.css:264 sets [data-state="desk"] .b-title { -webkit-line-clamp: none; overflow: visible } - the desk title CAN […]
+
 ## new-project-instructed-three-times
 `brand` · refuted in round 7
 
@@ -156,6 +160,11 @@ Measured at 390 in state=day with the disclosure forced open. The geometry the f
 `taste` · refuted in round 8
 
 Driven at 1440x960 and 1024x800 on owner-flight and desk, the behaviour is exactly as described but the reading of it is wrong. At rest the pair is 'TODAY IS 16 JULY' / 'Nothing is planned until 1 August.'; scrolled it becomes '8 August · 23 days away', then '5 September · 51 days away', and it returns to the rest sentence at scrollY 0 (round 7's live-derivation fix holds; no stale snapshot). (1) The claimed contradiction does not exist arithmetically. Every scrolled readout states its distance FROM the label's date: 16 July + 23 = 8 August, + 51 = 5 September, + 65 = 19 September (1024 width). The label is not announcing a rival date, it is the origin the second half of the line is measured […]
+
+## preview-erases-the-way-back
+`ux` · refuted in round 10
+
+Every measurement in the finding reproduces exactly, on both grounds, and it is still refuted on scope and on the fix. WHAT IS TRUE. Driven at 1440x960, v=paper and v=ink, owner-flight: open Menu tasting at The Orchard, press Hidden, press Done -> .b-undo data-empty="false", .b-undoText = "Menu tasting at The Orchard is now hidden from guests.", .b-undoAct enabled, .b-field[data-undo="true"], record.hidden written to the fixture. Press Preview -> data-state=desk, the guest sees 6 items not 7 (the hide carried). Press Back to the plan -> data-state=owner-flight, the moment is still data-visibility="hidden", and .b-undo is data-empty="true", .b-undoAct.disabled=true, data-undo gone, Ctrl+Z ine […]
 
 ## printed-url-severs-the-host
 `type` · refuted in round 8

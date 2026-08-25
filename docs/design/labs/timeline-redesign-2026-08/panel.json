@@ -559,6 +559,40 @@
           "done": "The name is built from the very strings the card paints, both branches, hoisted so the two cannot drift again. It reads \"Mara & Finn, 79 days away when this was sent. Wedding day, Saturday 3 October 2026\", and keeps the empty-label guard, because a plan the owner has just made has no day-name until a person writes one."
         }
       ]
+    },
+    {
+      "round": 11,
+      "scores": {
+        "UI composition": 9.3,
+        "Typography": 9.4,
+        "Interaction and states": 9.2,
+        "UX and information design": 9.2,
+        "Brand and copy": 9.1,
+        "Product taste and emotional resonance": 9.3,
+        "Measured evidence": 9.4
+      },
+      "findings": 13,
+      "confirmed": 13,
+      "refuted": 0,
+      "fixed": 13,
+      "headline": "The floor rose again, 8.6 to 9.1, and every seat rose with it for the second round running; the spread is now 0.3, seven independent samples agreeing within a third of a point. Thirteen findings, down from 22 and from 33 under the quota - and not one was refuted. That is the number worth reading: eight refuters were spent at 0.2 and above and all eight verdicts came back REAL, on measurement, several of them reproducing the seat's figures to two decimal places. A panel filing only what survives is what the loop was rebuilt to produce. The two heaviest were both the paid-for class the defect library names first - a floating object erasing what is under it. The editor's reversibility band was positioned against a reserve hand-measured in the docked sheet, where the panel is 480px wide and the bar is two rows; the room that actually ships is the 344px rail, where the same bar is three, so an opaque plate did not overlap the first field's name, it deleted it, at every desk width and on both grounds. Enlarging the reserve pushed the steppers under the pane's fold, which is the property round 1 paid for, so the bar was set as one paragraph instead of three rows - the action follows the last word, the plate is 64px in either column, the label keeps its air and the steppers hold at zero. A title long enough to take the sentence to four lines now shortens the NAME rather than clipping the plate, because clipping would have hidden the Undo control itself. The second was a day carrying three moments: each crowded plate paints an opaque 12px halo outside its own box, so a run of three deletes the date line of the row above - a pair never showed it, because the only follower had nothing painted after it, and the standing assertion passed at 1px of gap. Two findings came from the ink twin alone: the focus ring on the chat plate, where the ring token follows the room but the plate is somebody else's white surface in both rooms, so the ink ring painted white on white at 1.00:1 on the one screen where that card is the only focusable thing there is; and the artifact frame, the last two objects still written against literal ink and paper, whose alpha edge composited over its own white box and made the bezel the loudest line in the ink room at 13.4:1 against an indigo rail at 3.0. Both are the round-10 class recurring on different tokens. The forced-palette finding is the one that should change how this gate is written: three fills carried their meaning by translucency and repainted to Canvas on Canvas, so the loading frame lost every slab and the open editor lost its tie to the row it edits - invisible to two green assertions, because a forced palette is applied by the compositor and getComputedStyle still reports what the author wrote. The new assertions read painted pixels. The behaviour gate grew 644 to 787. Three of my own new assertions were caught proving nothing before they were trusted: two lost a backslash in a character class and measured every colour as black, and one standing assertion, 'the refusal says why', had been passing on the exact ambiguity this round found - it checked the refusal for the words the panel uses when a date IS accepted at the limit. Against the stopping condition, three findings landed at 0.3 or above, so round 11 does not meet it.",
+      "worst": [
+        {
+          "seat": "UI composition",
+          "cost": 0.4,
+          "problem": "The editor's undo band is absolutely positioned against .b-edit { padding-top: 88px }, a reserve whose comment records it as measured - in the DOCKED sheet, where the panel is 480 to 514px wide and the bar is two rows. In the shipping desk layout the panel is the 344px rail column, content width 310px, and the same bar is THREE rows. Driven at 1440, 1280, 1152 and 1024 on both grounds: the bar measures 94px, its bottom lands at panel-top+110 against a reserve of 88, and because the bar is opaque - rgb(255,255,255) on paper, rgb(17,17,17) on ink - it does not overlap the first field's label, it deletes it. elementFromPoint at the label's own centre returns .b-undoAct. The same constant fails the other way on the coarse path: at 390 the reserve is 104 and the bar is 88, so the label sits flush against the hairline with 0px of air where every other label in the panel has 22."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.4,
+          "problem": "On any day carrying three or more moments, the received plan silently deletes the date line from the middle rows. A crowded row's plate paints an opaque 12px spread halo that is not part of its own box, so it paints over the previously-painted sibling. A stacked LEAD is protected by padding-bottom; a stacked FOLLOW gets padding-top only, so its mono date sits flush with the plate's bottom edge, inside the band the next plate's halo covers. Driven at 390 and 1440 on both grounds, on the owner plan and through Preview: the followers measure zero slack and 'Sat 25 Jul' renders as the top five pixels of glyph and nothing else - a title that looks complete over a date sliced through the x-height. Neither gate saw it: a PAIR is safe, and the clipping check looks for hidden overflow, not for an opaque shadow spread painting over a neighbour."
+        },
+        {
+          "seat": "Interaction and states",
+          "cost": 0.3,
+          "problem": "The focus ring token is scoped per ground, but .b-chat is a messaging-app plate that is hard white in BOTH rooms, so on ink the ring resolves to white and paints onto white. Measured on the real composite at 1440x960 and 390x844: the ring on .b-unfurl computes rgb(255,255,255) and the pixel six pixels outside it is white on all four sides, in publish and in unfurl - 1.00:1, and a whole-viewport diff of focused against unfocused changes ZERO pixels. The same element on paper reads indigo at 6.29:1. On state=unfurl that card is the ONLY focusable element on the screen, so an ink-room keyboard user tabbing that state gets no indicator at all. The gate asserted only outlineWidth > 0, which was true the whole time."
+        }
+      ]
     }
   ]
 }

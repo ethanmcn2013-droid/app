@@ -374,15 +374,15 @@ body {
 .deck[data-medium="sheet"] .tl-stage { max-width: 794px; }
 .deck[data-medium="full"] .tl-stage { max-width: 1180px; }
 .deck .tl-device {
-  border: 1px solid var(--ink-16);
+  border: 1px solid var(--fore-16);
   border-radius: 24px;
   overflow: hidden;
-  background: var(--paper);
+  background: var(--back);
   line-height: 1.5;
 }
 .deck .tl-paperEdge {
-  border: 1px solid var(--ink-10);
-  background: var(--paper);
+  border: 1px solid var(--fore-10);
+  background: var(--back);
   line-height: 1.5;
 }
 .deck .tl-caption {
@@ -628,6 +628,7 @@ body {
 .deck .b-item[data-stack="follow"] .b-copy {
   border-top: 1px solid var(--fore-16);
   padding-top: var(--gap-snug);
+  padding-bottom: var(--gap-snug);
 }
 .deck .b-item[data-stack="lead"] .b-copy { padding-bottom: var(--gap-snug); }
 .deck .b-item[data-visibility="hidden"] .b-title, .deck .b-item[data-visibility="hidden"] .b-date, .deck .b-item[data-visibility="hidden"] .b-away { color: var(--fore-62); }
@@ -979,9 +980,9 @@ body {
   transition: background-color var(--t-base) var(--ease);
 }
 .deck .b-step:hover { background: var(--fore-06); }
+.deck .b-stepRead > span { display: block; }
 .deck .b-step[aria-disabled="true"] { color: var(--fore-62); border-color: var(--fore-16); }
 .deck .b-stepRead {
-  text-wrap: balance;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--size-body);
@@ -1052,9 +1053,13 @@ body {
   border-bottom: 1px solid var(--fore-16);
   border-radius: 0;
   padding: 0 0 var(--gap-snug);
-  min-height: 50px;
-  align-items: flex-start;
+  
+  display: block;
+  min-height: 64px;
 }
+.deck .b-edit .b-undoText { display: inline; }
+.deck .b-edit .b-undoAct { display: inline-block; vertical-align: baseline; margin-left: var(--gap-tight); }
+.deck .b-edit .b-undo kbd { display: inline-block; margin-left: var(--gap-snug); }
 .deck .b-edit .b-undo[data-empty="true"] { display: flex; visibility: hidden; }
 .deck .b-undoAct {
   min-height: 28px;
@@ -1162,7 +1167,7 @@ body {
   max-width: 52ch;
   text-wrap: balance;
 }
-.deck .b-chat { padding: var(--gap-block) var(--gap-line); background: var(--paper); }
+.deck .b-chat { padding: var(--gap-block) var(--gap-line); background: var(--paper); --focus: var(--accent); }
 .deck .b-chatPlate { border: 1px solid var(--fore-16); border-radius: 12px; }
 .deck .b-bubble {
   max-width: 300px;
@@ -1312,6 +1317,12 @@ body {
 .deck .b-print .b-behindState { display: block; margin-left: 0; }
 .deck .b-print { padding: var(--gap-block) var(--gap-item) var(--gap-block); line-height: var(--lead-body); container-type: inline-size; }
 .deck .b-printLink { margin: var(--gap-section) 0 0; }
+.deck .b-printCode {
+  width: 96px;
+  height: 96px;
+  margin: 0 0 var(--gap-block);
+}
+.deck .b-printCode svg { display: block; width: 100%; height: 100%; }
 .deck .b-printLinkLabel {
   font-family: var(--mono);
   font-size: var(--size-label);
@@ -1579,6 +1590,8 @@ body {
     max-height: none;
     overflow: visible;
     margin-top: var(--gap-block);
+    
+    padding-top: 104px;   
   }
 .deck[data-w="1280"][data-medium="full"] .b-two { grid-template-columns: 344px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
 .deck[data-w="1280"][data-medium="full"] .b-ownerField {
@@ -1622,6 +1635,8 @@ body {
     max-height: none;
     overflow: visible;
     margin-top: var(--gap-block);
+    
+    padding-top: 104px;   
   }
 .deck[data-w="1152"][data-medium="full"] .b-two { grid-template-columns: 344px minmax(0, 1fr); gap: var(--gap-major); align-items: start; }
 .deck[data-w="1152"][data-medium="full"] .b-ownerField {
@@ -1665,6 +1680,8 @@ body {
     max-height: none;
     overflow: visible;
     margin-top: var(--gap-block);
+    
+    padding-top: 104px;   
   }
 .deck .b-date, .deck .b-behindDate, .deck .b-behindCount, .deck .b-unit, .deck .b-origin, .deck .b-where {
   text-transform: none;
@@ -1683,10 +1700,11 @@ body {
   line-height: var(--lead-label);
   margin: var(--gap-snug) 0 0;
 }
-.deck[data-w="390"] .b-act, .deck .b-seg button, .deck .b-step, .deck .b-grab, .deck .b-linkField, .deck .b-undoAct { min-height: 44px; height: auto; }
+.deck[data-w="390"] .b-act, .deck .b-seg button, .deck .b-step, .deck .b-grab, .deck .b-input, .deck .b-linkField, .deck .b-undoAct { min-height: 44px; height: auto; }
 .deck[data-w="390"] .b-step { min-width: 52px; }
 .deck[data-w="390"] { --gap-control: var(--gap-line); }
-.deck[data-w="390"] .b-edit { padding-top: 104px; }
+.deck[data-w="390"] .b-edit { padding-top: 148px; }
+.deck[data-w="390"] .b-edit .b-undo { min-height: 110px; }
 @media (forced-colors: active) {
 .deck[data-accent="structure"] .b-measure:not(.b-back) .b-rail { background: CanvasText; opacity: 1; }
 .deck[data-accent="structure"] .b-back .b-rail { background: CanvasText; opacity: 1; }
@@ -1721,6 +1739,11 @@ body {
     background: Canvas;
     border-color: CanvasText;
     border-width: 1px;
+  }
+.deck .b-skel { background: Canvas; border: 1px solid CanvasText; }
+.deck .b-item[data-editing="true"] .b-copy {
+    outline: 1px solid CanvasText;
+    outline-offset: 9px;
   }
 }
 .deck { position: relative; overflow: hidden; }
@@ -2296,6 +2319,19 @@ body {
      offered to undo a change to nothing. */
   function nameOf(record) {
     return ((record && record.title) || "").trim() || "Untitled moment";
+  }
+
+  /* The reversibility bar sits in a band of its own, and the band has a
+     measured height. A title long enough to take the sentence to four
+     lines used to grow the plate straight back over the first field's
+     name - and clipping the plate instead would have hidden the Undo
+     control itself, which is the one thing on that bar that must never
+     be hard to find. So the NAME gives way, not the act: the full title
+     is in the field two rows below, and the sentence still says what
+     happened and offers the way back. */
+  function briefly(record) {
+    var name = nameOf(record);
+    return name.length <= 44 ? name : name.slice(0, 43).replace(/[s,;:]+$/, "") + "…";
   }
 
   /* A guest list is the owner list minus what the owner hid, and it is
@@ -2885,6 +2921,15 @@ body {
   }
 
   function remember(root, entry) {
+    /* The stamp moves, because the plan just changed. It used to be
+       written by hand inside the add branch, so it was true after one
+       of the six things an owner can do and stale after the other
+       five - and the guest, who has no "Live since" line, has this
+       string and nothing else to date the plan by. Every change that
+       can be undone passes through here, which is what makes this the
+       one place it belongs. */
+    F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
+    paintPublication(root);
     /* The place the owner was looking at is part of the change. Undo
        used to restore the moment and leave them a screen away from it. */
     entry.at = window.scrollY;
@@ -2959,7 +3004,11 @@ body {
     if (grab) grab.setAttribute("aria-label", grabLabel(record, iso, away, hidden));
 
     var read = root.querySelector(".b-stepRead");
-    if (read) read.textContent = F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away);
+    var readParts = read ? read.querySelectorAll("span") : [];
+    if (readParts.length === 2) {
+      readParts[0].textContent = F.fmt.longYear(iso);
+      readParts[1].textContent = "in " + F.fmt.dayCount(away);
+    }
 
     /* The field is the FIFTH consumer of this date, not a rival source
        of it. It used to be seeded once when the editor opened and never
@@ -2976,7 +3025,7 @@ body {
       when.value = F.fmt.medium(iso) + " " + F.fmt.year(iso);
       when.setAttribute("aria-invalid", "false");
       var refusal = root.querySelector(".b-ceiling");
-      if (refusal && /not a date|has gone/.test(refusal.textContent)) refusal.textContent = "";
+      if (refusal && /not a date|has gone|Nothing can sit after|Type the day first/.test(refusal.textContent)) refusal.textContent = "";
     }
 
     var steps = root.querySelectorAll(".b-step");
@@ -3147,6 +3196,18 @@ body {
         "aria-disabled": "false",
         text: (delta > 0 ? "+" : "−") + Math.abs(delta),
         on: {
+          /* The rail is a scroll pane, and a mouse press on a control
+             sitting near its edge makes the browser scroll that control
+             into view - which moves the button out from under the
+             pointer between one press and the next. Round 1 paid for
+             these buttons holding still; keepInBand holds the plan's
+             pane for the same reason and its comment assumed the rail
+             could never move. Focus is still taken, just without the
+             scroll that came with it. */
+          mousedown: function (event) {
+            event.preventDefault();
+            event.currentTarget.focus({ preventScroll: true });
+          },
           click: function (event) {
             /* Capture the NODE, not the event. currentTarget is nulled
                the moment dispatch finishes, so a closure that read it
@@ -3163,7 +3224,7 @@ body {
             var moved = Math.abs(to - from);
             remember(root, {
               id: record.id,
-              say: [nameOf(record) + " moved ", moved, moved === 1 ? " day " : " days ",
+              say: [briefly(record) + " moved ", moved, moved === 1 ? " day " : " days ",
                 to < from ? "earlier." : "later."],
               undo: function () { setAway(root, item, from); },
               focus: function () {
@@ -3191,7 +3252,7 @@ body {
             setVisibility(item, wantHidden);
             remember(root, {
               id: record.id,
-              say: [nameOf(record) + (wantHidden ? " is now hidden from guests." : " is now shown to guests.")],
+              say: [briefly(record) + (wantHidden ? " is now hidden from guests." : " is now shown to guests.")],
               undo: function () {
                 setVisibility(item, was);
                 for (var j = 0; j < group.length; j++) {
@@ -3259,10 +3320,18 @@ body {
           /* Its own line, at a reserved height. Beside the buttons it
              collapsed on the first press and threw the button you were
              about to press again two hundred pixels sideways. */
-          h("span.b-stepRead.num", {
-            role: "status",
-            text: F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away),
-          }),
+          /* Two facts, two lines - not one sentence with a connector in
+             it. The nbsp bound the middot backwards so it could never
+             OPEN line two, but the string does not fit its measure at
+             any width the panel is ever given, so the break simply moved
+             to the other side of the same glyph and left the separator
+             hanging in white space at the end of line one - which at
+             this size reads as a truncation mark, not as a joint. The
+             reserve was always two lines high; this is what it was for. */
+          h("span.b-stepRead.num", { role: "status" }, [
+            h("span", { text: F.fmt.longYear(iso) }),
+            h("span", { text: "in " + F.fmt.dayCount(away) }),
+          ]),
         ]),
         h("p.b-ceiling#b-edit-when-hint", { text: "" }),
       ]),
@@ -3299,11 +3368,26 @@ body {
       input.setAttribute("aria-invalid", "true");
       if (hint) hint.textContent = message;
     }
+    /* Three cases, three sentences - the same split the first field
+       the product ever offers already makes. Nothing typed is not an
+       unreadable date, and telling a person who typed nothing that what
+       they typed is not a date tells them to type. */
+    if (!(input.value || "").trim()) {
+      return refuse("Type the day first. For example, 3 October 2026.");
+    }
     if (!iso) return refuse("That is not a date. Try 3 October 2026.");
     var away = daysFrom(clock, iso);
     if (away < 1) return refuse("That day has gone. Pick one still ahead.");
     if (away > ceiling) {
-      return refuse("This is as far as it goes. Nothing can sit after the day itself.");
+      /* Not the standing note's words. That sentence is also what the
+         panel writes when a date IS accepted at the limit, so one
+         string carried both "we took it, you are at the edge" and "we
+         did not take it" - and the field went on holding the rejected
+         string. Like the other two refusals: state the rule, and name
+         what still stands. */
+      var standing = recordFor(item.getAttribute("data-id")).date;
+      return refuse("Nothing can sit after " + F.fmt.longYear(F.project.primaryDate.date)
+        + ". Still " + F.fmt.longYear(standing) + ".");
     }
     input.setAttribute("aria-invalid", "false");
     if (hint) hint.textContent = "";
@@ -3323,7 +3407,7 @@ body {
     var moved = Math.abs(to - from);
     remember(root, {
       id: record.id,
-      say: [nameOf(record) + " moved ", moved, moved === 1 ? " day " : " days ",
+      say: [briefly(record) + " moved ", moved, moved === 1 ? " day " : " days ",
         to < from ? "earlier." : "later."],
       /* setAway writes the field now, and on this path focus is on the
          Undo control rather than the field, so its guard lets the write
@@ -3414,7 +3498,18 @@ body {
   }
 
   function openEditor(root, item) {
-    if (item.getAttribute("data-editing") === "true") return;
+    /* The badge on an open row still announces aria-expanded="true"
+       over a panel it names by id, so refusing the press is a control
+       declaring a state and then not honouring it - and it stranded the
+       keyboard, because the panel precedes the rows in DOM order and
+       the only route back was Shift+Tab through every row above. Hand
+       over to the panel it names instead. land() is the one place that
+       moves focus without moving the page unless the target is off
+       screen. */
+    if (item.getAttribute("data-editing") === "true") {
+      land(root.querySelector("#b-edit"), root);
+      return;
+    }
     closeEditor(root, false);
     var node = editor(root, item);
     (root.querySelector(".b-editHost") || item.parentElement).appendChild(node);
@@ -3480,7 +3575,7 @@ body {
            restore a moment they never had. */
         remember(root, {
           id: record.id,
-          say: [nameOf(record) + " was removed."],
+          say: [briefly(record) + " was removed."],
           undo: function () {
             holdingPlace(root, function () {
               if (index >= 0) F.milestones.splice(index, 0, record);
@@ -3503,12 +3598,10 @@ body {
           date: F.plusDays(clock, away),
           state: "next",
         };
-        /* The stamp moves, because the plan just changed. The
-           publication record does NOT: adding a moment to a plan people
-           are already holding cannot un-hand it to them. A brand-new
-           plan is made a draft where it is created, before go(). */
-        F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
-        paintPublication(root);
+        /* The publication record does NOT move: adding a moment to a
+           plan people are already holding cannot un-hand it to them. A
+           brand-new plan is made a draft where it is created, before
+           go(). The stamp is remember()'s to write, for every change. */
         F.milestones.push(fresh);
         var node = row(fresh, away, true);
         host.insertBefore(node, host.querySelector(".b-item"));
@@ -4058,6 +4151,24 @@ body {
     ]);
   }
 
+  /* One sentence, one writer. "Have had this since" is the present
+     perfect: it states elapsed possession, and at the instant of
+     publishing the elapsed time is zero and nobody has been handed
+     anything - copying a link to your own clipboard is not sending it.
+     So the day of publication gets its own sentence, and it says what
+     the strap beside it has always said: sending comes next. The day
+     AFTER, the original sentence is true and is the one round 7
+     ratified. */
+  function pressHead() {
+    var since = F.publication.publishedAt ? F.days(F.publication.publishedAt, F.today) : -1;
+    if (since >= 1) {
+      return F.project.name + " have had this since "
+        + F.fmt.medium(F.publication.publishedAt) + ".";
+    }
+    if (since === 0) return F.project.name + " can open this as soon as you send it.";
+    return "Send it to " + F.project.name + ".";
+  }
+
   /* One writer. Taking the link IS the handover in this model, so the
      record, the heading the owner is looking at, and everything the
      owner surface paints on return all move together, once. */
@@ -4065,10 +4176,7 @@ body {
     if (F.publication.state === "published") return false;
     F.publication = { state: "published", publishedAt: F.today };
     var head = node && node.querySelector(".b-pressTitle");
-    if (head) {
-      head.textContent = F.project.name + " have had this since "
-        + F.fmt.medium(F.publication.publishedAt) + ".";
-    }
+    if (head) head.textContent = pressHead();
     return true;
   }
 
@@ -4089,10 +4197,7 @@ body {
              plan is already live the fact is the headline - the card
              beside it already says "when this was sent" - and the act
              on offer is the one that is actually available. */
-          h("h1.b-pressTitle", { "data-type": "headline",
-            text: F.publication.state === "published"
-              ? F.project.name + " have had this since " + F.fmt.medium(F.publication.publishedAt) + "."
-              : "Send it to " + F.project.name + "." }),
+          h("h1.b-pressTitle", { "data-type": "headline", text: pressHead() }),
           h("p.b-pressBody", {
             text: "It carries the day, the distance and the plan, and nothing "
               + "else: no notes, no suppliers, no prices.",
@@ -4139,8 +4244,12 @@ body {
           /* The heading changes silently — it is already focused, so a
              rewrite announces nothing. The one live region on this
              screen carries the fact instead. */
+          /* Not "they can open this now" - they have not been given it.
+             The one thing that IS true of a link on a clipboard is that
+             whoever holds it can open the plan, which is the grammar
+             the note and the owner surface already use. */
           live.textContent = first
-            ? "Link copied. " + F.project.name + " can open this now."
+            ? "Link copied. Anyone holding the link can open the plan."
             : "Link copied.";
           setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
         }, function () {
@@ -4195,6 +4304,17 @@ body {
     ]);
   };
 
+  function printCode() {
+    var made = window.__TLQR && window.__TLQR.svg;
+    if (!made) return null;
+    var block = h("div", {}, [
+      h("p.b-printLinkLabel", { text: "Scan for the live plan" }),
+      h("div.b-printCode", { role: "img", "aria-label": "Scan to open the plan online" }),
+    ]);
+    block.querySelector(".b-printCode").innerHTML = made;
+    return block;
+  }
+
   states.print = function () {
     return h("div.tl-paperEdge", { style: "min-height:1123px" }, [
       field([
@@ -4211,6 +4331,15 @@ body {
                could type. It is set as data, in its own case-preserving
                block, in the column that had the room. */
             h("div.b-printLink", {}, [
+              /* The sheet is the one surface with no way back: it goes
+                 to the venue, the celebrant and the helpers, who are
+                 exactly the people who never got the card in a message.
+                 The typed URL stays, underneath, for anyone who wants
+                 to read it - this is the route that can actually be
+                 taken off paper. Generated at build time from the same
+                 token, so there is no asset to lose and no library to
+                 load. */
+              printCode(),
               h("p.b-printLinkLabel", { text: "The plan stays online at" }),
               h("p.b-printLinkUrl", { text: F.shareUrlFull }),
             ]),
@@ -4381,7 +4510,9 @@ body {
 
 </script>
 <script></script>
-<script>
+<script>window.__TLQR = {"url":"https://timeline.signalstudio.ie/s/j7Qm2vK4xR9bT1nL6yH3cW8pZ5sD0aG7fJ4uE2rN9tM","svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 37 37\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h37v37H0z\"/><path fill=\"none\" stroke=\"#111111\" d=\"M0 0.5h7m3 0h1m1 0h1m1 0h3m2 0h3m1 0h1m2 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m3 0h1m1 0h1m3 0h3m1 0h3m3 0h2m2 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h3m1 0h2m1 0h2m4 0h1m1 0h1m2 0h2m2 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h2m1 0h4m1 0h1m2 0h1m4 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h6m4 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h1m1 0h2m1 0h2m5 0h1m1 0h1m4 0h1m2 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h5m5 0h4m1 0h2m3 0h1M0 8.5h1m1 0h5m2 0h1m1 0h6m2 0h4m3 0h1m1 0h1m1 0h5M0 9.5h3m1 0h1m2 0h3m1 0h3m1 0h1m1 0h3m1 0h1m1 0h4m2 0h1m3 0h1m1 0h1M1 10.5h2m1 0h3m2 0h1m2 0h1m2 0h3m3 0h2m2 0h6m2 0h4M1 11.5h1m3 0h1m1 0h1m2 0h2m1 0h1m1 0h1m3 0h5m4 0h1m1 0h4m2 0h1M0 12.5h2m2 0h1m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m1 0h1m2 0h1m2 0h3m1 0h4m1 0h3M1 13.5h5m1 0h3m4 0h6m3 0h1m1 0h2m1 0h1m2 0h1m3 0h2M0 14.5h2m1 0h1m1 0h6m1 0h4m4 0h1m3 0h2m1 0h7m1 0h2M0 15.5h1m1 0h4m2 0h1m3 0h1m3 0h1m3 0h2m5 0h1m3 0h2m3 0h1M0 16.5h3m1 0h1m1 0h1m1 0h5m1 0h2m2 0h1m4 0h3m2 0h3m3 0h1M0 17.5h3m1 0h1m4 0h1m5 0h4m1 0h3m3 0h4m1 0h1m1 0h3M0 18.5h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h2m3 0h2m2 0h2m2 0h1m1 0h2m3 0h1m2 0h2M1 19.5h4m2 0h2m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m2 0h1m1 0h1m2 0h4m3 0h1M2 20.5h1m3 0h2m1 0h4m3 0h3m3 0h1m1 0h4m1 0h2m1 0h3M7 21.5h7m2 0h2m1 0h3m1 0h1m4 0h1m4 0h1m1 0h1M0 22.5h4m1 0h6m1 0h4m1 0h1m2 0h3m3 0h2m3 0h3m1 0h2M4 23.5h2m3 0h2m1 0h1m4 0h2m2 0h1m2 0h1m1 0h7m3 0h1M1 24.5h2m2 0h4m1 0h7m2 0h2m1 0h1m1 0h3m2 0h2m1 0h1m1 0h3M0 25.5h3m2 0h1m4 0h1m1 0h1m2 0h1m2 0h3m1 0h2m1 0h2m1 0h1m1 0h2m1 0h1M0 26.5h1m2 0h4m1 0h1m4 0h1m1 0h3m3 0h1m2 0h1m2 0h3m1 0h1m1 0h4M0 27.5h1m1 0h4m2 0h2m1 0h2m2 0h1m3 0h1m1 0h2m1 0h1m1 0h1m2 0h2M0 28.5h1m4 0h2m1 0h1m1 0h2m3 0h2m5 0h1m1 0h9m2 0h1M8 29.5h1m1 0h3m1 0h1m4 0h3m1 0h1m3 0h2m3 0h2m1 0h1M0 30.5h7m3 0h1m2 0h1m1 0h2m1 0h1m2 0h2m1 0h2m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1M0 31.5h1m5 0h1m1 0h2m3 0h1m1 0h2m2 0h5m2 0h1m1 0h1m3 0h2m1 0h1M0 32.5h1m1 0h3m1 0h1m1 0h7m3 0h6m2 0h7m1 0h1M0 33.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m2 0h1m3 0h2m4 0h2m1 0h1m3 0h1M0 34.5h1m1 0h3m1 0h1m1 0h2m2 0h1m5 0h1m1 0h1m1 0h1m1 0h3m6 0h1m1 0h2M0 35.5h1m5 0h1m4 0h1m1 0h2m1 0h1m3 0h3m3 0h1m1 0h1m3 0h2m2 0h1M0 36.5h7m1 0h2m1 0h1m5 0h1m6 0h4m2 0h1m1 0h1m1 0h3\"/></svg>\n"};
+;
+
 /* The toolchain contract, and the whole of it: this file answers ?state=
    and ?v=, plus the two named decisions. shots.mjs, audit.mjs and the
    compiled console drive it through those parameters and nothing else. */

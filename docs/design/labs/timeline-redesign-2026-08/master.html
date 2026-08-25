@@ -306,16 +306,23 @@ body {
 /* A device is drawn only when there is room to draw one. At phone width
    the artifact IS the page — a bezel around a 390px viewport inside a
    390px viewport is a lie about what the reader is holding. */
+/* Laddered, not literal. These were the last two objects in the lab
+   written against ink and paper directly, and an alpha edge composites
+   over the box's OWN background - so a white box threw the ladder step
+   away and the ink room's loudest line became the frame around the
+   artifact: 13.4:1 for the phone's bezel and 18.9:1 for the sheet's,
+   against an indigo rail at 3.0:1. Print forces the paper ground, so
+   --back is still white there. */
 .tl-device {
-  border: 1px solid var(--ink-16);
+  border: 1px solid var(--fore-16);
   border-radius: 24px;
   overflow: hidden;
-  background: var(--paper);
+  background: var(--back);
   line-height: 1.5;
 }
 .tl-paperEdge {
-  border: 1px solid var(--ink-10);
-  background: var(--paper);
+  border: 1px solid var(--fore-10);
+  background: var(--back);
   line-height: 1.5;
 }
 
@@ -708,9 +715,16 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    found by every query that looks for it. */
 .b-item[data-stack="follow"] .b-away,
 .b-item[data-stack="follow"] .b-tick { visibility: hidden; }
+/* Both paddings, and the bottom one is not symmetry. A crowded plate
+   paints an opaque 12px halo that is not part of its own box, so it
+   covers the row above it - and a run of three means a follower is
+   the row above. The lead has had this padding all along, which is
+   exactly why a PAIR never showed the defect and a trio deleted a
+   date line. */
 .b-item[data-stack="follow"] .b-copy {
   border-top: 1px solid var(--fore-16);
   padding-top: var(--gap-snug);
+  padding-bottom: var(--gap-snug);
 }
 .b-item[data-stack="lead"] .b-copy { padding-bottom: var(--gap-snug); }
 
@@ -1186,10 +1200,14 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   transition: background-color var(--t-base) var(--ease);
 }
 .b-step:hover { background: var(--fore-06); }
+/* The readout is two facts, so it is set as the two lines its reserve
+   was always paying for. Run together with a connector it never fitted
+   its measure, and the separator ended line one standing alone in white
+   space. balance had nothing left to balance once the sentence split. */
+.b-stepRead > span { display: block; }
 /* 0.62, not 0.46: on the paper ground 0.46 is 3.1:1. */
 .b-step[aria-disabled="true"] { color: var(--fore-62); border-color: var(--fore-16); }
 .b-stepRead {
-  text-wrap: balance;
   font-family: var(--mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--size-body);
@@ -1293,10 +1311,24 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   border-bottom: 1px solid var(--fore-16);
   border-radius: 0;
   padding: 0 0 var(--gap-snug);
-  min-height: 50px;
-  align-items: flex-start;
+  /* One paragraph, not three rows. As a flex row the sentence took the
+     whole line and pushed Undo onto a third - 94px of bar in a 310px
+     rail column against a band measured for two rows in the 480px
+     docked sheet, which is how an opaque plate came to delete the first
+     field's name. Set inline, the action follows the last word and the
+     bar is 64px in every column it is ever given. */
+  display: block;
+  min-height: 64px;
 }
+.b-edit .b-undoText { display: inline; }
+.b-edit .b-undoAct { display: inline-block; vertical-align: baseline; margin-left: var(--gap-tight); }
+.b-edit .b-undo kbd { display: inline-block; margin-left: var(--gap-snug); }
 .b-edit .b-undo[data-empty="true"] { display: flex; visibility: hidden; }
+/* The band is bounded, or a long owner-typed title grows the plate
+   past any reserve measured for it and the erasure comes back. The
+   sentence is an echo of a change the owner just watched happen and
+   role=status speaks the whole of it either way; the field's own name
+   is not something a status echo gets to cover. */
 .b-undoAct {
   min-height: 28px;
   padding: 2px var(--gap-tight);
@@ -1436,7 +1468,11 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    is light whatever ground we chose. */
 /* On the owner's own screen the chat plate needs an edge, or on the
    paper ground it is a white card on a white field. */
-.b-chat { padding: var(--gap-block) var(--gap-line); background: var(--paper); }
+/* The ring follows the LOCAL ground, not the room's. This plate is the
+   page's second ground: --focus is white in the ink room, and a white
+   ring on a white card is no ring at all - on the unfurl screen the
+   card is the only focusable thing there is. */
+.b-chat { padding: var(--gap-block) var(--gap-line); background: var(--paper); --focus: var(--accent); }
 .b-chatPlate { border: 1px solid var(--fore-16); border-radius: 12px; }
 .b-bubble {
   max-width: 300px;
@@ -1647,6 +1683,16 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
    case-sensitive and the footer beside it is uppercase, so the only
    route back from paper used to be one nobody could type. */
 .b-printLink { margin: var(--gap-section) 0 0; }
+/* 96px, measured: at 37 modules that is 0.69mm per module on a home
+   laser, and it keeps the sheet inside the 1123px A4 ceiling. Fixed
+   ink on fixed paper because print forces the paper ground and a
+   scanner reads contrast, not our ladder. */
+.b-printCode {
+  width: 96px;
+  height: 96px;
+  margin: 0 0 var(--gap-block);
+}
+.b-printCode svg { display: block; width: 100%; height: 100%; }
 .b-printLinkLabel {
   font-family: var(--mono);
   font-size: var(--size-label);
@@ -1886,6 +1932,13 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
     max-height: none;
     overflow: visible;
     margin-top: var(--gap-block);
+    /* 88 was measured in the DOCKED sheet, where the panel is ~480px
+       wide. The rail column is 310px of content, the bar sat one row
+       taller there, and the reserve ran out - so an OPAQUE plate did
+       not overlap the first field's label, it deleted it. With the bar
+       set as one paragraph it is 64px in either column: 104 = 16 top
+       + 64 bar + 24 air, and the steppers stay where 88 kept them. */
+    padding-top: 104px;   /* off-ladder: measure geometry */
   }
 }
 
@@ -1932,13 +1985,23 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
   /* .b-undoAct was omitted the first time this was written, so the one
      control that takes a change back measured 51x28 - the smallest
      target in the product was the way out of a mistake. */
-  .b-act, .b-seg button, .b-step, .b-grab, .b-linkField, .b-undoAct { min-height: 44px; height: auto; }
+  /* .b-input was the second omission: the file declared the floor for
+     "anything a thumb presses" and then left out the three controls the
+     owner types into - including the day field on an empty project,
+     which is the first thing a person who has never used this touches
+     and the thing the whole plan is measured from. */
+  .b-act, .b-seg button, .b-step, .b-grab, .b-input, .b-linkField, .b-undoAct { min-height: 44px; height: auto; }
   .b-step { min-width: 52px; }
   :root { --gap-control: var(--gap-line); }
   /* The reserve must move with the button it reserves for. At 44 the
      bar's measured bottom goes 81.4 to 97.4, so the hand-measured 88
-     above would let the bar's hairline cross the panel's first label. */
-  .b-edit { padding-top: 104px; }  /* off-ladder: measure geometry */
+     above would let the bar's hairline cross the panel's first label.
+     104 then failed the other way: it left the label 1px off the
+     hairline where every other label in the panel has 22. The coarse
+     bar measures 110 at 332px of content - 44 for the action row, not
+     28 - so 148 = 16 + 110 + 22. */
+  .b-edit { padding-top: 148px; }  /* off-ladder: measure geometry */
+  .b-edit .b-undo { min-height: 110px; }
 }
 
 /* ═══ forced colours ══════════════════════════════════════════════
@@ -1997,10 +2060,26 @@ button { cursor: pointer; background: none; border: 0; padding: 0; text-align: l
     border-color: CanvasText;
     border-width: 1px;
   }
+  /* Two fills that carried their whole meaning by translucency. The
+     forced palette repaints both to Canvas, and Canvas on Canvas is
+     nothing at all: the loading frame lost every slab and the open
+     editor lost its tie to the row it edits. Same rule as the tick -
+     a forced palette may repaint any fill but cannot flatten a shape,
+     so the meaning moves into an edge. */
+  .b-skel { background: Canvas; border: 1px solid CanvasText; }
+  /* An outline, not a box-shadow: Chromium drops box-shadow entirely in
+     a forced palette, so the 12px halo cannot stand in for the plate.
+     9px of offset, not 12 - at 12 the right edge falls outside the
+     pane's own clip and the row gets a three-sided bracket. */
+  .b-item[data-editing="true"] .b-copy {
+    outline: 1px solid CanvasText;
+    outline-offset: 9px;
+  }
 }
 </style>
 <body data-state="owner-flight" data-v="paper" data-ground="paper" data-past="folded" data-accent="structure">
 <div id="tl"></div>
+<script>window.__TLQR = {"url":"https://timeline.signalstudio.ie/s/j7Qm2vK4xR9bT1nL6yH3cW8pZ5sD0aG7fJ4uE2rN9tM","svg":"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 37 37\" shape-rendering=\"crispEdges\"><path fill=\"#ffffff\" d=\"M0 0h37v37H0z\"/><path fill=\"none\" stroke=\"#111111\" d=\"M0 0.5h7m3 0h1m1 0h1m1 0h3m2 0h3m1 0h1m2 0h1m1 0h1m1 0h7M0 1.5h1m5 0h1m3 0h1m1 0h1m3 0h3m1 0h3m3 0h2m2 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h3m1 0h2m1 0h2m4 0h1m1 0h1m2 0h2m2 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m2 0h2m1 0h2m1 0h4m1 0h1m2 0h1m4 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h6m4 0h1m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h1m1 0h2m1 0h2m5 0h1m1 0h1m4 0h1m2 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h5m5 0h4m1 0h2m3 0h1M0 8.5h1m1 0h5m2 0h1m1 0h6m2 0h4m3 0h1m1 0h1m1 0h5M0 9.5h3m1 0h1m2 0h3m1 0h3m1 0h1m1 0h3m1 0h1m1 0h4m2 0h1m3 0h1m1 0h1M1 10.5h2m1 0h3m2 0h1m2 0h1m2 0h3m3 0h2m2 0h6m2 0h4M1 11.5h1m3 0h1m1 0h1m2 0h2m1 0h1m1 0h1m3 0h5m4 0h1m1 0h4m2 0h1M0 12.5h2m2 0h1m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m1 0h1m2 0h1m2 0h3m1 0h4m1 0h3M1 13.5h5m1 0h3m4 0h6m3 0h1m1 0h2m1 0h1m2 0h1m3 0h2M0 14.5h2m1 0h1m1 0h6m1 0h4m4 0h1m3 0h2m1 0h7m1 0h2M0 15.5h1m1 0h4m2 0h1m3 0h1m3 0h1m3 0h2m5 0h1m3 0h2m3 0h1M0 16.5h3m1 0h1m1 0h1m1 0h5m1 0h2m2 0h1m4 0h3m2 0h3m3 0h1M0 17.5h3m1 0h1m4 0h1m5 0h4m1 0h3m3 0h4m1 0h1m1 0h3M0 18.5h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h2m3 0h2m2 0h2m2 0h1m1 0h2m3 0h1m2 0h2M1 19.5h4m2 0h2m1 0h2m1 0h1m2 0h1m1 0h2m1 0h1m2 0h1m1 0h1m2 0h4m3 0h1M2 20.5h1m3 0h2m1 0h4m3 0h3m3 0h1m1 0h4m1 0h2m1 0h3M7 21.5h7m2 0h2m1 0h3m1 0h1m4 0h1m4 0h1m1 0h1M0 22.5h4m1 0h6m1 0h4m1 0h1m2 0h3m3 0h2m3 0h3m1 0h2M4 23.5h2m3 0h2m1 0h1m4 0h2m2 0h1m2 0h1m1 0h7m3 0h1M1 24.5h2m2 0h4m1 0h7m2 0h2m1 0h1m1 0h3m2 0h2m1 0h1m1 0h3M0 25.5h3m2 0h1m4 0h1m1 0h1m2 0h1m2 0h3m1 0h2m1 0h2m1 0h1m1 0h2m1 0h1M0 26.5h1m2 0h4m1 0h1m4 0h1m1 0h3m3 0h1m2 0h1m2 0h3m1 0h1m1 0h4M0 27.5h1m1 0h4m2 0h2m1 0h2m2 0h1m3 0h1m1 0h2m1 0h1m1 0h1m2 0h2M0 28.5h1m4 0h2m1 0h1m1 0h2m3 0h2m5 0h1m1 0h9m2 0h1M8 29.5h1m1 0h3m1 0h1m4 0h3m1 0h1m3 0h2m3 0h2m1 0h1M0 30.5h7m3 0h1m2 0h1m1 0h2m1 0h1m2 0h2m1 0h2m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1M0 31.5h1m5 0h1m1 0h2m3 0h1m1 0h2m2 0h5m2 0h1m1 0h1m3 0h2m1 0h1M0 32.5h1m1 0h3m1 0h1m1 0h7m3 0h6m2 0h7m1 0h1M0 33.5h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h2m2 0h1m3 0h2m4 0h2m1 0h1m3 0h1M0 34.5h1m1 0h3m1 0h1m1 0h2m2 0h1m5 0h1m1 0h1m1 0h1m1 0h3m6 0h1m1 0h2M0 35.5h1m5 0h1m4 0h1m1 0h2m1 0h1m3 0h3m3 0h1m1 0h1m3 0h2m2 0h1M0 36.5h7m1 0h2m1 0h1m5 0h1m6 0h4m2 0h1m1 0h1m1 0h3\"/></svg>\n"};</script>
 <script src="./fixture.js"></script>
 <script src="./render-core.js"></script>
 <script src="./render-b.js"></script>

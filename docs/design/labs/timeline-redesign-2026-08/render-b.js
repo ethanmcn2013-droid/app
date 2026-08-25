@@ -48,6 +48,19 @@
     return ((record && record.title) || "").trim() || "Untitled moment";
   }
 
+  /* The reversibility bar sits in a band of its own, and the band has a
+     measured height. A title long enough to take the sentence to four
+     lines used to grow the plate straight back over the first field's
+     name - and clipping the plate instead would have hidden the Undo
+     control itself, which is the one thing on that bar that must never
+     be hard to find. So the NAME gives way, not the act: the full title
+     is in the field two rows below, and the sentence still says what
+     happened and offers the way back. */
+  function briefly(record) {
+    var name = nameOf(record);
+    return name.length <= 44 ? name : name.slice(0, 43).replace(/[s,;:]+$/, "") + "…";
+  }
+
   /* A guest list is the owner list minus what the owner hid, and it is
      filtered HERE, once, rather than in each surface. Hiding a moment
      used to write an attribute on a row and nothing else, so the field
@@ -635,6 +648,15 @@
   }
 
   function remember(root, entry) {
+    /* The stamp moves, because the plan just changed. It used to be
+       written by hand inside the add branch, so it was true after one
+       of the six things an owner can do and stale after the other
+       five - and the guest, who has no "Live since" line, has this
+       string and nothing else to date the plan by. Every change that
+       can be undone passes through here, which is what makes this the
+       one place it belongs. */
+    F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
+    paintPublication(root);
     /* The place the owner was looking at is part of the change. Undo
        used to restore the moment and leave them a screen away from it. */
     entry.at = window.scrollY;
@@ -709,7 +731,11 @@
     if (grab) grab.setAttribute("aria-label", grabLabel(record, iso, away, hidden));
 
     var read = root.querySelector(".b-stepRead");
-    if (read) read.textContent = F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away);
+    var readParts = read ? read.querySelectorAll("span") : [];
+    if (readParts.length === 2) {
+      readParts[0].textContent = F.fmt.longYear(iso);
+      readParts[1].textContent = "in " + F.fmt.dayCount(away);
+    }
 
     /* The field is the FIFTH consumer of this date, not a rival source
        of it. It used to be seeded once when the editor opened and never
@@ -726,7 +752,7 @@
       when.value = F.fmt.medium(iso) + " " + F.fmt.year(iso);
       when.setAttribute("aria-invalid", "false");
       var refusal = root.querySelector(".b-ceiling");
-      if (refusal && /not a date|has gone/.test(refusal.textContent)) refusal.textContent = "";
+      if (refusal && /not a date|has gone|Nothing can sit after|Type the day first/.test(refusal.textContent)) refusal.textContent = "";
     }
 
     var steps = root.querySelectorAll(".b-step");
@@ -897,6 +923,18 @@
         "aria-disabled": "false",
         text: (delta > 0 ? "+" : "−") + Math.abs(delta),
         on: {
+          /* The rail is a scroll pane, and a mouse press on a control
+             sitting near its edge makes the browser scroll that control
+             into view - which moves the button out from under the
+             pointer between one press and the next. Round 1 paid for
+             these buttons holding still; keepInBand holds the plan's
+             pane for the same reason and its comment assumed the rail
+             could never move. Focus is still taken, just without the
+             scroll that came with it. */
+          mousedown: function (event) {
+            event.preventDefault();
+            event.currentTarget.focus({ preventScroll: true });
+          },
           click: function (event) {
             /* Capture the NODE, not the event. currentTarget is nulled
                the moment dispatch finishes, so a closure that read it
@@ -913,7 +951,7 @@
             var moved = Math.abs(to - from);
             remember(root, {
               id: record.id,
-              say: [nameOf(record) + " moved ", moved, moved === 1 ? " day " : " days ",
+              say: [briefly(record) + " moved ", moved, moved === 1 ? " day " : " days ",
                 to < from ? "earlier." : "later."],
               undo: function () { setAway(root, item, from); },
               focus: function () {
@@ -941,7 +979,7 @@
             setVisibility(item, wantHidden);
             remember(root, {
               id: record.id,
-              say: [nameOf(record) + (wantHidden ? " is now hidden from guests." : " is now shown to guests.")],
+              say: [briefly(record) + (wantHidden ? " is now hidden from guests." : " is now shown to guests.")],
               undo: function () {
                 setVisibility(item, was);
                 for (var j = 0; j < group.length; j++) {
@@ -1009,10 +1047,18 @@
           /* Its own line, at a reserved height. Beside the buttons it
              collapsed on the first press and threw the button you were
              about to press again two hundred pixels sideways. */
-          h("span.b-stepRead.num", {
-            role: "status",
-            text: F.fmt.longYear(iso) + " · in " + F.fmt.dayCount(away),
-          }),
+          /* Two facts, two lines - not one sentence with a connector in
+             it. The nbsp bound the middot backwards so it could never
+             OPEN line two, but the string does not fit its measure at
+             any width the panel is ever given, so the break simply moved
+             to the other side of the same glyph and left the separator
+             hanging in white space at the end of line one - which at
+             this size reads as a truncation mark, not as a joint. The
+             reserve was always two lines high; this is what it was for. */
+          h("span.b-stepRead.num", { role: "status" }, [
+            h("span", { text: F.fmt.longYear(iso) }),
+            h("span", { text: "in " + F.fmt.dayCount(away) }),
+          ]),
         ]),
         h("p.b-ceiling#b-edit-when-hint", { text: "" }),
       ]),
@@ -1049,11 +1095,26 @@
       input.setAttribute("aria-invalid", "true");
       if (hint) hint.textContent = message;
     }
+    /* Three cases, three sentences - the same split the first field
+       the product ever offers already makes. Nothing typed is not an
+       unreadable date, and telling a person who typed nothing that what
+       they typed is not a date tells them to type. */
+    if (!(input.value || "").trim()) {
+      return refuse("Type the day first. For example, 3 October 2026.");
+    }
     if (!iso) return refuse("That is not a date. Try 3 October 2026.");
     var away = daysFrom(clock, iso);
     if (away < 1) return refuse("That day has gone. Pick one still ahead.");
     if (away > ceiling) {
-      return refuse("This is as far as it goes. Nothing can sit after the day itself.");
+      /* Not the standing note's words. That sentence is also what the
+         panel writes when a date IS accepted at the limit, so one
+         string carried both "we took it, you are at the edge" and "we
+         did not take it" - and the field went on holding the rejected
+         string. Like the other two refusals: state the rule, and name
+         what still stands. */
+      var standing = recordFor(item.getAttribute("data-id")).date;
+      return refuse("Nothing can sit after " + F.fmt.longYear(F.project.primaryDate.date)
+        + ". Still " + F.fmt.longYear(standing) + ".");
     }
     input.setAttribute("aria-invalid", "false");
     if (hint) hint.textContent = "";
@@ -1073,7 +1134,7 @@
     var moved = Math.abs(to - from);
     remember(root, {
       id: record.id,
-      say: [nameOf(record) + " moved ", moved, moved === 1 ? " day " : " days ",
+      say: [briefly(record) + " moved ", moved, moved === 1 ? " day " : " days ",
         to < from ? "earlier." : "later."],
       /* setAway writes the field now, and on this path focus is on the
          Undo control rather than the field, so its guard lets the write
@@ -1164,7 +1225,18 @@
   }
 
   function openEditor(root, item) {
-    if (item.getAttribute("data-editing") === "true") return;
+    /* The badge on an open row still announces aria-expanded="true"
+       over a panel it names by id, so refusing the press is a control
+       declaring a state and then not honouring it - and it stranded the
+       keyboard, because the panel precedes the rows in DOM order and
+       the only route back was Shift+Tab through every row above. Hand
+       over to the panel it names instead. land() is the one place that
+       moves focus without moving the page unless the target is off
+       screen. */
+    if (item.getAttribute("data-editing") === "true") {
+      land(root.querySelector("#b-edit"), root);
+      return;
+    }
     closeEditor(root, false);
     var node = editor(root, item);
     (root.querySelector(".b-editHost") || item.parentElement).appendChild(node);
@@ -1230,7 +1302,7 @@
            restore a moment they never had. */
         remember(root, {
           id: record.id,
-          say: [nameOf(record) + " was removed."],
+          say: [briefly(record) + " was removed."],
           undo: function () {
             holdingPlace(root, function () {
               if (index >= 0) F.milestones.splice(index, 0, record);
@@ -1253,12 +1325,10 @@
           date: F.plusDays(clock, away),
           state: "next",
         };
-        /* The stamp moves, because the plan just changed. The
-           publication record does NOT: adding a moment to a plan people
-           are already holding cannot un-hand it to them. A brand-new
-           plan is made a draft where it is created, before go(). */
-        F.updatedLabel = F.fmt.medium(F.today) + " " + F.fmt.year(F.today);
-        paintPublication(root);
+        /* The publication record does NOT move: adding a moment to a
+           plan people are already holding cannot un-hand it to them. A
+           brand-new plan is made a draft where it is created, before
+           go(). The stamp is remember()'s to write, for every change. */
         F.milestones.push(fresh);
         var node = row(fresh, away, true);
         host.insertBefore(node, host.querySelector(".b-item"));
@@ -1808,6 +1878,24 @@
     ]);
   }
 
+  /* One sentence, one writer. "Have had this since" is the present
+     perfect: it states elapsed possession, and at the instant of
+     publishing the elapsed time is zero and nobody has been handed
+     anything - copying a link to your own clipboard is not sending it.
+     So the day of publication gets its own sentence, and it says what
+     the strap beside it has always said: sending comes next. The day
+     AFTER, the original sentence is true and is the one round 7
+     ratified. */
+  function pressHead() {
+    var since = F.publication.publishedAt ? F.days(F.publication.publishedAt, F.today) : -1;
+    if (since >= 1) {
+      return F.project.name + " have had this since "
+        + F.fmt.medium(F.publication.publishedAt) + ".";
+    }
+    if (since === 0) return F.project.name + " can open this as soon as you send it.";
+    return "Send it to " + F.project.name + ".";
+  }
+
   /* One writer. Taking the link IS the handover in this model, so the
      record, the heading the owner is looking at, and everything the
      owner surface paints on return all move together, once. */
@@ -1815,10 +1903,7 @@
     if (F.publication.state === "published") return false;
     F.publication = { state: "published", publishedAt: F.today };
     var head = node && node.querySelector(".b-pressTitle");
-    if (head) {
-      head.textContent = F.project.name + " have had this since "
-        + F.fmt.medium(F.publication.publishedAt) + ".";
-    }
+    if (head) head.textContent = pressHead();
     return true;
   }
 
@@ -1839,10 +1924,7 @@
              plan is already live the fact is the headline - the card
              beside it already says "when this was sent" - and the act
              on offer is the one that is actually available. */
-          h("h1.b-pressTitle", { "data-type": "headline",
-            text: F.publication.state === "published"
-              ? F.project.name + " have had this since " + F.fmt.medium(F.publication.publishedAt) + "."
-              : "Send it to " + F.project.name + "." }),
+          h("h1.b-pressTitle", { "data-type": "headline", text: pressHead() }),
           h("p.b-pressBody", {
             text: "It carries the day, the distance and the plan, and nothing "
               + "else: no notes, no suppliers, no prices.",
@@ -1889,8 +1971,12 @@
           /* The heading changes silently — it is already focused, so a
              rewrite announces nothing. The one live region on this
              screen carries the fact instead. */
+          /* Not "they can open this now" - they have not been given it.
+             The one thing that IS true of a link on a clipboard is that
+             whoever holds it can open the plan, which is the grammar
+             the note and the owner surface already use. */
           live.textContent = first
-            ? "Link copied. " + F.project.name + " can open this now."
+            ? "Link copied. Anyone holding the link can open the plan."
             : "Link copied.";
           setTimeout(function () { action.textContent = "Copy the link"; }, 2000);
         }, function () {
@@ -1945,6 +2031,17 @@
     ]);
   };
 
+  function printCode() {
+    var made = window.__TLQR && window.__TLQR.svg;
+    if (!made) return null;
+    var block = h("div", {}, [
+      h("p.b-printLinkLabel", { text: "Scan for the live plan" }),
+      h("div.b-printCode", { role: "img", "aria-label": "Scan to open the plan online" }),
+    ]);
+    block.querySelector(".b-printCode").innerHTML = made;
+    return block;
+  }
+
   states.print = function () {
     return h("div.tl-paperEdge", { style: "min-height:1123px" }, [
       field([
@@ -1961,6 +2058,15 @@
                could type. It is set as data, in its own case-preserving
                block, in the column that had the room. */
             h("div.b-printLink", {}, [
+              /* The sheet is the one surface with no way back: it goes
+                 to the venue, the celebrant and the helpers, who are
+                 exactly the people who never got the card in a message.
+                 The typed URL stays, underneath, for anyone who wants
+                 to read it - this is the route that can actually be
+                 taken off paper. Generated at build time from the same
+                 token, so there is no asset to lose and no library to
+                 load. */
+              printCode(),
               h("p.b-printLinkLabel", { text: "The plan stays online at" }),
               h("p.b-printLinkUrl", { text: F.shareUrlFull }),
             ]),

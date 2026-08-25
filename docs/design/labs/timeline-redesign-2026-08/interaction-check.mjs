@@ -65,6 +65,49 @@ async function open({ state, variant, viewport, touch, forcedColors, clipboard }
   return page;
 }
 
+/* Painted pixels, not computed style. A forced palette is applied by
+   the compositor and getComputedStyle still reports what the author
+   wrote, so a check phrased against declared values passes while the
+   screen is blank - which is exactly how four loading slabs and an open
+   editor's plate went missing under two green assertions. A screenshot
+   is a PNG and the lab ships no image library, so it is decoded on a
+   scratch page's own canvas. */
+const scratch = await browser.newPage();
+await scratch.goto("about:blank");
+async function painted(shot, points) {
+  return scratch.evaluate(async ({ b64, pts }) => {
+    const img = new Image();
+    img.src = "data:image/png;base64," + b64;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    return pts.map(([x, y]) => {
+      const d = ctx.getImageData(
+        Math.max(0, Math.min(c.width - 1, Math.round(x))),
+        Math.max(0, Math.min(c.height - 1, Math.round(y))),
+        1, 1,
+      ).data;
+      return [d[0], d[1], d[2]];
+    });
+  }, { b64: shot.toString("base64"), pts: points });
+}
+/* Dates carry non-breaking spaces, so every string read off the page
+ * is flattened before it is matched. Declared here, with the other
+ * helpers, because an assertion 1700 lines above the old declaration
+ * reached it and died in the temporal dead zone. */
+const flat9 = (x) => String(x).replace(/ /g, " ").trim();
+const samePixel = (a, b) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2];
+/* WCAG, on two pixels that are already composited. */
+function pixelRatio(a, b) {
+  const chan = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const lum = (c) => 0.2126 * chan(c[0]) + 0.7152 * chan(c[1]) + 0.0722 * chan(c[2]);
+  const x = lum(a), y = lum(b);
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
 /* ══ universal floor ═══════════════════════════════════════════════ */
 
 /* Every state loads clean and never scrolls sideways, at every width. */
@@ -117,6 +160,72 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
   });
   ok("focus paints a visible treatment", focusVisible);
   await page.close();
+}
+
+/* The ring has to SEPARATE from what it paints on, not merely exist.
+   --focus is scoped per ground, but the page carries a second ground
+   inside it: the chat plate is somebody else's surface and is literally
+   white in both rooms, so the ink room's white ring painted white on
+   white and the only focusable element on the unfurl screen had no
+   indicator at all. outlineWidth > 0 was true the whole time.
+
+   Walked with real Tab presses, because Chromium grants :focus-visible
+   to a programmatically focused button only after a keyboard gesture -
+   el.focus() reads every ring as transparent and proves nothing. */
+for (const variant of config.variants) {
+  for (const state of config.states) {
+    const page = await open({ state, variant });
+    /* Tab reaches the page that HAS focus, and the scratch page opened
+       for pixel reading took it. Without this the whole ring walk reads
+       transparent outlines and the block passes on nothing. */
+    await page.bringToFront();
+    await page.evaluate(() => {
+      const parse = (c) => {
+        const m = String(c).match(/[\d.]+/g) || [];
+        return { r: +m[0] || 0, g: +m[1] || 0, b: +m[2] || 0, a: m.length > 3 ? +m[3] : 1 };
+      };
+      const over = (fg, bg) => ({
+        r: fg.r * fg.a + bg.r * (1 - fg.a),
+        g: fg.g * fg.a + bg.g * (1 - fg.a),
+        b: fg.b * fg.a + bg.b * (1 - fg.a),
+        a: 1,
+      });
+      const lum = (c) => {
+        const s = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+        return 0.2126 * s(c.r) + 0.7152 * s(c.g) + 0.0722 * s(c.b);
+      };
+      /* The ring sits at outline-offset, OUTSIDE the border box, so the
+         backdrop is the ancestor stack - not the element's own fill. */
+      const backdrop = (el) => {
+        const chain = [];
+        for (let n = el.parentElement; n; n = n.parentElement) chain.push(parse(getComputedStyle(n).backgroundColor));
+        let base = { r: 255, g: 255, b: 255, a: 1 };
+        for (let i = chain.length - 1; i >= 0; i -= 1) base = over(chain[i], base);
+        return base;
+      };
+      window.__ringAt = () => {
+        const el = document.activeElement;
+        if (!el || el === document.body || !el.matches(":focus-visible")) return null;
+        const cs = getComputedStyle(el);
+        if (!(parseFloat(cs.outlineWidth) > 0) || cs.outlineStyle === "none") return null;
+        const bg = backdrop(el);
+        const ring = over(parse(cs.outlineColor), bg);
+        const a = lum(ring), b = lum(bg);
+        return {
+          tag: el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0],
+          ratio: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05),
+        };
+      };
+    });
+    const dim = [];
+    for (let i = 0; i < 24; i += 1) {
+      await page.keyboard.press("Tab");
+      const hit = await page.evaluate(() => window.__ringAt());
+      if (hit && hit.ratio < 3) dim.push(hit.tag + " " + hit.ratio.toFixed(2) + ":1");
+    }
+    ok(`the focus ring separates from what it paints on · ${state} · ${variant}`, dim.length === 0, dim.slice(0, 3).join(", "));
+    await page.close();
+  }
 }
 
 /* Word-safe text: no text node may end hard against its box mid-word with
@@ -1076,7 +1185,16 @@ for (const vp of [{ width: 390, height: 844 }, { width: 768, height: 1024 }]) {
   }));
   ok("a date past the day itself is refused", refused.invalid === "true" && refused.away === "56",
     `${refused.invalid} / ${refused.away}`);
-  ok("the refusal says why", /as far as it goes/.test(refused.hint), refused.hint);
+  /* It used to assert "as far as it goes" - which is the wording of the
+     standing note the panel writes when a date IS accepted at the limit.
+     One string carried both "we took it, you are at the edge" and "we
+     did not take it", so this assertion passed on the ambiguity it
+     should have caught. Now: name the rule, and name what still stands. */
+  ok("the refusal says why", /Nothing can sit after/.test(flat9(refused.hint)), refused.hint);
+  ok("the refusal names the date that still stands",
+    /Still .*10 September 2026/.test(flat9(refused.hint)), refused.hint);
+  ok("the refusal does not borrow the accepted note's words",
+    !/as far as it goes/.test(refused.hint), refused.hint);
 
   await page.locator("#b-edit-date").fill("1 January 2026");
   await page.locator("#b-edit-date").press("Enter");
@@ -1851,8 +1969,45 @@ for (const state of ["phone", "day", "owner-flight"]) {
      200px away, and on paper the two always print together. */
   ok("the sheet carries one ceremonial date, not two",
     !/20\d\d/.test(said.origin), said.origin);
-  ok("the sheet carries a link that can be typed",
+  /* Renamed to what it actually tests. It asserted that a string starts
+     with https:// and was read for years as "the sheet has a route
+     back" - which it did not: 76 characters ending in a 43-character
+     case-sensitive token is not a route anyone can take off paper. */
+  ok("the sheet prints the link in full",
     !!said.link && said.link.indexOf("https://") === 0, String(said.link));
+  await page.close();
+}
+
+/* ...and carries a route that can actually be TAKEN from paper. The
+   sheet goes to the venue, the celebrant and the day's helpers - the
+   people who never got the card in a message - so it is the one surface
+   where the fallback was "interrupt the person running the day". */
+for (const variant of config.variants) {
+  const page = await open({ state: "print", variant, viewport: { width: 900, height: 1200 } });
+  await page.waitForTimeout(200);
+  const route = await page.evaluate(() => {
+    const block = document.querySelector(".b-printLink");
+    if (!block) return { none: true };
+    const code = block.querySelector('[role="img"]');
+    const line = block.querySelector(".b-printLinkUrl");
+    if (!code) return { code: false };
+    const c = code.getBoundingClientRect();
+    const u = line ? line.getBoundingClientRect() : null;
+    return {
+      code: true,
+      name: code.getAttribute("aria-label") || "",
+      w: Math.round(c.width),
+      h: Math.round(c.height),
+      shapes: code.querySelectorAll("path, rect").length,
+      first: u ? c.bottom <= u.top + 1 : false,
+    };
+  });
+  ok(`the sheet carries a scannable route, not just a typed one · ${variant}`,
+    route.code === true && route.shapes > 1, JSON.stringify(route));
+  ok(`the scannable route is big enough to read off paper · ${variant}`,
+    route.w >= 88 && route.h >= 88, JSON.stringify(route));
+  ok(`the scannable route says what it is, and comes first · ${variant}`,
+    /scan/i.test(route.name) && route.first === true, JSON.stringify(route));
   await page.close();
 }
 
@@ -2682,15 +2837,56 @@ for (const width of [768, 1023]) {
   ok("the unfurl date is never split across lines", m.rects === 1, String(m.rects));
   await page.close();
 }
-{
-  const page = await open({ state: "owner-editing", viewport: { width: 1440, height: 960 } });
-  const bound = await page.evaluate(() => {
-    const t = document.querySelector(".b-stepRead").textContent;
-    const i = t.indexOf("·");
-    return i > 0 && t.charCodeAt(i - 1) === 0x00a0;
-  });
-  ok("the connector cannot start a line", bound);
-  await page.close();
+/* The readout is two facts and sets as two lines. The old assertion
+   policed only the connector's HEAD - the nbsp kept the middot off the
+   start of line two - and the break moved to the other side of the same
+   glyph, so line one ended on a separator standing alone in white
+   space at every width the panel is ever given. The property actually
+   wanted: two lines, and no line ending on its own punctuation. Driven
+   at rest and after a move, on both grounds. */
+for (const variant of config.variants) {
+  for (const w of [390, 1152, 1280, 1440]) {
+    const page = await open({ state: "owner-editing", variant, viewport: { width: w, height: 900 } });
+    await page.waitForTimeout(300);
+    const measure = () => page.evaluate(() => {
+      const el = document.querySelector(".b-stepRead");
+      const lines = new Map();
+      const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let node;
+      while ((node = walk.nextNode())) {
+        for (let i = 0; i < node.textContent.length; i += 1) {
+          const rg = document.createRange();
+          rg.setStart(node, i);
+          rg.setEnd(node, i + 1);
+          const b = rg.getBoundingClientRect();
+          if (b.width === 0 && b.height === 0) continue;
+          const key = Math.round(b.top);
+          if (!lines.has(key)) lines.set(key, []);
+          lines.get(key).push({ ch: node.textContent[i], right: b.right });
+        }
+      }
+      return [...lines.entries()].sort((a, b2) => a[0] - b2[0]).map(([, cs]) => {
+        cs.sort((a, b2) => a.right - b2.right);
+        let last = "";
+        for (let i = cs.length - 1; i >= 0; i -= 1) {
+          if (!/\s| /.test(cs[i].ch)) { last = cs[i].ch; break; }
+        }
+        return { text: cs.map((c) => c.ch).join(""), last };
+      });
+    });
+    const rest = await measure();
+    await page.click('.b-step[data-delta="7"]');
+    await page.waitForTimeout(200);
+    const moved = await measure();
+    for (const [when, lines] of [["at rest", rest], ["after a move", moved]]) {
+      ok(`the readout sets on two lines · ${when} · ${variant} @ ${w}`,
+        lines.length === 2, JSON.stringify(lines.map((l) => l.text)));
+      ok(`no line of the readout ends on its own punctuation · ${when} · ${variant} @ ${w}`,
+        lines.every((l) => !"·–—,;:".includes(l.last)),
+        JSON.stringify(lines.map((l) => l.text)));
+    }
+    await page.close();
+  }
 }
 
 /* The horizon sentence cannot outlive the fact it describes. It used to
@@ -2714,7 +2910,6 @@ for (const width of [768, 1023]) {
 
 
 /* ── round 9 · what the panel found, made unrepeatable ────────────── */
-const flat9 = (x) => String(x).replace(/ /g, " ").trim();
 async function firstRun(page) {
   await page.fill("#b-empty-date", "3 October 2026");
   await page.click('[data-act="setday"]');
@@ -2876,6 +3071,304 @@ async function firstRun(page) {
   ok("a stacked pair does not overlap on the render that forms it", !r.none && r.gap > 0, JSON.stringify(r));
   ok("place() is a fixed point", r.same === true);
   await page.close();
+}
+
+/* A forced palette may repaint any fill, but nothing on the screen may
+   disappear because of it. Read on painted pixels: the loading frame's
+   four slabs and the open editor's plate both carried their whole
+   meaning by translucency, so Canvas-on-Canvas erased them - the frame
+   fell to three text lines and the panel lost every tie to the row it
+   edits. The gate's other forced-colours passes only ever opened
+   owner-flight, so neither state was ever entered in that regime. */
+for (const variant of config.variants) {
+  {
+    const page = await open({ state: "loading", variant, viewport: { width: 390, height: 844 }, forcedColors: "active" });
+    const boxes = await page.evaluate(() => [...document.querySelectorAll(".b-skel")].map((s) => {
+      const r = s.getBoundingClientRect();
+      return { x: r.left, y: r.top, w: r.width, h: r.height };
+    }));
+    const shot = await page.screenshot();
+    const probes = [];
+    for (const b of boxes) {
+      probes.push([b.x + b.w / 2, b.y]);
+      probes.push([b.x + b.w / 2, b.y + b.h - 1]);
+      probes.push([b.x + b.w / 2, b.y - 6]);
+    }
+    const got = probes.length ? await painted(shot, probes) : [];
+    const flat = [];
+    for (let i = 0; i < boxes.length; i += 1) {
+      const [top, bot, ground] = [got[i * 3], got[i * 3 + 1], got[i * 3 + 2]];
+      if (samePixel(top, ground) && samePixel(bot, ground)) flat.push("slab " + i);
+    }
+    ok(`the loading frame still has slabs in a forced palette · ${variant}`, boxes.length > 0 && flat.length === 0, flat.join(", "));
+    await page.close();
+  }
+  {
+    const page = await open({ state: "owner-editing", variant, forcedColors: "active" });
+    await page.waitForTimeout(300);
+    const box = await page.evaluate(() => {
+      const c = document.querySelector('.b-item[data-editing="true"] .b-copy');
+      if (!c) return null;
+      const r = c.getBoundingClientRect();
+      return { x: r.left, y: r.top, w: r.width, h: r.height };
+    });
+    const shot = await page.screenshot();
+    const got = box ? await painted(shot, [
+      [box.x + box.w / 2, box.y - 10],
+      [box.x + box.w / 2, box.y + 2],
+      [box.x + box.w / 2, box.y + box.h - 2],
+      [box.x - 10, box.y + box.h / 2],
+    ]) : [];
+    const tied = Boolean(box) && !(samePixel(got[0], got[1]) && samePixel(got[1], got[2]) && samePixel(got[2], got[3]));
+    ok(`the edited row keeps a shape in a forced palette · ${variant}`, tied, JSON.stringify(got));
+    await page.close();
+  }
+}
+
+/* The frame around the artifact is furniture and must whisper on both
+   grounds. It is an alpha edge, and an alpha edge composites over the
+   box's OWN background - so writing the box white threw the ladder step
+   away and made the bezel the loudest line in the ink room at 13.4:1.
+   Read on painted pixels: computed style reported the same rgba on both
+   grounds the whole time, which is precisely what hid it. Print is
+   excluded: it forces the paper ground by design. */
+for (const variant of config.variants) {
+  for (const state of config.states) {
+    if (state === "print") continue;
+    const page = await open({ state, variant });
+    const box = await page.evaluate(() => {
+      const el = document.querySelector(".tl-device, .tl-paperEdge");
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { cls: String(el.className), x: r.left, y: r.top };
+    });
+    if (!box) { await page.close(); continue; }
+    const shot = await page.screenshot();
+    const [edge, out] = await painted(shot, [[box.x - 0.5, box.y + 60], [box.x - 5, box.y + 60]]);
+    const r = pixelRatio(edge, out);
+    ok(`the artifact frame whispers on this ground · ${state} · ${variant}`, r < 2,
+      `${box.cls} ${JSON.stringify(edge)} vs ${JSON.stringify(out)} = ${r.toFixed(2)}:1`);
+    await page.close();
+  }
+}
+
+/* The stamp is the ONLY string that dates the plan for a guest - the
+   owner's "Live since" line does not exist on the surfaces they see. It
+   used to be written by hand in the add branch, so it moved for one of
+   the six things an owner can do and lied after the other five: an
+   owner could delete eight moments in a row and the footer would still
+   claim the plan had not changed in eleven days. */
+for (const variant of config.variants) {
+  const page = await open({ state: "owner-flight", variant });
+  await page.waitForTimeout(400);
+  const stamps = await page.evaluate(async () => {
+    const wait = (ms) => new Promise((r2) => setTimeout(r2, ms));
+    const read = () => (document.querySelector(".b-stamp")?.textContent || "").trim();
+    const openRow = async (id) => {
+      document.querySelector('.b-item[data-id="' + id + '"] .b-grab').click();
+      await wait(300);
+    };
+    const out = { before: read() };
+    await openRow("demo-audience-item-invitations");
+    document.querySelector('.b-step[data-delta="7"]').click();
+    await wait(400);
+    out.afterMove = read();
+    await openRow("demo-audience-item-music");
+    const del = document.querySelector('[data-act="delete"]');
+    if (del) { del.click(); await wait(500); }
+    out.afterDelete = read();
+    return out;
+  });
+  ok(`moving a moment moves the stamp · ${variant}`, /16 July/.test(flat9(stamps.afterMove)), flat9(stamps.afterMove));
+  ok(`deleting a moment moves the stamp · ${variant}`, /16 July/.test(flat9(stamps.afterDelete)), flat9(stamps.afterDelete));
+  ok(`the stamp was stale to begin with · ${variant}`, /15 July/.test(flat9(stamps.before)), flat9(stamps.before));
+  await page.close();
+}
+
+/* The heading may not claim possession at the instant of publishing.
+   "Have had this since <today>" states elapsed possession where the
+   elapsed time is zero and nobody has been handed anything - and it
+   contradicted the strap beside it, which has always said sending
+   comes next. The day after, the same sentence is true, so the branch
+   is on the distance and not on the state. */
+for (const variant of config.variants) {
+  const page = await open({ state: "owner-draft", variant, clipboard: true });
+  await page.waitForTimeout(300);
+  const said = await page.evaluate(async () => {
+    const wait = (ms) => new Promise((r2) => setTimeout(r2, ms));
+    document.querySelector('[data-act="publish"]').click();
+    await wait(400);
+    const before = document.querySelector(".b-pressTitle")?.textContent || "";
+    document.querySelector('[data-act="copy"]').click();
+    await wait(600);
+    return {
+      before,
+      head: document.querySelector(".b-pressTitle")?.textContent || "",
+      live: document.querySelector(".b-live")?.textContent || "",
+    };
+  });
+  ok(`publishing today does not claim they have had it · ${variant}`,
+    !/have had this since/.test(flat9(said.head)), flat9(said.head));
+  ok(`the heading still moves on the press · ${variant}`,
+    flat9(said.head) !== flat9(said.before), flat9(said.head));
+  ok(`copying a link does not say it was delivered · ${variant}`,
+    /Link copied/.test(flat9(said.live)) && !/can open this now/.test(flat9(said.live)), flat9(said.live));
+  await page.close();
+}
+/* ...and the sentence is still the right one for a plan somebody has
+   genuinely been holding since yesterday. */
+for (const variant of config.variants) {
+  const page = await open({ state: "publish", variant });
+  const head = await page.evaluate(() => document.querySelector(".b-pressTitle")?.textContent || "");
+  ok(`a plan already out there says so plainly · ${variant}`,
+    /have had this since 15 July/.test(flat9(head)), flat9(head));
+  await page.close();
+}
+
+/* The reversibility bar is absolutely positioned against a reserve
+   that was hand-measured in the DOCKED sheet, where the panel is ~480px
+   wide and the sentence takes two rows. In the shipping rail column it
+   is 310px and three rows, so the reserve ran out - and because the bar
+   is opaque it did not overlap the first field's label, it deleted it.
+   Measured by hit-testing the label's own centre, at every desk width
+   and on the coarse path, on both grounds. The stepper under the
+   pointer must not move either: that is what the reserve was for. */
+for (const variant of config.variants) {
+  for (const vp of [
+    { width: 1440, height: 960 },
+    { width: 1280, height: 900 },
+    { width: 1152, height: 800 },
+    { width: 1024, height: 800 },
+    { width: 390, height: 844, touch: true },
+  ]) {
+    const page = await open({ state: "owner-flight", variant, viewport: { width: vp.width, height: vp.height }, touch: vp.touch });
+    await page.waitForTimeout(400);
+    const r = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r2) => setTimeout(r2, ms));
+      document.querySelector('.b-measure:not(.b-back) .b-item .b-grab').click();
+      await wait(350);
+      const step = document.querySelector('.b-step[data-delta="7"]');
+      const held = step.getBoundingClientRect().top;
+      step.click();
+      await wait(450);
+      const moved = Math.round(document.querySelector('.b-step[data-delta="7"]').getBoundingClientRect().top - held);
+      const label = document.querySelector(".b-edit .b-label, #b-edit .b-label");
+      if (!label) return { none: true };
+      const bar = document.querySelector(".b-edit .b-undo, #b-edit .b-undo");
+      const air = bar ? Math.round(label.getBoundingClientRect().top - bar.getBoundingClientRect().bottom) : null;
+      label.scrollIntoView({ block: "center" });
+      await wait(150);
+      const b = label.getBoundingClientRect();
+      const hit = [
+        document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2),
+        document.elementFromPoint(b.left + 2, b.top + b.height / 2),
+      ];
+      return {
+        covered: hit.some((el) => Boolean(el && bar && bar.contains(el))),
+        air,
+        moved,
+        name: label.textContent.trim(),
+      };
+    });
+    ok(`the undo band never paints over the first field's name · ${variant} @ ${vp.width}`,
+      !r.none && r.covered === false, JSON.stringify(r));
+    ok(`the first field keeps the air every other label has · ${variant} @ ${vp.width}`,
+      !r.none && r.air >= 16, JSON.stringify(r));
+    ok(`filling the band does not move the stepper · ${variant} @ ${vp.width}`,
+      !r.none && Math.abs(r.moved) <= 1, String(r.moved));
+    await page.close();
+  }
+}
+
+/* ...and it holds for a title long enough to take the sentence to four
+   lines, which is what a reserve measured against one fixture always
+   misses. The name gives way, never the act: clipping the plate would
+   have hidden the Undo control itself. */
+for (const variant of config.variants) {
+  for (const vp of [{ width: 1440, height: 960 }, { width: 390, height: 844, touch: true }]) {
+    const page = await open({ state: "owner-flight", variant, viewport: { width: vp.width, height: vp.height }, touch: vp.touch });
+    await page.waitForTimeout(400);
+    const r = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r2) => setTimeout(r2, ms));
+      document.querySelector('.b-measure:not(.b-back) .b-item .b-grab').click();
+      await wait(350);
+      const title = document.querySelector("#b-edit-title");
+      title.value = "Menu tasting at The Orchard with both families and the celebrant, and the photographer joining after";
+      title.dispatchEvent(new Event("input", { bubbles: true }));
+      title.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await wait(300);
+      document.querySelector('.b-step[data-delta="7"]').click();
+      await wait(450);
+      const bar = document.querySelector(".b-edit .b-undo");
+      const label = document.querySelector(".b-edit .b-label");
+      const act = bar.querySelector(".b-undoAct");
+      const air = Math.round(label.getBoundingClientRect().top - bar.getBoundingClientRect().bottom);
+      label.scrollIntoView({ block: "center" });
+      await wait(120);
+      const b = label.getBoundingClientRect();
+      const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+      const ar = act.getBoundingClientRect();
+      const br = bar.getBoundingClientRect();
+      return {
+        air,
+        covered: Boolean(hit && bar.contains(hit)),
+        said: bar.querySelector(".b-undoText").textContent,
+        actInside: ar.top >= br.top - 1 && ar.bottom <= br.bottom + 1,
+      };
+    });
+    ok(`a long title cannot grow the band back over the label · ${variant} @ ${vp.width}`,
+      r.covered === false && r.air >= 16, JSON.stringify(r));
+    ok(`the way back out of a mistake is never the thing that gets clipped · ${variant} @ ${vp.width}`,
+      r.actInside === true && /moved 7 days later/.test(flat9(r.said)), flat9(r.said));
+  await page.close();
+  }
+}
+
+/* Three on one day, not two. A crowded plate's halo is a 12px opaque
+   spread that paints OUTSIDE its own box and over whatever was painted
+   before it, so the row above a crowded row loses its last 12px. A pair
+   never showed it: the only follower had nothing painted after it. The
+   gap > 0 test above passes at 1px and can never catch this, so this one
+   asserts against the halo's own spread. */
+for (const variant of config.variants) {
+  for (const vp of [{ width: 1440, height: 960 }, { width: 390, height: 844 }]) {
+    const page = await open({ state: "owner-flight", variant, viewport: vp });
+    await page.waitForTimeout(400);
+    const crowd = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r2) => setTimeout(r2, ms));
+      const pull = async (id, times) => {
+        document.querySelector('.b-item[data-id="' + id + '"] .b-grab').click();
+        await wait(300);
+        for (let i = 0; i < times; i += 1) {
+          document.querySelector('.b-step[data-delta="-7"]').click();
+          await wait(280);
+        }
+      };
+      await pull("demo-audience-item-invitations", 1);
+      await pull("demo-audience-item-fitting", 3);
+      await wait(400);
+      const items = [...document.querySelectorAll('.b-measure:not(.b-back) .b-item')];
+      const run = items.filter((el) => ["lead", "follow"].includes(el.getAttribute("data-stack")));
+      const eaten = [];
+      for (let i = 0; i < items.length - 1; i += 1) {
+        if (items[i + 1].getAttribute("data-crowded") !== "true") continue;
+        const copy = items[i].querySelector(".b-copy");
+        const nextCopy = items[i + 1].querySelector(".b-copy");
+        if (!copy || !nextCopy) continue;
+        let deepest = -1e9;
+        for (const kid of copy.querySelectorAll("*")) {
+          const b = kid.getBoundingClientRect();
+          if (b.height > 0 && b.bottom > deepest) deepest = b.bottom;
+        }
+        const clear = Math.round(nextCopy.getBoundingClientRect().top - 12 - deepest);
+        if (clear < 0) eaten.push(items[i].getAttribute("data-id") + " " + clear + "px");
+      }
+      return { run: run.length, eaten };
+    });
+    ok(`three on one day: a run of three actually forms · ${variant} @ ${vp.width}`, crowd.run >= 3, String(crowd.run));
+    ok(`no crowded halo paints over the row above it · ${variant} @ ${vp.width}`, crowd.eaten.length === 0, crowd.eaten.join(", "));
+    await page.close();
+  }
 }
 
 /* the follower says its own number */

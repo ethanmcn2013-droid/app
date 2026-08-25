@@ -20,6 +20,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import QRCode from "qrcode";
 
 const LAB = path.dirname(fileURLToPath(import.meta.url));
 /* The lock. Direction B is the locked direction; a.css / render-a.js and
@@ -28,6 +29,29 @@ const LAB = path.dirname(fileURLToPath(import.meta.url));
  * another direction is this one line plus a room definition. */
 const CSS = ["fonts.css", "shell.css", "b.css"];
 const JS = ["fixture.js", "render-core.js", "render-b.js"];
+
+/* The printed sheet is handed to the venue, the celebrant and the day's
+ * helpers on the morning - the people who do NOT already hold the link,
+ * because the couple and the families got the card in a message. Its
+ * only route back was a 76-character URL ending in a 43-character
+ * case-sensitive token, set in mono and broken across three lines: an
+ * instruction nobody can follow off paper. The code is generated HERE,
+ * at build time, from the fixture's own token, so the master stays one
+ * self-contained file with no external asset and no runtime library. */
+const fixture = await readFile(path.join(LAB, "fixture.js"), "utf8");
+const token = (fixture.match(/var TOKEN = "([^"]+)"/) || [])[1];
+if (!token) throw new Error("build.mjs: no TOKEN in fixture.js — the sheet's scannable route cannot be generated");
+const shareUrl = "https://timeline.signalstudio.ie/s/" + token;
+const qr = await QRCode.toString(shareUrl, {
+  type: "svg",
+  errorCorrectionLevel: "M",
+  margin: 0,
+  color: { dark: "#111111", light: "#ffffff" },
+})
+  /* The module path is drawn with stroke and no fill, so it inherits
+     the SVG default of black - one hue off the three the palette lock
+     permits, in a file whose whole point is that there are three. */
+  .then((svg) => svg.replace("<path stroke=", '<path fill="none" stroke='));
 
 const css = [];
 for (const file of CSS) {
@@ -46,6 +70,7 @@ ${css.join("\n\n")}
 </style>
 <body data-state="owner-flight" data-v="paper" data-ground="paper" data-past="folded" data-accent="structure">
 <div id="tl"></div>
+<script>window.__TLQR = ${JSON.stringify({ url: shareUrl, svg: qr })};</script>
 ${JS.map((f) => `<script src="./${f}"></script>`).join("\n")}
 <script>
 /* The toolchain contract, and the whole of it: this file answers ?state=
