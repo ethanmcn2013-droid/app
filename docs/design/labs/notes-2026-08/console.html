@@ -747,10 +747,11 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .darkTime { font-size: var(--t-12); font-weight: 600; color: var(--on-ink-2); letter-spacing: var(--tr-12); line-height: var(--lh-base); }
 .deck .darkTop .spacer { flex: 1; }
 .deck .darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; overflow: auto; }
-.deck .darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-base); letter-spacing: var(--tr-34); text-wrap: pretty; }
-.deck .darkWave { max-width: var(--measure); }
+.deck .darkCol { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); }
+.deck[data-type="calm"] .darkCol { font-size: var(--t-27); }
+.deck .darkSaid { width: 100%; margin: 0; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-base); letter-spacing: var(--tr-34); text-wrap: pretty; }
 .deck .darkSaid .tail { color: var(--on-ink-3); }
-.deck .darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; width: 100%; margin: 40px auto 0; }
+.deck .darkWave { display: flex; align-items: center; gap: 4px; height: 40px; width: 100%; margin: 40px 0 0; }
 .deck .darkWave i { width: 3px; border-radius: 2px; background: var(--on-ink-2); transition: height var(--dur) var(--curve); }
 .deck .darkFoot { flex: none; padding: 0 32px 34px; display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
 .deck .darkNote { max-width: var(--measure); text-wrap: pretty; margin: 0; font-size: var(--t-12); line-height: var(--lh-read); color: var(--on-ink-2); letter-spacing: var(--tr-12); }
@@ -905,7 +906,11 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .readBody .sent, .deck .handBody .sent { cursor: pointer; border-radius: var(--r-xs); transition: background-color var(--dur) var(--curve); }
 .deck .readBody .sent:hover, .deck .handBody .sent:hover { background: var(--indigo-wash); }
 .deck .readBody .sent:hover .pick, .deck .handBody .sent:hover .pick { background: none; }
-.deck .pickHint { margin: 0; font-size: var(--t-12); line-height: var(--lh-note); letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400; max-width: var(--measure); }
+.deck .pickHint, .deck .deskFact span.pickHint {
+  margin: 0; font-size: var(--t-12); line-height: var(--lh-note);
+  letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400;
+  max-width: var(--measure); text-wrap: pretty;
+}
 .deck .peel {
   
   position: relative; width: min(var(--measure), calc(100% - 48px)); margin: -10px 0 0 24px;
@@ -918,9 +923,14 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 }
 .deck .pile > .peel { transform-origin: 32px 0; }
 .deck .pile > .peel {
-  max-height: calc(100vh - var(--desk-chrome, 311px) - var(--index-floor, 224px) - var(--note-min, 120px));
-  overflow: auto;
+  display: flex; flex-direction: column;
+  
+  max-height: max(330px, calc(100vh - var(--desk-chrome, 311px) - var(--index-floor, 224px) - var(--note-min, 120px)));
+  
+  overflow: visible;
 }
+.deck .pile > .peel:has(.pickerPop) { z-index: 2; }
+.deck .peelScroll { flex: 1; min-height: 0; overflow: auto; }
 .deck .pile > .peel { animation: peelIn var(--dur-settle) var(--curve) both; }
 @media (prefers-reduced-motion: reduce) {
 .deck .pile > .peel { animation: none; }
@@ -941,7 +951,7 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck .peelRow {
   display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px;
   border-top: 1px solid var(--line-soft); flex-wrap: wrap;
-  position: sticky; bottom: 0; background: var(--white); padding-bottom: 2px; z-index: 1;
+  background: var(--white); padding-bottom: 2px; flex: none;
 }
 .deck .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; line-height: var(--lh-base); }
 .deck .picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
@@ -1052,6 +1062,9 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck[data-w="390"] { --inset: 12px; --gutter: 22px; }
 .deck[data-w="390"] .specs { grid-template-columns: minmax(0, 1fr); }
 .deck[data-w="390"] .dockField { min-width: 168px; }
+.deck[data-w="390"] .state { flex-wrap: wrap; }
+.deck[data-w="390"] .state > *:not(svg) { min-width: 0; flex: 1 1 240px; }
+.deck[data-w="390"] .state .act { flex: 0 0 auto; margin-left: 30px; }
 .deck[data-w="390"] { --inset: 9px; --gutter: 16px; }
 .deck[data-w="390"] .floor { padding: var(--inset) var(--inset) 0; }
 .deck[data-w="390"] .rail {
@@ -1168,7 +1181,10 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
 .deck[data-w="390"] .idxRow { padding-top: 12px; padding-bottom: 12px; }
 .deck[data-w="390"][data-index="tight"] .idxRow { padding-top: 10px; padding-bottom: 10px; }
 .deck[data-w="390"] .dockField kbd, .deck .topMeta kbd, .deck .act kbd, .deck .undoAct kbd, .deck .darkAct kbd, .deck .headKbd { display: none; }
-.deck[data-w="390"] .dock .railTile, .deck .dockAvatar, .deck .groupBtn, .deck .undoAct, .deck .readSrc .filingBtn { min-height: 44px; }
+.deck[data-w="390"] .dock .railTile, .deck .groupBtn, .deck .undoAct, .deck .readSrc .filingBtn { min-height: 44px; }
+.deck[data-w="390"] .dock .dockGlyph, .deck .dock .dockAvatar { min-height: 0; position: relative; }
+.deck[data-w="390"] .dock .dockGlyph::before { content: ""; position: absolute; inset: -4px 0; }
+.deck[data-w="390"] .dock .dockAvatar::before { content: ""; position: absolute; inset: -7px 0; }
 .deck[data-w="390"] .dock .railTile, .deck .dockAvatar { position: relative; }
 .deck[data-w="390"] .dock .railTile::before, .deck .dockAvatar::before {
     content: ""; position: absolute; left: 0; right: 0; top: 50%;
@@ -2147,6 +2163,21 @@ deck.appendChild(boot);
     clearInterval(undoTick);
     revert();
     say(undoneLabel);
+    /* The universal way back was the only act in the file that repainted
+       without naming a destination, so pressing it left the keyboard on
+       document.body. Deliberately narrow: a stored destination breaks
+       the cross-room case — undoing from inside search, where .topField
+       does not exist, would consume refocus on a null target and skip
+       the caret fallback, putting the search caret on the body. So this
+       claims focus only when the control that was pressed is the one
+       about to be removed. */
+    const inStrip = document.activeElement && document.activeElement.closest(".undo");
+    if (inStrip) {
+      refocus = {
+        kind: "field",
+        sel: phone.matches ? ".phoneField" : ".topField",
+      };
+    }
     paint();
     return true;
   }
@@ -2639,7 +2670,21 @@ deck.appendChild(boot);
          the mark is theirs now rather than one the fixture restored. */
       pickRestored = false;
       couplePeel(text);
-      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
+      /* couplePeel refuses to overwrite a hand-edited wording, which is
+         right — nothing is silently deleted — but nothing else in the
+         seam was told, so the mark, the lead panel and this line all
+         named words the send would not use. When the wording has been
+         edited, say what will actually cross, under the field's own
+         label rather than the picked-words one. */
+      const wordingEdited =
+        peeling && taskWording.trim() && taskWording.trim() !== text.replace(/[.]$/, "");
+      say(
+        peeling
+          ? wordingEdited
+            ? `${wordsPicked(text)} ${N.copy.wordingLabel}: ${taskWording}. ${N.copy.payload}`
+            : `${wordsPicked(text)} The task will use these words.`
+          : `${wordsPicked(text)} ${N.copy.begin} to make them a task.`,
+      );
       paint();
       return;
     }
@@ -2647,7 +2692,21 @@ deck.appendChild(boot);
     couplePeel(text);
     if (text) {
       nudge = null;
-      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
+      /* couplePeel refuses to overwrite a hand-edited wording, which is
+         right — nothing is silently deleted — but nothing else in the
+         seam was told, so the mark, the lead panel and this line all
+         named words the send would not use. When the wording has been
+         edited, say what will actually cross, under the field's own
+         label rather than the picked-words one. */
+      const wordingEdited =
+        peeling && taskWording.trim() && taskWording.trim() !== text.replace(/[.]$/, "");
+      say(
+        peeling
+          ? wordingEdited
+            ? `${wordsPicked(text)} ${N.copy.wordingLabel}: ${taskWording}. ${N.copy.payload}`
+            : `${wordsPicked(text)} The task will use these words.`
+          : `${wordsPicked(text)} ${N.copy.begin} to make them a task.`,
+      );
     } else {
       say("Nothing picked.");
     }
@@ -2766,7 +2825,21 @@ deck.appendChild(boot);
          click opened it, which is the class search-caret-reset and
          capture-lands-where-you-cannot-see-it already paid for. */
       refocus = { kind: "act", sel: state === "review" ? ".handBody" : ".readBody" };
-      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
+      /* couplePeel refuses to overwrite a hand-edited wording, which is
+         right — nothing is silently deleted — but nothing else in the
+         seam was told, so the mark, the lead panel and this line all
+         named words the send would not use. When the wording has been
+         edited, say what will actually cross, under the field's own
+         label rather than the picked-words one. */
+      const wordingEdited =
+        peeling && taskWording.trim() && taskWording.trim() !== text.replace(/[.]$/, "");
+      say(
+        peeling
+          ? wordingEdited
+            ? `${wordsPicked(text)} ${N.copy.wordingLabel}: ${taskWording}. ${N.copy.payload}`
+            : `${wordsPicked(text)} The task will use these words.`
+          : `${wordsPicked(text)} ${N.copy.begin} to make them a task.`,
+      );
     }
     paint();
   }
@@ -2812,7 +2885,11 @@ deck.appendChild(boot);
        sentence-cased version, so the seam stated one fact in two
        spellings at the moment it promises the exact words. */
     say(`${N.copy.sourceLabel}: ${taskWording}. ${N.copy.payload}`);
-    refocus = { kind: "field", sel: ".peelField" };
+    /* The one surface where the exact words that cross are shown for
+       checking opened with the caret at index 0, so the first keystroke
+       landed in FRONT of them. `end: true` is the token the three
+       sibling branches already carry. */
+    refocus = { kind: "field", sel: ".peelField", end: true };
     paint();
   }
   function cancelPeel() {
@@ -3515,6 +3592,7 @@ deck.appendChild(boot);
           <span class="peelLabel">${esc(N.copy.heading)}</span>
         </div>
         <p class="peelBoundary">${esc(N.copy.handoffBoundary)}</p>
+        <div class="peelScroll">
         ${
           /* The picked words are printed once, and only when the wording
              has been edited away from them. Seeded, the two were the same
@@ -3526,6 +3604,7 @@ deck.appendChild(boot);
         <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
         <textarea class="peelField" rows="1" id="peel-field" aria-labelledby="peel-label"
           placeholder="What should the task say?">${esc(taskWording)}</textarea>
+        </div>
         <div class="peelRow">
           <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
             aria-label="${attr(N.copy.destinationLabel)}: ${attr(destinationOf(note))}. Change it."><b>To</b>${esc(destinationOf(note))}${I.chevron}</button>
@@ -4068,8 +4147,10 @@ deck.appendChild(boot);
             <span class="spacer"></span>
           </div>
           <div class="darkBody">
-            <p class="darkSaid" role="status">${esc(said.slice(0, cut))}<span class="tail"> ${esc(said.slice(cut + 1))}</span></p>
-            <div class="darkWave" aria-hidden="true">${bars.map((b) => `<i style="height:${Math.round(b * 40)}px"></i>`).join("")}</div>
+            <div class="darkCol">
+              <p class="darkSaid" role="status">${esc(said.slice(0, cut))}<span class="tail"> ${esc(said.slice(cut + 1))}</span></p>
+              <div class="darkWave" aria-hidden="true">${bars.map((b) => `<i style="height:${Math.round(b * 40)}px"></i>`).join("")}</div>
+            </div>
           </div>
           <div class="darkFoot">
             <p class="darkNote">${esc(N.copy.voiceDisclosure)}</p>
@@ -4971,10 +5052,25 @@ deck.appendChild(boot);
       paint();
       return;
     }
-    if (a === "timeline" || a === "more" || a === "privacy" || a === "options" || a === "photo" || a === "retry" || a === "destroy") {
-      /* Named so the panel can see they are deliberately inert in the lab
-         rather than dead: each belongs to a surface outside this master. */
-      say("That is on another screen.");
+    /* SEVEN CONTROLS, ONE SENTENCE, NO VISIBLE ANSWER.
+       Each of these takes a hover fill and a focus ring and answered a
+       press with a single live-region string, identical across all of
+       them and invisible to a sighted person — including "Try now",
+       "Save it again" and "Delete it" in the honesty room, which is the
+       worst place in the product for a control that does nothing. They
+       are still outside this master, and they say what they are and
+       where they go rather than sharing one sentence between seven. */
+    const ELSEWHERE = {
+      timeline: "Timeline is another surface in this suite. This lab is the Notes one.",
+      more: "The rest of Signal Studio is on another screen.",
+      privacy: `${N.copy.privacyLong} Your privacy settings are on another screen.`,
+      options: "Notes options are on another screen.",
+      photo: "Reading a photo happens on another screen. Nothing here changes.",
+      retry: "Sending again happens on another screen. Your note is still here.",
+      destroy: "Deleting for good happens on another screen. Nothing here is deleted.",
+    };
+    if (ELSEWHERE[a]) {
+      say(ELSEWHERE[a]);
       return;
     }
     if (a === "keep" || a === "first") {

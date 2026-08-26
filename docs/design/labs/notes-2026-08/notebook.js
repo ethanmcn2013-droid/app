@@ -315,6 +315,21 @@
     clearInterval(undoTick);
     revert();
     say(undoneLabel);
+    /* The universal way back was the only act in the file that repainted
+       without naming a destination, so pressing it left the keyboard on
+       document.body. Deliberately narrow: a stored destination breaks
+       the cross-room case — undoing from inside search, where .topField
+       does not exist, would consume refocus on a null target and skip
+       the caret fallback, putting the search caret on the body. So this
+       claims focus only when the control that was pressed is the one
+       about to be removed. */
+    const inStrip = document.activeElement && document.activeElement.closest(".undo");
+    if (inStrip) {
+      refocus = {
+        kind: "field",
+        sel: phone.matches ? ".phoneField" : ".topField",
+      };
+    }
     paint();
     return true;
   }
@@ -807,7 +822,21 @@
          the mark is theirs now rather than one the fixture restored. */
       pickRestored = false;
       couplePeel(text);
-      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
+      /* couplePeel refuses to overwrite a hand-edited wording, which is
+         right — nothing is silently deleted — but nothing else in the
+         seam was told, so the mark, the lead panel and this line all
+         named words the send would not use. When the wording has been
+         edited, say what will actually cross, under the field's own
+         label rather than the picked-words one. */
+      const wordingEdited =
+        peeling && taskWording.trim() && taskWording.trim() !== text.replace(/[.]$/, "");
+      say(
+        peeling
+          ? wordingEdited
+            ? `${wordsPicked(text)} ${N.copy.wordingLabel}: ${taskWording}. ${N.copy.payload}`
+            : `${wordsPicked(text)} The task will use these words.`
+          : `${wordsPicked(text)} ${N.copy.begin} to make them a task.`,
+      );
       paint();
       return;
     }
@@ -815,7 +844,21 @@
     couplePeel(text);
     if (text) {
       nudge = null;
-      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
+      /* couplePeel refuses to overwrite a hand-edited wording, which is
+         right — nothing is silently deleted — but nothing else in the
+         seam was told, so the mark, the lead panel and this line all
+         named words the send would not use. When the wording has been
+         edited, say what will actually cross, under the field's own
+         label rather than the picked-words one. */
+      const wordingEdited =
+        peeling && taskWording.trim() && taskWording.trim() !== text.replace(/[.]$/, "");
+      say(
+        peeling
+          ? wordingEdited
+            ? `${wordsPicked(text)} ${N.copy.wordingLabel}: ${taskWording}. ${N.copy.payload}`
+            : `${wordsPicked(text)} The task will use these words.`
+          : `${wordsPicked(text)} ${N.copy.begin} to make them a task.`,
+      );
     } else {
       say("Nothing picked.");
     }
@@ -934,7 +977,21 @@
          click opened it, which is the class search-caret-reset and
          capture-lands-where-you-cannot-see-it already paid for. */
       refocus = { kind: "act", sel: state === "review" ? ".handBody" : ".readBody" };
-      say(`${wordsPicked(text)} ${peeling ? "The task will use these words." : `${N.copy.begin} to make them a task.`}`);
+      /* couplePeel refuses to overwrite a hand-edited wording, which is
+         right — nothing is silently deleted — but nothing else in the
+         seam was told, so the mark, the lead panel and this line all
+         named words the send would not use. When the wording has been
+         edited, say what will actually cross, under the field's own
+         label rather than the picked-words one. */
+      const wordingEdited =
+        peeling && taskWording.trim() && taskWording.trim() !== text.replace(/[.]$/, "");
+      say(
+        peeling
+          ? wordingEdited
+            ? `${wordsPicked(text)} ${N.copy.wordingLabel}: ${taskWording}. ${N.copy.payload}`
+            : `${wordsPicked(text)} The task will use these words.`
+          : `${wordsPicked(text)} ${N.copy.begin} to make them a task.`,
+      );
     }
     paint();
   }
@@ -980,7 +1037,11 @@
        sentence-cased version, so the seam stated one fact in two
        spellings at the moment it promises the exact words. */
     say(`${N.copy.sourceLabel}: ${taskWording}. ${N.copy.payload}`);
-    refocus = { kind: "field", sel: ".peelField" };
+    /* The one surface where the exact words that cross are shown for
+       checking opened with the caret at index 0, so the first keystroke
+       landed in FRONT of them. `end: true` is the token the three
+       sibling branches already carry. */
+    refocus = { kind: "field", sel: ".peelField", end: true };
     paint();
   }
   function cancelPeel() {
@@ -1683,6 +1744,7 @@
           <span class="peelLabel">${esc(N.copy.heading)}</span>
         </div>
         <p class="peelBoundary">${esc(N.copy.handoffBoundary)}</p>
+        <div class="peelScroll">
         ${
           /* The picked words are printed once, and only when the wording
              has been edited away from them. Seeded, the two were the same
@@ -1694,6 +1756,7 @@
         <span class="peelLabel" id="peel-label">${esc(N.copy.wordingLabel)}</span>
         <textarea class="peelField" rows="1" id="peel-field" aria-labelledby="peel-label"
           placeholder="What should the task say?">${esc(taskWording)}</textarea>
+        </div>
         <div class="peelRow">
           <button class="picker" type="button" data-act="destination" aria-haspopup="listbox" aria-expanded="${picker === "peel"}"
             aria-label="${attr(N.copy.destinationLabel)}: ${attr(destinationOf(note))}. Change it."><b>To</b>${esc(destinationOf(note))}${I.chevron}</button>
@@ -2236,8 +2299,10 @@
             <span class="spacer"></span>
           </div>
           <div class="darkBody">
-            <p class="darkSaid" role="status">${esc(said.slice(0, cut))}<span class="tail"> ${esc(said.slice(cut + 1))}</span></p>
-            <div class="darkWave" aria-hidden="true">${bars.map((b) => `<i style="height:${Math.round(b * 40)}px"></i>`).join("")}</div>
+            <div class="darkCol">
+              <p class="darkSaid" role="status">${esc(said.slice(0, cut))}<span class="tail"> ${esc(said.slice(cut + 1))}</span></p>
+              <div class="darkWave" aria-hidden="true">${bars.map((b) => `<i style="height:${Math.round(b * 40)}px"></i>`).join("")}</div>
+            </div>
           </div>
           <div class="darkFoot">
             <p class="darkNote">${esc(N.copy.voiceDisclosure)}</p>
@@ -3139,10 +3204,25 @@
       paint();
       return;
     }
-    if (a === "timeline" || a === "more" || a === "privacy" || a === "options" || a === "photo" || a === "retry" || a === "destroy") {
-      /* Named so the panel can see they are deliberately inert in the lab
-         rather than dead: each belongs to a surface outside this master. */
-      say("That is on another screen.");
+    /* SEVEN CONTROLS, ONE SENTENCE, NO VISIBLE ANSWER.
+       Each of these takes a hover fill and a focus ring and answered a
+       press with a single live-region string, identical across all of
+       them and invisible to a sighted person — including "Try now",
+       "Save it again" and "Delete it" in the honesty room, which is the
+       worst place in the product for a control that does nothing. They
+       are still outside this master, and they say what they are and
+       where they go rather than sharing one sentence between seven. */
+    const ELSEWHERE = {
+      timeline: "Timeline is another surface in this suite. This lab is the Notes one.",
+      more: "The rest of Signal Studio is on another screen.",
+      privacy: `${N.copy.privacyLong} Your privacy settings are on another screen.`,
+      options: "Notes options are on another screen.",
+      photo: "Reading a photo happens on another screen. Nothing here changes.",
+      retry: "Sending again happens on another screen. Your note is still here.",
+      destroy: "Deleting for good happens on another screen. Nothing here is deleted.",
+    };
+    if (ELSEWHERE[a]) {
+      say(ELSEWHERE[a]);
       return;
     }
     if (a === "keep" || a === "first") {

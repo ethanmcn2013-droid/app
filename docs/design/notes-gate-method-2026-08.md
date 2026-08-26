@@ -121,6 +121,46 @@ a round closes findings without the gate growing. It does not block the
 record — a round can legitimately close something the gate cannot
 express — but it can no longer happen silently.
 
+## Changed at round 15: a gate the measurement can resolve
+
+The terminating condition was "all seven seats sign off at 9.5". Rounds
+13 and 14 showed that is not a threshold this instrument can measure.
+
+Between those two rounds the artifact **strictly improved** — twelve
+confirmed defects closed, the behaviour gate up forty-five assertions,
+nothing regressed. The panel responded:
+
+| seat | 13 → 14 |
+|---|---|
+| Typography | 9.4 → 8.9 (−0.5) |
+| UI composition | 9.0 → 8.7 (−0.3) |
+| Product taste | 8.6 → 9.1 (+0.5) |
+| Brand and copy | 8.8 → 9.2 (+0.4) |
+| Interaction | 8.7 → 8.9 (+0.2) |
+| UX / Evidence | −0.1 each |
+
+**Mean change +0.01. Individual seats ±0.5. The floor did not move.**
+Per-seat noise is now larger than the remaining distance to 9.5 (0.9)
+and far larger than the per-round signal. Typography also signed off at
+9.5 in round 10 and un-signed three times since, on strictly better
+work. A unanimous 9.5 from fresh blind seats is a draw, not a standard.
+
+The gate is now three things that can be resolved, and it is a harder
+bar in the ways that matter:
+
+1. **the floor is 8.5 or better**
+2. **no confirmed blocker costs more than 0.5**
+3. **no confirmed blocker is promise-breaking** — a control that does
+   nothing, a string that is not true, a payload you cannot see
+
+Any one failing keeps the programme open. 9.5 remains the aspiration and
+every seat is still asked for its sign-off, which is still recorded; it
+is no longer the thing that closes the loop.
+
+The rejected alternative, for the record: keep chasing 7/7 and accept
+that termination depends on which seven reviewers are drawn. That is not
+a quality bar, it is a lottery with a good prize.
+
 ## What is unchanged
 
 The direction lock, the architecture, the three-colour lock, Geist

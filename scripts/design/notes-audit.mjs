@@ -300,17 +300,26 @@ const AUDIT = `(() => {
        measures the union rather than punishing it. */
     const interactive = el.matches("button, a, [tabindex], input, textarea, select");
     if (interactive && visible && rect.width >= 1) {
-      let grow = 0;
+      /* PER AXIS, not one symmetric number. This took the MINIMUM of the
+         four negative insets, so an expander that grows only vertically
+         -- inset: -4px 0, the correct shape for a round control in a row
+         of butted siblings, where growing sideways would put a tap meant
+         for Notes on Tasks -- computed a growth of zero and the control
+         was reported at its drawn size. The rule could not express the
+         technique the file is required to use. */
+      let growX = 0;
+      let growY = 0;
       for (const pseudo of ["::before", "::after"]) {
         const ps = getComputedStyle(el, pseudo);
         if (!ps || ps.content === "none" || ps.position !== "absolute") continue;
         if (ps.pointerEvents === "none") continue;
-        const insets = [ps.top, ps.right, ps.bottom, ps.left].map(parseFloat);
-        if (insets.some((v) => !Number.isFinite(v) || v > 0)) continue;
-        grow = Math.max(grow, Math.min(...insets.map((v) => -v)));
+        const [top, right, bottom, left] = [ps.top, ps.right, ps.bottom, ps.left].map(parseFloat);
+        if ([top, right, bottom, left].some((v) => !Number.isFinite(v) || v > 0)) continue;
+        growY = Math.max(growY, Math.min(-top, -bottom));
+        growX = Math.max(growX, Math.min(-left, -right));
       }
-      rect.width += grow * 2;
-      rect.height += grow * 2;
+      rect.width += growX * 2;
+      rect.height += growY * 2;
       /* The coarse pass gates HEIGHT, which is what the coarse block
          actually guarantees. Width on the merged dock is a stated
          trade, not an oversight: the rail tiles sit at a 0px gap, so a

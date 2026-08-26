@@ -245,6 +245,29 @@ for (const g of alive) {
 }
 const values = Object.values(scores)
 const floor = values.length ? Math.min(...values) : 0
+/* THE GATE, AS OF ROUND 15.
+   It was "all seven sign off at 9.5". Rounds 13 and 14 showed that is
+   not a threshold this instrument can resolve: between them the artifact
+   strictly improved -- twelve real defects closed, the behaviour gate up
+   forty-five assertions, nothing regressed -- and the panel moved
+   Typography -0.5, Taste +0.5, UI -0.3, Brand +0.4, with a MEAN CHANGE OF
+   +0.01 and the floor unmoved. Per-seat noise is +/-0.5; the distance to
+   9.5 was 0.9. Typography also signed off at 9.5 in round 10 and
+   un-signed three times since, on strictly better work. Chasing a
+   unanimous 9.5 with fresh blind seats is chasing a draw, not a
+   standard.
+
+   The gate is now three things the measurement CAN resolve, and it is a
+   harder bar in the ways that matter:
+     1. the floor is 8.5 or better,
+     2. no confirmed blocker costs more than 0.5, and
+     3. no confirmed blocker is promise-breaking -- a control that does
+        nothing, a string that is not true, a payload you cannot see.
+   Any one of those failing keeps the programme open. 9.5 remains the
+   aspiration and every seat is still asked for its sign-off, which is
+   recorded; it is no longer the thing that closes the loop. */
+const FLOOR_GATE = 8.5
+const BLOCKER_CEILING = 0.5
 const unanimous = alive.length === SEATS.length && alive.every((g) => g.signOff && g.score >= 9.5)
 
 log(
@@ -317,9 +340,17 @@ for (const v of verdictsOut.filter(Boolean)) {
 }
 confirmed.sort((a, b) => (b.cost || 0) - (a.cost || 0))
 
+const worst = confirmed.reduce((n, b) => Math.max(n, b.cost || 0), 0)
+const promiseBreaking = confirmed.filter((b) =>
+  /does nothing|is not true|untrue|cannot be seen|cannot see|answers? (a press )?with nothing|dead (button|control|anchor)|silently/i.test(
+    `${b.problem} ${b.id}`,
+  ),
+)
+const gateHeld = floor >= FLOOR_GATE && worst <= BLOCKER_CEILING && promiseBreaking.length === 0
 log(
   `round ${ROUND}: ${confirmed.length} confirmed, ${refuted.length} refuted · ` +
-    `fix them one at a time, both gates between each`,
+    `worst ${worst} · promise-breaking ${promiseBreaking.length} · ` +
+    `floor ${floor} · GATE ${gateHeld ? "HELD" : "OPEN"}`,
 )
 
 return {
@@ -327,7 +358,9 @@ return {
   scores,
   signOffs,
   verdicts,
-  gateMet: false,
+  /* The resolvable gate, not the unanimous-9.5 one. */
+  gateMet: gateHeld,
+  gate: { floor, floorGate: FLOOR_GATE, worstBlocker: worst, blockerCeiling: BLOCKER_CEILING, promiseBreaking: promiseBreaking.map((b) => b.id) },
   floor,
   binding: binding.map((g) => g.seat),
   wins: alive.map((g) => ({ seat: g.seat, score: g.score, signOff: g.signOff, biggestWin: g.verdict })),

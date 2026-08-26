@@ -3441,6 +3441,236 @@ const said = (page) => page.locator("#say").textContent();
   await page.close();
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 14
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the words that cross are never behind the button that sends them ── */
+{
+  /* The peel scrolled itself with the commit row pinned INSIDE that same
+     scrollport, so the one thing this object exists to show was what got
+     pushed under an opaque bar and cut mid-glyph. Round 12 pinned the row
+     to stop it being laid out under the dock; that was right, and putting
+     it inside the scroller was not. */
+  for (const [width, height] of [
+    [1440, 960],
+    [1366, 768],
+    [1280, 800],
+  ]) {
+    const page = await open("?state=pressure", { width, height });
+    await page.locator(".readBody .sent").last().click();
+    await page.waitForTimeout(320);
+    await page.locator('[data-act="peel"]').click();
+    await page.waitForTimeout(580);
+    const seen = await page.evaluate(() => {
+      const f = document.querySelector(".peelField");
+      const row = document.querySelector(".peelRow");
+      const sc = document.querySelector(".peelScroll");
+      const send = document.querySelector('[data-act="send"]');
+      if (!f || !row || !sc) return { missing: true };
+      const fb = f.getBoundingClientRect();
+      const rb = row.getBoundingClientRect();
+      const sb = sc.getBoundingClientRect();
+      const top = Math.max(fb.top, sb.top);
+      const bottom = Math.min(fb.bottom, sb.bottom, rb.top);
+      const r = send.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return {
+        pct: Math.round((100 * Math.max(0, bottom - top)) / fb.height),
+        rowBelow: rb.top >= Math.min(fb.bottom, sb.bottom) - 1,
+        sendReachable: Boolean(hit && hit.closest('[data-act="send"]')),
+      };
+    });
+    ok(`${width}x${height}: the wording that crosses is fully visible`, seen.pct >= 99, `${seen.pct}%`);
+    ok(`${width}x${height}: and the commit row sits below it, never over it`, seen.rowBelow === true);
+    ok(`${width}x${height}: and the send is still reachable`, seen.sendReachable === true);
+    await page.close();
+  }
+}
+{
+  /* Two adjacent breaks the first attempt caused: overflow:hidden on the
+     peel swallowed the destination listbox, and the note's paper — which
+     paints over the peel by design, because the smaller sheet tucks under
+     it — also painted over that listbox. */
+  const page = await open("?state=seam");
+  await page.locator('[data-act="destination"]').click();
+  await page.waitForTimeout(320);
+  ok(
+    "the destination list is not clipped by the peel it opens from",
+    await page.evaluate(() => {
+      const pop = document.querySelector(".pickerPop");
+      if (!pop) return false;
+      const r = pop.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }),
+  );
+  ok(
+    "and the note's paper does not paint over it",
+    await page.evaluate(() => {
+      const opt = document.querySelector('.pickerPop [role="option"]');
+      const r = opt.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return Boolean(hit && hit.closest(".pickerPop"));
+    }),
+  );
+  await page.close();
+}
+
+/* ── the seam's caret lands after the words, not in front of them ── */
+{
+  for (const [label, setup] of [
+    [
+      "from the desk",
+      async (page) => {
+        await page.locator(".idxRow").nth(1).click();
+        await page.waitForTimeout(360);
+        await page.locator(".readBody .sent").first().click();
+        await page.waitForTimeout(320);
+        await page.locator('[data-act="peel"]').click();
+      },
+    ],
+    [
+      "from the hand",
+      async (page) => {
+        await page.keyboard.press("t");
+      },
+    ],
+  ]) {
+    const page = await open(label === "from the hand" ? "?state=review" : "");
+    await setup(page);
+    await page.waitForTimeout(680);
+    ok(
+      `${label}: the wording opens with the caret after the words`,
+      await page.evaluate(() => {
+        const f = document.querySelector(".peelField");
+        return Boolean(f) && document.activeElement === f && f.selectionStart === f.value.length;
+      }),
+    );
+    await page.close();
+  }
+}
+
+/* ── the universal way back keeps the keyboard ───────────────────── */
+{
+  const page = await open();
+  await page.locator(".topField").click();
+  await page.keyboard.type("Ring the florist back", { delay: 0 });
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(820);
+  await page.locator(".undoAct").focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(720);
+  await page.keyboard.type("Tonic", { delay: 0 });
+  await page.waitForTimeout(300);
+  ok(
+    "pressing undo leaves the caret where the next thought goes",
+    (await page.locator(".topField").inputValue()).includes("Tonic"),
+    await page.evaluate(() => (document.activeElement.className || document.activeElement.tagName).split(" ")[0]),
+  );
+  await page.close();
+}
+{
+  /* And never over a caret somewhere else: undoing from inside search
+     must leave the search caret alone. A stored destination would consume
+     refocus on a null target and skip the caret fallback. */
+  const page = await open();
+  await page.locator(".topField").click();
+  await page.keyboard.type("Marquee sides", { delay: 0 });
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(720);
+  await page.keyboard.press("Control+k");
+  await page.waitForTimeout(400);
+  await page.keyboard.type("marq", { delay: 12 });
+  await page.waitForTimeout(500);
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(700);
+  ok(
+    "and undoing from search leaves the search caret where it was",
+    await page.evaluate(() => document.activeElement.id === "q"),
+    await page.evaluate(() => document.activeElement.id || document.activeElement.className.split(" ")[0]),
+  );
+  await page.close();
+}
+
+/* ── nothing in the chrome answers a press with silence ──────────── */
+{
+  /* Seven acts shared one live-region sentence, identical across all of
+     them and invisible to a sighted person — including "Try now", "Save
+     it again" and "Delete it" in the honesty room. */
+  for (const state of ["notebook", "not-yet", "pressure"]) {
+    const page = await open(`?state=${state}`);
+    const acts = await page.evaluate(() =>
+      [...new Set([...document.querySelectorAll("[data-act]")].map((e) => e.dataset.act))].filter((a) =>
+        ["timeline", "more", "privacy", "options", "photo", "retry", "destroy"].includes(a),
+      ),
+    );
+    for (const act of acts) {
+      await page.evaluate(() => (document.querySelector(".sr").textContent = ""));
+      await page.locator(`[data-act="${act}"]`).first().click();
+      await page.waitForTimeout(280);
+      const heard = await said(page);
+      ok(`${state}: "${act}" answers a press`, heard.trim().length > 0);
+      ok(`${state}: and says where it goes, not one sentence shared by seven`, /screen|surface|suite/i.test(heard), heard.slice(0, 50));
+    }
+    await page.close();
+  }
+}
+
+/* ── the dictation floor's two objects share a column ────────────── */
+{
+  for (const width of [390, 1440, 1920]) {
+    const page = await open("?state=voice", { width, height: 960 });
+    const edges = await page.evaluate(() => {
+      const s = document.querySelector(".darkSaid").getBoundingClientRect();
+      const w = document.querySelector(".darkWave").getBoundingClientRect();
+      return { left: Math.abs(s.left - w.left), right: Math.abs(s.right - w.right) };
+    });
+    ok(`${width}: the transcript and the wave share both edges`, edges.left < 1 && edges.right < 1, JSON.stringify(edges));
+    await page.close();
+  }
+}
+
+/* ── a measure has a floor as well as a ceiling ──────────────────── */
+{
+  for (const width of [320, 360, 390]) {
+    const page = await open("?state=not-yet", { width, height: 900 });
+    const m = await page.evaluate(() => {
+      const ems = [...document.querySelectorAll(".state p")].map(
+        (p) => p.getBoundingClientRect().width / parseFloat(getComputedStyle(p).fontSize),
+      );
+      const doc = document.documentElement;
+      return { min: Math.min(...ems), max: Math.max(...ems), scroll: doc.scrollWidth > doc.clientWidth };
+    });
+    ok(`${width}: no paragraph is set below 16em`, m.min >= 16, `${m.min.toFixed(1)}em`);
+    ok(`${width}: and they all share one measure`, m.max - m.min < 0.5, `${m.min.toFixed(1)} to ${m.max.toFixed(1)}`);
+    ok(`${width}: with no sideways scroll`, m.scroll === false);
+    await page.close();
+  }
+}
+
+/* ── the phone's filled controls are circles ─────────────────────── */
+{
+  const page = await open("", { width: 390, height: 844 });
+  await page.locator(".phoneField").click();
+  await page.keyboard.type("Bar restock, tonic and the good olives.", { delay: 0 });
+  await page.waitForTimeout(660);
+  const round = await page.evaluate(() =>
+    [".dock [data-act=\"keep\"]", ".dockAvatar", ".dock [data-act=\"search\"]"].map((sel) => {
+      const e = document.querySelector(sel);
+      if (!e) return null;
+      const r = e.getBoundingClientRect();
+      return Math.abs(r.width - r.height) < 1;
+    }),
+  );
+  ok("the dock's round controls are drawn round, not as ellipses", round.every((r) => r === true), JSON.stringify(round));
+  const box = await page.locator('.dock [data-act="keep"]').boundingBox();
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await page.waitForTimeout(660);
+  ok("and a real tap on the commit still keeps the note", (await page.locator(".phoneField").inputValue()) === "");
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, [...new Set(errors)].slice(0, 3).join(" · "));
 
 await browser.close();

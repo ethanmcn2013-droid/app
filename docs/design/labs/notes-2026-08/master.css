@@ -888,10 +888,19 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 /* 1.28 is display leading, which the ladder reserves for a tight one.
    The same sentence got 1.62 on the desk and 1.28 on ink, at the one
    moment a person is least able to look carefully. */
-.darkSaid { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-base); letter-spacing: var(--tr-34); text-wrap: pretty; }
-.darkWave { max-width: var(--measure); }
+.darkCol { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); }
+[data-type="calm"] .darkCol { font-size: var(--t-27); }
+.darkSaid { width: 100%; margin: 0; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-base); letter-spacing: var(--tr-34); text-wrap: pretty; }
+
 .darkSaid .tail { color: var(--on-ink-3); }
-.darkWave { display: flex; align-items: center; gap: 4px; height: 40px; max-width: 900px; width: 100%; margin: 40px auto 0; }
+/* The floor holds exactly two objects and they did not share an edge:
+   the wave began 31.5px left of the "A" in "Ask" and overhung on the
+   right, because one carried a dead 31em rule and the other a live
+   900px one. They sit in one column now, and because --measure is
+   em-based that column is declared once at the transcript's own size
+   rather than copied to a second site that would not know when the
+   first changed — which is how the dead rule came to be dead. */
+.darkWave { display: flex; align-items: center; gap: 4px; height: 40px; width: 100%; margin: 40px 0 0; }
 .darkWave i { width: 3px; border-radius: 2px; background: var(--on-ink-2); transition: height var(--dur) var(--curve); }
 .darkFoot { flex: none; padding: 0 32px 34px; display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
 /* The disclosure. It is not negotiable and it is not hidden behind a
@@ -1165,7 +1174,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .readBody .sent:hover, .handBody .sent:hover { background: var(--indigo-wash); }
 .readBody .sent:hover .pick, .handBody .sent:hover .pick { background: none; }
 /* The instruction under the note, in the band the pick bar will take. */
-.pickHint { margin: 0; font-size: var(--t-12); line-height: var(--lh-note); letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400; max-width: var(--measure); }
+/* A later .deskFact span rule overrode every one of these, so a chrome
+   instruction set at the same size, leading, tracking and full-strength
+   ink as the facts beside a person's own note. The selector list is
+   extended rather than replaced: specificity is per-selector, so the
+   bare .pickHint costs nothing and keeps it styled anywhere else it is
+   ever rendered. */
+.pickHint, .deskFact span.pickHint {
+  margin: 0; font-size: var(--t-12); line-height: var(--lh-note);
+  letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400;
+  max-width: var(--measure); text-wrap: pretty;
+}
 /* The architecture calls this a second, SMALLER piece of paper peeled off
    the note. It was 4px wider and 2.3 times the area of the note it came
    from, which made the person's own sentence a strip and the form the
@@ -1213,10 +1232,41 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
    plane regardless. It scrolls inside itself, and because its commit
    row is already sticky the send, the cancel and the destination stay
    reachable at any height — only the wording region moves. */
+/* THE PAYLOAD IS NEVER BEHIND THE BUTTON THAT SENDS IT.
+   The peel scrolled itself with the commit row pinned inside that same
+   scrollport, so the one thing this object exists to show — the words
+   that actually cross — was what got pushed under an opaque bar and cut
+   mid-glyph. Round 12 pinned the row to stop it being laid out under
+   the dock; that was right, and putting it INSIDE the scroller was not.
+   The row is a flex item below the content now, so it is always visible
+   and never over anything. And the box has a floor as well as a
+   ceiling: at 1366x768 the old ceiling alone left about forty pixels of
+   scrolling region, which is starvation rather than occlusion. The note
+   yields first — paint() writes --peel-h for exactly that. */
 .pile > .peel {
-  max-height: calc(100vh - var(--desk-chrome, 311px) - var(--index-floor, 224px) - var(--note-min, 120px));
-  overflow: auto;
+  display: flex; flex-direction: column;
+  /* The floor fits the object's own contents: heading, boundary, label,
+     a three-line wording field and the commit row. Below about 820px of
+     viewport that floor and the note's own floor together exceed what
+     the index is owed, and the index is what yields — while a peel is
+     open the person is completing a crossing, the note is never covered
+     because the peel sits under it, and the pile is whole again the
+     moment the peel closes. Measured at 768: the index keeps three rows
+     and its scroll. */
+  max-height: max(330px, calc(100vh - var(--desk-chrome, 311px) - var(--index-floor, 224px) - var(--note-min, 120px)));
+  /* NOT overflow:hidden. .peelScroll already bounds the height, and
+     clipping here swallowed the destination listbox, which is absolutely
+     positioned out of the commit row — the control opened and could not
+     be pressed. */
+  overflow: visible;
 }
+/* The note paints over the peel by design — the smaller sheet tucks ten
+   pixels under its edge — but that also put the note over the peel's own
+   destination listbox, which opens upward out of the commit row: the
+   control opened and could not be pressed. The peel rises only while
+   its list is open, so the tuck is unchanged at rest. */
+.pile > .peel:has(.pickerPop) { z-index: 2; }
+.peelScroll { flex: 1; min-height: 0; overflow: auto; }
 .pile > .peel { animation: peelIn var(--dur-settle) var(--curve) both; }
 @media (prefers-reduced-motion: reduce) { .pile > .peel { animation: none; } }
 .deskAside .peelFrom { margin-top: 0; }
@@ -1244,7 +1294,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
 .peelRow {
   display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px;
   border-top: 1px solid var(--line-soft); flex-wrap: wrap;
-  position: sticky; bottom: 0; background: var(--white); padding-bottom: 2px; z-index: 1;
+  background: var(--white); padding-bottom: 2px; flex: none;
 }
 .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; line-height: var(--lh-base); }
 .picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
@@ -1420,6 +1470,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
   .dockField { min-width: 168px; }
 }
 @media (max-width: 720px) {
+  /* A measure has a floor as well as a ceiling. .state is a nowrap flex
+     row, so the prose column collapsed beside a button that kept its
+     full width: 6.7 to 13.8 em against 31 on a desk, in the room that
+     exists to be read calmly. The row wraps and the prose keeps a real
+     column. min-width: 0 rather than a fixed floor — a 240px floor
+     overflows a 270px track at 320 and gives the pile a horizontal
+     scrollbar below that, which is the guillotine class this programme
+     has already paid for twice. */
+  .state { flex-wrap: wrap; }
+  .state > *:not(svg) { min-width: 0; flex: 1 1 240px; }
+  .state .act { flex: 0 0 auto; margin-left: 30px; }
   :root { --inset: 9px; --gutter: 16px; }
   .floor { padding: var(--inset) var(--inset) 0; }
   /* The capsule and the dock are the same object here, which is the
@@ -1628,7 +1689,17 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
      check opens 390 without hasTouch — so the whole branch was dead
      code in both. It is measured now; see the coarse pass in
      notes-audit.mjs. */
-  .dock .railTile, .dockAvatar, .groupBtn, .undoAct, .readSrc .filingBtn { min-height: 44px; }
+  /* .dockGlyph and .dockAvatar are round, so a 44px min-height on a 36px
+     and a 30px control drew them as ellipses in a row of squares. Their
+     targets grow underneath instead, which is the technique the rest of
+     this block already uses. */
+  .dock .railTile, .groupBtn, .undoAct, .readSrc .filingBtn { min-height: 44px; }
+  .dock .dockGlyph, .dock .dockAvatar { min-height: 0; position: relative; }
+  /* Negative insets, which is the form the audit measures the union
+     from and the form .chip and the search Esc already use. 36 + 2x4 and
+     30 + 2x7 both reach 44. */
+  .dock .dockGlyph::before { content: ""; position: absolute; inset: -4px 0; }
+  .dock .dockAvatar::before { content: ""; position: absolute; inset: -7px 0; }
   /* Where the drawn box has to stay small, the target grows underneath
      it rather than redrawing it — the technique .chip and the search
      bar's Esc already use. Vertical only: the rail tiles sit at a 0px
@@ -1649,6 +1720,7 @@ mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line);
      person types their query into, below the floor, in the one state
      where the keyboard is already up. */
   .searchBar input, .searchBar .esc { min-height: 44px; }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
