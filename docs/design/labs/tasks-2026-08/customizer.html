@@ -38,6 +38,51 @@ body {
   min-height: 100dvh;
 }
 
+/* ── the record ─────────────────────────────────────────────────────
+   The console is one of four documents about this board, and the only
+   one that is not prose. The other three are named here at the foot of
+   the panel, quietly: a hairline list rather than cards, because the
+   panel above it is already the loudest thing in the tool. */
+.setLinks { display: grid; gap: 0; margin-top: -3px; }
+.setLink {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline; gap: 10px;
+  padding: 11px 0; text-decoration: none; color: inherit;
+  border-top: 1px solid var(--ui-line);
+}
+.setLink:last-child { border-bottom: 1px solid var(--ui-line); }
+.setLink b {
+  grid-column: 1; grid-row: 1;
+  font-size: 13px; font-weight: 600; letter-spacing: -0.012em;
+  color: var(--ui-text-strong); transition: color 140ms var(--ease);
+}
+.setLink em {
+  grid-column: 1; grid-row: 2; font-style: normal; margin-top: 3px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.setLink i {
+  grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal;
+  font-size: 12px; color: rgba(255, 255, 255, 0.42);
+  transition: color 140ms var(--ease), transform 140ms var(--ease);
+}
+.setLink:hover b { color: var(--ui-text-strong); }
+.setLink:hover i { color: var(--ui-text-strong); transform: translateX(2px); }
+.setLink:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 2px; border-radius: 4px;
+}
+.setHere {
+  display: flex; align-items: baseline; gap: 7px; margin: 12px 0 0;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.setHere::before {
+  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: var(--indigo); flex: none; transform: translateY(-1px);
+}
+
 /* ── the panel ─────────────────────────────────────────────────── */
 .panel {
   border-right: 1px solid var(--ui-line);
@@ -96,6 +141,7 @@ body {
 .choice > span { white-space: nowrap; }
 
 .presetRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.presetRow[data-single] { grid-template-columns: 1fr; }
 .preset {
   appearance: none; border: 0; cursor: pointer; font: inherit;
   border-radius: 8px; padding: 11px 10px 10px;
@@ -858,762 +904,335 @@ body {
   to   { stroke-dasharray: 22; stroke-dashoffset: 0; }
 }
 @keyframes settleIn { from { transform: translateY(2px); } }
-.deck to { opacity: 1; transform: none; }
-.deck }
-.card[data-just-done] .tick {}
-.deck }
-.card[data-just-done] .tick svg path {}
-.deck }
-
-.card[data-just-done] {}
-.deck }
-
-.card[data-just-done] .cardTitle {}
-.deck }
-.trayCount[data-changed], .deck .headFacts b[data-changed] {}
-.deck }
+.deck .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
+.deck .card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
+.deck .card[data-just-done] { transition: box-shadow 320ms var(--curve); }
+.deck .card[data-just-done] .cardTitle { transition: color 320ms var(--curve); }
+.deck .trayCount[data-changed], .deck .headFacts b[data-changed] { animation: settleIn 320ms var(--curve); }
 @media (prefers-reduced-motion: reduce) {
-  .card[data-just-done] .tick,
-  .card[data-just-done] .tick svg path,
-  .trayCount[data-changed],
-  .headFacts b[data-changed] { animation: none; }
-.deck }
-
-
-.cardMenu {}
-.deck z-index: 8 {z-index: 8}
-.deck min-width: 188px {min-width: 188px}
-.deck padding: 5px {padding: 5px}
-.deck border-radius: var(--r-ctl) {border-radius: var(--r-ctl)}
-.deck background: var(--white) {background: var(--white)}
-.deck box-shadow: var(--ring), .deck var(--float) {box-shadow: var(--ring), var(--float)}
-.deck display: grid {display: grid}
-.deck gap: 1px {gap: 1px}
-.deck }
-.cardMenu p {}
-.deck padding: 8px 9px 6px {padding: 8px 9px 6px}
-.deck font-size: 11px {font-size: 11px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: 0.1em {letter-spacing: 0.1em}
-.deck text-transform: uppercase {text-transform: uppercase}
-.deck font-family: var(--font-mono, .deck ui-monospace, .deck monospace) {font-family: var(--font-mono, ui-monospace, monospace)}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-.cardMenu button {}
-.deck align-items: center {align-items: center}
-.deck gap: 9px {gap: 9px}
-.deck min-height: 34px {min-height: 34px}
-.deck padding: 0 9px {padding: 0 9px}
-.deck border-radius: var(--r-chip) {border-radius: var(--r-chip)}
-.deck font-family: inherit {font-family: inherit}
-.deck font-size: inherit {font-size: inherit}
-.deck font-weight: inherit {font-weight: inherit}
-.deck line-height: inherit {line-height: inherit}
-.deck font-size: 13px {font-size: 13px}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck background: none {background: none}
-.deck border: 0 {border: 0}
-.deck text-align: left {text-align: left}
-.deck cursor: pointer {cursor: pointer}
-.deck transition: background-color var(--dur) var(--curve) {transition: background-color var(--dur) var(--curve)}
-.deck }
-.cardMenu button:hover {}
-.deck }
-.cardMenu button[aria-current] {}
-.deck }
-.cardMenu button[aria-current]::after {}
-.deck margin-left: auto {margin-left: auto}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck font-weight: 400 {font-weight: 400}
-.deck font-size: 12px {font-size: 12px}
-.deck }
-.menuVeil {}
-.deck inset: 0 {inset: 0}
-.deck z-index: 7 {z-index: 7}
-.deck }
-
-
-
-[aria-disabled="true"] {}
-.deck cursor: default {cursor: default}
-.deck }
-[aria-disabled="true"]:hover {}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-[aria-disabled="true"] svg {}
-.deck }
-
-.rail [aria-disabled="true"], .deck .rail [aria-disabled="true"] svg {}
-.deck }
-
-
-.card[data-draft] {}
-.deck cursor: default {cursor: default}
-.deck }
-
-.card[data-draft] .cardTitleRow {}
-.deck overflow: visible {overflow: visible}
-.deck }
-.card[data-draft] .cardTitle {}
-.deck min-height: 19px {min-height: 19px}
-.deck cursor: text {cursor: text}
-.deck text-wrap: pretty {text-wrap: pretty}
-.deck }
-
-.card[data-draft] .cardTitle:empty::before {}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck font-weight: 400 {font-weight: 400}
-.deck }
-
-.draftHint {}
-.deck }
-.draftDo {}
-.deck padding: 0 12px {padding: 0 12px}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck background: var(--ink) {background: var(--ink)}
-.deck color: var(--white) {color: var(--white)}
-.deck font-size: 12px {font-size: 12px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: var(--tr-12) {letter-spacing: var(--tr-12)}
-.deck border: 0 {border: 0}
-.deck cursor: pointer {cursor: pointer}
-.deck }
-.draftDrop {}
-.deck padding: 0 10px {padding: 0 10px}
-.deck border-radius: var(--r-chip) {border-radius: var(--r-chip)}
-.deck background: none {background: none}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck font-family: inherit {font-family: inherit}
-.deck font-size: inherit {font-size: inherit}
-.deck font-weight: inherit {font-weight: inherit}
-.deck line-height: inherit {line-height: inherit}
-.deck font-size: 12px {font-size: 12px}
-.deck letter-spacing: var(--tr-12) {letter-spacing: var(--tr-12)}
-.deck border: 0 {border: 0}
-.deck cursor: pointer {cursor: pointer}
-.deck }
-.draftDrop:hover {}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck }
-.draftDo::before, .deck .draftDrop::before {}
-.deck position: absolute {position: absolute}
-.deck inset: -8px -4px {inset: -8px -4px}
-.deck }
-.draftDo, .deck .draftDrop {}
-.deck }
-
-
-
-.trayCount .ofAll {}
-.deck }
-.board[data-filtered] .tray:not([data-empty]) .trayCount {}
-.deck }
-.draftHint {}
-.deck grid-row: 3 {grid-row: 3}
-.deck margin: 0 {margin: 0}
-.deck min-height: 24px {min-height: 24px}
-.deck display: flex {display: flex}
-.deck align-items: center {align-items: center}
-.deck font-size: 12px {font-size: 12px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: var(--tr-12) {letter-spacing: var(--tr-12)}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-
-
-.undated {}
-.deck font-size: inherit {font-size: inherit}
-.deck font-weight: inherit {font-weight: inherit}
-.deck line-height: inherit {line-height: inherit}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck background: none {background: none}
-.deck border: 0 {border: 0}
-.deck padding: 0 {padding: 0}
-.deck cursor: pointer {cursor: pointer}
-.deck text-underline-offset: 3px {text-underline-offset: 3px}
-.deck }
-.undated {}
-.deck text-decoration: underline dotted currentColor {text-decoration: underline dotted currentColor}
-.deck text-underline-offset: 3px {text-underline-offset: 3px}
-.deck }
-
-.undated::before {}
-.deck position: absolute {position: absolute}
-.deck inset: -14px -6px {inset: -14px -6px}
-.deck }
-.undated:hover {}
-.deck text-decoration: underline solid currentColor {text-decoration: underline solid currentColor}
-.deck }
-
-
-.dock {}
-.deck box-sizing: border-box {box-sizing: border-box}
-.deck position: absolute {position: absolute}
-.deck left: 50% {left: 50%}
-.deck bottom: 18px {bottom: 18px}
-.deck transform: translateX(-50%) {transform: translateX(-50%)}
-.deck display: flex {display: flex}
-.deck align-items: center {align-items: center}
-.deck gap: 4px {gap: 4px}
-.deck padding: 5px {padding: 5px}
-.deck width: max-content {width: max-content}
-.deck max-width: calc(100% - var(--inset) * 2) {max-width: calc(100% - var(--inset) * 2)}
-.deck background: var(--white) {background: var(--white)}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck box-shadow: var(--ring), .deck var(--float) {box-shadow: var(--ring), var(--float)}
-.deck z-index: 3 {z-index: 3}
-.deck }
-.dockField {}
-.deck align-items: center {align-items: center}
-.deck gap: 9px {gap: 9px}
-.deck height: 38px {height: 38px}
-.deck padding: 0 14px 0 13px {padding: 0 14px 0 13px}
-.deck min-width: 196px {min-width: 196px}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck background: var(--wash) {background: var(--wash)}
-.deck white-space: nowrap {white-space: nowrap}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck transition: background-color var(--dur) var(--curve), .deck color var(--dur) var(--curve) {transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve)}
-.deck }
-.dockField:not([aria-disabled="true"]):hover {}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck }
-.dockField svg {}
-.deck height: 16px {height: 16px}
-.deck }
-
-.dockField kbd, .deck .carry kbd {}
-.deck font-size: 10px {font-size: 10px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: var(--tr-10) {letter-spacing: var(--tr-10)}
-.deck border-radius: 5px {border-radius: 5px}
-.deck padding: 3px 5px {padding: 3px 5px}
-.deck }
-.dockField kbd {}
-.deck border: 1px solid var(--line) {border: 1px solid var(--line)}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-.carry kbd {}
-.deck color: var(--on-ink-1) {color: var(--on-ink-1)}
-.deck }
-
-.carry kbd[data-keys="arrows"] {}
-.deck padding-inline: 6px 3px {padding-inline: 6px 3px}
-.deck }
-.dockPrimary {}
-.deck align-items: center {align-items: center}
-.deck gap: 8px {gap: 8px}
-.deck height: 38px {height: 38px}
-.deck padding: 0 17px 0 14px {padding: 0 17px 0 14px}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck background: var(--ink) {background: var(--ink)}
-.deck color: var(--white) {color: var(--white)}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck white-space: nowrap {white-space: nowrap}
-.deck transition: transform var(--dur) var(--curve) {transition: transform var(--dur) var(--curve)}
-.deck }
-.dockPrimary svg {}
-.deck height: 16px {height: 16px}
-.deck }
-.dockPrimary:active {}
-.deck }
-.dockRule {}
-.deck height: 22px {height: 22px}
-.deck background: var(--line) {background: var(--line)}
-.deck margin: 0 3px {margin: 0 3px}
-.deck }
-
-.dock[data-idle] {}
-.deck }
-.dock[data-idle] .dockPrimary {}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-.dock[data-idle] .dockField, .deck .dock[data-idle] .dockAvatar {}
-.deck }
-.dock[data-idle] .dockAvatar {}
-.deck }
-.dockAvatar {}
-.deck height: 34px {height: 34px}
-.deck border-radius: 50% {border-radius: 50%}
-.deck background: var(--ink) {background: var(--ink)}
-.deck color: var(--white) {color: var(--white)}
-.deck display: grid {display: grid}
-.deck place-items: center {place-items: center}
-.deck font-size: 10px {font-size: 10px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: 0.04em {letter-spacing: 0.04em}
-.deck }
-
-
-
-.floor:has(.drawer) .sheet {}
-.deck transition: margin-right var(--dur) var(--curve) {transition: margin-right var(--dur) var(--curve)}
-.deck }
-
-.floor:has(.drawer) .board {}
-.deck grid-auto-flow: column {grid-auto-flow: column}
-.deck grid-auto-columns: minmax(258px, .deck 1fr) {grid-auto-columns: minmax(258px, 1fr)}
-.deck scroll-snap-type: x proximity {scroll-snap-type: x proximity}
-.deck scroll-padding-left: 16px {scroll-padding-left: 16px}
-.deck }
-.floor:has(.drawer) .tray {}
-.deck }
-
-.drawer {}
-.deck right: var(--inset) {right: var(--inset)}
-.deck top: var(--inset) {top: var(--inset)}
-.deck bottom: var(--inset) {bottom: var(--inset)}
-.deck width: 388px {width: 388px}
-.deck background: var(--white) {background: var(--white)}
-.deck border-radius: var(--r-sheet) {border-radius: var(--r-sheet)}
-.deck display: flex {display: flex}
-.deck flex-direction: column {flex-direction: column}
-.deck z-index: 5 {z-index: 5}
-.deck overflow: hidden {overflow: hidden}
-.deck }
-.drawerHead {}
-.deck }
-.drawerTop {}
-.deck align-items: center {align-items: center}
-.deck }
-.drawerKicker {}
-.deck font-size: 11px {font-size: 11px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: 0.1em {letter-spacing: 0.1em}
-.deck text-transform: uppercase {text-transform: uppercase}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-
-.drawerHead h2 {}
-.deck font-size: 16px {font-size: 16px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: var(--tr-15) {letter-spacing: var(--tr-15)}
-.deck }
-
-.drawerLine, .deck .drawerSummary, .deck .drawerTab, .deck .drawerAdd, .deck .drawerHelp .selectAll {}
-.deck }
-.drawerTab em, .deck .ghost em, .deck .axisEnds span {}
-.deck }
-.drawerHelp, .deck .drawerRow, .deck .drawerRow .sched, .deck .drawerEmpty {}
-.deck }
-
-.drawerRow > span {}
-.deck }
-.drawerLine {}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-.axis {}
-.deck height: 4px {height: 4px}
-.deck background: var(--wash) {background: var(--wash)}
-.deck border-radius: 2px {border-radius: 2px}
-.deck position: relative {position: relative}
-.deck }
-.axis i {}
-.deck inset: 0 auto 0 0 {inset: 0 auto 0 0}
-.deck width: 11.3% {width: 11.3%}
-.deck background: var(--ink) {background: var(--ink)}
-.deck border-radius: 2px {border-radius: 2px}
-.deck }
-.axis b {}
-.deck left: 11.3% {left: 11.3%}
-.deck top: 50% {top: 50%}
-.deck width: 10px {width: 10px}
-.deck height: 10px {height: 10px}
-.deck margin: -5px 0 0 -5px {margin: -5px 0 0 -5px}
-.deck border-radius: 50% {border-radius: 50%}
-.deck background: var(--indigo) {background: var(--indigo)}
-.deck box-shadow: 0 0 0 3px var(--white) {box-shadow: 0 0 0 3px var(--white)}
-.deck }
-.axisEnds {}
-.deck justify-content: space-between {justify-content: space-between}
-.deck font-size: 11px {font-size: 11px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: var(--tr-11) {letter-spacing: var(--tr-11)}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-.drawerSummary {}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck }
-.drawerTabs {}
-.deck gap: 3px {gap: 3px}
-.deck padding: 0 22px 12px {padding: 0 22px 12px}
-.deck }
-.drawerTab {}
-.deck padding: 0 12px {padding: 0 12px}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck transition: color var(--dur) var(--curve), .deck background-color var(--dur) var(--curve) {transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve)}
-.deck }
-.drawerTab:hover {}
-.deck }
-.drawerTab[data-active] {}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck font-weight: 600 {font-weight: 600}
-.deck }
-.drawerTab em {}
-.deck font-size: 11px {font-size: 11px}
-.deck margin-left: 6px {margin-left: 6px}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-.drawerHelp {}
-.deck margin: 0 {margin: 0}
-.deck font-size: 12px {font-size: 12px}
-.deck font-weight: 400 {font-weight: 400}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck line-height: 1.5 {line-height: 1.5}
-.deck }
-
-.drawerHelp .selectAll {}
-.deck float: right {float: right}
-.deck margin-left: 12px {margin-left: 12px}
-.deck font-weight: 600 {font-weight: 600}
-.deck font-size: 13px {font-size: 13px}
-.deck display: inline-flex {display: inline-flex}
-.deck align-items: center {align-items: center}
-.deck min-height: 28px {min-height: 28px}
-.deck }
-.drawerHelp .selectAll:hover {}
-.deck text-underline-offset: 3px {text-underline-offset: 3px}
-.deck text-decoration-color: var(--line) {text-decoration-color: var(--line)}
-.deck }
-.drawerRows {}
-.deck padding: 0 12px 16px {padding: 0 12px 16px}
-.deck display: grid {display: grid}
-.deck gap: 4px {gap: 4px}
-.deck align-content: start {align-content: start}
-.deck }
-.drawerRow {}
-.deck align-items: center {align-items: center}
-.deck gap: 11px {gap: 11px}
-.deck padding: 11px 10px {padding: 11px 10px}
-.deck border-radius: var(--r-chip) {border-radius: var(--r-chip)}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck line-height: 1.4 {line-height: 1.4}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck transition: background-color var(--dur) var(--curve) {transition: background-color var(--dur) var(--curve)}
-.deck }
-.drawerRow:hover {}
-.deck }
-.box {}
-.deck height: 15px {height: 15px}
-.deck border-radius: 4px {border-radius: 4px}
-.deck box-shadow: inset 0 0 0 1.4px var(--ink-4) {box-shadow: inset 0 0 0 1.4px var(--ink-4)}
-.deck flex: none {flex: none}
-.deck padding: 0 {padding: 0}
-.deck position: relative {position: relative}
-.deck transition: box-shadow var(--dur) var(--curve) {transition: box-shadow var(--dur) var(--curve)}
-.deck }
-.box::before {}
-.deck position: absolute {position: absolute}
-.deck inset: -8px {inset: -8px}
-.deck }
-
-.box[aria-checked="true"] {}
-.deck box-shadow: none {box-shadow: none}
-.deck color: var(--white) {color: var(--white)}
-.deck }
-.box[aria-checked="true"] svg {}
-.deck }
-.box svg {}
-.deck width: 11px {width: 11px}
-.deck height: 11px {height: 11px}
-.deck }
-.drawerRow[data-picked] {}
-.deck }
-.box:not([aria-checked="true"]):hover {}
-.deck }
-
-.drawerRow .sched {}
-.deck flex: none {flex: none}
-.deck display: inline-flex {display: inline-flex}
-.deck align-items: center {align-items: center}
-.deck gap: 4px {gap: 4px}
-.deck min-height: 28px {min-height: 28px}
-.deck padding: 0 6px {padding: 0 6px}
-.deck border-radius: var(--r-chip) {border-radius: var(--r-chip)}
-.deck font-size: 12px {font-size: 12px}
-.deck font-weight: 400 {font-weight: 400}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck transition: background-color var(--dur) var(--curve) {transition: background-color var(--dur) var(--curve)}
-.deck }
-.drawerRow .sched:hover {}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck }
-.drawerRow .sched svg {}
-.deck height: 13px {height: 13px}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-.drawerRow .sched[aria-expanded="true"] {}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck }
-
-.drawerRow .schedDate {}
-.deck letter-spacing: var(--tr-12) {letter-spacing: var(--tr-12)}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck white-space: nowrap {white-space: nowrap}
-.deck }
-
-.drawerRow {}
-.deck }
-
-.dayMenu {}
-.deck z-index: 20 {z-index: 20}
-.deck min-width: 168px {min-width: 168px}
-.deck padding: 5px {padding: 5px}
-.deck border-radius: var(--r-ctl) {border-radius: var(--r-ctl)}
-.deck background: var(--white) {background: var(--white)}
-.deck box-shadow: var(--ring), .deck var(--float) {box-shadow: var(--ring), var(--float)}
-.deck display: grid {display: grid}
-.deck gap: 1px {gap: 1px}
-.deck }
-.dayMenu button {}
-.deck border: 0 {border: 0}
-.deck background: none {background: none}
-.deck cursor: pointer {cursor: pointer}
-.deck font-family: inherit {font-family: inherit}
-.deck font-size: inherit {font-size: inherit}
-.deck font-weight: inherit {font-weight: inherit}
-.deck line-height: inherit {line-height: inherit}
-.deck font-size: 13px {font-size: 13px}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck text-align: left {text-align: left}
-.deck padding: 0 9px {padding: 0 9px}
-.deck min-height: 34px {min-height: 34px}
-.deck border-radius: 6px {border-radius: 6px}
-.deck display: flex {display: flex}
-.deck align-items: center {align-items: center}
-.deck justify-content: space-between {justify-content: space-between}
-.deck gap: 10px {gap: 10px}
-.deck }
-.dayMenu button:not([aria-disabled="true"]):hover {}
-.deck }
-.dayMenu button[aria-disabled="true"] {}
-.deck cursor: default {cursor: default}
-.deck }
-.dayMenu button svg {}
-.deck height: 13px {height: 13px}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-
-.drawerBulk {}
-.deck padding: 10px 16px 0 {padding: 10px 16px 0}
-.deck }
-.drawerDo {}
-.deck border: 0 {border: 0}
-.deck cursor: pointer {cursor: pointer}
-.deck font-family: inherit {font-family: inherit}
-.deck font-size: inherit {font-size: inherit}
-.deck font-weight: inherit {font-weight: inherit}
-.deck line-height: inherit {line-height: inherit}
-.deck width: 100% {width: 100%}
-.deck min-height: 40px {min-height: 40px}
-.deck padding: 0 14px {padding: 0 14px}
-.deck border-radius: var(--r-ctl) {border-radius: var(--r-ctl)}
-.deck background: var(--ink) {background: var(--ink)}
-.deck color: var(--white) {color: var(--white)}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: calc(var(--tr-13) + var(--tr-rev)) {letter-spacing: calc(var(--tr-13) + var(--tr-rev))}
-.deck display: flex {display: flex}
-.deck align-items: center {align-items: center}
-.deck justify-content: center {justify-content: center}
-.deck gap: 8px {gap: 8px}
-.deck }
-.drawerDo svg {}
-.deck height: 13px {height: 13px}
-.deck }
-
-.drawerAdd {}
-.deck padding: 0 10px {padding: 0 10px}
-.deck display: flex {display: flex}
-.deck align-items: center {align-items: center}
-.deck gap: 9px {gap: 9px}
-.deck min-height: 34px {min-height: 34px}
-.deck border-radius: var(--r-chip) {border-radius: var(--r-chip)}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck transition: color var(--dur) var(--curve), .deck background-color var(--dur) var(--curve) {transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve)}
-.deck }
-.drawerAdd:hover {}
-.deck background: var(--wash) {background: var(--wash)}
-.deck }
-.drawerAdd svg {}
-.deck height: 15px {height: 15px}
-.deck }
-
-
-.sk {}
-.deck background: var(--wash) {background: var(--wash)}
-.deck border-radius: 5px {border-radius: 5px}
-.deck animation: breathe 1.8s var(--ease-in-out) infinite {animation: breathe 1.8s var(--ease-in-out) infinite}
-.deck }
-
-.carry {}
-.deck transition: opacity var(--dur) var(--curve) {transition: opacity var(--dur) var(--curve)}
-.deck position: absolute {position: absolute}
-.deck left: 50% {left: 50%}
-.deck bottom: 80px {bottom: 80px}
-.deck transform: translateX(-50%) {transform: translateX(-50%)}
-.deck z-index: 6 {z-index: 6}
-.deck display: flex {display: flex}
-.deck align-items: center {align-items: center}
-.deck justify-content: center {justify-content: center}
-.deck flex-wrap: nowrap {flex-wrap: nowrap}
-.deck gap: 10px {gap: 10px}
-.deck width: max-content {width: max-content}
-.deck min-width: min(var(--dock-w), .deck calc(100% - 36px)) {min-width: min(var(--dock-w), calc(100% - 36px))}
-.deck max-width: min(760px, .deck calc(100% - 36px)) {max-width: min(760px, calc(100% - 36px))}
-.deck box-sizing: border-box {box-sizing: border-box}
-.deck min-height: 36px {min-height: 36px}
-.deck padding: 0 6px 0 14px {padding: 0 6px 0 14px}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck background: var(--ink-1) {background: var(--ink-1)}
-.deck color: var(--on-ink-1) {color: var(--on-ink-1)}
-.deck font-size: 12px {font-size: 12px}
-.deck letter-spacing: var(--tr-12) {letter-spacing: var(--tr-12)}
-.deck box-shadow: var(--lift) {box-shadow: var(--lift)}
-.deck animation: carryIn var(--dur) var(--curve) {animation: carryIn var(--dur) var(--curve)}
-.deck }
-
-.trayAdd[data-under] {}
-.deck pointer-events: none {pointer-events: none}
-.deck }
-.trayAdd {}
-.deck }
-.carry b {}
-.deck }
-.carry[data-waiting] {}
-.deck pointer-events: none {pointer-events: none}
-.deck }
-.carryName {}
-.deck overflow: hidden {overflow: hidden}
-.deck text-overflow: ellipsis {text-overflow: ellipsis}
-.deck white-space: nowrap {white-space: nowrap}
-.deck flex: 0 1 auto {flex: 0 1 auto}
-.deck min-width: 24ch {min-width: 24ch}
-.deck text-align: left {text-align: left}
-.deck overflow: hidden {overflow: hidden}
-.deck text-overflow: ellipsis {text-overflow: ellipsis}
-.deck white-space: nowrap {white-space: nowrap}
-.deck }
-
-.carry em {}
-.deck flex: none {flex: none}
-.deck }
-
-.carry .clearNote {}
-.deck }
-.carryDo {}
-.deck height: 26px {height: 26px}
-.deck padding: 0 10px {padding: 0 10px}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck background: var(--chrome-active) {background: var(--chrome-active)}
-.deck color: var(--on-ink-1) {color: var(--on-ink-1)}
-.deck font-family: inherit {font-family: inherit}
-.deck font-size: inherit {font-size: inherit}
-.deck font-weight: inherit {font-weight: inherit}
-.deck line-height: inherit {line-height: inherit}
-.deck font-size: 12px {font-size: 12px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: var(--tr-12) {letter-spacing: var(--tr-12)}
-.deck border: 0 {border: 0}
-.deck cursor: pointer {cursor: pointer}
-.deck transition: background-color var(--dur) var(--curve) {transition: background-color var(--dur) var(--curve)}
-.deck }
-.carryDo:hover {}
-.deck }
-.carryDo {}
-.deck }
-.carryDo::before {}
-.deck position: absolute {position: absolute}
-.deck inset: -9px -6px {inset: -9px -6px}
-.deck }
-.carry em {}
-.deck color: var(--on-ink-2) {color: var(--on-ink-2)}
-.deck display: inline-flex {display: inline-flex}
-.deck align-items: center {align-items: center}
-.deck gap: 6px {gap: 6px}
-.deck }
-
-@keyframes carryIn { from { opacity: 0; transform: translate(-50%, 6px) }
-.deck }
-@media (prefers-reduced-motion: reduce) { .carry { animation: none }
-.deck }
-
-
-
-.cardFly {}
-.deck margin: 0 {margin: 0}
-.deck z-index: 60 {z-index: 60}
-.deck pointer-events: none {pointer-events: none}
-.deck }
-
-.card.cardGhost {}
-.deck }
-
-.cardGhost[data-carries-focus] {}
-.deck outline-offset: 2px {outline-offset: 2px}
-.deck }
-.cardGhost {}
-.deck margin: 0 {margin: 0}
-.deck width: 100% {width: 100%}
-.deck height: 100% {height: 100%}
-.deck pointer-events: none {pointer-events: none}
-.deck box-shadow: var(--card-rest) {box-shadow: var(--card-rest)}
-.deck }
+.deck .card[data-just-done] .tick, .deck .card[data-just-done] .tick svg path, .deck .trayCount[data-changed], .deck .headFacts b[data-changed] { animation: none; }
+}
+.deck .cardMenu {
+  position: absolute; z-index: 8; min-width: 188px;
+  padding: 5px; border-radius: var(--r-ctl);
+  background: var(--white);
+  box-shadow: var(--ring), var(--float);
+  display: grid; gap: 1px;
+}
+.deck .cardMenu p {
+  margin: 0; padding: 8px 9px 6px;
+  font-size: 11px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-mono, ui-monospace, monospace); color: var(--ink-3);
+}
+.deck .cardMenu button {
+  display: flex; align-items: center; gap: 9px;
+  min-height: 34px; padding: 0 9px; border-radius: var(--r-chip);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-1); background: none; border: 0; text-align: left; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.deck .cardMenu button:hover { background: var(--wash); }
+.deck .cardMenu button[aria-current] { font-weight: 600; }
+.deck .cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
+.deck .menuVeil { position: fixed; inset: 0; z-index: 7; }
+.deck [aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+.deck [aria-disabled="true"]:hover { background: none; color: var(--ink-3); }
+.deck [aria-disabled="true"] svg { color: var(--ink-4); }
+.deck .rail [aria-disabled="true"], .deck .rail [aria-disabled="true"] svg { color: var(--on-ink-2); }
+.deck .card[data-draft] { --card-ring: 0 0 0 1.5px var(--indigo); cursor: default; }
+.deck .card[data-draft] .cardTitleRow { max-height: none; overflow: visible; }
+.deck .card[data-draft] .cardTitle {
+  outline: none; min-height: 19px; cursor: text;
+  text-wrap: pretty;
+}
+.deck .card[data-draft] .cardTitle:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3); font-weight: 400;
+}
+.deck .draftHint { gap: 8px; }
+.deck .draftDo { height: 28px; padding: 0 12px; border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600;
+  letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
+.deck .draftDrop { height: 28px; padding: 0 10px; border-radius: var(--r-chip);
+  background: none; color: var(--ink-2); font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px;
+  letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
+.deck .draftDrop:hover { background: var(--wash); color: var(--ink-1); }
+.deck .draftDo::before, .deck .draftDrop::before { content: ""; position: absolute; inset: -8px -4px; }
+.deck .draftDo, .deck .draftDrop { position: relative; }
+.deck .trayCount .ofAll { color: var(--ink-3); }
+.deck .board[data-filtered] .tray:not([data-empty]) .trayCount { color: var(--ink-1); }
+.deck .draftHint {
+  grid-column: 2; grid-row: 3;
+  margin: 0; min-height: 24px; display: flex; align-items: center;
+  font-size: 12px; font-weight: 400; letter-spacing: var(--tr-12);
+  color: var(--ink-3);
+}
+.deck .undated {
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
+  color: var(--ink-2); background: none; border: 0; padding: 0;
+  cursor: pointer; text-underline-offset: 3px;
+}
+.deck .undated {
+  position: relative;
+  
+  text-decoration: underline dotted currentColor; text-underline-offset: 3px;
+}
+.deck .undated::before { content: ""; position: absolute; inset: -14px -6px; }
+.deck .undated:hover { color: var(--ink-1); text-decoration: underline solid currentColor; }
+.deck .dock {
+  
+  width: var(--dock-w); box-sizing: border-box;
+  position: absolute; left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px;
+  
+  width: max-content; max-width: calc(100% - var(--inset) * 2);
+  background: var(--white);
+  border-radius: var(--r-pill);
+  box-shadow: var(--ring), var(--float);
+  z-index: 3;
+}
+.deck .dockField {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 38px; padding: 0 14px 0 13px;
+  min-width: 196px;
+  border-radius: var(--r-pill);
+  background: var(--wash);
+  white-space: nowrap;
+  font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+.deck .dockField:not([aria-disabled="true"]):hover { background: var(--wash-2); color: var(--ink-2); }
+.deck .dockField svg { width: 16px; height: 16px; }
+.deck .dockField kbd, .deck .carry kbd {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: var(--tr-10);
+  border-radius: 5px; padding: 3px 5px;
+}
+.deck .dockField kbd { margin-left: auto; border: 1px solid var(--line); color: var(--ink-3); }
+.deck .carry kbd { background: var(--chrome); color: var(--on-ink-1); }
+.deck .carry kbd[data-keys="arrows"] { letter-spacing: 0.28em; padding-inline: 6px 3px; }
+.deck .dockPrimary {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 17px 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white);
+  font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
+  white-space: nowrap;
+  transition: transform var(--dur) var(--curve);
+}
+.deck .dockPrimary svg { width: 16px; height: 16px; }
+.deck .dockPrimary:active { transform: scale(0.985); }
+.deck .dockRule { width: 1px; height: 22px; background: var(--line); margin: 0 3px; }
+.deck .dock[data-idle] { box-shadow: var(--ring); }
+.deck .dock[data-idle] .dockPrimary { background: var(--wash-2); color: var(--ink-3); }
+.deck .dock[data-idle] .dockField, .deck .dock[data-idle] .dockAvatar { color: var(--ink-3); }
+.deck .dock[data-idle] .dockAvatar { background: var(--wash-2); }
+.deck .dockAvatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ink); color: var(--white);
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+}
+.deck .floor:has(.drawer) .sheet {
+  margin-right: calc(388px + var(--inset));
+  transition: margin-right var(--dur) var(--curve);
+}
+.deck .floor:has(.drawer) .board {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(258px, 1fr);
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 16px;
+}
+.deck .floor:has(.drawer) .tray { scroll-snap-align: start; }
+.deck .drawer {
+  position: absolute;
+  right: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: 388px;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column;
+  z-index: 5; overflow: hidden;
+}
+.deck .drawerHead { padding: 20px 22px 18px; }
+.deck .drawerTop { display: flex; align-items: center; }
+.deck .drawerKicker {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.deck .drawerHead h2 { margin: 12px 0 4px; font-size: 16px; font-weight: 600; letter-spacing: var(--tr-15); }
+.deck .drawerLine, .deck .drawerSummary, .deck .drawerTab, .deck .drawerAdd, .deck .drawerHelp .selectAll { letter-spacing: var(--tr-13); }
+.deck .drawerTab em, .deck .ghost em, .deck .axisEnds span { letter-spacing: var(--tr-11); }
+.deck .drawerHelp, .deck .drawerRow, .deck .drawerRow .sched, .deck .drawerEmpty { letter-spacing: var(--tr-12); }
+.deck .drawerRow > span { text-wrap: balance; }
+.deck .drawerLine { margin: 0; font-size: 13px; font-weight: 400; color: var(--ink-3); }
+.deck .axis { margin: 22px 0 8px; height: 4px; background: var(--wash); border-radius: 2px; position: relative; }
+.deck .axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 2px; }
+.deck .axis b {
+  position: absolute; left: 11.3%; top: 50%;
+  width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; background: var(--indigo);
+  box-shadow: 0 0 0 3px var(--white);
+}
+.deck .axisEnds {
+  display: flex; justify-content: space-between;
+  font-size: 11px; font-weight: 400; letter-spacing: var(--tr-11); color: var(--ink-3);
+}
+.deck .drawerSummary { margin: 14px 0 0; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.deck .drawerTabs { display: flex; gap: 3px; padding: 0 22px 12px; }
+.deck .drawerTab {
+  height: 32px; padding: 0 12px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.deck .drawerTab:hover { color: var(--ink-1); }
+.deck .drawerTab[data-active] { background: var(--wash); color: var(--ink-1); font-weight: 600; }
+.deck .drawerTab em { font-style: normal; font-size: 11px; margin-left: 6px; color: var(--ink-3); }
+.deck .drawerHelp { padding: 0 22px 12px; margin: 0; font-size: 12px; font-weight: 400; color: var(--ink-3); line-height: 1.5; }
+.deck .drawerHelp .selectAll {
+  color: var(--ink-1);
+  float: right; margin-left: 12px; font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; min-height: 28px;
+}
+.deck .drawerHelp .selectAll:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
+.deck .drawerRows { overflow: auto; padding: 0 12px 16px; display: grid; gap: 4px; align-content: start; }
+.deck .drawerRow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 10px;
+  border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; line-height: 1.4; letter-spacing: var(--tr-13);
+  transition: background-color var(--dur) var(--curve);
+}
+.deck .drawerRow:hover { background: var(--wash); }
+.deck .box {
+  width: 15px; height: 15px; border-radius: 4px;
+  box-shadow: inset 0 0 0 1.4px var(--ink-4);
+  flex: none; padding: 0; position: relative;
+  transition: box-shadow var(--dur) var(--curve);
+}
+.deck .box::before { content: ""; position: absolute; inset: -8px; }
+.deck .box[aria-checked="true"] { background: var(--ink); box-shadow: none; color: var(--white); }
+.deck .box[aria-checked="true"] svg { display: block; }
+.deck .box svg { display: none; width: 11px; height: 11px; }
+.deck .drawerRow[data-picked] { background: var(--wash); }
+.deck .box:not([aria-checked="true"]):hover { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
+.deck .drawerRow .sched {
+  margin-left: auto; flex: none;
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 28px; padding: 0 6px; border-radius: var(--r-chip);
+  font-size: 12px; font-weight: 400; color: var(--ink-2);
+  transition: background-color var(--dur) var(--curve);
+}
+.deck .drawerRow .sched:hover { background: var(--wash-2); color: var(--ink-1); }
+.deck .drawerRow .sched svg { width: 13px; height: 13px; color: var(--ink-3); }
+.deck .drawerRow .sched[aria-expanded="true"] { background: var(--wash-2); color: var(--ink-1); }
+.deck .drawerRow .schedDate { font-size: 12px; letter-spacing: var(--tr-12); color: var(--ink-3); white-space: nowrap; }
+.deck .drawerRow { position: relative; }
+.deck .dayMenu {
+  position: fixed; z-index: 20; min-width: 168px;
+  padding: 5px; border-radius: var(--r-ctl);
+  background: var(--white); box-shadow: var(--ring), var(--float);
+  display: grid; gap: 1px;
+}
+.deck .dayMenu button {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1);
+  text-align: left; padding: 0 9px; min-height: 34px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.deck .dayMenu button:not([aria-disabled="true"]):hover { background: var(--wash); }
+.deck .dayMenu button[aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+.deck .dayMenu button svg { width: 13px; height: 13px; color: var(--ink-3); }
+.deck .drawerBulk { position: relative; padding: 10px 16px 0; }
+.deck .drawerDo {
+  appearance: none; border: 0; cursor: pointer; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit;
+  width: 100%; min-height: 40px; padding: 0 14px; border-radius: var(--r-ctl);
+  background: var(--ink); color: var(--white);
+  font-size: 13px; font-weight: 600; letter-spacing: calc(var(--tr-13) + var(--tr-rev));
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.deck .drawerDo svg { width: 13px; height: 13px; }
+.deck .drawerAdd {
+  margin: 6px 12px 18px; padding: 0 10px;
+  display: flex; align-items: center; gap: 9px;
+  min-height: 34px; border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.deck .drawerAdd:hover { color: var(--ink-1); background: var(--wash); }
+.deck .drawerAdd svg { width: 15px; height: 15px; }
+.deck .sk { display: block; background: var(--wash); border-radius: 5px; animation: breathe 1.8s var(--ease-in-out) infinite; }
+.deck .carry {
+  min-width: 0;
+  
+  transition: opacity var(--dur) var(--curve);
+  position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
+  z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap; gap: 10px;
+  width: max-content; min-width: min(var(--dock-w), calc(100% - 36px));
+  max-width: min(760px, calc(100% - 36px)); box-sizing: border-box;
+  min-height: 36px; padding: 0 6px 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink-1); color: var(--on-ink-1);
+  font-size: 12px; letter-spacing: var(--tr-12);
+  box-shadow: var(--lift);
+  animation: carryIn var(--dur) var(--curve);
+}
+.deck .trayAdd[data-under] { opacity: 0; pointer-events: none; }
+.deck .trayAdd { transition: opacity var(--dur) var(--curve); }
+.deck .carry b { font-weight: 600; }
+.deck .carry[data-waiting] { opacity: 0; pointer-events: none; }
+.deck .carryName {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 0 1 auto; min-width: 24ch; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.deck .carry em { white-space: nowrap; flex: none; }
+.deck .carry .clearNote { color: var(--on-ink-1); }
+.deck .carryDo {
+  flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
+  background: var(--chrome-active); color: var(--on-ink-1);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  border: 0; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.deck .carryDo:hover { background: rgba(255, 255, 255, 0.22); }
+.deck .carryDo { position: relative; }
+.deck .carryDo::before { content: ""; position: absolute; inset: -9px -6px; }
+.deck .carry em {
+  font-style: normal; color: var(--on-ink-2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+@keyframes carryIn { from { opacity: 0; transform: translate(-50%, 6px) } }
 @media (prefers-reduced-motion: reduce) {
-  .cardFly, .cardGhost { animation: none !important; transition: none; }
-.deck }
-
-
-.card[data-done] .tick:hover, .deck .card[data-done] .tick:focus-visible {}
-.deck }
-
-
-.late {}
-.deck }
-.late:hover {}
-.deck }
-
-.late[data-soft] {}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck box-shadow: inset 0 0 0 1px var(--ink-1) {box-shadow: inset 0 0 0 1px var(--ink-1)}
-.deck }
-.late[data-soft]:hover {}
-.deck }
-.late[data-soft][aria-pressed="true"] {}
-.deck }
-.late[aria-pressed="true"] {}
-.deck }
-.late[aria-pressed="true"]:hover {}
-.deck }
-.late svg {}
-.deck height: 11px {height: 11px}
-.deck margin-left: 3px {margin-left: 3px}
-.deck margin-right: -2px {margin-right: -2px}
-.deck }
-
-
+.deck .carry { animation: none }
+}
+.deck .cardFly { position: fixed; margin: 0; z-index: 60; pointer-events: none; }
+.deck .card.cardGhost { background: var(--white); }
+.deck .cardGhost[data-carries-focus] { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.deck .cardGhost {
+  position: static; margin: 0; width: 100%; height: 100%;
+  pointer-events: none; box-shadow: var(--card-rest);
+}
+@media (prefers-reduced-motion: reduce) {
+.deck .cardFly, .deck .cardGhost { animation: none !important; transition: none; }
+}
+.deck .card[data-done] .tick:hover, .deck .card[data-done] .tick:focus-visible {
+  box-shadow: 0 0 0 4px var(--wash-2);
+}
+.deck .late { transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+.deck .late:hover { box-shadow: 0 0 0 3px var(--wash-2); }
+.deck .late[data-soft] { background: none; color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
+.deck .late[data-soft]:hover { box-shadow: inset 0 0 0 1px var(--ink-1), 0 0 0 3px var(--wash-2); }
+.deck .late[data-soft][aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--ink-1), 0 0 0 3px var(--ink-4); }
+.deck .late[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink-4); }
+.deck .late[aria-pressed="true"]:hover { box-shadow: 0 0 0 3px var(--ink-2); }
+.deck .late svg { width: 11px; height: 11px; margin-left: 3px; margin-right: -2px; }
 @media (forced-colors: active) {
-  .card { border: 1px solid CanvasText; }
+.deck .card { border: 1px solid CanvasText; }
 .deck .card:focus-visible, .deck .card[data-force="focus"] { outline: 3px solid Highlight; outline-offset: 2px; }
 .deck .card[data-force="moving"], .deck .card[data-force="drag"] { outline: 3px solid Highlight; outline-offset: 2px; }
 .deck .card[data-open] { outline: 2px solid CanvasText; outline-offset: 2px; }
@@ -1627,450 +1246,228 @@ body {
 .deck .tray::before, .deck .tray::after { forced-color-adjust: none; background: CanvasText; }
 .deck .dock, .deck .carry, .deck .cardMenu, .deck .drawer { border: 1px solid CanvasText; }
 .deck .trayBody[data-above], .deck .trayBody[data-more] { border-block: 1px solid CanvasText; }
-.deck }
-
-@keyframes breathe { 0%, 100% { opacity: 1 }
-.deck 50% { opacity: 0.45 }
-.deck }
-@media (prefers-reduced-motion: reduce) { .sk { animation: none; opacity: 0.7; }
-.deck }
-
-.loadCard {}
-.deck box-shadow: var(--ring) {box-shadow: var(--ring)}
-.deck border-radius: var(--r-card) {border-radius: var(--r-card)}
-.deck padding: 12px 12px 12px 11px {padding: 12px 12px 12px 11px}
-.deck display: grid {display: grid}
-.deck grid-template-columns: 22px minmax(0, .deck 1fr) {grid-template-columns: 22px minmax(0, 1fr)}
-.deck column-gap: 8px {column-gap: 8px}
-.deck row-gap: 6px {row-gap: 6px}
-.deck }
-.loadCard .sk {}
-.deck }
-
-.loadCard .skTick {}
-.deck grid-row: 1 / span 2 {grid-row: 1 / span 2}
-.deck width: 18px {width: 18px}
-.deck height: 18px {height: 18px}
-.deck border-radius: 50% {border-radius: 50%}
-.deck align-self: start {align-self: start}
-.deck }
-.loadCard {}
-.deck align-content: start {align-content: start}
-.deck }
-.loadCard[data-tall] {}
-.deck }
-
-.loadSay {}
-.deck left: 50% {left: 50%}
-.deck bottom: 78px {bottom: 78px}
-.deck transform: translateX(-50%) {transform: translateX(-50%)}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck z-index: 4 {z-index: 4}
-.deck }
-
-
-.spec {}
-.deck min-height: 0 {min-height: 0}
-.deck overflow: auto {overflow: auto}
-.deck padding: 4px 28px 32px {padding: 4px 28px 32px}
-.deck }
-.specGrid {}
-.deck grid-template-columns: repeat(auto-fill, .deck minmax(268px, .deck 1fr)) {grid-template-columns: repeat(auto-fill, minmax(268px, 1fr))}
-.deck gap: 26px 20px {gap: 26px 20px}
-.deck }
-
-.specCell {}
-.deck gap: 9px {gap: 9px}
-.deck grid-template-rows: auto 1fr auto {grid-template-rows: auto 1fr auto}
-.deck align-content: stretch {align-content: stretch}
-.deck }
-.specLabel {}
-.deck font-size: 11px {font-size: 11px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: 0.1em {letter-spacing: 0.1em}
-.deck text-transform: uppercase {text-transform: uppercase}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck }
-
-.specProbe {}
-.deck visibility: hidden {visibility: hidden}
-.deck pointer-events: none {pointer-events: none}
-.deck left: 0 {left: 0}
-.deck right: 0 {right: 0}
-.deck height: 0 {height: 0}
-.deck overflow: hidden {overflow: hidden}
-.deck }
-.specProbe .board {}
-.deck padding-bottom: 0 {padding-bottom: 0}
-.deck }
-.specStage {}
-.deck border-radius: var(--r-card) {border-radius: var(--r-card)}
-.deck padding: 13px {padding: 13px}
-.deck width: calc(var(--tray-card, .deck 234px) + 26px) {width: calc(var(--tray-card, 234px) + 26px)}
-.deck max-width: 100% {max-width: 100%}
-.deck display: flex {display: flex}
-.deck align-items: center {align-items: center}
-.deck }
-.specStage .card {}
-.deck max-width: 100% {max-width: 100%}
-.deck }
-.specTray {}
-.deck border-left: 0 {border-left: 0}
-.deck width: calc(var(--tray-card, .deck 234px) + 16px) {width: calc(var(--tray-card, 234px) + 16px)}
-.deck border-radius: var(--r-card) {border-radius: var(--r-card)}
-.deck }
-
-.specTray .trayBody {}
-.deck margin: 0 -6px {margin: 0 -6px}
-.deck gap: 8px {gap: 8px}
-.deck }
-.specNote {}
-.deck font-weight: 400 {font-weight: 400}
-.deck line-height: 1.45 {line-height: 1.45}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck margin: 0 {margin: 0}
-.deck max-width: 268px {max-width: 268px}
-.deck }
-.specLabel {}
-.deck }
-
-.specIntro {}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck margin: 0 0 24px {margin: 0 0 24px}
-.deck font-size: 13px {font-size: 13px}
-.deck font-weight: 400 {font-weight: 400}
-.deck line-height: 1.55 {line-height: 1.55}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck }
-
-
-@media (pointer: coarse) {
-
-  .cardDots, .ghost, .trayAdd, .drawerTab, .drawerRow button, .drawerAdd, .drawerHelp a {
+}
+@keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+@media (prefers-reduced-motion: reduce) {
+.deck .sk { animation: none; opacity: 0.7; }
+}
+.deck .loadCard {
+  background: var(--white); box-shadow: var(--ring); border-radius: var(--r-card);
+  padding: 12px 12px 12px 11px;
+  display: grid; grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 8px; row-gap: 6px;
+}
+.deck .loadCard .sk { grid-column: 2; }
+.deck .loadCard .skTick {
+  grid-column: 1; grid-row: 1 / span 2;
+  width: 18px; height: 18px; border-radius: 50%; align-self: start;
+}
+.deck .loadCard { min-height: 98px; align-content: start; }
+.deck .loadCard[data-tall] { min-height: 124px; }
+.deck .loadSay {
+  position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
+  font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
+  color: var(--ink-3); z-index: 4;
+}
+.deck .spec { flex: 1; min-height: 0; overflow: auto; padding: 4px 28px 32px; }
+.deck .specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 26px 20px; }
+.deck .specCell { display: grid; gap: 9px; grid-template-rows: auto 1fr auto; align-content: stretch; }
+.deck .specLabel {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.deck .specProbe { position: absolute; visibility: hidden; pointer-events: none; left: 0; right: 0; height: 0; overflow: hidden; }
+.deck .specProbe .board { grid-auto-rows: 0; padding-bottom: 0; }
+.deck .specStage {
+  background: var(--wash); border-radius: var(--r-card);
+  padding: 13px; width: calc(var(--tray-card, 234px) + 26px); max-width: 100%;
+  display: flex; align-items: center;
+}
+.deck .specStage .card { width: var(--tray-card, 234px); max-width: 100%; }
+.deck .specTray { padding: 8px; border-left: 0; width: calc(var(--tray-card, 234px) + 16px); border-radius: var(--r-card); }
+.deck .specTray .trayBody { padding: 0 6px; margin: 0 -6px; gap: 8px; }
+.deck .specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 268px; }
+.deck .specLabel { max-width: 268px; }
+.deck .specIntro { max-width: 46ch; letter-spacing: var(--tr-13); margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
+.deck[data-w="390"] .cardDots, .deck .ghost, .deck .trayAdd, .deck .drawerTab, .deck .drawerRow button, .deck .drawerAdd, .deck .drawerHelp a {
     min-height: 44px; min-width: 44px;
   }
-.deck .cardDots { visibility: visible; color: var(--ink-4); }
-.deck .cardDots::before { inset: -10px; }
-.deck .cardTitle { min-width: 0; }
-.deck .dockField kbd { display: none; }
-.deck .tick::before { inset: -13px; }
-.deck }
-
-
-
-
-
-
-
-[data-cards="flat"] .card {}
-.deck --card-hover: none {--card-hover: none}
-.deck }
-
-[data-cards="flat"] .card:hover, .deck[data-cards="flat"] .card[data-force="hover"] {}
-.deck }
-[data-cards="flat"] .card[data-done] {}
-.deck background: var(--wash) {background: var(--wash)}
-.deck }
-[data-cards="flat"] .card[data-next] {}
-.deck --card-hover: 0 0 0 1px var(--indigo) {--card-hover: 0 0 0 1px var(--indigo)}
-.deck }
-[data-cards="flat"] .trayBody {}
-.deck }
-[data-cards="flat"] .loadCard {}
-.deck background: var(--wash) {background: var(--wash)}
-.deck }
-
-
-[data-cards="elevated"] .card {}
-.deck --card-hover: var(--ring-strong), .deck var(--float) {--card-hover: var(--ring-strong), var(--float)}
-.deck }
-
-[data-cards="elevated"] .card[data-done] {}
-.deck --card-hover: 0 0 0 1px var(--line-strong) {--card-hover: 0 0 0 1px var(--line-strong)}
-.deck }
-
-[data-cards="elevated"] .card[data-next] {}
-.deck --card-hover: 0 0 0 1px var(--indigo), .deck var(--float) {--card-hover: 0 0 0 1px var(--indigo), var(--float)}
-.deck }
-[data-cards="elevated"] .loadCard {}
-.deck }
-
-
-[data-radius="sharp"] {}
-.deck --r-ctl: 4px {--r-ctl: 4px}
-.deck --r-card: 4px {--r-card: 4px}
-.deck --r-sheet: 8px {--r-sheet: 8px}
-.deck }
-[data-radius="sharp"] .rail, .deck[data-radius="sharp"] .railTile, .deck[data-radius="sharp"] .railAdd {}
-.deck }
-[data-radius="sharp"] .seg, .deck[data-radius="sharp"] .segItem, .deck[data-radius="sharp"] .dock, .deck[data-radius="sharp"] .dockField, .deck[data-radius="sharp"] .dockPrimary, .deck[data-radius="sharp"] .when, .deck[data-radius="sharp"] .late, .deck[data-radius="sharp"] .drawerTab, .deck[data-radius="sharp"] .ghost {}
-.deck }
-[data-radius="sharp"] .railAvatar, .deck[data-radius="sharp"] .dockAvatar {}
-.deck }
-
-[data-radius="round"] {}
-.deck --r-ctl: 12px {--r-ctl: 12px}
-.deck --r-card: 16px {--r-card: 16px}
-.deck --r-sheet: 24px {--r-sheet: 24px}
-.deck }
-[data-radius="round"] .rail {}
-.deck }
-[data-radius="round"] .railTile, .deck[data-radius="round"] .railAdd {}
-.deck }
-[data-radius="round"] .specStage {}
-.deck }
-
-
-
-[data-density="compact"] .card {}
-.deck row-gap: 4px {row-gap: 4px}
-.deck column-gap: 7px {column-gap: 7px}
-.deck grid-template-columns: 20px minmax(0, .deck 1fr) {grid-template-columns: 20px minmax(0, 1fr)}
-.deck }
-[data-density="compact"] .cardTitle {}
-.deck line-height: 1.32 {line-height: 1.32}
-.deck max-height: calc(1.32em * 2) {max-height: calc(1.32em * 2)}
-.deck }
-[data-density="compact"] .cardNote {}
-.deck line-height: 1.38 {line-height: 1.38}
-.deck max-height: 1.38em {max-height: 1.38em}
-.deck }
-[data-density="compact"] .cardFoot {}
-.deck font-size: 11px {font-size: 11px}
-.deck gap: 8px {gap: 8px}
-.deck }
-[data-density="compact"] .trayBody {}
-.deck }
-[data-density="compact"] .tray {}
-.deck }
-[data-density="compact"] .trayNote {}
-.deck }
-[data-density="compact"] .trayHead {}
-.deck }
-[data-density="compact"] .head {}
-.deck }
-[data-density="compact"] .views {}
-.deck }
-[data-density="compact"] .tick {}
-.deck height: 16px {height: 16px}
-.deck }
-[data-density="compact"] .tick svg {}
-.deck height: 10px {height: 10px}
-.deck }
-[data-density="compact"] .when {}
-.deck font-size: 10.5px {font-size: 10.5px}
-.deck padding: 0 7px {padding: 0 7px}
-.deck }
-[data-density="compact"] .drawerRow {}
-.deck }
-[data-density="compact"] .loadCard {}
-.deck gap: 7px {gap: 7px}
-.deck }
-
-
-
-
-[data-indigo="forward"] .dockPrimary {}
-.deck }
-[data-indigo="forward"] .dockPrimary:hover {}
-.deck }
-[data-indigo="forward"] .railTile[data-active] {}
-.deck color: var(--white) {color: var(--white)}
-.deck }
-[data-indigo="forward"] .railMark i {}
-.deck }
-[data-indigo="forward"] .segItem[data-active] {}
-.deck }
-[data-indigo="forward"] .card[data-next] {}
-.deck --card-hover: 0 0 0 1.5px var(--indigo), .deck var(--float) {--card-hover: 0 0 0 1.5px var(--indigo), var(--float)}
-.deck }
-[data-indigo="forward"] .when[data-t="milestone"] {}
-.deck color: var(--white) {color: var(--white)}
-.deck }
-[data-indigo="forward"] .trayAdd:hover, .deck[data-indigo="forward"] .drawerAdd:hover {}
-.deck }
-
-
-
-[data-type="expressive"] .headName {}
-.deck letter-spacing: var(--tr-19) {letter-spacing: var(--tr-19)}
-.deck }
-[data-type="expressive"] .word {}
-.deck }
-[data-type="expressive"] .cardTitle {}
-.deck line-height: 1.34 {line-height: 1.34}
-.deck letter-spacing: var(--tr-15) {letter-spacing: var(--tr-15)}
-.deck }
-[data-type="expressive"] .cardNote {}
-.deck }
-[data-type="expressive"] .trayName {}
-.deck letter-spacing: 0.14em {letter-spacing: 0.14em}
-.deck }
-[data-type="expressive"] .drawerHead h2 {}
-.deck letter-spacing: var(--tr-19) {letter-spacing: var(--tr-19)}
-.deck }
-[data-type="expressive"] .specIntro {}
-.deck }
-[data-type="expressive"] .headFacts {}
-.deck }
-
-
-
-
-.board[data-filtered] .tray {}
-.deck max-height: 100% {max-height: 100%}
-.deck }
-.board[data-filtered] .tray[data-empty] .trayBody, .deck .board[data-filtered] .tray[data-empty] .trayAdd {}
-.deck }
-.board[data-filtered] .tray[data-empty] .trayHead {}
-.deck }
-
-.board[data-filtered] .tray[data-empty] .trayName {}
-.deck }
-.board[data-filtered] .tray[data-empty] .trayCount {}
-.deck }
-.board[data-filtered] .tray[data-empty] .pip {}
-.deck }
-
-
-
-
-.board[data-blank] .trayAdd, .deck .board[data-blank] .trayEmpty {}
-.deck }
-
-
-
-.board[data-blank] .tray {}
-.deck }
-.emptyBoard {}
-.deck inset: 130px 0 84px {inset: 130px 0 84px}
-.deck display: grid {display: grid}
-.deck place-content: center {place-content: center}
-.deck justify-items: center {justify-items: center}
-.deck gap: 14px {gap: 14px}
-.deck text-align: center {text-align: center}
-.deck padding: 0 24px 44px {padding: 0 24px 44px}
-.deck pointer-events: none {pointer-events: none}
-.deck }
-.emptyBoard p {}
-.deck max-width: 34ch {max-width: 34ch}
-.deck font-size: 15px {font-size: 15px}
-.deck font-weight: 400 {font-weight: 400}
-.deck letter-spacing: var(--tr-15) {letter-spacing: var(--tr-15)}
-.deck color: var(--ink-2) {color: var(--ink-2)}
-.deck text-wrap: balance {text-wrap: balance}
-.deck }
-.emptyBoard b {}
-.deck font-size: 16px {font-size: 16px}
-.deck font-weight: 600 {font-weight: 600}
-.deck letter-spacing: var(--tr-15) {letter-spacing: var(--tr-15)}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck margin-bottom: 6px {margin-bottom: 6px}
-.deck }
-.emptyBoard button {}
-.deck display: inline-flex {display: inline-flex}
-.deck align-items: center {align-items: center}
-.deck gap: 8px {gap: 8px}
-.deck min-height: 40px {min-height: 40px}
-.deck padding: 0 16px {padding: 0 16px}
-.deck border-radius: var(--r-pill) {border-radius: var(--r-pill)}
-.deck border: 1px solid var(--line-strong) {border: 1px solid var(--line-strong)}
-.deck background: var(--white) {background: var(--white)}
-.deck font-family: inherit {font-family: inherit}
-.deck font-size: inherit {font-size: inherit}
-.deck font-weight: inherit {font-weight: inherit}
-.deck line-height: inherit {line-height: inherit}
-.deck font-size: 14px {font-size: 14px}
-.deck font-weight: 600 {font-weight: 600}
-.deck color: var(--ink-1) {color: var(--ink-1)}
-.deck cursor: pointer {cursor: pointer}
-.deck transition: background var(--motion-fast) var(--curve) {transition: background var(--motion-fast) var(--curve)}
-.deck }
-.emptyBoard button:hover {}
-.deck }
-.emptyBoard button svg {}
-.deck height: 16px {height: 16px}
-.deck }
-
-.emptyBoard .emptyEg {}
-.deck letter-spacing: var(--tr-13) {letter-spacing: var(--tr-13)}
-.deck color: var(--ink-3) {color: var(--ink-3)}
-.deck max-width: 40ch {max-width: 40ch}
-.deck margin-top: -2px {margin-top: -2px}
-.deck }
-
-@media (max-width: 1200px) {
+.deck[data-w="390"] .cardDots { visibility: visible; color: var(--ink-4); }
+.deck[data-w="390"] .cardDots::before { inset: -10px; }
+.deck[data-w="390"] .cardTitle { min-width: 0; }
+.deck[data-w="390"] .dockField kbd { display: none; }
+.deck[data-w="390"] .tick::before { inset: -13px; }
+.deck[data-cards="flat"] .card { --card-rest: none; --card-hover: none; }
+.deck[data-cards="flat"] .card:hover, .deck[data-cards="flat"] .card[data-force="hover"] { background: var(--wash); }
+.deck[data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
+.deck[data-cards="flat"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo); }
+.deck[data-cards="flat"] .trayBody { gap: 2px; }
+.deck[data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
+.deck[data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); --card-hover: var(--ring-strong), var(--float); }
+.deck[data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); --card-hover: 0 0 0 1px var(--line-strong); }
+.deck[data-cards="elevated"] .card[data-next] {
+  --card-rest: 0 0 0 1px var(--indigo-line), var(--raise);
+  --card-hover: 0 0 0 1px var(--indigo), var(--float);
+}
+.deck[data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
+.deck[data-radius="sharp"] {
+  --r-chip: 4px; --r-ctl: 4px; --r-card: 4px; --r-sheet: 8px;
+}
+.deck[data-radius="sharp"] .rail, .deck[data-radius="sharp"] .railTile, .deck[data-radius="sharp"] .railAdd { border-radius: 8px; }
+.deck[data-radius="sharp"] .seg, .deck[data-radius="sharp"] .segItem, .deck[data-radius="sharp"] .dock, .deck[data-radius="sharp"] .dockField, .deck[data-radius="sharp"] .dockPrimary, .deck[data-radius="sharp"] .when, .deck[data-radius="sharp"] .late, .deck[data-radius="sharp"] .drawerTab, .deck[data-radius="sharp"] .ghost { border-radius: 4px; }
+.deck[data-radius="sharp"] .railAvatar, .deck[data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+.deck[data-radius="round"] {
+  --r-chip: 8px; --r-ctl: 12px; --r-card: 16px; --r-sheet: 24px;
+}
+.deck[data-radius="round"] .rail { border-radius: 24px; }
+.deck[data-radius="round"] .railTile, .deck[data-radius="round"] .railAdd { border-radius: 16px; }
+.deck[data-radius="round"] .specStage { border-radius: 16px; }
+.deck[data-density="compact"] .card { padding: 8px 10px 8px 9px; row-gap: 4px; column-gap: 7px; grid-template-columns: 20px minmax(0, 1fr); }
+.deck[data-density="compact"] .cardTitle { font-size: 13px; line-height: 1.32; max-height: calc(1.32em * 2); }
+.deck[data-density="compact"] .cardNote { font-size: 12px; line-height: 1.38; max-height: 1.38em; }
+.deck[data-density="compact"] .cardFoot { min-height: 0; font-size: 11px; gap: 8px; }
+.deck[data-density="compact"] .trayBody { gap: 5px; }
+.deck[data-density="compact"] .tray { padding: 12px 9px 6px; }
+.deck[data-density="compact"] .trayNote { display: none; }
+.deck[data-density="compact"] .trayHead { padding-bottom: 9px; }
+.deck[data-density="compact"] .head { height: 52px; }
+.deck[data-density="compact"] .views { padding-bottom: 10px; }
+.deck[data-density="compact"] .tick { width: 16px; height: 16px; }
+.deck[data-density="compact"] .tick svg { width: 10px; height: 10px; }
+.deck[data-density="compact"] .when { height: 18px; font-size: 10.5px; padding: 0 7px; }
+.deck[data-density="compact"] .drawerRow { padding: 8px 10px; }
+.deck[data-density="compact"] .loadCard { padding: 9px; gap: 7px; }
+.deck[data-indigo="forward"] .dockPrimary { background: var(--indigo); }
+.deck[data-indigo="forward"] .dockPrimary:hover { background: var(--indigo-deep); }
+.deck[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
+.deck[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
+.deck[data-indigo="forward"] .segItem[data-active] { color: var(--indigo-ink); }
+.deck[data-indigo="forward"] .card[data-next] { --card-rest: 0 0 0 1.5px var(--indigo); --card-hover: 0 0 0 1.5px var(--indigo), var(--float); }
+.deck[data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
+.deck[data-indigo="forward"] .trayAdd:hover, .deck[data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
+.deck[data-type="expressive"] .headName { font-size: 22px; letter-spacing: var(--tr-19); }
+.deck[data-type="expressive"] .word { font-size: 19px; }
+.deck[data-type="expressive"] .cardTitle { font-size: 15px; line-height: 1.34; letter-spacing: var(--tr-15); }
+.deck[data-type="expressive"] .cardNote { font-size: 13px; }
+.deck[data-type="expressive"] .trayName { font-size: 11px; letter-spacing: 0.14em; }
+.deck[data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: var(--tr-19); }
+.deck[data-type="expressive"] .specIntro { font-size: 14px; }
+.deck[data-type="expressive"] .headFacts { font-size: 13px; }
+.deck .board[data-filtered] .tray { align-self: start; max-height: 100%; }
+.deck .board[data-filtered] .tray[data-empty] .trayBody, .deck .board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
+.deck .board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
+.deck .board[data-filtered] .tray[data-empty] .trayName { color: var(--ink-2); }
+.deck .board[data-filtered] .tray[data-empty] .trayCount { color: var(--ink-3); }
+.deck .board[data-filtered] .tray[data-empty] .pip { background: rgba(17, 17, 17, 0.14); }
+.deck .board[data-blank] .trayAdd, .deck .board[data-blank] .trayEmpty { display: none; }
+.deck .board[data-blank] .tray { border-left-color: transparent; }
+.deck .emptyBoard {
   
-  .board {
+  position: absolute; inset: 130px 0 84px;
+  display: grid; place-content: center; justify-items: center;
+  gap: 14px; text-align: center; padding: 0 24px 44px;
+  pointer-events: none;
+}
+.deck .emptyBoard p {
+  margin: 0; max-width: 34ch;
+  font-size: 15px; font-weight: 400; letter-spacing: var(--tr-15);
+  color: var(--ink-2); text-wrap: balance;
+}
+.deck .emptyBoard b {
+  
+  display: block; font-size: 16px; font-weight: 600;
+  letter-spacing: var(--tr-15); color: var(--ink-1); margin-bottom: 6px;
+}
+.deck .emptyBoard button {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong); background: var(--white);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
+  cursor: pointer; transition: background var(--motion-fast) var(--curve);
+}
+.deck .emptyBoard button:hover { background: var(--wash); }
+.deck .emptyBoard button svg { width: 16px; height: 16px; }
+.deck .emptyBoard .emptyEg {
+  font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-3); max-width: 40ch; margin-top: -2px;
+}
+.deck[data-w="768"] .board {
     grid-template-columns: none; grid-auto-flow: column;
     grid-auto-columns: minmax(258px, 1fr);
   }
-.deck .drawer { width: 364px; }
-.deck .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
-.deck }
-
-
-@media (max-width: 1020px) {
-  .head .ghost > span {
+.deck[data-w="768"] .drawer { width: 364px; }
+.deck[data-w="768"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+.deck[data-w="390"] .board {
+    grid-template-columns: none; grid-auto-flow: column;
+    grid-auto-columns: minmax(258px, 1fr);
+  }
+.deck[data-w="390"] .drawer { width: 364px; }
+.deck[data-w="390"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+.deck[data-w="768"] .head .ghost > span {
     position: absolute; width: 1px; height: 1px;
     overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
-.deck .head .ghost > em { display: none; }
-.deck }
-@media (max-width: 900px) {
-  :root { --inset: 12px; }
-.deck .headFacts .late { display: inline-flex; }
-.deck .headFacts .ratio { display: inline; }
-.deck .headFacts { gap: 12px; }
-.deck .dockField { min-width: 148px; }
-.deck .drawer { left: var(--inset); width: auto; }
-.deck .floor:has(.drawer) .sheet { margin-right: 0; }
-.deck }
-@media (max-width: 720px) {
-  :root { --inset: 9px; }
-.deck .floor { padding: var(--inset) var(--inset) 0; }
-.deck .rail {
+.deck[data-w="768"] .head .ghost > em { display: none; }
+.deck[data-w="390"] .head .ghost > span {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+.deck[data-w="390"] .head .ghost > em { display: none; }
+.deck[data-w="768"] { --inset: 12px; }
+.deck[data-w="768"] .headFacts .late { display: inline-flex; }
+.deck[data-w="768"] .headFacts .ratio { display: inline; }
+.deck[data-w="768"] .headFacts { gap: 12px; }
+.deck[data-w="768"] .dockField { min-width: 148px; }
+.deck[data-w="768"] .drawer { left: var(--inset); width: auto; }
+.deck[data-w="768"] .floor:has(.drawer) .sheet { margin-right: 0; }
+.deck[data-w="390"] { --inset: 12px; }
+.deck[data-w="390"] .headFacts .late { display: inline-flex; }
+.deck[data-w="390"] .headFacts .ratio { display: inline; }
+.deck[data-w="390"] .headFacts { gap: 12px; }
+.deck[data-w="390"] .dockField { min-width: 148px; }
+.deck[data-w="390"] .drawer { left: var(--inset); width: auto; }
+.deck[data-w="390"] .floor:has(.drawer) .sheet { margin-right: 0; }
+.deck[data-w="390"] { --inset: 9px; }
+.deck[data-w="390"] .floor { padding: var(--inset) var(--inset) 0; }
+.deck[data-w="390"] .rail {
     left: var(--inset); right: var(--inset); top: auto;
     bottom: calc(var(--inset) + env(safe-area-inset-bottom));
     width: auto; height: 60px;
     flex-direction: row; justify-content: space-around;
     border-radius: 18px; padding: 0 8px;
   }
-.deck .railMark, .deck .railDivider, .deck .railSpacer { display: none; }
-.deck .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
-.deck .railUtil { display: none; }
-.deck .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
-.deck .railAdd {
+.deck[data-w="390"] .railMark, .deck[data-w="390"] .railDivider, .deck[data-w="390"] .railSpacer { display: none; }
+.deck[data-w="390"] .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+.deck[data-w="390"] .railUtil { display: none; }
+.deck[data-w="390"] .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+.deck[data-w="390"] .railAdd {
     display: grid; place-items: center;
     width: var(--tap); height: var(--tap); border-radius: 14px;
     background: var(--white); color: var(--ink-1);
     margin: 0 2px 0 8px;
   }
-.deck .railAdd svg { width: 20px; height: 20px; }
-.deck .railAvatar { margin: 0; }
-.deck .sheet { height: calc(100% - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
-.deck .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
-.deck .sheet[data-head="stack"] .headName { font-size: 19px; }
-.deck .headSearch { display: inline-flex; }
-.deck .carry kbd { display: none; }
-.deck .carry em:empty { display: none; }
-.deck .views { padding: 14px 16px 12px; }
-.deck .seg { width: 100%; }
-.deck .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
-.deck .segItem svg { display: none; }
-.deck .viewTools { display: none; }
-.deck .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
-.deck .tray { scroll-snap-align: start; padding-bottom: 8px; }
-.deck .trayBody { padding-bottom: 4px; }
-.deck .sheet::after, .deck .sheet::before { display: none; }
-.deck .dock { display: none; }
-.deck .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
-.deck .loadSay { bottom: 72px; }
-.deck .spec { padding: 4px 16px 24px; }
- {}
+.deck[data-w="390"] .railAdd svg { width: 20px; height: 20px; }
+.deck[data-w="390"] .railAvatar { margin: 0; }
+.deck[data-w="390"] .sheet { height: calc(100% - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+.deck[data-w="390"] .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
+.deck[data-w="390"] .sheet[data-head="stack"] .headName { font-size: 19px; }
+.deck[data-w="390"] .headSearch { display: inline-flex; }
+.deck[data-w="390"] .carry kbd { display: none; }
+.deck[data-w="390"] .carry em:empty { display: none; }
+.deck[data-w="390"] .views { padding: 14px 16px 12px; }
+.deck[data-w="390"] .seg { width: 100%; }
+.deck[data-w="390"] .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
+.deck[data-w="390"] .segItem svg { display: none; }
+.deck[data-w="390"] .viewTools { display: none; }
+.deck[data-w="390"] .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
+.deck[data-w="390"] .tray { scroll-snap-align: start; padding-bottom: 8px; }
+.deck[data-w="390"] .trayBody { padding-bottom: 4px; }
+.deck[data-w="390"] .sheet::after, .deck[data-w="390"] .sheet::before { display: none; }
+.deck[data-w="390"] .dock { display: none; }
+.deck[data-w="390"] .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
+.deck[data-w="390"] .loadSay { bottom: 72px; }
+.deck[data-w="390"] .spec { padding: 4px 16px 24px; }
 .deck { position: relative; }
 
 </style>
@@ -2083,8 +1480,14 @@ body {
     </div>
 
     <div class="group">
-      <span class="groupLabel">Start from</span>
-      <p class="groupHelp">Three finished versions. Pick one, then change anything you like underneath.</p>
+      <span class="groupLabel">The default</span>
+      <p class="groupHelp">The locked combination. This is what the product ships as, and what every panel round reviewed.</p>
+      <div class="presetRow" id="lockedPreset" data-single></div>
+    </div>
+
+    <div class="group">
+      <span class="groupLabel">Or start from</span>
+      <p class="groupHelp">Three finished alternatives. Pick one, then change anything you like underneath.</p>
       <div class="presetRow" id="presets"></div>
     </div>
 
@@ -2093,7 +1496,23 @@ body {
     <div class="group">
       <span class="groupLabel">This combination</span>
       <pre class="recipe" id="recipe"></pre>
-      <button class="reset" id="reset" type="button">Back to variant A</button>
+      <button class="reset" id="reset" type="button">Back to the default</button>
+    </div>
+    <div class="group">
+      <span class="groupLabel">The record</span>
+      <p class="groupHelp">Nineteen rounds of panel review sit behind this board. Three documents say what happened.</p>
+      <div class="setLinks">
+        <a class="setLink" href="https://claude.ai/code/artifact/1da5fc96-aae2-4980-8c79-f417ff30dc88" target="_blank" rel="noopener">
+          <b>Elevation Log</b><i>&rarr;</i><em>Nineteen rounds, scored</em>
+        </a>
+        <a class="setLink" href="https://claude.ai/code/artifact/e58b1fcc-274d-43bf-9314-2af5bb435d7b" target="_blank" rel="noopener">
+          <b>The 9.5 Question</b><i>&rarr;</i><em>Why it stopped where it did</em>
+        </a>
+        <a class="setLink" href="https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6" target="_blank" rel="noopener">
+          <b>Nineteen Rounds</b><i>&rarr;</i><em>The method, rated</em>
+        </a>
+      </div>
+      <p class="setHere">You are on the console</p>
     </div>
   </aside>
 
@@ -5094,6 +4513,7 @@ mount();
   const signal = window.__signal;
 
   const PRESET_COPY = {
+    locked: { name: "The default", line: "Elevated cards, soft corners, calm type. The combination the founder locked on 24 August." },
     a: { name: "A · Air", line: "Flat and borderless. Maximum whitespace." },
     b: { name: "B · Frame", line: "Bordered and dense. Structured." },
     c: { name: "C · Signal", line: "Elevated, indigo-forward, bolder." },
@@ -5147,15 +4567,17 @@ mount();
   ];
   const HEIGHTS = { 1440: 960, 1280: 900, 768: 1024, 390: 844 };
 
-  const STORE = "signal.tasks-console.v1";
-  let current = { preset: "a", state: "board", width: 1440 };
+  /* v2: the store key moved with the default, so a session held on the old
+     starting preset does not quietly outrank the locked combination. */
+  const STORE = "signal.tasks-console.v2";
+  let current = { preset: "locked", state: "board", width: 1440 };
   try {
     const saved = JSON.parse(localStorage.getItem(STORE) || "null");
     if (saved && typeof saved === "object") current = Object.assign(current, saved);
   } catch (error) { /* private mode */ }
 
   function decisionsFor(config) {
-    const base = Object.assign({}, signal.presets[config.preset] || signal.presets.a);
+    const base = Object.assign({}, signal.presets[config.preset] || signal.presets.locked);
     for (const control of CONTROLS) {
       if (config[control.key]) base[control.key] = config[control.key];
     }
@@ -5222,7 +4644,8 @@ mount();
 
   /* ── build the panel ─────────────────────────────────────────── */
   const presets = document.getElementById("presets");
-  ["a", "b", "c"].forEach(function (key) {
+  const lockedHost = document.getElementById("lockedPreset");
+  ["locked", "a", "b", "c"].forEach(function (key) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "preset";
@@ -5232,7 +4655,7 @@ mount();
       current = { preset: key, state: current.state, width: current.width };
       render();
     });
-    presets.appendChild(button);
+    (key === "locked" ? lockedHost : presets).appendChild(button);
   });
 
   const controls = document.getElementById("controls");
@@ -5285,7 +4708,7 @@ mount();
   });
 
   document.getElementById("reset").addEventListener("click", function () {
-    current = { preset: "a", state: current.state, width: current.width };
+    current = { preset: "locked", state: current.state, width: current.width };
     render();
   });
 

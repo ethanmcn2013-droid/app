@@ -127,8 +127,41 @@ function scopeSelector(selector) {
     .join(", ");
 }
 
+/* The splitter walks braces and trusts them, so one malformed rule in the
+   master does not fail here — it silently shifts every rule after it and the
+   console ships a stylesheet with a few hundred dead selectors in it. That is
+   exactly what happened: a stranded `to {...}` left behind by an edit to
+   @keyframes settleIn scoped 562 rules into nonsense, and the only visible
+   symptom was an unstyled dock nobody was looking at. The browser recovers
+   from bad CSS; this splitter must not have to. */
+const LF = String.fromCharCode(10);
+function assertBalanced(css, label) {
+  let depth = 0;
+  let line = 1;
+  for (let i = 0; i < css.length; i++) {
+    if (css[i] === LF) line++;
+    else if (css[i] === "{") depth++;
+    else if (css[i] === "}" && --depth < 0) {
+      throw new Error(label + ": unbalanced CSS — a closing brace with nothing open, at line " + line);
+    }
+  }
+  if (depth !== 0) throw new Error(label + ": unbalanced CSS — " + depth + " block(s) left open");
+}
+
+/* A scoped selector that looks like a declaration is the splitter having lost
+   its place. Catch it on the way out rather than in a screenshot. */
+function assertScoped(css, label) {
+  const bad = css.match(/^\.deck [a-z-]+:[^;{]*\{[^}]*\}$/gm) || [];
+  const empty = css.match(/^\.[A-Za-z][\w-]* \{\}$/gm) || [];
+  if (bad.length || empty.length) {
+    throw new Error(label + ": scoping produced " + bad.length + " declaration-shaped selector(s) and " +
+      empty.length + " empty rule(s); first: " + (bad[0] || empty[0]));
+  }
+}
+
 function scopeCss(rawCss, { nested = false } = {}) {
   const css = nested ? rawCss : stripComments(rawCss);
+  if (!nested) assertBalanced(css, "floor.html");
   const out = [];
   for (const block of splitBlocks(css)) {
     const trimmed = block.trim();

@@ -38,6 +38,51 @@ body {
   min-height: 100dvh;
 }
 
+/* ── the record ─────────────────────────────────────────────────────
+   The console is one of four documents about this board, and the only
+   one that is not prose. The other three are named here at the foot of
+   the panel, quietly: a hairline list rather than cards, because the
+   panel above it is already the loudest thing in the tool. */
+.setLinks { display: grid; gap: 0; margin-top: -3px; }
+.setLink {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline; gap: 10px;
+  padding: 11px 0; text-decoration: none; color: inherit;
+  border-top: 1px solid var(--ui-line);
+}
+.setLink:last-child { border-bottom: 1px solid var(--ui-line); }
+.setLink b {
+  grid-column: 1; grid-row: 1;
+  font-size: 13px; font-weight: 600; letter-spacing: -0.012em;
+  color: var(--ui-text-strong); transition: color 140ms var(--ease);
+}
+.setLink em {
+  grid-column: 1; grid-row: 2; font-style: normal; margin-top: 3px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.setLink i {
+  grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal;
+  font-size: 12px; color: rgba(255, 255, 255, 0.42);
+  transition: color 140ms var(--ease), transform 140ms var(--ease);
+}
+.setLink:hover b { color: var(--ui-text-strong); }
+.setLink:hover i { color: var(--ui-text-strong); transform: translateX(2px); }
+.setLink:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 2px; border-radius: 4px;
+}
+.setHere {
+  display: flex; align-items: baseline; gap: 7px; margin: 12px 0 0;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+}
+.setHere::before {
+  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: var(--indigo); flex: none; transform: translateY(-1px);
+}
+
 /* ── the panel ─────────────────────────────────────────────────── */
 .panel {
   border-right: 1px solid var(--ui-line);
@@ -96,6 +141,7 @@ body {
 .choice > span { white-space: nowrap; }
 
 .presetRow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.presetRow[data-single] { grid-template-columns: 1fr; }
 .preset {
   appearance: none; border: 0; cursor: pointer; font: inherit;
   border-radius: 8px; padding: 11px 10px 10px;
@@ -192,8 +238,14 @@ body {
     </div>
 
     <div class="group">
-      <span class="groupLabel">Start from</span>
-      <p class="groupHelp">Three finished versions. Pick one, then change anything you like underneath.</p>
+      <span class="groupLabel">The default</span>
+      <p class="groupHelp">The locked combination. This is what the product ships as, and what every panel round reviewed.</p>
+      <div class="presetRow" id="lockedPreset" data-single></div>
+    </div>
+
+    <div class="group">
+      <span class="groupLabel">Or start from</span>
+      <p class="groupHelp">Three finished alternatives. Pick one, then change anything you like underneath.</p>
       <div class="presetRow" id="presets"></div>
     </div>
 
@@ -202,7 +254,23 @@ body {
     <div class="group">
       <span class="groupLabel">This combination</span>
       <pre class="recipe" id="recipe"></pre>
-      <button class="reset" id="reset" type="button">Back to variant A</button>
+      <button class="reset" id="reset" type="button">Back to the default</button>
+    </div>
+    <div class="group">
+      <span class="groupLabel">The record</span>
+      <p class="groupHelp">Nineteen rounds of panel review sit behind this board. Three documents say what happened.</p>
+      <div class="setLinks">
+        <a class="setLink" href="https://claude.ai/code/artifact/1da5fc96-aae2-4980-8c79-f417ff30dc88" target="_blank" rel="noopener">
+          <b>Elevation Log</b><i>&rarr;</i><em>Nineteen rounds, scored</em>
+        </a>
+        <a class="setLink" href="https://claude.ai/code/artifact/e58b1fcc-274d-43bf-9314-2af5bb435d7b" target="_blank" rel="noopener">
+          <b>The 9.5 Question</b><i>&rarr;</i><em>Why it stopped where it did</em>
+        </a>
+        <a class="setLink" href="https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6" target="_blank" rel="noopener">
+          <b>Nineteen Rounds</b><i>&rarr;</i><em>The method, rated</em>
+        </a>
+      </div>
+      <p class="setHere">You are on the console</p>
     </div>
   </aside>
 
@@ -240,6 +308,7 @@ body {
   const signal = window.__signal;
 
   const PRESET_COPY = {
+    locked: { name: "The default", line: "Elevated cards, soft corners, calm type. The combination the founder locked on 24 August." },
     a: { name: "A · Air", line: "Flat and borderless. Maximum whitespace." },
     b: { name: "B · Frame", line: "Bordered and dense. Structured." },
     c: { name: "C · Signal", line: "Elevated, indigo-forward, bolder." },
@@ -293,15 +362,17 @@ body {
   ];
   const HEIGHTS = { 1440: 960, 1280: 900, 768: 1024, 390: 844 };
 
-  const STORE = "signal.tasks-console.v1";
-  let current = { preset: "a", state: "board", width: 1440 };
+  /* v2: the store key moved with the default, so a session held on the old
+     starting preset does not quietly outrank the locked combination. */
+  const STORE = "signal.tasks-console.v2";
+  let current = { preset: "locked", state: "board", width: 1440 };
   try {
     const saved = JSON.parse(localStorage.getItem(STORE) || "null");
     if (saved && typeof saved === "object") current = Object.assign(current, saved);
   } catch (error) { /* private mode */ }
 
   function decisionsFor(config) {
-    const base = Object.assign({}, signal.presets[config.preset] || signal.presets.a);
+    const base = Object.assign({}, signal.presets[config.preset] || signal.presets.locked);
     for (const control of CONTROLS) {
       if (config[control.key]) base[control.key] = config[control.key];
     }
@@ -368,7 +439,8 @@ body {
 
   /* ── build the panel ─────────────────────────────────────────── */
   const presets = document.getElementById("presets");
-  ["a", "b", "c"].forEach(function (key) {
+  const lockedHost = document.getElementById("lockedPreset");
+  ["locked", "a", "b", "c"].forEach(function (key) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "preset";
@@ -378,7 +450,7 @@ body {
       current = { preset: key, state: current.state, width: current.width };
       render();
     });
-    presets.appendChild(button);
+    (key === "locked" ? lockedHost : presets).appendChild(button);
   });
 
   const controls = document.getElementById("controls");
@@ -431,7 +503,7 @@ body {
   });
 
   document.getElementById("reset").addEventListener("click", function () {
-    current = { preset: "a", state: current.state, width: current.width };
+    current = { preset: "locked", state: current.state, width: current.width };
     render();
   });
 

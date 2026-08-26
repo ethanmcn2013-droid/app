@@ -137,3 +137,52 @@ the card body.
 fails if it shrinks. It is the loop's memory — 299 assertions, every one added
 because a seat found the defect it guards — and it is worth more than any single
 round's score.
+
+## The Console opens on the locked combination, 2026-08-26
+
+Until now the Design Console opened on preset **A · Air** and the locked
+combination existed only in `PRESETS.locked` in the master. Anyone opening the
+Console — including the founder, and every link now pointing at it from the
+other three artifacts — landed on flat cards, round corners and expressive type
+rather than on the configuration that was locked on 24 August. The Console now
+opens on the default, names it as *The default* in its own group above the three
+alternatives, and its reset returns there. Its store key moved to
+`signal.tasks-console.v2` so a browser holding the old starting preset does not
+quietly outrank the lock.
+
+### Two defects found while shooting the artifacts for cross-linking
+
+**A malformed `@keyframes settleIn` had been silently scoping 562 rules into
+nonsense in the Console.** An edit that removed the fade from the completion
+beat left the old `to { ... }` and its closing brace stranded outside the block.
+The browser recovers from invalid CSS and the standalone master rendered
+correctly, so nothing caught it; the Console's CSS scoper walks braces and
+trusts them, so it lost its place at that point and emitted several hundred
+declaration-shaped selectors. The visible symptom was the dock rendering as an
+unstyled full-width block with a 175px search icon, in the one artifact nobody
+had reason to screenshot. Rendering of the master is unchanged by the fix: the
+stranded rule was dead in every browser.
+
+`build-customizer.mjs` now asserts the master's CSS braces balance before
+splitting, and asserts the scoped output contains no declaration-shaped selector
+and no empty rule. Both throw rather than warn. **The browser recovers from bad
+CSS; a build step must not have to.**
+
+**`--indigo-line` was used in the Log and never defined**, so `.step[data-first]`
+and the current-page card fell back to `currentColor` and drew an ink edge where
+an indigo one was intended. Defined now in all three theme states.
+
+### And a third, in the generator that feeds production
+
+`extract-floor-css.mjs` was scoping keyframe selectors along with everything
+else, so every `@keyframes` in `src/components/floor/floor.module.css` read
+`.root from`, `.root 0%`, `.root 100%`. A keyframe selector is a position on a
+timeline, not an element: prefixed, the keyframe list parses as empty and the
+animation does nothing. **Every animation in the shipped board was dead** — the
+tick settle, the check draw, the count settle, the carry-in, the skeleton
+breathe — while the lab master played all of them, which is why nineteen rounds
+of panel review never saw it. The generator now leaves keyframes alone.
+
+This is a lab-side fix to a generated file. The app has not been run against it
+in this session; `floor-prod-check.mjs` needs a dev server and was not
+exercised. Treat the app-side verification as outstanding work for the port.

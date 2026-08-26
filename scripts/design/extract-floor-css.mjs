@@ -74,6 +74,15 @@ for (const block of blocks(css)) {
   if (selector === ":root") { tokens = `.root ${body}`; continue; }
 
   if (selector.startsWith("@")) {
+    /* A keyframe selector is a position on a timeline, not an element, so it
+       must not be scoped. Prefixed, `from` became `.root from` and the whole
+       keyframe list parsed as empty — which silently killed every animation in
+       the shipped app while the lab master kept playing them. */
+    if (/^@(-[a-z]+-)?keyframes\b/.test(selector)) {
+      kept.push(`${comment}${selector} ${body}`);
+      continue;
+    }
+
     // Recurse one level: media and supports blocks hold their own rules.
     const inner = body.slice(1, body.lastIndexOf("}"));
     const rewritten = blocks(inner).map((sub) => {

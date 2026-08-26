@@ -25,6 +25,7 @@
   --line: rgba(17, 17, 17, 0.08);
   --line-strong: rgba(17, 17, 17, 0.16);
   --indigo-wash: rgba(79, 70, 229, 0.09);
+  --indigo-line: rgba(79, 70, 229, 0.32);
 
   --paper: var(--white);
   --plate: rgba(17, 17, 17, 0.04);
@@ -49,6 +50,7 @@
     --line-strong: rgba(255, 255, 255, 0.2);
     --indigo: #6f68ee;
     --indigo-wash: rgba(111, 104, 238, 0.18);
+    --indigo-line: rgba(111, 104, 238, 0.42);
     --plate: rgba(255, 255, 255, 0.05);
   }
 }
@@ -64,6 +66,7 @@
   --line-strong: rgba(255, 255, 255, 0.2);
   --indigo: #6f68ee;
   --indigo-wash: rgba(111, 104, 238, 0.18);
+  --indigo-line: rgba(111, 104, 238, 0.42);
   --plate: rgba(255, 255, 255, 0.05);
 }
 
@@ -228,6 +231,47 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
 }
 .warn b { color: var(--ink-1); font-weight: 600; }
 
+
+/* ── the set ───────────────────────────────────────────────────────
+   Four documents describe this one piece of work, and each is useless
+   without the others to hand. The set is named on every one of them, with
+   the page you are on stated rather than linked. */
+.setNav { margin: 28px 0 0; }
+.setGrid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.setCard {
+  display: block; text-decoration: none; color: inherit;
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  padding: 18px 20px; background: var(--plate);
+  transition: border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+              background-color 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+a.setCard:hover { border-color: var(--line-strong, var(--line)); background: var(--wash); }
+a.setCard:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.setCard b {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.016em; color: var(--ink-1);
+}
+.setCard em {
+  display: block; margin-top: 3px; font-style: normal;
+  font-family: var(--mono, "Geist Mono", monospace); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.setCard span { display: block; margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.setCard[aria-current] {
+  border-color: var(--indigo-line); background: var(--indigo-wash); cursor: default;
+}
+.setCard[aria-current] em { color: var(--indigo); }
+/* A flex item, not a float: floated, the label intruded into the line box
+   below it and wrapped the role label around itself. */
+.setCard[aria-current] b::after {
+  content: "You are here"; flex: none; white-space: nowrap;
+  font-family: var(--mono, "Geist Mono", monospace); font-size: 9.5px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--indigo);
+}
 /* ── rounds ────────────────────────────────────────────────────── */
 .round { padding: 56px 0 0; }
 .roundHead { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-top: 1px solid var(--ink-1); padding-top: 24px; }
@@ -661,16 +705,22 @@ until this is on main.</pre>
 
   <section class="section" id="links">
     <div class="sectionHead">
-      <p class="kicker">06 · go and use it</p>
-      <h2>The console</h2>
-      <p>The real board with a control panel on it, not a picture of one.</p>
+      <p class="kicker">07 &middot; the set</p>
+      <h2>Four documents describe this one piece of work</h2>
+      <p>
+        The board itself, the record of how it got here, the argument about
+        where it stopped, and the critique of the method that took it there.
+        Each is on every one of the others.
+      </p>
     </div>
-    <div class="links">
-      <a class="linkCard" id="consoleLink" href="#">
-        <span><b>Tasks Design Console</b><span>Toggle card style, radius, density, indigo and type scale on the live board.</span></span>
-        <em>Open →</em>
-      </a>
+    <nav class="setNav" aria-label="The Tasks elevation set">
+    <div class="setGrid">
+      <a class="setCard" href="https://claude.ai/code/artifact/ec6277a9-49d3-4f69-a568-8fbb0c98f6c6" target="_blank" rel="noopener"><b>Design Console</b><em>The board itself, live</em><span>Every decision switchable, the master as it stands.</span></a>
+      <div class="setCard" aria-current="page"><b>Elevation Log</b><em>Nineteen rounds, scored</em><span>Every seat, every finding, every refutation.</span></div>
+      <a class="setCard" href="https://claude.ai/code/artifact/e58b1fcc-274d-43bf-9314-2af5bb435d7b" target="_blank" rel="noopener"><b>The 9.5 Question</b><em>Why it stopped where it did</em><span>The diagnosis, the evidence, and the loop rebuilt.</span></a>
+      <a class="setCard" href="https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6" target="_blank" rel="noopener"><b>Nineteen Rounds</b><em>The method, rated</em><span>A critical retrospective on the loop itself.</span></a>
     </div>
+    </nav>
   </section>
 
   <footer class="foot">
@@ -712,9 +762,7 @@ until this is on main.</pre>
   const PANEL = JSON.parse(document.getElementById("panel").textContent);
   const PALETTE = JSON.parse(document.getElementById("palette").textContent);
   const FRAMES = JSON.parse(document.getElementById("frames").textContent);
-  const CONSOLE_URL = "https://claude.ai/code/artifact/ec6277a9-49d3-4f69-a568-8fbb0c98f6c6";
 
-  document.getElementById("consoleLink").href = CONSOLE_URL;
 
   const rounds = PANEL.rounds;
   const latest = rounds[rounds.length - 1];

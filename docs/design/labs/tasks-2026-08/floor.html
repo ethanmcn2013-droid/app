@@ -893,8 +893,7 @@ a:focus-visible, button:focus-visible, [tabindex]:focus-visible {
    read " of  done" with two holes in it and the digits re-entered lighter than
    the words around them — hierarchy inverted for 150ms in the one moment the
    freeze was lifted for. It settles in place. */
-@keyframes settleIn { from { transform: translateY(2px); } }  to   { opacity: 1; transform: none; }
-}
+@keyframes settleIn { from { transform: translateY(2px); } }
 .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
 .card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
 /* The rest of the board answers in the same breath: the card's ring and

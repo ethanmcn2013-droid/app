@@ -138,6 +138,48 @@ code {
   background: var(--wash); padding: 1px 5px; border-radius: 4px;
 }
 
+
+/* ── the set ───────────────────────────────────────────────────────
+   Four documents describe this one piece of work, and each is useless
+   without the others to hand. The set is named on every one of them, with
+   the page you are on stated rather than linked. */
+.setNav { margin: 88px 0 0; padding: 30px 0 0; border-top: 1px solid var(--ink-1); }
+.setNav > p.kicker { margin: 0 0 20px; }
+.setGrid {
+  display: grid; gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.setCard {
+  display: block; text-decoration: none; color: inherit;
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  padding: 18px 20px; background: var(--plate);
+  transition: border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+              background-color 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+a.setCard:hover { border-color: var(--line-strong, var(--line)); background: var(--wash); }
+a.setCard:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.setCard b {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 15px; font-weight: 600;
+  letter-spacing: -0.016em; color: var(--ink-1);
+}
+.setCard em {
+  display: block; margin-top: 3px; font-style: normal;
+  font-family: var(--mono, "Geist Mono", monospace); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.setCard span { display: block; margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.setCard[aria-current] {
+  border-color: var(--indigo-line); background: var(--indigo-wash); cursor: default;
+}
+.setCard[aria-current] em { color: var(--indigo); }
+/* A flex item, not a float: floated, the label intruded into the line box
+   below it and wrapped the role label around itself. */
+.setCard[aria-current] b::after {
+  content: "You are here"; flex: none; white-space: nowrap;
+  font-family: var(--mono, "Geist Mono", monospace); font-size: 9.5px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--indigo);
+}
 /* ── the floor chart ──────────────────────────────────────────── */
 .figure { margin: 40px 0 0; }
 .figure figcaption {
@@ -587,6 +629,15 @@ td.low { color: var(--indigo); font-weight: 600; }
     </p>
   </div>
 
+  <nav class="setNav" aria-label="The Tasks elevation set">
+    <p class="kicker">The Tasks elevation &middot; four documents</p>
+    <div class="setGrid">
+      <a class="setCard" href="https://claude.ai/code/artifact/ec6277a9-49d3-4f69-a568-8fbb0c98f6c6" target="_blank" rel="noopener"><b>Design Console</b><em>The board itself, live</em><span>Every decision switchable, the master as it stands.</span></a>
+      <a class="setCard" href="https://claude.ai/code/artifact/1da5fc96-aae2-4980-8c79-f417ff30dc88" target="_blank" rel="noopener"><b>Elevation Log</b><em>Nineteen rounds, scored</em><span>Every seat, every finding, every refutation.</span></a>
+      <div class="setCard" aria-current="page"><b>The 9.5 Question</b><em>Why it stopped where it did</em><span>The diagnosis, the evidence, and the loop rebuilt.</span></div>
+      <a class="setCard" href="https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6" target="_blank" rel="noopener"><b>Nineteen Rounds</b><em>The method, rated</em><span>A critical retrospective on the loop itself.</span></a>
+    </div>
+  </nav>
   <p class="foot">
     Sources: <code>docs/design/labs/tasks-2026-08/panel.json</code> (15 rounds,
     scored), the Elevation Log and the Design Console. Cost attribution is
