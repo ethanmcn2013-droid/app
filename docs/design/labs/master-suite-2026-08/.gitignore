@@ -4,8 +4,13 @@
 _wrapped.html
 _gate-*.html
 
-# Working looks taken while building.
+# Working looks and measurements taken while building.
 _look*.png
+_audit.json
+_gate.out
+_before/
+_nlab/
+_scaffold/
 
 # The repointed copies of the three labs' own gates, and their scratch config.
 # tools/gates.mjs writes them fresh every run out of the labs themselves —

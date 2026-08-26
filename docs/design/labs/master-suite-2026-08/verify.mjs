@@ -23,6 +23,7 @@
  * differ, and every allowance is written down with a reason.
  */
 import { chromium } from "@playwright/test";
+import { orientation } from "./tools/orientation.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -815,6 +816,9 @@ if (run("spine")) await spine();
 if (run("contract")) await contract();
 if (run("grounds")) await grounds();
 if (run("motion")) await motion();
+if (run("orientation")) {
+  await orientation({ browser, url: SUITE_URL, check, head });
+}
 if (run("labgates")) await labGates();
 
 await browser.close();

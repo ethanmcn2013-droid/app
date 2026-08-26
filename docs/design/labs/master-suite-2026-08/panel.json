@@ -1,0 +1,16 @@
+{
+  "gate": null,
+  "budget": 3,
+  "ending": "two consecutive rounds with no confirmed blocking or misleading finding, both gates green, frozen surface, self-inflicted under 25%",
+  "seats": [
+    "UI composition",
+    "Typography",
+    "Interaction and states",
+    "UX and information design",
+    "Brand and copy",
+    "Product taste and emotional resonance",
+    "Measured evidence"
+  ],
+  "rounds": [],
+  "name": "master-suite"
+}

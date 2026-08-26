@@ -140,8 +140,20 @@
      upward while the index grew with the window, so at 1920 the two
      objects the architecture calls stacked planes shared neither edge and
      a 1056px void sat beside the paper. --measure still caps the writing
-     lines inside it; --stack is what the two planes agree on. */
-  --stack: min(100%, 1060px);
+     lines inside it; --stack is what the two planes agree on.
+
+     Raised from 1060 to 1440. At 1060 the fix above had solved the two
+     planes disagreeing and left 802px of an 1802px sheet — 45% of it —
+     painted white on either side. That is not a measure protecting
+     anybody's reading: the writing surfaces inside the stack are capped
+     by --measure at 31em and are unaffected by this number. What --stack
+     actually governs is the INDEX, whose rows are scan lines rather than
+     prose, and every pixel of width there is another few words of a
+     person's own note visible before the ellipsis. 1440 is the widest
+     the desk paper can stand before its header row loses its rhythm; the
+     index would take more and does not get it, because the two planes
+     agreeing is the architecture. */
+  --stack: min(100%, 1440px);
 
   /* One duration and one curve for the whole product. Any other value
      has to be argued for in writing. The one exception is the paper
@@ -225,7 +237,11 @@
 /* The subject and its date are one fact and never shrink; if they do
    not fit beside the wordmark they go below it whole. */
 [data-app="notes"] .headNext { flex: none; }
-[data-app="notes"] .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; letter-spacing: var(--tr-18); flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
+/* letter-spacing removed, not changed: the wordmark is one object in one
+   place on one sheet head and shell.css declares its tracking once for the
+   suite. Leaving --tr-18 here would have kept the two products rounding
+   the same curve differently, which is what the gate found. */
+[data-app="notes"] .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
 [data-app="notes"] .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
 [data-app="notes"] .headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
 /* What the house is facing, at the head of the sheet. The head's top-line

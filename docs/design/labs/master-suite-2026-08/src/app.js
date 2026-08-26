@@ -38,6 +38,27 @@ window.__SUITE = (function () {
      is not on screen opens on its own locked defaults. */
   var query = new URLSearchParams(location.search);
   var deck = document.getElementById("deck");
+
+  /* ── one parameter that names a surface completely ────────────────
+     `?state=` may be a product's own state ("board"), or it may name the
+     product too ("notes.voice"). Both reach the same place; the compound
+     form exists because a toolchain that can only set one parameter can
+     still reach all three products with it, and because a deep link that
+     names the surface completely is a better link than two that have to
+     agree. The per-product form is untouched, so every gate already
+     pointed at ?state= keeps working.
+
+     A DOT, not a colon. The first version used a colon, which reads
+     better in a URL and cannot be put in a filename on Windows — so the
+     shot harness, which names every frame after its state, silently
+     collapsed forty frames into three and then reported the two that
+     "differed" between runs. A state name has to survive being a
+     filename, because that is one of the places it lives. */
+  var compound = (query.get("state") || "").split(".");
+  if (compound.length === 2 && PRODUCTS.indexOf(compound[0]) >= 0) {
+    query.set("p", compound[0]);
+    query.set("state", compound[1]);
+  }
   /* Which sheet the app opens on: ?p= if it is given, otherwise whatever
      the markup already says. The markup default is what lets a copy of
      this page open on Notes with no query string at all — which is how the
@@ -240,7 +261,7 @@ window.__SUITE = (function () {
   function writeUrl() {
     var next = new URLSearchParams();
     next.set("p", current);
-    ["state", "v", "ground"].forEach(function (key) {
+    ["state", "v", "ground", "layout"].forEach(function (key) {
       var value = query.get(key);
       if (value) next.set(key, value);
     });
@@ -370,7 +391,11 @@ window.__SUITE = (function () {
       var own = new URLSearchParams();
       /* Timeline's ratified twin is a ground, not a state, and it is
          reachable whether or not Timeline is the sheet on the floor. */
-      if (product === "timeline" && query.get("ground")) own.set("ground", query.get("ground"));
+      if (product === "timeline") {
+        for (const key of ["ground", "layout"]) {
+          if (query.get(key)) own.set(key, query.get(key));
+        }
+      }
       return own;
     },
     root: hostOf,

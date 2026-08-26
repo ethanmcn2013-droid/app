@@ -169,7 +169,10 @@
    packed to one side, so the head, the view row and the board no longer shared
    an edge. The sheet is capped at the width five full columns need and centres
    on the floor, so every edge stays one edge. */
-[data-app="tasks"] .sheet { max-width: 1592px; margin-inline: auto; }
+/* The cap is derived, not chosen: five trays at their own ceiling plus
+   the sheet's two leading edges. It moves when the ceiling moves and at
+   no other time — 5 × 372 + 32. */
+[data-app="tasks"] .sheet { max-width: 1892px; margin-inline: auto; }
 /* Where the board runs past the sheet, the last column dissolves instead of
    being guillotined. Off by default, on wherever the board actually
    overflows. Same mask idiom as the dock scrim, and no new hue. */
@@ -210,9 +213,11 @@
   padding: 0 28px; height: 60px;
 }
 [data-app="tasks"] .word { font-size: 15px; letter-spacing: var(--tr-15); }
+/* letter-spacing removed, not changed: shell.css declares the wordmark's
+   tracking once for the suite, at this value. See the note there. */
 [data-app="tasks"] .word {
   display: inline-flex; align-items: baseline;
-  font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
+  font-size: 17px; font-weight: 600;
   color: var(--ink-1); flex: none;
 }
 /* The sheet's own claim is that indigo means the next milestone. Spending it
@@ -324,6 +329,17 @@
   letter-spacing: var(--tr-13); white-space: nowrap;
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
+/* The word inside the control. Both of these controls declare their own
+   height and the span inside them did not declare a leading, so the
+   browser chose one for every head action and every view name on the
+   board — Share, Planning, the overflow, and Board / List / Schedule /
+   Calendar. round(1.3 × 13) = 17, which is what it was already
+   computing, so nothing moves. */
+[data-app="tasks"] .ghost > span,
+[data-app="tasks"] .segItem > span,
+[data-app="tasks"] .trayAdd > span,
+[data-app="tasks"] .dockField > span,
+[data-app="tasks"] .dockPrimary > span { line-height: 17px; }
 [data-app="tasks"] .ghost svg { width: 15px; height: 15px; color: var(--ink-3); }
 [data-app="tasks"] .ghost:not([aria-disabled="true"]):hover { background: var(--wash); color: var(--ink-1); }
 [data-app="tasks"] .ghost:not([aria-disabled="true"]):hover svg { color: var(--ink-2); }
@@ -354,7 +370,13 @@
    Ruled columns, not filled boxes. The sheet stays one surface. */
 [data-app="tasks"] .board {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: repeat(5, minmax(258px, 312px));
+  /* 312 was the ceiling and it left 328px of ink either side of a 1592px
+     sheet at 1920 — the columns stopped growing and the width went
+     nowhere. A tray is a column of two-line titles: at 312 the fixture's
+     longest title takes two lines, at 372 it takes one, and past that a
+     card stops reading as a card. So the ceiling goes to 372 and the
+     sheet's cap follows it. Below 1440 nothing moves. */
+  display: grid; grid-template-columns: repeat(5, minmax(258px, 372px));
   /* `safe` is load-bearing: a centred grid that overflows puts its leading
      content out of reach of the scroller, which is exactly what the board
      becomes below 1100. It centres when it fits and starts when it does not. */
@@ -1679,7 +1701,10 @@
      left here is only what is genuinely phone: a tighter leading edge and a
      name set one step larger, because a 390 measure can carry it. */
   [data-app="tasks"] .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
-  [data-app="tasks"] .sheet[data-head="stack"] .headName { font-size: 19px; }
+  /* The leading follows the size, because the rule is round(1.3 × size)
+     and the size changes here. Declaring 26 for both moved the phone head
+     by a pixel and took 1.8% of the frame with it. */
+  [data-app="tasks"] .sheet[data-head="stack"] .headName { font-size: 19px; line-height: 25px; }
   [data-app="tasks"] .headSearch { display: inline-flex; }
   /* Only the way out survives, because there is no keyboard here to teach. */
   /* The shortcut hint goes; the depth ("1 more") stays, because it is the
@@ -1707,3 +1732,41 @@
   [data-app="tasks"] .spec { padding: 4px 16px 24px; }
 }
 
+
+
+/* ── the leading, declared ──────────────────────────────────────────
+   Twenty elements on this board resolved their line-height to `normal` —
+   the wordmark, the workspace name, every tray name and count, every tag,
+   every time chip, the head's two filter chips, the ratio, the comment
+   count, the priority mark, the account disc and three screen-reader
+   strings. The browser was choosing the leading on all of them and nobody
+   had. This board's own audit ran nineteen rounds and has no leading
+   check; the suite's does, and this is the first thing that ever looked.
+
+   The value is not a new decision. Geist's `normal` metric resolves to
+   exactly round(1.3 × size) at every size on this board, and nineteen
+   rounds have ratified how that looks — so the leading declared here IS
+   the leading that was ratified, written in pixels because that is what
+   the browser was computing. A unitless 1.3 is a hair off it and moved
+   0.3% of the board's pixels including two card heights, which is a
+   redesign wearing a fix's clothes.
+
+   Grouped by size rather than by element, because the rule is about the
+   metric and not about the component: on this board, a label of size N
+   leads at round(1.3N). */
+[data-app="tasks"] .dockAvatar { line-height: 13px; }   /* 10px */
+[data-app="tasks"] .trayName,
+[data-app="tasks"] .trayCount,
+[data-app="tasks"] .tag,
+[data-app="tasks"] .when { line-height: 14px; }         /* 11px */
+[data-app="tasks"] .late,
+[data-app="tasks"] .who,
+[data-app="tasks"] .hi,
+[data-app="tasks"] .cm { line-height: 16px; }           /* 12px */
+[data-app="tasks"] .today,
+[data-app="tasks"] .ratio,
+[data-app="tasks"] .ratio b,
+[data-app="tasks"] .undated,
+[data-app="tasks"] .headFacts > span { line-height: 17px; }  /* 13px */
+[data-app="tasks"] .word { line-height: 22px; }         /* 17px */
+[data-app="tasks"] .headName { line-height: 26px; }     /* 20px, 25px at 19 */

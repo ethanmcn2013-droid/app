@@ -220,6 +220,11 @@ body {
   position: absolute; width: 1px; height: 1px;
   margin: -1px; padding: 0; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap; border: 0;
+  /* Declared, because "the browser choosing it means nobody did" is true
+     of a box nobody sees as well. One, because a clipped 1×1 box has no
+     leading to have an opinion about, and leaving it `normal` put three
+     screen-reader strings on the gate's list every round. */
+  line-height: 1;
 }
 
 /* ── the floor ───────────────────────────────────────────────── */
@@ -248,7 +253,14 @@ body {
      do. On its own page it scrolled the window; there is no window to
      scroll here, and 100dvh has been re-based on this box. */
   overflow: auto;
-  height: 100%;
+  /* NO height here. This element carries .sheet as well, and .sheet
+     declares its own height twice — 100% at a desk, and
+     100dvh minus the phone bar below 720. A height on this selector
+     outranks both, so at 390 the artifact grew to the full floor and
+     painted straight over the capsule: the spine was underneath the
+     sheet, unreachable, and Timeline had no way out of it on a phone
+     from the day the suite was composed. The 133-check gate missed it
+     because the 390 merge was only ever driven for Tasks and Notes. */
 }
 #tl { min-height: 100%; }
 
@@ -358,6 +370,25 @@ body {
   outline: 2px solid var(--indigo);
   outline-offset: 2px;
 }
+
+/* ── the wordmark ───────────────────────────────────────────────
+   `tasks.` and `notes.` are the same object in the same place on the same
+   sheet head, and they were tracked two ways: -0.022em in the Tasks shell
+   and -0.021em in the Notes one, both reached through a token called
+   --tr-18. Apart, that is two labs rounding the same curve differently.
+   Together — one application, one head, the object a person sees swap when
+   they press a tile — it is the same word set two ways, and the measured
+   gate reported it as one key seen 49 times.
+
+   Declared once here, on the shell, at the Tasks value: the tracking
+   curve was argued and declared in the Tasks lock ("one tracking curve,
+   by size, declared once") and the Notes shell inherited that shell from
+   it. The full stop after the word stays product-scoped — it is ink in
+   Tasks and indigo in Notes, and both locks defend their own. */
+/* On #deck, not bare: each product's own .word rule is scoped to its app
+   element and outranks a bare class. The shell already reaches the spine's
+   decisions this way. */
+#deck .word { letter-spacing: -0.022em; }
 
 /* ── the sheet ─────────────────────────────────────────────────
    White against ink needs no shadow. Contrast is the elevation. Both
@@ -610,7 +641,10 @@ body {
    packed to one side, so the head, the view row and the board no longer shared
    an edge. The sheet is capped at the width five full columns need and centres
    on the floor, so every edge stays one edge. */
-[data-app="tasks"] .sheet { max-width: 1592px; margin-inline: auto; }
+/* The cap is derived, not chosen: five trays at their own ceiling plus
+   the sheet's two leading edges. It moves when the ceiling moves and at
+   no other time — 5 × 372 + 32. */
+[data-app="tasks"] .sheet { max-width: 1892px; margin-inline: auto; }
 /* Where the board runs past the sheet, the last column dissolves instead of
    being guillotined. Off by default, on wherever the board actually
    overflows. Same mask idiom as the dock scrim, and no new hue. */
@@ -651,9 +685,11 @@ body {
   padding: 0 28px; height: 60px;
 }
 [data-app="tasks"] .word { font-size: 15px; letter-spacing: var(--tr-15); }
+/* letter-spacing removed, not changed: shell.css declares the wordmark's
+   tracking once for the suite, at this value. See the note there. */
 [data-app="tasks"] .word {
   display: inline-flex; align-items: baseline;
-  font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
+  font-size: 17px; font-weight: 600;
   color: var(--ink-1); flex: none;
 }
 /* The sheet's own claim is that indigo means the next milestone. Spending it
@@ -765,6 +801,17 @@ body {
   letter-spacing: var(--tr-13); white-space: nowrap;
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
+/* The word inside the control. Both of these controls declare their own
+   height and the span inside them did not declare a leading, so the
+   browser chose one for every head action and every view name on the
+   board — Share, Planning, the overflow, and Board / List / Schedule /
+   Calendar. round(1.3 × 13) = 17, which is what it was already
+   computing, so nothing moves. */
+[data-app="tasks"] .ghost > span,
+[data-app="tasks"] .segItem > span,
+[data-app="tasks"] .trayAdd > span,
+[data-app="tasks"] .dockField > span,
+[data-app="tasks"] .dockPrimary > span { line-height: 17px; }
 [data-app="tasks"] .ghost svg { width: 15px; height: 15px; color: var(--ink-3); }
 [data-app="tasks"] .ghost:not([aria-disabled="true"]):hover { background: var(--wash); color: var(--ink-1); }
 [data-app="tasks"] .ghost:not([aria-disabled="true"]):hover svg { color: var(--ink-2); }
@@ -795,7 +842,13 @@ body {
    Ruled columns, not filled boxes. The sheet stays one surface. */
 [data-app="tasks"] .board {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: repeat(5, minmax(258px, 312px));
+  /* 312 was the ceiling and it left 328px of ink either side of a 1592px
+     sheet at 1920 — the columns stopped growing and the width went
+     nowhere. A tray is a column of two-line titles: at 312 the fixture's
+     longest title takes two lines, at 372 it takes one, and past that a
+     card stops reading as a card. So the ceiling goes to 372 and the
+     sheet's cap follows it. Below 1440 nothing moves. */
+  display: grid; grid-template-columns: repeat(5, minmax(258px, 372px));
   /* `safe` is load-bearing: a centred grid that overflows puts its leading
      content out of reach of the scroller, which is exactly what the board
      becomes below 1100. It centres when it fits and starts when it does not. */
@@ -2120,7 +2173,10 @@ body {
      left here is only what is genuinely phone: a tighter leading edge and a
      name set one step larger, because a 390 measure can carry it. */
   [data-app="tasks"] .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
-  [data-app="tasks"] .sheet[data-head="stack"] .headName { font-size: 19px; }
+  /* The leading follows the size, because the rule is round(1.3 × size)
+     and the size changes here. Declaring 26 for both moved the phone head
+     by a pixel and took 1.8% of the frame with it. */
+  [data-app="tasks"] .sheet[data-head="stack"] .headName { font-size: 19px; line-height: 25px; }
   [data-app="tasks"] .headSearch { display: inline-flex; }
   /* Only the way out survives, because there is no keyboard here to teach. */
   /* The shortcut hint goes; the depth ("1 more") stays, because it is the
@@ -2147,6 +2203,45 @@ body {
   [data-app="tasks"] .loadSay { bottom: 72px; }
   [data-app="tasks"] .spec { padding: 4px 16px 24px; }
 }
+
+
+
+/* ── the leading, declared ──────────────────────────────────────────
+   Twenty elements on this board resolved their line-height to `normal` —
+   the wordmark, the workspace name, every tray name and count, every tag,
+   every time chip, the head's two filter chips, the ratio, the comment
+   count, the priority mark, the account disc and three screen-reader
+   strings. The browser was choosing the leading on all of them and nobody
+   had. This board's own audit ran nineteen rounds and has no leading
+   check; the suite's does, and this is the first thing that ever looked.
+
+   The value is not a new decision. Geist's `normal` metric resolves to
+   exactly round(1.3 × size) at every size on this board, and nineteen
+   rounds have ratified how that looks — so the leading declared here IS
+   the leading that was ratified, written in pixels because that is what
+   the browser was computing. A unitless 1.3 is a hair off it and moved
+   0.3% of the board's pixels including two card heights, which is a
+   redesign wearing a fix's clothes.
+
+   Grouped by size rather than by element, because the rule is about the
+   metric and not about the component: on this board, a label of size N
+   leads at round(1.3N). */
+[data-app="tasks"] .dockAvatar { line-height: 13px; }   /* 10px */
+[data-app="tasks"] .trayName,
+[data-app="tasks"] .trayCount,
+[data-app="tasks"] .tag,
+[data-app="tasks"] .when { line-height: 14px; }         /* 11px */
+[data-app="tasks"] .late,
+[data-app="tasks"] .who,
+[data-app="tasks"] .hi,
+[data-app="tasks"] .cm { line-height: 16px; }           /* 12px */
+[data-app="tasks"] .today,
+[data-app="tasks"] .ratio,
+[data-app="tasks"] .ratio b,
+[data-app="tasks"] .undated,
+[data-app="tasks"] .headFacts > span { line-height: 17px; }  /* 13px */
+[data-app="tasks"] .word { line-height: 22px; }         /* 17px */
+[data-app="tasks"] .headName { line-height: 26px; }     /* 20px, 25px at 19 */
 
 /* ══ notes.css ══════════════════════════════════════════ */
 
@@ -2292,8 +2387,20 @@ body {
      upward while the index grew with the window, so at 1920 the two
      objects the architecture calls stacked planes shared neither edge and
      a 1056px void sat beside the paper. --measure still caps the writing
-     lines inside it; --stack is what the two planes agree on. */
-  --stack: min(100%, 1060px);
+     lines inside it; --stack is what the two planes agree on.
+
+     Raised from 1060 to 1440. At 1060 the fix above had solved the two
+     planes disagreeing and left 802px of an 1802px sheet — 45% of it —
+     painted white on either side. That is not a measure protecting
+     anybody's reading: the writing surfaces inside the stack are capped
+     by --measure at 31em and are unaffected by this number. What --stack
+     actually governs is the INDEX, whose rows are scan lines rather than
+     prose, and every pixel of width there is another few words of a
+     person's own note visible before the ellipsis. 1440 is the widest
+     the desk paper can stand before its header row loses its rhythm; the
+     index would take more and does not get it, because the two planes
+     agreeing is the architecture. */
+  --stack: min(100%, 1440px);
 
   /* One duration and one curve for the whole product. Any other value
      has to be argued for in writing. The one exception is the paper
@@ -2377,7 +2484,11 @@ body {
 /* The subject and its date are one fact and never shrink; if they do
    not fit beside the wordmark they go below it whole. */
 [data-app="notes"] .headNext { flex: none; }
-[data-app="notes"] .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; letter-spacing: var(--tr-18); flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
+/* letter-spacing removed, not changed: the wordmark is one object in one
+   place on one sheet head and shell.css declares its tracking once for the
+   suite. Leaving --tr-18 here would have kept the two products rounding
+   the same curve differently, which is what the gate found. */
+[data-app="notes"] .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
 [data-app="notes"] .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
 [data-app="notes"] .headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
 /* What the house is facing, at the head of the sheet. The head's top-line
@@ -4094,8 +4205,14 @@ body {
 }
 
 [data-app="timeline"] * { box-sizing: border-box; }
-[data-app="timeline"],
-[data-app="timeline"] { height: 100%; }
+/* `html, body { height: 100% }` was scoped from the lab's own stylesheet
+   and became this — the same selector twice, at (0,2,0), on an element
+   that is now the SHEET. It outranked .sheet's own height in the phone
+   media query, so at 390 the artifact grew to the full floor and painted
+   over the capsule: the spine sat underneath the sheet, unreachable, and
+   Timeline had no way out of it on a phone. The shell owns the sheet's
+   height; a page-level rule about html and body has nothing to say about
+   it here. Removed, not overridden. */
 [data-app="timeline"] {
   margin: 0;
   /* The page ground is painted as a tint LAID OVER paper, never as the
@@ -6026,6 +6143,363 @@ body {
     outline-offset: 9px;
   }
 }
+
+/* ══ across.css ══════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   ACROSS — the Timeline measure on the other axis.
+
+   Not a rotation of the column. Down the page, distance is read by
+   scrolling; across, the whole approach is one object and the reader
+   takes the distance in at a glance. Everything the instrument already
+   says stays said: the tick is still the position, the figure is still
+   a readout of the row it belongs to, the day is still the far end.
+
+   The scale is written by placeAcross() into --across-px and the
+   geometry into --rule-y, because both are measurements of the box this
+   is in and neither can be stated here. This stylesheet decides only
+   what the parts look like once they have been placed.
+
+   It is a separate file from timeline.css deliberately: timeline.css is
+   the three frozen lab stylesheets, derived and scoped. This is new
+   surface, and new surface is easier to argue with when it is not mixed
+   into somebody else's record.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── the orientation control ────────────────────────────────────────
+   It belongs to the measure, not to the chrome: it changes how this one
+   instrument is drawn and nothing else on the page. It sits beside the
+   measure's own head for the same reason the notebook's grouping control
+   sits beside "your notes" — the control that changes a view lives on
+   that view's own label. */
+[data-app="timeline"] .b-measureBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-line);
+  flex-wrap: wrap;
+}
+[data-app="timeline"] .b-layout {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--fore-16);
+  margin: var(--gap-item) 0 0;
+}
+[data-app="timeline"] .b-layoutBtn {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  line-height: var(--lead-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--fore-62);
+  padding: 6px 12px;
+  border-radius: 999px;
+  position: relative;
+  transition: color var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
+}
+/* A 27px pill is under the target floor on its own, and the first draft of
+   this expander did not fix it: it was written with `top: 50%` and a
+   transform, and a hit area is measured from its INSETS — a positive inset
+   is not an expander at all, whatever it looks like. The measured gate
+   caught it at every viewport before a seat was convened. Four negative
+   insets, so the union is real and readable. */
+[data-app="timeline"] .b-layoutBtn::after {
+  content: "";
+  position: absolute;
+  inset: -9px -6px;
+}
+/* And where a finger is the pointer, the control itself takes the floor.
+   An expander answers the gate; 44px of real control answers the thumb. */
+@media (pointer: coarse) {
+  [data-app="timeline"] .b-layoutBtn { min-height: 44px; }
+  [data-app="timeline"] .b-layout { padding: 3px; }
+}
+[data-app="timeline"] .b-layoutBtn:hover { color: var(--fore); }
+[data-app="timeline"] .b-layoutBtn[aria-pressed="true"] {
+  color: var(--back);
+  background: var(--fore);
+}
+
+/* ── the track ──────────────────────────────────────────────────── */
+[data-app="timeline"] .b-measure[data-across="true"] {
+  /* No count lane: the figures travel with their own words now. */
+  padding: 0;
+  margin-top: var(--gap-section);
+  /* height is written by placeAcross from the ranks it just assigned. */
+}
+/* Only when the fourteen-pixel floor bites. A scrollbar under a
+   composition that fits is a lie about the width. */
+[data-app="timeline"] .b-measure[data-across="true"][data-scrolls="true"] {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: var(--gap-snug);
+}
+
+/* The rule runs the width of the span, and today is where it starts. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-rail {
+  left: var(--across-edge, 0px);
+  top: var(--rule-y);
+  bottom: auto;
+  width: var(--across-span, 100%);
+  height: 1px;
+}
+/* The accent is NOT respent here. `structure` already puts indigo on the
+   rail — [data-accent="structure"] .b-measure:not(.b-back) .b-rail — and
+   that rule matches this measure exactly as it matches the vertical one.
+   The first draft of this file restated it at opacity 0.5, which is not a
+   declared step; the rule it was duplicating carries a comment saying so
+   in as many words. Across, all of the rail is ahead, which is the whole
+   point of the orientation, and the existing rule already draws it.
+   */
+
+/* Today: a filled mark at the origin with its name below the rule, so
+   the first label above the rule is not competing with it. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-origin {
+  left: var(--across-edge, 0px);
+  top: calc(var(--rule-y) + 15px);
+  white-space: nowrap;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-origin::before {
+  left: 0;
+  top: -15px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  border-radius: 999px;
+  background: var(--fore);
+}
+
+/* The far end names what the measure runs to. Down the page the reader
+   arrives at the day by scrolling to it; across, it has to be legible
+   from where they are standing. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-terminus {
+  position: absolute;
+  left: calc(var(--across-span, 100%) + var(--across-edge, 0px));
+  top: calc(var(--rule-y) + 15px);
+  transform: translateX(-100%);
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+  display: grid;
+  gap: 2px;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-terminusDay {
+  font-size: var(--size-body);
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-body);
+  color: var(--fore);
+  font-weight: 600;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-terminusWhat {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  line-height: var(--lead-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--fore-62);
+}
+
+/* ── a moment on the track ──────────────────────────────────────── */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item {
+  left: var(--x);
+  right: auto;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  /* Position is the quantity on this axis too, so a moment that is moved
+     animates the distance rather than decorating a state change. One
+     declared duration, one declared easing; reduced motion removes it. */
+  transition: left var(--t-slow) var(--ease);
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-tick {
+  left: 0;
+  top: var(--rule-y);
+  transform: translate(-50%, -50%);
+}
+/* The stem says which mark these words belong to. It is the rail's own
+   ink drawn from the tick out to the near edge of the words, and it
+   grows with the rank so a stepped label is never orphaned. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: calc(var(--rank, 0) * var(--step) + 20px);
+  pointer-events: none;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="above"]::after {
+  bottom: calc(100% - var(--rule-y) + 4px);
+  background: linear-gradient(to top, var(--fore-28), var(--fore-10));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="below"]::after {
+  top: calc(var(--rule-y) + 4px);
+  background: linear-gradient(to bottom, var(--fore-28), var(--fore-10));
+}
+/* The stem is geometry, and a forced palette may repaint a fill but
+   cannot flatten a gradient. It says nothing a reader has not already
+   been told in words, so it never reaches the accessibility tree. */
+@media (forced-colors: active) {
+  [data-app="timeline"] .b-measure[data-across="true"] .b-item::after { background: CanvasText; }
+}
+
+/* The figure and the words are one object: same lane, same alignment,
+   same rank, the figure nearer the rule because it is the readout of
+   the position and the words are what is at it. Nothing can push them
+   apart the way the vertical measure has to, because on this axis
+   crowding is answered by rank, not by displacement. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-away,
+[data-app="timeline"] .b-measure[data-across="true"] .b-copy {
+  position: absolute;
+  left: 0;
+  width: 168px;
+  max-width: none;
+  margin: 0;
+  transform: translateX(-50%);
+  text-align: center;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-away {
+  top: auto;
+  font-size: var(--size-data);
+  line-height: var(--lead-label);
+  /* 0.72, not 0.46. The lock is explicit: over paper the floor for type is
+     ink at 0.62 (5.34:1), and below the floor the ladder draws rules and
+     never letters. The first draft set this figure at 0.46 — 3.13:1 — on
+     the one number the whole instrument exists to report. The vertical
+     measure has always set the same object at 0.72; it is the same object,
+     so it takes the same step. Caught by the measured gate at three
+     viewports on two states, before a seat saw it. */
+  color: var(--fore-72);
+}
+/* At the two ends the label aligns inward rather than hanging off the
+   track. An axis names its ends from the inside. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="start"] .b-copy,
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="start"] .b-away {
+  transform: none;
+  text-align: left;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="end"] .b-copy,
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="end"] .b-away {
+  transform: translateX(-100%);
+  text-align: right;
+}
+/* --step and --away-h are MEASURED by placeAcross from the labels that
+   actually rendered, because how tall a rank is depends on what is in
+   it: an owner's row carries an Edit control a guest's does not, and a
+   two-line title is taller than a one-line one. A guessed step clipped
+   its own labels top and bottom on the first surface it met. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="above"] .b-away {
+  bottom: calc(100% - var(--rule-y) + 26px + var(--rank, 0) * var(--step));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="above"] .b-copy {
+  bottom: calc(100% - var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="below"] .b-away {
+  top: calc(var(--rule-y) + 26px + var(--rank, 0) * var(--step));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="below"] .b-copy {
+  top: calc(var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-title {
+  font-size: var(--size-body);
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-body);
+}
+/* A follower shares its leader's mark and rank, so it takes the row
+   under it rather than a second mark of its own. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"]::after {
+  display: none;
+}
+/* A stacked pair is one mark with two labels, so the follower takes the
+   row beyond its leader inside the SAME rank rather than a rank of its
+   own — which is why placeAcross doubles the step when any pair exists. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"][data-side="above"] .b-copy {
+  bottom: calc(100% - var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h) + var(--step) / 2);
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"][data-side="below"] .b-copy {
+  top: calc(var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h) + var(--step) / 2);
+}
+/* A stacked pair shares one mark, so the follower's own count and tick
+   are hidden exactly as they are down the page. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"] .b-away {
+  visibility: hidden;
+}
+/* The measure head stood over a column; across it stands over a track. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-measureHead { min-width: 0; }
+
+/* ── the page around it ─────────────────────────────────────────────
+   Across, the horizon is a band ABOVE the track rather than a column
+   beside it: the count, the date and what the day is, in that order,
+   and then the whole distance underneath them. The lock's rule that the
+   horizon never moves is kept by a different mechanism — there is
+   nothing to scroll past it, because the whole approach is in frame. */
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-two,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-two {
+  display: block;
+}
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-stick,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-stick {
+  position: static;
+  overflow: visible;
+  max-height: none;
+  min-height: 0;
+  mask-image: none;
+}
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-plan,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-plan {
+  overflow: visible;
+  min-height: 0;
+  mask-image: none;
+}
+/* The owner's desk surface is a fixed frame with two scrolling panes
+   when the plan runs down the page. Across there is one pane and it is
+   the page, so the frame stops being fixed and the sheet scrolls. */
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-ownerField {
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* The horizon band. The count and the day it is counting to stand on one
+   line at desk width, which is the composition the orientation exists
+   for: the number, and the thing at the end of it, in one look. */
+@media (min-width: 1024px) {
+  [data-app="timeline"][data-layout="across"] .b-horizon {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--gap-major);
+    align-items: start;
+  }
+  /* The horizon's children are a flat list, so each one is placed by
+     name. The count holds the left; everything that names the day it is
+     counting to holds the right, and the two sit on one baseline —
+     which is the composition this orientation exists for: the number,
+     and the thing at the end of it, in one look. */
+  [data-app="timeline"][data-layout="across"] .b-who { grid-column: 1; grid-row: 1; }
+  [data-app="timeline"][data-layout="across"] .b-count,
+  [data-app="timeline"][data-layout="across"] .b-dayCount,
+  [data-app="timeline"][data-layout="across"] .b-passed { grid-column: 1; grid-row: 2 / span 5; }
+  [data-app="timeline"][data-layout="across"] .b-when { grid-column: 2; grid-row: 2; margin-top: 0; }
+  [data-app="timeline"][data-layout="across"] .b-sub { grid-column: 2; grid-row: 3; }
+  [data-app="timeline"][data-layout="across"] .b-todayRule { grid-column: 2; grid-row: 4; }
+  [data-app="timeline"][data-layout="across"] .b-todayLabel { grid-column: 2; grid-row: 5; }
+  [data-app="timeline"][data-layout="across"] .b-gapNote { grid-column: 2; grid-row: 6; }
+  [data-app="timeline"][data-layout="across"] .b-keeper { grid-column: 2; grid-row: 7; }
+}
+
+/* ── the width the artifact is allowed ──────────────────────────────
+   The stage is capped at 1180px because down the page the artifact is a
+   document and a document has a measure. Across, the artifact IS the
+   distance, and a distance capped at 1180 in an 1800px sheet is 40% of
+   the surface painted white for no reason — which is the first thing
+   the founder said about it. The cap comes off for this orientation and
+   only this one. */
+[data-app="timeline"][data-layout="across"][data-medium="full"] .tl-stage,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .tl-stage {
+  max-width: 100%;
+}
 </style>
 
 <div id="deck" class="floor" data-product="tasks">
@@ -7140,6 +7614,27 @@ window.__SUITE = (function () {
      is not on screen opens on its own locked defaults. */
   var query = new URLSearchParams(location.search);
   var deck = document.getElementById("deck");
+
+  /* ── one parameter that names a surface completely ────────────────
+     `?state=` may be a product's own state ("board"), or it may name the
+     product too ("notes.voice"). Both reach the same place; the compound
+     form exists because a toolchain that can only set one parameter can
+     still reach all three products with it, and because a deep link that
+     names the surface completely is a better link than two that have to
+     agree. The per-product form is untouched, so every gate already
+     pointed at ?state= keeps working.
+
+     A DOT, not a colon. The first version used a colon, which reads
+     better in a URL and cannot be put in a filename on Windows — so the
+     shot harness, which names every frame after its state, silently
+     collapsed forty frames into three and then reported the two that
+     "differed" between runs. A state name has to survive being a
+     filename, because that is one of the places it lives. */
+  var compound = (query.get("state") || "").split(".");
+  if (compound.length === 2 && PRODUCTS.indexOf(compound[0]) >= 0) {
+    query.set("p", compound[0]);
+    query.set("state", compound[1]);
+  }
   /* Which sheet the app opens on: ?p= if it is given, otherwise whatever
      the markup already says. The markup default is what lets a copy of
      this page open on Notes with no query string at all — which is how the
@@ -7342,7 +7837,7 @@ window.__SUITE = (function () {
   function writeUrl() {
     var next = new URLSearchParams();
     next.set("p", current);
-    ["state", "v", "ground"].forEach(function (key) {
+    ["state", "v", "ground", "layout"].forEach(function (key) {
       var value = query.get(key);
       if (value) next.set(key, value);
     });
@@ -7472,7 +7967,11 @@ window.__SUITE = (function () {
       var own = new URLSearchParams();
       /* Timeline's ratified twin is a ground, not a state, and it is
          reachable whether or not Timeline is the sheet on the floor. */
-      if (product === "timeline" && query.get("ground")) own.set("ground", query.get("ground"));
+      if (product === "timeline") {
+        for (const key of ["ground", "layout"]) {
+          if (query.get(key)) own.set(key, query.get(key));
+        }
+      }
       return own;
     },
     root: hostOf,
@@ -10138,6 +10637,10 @@ function onScroll() {
 function mount() {
   const target = window.__SUITE.host("tasks");
   if (!target) return;
+  /* The state this board is in, where a harness can read it. Notes and
+     Timeline both write theirs onto their own root; the board was the one
+     surface whose state a gate could only infer from the pixels. */
+  root.setAttribute("data-state", lateOnly ? "filtered" : state);
   const before = flyId ? snapshot(target) : null;
   const kept = keepPlace(target);
   target.innerHTML = renderApp();
@@ -14678,9 +15181,85 @@ window.__SUITE.register("tasks", {
     ]);
   }
 
+  /* ── the two orientations ─────────────────────────────────────────
+     ACROSS and DOWN are two designs of one idea, not one design rotated.
+
+     Down the page, distance is read by scrolling: the composition is a
+     column and it is the right answer on a phone, where the whole
+     approach cannot be in frame and pretending otherwise would lie
+     about the proportion.
+
+     Across the page, the WHOLE approach is one object — today at your
+     feet, the day at the far end, every moment between them sitting at
+     its true share of the distance. That is the thing a phone cannot
+     give you and the only reason this orientation exists. It is what
+     the artifact opens on at a desk.
+
+     The scale follows: down, it is the lock's fixed pixels-per-day and
+     the page grows. Across, the track fills the width and the scale
+     falls out of it — with the lock's own desk figure as a FLOOR, below
+     which the track scrolls rather than lying about the proportion.
+     Fourteen is that floor because it is derived from the tightest real
+     gap in the fixture (seven days) against the largest a label can
+     grow; on this axis that is width rather than height, and the
+     stagger doubles the room every label gets. */
+  /* px per day, and the floor is NOT the vertical measure's fourteen.
+     Down the page, fourteen exists because a row is 92px tall and a
+     crowded pair can only be pushed along the same axis it is measured
+     on. Across, a crowded pair is stepped OUT — a second rank, with a
+     stem back to its own mark — so the constraint is not the label at
+     all: it is that the tightest real gap in the fixture stays legible
+     as a distance. Seven days is that gap, and at eight pixels a day it
+     is 56px of rail between two ticks, which reads.
+
+     Fourteen as a floor cost the composition its whole argument at two
+     ordinary desk widths: 1280 and 1024 both fell short of 79 × 14 and
+     the track scrolled, so "the whole approach in one frame" became a
+     horizontal scrollbar. Eight fits every desk width this fixture can
+     be opened at, and below it the track scrolls rather than lying
+     about the proportion. */
+  var ACROSS_FLOOR = 8;
+  var ACROSS_LABEL = 168;  /* px. A two-line title at the body size.  */
+  var ACROSS_RANK = 58;    /* px. One label plus its air.             */
+  var ACROSS_STEM = 26;    /* px. Rule to the near edge of the figure. */
+
+  /* Across is a desk composition. A phone is a column, and a printed
+     sheet is a column, and neither is a decision the reader makes. */
+  function acrossAllowed(medium) { return medium === "full" || medium === "sheet"; }
+
+  function layoutOf(medium) {
+    var want = C.rootEl().getAttribute("data-layout");
+    if (!acrossAllowed(medium)) return "down";
+    return want === "across" ? "across" : "down";
+  }
+
+  /* The control belongs to the measure, not to the chrome: it changes
+     how this instrument is drawn and nothing else on the page. It sits
+     beside the measure's own head for the same reason Notes' grouping
+     control sits beside "your notes". */
+  function orientationToggle(medium) {
+    if (!acrossAllowed(medium)) return null;
+    var now = layoutOf(medium);
+    var pick = function (key, label, hint) {
+      return h("button.b-layoutBtn", {
+        type: "button",
+        "data-layout-to": key,
+        "aria-pressed": now === key ? "true" : "false",
+        title: hint,
+        "aria-label": hint,
+      }, [h("span", { text: label })]);
+    };
+    return h("div.b-layout", { role: "group", "aria-label": "How the measure is drawn" }, [
+      pick("across", "Across", "Draw the whole approach across the page"),
+      pick("down", "Down", "Draw the approach down the page"),
+    ]);
+  }
+
   function measure(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
+    var medium = o.medium || (o.owner ? "full" : "phone");
+    var across = layoutOf(medium) === "across";
     var px = o.owner ? ownerScale() : (SCALE[o.medium] || SCALE.phone);
     var kids = [h("div.b-rail", { "aria-hidden": "true" })];
     /* The top of the rail is today, and it says so. The instrument could
@@ -14731,13 +15310,32 @@ window.__SUITE.register("tasks", {
       end.setAttribute("data-terminus", "true");
       kids.push(end);
     }
+    /* The terminus label sits at the far end of the track and the origin
+       at the near one, so across they are the two things that name what
+       the measure runs BETWEEN. Down, the origin alone does that job.
+
+       Only when no moment already stands on the day — the same rule the
+       measure's own terminus row uses. The fixture puts "Wedding day" on
+       the day, so drawing this as well printed the day's name twice, one
+       string on top of the other, at the one end of the measure a reader
+       is most likely to look at. */
+    if (across && !theDayRecord() && toDay0 >= 1) {
+      kids.push(h("p.b-terminus", { "aria-hidden": "true" }, [
+        h("span.b-terminusDay", { text: F.fmt.long(F.project.primaryDate.date) }),
+        h("span.b-terminusWhat", { text: F.project.primaryDate.label || "The day itself" }),
+      ]));
+    }
     return h("div", { style: "line-height:1.5" }, [
-      h("h2.b-measureHead", { text: "days away" }),
+      h("div.b-measureBar", {}, [
+        h("h2.b-measureHead", { text: "days away" }),
+        orientationToggle(medium),
+      ]),
       h("div.b-measure", {
         role: "list",
         "aria-label": "What is still ahead, nearest first",
         "data-px": String(px),
         "data-clock": clock,
+        "data-across": across ? "true" : null,
       }, kids),
     ]);
   }
@@ -14752,8 +15350,137 @@ window.__SUITE.register("tasks", {
      land on the SAME day they become one mark with two rows under it,
      done by attribute rather than by structure, so nothing is
      reparented and every row keeps its own name. */
+  /* Across, position is still the quantity — it has just moved axis. The
+     tick sits on the true pixel and never moves; the words are staggered
+     above and below the rule and, where two on the same side would still
+     touch, stepped one rank further out with a stem back to their own
+     mark. Nothing is nudged onto a lie: a label that cannot sit centred
+     over its tick aligns to the track's edge instead, which is what an
+     axis does at its two ends. */
+  function placeAcross(measureEl) {
+    var clock = measureEl.getAttribute("data-clock") || F.today;
+    var horizonDays = daysFrom(clock, F.project.primaryDate.date);
+    if (!(horizonDays > 0)) horizonDays = 1;
+
+    /* The track fills the width; the scale falls out of that, floored.
+       Half a tick is reserved at each end: the mark is 7px across and is
+       centred on its own pixel, so a terminus sitting exactly on the
+       track's edge hung 4px past it. */
+    var EDGE = 4;
+    var box = measureEl.clientWidth || measureEl.getBoundingClientRect().width || 0;
+    var usable = Math.max(0, box - EDGE * 2);
+    var px = usable > 0 ? Math.max(ACROSS_FLOOR, usable / horizonDays) : ACROSS_FLOOR;
+    var span = horizonDays * px;
+
+    var items = Array.prototype.slice.call(measureEl.querySelectorAll(".b-item"));
+    items.sort(function (a, b) {
+      return Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away"));
+    });
+
+    /* Two moments on one day are one mark with two labels, exactly as
+       they are down the page — by attribute, never by reparenting. */
+    var ORDINAL = ["first", "second", "third", "fourth", "fifth"];
+    for (var g = 0; g < items.length;) {
+      var day = items[g].getAttribute("data-away");
+      var end = g;
+      while (end < items.length && items[end].getAttribute("data-away") === day) end++;
+      var runLen = end - g;
+      for (var k = g; k < end; k++) {
+        var el0 = items[k], i0 = k - g;
+        el0.setAttribute("data-stack", runLen === 1 ? "" : (i0 === 0 ? "lead" : "follow"));
+        var said0 = el0.querySelector(".b-unitSaid");
+        if (said0) {
+          said0.textContent = runLen === 1
+            ? " days away,"
+            : (i0 === 0 ? " " : " " + day + " ") + "days away, the "
+              + (ORDINAL[i0] || (i0 + 1) + "th") + " of " + runLen + " moments on this day,";
+        }
+      }
+      g = end;
+    }
+
+    var half = ACROSS_LABEL / 2;
+    var lanes = { above: [], below: [] };
+    var deepest = { above: 0, below: 0 };
+    var side = "below";   /* the first moment goes above; this flips first */
+    var leader = null;
+
+    items.forEach(function (el) {
+      var away = Number(el.getAttribute("data-away"));
+      var x = EDGE + away * px;
+      el.style.left = x + "px";
+      el.style.removeProperty("top");
+      el.style.setProperty("--x", x + "px");
+
+      /* A follower shares its leader's mark, its side and its rank —
+         it is the same day, so it is the same place on the measure. */
+      var follow = el.getAttribute("data-stack") === "follow";
+      if (follow && leader) {
+        el.setAttribute("data-side", leader.getAttribute("data-side"));
+        el.setAttribute("data-rank", leader.getAttribute("data-rank"));
+        el.style.setProperty("--rank", leader.getAttribute("data-rank"));
+        var edgeF = leader.getAttribute("data-edge");
+        if (edgeF) el.setAttribute("data-edge", edgeF); else el.removeAttribute("data-edge");
+        return;
+      }
+      side = side === "above" ? "below" : "above";
+      el.setAttribute("data-side", side);
+
+      /* At the two ends the label aligns inward rather than hanging off
+         the track. An axis names its ends from the inside. */
+      var edge = x - half < EDGE ? "start" : (x + half > EDGE + span ? "end" : null);
+      if (edge) el.setAttribute("data-edge", edge); else el.removeAttribute("data-edge");
+      var left = edge === "start" ? x : (edge === "end" ? x - ACROSS_LABEL : x - half);
+      var right = left + ACROSS_LABEL;
+
+      var lane = lanes[side];
+      var rank = 0;
+      while (lane[rank] !== undefined && left < lane[rank] + 14) rank++;
+      lane[rank] = right;
+      el.setAttribute("data-rank", String(rank));
+      el.style.setProperty("--rank", String(rank));
+      deepest[side] = Math.max(deepest[side], rank);
+      leader = el;
+    });
+
+    /* ── the band, measured ───────────────────────────────────────
+       How tall a rank is depends on what is in it, and what is in it
+       differs by surface: an owner's row carries an Edit control that a
+       guest's does not, and a two-line title is taller than a one-line
+       one. Guessing a step produced a band that clipped its own labels
+       top and bottom on the first surface it met. So the step is the
+       tallest label actually rendered, plus its air, and the band is
+       that step against the deepest rank each side actually reached. */
+    measureEl.style.setProperty("--across-span", span + "px");
+    measureEl.style.setProperty("--across-edge", EDGE + "px");
+    measureEl.style.setProperty("--across-px", String(Math.round(px * 100) / 100));
+    var awayH = 0, blockH = 0;
+    items.forEach(function (el) {
+      var a = el.querySelector(".b-away"), c = el.querySelector(".b-copy");
+      if (a) awayH = Math.max(awayH, a.getBoundingClientRect().height);
+      if (c) blockH = Math.max(blockH, c.getBoundingClientRect().height);
+    });
+    /* A stacked pair takes two label heights in one rank. */
+    var stacked = items.some(function (el) { return el.getAttribute("data-stack") === "follow"; });
+    var step = Math.round(awayH + blockH * (stacked ? 2 : 1) + 14);
+    measureEl.style.setProperty("--away-h", Math.round(awayH) + "px");
+    measureEl.style.setProperty("--step", step + "px");
+
+    var band = function (n) { return ACROSS_STEM + (n + 1) * step; };
+    var above = band(deepest.above), below = band(deepest.below);
+    measureEl.style.setProperty("--rule-y", above + "px");
+    measureEl.style.height = above + below + "px";
+    /* Only when the floor bites. A track that fits never scrolls, and a
+       scrollbar under a composition that fits is a lie about the width. */
+    measureEl.setAttribute("data-scrolls", span > usable + 1 ? "true" : "false");
+  }
+
   function place(measureEl) {
     if (!measureEl) return;
+    /* One entry point, two instruments. Every caller — the settle, both
+       editor paths — asks for the measure to be placed and does not need
+       to know which way it runs. */
+    if (measureEl.getAttribute("data-across") === "true") return placeAcross(measureEl);
     var px = Number(measureEl.getAttribute("data-px")) || 14;
     var clock = measureEl.getAttribute("data-clock") || F.today;
     var back = measureEl.getAttribute("data-back") === "true";
@@ -14825,6 +15552,12 @@ window.__SUITE.register("tasks", {
       var away = Number(el.getAttribute("data-away"));
       var top = away * px;
       el.style.top = top + "px";
+      /* The other axis's leftovers. A row placed across and then placed
+         down again keeps an inline `left` that pins it off the rail. */
+      el.style.removeProperty("left");
+      el.removeAttribute("data-side");
+      el.removeAttribute("data-rank");
+      el.removeAttribute("data-edge");
       el.removeAttribute("data-lead");
 
       var copy = el.querySelector(".b-copy");
@@ -16826,6 +17559,29 @@ window.__SUITE.register("tasks", {
         var f = node.querySelector(".b-field");
         if (f) f.setAttribute("aria-busy", "true");
       }
+      /* The orientation control. Delegated on the freshly built tree, so
+         it works in every state that draws a measure — the owner's plan
+         and the guest's desk both — without either of them knowing about
+         it. It writes the decision where every other decision lives and
+         asks for a remount; nothing else in the page has to change. */
+      node.addEventListener("click", function (event) {
+        var btn = event.target.closest && event.target.closest("[data-layout-to]");
+        if (!btn) return;
+        var to = btn.getAttribute("data-layout-to");
+        if (C.rootEl().getAttribute("data-layout") === to) return;
+        C.rootEl().setAttribute("data-layout", to);
+        C.mount();
+        /* The control the press landed on is rebuilt, so focus is put
+           back on its replacement rather than dropped to the body. */
+        var back = document.querySelector('[data-layout-to="' + to + '"]');
+        if (back) back.focus({ preventScroll: true });
+        var say = document.querySelector(".b-live");
+        if (say) {
+          say.textContent = to === "across"
+            ? "The measure runs across the page."
+            : "The measure runs down the page.";
+        }
+      });
       return node;
     },
     settle: function () {
@@ -16863,6 +17619,24 @@ window.__SUITE.register("tasks", {
   var q = window.__SUITE.params("timeline");
   var root = window.__SUITE.root("timeline");
   var presets = window.__elevate.presets;
+
+  /* ── which way the measure runs ─────────────────────────────────
+     A desk gets the whole approach in one frame; a phone gets the
+     column, because a phone cannot hold the distance and drawing it
+     across anyway would compress the proportion into a lie. The reader
+     may say otherwise at any time, and ?layout= says it for them.
+
+     Decided ONCE, at load, from the width the reader actually has —
+     not re-decided on resize. An orientation that flips itself under a
+     hand mid-read is a surface that overrules a choice the reader has
+     already made. */
+  var asked = q.get("layout");
+  root.setAttribute(
+    "data-layout",
+    asked === "across" || asked === "down"
+      ? asked
+      : (window.innerWidth >= 1024 ? "across" : "down"),
+  );
   /* ?ground= is the suite's name for it and ?v= is the lab's name for the
      same room, so the Timeline engagement's own measured gate reaches the
      composed file with its config unchanged. */

@@ -1,0 +1,354 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ACROSS — the Timeline measure on the other axis.
+
+   Not a rotation of the column. Down the page, distance is read by
+   scrolling; across, the whole approach is one object and the reader
+   takes the distance in at a glance. Everything the instrument already
+   says stays said: the tick is still the position, the figure is still
+   a readout of the row it belongs to, the day is still the far end.
+
+   The scale is written by placeAcross() into --across-px and the
+   geometry into --rule-y, because both are measurements of the box this
+   is in and neither can be stated here. This stylesheet decides only
+   what the parts look like once they have been placed.
+
+   It is a separate file from timeline.css deliberately: timeline.css is
+   the three frozen lab stylesheets, derived and scoped. This is new
+   surface, and new surface is easier to argue with when it is not mixed
+   into somebody else's record.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── the orientation control ────────────────────────────────────────
+   It belongs to the measure, not to the chrome: it changes how this one
+   instrument is drawn and nothing else on the page. It sits beside the
+   measure's own head for the same reason the notebook's grouping control
+   sits beside "your notes" — the control that changes a view lives on
+   that view's own label. */
+[data-app="timeline"] .b-measureBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-line);
+  flex-wrap: wrap;
+}
+[data-app="timeline"] .b-layout {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--fore-16);
+  margin: var(--gap-item) 0 0;
+}
+[data-app="timeline"] .b-layoutBtn {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  line-height: var(--lead-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--fore-62);
+  padding: 6px 12px;
+  border-radius: 999px;
+  position: relative;
+  transition: color var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
+}
+/* A 27px pill is under the target floor on its own, and the first draft of
+   this expander did not fix it: it was written with `top: 50%` and a
+   transform, and a hit area is measured from its INSETS — a positive inset
+   is not an expander at all, whatever it looks like. The measured gate
+   caught it at every viewport before a seat was convened. Four negative
+   insets, so the union is real and readable. */
+[data-app="timeline"] .b-layoutBtn::after {
+  content: "";
+  position: absolute;
+  inset: -9px -6px;
+}
+/* And where a finger is the pointer, the control itself takes the floor.
+   An expander answers the gate; 44px of real control answers the thumb. */
+@media (pointer: coarse) {
+  [data-app="timeline"] .b-layoutBtn { min-height: 44px; }
+  [data-app="timeline"] .b-layout { padding: 3px; }
+}
+[data-app="timeline"] .b-layoutBtn:hover { color: var(--fore); }
+[data-app="timeline"] .b-layoutBtn[aria-pressed="true"] {
+  color: var(--back);
+  background: var(--fore);
+}
+
+/* ── the track ──────────────────────────────────────────────────── */
+[data-app="timeline"] .b-measure[data-across="true"] {
+  /* No count lane: the figures travel with their own words now. */
+  padding: 0;
+  margin-top: var(--gap-section);
+  /* height is written by placeAcross from the ranks it just assigned. */
+}
+/* Only when the fourteen-pixel floor bites. A scrollbar under a
+   composition that fits is a lie about the width. */
+[data-app="timeline"] .b-measure[data-across="true"][data-scrolls="true"] {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: var(--gap-snug);
+}
+
+/* The rule runs the width of the span, and today is where it starts. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-rail {
+  left: var(--across-edge, 0px);
+  top: var(--rule-y);
+  bottom: auto;
+  width: var(--across-span, 100%);
+  height: 1px;
+}
+/* The accent is NOT respent here. `structure` already puts indigo on the
+   rail — [data-accent="structure"] .b-measure:not(.b-back) .b-rail — and
+   that rule matches this measure exactly as it matches the vertical one.
+   The first draft of this file restated it at opacity 0.5, which is not a
+   declared step; the rule it was duplicating carries a comment saying so
+   in as many words. Across, all of the rail is ahead, which is the whole
+   point of the orientation, and the existing rule already draws it.
+   */
+
+/* Today: a filled mark at the origin with its name below the rule, so
+   the first label above the rule is not competing with it. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-origin {
+  left: var(--across-edge, 0px);
+  top: calc(var(--rule-y) + 15px);
+  white-space: nowrap;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-origin::before {
+  left: 0;
+  top: -15px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  border-radius: 999px;
+  background: var(--fore);
+}
+
+/* The far end names what the measure runs to. Down the page the reader
+   arrives at the day by scrolling to it; across, it has to be legible
+   from where they are standing. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-terminus {
+  position: absolute;
+  left: calc(var(--across-span, 100%) + var(--across-edge, 0px));
+  top: calc(var(--rule-y) + 15px);
+  transform: translateX(-100%);
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+  display: grid;
+  gap: 2px;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-terminusDay {
+  font-size: var(--size-body);
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-body);
+  color: var(--fore);
+  font-weight: 600;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-terminusWhat {
+  font-family: var(--mono);
+  font-size: var(--size-label);
+  line-height: var(--lead-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--fore-62);
+}
+
+/* ── a moment on the track ──────────────────────────────────────── */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item {
+  left: var(--x);
+  right: auto;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  /* Position is the quantity on this axis too, so a moment that is moved
+     animates the distance rather than decorating a state change. One
+     declared duration, one declared easing; reduced motion removes it. */
+  transition: left var(--t-slow) var(--ease);
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-tick {
+  left: 0;
+  top: var(--rule-y);
+  transform: translate(-50%, -50%);
+}
+/* The stem says which mark these words belong to. It is the rail's own
+   ink drawn from the tick out to the near edge of the words, and it
+   grows with the rank so a stepped label is never orphaned. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: calc(var(--rank, 0) * var(--step) + 20px);
+  pointer-events: none;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="above"]::after {
+  bottom: calc(100% - var(--rule-y) + 4px);
+  background: linear-gradient(to top, var(--fore-28), var(--fore-10));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="below"]::after {
+  top: calc(var(--rule-y) + 4px);
+  background: linear-gradient(to bottom, var(--fore-28), var(--fore-10));
+}
+/* The stem is geometry, and a forced palette may repaint a fill but
+   cannot flatten a gradient. It says nothing a reader has not already
+   been told in words, so it never reaches the accessibility tree. */
+@media (forced-colors: active) {
+  [data-app="timeline"] .b-measure[data-across="true"] .b-item::after { background: CanvasText; }
+}
+
+/* The figure and the words are one object: same lane, same alignment,
+   same rank, the figure nearer the rule because it is the readout of
+   the position and the words are what is at it. Nothing can push them
+   apart the way the vertical measure has to, because on this axis
+   crowding is answered by rank, not by displacement. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-away,
+[data-app="timeline"] .b-measure[data-across="true"] .b-copy {
+  position: absolute;
+  left: 0;
+  width: 168px;
+  max-width: none;
+  margin: 0;
+  transform: translateX(-50%);
+  text-align: center;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-away {
+  top: auto;
+  font-size: var(--size-data);
+  line-height: var(--lead-label);
+  /* 0.72, not 0.46. The lock is explicit: over paper the floor for type is
+     ink at 0.62 (5.34:1), and below the floor the ladder draws rules and
+     never letters. The first draft set this figure at 0.46 — 3.13:1 — on
+     the one number the whole instrument exists to report. The vertical
+     measure has always set the same object at 0.72; it is the same object,
+     so it takes the same step. Caught by the measured gate at three
+     viewports on two states, before a seat saw it. */
+  color: var(--fore-72);
+}
+/* At the two ends the label aligns inward rather than hanging off the
+   track. An axis names its ends from the inside. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="start"] .b-copy,
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="start"] .b-away {
+  transform: none;
+  text-align: left;
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="end"] .b-copy,
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="end"] .b-away {
+  transform: translateX(-100%);
+  text-align: right;
+}
+/* --step and --away-h are MEASURED by placeAcross from the labels that
+   actually rendered, because how tall a rank is depends on what is in
+   it: an owner's row carries an Edit control a guest's does not, and a
+   two-line title is taller than a one-line one. A guessed step clipped
+   its own labels top and bottom on the first surface it met. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="above"] .b-away {
+  bottom: calc(100% - var(--rule-y) + 26px + var(--rank, 0) * var(--step));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="above"] .b-copy {
+  bottom: calc(100% - var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="below"] .b-away {
+  top: calc(var(--rule-y) + 26px + var(--rank, 0) * var(--step));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-side="below"] .b-copy {
+  top: calc(var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h));
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-title {
+  font-size: var(--size-body);
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-body);
+}
+/* A follower shares its leader's mark and rank, so it takes the row
+   under it rather than a second mark of its own. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"]::after {
+  display: none;
+}
+/* A stacked pair is one mark with two labels, so the follower takes the
+   row beyond its leader inside the SAME rank rather than a rank of its
+   own — which is why placeAcross doubles the step when any pair exists. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"][data-side="above"] .b-copy {
+  bottom: calc(100% - var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h) + var(--step) / 2);
+}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"][data-side="below"] .b-copy {
+  top: calc(var(--rule-y) + 26px + var(--rank, 0) * var(--step) + var(--away-h) + var(--step) / 2);
+}
+/* A stacked pair shares one mark, so the follower's own count and tick
+   are hidden exactly as they are down the page. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-stack="follow"] .b-away {
+  visibility: hidden;
+}
+/* The measure head stood over a column; across it stands over a track. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-measureHead { min-width: 0; }
+
+/* ── the page around it ─────────────────────────────────────────────
+   Across, the horizon is a band ABOVE the track rather than a column
+   beside it: the count, the date and what the day is, in that order,
+   and then the whole distance underneath them. The lock's rule that the
+   horizon never moves is kept by a different mechanism — there is
+   nothing to scroll past it, because the whole approach is in frame. */
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-two,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-two {
+  display: block;
+}
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-stick,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-stick {
+  position: static;
+  overflow: visible;
+  max-height: none;
+  min-height: 0;
+  mask-image: none;
+}
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-plan,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .b-plan {
+  overflow: visible;
+  min-height: 0;
+  mask-image: none;
+}
+/* The owner's desk surface is a fixed frame with two scrolling panes
+   when the plan runs down the page. Across there is one pane and it is
+   the page, so the frame stops being fixed and the sheet scrolls. */
+[data-app="timeline"][data-layout="across"][data-medium="full"] .b-ownerField {
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* The horizon band. The count and the day it is counting to stand on one
+   line at desk width, which is the composition the orientation exists
+   for: the number, and the thing at the end of it, in one look. */
+@media (min-width: 1024px) {
+  [data-app="timeline"][data-layout="across"] .b-horizon {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--gap-major);
+    align-items: start;
+  }
+  /* The horizon's children are a flat list, so each one is placed by
+     name. The count holds the left; everything that names the day it is
+     counting to holds the right, and the two sit on one baseline —
+     which is the composition this orientation exists for: the number,
+     and the thing at the end of it, in one look. */
+  [data-app="timeline"][data-layout="across"] .b-who { grid-column: 1; grid-row: 1; }
+  [data-app="timeline"][data-layout="across"] .b-count,
+  [data-app="timeline"][data-layout="across"] .b-dayCount,
+  [data-app="timeline"][data-layout="across"] .b-passed { grid-column: 1; grid-row: 2 / span 5; }
+  [data-app="timeline"][data-layout="across"] .b-when { grid-column: 2; grid-row: 2; margin-top: 0; }
+  [data-app="timeline"][data-layout="across"] .b-sub { grid-column: 2; grid-row: 3; }
+  [data-app="timeline"][data-layout="across"] .b-todayRule { grid-column: 2; grid-row: 4; }
+  [data-app="timeline"][data-layout="across"] .b-todayLabel { grid-column: 2; grid-row: 5; }
+  [data-app="timeline"][data-layout="across"] .b-gapNote { grid-column: 2; grid-row: 6; }
+  [data-app="timeline"][data-layout="across"] .b-keeper { grid-column: 2; grid-row: 7; }
+}
+
+/* ── the width the artifact is allowed ──────────────────────────────
+   The stage is capped at 1180px because down the page the artifact is a
+   document and a document has a measure. Across, the artifact IS the
+   distance, and a distance capped at 1180 in an 1800px sheet is 40% of
+   the surface painted white for no reason — which is the first thing
+   the founder said about it. The cap comes off for this orientation and
+   only this one. */
+[data-app="timeline"][data-layout="across"][data-medium="full"] .tl-stage,
+[data-app="timeline"][data-layout="across"][data-medium="sheet"] .tl-stage {
+  max-width: 100%;
+}

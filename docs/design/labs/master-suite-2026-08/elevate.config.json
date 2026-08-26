@@ -1,0 +1,149 @@
+{
+  "name": "master-suite",
+  "product": "Signal Studio \u2014 Notes, Tasks and Timeline as one running application on one world of data",
+  "master": "_gate-suite.html",
+  "gate": 9.5,
+  "states": [
+    "tasks.board",
+    "tasks.dense",
+    "notes.notebook",
+    "notes.seam",
+    "notes.voice",
+    "timeline.owner-flight",
+    "timeline.desk",
+    "timeline.phone"
+  ],
+  "variants": [
+    "paper",
+    "ink"
+  ],
+  "defaultVariant": "paper",
+  "viewports": [
+    {
+      "name": "390x844",
+      "width": 390,
+      "height": 844,
+      "isMobile": true
+    },
+    {
+      "name": "768x1024",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "name": "1280x900",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "name": "1440x960",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "name": "1920x1000",
+      "width": 1920,
+      "height": 1000
+    }
+  ],
+  "palette": [
+    {
+      "name": "Ink",
+      "hex": "#111111"
+    },
+    {
+      "name": "Indigo",
+      "hex": "#4f46e5"
+    },
+    {
+      "name": "White",
+      "hex": "#ffffff"
+    },
+    {
+      "name": "Indigo deep",
+      "hex": "#4338ca"
+    }
+  ],
+  "families": [
+    "Geist",
+    "Geist Mono"
+  ],
+  "weights": [
+    400,
+    600
+  ],
+  "ladders": {
+    "radii": [
+      0,
+      1.5,
+      2,
+      4,
+      5,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      18,
+      24,
+      999
+    ],
+    "durations": [
+      0,
+      0.05,
+      0.08,
+      0.14,
+      0.22,
+      0.4
+    ],
+    "easings": [
+      "cubic-bezier(0.23, 1, 0.32, 1)",
+      "cubic-bezier(0.77, 0, 0.175, 1)"
+    ],
+    "typeRamp": [
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      19,
+      20,
+      22,
+      24,
+      27,
+      30,
+      34,
+      38,
+      48,
+      96,
+      148
+    ]
+  },
+  "console": {
+    "widths": [
+      1920,
+      1440,
+      1280,
+      768,
+      390
+    ],
+    "inline": [],
+    "fonts": []
+  },
+  "artifacts": {
+    "console": "https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76",
+    "log": ""
+  },
+  "notes": {
+    "master": "_gate-suite.html is written by tools/wrap.mjs from master.html. master.html is page CONTENT \u2014 no doctype, html, head or body \u2014 because the published artifact supplies the skeleton. Nothing can open it as a file without one, so every gate opens the wrapped copy.",
+    "states": "The suite answers ?state=<product>.<state> as well as its own ?p= and ?state=. The compound form exists so a toolchain that can set one parameter can reach all three products. Folded from the full space: Tasks ships 6 states, Notes 10, Timeline 14 \u2014 thirty in all. The eight here are the ones a defect would be found in; the folds are recorded in brief.md. A DOT and not a colon: a state name is also a filename, and the shot harness names every frame after its state \u2014 a colon collapsed forty frames into three on Windows without erroring.",
+    "variants": "paper and ink are Timeline's two ratified grounds. Tasks and Notes have no ground decision and ignore ?v= at these values, which is correct: they are the ink-floor products and the ground decision was only ever Timeline's.",
+    "ladders": "sizes and spaces are EMPTY DELIBERATELY, and this is a known gap, not an oversight. The source ladders read the stylesheets, and this artefact carries three products with three separately declared and separately ratified ladders \u2014 Timeline invented its own material system by name in its lock. One config cannot hold three. Each product is held to its OWN ladders by tools/gates.mjs, which repoints the three engagements' own audits at this file; this config covers what is genuinely cross-product: the palette, the families, the weights, contrast, targets, radii, motion and leading, at five viewports across all three surfaces.",
+    "palette": "Indigo deep #4338ca is the indigo ramp one step darker. It is declared in both the Tasks and Notes shells as --indigo-deep and was part of the three-colour lock's own reading of itself from the first round of both engagements.",
+    "typeRamp": "The union of the three products' ramps, and it is a UNION rather than a law \u2014 Timeline declares thirteen steps and gates them, Notes declares eight and gates them, Tasks declares none and its own audit has never had a ramp check. 14 is here because the Tasks card title, the most-read string on the board, is set at 14 and is on no ramp declared in that lab; 16 is here because the screen-reader live regions inherit it at a 1x1 box nobody sees. Both are recorded as observations in round 1 rather than smuggled in as law."
+  }
+}

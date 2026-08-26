@@ -195,8 +195,14 @@
 }
 
 [data-app="timeline"] * { box-sizing: border-box; }
-[data-app="timeline"],
-[data-app="timeline"] { height: 100%; }
+/* `html, body { height: 100% }` was scoped from the lab's own stylesheet
+   and became this — the same selector twice, at (0,2,0), on an element
+   that is now the SHEET. It outranked .sheet's own height in the phone
+   media query, so at 390 the artifact grew to the full floor and painted
+   over the capsule: the spine sat underneath the sheet, unreachable, and
+   Timeline had no way out of it on a phone. The shell owns the sheet's
+   height; a page-level rule about html and body has nothing to say about
+   it here. Removed, not overridden. */
 [data-app="timeline"] {
   margin: 0;
   /* The page ground is painted as a tint LAID OVER paper, never as the

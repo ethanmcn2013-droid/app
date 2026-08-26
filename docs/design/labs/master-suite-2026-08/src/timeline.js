@@ -539,9 +539,85 @@
     ]);
   }
 
+  /* ── the two orientations ─────────────────────────────────────────
+     ACROSS and DOWN are two designs of one idea, not one design rotated.
+
+     Down the page, distance is read by scrolling: the composition is a
+     column and it is the right answer on a phone, where the whole
+     approach cannot be in frame and pretending otherwise would lie
+     about the proportion.
+
+     Across the page, the WHOLE approach is one object — today at your
+     feet, the day at the far end, every moment between them sitting at
+     its true share of the distance. That is the thing a phone cannot
+     give you and the only reason this orientation exists. It is what
+     the artifact opens on at a desk.
+
+     The scale follows: down, it is the lock's fixed pixels-per-day and
+     the page grows. Across, the track fills the width and the scale
+     falls out of it — with the lock's own desk figure as a FLOOR, below
+     which the track scrolls rather than lying about the proportion.
+     Fourteen is that floor because it is derived from the tightest real
+     gap in the fixture (seven days) against the largest a label can
+     grow; on this axis that is width rather than height, and the
+     stagger doubles the room every label gets. */
+  /* px per day, and the floor is NOT the vertical measure's fourteen.
+     Down the page, fourteen exists because a row is 92px tall and a
+     crowded pair can only be pushed along the same axis it is measured
+     on. Across, a crowded pair is stepped OUT — a second rank, with a
+     stem back to its own mark — so the constraint is not the label at
+     all: it is that the tightest real gap in the fixture stays legible
+     as a distance. Seven days is that gap, and at eight pixels a day it
+     is 56px of rail between two ticks, which reads.
+
+     Fourteen as a floor cost the composition its whole argument at two
+     ordinary desk widths: 1280 and 1024 both fell short of 79 × 14 and
+     the track scrolled, so "the whole approach in one frame" became a
+     horizontal scrollbar. Eight fits every desk width this fixture can
+     be opened at, and below it the track scrolls rather than lying
+     about the proportion. */
+  var ACROSS_FLOOR = 8;
+  var ACROSS_LABEL = 168;  /* px. A two-line title at the body size.  */
+  var ACROSS_RANK = 58;    /* px. One label plus its air.             */
+  var ACROSS_STEM = 26;    /* px. Rule to the near edge of the figure. */
+
+  /* Across is a desk composition. A phone is a column, and a printed
+     sheet is a column, and neither is a decision the reader makes. */
+  function acrossAllowed(medium) { return medium === "full" || medium === "sheet"; }
+
+  function layoutOf(medium) {
+    var want = C.rootEl().getAttribute("data-layout");
+    if (!acrossAllowed(medium)) return "down";
+    return want === "across" ? "across" : "down";
+  }
+
+  /* The control belongs to the measure, not to the chrome: it changes
+     how this instrument is drawn and nothing else on the page. It sits
+     beside the measure's own head for the same reason Notes' grouping
+     control sits beside "your notes". */
+  function orientationToggle(medium) {
+    if (!acrossAllowed(medium)) return null;
+    var now = layoutOf(medium);
+    var pick = function (key, label, hint) {
+      return h("button.b-layoutBtn", {
+        type: "button",
+        "data-layout-to": key,
+        "aria-pressed": now === key ? "true" : "false",
+        title: hint,
+        "aria-label": hint,
+      }, [h("span", { text: label })]);
+    };
+    return h("div.b-layout", { role: "group", "aria-label": "How the measure is drawn" }, [
+      pick("across", "Across", "Draw the whole approach across the page"),
+      pick("down", "Down", "Draw the approach down the page"),
+    ]);
+  }
+
   function measure(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
+    var medium = o.medium || (o.owner ? "full" : "phone");
+    var across = layoutOf(medium) === "across";
     var px = o.owner ? ownerScale() : (SCALE[o.medium] || SCALE.phone);
     var kids = [h("div.b-rail", { "aria-hidden": "true" })];
     /* The top of the rail is today, and it says so. The instrument could
@@ -592,13 +668,32 @@
       end.setAttribute("data-terminus", "true");
       kids.push(end);
     }
+    /* The terminus label sits at the far end of the track and the origin
+       at the near one, so across they are the two things that name what
+       the measure runs BETWEEN. Down, the origin alone does that job.
+
+       Only when no moment already stands on the day — the same rule the
+       measure's own terminus row uses. The fixture puts "Wedding day" on
+       the day, so drawing this as well printed the day's name twice, one
+       string on top of the other, at the one end of the measure a reader
+       is most likely to look at. */
+    if (across && !theDayRecord() && toDay0 >= 1) {
+      kids.push(h("p.b-terminus", { "aria-hidden": "true" }, [
+        h("span.b-terminusDay", { text: F.fmt.long(F.project.primaryDate.date) }),
+        h("span.b-terminusWhat", { text: F.project.primaryDate.label || "The day itself" }),
+      ]));
+    }
     return h("div", { style: "line-height:1.5" }, [
-      h("h2.b-measureHead", { text: "days away" }),
+      h("div.b-measureBar", {}, [
+        h("h2.b-measureHead", { text: "days away" }),
+        orientationToggle(medium),
+      ]),
       h("div.b-measure", {
         role: "list",
         "aria-label": "What is still ahead, nearest first",
         "data-px": String(px),
         "data-clock": clock,
+        "data-across": across ? "true" : null,
       }, kids),
     ]);
   }
@@ -613,8 +708,137 @@
      land on the SAME day they become one mark with two rows under it,
      done by attribute rather than by structure, so nothing is
      reparented and every row keeps its own name. */
+  /* Across, position is still the quantity — it has just moved axis. The
+     tick sits on the true pixel and never moves; the words are staggered
+     above and below the rule and, where two on the same side would still
+     touch, stepped one rank further out with a stem back to their own
+     mark. Nothing is nudged onto a lie: a label that cannot sit centred
+     over its tick aligns to the track's edge instead, which is what an
+     axis does at its two ends. */
+  function placeAcross(measureEl) {
+    var clock = measureEl.getAttribute("data-clock") || F.today;
+    var horizonDays = daysFrom(clock, F.project.primaryDate.date);
+    if (!(horizonDays > 0)) horizonDays = 1;
+
+    /* The track fills the width; the scale falls out of that, floored.
+       Half a tick is reserved at each end: the mark is 7px across and is
+       centred on its own pixel, so a terminus sitting exactly on the
+       track's edge hung 4px past it. */
+    var EDGE = 4;
+    var box = measureEl.clientWidth || measureEl.getBoundingClientRect().width || 0;
+    var usable = Math.max(0, box - EDGE * 2);
+    var px = usable > 0 ? Math.max(ACROSS_FLOOR, usable / horizonDays) : ACROSS_FLOOR;
+    var span = horizonDays * px;
+
+    var items = Array.prototype.slice.call(measureEl.querySelectorAll(".b-item"));
+    items.sort(function (a, b) {
+      return Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away"));
+    });
+
+    /* Two moments on one day are one mark with two labels, exactly as
+       they are down the page — by attribute, never by reparenting. */
+    var ORDINAL = ["first", "second", "third", "fourth", "fifth"];
+    for (var g = 0; g < items.length;) {
+      var day = items[g].getAttribute("data-away");
+      var end = g;
+      while (end < items.length && items[end].getAttribute("data-away") === day) end++;
+      var runLen = end - g;
+      for (var k = g; k < end; k++) {
+        var el0 = items[k], i0 = k - g;
+        el0.setAttribute("data-stack", runLen === 1 ? "" : (i0 === 0 ? "lead" : "follow"));
+        var said0 = el0.querySelector(".b-unitSaid");
+        if (said0) {
+          said0.textContent = runLen === 1
+            ? " days away,"
+            : (i0 === 0 ? " " : " " + day + " ") + "days away, the "
+              + (ORDINAL[i0] || (i0 + 1) + "th") + " of " + runLen + " moments on this day,";
+        }
+      }
+      g = end;
+    }
+
+    var half = ACROSS_LABEL / 2;
+    var lanes = { above: [], below: [] };
+    var deepest = { above: 0, below: 0 };
+    var side = "below";   /* the first moment goes above; this flips first */
+    var leader = null;
+
+    items.forEach(function (el) {
+      var away = Number(el.getAttribute("data-away"));
+      var x = EDGE + away * px;
+      el.style.left = x + "px";
+      el.style.removeProperty("top");
+      el.style.setProperty("--x", x + "px");
+
+      /* A follower shares its leader's mark, its side and its rank —
+         it is the same day, so it is the same place on the measure. */
+      var follow = el.getAttribute("data-stack") === "follow";
+      if (follow && leader) {
+        el.setAttribute("data-side", leader.getAttribute("data-side"));
+        el.setAttribute("data-rank", leader.getAttribute("data-rank"));
+        el.style.setProperty("--rank", leader.getAttribute("data-rank"));
+        var edgeF = leader.getAttribute("data-edge");
+        if (edgeF) el.setAttribute("data-edge", edgeF); else el.removeAttribute("data-edge");
+        return;
+      }
+      side = side === "above" ? "below" : "above";
+      el.setAttribute("data-side", side);
+
+      /* At the two ends the label aligns inward rather than hanging off
+         the track. An axis names its ends from the inside. */
+      var edge = x - half < EDGE ? "start" : (x + half > EDGE + span ? "end" : null);
+      if (edge) el.setAttribute("data-edge", edge); else el.removeAttribute("data-edge");
+      var left = edge === "start" ? x : (edge === "end" ? x - ACROSS_LABEL : x - half);
+      var right = left + ACROSS_LABEL;
+
+      var lane = lanes[side];
+      var rank = 0;
+      while (lane[rank] !== undefined && left < lane[rank] + 14) rank++;
+      lane[rank] = right;
+      el.setAttribute("data-rank", String(rank));
+      el.style.setProperty("--rank", String(rank));
+      deepest[side] = Math.max(deepest[side], rank);
+      leader = el;
+    });
+
+    /* ── the band, measured ───────────────────────────────────────
+       How tall a rank is depends on what is in it, and what is in it
+       differs by surface: an owner's row carries an Edit control that a
+       guest's does not, and a two-line title is taller than a one-line
+       one. Guessing a step produced a band that clipped its own labels
+       top and bottom on the first surface it met. So the step is the
+       tallest label actually rendered, plus its air, and the band is
+       that step against the deepest rank each side actually reached. */
+    measureEl.style.setProperty("--across-span", span + "px");
+    measureEl.style.setProperty("--across-edge", EDGE + "px");
+    measureEl.style.setProperty("--across-px", String(Math.round(px * 100) / 100));
+    var awayH = 0, blockH = 0;
+    items.forEach(function (el) {
+      var a = el.querySelector(".b-away"), c = el.querySelector(".b-copy");
+      if (a) awayH = Math.max(awayH, a.getBoundingClientRect().height);
+      if (c) blockH = Math.max(blockH, c.getBoundingClientRect().height);
+    });
+    /* A stacked pair takes two label heights in one rank. */
+    var stacked = items.some(function (el) { return el.getAttribute("data-stack") === "follow"; });
+    var step = Math.round(awayH + blockH * (stacked ? 2 : 1) + 14);
+    measureEl.style.setProperty("--away-h", Math.round(awayH) + "px");
+    measureEl.style.setProperty("--step", step + "px");
+
+    var band = function (n) { return ACROSS_STEM + (n + 1) * step; };
+    var above = band(deepest.above), below = band(deepest.below);
+    measureEl.style.setProperty("--rule-y", above + "px");
+    measureEl.style.height = above + below + "px";
+    /* Only when the floor bites. A track that fits never scrolls, and a
+       scrollbar under a composition that fits is a lie about the width. */
+    measureEl.setAttribute("data-scrolls", span > usable + 1 ? "true" : "false");
+  }
+
   function place(measureEl) {
     if (!measureEl) return;
+    /* One entry point, two instruments. Every caller — the settle, both
+       editor paths — asks for the measure to be placed and does not need
+       to know which way it runs. */
+    if (measureEl.getAttribute("data-across") === "true") return placeAcross(measureEl);
     var px = Number(measureEl.getAttribute("data-px")) || 14;
     var clock = measureEl.getAttribute("data-clock") || F.today;
     var back = measureEl.getAttribute("data-back") === "true";
@@ -686,6 +910,12 @@
       var away = Number(el.getAttribute("data-away"));
       var top = away * px;
       el.style.top = top + "px";
+      /* The other axis's leftovers. A row placed across and then placed
+         down again keeps an inline `left` that pins it off the rail. */
+      el.style.removeProperty("left");
+      el.removeAttribute("data-side");
+      el.removeAttribute("data-rank");
+      el.removeAttribute("data-edge");
       el.removeAttribute("data-lead");
 
       var copy = el.querySelector(".b-copy");
@@ -2687,6 +2917,29 @@
         var f = node.querySelector(".b-field");
         if (f) f.setAttribute("aria-busy", "true");
       }
+      /* The orientation control. Delegated on the freshly built tree, so
+         it works in every state that draws a measure — the owner's plan
+         and the guest's desk both — without either of them knowing about
+         it. It writes the decision where every other decision lives and
+         asks for a remount; nothing else in the page has to change. */
+      node.addEventListener("click", function (event) {
+        var btn = event.target.closest && event.target.closest("[data-layout-to]");
+        if (!btn) return;
+        var to = btn.getAttribute("data-layout-to");
+        if (C.rootEl().getAttribute("data-layout") === to) return;
+        C.rootEl().setAttribute("data-layout", to);
+        C.mount();
+        /* The control the press landed on is rebuilt, so focus is put
+           back on its replacement rather than dropped to the body. */
+        var back = document.querySelector('[data-layout-to="' + to + '"]');
+        if (back) back.focus({ preventScroll: true });
+        var say = document.querySelector(".b-live");
+        if (say) {
+          say.textContent = to === "across"
+            ? "The measure runs across the page."
+            : "The measure runs down the page.";
+        }
+      });
       return node;
     },
     settle: function () {
@@ -2724,6 +2977,24 @@
   var q = window.__SUITE.params("timeline");
   var root = window.__SUITE.root("timeline");
   var presets = window.__elevate.presets;
+
+  /* ── which way the measure runs ─────────────────────────────────
+     A desk gets the whole approach in one frame; a phone gets the
+     column, because a phone cannot hold the distance and drawing it
+     across anyway would compress the proportion into a lie. The reader
+     may say otherwise at any time, and ?layout= says it for them.
+
+     Decided ONCE, at load, from the width the reader actually has —
+     not re-decided on resize. An orientation that flips itself under a
+     hand mid-read is a surface that overrules a choice the reader has
+     already made. */
+  var asked = q.get("layout");
+  root.setAttribute(
+    "data-layout",
+    asked === "across" || asked === "down"
+      ? asked
+      : (window.innerWidth >= 1024 ? "across" : "down"),
+  );
   /* ?ground= is the suite's name for it and ?v= is the lab's name for the
      same room, so the Timeline engagement's own measured gate reaches the
      composed file with its config unchanged. */

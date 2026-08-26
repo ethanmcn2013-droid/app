@@ -2637,6 +2637,10 @@ function onScroll() {
 function mount() {
   const target = window.__SUITE.host("tasks");
   if (!target) return;
+  /* The state this board is in, where a harness can read it. Notes and
+     Timeline both write theirs onto their own root; the board was the one
+     surface whose state a gate could only infer from the pixels. */
+  root.setAttribute("data-state", lateOnly ? "filtered" : state);
   const before = flyId ? snapshot(target) : null;
   const kept = keepPlace(target);
   target.innerHTML = renderApp();

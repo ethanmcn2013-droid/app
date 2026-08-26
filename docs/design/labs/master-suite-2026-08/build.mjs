@@ -27,15 +27,19 @@ import { fileURLToPath } from "node:url";
 import { parse, selectors, assertBalanced, classesIn } from "./tools/css.mjs";
 
 const LAB = path.dirname(fileURLToPath(import.meta.url));
-const src = (f) => readFile(path.join(LAB, "src", f), "utf8");
+/* Paths relative to the LAB, not to src/, because they are also read by
+   the elevate audit — its source-ladder check finds the stylesheets by
+   parsing the CSS list below out of this file, and a bare basename sent
+   it looking in the wrong directory. One list, one meaning. */
+const src = (f) => readFile(path.join(LAB, f), "utf8");
 
 /* Order is the cascade. foundation first because both products reach
    through it; shell next because the products override it; then the three
    products, none of which can reach the other two. */
-const CSS = ["foundation.css", "shell.css", "tasks.css", "notes.css", "timeline.css"];
+const CSS = ["src/foundation.css", "src/shell.css", "src/tasks.css", "src/notes.css", "src/timeline.css", "src/across.css"];
 /* fixture before icons before the products, and app.js before all of them:
    every product registers with the suite as it loads. */
-const JS = ["fixture.js", "icons.js", "app.js", "tasks.js", "notes.js", "timeline.js"];
+const JS = ["src/fixture.js", "src/icons.js", "src/app.js", "src/tasks.js", "src/notes.js", "src/timeline.js"];
 
 /* ── the fonts ───────────────────────────────────────────────────
    The variable Geist from the Tasks and Notes labs, not Timeline's three
@@ -67,11 +71,11 @@ for (const file of CSS) {
   let text = await src(file);
   /* The two @font-face blocks in foundation.css point at ./fonts/. They are
      replaced by the inlined pair above, once, at the top. */
-  if (file === "foundation.css") {
+  if (file === "src/foundation.css") {
     text = text.replace(/@font-face \{[^}]*\}\s*/g, "");
   }
   assertBalanced(text, `src/${file}`);
-  parts.push(`/* ══ ${file} ══════════════════════════════════════════ */`);
+  parts.push(`/* ══ ${path.basename(file)} ══════════════════════════════════════════ */`);
   parts.push(text.trim());
 }
 const css = faces.join("\n") + "\n\n" + parts.join("\n\n");
@@ -99,10 +103,13 @@ for (const [file, list] of Object.entries(nodes)) {
 /* 2 · no product rule escapes its scope. The shell owns the floor, the
    spine, the sheet's base and the body; a product rule that does not name
    its own app element is a rule that can starve another product. */
-const SHELL_OK = new Set(["shell.css", "foundation.css"]);
+const SHELL_OK = new Set(["src/shell.css", "src/foundation.css"]);
+/* across.css is Timeline's own new surface, kept in its own file so it is
+   easy to argue with, and held to the same scope rule. */
+const APP_OF = { "src/across.css": "timeline" };
 for (const [file, list] of Object.entries(nodes)) {
   if (SHELL_OK.has(file)) continue;
-  const app = file.replace(".css", "");
+  const app = APP_OF[file] || path.basename(file, ".css");
   for (const n of list) {
     if (n.kind !== "rule") continue;
     for (const s of selectors(n.selector)) {
@@ -133,7 +140,7 @@ for (const [file, list] of Object.entries(nodes)) {
 /* ── the scripts ─────────────────────────────────────────────────── */
 const scripts = [];
 for (const file of JS) {
-  scripts.push(`/* ══ ${file} ══════════════════════════════════════════ */`);
+  scripts.push(`/* ══ ${path.basename(file)} ══════════════════════════════════════════ */`);
   scripts.push((await src(file)).trim());
 }
 

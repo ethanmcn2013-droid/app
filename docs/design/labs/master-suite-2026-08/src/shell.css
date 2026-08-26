@@ -67,6 +67,11 @@ body {
   position: absolute; width: 1px; height: 1px;
   margin: -1px; padding: 0; overflow: hidden;
   clip-path: inset(50%); white-space: nowrap; border: 0;
+  /* Declared, because "the browser choosing it means nobody did" is true
+     of a box nobody sees as well. One, because a clipped 1×1 box has no
+     leading to have an opinion about, and leaving it `normal` put three
+     screen-reader strings on the gate's list every round. */
+  line-height: 1;
 }
 
 /* ── the floor ───────────────────────────────────────────────── */
@@ -95,7 +100,14 @@ body {
      do. On its own page it scrolled the window; there is no window to
      scroll here, and 100dvh has been re-based on this box. */
   overflow: auto;
-  height: 100%;
+  /* NO height here. This element carries .sheet as well, and .sheet
+     declares its own height twice — 100% at a desk, and
+     100dvh minus the phone bar below 720. A height on this selector
+     outranks both, so at 390 the artifact grew to the full floor and
+     painted straight over the capsule: the spine was underneath the
+     sheet, unreachable, and Timeline had no way out of it on a phone
+     from the day the suite was composed. The 133-check gate missed it
+     because the 390 merge was only ever driven for Tasks and Notes. */
 }
 #tl { min-height: 100%; }
 
@@ -205,6 +217,25 @@ body {
   outline: 2px solid var(--indigo);
   outline-offset: 2px;
 }
+
+/* ── the wordmark ───────────────────────────────────────────────
+   `tasks.` and `notes.` are the same object in the same place on the same
+   sheet head, and they were tracked two ways: -0.022em in the Tasks shell
+   and -0.021em in the Notes one, both reached through a token called
+   --tr-18. Apart, that is two labs rounding the same curve differently.
+   Together — one application, one head, the object a person sees swap when
+   they press a tile — it is the same word set two ways, and the measured
+   gate reported it as one key seen 49 times.
+
+   Declared once here, on the shell, at the Tasks value: the tracking
+   curve was argued and declared in the Tasks lock ("one tracking curve,
+   by size, declared once") and the Notes shell inherited that shell from
+   it. The full stop after the word stays product-scoped — it is ink in
+   Tasks and indigo in Notes, and both locks defend their own. */
+/* On #deck, not bare: each product's own .word rule is scoped to its app
+   element and outranks a bare class. The shell already reaches the spine's
+   decisions this way. */
+#deck .word { letter-spacing: -0.022em; }
 
 /* ── the sheet ─────────────────────────────────────────────────
    White against ink needs no shadow. Contrast is the elevation. Both

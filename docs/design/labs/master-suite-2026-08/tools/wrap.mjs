@@ -47,4 +47,8 @@ for (const product of ["tasks", "notes", "timeline"]) {
     "utf8",
   );
 }
-process.stdout.write(`_wrapped.html + 3 gate copies · ${Math.round(body.length / 1024)} KB each\n`);
+/* The elevate toolchain's own handle. It reaches every surface through
+   one parameter — ?state=<product>:<state> — so it is the plain wrapped
+   copy under the name elevate.config.json points at. */
+await writeFile(path.join(LAB, "_gate-suite.html"), skeleton(body), "utf8");
+process.stdout.write(`_wrapped.html + 4 gate copies · ${Math.round(body.length / 1024)} KB each\n`);
