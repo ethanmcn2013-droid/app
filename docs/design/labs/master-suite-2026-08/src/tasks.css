@@ -2187,3 +2187,107 @@
 @media (max-width: 900px) {
   [data-app="tasks"] .taskPanel { left: var(--inset); width: auto; }
 }
+
+/* ── the control surfaces ──────────────────────────────────────────
+   Filter, Sort, Display and Share. One shape for all four: a small panel
+   under its own button, a row per choice, a tick where the choice is live.
+   Lightweight rather than a dropdown — no chrome the choices do not need,
+   no scroll, and never more rows than change what is on screen.
+
+   `.viewTools` holds them, so it is the containing block. */
+[data-app="tasks"] .viewTools { position: relative; }
+[data-app="tasks"] .toolPop {
+  position: absolute; z-index: 40;
+  top: calc(100% + 8px); right: 0;
+  width: 268px; padding: 6px;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  box-shadow: 0 0 0 1px var(--line), var(--float);
+  display: grid; gap: 1px;
+  animation: toolIn var(--motion-instant) var(--curve) both;
+}
+[data-app="tasks"] .toolPop[data-tool="share"] { width: 320px; }
+@keyframes toolIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+[data-app="tasks"] .toolLabel {
+  margin: 0; padding: 8px 9px 5px;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+[data-app="tasks"] .toolItem {
+  font-family: inherit; font-size: 13px; font-weight: 400;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-13);
+  background: none; border: 0;
+  display: grid; grid-template-columns: 18px 1fr; align-items: center; gap: 8px;
+  min-height: 38px; padding: 0 8px;
+  border-radius: var(--r-ctl);
+  text-align: left; cursor: pointer;
+  color: var(--ink-1);
+  transition: background-color var(--motion-instant) var(--curve);
+}
+[data-app="tasks"] .toolItem:hover { background: var(--wash); }
+[data-app="tasks"] .toolItem b { display: block; font-weight: 400; }
+[data-app="tasks"] .toolItem[data-on] b { font-weight: 600; }
+[data-app="tasks"] .toolItem em {
+  display: block; font-style: normal;
+  font-size: 11px; letter-spacing: 0.005em;
+  color: var(--ink-3); margin-top: 2px;
+}
+[data-app="tasks"] .toolTick { display: grid; place-items: center; color: var(--indigo); }
+[data-app="tasks"] .toolTick svg { width: 15px; height: 15px; }
+[data-app="tasks"] .toolFoot { border-top: 1px solid var(--line-soft); margin-top: 5px; padding: 7px 3px 2px; }
+[data-app="tasks"] .toolClear {
+  font-family: inherit; font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
+  background: none; border: 0; padding: 6px 6px; margin: -6px -6px;
+  border-radius: var(--r-ctl);
+  color: var(--indigo); cursor: pointer;
+}
+[data-app="tasks"] .toolClear:hover { background: var(--indigo-wash); }
+[data-app="tasks"] .toolNote {
+  margin: 0; padding: 9px 9px 4px;
+  font-size: 13px; font-weight: 400; line-height: 20px; letter-spacing: var(--tr-13);
+  color: var(--ink-2);
+}
+[data-app="tasks"] .shareLink {
+  display: flex; align-items: center; gap: 8px;
+  margin: 4px 3px 0; padding: 9px 10px;
+  background: var(--wash);
+  border-radius: var(--r-ctl);
+}
+[data-app="tasks"] .shareLink code {
+  font-family: var(--font-mono); font-size: 12px; color: var(--ink-1);
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A live control says so on its own face. This is the founder's rule that a
+   person must never have to OPEN a control to find out whether it is on —
+   so a count rides on Filter, and a plain dot on Sort and Display. */
+[data-app="tasks"] .viewTools .ghost { position: relative; }
+[data-app="tasks"] .viewTools .ghost[data-open] { background: var(--wash); color: var(--ink-1); }
+[data-app="tasks"] .viewTools .ghost[data-live] { color: var(--ink-1); }
+/* `em.toolDot`, not `.toolDot`. The product already has a rule for
+   `[data-app="tasks"] .ghost em` — 12px, 600, ink — and at (0,2,1) it
+   outranks a bare class, so the badge was painting INK on indigo at 3:1
+   while this block declared white. The stylesheet said one thing and the
+   cascade did another; only the audit's composited reading caught it. */
+[data-app="tasks"] .ghost em.toolDot {
+  position: absolute; top: 3px; right: 2px;
+  min-width: 14px; height: 14px; padding: 0 3px;
+  border-radius: var(--r-pill);
+  background: var(--indigo); color: var(--white);
+  font-family: var(--font-mono); font-style: normal;
+  font-size: 10px; line-height: 14px; letter-spacing: 0;
+  display: grid; place-items: center;
+}
+[data-app="tasks"] .ghost em.toolDot:empty { min-width: 6px; width: 6px; height: 6px; padding: 0; top: 6px; right: 5px; }
+/* Titles only. */
+[data-app="tasks"][data-no-notes] .cardNote { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .toolPop { animation: none; }
+}
+@media (max-width: 720px) {
+  [data-app="tasks"] .toolPop { right: auto; left: 0; width: min(268px, calc(100vw - 40px)); }
+}

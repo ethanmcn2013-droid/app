@@ -137,7 +137,31 @@ function tasksFor(lane) {
     rows = rows.filter((t) =>
       (t.title + " " + (t.note || "") + " " + (t.tag || "")).toLowerCase().includes(q));
   }
+  /* Sort AFTER filtering and after Done's own ordering, so a chosen sort
+     overrides the lane's default rather than fighting it. Manual means the
+     order the operator put them in, which is the only one the board itself
+     can change by dragging — so it is the default and nothing is imposed
+     on a person who never opened the control. */
+  if (sortBy !== "manual") rows = rows.slice().sort(sortRows);
   return rows;
+}
+
+const PRIORITY_RANK = { High: 0, Medium: 1, Normal: 2, Low: 3 };
+function sortRows(a, b) {
+  if (sortBy === "title") return a.title.localeCompare(b.title);
+  if (sortBy === "priority") {
+    const rank = (t) => (t.priority in PRIORITY_RANK ? PRIORITY_RANK[t.priority] : 9);
+    return rank(a) - rank(b) || a.title.localeCompare(b.title);
+  }
+  /* By day. A task with no day sorts last rather than first: an undated
+     task is not urgent, and an empty string sorting above every real date
+     is the classic way "soonest first" opens on everything nobody dated. */
+  const day = (t) => t.dueAt || t.completedAt || "";
+  const da = day(a), db = day(b);
+  if (!da && !db) return a.title.localeCompare(b.title);
+  if (!da) return 1;
+  if (!db) return -1;
+  return da < db ? -1 : da > db ? 1 : a.title.localeCompare(b.title);
 }
 
 function filtering() { return lateOnly || clientOnly || todayOnly || Boolean(queryText.trim()); }
@@ -548,6 +572,98 @@ function projectMenu() {
   );
 }
 
+/* ── the control surfaces ──────────────────────────────────────────
+   Filter, Sort, Display and Share. Four popovers sharing one shape, one
+   dismissal model and one keyboard model, because four controls that each
+   invented their own would be four things to learn rather than one.
+
+   The rule the founder's brief sets is that a person must always know what
+   is active WITHOUT opening anything, so every live state is on the
+   button's own face: a count on Filter, a dot on Sort and Display. Opening
+   one is for changing it, never for finding out.
+
+   Simple first, complexity progressively revealed: each panel shows the
+   handful of choices that change what is on screen, and nothing else. A
+   control surface that lists every possibility is a preferences dialog. */
+let toolOpen = null;    /* which control surface is open, if any            */
+let sortBy = "manual";  /* manual · due · priority · title                  */
+let showNotes = true;   /* whether cards carry their note                   */
+let density = "comfortable";
+
+function filterCount() {
+  return (lateOnly ? 1 : 0) + (todayOnly ? 1 : 0) + (clientOnly ? 1 : 0) +
+    (queryText.trim() ? 1 : 0);
+}
+
+/* Every tag in the project, in the order the board first meets them. */
+function allTags() {
+  const seen = [];
+  allTasks().forEach((t) => { if (t.tag && seen.indexOf(t.tag) < 0) seen.push(t.tag); });
+  return seen;
+}
+
+function toolPop(kind) {
+  const row = (act, value, label, on, note) =>
+    '<button type="button" class="toolItem" role="menuitemradio" data-act="' + act +
+    '" data-value="' + esc(value) + '" aria-checked="' + (on ? "true" : "false") + '"' +
+    (on ? " data-on" : "") + '><span class="toolTick">' + (on ? I.check : "") + "</span>" +
+    "<span><b>" + esc(label) + "</b>" + (note ? "<em>" + esc(note) + "</em>" : "") + "</span></button>";
+
+  let body = "";
+  let title = "";
+
+  if (kind === "filter") {
+    title = "Filter";
+    body =
+      row("filter-set", "late", "Overdue", lateOnly, "Past its day") +
+      row("filter-set", "today", "Due today", todayOnly, "Owed before tonight") +
+      (allTags().length
+        ? '<p class="toolLabel">By tag</p>' +
+          allTags().map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
+        : "") +
+      (filterCount()
+        ? '<div class="toolFoot"><button type="button" class="toolClear" data-act="filter-clear">' +
+          "Clear " + filterCount() + (filterCount() === 1 ? " filter" : " filters") + "</button></div>"
+        : "");
+  } else if (kind === "sort") {
+    title = "Sort";
+    body =
+      row("sort-set", "manual", "Manual", sortBy === "manual", "The order you put them in") +
+      row("sort-set", "due", "By day", sortBy === "due", "Soonest first") +
+      row("sort-set", "priority", "By priority", sortBy === "priority", "High first") +
+      row("sort-set", "title", "A to Z", sortBy === "title");
+  } else if (kind === "display") {
+    title = "Display";
+    body =
+      row("display-density", "comfortable", "Comfortable", density === "comfortable") +
+      row("display-density", "compact", "Compact", density === "compact", "More on screen") +
+      '<p class="toolLabel">On the card</p>' +
+      row("display-notes", "on", "Show notes", showNotes) +
+      row("display-notes", "off", "Titles only", !showNotes);
+  } else if (kind === "share") {
+    title = "Share";
+    /* Honest, and still a real surface. The link is the thing a person came
+       for and it is right there; what cannot be done yet says so in the
+       same sentence it would have used to offer it. */
+    body =
+      '<p class="toolNote">Anyone with this link can read ' + esc(B.workspace) +
+        ". Nobody can change it.</p>" +
+      '<div class="shareLink"><code>' + esc(shareUrl()) + "</code>" +
+        '<button type="button" class="toolClear" data-act="share-copy">Copy</button></div>' +
+      '<div class="toolFoot"><p class="tpNone">Inviting people by name, and letting them ' +
+        "edit, is not here yet.</p></div>";
+  }
+
+  return (
+    '<div class="toolPop" data-tool="' + kind + '" role="menu" aria-label="' + title + '">' +
+    (kind === "share" ? "" : '<p class="toolLabel">' + title + "</p>") + body + "</div>"
+  );
+}
+
+function shareUrl() {
+  return "signalstudio.ie/s/" + (window.PROJECTS ? window.PROJECTS.current() : "board") + "-7f2a";
+}
+
 function head() {
   const p = B.progress;
   const rows = allTasks();
@@ -598,7 +714,9 @@ function head() {
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search"' + notYet(SEARCH) + ">" +
         I.search + "</button>" +
-      '<button class="ghost"' + notYet("Sharing arrives when you can invite the couple and your suppliers in.") + ">" +
+      '<button class="ghost" data-act="tool" data-tool="share"' +
+        ' aria-haspopup="menu" aria-expanded="' + (toolOpen === "share" ? "true" : "false") + '"' +
+        (toolOpen === "share" ? " data-open" : "") + ">" +
         I.share + "<span>Share</span></button>" +
       /* The count is printed once, in the facts row, where it names what it
          counts. It used to be printed twice on one 40px band under two names
@@ -626,10 +744,25 @@ function views() {
         ? ' data-active aria-current="true" aria-selected="true"'
         : ' aria-selected="false"' + notYet(SOON)) +
       ' tabindex="' + (v === "Board" ? "0" : "-1") + '">' + icons[v] + "<span>" + v + "</span></button>").join("") +
+    /* Three real controls where three closed doors used to be. Each one
+       carries its own live state on its face — a filter that is on says so
+       without being opened, because "what is currently active" is the one
+       thing a control surface must never make you open it to find out. */
     '</nav><div class="viewTools" data-group="tools">' +
-      ["Filter", "Sort", "Display"].map((t, i) =>
-        '<button class="ghost" tabindex="' + (i ? "-1" : "0") + '"' + notYet(TOOLS) + ">" +
-        I[t.toLowerCase()] + "<span>" + t + "</span></button>").join("") +
+      ["Filter", "Sort", "Display"].map((t, i) => {
+        const key = t.toLowerCase();
+        const live = key === "filter" ? filterCount()
+          : key === "sort" ? (sortBy === "manual" ? 0 : 1)
+          : (showNotes ? 0 : 1);
+        return '<button class="ghost" data-act="tool" data-tool="' + key + '"' +
+          ' tabindex="' + (i ? "-1" : "0") + '"' +
+          ' aria-haspopup="menu" aria-expanded="' + (toolOpen === key ? "true" : "false") + '"' +
+          (toolOpen === key ? " data-open" : "") + (live ? " data-live" : "") + ">" +
+          I[key] + "<span>" + t + "</span>" +
+          (live ? '<em class="toolDot" aria-hidden="true">' + (key === "filter" ? live : "") + "</em>" : "") +
+          "</button>";
+      }).join("") +
+      (toolOpen ? toolPop(toolOpen) : "") +
     "</div></div>"
   );
 }
@@ -2048,6 +2181,15 @@ function onKey(event) {
   if (key === "Escape") {
     /* Innermost first: menu, carried card, open note, then the filters in
        the order they were most likely just set, then the drawer. */
+    if (toolOpen) {
+      event.preventDefault();
+      const was = toolOpen;
+      toolOpen = null;
+      mount();
+      const back = document.querySelector('[data-tool="' + was + '"][data-act="tool"]');
+      if (back) back.focus();
+      return;
+    }
     if (dayFor) { event.preventDefault(); dayFor = null; mount(); return; }
     if (closeMenu()) { event.preventDefault(); return; }
     if (carriedId) {
@@ -2160,6 +2302,15 @@ function onKey(event) {
 }
 
 function onClick(event) {
+  /* One dismissal model for all four control surfaces: a press anywhere
+     that is not the open panel or the button that opened it closes it.
+     Sited first so it runs even when the press is handled by something
+     else — a filter chip, a card, the board itself. */
+  if (toolOpen) {
+    const inside = event.target.closest &&
+      (event.target.closest(".toolPop") || event.target.closest('[data-act="tool"]'));
+    if (!inside) { toolOpen = null; mount(); }
+  }
   const off = event.target.closest && event.target.closest('[aria-disabled="true"]');
   if (off) {
     /* Hover is not available to a thumb, so the reason is spoken and shown. */
@@ -2271,6 +2422,61 @@ function onClick(event) {
     mount();
     const field = document.querySelector(".card[data-draft] .cardTitle");
     if (field) field.focus();
+    return;
+  }
+  if (what === "tool") {
+    const kind = act.dataset.tool;
+    toolOpen = toolOpen === kind ? null : kind;
+    mount();
+    const back = document.querySelector('[data-tool="' + kind + '"][data-act="tool"]');
+    if (back) back.focus();
+    return;
+  }
+  if (what === "filter-set") {
+    const v = act.dataset.value;
+    if (v === "late") { lateOnly = !lateOnly; if (lateOnly) todayOnly = false; }
+    if (v === "today") { todayOnly = !todayOnly; if (todayOnly) lateOnly = false; }
+    mount(); say(filterSentence() || "Showing everything."); return;
+  }
+  if (what === "filter-tag") {
+    clientOnly = clientOnly === act.dataset.value ? null : act.dataset.value;
+    mount(); say(filterSentence() || "Showing everything."); return;
+  }
+  if (what === "filter-clear") {
+    lateOnly = false; todayOnly = false; clientOnly = null; queryText = "";
+    mount();
+    say("Filters cleared. Showing everything.");
+    return;
+  }
+  if (what === "sort-set") {
+    sortBy = act.dataset.value;
+    mount();
+    say(sortBy === "manual" ? "Sorted the way you put them."
+      : sortBy === "due" ? "Sorted by day, soonest first."
+      : sortBy === "priority" ? "Sorted by priority, high first."
+      : "Sorted A to Z.");
+    return;
+  }
+  if (what === "display-density") {
+    density = act.dataset.value;
+    root.setAttribute("data-density", density);
+    mount();
+    say(density === "compact" ? "Compact. More on screen." : "Comfortable.");
+    return;
+  }
+  if (what === "display-notes") {
+    showNotes = act.dataset.value === "on";
+    root.toggleAttribute("data-no-notes", !showNotes);
+    mount();
+    say(showNotes ? "Cards show their notes." : "Titles only.");
+    return;
+  }
+  if (what === "share-copy") {
+    const url = shareUrl();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).catch(() => {});
+    }
+    say("Link copied. " + url);
     return;
   }
   if (what === "task-close") {

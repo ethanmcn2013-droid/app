@@ -4,13 +4,13 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "15847 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "16984 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1440 · the spine",
       "ok": true,
-      "detail": "14454 px, in x 28–1055, y 37–864"
+      "detail": "14454 px, in x 28–1382, y 37–864"
     },
     {
       "section": "fidelity",
@@ -34,7 +34,7 @@
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "6316 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "7444 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -64,13 +64,13 @@
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "6295 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "7203 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @768 · the spine",
       "ok": true,
-      "detail": "14432 px, in x 22–612.5, y 37.5–870"
+      "detail": "14432 px, in x 22–716, y 37.5–870"
     },
     {
       "section": "fidelity",
@@ -94,13 +94,13 @@
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "20 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "90 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @390 · the spine",
       "ok": true,
-      "detail": "13861 px, in x 44–364, y 91–826.5"
+      "detail": "13861 px, in x 44–364, y 35–826.5"
     },
     {
       "section": "fidelity",
@@ -1706,7 +1706,7 @@
       "section": "delight",
       "name": "completion via tick · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 8 dots · widest 2.6px · brightest 0.67"
+      "detail": "1 burst · 8 dots · widest 2.3px · brightest 0.50"
     },
     {
       "section": "delight",
@@ -1869,6 +1869,78 @@
       "name": "Enter opens the same expanded task a press does",
       "ok": true,
       "detail": "true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1440 · all four open inside the viewport",
+      "ok": true,
+      "detail": "{\"filter\":true,\"sort\":true,\"display\":true,\"share\":true}"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1440 · a press outside closes them",
+      "ok": true,
+      "detail": "[true,true,true,true]"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1440 · Filter filters, and says so with the panel SHUT",
+      "ok": true,
+      "detail": "13 → 1 · badge \"1\" while shut · cleared:true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1440 · Sort really reorders, and marks itself live",
+      "ok": true,
+      "detail": "changed:true a-z:true dot:true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1440 · Display really changes the card",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1440 · Escape closes and hands the button back",
+      "ok": true,
+      "detail": "closed:true focus:true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1920 · all four open inside the viewport",
+      "ok": true,
+      "detail": "{\"filter\":true,\"sort\":true,\"display\":true,\"share\":true}"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1920 · a press outside closes them",
+      "ok": true,
+      "detail": "[true,true,true,true]"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1920 · Filter filters, and says so with the panel SHUT",
+      "ok": true,
+      "detail": "13 → 1 · badge \"1\" while shut · cleared:true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1920 · Sort really reorders, and marks itself live",
+      "ok": true,
+      "detail": "changed:true a-z:true dot:true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1920 · Display really changes the card",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "section": "delight",
+      "name": "controls @1920 · Escape closes and hands the button back",
+      "ok": true,
+      "detail": "closed:true focus:true"
     },
     {
       "section": "lab gates",

@@ -258,4 +258,102 @@ export async function delight({ browser, url, check, head }) {
     check("delight", "Enter opens the same expanded task a press does", viaKey === true, String(viaKey));
     await page.close();
   }
+
+  /* ── the control surfaces ───────────────────────────────────────
+     Filter, Sort, Display and Share. The founder's rule is that a person
+     must always know what is active WITHOUT opening anything, so the
+     load-bearing assertion here is not "the panel opens" — it is "the
+     button says it is on while the panel is shut". */
+  for (const width of [1440, 1920]) {
+    const page = await open(width);
+    const r = await page.evaluate(async () => {
+      const btn = (t) => document.querySelector(`[data-act="tool"][data-tool="${t}"]`);
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const out = { opens: {}, inView: {} };
+      for (const t of ["filter", "sort", "display", "share"]) {
+        btn(t).click();
+        await wait(260);
+        const pop = document.querySelector(".toolPop");
+        out.opens[t] = Boolean(pop);
+        if (pop) {
+          const b = pop.getBoundingClientRect();
+          out.inView[t] = b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight;
+        }
+        /* Dismissal: a press on the board closes it. */
+        document.querySelector(".board").click();
+        await wait(200);
+        out["dismissed_" + t] = !document.querySelector(".toolPop");
+      }
+
+      /* Filter changes the board and SAYS SO on its own face. */
+      const before = document.querySelectorAll(".board .card").length;
+      btn("filter").click(); await wait(240);
+      document.querySelector('[data-act="filter-set"][data-value="late"]').click();
+      await wait(320);
+      out.filtered = document.querySelectorAll(".board .card").length;
+      document.querySelector(".board").click(); await wait(200);
+      /* Panel SHUT, and the button still reports the live filter. */
+      out.badgeWhenShut = (btn("filter").querySelector(".toolDot") || {}).textContent;
+      out.panelShut = !document.querySelector(".toolPop");
+      btn("filter").click(); await wait(240);
+      document.querySelector('[data-act="filter-clear"]').click();
+      await wait(320);
+      out.cleared = document.querySelectorAll(".board .card").length;
+      out.badgeGone = !btn("filter").querySelector(".toolDot");
+
+      /* Sort actually reorders. */
+      /* Every lane, not one. The To do lane's manual order happens to be
+         alphabetical already — Confirm, Reprint, Send — so asserting "it
+         changed" against that one lane failed a sort that was working
+         perfectly. The requirement is that EVERY lane comes out ordered,
+         and that at least one of them actually had to move to get there. */
+      const laneTitles = () => [...document.querySelectorAll(".board [data-lane]")]
+        .map((l) => [...l.querySelectorAll(".card .cardTitle")].map((e) => e.textContent.trim()));
+      const manual = laneTitles();
+      btn("sort").click(); await wait(240);
+      document.querySelector('[data-act="sort-set"][data-value="title"]').click();
+      await wait(320);
+      const az = laneTitles();
+      out.sorted = JSON.stringify(manual) !== JSON.stringify(az);
+      out.reallyAZ = az.every((lane) =>
+        JSON.stringify(lane) === JSON.stringify([...lane].sort((a, b) => a.localeCompare(b))));
+      out.sortDot = Boolean(btn("sort").querySelector(".toolDot"));
+      document.querySelector(".board").click(); await wait(200);
+
+      /* Display actually changes the card. */
+      const notesBefore = document.querySelectorAll(".board .cardNote").length;
+      btn("display").click(); await wait(240);
+      document.querySelector('[data-act="display-notes"][data-value="off"]').click();
+      await wait(320);
+      const shown = [...document.querySelectorAll(".board .cardNote")]
+        .filter((n) => n.getBoundingClientRect().height > 0).length;
+      out.notesHidden = notesBefore > 0 && shown === 0;
+      document.querySelector(".board").click(); await wait(200);
+
+      /* Escape closes and hands the button back. */
+      btn("sort").click(); await wait(240);
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      await wait(260);
+      out.escClosed = !document.querySelector(".toolPop");
+      out.escFocus = document.activeElement === btn("sort");
+      return out;
+    });
+
+    const allOpen = ["filter", "sort", "display", "share"].every((t) => r.opens[t] && r.inView[t]);
+    const allDismiss = ["filter", "sort", "display", "share"].every((t) => r["dismissed_" + t]);
+    check("delight", `controls @${width} · all four open inside the viewport`,
+      allOpen, JSON.stringify(r.opens));
+    check("delight", `controls @${width} · a press outside closes them`,
+      allDismiss, JSON.stringify(["filter", "sort", "display", "share"].map((t) => r["dismissed_" + t])));
+    check("delight", `controls @${width} · Filter filters, and says so with the panel SHUT`,
+      r.filtered < r.cleared && r.panelShut && r.badgeWhenShut === "1" && r.badgeGone,
+      `${r.cleared} → ${r.filtered} · badge "${r.badgeWhenShut}" while shut · cleared:${r.badgeGone}`);
+    check("delight", `controls @${width} · Sort really reorders, and marks itself live`,
+      r.sorted && r.reallyAZ && r.sortDot, `changed:${r.sorted} a-z:${r.reallyAZ} dot:${r.sortDot}`);
+    check("delight", `controls @${width} · Display really changes the card`,
+      r.notesHidden === true, String(r.notesHidden));
+    check("delight", `controls @${width} · Escape closes and hands the button back`,
+      r.escClosed && r.escFocus, `closed:${r.escClosed} focus:${r.escFocus}`);
+    await page.close();
+  }
 }
