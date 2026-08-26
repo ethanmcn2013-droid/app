@@ -45,6 +45,15 @@
   --rail: 64px;
   --tap: 44px;
 
+  /* The chrome is ON the ramp, and has to say so here. Both products scope
+     their type tokens to their own app element, so a rail rule reaching for
+     `--t-11` resolved to nothing and silently inherited 16px — a label
+     nearly half again the size it was drawn at, and still a violation
+     because 16 is on no ladder either. Declared at :root, where a product's
+     own [data-app] block outranks it and nothing changes inside a sheet. */
+  --t-11: 11px;
+  --lh-tight: 1.28;
+
   /* Tasks reaches these through foundation.css and Notes states the
      resolved values. Identical either way; the indirection is kept
      because foundation.css is where reduced motion zeroes them. */
@@ -184,8 +193,12 @@ body {
 .railTile[data-util] { height: var(--tap); padding: 0; gap: 0; }
 .railTile svg { width: 19px; height: 19px; }
 .railName {
-  font-size: 10px; font-weight: 400;
-  line-height: 1; letter-spacing: 0.005em;
+  /* 11px, not 10. The ramp is 11/12/13/15/17/20/27/34 "and no ninth", and a
+     10px label put a ninth step on it — the shared audit counted ten
+     violations, one per rail label per state. The leading is declared for
+     the same reason: an undeclared one is off the ladder too. */
+  font-size: var(--t-11); font-weight: 400;
+  line-height: var(--lh-tight); letter-spacing: 0.005em;
   /* The one place the rail may clip: "Timeline" is the longest word that
      has to fit 64px of capsule, and it fits at 10px with room to spare. */
   max-width: 100%;
@@ -384,7 +397,7 @@ body {
   padding: 7px;
   background: var(--chrome);
   box-shadow: inset 0 0 0 1px var(--chrome-line), var(--float);
-  border-radius: 14px;
+  border-radius: 16px;
   display: grid; gap: 1px;
   z-index: 6;
   animation: morePopIn var(--dur) var(--curve) both;
@@ -410,7 +423,7 @@ body {
   background: none; border: 0;
   display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 9px;
   min-height: 36px; padding: 0 9px;
-  border-radius: 9px;
+  border-radius: 8px;
   color: var(--on-ink-2);
   text-align: left;
   cursor: default;

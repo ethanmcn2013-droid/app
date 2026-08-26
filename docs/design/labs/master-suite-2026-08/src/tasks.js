@@ -512,6 +512,31 @@ const RAIL = {
   tasks: "Tasks",
 };
 
+/* ── the project switcher ──────────────────────────────────────────
+   Everything on this sheet belongs to one project, and until now the
+   application had no way of saying which — or of being asked for another.
+   The list is short and stays short: this is a switcher, not a project
+   manager, so it names the projects and nothing else. */
+let projOpen = false;
+
+function projectMenu() {
+  const P = window.PROJECTS;
+  if (!P) return "";
+  const here = P.current();
+  return (
+    '<div class="projMenu" role="listbox" aria-label="Projects">' +
+    P.list.map((p) => {
+      const on = p.id === here;
+      return '<button type="button" class="projItem" role="option" data-act="project" data-project="' +
+        p.id + '" aria-selected="' + (on ? "true" : "false") + '"' + (on ? " data-on" : "") +
+        ' tabindex="' + (on ? "0" : "-1") + '">' +
+        '<span class="projTick">' + (on ? I.check : "") + "</span>" +
+        "<span><b>" + esc(p.name) + "</b><em>" + esc(p.kind) + "</em></span></button>";
+    }).join("") +
+    "</div>"
+  );
+}
+
 function head() {
   const p = B.progress;
   const rows = allTasks();
@@ -523,7 +548,17 @@ function head() {
   return (
     '<div class="head">' +
     '<span class="word">tasks</span><span class="headRule"></span>' +
-    '<h1 class="headName">' + esc(B.workspace) + "</h1>" +
+    /* The workspace name is the switcher. A reader with three projects had
+       no way to say which one they meant, and the name was the one thing
+       on the surface already claiming "everything here belongs to this" —
+       so it becomes the control rather than a second control being added
+       beside it. */
+    '<h1 class="headName"><button type="button" class="projSwitch" data-act="projects"' +
+      ' aria-haspopup="listbox" aria-expanded="' + (projOpen ? "true" : "false") + '"' +
+      (projOpen ? " data-open" : "") +
+      ' aria-label="' + esc(B.workspace) + ', switch project">' +
+      "<span>" + esc(B.workspace) + "</span>" + I.chevron + "</button></h1>" +
+    (projOpen ? projectMenu() : "") +
     '<div class="headFacts">' +
       '<span class="today">' + todayLabel() + "</span>" +
       (total && done === total ? '<span class="ratio" data-all>Everything is done.</span>' :
@@ -2033,6 +2068,51 @@ function onClick(event) {
     mount();
     const field = document.querySelector(".card[data-draft] .cardTitle");
     if (field) field.focus();
+    return;
+  }
+  if (what === "projects") {
+    projOpen = !projOpen;
+    mount();
+    const back = document.querySelector('[data-act="projects"]');
+    if (back) back.focus();
+    say(projOpen ? "Projects, open." : "Projects, closed.");
+    return;
+  }
+  if (what === "project") {
+    const id = act.dataset.project;
+    const P = window.PROJECTS;
+    projOpen = false;
+    if (!P || id === P.current()) { mount(); return; }
+    /* The whole workspace, not the cards. Tasks, Timeline and Planning all
+       read the same two objects, so switching them once and repainting
+       every product is what makes "the selected project is the source of
+       truth" true rather than merely claimed. Any local state that names a
+       row of the OLD project has to go with it — a filter, a picked set, an
+       open note and an undo that could put a foreign card back on this
+       board are all leaks wearing a different coat. */
+    P.apply(id);
+    /* The row cache is keyed by STATE, and the state has not changed — only
+       the project underneath it has. Without this the board would go on
+       serving the previous project's cards from memory while every label
+       around them said the new project's name, which is the most confusing
+       possible half-switch. */
+    WORK = null;
+    picked.clear();
+    undoHistory.length = 0;
+    undone = null;
+    openNoteId = null;
+    menuFor = null;
+    dayFor = null;
+    focusId = null;
+    lateOnly = false;
+    drawerTab = "nodate";
+    state = "board";
+    mount();
+    if (window.__SUITE && window.__SUITE.reproject) window.__SUITE.reproject();
+    const name = (P.list.find((p) => p.id === id) || {}).name || "the project";
+    say(name + ". Tasks, Timeline and Planning all moved with it.");
+    const back = document.querySelector('[data-act="projects"]');
+    if (back) back.focus();
     return;
   }
   if (what === "menu") {

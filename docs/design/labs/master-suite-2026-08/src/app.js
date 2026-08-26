@@ -429,6 +429,31 @@ window.__SUITE = (function () {
   /* ── wiring ───────────────────────────────────────────────── */
   function register(name, api) { registry[name] = api; }
 
+  /* ── the project reached every product ────────────────────────
+     `window.PROJECTS.apply()` has already swapped the data underneath all
+     three. This is the other half: every product repaints, including the
+     two that are mounted but hidden.
+
+     Repainting the hidden ones is the whole point and it is easy to talk
+     yourself out of — they are not on screen, so why pay for it? Because
+     the suite never tears a product down, so a hidden Timeline still holds
+     the PREVIOUS project's measure in the DOM, and the reader would walk
+     the spine and find it there. "The previous project's timeline must not
+     remain visible" is not satisfied by it merely being off screen. */
+  function reproject() {
+    PRODUCTS.forEach(function (key) {
+      var entry = registry[key];
+      if (entry && typeof entry.show === "function") {
+        try { entry.show(); } catch (err) { /* one product must not stop the rest */ }
+      }
+    });
+    /* Timeline registers no `show` — it is drawn by its own core, which
+       rebuilds the measure from the fixture it has just been handed. */
+    if (window.__TLCORE && window.__TLCORE.mount) {
+      try { window.__TLCORE.mount(); } catch (err) { /* as above */ }
+    }
+  }
+
   deck.addEventListener("click", function (event) {
     /* A press anywhere that is not the plus or its own panel closes the
        panel. Sited before the tile test so a press on the floor closes it
@@ -566,6 +591,7 @@ window.__SUITE = (function () {
     uncross: uncross,
     openTask: openTask,
     register: register,
+    reproject: reproject,
     /* Called once, after all three products have registered. */
     start: function () {
       deck.insertAdjacentHTML("afterbegin", railHtml());

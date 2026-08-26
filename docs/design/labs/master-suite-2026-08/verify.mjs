@@ -29,6 +29,7 @@ import { truth } from "./tools/truth.mjs";
 import { craft } from "./tools/craft.mjs";
 import { reach } from "./tools/reach.mjs";
 import { ring } from "./tools/ring.mjs";
+import { projects } from "./tools/projects.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -52,6 +53,13 @@ const CHANGED = {
   notes: "the index column 1060 → 1440, the wedding moved to 3 October, "
     + "the dock's account tile now says what the rail's says",
   timeline: "a second composition (across) and its own wordmark on the sheet head",
+  /* The workspace name became the project switcher. The founder asked for
+     a way to change project and named the head as where it belongs, so the
+     board's h1 now carries a chevron and a hit area — the same type at the
+     same size in the same place, plus 15px of glyph. The board below it is
+     untouched; this declaration covers the head. */
+  tasks: "the workspace name is now the project switcher — a chevron and a "
+    + "real hit target on the same h1, in the same place, at the same size",
 };
 
 /* A product this engagement did not redesign, but did repair. The board is
@@ -905,6 +913,7 @@ if (run("truth")) await truth({ browser, url: SUITE_URL, check, head, lab: LAB }
 if (run("craft")) await craft({ browser, url: SUITE_URL, check, head });
 if (run("reach")) await reach({ browser, url: SUITE_URL, check, head, lab: LAB });
 if (run("ring")) await ring({ browser, url: SUITE_URL, check, head, PNG });
+if (run("projects")) await projects({ browser, url: SUITE_URL, check, head });
 if (run("labgates")) await labGates();
 
 await browser.close();

@@ -39,7 +39,7 @@ const src = (f) => readFile(path.join(LAB, f), "utf8");
 const CSS = ["src/foundation.css", "src/shell.css", "src/tasks.css", "src/notes.css", "src/timeline.css", "src/across.css"];
 /* fixture before icons before the products, and app.js before all of them:
    every product registers with the suite as it loads. */
-const JS = ["src/fixture.js", "src/icons.js", "src/app.js", "src/tasks.js", "src/notes.js", "src/timeline.js"];
+const JS = ["src/fixture.js", "src/projects.js", "src/icons.js", "src/app.js", "src/tasks.js", "src/notes.js", "src/timeline.js"];
 
 /* ── the fonts ───────────────────────────────────────────────────
    The variable Geist from the Tasks and Notes labs, not Timeline's three

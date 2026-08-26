@@ -237,8 +237,17 @@
      Planning open the drawer's h2 was setting the same venue name larger than
      the board's own h1. */
   font-size: 20px; font-weight: 600; letter-spacing: var(--tr-19);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 0 0 auto; min-width: 0;
+  /* The truncation moved INTO the button, and the h1's own `overflow:
+     hidden` had to go with it. It was clipping the switcher's grown hit
+     area down to 26px — the same defect round 1 found on `.who`, where a
+     control's own ::before grower was cut off by an ancestor's overflow.
+     A hit target is measured by the pointer, not by the stylesheet. */
+  white-space: nowrap;
+  /* Shrink only when the head actually runs out. `flex: 0 0 auto` refused to
+     shrink and the button's own `max-width: 100%` then resolved against a
+     box sized from a span that was already clipping itself — the name
+     truncated at 200px with 222px of head still empty beside it. */
+  flex: 0 1 auto; min-width: 0;
 }
 [data-app="tasks"] .headFacts {
   display: flex; align-items: center; gap: 14px;
@@ -1814,3 +1823,84 @@
 [data-app="tasks"] .headFacts > span { line-height: 17px; }  /* 13px */
 [data-app="tasks"] .word { line-height: 22px; }         /* 17px */
 [data-app="tasks"] .headName { line-height: 26px; }     /* 20px, 25px at 19 */
+
+/* ── the project switcher ──────────────────────────────────────────
+   The workspace name became a control. It must not LOOK like a new
+   control: the type, the size, the weight and the position are exactly
+   what they were, and everything that says "pressable" is held back until
+   the pointer is on it. A chevron at 0.42 alpha is the whole standing
+   affordance — enough to be found, not enough to be furniture. */
+[data-app="tasks"] .projSwitch {
+  font-family: inherit; font-size: inherit; font-weight: inherit;
+  letter-spacing: inherit; line-height: inherit; color: inherit;
+  background: none; border: 0;
+  display: inline-flex; align-items: center; gap: 5px;
+  /* No `max-width: 100%`. A percentage max-width inside an auto-width
+     parent whose own width comes from this element resolves circularly —
+     it settled at 200px and clipped the name with 111px of head still
+     empty. The h1 shrinks; this follows it. */
+  max-width: none; min-width: 0;
+  /* Grown, not padded: a positive inset would push the head's own rhythm
+     around, and this is the same trick `.who` uses eleven rules down. */
+  padding: 4px 7px; margin: -4px -7px;
+  border-radius: var(--r-ctl);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .projSwitch > span {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  min-width: 0;
+}
+[data-app="tasks"] .projSwitch svg {
+  width: 15px; height: 15px; flex: none;
+  color: var(--ink-4);
+  transition: color var(--dur) var(--curve), transform var(--dur) var(--curve);
+}
+[data-app="tasks"] .projSwitch:hover { background: var(--wash); }
+[data-app="tasks"] .projSwitch:hover svg { color: var(--ink-3); }
+[data-app="tasks"] .projSwitch[data-open] { background: var(--wash); }
+[data-app="tasks"] .projSwitch[data-open] svg { color: var(--ink-2); transform: rotate(180deg); }
+
+[data-app="tasks"] .projMenu {
+  position: absolute; z-index: 40;
+  top: calc(100% + 7px); left: -7px;
+  width: 288px; padding: 6px;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  box-shadow: 0 0 0 1px var(--line), var(--float);
+  display: grid; gap: 1px;
+  animation: projIn var(--dur) var(--curve) both;
+}
+@keyframes projIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
+[data-app="tasks"] .projItem {
+  font-family: inherit; font-size: 13px; font-weight: 400;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-13);
+  background: none; border: 0;
+  display: grid; grid-template-columns: 18px 1fr; align-items: center; gap: 8px;
+  min-height: 46px; padding: 0 8px;
+  border-radius: var(--r-card);
+  text-align: left; cursor: pointer;
+  color: var(--ink-1);
+  transition: background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .projItem:hover { background: var(--wash); }
+[data-app="tasks"] .projItem b { display: block; font-weight: 400; }
+[data-app="tasks"] .projItem[data-on] b { font-weight: 600; }
+[data-app="tasks"] .projItem em {
+  display: block; font-style: normal;
+  font-size: var(--t-11); letter-spacing: var(--tr-cap);
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+[data-app="tasks"] .projTick { display: grid; place-items: center; color: var(--indigo); }
+[data-app="tasks"] .projTick svg { width: 15px; height: 15px; }
+/* The head has to be able to hold a popover under it. */
+[data-app="tasks"] .head { position: relative; }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .projMenu { animation: none; }
+  [data-app="tasks"] .projSwitch svg { transition: none; }
+}
