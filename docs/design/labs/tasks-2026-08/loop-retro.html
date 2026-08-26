@@ -1,0 +1,461 @@
+<title>Nineteen Rounds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+/* A retrospective on a method, held to the palette that method policed:
+   Ink, Indigo, White and tints of those three, Geist at 400 and 600. It is a
+   scorecard and an argument, so it is built as a narrow column of prose with
+   the evidence pulled wide beside it. */
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --ink-3: rgba(17, 17, 17, 0.60);
+  --ink-4: rgba(17, 17, 17, 0.26);
+  --wash: rgba(17, 17, 17, 0.04);
+  --line-soft: rgba(17, 17, 17, 0.07);
+  --line: rgba(17, 17, 17, 0.12);
+  --indigo-wash: rgba(79, 70, 229, 0.09);
+  --indigo-line: rgba(79, 70, 229, 0.30);
+
+  --paper: var(--white);
+  --plate: rgba(17, 17, 17, 0.03);
+
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --measure: 35rem;
+  --wide: 64rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0c0c0d;
+    --ink-1: #f5f5f6;
+    --ink-2: rgba(245, 245, 246, 0.72);
+    --ink-3: rgba(245, 245, 246, 0.58);
+    --ink-4: rgba(245, 245, 246, 0.28);
+    --wash: rgba(255, 255, 255, 0.05);
+    --line-soft: rgba(255, 255, 255, 0.08);
+    --line: rgba(255, 255, 255, 0.14);
+    --indigo: #7d76f1;
+    --indigo-wash: rgba(125, 118, 241, 0.15);
+    --indigo-line: rgba(125, 118, 241, 0.38);
+    --plate: rgba(255, 255, 255, 0.04);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0c0c0d;
+  --ink-1: #f5f5f6;
+  --ink-2: rgba(245, 245, 246, 0.72);
+  --ink-3: rgba(245, 245, 246, 0.58);
+  --ink-4: rgba(245, 245, 246, 0.28);
+  --wash: rgba(255, 255, 255, 0.05);
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line: rgba(255, 255, 255, 0.14);
+  --indigo: #7d76f1;
+  --indigo-wash: rgba(125, 118, 241, 0.15);
+  --indigo-line: rgba(125, 118, 241, 0.38);
+  --plate: rgba(255, 255, 255, 0.04);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink-1);
+  font-family: var(--sans); font-size: 16px; line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: var(--wide); margin: 0 auto; padding: 0 28px 120px; }
+.col { max-width: var(--measure); }
+
+.kicker {
+  margin: 0; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3);
+}
+
+.mast { padding: 84px 0 40px; border-bottom: 1px solid var(--ink-1); }
+.mast h1 {
+  margin: 18px 0 0; font-size: clamp(2.6rem, 1.3rem + 4.2vw, 4.6rem);
+  font-weight: 600; letter-spacing: -0.045em; line-height: 0.96; text-wrap: balance;
+}
+.stand { margin: 24px 0 0; max-width: 42rem; font-size: 19px; line-height: 1.55; color: var(--ink-2); }
+.byline {
+  margin: 28px 0 0; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+
+/* ── the score ─────────────────────────────────────────────────── */
+.verdict {
+  margin: 48px 0 0; display: grid; gap: 32px;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: start;
+}
+.bigScore {
+  border: 1px solid var(--indigo-line); background: var(--indigo-wash);
+  border-radius: 14px; padding: 26px 30px; text-align: center; min-width: 180px;
+}
+.bigScore b {
+  display: block; font-size: 64px; font-weight: 600;
+  letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.bigScore span {
+  display: block; margin-top: 10px; font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.verdict p { margin: 0; font-size: 17px; line-height: 1.6; color: var(--ink-2); max-width: 38rem; }
+.verdict p + p { margin-top: 14px; }
+.verdict b.hi { color: var(--ink-1); font-weight: 600; }
+
+.subs { margin: 36px 0 0; display: grid; gap: 1px; max-width: 46rem; }
+.sub {
+  display: grid; grid-template-columns: 15rem minmax(0, 1fr) 2.5rem;
+  gap: 16px; align-items: center; padding: 11px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.sub > span:first-child { font-size: 14px; color: var(--ink-1); }
+.sub .track { position: relative; height: 6px; background: var(--wash); border-radius: 3px; }
+.sub .track i { position: absolute; inset: 0 auto 0 0; background: var(--indigo); border-radius: 3px; }
+.sub .track i[data-low] { background: var(--ink-4); }
+.sub .n {
+  text-align: right; font-variant-numeric: tabular-nums;
+  font-size: 14px; font-weight: 600; color: var(--ink-1);
+}
+
+h2 {
+  margin: 80px 0 0; font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem);
+  font-weight: 600; letter-spacing: -0.032em; line-height: 1.12; text-wrap: balance;
+}
+h3 { margin: 40px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -0.018em; }
+p { margin: 16px 0 0; }
+.col p, .col li { color: var(--ink-2); }
+.col strong { color: var(--ink-1); font-weight: 600; }
+ul { margin: 14px 0 0; padding-left: 20px; }
+li { margin: 8px 0 0; }
+li::marker { color: var(--ink-4); }
+code {
+  font-family: var(--mono); font-size: 0.88em;
+  background: var(--wash); padding: 1px 5px; border-radius: 4px;
+}
+
+/* ── the arc table ─────────────────────────────────────────────── */
+.dataBox { margin: 34px 0 0; overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 12.5px; }
+caption {
+  text-align: left; padding: 0 0 12px; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3);
+}
+th, td {
+  padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--line-soft);
+  font-variant-numeric: tabular-nums;
+}
+th:first-child, td:first-child { text-align: left; white-space: nowrap; padding-left: 0; }
+thead th {
+  font-family: var(--mono); font-weight: 400; font-size: 10.5px;
+  color: var(--ink-3); border-bottom: 1px solid var(--line);
+}
+td { color: var(--ink-2); }
+td.mark { color: var(--indigo); font-weight: 600; }
+td.dim { color: var(--ink-4); }
+
+/* ── faults and fixes ──────────────────────────────────────────── */
+.fault {
+  margin: 22px 0 0; padding: 22px 26px; max-width: 47rem;
+  border: 1px solid var(--line-soft); border-radius: 12px; background: var(--plate);
+}
+.fault[data-worst] { border-color: var(--indigo-line); background: var(--indigo-wash); }
+.faultTop { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.faultTop h3 { margin: 0; font-size: 16.5px; }
+.tag {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px;
+}
+.fault[data-worst] .tag { color: var(--indigo); border-color: var(--indigo-line); }
+.fault p { margin: 11px 0 0; font-size: 14.5px; color: var(--ink-2); }
+.fault p b { color: var(--ink-1); font-weight: 600; }
+.fault .cure {
+  margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft);
+  font-size: 14px;
+}
+.fault .cure b { font-weight: 600; color: var(--ink-1); }
+
+.prompt { margin: 24px 0 0; max-width: 48rem; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.promptHead {
+  padding: 12px 18px; background: var(--wash); border-bottom: 1px solid var(--line-soft);
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.prompt pre {
+  margin: 0; padding: 20px 18px; overflow-x: auto; font-family: var(--mono);
+  font-size: 12.5px; line-height: 1.65; color: var(--ink-1);
+  white-space: pre-wrap; word-break: break-word;
+}
+
+.foot {
+  margin: 84px 0 0; padding: 24px 0 0; border-top: 1px solid var(--ink-1);
+  font-size: 13px; color: var(--ink-3); max-width: 46rem;
+}
+
+@media (max-width: 720px) {
+  .verdict { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .sub { grid-template-columns: 9rem minmax(0, 1fr) 2.5rem; gap: 10px; }
+  .page { padding: 0 20px 80px; }
+}
+</style>
+
+<div class="page">
+
+  <header class="mast">
+    <p class="kicker">Retrospective · the elevate loop · Tasks · Studio Floor</p>
+    <h1>Nineteen Rounds</h1>
+    <p class="stand">
+      A critical review of the method, not the product. What the elevation loop
+      is good at, where it is structurally unable to reach its own goal, and what
+      I would change before running it on anything else.
+    </p>
+    <p class="byline">Written by the session that ran it · 26 August 2026 · Tasks</p>
+  </header>
+
+  <div class="verdict">
+    <div class="bigScore">
+      <b>6</b><span>out of ten</span>
+    </div>
+    <div>
+      <p>
+        A real method that works, produces value nothing else here produced, and
+        <b class="hi">cannot reach the bar it sets itself</b>. It found 639 defects
+        across nineteen rounds and killed 218 of them as wrong. It moved the
+        artifact from 6.3 to roughly 8.4. It built a 360-assertion behaviour gate
+        that caught three defects live and invisible for more than ten rounds.
+      </p>
+      <p>
+        And it plateaued at round 9, spent ten further rounds without regaining
+        its own high-water mark, and in its last two rounds was
+        <b class="hi">grading its own repairs rather than the product</b>. Six is
+        the score of a method you would run again — but never unchanged.
+      </p>
+    </div>
+  </div>
+
+  <div class="subs">
+    <div class="sub"><span>Finds real defects</span><span class="track"><i style="width:90%"></i></span><span class="n">9</span></div>
+    <div class="sub"><span>Rejects false ones</span><span class="track"><i style="width:80%"></i></span><span class="n">8</span></div>
+    <div class="sub"><span>Retains what it learns</span><span class="track"><i style="width:70%"></i></span><span class="n">7</span></div>
+    <div class="sub"><span>Efficiency per round</span><span class="track"><i data-low style="width:40%"></i></span><span class="n">4</span></div>
+    <div class="sub"><span>Converges on its goal</span><span class="track"><i data-low style="width:30%"></i></span><span class="n">3</span></div>
+    <div class="sub"><span>Guards against its own fixes</span><span class="track"><i data-low style="width:20%"></i></span><span class="n">2</span></div>
+  </div>
+
+  <section class="col">
+    <h2>What the numbers actually show</h2>
+    <p>
+      Three series matter, and only one of them behaves the way the method
+      assumes.
+    </p>
+  </section>
+
+  <div class="dataBox">
+    <table>
+      <caption>Nineteen rounds</caption>
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th>
+          <th>8</th><th>9</th><th>10</th><th>11</th><th>12</th><th>13</th>
+          <th>14</th><th>15</th><th>16</th><th>17</th><th>18</th><th>19</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Floor</td>
+          <td>6.3</td><td>7.1</td><td>7.2</td><td>7.2</td><td>6.3</td><td>7.1</td><td>7.4</td>
+          <td>8.3</td><td class="mark">8.6</td><td>8.5</td><td>8.1</td><td>7.4</td><td>7.4</td>
+          <td>8.2</td><td>7.9</td><td>8.3</td><td>8.2</td><td>8.2</td><td>7.3</td>
+        </tr>
+        <tr>
+          <td>Worst finding</td>
+          <td>2</td><td>9</td><td>9</td><td>9</td><td>9</td><td>9</td><td>9</td>
+          <td>10</td><td>9</td><td>20</td><td>9</td><td>12</td><td>9</td>
+          <td>8</td><td>5</td><td class="mark">3</td><td class="mark">3</td><td class="mark">3</td><td>9</td>
+        </tr>
+        <tr>
+          <td>Defects confirmed</td>
+          <td>20</td><td>17</td><td>17</td><td>21</td><td>29</td><td>24</td><td>29</td>
+          <td>28</td><td>28</td><td>26</td><td class="dim">4</td><td>24</td><td>22</td>
+          <td>24</td><td>23</td><td>16</td><td>17</td><td>23</td><td>29</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="col">
+    <p>
+      <strong>Severity converged. The score did not.</strong> The worst finding
+      in a round fell from the teens to a steady 3 — real, measurable progress —
+      while the floor sat between 8.2 and 8.3. Two rounds later the worst finding
+      was back at 9, and that 9 was a defect the previous round's own remediation
+      had introduced.
+    </p>
+    <p>
+      <strong>The defect supply never depleted.</strong> Nineteen rounds and 421
+      fixes in, five fresh expert seats still found 29 new things, none of them
+      repeats. That is not a sign of bad work; it is what seven expert lenses do
+      to any artifact of this size, indefinitely.
+    </p>
+    <p>
+      <strong>The panel never softened.</strong> The refute rate held at 34%
+      across the whole engagement. Whatever else went wrong, the adversarial
+      layer did its job from round 1 to round 19 without drift.
+    </p>
+  </section>
+
+  <section class="col">
+    <h2>The three faults</h2>
+    <p>
+      Ranked by what they cost. Each is structural — a property of the loop's
+      shape, not of any round's execution.
+    </p>
+  </section>
+
+  <div class="fault" data-worst>
+    <div class="faultTop"><h3>The fixer grades its own work</h3><span class="tag">Fatal</span></div>
+    <p>
+      One agent finds defects, fixes them, and the fixes are not checked by
+      anything until a full round later. In rounds 18 and 19,
+      <b>the largest single finding in the round was a defect introduced while
+      fixing the previous round's largest finding</b> — twice consecutively, each
+      costing an entire ~2M-token round to discover.
+    </p>
+    <p>
+      The loop has an adversarial layer for <em>findings</em> and none at all for
+      <em>fixes</em>. That asymmetry is the reason the last three rounds cannot
+      be read as measurements of the product.
+    </p>
+    <p class="cure">
+      <b>The change.</b> Every remediation batch gets an independent verifier
+      before the round closes: a fresh agent, given only the finding and the
+      diff, asked whether the fix does what it claims and whether anything
+      adjacent broke. Cheap — it is one agent per batch, not per finding — and it
+      would have caught both regressions inside their own round.
+    </p>
+  </div>
+
+  <div class="fault" data-worst>
+    <div class="faultTop"><h3>The scoring instrument is not additive, and the loop treats it as if it were</h3><span class="tag">Fatal</span></div>
+    <p>
+      Seats give a holistic score, then list findings with costs. Those costs do
+      not sum to the distance from 10. So "fix every finding" does not produce
+      "reach the implied score", and the loop's central assumption — that
+      remediation raises the floor — is <b>unfounded by construction</b>.
+    </p>
+    <p>
+      I built a signal to test this mid-engagement, asking each seat what it
+      would score if its own findings were fixed. It predicted 9.1; the next
+      round returned 8.2. The signal was mine and it was wrong, because a fresh
+      seat next round finds a different list. Costs are an <em>attribution</em>,
+      not a budget.
+    </p>
+    <p class="cure">
+      <b>The change.</b> Stop using the floor as the progress metric. Use
+      <b>maximum finding cost</b>, which genuinely converged (12 to 3) and is
+      additive-free. Gate on "no seat can find anything above threshold X",
+      which is a statement the instrument can actually support. Keep the holistic
+      score as a periodic sanity check, not a steering signal.
+    </p>
+  </div>
+
+  <div class="fault">
+    <div class="faultTop"><h3>It grades a moving target</h3><span class="tag">Severe, and fixable</span></div>
+    <p>
+      Up to round 9, remediation removed defects from a fixed surface and the
+      floor climbed 2.3 points. After it, remediation began adding surface — a
+      header band, a rebuilt empty state, a card preset, an entire Planning room
+      — and every addition arrived unpanelled. Across rounds 12 to 15 that was
+      <b>53%, 39%, 54% and 68%</b> of each round's confirmed defect cost, rising.
+    </p>
+    <p class="cure">
+      <b>The change, already made and proven.</b> Freeze the surface: a finding
+      whose answer is "build X" is recorded and deferred, never remediated
+      in-round. The first frozen round deferred exactly one build and lifted the
+      floor 0.4 at 48% of the previous round's cost. This one works — it simply
+      is not sufficient on its own.
+    </p>
+  </div>
+
+  <section class="col">
+    <h2>What was genuinely good</h2>
+    <p>
+      A fair retrospective has to say what to keep, and three things here are
+      worth more than the score.
+    </p>
+
+    <h3>Adversarial verification, unambiguously</h3>
+    <p>
+      One refuter per finding, defaulting to REFUTED, killed 218 of 639. It
+      caught seats making measurement errors — one held a drag 122px below the
+      scroller it claimed to be inside — and it repeatedly killed
+      <em>my own proposed fixes</em> as wrong before they were written. The
+      refute rate never drifted. This is the strongest part of the method and it
+      should be copied into anything else that reviews work.
+    </p>
+
+    <h3>The gate is the real product</h3>
+    <p>
+      186 assertions to 360, every one added because a seat found the defect it
+      guards. It caught three defects that had been live and invisible for more
+      than ten rounds, including <strong>a drag threshold that silently swallowed
+      the board's primary gesture on ordinary trackpad hardware</strong> — missed
+      by 232 existing assertions because every one of them clicked with a
+      teleport instead of real pointer travel. The loop treated the gate as a
+      byproduct. It is the asset.
+    </p>
+
+    <h3>Driving beats reading</h3>
+    <p>
+      The findings that mattered came from agents operating the artifact with
+      real pointer travel, not from reading its source. Every high-cost finding
+      in the last six rounds was behavioural. A review method that only reads
+      would have found none of them.
+    </p>
+  </section>
+
+  <section class="col">
+    <h2>Six changes for the next engagement</h2>
+    <ol>
+      <li><strong>Verify the fix, not just the finding.</strong> One independent agent per remediation batch, before the round closes. This is the single highest-value change and it addresses the fault that ended this engagement.</li>
+      <li><strong>Steer on maximum finding cost, not the floor.</strong> Gate on "nothing above threshold", which the instrument supports. Report the holistic score; do not chase it.</li>
+      <li><strong>Cap remediation at roughly eight fixes per round.</strong> This session landed 16 to 29 per round. Large batches are where invisible regressions live, and the two that cost most both arrived in batches above twenty.</li>
+      <li><strong>Freeze the surface for the duration.</strong> Proven here. Deferred builds go on a list for after the gate.</li>
+      <li><strong>Hand seats what is already proven.</strong> The gate's claims, by name, plus the previous round's refuted findings. Nine kilobytes of text removes a whole class of re-discovery, and 218 refutations say how large that class is.</li>
+      <li><strong>Declare the gate before starting.</strong> "9.5 unanimous, lowest of seven seats" is an AND across seven expert lenses on a sweep that reliably produces 25 to 35 findings. Decide up front whether that applies to the resting artifact or the whole live product — they are different bars, and leaving it ambiguous cost this engagement several rounds of arguing with itself.</li>
+    </ol>
+  </section>
+
+  <section class="col">
+    <h2>Would I run it again</h2>
+    <p>
+      Yes, with the six changes, and with a stop rule declared at the start: when
+      maximum finding cost has been below threshold for two consecutive rounds,
+      or when two consecutive rounds are dominated by remediation-induced
+      defects, <strong>the loop has finished doing what it can do</strong> and
+      further rounds measure the fixer rather than the work.
+    </p>
+    <p>
+      This engagement hit the second condition at round 19 and I stopped there.
+      It would have been better to have declared the condition at round 1.
+    </p>
+  </section>
+
+  <p class="foot">
+    Evidence: <code>docs/design/labs/tasks-2026-08/panel.json</code> (19 rounds,
+    scored, every finding and refutation recorded),
+    <code>scripts/design/interaction-check.mjs</code> (360 assertions),
+    <code>scripts/design/preflight.mjs</code>, and the commit history on
+    <code>design/tasks-exploration</code>. Ratings are this session's own
+    judgement of a method it both used and modified, which is a conflict worth
+    naming: I redesigned the loop at round 16 and then scored the loop.
+  </p>
+
+</div>
