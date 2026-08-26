@@ -818,11 +818,79 @@
 /* ── the destination, not just the hand ─────────────────────────── */
 /* Drag is the board's defining gesture, and half of it was undesigned: the
    card in flight had a lift and the tray it was heading for had nothing. */
-[data-app="tasks"] .tray[data-over] { background: var(--wash); }
+/* THE TINT IS ONE TOKEN PER LANE, and it is deliberately inside the locked
+   palette. The founder's drag brief asks for muted amber on Review, orange
+   on Waiting and green on Done. Those are three new hues, the palette lock
+   permits exactly four colours and says "NO other hue may be introduced",
+   and this product's own card comment says severity "is expressed by ink
+   density and fill, never by hue". audit.mjs enforces it as a hard gate, so
+   spending the lock is a founder's call and not a stylesheet's.
+
+   What is here instead keeps every behaviour the brief asks for and says
+   the same thing with density: neutral lanes take an ink wash, and the one
+   lane the accent already means — In progress, in motion right now — takes
+   indigo. If the lock is spent later, it is these three declarations that
+   change and nothing else. */
+[data-app="tasks"] {
+  --over-neutral: rgba(17, 17, 17, 0.028);
+  --over-flight: rgba(79, 70, 229, 0.05);
+  --over-done: rgba(17, 17, 17, 0.045);
+}
+[data-app="tasks"] .tray[data-over] { background: var(--over-neutral); }
+[data-app="tasks"] .tray[data-tone="flight"][data-over] { background: var(--over-flight); }
+[data-app="tasks"] .tray[data-tone="done"][data-over] { background: var(--over-done); }
+/* Into and out of the drop state, not snapped. The brief's own test is that
+   the canvas still reads as white, so what has to be fast is the ARRIVAL —
+   the eye needs the target named the instant the card crosses in — and the
+   departure can be slower because nothing depends on it. */
+[data-app="tasks"] .tray {
+  /* On the ladder: 80ms is `--motion-instant`, and the arrival is the half
+     the eye is on. Off-ladder durations are a motion violation in this
+     product’s own audit, and six of mine were. */
+  transition: background-color var(--motion-instant) var(--curve);
+}
 [data-app="tasks"] .tray[data-over] .trayHead {
   background: linear-gradient(var(--wash), var(--wash)), var(--white);
 }
-[data-app="tasks"] .dropLine { height: 2px; border-radius: 1px; background: var(--ink-1); }
+/* The lane's own dot answers. 12% of scale and a step of ink — enough that
+   the eye lands on the right column without the dot becoming a thing that
+   moves. No pulse: a repeating animation asks for attention the interaction
+   has already got. */
+[data-app="tasks"] .pip {
+  transition: transform var(--motion-instant) var(--curve), background-color var(--motion-instant) var(--curve);
+}
+[data-app="tasks"] .tray[data-over] .pip { transform: scale(1.12); background: var(--ink-2); }
+[data-app="tasks"] .tray[data-tone="flight"][data-over] .pip { background: var(--indigo); }
+[data-app="tasks"] .tray[data-tone="done"][data-over] .pip { background: var(--ink-1); }
+
+/* The insertion line arrives rather than appearing. 90ms of width is under
+   the threshold where a person reads it as an animation and over the one
+   where it reads as a jump. */
+[data-app="tasks"] .dropLine {
+  height: 2px; border-radius: 1px; background: var(--ink-1);
+  transform-origin: left center;
+  animation: dropLineIn var(--motion-instant) var(--curve) both;
+}
+@keyframes dropLineIn {
+  from { transform: scaleX(0.24); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+/* The card settles into its new place. One overshoot of 2px, damped — the
+   brief asks for a settle, not a bounce, and anything with a second
+   oscillation reads as a toy. */
+[data-app="tasks"] .card[data-settling] {
+  animation: cardSettle var(--motion-base) cubic-bezier(0.22, 1.1, 0.36, 1) both;
+}
+@keyframes cardSettle {
+  from { transform: translateY(-2px) scale(0.994); }
+  to   { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .tray,
+  [data-app="tasks"] .pip { transition: none; }
+  [data-app="tasks"] .dropLine,
+  [data-app="tasks"] .card[data-settling] { animation: none; }
+}
 
 /* ── empty and add ─────────────────────────────────────────────── */
 /* Two lines are always reserved, so the Add task row does not move from
@@ -1031,17 +1099,88 @@
   box-shadow: var(--ring), var(--float);
   z-index: 3;
 }
+/* ── the search field opens up ─────────────────────────────────────
+   It expands on focus and contracts when it is left empty. Four properties
+   move together — width, ground, ring and the internal padding — because
+   one of them alone reads as a box changing size and all four read as a
+   control coming forward.
+
+   The dock is `position: absolute` at `left: 50%` with a `translateX(-50%)`
+   and `width: max-content`, so the field's width is the ONLY thing that
+   changes: the dock grows symmetrically about its own centre and not one
+   box on the board reflows. That is what makes this affordable at all, and
+   it is why the animation is on `width` rather than on `transform` — a
+   scaled pill would take its own text with it.
+
+   280ms out, 220ms back. Opening is the half a person is watching. */
 [data-app="tasks"] .dockField {
   display: inline-flex; align-items: center; gap: 9px;
   height: 38px; padding: 0 14px 0 13px;
-  min-width: 196px;
+  width: 196px;
   border-radius: var(--r-pill);
   background: var(--wash);
   white-space: nowrap;
   font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition:
+    width var(--motion-base) var(--curve),
+    padding var(--motion-base) var(--curve),
+    background-color var(--dur) var(--curve),
+    box-shadow var(--dur) var(--curve),
+    color var(--dur) var(--curve);
+}
+[data-app="tasks"] .dockField:hover { background: var(--wash-2); color: var(--ink-2); }
+[data-app="tasks"] .dockField:focus-within,
+[data-app="tasks"] .dockField.is-live {
+  width: 392px;
+  padding: 0 8px 0 15px;
+  background: var(--white);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--ink-1);
+/* Opening and closing take the same 220ms. The ladder has no 280, and a
+     step off it to buy 60ms of deliberateness is not a trade this product
+     makes — the audit is the reason the motion reads as one system. */
+}
+[data-app="tasks"] .dockField:focus-within svg { color: var(--ink-2); }
+[data-app="tasks"] .dockInput {
+  font-family: inherit; font-size: inherit; font-weight: inherit;
+  letter-spacing: inherit; line-height: inherit;
+  color: var(--ink-1);
+  background: none; border: 0; padding: 0; margin: 0;
+  min-width: 0; flex: 1;
+  /* The pill is 38px and the input's own box was 17. A finger aims at the
+     pill; the pointer lands on whatever is under it, and what was under it
+     was 17px of input inside 38px of nothing. Stretching the input to the
+     pill's height makes the target the thing it looks like. */
+  align-self: stretch; height: auto;
+  -webkit-appearance: none; appearance: none;
+}
+/* The ring belongs to the pill, not to the input inside it — two rings on
+   one object is the classic composed-control tell. */
+[data-app="tasks"] .dockInput:focus { outline: none; }
+[data-app="tasks"] .dockInput::placeholder { color: var(--ink-3); }
+[data-app="tasks"] .dockInput::-webkit-search-cancel-button { display: none; }
+[data-app="tasks"] .dockClear {
+  display: grid; place-items: center;
+  width: 28px; height: 28px; flex: none;
+  border-radius: var(--r-pill);
+  background: none; border: 0; padding: 0;
+  color: var(--ink-3); cursor: pointer;
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
-[data-app="tasks"] .dockField:not([aria-disabled="true"]):hover { background: var(--wash-2); color: var(--ink-2); }
+[data-app="tasks"] .dockClear:hover { background: var(--wash); color: var(--ink-1); }
+[data-app="tasks"] .dockClear svg { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .dockField { transition: none; }
+}
+/* A phone has no room to grow into: the dock is already nearly the width of
+   the sheet, so the field takes what there is and the expansion is the
+   ground and the ring rather than the width. */
+@media (max-width: 720px) {
+  [data-app="tasks"] .dockField { width: 100%; min-width: 0; }
+  [data-app="tasks"] .dockField:focus-within,
+  [data-app="tasks"] .dockField.is-live { width: 100%; }
+}
 [data-app="tasks"] .dockField svg { width: 16px; height: 16px; }
 /* One keycap in the product. The two that existed disagreed on size,
    tracking and radius, which is the kind of drift a design system is for. */

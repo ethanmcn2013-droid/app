@@ -4,13 +4,13 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "9479 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "15847 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1440 · the spine",
       "ok": true,
-      "detail": "14454 px, in x 28–1055, y 37–859.5"
+      "detail": "14454 px, in x 28–1055, y 37–864"
     },
     {
       "section": "fidelity",
@@ -34,13 +34,13 @@
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "41 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "6316 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1280 · the spine",
       "ok": true,
-      "detail": "14432 px, in x 28–1234.5, y 43.5–859.5"
+      "detail": "14432 px, in x 28–1234.5, y 43.5–864"
     },
     {
       "section": "fidelity",
@@ -64,13 +64,13 @@
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "20 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "6295 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @768 · the spine",
       "ok": true,
-      "detail": "14432 px, in x 22–310.5, y 37.5–865.5"
+      "detail": "14432 px, in x 22–612.5, y 37.5–870"
     },
     {
       "section": "fidelity",
@@ -1701,6 +1701,114 @@
       "name": "switching away and back restores the board exactly",
       "ok": true,
       "detail": "moved:true restored:true"
+    },
+    {
+      "section": "delight",
+      "name": "completion via tick · one burst, and it is visible",
+      "ok": true,
+      "detail": "1 burst · 8 dots · widest 2.6px · brightest 0.67"
+    },
+    {
+      "section": "delight",
+      "name": "completion via tick · it clears itself away",
+      "ok": true,
+      "detail": "0 left behind"
+    },
+    {
+      "section": "delight",
+      "name": "completion via keyboard · one burst, and it is visible",
+      "ok": true,
+      "detail": "1 burst · 8 dots · widest 2.3px · brightest 0.50"
+    },
+    {
+      "section": "delight",
+      "name": "completion via keyboard · it clears itself away",
+      "ok": true,
+      "detail": "0 left behind"
+    },
+    {
+      "section": "delight",
+      "name": "nothing celebrates except a completion",
+      "ok": true,
+      "detail": "{\"afterOpen\":0,\"afterMenu\":0}"
+    },
+    {
+      "section": "delight",
+      "name": "reduced motion gets no burst at all",
+      "ok": true,
+      "detail": "0 bursts"
+    },
+    {
+      "section": "delight",
+      "name": "search @1440 · it opens",
+      "ok": true,
+      "detail": "196 → 392px"
+    },
+    {
+      "section": "delight",
+      "name": "search @1440 · the dock stays anchored to its own centre",
+      "ok": true,
+      "detail": "761 → 761"
+    },
+    {
+      "section": "delight",
+      "name": "search @1440 · nothing on the board moves",
+      "ok": true,
+      "detail": "128,197 → 128,197"
+    },
+    {
+      "section": "delight",
+      "name": "search @1440 · it actually filters, and Escape clears it",
+      "ok": true,
+      "detail": "13 → 2 → 13"
+    },
+    {
+      "section": "delight",
+      "name": "search @1440 · it contracts when left empty",
+      "ok": true,
+      "detail": "196 vs 196"
+    },
+    {
+      "section": "delight",
+      "name": "search @390 · it opens",
+      "ok": true,
+      "detail": "0 → 0px"
+    },
+    {
+      "section": "delight",
+      "name": "search @390 · the dock stays anchored to its own centre",
+      "ok": true,
+      "detail": "0 → 0"
+    },
+    {
+      "section": "delight",
+      "name": "search @390 · nothing on the board moves",
+      "ok": true,
+      "detail": "33,347 → 33,347"
+    },
+    {
+      "section": "delight",
+      "name": "search @390 · it actually filters, and Escape clears it",
+      "ok": true,
+      "detail": "13 → 2 → 13"
+    },
+    {
+      "section": "delight",
+      "name": "search @390 · it contracts when left empty",
+      "ok": true,
+      "detail": "0 vs 0"
+    },
+    {
+      "section": "delight",
+      "name": "the drop tint is faint enough that the sheet still reads white",
+      "ok": true,
+      "detail": "rgba(17, 17, 17, 0.043) — alpha 0.043"
+    },
+    {
+      "section": "delight",
+      "name": "the lane's own dot answers the drop",
+      "ok": true,
+      "detail": "none → matrix(1.12, 0, 0, 1.12, 0, 0)"
     },
     {
       "section": "lab gates",

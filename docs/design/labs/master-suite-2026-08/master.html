@@ -596,6 +596,63 @@ body {
   .morePop { left: auto; right: 8px; bottom: calc(100% + 10px); }
 }
 
+/* ── the completion moment ─────────────────────────────────────────
+   Eight hairline particles and one ring, 420ms, drawn on the FLOOR rather
+   than inside the sheet so it cannot be clipped by a tray's overflow and
+   cannot affect a single layout box. pointer-events: none throughout —
+   the board answers the whole time it is running.
+
+   The restraint is the design. Two pixels of particle, a ring that never
+   exceeds 44px, no confetti, no colour outside the lock, and nothing still
+   on screen by the time a hand reaches the next card. */
+.burst {
+  position: absolute; z-index: 30;
+  width: 0; height: 0;
+  pointer-events: none;
+}
+.burst i {
+  position: absolute; left: 0; top: 0;
+  width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
+  border-radius: 50%;
+  background: var(--indigo);
+  opacity: 0;
+  animation: burstOut var(--motion-slow) var(--curve) var(--d, 0ms) both;
+}
+/* Every second particle is ink, so the moment reads as the product's own
+   two colours rather than as one accent doing a trick. */
+.burst i:nth-child(2n) { background: var(--ink-1); opacity: 0; }
+.burst .burstRing {
+  width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: none;
+  box-shadow: 0 0 0 1.5px var(--indigo);
+  animation: burstRing var(--motion-slow) var(--curve) both;
+}
+/* The particle is at FULL size for the part of the flight the eye is on,
+   and only shrinks as it dies. The first draft ran 0.6 → 0.3 across the
+   whole 380ms, which meant a 3px dot was never wider than one physical
+   pixel and the whole burst was invisible while measuring as present —
+   nine nodes, correct colours, animating, and nothing on screen. */
+@keyframes burstOut {
+  0%   { transform: translate3d(0, 0, 0) scale(0.5); opacity: 0; }
+  18%  { transform: translate3d(calc(var(--dx) * 0.34), calc(var(--dy) * 0.34), 0) scale(1); opacity: 1; }
+  100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.55); opacity: 0; }
+}
+/* The ring is the quietest part of it. At half opacity and 2.4x it was the
+   loudest thing on the sheet for a tenth of a second, which is the opposite
+   of the brief. */
+@keyframes burstRing {
+  0%   { transform: scale(0.35); opacity: 0; }
+  26%  { opacity: 0.3; }
+  100% { transform: scale(2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Nothing at all. A shorter celebration is still a celebration, and the
+     preference is a request not to be moved. src/tasks.js returns before
+     building the node, so this is the second lock rather than the first. */
+  .burst { display: none; }
+}
+
 /* ══ tasks.css ══════════════════════════════════════════ */
 
 /* Tasks · Studio Floor — GENERATED ONCE by tools/split.mjs from floor.html <style>, then hand-edited.
@@ -1418,11 +1475,79 @@ body {
 /* ── the destination, not just the hand ─────────────────────────── */
 /* Drag is the board's defining gesture, and half of it was undesigned: the
    card in flight had a lift and the tray it was heading for had nothing. */
-[data-app="tasks"] .tray[data-over] { background: var(--wash); }
+/* THE TINT IS ONE TOKEN PER LANE, and it is deliberately inside the locked
+   palette. The founder's drag brief asks for muted amber on Review, orange
+   on Waiting and green on Done. Those are three new hues, the palette lock
+   permits exactly four colours and says "NO other hue may be introduced",
+   and this product's own card comment says severity "is expressed by ink
+   density and fill, never by hue". audit.mjs enforces it as a hard gate, so
+   spending the lock is a founder's call and not a stylesheet's.
+
+   What is here instead keeps every behaviour the brief asks for and says
+   the same thing with density: neutral lanes take an ink wash, and the one
+   lane the accent already means — In progress, in motion right now — takes
+   indigo. If the lock is spent later, it is these three declarations that
+   change and nothing else. */
+[data-app="tasks"] {
+  --over-neutral: rgba(17, 17, 17, 0.028);
+  --over-flight: rgba(79, 70, 229, 0.05);
+  --over-done: rgba(17, 17, 17, 0.045);
+}
+[data-app="tasks"] .tray[data-over] { background: var(--over-neutral); }
+[data-app="tasks"] .tray[data-tone="flight"][data-over] { background: var(--over-flight); }
+[data-app="tasks"] .tray[data-tone="done"][data-over] { background: var(--over-done); }
+/* Into and out of the drop state, not snapped. The brief's own test is that
+   the canvas still reads as white, so what has to be fast is the ARRIVAL —
+   the eye needs the target named the instant the card crosses in — and the
+   departure can be slower because nothing depends on it. */
+[data-app="tasks"] .tray {
+  /* On the ladder: 80ms is `--motion-instant`, and the arrival is the half
+     the eye is on. Off-ladder durations are a motion violation in this
+     product’s own audit, and six of mine were. */
+  transition: background-color var(--motion-instant) var(--curve);
+}
 [data-app="tasks"] .tray[data-over] .trayHead {
   background: linear-gradient(var(--wash), var(--wash)), var(--white);
 }
-[data-app="tasks"] .dropLine { height: 2px; border-radius: 1px; background: var(--ink-1); }
+/* The lane's own dot answers. 12% of scale and a step of ink — enough that
+   the eye lands on the right column without the dot becoming a thing that
+   moves. No pulse: a repeating animation asks for attention the interaction
+   has already got. */
+[data-app="tasks"] .pip {
+  transition: transform var(--motion-instant) var(--curve), background-color var(--motion-instant) var(--curve);
+}
+[data-app="tasks"] .tray[data-over] .pip { transform: scale(1.12); background: var(--ink-2); }
+[data-app="tasks"] .tray[data-tone="flight"][data-over] .pip { background: var(--indigo); }
+[data-app="tasks"] .tray[data-tone="done"][data-over] .pip { background: var(--ink-1); }
+
+/* The insertion line arrives rather than appearing. 90ms of width is under
+   the threshold where a person reads it as an animation and over the one
+   where it reads as a jump. */
+[data-app="tasks"] .dropLine {
+  height: 2px; border-radius: 1px; background: var(--ink-1);
+  transform-origin: left center;
+  animation: dropLineIn var(--motion-instant) var(--curve) both;
+}
+@keyframes dropLineIn {
+  from { transform: scaleX(0.24); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+/* The card settles into its new place. One overshoot of 2px, damped — the
+   brief asks for a settle, not a bounce, and anything with a second
+   oscillation reads as a toy. */
+[data-app="tasks"] .card[data-settling] {
+  animation: cardSettle var(--motion-base) cubic-bezier(0.22, 1.1, 0.36, 1) both;
+}
+@keyframes cardSettle {
+  from { transform: translateY(-2px) scale(0.994); }
+  to   { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .tray,
+  [data-app="tasks"] .pip { transition: none; }
+  [data-app="tasks"] .dropLine,
+  [data-app="tasks"] .card[data-settling] { animation: none; }
+}
 
 /* ── empty and add ─────────────────────────────────────────────── */
 /* Two lines are always reserved, so the Add task row does not move from
@@ -1631,17 +1756,88 @@ body {
   box-shadow: var(--ring), var(--float);
   z-index: 3;
 }
+/* ── the search field opens up ─────────────────────────────────────
+   It expands on focus and contracts when it is left empty. Four properties
+   move together — width, ground, ring and the internal padding — because
+   one of them alone reads as a box changing size and all four read as a
+   control coming forward.
+
+   The dock is `position: absolute` at `left: 50%` with a `translateX(-50%)`
+   and `width: max-content`, so the field's width is the ONLY thing that
+   changes: the dock grows symmetrically about its own centre and not one
+   box on the board reflows. That is what makes this affordable at all, and
+   it is why the animation is on `width` rather than on `transform` — a
+   scaled pill would take its own text with it.
+
+   280ms out, 220ms back. Opening is the half a person is watching. */
 [data-app="tasks"] .dockField {
   display: inline-flex; align-items: center; gap: 9px;
   height: 38px; padding: 0 14px 0 13px;
-  min-width: 196px;
+  width: 196px;
   border-radius: var(--r-pill);
   background: var(--wash);
   white-space: nowrap;
   font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
+  box-shadow: inset 0 0 0 1px transparent;
+  transition:
+    width var(--motion-base) var(--curve),
+    padding var(--motion-base) var(--curve),
+    background-color var(--dur) var(--curve),
+    box-shadow var(--dur) var(--curve),
+    color var(--dur) var(--curve);
+}
+[data-app="tasks"] .dockField:hover { background: var(--wash-2); color: var(--ink-2); }
+[data-app="tasks"] .dockField:focus-within,
+[data-app="tasks"] .dockField.is-live {
+  width: 392px;
+  padding: 0 8px 0 15px;
+  background: var(--white);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--ink-1);
+/* Opening and closing take the same 220ms. The ladder has no 280, and a
+     step off it to buy 60ms of deliberateness is not a trade this product
+     makes — the audit is the reason the motion reads as one system. */
+}
+[data-app="tasks"] .dockField:focus-within svg { color: var(--ink-2); }
+[data-app="tasks"] .dockInput {
+  font-family: inherit; font-size: inherit; font-weight: inherit;
+  letter-spacing: inherit; line-height: inherit;
+  color: var(--ink-1);
+  background: none; border: 0; padding: 0; margin: 0;
+  min-width: 0; flex: 1;
+  /* The pill is 38px and the input's own box was 17. A finger aims at the
+     pill; the pointer lands on whatever is under it, and what was under it
+     was 17px of input inside 38px of nothing. Stretching the input to the
+     pill's height makes the target the thing it looks like. */
+  align-self: stretch; height: auto;
+  -webkit-appearance: none; appearance: none;
+}
+/* The ring belongs to the pill, not to the input inside it — two rings on
+   one object is the classic composed-control tell. */
+[data-app="tasks"] .dockInput:focus { outline: none; }
+[data-app="tasks"] .dockInput::placeholder { color: var(--ink-3); }
+[data-app="tasks"] .dockInput::-webkit-search-cancel-button { display: none; }
+[data-app="tasks"] .dockClear {
+  display: grid; place-items: center;
+  width: 28px; height: 28px; flex: none;
+  border-radius: var(--r-pill);
+  background: none; border: 0; padding: 0;
+  color: var(--ink-3); cursor: pointer;
   transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
-[data-app="tasks"] .dockField:not([aria-disabled="true"]):hover { background: var(--wash-2); color: var(--ink-2); }
+[data-app="tasks"] .dockClear:hover { background: var(--wash); color: var(--ink-1); }
+[data-app="tasks"] .dockClear svg { width: 14px; height: 14px; }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .dockField { transition: none; }
+}
+/* A phone has no room to grow into: the dock is already nearly the width of
+   the sheet, so the field takes what there is and the expansion is the
+   ground and the ring rather than the width. */
+@media (max-width: 720px) {
+  [data-app="tasks"] .dockField { width: 100%; min-width: 0; }
+  [data-app="tasks"] .dockField:focus-within,
+  [data-app="tasks"] .dockField.is-live { width: 100%; }
+}
 [data-app="tasks"] .dockField svg { width: 16px; height: 16px; }
 /* One keycap in the product. The two that existed disagreed on size,
    tracking and radius, which is the kind of drift a design system is for. */
@@ -9009,6 +9205,7 @@ let draftFrom = null;   /* the control the composer was opened from         */
 let seq = 0;
 let undoTimer = null;
 let menuFor = null;     /* the card whose move menu is open                 */
+let queryText = "";     /* what the dock's search field holds               */
 let menuAt = "";
 let flyFrom = null;     /* where a completed card was, so it can travel     */
 let refocus = false;    /* the last change came from the keyboard          */
@@ -9068,10 +9265,19 @@ function tasksFor(lane) {
   if (lateOnly) rows = rows.filter((t) => timeOf(t).kind === "overdue");
   if (todayOnly) rows = rows.filter((t) => timeOf(t).kind === "today");
   if (clientOnly) rows = rows.filter((t) => t.tag === clientOnly);
+  /* Search is a filter like the others, so it composes with them rather than
+     replacing them, and the head's "5 of 13 done" goes on meaning the whole
+     project exactly as the comment above requires. Title, note and tag,
+     because those are the three things a person remembers a task by. */
+  if (queryText.trim()) {
+    const q = queryText.trim().toLowerCase();
+    rows = rows.filter((t) =>
+      (t.title + " " + (t.note || "") + " " + (t.tag || "")).toLowerCase().includes(q));
+  }
   return rows;
 }
 
-function filtering() { return lateOnly || clientOnly || todayOnly; }
+function filtering() { return lateOnly || clientOnly || todayOnly || Boolean(queryText.trim()); }
 
 /* The board can be asked more than one question at once, and the sentence is
    composed from whichever are live rather than branched per filter. */
@@ -9664,8 +9870,21 @@ function board() {
 function dock() {
   return (
     '<div class="dock">' +
-      '<button class="dockField"' + notYet(SEARCH) + ">" + I.search +
-        "<span>Search " + esc(B.workspace) + "</span></button>" +
+      /* A real field, not a door. It was the one control at the foot of the
+         sheet that looked like an input and refused to be one. It expands on
+         focus, filters as you type, and contracts when you leave it empty —
+         and because the dock is absolutely positioned and centred, growing
+         it cannot move a single thing on the board. */
+      '<div class="dockField' + (queryText ? " is-live" : "") + '">' + I.search +
+        '<input type="search" class="dockInput" data-act="search"' +
+        ' placeholder="Search ' + esc(B.workspace) + '"' +
+        ' aria-label="Search ' + esc(B.workspace) + '"' +
+        ' value="' + esc(queryText) + '">' +
+        (queryText
+          ? '<button type="button" class="dockClear" data-act="search-clear" aria-label="Clear search">' +
+            I.close + "</button>"
+          : "") +
+      "</div>" +
       '<button class="dockPrimary" data-act="add" data-lane="' + B.columns[0].id + '">' +
         I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
@@ -10155,7 +10374,56 @@ function moveTo(id, lane, index, preview) {
    nothing and let the chip vanish silently — which is the exact behaviour
    the beat was written to replace. One receipt, one sentence, one release of
    the filter, called from every route that finishes work. */
+/* ── the completion moment ─────────────────────────────────────────
+   One beat, once per completion, wherever the completion came from — the
+   tick, a keyboard carry into Done, a drag, the expanded card. It is sited
+   HERE, in the one function every one of those routes already calls, so it
+   cannot fire twice and cannot be forgotten by a fifth route added later.
+
+   What it is: eight hairline particles on a 26px radius, and a ring that
+   expands once and dies. 420ms end to end. What it is deliberately not: a
+   burst that has to finish before the board answers again, anything that
+   moves the layout, anything with a second bounce, and anything the eye
+   can still see when the hand reaches the next card.
+
+   Ink and indigo, because the palette says so and because a celebration in
+   the accent colour is the product agreeing with you rather than
+   congratulating you. */
+var celebrating = 0;
+function celebrate(anchor) {
+  if (!anchor || !anchor.getBoundingClientRect) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = anchor.getBoundingClientRect();
+  if (!box.width && !box.height) return;
+  const floor = document.querySelector(".floor") || document.body;
+  const frame = floor.getBoundingClientRect();
+  const burst = document.createElement("span");
+  burst.className = "burst";
+  burst.setAttribute("aria-hidden", "true");
+  burst.style.left = Math.round(box.left - frame.left + box.width / 2) + "px";
+  burst.style.top = Math.round(box.top - frame.top + box.height / 2) + "px";
+  let dots = '<i class="burstRing"></i>';
+  for (let i = 0; i < 8; i++) {
+    /* Not evenly spaced to the degree — a perfect octagon reads as a
+       graphic. Two degrees of jitter, deterministic so a shot is stable. */
+    const a = (i * 45 + (i % 3) * 2) * (Math.PI / 180);
+    dots += '<i style="--dx:' + Math.round(Math.cos(a) * 26) +
+      "px;--dy:" + Math.round(Math.sin(a) * 26) +
+      "px;--d:" + (i % 2 ? 18 : 0) + 'ms"></i>';
+  }
+  burst.innerHTML = dots;
+  floor.appendChild(burst);
+  const id = ++celebrating;
+  setTimeout(() => { burst.remove(); if (id === celebrating) celebrating = 0; }, 520);
+}
+
 function completed(task, cleared) {
+  /* The tick that was pressed, or the card if the completion came from
+     somewhere without one. Read BEFORE the repaint, because the repaint
+     replaces the node. */
+  const from = document.querySelector('.card[data-id="' + task.id + '"] .tick') ||
+    document.querySelector('.card[data-id="' + task.id + '"]');
+  celebrate(from);
   arm({ kind: "done", id: task.id, title: task.title, cleared: cleared });
   if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
     lateOnly = false;
@@ -11012,6 +11280,14 @@ function onClick(event) {
     if (field) field.focus();
     return;
   }
+  if (what === "search-clear") {
+    queryText = "";
+    mount();
+    const field = document.querySelector(".dockInput");
+    if (field) field.focus();
+    say("Search cleared.");
+    return;
+  }
   if (what === "projects") {
     projOpen = !projOpen;
     mount();
@@ -11813,6 +12089,38 @@ if (host) {
   host.addEventListener("input", (event) => {
     const field = event.target.closest && event.target.closest(".card[data-draft] .cardTitle");
     if (field) draftText = field.textContent;
+    const search = event.target.closest && event.target.closest(".dockInput");
+    if (search) {
+      queryText = search.value;
+      /* The caret is the one thing a repaint must not take from somebody
+         who is typing, so the field is re-focused and the selection put
+         back exactly where it was. */
+      const at = search.selectionStart;
+      mount();
+      const back = document.querySelector(".dockInput");
+      if (back) {
+        back.focus();
+        try { back.setSelectionRange(at, at); } catch (err) { /* not all types allow it */ }
+      }
+    }
+  });
+  /* Escape leaves the field: first press clears what is in it, second gives
+     the board back. A field you cannot get out of by the key everyone tries
+     is a trap, however good it looks. */
+  host.addEventListener("keydown", (event) => {
+    const search = event.target.closest && event.target.closest(".dockInput");
+    if (!search || event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (queryText) {
+      queryText = "";
+      mount();
+      const back = document.querySelector(".dockInput");
+      if (back) back.focus();
+      say("Search cleared.");
+    } else {
+      search.blur();
+    }
   });
   /* The light-dismiss handler is gone. One panel was running two contradictory
      input models: to the keyboard the drawer was a non-modal sibling with two

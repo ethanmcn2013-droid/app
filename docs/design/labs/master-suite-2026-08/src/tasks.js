@@ -67,6 +67,7 @@ let draftFrom = null;   /* the control the composer was opened from         */
 let seq = 0;
 let undoTimer = null;
 let menuFor = null;     /* the card whose move menu is open                 */
+let queryText = "";     /* what the dock's search field holds               */
 let menuAt = "";
 let flyFrom = null;     /* where a completed card was, so it can travel     */
 let refocus = false;    /* the last change came from the keyboard          */
@@ -126,10 +127,19 @@ function tasksFor(lane) {
   if (lateOnly) rows = rows.filter((t) => timeOf(t).kind === "overdue");
   if (todayOnly) rows = rows.filter((t) => timeOf(t).kind === "today");
   if (clientOnly) rows = rows.filter((t) => t.tag === clientOnly);
+  /* Search is a filter like the others, so it composes with them rather than
+     replacing them, and the head's "5 of 13 done" goes on meaning the whole
+     project exactly as the comment above requires. Title, note and tag,
+     because those are the three things a person remembers a task by. */
+  if (queryText.trim()) {
+    const q = queryText.trim().toLowerCase();
+    rows = rows.filter((t) =>
+      (t.title + " " + (t.note || "") + " " + (t.tag || "")).toLowerCase().includes(q));
+  }
   return rows;
 }
 
-function filtering() { return lateOnly || clientOnly || todayOnly; }
+function filtering() { return lateOnly || clientOnly || todayOnly || Boolean(queryText.trim()); }
 
 /* The board can be asked more than one question at once, and the sentence is
    composed from whichever are live rather than branched per filter. */
@@ -722,8 +732,21 @@ function board() {
 function dock() {
   return (
     '<div class="dock">' +
-      '<button class="dockField"' + notYet(SEARCH) + ">" + I.search +
-        "<span>Search " + esc(B.workspace) + "</span></button>" +
+      /* A real field, not a door. It was the one control at the foot of the
+         sheet that looked like an input and refused to be one. It expands on
+         focus, filters as you type, and contracts when you leave it empty —
+         and because the dock is absolutely positioned and centred, growing
+         it cannot move a single thing on the board. */
+      '<div class="dockField' + (queryText ? " is-live" : "") + '">' + I.search +
+        '<input type="search" class="dockInput" data-act="search"' +
+        ' placeholder="Search ' + esc(B.workspace) + '"' +
+        ' aria-label="Search ' + esc(B.workspace) + '"' +
+        ' value="' + esc(queryText) + '">' +
+        (queryText
+          ? '<button type="button" class="dockClear" data-act="search-clear" aria-label="Clear search">' +
+            I.close + "</button>"
+          : "") +
+      "</div>" +
       '<button class="dockPrimary" data-act="add" data-lane="' + B.columns[0].id + '">' +
         I.plus + "<span>Add task</span></button>" +
       '<span class="dockRule"></span>' +
@@ -1213,7 +1236,56 @@ function moveTo(id, lane, index, preview) {
    nothing and let the chip vanish silently — which is the exact behaviour
    the beat was written to replace. One receipt, one sentence, one release of
    the filter, called from every route that finishes work. */
+/* ── the completion moment ─────────────────────────────────────────
+   One beat, once per completion, wherever the completion came from — the
+   tick, a keyboard carry into Done, a drag, the expanded card. It is sited
+   HERE, in the one function every one of those routes already calls, so it
+   cannot fire twice and cannot be forgotten by a fifth route added later.
+
+   What it is: eight hairline particles on a 26px radius, and a ring that
+   expands once and dies. 420ms end to end. What it is deliberately not: a
+   burst that has to finish before the board answers again, anything that
+   moves the layout, anything with a second bounce, and anything the eye
+   can still see when the hand reaches the next card.
+
+   Ink and indigo, because the palette says so and because a celebration in
+   the accent colour is the product agreeing with you rather than
+   congratulating you. */
+var celebrating = 0;
+function celebrate(anchor) {
+  if (!anchor || !anchor.getBoundingClientRect) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const box = anchor.getBoundingClientRect();
+  if (!box.width && !box.height) return;
+  const floor = document.querySelector(".floor") || document.body;
+  const frame = floor.getBoundingClientRect();
+  const burst = document.createElement("span");
+  burst.className = "burst";
+  burst.setAttribute("aria-hidden", "true");
+  burst.style.left = Math.round(box.left - frame.left + box.width / 2) + "px";
+  burst.style.top = Math.round(box.top - frame.top + box.height / 2) + "px";
+  let dots = '<i class="burstRing"></i>';
+  for (let i = 0; i < 8; i++) {
+    /* Not evenly spaced to the degree — a perfect octagon reads as a
+       graphic. Two degrees of jitter, deterministic so a shot is stable. */
+    const a = (i * 45 + (i % 3) * 2) * (Math.PI / 180);
+    dots += '<i style="--dx:' + Math.round(Math.cos(a) * 26) +
+      "px;--dy:" + Math.round(Math.sin(a) * 26) +
+      "px;--d:" + (i % 2 ? 18 : 0) + 'ms"></i>';
+  }
+  burst.innerHTML = dots;
+  floor.appendChild(burst);
+  const id = ++celebrating;
+  setTimeout(() => { burst.remove(); if (id === celebrating) celebrating = 0; }, 520);
+}
+
 function completed(task, cleared) {
+  /* The tick that was pressed, or the card if the completion came from
+     somewhere without one. Read BEFORE the repaint, because the repaint
+     replaces the node. */
+  const from = document.querySelector('.card[data-id="' + task.id + '"] .tick') ||
+    document.querySelector('.card[data-id="' + task.id + '"]');
+  celebrate(from);
   arm({ kind: "done", id: task.id, title: task.title, cleared: cleared });
   if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
     lateOnly = false;
@@ -2070,6 +2142,14 @@ function onClick(event) {
     if (field) field.focus();
     return;
   }
+  if (what === "search-clear") {
+    queryText = "";
+    mount();
+    const field = document.querySelector(".dockInput");
+    if (field) field.focus();
+    say("Search cleared.");
+    return;
+  }
   if (what === "projects") {
     projOpen = !projOpen;
     mount();
@@ -2871,6 +2951,38 @@ if (host) {
   host.addEventListener("input", (event) => {
     const field = event.target.closest && event.target.closest(".card[data-draft] .cardTitle");
     if (field) draftText = field.textContent;
+    const search = event.target.closest && event.target.closest(".dockInput");
+    if (search) {
+      queryText = search.value;
+      /* The caret is the one thing a repaint must not take from somebody
+         who is typing, so the field is re-focused and the selection put
+         back exactly where it was. */
+      const at = search.selectionStart;
+      mount();
+      const back = document.querySelector(".dockInput");
+      if (back) {
+        back.focus();
+        try { back.setSelectionRange(at, at); } catch (err) { /* not all types allow it */ }
+      }
+    }
+  });
+  /* Escape leaves the field: first press clears what is in it, second gives
+     the board back. A field you cannot get out of by the key everyone tries
+     is a trap, however good it looks. */
+  host.addEventListener("keydown", (event) => {
+    const search = event.target.closest && event.target.closest(".dockInput");
+    if (!search || event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (queryText) {
+      queryText = "";
+      mount();
+      const back = document.querySelector(".dockInput");
+      if (back) back.focus();
+      say("Search cleared.");
+    } else {
+      search.blur();
+    }
   });
   /* The light-dismiss handler is gone. One panel was running two contradictory
      input models: to the keyboard the drawer was a non-modal sibling with two
