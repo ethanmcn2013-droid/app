@@ -5,13 +5,10 @@ const out = await readFile("_verify.out", "utf8");
 const m = out.match(/(\d+) checks/);
 const assertions = m ? Number(m[1]) : null;
 
-const scores = {};
-for (const s of r2.scores || []) scores[s.seat] = s.score;
-
 const entry = {
   round: 2,
   seatsSat: r2.seatsSat,
-  scores,
+  scores: r2.scores,
   signOffs: r2.signOffs || [],
   headline:
     "Two of three seats independently found the same blocking defect: Tasks' Planning drawer covered a fifth of the board and reserved no layout, so DONE was 100% covered at every desk width and the arrow keys walked the focus ring in behind an opaque panel. The cause was the composition, not the drawer — the lab had already fixed this and said so in a comment that is still there; scoping the product under its app compound turned the lab's root element into a demanded descendant, and five rules matched nothing from the day the document was composed. A selector that matches nothing fails nothing, which is why no gate saw it. Three more findings were one hole: focus moved and the board did not follow it. And the URL contract had never written once, because a const at the top level of one product's script shadowed window.history for the whole document.",

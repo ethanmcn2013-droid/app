@@ -8,25 +8,27 @@ here depends on a conversation being remembered.
 | | |
 |---|---|
 | Round budget | **3**, set by the founder before round 1 |
-| Round 1 | **complete and closed.** `panel/round-1.json`, `panel.json` |
-| Round 2 | **running or awaiting collection** — see below |
-| Round 3 | not started. Must be the **full seven seats** (the ending needs the strong kind of evidence) |
-| Gates | both green at round 1 close · 228 behaviour assertions · `node gate.mjs` and `node verify.mjs` |
+| Round 1 | **complete and closed.** `panel/round-1.json` |
+| Round 2 | **complete and closed.** `panel/round-2.json` · 3 seats · 7 confirmed, all fixed |
+| Round 3 | **running** — full seven seats, `--final`. Run `wf_acb8cc61-531`, task `wp6t3jkrq` |
+| Gates | both green at round 2 close · **249** behaviour assertions · `node gate.mjs` and `node verify.mjs` |
 | Artifact | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 — **not yet republished since round 0**; republish at the close |
-| Branch | `design/master-suite-2026-08`, pushed through `Round 1 batch 4` |
+| Branch | `design/master-suite-2026-08`, pushed through `Round 2` |
 
-## Round 2 — collecting it
+## Round 3 — collecting it
 
-Workflow run `wf_0abbeaf9-34e` (task `wo27y3gmh`), three rotating seats.
+Workflow run `wf_acb8cc61-531` (task `wp6t3jkrq`), **seven** seats, final round.
 The notification truncates; the journal does not. Build the record from the journal:
 
 ```
-node tools/round.mjs "C:/Users/ethan/.claude/projects/C--Users-ethan/7c0de329-febd-4a7e-ab6a-74379c009573/subagents/workflows/wf_0abbeaf9-34e/journal.jsonl" 2
+node tools/round.mjs "C:/Users/ethan/.claude/projects/C--Users-ethan/7c0de329-febd-4a7e-ab6a-74379c009573/subagents/workflows/wf_acb8cc61-531/journal.jsonl" 3
 ```
 
-That writes `panel/round-2.json` and prints every confirmed finding in severity
-order. Then merge it into `panel.json`'s `rounds` array, fill `selfInflicted`,
-`frozen`, `gatesGreen` and `assertions` by hand, and run:
+Round 2's journal, if it is ever needed again, is `wf_0abbeaf9-34e`.
+
+That writes `panel/round-3.json` and prints every confirmed finding in severity
+order. Then merge it into `panel.json`'s `rounds` array — `tools/merge2.mjs` is the
+working example, copy it for round 3 — and run:
 
 ```
 node ../../../../../.claude/skills/elevate/scripts/ledger.mjs --lab=. --check
@@ -49,6 +51,16 @@ node ../../../../../.claude/skills/elevate/scripts/round-metrics.mjs --lab=.
    `panel-round.mjs --lab=. --round=<n+1>` (add `--final` and drop `--seats` for
    round 3 — the closing round is full-panel), then run it with the Workflow tool.
 6. Commit and push every round.
+
+## What round 2 cost, in one line
+
+The Planning drawer covered a fifth of the board at every desk width. The lab
+had **already fixed that** and its comment is still in the file; scoping each
+product under its app compound turned the lab's root `.floor` into a demanded
+DESCENDANT, and in the suite the floor is `#deck`, the app's PARENT. Five rules
+matched nothing from the day the document was composed. **A selector that
+matches nothing fails nothing** — which is why `tools/reach.mjs` gates the class
+and not the instance. Assume there are more of these.
 
 ## Open from round 1 — ten defects, known and classed
 
@@ -89,7 +101,15 @@ one application — a system or three?
   on Windows, and the shot harness names every frame after its state — it
   collapsed forty frames into three without erroring.
 - **`--only=<section>`** on `verify.mjs`: `fidelity console seam spine contract
-  grounds motion orientation truth craft spinekeys labgates`.
+  grounds motion orientation truth craft reach spinekeys labgates`.
+- **Write the assertion first and watch it fail — then check the failure is the
+  product's and not the assertion's.** Round 2 wrote four assertions that failed
+  for the wrong reason: a node held across a Tasks repaint is detached and
+  measures 0x0; an ASCII space does not match the non-breaking space the horizon
+  binds a date with; a local-midnight date read back in UTC lands a day early;
+  and a CSS scan that does not strip comments matches its own note. Each was
+  caught by a result *contradicting* a seat rather than confirming it. A green
+  assertion you never watched fail correctly is not evidence.
 
 ## The founder's standing asks, from round 1
 
