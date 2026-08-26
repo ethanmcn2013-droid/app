@@ -1351,12 +1351,15 @@ async function tap(page, selector) {
    This one holds a real pointer down and measures what paints. */
 {
   for (const mode of [null, "play"]) {
-    const page = await open({ raw: mode ? { state: "full", v: "light", motion: mode } : { state: "full", v: "light" } });
+    /* The error state is where the surface's one real control lives. The
+       row above it is read, not operated, so its press was retired with its
+       link role — this measures a control that is still a control. */
+    const page = await open({ raw: mode ? { state: "error", v: "light", motion: mode } : { state: "error", v: "light" } });
     await page.waitForTimeout(mode === "play" ? 2000 : 200);
-    const card = page.locator("a.kpi, .kpi").first();
+    const card = page.locator(".btn").first();
     const box = await card.boundingBox();
     const rest = await page.evaluate(() => {
-      const el = document.querySelector(".kpi");
+      const el = document.querySelector(".btn");
       const cs = getComputedStyle(el);
       return { t: cs.transform, bg: cs.backgroundColor, bd: cs.borderTopColor };
     });
@@ -1364,14 +1367,14 @@ async function tap(page, selector) {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 20 });
     await page.waitForTimeout(200);
     const hover = await page.evaluate(() => {
-      const el = document.querySelector(".kpi");
+      const el = document.querySelector(".btn");
       const cs = getComputedStyle(el);
       return { t: cs.transform, bg: cs.backgroundColor, bd: cs.borderTopColor };
     });
     await page.mouse.down();
     await page.waitForTimeout(180);
     const press = await page.evaluate(() => {
-      const el = document.querySelector(".kpi");
+      const el = document.querySelector(".btn");
       const cs = getComputedStyle(el);
       return { t: cs.transform, bg: cs.backgroundColor, bd: cs.borderTopColor };
     });
@@ -1382,7 +1385,7 @@ async function tap(page, selector) {
         const f = getComputedStyle(el).animationFillMode;
         return f !== "both" && f !== "forwards";
       })), "a forwards fill outranks every author declaration, permanently");
-    ok(`a card acknowledges a press, measured from what paints · motion=${mode ?? "settled"}`,
+    ok(`a control acknowledges a press, measured from what paints · motion=${mode ?? "settled"}`,
       key(press) !== key(hover) && key(hover) !== key(rest),
       `rest ${key(rest)} / hover ${key(hover)} / press ${key(press)}`);
     await page.close();
@@ -1530,6 +1533,8 @@ async function tap(page, selector) {
     const heard = await page.evaluate(() => {
       const out = [];
       for (const card of document.querySelectorAll(".kpi:not(.lead)")) {
+        /* The sentence is the group's own label now, so the card should
+           contribute no text leaves of its own and exactly one name. */
         const leaves = [];
         const walk = (el) => {
           if (el.getAttribute && el.getAttribute("aria-hidden") === "true") return;
@@ -1539,11 +1544,12 @@ async function tap(page, selector) {
           }
         };
         walk(card);
-        out.push(leaves.length);
+        out.push({ leaves: leaves.length, named: (card.getAttribute("aria-label") || "").length > 12 });
       }
       return out;
     });
-    ok(`each card in the row says its fact once · ${state}`, heard.every((n) => n === 1), heard.join(","));
+    ok(`each card in the row says its fact once · ${state}`,
+      heard.every((c) => c.leaves === 0 && c.named), JSON.stringify(heard));
     await page.close();
   }
 }
@@ -1580,7 +1586,7 @@ async function tap(page, selector) {
       return out;
     });
     ok(`every status mark clears the non-text floor · ${variant}`,
-      glyphs.length > 0 && glyphs.every((g) => g.r >= 3), glyphs.map((g) => g.r.toFixed(2)).join(" "));
+      glyphs.length > 0 && glyphs.every((g) => Number(g.r.toFixed(2)) >= 3), glyphs.map((g) => g.r.toFixed(2)).join(" "));
     await page.close();
   }
 }

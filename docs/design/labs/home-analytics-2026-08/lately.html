@@ -819,7 +819,7 @@ function movementOne({ record = D.weeks.length > 1 } = {}) {
               <span class="t-hero" data-type="hero" id="count">${D.lastFour}</span>
               <span class="delta t-label" data-type="label">${up ? ICON.up : ICON.down} ${up ? "+" : ""}${D.delta} on the four before</span>
             </div>
-            <p class="t-body dim-2 hero-note" data-type="body">jobs finished, ${esc(D.workspace)}${D.weeks[D.weeks.length - 1].partial ? " &mdash; this week still running" : ""}</p>
+            <p class="t-body dim-2 hero-note" data-type="body">jobs finished, ${esc(D.workspace)}${D.weeks.length && D.weeks[D.weeks.length - 1].partial ? " &mdash; this week still running" : ""}</p>
           </div>
           <p class="t-small dim hero-note" data-type="small">Counted at the moment each job reached a done column.</p>
         </div>

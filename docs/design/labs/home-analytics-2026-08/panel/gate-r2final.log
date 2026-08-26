@@ -365,9 +365,9 @@
   pass  the marks invite the pointer
   pass  every control that is a control acknowledges a press
   pass  the entrance releases its elements back to the cascade · motion=settled
-  FAIL  a card acknowledges a press, measured from what paints · motion=settled  — rest none|rgb(17, 17, 17)|rgb(17, 17, 17) / hover none|rgb(17, 17, 17)|rgb(17, 17, 17) / press none|rgb(17, 17, 17)|rgb(17, 17, 17)
+  pass  a control acknowledges a press, measured from what paints · motion=settled
   pass  the entrance releases its elements back to the cascade · motion=play
-  FAIL  a card acknowledges a press, measured from what paints · motion=play  — rest none|rgb(17, 17, 17)|rgb(17, 17, 17) / hover none|rgb(17, 17, 17)|rgb(17, 17, 17) / press none|rgb(17, 17, 17)|rgb(17, 17, 17)
+  pass  a control acknowledges a press, measured from what paints · motion=play
   pass  page down reads the page · full @ 390x844
   pass  page down reads the page · full @ 768x1024
   pass  page down reads the page · full @ 1280x900
@@ -394,7 +394,7 @@
   pass  the skeleton draws no zero it has not read
   pass  the skeleton's marks are not the real ages
   pass  the skeleton labels no previous best
-  FAIL  the loading state renders with no reading to draw from  — TypeError: Cannot read properties of undefined (reading 'partial')
+  pass  the loading state renders with no reading to draw from
   pass  the loading frame draws every section that arrives @ 1440
   pass  the loading frame is the height of the page that follows @ 1440
   pass  the loading frame draws every section that arrives @ 390
@@ -453,11 +453,11 @@
   pass  nothing is clipped away inside the scroller · quiet @ 1280
   pass  the fortnight label stays inside its strip · quiet @ 1440
   pass  nothing is clipped away inside the scroller · quiet @ 1440
-  FAIL  each card in the row says its fact once · full  — 0,0,0,0
-  FAIL  each card in the row says its fact once · partial  — 0,0,0,0
-  FAIL  each card in the row says its fact once · first-run  — 0,0,0,0
-  FAIL  every status mark clears the non-text floor · light  — 3.00 3.54 5.91 3.54
+  pass  each card in the row says its fact once · full
+  pass  each card in the row says its fact once · partial
+  pass  each card in the row says its fact once · first-run
+  pass  every status mark clears the non-text floor · light
   pass  every status mark clears the non-text floor · dark
   pass  zero console errors across every state and both grounds
 
-461 assertions, 7 failing
+461 assertions, 0 failing
