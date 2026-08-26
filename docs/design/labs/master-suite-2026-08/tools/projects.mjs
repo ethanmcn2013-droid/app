@@ -110,6 +110,25 @@ export async function projects({ browser, url, check, head }) {
         timeline: (window.__TLFIXTURE && window.__TLFIXTURE.workspace && window.__TLFIXTURE.workspace.name) || "",
         world: (window.WORLD && window.WORLD.project) || "",
       }));
+      /* Planning's own axis measures the project's period. Its two ends were
+         literal strings — "6 Jul" and "10 Oct" — correct for the venue's
+         wedding season and wrong for every other project, so the academic
+         year got an axis measuring a season that had nothing to do with it
+         while the line six pixels above read the right dates. The marker
+         scan above cannot see this: "6 Jul" belongs to both projects. */
+      const axis = await page.evaluate(async () => {
+        const open = document.querySelector('[data-act="planning"]');
+        if (open && open.getAttribute("aria-expanded") !== "true") open.click();
+        await new Promise((r) => setTimeout(r, 450));
+        const ends = [...document.querySelectorAll(".axisEnds span")].map((s) => s.textContent.trim());
+        const period = (window.BOARD && window.BOARD.period) || "";
+        if (open) { open.click(); await new Promise((r) => setTimeout(r, 300)); }
+        return { ends, period };
+      });
+      check("projects", `${target} @${width} · Planning's axis measures this project's period`,
+        axis.ends.length === 2 && axis.period.includes(axis.ends[0]) && axis.period.includes(axis.ends[1]),
+        `${axis.ends.join(" – ")} against "${axis.period}"`);
+
       const names = new Set([agree.board, agree.planning, agree.timeline]);
       check("projects", `${target} @${width} · board, planning and timeline name one project`,
         names.size === 1 && agree.world === target,

@@ -1602,6 +1602,12 @@
     },
     {
       "section": "projects",
+      "name": "orchard @1440 · Planning's axis measures this project's period",
+      "ok": true,
+      "detail": "6 Jul – 10 Oct against \"6 Jul – 10 Oct\""
+    },
+    {
+      "section": "projects",
       "name": "orchard @1440 · board, planning and timeline name one project",
       "ok": true,
       "detail": "{\"board\":\"The Orchard, events\",\"planning\":\"The Orchard, events\",\"timeline\":\"The Orchard, events\",\"world\":\"orchard\"}"
@@ -1617,6 +1623,12 @@
       "name": "academic @1440 · its own content is actually there",
       "ok": true,
       "detail": "MK3021 · literature review"
+    },
+    {
+      "section": "projects",
+      "name": "academic @1440 · Planning's axis measures this project's period",
+      "ok": true,
+      "detail": "6 Jul – 18 Dec against \"6 Jul – 18 Dec\""
     },
     {
       "section": "projects",
@@ -1638,6 +1650,12 @@
     },
     {
       "section": "projects",
+      "name": "school @1440 · Planning's axis measures this project's period",
+      "ok": true,
+      "detail": "1 Sep – 26 Jun against \"1 Sep – 26 Jun\""
+    },
+    {
+      "section": "projects",
       "name": "school @1440 · board, planning and timeline name one project",
       "ok": true,
       "detail": "{\"board\":\"Secondary School Year 2026\",\"planning\":\"Secondary School Year 2026\",\"timeline\":\"Secondary School Year 2026\",\"world\":\"school\"}"
@@ -1653,6 +1671,12 @@
       "name": "orchard @390 · its own content is actually there",
       "ok": true,
       "detail": "Mara & Finn · marquee"
+    },
+    {
+      "section": "projects",
+      "name": "orchard @390 · Planning's axis measures this project's period",
+      "ok": true,
+      "detail": "6 Jul – 10 Oct against \"6 Jul – 10 Oct\""
     },
     {
       "section": "projects",
@@ -1674,6 +1698,12 @@
     },
     {
       "section": "projects",
+      "name": "academic @390 · Planning's axis measures this project's period",
+      "ok": true,
+      "detail": "6 Jul – 18 Dec against \"6 Jul – 18 Dec\""
+    },
+    {
+      "section": "projects",
       "name": "academic @390 · board, planning and timeline name one project",
       "ok": true,
       "detail": "{\"board\":\"Academic Year 2026\",\"planning\":\"Academic Year 2026\",\"timeline\":\"Academic Year 2026\",\"world\":\"academic\"}"
@@ -1692,6 +1722,12 @@
     },
     {
       "section": "projects",
+      "name": "school @390 · Planning's axis measures this project's period",
+      "ok": true,
+      "detail": "1 Sep – 26 Jun against \"1 Sep – 26 Jun\""
+    },
+    {
+      "section": "projects",
       "name": "school @390 · board, planning and timeline name one project",
       "ok": true,
       "detail": "{\"board\":\"Secondary School Year 2026\",\"planning\":\"Secondary School Year 2026\",\"timeline\":\"Secondary School Year 2026\",\"world\":\"school\"}"
@@ -1706,7 +1742,7 @@
       "section": "delight",
       "name": "completion via tick · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 8 dots · widest 2.3px · brightest 0.50"
+      "detail": "1 burst · 8 dots · widest 2.6px · brightest 0.67"
     },
     {
       "section": "delight",
@@ -1718,7 +1754,7 @@
       "section": "delight",
       "name": "completion via keyboard · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 8 dots · widest 2.3px · brightest 0.50"
+      "detail": "1 burst · 8 dots · widest 2.6px · brightest 0.67"
     },
     {
       "section": "delight",
@@ -1941,6 +1977,66 @@
       "name": "controls @1920 · Escape closes and hands the button back",
       "ok": true,
       "detail": "closed:true focus:true"
+    },
+    {
+      "section": "flow",
+      "name": "opens on Tasks, showing The Orchard",
+      "ok": true,
+      "detail": "The Orchard, events"
+    },
+    {
+      "section": "flow",
+      "name": "switching project moves Tasks, Timeline and Planning together",
+      "ok": true,
+      "detail": "{\"ok\":true,\"board\":14,\"timelineHasWedding\":false}"
+    },
+    {
+      "section": "flow",
+      "name": "switching back restores The Orchard and leaves nothing behind",
+      "ok": true,
+      "detail": "{\"ok\":true}"
+    },
+    {
+      "section": "flow",
+      "name": "a task opens into the expanded surface and closes again",
+      "ok": true,
+      "detail": "{\"ok\":true,\"opened\":true}"
+    },
+    {
+      "section": "flow",
+      "name": "completing with the tick fires the moment exactly once",
+      "ok": true,
+      "detail": "{\"ok\":true,\"bursts\":1,\"before\":5}"
+    },
+    {
+      "section": "flow",
+      "name": "carrying a card into Done fires the same moment",
+      "ok": true,
+      "detail": "{\"ok\":true,\"bursts\":1}"
+    },
+    {
+      "section": "flow",
+      "name": "search opens and closes without moving the board",
+      "ok": true,
+      "detail": "{\"ok\":true,\"before\":\"128,197\",\"during\":\"128,197\",\"filtered\":1}"
+    },
+    {
+      "section": "flow",
+      "name": "the plus opens More, and Settings is reachable and honest",
+      "ok": true,
+      "detail": "{\"ok\":true,\"doors\":3}"
+    },
+    {
+      "section": "flow",
+      "name": "Notes, Tasks and Timeline all still work after all of that",
+      "ok": true,
+      "detail": "{\"ok\":true,\"seen\":{\"notes\":true,\"timeline\":true,\"tasks\":true}}"
+    },
+    {
+      "section": "flow",
+      "name": "the whole session is silent",
+      "ok": true,
+      "detail": "0 errors across ten steps"
     },
     {
       "section": "lab gates",

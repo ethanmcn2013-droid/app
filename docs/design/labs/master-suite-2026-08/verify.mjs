@@ -31,6 +31,7 @@ import { reach } from "./tools/reach.mjs";
 import { ring } from "./tools/ring.mjs";
 import { projects } from "./tools/projects.mjs";
 import { delight } from "./tools/delight.mjs";
+import { flow } from "./tools/flow.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -916,6 +917,7 @@ if (run("reach")) await reach({ browser, url: SUITE_URL, check, head, lab: LAB }
 if (run("ring")) await ring({ browser, url: SUITE_URL, check, head, PNG });
 if (run("projects")) await projects({ browser, url: SUITE_URL, check, head });
 if (run("delight")) await delight({ browser, url: SUITE_URL, check, head });
+if (run("flow")) await flow({ browser, url: SUITE_URL, check, head });
 if (run("labgates")) await labGates();
 
 await browser.close();

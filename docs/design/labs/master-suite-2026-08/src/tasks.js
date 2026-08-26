@@ -1122,6 +1122,14 @@ function taskPanel() {
   );
 }
 
+/* The two ends of the project's own period, split from the one string that
+   already states it. One source, so the axis cannot disagree with the line
+   printed six pixels above it. */
+function periodEnds() {
+  const parts = String(B.period || "").split(/\s*[–—-]\s*/);
+  return parts.length === 2 ? parts : [B.period || "", ""];
+}
+
 function drawer() {
   const p = B.planning;
   const rows = drawerTab === "milestones" ? milestoneTasks() : undatedTasks();
@@ -1142,7 +1150,17 @@ function drawer() {
       '<h2 id="drawerTitle">' + (drawerTab === "milestones" ? "Milestones" : "Tasks with no day") + "</h2>" +
       '<p class="drawerLine">' + esc(p.line) + "</p>" +
       '<div class="axis"><i></i><b></b></div>' +
-      '<div class="axisEnds"><span>6 Jul</span><span>10 Oct</span></div>' +
+      /* From B.period, not typed. These were the literal strings "6 Jul" and
+         "10 Oct" — correct for the venue's wedding season and wrong for
+         every other project, so switching to the academic year left the
+         planning axis measuring a season that had nothing to do with it
+         while the line directly above it read "Semester 2 · 6 Jul – 18 Dec".
+         A leak the project gate could not see, because it reads the
+         RENDERED products for another project's phrases and "6 Jul" belongs
+         to both. */
+      '<div class="axisEnds">' +
+        periodEnds().map((end) => "<span>" + esc(end) + "</span>").join("") +
+      "</div>" +
       '<p class="drawerSummary">' + esc(p.summary) + "</p></div>" +
     '<div class="drawerTabs" role="tablist" aria-label="Planning">' +
       tab("nodate", "No day", undatedTasks().length) +
