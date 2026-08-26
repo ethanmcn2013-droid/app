@@ -640,19 +640,34 @@ async function spine() {
   });
   check("spine", "a half-written note survives it too", draft === "Half a thought about the marquee", JSON.stringify(draft));
 
-  /* Honest doors stay honest. */
-  const doors = await page.evaluate(() => {
+  /* Honest doors stay honest — WHEREVER they live.
+     Home, Inbox and Help left the rail so it could be three products and
+     nothing else. They were not deleted: deleting an honest door is how a
+     product starts lying about what it is. They sit behind the plus, and
+     this check follows them there rather than being relaxed to let them
+     vanish — the assertion is "the door is reachable and says it is not
+     here yet", which was never an assertion about the rail. */
+  const doors = await page.evaluate(async () => {
     const out = {};
-    for (const key of ["home", "inbox", "help", "mark", "me"]) {
-      const tile = document.querySelector(`.rail [data-rail="${key}"]`);
+    const plus = document.querySelector('.rail [data-rail="plus"]');
+    if (plus) { plus.click(); await new Promise((r) => setTimeout(r, 320)); }
+    for (const key of ["home", "inbox", "help", "settings", "me"]) {
+      const tile = document.querySelector(`.rail [data-rail="${key}"]`) ||
+        document.querySelector(`.morePop [data-door="${key}"]`);
       out[key] = tile && {
         disabled: tile.getAttribute("aria-disabled") === "true",
         says: /not here yet/i.test(tile.getAttribute("title") || ""),
         reachable: tile.tabIndex >= -1,
       };
     }
+    /* And the plus itself is a live control, not a door. */
+    out.plusOpens = Boolean(document.querySelector(".morePop"));
+    if (plus) { plus.click(); await new Promise((r) => setTimeout(r, 220)); }
     return out;
   });
+  check("spine", "the plus opens the doors the rail no longer spends a tile on",
+    doors.plusOpens === true, String(doors.plusOpens));
+  delete doors.plusOpens;
   for (const [key, d] of Object.entries(doors)) {
     check("spine", `${key} says it is not here yet`, d && d.disabled && d.says && d.reachable, JSON.stringify(d));
   }

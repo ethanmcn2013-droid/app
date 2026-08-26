@@ -17,6 +17,16 @@ window.ICON = (function () {
     help: s('<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.4a2.4 2.4 0 1 1 3.1 2.6c-.6.2-.8.7-.8 1.3v.4"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>'),
     search: s('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.7-3.7"/>'),
     plus: s('<path d="M12 5.5v13M5.5 12h13"/>'),
+    /* A COG, not a sun. The first draft drew eight thin rays around a hub
+       and at 19px that is a brightness control, not settings — the teeth
+       have to be blocky and joined by a ring or the silhouette says the
+       wrong word. Eight teeth on a closed outline, hub at r=3, rounded
+       joins doing the softening so it still sits at 1.6 stroke with
+       everything else. */
+    settings: s('<path d="M10.52 3.12L13.48 3.12L13.59 5.29L15.62 6.13L17.23 4.68L19.32 6.77L17.87 8.38L18.71 10.41L20.88 10.52L20.88 13.48L18.71 13.59L17.87 15.62L19.32 17.23L17.23 19.32L15.62 17.87L13.59 18.71L13.48 20.88L10.52 20.88L10.41 18.71L8.38 17.87L6.77 19.32L4.68 17.23L6.13 15.62L5.29 13.59L3.12 13.48L3.12 10.52L5.29 10.41L6.13 8.38L4.68 6.77L6.77 4.68L8.38 6.13L10.41 5.29Z"/><circle cx="12" cy="12" r="3"/>'),
+    /* The switcher's chevron. Down, small, and only ever beside a name the
+       reader is already looking at. */
+    chevron: s('<path d="m7.5 10 4.5 4.5 4.5-4.5"/>'),
     board: s('<rect x="4" y="4.5" width="6" height="15" rx="1.6"/><rect x="14" y="4.5" width="6" height="9.5" rx="1.6"/>'),
     list: s('<path d="M9 7h11M9 12h11M9 17h7"/><circle cx="5" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="17" r="1.1" fill="currentColor" stroke="none"/>'),
     schedule: s('<path d="M4 6.5h12M4 12h16M4 17.5h8"/>'),

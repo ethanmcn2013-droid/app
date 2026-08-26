@@ -285,45 +285,64 @@ body {
   padding: 10px 0;
   z-index: 4;
 }
-.railMark {
+/* ── the brand ──────────────────────────────────────────────────
+   One indigo dot. It was a four-square grid glyph with a dot beside it,
+   which reads as a menu button and invited a press that went nowhere —
+   an honest door nobody asked for. A dot is the whole identity, asks for
+   nothing, and is the only indigo in the rail, so it also marks the top
+   of the spine without a rule or a divider doing it. */
+.railBrand {
   width: var(--tap); height: var(--tap);
   display: grid; place-items: center;
-  color: var(--on-ink-1);
-  position: relative;
-  border-radius: 12px;
+  flex: none;
 }
-.railMark svg { width: 19px; height: 19px; }
+.railBrand::after {
+  content: "";
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--indigo);
+}
 /* Ink, not indigo. The Tasks lock states the rule at class level: "the
    accent is spent only on what the specimen sheet says it means", and it
    names the rail dot as one of the two places that made the claim false.
    Notes' own master still painted this dot indigo; the rail is one object
    now, so it takes the rule that was argued rather than the one that was
    inherited. Recorded in COMPOSITION.md. */
-.railMark i {
-  position: absolute; right: 9px; bottom: 10px;
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--on-ink-1);
-}
 .railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
 .railGroup, .railUtil { display: grid; gap: 4px; }
 /* Buttons, not href-less anchors. The reset means the change costs no
    pixels. */
-.railTile, .railMark, .railAvatar {
+.railTile, .railAvatar {
   font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit;
   background: none; border: 0; padding: 0;
   -webkit-appearance: none;
 }
 .railAvatar { cursor: pointer; }
+/* ── a product tile carries its own name ────────────────────────
+   The rail was three abstract glyphs and the reader had to decode them.
+   A 10px word under the icon costs eight pixels of height and removes the
+   decoding entirely — the glyph still does the work at a glance, the word
+   is there for the FIRST glance rather than the hundredth. Utilities do
+   not get one: a utility is not a destination, and naming it would flatten
+   the hierarchy the products have just gained. */
 .railTile {
-  width: var(--tap); height: var(--tap);
+  width: var(--tap); min-height: var(--tap);
   border-radius: 12px;
-  display: grid; place-items: center;
+  display: grid; place-items: center; gap: 2px;
+  padding: 6px 0 5px;
   color: var(--on-ink-2);
   position: relative;
   cursor: pointer;
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
+.railTile[data-util] { height: var(--tap); padding: 0; gap: 0; }
 .railTile svg { width: 19px; height: 19px; }
+.railName {
+  font-size: 10px; font-weight: 400;
+  line-height: 1; letter-spacing: 0.005em;
+  /* The one place the rail may clip: "Timeline" is the longest word that
+     has to fit 64px of capsule, and it fits at 10px with room to spare. */
+  max-width: 100%;
+}
 .railTile:not([aria-disabled="true"]):hover { color: var(--on-ink-1); background: var(--chrome-active); }
 .railTile[data-active] { color: var(--ink-1); background: var(--white); }
 /* The capsule points at the sheet it opened. */
@@ -443,7 +462,8 @@ body {
 #deck[data-radius="round"] .railTile,
 #deck[data-radius="round"] .railAdd { border-radius: 16px; }
 #deck[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
-#deck[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
+/* The brand dot is already indigo, so the forward preset has nothing
+   left to add to it. */
 
 /* ── the phone ───────────────────────────────────────────────────
    Both locks say the same thing — on a phone the capsule and the dock are
@@ -470,9 +490,18 @@ body {
     flex-direction: row; justify-content: space-around;
     border-radius: 18px; padding: 0 8px;
   }
-  .railMark, .railDivider, .railSpacer { display: none; }
+  /* On a phone the capsule IS the dock, so the brand, the divider and the
+     labels all go: a five-across row of icon-plus-word does not fit 390px
+     and the words would be the first thing to clip. */
+  .railBrand, .railDivider, .railSpacer { display: none; }
+  .railName { display: none; }
+  .railTile { min-height: var(--tap); height: var(--tap); padding: 0; gap: 0; }
   .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
-  .railUtil { display: none; }
+  /* The plus stays. It is the ONLY route to the other doors on a phone, and
+     hiding it there would delete them rather than move them. Settings does
+     not fit a five-across dock and lives behind the plus at this width. */
+  .railUtil { display: flex; gap: 2px; }
+  .railUtil .railTile[data-rail="settings"] { display: none; }
   .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
   .railAdd {
     display: grid; place-items: center;
@@ -493,6 +522,65 @@ body {
   /* Timeline has no dock and no add verb: the capsule is the way out and
      it carries only the suite. */
   #deck[data-product="timeline"] .railAdd { display: none; }
+}
+
+/* ── more, behind the plus ──────────────────────────────────────
+   The doors the rail used to spend three tiles on. They are not deleted —
+   deleting an honest door is how a product starts lying about what it is —
+   they sit one press away, still in the tab order, still saying plainly
+   that they are not here yet. The panel is chrome, not sheet: it is the
+   rail's own object and it wears the rail's ink. */
+.morePop {
+  position: absolute;
+  left: calc(100% + 10px); bottom: 62px;
+  width: 216px;
+  padding: 7px;
+  background: var(--chrome);
+  box-shadow: inset 0 0 0 1px var(--chrome-line), var(--float);
+  border-radius: 14px;
+  display: grid; gap: 1px;
+  z-index: 6;
+  animation: morePopIn var(--dur) var(--curve) both;
+}
+@keyframes morePopIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .morePop { animation: none; }
+}
+.morePop p {
+  margin: 0; padding: 7px 9px 5px;
+  font-size: var(--t-11); font-weight: 400;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-cap);
+  text-indent: var(--tr-cap);
+  text-transform: uppercase;
+  color: var(--on-ink-3);
+}
+.moreItem {
+  font-family: inherit; font-size: 13px; font-weight: 400;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-13);
+  background: none; border: 0;
+  display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 9px;
+  min-height: 36px; padding: 0 9px;
+  border-radius: 9px;
+  color: var(--on-ink-2);
+  text-align: left;
+  cursor: default;
+}
+.moreItem svg { width: 16px; height: 16px; }
+.moreItem em {
+  font-style: normal;
+  font-size: var(--t-11); letter-spacing: var(--tr-cap);
+  color: var(--on-ink-3);
+}
+/* A closed door does not light up under the pointer. It answers when
+   pressed — the sentence is spoken — and that is the whole affordance. */
+.moreItem:hover { background: var(--chrome-active); }
+.railTile[data-open] { color: var(--on-ink-1); background: var(--chrome-active); }
+@media (max-width: 720px) {
+  /* The dock has no room beside it; the panel comes up off the dock. */
+  .morePop { left: auto; right: 8px; bottom: calc(100% + 10px); }
 }
 
 /* ══ tasks.css ══════════════════════════════════════════ */
@@ -7748,6 +7836,16 @@ window.ICON = (function () {
     help: s('<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.4a2.4 2.4 0 1 1 3.1 2.6c-.6.2-.8.7-.8 1.3v.4"/><circle cx="12" cy="16.6" r=".9" fill="currentColor" stroke="none"/>'),
     search: s('<circle cx="11" cy="11" r="6.5"/><path d="m20 20-3.7-3.7"/>'),
     plus: s('<path d="M12 5.5v13M5.5 12h13"/>'),
+    /* A COG, not a sun. The first draft drew eight thin rays around a hub
+       and at 19px that is a brightness control, not settings — the teeth
+       have to be blocky and joined by a ring or the silhouette says the
+       wrong word. Eight teeth on a closed outline, hub at r=3, rounded
+       joins doing the softening so it still sits at 1.6 stroke with
+       everything else. */
+    settings: s('<path d="M10.52 3.12L13.48 3.12L13.59 5.29L15.62 6.13L17.23 4.68L19.32 6.77L17.87 8.38L18.71 10.41L20.88 10.52L20.88 13.48L18.71 13.59L17.87 15.62L19.32 17.23L17.23 19.32L15.62 17.87L13.59 18.71L13.48 20.88L10.52 20.88L10.41 18.71L8.38 17.87L6.77 19.32L4.68 17.23L6.13 15.62L5.29 13.59L3.12 13.48L3.12 10.52L5.29 10.41L6.13 8.38L4.68 6.77L6.77 4.68L8.38 6.13L10.41 5.29Z"/><circle cx="12" cy="12" r="3"/>'),
+    /* The switcher's chevron. Down, small, and only ever beside a name the
+       reader is already looking at. */
+    chevron: s('<path d="m7.5 10 4.5 4.5 4.5-4.5"/>'),
     board: s('<rect x="4" y="4.5" width="6" height="15" rx="1.6"/><rect x="14" y="4.5" width="6" height="9.5" rx="1.6"/>'),
     list: s('<path d="M9 7h11M9 12h11M9 17h7"/><circle cx="5" cy="7" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="5" cy="17" r="1.1" fill="currentColor" stroke="none"/>'),
     schedule: s('<path d="M4 6.5h12M4 12h16M4 17.5h8"/>'),
@@ -7889,9 +7987,18 @@ window.__SUITE = (function () {
     home: "Every project in one list. Not here yet.",
     inbox: "What came in while you were working. Not here yet.",
     help: "Guides and support. Not here yet.",
-    mark: "Every Signal Studio app in one place. Not here yet.",
+    settings: "Your workspace, your way. Not here yet.",
     me: "Your account, in Signal Studio. Not here yet.",
   };
+  /* The doors that used to sit in the rail. They are not deleted — deleting
+     an honest door is how a product starts lying about what it is — they
+     move behind the plus, where the rail can be three products and nothing
+     else and the doors are still one press and still in the tab order. */
+  var MORE_DOORS = [
+    { key: "home", label: "All projects" },
+    { key: "inbox", label: "Inbox" },
+    { key: "help", label: "Help" },
+  ];
   var LABEL = { notes: "Notes", tasks: "Tasks", timeline: "Timeline" };
 
   /* ── the spine ────────────────────────────────────────────────
@@ -7900,10 +8007,18 @@ window.__SUITE = (function () {
      written: one piece of state says where the group's index is, every
      button is addressed by the same key, and the position survives a
      repaint — and now a product switch as well. */
+  /* Is the plus open? One flag, because the rail is rendered whole. */
+  var moreOpen = false;
+
   function railHtml() {
     if (!railCurrent) railCurrent = current;
     var stop = function (key) { return ' tabindex="' + (key === railCurrent ? "0" : "-1") + '"'; };
     var notYet = function (what) { return ' aria-disabled="true" title="' + esc(what) + '"'; };
+    /* A product tile carries its own name. The rail was three abstract
+       glyphs and a reader had to decode them; a 10px word under the icon
+       costs eight pixels of height and removes the decoding entirely. The
+       icon still does the work at a glance — the word is there for the
+       first glance, not the hundredth. */
     var tile = function (key, label, live) {
       var active = live && key === current;
       return '<button type="button" class="railTile" data-rail="' + key + '" aria-label="' + esc(label) +
@@ -7911,21 +8026,46 @@ window.__SUITE = (function () {
         (active
           ? ' data-active aria-current="page" title="' + esc(label) + '"'
           : live ? ' title="' + esc(label) + '"' : notYet(NOT_YET[key] || label)) +
-        ">" + I[key] + "</button>";
+        ">" + I[key] + '<span class="railName">' + esc(label) + "</span></button>";
     };
+    /* No label, no name underneath: a utility is not a destination and
+       giving it one would flatten the hierarchy the products just gained. */
+    var util = function (key, label, extra) {
+      return '<button type="button" class="railTile" data-util data-rail="' + key +
+        '" aria-label="' + esc(label) + '"' + stop(key) + (extra || "") + ">" + I[key] + "</button>";
+    };
+    /* Settings has no room in a five-across dock, so on a phone it joins the
+       doors behind the plus rather than disappearing. */
+    var phone = matchMedia("(max-width: 720px)").matches;
+    var list = phone
+      ? MORE_DOORS.concat([{ key: "settings", label: "Settings" }])
+      : MORE_DOORS;
+    var doors = list.map(function (d) {
+      return '<button type="button" class="moreItem" data-door="' + d.key + '" aria-disabled="true" title="' +
+        esc(NOT_YET[d.key]) + '">' + I[d.key] + "<span>" + esc(d.label) + "</span>" +
+        '<em>Not here yet</em></button>';
+    }).join("");
     return (
       '<nav class="rail" data-group="rail" aria-label="Signal Studio">' +
-      '<button type="button" class="railMark" data-rail="mark" aria-label="Signal Studio"' + stop("mark") +
-        notYet(NOT_YET.mark) + ">" + I.more + "<i></i></button>" +
+      /* The brand is a dot. It was a four-square grid glyph with a dot beside
+         it, which read as a menu and invited a press that went nowhere. One
+         indigo dot is the whole identity and it asks for nothing. */
+      '<span class="railBrand" aria-label="Signal Studio" role="img"></span>' +
       '<span class="railDivider"></span>' +
       '<div class="railGroup">' +
-        tile("home", "Home", false) +
         tile("notes", "Notes", true) +
         tile("tasks", "Tasks", true) +
         tile("timeline", "Timeline", true) +
       "</div>" +
       '<span class="railSpacer"></span>' +
-      '<div class="railUtil">' + tile("inbox", "Inbox", false) + tile("help", "Help and settings", false) + "</div>" +
+      '<div class="railUtil">' +
+        util("plus", "More", ' aria-expanded="' + (moreOpen ? "true" : "false") +
+          '" aria-haspopup="menu"' + (moreOpen ? " data-open" : "")) +
+        util("settings", "Settings", notYet(NOT_YET.settings)) +
+      "</div>" +
+      (moreOpen
+        ? '<div class="morePop" role="menu" aria-label="More"><p>Also in Signal Studio</p>' + doors + "</div>"
+        : "") +
       '<button type="button" class="railAdd" data-rail="add" aria-label="Add task"' + stop("add") + ">" + I.plus + "</button>" +
       '<button type="button" class="railAvatar" data-rail="me" aria-label="' + esc(B.operator.role) + '"' +
         stop("me") + notYet(NOT_YET.me) + ">" + B.operator.initials + "</button>" +
@@ -8180,11 +8320,34 @@ window.__SUITE = (function () {
   function register(name, api) { registry[name] = api; }
 
   deck.addEventListener("click", function (event) {
+    /* A press anywhere that is not the plus or its own panel closes the
+       panel. Sited before the tile test so a press on the floor closes it
+       too, and after nothing, so it cannot be skipped by an early return. */
+    var insideMore = event.target.closest &&
+      (event.target.closest(".morePop") || event.target.closest('[data-rail="plus"]'));
+    if (moreOpen && !insideMore) { moreOpen = false; paintRail(); }
+
+    var door = event.target.closest && event.target.closest(".moreItem");
+    if (door) {
+      event.preventDefault();
+      say(door.getAttribute("title"));
+      return;
+    }
+
     var tile = event.target.closest && event.target.closest("[data-rail]");
     if (!tile) return;
     event.preventDefault();
     var key = tile.dataset.rail;
     railCurrent = key;
+
+    if (key === "plus") {
+      moreOpen = !moreOpen;
+      paintRail();
+      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      if (plus) plus.focus();
+      say(moreOpen ? "More, open." : "More, closed.");
+      return;
+    }
     if (tile.getAttribute("aria-disabled") === "true") {
       say(tile.getAttribute("title"));
       paintRail();
@@ -8221,6 +8384,20 @@ window.__SUITE = (function () {
      the add verb on a phone and not at a desk, so its membership is
      different at the two widths and cannot be written down. */
   deck.addEventListener("keydown", function (event) {
+    /* Escape closes the plus, from anywhere, and puts the reader back on
+       the control that opened it. Sited before the rover's own test so it
+       works while focus is inside the panel, where there is no [data-rail]
+       to close on. */
+    if (event.key === "Escape" && moreOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      moreOpen = false;
+      paintRail();
+      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      if (plus) plus.focus();
+      say("More, closed.");
+      return;
+    }
     var tile = event.target.closest && event.target.closest(".rail [data-rail]");
     if (!tile) return;
     /* offsetParent is null for anything display:none — the same predicate

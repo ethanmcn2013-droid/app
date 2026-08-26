@@ -132,45 +132,64 @@ body {
   padding: 10px 0;
   z-index: 4;
 }
-.railMark {
+/* ── the brand ──────────────────────────────────────────────────
+   One indigo dot. It was a four-square grid glyph with a dot beside it,
+   which reads as a menu button and invited a press that went nowhere —
+   an honest door nobody asked for. A dot is the whole identity, asks for
+   nothing, and is the only indigo in the rail, so it also marks the top
+   of the spine without a rule or a divider doing it. */
+.railBrand {
   width: var(--tap); height: var(--tap);
   display: grid; place-items: center;
-  color: var(--on-ink-1);
-  position: relative;
-  border-radius: 12px;
+  flex: none;
 }
-.railMark svg { width: 19px; height: 19px; }
+.railBrand::after {
+  content: "";
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--indigo);
+}
 /* Ink, not indigo. The Tasks lock states the rule at class level: "the
    accent is spent only on what the specimen sheet says it means", and it
    names the rail dot as one of the two places that made the claim false.
    Notes' own master still painted this dot indigo; the rail is one object
    now, so it takes the rule that was argued rather than the one that was
    inherited. Recorded in COMPOSITION.md. */
-.railMark i {
-  position: absolute; right: 9px; bottom: 10px;
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--on-ink-1);
-}
 .railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
 .railGroup, .railUtil { display: grid; gap: 4px; }
 /* Buttons, not href-less anchors. The reset means the change costs no
    pixels. */
-.railTile, .railMark, .railAvatar {
+.railTile, .railAvatar {
   font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit;
   background: none; border: 0; padding: 0;
   -webkit-appearance: none;
 }
 .railAvatar { cursor: pointer; }
+/* ── a product tile carries its own name ────────────────────────
+   The rail was three abstract glyphs and the reader had to decode them.
+   A 10px word under the icon costs eight pixels of height and removes the
+   decoding entirely — the glyph still does the work at a glance, the word
+   is there for the FIRST glance rather than the hundredth. Utilities do
+   not get one: a utility is not a destination, and naming it would flatten
+   the hierarchy the products have just gained. */
 .railTile {
-  width: var(--tap); height: var(--tap);
+  width: var(--tap); min-height: var(--tap);
   border-radius: 12px;
-  display: grid; place-items: center;
+  display: grid; place-items: center; gap: 2px;
+  padding: 6px 0 5px;
   color: var(--on-ink-2);
   position: relative;
   cursor: pointer;
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
+.railTile[data-util] { height: var(--tap); padding: 0; gap: 0; }
 .railTile svg { width: 19px; height: 19px; }
+.railName {
+  font-size: 10px; font-weight: 400;
+  line-height: 1; letter-spacing: 0.005em;
+  /* The one place the rail may clip: "Timeline" is the longest word that
+     has to fit 64px of capsule, and it fits at 10px with room to spare. */
+  max-width: 100%;
+}
 .railTile:not([aria-disabled="true"]):hover { color: var(--on-ink-1); background: var(--chrome-active); }
 .railTile[data-active] { color: var(--ink-1); background: var(--white); }
 /* The capsule points at the sheet it opened. */
@@ -290,7 +309,8 @@ body {
 #deck[data-radius="round"] .railTile,
 #deck[data-radius="round"] .railAdd { border-radius: 16px; }
 #deck[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
-#deck[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
+/* The brand dot is already indigo, so the forward preset has nothing
+   left to add to it. */
 
 /* ── the phone ───────────────────────────────────────────────────
    Both locks say the same thing — on a phone the capsule and the dock are
@@ -317,9 +337,18 @@ body {
     flex-direction: row; justify-content: space-around;
     border-radius: 18px; padding: 0 8px;
   }
-  .railMark, .railDivider, .railSpacer { display: none; }
+  /* On a phone the capsule IS the dock, so the brand, the divider and the
+     labels all go: a five-across row of icon-plus-word does not fit 390px
+     and the words would be the first thing to clip. */
+  .railBrand, .railDivider, .railSpacer { display: none; }
+  .railName { display: none; }
+  .railTile { min-height: var(--tap); height: var(--tap); padding: 0; gap: 0; }
   .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
-  .railUtil { display: none; }
+  /* The plus stays. It is the ONLY route to the other doors on a phone, and
+     hiding it there would delete them rather than move them. Settings does
+     not fit a five-across dock and lives behind the plus at this width. */
+  .railUtil { display: flex; gap: 2px; }
+  .railUtil .railTile[data-rail="settings"] { display: none; }
   .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
   .railAdd {
     display: grid; place-items: center;
@@ -340,4 +369,63 @@ body {
   /* Timeline has no dock and no add verb: the capsule is the way out and
      it carries only the suite. */
   #deck[data-product="timeline"] .railAdd { display: none; }
+}
+
+/* ── more, behind the plus ──────────────────────────────────────
+   The doors the rail used to spend three tiles on. They are not deleted —
+   deleting an honest door is how a product starts lying about what it is —
+   they sit one press away, still in the tab order, still saying plainly
+   that they are not here yet. The panel is chrome, not sheet: it is the
+   rail's own object and it wears the rail's ink. */
+.morePop {
+  position: absolute;
+  left: calc(100% + 10px); bottom: 62px;
+  width: 216px;
+  padding: 7px;
+  background: var(--chrome);
+  box-shadow: inset 0 0 0 1px var(--chrome-line), var(--float);
+  border-radius: 14px;
+  display: grid; gap: 1px;
+  z-index: 6;
+  animation: morePopIn var(--dur) var(--curve) both;
+}
+@keyframes morePopIn {
+  from { opacity: 0; transform: translateY(4px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .morePop { animation: none; }
+}
+.morePop p {
+  margin: 0; padding: 7px 9px 5px;
+  font-size: var(--t-11); font-weight: 400;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-cap);
+  text-indent: var(--tr-cap);
+  text-transform: uppercase;
+  color: var(--on-ink-3);
+}
+.moreItem {
+  font-family: inherit; font-size: 13px; font-weight: 400;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-13);
+  background: none; border: 0;
+  display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 9px;
+  min-height: 36px; padding: 0 9px;
+  border-radius: 9px;
+  color: var(--on-ink-2);
+  text-align: left;
+  cursor: default;
+}
+.moreItem svg { width: 16px; height: 16px; }
+.moreItem em {
+  font-style: normal;
+  font-size: var(--t-11); letter-spacing: var(--tr-cap);
+  color: var(--on-ink-3);
+}
+/* A closed door does not light up under the pointer. It answers when
+   pressed — the sentence is spoken — and that is the whole affordance. */
+.moreItem:hover { background: var(--chrome-active); }
+.railTile[data-open] { color: var(--on-ink-1); background: var(--chrome-active); }
+@media (max-width: 720px) {
+  /* The dock has no room beside it; the panel comes up off the dock. */
+  .morePop { left: auto; right: 8px; bottom: calc(100% + 10px); }
 }

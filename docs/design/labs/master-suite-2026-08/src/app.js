@@ -97,9 +97,18 @@ window.__SUITE = (function () {
     home: "Every project in one list. Not here yet.",
     inbox: "What came in while you were working. Not here yet.",
     help: "Guides and support. Not here yet.",
-    mark: "Every Signal Studio app in one place. Not here yet.",
+    settings: "Your workspace, your way. Not here yet.",
     me: "Your account, in Signal Studio. Not here yet.",
   };
+  /* The doors that used to sit in the rail. They are not deleted — deleting
+     an honest door is how a product starts lying about what it is — they
+     move behind the plus, where the rail can be three products and nothing
+     else and the doors are still one press and still in the tab order. */
+  var MORE_DOORS = [
+    { key: "home", label: "All projects" },
+    { key: "inbox", label: "Inbox" },
+    { key: "help", label: "Help" },
+  ];
   var LABEL = { notes: "Notes", tasks: "Tasks", timeline: "Timeline" };
 
   /* ── the spine ────────────────────────────────────────────────
@@ -108,10 +117,18 @@ window.__SUITE = (function () {
      written: one piece of state says where the group's index is, every
      button is addressed by the same key, and the position survives a
      repaint — and now a product switch as well. */
+  /* Is the plus open? One flag, because the rail is rendered whole. */
+  var moreOpen = false;
+
   function railHtml() {
     if (!railCurrent) railCurrent = current;
     var stop = function (key) { return ' tabindex="' + (key === railCurrent ? "0" : "-1") + '"'; };
     var notYet = function (what) { return ' aria-disabled="true" title="' + esc(what) + '"'; };
+    /* A product tile carries its own name. The rail was three abstract
+       glyphs and a reader had to decode them; a 10px word under the icon
+       costs eight pixels of height and removes the decoding entirely. The
+       icon still does the work at a glance — the word is there for the
+       first glance, not the hundredth. */
     var tile = function (key, label, live) {
       var active = live && key === current;
       return '<button type="button" class="railTile" data-rail="' + key + '" aria-label="' + esc(label) +
@@ -119,21 +136,46 @@ window.__SUITE = (function () {
         (active
           ? ' data-active aria-current="page" title="' + esc(label) + '"'
           : live ? ' title="' + esc(label) + '"' : notYet(NOT_YET[key] || label)) +
-        ">" + I[key] + "</button>";
+        ">" + I[key] + '<span class="railName">' + esc(label) + "</span></button>";
     };
+    /* No label, no name underneath: a utility is not a destination and
+       giving it one would flatten the hierarchy the products just gained. */
+    var util = function (key, label, extra) {
+      return '<button type="button" class="railTile" data-util data-rail="' + key +
+        '" aria-label="' + esc(label) + '"' + stop(key) + (extra || "") + ">" + I[key] + "</button>";
+    };
+    /* Settings has no room in a five-across dock, so on a phone it joins the
+       doors behind the plus rather than disappearing. */
+    var phone = matchMedia("(max-width: 720px)").matches;
+    var list = phone
+      ? MORE_DOORS.concat([{ key: "settings", label: "Settings" }])
+      : MORE_DOORS;
+    var doors = list.map(function (d) {
+      return '<button type="button" class="moreItem" data-door="' + d.key + '" aria-disabled="true" title="' +
+        esc(NOT_YET[d.key]) + '">' + I[d.key] + "<span>" + esc(d.label) + "</span>" +
+        '<em>Not here yet</em></button>';
+    }).join("");
     return (
       '<nav class="rail" data-group="rail" aria-label="Signal Studio">' +
-      '<button type="button" class="railMark" data-rail="mark" aria-label="Signal Studio"' + stop("mark") +
-        notYet(NOT_YET.mark) + ">" + I.more + "<i></i></button>" +
+      /* The brand is a dot. It was a four-square grid glyph with a dot beside
+         it, which read as a menu and invited a press that went nowhere. One
+         indigo dot is the whole identity and it asks for nothing. */
+      '<span class="railBrand" aria-label="Signal Studio" role="img"></span>' +
       '<span class="railDivider"></span>' +
       '<div class="railGroup">' +
-        tile("home", "Home", false) +
         tile("notes", "Notes", true) +
         tile("tasks", "Tasks", true) +
         tile("timeline", "Timeline", true) +
       "</div>" +
       '<span class="railSpacer"></span>' +
-      '<div class="railUtil">' + tile("inbox", "Inbox", false) + tile("help", "Help and settings", false) + "</div>" +
+      '<div class="railUtil">' +
+        util("plus", "More", ' aria-expanded="' + (moreOpen ? "true" : "false") +
+          '" aria-haspopup="menu"' + (moreOpen ? " data-open" : "")) +
+        util("settings", "Settings", notYet(NOT_YET.settings)) +
+      "</div>" +
+      (moreOpen
+        ? '<div class="morePop" role="menu" aria-label="More"><p>Also in Signal Studio</p>' + doors + "</div>"
+        : "") +
       '<button type="button" class="railAdd" data-rail="add" aria-label="Add task"' + stop("add") + ">" + I.plus + "</button>" +
       '<button type="button" class="railAvatar" data-rail="me" aria-label="' + esc(B.operator.role) + '"' +
         stop("me") + notYet(NOT_YET.me) + ">" + B.operator.initials + "</button>" +
@@ -388,11 +430,34 @@ window.__SUITE = (function () {
   function register(name, api) { registry[name] = api; }
 
   deck.addEventListener("click", function (event) {
+    /* A press anywhere that is not the plus or its own panel closes the
+       panel. Sited before the tile test so a press on the floor closes it
+       too, and after nothing, so it cannot be skipped by an early return. */
+    var insideMore = event.target.closest &&
+      (event.target.closest(".morePop") || event.target.closest('[data-rail="plus"]'));
+    if (moreOpen && !insideMore) { moreOpen = false; paintRail(); }
+
+    var door = event.target.closest && event.target.closest(".moreItem");
+    if (door) {
+      event.preventDefault();
+      say(door.getAttribute("title"));
+      return;
+    }
+
     var tile = event.target.closest && event.target.closest("[data-rail]");
     if (!tile) return;
     event.preventDefault();
     var key = tile.dataset.rail;
     railCurrent = key;
+
+    if (key === "plus") {
+      moreOpen = !moreOpen;
+      paintRail();
+      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      if (plus) plus.focus();
+      say(moreOpen ? "More, open." : "More, closed.");
+      return;
+    }
     if (tile.getAttribute("aria-disabled") === "true") {
       say(tile.getAttribute("title"));
       paintRail();
@@ -429,6 +494,20 @@ window.__SUITE = (function () {
      the add verb on a phone and not at a desk, so its membership is
      different at the two widths and cannot be written down. */
   deck.addEventListener("keydown", function (event) {
+    /* Escape closes the plus, from anywhere, and puts the reader back on
+       the control that opened it. Sited before the rover's own test so it
+       works while focus is inside the panel, where there is no [data-rail]
+       to close on. */
+    if (event.key === "Escape" && moreOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      moreOpen = false;
+      paintRail();
+      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      if (plus) plus.focus();
+      say("More, closed.");
+      return;
+    }
     var tile = event.target.closest && event.target.closest(".rail [data-rail]");
     if (!tile) return;
     /* offsetParent is null for anything display:none — the same predicate
