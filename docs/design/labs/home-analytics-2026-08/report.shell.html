@@ -433,23 +433,33 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     /* One lane per round, stacked, so an earlier score sits under the current
        one rather than hidden behind it. */
     const lane = Math.max(3, Math.floor(18 / rounds.length) - 2);
+    /* A seat that did not sit a round has no score for it, and the method
+       prescribes exactly that: seven seats at round 1, at an audit and at
+       the close, a rotating three between. An absent score is a gap, never
+       a zero — drawing it as one would show a seat that skipped a round as
+       a seat that failed it. */
+    const sat = function (r) { return typeof r.scores[seat] === "number"; };
     const bars = rounds.map(function (r, i) {
+      if (!sat(r)) return "";
       const isLast = i === rounds.length - 1;
       return '<i style="left:0;width:' + (r.scores[seat] * 10) + "%;top:" + (2 + i * (lane + 2)) +
         "px;height:" + lane + 'px"' + (isLast ? " data-latest" : "") + "></i>";
     }).join("");
     const marks = rounds.map(function (r, i) {
       const isLast = i === rounds.length - 1;
+      if (!sat(r)) return '<span style="opacity:0.35">\u2014</span>';
       return "<span" + (isLast ? ' style="color:var(--ink-1)"' : "") + ">" + r.scores[seat].toFixed(1) + "</span>";
     }).join("");
-    const first = rounds[0].scores[seat];
-    const last = latest.scores[seat];
-    const delta = last - first;
+    /* The delta spans the rounds this seat actually sat, not round 1 to now. */
+    const satRounds = rounds.filter(sat);
+    const first = satRounds.length ? satRounds[0].scores[seat] : null;
+    const last = satRounds.length ? satRounds[satRounds.length - 1].scores[seat] : null;
+    const delta = first === null ? null : last - first;
     row.innerHTML =
       '<span class="seat">' + seat + "</span>" +
       '<span class="track">' + bars + '<b style="left:' + GATE * 10 + '%"></b></span>' +
       '<span class="scores">' + marks +
-      (rounds.length > 1 ? '<span class="delta">' + (delta >= 0 ? "+" : "") + delta.toFixed(1) + "</span>" : "") +
+      (satRounds.length > 1 ? '<span class="delta">' + (delta >= 0 ? "+" : "") + delta.toFixed(1) + "</span>" : "") +
       "</span>";
     chart.appendChild(row);
   });

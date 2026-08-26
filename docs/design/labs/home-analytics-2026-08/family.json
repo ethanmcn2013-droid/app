@@ -1,12 +1,12 @@
 {
   "product": "Lately",
-  "rounds": 0,
+  "rounds": 3,
   "urls": {
-    "ceo": "",
+    "ceo": "https://claude.ai/code/artifact/bbc3c970-d680-4065-ad45-10cbedadd30f",
     "console": "https://claude.ai/code/artifact/d894ef6e-3018-4f05-a64e-66dc966396c8",
     "log": "https://claude.ai/code/artifact/885389f0-bebd-4420-a950-56e9cb307273",
-    "question": "",
-    "method": "",
+    "question": "https://claude.ai/code/artifact/63088e5d-51d5-4a70-ac35-e804bdd2f3eb",
+    "method": "https://claude.ai/code/artifact/c7863a3d-bdf7-4677-bab5-58279265b1cf",
     "surface": "https://claude.ai/code/artifact/9973453b-6d1b-4f10-88fb-c626e1e286e6",
     "plan": "https://claude.ai/code/artifact/a3ebb330-0445-4265-ab66-503458fb80f6"
   },

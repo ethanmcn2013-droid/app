@@ -1,3 +1,36 @@
+<!--fam:start-->
+<nav class="famRail" aria-label="The Lately elevation — five documents">
+  <div class="famRail-in">
+    <span class="famRail-mark"><span class="famRail-dot"></span><b>Signal Studio</b><i>/</i><em>Lately</em></span>
+    <ol class="famRail-set"><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/bbc3c970-d680-4065-ad45-10cbedadd30f"><span class="famRail-n">01</span><span class="famRail-t">CEO Report</span></a></li><li class="famRail-item is-here"><span class="famRail-link" aria-current="page"><span class="famRail-n">02</span><span class="famRail-t">Design Console</span></span></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/885389f0-bebd-4420-a950-56e9cb307273"><span class="famRail-n">03</span><span class="famRail-t">Elevation Log</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/63088e5d-51d5-4a70-ac35-e804bdd2f3eb"><span class="famRail-n">04</span><span class="famRail-t">The Honest Distance</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/c7863a3d-bdf7-4677-bab5-58279265b1cf"><span class="famRail-n">05</span><span class="famRail-t">3 Rounds</span></a></li></ol>
+    
+  </div>
+</nav>
+<style>
+.famRail { position: sticky; top: 0; z-index: 40; background: var(--paper, #fff); border-bottom: 1px solid var(--line, rgba(17,17,17,.1)); }
+.famRail-in { display: flex; align-items: center; gap: 18px; padding: 10px 20px; max-width: 1180px; margin: 0 auto; }
+.famRail-mark { display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: var(--ink, #111); }
+.famRail-mark i { opacity: .4; }
+.famRail-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--accent, #4f46e5); }
+.famRail-set { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; overflow-x: auto; scrollbar-width: none; }
+.famRail-set::-webkit-scrollbar { display: none; }
+.famRail-link { display: flex; align-items: baseline; gap: 6px; padding: 5px 9px; border-radius: 6px;
+  font-size: 12px; text-decoration: none; color: var(--ink-2, rgba(17,17,17,.66)); white-space: nowrap; }
+a.famRail-link:hover { background: var(--wash, rgba(17,17,17,.05)); color: var(--ink, #111); }
+.famRail-n { font-variant-numeric: tabular-nums; opacity: .5; font-size: 11px; }
+.is-here .famRail-link { color: var(--ink, #111); font-weight: 600; background: var(--wash, rgba(17,17,17,.06)); }
+.is-soon .famRail-link { opacity: .38; }
+.famRail-sibs { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; white-space: nowrap; }
+.famRail-sibsLabel { color: var(--ink-2, rgba(17,17,17,.55)); }
+.famRail-sib { color: var(--ink, #111); text-decoration: none; border-bottom: 1px solid var(--line, rgba(17,17,17,.2)); }
+@media (max-width: 760px) {
+  .famRail-in { gap: 10px; padding: 8px 12px; }
+  .famRail-sibs { display: none; }
+  .famRail-t { display: none; }
+  .is-here .famRail-t { display: inline; }
+}
+</style>
+<!--fam:end-->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lately Design Console</title>
 <style>
@@ -139,6 +172,15 @@ body {
 .stageBar { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .stageBar .groupLabel { margin-right: -10px; }
 .stageTabs { display: inline-flex; gap: 3px; padding: 3px; background: var(--ui-panel); border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ui-line); }
+/* Seven state tabs measure 436px and the phone is 390. The page body
+   never scrolls sideways, so the pill takes the scroll itself and keeps
+   its shape — the alternative, wrapping it, breaks the pill into two
+   half-pills and loses the one-control reading. */
+@media (max-width: 520px) {
+  .stageTabs { display: flex; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .stageTabs::-webkit-scrollbar { display: none; }
+  .stageTab { flex: none; }
+}
 .stageTab {
   appearance: none; border: 0; cursor: pointer; font: inherit;
   font-size: 12.5px; color: var(--ui-text);
@@ -306,7 +348,9 @@ body {
   padding-top: var(--gap-tight); padding-bottom: var(--gap-snug);
   transition: color 0.14s var(--ease);
 }
+@media (hover: hover) {
 .deck .tab:hover { color: var(--ink); }
+}
 .deck .tab[aria-current="page"] { color: var(--ink); font-weight: 600; }
 .deck .tab[aria-current="page"]::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
@@ -418,7 +462,10 @@ body {
 .deck .dot::after { content: ""; position: absolute; top: -8px; right: -11px; bottom: -8px; left: -11px; border-radius: 14px; }
 .deck .dot.old::before { background: var(--disc); }
 .deck .dot.old { --disc: var(--accent); }
-.deck .dot:hover, .deck .dot:focus-visible { --disc: var(--ink); }
+@media (hover: hover) {
+.deck .dot:hover { --disc: var(--ink); }
+}
+.deck .dot:focus-visible { --disc: var(--ink); }
 .deck .dot:active { --disc: var(--ink-2); }
 .deck .dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .deck .fortnight { position: absolute; top: 0; bottom: 20px; left: calc(var(--x) * 1%); width: 0; border-left: 1px dashed var(--line); }
@@ -442,6 +489,7 @@ body {
 .deck .tip.on { opacity: 1; transform: translateY(0); }
 .deck .limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-line); }
 .deck .limit { padding: var(--gap-line); display: flex; flex-direction: column; gap: var(--gap-snug); background: var(--paper-3); border-radius: 12px; }
+.deck .limit .t-small { max-width: 330px; }
 .deck .limit .t-label { color: var(--ink-2); }
 .deck .ghost { position: relative; margin: var(--gap-line) 0 0; padding: var(--gap-room); border: 1px dashed var(--line); border-radius: 12px; }
 .deck .ghost-plot::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
@@ -465,10 +513,12 @@ body {
   background: var(--paper); color: var(--ink); cursor: pointer;
   transition: background-color 0.14s var(--ease), border-color 0.14s var(--ease);
 }
+@media (hover: hover) {
 .deck .btn:hover { background: var(--paper-3); border-color: var(--ink-4); }
+}
 .deck .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .deck .btn:active { border-color: var(--ink-3); transform: translateY(1px); }
-.deck .sk-wrap { pointer-events: none; }
+.deck .sk-wrap { pointer-events: none; -webkit-user-select: none; user-select: none; }
 .deck .sk-wrap [data-type] { color: transparent; background: var(--wash); border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .deck .sk-wrap .bar { background: var(--wash); border: 0; }
 .deck .sk-wrap .dot::before, .deck .sk-wrap .meter i, .deck .sk-wrap .glyph { background: var(--wash); box-shadow: none; }
@@ -501,14 +551,20 @@ body {
 .deck[data-motion="settled"] .record { clip-path: none; opacity: 1; }
 .deck[data-w="768"] .hero { grid-template-columns: 1fr; gap: var(--gap-room); }
 .deck[data-w="768"] .kpis { grid-template-columns: repeat(2, 1fr); }
-.deck[data-w="768"] .kpi.lead { grid-column: 1 / -1; }
+.deck[data-w="768"] .kpi.lead { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: var(--gap-snug); flex-wrap: wrap; }
+.deck[data-w="768"] .kpi.lead > .t-label { height: auto; }
+.deck[data-w="768"] .kpi.lead > .t-small { flex: 0 1 auto; }
 .deck[data-w="768"] .limits { grid-template-columns: 1fr; }
 .deck[data-w="768"] .sk-row { grid-template-columns: repeat(2, 1fr); }
 .deck[data-w="390"] .hero { grid-template-columns: 1fr; gap: var(--gap-room); }
 .deck[data-w="390"] .kpis { grid-template-columns: repeat(2, 1fr); }
-.deck[data-w="390"] .kpi.lead { grid-column: 1 / -1; }
+.deck[data-w="390"] .kpi.lead { grid-column: 1 / -1; flex-direction: row; align-items: baseline; gap: var(--gap-snug); flex-wrap: wrap; }
+.deck[data-w="390"] .kpi.lead > .t-label { height: auto; }
+.deck[data-w="390"] .kpi.lead > .t-small { flex: 0 1 auto; }
 .deck[data-w="390"] .limits { grid-template-columns: 1fr; }
 .deck[data-w="390"] .sk-row { grid-template-columns: repeat(2, 1fr); }
+.deck .ghost-say .t-head, .deck .center .t-sect, .deck .center .t-body, .deck .kpi > .t-small, .deck .ages .band-head .t-head { text-wrap: balance; }
+.deck .limit .t-small, .deck .hero-note, .deck .note .t-body { text-wrap: pretty; }
 .deck .reading[data-wrapped] { gap: var(--gap-tight); }
 .deck .reading[data-wrapped] .rule { display: none; }
 .deck .reading[data-wrapped] p:not(:first-child)::before { content: "\00b7\00a0"; }
@@ -555,7 +611,13 @@ body {
 
     <div class="frame" id="frame">
       <div class="deck" id="deck"><div id="root"></div>
-<div class="tip t-small" id="tip" role="presentation"></div></div>
+<!-- aria-hidden, not emptied. The tip is a visual echo of a name the
+     mark already carries, so nothing is lost by taking it out of the
+     tree — and it holds no focusable descendant and nothing points at it
+     with aria-describedby. Clearing innerHTML instead would put the
+     markup re-parse back on every pointerleave, which is what round 1
+     separated fill from place to avoid. -->
+<div class="tip t-small" id="tip" role="presentation" aria-hidden="true"></div></div>
     </div>
 
     <p class="footNote" id="footNote"></p>
@@ -1032,19 +1094,25 @@ function label(text) {
    plural under a numeral that can be 1 printed "1 have nobody's name on
    them" on screen and spoke it aloud. Zero keeps the plural, which is
    already correct. */
-function kpi({ n, word, glyph, tone, i, unavailable = false }) {
+/* naPhrase exists because the plural string was doing two jobs. As the
+   card s own sentence it wants a finite verb — "are past the day they
+   were due" — and as the noun phrase inside "Jobs ___: not available" it
+   cannot have one. One card carried the noun phrase in both places and
+   so read as the only card in the row without a verb. */
+function kpi({ n, word, glyph, tone, i, unavailable = false, naPhrase }) {
+  const na = naPhrase ?? word.many;
   const known = !unavailable;
   const phrase = n === 1 ? word.one : word.many;
   const share = known && D.open ? Math.min(1, n / D.open) : 0;
   const name = known
     ? `${plural(n, "job", "jobs")} ${phrase}, of ${plural(D.open, "job", "jobs")} open`
-    : `Jobs ${word.many}: not available, because Timeline did not answer`;
+    : `Jobs ${na}: not available, because Timeline did not answer`;
   const body = `
       <span class="glyph" aria-hidden="true" style="color:var(${tone})">${glyph}</span>
       ${known
         ? `<span class="t-num" data-type="bignum" aria-hidden="true">${n}</span>`
         : `<span class="t-num na" data-type="bignum" aria-hidden="true">&mdash;</span>`}
-      <span class="t-small dim-2" data-type="small" aria-hidden="true">${esc(known ? phrase : word.many)}</span>
+      <span class="t-small dim-2" data-type="small" aria-hidden="true">${esc(known ? phrase : na)}</span>
       ${known
         ? `<span class="meter" aria-hidden="true"><i class="${n === 0 ? "zero" : ""}" style="--f:${share};--i:${i}"></i></span>`
         : `<span class="t-label dim" data-type="label" aria-hidden="true">Not available</span>`}
@@ -1093,9 +1161,19 @@ function chart({ record = true } = {}) {
     : "";
   /* Three gridlines with their values, so the columns are read against a
      magnitude rather than only against each other. */
+  /* The ceiling label stands down when the live mark has already said
+     that number. max is Math.max(D.peak, D.bestPrior) and D.peak counts
+     the running week, so on any fixture where this week is the best week
+     — the shipped one, and the case the chart exists to show — the top
+     gridline and the live column printed the same numeral at the same
+     height, 15px apart. Two labels for one fact is not a scale; it reads
+     as two different quantities that happen to agree. The rule still
+     draws, because the reader still needs the height. */
+  const liveValue = D.weeks.length ? D.weeks[D.weeks.length - 1].v : null;
   const grid = [0.5, 1].map((g) => {
     const v = Math.round(max * g);
-    return `<span class="gridline" style="bottom:${g * 100}%"><b class="t-label" data-type="label">${v}</b></span>`;
+    const saidByTheMark = g === 1 && v === liveValue;
+    return `<span class="gridline" style="bottom:${g * 100}%">${saidByTheMark ? "" : `<b class="t-label" data-type="label">${v}</b>`}</span>`;
   }).join("");
   return `
     <div class="chart">
@@ -1159,7 +1237,7 @@ function strip() {
         ${dots}
         <span class="strip-scale">${marks.map((n) => `<span class="t-unit" data-type="unit" style="--x:${(n / D.axisMax) * 100}">${n === 0 ? "today" : n + "d"}</span>`).join("")}</span>
       </div>
-      <p class="sr">${plural(D.jobs.length, "open job", "open jobs")}, by age: ${D.jobs.map((j) => `${j.title}, ${j.age} days`).join("; ")}. ${plural(D.sitting, "job has", "jobs have")} been open longer than a fortnight.</p>
+      <p class="sr">${plural(D.jobs.length, "open job", "open jobs")}, by age: ${D.jobs.map((j) => `${j.title}, ${plural(j.age, "day", "days")}`).join("; ")}. ${plural(D.sitting, "job has", "jobs have")} been open longer than a fortnight.</p>
     </div>`;
 }
 
@@ -1174,7 +1252,7 @@ function movementTwo({ partial = false } = {}) {
       <div class="kpis">
         ${leadKpi(0)}
         ${kpi({ n: D.sitting, word: { one: "hasn’t moved in a fortnight", many: "haven’t moved in a fortnight" }, glyph: ICON.still, tone: TONE.still, i: 1 })}
-        ${kpi({ n: D.overdue, word: { one: "is past the day it was due", many: "past the day they were due" }, glyph: ICON.past, tone: TONE.past, i: 2, unavailable: partial })}
+        ${kpi({ n: D.overdue, word: { one: "is past the day it was due", many: "are past the day they were due" }, naPhrase: "past the day they were due", glyph: ICON.past, tone: TONE.past, i: 2, unavailable: partial })}
         ${kpi({ n: D.unowned, word: { one: "has nobody’s name on it", many: "have nobody’s name on them" }, glyph: ICON.nobody, tone: TONE.nobody, i: 3 })}
         ${kpi({ n: D.waiting, word: { one: "is waiting on something else", many: "are waiting on something else" }, glyph: ICON.waiting, tone: TONE.waiting, i: 4 })}
       </div>
@@ -1263,8 +1341,13 @@ function shell(inner) {
         <span><b>Timeline</b> ${esc(sources.timeline)}</span>
         <span><b>Notes</b> ${esc(sources.notes)}</span>
         <span><b>Read</b> ${esc(D.readingLong)}</span>
-        <span><b>Lab</b> counts and ages are lab-authored</span>
-        <span><b>Bound</b> workspace, owner, reading date and the ${D.open}</span>
+        <span><b>Lab-authored</b> counts and ages</span>
+        <!-- The last two words are bound to the numeral. At 390 this stamp
+             is 349px in a 342px box, so it wraps — and wrapped on a space it
+             left the bare digit alone on line two, a number with nothing to
+             say what it counts. nowrap is the wrong instrument here: it
+             turns the wrap into an overflow. -->
+        <span><b>Bound</b> workspace, owner, reading date and&nbsp;the&nbsp;${D.open}</span>
       </footer>
     </div></div></div>
   </div>`;
@@ -1305,7 +1388,7 @@ const VIEW = {
             <div class="hero-n"><span class="t-hero" data-type="hero">${D.thisWeek}</span></div>
             <p class="t-body dim-2 hero-note" data-type="body">jobs finished since you started, ${esc(D.workspace)}</p>
           </div>
-          <p class="t-small dim hero-note" data-type="small">Four weeks of records make a comparison worth printing. Yours arrive on ${esc(D.comparisonArrives)}.</p>
+          <p class="t-small dim hero-note" data-type="small">Four weeks of records make a comparison worth printing. Yours arrive on ${esc(D.comparisonArrives).replace(/ /g, "\u00a0")}.</p>
         </div>
         <div class="chart">
           <div class="plot solo" aria-hidden="true">
@@ -1347,7 +1430,12 @@ const VIEW = {
     <section class="band" aria-labelledby="mError">
       <div class="card rise" style="--i:0">
         <div class="center">
-          <div role="alert">
+          <!-- .stack, not a bare div. The role="alert" wrapper the r1 fix
+               added made the heading and its sentence children of an element
+               with no gap, so the 16px rung the empty and quiet states keep
+               collapsed to nothing here. .stack already declares exactly the
+               column and gap this needs. -->
+          <div class="stack" role="alert">
             <h2 class="t-sect" id="mError" data-type="sect">Tasks did not answer</h2>
             <p class="t-body dim-2" data-type="body">This reading needs the Tasks records and they did not come back. Nothing below is shown, because a part of this screen would be guessing.</p>
           </div>
@@ -1510,7 +1598,19 @@ if (fatal) {
 
   for (const el of root.querySelectorAll("[data-tip]")) {
     el.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") show(el); });
-    el.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") hide(); });
+    /* Hand the tip back to a mark that is still visibly focused. The
+       pointer leaving is not the keyboard leaving, and the mark s title
+       lives nowhere else on the screen. Gated on :focus-visible rather
+       than on focus, so a mouse-clicked mark still clears. */
+    el.addEventListener("pointerleave", (e) => {
+      if (e.pointerType === "touch") return;
+      const held = document.activeElement;
+      if (!pinned && held && held.dataset && held.dataset.tip && held.matches(":focus-visible")) {
+        show(held);
+        return;
+      }
+      hide();
+    });
     el.addEventListener("pointerdown", (e) => {
       if (e.pointerType !== "touch") return;
       e.preventDefault();
@@ -1522,6 +1622,14 @@ if (fatal) {
     el.addEventListener("blur", () => hide());
     el.addEventListener("click", (e) => e.preventDefault());
   }
+  /* The tab that is already current has nowhere to go — not in this lab
+     and not in the product — so activating it only pushed a history entry
+     and snapped the document to the top. Its two siblings are left alone:
+     they carry real routes after the port, and guarding them here would
+     be guarding against the thing they exist to do. */
+  const currentTab = root.querySelector('.tab[aria-current="page"]');
+  if (currentTab) currentTab.addEventListener("click", (e) => e.preventDefault());
+
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") drop(); });
 
   /* The skeleton is the real composition with its ink out, so it arrives

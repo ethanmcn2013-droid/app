@@ -1,0 +1,189 @@
+{
+  "note": "Round 3, the close. Seven blind seats raised 36 findings as filed; they cluster to 28 distinct claims. Every alias is kept, so convergence is recorded as evidence rather than as duplicated work. `selfInflicted` is attributed against the fix scripts themselves, not estimated: a claim is flagged true only when the element or assertion it lands on was authored or restructured by a round-1 or round-2 fix batch, checked by grepping panel/fix-*.py for the exact string. Where a fix script used a string as an ANCHOR rather than introducing it, the defect pre-dates remediation and the flag is false — that check moved five claims from true to false.",
+  "clusters": [
+    {
+      "id": "gate-word-boundaries-are-double-escaped-and-cannot-fail",
+      "canonical": "Interaction and states",
+      "aliases": [
+        "two-gate-guards-match-a-literal-backslash:Typography",
+        "gate-regexes-lost-their-escapes:Measured evidence"
+      ],
+      "selfInflicted": true,
+      "note": "Three seats, independently, each proving it from a file rather than a shell. The strongest convergence of the engagement."
+    },
+    {
+      "id": "error-reading-assertion-cannot-fail",
+      "canonical": "UX and information design",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "first-run-height-assertion-certifies-its-own-literal",
+      "canonical": "UI composition",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "kpi-row-name-is-checked-for-length-only",
+      "canonical": "Taste and restraint",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "pinned-tip-guard-scrolls-a-container-that-no-longer-scrolls",
+      "canonical": "Measured evidence",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "record-draws-last-cannot-fail-for-its-own-claim",
+      "canonical": "Measured evidence",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "settled-is-proved-by-a-check-that-cannot-see-it",
+      "canonical": "Brand and copy",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "axis-max-and-live-week-print-the-same-number",
+      "canonical": "UI composition",
+      "aliases": [
+        "axis-max-labels-the-live-week-with-its-own-number:UX and information design"
+      ],
+      "selfInflicted": true
+    },
+    {
+      "id": "first-run-hero-is-three-fifths-empty-paper",
+      "canonical": "UI composition",
+      "aliases": [
+        "first-run-hero-reserves-a-chart-it-does-not-draw:UX and information design"
+      ],
+      "selfInflicted": true
+    },
+    {
+      "id": "error-alert-loses-a-rung-the-other-terminal-states-keep",
+      "canonical": "UX and information design",
+      "aliases": [
+        "error-heading-and-its-body-have-no-rung-between-them:UI composition",
+        "error-heading-sits-flush-on-its-own-sentence:Taste and restraint"
+      ],
+      "selfInflicted": true
+    },
+    {
+      "id": "all-five-counted-out-of-nine-when-one-is-not-counted",
+      "canonical": "UX and information design",
+      "aliases": [
+        "partial-row-speaks-a-denominator-one-card-does-not-have:Taste and restraint"
+      ],
+      "selfInflicted": true
+    },
+    {
+      "id": "loading-hands-over-the-reading-it-says-it-has-not-made",
+      "canonical": "Brand and copy",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "loading-footer-stamps-a-reading-it-says-is-still-running",
+      "canonical": "UX and information design",
+      "aliases": [],
+      "selfInflicted": true,
+      "note": "Distinct from the cluster above, and checked: the coverage footer is built at lately.html:950, OUTSIDE the .sk-wrap at :1026. Round 2's neutralising pass could not have reached it, and stopped one element short of the rule it established."
+    },
+    {
+      "id": "nothing-balances-a-last-line",
+      "canonical": "Typography",
+      "aliases": [
+        "ghost-headline-strands-here-at-every-desk-width:Taste and restraint"
+      ],
+      "selfInflicted": true
+    },
+    {
+      "id": "the-bound-stamp-wraps-and-strands-its-digit",
+      "canonical": "Typography",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "the-lab-stamp-repeats-its-own-key",
+      "canonical": "Brand and copy",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "focused-mark-loses-its-name-to-a-pointer-leave",
+      "canonical": "Interaction and states",
+      "aliases": [],
+      "selfInflicted": true
+    },
+    {
+      "id": "the-age-summary-says-one-days",
+      "canonical": "Brand and copy",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "one-of-four-labels-drops-the-verb-the-others-keep",
+      "canonical": "Brand and copy",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "tapped-mark-keeps-the-hover-ink-forever",
+      "canonical": "Measured evidence",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "tooltip-text-stays-in-the-accessibility-tree",
+      "canonical": "Measured evidence",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "tab-strip-activates-into-a-dead-history-entry",
+      "canonical": "Interaction and states",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "strip-marks-name-their-job-only-on-hover",
+      "canonical": "Interaction and states",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "refusal-copy-has-no-measure-ceiling",
+      "canonical": "Typography",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "live-week-label-arrives-before-its-column",
+      "canonical": "Taste and restraint",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "sitting-means-two-opposite-things-in-one-section",
+      "canonical": "UX and information design",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "denominator-plate-keeps-a-portrait-layout-in-a-banner-box",
+      "canonical": "UI composition",
+      "aliases": [],
+      "selfInflicted": false
+    },
+    {
+      "id": "partial-note-explains-the-design-to-the-owner",
+      "canonical": "UX and information design",
+      "aliases": [],
+      "selfInflicted": false
+    }
+  ]
+}

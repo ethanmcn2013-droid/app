@@ -250,12 +250,26 @@ for (const state of config.states) {
   }
 
   /* The columns are read against a magnitude, not only against each other. */
+  /* The scale is stated once, by whichever mark is entitled to state it.
+     The ceiling label stands down when the live column already prints that
+     number, so a membership test over gridline text alone now fails on a
+     correct surface. Both halves are asserted instead, because either one
+     on its own passes by construction: the mid gridline must always carry
+     a numeral, and the peak must be printed somewhere in the plot. */
   const grid = await page.evaluate(() => {
     const lines = Array.from(document.querySelectorAll(".gridline"));
+    const num = (el) => {
+      const m = (el.textContent || "").match(/\d+/);
+      return m ? Number(m[0]) : null;
+    };
     const max = Math.max(...window.LATELY_FIXTURE.weeks.map((w) => w.v));
-    return { n: lines.length, top: lines.map((l) => Number(l.textContent)).includes(max) };
+    const labelled = lines.map(num).filter((n) => n !== null);
+    const live = num(document.querySelector(".plot .colw:last-child .bar-val") ?? document.createElement("i"));
+    return { n: lines.length, labelled, live, max, statesPeak: labelled.includes(max) || live === max };
   });
-  ok("the chart states its own scale", grid.n >= 2 && grid.top, JSON.stringify(grid));
+  ok("the chart states its own scale", grid.n >= 2 && grid.labelled.length >= 1 && grid.statesPeak, JSON.stringify(grid));
+  ok("and it states it once, not twice at the same height",
+    !(grid.labelled.includes(grid.max) && grid.live === grid.max), JSON.stringify(grid));
 
   /* Provenance: which source answered, and which numbers this lab authored. */
   const cover = await page.evaluate(() => document.querySelector(".coverage")?.textContent ?? "");
@@ -264,7 +278,12 @@ for (const state of config.states) {
      is set in: which figures the lab authored, and which are bound to
      the shipping fixture. A single sentence carrying both ran to 134
      characters of tracked uppercase mono. */
-  ok("the surface says which of its numbers are lab-authored", /lab-authored/.test(cover) && /Bound/.test(cover) && /reading date/.test(cover));
+  /* Case-insensitive, because the strip is SET in uppercase and written in
+     sentence case, so which case reaches textContent is a markup detail and
+     not the claim. It went red on "Lab-authored" — which is the assertion
+     doing its job, and worth recording: it is not one of this round s
+     vacuous ones. */
+  ok("the surface says which of its numbers are lab-authored", /lab-authored/i.test(cover) && /Bound/i.test(cover) && /reading date/i.test(cover));
 
   /* The current bucket is drawn open-topped and hatched: the week is not
      over, and a solid column there claims a completed week. */
@@ -350,7 +369,11 @@ for (const state of config.states) {
    Everything relative resolves against one stated reading instant, printed
    once, in every state that renders a reading. */
 {
-  for (const state of ["full", "partial", "quiet", "first-run", "error"]) {
+  /* loading is in this loop now. It was the one state the anchored check
+     omitted, and it is the state whose entire claim is that it has not
+     finished reading — so what it says about the reading instant was the
+     least guarded copy on the surface. */
+  for (const state of ["full", "partial", "quiet", "first-run", "error", "loading"]) {
     const page = await open({ state, reducedMotion: true });
     const anchored = await page.evaluate(() => {
       const want = window.LATELY_FIXTURE.readingLong;
@@ -506,12 +529,32 @@ async function tap(page, selector) {
   const settled = await open({ raw: { state: "full", v: "light" } });
   ok("automation lands on the settled surface by default",
     await settled.evaluate(() => document.documentElement.getAttribute("data-motion") === "settled"));
-  const still = await settled.evaluate(() => {
-    const bar = document.querySelector(".bar");
-    return { h: bar.getBoundingClientRect().height, hero: document.getElementById("count").textContent.trim() };
-  });
-  ok("settled means every column is already at its height", still.h > 8, `${still.h}px`);
   await settled.close();
+
+  /* Measured at 150ms, not at 1800. The twelfth column finishes at 1280ms,
+     so a sample taken at 1800 reads full height whether the surface settled
+     or ran the whole entrance — the check passed on both and proved neither.
+     Two pages, one instant, and the difference between them is the claim. */
+  const heightAt150 = async (motion) => {
+    const c = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+    const p = await c.newPage();
+    const u = new URL(MASTER);
+    u.searchParams.set("state", "full");
+    u.searchParams.set("v", "light");
+    if (motion) u.searchParams.set("motion", motion);
+    await p.goto(u.href, { waitUntil: "load" });
+    await p.waitForTimeout(150);
+    const h = await p.evaluate(() => document.querySelector(".plot .colw .bar").getBoundingClientRect().height);
+    await p.close(); await c.close();
+    return h;
+  };
+  const hSettled = await heightAt150(null);
+  const hPlaying = await heightAt150("play");
+  ok("settled means every column is already at its height",
+    hSettled > 8, `${hSettled.toFixed(2)}px at 150ms`);
+  ok("and the entrance is the thing settled is measured against",
+    hPlaying < hSettled - 8,
+    `settled ${hSettled.toFixed(2)}px vs play ${hPlaying.toFixed(2)}px, both at 150ms`);
 
   const playing = await browser.newContext({ viewport: { width: 1440, height: 960 } });
   const p2 = await playing.newPage();
@@ -531,7 +574,35 @@ async function tap(page, selector) {
   }));
   ok("the entrance actually runs when it is asked to", early.hero < late.hero || early.lastBar < late.lastBar, JSON.stringify({ early, late }));
   ok("the figure counts up from below and never overshoots", early.hero <= late.hero, `${early.hero} then ${late.hero}`);
-  ok("the previous best draws last, after the columns have grown", Number(early.record) < Number(late.record) || early.lastBar < late.lastBar);
+  /* The declared timeline, not a photographed frame. The old test read
+     `record opacity rose OR the last bar grew`, and the right-hand half is
+     a term of the check two lines above that the entrance runs at all —
+     true of any entrance, so the claim could not fail for its own subject.
+     The invariant is that the rule finishes after every column has: the
+     columns end at 1280ms (i*40 + 340 + 500) and the rule ends at 1700ms
+     (1100 + 600). Drop the delay and it goes red. */
+  const seq = await p2.evaluate(() => {
+    const endOf = (el, name) => {
+      const a = el.getAnimations().find((x) => x.animationName === name);
+      if (!a) return null;
+      const t = a.effect.getComputedTiming();
+      return Number(t.delay) + Number(t.activeDuration);
+    };
+    const bars = Array.from(document.querySelectorAll(".plot .colw .bar"))
+      .map((b) => endOf(b, "grow")).filter((n) => n !== null);
+    const rec = document.querySelector(".record");
+    const tag = document.querySelector(".record-tag");
+    return {
+      lastColumn: bars.length ? Math.max(...bars) : null,
+      record: rec ? endOf(rec, "draw") : null,
+      tag: tag ? endOf(tag, "rise") : null,
+    };
+  });
+  ok("the previous best draws last, after the columns have grown",
+    seq.lastColumn !== null && seq.record !== null && seq.record > seq.lastColumn,
+    JSON.stringify(seq));
+  ok("and its tag lands after the rule it labels",
+    seq.tag !== null && seq.tag > seq.record, JSON.stringify(seq));
   await p2.close(); await playing.close();
 }
 
@@ -823,6 +894,14 @@ async function tap(page, selector) {
           fortnight: window.LATELY_FIXTURE.fortnight,
         };
       });
+      /* The guard s own precondition, asserted where it must hold. The block
+         below is keyed on the all-clear sentence existing; nothing else in
+         the lab asserts that it does, so a copy edit would have skipped the
+         block and taken its assertions with it in silence. */
+      if (state === "quiet") {
+        ok(`the quiet state still says the all-clear this guard keys on · ${variant}`,
+          claim.reassures, JSON.stringify({ reassures: claim.reassures }));
+      }
       if (claim.reassures) {
         ok(`nothing is sitting means nothing is drawn sitting · ${state} @ ${variant}`,
           claim.old === 0 && claim.spoken === 0 && claim.maxAge < claim.fortnight,
@@ -922,9 +1001,18 @@ async function tap(page, selector) {
   }
 }
 
-/* first-run-plot-has-no-scale · a mark whose height is a typed literal
-   encodes nothing. The single week stands at the pitch it will hold when
-   the twelve-week chart arrives, and it says in words what it draws. */
+/* first-run-plot-has-no-scale · the single week stands at the pitch it
+   will hold when the twelve-week chart arrives, and it says in words what
+   it draws.
+
+   The height here is 100 for EVERY possible fixture value and must be: a
+   solo week is its own maximum, and lately.html:281-285 argues why there is
+   no scale to derive it against. So the invariant is not "the height comes
+   from the value" — there is no relation to hold down — it is "the solo
+   mark fills its plot". This assertion was named for the first and tests
+   the second; it is source-sensitive either way (edit 100 to 50 and it goes
+   red) but a check whose name and subject disagree is how the vacuous class
+   starts. */
 {
   const page = await open({ state: "first-run", reducedMotion: true });
   const plot = await page.evaluate(() => {
@@ -933,12 +1021,11 @@ async function tap(page, selector) {
     const f = window.LATELY_FIXTURE;
     return {
       h: bar ? Number(bar.style.getPropertyValue("--h")) : null,
-      value: f.weeks[f.weeks.length - 1].v,
       spoken: sr ? sr.textContent : "",
       width: bar ? Math.round(bar.getBoundingClientRect().width) : null,
     };
   });
-  ok("the first-run mark's height comes from its value, not a literal", plot.h === 100, `--h ${plot.h}`);
+  ok("the solo mark fills its plot, because one week is its own maximum", plot.h === 100, `--h ${plot.h}`);
   ok("the first-run chart has a spoken equivalent", /finished/.test(plot.spoken) && plot.spoken.length > 20, plot.spoken.slice(0, 60));
   ok("the first-run mark stands at a real column's width", plot.width !== null && plot.width <= 60, `${plot.width}px`);
   await page.close();
@@ -959,7 +1046,13 @@ async function tap(page, selector) {
       };
       for (const el of document.querySelectorAll(".kpi")) {
         check(el.textContent, "card");
-        check(el.querySelector(".sr")?.textContent, "card name");
+        /* The name, not the leaf. Round 2 moved this sentence onto the
+           group s own label and left the grammar check reading .sr, which
+           is null on every status card — so the row s only content check
+           was its length. A planted singular verb, a planted plural and a
+           falsified denominator all passed. */
+        check(el.getAttribute("aria-label"), "card name");
+        check(el.querySelector(".sr")?.textContent, "card sr");
       }
       for (const el of document.querySelectorAll("main p, main span, .sr")) check(el.textContent, "copy");
       return bad;
@@ -1010,7 +1103,14 @@ async function tap(page, selector) {
     while ((i = text.indexOf(want, i)) >= 0) { n += 1; i += want.length; }
     return { claimsLastGood: /Last good reading/.test(text), instances: n };
   });
-  ok("the error state claims no reading it does not hold", !err.claimsLastGood, `${err.instances} stamps`);
+  /* Both halves. The phrase guard is a literal-regression guard and it does
+     fail on a verbatim reintroduction — but it was the only predicate here,
+     while the count beside it was computed and thrown away. The count is the
+     positive statement of the policy: main prints no successful reading in
+     the state built to say the reading failed. The header stamp is sanctioned
+     and lives outside main, which is why the scope stays. */
+  ok("the error state claims no reading it does not hold",
+    !err.claimsLastGood && err.instances === 0, `${err.instances} stamps in main`);
   await page.close();
 }
 
@@ -1203,7 +1303,10 @@ async function tap(page, selector) {
   await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
   await page.waitForTimeout(200);
   const before = await page.evaluate(() => document.getElementById("tip").classList.contains("on"));
-  await page.evaluate(() => document.querySelector(".scroll").scrollBy(0, 260));
+  /* The document, not .scroll. Round 2 moved scroll ownership to the
+     document; .scroll now carries only overflow-x: clip, so scrollBy on it
+     is a no-op and this guard has been scrolling nothing ever since. */
+  await page.evaluate(() => window.scrollBy(0, 260));
   await page.waitForTimeout(220);
   const after = await page.evaluate(() => {
     const t = document.getElementById("tip");
@@ -1228,11 +1331,34 @@ async function tap(page, selector) {
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const found = [];
       for (const m of months) {
-        const re = new RegExp("\\\\b" + m + "\\\\b(?!\\\\s+\\\\d{4})", "g");
+        /* Two source backslashes, not four. Four compile to a literal
+           backslash followed by b, which main never contains — the guard
+           was structurally empty for four rounds. The lookbehind is the
+           refuter s correction: a month preceded by a day-of-month is a
+           date ("4 May" in the chart s spoken line), not a bare month, and
+           without it the corrected escape turns the gate red on a surface
+           that is right. */
+        const re = new RegExp("(?<!\\d\\s)\\b" + m + "\\b(?!\\s+\\d{4})", "g");
         if (re.test(text)) found.push(m);
       }
       return found;
     });
+    /* The instrument, proved alive on a fixed probe before it is trusted
+       on the page. This is the assertion the vacuous-guard class needs:
+       not "did it find nothing", but "would it find something". */
+    const monthProbe = await page.evaluate(() => {
+      /* One construction, three probes, a fresh RegExp per call. Written
+         first as two regex literals carrying doubled backslashes — which
+         is the defect this whole block exists to close, and would have
+         made two of the three cases false whatever they were given. A
+         fresh instance each time also keeps the g flag s lastIndex from
+         making the answer depend on the order the cases are read. */
+      const src = "(?<!\\d\\s)\\bAugust\\b(?!\\s+\\d{4})";
+      const hit = (s) => new RegExp(src).test(s);
+      return { bare: hit("finished in August, before the week is out"), dated: hit("August 2026"), day: hit("4 August") };
+    });
+    ok(`the month guard can still see a bare month · ${state}`,
+      monthProbe.bare && !monthProbe.dated && !monthProbe.day, JSON.stringify(monthProbe));
     ok(`no month is named without its year · ${state}`, dates.length === 0, dates.join(", "));
     await page.close();
   }
@@ -1247,7 +1373,7 @@ async function tap(page, selector) {
     const voice = await page.evaluate(() => {
       const text = (document.querySelector("main") || document.body).innerText;
       const banned = ["snapshot writer", "callers", "recorder", "structured", "accrues", "periods", "provider"];
-      const hits = banned.filter((w) => new RegExp("\\\\b" + w + "\\\\b", "i").test(text));
+      const hits = banned.filter((w) => new RegExp("\\b" + w + "\\b", "i").test(text));
       const firstPerson = /\bwe\b/i.test(text);
       const lowerStart = Array.from(document.querySelectorAll("main p"))
         .map((p) => p.textContent.trim())
@@ -1589,6 +1715,461 @@ async function tap(page, selector) {
       glyphs.length > 0 && glyphs.every((g) => Number(g.r.toFixed(2)) >= 3), glyphs.map((g) => g.r.toFixed(2)).join(" "));
     await page.close();
   }
+}
+
+/* ══ round 3, batch 2 ═══════════════════════════════════════════════
+   Six surface findings, each written before its fix and watched failing on
+   the surface as it stood: the scale stated twice at the same height, a
+   0.0px rung, user-select auto with the fixture's own magnitudes in the
+   text, a last line 7.6px wide carrying one digit, a mark inked #111111
+   after one tap, and a refusal body running to 716px. */
+
+/* axis-max-and-live-week-print-the-same-number · max is Math.max(D.peak,
+   D.bestPrior) and D.peak counts the running week, so on any fixture where
+   this week is the best week the top gridline and the live column printed
+   the same numeral at the same height. The peak must still be stated —
+   by exactly one of them. */
+{
+  for (const state of ["full", "partial", "quiet"]) {
+    const page = await open({ state, reducedMotion: true });
+    const scale = await page.evaluate(() => {
+      const num = (el) => {
+        const m = (el?.textContent || "").match(/\d+/);
+        return m ? Number(m[0]) : null;
+      };
+      const labelled = Array.from(document.querySelectorAll(".gridline")).map(num).filter((n) => n !== null);
+      const live = num(document.querySelector(".plot .colw:last-child .bar-val"));
+      const drawn = document.querySelectorAll(".gridline").length;
+      const peak = Math.max(...Array.from(document.querySelectorAll(".plot .colw .bar"))
+        .map((b) => Number(b.style.getPropertyValue("--h")) || 0));
+      return { labelled, live, drawn, peakIsLive: peak === 100 };
+    });
+    ok(`the chart states its peak exactly once · ${state}`,
+      !(scale.peakIsLive && scale.live !== null && scale.labelled.includes(scale.live)),
+      JSON.stringify(scale));
+    ok(`and the rule is still drawn where the numeral stood down · ${state}`,
+      scale.drawn >= 2, JSON.stringify(scale));
+    await page.close();
+  }
+}
+
+/* the-age-summary-says-one-days · every other age on this surface goes
+   through plural(); this one line hard-coded the plural noun. Asserted as
+   a concord rule over the whole spoken tree rather than over the one
+   string, so the next hard-coded noun is caught where it is written. */
+{
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    const page = await open({ state, reducedMotion: true });
+    const concord = await page.evaluate(() => {
+      const bad = [];
+      const nodes = Array.from(document.querySelectorAll("main .sr, main p, main span"));
+      for (const el of nodes) {
+        const t = el.textContent || "";
+        const m = t.match(/\b1 (days|jobs|weeks|hours|marks)\b/);
+        if (m) bad.push(`${m[0]} — ${t.slice(0, 50)}`);
+      }
+      const names = Array.from(document.querySelectorAll("[aria-label]"))
+        .map((el) => el.getAttribute("aria-label"))
+        .filter((n) => /\b1 (days|jobs|weeks|hours)\b/.test(n));
+      return { bad, names };
+    });
+    ok(`a count of one never takes a plural noun · ${state}`,
+      concord.bad.length === 0 && concord.names.length === 0,
+      JSON.stringify(concord).slice(0, 160));
+    await page.close();
+  }
+}
+
+/* the-bound-stamp-wraps-and-strands-its-digit · 349px of tracked uppercase
+   mono in a 342px content box at 390. Wrapped on a space it left the bare
+   digit alone on line two — a number with nothing to say what it counts.
+   Measured from a Range over the text, not from the element box: the span
+   is a flex item and takes the full row whether its text wraps or not. */
+{
+  for (const vp of [{ width: 390, height: 844 }, { width: 360, height: 780 }]) {
+    const page = await open({ state: "full", viewport: vp, touch: true, reducedMotion: true });
+    const stamp = await page.evaluate(() => {
+      const out = [];
+      for (const s of document.querySelectorAll(".coverage span")) {
+        const r = document.createRange();
+        r.selectNodeContents(s);
+        const rects = Array.from(r.getClientRects());
+        if (rects.length < 2) continue;
+        const last = rects[rects.length - 1];
+        out.push({ w: Math.round(last.width * 10) / 10, text: s.textContent.trim().slice(0, 28) });
+      }
+      return out;
+    });
+    ok(`no wrapped stamp strands a lone digit · ${vp.width}`,
+      stamp.every((s) => s.w > 40), JSON.stringify(stamp));
+    await page.close();
+  }
+}
+
+/* error-alert-loses-a-rung-the-other-terminal-states-keep · the r1 fix
+   wrapped the heading and its sentence in role="alert", which made them
+   children of an element with no gap of its own. The three terminal states
+   are composed alike and must measure alike. */
+{
+  for (const variant of config.variants) {
+    const gaps = {};
+    for (const state of ["empty", "quiet", "error"]) {
+      const page = await open({ state, variant, reducedMotion: true });
+      gaps[state] = await page.evaluate(() => {
+        const c = document.querySelector(".center");
+        if (!c) return null;
+        /* By role, not by tag. These three states are composed alike and
+           marked up differently: empty and error head with an h2.t-sect,
+           quiet with a p.t-head. A probe keyed on the tag saw two of the
+           three and reported the third as absent. */
+        const head = c.querySelector(".t-sect, .t-head, h1, h2, h3");
+        if (!head) return null;
+        const par = Array.from(head.parentElement.children)
+          .find((el) => el !== head && el.matches("p.t-body"));
+        if (!par) return null;
+        return Math.round((par.getBoundingClientRect().top - head.getBoundingClientRect().bottom) * 10) / 10;
+      });
+      await page.close();
+    }
+    const measured = Object.values(gaps).filter((n) => n !== null);
+    ok(`the terminal states set the same rung under their heading @ ${variant}`,
+      measured.length === 3 && new Set(measured).size === 1 && measured[0] >= 15,
+      JSON.stringify(gaps));
+  }
+}
+
+/* loading-hands-over-the-reading-it-says-it-has-not-made · round 2
+   neutralised every magnitude that carries geometry and left every fact in
+   the DOM as live text, hidden by color: transparent. The existing skeleton
+   block reads custom properties, class names and visibility, so it cannot
+   fail on a text leak. This one reads what a real selection returns, and
+   drives the magnitudes from the fixture rather than typing them. */
+{
+  const page = await open({ state: "loading", reducedMotion: true });
+  const held = await page.evaluate(() => {
+    const wrap = document.querySelector(".sk-wrap");
+    return {
+      userSelect: wrap ? getComputedStyle(wrap).userSelect : null,
+      pointerEvents: wrap ? getComputedStyle(wrap).pointerEvents : null,
+    };
+  });
+  ok("the loading frame hands over nothing it says it has not read",
+    held.userSelect === "none" && held.pointerEvents === "none", JSON.stringify(held));
+
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.waitForTimeout(120);
+  /* Scoped to the skeleton. Select-all returns the header and the coverage
+     footer as well, and the footer legitimately carries the bound nine —
+     the claim that it should stop saying so was raised this round and
+     refuted. What is asserted is the skeleton s own contract: a frame that
+     says it has not read the numbers hands none of them over. */
+  /* The selection TEXT, not containsNode(). containsNode is DOM-range
+     geometry and blind to user-select — measured here, it reports all 41
+     skeleton nodes inside the range while the text a person would actually
+     copy contains none of their 18 strands. What is claimed is what the
+     reader gets, so the text is the subject. The strand count is asserted
+     too, so an empty list can never pass this by construction. */
+  const selected = await page.evaluate(() => {
+    const text = String(window.getSelection() ?? "");
+    const strands = Array.from(document.querySelectorAll(".sk-wrap [data-type]"))
+      .map((n) => (n.textContent || "").trim())
+      .filter((s) => s.length > 6);
+    const leaked = strands.filter((s) => text.includes(s));
+    return { strands: strands.length, leaked: leaked.length, sample: leaked.slice(0, 2) };
+  });
+  ok("and a real selection returns nothing the skeleton is holding",
+    selected.strands > 0 && selected.leaked === 0, JSON.stringify(selected));
+  await page.close();
+}
+
+/* tapped-mark-keeps-the-hover-ink-forever · a coarse pointer latches
+   :hover onto the last element touched and never releases it. The latch is
+   the browser's and cannot be prevented; what can be prevented is a hover
+   rule applying to a device that has no hover. One tap, read where it
+   lands — a second tap elsewhere moves the latch and hides the defect. */
+{
+  const page = await open({ state: "full", viewport: { width: 390, height: 844 }, touch: true, reducedMotion: true });
+  await page.locator(".dot").first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(120);
+  const box = await page.locator(".dot").first().boundingBox();
+  const rest = await page.evaluate(() => getComputedStyle(document.querySelector(".dot")).getPropertyValue("--disc").trim());
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await page.waitForTimeout(200);
+  const after = await page.evaluate(() => {
+    const d = document.querySelector(".dot");
+    const tabs = Array.from(document.querySelectorAll(".tab")).map((t) => getComputedStyle(t).color);
+    return { latched: d.matches(":hover"), disc: getComputedStyle(d).getPropertyValue("--disc").trim(), tabs };
+  });
+  ok("a tapped mark keeps the ink it had at rest",
+    after.disc === rest, `rest ${rest}, after a tap ${after.disc}, browser latch ${after.latched}`);
+  await page.close();
+
+  const strip = await open({ state: "full", viewport: { width: 390, height: 844 }, touch: true, reducedMotion: true });
+  const tabBox = await strip.locator(".tab").first().boundingBox();
+  const tabsRest = await strip.evaluate(() => Array.from(document.querySelectorAll(".tab")).map((t) => getComputedStyle(t).color));
+  await strip.touchscreen.tap(tabBox.x + tabBox.width / 2, tabBox.y + tabBox.height / 2);
+  await strip.waitForTimeout(200);
+  const tabsAfter = await strip.evaluate(() => Array.from(document.querySelectorAll(".tab")).map((t) => getComputedStyle(t).color));
+  ok("and a tapped tab does not join the current one at full ink",
+    JSON.stringify(tabsRest) === JSON.stringify(tabsAfter),
+    `${JSON.stringify(tabsRest)} then ${JSON.stringify(tabsAfter)}`);
+  await strip.close();
+}
+
+/* refusal-copy-has-no-measure-ceiling · .limits collapses to one column at
+   900 and the refusal bodies had no bound at all, so a paragraph that reads
+   at 49-55 characters in three columns ran to 121 at 900px. Asserted at the
+   widths where the grid has collapsed, which is where the defect lives. */
+{
+  for (const width of [900, 793, 768]) {
+    const page = await open({ state: "full", viewport: { width, height: 1024 }, reducedMotion: true });
+    const measure = await page.evaluate(() => {
+      const bodies = Array.from(document.querySelectorAll(".limit .t-small"));
+      const widths = bodies.map((b) => Math.round(b.getBoundingClientRect().width));
+      const chars = bodies.map((b) => {
+        const r = document.createRange();
+        r.selectNodeContents(b);
+        const lines = r.getClientRects().length;
+        return lines ? Math.ceil((b.textContent || "").trim().length / lines) : 0;
+      });
+      return { widths, chars, cap: bodies.length ? getComputedStyle(bodies[0]).maxWidth : "n/a" };
+    });
+    ok(`the refusal bodies hold a measure · ${width}`,
+      measure.cap !== "none" && measure.widths.every((w) => w <= 340) && measure.chars.every((c) => c <= 70),
+      JSON.stringify(measure));
+    await page.close();
+  }
+}
+
+/* ══ round 3, batch 3 ═══════════════════════════════════════════════
+   The last seven confirmed findings of the closing round. Every one of
+   these was watched failing on the surface before its fix landed. */
+
+/* denominator-plate-keeps-a-portrait-layout-in-a-banner-box · at 1440 the
+   lead card is a portrait tile and exactly right. Below 900 the row goes
+   two-up and the card spans both columns — a box more than twice as wide
+   holding the identical stacked composition. Asserted as a relationship
+   between the box and its contents, not as a typed breakpoint. */
+{
+  for (const width of [1440, 768, 390]) {
+    const page = await open({
+      state: "full",
+      viewport: { width, height: width <= 480 ? 844 : 1024 },
+      touch: width <= 480,
+      reducedMotion: true,
+    });
+    const plate = await page.evaluate(() => {
+      const lead = document.querySelector(".kpi.lead");
+      if (!lead) return null;
+      const cs = getComputedStyle(lead);
+      const box = lead.getBoundingClientRect();
+      const kids = Array.from(lead.children).map((k) => k.getBoundingClientRect());
+      const inkRight = kids.length ? Math.max(...kids.map((k) => k.right)) : box.left;
+      const inkLeft = kids.length ? Math.min(...kids.map((k) => k.left)) : box.right;
+      return {
+        direction: cs.flexDirection,
+        ratio: Math.round((box.width / box.height) * 100) / 100,
+        fill: Math.round(((inkRight - inkLeft) / box.width) * 100),
+      };
+    });
+    /* A tile stacks; a banner lies down. The card must not be a banner in
+       shape and a tile in composition — which is measured here as ink that
+       fails to reach across a box wide enough to need it. */
+    ok(`the denominator plate is composed like the box it is in · ${width}`,
+      plate !== null && (plate.ratio < 1.8 ? plate.direction === "column" : plate.direction === "row"),
+      JSON.stringify(plate));
+    await page.close();
+  }
+}
+
+/* nothing-balances-a-last-line · text-wrap computed to wrap on every
+   element on the surface, and forty-two line boxes across the seven states
+   ended on a single word — identical on both grounds, so not a ground
+   artefact. Measured from Ranges over the text, because the element box
+   says nothing about where the words landed. */
+{
+  const lastLine = (sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return null;
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    const rects = Array.from(r.getClientRects());
+    if (rects.length < 2) return { lines: rects.length, w: null };
+    return { lines: rects.length, w: Math.round(rects[rects.length - 1].width) };
+  };
+
+  for (const width of [1440, 1280, 768]) {
+    const page = await open({ state: "full", viewport: { width, height: 1024 }, reducedMotion: true });
+    const caption = await page.evaluate(
+      new Function(`return (${lastLine.toString()})(".ghost-say .t-head")`),
+    );
+    ok(`the refusal caption does not end on a lone word · ${width}`,
+      caption !== null && (caption.lines === 1 || caption.w > 60), JSON.stringify(caption));
+    await page.close();
+  }
+
+  /* The first-run note is the pair that must land together: `pretty` on its
+     own moved the break INTO the date — "Yours arrive on 10 / August 2026." —
+     which is worse than the widow it replaced. The date is bound, so the
+     break can only fall between words that are allowed to part. */
+  const page = await open({ state: "first-run", reducedMotion: true });
+  const note = await page.evaluate(() => {
+    /* The note that carries the date, not the first .hero-note: first-run
+       has two and the other one is about the count. */
+    const el = Array.from(document.querySelectorAll(".hero-note"))
+      .find((n) => /arrive on/.test(n.textContent || ""));
+    if (!el) return null;
+    const text = el.textContent || "";
+    const r = document.createRange();
+    r.selectNodeContents(el);
+    const rects = Array.from(r.getClientRects());
+    return {
+      lines: rects.length,
+      last: rects.length ? Math.round(rects[rects.length - 1].width) : null,
+      dateIsBound: / /.test(text),
+      text: text.slice(-40),
+    };
+  });
+  ok("the first-run comparison date cannot be broken across lines",
+    note !== null && note.dateIsBound, JSON.stringify(note));
+  await page.close();
+}
+
+/* the-lab-stamp-repeats-its-own-key · five of the six provenance stamps
+   read as key plus value; this one repeated its key inside its value, and
+   offered a garden path where the key could be read as the subject of the
+   verb that followed. Asserted over every stamp, not the one that had it. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const stamps = await page.evaluate(() => {
+    const out = [];
+    for (const s of document.querySelectorAll(".coverage span")) {
+      const key = s.querySelector("b")?.textContent?.trim() ?? "";
+      const value = (s.textContent || "").replace(key, "").trim();
+      const stem = key.toLowerCase().split("-")[0];
+      out.push({ key, repeats: stem.length > 2 && value.toLowerCase().includes(stem) });
+    }
+    return out;
+  });
+  ok("no provenance stamp repeats its own key inside its value",
+    stamps.length > 0 && stamps.every((s) => !s.repeats), JSON.stringify(stamps));
+  await page.close();
+}
+
+/* one-of-four-labels-drops-the-verb-the-others-keep · the plural string was
+   doing two jobs — the card's own sentence, which wants a finite verb, and
+   the noun phrase inside "Jobs ___: not available", which cannot have one.
+   One card carried the noun phrase in both places. Asserted as concord
+   across the row, so the next card to lose its verb is caught too. */
+{
+  /* full and partial. The quiet state has no status row at all — it shows
+     the all-clear instead — so a concord check keyed on four cards there
+     was asserting the absence of a thing that is absent by design. */
+  for (const state of ["full", "partial"]) {
+    const page = await open({ state, reducedMotion: true });
+    const row = await page.evaluate(() => {
+      const cards = Array.from(document.querySelectorAll(".kpi:not(.lead)"));
+      return cards.map((c) => {
+        const phrase = c.querySelector(".t-small")?.textContent?.trim() ?? "";
+        return { phrase, finite: /^(are|is|have|has|haven|hasn|aren|isn)\b/i.test(phrase) };
+      });
+    });
+    /* The unavailable card prints its noun phrase by design, so it is the
+       one card excused — and the count is asserted separately, so excusing
+       it cannot quietly excuse the row. */
+    ok(`every status card leads with a finite verb · ${state}`,
+      row.length === 4 && row.filter((c) => c.finite).length >= 3, JSON.stringify(row.map((c) => c.phrase)));
+    await page.close();
+  }
+
+  /* And the unavailable card keeps the noun phrase its construction needs:
+     "Jobs past the day they were due: not available" — never "Jobs are past
+     the day they were due: not available". */
+  const page = await open({ state: "partial", reducedMotion: true });
+  const na = await page.evaluate(() => {
+    const card = Array.from(document.querySelectorAll(".kpi")).find((c) => c.querySelector(".na"));
+    return card ? card.getAttribute("aria-label") : null;
+  });
+  ok("the unavailable card names itself with a noun phrase, not a sentence",
+    na !== null && /not available/i.test(na) && !/^Jobs (are|is|have|has)\b/i.test(na), String(na));
+  await page.close();
+}
+
+/* tab-strip-activates-into-a-dead-history-entry · the current tab is an
+   anchor to a bare #, so activating it pushed a history entry and snapped
+   the document to the top while aria-current never moved. The two siblings
+   are deliberately left alone — they carry real routes after the port. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  await page.evaluate(() => window.scrollTo(0, 400));
+  await page.waitForTimeout(120);
+  const before = await page.evaluate(() => ({ len: history.length, y: Math.round(window.scrollY), hash: location.hash }));
+  /* Dispatched in the page. locator.click() scrolls its target into view
+     first, so driving it from outside moves the document and then reads the
+     movement back as the defect. */
+  await page.evaluate(() => document.querySelector('.tab[aria-current="page"]').click());
+  await page.waitForTimeout(200);
+  const after = await page.evaluate(() => ({ len: history.length, y: Math.round(window.scrollY), hash: location.hash }));
+  ok("the current tab does not re-navigate to itself",
+    after.len === before.len && Math.abs(after.y - before.y) <= 2 && after.hash === before.hash,
+    `${JSON.stringify(before)} then ${JSON.stringify(after)}`);
+  await page.close();
+}
+
+/* tooltip-text-stays-in-the-accessibility-tree · the tip is hidden with
+   opacity and never cleared, so after a blur the last mark's title and day
+   count stayed in the tree — a second, stale copy of a name the mark
+   already carries. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const tip = await page.evaluate(() => {
+    const t = document.getElementById("tip");
+    if (!t) return null;
+    return {
+      ariaHidden: t.getAttribute("aria-hidden"),
+      described: document.querySelectorAll('[aria-describedby="tip"]').length,
+      focusable: t.querySelectorAll("a, button, input, [tabindex]").length,
+    };
+  });
+  ok("the tooltip is a visual echo and stays out of the tree",
+    tip !== null && tip.ariaHidden === "true" && tip.described === 0 && tip.focusable === 0,
+    JSON.stringify(tip));
+  await page.close();
+}
+
+/* focused-mark-loses-its-name-to-a-pointer-leave · hide() guarded the touch
+   pin and not focus, so a pointer crossing any mark and leaving took the tip
+   away from a mark that was still focused and still ringed — and the mark's
+   title lives nowhere else on the screen. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const marks = page.locator(".dot");
+  await marks.nth(2).scrollIntoViewIfNeeded();
+  await marks.nth(2).focus();
+  await page.waitForTimeout(150);
+  const held = await page.evaluate(() => ({
+    on: document.getElementById("tip").classList.contains("on"),
+    text: document.getElementById("tip").textContent,
+    ring: document.activeElement.matches(":focus-visible"),
+  }));
+
+  /* Cross a sibling and leave. This is the exact gesture that took the name
+     away: the pointer never touched the focused mark. */
+  const other = await marks.nth(5).boundingBox();
+  await page.mouse.move(other.x + other.width / 2, other.y + other.height / 2);
+  await page.waitForTimeout(120);
+  await page.mouse.move(other.x + 500, other.y - 200);
+  await page.waitForTimeout(200);
+
+  const after = await page.evaluate(() => ({
+    on: document.getElementById("tip").classList.contains("on"),
+    text: document.getElementById("tip").textContent,
+    stillFocused: document.activeElement.classList.contains("dot"),
+  }));
+  ok("a focused mark keeps its name when a pointer crosses its neighbours",
+    held.on && after.stillFocused && after.on && after.text === held.text,
+    `${JSON.stringify(held)} then ${JSON.stringify(after)}`);
+  await page.close();
 }
 
 ok("zero console errors across every state and both grounds", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));

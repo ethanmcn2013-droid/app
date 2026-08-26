@@ -139,6 +139,15 @@ body {
 .stageBar { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 .stageBar .groupLabel { margin-right: -10px; }
 .stageTabs { display: inline-flex; gap: 3px; padding: 3px; background: var(--ui-panel); border-radius: 999px; box-shadow: inset 0 0 0 1px var(--ui-line); }
+/* Seven state tabs measure 436px and the phone is 390. The page body
+   never scrolls sideways, so the pill takes the scroll itself and keeps
+   its shape — the alternative, wrapping it, breaks the pill into two
+   half-pills and loses the one-control reading. */
+@media (max-width: 520px) {
+  .stageTabs { display: flex; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .stageTabs::-webkit-scrollbar { display: none; }
+  .stageTab { flex: none; }
+}
 .stageTab {
   appearance: none; border: 0; cursor: pointer; font: inherit;
   font-size: 12.5px; color: var(--ui-text);

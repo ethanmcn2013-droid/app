@@ -1,37 +1,46 @@
 # Where this engagement stands
 
-Written so a fresh session can pick it up without the previous one's
-context. Everything below is on disk and pushed; nothing here lives only in
-a transcript.
+**CLOSED at round 3, on budget, with the distance published. The ledger did
+NOT close. Both gates green: measured 0 violations on both grounds,
+behaviour 506 assertions 0 failing. All seven artifacts published and the
+family contract holds. Nothing is in flight.**
 
-**Branch `design/home-analytics-2026-08` @ 45691be7, pushed. Working tree
-clean. Both gates green. Rounds 1 and 2 recorded in `panel.json`.
-Round 3 — the close — has not started. The freeze is declared.**
+Written so a fresh session can pick this up without the previous one's
+context. Everything below is on disk and pushed.
 
 ## The engagement
 
 `elevate`, full door, on **Lately** — the analytics view inside Signal
-Studio's Home. Budget **3 rounds**, declared before round 1. Read `brief.md`
-and `lock.md` first: they carry the three folds and the decisions that may
-not be re-opened.
+Studio's Home. Budget **3 rounds**, declared before round 1 and spent.
+`brief.md` and `lock.md` carry the three folds and the decisions that may
+not be re-opened. `PORT-PACKET.md` is the deliverable.
 
-## The four published artifacts — republish to these URLs, never new ones
+## The seven published artifacts — republish to these URLs, never new ones
 
-| Slot | URL | Built from |
-|---|---|---|
-| Surface | https://claude.ai/code/artifact/9973453b-6d1b-4f10-88fb-c626e1e286e6 | `surface.html` ← `node build-surface.mjs` |
-| Plan | https://claude.ai/code/artifact/a3ebb330-0445-4265-ab66-503458fb80f6 | `plan.html`, unchanged since handover |
-| Design Console | https://claude.ai/code/artifact/d894ef6e-3018-4f05-a64e-66dc966396c8 | `console.html` ← `build-console.mjs` |
-| Elevation Log | https://claude.ai/code/artifact/885389f0-bebd-4420-a950-56e9cb307273 | `report.html` ← `build-report.mjs` |
+| # | Slot | URL | Built from |
+|---|---|---|---|
+| 01 | CEO Report | https://claude.ai/code/artifact/bbc3c970-d680-4065-ad45-10cbedadd30f | `ceo.html` ← `_ceo.body.html` + `_family.css` |
+| 02 | Design Console | https://claude.ai/code/artifact/d894ef6e-3018-4f05-a64e-66dc966396c8 | `console.html` ← `build-console.mjs`, then `family.mjs --apply` |
+| 03 | Elevation Log | https://claude.ai/code/artifact/885389f0-bebd-4420-a950-56e9cb307273 | `log.html` ← copy of `report.html` ← `build-report.mjs`, then `family.mjs --apply` |
+| 04 | The Honest Distance | https://claude.ai/code/artifact/63088e5d-51d5-4a70-ac35-e804bdd2f3eb | `question.html` ← `_question.body.html` + `_family.css` |
+| 05 | 3 Rounds | https://claude.ai/code/artifact/c7863a3d-bdf7-4677-bab5-58279265b1cf | `method.html` ← `_method.body.html` + `_family.css` |
+| — | Surface | https://claude.ai/code/artifact/9973453b-6d1b-4f10-88fb-c626e1e286e6 | `surface.html` ← `node build-surface.mjs` |
+| — | Plan | https://claude.ai/code/artifact/a3ebb330-0445-4265-ab66-503458fb80f6 | `plan.html`, unchanged since handover |
+
+**The fixed set names `log.html`, not `report.html`.** `build-report.mjs`
+writes `report.html`; copy it to `log.html`, then run `family.mjs --apply`,
+or `family.mjs --check` fails on a missing file and a stripped rail.
+`build-console.mjs` likewise overwrites the rail — always re-apply after a
+rebuild.
 
 ## Running anything
 
 `@playwright/test` resolves **only** from
 `C:\Users\ethan\signal-studio-workspace\collateral`. Run the skill's scripts
-with that as the working directory and pass an absolute `--lab=`. The
-behaviour gate runs from the lab directory itself and resolves Playwright by
-walking up. **It takes about four minutes — always run it in the background
-to a log file**, then poll the log.
+with that as the working directory and pass an **absolute** `--lab=` — and
+for `verify-artifact.mjs` an **absolute `--file=`**, because it resolves the
+file against the cwd and not against `--lab`. The behaviour gate runs from
+the lab directory itself.
 
 ```
 LAB="C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08"
@@ -39,144 +48,135 @@ SK="C:\Users\ethan\.claude\skills\elevate\scripts"
 COL="C:\Users\ethan\signal-studio-workspace\collateral"
 
 cd "$LAB" && node derive-fixture.mjs --check
-cd "$LAB" && node interaction-check.mjs > panel/gate.log 2>&1     # background it
+cd "$LAB" && node interaction-check.mjs > panel/gate.log 2>&1   # ~5 min
 cd "$COL" && node "$SK/audit.mjs"          --lab="$LAB" --v=light
 cd "$COL" && node "$SK/audit.mjs"          --lab="$LAB" --v=dark
 cd "$COL" && node "$SK/shots.mjs"          --lab="$LAB" --v=light,dark --twice
 cd "$COL" && node "$SK/pack-shots.mjs"     --lab="$LAB"
 cd "$COL" && node "$SK/ledger.mjs"         --lab="$LAB" --check
 cd "$COL" && node "$SK/round-metrics.mjs"  --lab="$LAB"
+cd "$COL" && node "$SK/family.mjs"         --lab="$LAB" --check
+cd "$COL" && node "$SK/verify-artifact.mjs" --file="$LAB\ceo.html"
 ```
 
-## The method as run here — follow this, it is load-bearing
+**Backgrounding the gate is unreliable here** — the process is killed when
+the tool call's notification fires, truncating the log. Run it in the
+foreground with a long timeout; it takes about five minutes.
 
-- Seats come from `panel-round.mjs --mode=prompts`, then run as **parallel
-  subagents, one per seat prompt**, each told to read its prompt file in
-  full and write the JSON to the path the file names. Append an environment
-  note to each prompt first: where Playwright resolves, use the scratchpad
-  not the lab for throwaway scripts, and `?motion=play` to watch the
-  entrance. The concurrency cap is 20 agents.
-- Findings are **clustered before refutation** into
-  `panel/clusters-round-N.json` — the same defect seen by several seats
-  becomes one claim, every alias kept, so convergence is recorded as
-  evidence rather than as duplicate work. Then
-  `node panel/make-refuters.mjs round-N` writes one prompt per cluster.
-- **One fresh refuter per cluster**, defaulting to REFUTED. Never tell a
-  refuter how many seats converged — it anchors them toward confirming.
-- A refuter that returns `real: false` **but affirms the problem and gives a
-  sharpenedFix** is recorded as confirmed carrying the refuter's fix. Pass
-  those ids to `record-round.mjs --replaced=`. The alternative — a real,
-  correctly-classed defect dying because the seat's wording did not fit a
-  pill — would let the engagement close over defects nobody disputes.
-- Assertions are authored in `panel/round-N-batchM-assertions.js` **with an
-  editor tool** and spliced by `panel/append-assertions.mjs`. Never through
-  a heredoc: it ate escapes twice in this engagement alone.
-- Fixes are applied by `panel/fix-*.py`, exact string replacement, no regex.
-  **Note the trap:** those scripts' `edit()`/`sub()` helpers write only after
-  every replacement matches, so one MISS silently discards the whole batch.
-  Check the output lines, not just the exit.
+## The three rounds
 
-## Round 1 — closed, recorded, published, pushed
+| r | seats | floor | ceil | spread | raised | distinct | conf | refut | blk | mis | def | ref | self | frozen | gate |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 7 | 7.0 | 8.3 | 1.30 | 69 | 37 | 29 | 22% | 0 | 6 | 22 | 1 | 0% | no | 366 |
+| 2 | 3 | 7.6 | 8.3 | 0.70 | 26 | 19 | 14 | 26% | 0 | 0 | 13 | 1 | 36% | no | 461 |
+| 3 | 7 | 8.6 | 9.1 | 0.50 | 36 | 28 | 21 | 25% | 0 | 0 | 14 | 7 | 67% | yes | 506 |
 
-7 seats · 69 raised · 37 distinct · 29 confirmed · 8 refuted (22%)
-· 0 blocking · 6 misleading · 22 defect · 1 refinement
-· self-inflicted 0% · not frozen · gate 122 → 366.
-Floor 7.0, ceiling 8.3, spread 1.30.
+Totals: 17 seat sittings, 131 raised, 84 distinct, 64 confirmed and fixed,
+20 refuted. Gate 122 → 506. Round 3 sign-offs: Measured evidence, Product
+taste, UX. Four seats did not sign off.
 
-## Round 2 — closed, recorded, published, pushed
-
-3 rotating seats (evidence, interaction, UX) · 26 raised · 19 distinct
-· 14 confirmed · 5 refuted (26%)
-· **0 blocking · 0 misleading** · 13 defect · 1 refinement
-· **self-inflicted 36%** · not frozen · gate 366 → 461.
-Floor 7.6, ceiling 8.3, spread 0.70. No seat signed off in either round.
-
-Scores moved: interaction 8.3 → 8.2, UX 7.0 → 8.3, evidence 7.2 → 7.6.
-
-## Round 3 — the close. NOT STARTED. Do this next.
-
-1. **The freeze is declared.** Any finding whose answer is "build X" is
-   recorded on the port packet and never remediated in-round. Record
-   `--frozen=true` for round 3.
-2. Full **seven** seats — the method requires seven at round 1, at an audit
-   and at the close. Generate with
-   `panel-round.mjs --lab="$LAB" --round=3 --final --mode=prompts --notes=<file>`.
-   Write the notes file first: what changed in round 2, and the decisions
-   seats should argue with rather than file as misses (see
-   `panel/round-2-notes.md` for the shape).
-3. Cluster, refute, fix in batches of eight, gates between batches.
-4. `node panel/record-round.mjs 3 --assertions=<n> --selfInflicted=<measured> --frozen=true --replaced=<ids> --headline="..."`.
-   **Measure the self-inflicted share, do not estimate it** — count confirmed
-   clusters flagged `selfInflicted` in `clusters-round-3.json` over confirmed
-   total, the way round 2's 36% was computed.
-5. `ledger.mjs --check`, `round-metrics.mjs`, republish all four artifacts,
-   commit, push.
-6. Then the three closing documents and the port packet — `references/
-   artifacts.md` and `references/handover.md` in the skill.
-
-## The ledger, and the honest position — say this plainly
+## Why it stopped — say this plainly, do not soften it
 
 The ending is two consecutive rounds with no confirmed `blocking` or
-`misleading` finding, both gates green, on a **frozen** configuration, with
+`misleading`, both gates green, on a **frozen** configuration, with
 self-inflicted **under 25%** in both.
 
-Round 2 is clean on severity but fails two clauses: it was not frozen, and
-self-inflicted was 36%. So the earliest the ledger could close is round 4,
-which is outside the declared budget of 3.
+Severity is clean and has been for two rounds. Two clauses fail: round 2 was
+not frozen, and self-inflicted ran 36% then 67%. `round-metrics.mjs` reaches
+the conclusion itself:
 
-**The engagement stops on its budget with a stated remainder.**
-`stopping.md` calls that finished work provided the distance is published.
-Do not imply a close that has not happened, and do not quietly extend the
-budget — that is the operator's call, not the session's.
+> two consecutive rounds above 25% self-inflicted. The loop is measuring the
+> fixer, not the work — stop and publish the honest distance.
 
-## Two things the panel found in the gate itself
+`stopping.md` calls stopping on budget finished work **provided the distance
+is published**. It is, in `question.html` and in `PORT-PACKET.md` §5.
+**Do not restart the loop to chase the ledger.** A fourth round would find
+the third round's repairs, which is what the 67% is telling you.
 
-Worth more than the defects that exposed them. All four are now measured
-from rendered state:
+## The method as run here
 
-1. R1's `the unfinished week is hatched, open-topped` measured
-   `borderBottomWidth` — the edge sitting on the baseline, invisible — and
-   so certified the opposite of the protected contract it guarded.
-2. R1's `every control acknowledges a press` grepped `document.styleSheets`
-   for the selector text and never rendered it. It passed on a rule that an
-   animation's `fill-mode: both` had pinned dead.
-3. R1's three skeleton-geometry assertions built the loading DOM and the
-   arrived DOM from the same fixture in the same frame and compared them to
-   each other. They could not fail. Driven against a client holding no
-   reading — the condition the loading state exists for — the master threw.
-4. Two of my own assertions were wrong before they were trusted: one read
-   `document.body.textContent` and matched a template's own source rather
-   than the page; one used `elementFromPoint` on a strip below the fold and
-   reported every mark stolen at every width.
+- Seats from `panel-round.mjs --mode=prompts`, run as **parallel subagents,
+  one per prompt**, each told to read its prompt in full and write JSON to
+  the path the file names. Append the environment note first. **The
+  concurrency cap is 20** — round 3 needed 28 refuters, so they went in
+  waves with the queue tracked in `panel/round-3/refuters/PENDING.txt`.
+- Findings are **clustered before refutation** into
+  `panel/clusters-round-N.json`, every alias kept.
+- **One fresh refuter per cluster**, defaulting to REFUTED, never told how
+  many seats converged.
+- **The adjudication rule, stated before the count so it cannot be fitted to
+  it** (`panel/round-3/ADJUDICATION.md`): a refuter returning `real: false`
+  is recorded as confirmed-carrying-the-refuter's-fix only when it affirms a
+  problem that survives its own criticism **and** prescribes a fix
+  unconditionally. A conditional "if the panel wants X" is the refuter
+  declining to require a change, and the finding stands refuted. That rule
+  produced a 25% refutation rate, in line with r1's 22% and r2's 26%.
+- **Measure self-inflicted, never estimate it.** Grep `panel/fix-*.py` for
+  each exact string, and demote every case where a script used the string as
+  an **anchor** rather than introducing it — that check moved five claims
+  from self-inflicted to not in round 3 alone.
+- Assertions authored in `panel/round-N-batchM-assertions.js` **with an
+  editor tool** and spliced by `panel/append-assertions.mjs`. Never a
+  heredoc, and never `node -e` through the shell — both halve backslashes in
+  this environment. Prove a regex from a **file**.
+- Fixes applied by `panel/fix-*.py`, exact string replacement, no regex.
+  **The trap:** `edit()` writes only after every pair in a call matches, so
+  one MISS silently discards the whole call and everything after it. It
+  fired twice in round 3. Read the output lines, not the exit code.
+
+## What round 3 found, and it is mostly about the instrument
+
+**Eleven assertions in this gate could not fail** — four found in rounds
+1–2, seven more at the close, every one guarding a finding already recorded
+closed. The full table is in `PORT-PACKET.md` §2. The worst: `"\\\\b"` —
+four source backslashes — compiles to a literal backslash followed by `b`,
+so two guards matched nothing across four states each.
+
+**Four of the five red lines in round 3's own verification were new probes
+of mine measuring the wrong thing**: a heading selected by tag in a state
+that heads with a paragraph; a selection measured with `containsNode`, which
+is DOM geometry and blind to `user-select`; a concord check keyed on a row
+that state does not have; a click driven through `locator.click()`, which
+scrolls its own target into view and then reads the scroll back as the
+defect. All four were caught by running them.
 
 **When adding an assertion, the test is: would this fail if the thing it
 guards were broken?** If you cannot make it fail on purpose, it is not a
-rule yet.
+rule yet. Round 3 added a liveness probe beside each repaired regex for
+exactly this reason.
+
+## Two bugs fixed outside the lab
+
+Both were found by running the artifact verifier, which had not been run
+since round 2:
+
+1. **`assets/report.shell.html` in the skill** threw on any engagement that
+   follows the method's own rotating-seat rule: the round chart iterated
+   every declared seat across every round and called `.toFixed()` on the
+   result, so a seat that skipped a round killed the page on load. Fixed at
+   source and in the lab's copy — an absent score is a gap, never a zero,
+   and the delta spans the rounds the seat actually sat.
+2. **`plan.html` carried no viewport meta.** Harmless in publication — the
+   artifact wrapper injects one — but it made the file's own phone checks
+   vacuous, which is precisely `lessons.md` L-14.
 
 ## Known open — for the port packet
 
-- **The chart's context columns sit at 1.48:1 (light) and 1.70:1 (dark)**
-  against the card, under the 3:1 non-text floor. The obvious fix inverts
-  the chart: the current week is a hatch that composites to 1.71:1, *fainter*
-  than the columns it would be contrasted against, so darkening the columns
-  alone makes the live mark the weakest thing in the frame. The strip half
-  was fixed — a ring for quiet marks, solid past the fortnight — which
-  clears the floor without leaning on hue. The chart half needs a design
-  decision, not a token swap. Measurements in
-  `panel/round-2/refuters/chart-and-strip-marks-fall-under-the-non-text-floor.json`.
-- **No destination for a filtered list of open work.** The hero stopped
-  claiming a finished job is openable (r1); the KPI row stopped offering
-  link roles that append a bare `#` (r2). The affordance ships when the
-  destination does.
-- **A designed retry.** `#retry` is unwired, like every control on this
-  master. Needs live wiring the lab does not have.
-- **Per-column values on the twelve-week chart.** All twelve are named in
-  the chart's spoken line; twelve 22px buttons would fail the hit-target
-  floor at 390 and triple the keyboard path of a reading surface.
-- **A bound record-start instant**, if the refusals are ever to name a date.
-  The fixture holds none, and inventing one would be the defect the
-  derivation exists to prevent.
-- **Nobody owns the port.** Three prior engagements, forty-five rounds,
-  1,358 findings, 919 fixes, **zero shipped pixels**. This engagement ends
-  with a port packet a separate build session lands. Say so to the operator
-  before round twelve, not after.
+`PORT-PACKET.md` is the deliverable and carries all of this in full: the
+frozen configuration, both gates, the decision list, the deferred builds,
+the open ledger, nine port risks and the frames.
+
+- **One item confirmed and unfixed on the surface:** the chart's context
+  columns at 1.48:1 (light) and 1.70:1 (dark) against the 3:1 non-text
+  floor. The obvious fix inverts the chart — the live week is a hatch at
+  1.71:1, fainter than the columns it would be contrasted against. Needs a
+  design decision. `audit.mjs` does **not** grade non-text contrast; a green
+  measured gate is not a 1.4.11 pass.
+- **Five deferred builds**, none of them work done badly: a destination for
+  a filtered list of open work, a wired retry, the chart-wide contrast
+  answer, per-column values that would not cost twelve tab stops, and a
+  bound record-start instant.
+- **Nobody owns the port.** Four engagements, forty-eight rounds, 1,442
+  findings, 983 fixes, **zero shipped pixels**. This one ends at a port
+  packet a separate build session lands. If that session is not named, this
+  makes four.

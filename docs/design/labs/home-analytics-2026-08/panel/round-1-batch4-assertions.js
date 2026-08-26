@@ -93,7 +93,7 @@
       const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
       const found = [];
       for (const m of months) {
-        const re = new RegExp("\\\\b" + m + "\\\\b(?!\\\\s+\\\\d{4})", "g");
+        const re = new RegExp("(?<!\\d\\s)\\b" + m + "\\b(?!\\s+\\d{4})", "g");
         if (re.test(text)) found.push(m);
       }
       return found;
@@ -112,7 +112,7 @@
     const voice = await page.evaluate(() => {
       const text = (document.querySelector("main") || document.body).innerText;
       const banned = ["snapshot writer", "callers", "recorder", "structured", "accrues", "periods", "provider"];
-      const hits = banned.filter((w) => new RegExp("\\\\b" + w + "\\\\b", "i").test(text));
+      const hits = banned.filter((w) => new RegExp("\\b" + w + "\\b", "i").test(text));
       const firstPerson = /\bwe\b/i.test(text);
       const lowerStart = Array.from(document.querySelectorAll("main p"))
         .map((p) => p.textContent.trim())

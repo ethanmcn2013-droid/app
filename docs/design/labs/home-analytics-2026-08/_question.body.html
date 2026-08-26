@@ -1,0 +1,122 @@
+<div class="page">
+
+  <header class="mast">
+    <p class="t-label">Signal Studio &middot; Home &middot; Lately &middot; what remains</p>
+    <h1 class="t-display">The honest distance</h1>
+    <p class="t-body">What is still open on Lately, at what severity, and roughly what it would take. Written at the close, from the record, on the assumption that a closing document which only lists what went well is worthless.</p>
+  </header>
+
+  <section class="verdict is-open" aria-labelledby="v">
+    <p class="t-label">Say this first</p>
+    <h2 class="t-sect" id="v">The ledger did not close. Two of its five clauses fail, and the one that fails hardest is getting worse rather than better.</h2>
+    <p class="t-body">The engagement stopped on its declared budget of three rounds. <code>stopping.md</code> calls that finished work <em>provided the distance is published</em> &mdash; this page is that condition being met, not a summary of a success.</p>
+  </section>
+
+  <section class="band" aria-labelledby="ledger">
+    <div class="band-head"><h2 class="t-sect grow" id="ledger">The ending, clause by clause</h2></div>
+    <p class="t-body">The engagement ends when <strong>two consecutive rounds</strong> confirm no finding classed blocking or misleading, both gates green, on a frozen configuration, with self-inflicted cost under 25% in both. Rounds 2 and 3 are the pair being tested.</p>
+    <div class="clauses">
+      <div class="clause">
+        <div class="clause-t"><p class="t-head">No confirmed <code>blocking</code> finding</p><p class="t-small">0 in round 2, 0 in round 3. None in any round of this engagement.</p></div>
+        <div class="clause-v"><span class="pill met">met</span></div>
+      </div>
+      <div class="clause">
+        <div class="clause-t"><p class="t-head">No confirmed <code>misleading</code> finding</p><p class="t-small">0 and 0. Six in round one &mdash; all six fixed, none returned.</p></div>
+        <div class="clause-v"><span class="pill met">met</span></div>
+      </div>
+      <div class="clause">
+        <div class="clause-t"><p class="t-head">Both gates green</p><p class="t-small">Measured gate: 0 violations across 15 categories, both grounds. Behaviour gate: 506 assertions, 0 failing.</p></div>
+        <div class="clause-v"><span class="pill met">met</span></div>
+      </div>
+      <div class="clause is-unmet">
+        <div class="clause-t"><p class="t-head">A frozen configuration</p><p class="t-small">Round 3 was frozen. <strong>Round 2 was not</strong> &mdash; it restructured the scroll model, rebuilt the loading state and took the link role off the KPI row. A pair needs both.</p></div>
+        <div class="clause-v"><span class="pill unmet">round 2</span></div>
+      </div>
+      <div class="clause is-unmet">
+        <div class="clause-t"><p class="t-head">Self-inflicted cost under 25%</p><p class="t-small"><strong>36% in round 2 and 67% in round 3.</strong> Both over, and the trend is the wrong way.</p></div>
+        <div class="clause-v"><span class="pill unmet">both</span></div>
+      </div>
+    </div>
+    <p class="t-body">The instrument reaches the conclusion on its own, without being asked to. <code>round-metrics.mjs</code> returns two warnings and a verdict:</p>
+    <blockquote>
+      <p>Two consecutive rounds above 25% self-inflicted. The loop is measuring the fixer, not the work &mdash; stop and publish the honest distance.</p>
+      <cite class="t-label">round-metrics.mjs, unprompted</cite>
+    </blockquote>
+  </section>
+
+  <section class="band" aria-labelledby="surface">
+    <div class="band-head"><h2 class="t-sect grow" id="surface">Confirmed and unfixed on the surface</h2><span class="pill defect">one item</span></div>
+    <div class="note is-open">
+      <p class="t-label">Non-text contrast on the twelve-week chart &middot; defect &middot; raised round 2</p>
+      <p class="t-body">The eleven context columns composite to <span class="mono">1.48:1</span> against the card on paper and <span class="mono">1.70:1</span> on the dark twin. WCAG 1.4.11 asks 3:1 for a graphical object carrying meaning, and these carry the whole shape of the reading.</p>
+      <p class="t-body"><strong>Why it is still open.</strong> The obvious fix inverts the chart. The current week is a hatch that composites to <span class="mono">1.71:1</span> &mdash; fainter than the columns it would be contrasted against &mdash; and <code>.bar.live</code> paints in zero states, so darkening the context alone makes the live mark the weakest thing in the frame and the one the reader is meant to read first. The strip half of the same finding <em>was</em> fixed: marks inside the fortnight became a 2px ring, solid past it, which clears the floor on a fill difference rather than on hue.</p>
+      <p class="t-small"><strong>Size:</strong> half a day to a day, and it is a design decision before it is an edit &mdash; the plate, the hatch and the live mark have to be re-derived together, then re-measured on both grounds. Measurements are in <code>panel/round-2/refuters/chart-and-strip-marks-fall-under-the-non-text-floor.json</code>.</p>
+      <p class="t-small"><strong>The trap for whoever ports this:</strong> <code>audit.mjs</code> grades text contrast against the real composited backdrop and does not grade non-text contrast at all. A green measured gate is not a 1.4.11 pass and must not be read as one.</p>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="builds">
+    <div class="band-head"><h2 class="t-sect grow" id="builds">Deferred because they do not exist yet</h2></div>
+    <p class="t-body">These are not things done badly. Each is a thing the product does not have, and the surface deliberately offers no affordance that leads nowhere &mdash; an affordance the screen cannot honour is the defect round 1 and round 2 both removed.</p>
+    <div class="scroller">
+      <table>
+        <thead><tr><th>What is missing</th><th>Severity</th><th class="num">Size</th><th>Why not here</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>A destination for a filtered list of open work</strong></td>
+            <td><span class="pill defect">defect</span></td>
+            <td class="num">days</td>
+            <td>Needs a route and a filtered view that do not exist. Until then the KPI row is read, not operated.</td>
+          </tr>
+          <tr>
+            <td><strong>A designed retry</strong></td>
+            <td><span class="pill defect">defect</span></td>
+            <td class="num">1&ndash;2 d</td>
+            <td>Needs live wiring. The lab has never exercised a loading&rarr;error&rarr;success transition, so the retry&rsquo;s own states are ungraded.</td>
+          </tr>
+          <tr>
+            <td><strong>The chart-wide non-text answer</strong></td>
+            <td><span class="pill defect">defect</span></td>
+            <td class="num">0.5&ndash;1 d</td>
+            <td>The open item above. A decision, then a re-measure on both grounds.</td>
+          </tr>
+          <tr>
+            <td><strong>Per-column values on the chart</strong></td>
+            <td><span class="pill refinement">refinement</span></td>
+            <td class="num">1 d</td>
+            <td>All twelve are already named in the chart&rsquo;s spoken line. Twelve 22px buttons would fail the hit-target floor at 390 and triple the keyboard path of a reading surface. Needs a different interaction, not twelve more tab stops.</td>
+          </tr>
+          <tr>
+            <td><strong>A bound record-start instant</strong></td>
+            <td><span class="pill refinement">refinement</span></td>
+            <td class="num">hours</td>
+            <td>Only if the refusals are ever to name a date. The fixture holds none, and inventing one is exactly the defect the derivation exists to prevent.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="port">
+    <div class="band-head"><h2 class="t-sect grow" id="port">The largest open item is not a pixel</h2></div>
+    <p class="t-body"><strong>Nobody owns the port into <code>src/</code>.</strong> This skill owns the lab master, both gates, the ledger, the record and the five documents. It hands over a port packet; a separate build session lands it, with the product&rsquo;s own tests and its own release gate.</p>
+    <p class="t-body">Three prior engagements ran forty-five rounds, raised 1,358 findings, made 919 fixes and published fifteen artifacts &mdash; and shipped <strong>zero pixels</strong>. None of the three retrospectives raised it. Each ended with a lab master nobody had agreed to port, and the question of whose job that was stayed open by default rather than by decision.</p>
+    <p class="t-body">Said plainly, because it should be heard before round one rather than after round twelve: <em>a lab master at the bar is not a shipped product, and an engagement that ends here has not improved anything a customer can see.</em></p>
+  </section>
+
+  <section class="band" aria-labelledby="harsh">
+    <div class="band-head"><h2 class="t-sect grow" id="harsh">The harshest seat, verbatim</h2></div>
+    <p class="t-body">Typography scored the closing round <span class="mono">8.6</span>, the lowest of the seven, and did not sign off. Its highest-value finding was not on the surface at all:</p>
+    <blockquote>
+      <p>The highest-value item is a gate finding, not a surface one. Both guards build their matchers with four literal backslashes, so the compiled pattern is a literal backslash followed by <code>b</code>, not a word boundary. Fed a sentence containing all seven banned terms, the gate&rsquo;s own expression returns <code>[]</code>. Each guard loops four states, so <strong>eight of the 461 assertions cannot fail</strong> &mdash; and they are the guards for two round-one findings now recorded closed on evidence that would pass either way.</p>
+      <cite class="t-label">Typography &middot; round 3 &middot; 8.6 &middot; did not sign off</cite>
+    </blockquote>
+    <p class="t-body">It was right about the mechanism and wrong about the fix. The refuter proved the seat&rsquo;s own corrected line turns the gate red on a correct surface, because <code>\b</code> plus <code>May</code> matches &ldquo;4 May&rdquo; in the chart&rsquo;s spoken description. Both landed: the defect is recorded confirmed, carrying the refuter&rsquo;s fix. That is the panel working exactly as designed &mdash; and it is the reason no finding on this engagement went straight to a repair.</p>
+  </section>
+
+  <footer class="foot">
+    <p class="t-label">Lately &middot; The Honest Distance &middot; 26 August 2026</p>
+    <p class="t-small">Severity classes: <strong>blocking</strong> &mdash; it will not do what it says. <strong>misleading</strong> &mdash; it asserts something untrue. <strong>defect</strong> &mdash; visibly wrong but passable. <strong>refinement</strong> &mdash; nothing is wrong. The ending is stated in these, never in a score.</p>
+  </footer>
+
+</div>

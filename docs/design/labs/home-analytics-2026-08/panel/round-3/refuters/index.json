@@ -1,0 +1,218 @@
+[
+  {
+    "id": "loading-hands-over-the-reading-it-says-it-has-not-made",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "loading-hands-over-the-reading-it-says-it-has-not-made.md"
+  },
+  {
+    "id": "settled-is-proved-by-a-check-that-cannot-see-it",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "settled-is-proved-by-a-check-that-cannot-see-it.md"
+  },
+  {
+    "id": "the-age-summary-says-one-days",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "the-age-summary-says-one-days.md"
+  },
+  {
+    "id": "one-of-four-labels-drops-the-verb-the-others-keep",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "one-of-four-labels-drops-the-verb-the-others-keep.md"
+  },
+  {
+    "id": "the-lab-stamp-repeats-its-own-key",
+    "seat": "Brand and copy",
+    "severity": "refinement",
+    "file": "the-lab-stamp-repeats-its-own-key.md"
+  },
+  {
+    "id": "gate-regexes-lost-their-escapes",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "gate-regexes-lost-their-escapes.md"
+  },
+  {
+    "id": "pinned-tip-guard-scrolls-a-container-that-no-longer-scrolls",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "pinned-tip-guard-scrolls-a-container-that-no-longer-scrolls.md"
+  },
+  {
+    "id": "record-draws-last-cannot-fail-for-its-own-claim",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "record-draws-last-cannot-fail-for-its-own-claim.md"
+  },
+  {
+    "id": "tapped-mark-keeps-the-hover-ink-forever",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "tapped-mark-keeps-the-hover-ink-forever.md"
+  },
+  {
+    "id": "tooltip-text-stays-in-the-accessibility-tree",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "tooltip-text-stays-in-the-accessibility-tree.md"
+  },
+  {
+    "id": "gate-word-boundaries-are-double-escaped-and-cannot-fail",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "gate-word-boundaries-are-double-escaped-and-cannot-fail.md"
+  },
+  {
+    "id": "focused-mark-loses-its-name-to-a-pointer-leave",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "focused-mark-loses-its-name-to-a-pointer-leave.md"
+  },
+  {
+    "id": "tab-strip-activates-into-a-dead-history-entry",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "tab-strip-activates-into-a-dead-history-entry.md"
+  },
+  {
+    "id": "strip-marks-name-their-job-only-on-hover",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "strip-marks-name-their-job-only-on-hover.md"
+  },
+  {
+    "id": "kpi-row-name-is-checked-for-length-only",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "kpi-row-name-is-checked-for-length-only.md"
+  },
+  {
+    "id": "live-week-label-arrives-before-its-column",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "live-week-label-arrives-before-its-column.md"
+  },
+  {
+    "id": "error-heading-sits-flush-on-its-own-sentence",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "error-heading-sits-flush-on-its-own-sentence.md"
+  },
+  {
+    "id": "partial-row-speaks-a-denominator-one-card-does-not-have",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "partial-row-speaks-a-denominator-one-card-does-not-have.md"
+  },
+  {
+    "id": "ghost-headline-strands-here-at-every-desk-width",
+    "seat": "Product taste and emotional resonance",
+    "severity": "refinement",
+    "file": "ghost-headline-strands-here-at-every-desk-width.md"
+  },
+  {
+    "id": "two-gate-guards-match-a-literal-backslash",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "two-gate-guards-match-a-literal-backslash.md"
+  },
+  {
+    "id": "refusal-copy-has-no-measure-ceiling",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "refusal-copy-has-no-measure-ceiling.md"
+  },
+  {
+    "id": "nothing-balances-a-last-line",
+    "seat": "Typography",
+    "severity": "refinement",
+    "file": "nothing-balances-a-last-line.md"
+  },
+  {
+    "id": "the-bound-stamp-wraps-and-strands-its-digit",
+    "seat": "Typography",
+    "severity": "refinement",
+    "file": "the-bound-stamp-wraps-and-strands-its-digit.md"
+  },
+  {
+    "id": "axis-max-and-live-week-print-the-same-number",
+    "seat": "ui",
+    "severity": "defect",
+    "file": "axis-max-and-live-week-print-the-same-number.md"
+  },
+  {
+    "id": "first-run-hero-is-three-fifths-empty-paper",
+    "seat": "ui",
+    "severity": "defect",
+    "file": "first-run-hero-is-three-fifths-empty-paper.md"
+  },
+  {
+    "id": "first-run-height-assertion-certifies-its-own-literal",
+    "seat": "ui",
+    "severity": "defect",
+    "file": "first-run-height-assertion-certifies-its-own-literal.md"
+  },
+  {
+    "id": "error-heading-and-its-body-have-no-rung-between-them",
+    "seat": "ui",
+    "severity": "defect",
+    "file": "error-heading-and-its-body-have-no-rung-between-them.md"
+  },
+  {
+    "id": "denominator-plate-keeps-a-portrait-layout-in-a-banner-box",
+    "seat": "ui",
+    "severity": "refinement",
+    "file": "denominator-plate-keeps-a-portrait-layout-in-a-banner-box.md"
+  },
+  {
+    "id": "error-reading-assertion-cannot-fail",
+    "seat": "ux",
+    "severity": "defect",
+    "file": "error-reading-assertion-cannot-fail.md"
+  },
+  {
+    "id": "first-run-hero-reserves-a-chart-it-does-not-draw",
+    "seat": "ux",
+    "severity": "defect",
+    "file": "first-run-hero-reserves-a-chart-it-does-not-draw.md"
+  },
+  {
+    "id": "axis-max-labels-the-live-week-with-its-own-number",
+    "seat": "ux",
+    "severity": "defect",
+    "file": "axis-max-labels-the-live-week-with-its-own-number.md"
+  },
+  {
+    "id": "all-five-counted-out-of-nine-when-one-is-not-counted",
+    "seat": "ux",
+    "severity": "defect",
+    "file": "all-five-counted-out-of-nine-when-one-is-not-counted.md"
+  },
+  {
+    "id": "loading-footer-stamps-a-reading-it-says-is-still-running",
+    "seat": "ux",
+    "severity": "defect",
+    "file": "loading-footer-stamps-a-reading-it-says-is-still-running.md"
+  },
+  {
+    "id": "sitting-means-two-opposite-things-in-one-section",
+    "seat": "ux",
+    "severity": "defect",
+    "file": "sitting-means-two-opposite-things-in-one-section.md"
+  },
+  {
+    "id": "error-alert-loses-a-rung-the-other-terminal-states-keep",
+    "seat": "ux",
+    "severity": "defect",
+    "file": "error-alert-loses-a-rung-the-other-terminal-states-keep.md"
+  },
+  {
+    "id": "partial-note-explains-the-design-to-the-owner",
+    "seat": "ux",
+    "severity": "refinement",
+    "file": "partial-note-explains-the-design-to-the-owner.md"
+  }
+]

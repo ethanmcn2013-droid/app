@@ -1,0 +1,314 @@
+<!--fam:start-->
+<nav class="famRail" aria-label="The Lately elevation — five documents">
+  <div class="famRail-in">
+    <span class="famRail-mark"><span class="famRail-dot"></span><b>Signal Studio</b><i>/</i><em>Lately</em></span>
+    <ol class="famRail-set"><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/bbc3c970-d680-4065-ad45-10cbedadd30f"><span class="famRail-n">01</span><span class="famRail-t">CEO Report</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/d894ef6e-3018-4f05-a64e-66dc966396c8"><span class="famRail-n">02</span><span class="famRail-t">Design Console</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/885389f0-bebd-4420-a950-56e9cb307273"><span class="famRail-n">03</span><span class="famRail-t">Elevation Log</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/63088e5d-51d5-4a70-ac35-e804bdd2f3eb"><span class="famRail-n">04</span><span class="famRail-t">The Honest Distance</span></a></li><li class="famRail-item is-here"><span class="famRail-link" aria-current="page"><span class="famRail-n">05</span><span class="famRail-t">3 Rounds</span></span></li></ol>
+    
+  </div>
+</nav>
+<style>
+.famRail { position: sticky; top: 0; z-index: 40; background: var(--paper, #fff); border-bottom: 1px solid var(--line, rgba(17,17,17,.1)); }
+.famRail-in { display: flex; align-items: center; gap: 18px; padding: 10px 20px; max-width: 1180px; margin: 0 auto; }
+.famRail-mark { display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap; color: var(--ink, #111); }
+.famRail-mark i { opacity: .4; }
+.famRail-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--accent, #4f46e5); }
+.famRail-set { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; overflow-x: auto; scrollbar-width: none; }
+.famRail-set::-webkit-scrollbar { display: none; }
+.famRail-link { display: flex; align-items: baseline; gap: 6px; padding: 5px 9px; border-radius: 6px;
+  font-size: 12px; text-decoration: none; color: var(--ink-2, rgba(17,17,17,.66)); white-space: nowrap; }
+a.famRail-link:hover { background: var(--wash, rgba(17,17,17,.05)); color: var(--ink, #111); }
+.famRail-n { font-variant-numeric: tabular-nums; opacity: .5; font-size: 11px; }
+.is-here .famRail-link { color: var(--ink, #111); font-weight: 600; background: var(--wash, rgba(17,17,17,.06)); }
+.is-soon .famRail-link { opacity: .38; }
+.famRail-sibs { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; white-space: nowrap; }
+.famRail-sibsLabel { color: var(--ink-2, rgba(17,17,17,.55)); }
+.famRail-sib { color: var(--ink, #111); text-decoration: none; border-bottom: 1px solid var(--line, rgba(17,17,17,.2)); }
+@media (max-width: 760px) {
+  .famRail-in { gap: 10px; padding: 8px 12px; }
+  .famRail-sibs { display: none; }
+  .famRail-t { display: none; }
+  .is-here .famRail-t { display: inline; }
+}
+</style>
+<!--fam:end-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3 Rounds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+/* The three closing documents are held to the same lock as the product they
+   describe and the two living pages they sit beside: Ink, Indigo, White and
+   tints of those, the lock's four status marks where a severity has to read
+   at a glance, Geist at 400 and 600, Geist Mono at 400. Nothing else.
+   A closing report that broke the rule it is reporting on would be a poor
+   argument for the rule. */
+
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --ink-3: rgba(17, 17, 17, 0.62);
+  --ink-4: rgba(17, 17, 17, 0.28);
+  --wash: rgba(17, 17, 17, 0.04);
+  --line-soft: rgba(17, 17, 17, 0.06);
+  --line: rgba(17, 17, 17, 0.08);
+  --line-strong: rgba(17, 17, 17, 0.16);
+  --indigo-wash: rgba(79, 70, 229, 0.09);
+
+  --paper: var(--white);
+  --plate: rgba(17, 17, 17, 0.04);
+
+  /* The lock's status four, used only where a severity or a pass has to
+     read before the words do. Never decoration. */
+  --red: #ef4444;
+  --amber: #d97706;
+  --emerald: #059669;
+  --accent: var(--indigo);
+
+  --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+  --page: 1120px;
+  --measure: 68ch;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0e0e0f;
+    --ink-1: #f6f6f7;
+    --ink-2: rgba(246, 246, 247, 0.72);
+    --ink-3: rgba(246, 246, 247, 0.6);
+    --ink-4: rgba(246, 246, 247, 0.3);
+    --wash: rgba(255, 255, 255, 0.05);
+    --line-soft: rgba(255, 255, 255, 0.07);
+    --line: rgba(255, 255, 255, 0.1);
+    --line-strong: rgba(255, 255, 255, 0.2);
+    --indigo: #6f68ee;
+    --indigo-wash: rgba(111, 104, 238, 0.18);
+    --plate: rgba(255, 255, 255, 0.05);
+    --red: #f87171;
+    --amber: #f0a13a;
+    --emerald: #34d399;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0e0e0f;
+  --ink-1: #f6f6f7;
+  --ink-2: rgba(246, 246, 247, 0.72);
+  --ink-3: rgba(246, 246, 247, 0.6);
+  --ink-4: rgba(246, 246, 247, 0.3);
+  --wash: rgba(255, 255, 255, 0.05);
+  --line-soft: rgba(255, 255, 255, 0.07);
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.2);
+  --indigo: #6f68ee;
+  --indigo-wash: rgba(111, 104, 238, 0.18);
+  --plate: rgba(255, 255, 255, 0.05);
+  --red: #f87171;
+  --amber: #f0a13a;
+  --emerald: #34d399;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, ul, ol, figure, table { margin: 0; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; border-radius: 3px; }
+
+.page { max-width: var(--page); margin: 0 auto; padding: 0 24px 96px; }
+.stack { display: flex; flex-direction: column; }
+
+/* ── Type roles. Size, weight, leading and letterfit are one decision, so
+      they travel together on one class. ─────────────────────────────── */
+.t-label {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3);
+  line-height: 1;
+}
+.t-display { font-size: clamp(30px, 4.4vw, 46px); font-weight: 600; line-height: 1.06; letter-spacing: -0.025em; text-wrap: balance; }
+.t-sect { font-size: 22px; font-weight: 600; line-height: 1.25; letter-spacing: -0.015em; text-wrap: balance; }
+.t-head { font-size: 17px; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; text-wrap: balance; }
+.t-body { font-size: 16px; line-height: 1.6; color: var(--ink-2); max-width: var(--measure); text-wrap: pretty; }
+.t-small { font-size: 14px; line-height: 1.55; color: var(--ink-3); max-width: var(--measure); text-wrap: pretty; }
+.t-num { font-size: 34px; font-weight: 600; line-height: 1.04; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+strong, b { font-weight: 600; color: var(--ink-1); }
+em { font-style: normal; color: var(--ink-1); font-weight: 600; }
+code { font-family: var(--font-mono); font-size: 0.88em; background: var(--wash); padding: 1px 5px; border-radius: 4px; }
+
+/* ── Masthead ──────────────────────────────────────────────────────── */
+.mast { padding: 56px 0 40px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 18px; }
+.mast-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mast .t-body { max-width: 72ch; }
+
+/* ── The verdict plate. Every closing document opens with the one
+      sentence that decides, and nothing above it. ──────────────────── */
+.verdict {
+  margin-top: 40px; padding: 28px 30px; border-radius: 14px;
+  background: var(--plate); border: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.verdict.is-open { border-left: 3px solid var(--amber); }
+.verdict .t-sect { max-width: 46ch; }
+
+/* ── Sections ──────────────────────────────────────────────────────── */
+.band { padding-top: 56px; display: flex; flex-direction: column; gap: 20px; }
+.band-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.band-head .grow { flex: 1 1 auto; }
+
+/* ── Figures row ───────────────────────────────────────────────────── */
+.figs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.fig { background: var(--paper); padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.fig .t-small { color: var(--ink-3); font-size: 13px; max-width: none; }
+
+/* ── Tables. Wide content scrolls inside its own box; the page never
+      scrolls sideways. ────────────────────────────────────────────── */
+.scroller { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+thead th {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3);
+  background: var(--wash); border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.is-now td { background: var(--indigo-wash); }
+tr.is-now td:first-child { box-shadow: inset 3px 0 0 var(--indigo); }
+
+/* ── Severity and state marks. Fill and ink, never hue alone: each mark
+      also carries its own word. ───────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-2);
+  white-space: nowrap;
+}
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 999px; background: var(--ink-4); flex: none; }
+.pill.met::before { background: var(--emerald); }
+.pill.unmet::before { background: var(--amber); }
+.pill.blocking::before { background: var(--red); }
+.pill.defect::before { background: var(--ink-3); }
+.pill.refinement::before { background: transparent; box-shadow: inset 0 0 0 2px var(--ink-4); }
+
+/* ── The clause checklist. Five rows, each a real state. ───────────── */
+.clauses { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.clause { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap; }
+.clause:last-child { border-bottom: 0; }
+.clause-t { flex: 1 1 260px; min-width: 0; }
+.clause-v { display: flex; gap: 8px; align-items: center; }
+.clause.is-unmet { background: var(--wash); }
+
+/* ── Quote ─────────────────────────────────────────────────────────── */
+blockquote { margin: 0; padding: 4px 0 4px 20px; border-left: 2px solid var(--indigo); }
+blockquote p { font-size: 17px; line-height: 1.55; color: var(--ink-1); max-width: 60ch; text-wrap: pretty; }
+blockquote cite { display: block; margin-top: 10px; font-style: normal; }
+
+/* ── Notes ─────────────────────────────────────────────────────────── */
+.note { padding: 18px 20px; border-radius: 12px; background: var(--wash); display: flex; flex-direction: column; gap: 8px; }
+.note.is-open { box-shadow: inset 3px 0 0 var(--amber); }
+.note .t-body { max-width: 66ch; }
+
+ul.plain { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+ul.plain > li { padding-left: 18px; position: relative; color: var(--ink-2); font-size: 15px; line-height: 1.6; max-width: var(--measure); text-wrap: pretty; }
+ul.plain > li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 5px; height: 5px; border-radius: 999px; background: var(--ink-4); }
+
+.foot { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+
+@media (max-width: 640px) {
+  .page { padding: 0 16px 64px; }
+  .mast { padding: 36px 0 28px; }
+  .verdict { padding: 22px 20px; }
+  .band { padding-top: 40px; }
+}
+</style>
+
+<div class="page">
+
+  <header class="mast">
+    <p class="t-label">Signal Studio &middot; Home &middot; Lately &middot; retrospective on the method</p>
+    <h1 class="t-display">Three rounds</h1>
+    <p class="t-body">A retrospective on the <em>method</em>, not the product. Written by the session that ran it &mdash; which is a conflict, and is named here rather than left for the reader to notice.</p>
+  </header>
+
+  <section class="verdict" aria-labelledby="v">
+    <p class="t-label">The conflict, stated before the findings</p>
+    <h2 class="t-sect" id="v">A session scoring a loop it also modified is an interested witness.</h2>
+    <p class="t-body">This session ran the panel, applied every fix, wrote most of the new gate assertions, and is now grading the instrument it spent three rounds sharpening. A report that only praises the method would be worthless, so the sharpest material here is the method&rsquo;s failures &mdash; including four this session caused and one it shipped into a shared skill.</p>
+  </section>
+
+  <section class="band" aria-labelledby="numbers">
+    <div class="band-head"><h2 class="t-sect grow" id="numbers">The numbers, recomputed rather than remembered</h2></div>
+    <p class="t-body">The three proving retrospectives before this one each reported figures their own records contradicted &mdash; an assertion count off by eight, a worst-finding series disagreeing at three rounds, a confirmed total off by one &mdash; all recomputable from the record in seconds. This table is <code>round-metrics.mjs</code> output, pasted.</p>
+    <div class="scroller">
+      <table>
+        <thead><tr><th class="num">R</th><th class="num">Seats</th><th class="num">Floor</th><th class="num">Ceil</th><th class="num">Spread</th><th class="num">Distinct</th><th class="num">Conf</th><th class="num">Refuted</th><th class="num">Per seat</th><th class="num">Blk</th><th class="num">Mis</th><th class="num">Def</th><th class="num">Ref</th><th class="num">Self</th><th>Frozen</th><th class="num">Gate</th></tr></thead>
+        <tbody>
+          <tr><td class="num">1</td><td class="num">7</td><td class="num">7.0</td><td class="num">8.3</td><td class="num">1.30</td><td class="num">37</td><td class="num">29</td><td class="num">22%</td><td class="num">5.29</td><td class="num">0</td><td class="num">6</td><td class="num">22</td><td class="num">1</td><td class="num">0%</td><td>no</td><td class="num">366</td></tr>
+          <tr><td class="num">2</td><td class="num">3</td><td class="num">7.6</td><td class="num">8.3</td><td class="num">0.70</td><td class="num">19</td><td class="num">14</td><td class="num">26%</td><td class="num">6.33</td><td class="num">0</td><td class="num">0</td><td class="num">13</td><td class="num">1</td><td class="num">36%</td><td>no</td><td class="num">461</td></tr>
+          <tr class="is-now"><td class="num">3</td><td class="num">7</td><td class="num">8.6</td><td class="num">9.1</td><td class="num">0.50</td><td class="num">28</td><td class="num">21</td><td class="num">25%</td><td class="num">4.00</td><td class="num">0</td><td class="num">0</td><td class="num">14</td><td class="num">7</td><td class="num">67%</td><td>yes</td><td class="num">506</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="t-body">Read the spread column and the self column together. Agreement improved every round &mdash; 1.30, 0.70, 0.50 between the harshest and kindest seat &mdash; while the share of findings landing on the loop&rsquo;s own repairs went 0%, 36%, 67%. The panel converged on the work at the same rate it began consuming itself.</p>
+  </section>
+
+  <section class="band" aria-labelledby="held">
+    <div class="band-head"><h2 class="t-sect grow" id="held">What held</h2></div>
+    <ul class="plain">
+      <li><strong>The refuter is the load-bearing part.</strong> 22%, 26%, 25% &mdash; a quarter of everything seven expert seats filed did not survive one fresh reader instructed to default to refuted, and the rate was stable across three rounds and two panel sizes. Without it, one finding in four would have become a change to a surface that did not need one.</li>
+      <li><strong>Refuting the fix while affirming the problem.</strong> Ten of round three&rsquo;s twenty-one confirmed findings arrived this way: the defect real, the proposed repair wrong. The best example would have turned a green gate red in the closing round &mdash; a corrected regex that matches &ldquo;4 May&rdquo; in the chart&rsquo;s own spoken line. Without this category those ten either ship a bad fix or die on a technicality.</li>
+      <li><strong>Clustering before refutation.</strong> 131 findings as filed, 84 distinct claims. Convergence is recorded as evidence rather than paid for twice &mdash; three seats independently found the same dead regex, and that agreement is in the record instead of being three refutations of one thing.</li>
+      <li><strong>Severity as the ending, not a score.</strong> Seven blind seats disagree with a standard deviation of 0.335, so a unanimous 9.5 would need true quality of 9.94 to pass half the time. The scores here moved 7.0&rarr;8.6 at the floor and gated nothing, correctly. The severity ledger resolved cleanly every round.</li>
+      <li><strong>Assertion first, watched failing.</strong> Seven surface findings in round three were driven against the unfixed master and all seven went red before anything was repaired. Two of the seven probes were wrong when first written and were caught by that same run.</li>
+    </ul>
+  </section>
+
+  <section class="band" aria-labelledby="broke">
+    <div class="band-head"><h2 class="t-sect grow" id="broke">What broke</h2></div>
+    <ul class="plain">
+      <li><strong>The gate certified eleven things it could not see.</strong> Four found in rounds 1&ndash;2, seven more in the closing round, every one of them guarding a finding already recorded closed. Four source backslashes compiling to a literal backslash. A predicate grepping <code>document.styleSheets</code> for selector text it never rendered. Three comparing the loading DOM to itself. A <code>scrollBy</code> on a container a later round stopped making a scroller. <code>--h === 100</code> against a template that types <code>--h:100</code>. An accessible name checked for <code>length &gt; 12</code> and nothing else. <strong>An assertion that cannot fail is worse than none, because it certifies</strong> &mdash; and the only defence found was the panel itself.</li>
+      <li><strong>Self-inflicted cost is the metric that decided this engagement, and it is not in the loop.</strong> Nothing in the method stops between batches to ask whether the last batch caused the next round. It is recorded at the end of a round, by hand, from a judgement about provenance &mdash; and even that was nearly guessed here. Grepping the fix scripts for each exact string, and demoting every case where a script had used a string as an <em>anchor</em> rather than introducing it, moved five claims from self-inflicted to not. Estimated, the number would have been wrong by a fifth.</li>
+      <li><strong>The rotating three is a real gap.</strong> Round 2 sat three seats and produced the round that was not frozen and the round whose repairs caused most of round 3. Cheaper per round, more expensive across the engagement.</li>
+      <li><strong>The shared report builder threw on the method&rsquo;s own prescription.</strong> The round chart iterated every declared seat across every round and called <code>.toFixed()</code> on the result &mdash; so any engagement that follows the rotating-three rule publishes a log that dies on load, taking the ledger and every block below it with it. Fixed at source. It had almost certainly been live since round 2 and was caught only because the artifact verifier was run this time.</li>
+      <li><strong>Four of five red lines in this round&rsquo;s own verification were new probes measuring the wrong thing</strong> &mdash; a heading selected by tag in a state that heads with a paragraph, a selection measured with <code>containsNode</code>, which is blind to <code>user-select</code>; a concord check keyed on a row that state does not have; a click driven through a helper that scrolls its own target into view and then reads the scroll back as the defect. The discipline caught all four. It catches nothing that is not run.</li>
+    </ul>
+  </section>
+
+  <section class="band" aria-labelledby="change">
+    <div class="band-head"><h2 class="t-sect grow" id="change">What should change</h2></div>
+    <ul class="plain">
+      <li><strong>Make self-inflicted cost a gate, not a note.</strong> It is the number that ended this engagement and it is computed last, by hand. Attribute each confirmed finding against the fix scripts as it is confirmed, and refuse to open round <span class="mono">N+1</span> above the threshold.</li>
+      <li><strong>Add a liveness class to the gate.</strong> Eleven vacuous assertions in one engagement is not bad luck. Every predicate built from a constructed pattern should carry a fixed probe beside it proving it still finds what it is for &mdash; the pattern used here for both repaired guards, and the only one that would have caught them without a panel.</li>
+      <li><strong>Freeze earlier.</strong> The freeze arrived at round 3 by design; round 2&rsquo;s restructuring is the direct cause of the pair failing. Freezing at the first clean-on-severity round would likely have closed this ledger.</li>
+      <li><strong>Verify the artifacts every round, not at the close.</strong> One published document had been throwing on load and one had never carried a viewport meta &mdash; the exact defect <code>lessons.md</code> L-14 was written about, in the set of documents that records L-14.</li>
+    </ul>
+  </section>
+
+  <section class="band" aria-labelledby="worth">
+    <div class="band-head"><h2 class="t-sect grow" id="worth">Was it worth it</h2></div>
+    <p class="t-body">For the instrument, unambiguously: the behaviour gate went from 122 assertions to 506, eleven of which were certifying nothing and now cannot, and it travels with the work. For the surface, yes but with a limit that should be said rather than implied &mdash; six misleading claims and a self-contradicting quiet state are gone, and the last two rounds bought progressively less of the product and more of the loop.</p>
+    <p class="t-body">The strongest argument for the method is that it reached its own stopping condition without being told to, from a metric that indicts the session running it. The strongest argument against it is the one the method already makes about itself: <strong>three engagements, forty-five rounds, 1,358 findings, 919 fixes, zero shipped pixels.</strong> This is the fourth, and it ends at a port packet rather than in the product.</p>
+    <p class="t-body">Whether that is a fourth failure or the first hand-over depends entirely on what happens next, which is not this session&rsquo;s to decide.</p>
+  </section>
+
+  <footer class="foot">
+    <p class="t-label">3 Rounds &middot; 26 August 2026</p>
+    <p class="t-small">Every figure is <code>round-metrics.mjs</code> output over <code>panel.json</code>. Written by the session that ran the loop, which is an interested witness &mdash; read it against the record, not instead of it.</p>
+  </footer>
+
+</div>

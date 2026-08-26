@@ -1,0 +1,463 @@
+  pass  no sideways scroll · full @ 390x844
+  pass  no sideways scroll · full @ 768x1024
+  pass  no sideways scroll · full @ 1280x900
+  pass  no sideways scroll · full @ 1440x960
+  pass  no sideways scroll · partial @ 390x844
+  pass  no sideways scroll · partial @ 768x1024
+  pass  no sideways scroll · partial @ 1280x900
+  pass  no sideways scroll · partial @ 1440x960
+  pass  no sideways scroll · quiet @ 390x844
+  pass  no sideways scroll · quiet @ 768x1024
+  pass  no sideways scroll · quiet @ 1280x900
+  pass  no sideways scroll · quiet @ 1440x960
+  pass  no sideways scroll · first-run @ 390x844
+  pass  no sideways scroll · first-run @ 768x1024
+  pass  no sideways scroll · first-run @ 1280x900
+  pass  no sideways scroll · first-run @ 1440x960
+  pass  no sideways scroll · empty @ 390x844
+  pass  no sideways scroll · empty @ 768x1024
+  pass  no sideways scroll · empty @ 1280x900
+  pass  no sideways scroll · empty @ 1440x960
+  pass  no sideways scroll · loading @ 390x844
+  pass  no sideways scroll · loading @ 768x1024
+  pass  no sideways scroll · loading @ 1280x900
+  pass  no sideways scroll · loading @ 1440x960
+  pass  no sideways scroll · error @ 390x844
+  pass  no sideways scroll · error @ 768x1024
+  pass  no sideways scroll · error @ 1280x900
+  pass  no sideways scroll · error @ 1440x960
+  pass  every visible interactive element has an accessible name · full
+  pass  nothing invisible can take focus · full
+  pass  every visible interactive element has an accessible name · partial
+  pass  nothing invisible can take focus · partial
+  pass  every visible interactive element has an accessible name · quiet
+  pass  nothing invisible can take focus · quiet
+  pass  every visible interactive element has an accessible name · first-run
+  pass  nothing invisible can take focus · first-run
+  pass  every visible interactive element has an accessible name · empty
+  pass  nothing invisible can take focus · empty
+  pass  every visible interactive element has an accessible name · loading
+  pass  nothing invisible can take focus · loading
+  pass  every visible interactive element has an accessible name · error
+  pass  nothing invisible can take focus · error
+  pass  focus paints a visible treatment
+  pass  no silent text clipping (hidden overflow without ellipsis)
+  pass  every screen-reader line carries a real sentence
+  pass  no screen-reader line is buried under aria-hidden
+  pass  unknown key stops rather than rendering the default · {"state":"resting"}
+  pass  unknown key stops rather than rendering the default · {"state":""}
+  pass  unknown key stops rather than rendering the default · {"v":"c"}
+  pass  unknown key stops rather than rendering the default · {"state":"full","v":"sepia"}
+  pass  unknown key stops rather than rendering the default · {"state":"full","motion":"slow"}
+  pass  declared key renders · full @ light
+  pass  declared key renders · full @ dark
+  pass  declared key renders · partial @ light
+  pass  declared key renders · partial @ dark
+  pass  declared key renders · quiet @ light
+  pass  declared key renders · quiet @ dark
+  pass  declared key renders · first-run @ light
+  pass  declared key renders · first-run @ dark
+  pass  declared key renders · empty @ light
+  pass  declared key renders · empty @ dark
+  pass  declared key renders · loading @ light
+  pass  declared key renders · loading @ dark
+  pass  declared key renders · error @ light
+  pass  declared key renders · error @ dark
+  pass  the hero numeral equals the last four columns it sits beside
+  pass  the denominator card reads the fixture's open count
+  pass  every status card counts out of the shared denominator
+  pass  one dot per open job, none dropped
+  pass  twelve weeks are drawn, not summarised
+  pass  the oldest job sits inside its own axis
+  pass  no two marks merge into one · 1440
+  pass  every stacked mark stays inside the strip · 1440
+  pass  no two marks merge into one · 390
+  pass  every stacked mark stays inside the strip · 390
+  pass  the chart states its own scale
+  pass  the surface says which sources answered
+  pass  the surface says which of its numbers are lab-authored
+  pass  the unfinished week is hatched, open-topped and says so
+  pass  the coverage strip names the source that did not answer
+  pass  the unavailable card keeps its place in the row
+  pass  an unanswered source never renders as zero
+  pass  an unavailable card draws no meter (a meter of nothing is a claim)
+  pass  unavailability is carried in words, not only in ink
+  pass  a true zero draws its meter
+  pass  no card in the row offers a role the surface cannot honour
+  pass  every mark names its own fact in words
+  pass  the marks past the fortnight line are the number the card claims
+  pass  the chart has a spoken equivalent, not just a shape
+  pass  the reading instant is stated, once · full
+  pass  the reading instant is stated, once · partial
+  pass  the reading instant is stated, once · quiet
+  pass  the reading instant is stated, once · first-run
+  pass  the reading instant is stated, once · error
+  pass  the skeleton draws the same number of cards that arrive @ 1440
+  pass  the skeleton hero is the real hero's height @ 1440
+  pass  the skeleton card is the real card's height @ 1440
+  pass  no shimmer @ 1440
+  pass  the skeleton promises no section that never renders @ 1440
+  pass  the skeleton draws the same number of cards that arrive @ 390
+  pass  the skeleton hero is the real hero's height @ 390
+  pass  the skeleton card is the real card's height @ 390
+  pass  no shimmer @ 390
+  pass  the skeleton promises no section that never renders @ 390
+  pass  the empty state says one thing and offers one move
+  pass  the limits movement is present with its three tiles
+  pass  the chart that is not there is drawn as a chart
+  pass  the refusals carry the same rank as the findings
+  pass  a real pointer over a mark names it
+  pass  the tooltip stays inside the window
+  pass  a real touch on a mark names it
+  pass  the tooltip stays inside a 390 window
+  pass  a second touch on the same mark dismisses it
+  pass  a touch away from the marks dismisses it
+  pass  focus alone raises the mark's name
+  pass  Escape dismisses it
+  pass  automation lands on the settled surface by default
+  pass  settled means every column is already at its height
+  pass  the entrance actually runs when it is asked to
+  pass  the figure counts up from below and never overshoots
+  pass  the previous best draws last, after the columns have grown
+  pass  under reduced motion the figure is simply correct, immediately
+  pass  under reduced motion every column is at its full height
+  pass  the hero lands on the real total and stops there
+  pass  the ground actually flips
+  pass  the twin draws the same marks, not fewer
+  pass  the workspace on screen is the fixture's workspace
+  pass  the owner on screen is the fixture's actor
+  pass  every fixture root task is a mark on the strip
+  pass  the strip's marks are exactly the fixture's open count
+  pass  every margin is a rung on the declared ladder · full @ 1440
+  pass  every margin is a rung on the declared ladder · full @ 390
+  pass  every margin is a rung on the declared ladder · partial @ 1440
+  pass  every margin is a rung on the declared ladder · partial @ 390
+  pass  every margin is a rung on the declared ladder · quiet @ 1440
+  pass  every margin is a rung on the declared ladder · quiet @ 390
+  pass  every margin is a rung on the declared ladder · first-run @ 1440
+  pass  every margin is a rung on the declared ladder · first-run @ 390
+  pass  every margin is a rung on the declared ladder · empty @ 1440
+  pass  every margin is a rung on the declared ladder · empty @ 390
+  pass  every margin is a rung on the declared ladder · loading @ 1440
+  pass  every margin is a rung on the declared ladder · loading @ 390
+  pass  every margin is a rung on the declared ladder · error @ 1440
+  pass  every margin is a rung on the declared ladder · error @ 390
+  pass  no two chart labels overprint · full @ 390x844
+  pass  no chart label leaves its card · full @ 390x844
+  pass  no two chart labels overprint · full @ 768x1024
+  pass  no chart label leaves its card · full @ 768x1024
+  pass  no two chart labels overprint · full @ 1280x900
+  pass  no chart label leaves its card · full @ 1280x900
+  pass  no two chart labels overprint · full @ 1440x960
+  pass  no chart label leaves its card · full @ 1440x960
+  pass  no two chart labels overprint · partial @ 390x844
+  pass  no chart label leaves its card · partial @ 390x844
+  pass  no two chart labels overprint · partial @ 768x1024
+  pass  no chart label leaves its card · partial @ 768x1024
+  pass  no two chart labels overprint · partial @ 1280x900
+  pass  no chart label leaves its card · partial @ 1280x900
+  pass  no two chart labels overprint · partial @ 1440x960
+  pass  no chart label leaves its card · partial @ 1440x960
+  pass  no two chart labels overprint · quiet @ 390x844
+  pass  no chart label leaves its card · quiet @ 390x844
+  pass  no two chart labels overprint · quiet @ 768x1024
+  pass  no chart label leaves its card · quiet @ 768x1024
+  pass  no two chart labels overprint · quiet @ 1280x900
+  pass  no chart label leaves its card · quiet @ 1280x900
+  pass  no two chart labels overprint · quiet @ 1440x960
+  pass  no chart label leaves its card · quiet @ 1440x960
+  pass  the previous best names itself on screen · light @ 390x844
+  pass  the previous best names itself on screen · light @ 768x1024
+  pass  the previous best names itself on screen · light @ 1280x900
+  pass  the previous best names itself on screen · light @ 1440x960
+  pass  the previous best names itself on screen · dark @ 390x844
+  pass  the previous best names itself on screen · dark @ 768x1024
+  pass  the previous best names itself on screen · dark @ 1280x900
+  pass  the previous best names itself on screen · dark @ 1440x960
+  pass  the unfinished week is open at the edge a reader can see
+  pass  the unfinished week keeps its two rails and its hatch
+  pass  a finished week is capped, so the two shapes differ
+  pass  every figure in the row shares one line · full @ 1280
+  pass  every mark in the row shares one floor · full @ 1280
+  pass  every figure in the row shares one line · full @ 1440
+  pass  every mark in the row shares one floor · full @ 1440
+  pass  every figure in the row shares one line · partial @ 1280
+  pass  every mark in the row shares one floor · partial @ 1280
+  pass  every figure in the row shares one line · partial @ 1440
+  pass  every mark in the row shares one floor · partial @ 1440
+  pass  the ages card stands off its neighbour by a rung · full
+  pass  the ages card stands off its neighbour by a rung · partial
+  pass  the ages card stands off its neighbour by a rung · quiet
+  pass  the ages card stands off its neighbour by a rung · first-run
+  pass  the week ruler stays on one line · 1440
+  pass  no week tick leaves the card · 1440
+  pass  the week ruler stays on one line · 1141
+  pass  no week tick leaves the card · 1141
+  pass  the week ruler stays on one line · 1140
+  pass  no week tick leaves the card · 1140
+  pass  the week ruler stays on one line · 1000
+  pass  no week tick leaves the card · 1000
+  pass  the week ruler stays on one line · 901
+  pass  no week tick leaves the card · 901
+  pass  the week ruler stays on one line · 900
+  pass  no week tick leaves the card · 900
+  pass  the week ruler stays on one line · 793
+  pass  no week tick leaves the card · 793
+  pass  the week ruler stays on one line · 792
+  pass  no week tick leaves the card · 792
+  pass  the week ruler stays on one line · 768
+  pass  no week tick leaves the card · 768
+  pass  the week ruler stays on one line · 560
+  pass  no week tick leaves the card · 560
+  pass  the week ruler stays on one line · 390
+  pass  no week tick leaves the card · 390
+  pass  the reading rule is drawn only when it joins something · 390
+  pass  the reading rule is drawn only when it joins something · 480
+  pass  the reading rule is drawn only when it joins something · 560
+  pass  the reading rule is drawn only when it joins something · 570
+  pass  the reading rule is drawn only when it joins something · 600
+  pass  the reading rule is drawn only when it joins something · 768
+  pass  the reading rule is drawn only when it joins something · 1440
+  pass  the oldest label is the oldest mark · full @ light
+  pass  the fortnight card equals the marks past the line · full @ light
+  pass  the oldest label is the oldest mark · full @ dark
+  pass  the fortnight card equals the marks past the line · full @ dark
+  pass  the oldest label is the oldest mark · partial @ light
+  pass  the fortnight card equals the marks past the line · partial @ light
+  pass  the oldest label is the oldest mark · partial @ dark
+  pass  the fortnight card equals the marks past the line · partial @ dark
+  pass  nothing is sitting means nothing is drawn sitting · quiet @ light
+  pass  the oldest label is the oldest mark · quiet @ light
+  pass  nothing is sitting means nothing is drawn sitting · quiet @ dark
+  pass  the oldest label is the oldest mark · quiet @ dark
+  pass  the oldest label is the oldest mark · first-run @ light
+  pass  the fortnight card equals the marks past the line · first-run @ light
+  pass  the oldest label is the oldest mark · first-run @ dark
+  pass  the fortnight card equals the marks past the line · first-run @ dark
+  pass  no job is older than the account that holds it
+  pass  first-run still draws every open job
+  pass  every age tick stands on its own value · full @ 390x844
+  pass  no age tick leaves the strip · full @ 390x844
+  pass  every age tick stands on its own value · full @ 768x1024
+  pass  no age tick leaves the strip · full @ 768x1024
+  pass  every age tick stands on its own value · full @ 1280x900
+  pass  no age tick leaves the strip · full @ 1280x900
+  pass  every age tick stands on its own value · full @ 1440x960
+  pass  no age tick leaves the strip · full @ 1440x960
+  pass  every age tick stands on its own value · quiet @ 390x844
+  pass  no age tick leaves the strip · quiet @ 390x844
+  pass  every age tick stands on its own value · quiet @ 768x1024
+  pass  no age tick leaves the strip · quiet @ 768x1024
+  pass  every age tick stands on its own value · quiet @ 1280x900
+  pass  no age tick leaves the strip · quiet @ 1280x900
+  pass  every age tick stands on its own value · quiet @ 1440x960
+  pass  no age tick leaves the strip · quiet @ 1440x960
+  pass  every age tick stands on its own value · first-run @ 390x844
+  pass  no age tick leaves the strip · first-run @ 390x844
+  pass  every age tick stands on its own value · first-run @ 768x1024
+  pass  no age tick leaves the strip · first-run @ 768x1024
+  pass  every age tick stands on its own value · first-run @ 1280x900
+  pass  no age tick leaves the strip · first-run @ 1280x900
+  pass  every age tick stands on its own value · first-run @ 1440x960
+  pass  no age tick leaves the strip · first-run @ 1440x960
+  pass  the age axis is derived from its own data · full
+  pass  the fortnight rule is drawn only where it can be crossed · full
+  pass  the age axis is derived from its own data · quiet
+  pass  the fortnight rule is drawn only where it can be crossed · quiet
+  pass  the age axis is derived from its own data · first-run
+  pass  the fortnight rule is drawn only where it can be crossed · first-run
+  pass  the first-run mark's height comes from its value, not a literal
+  pass  the first-run chart has a spoken equivalent
+  pass  the first-run mark stands at a real column's width
+  pass  every sentence agrees with its own numeral · full
+  pass  every sentence agrees with its own numeral · partial
+  pass  every sentence agrees with its own numeral · quiet
+  pass  every sentence agrees with its own numeral · first-run
+  pass  the running week is named where the figure is read · full
+  pass  the window ends on the reading, not on a week's first day · full
+  pass  the running week is named where the figure is read · partial
+  pass  the window ends on the reading, not on a week's first day · partial
+  pass  the running week is named where the figure is read · quiet
+  pass  the window ends on the reading, not on a week's first day · quiet
+  pass  the error state claims no reading it does not hold
+  pass  every mark owns its own centre · full @ 390x844
+  pass  every mark owns its own centre · full @ 768x1024
+  pass  every mark owns its own centre · full @ 1280x900
+  pass  every mark owns its own centre · full @ 1440x960
+  pass  every mark owns its own centre · partial @ 390x844
+  pass  every mark owns its own centre · partial @ 768x1024
+  pass  every mark owns its own centre · partial @ 1280x900
+  pass  every mark owns its own centre · partial @ 1440x960
+  pass  every mark owns its own centre · quiet @ 390x844
+  pass  every mark owns its own centre · quiet @ 768x1024
+  pass  every mark owns its own centre · quiet @ 1280x900
+  pass  every mark owns its own centre · quiet @ 1440x960
+  pass  every mark owns its own centre · first-run @ 390x844
+  pass  every mark owns its own centre · first-run @ 768x1024
+  pass  every mark owns its own centre · first-run @ 1280x900
+  pass  every mark owns its own centre · first-run @ 1440x960
+  pass  the tab strip names every surface the way the contract does
+  pass  a degraded state loses only what its unanswered source fed
+  pass  the chart is announced once · full
+  pass  no invisible label carries live text · full
+  pass  the chart is announced once · partial
+  pass  no invisible label carries live text · partial
+  pass  the chart is announced once · quiet
+  pass  no invisible label carries live text · quiet
+  pass  the chart is announced once · first-run
+  pass  no invisible label carries live text · first-run
+  pass  every state offers a heading inside main · full
+  pass  every section names itself · full
+  pass  no live region where nothing is happening · full
+  pass  every state offers a heading inside main · partial
+  pass  every section names itself · partial
+  pass  no live region where nothing is happening · partial
+  pass  every state offers a heading inside main · quiet
+  pass  every section names itself · quiet
+  pass  no live region where nothing is happening · quiet
+  pass  every state offers a heading inside main · first-run
+  pass  every section names itself · first-run
+  pass  no live region where nothing is happening · first-run
+  pass  every state offers a heading inside main · empty
+  pass  every section names itself · empty
+  pass  no live region where nothing is happening · empty
+  pass  every state offers a heading inside main · loading
+  pass  every section names itself · loading
+  pass  the loading state announces politely
+  pass  every state offers a heading inside main · error
+  pass  every section names itself · error
+  pass  the error state announces assertively
+  pass  the provenance strip is a landmark of its own · full
+  pass  the provenance strip is a landmark of its own · partial
+  pass  the provenance strip is a landmark of its own · quiet
+  pass  the provenance strip is a landmark of its own · first-run
+  pass  the provenance strip is a landmark of its own · empty
+  pass  the provenance strip is a landmark of its own · loading
+  pass  the provenance strip is a landmark of its own · error
+  pass  the denominator plate is not the brightest thing on the dark ground
+  pass  the denominator plate still reads as its own kind of surface
+  pass  its figure still clears AA on that plate
+  pass  a pinned label is dismissed or follows its mark
+  pass  no month is named without its year · full
+  pass  no month is named without its year · partial
+  pass  no month is named without its year · quiet
+  pass  no month is named without its year · first-run
+  pass  the refusals speak the reader's language · full
+  pass  the surface never says "we" · full
+  pass  no sentence begins as the back half of another · full
+  pass  the refusals speak the reader's language · partial
+  pass  the surface never says "we" · partial
+  pass  no sentence begins as the back half of another · partial
+  pass  the refusals speak the reader's language · quiet
+  pass  the surface never says "we" · quiet
+  pass  no sentence begins as the back half of another · quiet
+  pass  the refusals speak the reader's language · first-run
+  pass  the surface never says "we" · first-run
+  pass  no sentence begins as the back half of another · first-run
+  pass  the drawn-but-empty plot names the refusal it draws
+  pass  it is marked up as the figure it is
+  pass  its columns stand on a baseline
+  pass  no rail mark is set in a face the lock does not own
+  pass  no sentence advertises a move the surface does not carry · full
+  pass  no sentence advertises a move the surface does not carry · partial
+  pass  no sentence advertises a move the surface does not carry · quiet
+  pass  no sentence advertises a move the surface does not carry · loading
+  pass  the marks invite the pointer
+  pass  every control that is a control acknowledges a press
+  pass  the entrance releases its elements back to the cascade · motion=settled
+  pass  a control acknowledges a press, measured from what paints · motion=settled
+  pass  the entrance releases its elements back to the cascade · motion=play
+  pass  a control acknowledges a press, measured from what paints · motion=play
+  pass  page down reads the page · full @ 390x844
+  pass  page down reads the page · full @ 768x1024
+  pass  page down reads the page · full @ 1280x900
+  pass  page down reads the page · full @ 1440x960
+  pass  page down reads the page · partial @ 390x844
+  pass  page down reads the page · partial @ 768x1024
+  pass  page down reads the page · partial @ 1280x900
+  pass  page down reads the page · partial @ 1440x960
+  pass  page down reads the page · quiet @ 390x844
+  pass  page down reads the page · quiet @ 768x1024
+  pass  page down reads the page · quiet @ 1280x900
+  pass  page down reads the page · quiet @ 1440x960
+  pass  page down reads the page · first-run @ 390x844
+  pass  page down reads the page · first-run @ 768x1024
+  pass  page down reads the page · first-run @ 1280x900
+  pass  page down reads the page · first-run @ 1440x960
+  pass  page down reads the page · loading @ 390x844
+  pass  page down reads the page · loading @ 768x1024
+  pass  page down reads the page · loading @ 1280x900
+  pass  page down reads the page · loading @ 1440x960
+  pass  the skeleton's columns publish no reading
+  pass  the skeleton's meters publish no reading
+  pass  the skeleton draws no partial-week treatment of a week nobody read
+  pass  the skeleton draws no zero it has not read
+  pass  the skeleton's marks are not the real ages
+  pass  the skeleton labels no previous best
+  pass  the loading state renders with no reading to draw from
+  pass  the loading frame draws every section that arrives @ 1440
+  pass  the loading frame is the height of the page that follows @ 1440
+  pass  the loading frame draws every section that arrives @ 390
+  pass  the loading frame is the height of the page that follows @ 390
+  pass  the fortnight label stays inside its strip · full @ 320
+  pass  nothing is clipped away inside the scroller · full @ 320
+  pass  the fortnight label stays inside its strip · full @ 360
+  pass  nothing is clipped away inside the scroller · full @ 360
+  pass  the fortnight label stays inside its strip · full @ 390
+  pass  nothing is clipped away inside the scroller · full @ 390
+  pass  the fortnight label stays inside its strip · full @ 414
+  pass  nothing is clipped away inside the scroller · full @ 414
+  pass  the fortnight label stays inside its strip · full @ 560
+  pass  nothing is clipped away inside the scroller · full @ 560
+  pass  the fortnight label stays inside its strip · full @ 768
+  pass  nothing is clipped away inside the scroller · full @ 768
+  pass  the fortnight label stays inside its strip · full @ 1024
+  pass  nothing is clipped away inside the scroller · full @ 1024
+  pass  the fortnight label stays inside its strip · full @ 1280
+  pass  nothing is clipped away inside the scroller · full @ 1280
+  pass  the fortnight label stays inside its strip · full @ 1440
+  pass  nothing is clipped away inside the scroller · full @ 1440
+  pass  the fortnight label stays inside its strip · partial @ 320
+  pass  nothing is clipped away inside the scroller · partial @ 320
+  pass  the fortnight label stays inside its strip · partial @ 360
+  pass  nothing is clipped away inside the scroller · partial @ 360
+  pass  the fortnight label stays inside its strip · partial @ 390
+  pass  nothing is clipped away inside the scroller · partial @ 390
+  pass  the fortnight label stays inside its strip · partial @ 414
+  pass  nothing is clipped away inside the scroller · partial @ 414
+  pass  the fortnight label stays inside its strip · partial @ 560
+  pass  nothing is clipped away inside the scroller · partial @ 560
+  pass  the fortnight label stays inside its strip · partial @ 768
+  pass  nothing is clipped away inside the scroller · partial @ 768
+  pass  the fortnight label stays inside its strip · partial @ 1024
+  pass  nothing is clipped away inside the scroller · partial @ 1024
+  pass  the fortnight label stays inside its strip · partial @ 1280
+  pass  nothing is clipped away inside the scroller · partial @ 1280
+  pass  the fortnight label stays inside its strip · partial @ 1440
+  pass  nothing is clipped away inside the scroller · partial @ 1440
+  pass  the fortnight label stays inside its strip · quiet @ 320
+  pass  nothing is clipped away inside the scroller · quiet @ 320
+  pass  the fortnight label stays inside its strip · quiet @ 360
+  pass  nothing is clipped away inside the scroller · quiet @ 360
+  pass  the fortnight label stays inside its strip · quiet @ 390
+  pass  nothing is clipped away inside the scroller · quiet @ 390
+  pass  the fortnight label stays inside its strip · quiet @ 414
+  pass  nothing is clipped away inside the scroller · quiet @ 414
+  pass  the fortnight label stays inside its strip · quiet @ 560
+  pass  nothing is clipped away inside the scroller · quiet @ 560
+  pass  the fortnight label stays inside its strip · quiet @ 768
+  pass  nothing is clipped away inside the scroller · quiet @ 768
+  pass  the fortnight label stays inside its strip · quiet @ 1024
+  pass  nothing is clipped away inside the scroller · quiet @ 1024
+  pass  the fortnight label stays inside its strip · quiet @ 1280
+  pass  nothing is clipped away inside the scroller · quiet @ 1280
+  pass  the fortnight label stays inside its strip · quiet @ 1440
+  pass  nothing is clipped away inside the scroller · quiet @ 1440
+  pass  each card in the row says its fact once · full
+  pass  each card in the row says its fact once · partial
+  pass  each card in the row says its fact once · first-run
+  pass  every status mark clears the non-text floor · light
+  pass  every status mark clears the non-text floor · dark
+  pass  zero console errors across every state and both grounds
+
+461 assertions, 0 failing
