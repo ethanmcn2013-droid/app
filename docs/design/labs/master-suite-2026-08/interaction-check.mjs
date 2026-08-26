@@ -87,14 +87,32 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
     );
     for (const el of interactive) {
       const cs = getComputedStyle(el);
-      const rect = el.getBoundingClientRect();
-      const visible = rect.width > 0 && rect.height > 0 && cs.visibility !== "hidden" && cs.display !== "none" && parseFloat(cs.opacity) > 0.01;
+      /* checkVisibility walks ANCESTORS. The hand-rolled test below it read
+         `display` off the element itself, so every control inside the two
+         products that are mounted-but-hidden — `.app[hidden]`, `display:
+         none` — reported its own `flex` and was called an invisible focus
+         stop. Four false positives, in a gate whose whole job is to be
+         believed. */
+      const shown = el.checkVisibility
+        ? el.checkVisibility({ checkVisibilityCSS: true, checkOpacity: true })
+        : cs.visibility !== "hidden" && cs.display !== "none";
+      const visible = shown && !el.closest("[inert]") && !el.closest("[hidden]");
       const name = (el.getAttribute("aria-label") || el.textContent || el.getAttribute("title") || (el.labels && el.labels[0]?.textContent) || "").trim();
       const focusable = el.tabIndex >= 0;
       if (focusable) out.stops += 1;
       if (visible && !name) out.unnamed.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
-      /* An invisible element that can take focus strands the keyboard. */
-      if (!visible && focusable && cs.pointerEvents !== "none") out.invisible.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
+      /* An invisible element that can take focus strands the keyboard — but
+         "can take focus" is a question for the browser, not for a stylesheet.
+         Ask it: focus the thing and see whether focus actually lands. A
+         control inside a `display: none` subtree cannot be focused at all,
+         which is exactly why it was never a stranding risk. */
+      if (!visible && focusable && cs.pointerEvents !== "none") {
+        const was = document.activeElement;
+        try { el.focus(); } catch (e) { /* refused, which is the answer */ }
+        const took = document.activeElement === el;
+        if (was && was.focus) { try { was.focus(); } catch (e) {} }
+        if (took) out.invisible.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
+      }
     }
     return out;
   });
@@ -128,6 +146,14 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
       if (cs.overflow !== "hidden" && cs.overflowX !== "hidden") continue;
       if (el.scrollWidth <= el.clientWidth + 1) continue;
       if (cs.textOverflow === "ellipsis") continue;
+      /* The visually-hidden signature: a 1x1 box clipped to nothing, holding
+         text meant for a screen reader and never for the eye. Its scrollWidth
+         is 830 against a clientWidth of 1, which reads as catastrophic
+         clipping to a rule looking for a cut word. It is the opposite — text
+         deliberately delivered in full to the one reader who wants it. Six
+         false positives, all of them `span.sr`. */
+      if (el.clientWidth <= 1 || el.clientHeight <= 1) continue;
+      if (/inset\(50%\)/.test(cs.clipPath || "")) continue;
       const text = Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim());
       if (text) bad.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
     }
