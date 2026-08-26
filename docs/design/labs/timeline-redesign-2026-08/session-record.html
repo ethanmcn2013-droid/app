@@ -1,4 +1,4 @@
-<title>Timeline Session Record</title>
+<title>The 9.5 Question</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
@@ -19,6 +19,8 @@
     --fore-16: rgba(17, 17, 17, 0.16);
     --fore-06: rgba(17, 17, 17, 0.06);
     --accent: #4f46e5;
+    --accent-line: rgba(79, 70, 229, 0.32);
+    --accent-wash: rgba(79, 70, 229, 0.10);
     --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
@@ -34,6 +36,8 @@
       --fore-16: rgba(255, 255, 255, 0.16);
       --fore-06: rgba(255, 255, 255, 0.06);
       --accent: #7c74f0;
+      --accent-line: rgba(124, 116, 240, 0.40);
+      --accent-wash: rgba(124, 116, 240, 0.16);
     }
   }
   :root[data-theme="dark"] {
@@ -47,27 +51,40 @@
     --fore-16: rgba(255, 255, 255, 0.16);
     --fore-06: rgba(255, 255, 255, 0.06);
     --accent: #7c74f0;
+    --accent-line: rgba(124, 116, 240, 0.40);
+    --accent-wash: rgba(124, 116, 240, 0.16);
   }
 
-  /* ── the switcher ───────────────────────────────────────────── */
-  .switch { border-bottom: 1px solid var(--fore-28); }
-  .switchRow { max-width: 940px; margin: 0 auto; padding: 0 28px; display: grid; }
-  @media (min-width: 720px) { .switchRow { grid-template-columns: repeat(4, 1fr); } }
-  .switchRow a, .switchRow span {
-    display: block; padding: 18px 24px 16px 0;
-    border-top: 2px solid transparent; text-decoration: none; color: inherit;
+  /* ── the elevation set ──────────────────────────────────────────
+     Four artifacts, one engagement. The same component carries the set
+     on every page of it, and on every product's set, so a reader who
+     learns it once knows where they are anywhere. */
+  .setNav { margin: 88px 0 0; padding: 30px 0 0; border-top: 1px solid var(--fore); }
+  .setNav > p.eyebrow { margin: 0 0 20px; }
+  .setGrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .setCard {
+    display: block; text-decoration: none; color: inherit;
+    border: 1px solid var(--fore-06); border-radius: 12px;
+    padding: 18px 20px; background: var(--card);
+    transition: border-color 140ms cubic-bezier(0.23, 1, 0.32, 1),
+                background-color 140ms cubic-bezier(0.23, 1, 0.32, 1);
   }
-  .switchRow a { border-bottom: 1px solid var(--fore-06); }
-  @media (min-width: 720px) { .switchRow a { border-bottom: 0; } }
-  .switchRow b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--fore-62); }
-  .switchRow i {
-    display: block; font-style: normal; font-family: var(--mono); font-size: 11px;
-    letter-spacing: 0.1em; text-transform: uppercase; color: var(--fore-46); margin-top: 5px;
+  a.setCard:hover { border-color: var(--fore-16); background: var(--fore-06); }
+  a.setCard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .setCard b {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    font-size: 15px; font-weight: 600; letter-spacing: -0.016em; color: var(--fore);
   }
-  .switchRow a:hover b { color: var(--fore); }
-  .switchRow .here { border-top-color: var(--accent); }
-  .switchRow .here b { color: var(--fore); }
-  .switchRow .here i { color: var(--accent); }
+  .setCard em {
+    display: block; margin-top: 3px; font-style: normal;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--fore-62);
+  }
+  .setCard span { display: block; margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--fore-72); }
+  .setCard[aria-current] {
+    border-color: var(--accent-line); background: var(--accent-wash); cursor: default;
+  }
+  .setCard[aria-current] em { color: var(--accent); }
 
   * { box-sizing: border-box; }
   body {
@@ -263,15 +280,6 @@
 
   footer { margin-top: 88px; padding-top: 22px; border-top: 1px solid var(--fore-16); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fore-46); display: flex; flex-wrap: wrap; gap: 8px 26px; }
 </style>
-
-<nav class="switch" aria-label="This engagement's artifacts">
-  <div class="switchRow">
-    <a href="https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f"><b>The Console</b><i>drive the room</i></a>
-    <a href="https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19"><b>The Log</b><i>every round, every defect</i></a>
-    <span class="here"><b>The Record</b><i>where it landed</i></span>
-    <a href="https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd"><b>The Method</b><i>how the loop performed</i></a>
-  </div>
-</nav>
 
 <div class="wrap">
 
@@ -521,6 +529,16 @@
       </div>
     </div>
   </section>
+
+  <nav class="setNav" aria-label="The Timeline elevation set">
+    <p class="eyebrow">The Timeline elevation · four artifacts</p>
+    <div class="setGrid">
+      <a class="setCard" href="https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f" target="_blank" rel="noopener"><b>Design Console</b><em>The plan itself, live</em><span>Every decision switchable, the master as it stands.</span></a>
+      <a class="setCard" href="https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19" target="_blank" rel="noopener"><b>Elevation Log</b><em>Twelve rounds, scored</em><span>Every seat, every finding, every refutation.</span></a>
+      <div class="setCard" aria-current="page"><b>The 9.5 Question</b><em>Why it stopped where it did</em><span>The number, the arc, and the honest distance left.</span></div>
+      <a class="setCard" href="https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd" target="_blank" rel="noopener"><b>Twelve Rounds</b><em>The method, rated</em><span>A critical retrospective on the loop itself.</span></a>
+    </div>
+  </nav>
 
   <footer>
     <span>Branch design/timeline-redesign-2026-08</span>

@@ -25,6 +25,7 @@
   --line: rgba(17, 17, 17, 0.08);
   --line-strong: rgba(17, 17, 17, 0.16);
   --indigo-wash: rgba(79, 70, 229, 0.09);
+  --indigo-line: rgba(79, 70, 229, 0.32);
 
   --paper: var(--white);
   --plate: rgba(17, 17, 17, 0.04);
@@ -49,6 +50,7 @@
     --line-strong: rgba(255, 255, 255, 0.2);
     --indigo: #6f68ee;
     --indigo-wash: rgba(111, 104, 238, 0.18);
+    --indigo-line: rgba(111, 104, 238, 0.40);
     --plate: rgba(255, 255, 255, 0.05);
   }
 }
@@ -64,6 +66,7 @@
   --line-strong: rgba(255, 255, 255, 0.2);
   --indigo: #6f68ee;
   --indigo-wash: rgba(111, 104, 238, 0.18);
+  --indigo-line: rgba(111, 104, 238, 0.40);
   --plate: rgba(255, 255, 255, 0.05);
 }
 
@@ -86,40 +89,33 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
 
 .wrap { max-width: var(--page); margin: 0 auto; padding: 0 24px; }
 
-/* ── the switcher ─────────────────────────────────────────────────
-   Four artifacts, one engagement. Whichever one a reader lands on,
-   the other three are one press away and named by what they are FOR,
-   not by their document type. */
-.switch { border-bottom: 1px solid var(--line-strong); }
-.switchRow { max-width: var(--page); margin: 0 auto; padding: 0 24px; display: grid; gap: 0; }
-@media (min-width: 720px) { .switchRow { grid-template-columns: repeat(4, 1fr); } }
-.switchRow a, .switchRow span.here {
-  display: block;
-  padding: 18px 20px 16px 0;
-  border-top: 2px solid transparent;
-  text-decoration: none;
-  color: inherit;
+/* ── the elevation set ────────────────────────────────────────────
+   Four artifacts, one engagement. The same component carries the set on
+   every page of it, and on every product's set, so a reader who learns
+   it once knows where they are anywhere. */
+.setNav { margin: 88px 0 0; padding: 30px 0 0; border-top: 1px solid var(--ink-1); }
+.setNav > p.kicker { margin: 0 0 20px; }
+.setGrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.setCard {
+  display: block; text-decoration: none; color: inherit;
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  padding: 18px 20px; background: var(--plate);
+  transition: border-color 140ms var(--curve), background-color 140ms var(--curve);
 }
-@media (min-width: 720px) { .switchRow a, .switchRow span.here { padding-right: 24px; } }
-.switchRow a:not(:last-child), .switchRow span.here:not(:last-child) { border-bottom: 1px solid var(--line-soft); }
-@media (min-width: 720px) { .switchRow a, .switchRow span.here { border-bottom: 0 !important; } }
-.switchRow b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-3); }
-.switchRow i {
-  display: block;
-  font-style: normal;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-4);
-  margin-top: 5px;
+a.setCard:hover { border-color: var(--line-strong); background: var(--wash); }
+a.setCard:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.setCard b {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  font-size: 15px; font-weight: 600; letter-spacing: -0.016em; color: var(--ink-1);
 }
-.switchRow a:hover b { color: var(--ink-1); }
-.switchRow a:hover i { color: var(--ink-3); }
-.switchRow .here { border-top-color: var(--indigo); }
-.switchRow .here b { color: var(--ink-1); }
-.switchRow .here i { color: var(--indigo); }
-.switchRow a[hidden] { display: none; }
+.setCard em {
+  display: block; margin-top: 3px; font-style: normal;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.setCard span { display: block; margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.setCard[aria-current] { border-color: var(--indigo-line); background: var(--indigo-wash); cursor: default; }
+.setCard[aria-current] em { color: var(--indigo); }
 
 /* ── the founder's read ───────────────────────────────────────────
    Before the record, not inside it: the one screen that answers "where
@@ -342,15 +338,6 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
 <script id="frames" type="application/json">/*__FRAMES__*/</script>
 <script id="meta" type="application/json">/*__META__*/</script>
 
-<nav class="switch" aria-label="This engagement's artifacts">
-  <div class="switchRow">
-    <a id="navConsole" href="#"><b>The Console</b><i>drive the room</i></a>
-    <span class="here"><b>The Log</b><i>every round, every defect</i></span>
-    <a id="navRecord" href="#"><b>The Record</b><i>where it landed</i></a>
-    <a id="navMethod" href="#"><b>The Method</b><i>how the loop performed</i></a>
-  </div>
-</nav>
-
 <div class="wrap">
   <section class="brief" id="brief" hidden>
     <p class="kicker">Read this first · 90 seconds</p>
@@ -466,6 +453,11 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     </div>
   </section>
 
+  <nav class="setNav" id="setNav" aria-label="The Timeline elevation set" hidden>
+    <p class="kicker">The Timeline elevation · four artifacts</p>
+    <div class="setGrid" id="setGrid"></div>
+  </nav>
+
   <footer class="foot">
     <p class="kicker">How the panel works</p>
     <p>
@@ -514,15 +506,25 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
   document.getElementById("variantsLead").textContent = META.variantsLead || "Each is a preset of the same named design decisions, which is what guarantees every one of them stays on palette. All are live in the console.";
   document.getElementById("footNote").textContent = META.footNote || "";
 
-  /* The switcher. A link with nowhere to go is removed rather than left
-     as a dead press - the same rule the product itself is held to. */
+  /* The set. A card with nowhere to go is dropped rather than left as a
+     dead press - the same rule the product itself is held to. */
   const ART = META.artifacts || {};
-  for (const [id, url] of [
-    ["navConsole", ART.console], ["navRecord", ART.record], ["navMethod", ART.method],
-  ]) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    if (url) el.href = url; else el.hidden = true;
+  const SET = [
+    ["console", "Design Console", "The plan itself, live", "Every decision switchable, the master as it stands."],
+    ["log", "Elevation Log", "Twelve rounds, scored", "Every seat, every finding, every refutation."],
+    ["record", "The 9.5 Question", "Why it stopped where it did", "The number, the arc, and the honest distance left."],
+    ["method", "Twelve Rounds", "The method, rated", "A critical retrospective on the loop itself."],
+  ];
+  const cards = SET.map(function (s) {
+    const inner = "<b>" + s[1] + "</b><em>" + s[2] + "</em><span>" + s[3] + "</span>";
+    if (s[0] === "log") return '<div class="setCard" aria-current="page">' + inner + "</div>";
+    return ART[s[0]]
+      ? '<a class="setCard" href="' + ART[s[0]] + '" target="_blank" rel="noopener">' + inner + "</a>"
+      : "";
+  }).filter(Boolean);
+  if (cards.length > 1) {
+    document.getElementById("setGrid").innerHTML = cards.join("");
+    document.getElementById("setNav").hidden = false;
   }
 
   /* The handover into production. Rendered only when written. */
