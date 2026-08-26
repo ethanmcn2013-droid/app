@@ -39,6 +39,7 @@
   --ink-3:      #71717a;
   --ink-4:      #a1a1aa;
   --mark-ctx:   #d4d4d8;
+  --mark-quiet: #71717a;
   --line:       rgba(17, 17, 17, 0.10);
   --line-soft:  rgba(17, 17, 17, 0.055);
   --wash:       rgba(17, 17, 17, 0.03);
@@ -98,6 +99,7 @@
   --ink-3:      #a1a1aa;
   --ink-4:      #71717a;
   --mark-ctx:   #3f3f46;
+  --mark-quiet: #71717a;
   --line:       rgba(255, 255, 255, 0.12);
   --line-soft:  rgba(255, 255, 255, 0.07);
   --wash:       rgba(255, 255, 255, 0.04);
@@ -113,7 +115,11 @@
    reads the SOURCE for raw px, so it could never see them. */
 h1, h2, h3, h4, p { margin: 0; }
 
-html, body { height: 100%; }
+/* The document is the scroller. With every pixel inside a 100vh div and
+   html/body pinned to 100%, the primary reading gesture — space, page
+   down — moved nothing on a fresh load, at any width, in any state. */
+html { height: 100%; }
+body { min-height: 100%; }
 
 body {
   margin: 0;
@@ -150,9 +156,12 @@ body {
    The rail is the product's, not this view's. It is inert furniture here
    and marked aria-hidden so a screen reader is not offered four controls
    that do nothing in a lab. */
-.app { display: flex; min-height: 100%; background: var(--paper-2); }
+.app { display: flex; min-height: 100vh; background: var(--paper-2); }
 
+/* Sticky rather than stretched, so the product's rail stays put while
+   the document scrolls under it. Inert below 561, where it is hidden. */
 .rail {
+  position: sticky; top: 0; height: 100vh; align-self: flex-start;
   width: 56px; flex: none;
   display: flex; flex-direction: column; align-items: center;
   gap: var(--gap-room); padding-top: var(--gap-room);
@@ -167,8 +176,10 @@ body {
 }
 .rail i.on { background: var(--ink); color: var(--paper); }
 
-.canvas { flex: 1 1 auto; min-width: 0; overflow: hidden; }
-.scroll { height: 100vh; overflow-y: auto; overflow-x: hidden; }
+.canvas { flex: 1 1 auto; min-width: 0; }
+/* clip, not hidden: overflow:hidden on one axis forces the other to
+   auto and would reinstate the trap this fix exists to remove. */
+.scroll { overflow-x: clip; }
 .page { max-width: 1180px; margin: 0 auto; padding-left: var(--gap-hall); padding-right: var(--gap-hall); padding-bottom: var(--gap-far); }
 
 /* ── Header and tabs ───────────────────────────────────────────────────*/
@@ -244,7 +255,6 @@ body {
   animation: grow 0.5s var(--ease) both;
   animation-delay: calc(var(--i) * 40ms + 340ms);
 }
-.bar.live { background: var(--accent); }
 /* The week is not over, so its column is not closed. A solid column here
    would claim a completed week; hatch plus an open top says "so far"
    without a sentence. */
@@ -275,6 +285,10 @@ body {
 .plot.solo .cols { right: auto; width: 57px; }
 .plot.solo .baseline { right: auto; width: 57px; }
 .plot.solo .colw .bar-val { left: 0; right: auto; transform: none; }
+/* The ruler is narrowed with the plot it labels. Left out of the solo
+   treatment, its single tick centred itself in the whole chart column
+   and stood 298px from the only mark on the chart. */
+.plot.solo ~ .xaxis { width: 57px; padding-right: 0; }
 /* Three gridlines, not a grid. A column chart read against nothing gives
    you the shape and withholds the magnitude; more than three and the marks
    are competing with their own scaffolding. */
@@ -301,10 +315,10 @@ body {
    1140-901 and 792 down. 900-793 is the widest the plot ever gets,
    because the hero stacks there, and needs no thinning. */
 @media (max-width: 1140px) and (min-width: 901px), (max-width: 792px) {
-  .xaxis span:not(:only-child) { display: none; }
+  .xaxis span:not(:only-child) { display: flex; justify-content: center; flex: 1 1 0; visibility: hidden; }
   .xaxis span:not(:only-child):first-child,
   .xaxis span:not(:only-child):nth-child(7),
-  .xaxis span:not(:only-child):last-child { display: block; flex: 0 0 auto; }
+  .xaxis span:not(:only-child):last-child { visibility: visible; }
 }
 
 /* ── Movement two — the KPI row over one denominator ───────────────────
@@ -320,9 +334,8 @@ body {
   text-decoration: none; color: inherit;
   transition: border-color 0.14s var(--ease), transform 0.14s var(--ease);
 }
-a.kpi:hover { border-color: var(--line); transform: translateY(-2px); }
-a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-a.kpi:active { transform: translateY(0); }
+/* The row is read, not operated, so it carries no hover or press. What
+   the entrance used to pin dead is now simply not declared. */
 .kpi.lead { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .kpi.lead .t-small { color: var(--mark-ctx); }
 .glyph { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; background: var(--wash); }
@@ -336,27 +349,41 @@ a.kpi:active { transform: translateY(0); }
 .glyph svg { display: block; }
 .meter { height: 3px; border-radius: 2px; background: var(--wash); overflow: hidden; }
 .meter i { display: block; height: 100%; border-radius: 2px; background: var(--accent); transform: scaleX(var(--f)); transform-origin: 0 50%; animation: fill 0.55s var(--ease) both; animation-delay: calc(var(--i) * 60ms + 620ms); }
-.meter i.zero { background: var(--mark-ctx); }
+.meter i.zero { background: var(--mark-quiet); }
 .kpi .na { color: var(--ink-3); }
 
 /* ── The ages strip ────────────────────────────────────────────────────
    A one-dimensional dot strip, because the finding is the tail and a
    median is the specific summary that destroys it. */
 .ages { padding: var(--gap-room); margin-top: var(--gap-line); }
-.strip { position: relative; height: 92px; margin-top: var(--gap-line); }
+/* A reserved band, not a grown one. The de-swarm stacks colliding
+   marks, so the strip's height depends on the data — which a loading
+   frame cannot know and therefore cannot promise. Two rows are
+   reserved at every width; denser data grows past the reserve. */
+.strip { position: relative; min-height: 112px; margin-top: var(--gap-line); }
 .strip-axis { position: absolute; left: 0; right: 0; bottom: 26px; height: 1px; background: var(--line); }
 .dot {
-  --disc: var(--mark-ctx);
+  --disc: var(--mark-quiet);
   position: absolute; bottom: calc(20px + var(--row, 0) * 20px); width: 12px; height: 12px; border-radius: 999px;
   border: 0; padding: 0; background: transparent; cursor: pointer;
   left: calc(var(--x) * 1%); transform: translateX(-50%);
+  /* Focus brings the ruler and the card's own edge with it. */
+  scroll-margin-bottom: var(--gap-hall);
+  scroll-margin-top: var(--gap-room);
 }
+/* A ring, not a fill, for a mark inside the fortnight. The 2px stroke is
+   the graphical object and clears 3:1 in both grounds, and hollow versus
+   solid is a fill difference — which is what the lock sanctions — so the
+   three marks past the line keep their separation without leaning on hue.
+   Darkening the quiet fill instead would have cut that separation from
+   4.25:1 to 1.30:1 and left the strip's only real reading carried by
+   colour alone. */
 /* The disc is a pseudo, not the button. An entrance that scales the control
    itself shrinks its own hit area for the length of the animation — these
    dots measured 27px against a 28px floor for 760ms of every load. */
 .dot::before {
   content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-  border-radius: 999px; background: var(--disc);
+  border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 2px var(--disc);
   animation: pop 0.4s var(--ease) both; animation-delay: calc(var(--i) * 55ms + 760ms);
   transition: background-color 0.14s var(--ease);
 }
@@ -365,6 +392,7 @@ a.kpi:active { transform: translateY(0); }
    neighbour's centre, and euclidean distance — which the gate was
    measuring — cannot see occlusion. 34x28 still clears the 28px floor. */
 .dot::after { content: ""; position: absolute; top: -8px; right: -11px; bottom: -8px; left: -11px; border-radius: 14px; }
+.dot.old::before { background: var(--disc); }
 .dot.old { --disc: var(--accent); }
 .dot:hover, .dot:focus-visible { --disc: var(--ink); }
 /* On the property, not on the pseudo's transform: the pop keyframes run
@@ -373,6 +401,10 @@ a.kpi:active { transform: translateY(0); }
 .dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .fortnight { position: absolute; top: 0; bottom: 20px; left: calc(var(--x) * 1%); width: 0; border-left: 1px dashed var(--line); }
 .fortnight span { position: absolute; top: 0; left: var(--gap-tight); color: var(--ink-3); white-space: nowrap; }
+/* An anchor with only one bound leaves the card the moment the rule sits
+   near the end of a derived axis. Flipped by measurement, not by a typed
+   breakpoint, and reset before every measurement so it can flip back. */
+.fortnight[data-flip] span { left: auto; right: var(--gap-tight); }
 /* Every tick stands where its value stands. Distributed by flexbox the
    marks landed on 0/33/67/100% of the strip whatever they said, and
    agreed with the dots only because the shipped oldest job rounds the
@@ -454,10 +486,12 @@ a.kpi:active { transform: translateY(0); }
 .sk-wrap { pointer-events: none; }
 .sk-wrap [data-type] { color: transparent; background: var(--wash); border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 .sk-wrap .bar { background: var(--wash); border: 0; }
-.sk-wrap .dot::before, .sk-wrap .meter i, .sk-wrap .glyph { background: var(--wash); }
+.sk-wrap .dot::before, .sk-wrap .meter i, .sk-wrap .glyph { background: var(--wash); box-shadow: none; }
 .sk-wrap .kpi.lead { background: var(--paper); border-color: var(--line-soft); }
 .sk-wrap .kpi.lead .t-small { color: transparent; }
-.sk-wrap svg, .sk-wrap .record, .sk-wrap .fortnight { visibility: hidden; }
+/* The tag goes with the rule it labels: hiding one and not the other left
+   a wash box floating at the true previous-best height. */
+.sk-wrap svg, .sk-wrap .record, .sk-wrap .record-tag, .sk-wrap .fortnight { visibility: hidden; }
 
 /* The unknown-key stop. A harness that accepts a key it does not have
    grades work that does not exist, so the surface refuses to render. */
@@ -482,7 +516,13 @@ a.kpi:active { transform: translateY(0); }
 @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(var(--f)); } }
 @keyframes pop  { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
 @keyframes draw { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
-.rise { animation: rise 0.5s var(--ease) both; animation-delay: calc(var(--i) * 65ms); }
+/* backwards, not both. A forwards fill sits in the animation origin and
+   outranks every author declaration permanently: the KPI card's hover
+   lift and its press were pinned dead by their own entrance, and the
+   assertion that was meant to catch it grepped the stylesheet for the
+   selector instead of rendering it. The end state is the resting state,
+   so releasing it changes nothing that is drawn. */
+.rise { animation: rise 0.5s var(--ease) backwards; animation-delay: calc(var(--i) * 65ms); }
 /* Nothing on the loading state moves. */
 [data-state="loading"] *, [data-state="loading"] *::before, [data-state="loading"] *::after { animation: none !important; }
 
@@ -593,8 +633,10 @@ const D = {
   workspace: F.bound.workspace,
   owner: F.bound.owner,
   readingLong: F.readingLong,
-  weeks: state === "first-run" ? F.weeks.slice(-1) : F.weeks,
-  jobs: SCOPE.jobs,
+  /* A client that is still reading holds no weeks and no jobs. The state
+     that draws that condition must not throw on it. */
+  weeks: state === "first-run" ? (F.weeks ?? []).slice(-1) : (F.weeks ?? []),
+  jobs: SCOPE.jobs ?? [],
   fortnight: F.fortnight,
   accountDays: F.accountDays,
   comparisonArrives: F.comparisonArrives,
@@ -602,15 +644,15 @@ const D = {
   open: F.bound.openCount,
   lastFour: sum(F.weeks.slice(8).map((w) => w.v)),
   priorFour: sum(F.weeks.slice(4, 8).map((w) => w.v)),
-  thisWeek: F.weeks[F.weeks.length - 1].v,
-  bestPrior: Math.max(...F.weeks.slice(0, -1).map((w) => w.v)),
+  thisWeek: (F.weeks ?? []).length ? F.weeks[F.weeks.length - 1].v : 0,
+  bestPrior: (F.weeks ?? []).length > 1 ? Math.max(...F.weeks.slice(0, -1).map((w) => w.v)) : 0,
   sitting: SCOPE.status.sitting,
   overdue: SCOPE.status.overdue,
   unowned: SCOPE.status.unowned,
   waiting: SCOPE.status.waiting,
 };
 D.delta = D.lastFour - D.priorFour;
-D.oldest = Math.max(...D.jobs.map((j) => j.age));
+D.oldest = D.jobs.length ? Math.max(...D.jobs.map((j) => j.age)) : 0;
 /* Derived, never typed, and with no floor: a floor of 45 forced a
    three-day-old account to draw a six-week ruler, and it was only
    because the full state's oldest job rounds to exactly 45 that the
@@ -625,7 +667,7 @@ D.scaleMarks = D.axisMax <= 10
   : D.axisMax <= 20
     ? [0, Math.round(D.axisMax / 2), D.axisMax]
     : [0, Math.round(D.axisMax / 3), Math.round((2 * D.axisMax) / 3), D.axisMax];
-D.peak = Math.max(...D.weeks.map((w) => w.v));
+D.peak = D.weeks.length ? Math.max(...D.weeks.map((w) => w.v)) : 0;
 
 /* The axis maximum is derived, never typed. A sixty-day job must not fall
    off the end of its own chart; the undesigned edge is a whole class of
@@ -642,11 +684,11 @@ const ICON = {
   /* Status wears a shape as well as a colour, always, and never a colour
      alone: the four are amber, indigo, red, emerald in that fixed order
      because red adjacent to amber fails CVD separation at 4.4. */
-  still: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.2" fill="none" stroke="#d97706" stroke-width="1.6" stroke-dasharray="2 2"/></svg>',
-  past: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6 11 10.4H1z" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linejoin="round"/></svg>',
-  nobody: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="2" fill="none" stroke="#4f46e5" stroke-width="1.5"/></svg>',
-  waiting: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.4 6h7.2" fill="none" stroke="#059669" stroke-width="1.6" stroke-linecap="round"/></svg>',
-  clear: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9l5-6" fill="none" stroke="#059669" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  still: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2 2"/></svg>',
+  past: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6 11 10.4H1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  nobody: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+  waiting: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.4 6h7.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  clear: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9l5-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 
 /* The rail is drawn, not set. Geist carries none of the three characters
@@ -661,6 +703,13 @@ const RAIL = {
   timeline: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 
+/* Each status mark carries its own tone on the wrapper, so the glyph can
+   inherit it and the twin's indigo step reaches the one mark that used to
+   miss it. The four tones are the reserved status four; --accent is the
+   only one the dark ground redefines, which is exactly the one that had
+   to move. */
+const TONE = { still: "--amber", past: "--red", nobody: "--accent", waiting: "--emerald", clear: "--emerald" };
+
 function label(text) {
   return `<p class="t-label dim" data-type="label">${esc(text)}</p>`;
 }
@@ -672,7 +721,7 @@ function label(text) {
    plural under a numeral that can be 1 printed "1 have nobody's name on
    them" on screen and spoke it aloud. Zero keeps the plural, which is
    already correct. */
-function kpi({ n, word, glyph, i, unavailable = false }) {
+function kpi({ n, word, glyph, tone, i, unavailable = false }) {
   const known = !unavailable;
   const phrase = n === 1 ? word.one : word.many;
   const share = known && D.open ? Math.min(1, n / D.open) : 0;
@@ -680,18 +729,20 @@ function kpi({ n, word, glyph, i, unavailable = false }) {
     ? `${plural(n, "job", "jobs")} ${phrase}, of ${plural(D.open, "job", "jobs")} open`
     : `Jobs ${word.many}: not available, because Timeline did not answer`;
   const body = `
-      <span class="glyph" aria-hidden="true">${glyph}</span>
+      <span class="glyph" aria-hidden="true" style="color:var(${tone})">${glyph}</span>
       ${known
-        ? `<span class="t-num" data-type="bignum">${n}</span>`
-        : `<span class="t-num na" data-type="bignum">&mdash;</span>`}
-      <span class="t-small dim-2" data-type="small">${esc(known ? phrase : word.many)}</span>
+        ? `<span class="t-num" data-type="bignum" aria-hidden="true">${n}</span>`
+        : `<span class="t-num na" data-type="bignum" aria-hidden="true">&mdash;</span>`}
+      <span class="t-small dim-2" data-type="small" aria-hidden="true">${esc(known ? phrase : word.many)}</span>
       ${known
         ? `<span class="meter" aria-hidden="true"><i class="${n === 0 ? "zero" : ""}" style="--f:${share};--i:${i}"></i></span>`
-        : `<span class="t-label dim" data-type="label">Not available</span>`}
-      <span class="sr">${esc(name)}</span>`;
-  return known && n > 0
-    ? `<a class="kpi rise" href="#" style="--i:${i}">${body}</a>`
-    : `<div class="kpi rise" style="--i:${i}">${body}</div>`;
+        : `<span class="t-label dim" data-type="label" aria-hidden="true">Not available</span>`}
+      `;
+  /* Never a link. Nothing on this surface opens a filtered list, and a
+     role the screen cannot honour is the same promise the hero stopped
+     making in round 1. The destination is on the port packet; the
+     affordance ships when it does. */
+  return `<div class="kpi rise" role="group" aria-label="${esc(name)}" style="--i:${i}">${body}</div>`;
 }
 
 /* The denominator card. Not a status, so it wears no status furniture and
@@ -709,9 +760,10 @@ function leadKpi(i) {
 /* ── Movement one ───────────────────────────────────────────────────── */
 function chart({ record = true } = {}) {
   const max = Math.max(D.peak, D.bestPrior);
+  if (!D.weeks.length) return `<div class="chart"><div class="plot" aria-hidden="true"><span class="baseline"></span></div><div class="xaxis" aria-hidden="true"></div><p class="sr">No weeks have been read yet.</p></div>`;
   const cols = D.weeks.map((w, i) => {
     const live = i === D.weeks.length - 1;
-    const cls = w.partial ? "bar part" : (live ? "bar live" : "bar");
+    const cls = w.partial ? "bar part" : "bar";
     const val = live
       ? `<span class="bar-val t-label" data-type="label" style="--h:${pct(w.v, max)}">${w.v} so far</span>`
       : "";
@@ -743,7 +795,7 @@ function chart({ record = true } = {}) {
         <span class="cols">${cols}</span>
       </div>
       <div class="xaxis" aria-hidden="true">${ticks}</div>
-      <p class="sr">Twelve weeks of finished work, week commencing ${esc(D.weeks[0].start)} to ${esc(D.weeks[D.weeks.length - 1].start)}: ${D.weeks.map((w) => `${w.start}, ${w.v}${w.partial ? " so far" : ""}`).join("; ")}.${record ? ` The best week before this one was ${D.bestPrior}.` : ""}</p>
+      <p class="sr">${D.weeks.length ? `Twelve weeks of finished work, week commencing ${esc(D.weeks[0].start)} to ${esc(D.weeks[D.weeks.length - 1].start)}: ${D.weeks.map((w) => `${w.start}, ${w.v}${w.partial ? " so far" : ""}`).join("; ")}.${record ? ` The best week before this one was ${D.bestPrior}.` : ""}` : "No weeks have been read yet."}</p>
     </div>`;
 }
 
@@ -758,7 +810,7 @@ function movementOne({ record = D.weeks.length > 1 } = {}) {
       <div class="band-head">
         <h2 class="t-sect" id="m1" data-type="sect">What you did</h2>
         <span class="grow"></span>
-        <p class="t-label dim" data-type="label">Last four weeks &middot; ${esc(D.weeks[D.weeks.length - 4].start)} to ${esc(D.readingShort)}</p>
+        <p class="t-label dim" data-type="label">${D.weeks.length >= 4 ? `Last four weeks &middot; ${esc(D.weeks[D.weeks.length - 4].start)} to ${esc(D.readingShort)}` : ""}</p>
       </div>
       <div class="card hero rise" style="--i:1">
         <div class="hero-fig">
@@ -810,10 +862,10 @@ function movementTwo({ partial = false } = {}) {
       </div>
       <div class="kpis">
         ${leadKpi(0)}
-        ${kpi({ n: D.sitting, word: { one: "hasn’t moved in a fortnight", many: "haven’t moved in a fortnight" }, glyph: ICON.still, i: 1 })}
-        ${kpi({ n: D.overdue, word: { one: "is past the day it was due", many: "past the day they were due" }, glyph: ICON.past, i: 2, unavailable: partial })}
-        ${kpi({ n: D.unowned, word: { one: "has nobody’s name on it", many: "have nobody’s name on them" }, glyph: ICON.nobody, i: 3 })}
-        ${kpi({ n: D.waiting, word: { one: "is waiting on something else", many: "are waiting on something else" }, glyph: ICON.waiting, i: 4 })}
+        ${kpi({ n: D.sitting, word: { one: "hasn’t moved in a fortnight", many: "haven’t moved in a fortnight" }, glyph: ICON.still, tone: TONE.still, i: 1 })}
+        ${kpi({ n: D.overdue, word: { one: "is past the day it was due", many: "past the day they were due" }, glyph: ICON.past, tone: TONE.past, i: 2, unavailable: partial })}
+        ${kpi({ n: D.unowned, word: { one: "has nobody’s name on it", many: "have nobody’s name on them" }, glyph: ICON.nobody, tone: TONE.nobody, i: 3 })}
+        ${kpi({ n: D.waiting, word: { one: "is waiting on something else", many: "are waiting on something else" }, glyph: ICON.waiting, tone: TONE.waiting, i: 4 })}
       </div>
       ${partial ? `<div class="note" style="margin-top:var(--gap-line)"><p class="t-body dim-2" data-type="body">Timeline did not answer this reading, so nothing here knows a due date. The card keeps its place and says so; it does not fall back to zero.</p></div>` : ""}
       ${strip()}
@@ -921,9 +973,9 @@ const VIEW = {
       </div>
       <div class="card rise" style="--i:1">
         <div class="center">
-          <span class="glyph" aria-hidden="true">${ICON.clear}</span>
+          <span class="glyph" aria-hidden="true" style="color:var(--emerald)">${ICON.clear}</span>
           <p class="t-head" data-type="head">Nothing is sitting</p>
-          <p class="t-body dim-2" data-type="body">${D.open === 1 ? "The one open job has" : `All ${D.open} open jobs have`} moved inside a fortnight, none is past its day, and every one has a name on it.</p>
+          <p class="t-body dim-2" data-type="body">${D.open === 1 ? "The one open job has" : `All ${D.open} open jobs have`} moved inside a fortnight, none is past its day, every one has a name on it, and none is waiting on anything else.</p>
         </div>
       </div>
       ${strip()}
@@ -949,8 +1001,8 @@ const VIEW = {
             <span class="baseline"></span>
             <span class="cols"><span class="colw"><span class="bar part" style="--h:100;--i:0"></span><span class="bar-val t-label" data-type="label" style="--h:100">${D.thisWeek} so far</span></span></span>
           </div>
-          <div class="xaxis" aria-hidden="true"><span class="t-label" data-type="label">${esc(D.weeks[0].start)}</span></div>
-          <p class="sr">This week so far: ${D.thisWeek} jobs finished, week commencing ${esc(D.weeks[0].start)}. There is no earlier week to compare it with; twelve weeks of history are not recorded yet.</p>
+          <div class="xaxis" aria-hidden="true"><span class="t-label" data-type="label">${D.weeks.length ? esc(D.weeks[0].start) : ""}</span></div>
+          <p class="sr">This week so far: ${D.thisWeek} jobs finished${D.weeks.length ? `, week commencing ${esc(D.weeks[0].start)}` : ""}. There is no earlier week to compare it with; twelve weeks of history are not recorded yet.</p>
         </div>
       </div>
     </section>` + movementTwo() + movementThree()),
@@ -972,7 +1024,11 @@ const VIEW = {
      render — never a promise of a section that never arrives. */
   loading: () => shell(
     `<div class="sk-wrap" aria-hidden="true">${movementOne() + movementTwo()}</div>` +
-    `<p class="sr" role="status">Loading this reading.</p>`),
+    `<p class="sr" role="status">Loading this reading.</p>` +
+    /* The refusals need no source, so they arrive whole rather than as
+       skeleton, and the frame becomes the height of the page that
+       follows instead of two thirds of it. */
+    movementThree()),
 
   /* Names the source, offers the one useful move, and shows nothing it
      cannot stand behind. */
@@ -1053,7 +1109,7 @@ if (fatal) {
         rows[r] = x;
         el.style.setProperty("--row", r);
       });
-    strip.style.minHeight = `${92 + Math.max(0, rows.length - 1) * 20}px`;
+    strip.style.minHeight = `${Math.max(112, 92 + (rows.length - 1) * 20)}px`;
   };
   /* The reading line's connector, measured after layout. */
   const reading = root.querySelector(".reading");
@@ -1063,13 +1119,35 @@ if (fatal) {
     const tops = Array.from(reading.querySelectorAll("p")).map((p) => Math.round(p.getBoundingClientRect().top));
     if (new Set(tops).size > 1) reading.setAttribute("data-wrapped", "");
   };
-  const relayout = () => { deswarm(); measureReading(); };
+  /* The fortnight label, measured against the strip it belongs to. */
+  const measureFortnight = () => {
+    const rule = root.querySelector(".fortnight");
+    const strip = root.querySelector(".strip");
+    if (!rule || !strip) return;
+    rule.removeAttribute("data-flip");
+    const span = rule.querySelector("span");
+    const box = strip.getBoundingClientRect();
+    const r = span.getBoundingClientRect();
+    if (r.right > box.right + 0.5) rule.setAttribute("data-flip", "");
+  };
+  const relayout = () => { deswarm(); measureReading(); measureFortnight(); };
   relayout();
   /* Again once the faces have swapped. A measurement taken against the
      fallback face is a measurement of a page nobody sees, and the
      reading line wraps at a different width in each. */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
-  window.addEventListener("resize", () => { relayout(); queueMove(); });
+  /* A resize re-lays the marks and the browser does not follow focus, so
+     a reader loses the ring and the mark's title — which lives nowhere
+     else on this screen — with no way back but Tab. */
+  window.addEventListener("resize", () => {
+    const held = document.activeElement;
+    relayout();
+    if (held && held !== document.body && root.contains(held)) {
+      const b = held.getBoundingClientRect();
+      if (b.top < 0 || b.bottom > window.innerHeight) held.scrollIntoView({ block: "nearest" });
+    }
+    queueMove();
+  });
 
   /* Pointer AND touch, and they are not the same interaction.
      A tooltip bound to hover does not exist under a coarse pointer: a tap
@@ -1141,6 +1219,21 @@ if (fatal) {
      the surface cannot keep, and a spoken sentence about nine open jobs is
      a claim about numbers nobody has read. Both are stripped, in place, so
      the geometry survives and the semantics do not lie. */
+  /* A state that says it is still reading may not publish the reading.
+     Every magnitude is neutralised in place — heights, fills, ages, the
+     partial-week treatment and the previous-best tag — so the geometry
+     survives and the numbers do not leak. Done before the de-swarm, so
+     nothing downstream has to be re-run. */
+  if (state === "loading") {
+    const wrap = root.querySelector(".sk-wrap");
+    if (wrap) {
+      for (const b of wrap.querySelectorAll(".bar")) { b.style.setProperty("--h", 46); b.classList.remove("part"); }
+      for (const v of wrap.querySelectorAll(".bar-val")) v.style.setProperty("--h", 46);
+      for (const m of wrap.querySelectorAll(".meter i")) { m.style.setProperty("--f", 0.4); m.classList.remove("zero"); }
+      const dots = Array.from(wrap.querySelectorAll(".dot"));
+      dots.forEach((d, i) => d.style.setProperty("--x", ((i + 0.5) / dots.length) * 100));
+    }
+  }
   for (const el of root.querySelectorAll(".sk-wrap .sr")) el.remove();
   for (const el of root.querySelectorAll(".sk-wrap a, .sk-wrap button")) {
     const inert = document.createElement("span");

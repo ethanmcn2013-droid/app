@@ -1,0 +1,24 @@
+{
+  "note": "Three rotating seats raised 26 findings; seven of them are the same defect seen twice. Clustered before refutation, canonical id is the clearest statement, every alias kept. One fresh refuter per cluster. The `selfInflicted` column marks a finding that lands on work built during round 1's remediation — the loop measuring its own fixer, which the method requires be counted while the round can still act on it.",
+  "clusters": [
+    { "id": "rise-fill-outranks-every-interaction-rule", "canonical": "Interaction and states", "aliases": ["kpi-lift-and-press-outranked-by-their-own-entrance:Measured evidence"], "selfInflicted": false },
+    { "id": "fortnight-label-escapes-its-card", "canonical": "UX and information design", "aliases": ["fortnight-label-runs-off-the-quiet-strip:Measured evidence"], "selfInflicted": true },
+    { "id": "first-run-week-label-stands-300px-from-its-mark", "canonical": "UX and information design", "aliases": ["first-run-week-tick-stands-nowhere-near-its-week:Measured evidence"], "selfInflicted": true },
+    { "id": "skeleton-draws-the-data-it-says-it-is-still-reading", "canonical": "UX and information design", "aliases": ["loading-skeleton-is-composed-from-the-reading-it-is-waiting-for:Measured evidence"], "selfInflicted": true },
+    { "id": "kpi-cards-announce-their-fact-twice", "canonical": "UX and information design", "aliases": ["kpi-link-names-say-it-twice:Interaction and states"], "selfInflicted": false },
+    { "id": "try-again-has-no-designed-press", "canonical": "UX and information design", "aliases": ["the-terminal-states-only-move-does-nothing:Measured evidence"], "selfInflicted": false },
+    { "id": "focused-mark-lands-flush-on-the-window-edge", "canonical": "UX and information design", "aliases": ["age-marks-take-focus-with-their-ruler-below-the-fold:Measured evidence"], "selfInflicted": false },
+    { "id": "first-run-fortnight-card-reads-as-an-achievement", "canonical": "UX and information design", "aliases": [], "selfInflicted": true },
+    { "id": "bound-nine-prints-where-no-nine-was-read", "canonical": "Measured evidence", "aliases": [], "selfInflicted": true },
+    { "id": "keyboard-cannot-scroll-the-reading-surface", "canonical": "Interaction and states", "aliases": [], "selfInflicted": false },
+    { "id": "kpi-cards-are-links-that-open-nothing", "canonical": "Interaction and states", "aliases": [], "selfInflicted": false },
+    { "id": "loading-frame-is-a-movement-short", "canonical": "Interaction and states", "aliases": [], "selfInflicted": false },
+    { "id": "resize-strands-focus-below-the-fold", "canonical": "Interaction and states", "aliases": [], "selfInflicted": true },
+    { "id": "week-ticks-spread-by-flexbox-when-they-are-thinned", "canonical": "UX and information design", "aliases": [], "selfInflicted": true },
+    { "id": "status-indigo-is-the-only-mark-the-dark-twin-forgets", "canonical": "UX and information design", "aliases": [], "selfInflicted": false },
+    { "id": "chart-and-strip-marks-fall-under-the-non-text-floor", "canonical": "Measured evidence", "aliases": [], "selfInflicted": false },
+    { "id": "every-age-mark-names-itself-twice-in-the-tree", "canonical": "Measured evidence", "aliases": [], "selfInflicted": false },
+    { "id": "the-reading-instant-is-printed-twice", "canonical": "UX and information design", "aliases": [], "selfInflicted": false },
+    { "id": "the-all-clear-sentence-drops-one-of-its-four-categories", "canonical": "UX and information design", "aliases": [], "selfInflicted": false }
+  ]
+}

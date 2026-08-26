@@ -1,0 +1,158 @@
+[
+  {
+    "id": "kpi-lift-and-press-outranked-by-their-own-entrance",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "kpi-lift-and-press-outranked-by-their-own-entrance.md"
+  },
+  {
+    "id": "chart-and-strip-marks-fall-under-the-non-text-floor",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "chart-and-strip-marks-fall-under-the-non-text-floor.md"
+  },
+  {
+    "id": "bound-nine-prints-where-no-nine-was-read",
+    "seat": "Measured evidence",
+    "severity": "misleading",
+    "file": "bound-nine-prints-where-no-nine-was-read.md"
+  },
+  {
+    "id": "first-run-week-tick-stands-nowhere-near-its-week",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "first-run-week-tick-stands-nowhere-near-its-week.md"
+  },
+  {
+    "id": "fortnight-label-runs-off-the-quiet-strip",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "fortnight-label-runs-off-the-quiet-strip.md"
+  },
+  {
+    "id": "loading-skeleton-is-composed-from-the-reading-it-is-waiting-for",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "loading-skeleton-is-composed-from-the-reading-it-is-waiting-for.md"
+  },
+  {
+    "id": "the-terminal-states-only-move-does-nothing",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "the-terminal-states-only-move-does-nothing.md"
+  },
+  {
+    "id": "every-age-mark-names-itself-twice-in-the-tree",
+    "seat": "Measured evidence",
+    "severity": "refinement",
+    "file": "every-age-mark-names-itself-twice-in-the-tree.md"
+  },
+  {
+    "id": "age-marks-take-focus-with-their-ruler-below-the-fold",
+    "seat": "Measured evidence",
+    "severity": "refinement",
+    "file": "age-marks-take-focus-with-their-ruler-below-the-fold.md"
+  },
+  {
+    "id": "keyboard-cannot-scroll-the-reading-surface",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "keyboard-cannot-scroll-the-reading-surface.md"
+  },
+  {
+    "id": "rise-fill-outranks-every-interaction-rule",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "rise-fill-outranks-every-interaction-rule.md"
+  },
+  {
+    "id": "kpi-cards-are-links-that-open-nothing",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "kpi-cards-are-links-that-open-nothing.md"
+  },
+  {
+    "id": "loading-frame-is-a-movement-short",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "loading-frame-is-a-movement-short.md"
+  },
+  {
+    "id": "resize-strands-focus-below-the-fold",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "resize-strands-focus-below-the-fold.md"
+  },
+  {
+    "id": "kpi-link-names-say-it-twice",
+    "seat": "Interaction and states",
+    "severity": "refinement",
+    "file": "kpi-link-names-say-it-twice.md"
+  },
+  {
+    "id": "first-run-fortnight-card-reads-as-an-achievement",
+    "seat": "UX and information design",
+    "severity": "misleading",
+    "file": "first-run-fortnight-card-reads-as-an-achievement.md"
+  },
+  {
+    "id": "fortnight-label-escapes-its-card",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "fortnight-label-escapes-its-card.md"
+  },
+  {
+    "id": "first-run-week-label-stands-300px-from-its-mark",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "first-run-week-label-stands-300px-from-its-mark.md"
+  },
+  {
+    "id": "week-ticks-spread-by-flexbox-when-they-are-thinned",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "week-ticks-spread-by-flexbox-when-they-are-thinned.md"
+  },
+  {
+    "id": "skeleton-draws-the-data-it-says-it-is-still-reading",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "skeleton-draws-the-data-it-says-it-is-still-reading.md"
+  },
+  {
+    "id": "kpi-cards-announce-their-fact-twice",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "kpi-cards-announce-their-fact-twice.md"
+  },
+  {
+    "id": "status-indigo-is-the-only-mark-the-dark-twin-forgets",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "status-indigo-is-the-only-mark-the-dark-twin-forgets.md"
+  },
+  {
+    "id": "focused-mark-lands-flush-on-the-window-edge",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "focused-mark-lands-flush-on-the-window-edge.md"
+  },
+  {
+    "id": "try-again-has-no-designed-press",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "try-again-has-no-designed-press.md"
+  },
+  {
+    "id": "the-reading-instant-is-printed-twice",
+    "seat": "UX and information design",
+    "severity": "refinement",
+    "file": "the-reading-instant-is-printed-twice.md"
+  },
+  {
+    "id": "the-all-clear-sentence-drops-one-of-its-four-categories",
+    "seat": "UX and information design",
+    "severity": "refinement",
+    "file": "the-all-clear-sentence-drops-one-of-its-four-categories.md"
+  }
+]
