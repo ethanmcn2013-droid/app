@@ -18,8 +18,15 @@ _scaffold/
 gates/
 
 # Seat scratch — agents write probes here while driving the file.
+# Both separators: round 3's seats wrote _zz-*.mjs against a rule that only
+# named _zz_*.mjs, and eighty scratch files went into a commit.
 _m.mjs
 _zz_*.mjs
+_zz-*.mjs
+_drive*.mjs
 _verify.out
+_gate.out
+_shots.out
 _round1.json
 _seat-*.mjs
+panel/m*/
