@@ -362,6 +362,15 @@ function card(task, force, stop) {
 function groupKeys(event) {
   const group = event.target.closest && event.target.closest("[data-group]");
   if (!group) return false;
+  /* THE SPINE IS NOT THIS BOARD'S. `[data-group="rail"]` used to be the
+     board's own capsule; it is now the SUITE's nav, and this rover was
+     still answering its keys alongside the suite's own. Two handlers, one
+     group: every arrow press moved two tiles, half the spine was
+     unreachable, and the one object that makes three products into one
+     application was the one object whose keyboard model did not work.
+     Five seats found it independently in round 1.
+     The suite owns its spine's keys. This board owns the board's. */
+  if (group.dataset.group === "rail") return false;
   const key = event.key;
   const horizontal = group.dataset.group !== "rail";
   const next = horizontal ? "ArrowRight" : "ArrowDown";
@@ -374,10 +383,6 @@ function groupKeys(event) {
     : key === "End" ? items.length - 1
     : (at + (key === next ? 1 : items.length - 1) + items.length) % items.length;
   items.forEach((n, i) => n.setAttribute("tabindex", i === to ? "0" : "-1"));
-  /* The rail is the one group that survives a repaint, so where its index
-     moved to has to be remembered rather than re-derived from the active
-     product on every mount. */
-  if (group.dataset.group === "rail" && items[to].dataset.key) railCurrent = items[to].dataset.key;
   items[to].focus();
   return true;
 }

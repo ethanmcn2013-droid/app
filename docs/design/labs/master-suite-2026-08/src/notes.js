@@ -1071,6 +1071,8 @@
         ...note,
         id: `crossed_${note.id}`,
         task: wording,
+        /* Same boundary in the hand as on the desk. */
+        crossedWords: pickedWords || wording,
         /* The ledger column carries a Tasks LANE. destinationOf() returns
            a project, so the one row a person is looking for — the one
            she just made — carried a different kind of fact from the
@@ -1110,6 +1112,15 @@
       lane: "To do",
       crossedWhen: "just now",
       sent: true,
+      /* THE WORDS THAT CROSS, and the only ones. This product states its
+         handoff boundary twice on this very screen, in bold, directly
+         above the button: "Tasks only ever receives the exact words you
+         pick and check below", and "The rest of what you wrote stays
+         private here." The suite then put the whole note on the card, so
+         a sentence a person reads as a guarantee was a caption. Carried
+         explicitly rather than left to whatever `...note` spreads,
+         because that spread is exactly what leaked it. */
+      crossedWords: pickedWords || wording,
     };
     CROSSED.unshift(entry);
     /* AND IT ARRIVES. The ledger row and the receipt on the note were
@@ -1601,7 +1612,7 @@
                  <div class="dockRow" data-suite>
                    <span class="dockRule" aria-hidden="true"></span>
                    ${railTiles({ tight: true })}
-                   <button class="dockAvatar" type="button" data-act="account" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
+                   <button class="dockAvatar" type="button" data-act="account" aria-disabled="true" title="Your account, in Signal Studio. Not here yet." aria-label="${attr(N.operator.role)}. Not here yet.">${N.operator.initials}</button>
                  </div>`
               : `${backToWriting}${
                    /* While the sheet is searching, the query field is at
@@ -1620,7 +1631,7 @@
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
                  <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
                  <span class="dockRule" aria-hidden="true"></span>
-                 <button class="dockAvatar" type="button" data-act="account" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>`
+                 <button class="dockAvatar" type="button" data-act="account" aria-disabled="true" title="Your account, in Signal Studio. Not here yet." aria-label="${attr(N.operator.role)}. Not here yet.">${N.operator.initials}</button>`
           }
         </div>
       </div>`;
@@ -3046,7 +3057,14 @@
       return;
     }
     if (a === "account") {
-      say(`${N.operator.role}. Account and settings are on another screen.`);
+      /* The same sentence the rail tile carries, because it is the same
+         door. Notes painted two "OR" discs on one screen — the rail's,
+         which is aria-disabled and says "Not here yet", and the dock's,
+         which answered as though it went somewhere. One name, one object,
+         two contracts: a person who tried the quiet one and was told it
+         does not exist has been told the loud one does. Two slots is
+         correct and Tasks proves it; two promises is not. */
+      say("Your account, in Signal Studio. Not here yet.");
       return;
     }
     if (a === "filing" || a === "refile") {
@@ -3385,6 +3403,13 @@
     /* The notebook that is not on screen keeps its DOM, so it would keep
        answering the keyboard as well. A product's keys are its own. */
     if (!window.__SUITE.active("notes")) return;
+    /* And a product's keys are its own only while the keyboard is IN it.
+       The guard above asks which product is mounted, which is true while
+       the reader is standing on the spine — so ArrowDown off a rail tile
+       walked the note index and focus left the capsule on the first
+       press. The question is where the keyboard is, not what is on the
+       floor. */
+    if (e.target.closest && e.target.closest(".rail")) return;
     const typing = e.target.matches("textarea, input, [contenteditable]");
 
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "z") {

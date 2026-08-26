@@ -161,6 +161,16 @@ ${css}
   <main class="app sheet" data-app="timeline" hidden inert
         data-v="paper" data-ground="paper" data-spacing="measured"
         data-past="folded" data-accent="structure" data-state="owner-flight">
+    <!-- Identity on the sheet's own head, the way a file names itself —
+         the one thing every sheet in this suite does and Timeline did not.
+         It wore its name at 11px mono, 62% ink, in the FOOTER, so walking
+         the spine made the application's own name jump corner to corner
+         and change voice mid-sentence. Outside #tl deliberately: that is
+         the scope Timeline's own ladders are audited in, and this mark is
+         the SUITE's slot, set in the suite's register like the other two.
+         The footer line stays where it is — on a page a couple opens from
+         a link it is provenance for a stranger, not chrome. -->
+    <header class="tlHead"><span class="word">timeline</span></header>
     <div id="tl"></div>
   </main>
 </div>

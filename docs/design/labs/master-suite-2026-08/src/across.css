@@ -171,6 +171,31 @@
   top: var(--rule-y);
   transform: translate(-50%, -50%);
 }
+/* The terminus rule is the VERTICAL measure's idiom: a hairline drawn
+   across the full width of the words above the final moment. On this axis
+   the item is a zero-width position, so the same declaration resolved to a
+   27×1px orphan floating 137px above the label it belongs to, in empty
+   paper, at every desk width and on both grounds. It shipped through two
+   green gates: the stray check reads inline styles and data-side, and the
+   spill check iterates `.b-item *` — neither can see a pseudo-element.
+
+   Suppressed, keyed on [data-anchor="true"] rather than :last-child,
+   because `.b-back` is a measure without data-across whose last child is
+   not the anchor and whose own kill is keyed the same way. The horizontal
+   measure names its far end with the moment's own weight instead. */
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-anchor="true"]::before {
+  content: none;
+}
+/* The forced-colours ring rode on that same pseudo — geometry a repainted
+   fill cannot flatten. Across, it moves to the mark itself, so "this one"
+   still survives a forced palette. */
+@media (forced-colors: active) {
+  [data-app="timeline"] .b-measure[data-across="true"] .b-item[data-anchor="true"] .b-tick {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
 /* The stem says which mark these words belong to. It is the rail's own
    ink drawn from the tick out to the near edge of the words, and it
    grows with the rank so a stepped label is never orphaned. */
@@ -351,4 +376,50 @@
 [data-app="timeline"][data-layout="across"][data-medium="full"] .tl-stage,
 [data-app="timeline"][data-layout="across"][data-medium="sheet"] .tl-stage {
   max-width: 100%;
+}
+
+/* ── identity on the sheet's own head ───────────────────────────────
+   Tasks and Notes each carry their wordmark at the top-left of the sheet
+   head: 17px, 600, the suite's own tracking, with a full stop. Timeline
+   carried "Signal Timeline" at 11px mono, 62% ink, bottom-right, in the
+   footer — so walking notes → tasks → timeline made the application's own
+   name jump from one corner to the other and change voice on the way.
+
+   Colour is --fore, never --ink-1. Timeline is the one product with a
+   ground decision, and a mark hard-set to ink is #111 on a #111 sheet on
+   the ink twin — invisible, and worse than no mark at all.
+
+   The full stop is --fore too, siding with Tasks: that lock spends the
+   accent only on what the specimen sheet says it means, and Timeline
+   spends indigo on the today rule and the lead tick, which are structure.
+   A full stop is not structure. Recorded in COMPOSITION.md §5 beside the
+   other two. */
+[data-app="timeline"] .tlHead {
+  padding: var(--stage-pad) var(--stage-pad) 0;
+  display: flex;
+  align-items: baseline;
+}
+[data-app="timeline"] .tlHead .word {
+  font-size: var(--size-lead);
+  font-weight: 600;
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-body);
+  color: var(--fore);
+  display: inline-flex;
+  align-items: baseline;
+}
+[data-app="timeline"] .tlHead .word::after {
+  content: "";
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background: var(--fore);
+  margin-left: 2px;
+}
+/* Studio chrome on a page a couple opens from a link is a decision, not a
+   freebie. The wordmark is the OWNER's; a guest gets the artifact and the
+   colophon, which is what it already had. */
+[data-app="timeline"]:not([data-state^="owner"]) .tlHead { display: none; }
+@media (max-width: 430px) {
+  [data-app="timeline"] .tlHead { padding: var(--gap-line) var(--gap-line) 0; }
 }

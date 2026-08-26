@@ -2933,12 +2933,18 @@
            back on its replacement rather than dropped to the body. */
         var back = document.querySelector('[data-layout-to="' + to + '"]');
         if (back) back.focus({ preventScroll: true });
-        var say = document.querySelector(".b-live");
-        if (say) {
-          say.textContent = to === "across"
-            ? "The measure runs across the page."
-            : "The measure runs down the page.";
-        }
+        /* On the SUITE's region, not on `.b-live`. `.b-live` belongs to
+           the owner surface; the guest's desk read draws the same control
+           and has no such element, so the switch was silent on one of the
+           two states that carry it. The suite's region is in the tree
+           before the first paint and is the one every product announces
+           through. Called after the focus restore, so the polite queue
+           runs behind the control's own announcement rather than racing
+           it. `.b-live` stays where it is — the copy-link and publish
+           receipts are still read from it. */
+        window.__SUITE.say(to === "across"
+          ? "The measure runs across the page."
+          : "The measure runs down the page.");
       });
       return node;
     },

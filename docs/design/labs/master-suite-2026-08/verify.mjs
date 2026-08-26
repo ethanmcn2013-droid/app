@@ -24,6 +24,8 @@
  */
 import { chromium } from "@playwright/test";
 import { orientation } from "./tools/orientation.mjs";
+import { spine as spineKeys } from "./tools/spine.mjs";
+import { truth } from "./tools/truth.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -39,6 +41,15 @@ const pixelmatch = (await import(pathToFileURL(path.join(WS, "studio/node_module
 
 const WIDTHS = [1440, 1280, 768, 390];
 const HEIGHT = (w) => (w <= 430 ? 844 : 900);
+
+/* Products this engagement has deliberately moved past their frozen lab,
+   with what moved. A product absent from this list must still be
+   byte-identical to the master it was composed from. */
+const CHANGED = {
+  notes: "the index column 1060 → 1440, the wedding moved to 3 October, "
+    + "the dock's account tile now says what the rail's says",
+  timeline: "a second composition (across) and its own wordmark on the sheet head",
+};
 
 const LABS = {
   tasks: ["_wt-design-tasks/docs/design/labs/tasks-2026-08/floor.html", "?v=locked"],
@@ -150,8 +161,28 @@ async function fidelity() {
         x0: sheet.x * s, x1: (sheet.x + sheet.w) * s,
         y0: sheet.y * s, y1: (sheet.y + sheet.h) * s,
       });
-      check("fidelity", `${product} @${width} · the sheet`, inSheet === 0,
-        inSheet === 0 ? `${sheet.w}×${sheet.h} at ${sheet.x},${sheet.y} — identical` : `${inSheet} px differ`);
+      /* WHAT THIS SECTION NOW MEASURES, and why it changed.
+         The first brief said pixel-faithful to the three frozen labs and
+         redesign nothing. The founder released that in as many words at
+         round 1 — "not held back by old contracts and restraints" — and
+         this round then deliberately widened the Notes column from 1060
+         to 1440, moved a wedding eleven weeks, and gave Timeline a second
+         composition. A sheet that is still byte-identical to its lab is a
+         sheet this engagement has not touched, which is now a fact about
+         the round rather than a requirement of it.
+         So: a product this round did NOT change must still be identical,
+         and one it did is reported with its number and its reason. The
+         no-regression job — did this fix move something it should not —
+         moved to tools/moved.mjs, which snapshots the composed file
+         against itself and is what proved the leading fix cost nothing. */
+      const declared = CHANGED[product];
+      if (!declared) {
+        check("fidelity", `${product} @${width} · the sheet`, inSheet === 0,
+          inSheet === 0 ? `${sheet.w}×${sheet.h} at ${sheet.x},${sheet.y} — identical` : `${inSheet} px differ`);
+      } else {
+        check("fidelity", `${product} @${width} · the sheet, changed on purpose`, true,
+          `${inSheet} px differ · ${declared}`);
+      }
 
       const outside = changed - inSheet;
       const box = bounds(diff, a.width, a.height);
@@ -232,7 +263,11 @@ async function timelineArtifact() {
     const labPage = await openLab("timeline", width);
     const a = await read(labPage);
     await labPage.close();
-    const suitePage = await openSuite("?p=timeline", width);
+    /* DOWN, not across. The lab shipped one composition and the suite now
+       draws two; comparing the lab's column against the suite's horizontal
+       track measures the new composition, not the fidelity of the old one.
+       `across` is measured on its own terms in §9. */
+    const suitePage = await openSuite("?p=timeline&layout=down", width);
     const b = await read(suitePage);
     await suitePage.close();
 
@@ -292,7 +327,7 @@ async function timelineArtifact() {
     const labPage2 = await openLab("timeline", width);
     const A = await boxes(labPage2);
     await labPage2.close();
-    const suitePage2 = await openSuite("?p=timeline", width);
+    const suitePage2 = await openSuite("?p=timeline&layout=down", width);
     const B = await boxes(suitePage2);
     await suitePage2.close();
 
@@ -307,6 +342,15 @@ async function timelineArtifact() {
          the floor's inset is not the font. */
       const dw = Math.abs(one.w - two.w);
       const dh = Math.abs(one.h - two.h);
+      /* The measure's own head is now the first cell of a flex row that
+         also holds the orientation control, so its BOX shrank to its
+         content — 350px of full-width block became 76px of label. The
+         glyphs are identical and it is left-aligned in both, so nothing
+         moved on screen. This check is about the FONT; a box that changed
+         because its container changed is not a font difference. */
+      const containerOnly = one.key.startsWith("b-measureHead");
+      if (containerOnly && one.size === two.size && one.weight === two.weight
+        && one.family === two.family && Math.abs(one.h - two.h) < 0.5) continue;
       const insetOnly = dw === allowW;
       if (insetOnly) {
         /* The floor costs 18px at 390, and a line that was one word from
@@ -336,7 +380,7 @@ async function timelineArtifact() {
        grow (two lines)" — this is that claim, measured in the composed
        file rather than taken from the lock. */
     const overlap = await (async () => {
-      const p = await openSuite("?p=timeline", width);
+      const p = await openSuite("?p=timeline&layout=down", width);
       const bad = await p.evaluate(() => {
         const items = [...document.querySelectorAll("#tl .b-title")]
           .map((t) => t.closest("li, .b-moment, div") || t)
@@ -819,6 +863,8 @@ if (run("motion")) await motion();
 if (run("orientation")) {
   await orientation({ browser, url: SUITE_URL, check, head });
 }
+if (run("spinekeys")) await spineKeys({ browser, url: SUITE_URL, check, head });
+if (run("truth")) await truth({ browser, url: SUITE_URL, check, head });
 if (run("labgates")) await labGates();
 
 await browser.close();

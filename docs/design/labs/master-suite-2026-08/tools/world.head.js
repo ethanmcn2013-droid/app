@@ -20,6 +20,24 @@ var WORLD = (window.WORLD = {
   todayLabel: "Thursday 16 July",
   nowUTC: Date.UTC(2026, 6, 16, 9, 0, 0),
 
+  /* ── the wedding, held ONCE ──────────────────────────────────
+     Round 1 found the same couple carrying two irreconcilable days: the
+     notebook's head read "Mara & Finn · Saturday 18 July, in 2 days" and
+     the Timeline's count read 79 with its date on Saturday 3 October.
+     Two seats filed it independently and both refuters confirmed it as
+     the finding the suite's whole claim rests on — a person reading the
+     notebook is preparing for a wedding that, according to the Timeline
+     beside it, has not happened yet and will not for eleven weeks.
+
+     3 October is the anchor, not 18 July, and that direction is forced:
+     it is the date in `src/lib/review-suite-fixture.ts`, it is the date
+     the ten milestones are measured from, and moving it to July would
+     collapse the count from 79 to 2 and take the Timeline's entire
+     composition with it. So the July claim moves, and the notebook now
+     derives its subject and its head from here rather than declaring a
+     second one. */
+  wedding: { couple: "Mara & Finn", date: "2026-10-03", label: "Saturday 3 October" },
+
   venue: "The Orchard, events",
   operator: { name: "Orla", initials: "OR", role: "Orla, venue manager" },
   project: "Mara & Finn",

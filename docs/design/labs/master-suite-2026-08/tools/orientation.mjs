@@ -63,7 +63,7 @@ export async function orientation({ browser, url, check, head }) {
       across: Boolean(document.querySelector('.b-measure[data-across="true"]')),
       pressed: document.querySelector('[data-layout-to="down"]').getAttribute("aria-pressed"),
       focused: document.activeElement.getAttribute("data-layout-to"),
-      said: (document.querySelector(".b-live") || {}).textContent,
+      said: (document.getElementById("say") || {}).textContent,
       /* Down the page, the rows are placed by top and carry no across
          attributes. A row that kept an inline `left` from the other axis
          would sit off the rail entirely. */

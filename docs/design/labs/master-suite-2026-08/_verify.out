@@ -1,0 +1,275 @@
+_wrapped.html + 4 gate copies · 1061 KB each
+
+── 1 · fidelity — the lab masters against the composed surfaces ──
+  · tasks @1440 · the sheet  1322×864 at 100,18 — identical
+  · tasks @1440 · the spine  74 px, in x 42–57, y 852–859.5
+  · notes @1440 · the sheet, changed on purpose  160908 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says
+  · notes @1440 · the spine  14529 px, in x 28–1392.5, y 36–859.5
+  · timeline @1440 · re-composed  14.71% of the frame — see §1b
+  · tasks @1280 · the sheet  1162×864 at 100,18 — identical
+  · tasks @1280 · the spine  86 px, in x 42–57, y 852–859.5
+  · notes @1280 · the sheet, changed on purpose  141347 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says
+  · notes @1280 · the spine  14529 px, in x 28–1232.5, y 36–859.5
+  · timeline @1280 · re-composed  15.89% of the frame — see §1b
+  · tasks @768 · the sheet  668×876 at 88,12 — identical
+  · tasks @768 · the spine  86 px, in x 36–51, y 858–865.5
+  · notes @768 · the sheet, changed on purpose  9045 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says
+  · notes @768 · the spine  14531 px, in x 22–722, y 22–865.5
+  · timeline @768 · re-composed  19.09% of the frame — see §1b
+  · tasks @390 · the sheet  372×757 at 9,9 — identical
+  · tasks @390 · the spine  74 px, in x 349–364, y 801–808.5
+  · notes @390 · the sheet, changed on purpose  68948 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says
+  · notes @390 · the spine  identical
+  · timeline @390 · re-composed  20.07% of the frame — see §1b
+
+── 1b · Timeline — the artifact itself, lab against suite ──
+  · timeline count @1440  148px 400 Geist Mono, 163×133
+  · timeline unit @1440  11px 400 Geist Mono, 28×15
+  · timeline when @1440  30px 400 Geist, 344×39
+  · timeline who @1440  12px 400 Geist Mono, 344×17
+  · timeline today @1440  11px 400 Geist Mono, 344×15
+  · timeline origin @1440  11px 400 Geist Mono, 99×15
+  · timeline firstDate @1440  11px 400 Geist Mono, 534×15
+  · timeline moments @1440  7 vs 7
+  · timeline · the variable font @1440  75 text boxes identical (70×400 2×600)
+  · timeline · 600 is exercised @1440  70×400 2×600
+  · timeline · nothing collides @1440  every moment clears the one above it
+  · timeline ground @1440  paper vs paper
+  · timeline count @390  96px 400 Geist Mono, 108×86
+  · timeline unit @390  11px 400 Geist Mono, 28×15
+  · timeline when @390  350 → 332px wide — the floor's 9px inset, both sides
+  · timeline who @390  350 → 332px wide — the floor's 9px inset, both sides
+  · timeline today @390  350 → 332px wide — the floor's 9px inset, both sides
+  · timeline origin @390  11px 400 Geist Mono, 99×15
+  · timeline firstDate @390  240 → 222px wide — the floor's 9px inset, both sides
+  · timeline moments @390  7 vs 7
+  · timeline · the variable font @390  75 text boxes identical (70×400 2×600)
+  · timeline · 600 is exercised @390  70×400 2×600
+    (the floor's inset costs a line at 390: Menu tasting at The Orchard takes 2 lines)
+  · timeline · nothing collides @390  every moment clears the one above it
+  · timeline ground @390  paper vs paper
+
+── 2 · console — every surface, every width, load and after interaction ──
+  · tasks @1440  clean
+  · notes @1440  clean
+  · timeline @1440  clean
+  · tasks @1280  clean
+  · notes @1280  clean
+  · timeline @1280  clean
+  · tasks @768  clean
+  · notes @768  clean
+  · timeline @768  clean
+  · tasks @390  clean
+  · notes @390  clean
+  · timeline @390  clean
+
+── 3 · the seam — Notes to Tasks, and back out of both ──
+  · a note lifts onto the desk  Ask the venue whether the ballroom can b
+  · words are picked  Ask the venue whether the ballroom can be accessed
+  · the peel control is live
+  · the peel carries the words  “Ask the venue whether the ballroom can be acce…”
+  · send is reachable
+  · the card is on the board  #seam_n03_1
+  · …in the lane the seam chose  To do
+  · the note offers the way through
+  · it opens Tasks  tasks
+  · and reveals the card  visible true, focused true — “Opened in Tasks. Your note stayed in Notes.”
+  · undo is offered
+  · the card is gone from the board  13 cards (was 13)
+  · and gone from the ledger
+  · the board is back where it started  13 → 13
+
+── 4 · the spine — every product, both directions, and the state survives ──
+  · mouse → notes  product notes, active notes, showing notes, inert tasks+timeline
+  · mouse → timeline  product timeline, active timeline, showing timeline, inert notes+tasks
+  · mouse → tasks  product tasks, active tasks, showing tasks, inert notes+timeline
+  · mouse → timeline  product timeline, active timeline, showing timeline, inert notes+tasks
+  · mouse → notes  product notes, active notes, showing notes, inert tasks+timeline
+  · mouse → tasks  product tasks, active tasks, showing tasks, inert notes+timeline
+  · the arrows walk the capsule  timeline → inbox → help
+  · Enter opens the door  notes
+  · the roving stop follows  notes
+  · focus lands in the new sheet
+  · the board survives the round trip  1 cards / filter true → 1 / true
+  · a half-written note survives it too  "Half a thought about the marquee"
+  · home says it is not here yet  {"disabled":true,"says":true,"reachable":true}
+  · inbox says it is not here yet  {"disabled":true,"says":true,"reachable":true}
+  · help says it is not here yet  {"disabled":true,"says":true,"reachable":true}
+  · mark says it is not here yet  {"disabled":true,"says":true,"reachable":true}
+  · me says it is not here yet  {"disabled":true,"says":true,"reachable":true}
+  · at 390 Tasks folds the dock into the capsule  rail true, dock false
+  · …and carries the add verb there
+  · at 390 Notes folds the capsule into the dock  rail false, 3 suite tiles in the dock
+  · …and those tiles are real doors  tasks
+
+── 5 · the contract — palette, type, presets, and no console chrome ──
+  · no famRail travelled
+  · no console panel travelled
+  · self-contained  no external reference
+  · no page skeleton authored
+  · a title is set
+  · fonts inlined
+  · tasks @1440 · palette  ink, paper, indigo
+  · tasks @1440 · weights  400 600
+  · tasks @1440 · families  Geist Geist Mono
+  · notes @1440 · palette  ink, paper, indigo
+  · notes @1440 · weights  400 600
+  · notes @1440 · families  Geist
+  · timeline @1440 · palette  ink, paper, indigo
+  · timeline @1440 · weights  400 600
+  · timeline @1440 · families  Geist Geist Mono
+  · tasks @390 · palette  ink, paper, indigo
+  · tasks @390 · weights  400 600
+  · tasks @390 · families  Geist Geist Mono
+  · notes @390 · palette  ink, paper, indigo
+  · notes @390 · weights  400 600
+  · notes @390 · families  Geist
+  · timeline @390 · palette  ink, paper, indigo
+  · timeline @390 · weights  400 600
+  · timeline @390 · families  Geist Geist Mono
+  · tasks · the locked configuration  cards elevated · radius soft · density comfortable · indigo subtle · type calm
+  · notes · the locked configuration  paper stacked · index airy · radius soft · indigo subtle · type calm
+  · timeline · the locked configuration  ground paper · spacing measured · past folded · accent structure · state owner-flight
+  · no switch UI  0 found
+
+── 6 · Timeline — the paper room and its ink twin ──
+  · paper is the ground  paper
+  · paper paints the right way round  wash rgba(17, 17, 17, 0.04), rgba(17, 17, 17, · type rgb(17, 17, 17)
+  · paper · the pixel agrees  rgb(255, 255, 255)
+  · ink is the ground  ink
+  · ink paints the right way round  wash rgb(17, 17, 17), rgb(17, 17, 17) · type rgb(255, 255, 255)
+  · ink · the pixel agrees  rgb(17, 17, 17)
+  · print forces paper  rgb(255, 255, 255)
+
+── 7 · reduced motion — honoured completely ──
+  · tasks stands still  nothing moves
+  · notes stands still  nothing moves
+  · timeline stands still  nothing moves
+
+── 9 · the two orientations, and what this round closed ──
+  · @1920 opens across  data-layout across, measure across true
+  · @1440 opens across  data-layout across, measure across true
+  · @1024 opens across  data-layout across, measure across true
+  · @900 opens down  data-layout down, measure across false
+  · @390 opens down  data-layout down, measure across false
+  · ?layout= wins at 1440  down
+  · ?layout= wins at 1200  across
+  · the control switches the measure  true → false
+  · …and says which one is on  true
+  · …and keeps the keyboard on the control  down
+  · …and announces it  “The measure runs down the page.”
+  · …leaving nothing of the other axis behind  0 rows still carrying across geometry
+  · and back again  across true, 0 stale tops
+  · the control is a real target on a phone  74×44+6 57×44+6
+  · @1920 nothing paints outside the track  0px
+  · @1920 no two labels collide  0 overlapping · 20.28px per day
+  · @1920 the whole approach is in one frame  20.28px per day, no scroll
+  · @1920 the scale is at or above the floor  20.28px per day · 7 days reads as 142px
+  · @1600 nothing paints outside the track  0px
+  · @1600 no two labels collide  0 overlapping · 16.23px per day
+  · @1600 the whole approach is in one frame  16.23px per day, no scroll
+  · @1600 the scale is at or above the floor  16.23px per day · 7 days reads as 114px
+  · @1440 nothing paints outside the track  0px
+  · @1440 no two labels collide  0 overlapping · 14.2px per day
+  · @1440 the whole approach is in one frame  14.2px per day, no scroll
+  · @1440 the scale is at or above the floor  14.2px per day · 7 days reads as 99px
+  · @1280 nothing paints outside the track  0px
+  · @1280 no two labels collide  0 overlapping · 12.18px per day
+  · @1280 the whole approach is in one frame  12.18px per day, no scroll
+  · @1280 the scale is at or above the floor  12.18px per day · 7 days reads as 85px
+  · @1024 nothing paints outside the track  0px
+  · @1024 no two labels collide  0 overlapping · 8.94px per day
+  · @1024 the whole approach is in one frame  8.94px per day, no scroll
+  · @1024 the scale is at or above the floor  8.94px per day · 7 days reads as 63px
+  · timeline @390 · the sheet does not cover the spine  sheet overruns the capsule by -9px
+  · timeline @390 · a suite tile answers the finger
+  · tasks @390 · the sheet does not cover the spine  sheet overruns the capsule by -9px
+  · tasks @390 · a suite tile answers the finger
+  · timeline @390 · the spine is a way out  notes
+  · the day figure is above the paper floor  7.62:1 at alpha 0.72
+  · the wordmark is tracked one way  tasks -0.374px · notes -0.374px
+  · tasks.board · every leading is declared  none left to the browser
+  · notes.notebook · every leading is declared  none left to the browser
+  · timeline.owner-flight · every leading is declared  none left to the browser
+
+── 10 · the spine's keyboard model ──
+  · tasks @1440 · one press, one tile  walked timeline inbox help me mark home notes tasks timeline · wanted timeline inbox help me mark home notes tasks timeline
+  · tasks @1440 · the keys stay on the spine  focus never left the rail
+  · tasks @1440 · every tile the walk can reach  8 of 8 reached
+  · tasks @1440 · it walks back  tasks
+  · tasks @1440 · Home and End land on the ends  mark … me · wanted mark … me
+  · tasks @1440 · one tab stop in the group  1
+  · notes @1440 · one press, one tile  walked tasks timeline inbox help me mark home notes tasks · wanted tasks timeline inbox help me mark home notes tasks
+  · notes @1440 · the keys stay on the spine  focus never left the rail
+  · notes @1440 · every tile the walk can reach  8 of 8 reached
+  · notes @1440 · it walks back  notes
+  · notes @1440 · Home and End land on the ends  mark … me · wanted mark … me
+  · notes @1440 · one tab stop in the group  1
+  · timeline @1440 · one press, one tile  walked inbox help me mark home notes tasks timeline inbox · wanted inbox help me mark home notes tasks timeline inbox
+  · timeline @1440 · the keys stay on the spine  focus never left the rail
+  · timeline @1440 · every tile the walk can reach  8 of 8 reached
+  · timeline @1440 · it walks back  timeline
+  · timeline @1440 · Home and End land on the ends  mark … me · wanted mark … me
+  · timeline @1440 · one tab stop in the group  1
+  · tasks @390 · one press, one tile  walked timeline add me home notes tasks timeline · wanted timeline add me home notes tasks timeline
+  · tasks @390 · the keys stay on the spine  focus never left the rail
+  · tasks @390 · every tile the walk can reach  6 of 6 reached
+  · tasks @390 · it walks back  tasks
+  · tasks @390 · Home and End land on the ends  home … me · wanted home … me
+  · tasks @390 · one tab stop in the group  1
+  · notes @390 · the capsule stands down  0 tiles
+  · the notebook still answers its own arrows  cursor n01 → n02
+  · one spine, one rover  1 rails, 1 keyboard groups called rail
+
+── 11 · what the suite says about itself ──
+  · the crossing lands  seam_n03_1
+  · …carrying only the words that were picked  76 chars picked, 78 chars kept back
+  · …and the picked words are actually there  looking for “Ask the venue whethe” in the card
+  · the world holds the wedding once  2026-10-03
+  · Timeline agrees with it  2026-10-03 vs 2026-10-03
+  · the notebook agrees with it  Saturday 3 October, in 79 days
+  · and the head says the same day  “Mara & Finn Saturday 3 October, in 79 days”
+  · the couple is the same couple  Mara & Finn vs Mara & Finn
+  · the ledger counts every crossing  6 counted, 6 notes actually badged
+  · notes @1440 · the account tiles agree  railAvatar:not-yet dockAvatar:not-yet
+  · tasks @1440 · the account tiles agree  railAvatar:not-yet dockAvatar:not-yet
+  · notes @390 · the account tiles agree  dockAvatar:not-yet
+
+── 8 · the three labs' own measured gates, against this file ──
+  · Tasks · audit.mjs  PASS
+  · Notes · notes-audit.mjs  PASS
+  · Timeline · elevate audit.mjs (scoped to #tl)  PASS
+    {"colors":0,"weights":0,"families":0,"contrast":0,"targets":0,"radii":0,"motion":0}
+    {"colors":0,"weights":0,"families":0,"contrast":0,"targets":0,"radii":0,"motion":0,"sizes":0,"leading":0,"measure":0}
+    {"colors":0,"weights":0,"families":0,"contrast":0,"targets":0,"radii":0,"motion":0,"ramp":0,"leading":0,"leadingLadder":0,"leadingRole":0,"tracking":0,"trackingLadder":0,"sizeLadder":0,"spaceLadder":0}
+── not repointed, and why ──
+  · Tasks  · scripts/design/interaction-check.mjs and verify-tasks.mjs drive the
+             lab file by state through the CONSOLE's own harness (window.__signal
+             plus the customizer shell). They can be pointed at the master, but
+             the console does not exist here, so what they would grade is a
+             different page. verify.mjs §3 and §4 drive the composed file
+             directly instead, in the suite's own vocabulary.
+  · Notes  · scripts/design/notes-interaction-check.mjs, same reason.
+  · Timeline · interaction-check.mjs (845 assertions) is written against the lab
+             master's ELEVEN states as separate page loads. In the suite the
+             artifact is one product among three and ?state= reaches it, so this
+             one is genuinely repointable — it is the largest single piece of
+             outstanding verification and it is on BUILD-LIST.md, not done.
+
+── noise across every page this gate opened ──
+  · the composed file is silent  0 errors
+  (the three lab masters reported 0: none)
+
+════ the gate ════
+  fidelity    44 pass    0 fail
+  console     13 pass    0 fail
+  seam        14 pass    0 fail
+  spine       48 pass    0 fail
+  contract    28 pass    0 fail
+  grounds      7 pass    0 fail
+  motion       3 pass    0 fail
+  orientation  44 pass    0 fail
+  truth       12 pass    0 fail
+  lab gates    3 pass    0 fail
+
+all green · 216 checks · shots in shots/ · gate.json written

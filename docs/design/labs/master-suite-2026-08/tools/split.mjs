@@ -46,14 +46,39 @@ const force = process.argv.includes("--force");
 
 const read = (f) => readFile(path.join(SRC, f), "utf8").then((s) => s.replace(/\r\n/g, "\n"));
 
+/* WHAT --force DESTROYED ONCE, AND WILL NOT AGAIN.
+   src/ is the living source after the first derivation. Round 1 was
+   mid-remediation when this ran with --force out of habit, and it silently
+   replaced six hand-edited files — the whole horizontal Timeline, four
+   defect fixes and two days of argued comments — with the frozen labs
+   again. Nothing errored. The behaviour gate then PASSED the seam's
+   privacy assertion, because the field the fix reads had gone with the
+   fix and an absent field reads as "sent nothing", which is the one
+   outcome that looks like success from the outside.
+
+   So --force now takes a copy first, and says where it went. A one-shot
+   derivation that can eat a round's work without leaving a trace is not a
+   tool, it is a trap. */
 async function guard(name) {
-  if (force) return;
+  if (!force) {
+    try {
+      await access(path.join(OUT, name));
+      throw new Error(
+        `src/${name} already exists. src/ is the living source after the first derivation — ` +
+        `pass --force only if you mean to throw away every edit made since.`,
+      );
+    } catch (err) {
+      if (err.code !== "ENOENT") throw err;
+    }
+    return;
+  }
   try {
-    await access(path.join(OUT, name));
-    throw new Error(
-      `src/${name} already exists. src/ is the living source after the first derivation — ` +
-      `pass --force only if you mean to throw away every edit made since.`,
-    );
+    const was = await readFile(path.join(OUT, name), "utf8");
+    const backup = path.join(SRC, ".replaced");
+    await mkdir(backup, { recursive: true });
+    await writeFile(path.join(backup, name), was);
+    process.stdout.write(`   --force is replacing src/${name} · the copy it replaced is in _source/.replaced/
+`);
   } catch (err) {
     if (err.code !== "ENOENT") throw err;
   }

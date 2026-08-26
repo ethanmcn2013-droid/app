@@ -43,6 +43,37 @@
   agree("Timeline's project", T.project.name, WORLD.project);
   agree("Notes' project", N.project, WORLD.project);
 
+  /* ── one wedding, one day ──────────────────────────────────────
+     The notebook declared its own date for the same couple. It derives it
+     now, and the assertion below is what stops a third one appearing. */
+  (function () {
+    var w = WORLD.wedding;
+    var days = Math.round((Date.parse(w.date + "T00:00:00Z") - Date.parse(WORLD.today + "T00:00:00Z")) / 86400000);
+    var subject = N.subjects["mara-finn"];
+    subject.label = w.couple;
+    subject.when = w.label;
+    subject.days = days;
+    N.next = { key: "mara-finn", label: w.couple, when: w.label, days: days };
+    /* Every note filed under the couple carries the derived date too. */
+    N.notes.concat(N.crossed, N.dense, [N.long]).forEach(function (note) {
+      if (note && note.aboutKey === "mara-finn" && note.about) {
+        note.about = subject;
+      }
+    });
+    agree("the wedding, in Timeline", T.project.primaryDate.date, w.date);
+    agree("the couple whose wedding it is", T.project.name, w.couple);
+    agree("the notebook's day for them", N.subjects["mara-finn"].when, w.label);
+    agree("the notebook's head", N.next.when, w.label);
+    if (N.next.days !== days) throw new Error("ONE WORLD: the notebook counts a different number of days to the wedding");
+  })();
+
+  /* ── the ledger counts what the index badges ────────────────────
+     The pile headed "what has crossed into Tasks" counted its own fixture
+     array — three — while the index beside it badged six notes "In
+     Tasks". Two numbers for one fact, on one screen. The count is what
+     the notebook actually shows. */
+  N.counts.sent = N.notes.filter(function (n) { return n.sent; }).length + N.crossed.length;
+
   /* ── one set of milestones ─────────────────────────────────────
      Tasks names one milestone on the board and one in Planning; Timeline
      draws ten. Where a milestone appears in both it must be the same

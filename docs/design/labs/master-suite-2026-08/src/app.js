@@ -295,7 +295,14 @@ window.__SUITE = (function () {
          reads; the board knows it by id and does the translation. */
       lane: api.laneIdFor(entry.lane) || B.columns[0].id,
       title: entry.task,
-      note: entry.body || "",
+      /* Only what crossed. `entry.body` is the whole private note, and
+         putting it here made a stated guarantee false one click after it
+         was read. The card carries the picked words, and carries nothing
+         at all when the title already IS them — a note that repeats its
+         own title is noise, not privacy. */
+      note: entry.crossedWords && entry.crossedWords.trim() !== String(entry.task).trim()
+        ? entry.crossedWords
+        : "",
       /* What the note was about is what the task is tagged with. The seam
          resolved a destination on the Notes side; it would be thrown away
          here otherwise. */
@@ -360,12 +367,33 @@ window.__SUITE = (function () {
     go(key);
   });
 
-  /* The spine is one stop the arrows walk. */
+  /* The spine is one stop the arrows walk, and this is the ONLY thing
+     that walks it. Round 1 found six blocking findings from five seats in
+     this one handler and the two that used to compete with it:
+
+       · Tasks still carried its own rover for `[data-group="rail"]`,
+         which is now this nav. Two handlers, one group, two tiles per
+         press, half the spine unreachable.
+       · Notes' document handler guarded on "is Notes mounted", which is
+         true while the reader is standing on the rail, so ArrowDown off
+         a tile walked the note index.
+       · The member list was every `[data-rail]` in the nav, including
+         `.railAdd`, which `display: none` hides at every desk width. The
+         walk clamped on a tile nobody can see.
+
+     Both products now decline these keys, and the list is DERIVED from
+     what is actually laid out rather than authored — the capsule carries
+     the add verb on a phone and not at a desk, so its membership is
+     different at the two widths and cannot be written down. */
   deck.addEventListener("keydown", function (event) {
     var tile = event.target.closest && event.target.closest(".rail [data-rail]");
     if (!tile) return;
-    var keys = [].slice.call(deck.querySelectorAll(".rail [data-rail]"));
+    /* offsetParent is null for anything display:none — the same predicate
+       the board's own rover has used since it was written. */
+    var keys = [].slice.call(deck.querySelectorAll(".rail [data-rail]"))
+      .filter(function (el) { return el.offsetParent !== null; });
     var i = keys.indexOf(tile);
+    if (i < 0) return;
     var next = null;
     /* The capsule lies down on a phone, so the arrows that walk it lie
        down with it. */
@@ -378,6 +406,9 @@ window.__SUITE = (function () {
     else if (event.key === "End") next = keys[keys.length - 1];
     if (!next) return;
     event.preventDefault();
+    /* And nothing downstream sees it. A key the spine has answered is a
+       key the spine has answered. */
+    event.stopPropagation();
     railCurrent = next.dataset.rail;
     keys.forEach(function (el) { el.tabIndex = el === next ? 0 : -1; });
     next.focus();
