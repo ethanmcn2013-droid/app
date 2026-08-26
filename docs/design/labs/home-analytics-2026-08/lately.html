@@ -6,9 +6,9 @@
 <style>
 /* ═══════════════════════════════════════════════════════════════════
    Lately — the third tab inside Home.
-   Tokens are the Signal DS (ds-foundation/tokens/tokens.css) verbatim.
-   Nothing here invents a colour. Chart colour follows the rule proved
-   by scripts/validate_palette.js and recorded in the plan.
+   Instrument, not report. Numbers and marks carry it; copy is labels.
+   Tokens are the Signal DS verbatim. Chart colour follows the measured
+   rule: identity is never hue, magnitude is one hue, status is reserved.
    ═══════════════════════════════════════════════════════════════════ */
 :root {
   --paper: #ffffff;
@@ -21,69 +21,48 @@
   --accent: #4f46e5;
   --accent-tint: #eef2ff;
   --hairline: rgba(17, 17, 17, 0.10);
-  --hairline-soft: rgba(17, 17, 17, 0.06);
+  --hairline-soft: rgba(17, 17, 17, 0.055);
 
-  /* Status — reserved meaning, never a series colour. Fixed order
-     amber → indigo → red → emerald; light mode passes all six checks. */
   --st-attention: #d97706;
   --st-acute: #ef4444;
   --st-good: #059669;
 
-  /* Chart. Magnitude is one hue. Context is zinc. Identity is never hue. */
-  --mark-context: #d4d4d8;
+  --mark-context: #e0e0e3;
+  --mark-context-2: #c9c9ce;
   --mark-live: var(--accent);
-  --mark-grid: rgba(17, 17, 17, 0.07);
+  --track: rgba(17, 17, 17, 0.07);
 
   --rail: #111111;
-  --rail-ink: rgba(255, 255, 255, 0.55);
+  --shell: #e9e9e7;
+  --tip-bg: #111111;
+  --tip-ink: #fafafa;
 
-  --shell: #e8e8e6;
-  --focus: var(--accent);
+  --sp: 1;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #0f0f10;
-    --paper-soft: #161618;
-    --paper-deep: #1d1d20;
-    --ink: #f4f4f5;
-    --ink-soft: #d4d4d8;
-    --ink-faint: #a1a1aa;
-    --ink-ghost: #3f3f46;
-    --accent: #6366f1;
-    --accent-tint: rgba(79, 70, 229, 0.16);
-    --hairline: rgba(255, 255, 255, 0.10);
-    --hairline-soft: rgba(255, 255, 255, 0.06);
-    /* Snapped one step darker: at #f59e0b / #10b981 both sit above the
-       dark lightness band. Measured — see the plan's colour section. */
-    --st-attention: #d97706;
-    --st-acute: #ef4444;
-    --st-good: #059669;
-    --mark-context: #3f3f46;
-    --mark-grid: rgba(255, 255, 255, 0.08);
-    --rail: #050506;
-    --shell: #050506;
+    --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+    --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+    --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16);
+    --hairline: rgba(255,255,255,0.11); --hairline-soft: rgba(255,255,255,0.06);
+    --st-attention: #d97706; --st-acute: #ef4444; --st-good: #059669;
+    --mark-context: #2c2c31; --mark-context-2: #45454c;
+    --track: rgba(255,255,255,0.08);
+    --rail: #050506; --shell: #050506;
+    --tip-bg: #f4f4f5; --tip-ink: #111111;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #0f0f10;
-  --paper-soft: #161618;
-  --paper-deep: #1d1d20;
-  --ink: #f4f4f5;
-  --ink-soft: #d4d4d8;
-  --ink-faint: #a1a1aa;
-  --ink-ghost: #3f3f46;
-  --accent: #6366f1;
-  --accent-tint: rgba(79, 70, 229, 0.16);
-  --hairline: rgba(255, 255, 255, 0.10);
-  --hairline-soft: rgba(255, 255, 255, 0.06);
-  --st-attention: #d97706;
-  --st-acute: #ef4444;
-  --st-good: #059669;
-  --mark-context: #3f3f46;
-  --mark-grid: rgba(255, 255, 255, 0.08);
-  --rail: #050506;
-  --shell: #050506;
+  --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+  --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+  --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16);
+  --hairline: rgba(255,255,255,0.11); --hairline-soft: rgba(255,255,255,0.06);
+  --st-attention: #d97706; --st-acute: #ef4444; --st-good: #059669;
+  --mark-context: #2c2c31; --mark-context-2: #45454c;
+  --track: rgba(255,255,255,0.08);
+  --rail: #050506; --shell: #050506;
+  --tip-bg: #f4f4f5; --tip-ink: #111111;
 }
 
 * { box-sizing: border-box; }
@@ -92,22 +71,17 @@ body {
   margin: 0;
   background: var(--shell);
   color: var(--ink);
-  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
 }
 
-.mono {
-  font-family: "Geist Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
-}
-
-/* ── Micro-label: the suite's tracked uppercase mono ────────────── */
 .eyebrow {
   font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.14em;
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
   color: var(--ink-faint);
   margin: 0;
@@ -115,587 +89,443 @@ body {
 
 /* ═══ Driving deck ══════════════════════════════════════════════ */
 .deck {
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  position: sticky; top: 0; z-index: 60;
   background: var(--paper);
   border-bottom: 1px solid var(--hairline);
-  padding: 14px 20px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 18px 28px;
-  align-items: center;
+  padding: 13px 20px;
+  display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center;
 }
-.deck-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.deck-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .deck-label {
   font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
+  font-size: 9.5px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-faint);
 }
 .deck button {
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--ink-soft);
-  background: var(--paper);
-  border: 1px solid var(--hairline);
-  border-radius: 7px;
-  padding: 5px 11px;
-  cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 500;
+  color: var(--ink-soft); background: var(--paper);
+  border: 1px solid var(--hairline); border-radius: 7px;
+  padding: 5px 11px; cursor: pointer;
   transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
 }
 .deck button:hover { color: var(--ink); border-color: var(--ink-ghost); }
-.deck button[aria-pressed="true"] {
-  color: var(--paper);
-  background: var(--ink);
-  border-color: var(--ink);
-}
-.deck button:focus-visible,
-a:focus-visible,
-.dot:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
+.deck button[aria-pressed="true"] { color: var(--paper); background: var(--ink); border-color: var(--ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.deck-note {
-  margin: 0;
-  font-size: 12.5px;
-  color: var(--ink-faint);
-  flex-basis: 100%;
-  max-width: 78ch;
-}
-
-/* ═══ Stage ═════════════════════════════════════════════════════ */
-.stage {
-  padding: 34px 20px 64px;
-  display: flex;
-  justify-content: center;
-}
-
-.frame-label {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin: 0 0 12px;
-}
+/* ═══ Stage / shell ═════════════════════════════════════════════ */
+.stage { padding: 30px 20px 60px; display: flex; justify-content: center; }
+.frame-label { display: flex; align-items: baseline; gap: 10px; margin: 0 0 11px; }
 .frame-label .w { color: var(--ink-faint); }
 
-/* The app shell: dark rail + warm card, as the suite ships. */
 .shell {
-  display: flex;
+  display: flex; width: 100%;
   background: var(--rail);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.18), 0 18px 48px rgba(0,0,0,0.20);
-  width: 100%;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.16), 0 20px 52px rgba(0,0,0,0.20);
 }
 .rail {
-  width: 62px;
-  flex: 0 0 62px;
-  padding: 18px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
+  width: 60px; flex: 0 0 60px; padding: 17px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 15px;
 }
 .rail-mark {
-  width: 26px; height: 26px;
-  border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.22);
+  width: 26px; height: 26px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.20);
   display: grid; place-items: center;
-  color: var(--rail-ink);
-  font-size: 11px;
+  color: rgba(255,255,255,0.55); font-size: 11px;
 }
-.rail-mark.current {
-  background: var(--paper);
-  border-color: var(--paper);
-  color: var(--ink);
-}
-.rail-sep { width: 20px; height: 1px; background: rgba(255,255,255,0.14); }
+.rail-mark.current { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.rail-sep { width: 20px; height: 1px; background: rgba(255,255,255,0.13); }
 
 .canvas {
-  flex: 1 1 auto;
-  min-width: 0;
+  flex: 1 1 auto; min-width: 0;
   background: var(--paper);
-  margin: 6px 6px 6px 0;
-  border-radius: 12px;
-  overflow: hidden;
+  margin: 6px 6px 6px 0; border-radius: 12px; overflow: hidden;
 }
-
-/* Phone frame */
 .stage[data-w="phone"] .shell { max-width: 390px; }
 .stage[data-w="phone"] .rail { display: none; }
 .stage[data-w="phone"] .canvas { margin: 0; border-radius: 16px; }
-.stage[data-w="desk"] .shell { max-width: 1180px; }
+.stage[data-w="desk"] .shell { max-width: 1240px; }
 
-.scroller {
-  height: 760px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.stage[data-w="phone"] .scroller { height: 720px; }
+.scroller { height: 800px; overflow-y: auto; overscroll-behavior: contain; }
+.stage[data-w="phone"] .scroller { height: 740px; }
 
 /* ═══ Home spine ════════════════════════════════════════════════ */
 .spine {
-  position: sticky; top: 0; z-index: 5;
-  background: var(--paper);
+  position: sticky; top: 0; z-index: 8;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--hairline-soft);
-  padding: 16px 40px 0;
+  padding: 15px 34px 0;
 }
-.stage[data-w="phone"] .spine { padding: 14px 20px 0; }
-.spine-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
-.spine-top h1 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.spine-top .ws { font-size: 13px; color: var(--ink-faint); }
-
+.stage[data-w="phone"] .spine { padding: 13px 18px 0; }
+.spine-top { display: flex; align-items: baseline; gap: 11px; margin-bottom: 11px; }
+.spine-top h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.012em; }
+.spine-top .ws { font-size: 12.5px; color: var(--ink-faint); }
 .tabs { display: flex; gap: 2px; }
 .tab {
-  appearance: none;
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--ink-faint);
-  background: none;
-  border: 0;
+  font: inherit; font-size: 13.5px; font-weight: 500;
+  color: var(--ink-faint); background: none; border: 0;
   border-bottom: 2px solid transparent;
-  padding: 7px 13px 11px;
-  cursor: pointer;
-  text-decoration: none;
+  padding: 6px 12px 10px; text-decoration: none;
   border-radius: 6px 6px 0 0;
-  transition: color 120ms ease;
+  transition: color 130ms ease;
 }
 .tab:hover { color: var(--ink); }
-.tab[aria-current="page"] {
-  color: var(--ink);
-  border-bottom-color: var(--accent);
-  font-weight: 600;
+.tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+
+/* ═══ Grid ══════════════════════════════════════════════════════ */
+.col { padding: 26px 34px 60px; max-width: 1080px; margin: 0 auto; }
+.stage[data-w="phone"] .col { padding: 20px 18px 52px; }
+
+.band { margin-top: 26px; }
+.band:first-child { margin-top: 0; }
+.band-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; margin-bottom: 11px;
+}
+/* At 390 the two eyebrows collide. The right-hand one is a restatement
+   of what the cards below already say, so it goes rather than wraps. */
+.stage[data-w="phone"] .band-head > :last-child:not(:first-child) { display: none; }
+
+/* ═══ Card ══════════════════════════════════════════════════════ */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 13px;
+  padding: 22px 24px;
+}
+.stage[data-w="phone"] .card { padding: 18px; border-radius: 12px; }
+
+/* ── Entrance choreography ────────────────────────────────────── */
+.rise { opacity: 0; transform: translateY(9px); }
+.play .rise {
+  animation: rise 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 65ms);
+}
+@keyframes rise { to { opacity: 1; transform: none; } }
+
+/* ═══ Movement 1 — the lead ═════════════════════════════════════ */
+.lead {
+  display: grid;
+  gap: 26px;
+  align-items: stretch;
+}
+@media (min-width: 900px) {
+  .stage[data-w="desk"] .lead { grid-template-columns: minmax(220px, 300px) 1fr; gap: 34px; }
 }
 
-/* ═══ Column ════════════════════════════════════════════════════ */
-.col {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 34px 40px 72px;
-}
-.stage[data-w="phone"] .col { padding: 26px 20px 64px; }
-
-section + section { margin-top: 52px; }
-.stage[data-w="phone"] section + section { margin-top: 44px; }
-
-.section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 9px;
-  border-bottom: 1px solid var(--hairline);
-  margin-bottom: 22px;
-}
-
-/* ═══ Movement 1 — the hero ═════════════════════════════════════ */
-.hero-figure {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  margin-top: 14px;
-}
+.lead-figure { display: flex; flex-direction: column; justify-content: center; }
 .hero-num {
-  font-size: clamp(76px, 15vw, 132px);
-  line-height: 0.82;
+  font-size: clamp(72px, 11vw, 116px);
+  line-height: 0.84;
   font-weight: 500;
-  letter-spacing: -0.045em;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
+  letter-spacing: -0.05em;
+  margin-top: 12px;
 }
-.hero-unit {
+.hero-unit { margin-top: 12px; font-size: 14px; color: var(--ink-soft); }
+.delta {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 16px; padding: 5px 10px 5px 8px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent);
   font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 13px;
-  color: var(--ink-faint);
-  letter-spacing: 0.02em;
+  font-size: 11px; letter-spacing: 0.06em;
+  align-self: flex-start;
 }
-.hero-read {
-  margin: 22px 0 0;
-  font-size: 19px;
-  line-height: 1.5;
-  letter-spacing: -0.012em;
-  max-width: 34ch;
-  text-wrap: balance;
-}
-.stage[data-w="phone"] .hero-read { font-size: 17.5px; }
-.hero-sub {
-  margin: 10px 0 0;
-  font-size: 14px;
-  color: var(--ink-soft);
-  max-width: 48ch;
-}
-.hero-rule {
-  height: 1px;
-  background: var(--accent);
-  margin: 26px 0 0;
-  transform-origin: left;
-}
+.delta svg { display: block; }
 
 /* ═══ The twelve-week chart ═════════════════════════════════════ */
-.chart {
-  margin-top: 30px;
-}
+.plot-wrap { min-width: 0; display: flex; flex-direction: column; }
 .chart-plot {
   --val-row: 17px;
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 6px;
-  align-items: stretch;
-  height: 148px;
+  grid-template-columns: repeat(var(--n, 12), 1fr);
+  gap: 5px;
+  height: 186px;
   border-bottom: 1px solid var(--hairline);
-  position: relative;
-}
-.stage[data-w="phone"] .chart-plot { height: 116px; gap: 4px; }
-
-/* The record line — drawn only when the claim is true. */
-.record-line {
-  position: absolute;
-  left: 0; right: 0;
-  border-top: 1px dashed var(--accent);
-  opacity: 0;
-  pointer-events: none;
-}
-.record-line.on { animation: draw-record 520ms 340ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-@keyframes draw-record {
-  from { opacity: 0; clip-path: inset(0 100% 0 0); }
-  to   { opacity: 1; clip-path: inset(0 0 0 0); }
-}
-.record-tag {
-  position: absolute;
-  left: 0;
-  transform: translateY(-100%);
-  padding-bottom: 5px;
-  background: var(--paper);
-  padding-right: 8px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  opacity: 0;
-  pointer-events: none;
-}
-.record-tag.on { animation: fade-tag 300ms 760ms ease forwards; }
-@keyframes fade-tag { to { opacity: 1; } }
-
-/* The value label gets its own row, so a full-height bar can never push
-   its own label out of the plot. The record line is offset by the same
-   row height, so line and bar top are measured from one baseline. */
-.bar-slot {
-  position: relative;
-  height: 100%;
-  display: grid;
-  grid-template-rows: var(--val-row) 1fr;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: default;
-}
-/* The label rides on top of its own bar rather than sitting in a
-   detached number row, so a column and its value are one object. */
-.bar-track { position: relative; grid-row: 2; }
-.bar {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 0;
-  width: 62%;
-  max-width: 34px;
-  background: var(--mark-context);
-  border-radius: 2px 2px 0 0;
-  min-height: 2px;
-}
-.bar-slot.live .bar { background: var(--mark-live); }
-/* Partial bucket: open-topped and hatched. The week is not over. */
-.bar-slot.partial .bar {
-  background: repeating-linear-gradient(
-    135deg,
-    var(--mark-live) 0 3px,
-    transparent 3px 6px
-  );
-  border: 1px solid var(--mark-live);
-  border-bottom: 0;
-  border-radius: 3px 3px 0 0;
-}
-.bar-val {
-  position: absolute;
-  left: 0; right: 0;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10.5px;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-faint);
-  text-align: center;
-  margin-bottom: 4px;
-  line-height: 1;
-  /* Knocks the record line out from behind its own value, so a column
-     label is never struck through by the rule it sits beside. */
-  z-index: 2;
-  background: var(--paper);
-  padding: 1px 0 2px;
-}
-.bar-slot.live .bar-val, .bar-slot.partial .bar-val { color: var(--accent); font-weight: 500; }
-
-.chart-axis {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 6px;
   margin-top: 8px;
 }
-.stage[data-w="phone"] .chart-axis { gap: 4px; }
+.stage[data-w="phone"] .chart-plot { height: 132px; gap: 3px; }
+
+.gridline {
+  position: absolute; left: 0; right: 0;
+  border-top: 1px solid var(--track);
+  pointer-events: none;
+}
+.record-line {
+  position: absolute; left: 0; right: 0;
+  border-top: 1.5px dashed var(--accent);
+  opacity: 0; clip-path: inset(0 100% 0 0);
+  pointer-events: none;
+}
+.play .record-line { animation: draw 620ms 900ms cubic-bezier(0.22,1,0.36,1) forwards; }
+@keyframes draw { to { opacity: 1; clip-path: inset(0 0 0 0); } }
+
+.record-tag {
+  position: absolute; left: 0; transform: translateY(-100%);
+  padding: 0 8px 5px 0; background: var(--paper);
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--accent); opacity: 0; pointer-events: none;
+}
+.play .record-tag { animation: fadein 320ms 1320ms ease forwards; }
+@keyframes fadein { to { opacity: 1; } }
+
+.bar-slot {
+  position: relative; height: 100%;
+  display: grid; grid-template-rows: var(--val-row) 1fr;
+  background: none; border: 0; padding: 0; cursor: default;
+  font: inherit; color: inherit;
+}
+.bar-track { position: relative; grid-row: 2; }
+.bar {
+  position: absolute; left: 50%; bottom: 0;
+  transform: translateX(-50%) scaleY(0);
+  transform-origin: bottom;
+  width: 64%; max-width: 30px;
+  background: var(--mark-context);
+  border-radius: 2.5px 2.5px 0 0;
+  min-height: 2px;
+  transition: background 130ms ease;
+}
+.play .bar {
+  animation: grow 640ms cubic-bezier(0.22,1,0.36,1) forwards;
+  animation-delay: calc(300ms + var(--i, 0) * 42ms);
+}
+@keyframes grow { to { transform: translateX(-50%) scaleY(1); } }
+
+.bar-slot:hover .bar, .bar-slot:focus-visible .bar { background: var(--mark-context-2); }
+.bar-slot.partial .bar {
+  background: repeating-linear-gradient(135deg, var(--mark-live) 0 3px, transparent 3px 6.5px);
+  box-shadow: inset 0 0 0 1px var(--mark-live);
+}
+.bar-slot.partial:hover .bar { background: repeating-linear-gradient(135deg, var(--mark-live) 0 4px, transparent 4px 6.5px); }
+
+/* Selective direct labels only: the live column carries its number,
+   every other value is on hover. A number on every point is noise, and
+   the knockout each one needs would shred the record line behind it. */
+.bar-val {
+  position: absolute; left: -6px; right: -6px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px; font-weight: 500; color: var(--accent);
+  text-align: center; margin-bottom: 6px; line-height: 1;
+  z-index: 4; opacity: 0;
+}
+.play .bar-val { animation: fadein 300ms 1180ms forwards; }
+
+.chart-axis { display: grid; grid-template-columns: repeat(var(--n, 12), 1fr); gap: 5px; margin-top: 7px; }
 .axis-tick {
   font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 9.5px;
-  color: var(--ink-ghost);
-  text-align: center;
-  letter-spacing: 0.02em;
+  font-size: 9.5px; color: var(--ink-ghost); text-align: center;
 }
 .axis-tick.named { color: var(--ink-faint); }
 
-.chart-caption {
-  margin: 14px 0 0;
-  font-size: 13px;
-  color: var(--ink-faint);
-  max-width: 60ch;
-}
+/* ═══ KPI row ═══════════════════════════════════════════════════ */
+.kpis { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); }
+@media (min-width: 760px) { .stage[data-w="desk"] .kpis { grid-template-columns: repeat(5, 1fr); } }
 
-/* ═══ Movement 2 — quietly slipping ═════════════════════════════ */
-.slip-list { list-style: none; margin: 0; padding: 0; }
-.slip {
-  display: flex;
-  align-items: baseline;
-  gap: 18px;
-  padding: 15px 0;
-  border-bottom: 1px solid var(--hairline-soft);
-  text-decoration: none;
-  color: inherit;
-}
-.slip:last-child { border-bottom: 0; }
-a.slip:hover .slip-claim { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--ink-ghost); }
-.slip-count {
-  font-size: 27px;
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-  min-width: 2.2ch;
-  text-align: right;
-  flex: 0 0 auto;
-}
-.slip-count.none { color: var(--ink-faint); font-weight: 400; }
-.slip-body { min-width: 0; flex: 1 1 auto; }
-.slip-claim { display: block; font-size: 14.5px; line-height: 1.45; }
-.slip-why { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.5; color: var(--ink-faint); max-width: 54ch; }
-.slip-open {
-  flex: 0 0 auto;
-  font-size: 12.5px;
-  color: var(--ink-faint);
-  white-space: nowrap;
-}
-.stage[data-w="phone"] .slip-open { display: none; }
-
-/* Status marks — icon + word, never colour alone. */
-.mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
-}
-.mark::before {
-  content: "";
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  flex: 0 0 auto;
-}
-.mark.attention { color: var(--st-attention); }
-.mark.acute { color: var(--st-acute); }
-.mark.good { color: var(--st-good); }
-.mark.acute::before { border-radius: 1px; transform: rotate(45deg); }
-.mark.good::before { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--paper); }
-
-/* All clear — an absence stated once, with its arithmetic. */
-.clear {
-  border: 1px solid var(--hairline-soft);
-  background: var(--paper-soft);
-  border-radius: 10px;
-  padding: 22px 24px;
-}
-.clear-claim {
-  margin: 12px 0 0;
-  font-size: 17px;
-  font-weight: 500;
-  letter-spacing: -0.012em;
-}
-.clear-work { margin: 8px 0 0; font-size: 13px; color: var(--ink-faint); max-width: 54ch; }
-
-/* ═══ The ages strip ════════════════════════════════════════════ */
-.strip { margin-top: 30px; }
-.strip-plot {
+.kpi {
   position: relative;
-  height: 54px;
-  border-bottom: 1px solid var(--hairline);
+  display: block; text-align: left; text-decoration: none; color: inherit;
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 15px 16px 14px;
+  overflow: hidden;
+  transition: border-color 140ms ease, transform 160ms cubic-bezier(0.22,1,0.36,1);
 }
-.strip-grid {
-  position: absolute; inset: 0;
-  border-left: 1px solid var(--mark-grid);
+a.kpi:hover { border-color: var(--ink-ghost); transform: translateY(-2px); }
+.kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kpi-n {
+  display: block; margin-top: 9px;
+  font-size: 34px; line-height: 1; font-weight: 500; letter-spacing: -0.035em;
+}
+.stage[data-w="phone"] .kpi-n { font-size: 30px; }
+.kpi-n.zero { color: var(--ink-faint); font-weight: 400; }
+.kpi-lab { display: block; margin-top: 7px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.35; }
+.kpi-meter {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--track);
+}
+.kpi-meter i {
+  display: block; height: 100%;
+  background: currentColor;
+  transform: scaleX(0); transform-origin: left;
+}
+.play .kpi-meter i {
+  animation: fill 720ms cubic-bezier(0.22,1,0.36,1) forwards;
+  animation-delay: calc(420ms + var(--i,0) * 65ms);
+}
+@keyframes fill { to { transform: scaleX(var(--f, 0)); } }
+
+.kpi.lead-kpi { background: var(--paper-soft); }
+.kpi.attention { color: var(--st-attention); }
+.kpi.acute { color: var(--st-acute); }
+.kpi.good { color: var(--st-good); }
+.kpi.neutral { color: var(--ink-soft); }
+.kpi .kpi-n, .kpi .kpi-lab { color: var(--ink); }
+.kpi .kpi-lab { color: var(--ink-soft); }
+.kpi-n.zero { color: var(--ink-faint); }
+
+/* Status glyph — shape + word, never colour alone. */
+.glyph {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
+  color: currentColor;
+  /* An inline-flex box in block flow can be squeezed to min-content and
+     wrap mid-label. Pin it so a glyph never breaks across two lines. */
+  white-space: nowrap; flex: 0 0 auto; align-self: flex-start;
+}
+.glyph::before {
+  content: ""; width: 6px; height: 6px; flex: 0 0 auto;
+  background: currentColor; border-radius: 50%;
+}
+.glyph.sq::before { border-radius: 1px; }
+.glyph.di::before { border-radius: 1px; transform: rotate(45deg); }
+.glyph.ring::before { background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
+.glyph.dash::before { height: 2px; width: 9px; border-radius: 0; }
+
+/* ═══ Ages strip ════════════════════════════════════════════════ */
+.strip-plot { position: relative; height: 76px; border-bottom: 1px solid var(--hairline); margin-top: 10px; }
+.strip-grid { position: absolute; inset: 0; border-left: 1px solid var(--track); }
+.strip-threshold { position: absolute; top: 2px; bottom: 0; border-left: 1px dashed var(--ink-ghost); }
+.threshold-label {
+  position: absolute; top: 0; margin-left: 7px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--ink-faint); white-space: nowrap;
 }
 .dot {
-  position: absolute;
-  bottom: 14px;
-  width: 11px; height: 11px;
-  margin-left: -5.5px;
+  position: absolute; bottom: calc(16px + var(--row, 0) * 15px);
+  width: 13px; height: 13px; margin-left: -6.5px;
   border-radius: 50%;
-  background: var(--mark-context);
-  border: 2px solid var(--paper);
-  padding: 0;
-  cursor: default;
+  background: var(--mark-context-2);
+  box-shadow: 0 0 0 2.5px var(--paper);
+  border: 0; padding: 0; cursor: default;
+  opacity: 0; transform: scale(0.4);
+  transition: transform 150ms cubic-bezier(0.22,1,0.36,1);
 }
+.play .dot {
+  animation: pop 480ms cubic-bezier(0.34, 1.4, 0.5, 1) forwards;
+  animation-delay: calc(360ms + var(--i,0) * 55ms);
+}
+@keyframes pop { to { opacity: 1; transform: scale(1); } }
+.dot:hover, .dot:focus-visible { transform: scale(1.32); z-index: 3; }
 .dot.old { background: var(--st-attention); }
-.dot-label {
-  position: absolute;
-  right: 0;
-  bottom: 32px;
+.dot-cap {
+  position: absolute; right: 0; bottom: 40px;
   font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10px;
-  color: var(--st-attention);
+  font-size: 9.5px; color: var(--st-attention); white-space: nowrap;
+}
+.strip-axis { display: flex; justify-content: space-between; margin-top: 7px; }
+
+/* ═══ Tooltip ═══════════════════════════════════════════════════ */
+.tip {
+  position: fixed; z-index: 90; pointer-events: none;
+  background: var(--tip-bg); color: var(--tip-ink);
+  border-radius: 7px; padding: 8px 11px;
+  font-size: 12px; line-height: 1.4;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+  opacity: 0; transform: translate(-50%, -100%) translateY(-9px);
+  transition: opacity 110ms ease;
   white-space: nowrap;
 }
-/* The threshold the count above is made of, drawn where it falls. */
-.strip-threshold {
-  position: absolute;
-  top: 4px; bottom: 0;
-  border-left: 1px dashed var(--ink-ghost);
-}
-.threshold-label {
-  position: absolute;
-  top: 0;
-  margin-left: 7px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  white-space: nowrap;
-}
-.strip-axis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-}
+.tip.on { opacity: 1; }
+.tip b { font-family: "Geist Mono", ui-monospace, monospace; font-weight: 500; }
+.tip span { display: block; opacity: 0.62; font-size: 11px; margin-top: 2px; }
 
-/* ═══ Movement 3 — the refusals ═════════════════════════════════ */
-.refusals { list-style: none; margin: 0; padding: 0; }
-.refusal {
-  padding: 18px 0;
-  border-bottom: 1px solid var(--hairline-soft);
+/* ═══ Movement 3 — the limits ═══════════════════════════════════ */
+.limits { display: grid; gap: 10px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .stage[data-w="desk"] .limits { grid-template-columns: repeat(3, 1fr); } }
+.limit {
+  border: 1px solid var(--hairline); border-radius: 12px;
+  padding: 15px 16px; background: var(--paper);
+  display: flex; flex-direction: column;
 }
-.refusal:last-child { border-bottom: 0; }
-.refusal h3 {
-  margin: 0;
-  font-size: 14.5px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-}
-.refusal p { margin: 5px 0 0; font-size: 13px; color: var(--ink-faint); max-width: 62ch; }
+.limit h3 { margin: 9px 0 0; font-size: 13.5px; font-weight: 500; letter-spacing: -0.008em; line-height: 1.35; }
+.limit p { margin: 5px 0 0; font-size: 12px; color: var(--ink-faint); line-height: 1.45; }
 
-/* The chart that is not there — drawn, not hidden. */
-.ghost-chart {
-  margin-top: 16px;
+/* The chart that is not there — drawn as the plot it would be, with its
+   own baseline and gridlines, so the reader meets the limit at exactly
+   the place they would otherwise assume the opposite. */
+.ghost {
+  margin-top: 10px;
   border: 1px dashed var(--ink-ghost);
-  border-radius: 8px;
-  height: 104px;
-  display: grid;
-  place-items: center;
-  padding: 0 22px;
+  border-radius: 11px;
+  height: 124px; display: grid; place-items: center; padding: 0 22px;
+  position: relative; overflow: hidden;
+  /* Week columns and a baseline — the plot's own skeleton, nothing more.
+     Horizontal rules as well would read as a table, not a chart. */
   background:
-    repeating-linear-gradient(90deg, var(--mark-grid) 0 1px, transparent 1px 60px);
+    repeating-linear-gradient(90deg, transparent 0 calc(8.333% - 1px), var(--track) calc(8.333% - 1px) 8.333%);
 }
-.ghost-chart p {
-  margin: 0;
-  text-align: center;
-  font-size: 12.5px;
-  color: var(--ink-faint);
-  max-width: 44ch;
+.ghost::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  border-bottom: 1px solid var(--ink-ghost);
+}
+.ghost p {
+  margin: 0; text-align: center; font-size: 12.5px; color: var(--ink-faint);
+  max-width: 40ch; line-height: 1.5;
 }
 
-/* ═══ Coverage footer ═══════════════════════════════════════════ */
-.coverage {
-  margin-top: 52px;
-  padding-top: 18px;
-  border-top: 1px solid var(--hairline);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 26px;
-}
-.cov { display: flex; align-items: baseline; gap: 7px; font-size: 12.5px; color: var(--ink-faint); }
-.cov .src { color: var(--ink-soft); }
-
-/* ═══ Banner (partial / stale / error) ══════════════════════════ */
+/* ═══ Banner / clear / blank ════════════════════════════════════ */
 .banner {
-  margin-bottom: 30px;
-  padding: 15px 17px;
-  border-radius: 9px;
   border: 1px solid var(--hairline);
   border-left: 2px solid var(--st-attention);
+  border-radius: 0 11px 11px 0;
   background: var(--paper-soft);
+  padding: 14px 17px;
 }
 .banner.acute { border-left-color: var(--st-acute); }
-.banner h2 { margin: 6px 0 0; font-size: 14.5px; font-weight: 500; }
-.banner p { margin: 5px 0 0; font-size: 13px; color: var(--ink-faint); max-width: 58ch; }
+.banner h2 { margin: 7px 0 0; font-size: 14px; font-weight: 500; }
+.banner p { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-faint); max-width: 62ch; }
 
-/* ═══ Empty / first-run ═════════════════════════════════════════ */
-.blank { padding: 12px 0 0; }
+.clear {
+  border: 1px solid var(--hairline); border-radius: 13px;
+  background: var(--paper-soft); padding: 24px;
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+}
+.clear-n { font-size: 46px; line-height: 1; font-weight: 500; letter-spacing: -0.04em; color: var(--st-good); }
+.clear-txt p { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.012em; }
+.clear-txt span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--ink-faint); }
+
+.blank { padding: 26px 0 0; }
 .blank .lede {
-  font-size: 21px;
-  line-height: 1.42;
-  letter-spacing: -0.016em;
-  max-width: 26ch;
-  margin: 16px 0 0;
-  text-wrap: balance;
+  font-size: clamp(24px, 3.6vw, 32px); line-height: 1.16; letter-spacing: -0.028em;
+  font-weight: 500; max-width: 20ch; margin: 14px 0 0; text-wrap: balance;
 }
-.blank .body { margin: 12px 0 0; font-size: 14px; color: var(--ink-soft); max-width: 46ch; }
-.blank .move {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 22px;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--paper);
-  background: var(--ink);
-  border-radius: 8px;
-  padding: 9px 15px;
-  text-decoration: none;
+.blank .body { margin: 12px 0 0; font-size: 14px; color: var(--ink-soft); max-width: 42ch; }
+.move {
+  display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+  font-size: 13.5px; font-weight: 500; color: var(--paper); background: var(--ink);
+  border-radius: 9px; padding: 10px 16px; text-decoration: none;
 }
-.blank .move:hover { background: var(--ink-soft); }
+.move:hover { background: var(--ink-soft); }
 
-/* ═══ Loading — sized to the real geometry ══════════════════════ */
-.sk { background: var(--paper-deep); border-radius: 5px; }
-.sk-row { display: flex; flex-direction: column; gap: 12px; }
+/* ═══ Coverage strip ════════════════════════════════════════════ */
+.coverage {
+  margin-top: 26px; padding-top: 14px;
+  border-top: 1px solid var(--hairline-soft);
+  display: flex; flex-wrap: wrap; gap: 6px 22px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10.5px; letter-spacing: 0.05em; color: var(--ink-ghost);
+}
+.coverage b { font-weight: 400; color: var(--ink-faint); }
+
+/* ═══ Skeleton ══════════════════════════════════════════════════ */
+.sk { background: var(--paper-deep); border-radius: 6px; }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0ms !important; animation-delay: 0ms !important; transition-duration: 0ms !important; }
-  .record-line { opacity: 1; clip-path: none; }
-  .record-tag { opacity: 1; }
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+  .rise, .bar-val, .dot { opacity: 1; transform: none; }
+  .record-line, .record-tag { opacity: 1; clip-path: none; }
+  .bar { transform: translateX(-50%) scaleY(1); }
+  .kpi-meter i { transform: scaleX(var(--f, 0)); }
 }
 
-.sr {
-  position: absolute; width: 1px; height: 1px;
-  padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
-}
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
 </style>
 
 <div class="deck">
@@ -714,12 +544,15 @@ a.slip:hover .slip-claim { text-decoration: underline; text-underline-offset: 4p
     <button type="button" data-w="desk" aria-pressed="true">Desk</button>
     <button type="button" data-w="phone" aria-pressed="false">390</button>
   </div>
-  <p class="deck-note" id="deck-note"></p>
+  <div class="deck-group">
+    <span class="deck-label">Motion</span>
+    <button type="button" id="replay">Replay</button>
+  </div>
 </div>
 
 <div class="stage" id="stage" data-w="desk">
-  <div style="width:100%;max-width:1180px;">
-    <p class="frame-label eyebrow"><span id="frame-name">Full</span> <span class="w" id="frame-w">· 1180 × 760</span></p>
+  <div style="width:100%;max-width:1240px;">
+    <p class="frame-label eyebrow"><span id="frame-name">Full</span> <span class="w" id="frame-w">· 1240 × 800</span></p>
     <div class="shell">
       <nav class="rail" aria-label="Products">
         <span class="rail-mark current" aria-hidden="true">⌂</span>
@@ -748,413 +581,356 @@ a.slip:hover .slip-claim { text-decoration: underline; text-underline-offset: 4p
   </div>
 </div>
 
+<div class="tip" id="tip" role="presentation"></div>
+
 <script>
 /* ═══════════════════════════════════════════════════════════════
-   One accessor per fact. Every number the screen shows comes from
-   this object — the header can never disagree with the list beneath
-   it, because both read the same field.
+   ONE accessor per fact. Every figure on screen reads from here,
+   so a card and a mark can never disagree.
    ═══════════════════════════════════════════════════════════════ */
+const READ_TIME = "09:14";
+const READ_FULL = "09:14, Thursday 16 July 2026";
 
-const READ_AT = "09:14, Thursday 16 July 2026";
-
-/* Twelve weeks of completions. Weekly buckets, exactly what
-   buildTrendPoints() emits for an 84-day period. The last bucket is
-   partial — the week is not over — and is drawn as such. */
 const WEEKS = [
-  { start: "27 Apr", v: 5 },
-  { start: "4 May",  v: 3 },
-  { start: "11 May", v: 6 },
-  { start: "18 May", v: 4 },
-  { start: "25 May", v: 7 },
-  { start: "1 Jun",  v: 5 },
-  { start: "8 Jun",  v: 8 },
-  { start: "15 Jun", v: 6 },
-  { start: "22 Jun", v: 6 },
-  { start: "29 Jun", v: 8 },
-  { start: "6 Jul",  v: 5 },
-  { start: "13 Jul", v: 12, partial: true },
+  { start: "27 Apr", v: 5 },  { start: "4 May",  v: 3 },
+  { start: "11 May", v: 6 },  { start: "18 May", v: 4 },
+  { start: "25 May", v: 7 },  { start: "1 Jun",  v: 5 },
+  { start: "8 Jun",  v: 8 },  { start: "15 Jun", v: 6 },
+  { start: "22 Jun", v: 6 },  { start: "29 Jun", v: 8 },
+  { start: "6 Jul",  v: 5 },  { start: "13 Jul", v: 12, partial: true },
 ];
 
-const AGES = [2, 3, 5, 6, 9, 11, 19, 23, 41];
-const OLD_THRESHOLD = 14;
+const JOBS = [
+  { age: 2,  title: "Order tonic and the good olives" },
+  { age: 3,  title: "Build the Saturday run-sheet" },
+  { age: 5,  title: "Send midweek rate to the June 2027 couple" },
+  { age: 6,  title: "Approve the final seating plan" },
+  { age: 9,  title: "Reprint the faded welcome sign" },
+  { age: 11, title: "Confirm the lighting rig with the venue" },
+  { age: 19, title: "Sign off the recommended-suppliers list" },
+  { age: 23, title: "Chase the boat operator on the crossing time" },
+  { age: 41, title: "Confirm marquee sides with the hire company" },
+];
+const FORTNIGHT = 14;
 
 const D = {
-  finishedFour: WEEKS.slice(8).reduce((a, w) => a + w.v, 0),   // 31
-  priorFours: [
-    WEEKS.slice(0, 4).reduce((a, w) => a + w.v, 0),            // 18
-    WEEKS.slice(4, 8).reduce((a, w) => a + w.v, 0),            // 26
-  ],
-  thisWeek: WEEKS[11].v,
-  bestPriorWeek: Math.max(...WEEKS.slice(0, 11).map((w) => w.v)),
-  openWork: AGES.length,
-  stalled: AGES.filter((a) => a >= OLD_THRESHOLD).length,
-  overdue: 2,
-  unowned: 1,
-  waiting: 0,
+  finishedFour: WEEKS.slice(8).reduce((a, w) => a + w.v, 0),
+  priorFour:    WEEKS.slice(4, 8).reduce((a, w) => a + w.v, 0),
+  priorFour2:   WEEKS.slice(0, 4).reduce((a, w) => a + w.v, 0),
+  thisWeek:     WEEKS[11].v,
+  bestPrior:    Math.max(...WEEKS.slice(0, 11).map((w) => w.v)),
+  open:         JOBS.length,
+  sitting:      JOBS.filter((j) => j.age >= FORTNIGHT).length,
+  overdue:      2,
+  unowned:      1,
+  waiting:      0,
 };
+D.delta = D.finishedFour - D.priorFour;
 
 const STATES = {
-  full: {
-    name: "Full",
-    note: "Everything resolves. Tasks and Timeline both answered; Notes answered for this reader. The hero is work_completed — observed, no history needed. The twelve columns are buildTrendPoints() at weekly resolution, which needs no snapshot writer because a completion carries its own timestamp.",
-  },
-  partial: {
-    name: "Partial",
-    note: "Timeline did not answer. The sections it feeds state that plainly and keep their shape; nothing degrades to zero. This is the common state on a young account, so it is designed, not caught.",
-  },
-  quiet: {
-    name: "All clear",
-    note: "Nothing is slipping. The section does not vanish — an absent section reads as a bug — it states the absence once, with the arithmetic behind it.",
-  },
-  "first-run": {
-    name: "First run",
-    note: "A workspace with work but under four weeks of it. The hero cannot make a comparison, so it does not pretend to; it counts what is there and says when the comparison arrives.",
-  },
-  empty: {
-    name: "Empty",
-    note: "No work at all. One instruction, once — not four templated 'Nothing here' lines.",
-  },
-  loading: {
-    name: "Loading",
-    note: "Skeletons for the sections that will actually render, at their real geometry. No shimmer, no invented sections.",
-  },
-  error: {
-    name: "Error",
-    note: "The read failed. It says which source, what it means, and what to do — and shows nothing it cannot stand behind.",
-  },
+  full:        { name: "Full",      note: "Every source answered. The lead figure is work_completed — observed, no history needed. The twelve columns are buildTrendPoints() at weekly resolution, which needs no snapshot writer because a completion carries its own timestamp." },
+  partial:     { name: "Partial",   note: "Timeline did not answer. The cards it feeds say so and keep their shape; nothing degrades to zero." },
+  quiet:       { name: "All clear", note: "Nothing slipping. The band does not vanish — an absent band reads as a bug. It states the absence once, with its arithmetic." },
+  "first-run": { name: "First run", note: "Under four weeks of work. No comparison is attempted, and the date it arrives is named." },
+  empty:       { name: "Empty",     note: "No work at all. One instruction, once." },
+  loading:     { name: "Loading",   note: "Skeletons at the real geometry of the sections that will actually render. No shimmer." },
+  error:       { name: "Error",     note: "Names the source, offers the one useful move, and shows nothing it cannot stand behind." },
 };
 
-/* ── pieces ──────────────────────────────────────────────────── */
+/* ── atoms ───────────────────────────────────────────────────── */
+const arrowUp = `<svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true"><path d="M4.5 8V1M4.5 1L1.5 4M4.5 1l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
-function eyebrow(text) {
-  return `<p class="eyebrow">${text}</p>`;
+function kpi({ n, label, glyph, tone, share, i, link = true, zero = false }) {
+  const T = tone ? ` ${tone}` : "";
+  const inner = `
+    <span class="kpi-top">
+      <span class="glyph ${glyph[0]}">${glyph[1]}</span>
+    </span>
+    <span class="kpi-n${zero ? " zero" : ""}">${n}</span>
+    <span class="kpi-lab">${label}</span>
+    <span class="kpi-meter" aria-hidden="true"><i style="--f:${share}"></i></span>`;
+  return link
+    ? `<a class="kpi rise${T}" href="#" style="--i:${i}">${inner}</a>`
+    : `<div class="kpi rise${T}" style="--i:${i}">${inner}</div>`;
 }
 
-function chart({ live = true } = {}) {
-  const max = Math.max(...WEEKS.map((w) => w.v));
-  const isRecord = WEEKS[11].v > D.bestPriorWeek;
-  const recordPct = (D.bestPriorWeek / max) * 100;
+/* The denominator card. Not a status, so it wears no status furniture and
+   no meter — a meter against itself is always full, which says nothing. */
+function leadKpi(i) {
+  return `
+  <div class="kpi lead-kpi rise" style="--i:${i}">
+    <span class="kpi-top"><span class="eyebrow">Open</span></span>
+    <span class="kpi-n">${D.open}</span>
+    <span class="kpi-lab">on the board right now</span>
+  </div>`;
+}
 
-  const bars = WEEKS.map((w) => {
-    const h = (w.v / max) * 100;
-    return `
-      <div class="bar-slot${w.partial ? " partial" : ""}">
-        <span class="bar-track">
-          <span class="bar-val" style="bottom:${h}%">${w.v}</span>
-          <span class="bar" style="height:${h}%"></span>
-        </span>
-      </div>`;
-  }).join("");
+function chart(weeks, { record = true } = {}) {
+  const max = Math.max(...weeks.map((w) => w.v));
+  const n = weeks.length;
+  const isRecord = record && weeks[n - 1].v > Math.max(...weeks.slice(0, n - 1).map((w) => w.v));
+  const best = Math.max(...weeks.slice(0, n - 1).map((w) => w.v));
+  const pct = (v) => (v / max) * 100;
+  const atBottom = (p) => `calc((100% - var(--val-row)) * ${p / 100})`;
 
-  // Label a quarter of the weeks. Twelve dates is a wall; two is a gap
-  // the eye has to interpolate across.
-  const NAMED = [0, 4, 8, 11];
-  const ticks = WEEKS.map((w, i) =>
-    `<span class="axis-tick${NAMED.includes(i) ? " named" : ""}">${NAMED.includes(i) ? w.start : ""}</span>`,
-  ).join("");
+  const bars = weeks.map((w, i) => `
+    <div class="bar-slot${w.partial ? " partial" : ""}" style="--i:${i}"
+      data-tip="<b>${w.v}${w.partial ? " so far" : ""}</b><span>Week of ${w.start}</span>">
+      <span class="bar-track">
+        ${w.partial ? `<span class="bar-val" style="bottom:${pct(w.v)}%">${w.v}</span>` : ""}
+        <span class="bar" style="height:${pct(w.v)}%"></span>
+      </span>
+    </div>`).join("");
+
+  const named = n > 5 ? [0, Math.floor(n / 3), Math.floor((2 * n) / 3), n - 1] : weeks.map((_, i) => i);
+  const ticks = weeks.map((w, i) =>
+    `<span class="axis-tick${named.includes(i) ? " named" : ""}">${named.includes(i) ? w.start : ""}</span>`).join("");
+
+  const grid = [0.33, 0.66, 1].map((g) =>
+    `<span class="gridline" style="bottom:${atBottom(g * 100)}"></span>`).join("");
 
   return `
-  <div class="chart">
-    <div class="chart-plot" role="img"
-      aria-label="Work finished each week for twelve weeks: ${WEEKS.map((w) => `week of ${w.start}, ${w.v}${w.partial ? ", so far" : ""}`).join("; ")}.">
-      ${isRecord ? `<span class="record-line${live ? " on" : ""}" style="bottom:calc((100% - var(--val-row)) * ${recordPct / 100})"></span>
-      <span class="record-tag${live ? " on" : ""}" style="bottom:calc((100% - var(--val-row)) * ${recordPct / 100})">Previous best · ${D.bestPriorWeek}</span>` : ""}
+  <div class="plot-wrap">
+    <div class="chart-plot" style="--n:${n}" role="img"
+      aria-label="Work finished each week: ${weeks.map((w) => `week of ${w.start}, ${w.v}${w.partial ? " so far" : ""}`).join("; ")}.">
+      ${grid}
+      ${isRecord ? `
+        <span class="record-line" style="bottom:${atBottom(pct(best))}"></span>
+        <span class="record-tag" style="bottom:${atBottom(pct(best))}">Previous best &middot; ${best}</span>` : ""}
       ${bars}
     </div>
-    <div class="chart-axis">${ticks}</div>
-    <p class="chart-caption">Each column is one week&rsquo;s finished work. The last one is hatched because
-      this week is not over — ${D.thisWeek} so far, counted at ${READ_AT.split(",")[0]}.</p>
+    <div class="chart-axis" style="--n:${n}">${ticks}</div>
   </div>`;
 }
 
 function strip() {
-  const oldest = Math.max(...AGES);
-  // The axis end is derived from the data, never a constant. A hard-coded
-  // 45 would push a 60-day job off the end of its own chart.
+  const oldest = Math.max(...JOBS.map((j) => j.age));
   const max = Math.ceil((oldest + 4) / 5) * 5;
-  const dots = AGES.map((a) => {
-    const old = a >= OLD_THRESHOLD;
-    return `<span class="dot${old ? " old" : ""}" style="left:${(a / max) * 100}%"
-      title="${a} days since anything was recorded"></span>`;
-  }).join("");
+  const dots = JOBS.map((j, i) => `
+    <span class="dot${j.age >= FORTNIGHT ? " old" : ""}" style="left:${(j.age / max) * 100}%;--i:${i}"
+      data-tip="<b>${j.age} days</b><span>${j.title}</span>"></span>`).join("");
   return `
-  <div class="strip">
-    <div class="strip-plot" role="img"
-      aria-label="Nine open jobs by days since anything was recorded: ${AGES.join(", ")} days. ${D.stalled} are over a fortnight; the oldest is ${oldest} days.">
-      <span class="strip-grid"></span>
-      <span class="strip-threshold" style="left:${(OLD_THRESHOLD / max) * 100}%"></span>
-      <span class="threshold-label" style="left:${(OLD_THRESHOLD / max) * 100}%">A fortnight</span>
-      ${dots}
-      <span class="dot-label">${oldest} days</span>
-    </div>
-    <div class="strip-axis">
-      <span class="axis-tick named">Touched today</span>
-      <span class="axis-tick named">${max} days ago</span>
-    </div>
-    <p class="chart-caption">One dot per open job, placed by how long since anything was recorded
-      against it. Everything right of the line is what the ${D.stalled} above are counting.
-      This describes the record, never a person.</p>
-  </div>`;
-}
-
-function slip(count, claim, why, open, mark) {
-  const none = count === 0;
-  const tag = mark ? `<span class="mark ${mark[0]}">${mark[1]}</span> ` : "";
-  const inner = `
-      <span class="slip-count${none ? " none" : ""}">${none ? "0" : count}</span>
-      <span class="slip-body">
-        <span class="slip-claim">${tag}${claim}</span>
-        <span class="slip-why">${why}</span>
-      </span>
-      ${none ? "" : `<span class="slip-open">Open →</span>`}`;
-  return none
-    ? `<li class="slip">${inner}</li>`
-    : `<li><a class="slip" href="#">${inner}</a></li>`;
-}
-
-/* The all-clear is its own object, not a slip row with a zero in it.
-   A "0" sitting beside "Nothing is slipping" is two grammars for one
-   fact, and the reader has to reconcile them. */
-function clearBlock(claim, working) {
-  return `
-  <div class="clear">
-    <span class="mark good">Clear</span>
-    <p class="clear-claim">${claim}</p>
-    <p class="clear-work">${working}</p>
+  <div class="strip-plot" role="img"
+    aria-label="Nine open jobs by days since anything was recorded: ${JOBS.map((j) => `${j.title}, ${j.age} days`).join("; ")}. ${D.sitting} are over a fortnight.">
+    <span class="strip-grid"></span>
+    <span class="strip-threshold" style="left:${(FORTNIGHT / max) * 100}%"></span>
+    <span class="threshold-label" style="left:${(FORTNIGHT / max) * 100}%">A fortnight</span>
+    ${dots}
+    <span class="dot-cap">${oldest} days</span>
+  </div>
+  <div class="strip-axis">
+    <span class="axis-tick named">Touched today</span>
+    <span class="axis-tick named">${max} days ago</span>
   </div>`;
 }
 
 function coverage(rows) {
-  return `<div class="coverage">${rows.map((r) =>
-    `<span class="cov"><span class="src">${r[0]}</span> ${r[1]}</span>`).join("")}
-    <span class="cov"><span class="src">Read</span> ${READ_AT}</span></div>`;
+  return `<div class="coverage">${rows.map((r) => `<span><b>${r[0]}</b> ${r[1]}</span>`).join("")}
+    <span><b>Read</b> ${READ_FULL}</span></div>`;
 }
 
-function refusals(items) {
+const LIMITS = {
+  movement: { g: ["di", "Not recorded"], t: "How a date moved", p: "Nothing writes date changes down yet. Recording starts the day it is switched on." },
+  timeline: { g: ["di", "Silent"], t: "Anything from your dates", p: "Timeline did not answer. Nothing was assumed in its place." },
+  decisions:{ g: ["dash", "No source"], t: "Decisions in your notes", p: "Notes offers follow-ups only. Not a zero — there is nothing to count." },
+  scope:    { g: ["ring", "One project"], t: "Your three other projects", p: "Permission is checked one project at a time. A total across four would be unproved." },
+};
+
+function limits(keys) {
   return `
-  <section aria-labelledby="cannot">
-    <div class="section-head">
-      <p class="eyebrow" id="cannot">What this cannot tell you</p>
+  <section class="band" aria-labelledby="lim">
+    <div class="band-head">
+      <p class="eyebrow" id="lim">What this cannot tell you</p>
     </div>
-    <ul class="refusals">${items.map((i) => `
-      <li class="refusal">
-        <h3>${i.t}</h3>
-        <p>${i.p}</p>
-        ${i.ghost ? `<div class="ghost-chart"><p>${i.ghost}</p></div>` : ""}
-      </li>`).join("")}
-    </ul>
+    <div class="limits">
+      ${keys.map((k, i) => {
+        const L = LIMITS[k];
+        return `<div class="limit rise" style="--i:${i}">
+          <span class="glyph ${L.g[0]}" style="color:var(--ink-faint)">${L.g[1]}</span>
+          <h3>${L.t}</h3><p>${L.p}</p></div>`;
+      }).join("")}
+    </div>
+    <div class="ghost rise" style="--i:3">
+      <p><b style="font-weight:500;color:var(--ink-soft)">How much was open, week by week.</b><br>
+        The first reading is kept tonight. This fills in from tomorrow.</p>
+    </div>
   </section>`;
 }
 
-const REFUSAL_MOVEMENT = {
-  t: "Whether a date has moved, and by how much",
-  p: "Nothing has been writing dates down yet, so a date that has moved three times looks exactly like one that never moved. Recording starts the day it is switched on — it cannot be filled in backwards.",
-};
-const REFUSAL_DECISIONS = {
-  t: "Decisions taken in your notes",
-  p: "Notes keeps your writing private and offers this reading follow-ups only. There is no decision to count, so nothing is counted — this is not a zero.",
-};
-const REFUSAL_ONE_PROJECT = {
-  t: "Anything outside Mara &amp; Finn",
-  p: "This reading covers one project. You have three others; each is read on its own, because permission is checked one project at a time and a total across all four would be a number nobody has proved you may see.",
-};
-/* In the partial state the milestone refusal changes cause: it is not
-   that nothing was written down, it is that Timeline did not answer.
-   Same slot, different sentence — a reason that is wrong is worse than
-   no reason at all. */
-const REFUSAL_TIMELINE_SILENT = {
-  t: "Anything that comes from your dates",
-  p: "Timeline did not answer this morning, so nothing here counted your commitments or the work behind them. Nothing was assumed in their place. This usually clears on its own.",
-};
-const REFUSAL_OPEN_OVER_TIME = {
-  t: "How much was open last month",
-  p: "Finished work carries its own date, so the twelve weeks above are real. How much was open on a past Tuesday is not — nobody wrote it down at the time.",
-  ghost: "The first reading is kept tonight. This fills in from tomorrow, one day at a time.",
-};
+/* ── views ───────────────────────────────────────────────────── */
 
-/* ── the views ───────────────────────────────────────────────── */
+function slipKpis() {
+  return `
+    ${leadKpi(0)}
+    ${kpi({ n: D.sitting, label: "sitting over a fortnight", glyph: ["", "Sitting"], tone: "attention", share: D.sitting / D.open, i: 1 })}
+    ${kpi({ n: D.overdue, label: "past the day you gave them", glyph: ["di", "Past date"], tone: "acute", share: D.overdue / D.open, i: 2 })}
+    ${kpi({ n: D.unowned, label: "with nobody&rsquo;s name on", glyph: ["sq", "Unowned"], tone: "neutral", share: D.unowned / D.open, i: 3 })}
+    ${kpi({ n: D.waiting, label: "waiting on somebody else", glyph: ["ring", "Clear"], tone: "good", share: 0, i: 4, link: false, zero: true })}`;
+}
 
 function viewFull({ partial = false } = {}) {
-  const cov = partial
-    ? [["Tasks", "answered"], ["Timeline", "did not answer"], ["Notes", "answered, for you"]]
-    : [["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]];
-
   const banner = partial ? `
-    <div class="banner">
-      <span class="mark attention">Partial</span>
+    <div class="banner rise" style="--i:0;margin-bottom:22px">
+      <span class="glyph di" style="color:var(--st-attention)">Partial</span>
       <h2>Timeline did not answer this morning.</h2>
-      <p>What you see below is read from Tasks and Notes only. Anything that needs your dated
-        commitments is missing rather than empty, and says so where it sits.</p>
+      <p>Read from Tasks and Notes only. Anything needing your dated commitments is missing, not empty.</p>
     </div>` : "";
 
   return `
   ${banner}
-  <section aria-labelledby="did">
-    ${eyebrow("Last four weeks · 22 Jun – 16 Jul")}
-    <div class="hero-figure">
-      <span class="hero-num">${D.finishedFour}</span>
-      <span class="hero-unit">jobs finished</span>
+  <section class="band" aria-labelledby="did">
+    <div class="card rise" style="--i:0">
+      <div class="lead">
+        <div class="lead-figure">
+          <p class="eyebrow" id="did">Last four weeks &middot; 22 Jun &ndash; 16 Jul</p>
+          <span class="hero-num" data-count="${D.finishedFour}">0</span>
+          <span class="hero-unit">jobs finished</span>
+          <span class="delta">${arrowUp} +${D.delta} on the four before</span>
+        </div>
+        ${chart(WEEKS)}
+      </div>
     </div>
-    <p class="hero-read" id="did">Your best four weeks since the spring.</p>
-    <p class="hero-sub">The four weeks before this were ${D.priorFours[1]}, and the four before those ${D.priorFours[0]}.
-      Every one of the ${D.finishedFour} is a job you marked done — you can open any of them.</p>
-    <div class="hero-rule"></div>
-    ${chart({ live: true })}
   </section>
 
-  <section aria-labelledby="slipping">
-    <div class="section-head">
-      <p class="eyebrow" id="slipping">Quietly slipping</p>
-      <p class="eyebrow">${D.openWork} open</p>
+  <section class="band" aria-labelledby="slip">
+    <div class="band-head">
+      <p class="eyebrow" id="slip">Quietly slipping</p>
+      <p class="eyebrow">Four readings of the same ${D.open} &middot; read ${READ_TIME}</p>
     </div>
-    <ul class="slip-list">
-      ${slip(D.stalled, "haven&rsquo;t moved in over a fortnight", "Nothing recorded against them since 27 June. The oldest is 41 days.", true, ["attention", "Sitting"])}
-      ${slip(D.overdue, "are past the day you gave them", "The pier cordon and the lighting walk-through. Both are behind the walkthrough on 24 July.", true, ["acute", "Past date"])}
-      ${slip(D.unowned, "has nobody&rsquo;s name on it", "&ldquo;Confirm the lighting rig with the venue.&rdquo; Due 22 July.", true, null)}
-      ${slip(D.waiting, "are waiting on somebody else", "Nothing is sitting in Waiting. This is a real zero — the column was read.", false, ["good", "Clear"])}
-    </ul>
-    ${strip()}
+    <div class="kpis">${slipKpis()}</div>
   </section>
 
-  ${refusals(
-    partial
-      ? [REFUSAL_TIMELINE_SILENT, REFUSAL_DECISIONS, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME]
-      : [REFUSAL_MOVEMENT, REFUSAL_DECISIONS, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME],
-  )}
+  <section class="band" aria-labelledby="ages">
+    <div class="card rise" style="--i:1">
+      <div class="band-head" style="margin-bottom:0">
+        <p class="eyebrow" id="ages">How long open work has been sitting</p>
+        <p class="eyebrow">${D.sitting} of ${D.open} past the line</p>
+      </div>
+      ${strip()}
+    </div>
+  </section>
 
-  ${coverage(cov)}`;
+  ${limits(partial ? ["timeline", "decisions", "scope"] : ["movement", "decisions", "scope"])}
+
+  ${coverage(partial
+    ? [["Tasks", "answered"], ["Timeline", "did not answer"], ["Notes", "answered, for you"]]
+    : [["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
 }
 
 function viewQuiet() {
   return `
-  <section aria-labelledby="did">
-    ${eyebrow("Last four weeks · 22 Jun – 16 Jul")}
-    <div class="hero-figure">
-      <span class="hero-num">${D.finishedFour}</span>
-      <span class="hero-unit">jobs finished</span>
+  <section class="band">
+    <div class="card rise" style="--i:0">
+      <div class="lead">
+        <div class="lead-figure">
+          <p class="eyebrow">Last four weeks &middot; 22 Jun &ndash; 16 Jul</p>
+          <span class="hero-num" data-count="${D.finishedFour}">0</span>
+          <span class="hero-unit">jobs finished</span>
+          <span class="delta">${arrowUp} +${D.delta} on the four before</span>
+        </div>
+        ${chart(WEEKS)}
+      </div>
     </div>
-    <p class="hero-read" id="did">Your best four weeks since the spring.</p>
-    <p class="hero-sub">The four weeks before this were ${D.priorFours[1]}, and the four before those ${D.priorFours[0]}.</p>
-    <div class="hero-rule"></div>
-    ${chart({ live: true })}
   </section>
 
-  <section aria-labelledby="slipping">
-    <div class="section-head">
-      <p class="eyebrow" id="slipping">Quietly slipping</p>
-      <p class="eyebrow">9 open</p>
+  <section class="band" aria-labelledby="slip2">
+    <div class="band-head"><p class="eyebrow" id="slip2">Quietly slipping</p><p class="eyebrow">Read ${READ_TIME}</p></div>
+    <div class="clear rise" style="--i:1">
+      <span class="clear-n" data-count="0">0</span>
+      <span class="clear-txt">
+        <p>Nothing is slipping.</p>
+        <span>All ${D.open} open jobs touched inside a fortnight, all dated, all owned.</span>
+      </span>
     </div>
-    ${clearBlock(
-      "Nothing is slipping.",
-      "All nine open jobs have been touched inside the last fortnight, all nine have a day on them, and all nine have somebody&rsquo;s name against them. Read at " + READ_AT.split(",")[0] + ".",
-    )}
   </section>
 
-  ${refusals([REFUSAL_MOVEMENT, REFUSAL_DECISIONS, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME])}
+  ${limits(["movement", "decisions", "scope"])}
   ${coverage([["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
 }
 
 function viewFirstRun() {
   const w = WEEKS.slice(9);
   const total = w.reduce((a, x) => a + x.v, 0);
-  const max = Math.max(...w.map((x) => x.v));
-  const bars = w.map((x) => {
-    const h = (x.v / max) * 100;
-    return `
-    <div class="bar-slot${x.partial ? " partial" : ""}">
-      <span class="bar-track">
-        <span class="bar-val" style="bottom:${h}%">${x.v}</span>
-        <span class="bar" style="height:${h}%"></span>
-      </span>
-    </div>`;
-  }).join("");
   return `
-  <section aria-labelledby="did">
-    ${eyebrow("Since you started · 29 Jun – 16 Jul")}
-    <div class="hero-figure">
-      <span class="hero-num">${total}</span>
-      <span class="hero-unit">jobs finished</span>
-    </div>
-    <p class="hero-read" id="did">Three weeks in. Too early to say whether that is a lot.</p>
-    <p class="hero-sub">Once you have four full weeks behind you — around 27 July — this will start
-      telling you whether a week was better or worse than your normal.</p>
-    <div class="hero-rule"></div>
-    <div class="chart">
-      <div class="chart-plot" style="grid-template-columns:repeat(3,1fr);max-width:280px" role="img"
-        aria-label="Work finished each week since starting: ${w.map((x) => `week of ${x.start}, ${x.v}${x.partial ? ", so far" : ""}`).join("; ")}.">
-        ${bars}
+  <section class="band">
+    <div class="card rise" style="--i:0">
+      <div class="lead">
+        <div class="lead-figure">
+          <p class="eyebrow">Since you started &middot; 29 Jun &ndash; 16 Jul</p>
+          <span class="hero-num" data-count="${total}">0</span>
+          <span class="hero-unit">jobs finished</span>
+          <span class="delta" style="background:var(--paper-deep);color:var(--ink-faint)">Comparison from 27 July</span>
+        </div>
+        ${chart(w, { record: false })}
       </div>
-      <div class="chart-axis" style="grid-template-columns:repeat(3,1fr);max-width:280px">
-        ${w.map((x) => `<span class="axis-tick named">${x.start}</span>`).join("")}
-      </div>
-      <p class="chart-caption">Three weeks so far. Nine more and this becomes a shape you can read.</p>
     </div>
   </section>
 
-  <section aria-labelledby="slipping">
-    <div class="section-head">
-      <p class="eyebrow" id="slipping">Quietly slipping</p>
-      <p class="eyebrow">6 open</p>
+  <section class="band" aria-labelledby="slip3">
+    <div class="band-head"><p class="eyebrow" id="slip3">Quietly slipping</p></div>
+    <div class="clear rise" style="--i:1">
+      <span class="clear-n" data-count="0">0</span>
+      <span class="clear-txt">
+        <p>Nothing has had time to slip.</p>
+        <span>The oldest thing on your board is eighteen days old.</span>
+      </span>
     </div>
-    ${clearBlock(
-      "Nothing has had time to slip yet.",
-      "The oldest thing on your board is eighteen days old. This section starts earning its place once something has been sitting longer than that.",
-    )}
   </section>
 
-  ${refusals([REFUSAL_MOVEMENT, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME])}
+  ${limits(["movement", "scope", "decisions"])}
   ${coverage([["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
 }
 
 function viewEmpty() {
   return `
-  <div class="blank">
-    ${eyebrow("Mara & Finn")}
-    <p class="lede">There is nothing here to read yet.</p>
+  <div class="blank rise" style="--i:0">
+    <p class="eyebrow">Mara &amp; Finn</p>
+    <p class="lede">Nothing to read yet.</p>
     <p class="body">This page looks back at work you have finished and work that has gone quiet.
       Neither exists until there is something on your board.</p>
-    <a class="move" href="#">Add your first job <span aria-hidden="true">→</span></a>
+    <a class="move" href="#">Add your first job <span aria-hidden="true">&rarr;</span></a>
   </div>`;
 }
 
 function viewLoading() {
-  const bar = (h) => `<div class="bar-slot"><span class="bar-track"><span class="sk bar" style="height:${h}%"></span></span></div>`;
+  const heights = [42, 25, 50, 33, 58, 42, 67, 50, 50, 67, 42, 100];
   return `
-  <section aria-label="Loading this reading">
-    <div class="sk" style="width:180px;height:11px"></div>
-    <div class="sk" style="width:230px;height:104px;margin-top:20px;border-radius:8px"></div>
-    <div class="sk" style="width:300px;height:19px;margin-top:24px"></div>
-    <div class="sk" style="width:100%;max-width:420px;height:14px;margin-top:12px"></div>
-    <div class="sk" style="height:1px;margin-top:26px"></div>
-    <div class="chart-plot" style="margin-top:30px;border-bottom-color:var(--hairline-soft)">
-      ${[42, 25, 50, 33, 58, 42, 67, 50, 50, 67, 42, 100].map(bar).join("")}
+  <section class="band">
+    <div class="card">
+      <div class="lead">
+        <div class="lead-figure">
+          <div class="sk" style="width:180px;height:10px"></div>
+          <div class="sk" style="width:190px;height:92px;margin-top:16px;border-radius:9px"></div>
+          <div class="sk" style="width:110px;height:13px;margin-top:14px"></div>
+          <div class="sk" style="width:150px;height:22px;margin-top:16px;border-radius:999px"></div>
+        </div>
+        <div class="plot-wrap">
+          <div class="chart-plot" style="--n:12">
+            ${heights.map((h) => `<div class="bar-slot"><span class="bar-track"><span class="sk" style="position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:64%;max-width:30px;height:${h}%;border-radius:2.5px 2.5px 0 0"></span></span></div>`).join("")}
+          </div>
+        </div>
+      </div>
     </div>
   </section>
-  <section aria-hidden="true">
-    <div class="section-head"><div class="sk" style="width:130px;height:11px"></div></div>
-    <div class="sk-row" style="gap:22px">
-      <div class="sk" style="height:70px"></div>
-      <div class="sk" style="height:70px"></div>
-      <div class="sk" style="height:70px"></div>
-      <div class="sk" style="height:70px"></div>
-    </div>
-    <div class="sk" style="height:54px;margin-top:30px;border-radius:0"></div>
+  <section class="band" aria-hidden="true">
+    <div class="band-head"><div class="sk" style="width:120px;height:10px"></div></div>
+    <div class="kpis">${Array.from({ length: 5 }, () => `<div class="sk" style="height:104px;border-radius:12px"></div>`).join("")}</div>
+  </section>
+  <section class="band" aria-hidden="true">
+    <div class="card"><div class="sk" style="width:200px;height:10px"></div><div class="sk" style="height:76px;margin-top:14px"></div></div>
   </section>
   <p class="sr" role="status">Reading your last twelve weeks.</p>`;
 }
 
 function viewError() {
   return `
-  <div class="banner acute">
-    <span class="mark acute">Could not read</span>
+  <div class="banner acute rise" style="--i:0">
+    <span class="glyph di" style="color:var(--st-acute)">Could not read</span>
     <h2>Tasks did not answer, so there is nothing to show.</h2>
-    <p>Your work is safe — this page could not reach it just now. It tries again on its own;
-      if it is still like this in an hour, the board itself will tell you more.</p>
+    <p>Your work is safe — this page could not reach it just now. It tries again on its own.</p>
   </div>
-  <div class="blank">
-    <p class="body" style="margin-top:0">Nothing below is shown, because everything on this page is
-      counted from Tasks and none of it could be counted.</p>
-    <a class="move" href="#">Open your board <span aria-hidden="true">→</span></a>
+  <div class="blank rise" style="--i:1" style="padding-top:18px">
+    <a class="move" href="#">Open your board <span aria-hidden="true">&rarr;</span></a>
   </div>
   ${coverage([["Tasks", "did not answer"], ["Timeline", "not read"], ["Notes", "not read"]])}`;
 }
@@ -1172,37 +948,100 @@ const RENDER = {
 /* ── driving ─────────────────────────────────────────────────── */
 const view = document.getElementById("view");
 const stage = document.getElementById("stage");
-const note = document.getElementById("deck-note");
+const tip = document.getElementById("tip");
 const frameName = document.getElementById("frame-name");
 const frameW = document.getElementById("frame-w");
 let current = "full";
 
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function countUp(el) {
+  const target = Number(el.dataset.count);
+  if (reduced || target === 0) { el.textContent = String(target); return; }
+  const dur = 900, t0 = performance.now();
+  const tick = (t) => {
+    const p = Math.min(1, (t - t0) / dur);
+    // Ease-out cubic: fast arrival, soft landing.
+    el.textContent = String(Math.round(target * (1 - Math.pow(1 - p, 3))));
+    if (p < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
 function paint(state) {
   current = state;
+  view.classList.remove("play");
   view.innerHTML = RENDER[state]();
-  note.textContent = STATES[state].note;
-  frameName.textContent = STATES[state].name;
   document.getElementById("scroller").scrollTop = 0;
+  hideTip();
+  deswarm();
+  // Force reflow so the animations restart from zero on every repaint.
+  void view.offsetWidth;
+  view.classList.add("play");
+  view.querySelectorAll("[data-count]").forEach((el) => {
+    setTimeout(() => countUp(el), reduced ? 0 : 260);
+  });
 }
+
+/* Beeswarm. Two jobs three days apart overlap into one blob at 390, which
+   reads as fewer jobs than there are. Position on the axis stays exact —
+   only the y, which carries no meaning here, absorbs the collision.
+   Measured after layout, because the threshold is a pixel distance. */
+function deswarm() {
+  const plot = view.querySelector(".strip-plot");
+  if (!plot) return;
+  const w = plot.clientWidth;
+  if (!w) return;
+  const MIN = 17; // dot 13px + 4px breathing room
+  const rows = [];
+  [...plot.querySelectorAll(".dot")]
+    .map((el) => ({ el, x: (parseFloat(el.style.left) / 100) * w }))
+    .sort((a, b) => a.x - b.x)
+    .forEach(({ el, x }) => {
+      let r = 0;
+      while (rows[r] !== undefined && x - rows[r] < MIN) r += 1;
+      rows[r] = x;
+      el.style.setProperty("--row", r);
+    });
+  // The plot must be tall enough for the tallest stack it just produced.
+  plot.style.minHeight = `${76 + Math.max(0, rows.length - 1) * 15}px`;
+}
+
+/* Tooltips — one floating element, delegated. */
+function showTip(el) {
+  tip.innerHTML = el.dataset.tip;
+  const r = el.getBoundingClientRect();
+  tip.style.left = `${r.left + r.width / 2}px`;
+  tip.style.top = `${r.top}px`;
+  tip.classList.add("on");
+}
+function hideTip() { tip.classList.remove("on"); }
+
+view.addEventListener("pointerover", (e) => {
+  const t = e.target.closest("[data-tip]");
+  if (t) showTip(t); else hideTip();
+});
+view.addEventListener("pointerleave", hideTip);
+document.getElementById("scroller").addEventListener("scroll", hideTip);
 
 document.querySelectorAll("[data-state]").forEach((b) => {
   b.addEventListener("click", () => {
-    document.querySelectorAll("[data-state]").forEach((o) =>
-      o.setAttribute("aria-pressed", String(o === b)));
+    document.querySelectorAll("[data-state]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
     paint(b.dataset.state);
+    frameName.textContent = STATES[b.dataset.state].name;
   });
 });
 
-document.querySelectorAll("[data-w]").forEach((b) => {
-  if (!b.dataset.w || b.tagName !== "BUTTON") return;
+document.querySelectorAll("button[data-w]").forEach((b) => {
   b.addEventListener("click", () => {
-    document.querySelectorAll("button[data-w]").forEach((o) =>
-      o.setAttribute("aria-pressed", String(o === b)));
+    document.querySelectorAll("button[data-w]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
     stage.dataset.w = b.dataset.w;
-    frameW.textContent = b.dataset.w === "phone" ? "· 390 × 720" : "· 1180 × 760";
+    frameW.textContent = b.dataset.w === "phone" ? "· 390 × 740" : "· 1240 × 800";
     paint(current);
   });
 });
+
+document.getElementById("replay").addEventListener("click", () => paint(current));
 
 paint("full");
 </script>
