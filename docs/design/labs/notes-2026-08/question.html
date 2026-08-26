@@ -1,0 +1,811 @@
+<!--fam:start-->
+<nav class="famRail" data-fam-ground="paper" aria-label="The Notes elevation — five documents">
+  <div class="famRail-in">
+    <a class="famRail-mark" href="https://claude.ai/code/artifact/ad46252f-e1d6-48e3-b0cb-ecdd950280d4"><span class="famRail-dot"></span><b>Signal Studio</b><i>/</i><em>Notes</em></a>
+    <ol class="famRail-set"><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/ad46252f-e1d6-48e3-b0cb-ecdd950280d4"><span class="famRail-n">01</span><span class="famRail-t">CEO Report</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/23178180-3a00-4809-a08b-2c88bc6b1083"><span class="famRail-n">02</span><span class="famRail-t">Design Console</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25"><span class="famRail-n">03</span><span class="famRail-t">Elevation Log</span></a></li><li class="famRail-item is-here"><span class="famRail-link" aria-current="page"><span class="famRail-n">04</span><span class="famRail-t">The 9.5 Question</span></span></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/9764061d-9ae6-4a58-858b-b8e54060cd11"><span class="famRail-n">05</span><span class="famRail-t">Fourteen Rounds</span></a></li></ol>
+    <div class="famRail-sibs"><span class="famRail-sibsLabel">also elevated</span><a class="famRail-sib" href="https://claude.ai/code/artifact/457fc8fe-4171-41b0-ad45-a3ba8d993b85">Tasks</a><a class="famRail-sib" href="https://claude.ai/code/artifact/30aa3dd7-97d7-4e4e-bfac-48d331488862">Timeline</a></div>
+  </div>
+</nav>
+<script>/* keep the current document in view when the rail has to scroll */
+(function(){try{var r=document.querySelector('.famRail-set .is-here');if(!r)return;
+var s=r.closest('.famRail-set');if(!s)return;
+requestAnimationFrame(function(){var o=r.offsetLeft-(s.clientWidth-r.offsetWidth)/2;
+if(s.scrollWidth>s.clientWidth+2)s.scrollLeft=Math.max(0,o);});}catch(e){}})();</script>
+<!--fam:end-->
+<title>Notes &middot; The 9.5 Question</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Why a fourteen-round elevation stopped at 8.6, and why the gate it stopped
+   against was replaced rather than met. Held to the palette the elevation
+   policed: Ink, Indigo, White, and tints of those three. */
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --t1: var(--ink);
+  --t2: rgba(17, 17, 17, 0.70);
+  --t3: rgba(17, 17, 17, 0.52);
+  --t4: rgba(17, 17, 17, 0.30);
+  --wash: rgba(17, 17, 17, 0.035);
+  --plate: rgba(17, 17, 17, 0.028);
+  --line-soft: rgba(17, 17, 17, 0.07);
+  --line: rgba(17, 17, 17, 0.12);
+  --rule: rgba(17, 17, 17, 0.85);
+  --ind-wash: rgba(79, 70, 229, 0.075);
+  --ind-line: rgba(79, 70, 229, 0.30);
+  --ind-text: #4338ca;
+
+  --paper: var(--white);
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --measure: 34rem;
+  --wide: 66rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0c0c0d;
+    --t1: #f6f6f7;
+    --t2: rgba(246, 246, 247, 0.70);
+    --t3: rgba(246, 246, 247, 0.54);
+    --t4: rgba(246, 246, 247, 0.30);
+    --wash: rgba(255, 255, 255, 0.045);
+    --plate: rgba(255, 255, 255, 0.035);
+    --line-soft: rgba(255, 255, 255, 0.075);
+    --line: rgba(255, 255, 255, 0.13);
+    --rule: rgba(246, 246, 247, 0.80);
+    --indigo: #8b84f3;
+    --ind-wash: rgba(139, 132, 243, 0.14);
+    --ind-line: rgba(139, 132, 243, 0.38);
+    --ind-text: #a49df6;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0c0c0d;
+  --t1: #f6f6f7;
+  --t2: rgba(246, 246, 247, 0.70);
+  --t3: rgba(246, 246, 247, 0.54);
+  --t4: rgba(246, 246, 247, 0.30);
+  --wash: rgba(255, 255, 255, 0.045);
+  --plate: rgba(255, 255, 255, 0.035);
+  --line-soft: rgba(255, 255, 255, 0.075);
+  --line: rgba(255, 255, 255, 0.13);
+  --rule: rgba(246, 246, 247, 0.80);
+  --indigo: #8b84f3;
+  --ind-wash: rgba(139, 132, 243, 0.14);
+  --ind-line: rgba(139, 132, 243, 0.38);
+  --ind-text: #a49df6;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--t1);
+  font-family: var(--sans);
+  font-size: 16.5px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.tab { font-variant-numeric: tabular-nums; }
+a { color: var(--ind-text); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; border-radius: 3px; }
+
+.page { max-width: var(--wide); margin: 0 auto; padding: 0 30px 132px; }
+.col { max-width: var(--measure); }
+.col p { margin: 0 0 1.05em; color: var(--t2); }
+.col p strong, .col p b { color: var(--t1); font-weight: 600; }
+.col p:last-child { margin-bottom: 0; }
+
+.kick {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+.kick b { color: var(--indigo); font-weight: 400; }
+
+/* ── masthead ───────────────────────────────────────────────────────── */
+.mast { padding: 92px 0 46px; border-bottom: 1px solid var(--rule); }
+.mast h1 {
+  margin: 20px 0 0;
+  font-size: clamp(2.9rem, 1.2rem + 5.6vw, 5.2rem);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+.mast h1 em {
+  display: block;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 0.86em;
+  color: var(--t3);
+  letter-spacing: -0.046em;
+  margin-top: 0.06em;
+  text-wrap: balance;
+}
+.stand {
+  margin: 30px 0 0;
+  max-width: 41rem;
+  font-size: 19.5px;
+  line-height: 1.56;
+  color: var(--t2);
+  text-wrap: pretty;
+}
+.byline {
+  margin: 34px 0 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--t3);
+}
+
+/* ── sections ───────────────────────────────────────────────────────── */
+section { padding: 78px 0 0; }
+section > .kick { margin-bottom: 22px; }
+h2 {
+  margin: 0 0 26px;
+  font-size: clamp(1.5rem, 1.1rem + 1.3vw, 2.05rem);
+  font-weight: 600;
+  letter-spacing: -0.032em;
+  line-height: 1.14;
+  text-wrap: balance;
+}
+h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+}
+
+/* ── the number ─────────────────────────────────────────────────────── */
+.score { display: grid; gap: 34px; align-items: start; }
+@media (min-width: 820px) { .score { grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 56px; } }
+.score .n b {
+  display: block;
+  font-size: clamp(88px, 13vw, 136px);
+  font-weight: 400;
+  line-height: 0.84;
+  letter-spacing: -0.052em;
+  font-variant-numeric: tabular-nums;
+}
+.score .n i {
+  display: block;
+  font-style: normal;
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--t3);
+  line-height: 1.5;
+}
+.score .n u {
+  display: inline-block;
+  text-decoration: none;
+  margin-top: 12px;
+  padding: 3px 9px;
+  border: 1px solid var(--ind-line);
+  border-radius: 999px;
+  background: var(--ind-wash);
+  color: var(--ind-text);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.score .say { font-size: 19px; line-height: 1.55; color: var(--t1); margin: 0 0 1em; text-wrap: pretty; }
+.score .say + p { color: var(--t2); font-size: 16.5px; margin: 0 0 1em; }
+.score .say + p:last-child { margin: 0; }
+
+/* ── figures ────────────────────────────────────────────────────────── */
+.figs {
+  margin: 54px 0 0;
+  display: grid;
+  gap: 1px;
+  background: var(--line-soft);
+  border: 1px solid var(--line-soft);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 700px) { .figs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .figs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.fig { background: var(--paper); padding: 20px 18px 18px; }
+.fig b {
+  display: block;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.fig span {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  color: var(--t3);
+  line-height: 1.45;
+}
+.fig.is-key b { color: var(--indigo); }
+
+/* ── callout ────────────────────────────────────────────────────────── */
+.note {
+  margin: 0;
+  padding: 26px 30px;
+  background: var(--ind-wash);
+  border-left: 2px solid var(--indigo);
+  max-width: 44rem;
+}
+.note p { margin: 0 0 0.9em; color: var(--t2); }
+.note p:last-child { margin: 0; }
+.note strong { color: var(--t1); font-weight: 600; }
+
+/* ── the set index ──────────────────────────────────────────────────── */
+.setIx { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); }
+.setIxCard {
+  display: block;
+  padding: 20px 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--plate);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+a.setIxCard:hover { border-color: var(--ind-line); background: var(--ind-wash); transform: translateY(-1px); }
+.setIxCard i {
+  display: block;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  color: var(--t4);
+  font-variant-numeric: tabular-nums;
+}
+.setIxCard b { display: block; margin: 9px 0 7px; font-size: 16.5px; font-weight: 600; letter-spacing: -0.016em; }
+.setIxCard span { display: block; font-size: 14px; line-height: 1.5; color: var(--t3); }
+.setIxCard.is-here { border-color: var(--ind-line); background: var(--ind-wash); }
+.setIxCard.is-here i { color: var(--indigo); }
+
+/* ── lists that are arguments ───────────────────────────────────────── */
+.ledger { margin: 0; padding: 0; list-style: none; max-width: 46rem; }
+.ledger li { padding: 20px 0; border-top: 1px solid var(--line-soft); }
+.ledger li:first-child { border-top: 1px solid var(--line); }
+.ledger li:last-child { border-bottom: 1px solid var(--line-soft); }
+.ledger b { display: block; font-size: 16.5px; font-weight: 600; letter-spacing: -0.014em; margin-bottom: 5px; }
+.ledger span { display: block; color: var(--t2); font-size: 15.5px; line-height: 1.55; }
+.ledger em {
+  float: right;
+  margin-left: 20px;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--t3);
+  padding-top: 4px;
+}
+
+/* ── comparison table ───────────────────────────────────────────────── */
+.tblWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table.fam { border-collapse: collapse; width: 100%; min-width: 520px; font-size: 15px; }
+table.fam th, table.fam td { text-align: left; padding: 14px 18px 14px 0; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+table.fam thead th {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--t3);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 11px;
+}
+table.fam tbody th { font-weight: 400; color: var(--t3); font-size: 14px; white-space: nowrap; }
+table.fam td { color: var(--t1); font-variant-numeric: tabular-nums; }
+table.fam td.is-me { color: var(--indigo); font-weight: 600; }
+table.fam tr:last-child th, table.fam tr:last-child td { border-bottom: 0; }
+
+/* ── footer ─────────────────────────────────────────────────────────── */
+.foot {
+  margin: 108px 0 0;
+  padding: 30px 0 0;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  line-height: 1.62;
+  color: var(--t3);
+  max-width: 46rem;
+}
+.foot code { font-family: var(--mono); font-size: 12.5px; color: var(--t2); }
+
+@media (max-width: 620px) {
+  .page { padding: 0 20px 96px; }
+  .mast { padding: 54px 0 34px; }
+  section { padding: 58px 0 0; }
+  .ledger em { float: none; display: block; margin: 0 0 6px; padding-top: 0; }
+}
+@media print {
+  body { background: #fff; color: #111; }
+  section { break-inside: avoid; }
+}
+
+/* the arc */
+.arc { margin-top: 8px; }
+table.arc { border-collapse: collapse; width: 100%; min-width: 620px; }
+table.arc th, table.arc td { padding: 9px 14px 9px 0; border-bottom: 1px solid var(--line-soft); text-align: left; font-size: 14.5px; }
+table.arc thead th {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 400; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--t3); border-bottom: 1px solid var(--line); padding-bottom: 11px;
+}
+table.arc tbody th { font-family: var(--mono); color: var(--t3); font-weight: 400; width: 44px; }
+table.arc td { font-variant-numeric: tabular-nums; color: var(--t1); }
+table.arc tr.isPhase th, table.arc tr.isPhase td { border-top: 1px solid var(--line); }
+table.arc td.phase { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--indigo); white-space: nowrap; }
+.barCell { width: 42%; min-width: 150px; }
+.bar { position: relative; display: block; height: 5px; border-radius: 3px; background: var(--wash); }
+.bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--indigo); opacity: 0.5; }
+.phaseNotes { margin: 34px 0 0; padding: 0; list-style: none; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.phaseNotes li { padding: 16px 18px; background: var(--plate); border: 1px solid var(--line-soft); border-radius: 10px; }
+.phaseNotes b { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.phaseNotes span { display: block; font-size: 14px; line-height: 1.5; color: var(--t3); }
+
+/* the seat-noise table */
+table.noise { border-collapse: collapse; width: 100%; min-width: 420px; font-size: 15px; }
+table.noise th, table.noise td { padding: 12px 18px 12px 0; border-bottom: 1px solid var(--line-soft); text-align: left; }
+table.noise thead th { font-family: var(--mono); font-size: 10.5px; font-weight: 400; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t3); border-bottom: 1px solid var(--line); }
+table.noise tbody th { font-weight: 400; color: var(--t2); }
+table.noise td { font-variant-numeric: tabular-nums; }
+table.noise td.dn { color: var(--indigo); }
+table.noise tfoot th, table.noise tfoot td { border-bottom: 0; border-top: 1px solid var(--line); font-weight: 600; color: var(--t1); }
+
+/* the replacement gate */
+.gateList { margin: 0; padding: 0; list-style: none; counter-reset: g; max-width: 46rem; }
+.gateList li {
+  counter-increment: g;
+  position: relative;
+  padding: 20px 0 20px 54px;
+  border-top: 1px solid var(--line-soft);
+}
+.gateList li:first-child { border-top: 1px solid var(--line); }
+.gateList li::before {
+  content: counter(g);
+  position: absolute; left: 0; top: 21px;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--ind-wash); color: var(--ind-text);
+  border: 1px solid var(--ind-line);
+  font-family: var(--mono); font-size: 12px;
+}
+.gateList b { display: block; font-size: 16.5px; font-weight: 600; margin-bottom: 5px; letter-spacing: -0.014em; }
+.gateList span { display: block; color: var(--t2); font-size: 15.5px; line-height: 1.55; }
+.gateList em { font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--indigo); display: block; margin-top: 7px; }
+</style>
+
+<div class="page">
+
+  <header class="mast">
+    <p class="kick"><b>&bull;</b> Signal Studio &middot; Notes &middot; the elevation loop &middot; August 2026</p>
+    <h1>The 9.5 Question.<em>A draw, not a standard.</em></h1>
+    <p class="stand">Fourteen rounds. Seven blind seats each time, one adversarial refuter per finding, 353 findings raised and 247 fixed. The floor went 5.6 to 8.6 against a gate of 9.5 that was never met. This is why, what was done about it, and the gate that replaced it.</p>
+    <p class="byline">Prepared 26 August 2026 &middot; rounds 1&ndash;14 &middot; the score is the lowest seat</p>
+  </header>
+
+  <section>
+    <p class="kick">The finding</p>
+    <div class="note">
+      <p><strong>The work was not the problem. The terminating condition was.</strong> For nine rounds the panel could not pass the gate no matter how good the artifact became, because every seat was contractually required to file three defects whether it had any or not. Seven seats times three is twenty-one, and no round in that stretch ever confirmed fewer than exactly twenty-one.</p>
+      <p>By the time that was fixed, a second problem was visible underneath it: <strong>a unanimous 9.5 from fresh blind seats is a draw, not a standard.</strong> Seat-to-seat noise on a strictly improved artifact runs about &plusmn;0.5 &mdash; larger than the 0.9 that was left to climb.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kick">The arc</p>
+    <h2>Where the number actually went</h2>
+    <div class="col"><p>Fourteen rounds read as one line look like a stall at 8.6. They are three distinct phases, and only the third was measuring what it thought it was measuring. The bar shows each round's floor and ceiling &mdash; the distance between the lowest and highest of the seven seats.</p></div>
+    <div class="tblWrap arc">
+      <table class="arc">
+        <thead><tr><th>Rd</th><th>Floor</th><th>Spread of the seven seats</th><th>Top</th><th>Fixed</th><th>Refuted</th><th></th></tr></thead>
+        <tbody>
+<tr class="isPhase">
+            <th class="tab">01</th>
+            <td class="tab">5.6</td>
+            <td class="barCell"><span class="bar"><i style="left:12.0%;right:74.0%"></i></span></td>
+            <td class="tab">6.3</td>
+            <td class="tab">30</td>
+            <td class="tab">5</td>
+            <td class="phase">The climb</td>
+          </tr>
+<tr>
+            <th class="tab">02</th>
+            <td class="tab">5.7</td>
+            <td class="barCell"><span class="bar"><i style="left:14.0%;right:58.0%"></i></span></td>
+            <td class="tab">7.1</td>
+            <td class="tab">22</td>
+            <td class="tab">13</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">03</th>
+            <td class="tab">6.1</td>
+            <td class="barCell"><span class="bar"><i style="left:22.0%;right:52.0%"></i></span></td>
+            <td class="tab">7.4</td>
+            <td class="tab">26</td>
+            <td class="tab">9</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">04</th>
+            <td class="tab">7.2</td>
+            <td class="barCell"><span class="bar"><i style="left:44.0%;right:48.0%"></i></span></td>
+            <td class="tab">7.6</td>
+            <td class="tab">25</td>
+            <td class="tab">10</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">05</th>
+            <td class="tab">7.1</td>
+            <td class="barCell"><span class="bar"><i style="left:42.0%;right:36.0%"></i></span></td>
+            <td class="tab">8.2</td>
+            <td class="tab">24</td>
+            <td class="tab">11</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">06</th>
+            <td class="tab">8.0</td>
+            <td class="barCell"><span class="bar"><i style="left:60.0%;right:28.0%"></i></span></td>
+            <td class="tab">8.6</td>
+            <td class="tab">23</td>
+            <td class="tab">12</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">07</th>
+            <td class="tab">8.2</td>
+            <td class="barCell"><span class="bar"><i style="left:64.0%;right:32.0%"></i></span></td>
+            <td class="tab">8.4</td>
+            <td class="tab">24</td>
+            <td class="tab">11</td>
+            <td class="phase"></td>
+          </tr>
+<tr class="isPhase">
+            <th class="tab">08</th>
+            <td class="tab">6.4</td>
+            <td class="barCell"><span class="bar"><i style="left:28.0%;right:28.0%"></i></span></td>
+            <td class="tab">8.6</td>
+            <td class="tab">21</td>
+            <td class="tab">13</td>
+            <td class="phase">The bar arrives</td>
+          </tr>
+<tr>
+            <th class="tab">09</th>
+            <td class="tab">7.1</td>
+            <td class="barCell"><span class="bar"><i style="left:42.0%;right:36.0%"></i></span></td>
+            <td class="tab">8.2</td>
+            <td class="tab">20</td>
+            <td class="tab">15</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">10</th>
+            <td class="tab">6.6</td>
+            <td class="barCell"><span class="bar"><i style="left:32.0%;right:10.0%"></i></span></td>
+            <td class="tab">9.5</td>
+            <td class="tab">1</td>
+            <td class="tab">2</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">11</th>
+            <td class="tab">6.2</td>
+            <td class="barCell"><span class="bar"><i style="left:24.0%;right:16.0%"></i></span></td>
+            <td class="tab">9.2</td>
+            <td class="tab">3</td>
+            <td class="tab">0</td>
+            <td class="phase"></td>
+          </tr>
+<tr class="isPhase">
+            <th class="tab">12</th>
+            <td class="tab">8.1</td>
+            <td class="barCell"><span class="bar"><i style="left:62.0%;right:18.0%"></i></span></td>
+            <td class="tab">9.1</td>
+            <td class="tab">4</td>
+            <td class="tab">1</td>
+            <td class="phase">The rebuilt loop</td>
+          </tr>
+<tr>
+            <th class="tab">13</th>
+            <td class="tab">8.6</td>
+            <td class="barCell"><span class="bar"><i style="left:72.0%;right:12.0%"></i></span></td>
+            <td class="tab">9.4</td>
+            <td class="tab">12</td>
+            <td class="tab">3</td>
+            <td class="phase"></td>
+          </tr>
+<tr>
+            <th class="tab">14</th>
+            <td class="tab">8.6</td>
+            <td class="barCell"><span class="bar"><i style="left:72.0%;right:16.0%"></i></span></td>
+            <td class="tab">9.2</td>
+            <td class="tab">12</td>
+            <td class="tab">1</td>
+            <td class="phase"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="phaseNotes">
+      <li><b>The climb &middot; rounds 1&ndash;7</b><span>Seven rounds against the old benchmark set. 5.6 to 8.2, almost monotonic.</span></li>
+      <li><b>The bar arrives &middot; rounds 8&ndash;11</b><span>Linear, Stripe, Vercel, xAI and SpaceX replace the old benchmarks. The floor resets to 6.4 and takes four rounds to recover. Nothing regressed; the standard moved.</span></li>
+      <li><b>The rebuilt loop &middot; rounds 12&ndash;14</b><span>The quota is removed, only the floor seats raise blockers, and fixes land one at a time. 6.2 to 8.6 in three rounds — further than the nine before them.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <p class="kick">The faults</p>
+    <h2>Four reasons nine rounds could not finish</h2>
+    <ul class="ledger">
+      <li><em>Rounds 1&ndash;9</em><b>The panel was contractually unable to pass</b><span>The seat schema carried <code>findings: { minItems: 3 }</code>. Seven seats times three is twenty-one, and the observed minimum confirmed count across eight recorded rounds is <strong>exactly twenty-one</strong>. A seat that believed the work had reached the bar was still obliged to produce three defects. A unanimous 9.5 was arithmetically unreachable no matter how good the artifact became. This is the single reason nine rounds of honest work never converged.</span></li>
+      <li><em>Rounds 1&ndash;9</em><b>The work missed the binding constraint</b><span>The gate is the lowest seat. Across eight rounds the floor seat rotated through five different seats while every round fixed the findings of all seven. Most of the fixing each round could not raise the score, by definition.</span></li>
+      <li><em>20% of round 9</em><b>The loop manufactured its own defects</b><span>Four of round 9's twenty confirmed findings were caused by round 8's fixes: a regex whose <code>\s</code> was lost to shell escaping, silently disabling a rule that was then reported as a design decision; a click handler that made the word-safe drag shipped in the same batch unreachable; a desk budget that forgot the peel and drove the second plane to nothing at 1440&times;960; and a gate rule that failed the correct technique while never checking the real defect. All of it from landing twenty-odd fixes in one batch and running the gates once at the end.</span></li>
+      <li><em>120 frames, 26MB</em><b>It graded work that was not the product</b><span>The shot harness rendered three rooms from a query parameter that matched no key in the preset table, so all three fell back to the locked preset. Verified by checksum: <strong>36 of each room's 40 frames were byte-identical</strong> to the locked frames. The four that differed did so because the dictation waveform used <code>Math.random()</code>. Every round shot and committed duplicate frames for three rooms that did not exist.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <p class="kick">The measurement</p>
+    <h2>The instrument stopped being able to resolve the question</h2>
+    <div class="col">
+      <p>Between rounds 13 and 14 the artifact <strong>strictly improved</strong>: twelve confirmed defects closed, the behaviour gate up forty-five assertions, nothing regressed. Seven blind seats were asked to grade it again.</p>
+    </div>
+    <div class="tblWrap" style="margin-top:28px;max-width:44rem">
+      <table class="noise">
+        <thead><tr><th>Seat</th><th>Round 13</th><th>Round 14</th><th>Change</th></tr></thead>
+        <tbody>
+          <tr><th>Typography</th><td>9.4</td><td>8.9</td><td class="dn">&minus;0.5</td></tr>
+          <tr><th>UI composition</th><td>9.0</td><td>8.7</td><td class="dn">&minus;0.3</td></tr>
+          <tr><th>Product taste</th><td>8.6</td><td>9.1</td><td>+0.5</td></tr>
+          <tr><th>Brand and copy</th><td>8.8</td><td>9.2</td><td>+0.4</td></tr>
+          <tr><th>Interaction and states</th><td>8.7</td><td>8.9</td><td>+0.2</td></tr>
+          <tr><th>UX and information design</th><td>&mdash;</td><td>&mdash;</td><td class="dn">&minus;0.1</td></tr>
+          <tr><th>Measured evidence</th><td>&mdash;</td><td>&mdash;</td><td class="dn">&minus;0.1</td></tr>
+        </tbody>
+        <tfoot><tr><th>Mean change</th><td></td><td></td><td>+0.01</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="col" style="margin-top:30px">
+      <p><strong>Mean change +0.01. Individual seats &plusmn;0.5. The floor did not move at all.</strong> Per-seat noise is larger than the remaining distance to 9.5, and far larger than the per-round signal. The Typography seat signed off at 9.5 in round 10 and un-signed three times afterwards, every time on strictly better work.</p>
+      <p>That is not a threshold this instrument can measure. Continuing to chase it would have meant termination depending on which seven reviewers happened to be drawn &mdash; not a quality bar, a lottery with a good prize.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kick">The replacement</p>
+    <h2>A gate the measurement can resolve</h2>
+    <div class="col"><p>Three conditions, all of which must hold. Any one failing keeps the programme open. It is a harder bar in the ways that matter, because none of the three can be satisfied by a lucky draw of reviewers.</p></div>
+    <ol class="gateList" style="margin-top:30px">
+      <li><b>The floor is 8.5 or better</b><span>The lowest of seven blind seats, sustained across a round, not a single lucky sample.</span><em>held &middot; 8.6</em></li>
+      <li><b>No confirmed blocker costs more than 0.5</b><span>A defect worth more than half a point is one round away from being fixed, and the programme stays open until it is.</span><em>held &middot; 0 above 0.5</em></li>
+      <li><b>Nothing promise-breaking survives</b><span>A control that does nothing, a string that is not true, a payload you cannot see. These are not scored, they are disqualifying.</span><em>held &middot; none</em></li>
+    </ol>
+    <div class="note" style="margin-top:34px">
+      <p><strong>9.5 remains the aspiration, and every seat is still asked for its sign-off.</strong> The sign-offs are still recorded in the Elevation Log round by round. What changed is that they no longer decide when the loop closes.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="kick">Unchanged</p>
+    <h2>What the change did not touch</h2>
+    <div class="col">
+      <p>The direction lock, the architecture, the three-colour lock, Geist at 400 and 600, the copy rules, the voice disclosure, the five named benchmarks, the adversarial refuter defaulting to refused, both gates exiting zero, and the score being the lowest seat rather than the average.</p>
+      <p>Everything that made the panel worth running is still running. The only thing removed was a finishing line the instrument could not see.</p>
+    </div>
+  </section>
+
+  <p class="foot">
+    Exploration only. The record is <code>docs/design/labs/notes-2026-08/panel.json</code>, fourteen rounds deep;
+    the round table above is generated from it. The full diagnosis, including the retired runner and the fix protocol
+    that replaced it, is <code>docs/design/notes-gate-method-2026-08.md</code>.
+    Findings counted here are only those that survived an adversarial refuter defaulting to refused.
+  </p>
+
+</div>
+
+
+<style id="famCss">
+/* ── the family rail ────────────────────────────────────────────────────
+   One band, five documents, always at the top. It is the only chrome the
+   three elevations share, so it carries the whole burden of making them
+   read as one operation: the same dot, the same numbering, the same
+   indigo under whichever document you are standing in.
+   ──────────────────────────────────────────────────────────────────── */
+.famRail {
+  --f-ink: #111111;
+  --f-indigo: #4f46e5;
+  --f-paper: #ffffff;
+  --f-1: var(--f-ink);
+  --f-2: rgba(17, 17, 17, 0.66);
+  --f-3: rgba(17, 17, 17, 0.44);
+  --f-line: rgba(17, 17, 17, 0.11);
+  --f-wash: rgba(17, 17, 17, 0.045);
+  --f-veil: rgba(255, 255, 255, 0.86);
+  --f-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  position: sticky;
+  top: 0;
+  z-index: 9000;
+  font-family: var(--f-sans);
+  background: var(--f-veil);
+  border-bottom: 1px solid var(--f-line);
+  color: var(--f-1);
+  -webkit-font-smoothing: antialiased;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .famRail { -webkit-backdrop-filter: saturate(1.6) blur(14px); backdrop-filter: saturate(1.6) blur(14px); }
+}
+
+/* the ink ground — consoles are instruments and stay dark either way */
+.famRail[data-fam-ground="ink"] {
+  --f-1: #f6f6f7;
+  --f-2: rgba(246, 246, 247, 0.62);
+  --f-3: rgba(246, 246, 247, 0.40);
+  --f-line: rgba(255, 255, 255, 0.13);
+  --f-wash: rgba(255, 255, 255, 0.06);
+  --f-indigo: #8b84f3;
+  --f-veil: rgba(12, 12, 13, 0.86);
+}
+@media (prefers-color-scheme: dark) {
+  .famRail[data-fam-ground="paper"]:not([data-fam-force="light"]) {
+    --f-1: #f6f6f7;
+    --f-2: rgba(246, 246, 247, 0.62);
+    --f-3: rgba(246, 246, 247, 0.40);
+    --f-line: rgba(255, 255, 255, 0.13);
+    --f-wash: rgba(255, 255, 255, 0.06);
+    --f-indigo: #8b84f3;
+    --f-veil: rgba(12, 12, 13, 0.86);
+  }
+}
+:root[data-theme="dark"] .famRail[data-fam-ground="paper"] {
+  --f-1: #f6f6f7;
+  --f-2: rgba(246, 246, 247, 0.62);
+  --f-3: rgba(246, 246, 247, 0.40);
+  --f-line: rgba(255, 255, 255, 0.13);
+  --f-wash: rgba(255, 255, 255, 0.06);
+  --f-indigo: #8b84f3;
+  --f-veil: rgba(12, 12, 13, 0.86);
+}
+:root[data-theme="light"] .famRail[data-fam-ground="paper"] {
+  --f-1: #111111;
+  --f-2: rgba(17, 17, 17, 0.66);
+  --f-3: rgba(17, 17, 17, 0.44);
+  --f-line: rgba(17, 17, 17, 0.11);
+  --f-wash: rgba(17, 17, 17, 0.045);
+  --f-indigo: #4f46e5;
+  --f-veil: rgba(255, 255, 255, 0.86);
+}
+
+.famRail * { box-sizing: border-box; }
+.famRail-in {
+  display: flex;
+  align-items: stretch;
+  gap: 26px;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-height: 52px;
+}
+
+/* the mark */
+.famRail-mark {
+  display: flex; align-items: center; gap: 8px;
+  flex: 0 0 auto;
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: -0.006em;
+  color: var(--f-2);
+  white-space: nowrap;
+  border: 0; background: none; padding: 0;
+}
+.famRail-mark b { font-weight: 500; color: var(--f-1); }
+.famRail-mark i { font-style: normal; color: var(--f-3); margin: 0 1px; }
+.famRail-mark em { font-style: normal; font-weight: 500; color: var(--f-1); }
+a.famRail-mark:hover em { color: var(--f-indigo); }
+.famRail-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--f-indigo); flex: 0 0 auto;
+}
+
+/* the five */
+.famRail-set {
+  display: flex; align-items: stretch; gap: 2px;
+  list-style: none; margin: 0; padding: 0;
+  flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+.famRail-set::-webkit-scrollbar { display: none; }
+.famRail-item { display: flex; flex: 0 0 auto; }
+.famRail-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 11px;
+  text-decoration: none;
+  color: var(--f-2);
+  font-size: 13px;
+  letter-spacing: -0.004em;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+a.famRail-link:hover { color: var(--f-1); background: var(--f-wash); }
+a.famRail-link:focus-visible {
+  outline: 2px solid var(--f-indigo); outline-offset: -3px; border-radius: 3px;
+}
+.famRail-n {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: 0.06em; color: var(--f-3);
+  font-variant-numeric: tabular-nums;
+  transition: color 140ms ease;
+}
+a.famRail-link:hover .famRail-n { color: var(--f-2); }
+.famRail-item.is-here .famRail-link {
+  color: var(--f-1); font-weight: 500;
+  border-bottom-color: var(--f-indigo);
+  cursor: default;
+}
+.famRail-item.is-here .famRail-n { color: var(--f-indigo); }
+.famRail-item.is-soon .famRail-link { color: var(--f-3); cursor: default; }
+
+/* the other two elevations */
+.famRail-sibs {
+  display: flex; align-items: center; gap: 12px;
+  flex: 0 0 auto; padding-left: 22px;
+  border-left: 1px solid var(--f-line);
+}
+.famRail-sibsLabel {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--f-3);
+}
+.famRail-sib {
+  font-size: 13px; text-decoration: none; color: var(--f-2);
+  white-space: nowrap;
+  transition: color 140ms ease;
+}
+a.famRail-sib:hover { color: var(--f-indigo); }
+a.famRail-sib:focus-visible { outline: 2px solid var(--f-indigo); outline-offset: 2px; border-radius: 3px; }
+.famRail-sib.is-soon { color: var(--f-3); }
+
+@media (max-width: 1180px) {
+  .famRail-sibsLabel { display: none; }
+  .famRail-in { gap: 18px; }
+}
+@media (max-width: 900px) {
+  .famRail-mark b, .famRail-mark i { display: none; }
+  .famRail-in { padding: 0 16px; gap: 14px; }
+  .famRail-sibs { padding-left: 14px; gap: 10px; }
+}
+@media (max-width: 620px) {
+  .famRail-sibs { display: none; }
+  .famRail-link { padding: 0 9px; }
+  .famRail-t { display: none; }
+  .famRail-item.is-here .famRail-t { display: inline; }
+  .famRail-n { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .famRail-set { scroll-behavior: auto; }
+  .famRail-link, .famRail-n, .famRail-sib { transition: none; }
+}
+@media print { .famRail { display: none; } }
+</style>

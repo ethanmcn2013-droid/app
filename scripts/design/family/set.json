@@ -1,0 +1,115 @@
+{
+  "note": "The canonical map of the August 2026 elevation family. Three products, five documents each. Every artifact's top rail is generated from this file, so a URL is corrected in one place and lands in fifteen pages.",
+  "docs": [
+    {
+      "slot": "ceo",
+      "n": "01",
+      "label": "CEO Report",
+      "blurb": "The whole elevation on one page — what changed, what it cost, and what is left."
+    },
+    {
+      "slot": "console",
+      "n": "02",
+      "label": "Design Console",
+      "blurb": "The real product, live, with every locked decision as a switch you can throw."
+    },
+    {
+      "slot": "log",
+      "n": "03",
+      "label": "Elevation Log",
+      "blurb": "Every round, every seat, every finding and every refutation, unedited."
+    },
+    {
+      "slot": "question",
+      "n": "04",
+      "label": "The 9.5 Question",
+      "blurb": "Why the score stopped where it did, and whether the gate was the right one."
+    },
+    {
+      "slot": "method",
+      "n": "05",
+      "label": "The Method",
+      "blurb": "The loop that produced all of this, rated against its own results."
+    }
+  ],
+  "products": {
+    "notes": {
+      "name": "Notes",
+      "order": 1,
+      "rounds": 14,
+      "roundWord": "Fourteen",
+      "worktree": "_wt-design-notes",
+      "lab": "docs/design/labs/notes-2026-08",
+      "files": {
+        "ceo": "ceo.html",
+        "console": "console.html",
+        "log": "log.html",
+        "question": "question.html",
+        "method": "retro.html"
+      },
+      "shells": {
+        "console": "console.shell.html",
+        "log": "log.shell.html"
+      },
+      "urls": {
+        "ceo": "https://claude.ai/code/artifact/ad46252f-e1d6-48e3-b0cb-ecdd950280d4",
+        "console": "https://claude.ai/code/artifact/23178180-3a00-4809-a08b-2c88bc6b1083",
+        "log": "https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25",
+        "question": "https://claude.ai/code/artifact/a70ffa75-d013-4e30-b62e-39cc7715e720",
+        "method": "https://claude.ai/code/artifact/9764061d-9ae6-4a58-858b-b8e54060cd11"
+      }
+    },
+    "tasks": {
+      "name": "Tasks",
+      "order": 2,
+      "rounds": 19,
+      "roundWord": "Nineteen",
+      "worktree": "_wt-design-tasks",
+      "lab": "docs/design/labs/tasks-2026-08",
+      "files": {
+        "ceo": "ceo.html",
+        "console": "customizer.html",
+        "log": "report.html",
+        "question": "ceo-report.html",
+        "method": "loop-retro.html"
+      },
+      "shells": {
+        "console": "customizer.shell.html",
+        "log": "report.shell.html"
+      },
+      "urls": {
+        "ceo": "https://claude.ai/code/artifact/457fc8fe-4171-41b0-ad45-a3ba8d993b85",
+        "console": "https://claude.ai/code/artifact/ec6277a9-49d3-4f69-a568-8fbb0c98f6c6",
+        "log": "https://claude.ai/code/artifact/1da5fc96-aae2-4980-8c79-f417ff30dc88",
+        "question": "https://claude.ai/code/artifact/e58b1fcc-274d-43bf-9314-2af5bb435d7b",
+        "method": "https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6"
+      }
+    },
+    "timeline": {
+      "name": "Timeline",
+      "order": 3,
+      "rounds": 12,
+      "roundWord": "Twelve",
+      "worktree": "_wt-timeline-redesign",
+      "lab": "docs/design/labs/timeline-redesign-2026-08",
+      "files": {
+        "ceo": "ceo.html",
+        "console": "console.html",
+        "log": "report.html",
+        "question": "session-record.html",
+        "method": "method-review.html"
+      },
+      "shells": {
+        "console": "console.shell.html",
+        "log": "report.shell.html"
+      },
+      "urls": {
+        "ceo": "https://claude.ai/code/artifact/30aa3dd7-97d7-4e4e-bfac-48d331488862",
+        "console": "https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f",
+        "log": "https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19",
+        "question": "https://claude.ai/code/artifact/4be95a6e-fe0b-46fb-b2f7-c2c41a15f2f6",
+        "method": "https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd"
+      }
+    }
+  }
+}
