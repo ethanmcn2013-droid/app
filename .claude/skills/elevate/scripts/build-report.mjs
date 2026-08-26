@@ -69,6 +69,15 @@ const meta = {
   captions: report.captions ?? {},
   variants: report.variants ?? [],
   footNote: report.footNote ?? `Exploration only. Branch design/${config.name}-exploration, no pull request and no deploy.`,
+  /* Every artifact this engagement publishes, so each one can carry a
+     way into the others. A reader who lands on any of them should never
+     have to go back to a chat log to find the rest. */
+  artifacts: config.artifacts ?? {},
+  /* The founder's read, ahead of everything else on the page. */
+  summary: report.summary ?? null,
+  /* How the elevated design gets into production, with the prompt that
+     starts it. A lab that has not decided this renders no section. */
+  handover: report.handover ?? null,
 };
 
 if (panel.gate === undefined) panel.gate = config.gate;

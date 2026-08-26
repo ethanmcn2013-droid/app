@@ -1,0 +1,484 @@
+<title>The Method Under Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+  /* Held to the palette lock it is reviewing: three colours, two faces,
+     two weights, hairlines, one indigo moment - and the ink room as its
+     dark twin rather than a theme laid over it. */
+  :root {
+    --ground: #f6f6f6;
+    --card: #ffffff;
+    --fore: #111111;
+    --fore-72: rgba(17, 17, 17, 0.72);
+    --fore-62: rgba(17, 17, 17, 0.62);
+    --fore-46: rgba(17, 17, 17, 0.46);
+    --fore-28: rgba(17, 17, 17, 0.28);
+    --fore-16: rgba(17, 17, 17, 0.16);
+    --fore-06: rgba(17, 17, 17, 0.06);
+    --accent: #4f46e5;
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #111111;
+      --card: #191919;
+      --fore: #ffffff;
+      --fore-72: rgba(255, 255, 255, 0.72);
+      --fore-62: rgba(255, 255, 255, 0.62);
+      --fore-46: rgba(255, 255, 255, 0.46);
+      --fore-28: rgba(255, 255, 255, 0.28);
+      --fore-16: rgba(255, 255, 255, 0.16);
+      --fore-06: rgba(255, 255, 255, 0.06);
+      --accent: #7c74f0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #111111;
+    --card: #191919;
+    --fore: #ffffff;
+    --fore-72: rgba(255, 255, 255, 0.72);
+    --fore-62: rgba(255, 255, 255, 0.62);
+    --fore-46: rgba(255, 255, 255, 0.46);
+    --fore-28: rgba(255, 255, 255, 0.28);
+    --fore-16: rgba(255, 255, 255, 0.16);
+    --fore-06: rgba(255, 255, 255, 0.06);
+    --accent: #7c74f0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--fore);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── the switcher ───────────────────────────────────────────── */
+  .switch { border-bottom: 1px solid var(--fore-28); }
+  .switchRow { max-width: 940px; margin: 0 auto; padding: 0 28px; display: grid; }
+  @media (min-width: 720px) { .switchRow { grid-template-columns: repeat(4, 1fr); } }
+  .switchRow a, .switchRow span {
+    display: block; padding: 18px 24px 16px 0;
+    border-top: 2px solid transparent; text-decoration: none; color: inherit;
+  }
+  .switchRow a { border-bottom: 1px solid var(--fore-06); }
+  @media (min-width: 720px) { .switchRow a { border-bottom: 0; } }
+  .switchRow b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--fore-62); }
+  .switchRow i {
+    display: block; font-style: normal; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--fore-46); margin-top: 5px;
+  }
+  .switchRow a:hover b { color: var(--fore); }
+  .switchRow .here { border-top-color: var(--accent); }
+  .switchRow .here b { color: var(--fore); }
+  .switchRow .here i { color: var(--accent); }
+
+  .wrap { max-width: 940px; margin: 0 auto; padding: 64px 28px 120px; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fore-62); margin: 0; }
+  h1 { font-size: clamp(30px, 4.2vw, 44px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; margin: 14px 0 0; }
+  .standfirst { max-width: 62ch; font-size: 18px; color: var(--fore-72); margin: 18px 0 0; text-wrap: pretty; }
+
+  section { margin-top: 72px; }
+  h2 {
+    font-family: var(--mono); font-size: 11px; font-weight: 400; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--fore-62); margin: 0 0 22px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--fore-16);
+  }
+  h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance; }
+  p { margin: 0 0 14px; max-width: 68ch; text-wrap: pretty; }
+  p:last-child { margin-bottom: 0; }
+  a { color: var(--fore); text-decoration-color: var(--fore-28); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  code { font-family: var(--mono); font-size: 0.92em; }
+
+  /* ── the rating ─────────────────────────────────────────────── */
+  .rate { display: grid; gap: 40px; align-items: start; }
+  @media (min-width: 760px) { .rate { grid-template-columns: minmax(0, 240px) minmax(0, 1fr); gap: 48px; } }
+  .rate .n { font-variant-numeric: tabular-nums; }
+  .rate .n b { display: block; font-size: clamp(88px, 13vw, 132px); font-weight: 400; line-height: 0.86; letter-spacing: -0.045em; }
+  .rate .n span { display: block; font-family: var(--mono); font-size: 13px; color: var(--fore-62); margin-top: 14px; }
+  .split { display: grid; gap: 0; }
+  .split div { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: baseline; padding: 11px 0; border-bottom: 1px solid var(--fore-06); }
+  .split div:last-child { border-bottom: 0; }
+  .split em { font-style: normal; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; }
+  .split div[data-low="true"] em { color: var(--accent); }
+
+  .items { display: grid; margin-top: 4px; }
+  .item { padding: 26px 0; border-top: 1px solid var(--fore-16); }
+  .item:last-child { border-bottom: 1px solid var(--fore-16); }
+  .kind { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fore-46); display: block; margin-bottom: 8px; }
+  .item p { font-size: 15px; color: var(--fore-72); margin: 0 0 12px; }
+  .item p:last-child { margin-bottom: 0; }
+  .fix { margin-top: 12px; padding: 14px 18px; background: var(--card); border-left: 1px solid var(--accent); }
+  .fix p { color: var(--fore); margin: 0; font-size: 15px; }
+  .fix span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 6px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 15px; }
+  th, td { text-align: left; padding: 12px 14px 12px 0; border-bottom: 1px solid var(--fore-06); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fore-62); font-weight: 400; border-bottom-color: var(--fore-16); }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .scroller { overflow-x: auto; }
+
+  footer { margin-top: 88px; padding-top: 22px; border-top: 1px solid var(--fore-16); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fore-46); display: flex; flex-wrap: wrap; gap: 8px 26px; }
+</style>
+
+<nav class="switch" aria-label="This engagement's artifacts">
+  <div class="switchRow">
+    <a href="https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f"><b>The Console</b><i>drive the room</i></a>
+    <a href="https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19"><b>The Log</b><i>every round, every defect</i></a>
+    <a href="https://claude.ai/code/artifact/4be95a6e-fe0b-46fb-b2f7-c2c41a15f2f6"><b>The Record</b><i>where it landed</i></a>
+    <span class="here"><b>The Method</b><i>how the loop performed</i></span>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <p class="eyebrow">Signal Timeline · retrospective on the elevate skill</p>
+  <h1>The method under review</h1>
+  <p class="standfirst">
+    Twelve rounds is enough to judge the instrument as well as the work. This is
+    what the elevate skill got right, what it got wrong, and what I would change
+    before running it again — written by the agent that ran it, on the assumption
+    that a report which only praises the method is worthless.
+  </p>
+
+  <section>
+    <h2>The rating</h2>
+    <div class="rate">
+      <div class="n">
+        <b>7.5</b>
+        <span>Out of 10, as the skill<br>stood at the start of<br>this engagement.</span>
+      </div>
+      <div>
+        <p>
+          The skill's core is genuinely excellent and I would not want to work
+          without it. Its scoring apparatus is the weak part, and it cost roughly
+          half the engagement.
+        </p>
+        <div class="split">
+          <div><span>Blind parallel seats</span><em>9.5</em></div>
+          <div><span>Adversarial refuters</span><em>9.5</em></div>
+          <div><span>Automated gates, grown per defect</span><em>10</em></div>
+          <div><span>Drive the real file, never frames</span><em>10</em></div>
+          <div><span>Two living artifacts, republished</span><em>9</em></div>
+          <div data-low="true"><span>The finding quota</span><em>2</em></div>
+          <div data-low="true"><span>The 9.5-unanimous stopping rule</span><em>4</em></div>
+          <div><span>Guidance on when to stop</span><em>5</em></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the method got right</h2>
+
+    <div class="items">
+      <div class="item">
+        <span class="kind">Keep exactly as is</span>
+        <h3>Every finding meets a refuter that defaults to rejection</h3>
+        <p>
+          This is the single best mechanic in the skill. It killed 115 of 366
+          findings across twelve rounds, and — more valuable — it repeatedly
+          <em>sharpened</em> the ones that survived: refuters corrected the seat's
+          proposed numbers, rejected fixes that would have introduced silent
+          truncation, and tied remedies back to existing accessors so one fact kept
+          one writer. Several found the defect worse than filed.
+        </p>
+      </div>
+
+      <div class="item">
+        <span class="kind">Keep exactly as is</span>
+        <h3>Every fix ships with a gate assertion, written first and failing</h3>
+        <p>
+          The behaviour gate went from a planted skeleton to 845 assertions, each
+          one existing because a reviewer found the defect it now guards. This is
+          the only part of the engagement that will still be paying out in a year.
+          The discipline of writing the assertion <em>before</em> the fix caught
+          three of my own checks passing vacuously in the final round alone.
+        </p>
+      </div>
+
+      <div class="item">
+        <span class="kind">Keep exactly as is</span>
+        <h3>Grading drives the real file from round one</h3>
+        <p>
+          Almost every serious defect this engagement found was invisible in a
+          screenshot: a stale CSS variable after a resize, a focus ring that
+          resolved to white on white, an opaque plate that deleted a field label
+          two clicks into the flow, a comment describing a fix that did not exist.
+          A panel reviewing images would have found none of them.
+        </p>
+      </div>
+
+      <div class="item">
+        <span class="kind">Keep, with one addition</span>
+        <h3>The settled ledger</h3>
+        <p>
+          Fifty-nine findings raised, killed, and recorded with the measured reason
+          they died. It stopped the panel relitigating the same three objections
+          every round and saved a great many refuters.
+        </p>
+        <div class="fix">
+          <span>Add</span>
+          <p>
+            It only records what was <em>refuted</em>. It should also record what
+            was <em>fixed</em>, because seats re-reported fixed items constantly
+            until I started listing them by hand in the round notes.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the method got wrong</h2>
+
+    <div class="items">
+      <div class="item">
+        <span class="kind">Critical · cost nine rounds</span>
+        <h3>The finding quota made the gate unreachable by construction</h3>
+        <p>
+          The seat schema required <code>minItems: 3</code>. Seven blind seats
+          therefore produced 33–35 findings every round whether or not 33 defects
+          existed. Because the gate is the lowest seat, the floor measured the
+          quota rather than the work.
+        </p>
+        <p>
+          The evidence was visible for nine rounds and I did not read it: the
+          ceiling climbed 7.6 → 9.0 almost monotonically while the floor sawtoothed
+          6.2 → 8.2 with two falls, and the refutation rate rose from 6% to 66% —
+          the panel filing to fill a slot, refuters spending their time killing it.
+        </p>
+        <div class="fix">
+          <span>Fixed mid-engagement · round 10</span>
+          <p>
+            Minimum removed, brief rewritten to say zero is an expected answer.
+            Findings fell 33 → 13, refutation fell to zero, and the floor moved
+            7.2 → 8.6 → 9.1 in two rounds. Every seat rose, twice running.
+          </p>
+        </div>
+      </div>
+
+      <div class="item">
+        <span class="kind">Critical · unfixed, and why I stopped</span>
+        <h3>Near the top, the gate measures the sampling rather than the work</h3>
+        <p>
+          The score is the minimum of seven independent adversarial samples. Even
+          if true quality were exactly 9.5, seven samples each drifting a tenth or
+          two would put the minimum below 9.5 most of the time. The minimum of N
+          noisy measurements is biased downward, and the bias grows with N.
+        </p>
+        <p>
+          This is the residual form of the quota error: at 7.0 a unanimous 9.5 is
+          an excellent forcing function; at 9.3 it is a poor instrument. The skill
+          offers no guidance on this transition, and I only diagnosed it after the
+          floor sat at 9.1 for two rounds while findings rose from 13 to 19.
+        </p>
+        <div class="fix">
+          <span>Recommend</span>
+          <p>
+            Make the mechanical ending primary rather than a footnote: two
+            consecutive rounds with no confirmed finding at 0.3 or above, both
+            gates green, on the shipping configuration. Report scores, never gate
+            on them. A score is a reading; the finding ledger is a measurement.
+          </p>
+        </div>
+      </div>
+
+      <div class="item">
+        <span class="kind">Serious</span>
+        <h3>Nothing in the method notices that fixes create defects</h3>
+        <p>
+          Four of the final round's nineteen findings were defects introduced by the
+          previous round's fixes — including one of mine where a character class
+          lost a backslash and silently matched a letter. The loop has no concept of
+          this rate, so it cannot tell "the work is improving" from "the work is
+          churning".
+        </p>
+        <div class="fix">
+          <span>Recommend</span>
+          <p>
+            Tag each finding with whether it lands on code the previous round
+            touched, and record the ratio per round. When fix-induced findings pass
+            roughly a quarter of the total, the loop is done regardless of score.
+          </p>
+        </div>
+      </div>
+
+      <div class="item">
+        <span class="kind">Serious</span>
+        <h3>The panel is never a user</h3>
+        <p>
+          Twelve rounds, seven expert seats, and not one minute of a person opening
+          the thing cold. The seats are extraordinarily good at finding defects and
+          structurally incapable of finding confusion — nobody asked whether a
+          first-time owner understands what the product <em>is</em>.
+        </p>
+        <div class="fix">
+          <span>Recommend</span>
+          <p>
+            Add a first-contact gate to the method between the pick and the loop,
+            and repeat it at close. This repo already ships one; the skill does not
+            know about it.
+          </p>
+        </div>
+      </div>
+
+      <div class="item">
+        <span class="kind">Moderate</span>
+        <h3>A green gate is not evidence that the gate tests anything</h3>
+        <p>
+          The engagement found several assertions passing while proving nothing: a
+          forced-colours check reading computed style, which reports what the author
+          wrote rather than what the compositor painted; a refusal check asserting
+          words the surface also uses when it <em>accepts</em>; and three of my own
+          new checks in the final round, one of which seeded a moment after the
+          render and never built a row for it.
+        </p>
+        <div class="fix">
+          <span>Recommend</span>
+          <p>
+            Make it a rule, not a habit: every new assertion must be observed
+            failing against the unfixed code, and the failure recorded. And add a
+            standing instruction to the measured-evidence seat to hunt vacuous
+            assertions — it found several and they were among the round's most
+            valuable findings.
+          </p>
+        </div>
+      </div>
+
+      <div class="item">
+        <span class="kind">Moderate · cost two rounds of confusion</span>
+        <h3>Grading rooms nobody will ship</h3>
+        <p>
+          Until round 10 the panel graded four or five configuration presets. Two
+          thirds of every round was spent on work that would never exist, and the
+          defects that actually mattered — in the room the founder had picked —
+          were only found once that room became the subject.
+        </p>
+        <div class="fix">
+          <span>Fixed mid-engagement · already in the skill</span>
+          <p>
+            Grade the shipping configuration and its ground-flipped twin, and
+            nothing else. This is now non-negotiable 12.
+          </p>
+        </div>
+      </div>
+
+      <div class="item">
+        <span class="kind">Process, not skill</span>
+        <h3>Regexes written through a shell lost their escapes, four times</h3>
+        <p>
+          <code>[\s,;:]</code> became <code>[s,;:]</code> and matched the letter s.
+          Twice in gate assertions, where it silently made checks vacuous, and once
+          in shipped product code, where the panel caught it. This is my error, not
+          the skill's, but a method that generates a lot of patch code should name
+          the trap.
+        </p>
+        <div class="fix">
+          <span>Now a rule</span>
+          <p>
+            Anything containing a regex is written to a file with an editor tool and
+            verified against its own inputs before it lands. Never through a
+            heredoc.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>What the numbers say</h2>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th>Era</th><th>Rounds</th><th>Findings / round</th><th>Refuted</th><th>Floor movement</th><th>Read</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Quota, all presets</td>
+            <td class="num">1–9</td>
+            <td class="num">33–35</td>
+            <td class="num">6% → 66%</td>
+            <td class="num">6.2 → 8.2, two falls</td>
+            <td>The floor tracked the quota, not the work.</td>
+          </tr>
+          <tr>
+            <td>No quota, shipping room only</td>
+            <td class="num">10–12</td>
+            <td class="num">22 → 13 → 19</td>
+            <td class="num">9% → 0% → 0%</td>
+            <td class="num">8.6 → 9.1 → 9.1</td>
+            <td>Accurate panel, flat floor: a tail, not a gap.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:22px">
+      The cleanest single signal in the whole engagement: <strong>thirty-two
+      consecutive confirmed findings across rounds 11 and 12, with zero
+      refutations</strong>, while the floor did not move. A panel that accurate and
+      a score that static cannot both be measuring the same thing.
+    </p>
+  </section>
+
+  <section>
+    <h2>If I ran it again</h2>
+    <div class="items">
+      <div class="item">
+        <span class="kind">Change 1</span>
+        <h3>Stop on the ledger, report the score</h3>
+        <p>
+          Two consecutive rounds with no confirmed finding at 0.3 or above, both
+          gates green, on the shipping configuration. Scores go in the log because
+          founders want them; they never decide anything.
+        </p>
+      </div>
+      <div class="item">
+        <span class="kind">Change 2</span>
+        <h3>Front-load the cheap gates before spending a single seat</h3>
+        <p>
+          Rounds 1–4 found things a linter would have caught. The measured gate,
+          the behaviour skeleton and a first-contact pass should all be green
+          before the panel is convened; the panel is the expensive instrument and
+          should only ever see work that has already survived the cheap ones.
+        </p>
+      </div>
+      <div class="item">
+        <span class="kind">Change 3</span>
+        <h3>Three seats for most rounds, seven for the audit</h3>
+        <p>
+          Seven blind seats every round is the largest cost in the method and its
+          value is front-loaded — by round 10 whole seats were returning one
+          finding. Rotate a subset per round and convene the full panel only at
+          the start, at the halfway audit, and at close. The blindness is what
+          matters, not the count.
+        </p>
+      </div>
+      <div class="item">
+        <span class="kind">Change 4</span>
+        <h3>Give the loop a budget at the outset</h3>
+        <p>
+          The skill has two honest endings and no notion of cost. Twelve rounds is
+          a great deal of compute for the last four tenths, and nothing in the
+          method ever said so. A declared round budget, with the honest-distance
+          ending as the default at the end of it, would have closed this
+          engagement around round eight with substantially the same artifact.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Signal Timeline · direction B</span>
+    <span>Twelve rounds · 366 findings · 251 fixed</span>
+    <span>Written 2026-08-26</span>
+  </footer>
+
+</div>

@@ -49,6 +49,26 @@
     --accent: #7c74f0;
   }
 
+  /* ── the switcher ───────────────────────────────────────────── */
+  .switch { border-bottom: 1px solid var(--fore-28); }
+  .switchRow { max-width: 940px; margin: 0 auto; padding: 0 28px; display: grid; }
+  @media (min-width: 720px) { .switchRow { grid-template-columns: repeat(4, 1fr); } }
+  .switchRow a, .switchRow span {
+    display: block; padding: 18px 24px 16px 0;
+    border-top: 2px solid transparent; text-decoration: none; color: inherit;
+  }
+  .switchRow a { border-bottom: 1px solid var(--fore-06); }
+  @media (min-width: 720px) { .switchRow a { border-bottom: 0; } }
+  .switchRow b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--fore-62); }
+  .switchRow i {
+    display: block; font-style: normal; font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--fore-46); margin-top: 5px;
+  }
+  .switchRow a:hover b { color: var(--fore); }
+  .switchRow .here { border-top-color: var(--accent); }
+  .switchRow .here b { color: var(--fore); }
+  .switchRow .here i { color: var(--accent); }
+
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -59,7 +79,7 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 940px; margin: 0 auto; padding: 72px 28px 120px; }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 64px 28px 120px; }
 
   .eyebrow {
     font-family: var(--mono);
@@ -243,6 +263,15 @@
 
   footer { margin-top: 88px; padding-top: 22px; border-top: 1px solid var(--fore-16); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fore-46); display: flex; flex-wrap: wrap; gap: 8px 26px; }
 </style>
+
+<nav class="switch" aria-label="This engagement's artifacts">
+  <div class="switchRow">
+    <a href="https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f"><b>The Console</b><i>drive the room</i></a>
+    <a href="https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19"><b>The Log</b><i>every round, every defect</i></a>
+    <span class="here"><b>The Record</b><i>where it landed</i></span>
+    <a href="https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd"><b>The Method</b><i>how the loop performed</i></a>
+  </div>
+</nav>
 
 <div class="wrap">
 

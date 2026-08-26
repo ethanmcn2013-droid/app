@@ -156,6 +156,36 @@ body {
 .stageTab[aria-pressed="true"] { background: var(--white); color: var(--ink); font-weight: 600; }
 .stageTab:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
 
+/* ── the way out to the other three ─────────────────────────────── */
+.elsewhere { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--ui-line); }
+.elseLink {
+  display: block;
+  padding: 9px 0;
+  text-decoration: none;
+  border-bottom: 1px solid var(--ui-line);
+}
+.elseLink:last-child { border-bottom: 0; }
+.elseLink b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--ui-text);
+  transition: color 140ms var(--ease);
+}
+.elseLink i {
+  display: block;
+  font-style: normal;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.34);
+  margin-top: 3px;
+}
+.elseLink:hover b { color: var(--white); }
+.elseLink:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; border-radius: 3px; }
+
 .frame {
   border-radius: 12px;
   overflow: hidden;
@@ -211,6 +241,16 @@ body {
       <pre class="recipe" id="recipe"></pre>
       <button class="reset" id="reset" type="button"></button>
     </div>
+
+    <!-- Four artifacts, one engagement. The console is where a reader
+         usually starts, so it is where the other three have to be
+         reachable from. -->
+    <nav class="group elsewhere" id="elsewhere" aria-label="This engagement's artifacts" hidden>
+      <span class="groupLabel">Elsewhere in this engagement</span>
+      <a class="elseLink" data-key="log" href="#"><b>The Log</b><i>every round, every defect</i></a>
+      <a class="elseLink" data-key="record" href="#"><b>The Record</b><i>where it landed</i></a>
+      <a class="elseLink" data-key="method" href="#"><b>The Method</b><i>how the loop performed</i></a>
+    </nav>
   </aside>
 
   <main class="stage">
@@ -262,6 +302,21 @@ body {
 
   document.title = (META.name ? cap(META.name) + " " : "") + "Design Console";
   document.getElementById("brandWord").textContent = META.name || "design";
+
+  /* The other three artifacts. A link with nowhere to go is removed
+     rather than left as a dead press, and the block only appears once
+     at least one of them exists. */
+  (function () {
+    const urls = META.artifacts || {};
+    const block = document.getElementById("elsewhere");
+    if (!block) return;
+    let shown = 0;
+    Array.prototype.forEach.call(block.querySelectorAll(".elseLink"), function (a) {
+      const url = urls[a.getAttribute("data-key")];
+      if (url) { a.href = url; shown += 1; } else { a.hidden = true; }
+    });
+    if (shown) block.hidden = false;
+  })();
   document.getElementById("presetHelp").textContent = META.presetHelp ||
     (PRESET_KEYS.length + " finished version" + (PRESET_KEYS.length === 1 ? "" : "s") +
      ". Pick one, then change anything you like underneath.");

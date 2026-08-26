@@ -86,6 +86,97 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
 
 .wrap { max-width: var(--page); margin: 0 auto; padding: 0 24px; }
 
+/* ── the switcher ─────────────────────────────────────────────────
+   Four artifacts, one engagement. Whichever one a reader lands on,
+   the other three are one press away and named by what they are FOR,
+   not by their document type. */
+.switch { border-bottom: 1px solid var(--line-strong); }
+.switchRow { max-width: var(--page); margin: 0 auto; padding: 0 24px; display: grid; gap: 0; }
+@media (min-width: 720px) { .switchRow { grid-template-columns: repeat(4, 1fr); } }
+.switchRow a, .switchRow span.here {
+  display: block;
+  padding: 18px 20px 16px 0;
+  border-top: 2px solid transparent;
+  text-decoration: none;
+  color: inherit;
+}
+@media (min-width: 720px) { .switchRow a, .switchRow span.here { padding-right: 24px; } }
+.switchRow a:not(:last-child), .switchRow span.here:not(:last-child) { border-bottom: 1px solid var(--line-soft); }
+@media (min-width: 720px) { .switchRow a, .switchRow span.here { border-bottom: 0 !important; } }
+.switchRow b { display: block; font-size: 15px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink-3); }
+.switchRow i {
+  display: block;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-top: 5px;
+}
+.switchRow a:hover b { color: var(--ink-1); }
+.switchRow a:hover i { color: var(--ink-3); }
+.switchRow .here { border-top-color: var(--indigo); }
+.switchRow .here b { color: var(--ink-1); }
+.switchRow .here i { color: var(--indigo); }
+.switchRow a[hidden] { display: none; }
+
+/* ── the founder's read ───────────────────────────────────────────
+   Before the record, not inside it: the one screen that answers "where
+   is this and what do you want from me" without scrolling. */
+.brief { padding: 40px 0 8px; }
+.briefGrid { display: grid; gap: 30px; }
+@media (min-width: 860px) { .briefGrid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 56px; } }
+.briefLede { font-size: 19px; line-height: 1.55; color: var(--ink-1); margin: 0 0 16px; text-wrap: pretty; }
+.brief p { margin: 0 0 14px; color: var(--ink-2); }
+.brief p:last-child { margin-bottom: 0; }
+.briefStats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); align-self: start; }
+.briefStats div { background: var(--paper); padding: 18px 18px 16px; }
+.briefStats b { display: block; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 26px; letter-spacing: -0.02em; }
+.briefStats i { display: block; font-style: normal; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); margin-top: 6px; }
+.briefStats div[data-mark="true"] b { color: var(--indigo); }
+.askHead { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); margin: 40px 0 14px; }
+.ask { margin: 0; padding: 0; list-style: none; display: grid; gap: 0; }
+.ask li { padding: 13px 0; border-top: 1px solid var(--line); color: var(--ink-2); }
+.ask li:last-child { border-bottom: 1px solid var(--line); }
+.ask li b { color: var(--ink-1); font-weight: 600; }
+
+/* ── the handover ─────────────────────────────────────────────────
+   Three redesigns land in one app. The order is the whole argument, so
+   it is drawn as an order and not as a list of options. */
+.stepGrid { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 34px; }
+@media (min-width: 900px) { .stepGrid { grid-template-columns: repeat(4, 1fr); } }
+.stepGrid > div { background: var(--paper); padding: 20px 20px 22px; }
+.stepGrid .no {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--indigo); display: block; margin-bottom: 10px;
+}
+.stepGrid h4 { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 7px; }
+.stepGrid p { font-size: 14px; color: var(--ink-2); margin: 0; }
+.stepGrid .ship { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); margin-top: 12px; }
+
+.promptWrap { border: 1px solid var(--line-strong); }
+.promptHead {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 18px; border-bottom: 1px solid var(--line-strong); flex-wrap: wrap;
+}
+.promptHead .kicker { margin: 0; }
+.copyBtn {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--paper); background: var(--ink-1); border: 0; border-radius: 4px;
+  padding: 8px 14px; min-height: 32px; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+.copyBtn:hover { background: var(--indigo); }
+.copyBtn:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.prompt {
+  margin: 0; padding: 22px 18px; max-height: 460px; overflow: auto;
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65;
+  color: var(--ink-2); white-space: pre-wrap; word-break: break-word;
+  background: var(--wash);
+}
+.promptNote { margin: 0; padding: 14px 18px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-3); }
+
 .kicker {
   font-family: var(--font-mono);
   font-size: 11px; font-weight: 400;
@@ -251,7 +342,29 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
 <script id="frames" type="application/json">/*__FRAMES__*/</script>
 <script id="meta" type="application/json">/*__META__*/</script>
 
+<nav class="switch" aria-label="This engagement's artifacts">
+  <div class="switchRow">
+    <a id="navConsole" href="#"><b>The Console</b><i>drive the room</i></a>
+    <span class="here"><b>The Log</b><i>every round, every defect</i></span>
+    <a id="navRecord" href="#"><b>The Record</b><i>where it landed</i></a>
+    <a id="navMethod" href="#"><b>The Method</b><i>how the loop performed</i></a>
+  </div>
+</nav>
+
 <div class="wrap">
+  <section class="brief" id="brief" hidden>
+    <p class="kicker">Read this first · 90 seconds</p>
+    <div class="briefGrid">
+      <div>
+        <p class="briefLede" id="briefLede"></p>
+        <div id="briefBody"></div>
+        <p class="askHead">What I need from you</p>
+        <ul class="ask" id="briefAsk"></ul>
+      </div>
+      <div class="briefStats" id="briefStats"></div>
+    </div>
+  </section>
+
   <header class="mast">
     <p class="kicker" id="mastKicker"></p>
     <h1>Taking a locked design to a gate</h1>
@@ -334,6 +447,25 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     </div>
   </section>
 
+  <section class="section" id="handover" hidden>
+    <div class="sectionHead">
+      <p class="kicker">07 · into production</p>
+      <h2 id="handoverTitle"></h2>
+      <p id="handoverLead"></p>
+    </div>
+
+    <div class="stepGrid" id="handoverSteps"></div>
+
+    <div class="promptWrap">
+      <div class="promptHead">
+        <p class="kicker">The prompt · start a fresh session in the app repo and paste this</p>
+        <button class="copyBtn" id="copyPrompt" type="button">Copy</button>
+      </div>
+      <pre class="prompt" id="promptText"></pre>
+      <p class="promptNote" id="promptNote"></p>
+    </div>
+  </section>
+
   <footer class="foot">
     <p class="kicker">How the panel works</p>
     <p>
@@ -381,6 +513,57 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
   document.getElementById("consoleSub").textContent = META.consoleSub || "Drive the live master and change its decisions underneath.";
   document.getElementById("variantsLead").textContent = META.variantsLead || "Each is a preset of the same named design decisions, which is what guarantees every one of them stays on palette. All are live in the console.";
   document.getElementById("footNote").textContent = META.footNote || "";
+
+  /* The switcher. A link with nowhere to go is removed rather than left
+     as a dead press - the same rule the product itself is held to. */
+  const ART = META.artifacts || {};
+  for (const [id, url] of [
+    ["navConsole", ART.console], ["navRecord", ART.record], ["navMethod", ART.method],
+  ]) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (url) el.href = url; else el.hidden = true;
+  }
+
+  /* The handover into production. Rendered only when written. */
+  const H = META.handover;
+  if (H) {
+    const sec = document.getElementById("handover");
+    sec.hidden = false;
+    document.getElementById("handoverTitle").textContent = H.title || "";
+    document.getElementById("handoverLead").textContent = H.lead || "";
+    document.getElementById("handoverSteps").innerHTML = (H.steps || [])
+      .map((s, i) => `<div><span class="no">Step ${i + 1}</span><h4>${s.what}</h4><p>${s.why}</p><span class="ship">${s.ship}</span></div>`)
+      .join("");
+    document.getElementById("promptText").textContent = H.prompt || "";
+    document.getElementById("promptNote").textContent = H.note || "";
+    const btn = document.getElementById("copyPrompt");
+    btn.addEventListener("click", function () {
+      navigator.clipboard.writeText(H.prompt || "").then(function () {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 2000);
+      }, function () {
+        btn.textContent = "Select it and copy";
+        setTimeout(function () { btn.textContent = "Copy"; }, 3000);
+      });
+    });
+  }
+
+  /* The founder's read. Rendered only when the engagement has written
+     one, so a lab that has not reached a verdict shows no empty frame. */
+  const S = META.summary;
+  if (S) {
+    const brief = document.getElementById("brief");
+    brief.hidden = false;
+    document.getElementById("briefLede").textContent = S.lede || "";
+    document.getElementById("briefBody").innerHTML = (S.body || [])
+      .map((p) => `<p>${p}</p>`).join("");
+    document.getElementById("briefStats").innerHTML = (S.stats || [])
+      .map((s) => `<div${s.mark ? ' data-mark="true"' : ""}><b>${s.value}</b><i>${s.label}</i></div>`)
+      .join("");
+    document.getElementById("briefAsk").innerHTML = (S.ask || [])
+      .map((a) => `<li><b>${a.what}</b> — ${a.why}</li>`).join("");
+  }
   if (META.palette) {
     document.getElementById("paletteH2").textContent = META.palette.length + " colours, and the receipt";
     document.getElementById("paletteSwatches").innerHTML = META.palette.map(function (p) {

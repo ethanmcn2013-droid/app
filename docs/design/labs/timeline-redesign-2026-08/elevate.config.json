@@ -128,12 +128,21 @@
       "render-core.js",
       "render-b.js"
     ],
-    "fonts": []
+    "fonts": [],
+    "meta": {
+      "artifacts": {
+        "console": "https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f",
+        "log": "https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19",
+        "record": "https://claude.ai/code/artifact/4be95a6e-fe0b-46fb-b2f7-c2c41a15f2f6",
+        "method": "https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd"
+      }
+    }
   },
   "artifacts": {
     "console": "https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f",
     "log": "https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19",
-    "record": "https://claude.ai/code/artifact/4be95a6e-fe0b-46fb-b2f7-c2c41a15f2f6"
+    "record": "https://claude.ai/code/artifact/4be95a6e-fe0b-46fb-b2f7-c2c41a15f2f6",
+    "method": "https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd"
   },
   "report": {
     "title": "Timeline Elevation Log",
@@ -206,6 +215,83 @@
         "After dark"
       ]
     ],
-    "variantsLead": "One configuration ships and it has a dark twin. Paper is the room as the founder picked it - ink on white, the past folded to a line, and indigo spent on the next thing AND the rail that is still ahead. Ink is the same four decisions with the ground flipped through the declared ladder: not a theme laid over the work, the same room read at night. Every fix lands in both, and both are graded every round. Print forces paper, which is now the room it already is."
+    "variantsLead": "One configuration ships and it has a dark twin. Paper is the room as the founder picked it - ink on white, the past folded to a line, and indigo spent on the next thing AND the rail that is still ahead. Ink is the same four decisions with the ground flipped through the declared ladder: not a theme laid over the work, the same room read at night. Every fix lands in both, and both are graded every round. Print forces paper, which is now the room it already is.",
+    "summary": {
+      "lede": "Timeline's redesign is finished to a floor of 9.1 out of 10 across seven independent reviewers, against a gate of 9.5. It is not shipped, and it is not blocked — three sized builds and one decision stand between here and production.",
+      "body": [
+        "The direction was locked in August and never reopened. Twelve rounds of a blind seven-seat panel drove the real file, every finding met a fresh reviewer whose default was to reject it, and two automated gates ran on both grounds after every fix. 366 findings were filed, 251 survived rejection, and all 251 were fixed.",
+        "The gate was not met and I stopped anyway. The score is the lowest of seven independent samples, so near the top it measures how hard the panel looked rather than how good the work is — findings rose from 13 to 19 in the last two rounds while the floor did not move, which is a tail, not a gap. Continuing would have bought churn: four of the final round's findings were defects introduced by the previous round's fixes.",
+        "What durably came out of it is not the score. It is 845 behaviour assertions and a fifteen-category measured gate that both run on the paper room and its dark twin, and every one of those assertions exists because a reviewer found the defect it now guards. That is the asset worth carrying into the app."
+      ],
+      "stats": [
+        {
+          "value": "9.1",
+          "label": "floor · lowest seat",
+          "mark": true
+        },
+        {
+          "value": "9.4",
+          "label": "ceiling · highest seat"
+        },
+        {
+          "value": "12",
+          "label": "rounds"
+        },
+        {
+          "value": "251",
+          "label": "defects fixed"
+        },
+        {
+          "value": "845",
+          "label": "behaviour assertions"
+        },
+        {
+          "value": "0 / 15",
+          "label": "measured gate, both grounds"
+        }
+      ],
+      "ask": [
+        {
+          "what": "Fifteen minutes in the Console",
+          "why": "switch the ground and confirm the room is right. If it is not, nothing else matters."
+        },
+        {
+          "what": "One person, twenty minutes",
+          "why": "somebody who has never seen it, opening the phone frame cold. No panel can stand in for this."
+        },
+        {
+          "what": "A yes or no on three builds",
+          "why": "editing a moment that has passed, a loading frame at desk widths, and whether a moment gets a time. The Record sizes each one."
+        }
+      ]
+    },
+    "handover": {
+      "title": "Getting three redesigns into one app",
+      "lead": "Timeline, Notes and Tasks were each elevated in their own session and their own worktree. They share a design language by design — whatever won here becomes the language the suite adopts. That shared substrate is the reason the order below matters more than the speed.",
+      "steps": [
+        {
+          "what": "The foundation, alone",
+          "why": "Extract the shared ladders into the design system and bring both gates across, pointed at the app. Nothing visual changes. If this is not done first, each product invents its own version of the substrate and one wins by accident.",
+          "ship": "Its own PR · one session"
+        },
+        {
+          "what": "Timeline first",
+          "why": "The brief already names it as the surface the others inherit from, and it is the most completely specified. Porting it proves the foundation against real data, real loading and real errors — none of which the lab has.",
+          "ship": "Its own PR · behind a flag"
+        },
+        {
+          "what": "Notes, then Tasks",
+          "why": "One at a time, each rebased on the foundation, each in its own session. A regression in one must never be able to block the other two, and each carries its own Signal HQ update.",
+          "ship": "One PR each"
+        },
+        {
+          "what": "Flags off, in order",
+          "why": "Ship dark, enable one product at a time, and let each sit for a few days. The first-contact test runs against the real thing here, not the lab.",
+          "ship": "No PR · a switch"
+        }
+      ],
+      "prompt": "Port an elevated design lab into the app. This is step ONE of four and it ships\nthe foundation only - no product surface changes in this PR.\n\nREAD FIRST, in this order:\n  AGENTS.md (repo contract), docs/design/labs/timeline-redesign-2026-08/lock.md\n  (the locked decisions and the close-out), and that lab's elevate.config.json\n  (the declared ladders: palette, weights, families, radii, durations, type ramp,\n  leading, tracking, size and space).\n\nWHAT TO DO\n1. Extract the shared substrate into the design system. The ladders in that\n   config are the most completely declared of the three redesigns, so they are\n   the candidate substrate for all of them. src/ds/tokens.css is GENERATED and\n   vendored - never hand-edit it. Change the source and regenerate via\n   scripts/ds-vendor.mjs.\n2. Bring BOTH gates across and point them at the app, not at the lab master.\n   .claude/skills/elevate/scripts/audit.mjs and the lab's interaction-check.mjs\n   (845 assertions) are the most valuable thing the engagement produced. A design\n   ported without its gates loses the property that made it durable. If an\n   assertion cannot be re-pointed, say so and list it rather than dropping it\n   silently.\n3. Prove the substrate changes nothing yet. Every existing route must render\n   byte-identically after the token swap. Show me the diff of what moved.\n\nCONSTRAINTS\n- No product UI in this PR. Tasks, Notes and Timeline all land later, one each.\n- No schema change, no drizzle-kit push or migrate. pnpm db:contract is the\n  pre-flight if anything touches the database; it should not.\n- Real routes and product names come from src/lib/product-urls.ts. Never invent\n  a hostname or a product name.\n- Open the matching Signal HQ update in the same cycle (studio repo).\n\nWHEN YOU ARE DONE\nReport: what moved into the design system, which gate assertions survived the\nre-point and which did not, and the list of every route you verified unchanged.\nThen stop. I will schedule the three product PRs myself.",
+      "note": "Use it once, for step one only. For steps two and three, start a fresh session per product and swap the lab path — do not hand one session all three redesigns: the review surface becomes unreviewable and any one regression blocks the others."
+    }
   }
 }
