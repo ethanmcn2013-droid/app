@@ -1,0 +1,180 @@
+{
+  "name": "home-analytics",
+  "product": "Lately — the analytics view inside Signal Studio's Home",
+  "master": "lately.html",
+  "gate": null,
+  "states": [
+    "full",
+    "partial",
+    "quiet",
+    "first-run",
+    "empty",
+    "loading",
+    "error"
+  ],
+  "variants": [
+    "light",
+    "dark"
+  ],
+  "defaultVariant": "light",
+  "viewports": [
+    {
+      "name": "390x844",
+      "width": 390,
+      "height": 844,
+      "isMobile": true
+    },
+    {
+      "name": "768x1024",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "name": "1280x900",
+      "width": 1280,
+      "height": 900
+    },
+    {
+      "name": "1440x960",
+      "width": 1440,
+      "height": 960
+    }
+  ],
+  "palette": [
+    {
+      "name": "Ink",
+      "hex": "#111111"
+    },
+    {
+      "name": "Ink 2 (zinc 700)",
+      "hex": "#3f3f46"
+    },
+    {
+      "name": "Ink 3 (zinc 500)",
+      "hex": "#71717a"
+    },
+    {
+      "name": "Ink 4 (zinc 400)",
+      "hex": "#a1a1aa"
+    },
+    {
+      "name": "Ink 5 (zinc 300)",
+      "hex": "#d4d4d8"
+    },
+    {
+      "name": "Line (zinc 200)",
+      "hex": "#e4e4e7"
+    },
+    {
+      "name": "Paper 3 (zinc 100)",
+      "hex": "#f4f4f5"
+    },
+    {
+      "name": "Paper 2",
+      "hex": "#fafafa"
+    },
+    {
+      "name": "Paper",
+      "hex": "#ffffff"
+    },
+    {
+      "name": "Indigo 600",
+      "hex": "#4f46e5"
+    },
+    {
+      "name": "Indigo 500",
+      "hex": "#6366f1"
+    },
+    {
+      "name": "Indigo 400",
+      "hex": "#818cf8"
+    },
+    {
+      "name": "Amber 600",
+      "hex": "#d97706"
+    },
+    {
+      "name": "Red 500",
+      "hex": "#ef4444"
+    },
+    {
+      "name": "Emerald 600",
+      "hex": "#059669"
+    },
+    {
+      "name": "Ground (dark)",
+      "hex": "#0f0f10"
+    },
+    {
+      "name": "Ground 2 (dark)",
+      "hex": "#18181b"
+    },
+    {
+      "name": "Ground 3 (dark)",
+      "hex": "#27272a"
+    }
+  ],
+  "families": [
+    "Geist",
+    "Geist Mono"
+  ],
+  "weights": [
+    400,
+    600
+  ],
+  "ladders": {
+    "radii": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      12,
+      16,
+      999
+    ],
+    "durations": [
+      0,
+      0.08,
+      0.14,
+      0.22
+    ],
+    "easings": [
+      "cubic-bezier(0.23, 1, 0.32, 1)",
+      "cubic-bezier(0.4, 0, 0.2, 1)"
+    ],
+    "typeRamp": [
+      11,
+      12,
+      13,
+      15,
+      17,
+      20,
+      26,
+      34,
+      64
+    ]
+  },
+  "console": {
+    "widths": [
+      1440,
+      1280,
+      768,
+      390
+    ],
+    "inline": [
+      "fixture.js"
+    ],
+    "fonts": [
+      "fonts/Geist-Regular.woff2",
+      "fonts/Geist-SemiBold.woff2",
+      "fonts/GeistMono-Regular.woff2"
+    ]
+  },
+  "artifacts": {
+    "console": "https://claude.ai/code/artifact/d894ef6e-3018-4f05-a64e-66dc966396c8",
+    "log": "https://claude.ai/code/artifact/885389f0-bebd-4420-a950-56e9cb307273",
+    "surface": "https://claude.ai/code/artifact/9973453b-6d1b-4f10-88fb-c626e1e286e6",
+    "plan": "https://claude.ai/code/artifact/a3ebb330-0445-4265-ab66-503458fb80f6"
+  }
+}

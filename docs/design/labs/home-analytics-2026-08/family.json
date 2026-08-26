@@ -1,0 +1,14 @@
+{
+  "product": "Lately",
+  "rounds": 0,
+  "urls": {
+    "ceo": "",
+    "console": "https://claude.ai/code/artifact/d894ef6e-3018-4f05-a64e-66dc966396c8",
+    "log": "https://claude.ai/code/artifact/885389f0-bebd-4420-a950-56e9cb307273",
+    "question": "",
+    "method": "",
+    "surface": "https://claude.ai/code/artifact/9973453b-6d1b-4f10-88fb-c626e1e286e6",
+    "plan": "https://claude.ai/code/artifact/a3ebb330-0445-4265-ab66-503458fb80f6"
+  },
+  "siblings": []
+}

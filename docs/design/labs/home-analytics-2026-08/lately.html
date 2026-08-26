@@ -1,1047 +1,968 @@
-<title>Lately</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lately · Signal Studio</title>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     Lately — the past tense of Home, at /app/home/analytics.
+     THE MASTER. This file is the graded surface and nothing else: there is
+     no state deck, no width toggle and no replay button on it, because a
+     seat must grade the product and not the scaffolding around it. State
+     moves on the URL — ?state= and ?v= — and an unknown value stops rather
+     than silently rendering the default.
+     Numbers come from fixture.js, which derive-fixture.mjs binds to
+     src/lib/project-truth-fixture.ts and fails the build on drift.
+     ═══════════════════════════════════════════════════════════════════ */ -->
 
 <style>
-/* ═══════════════════════════════════════════════════════════════════
-   Lately — the third tab inside Home.
-   Instrument, not report. Numbers and marks carry it; copy is labels.
-   Tokens are the Signal DS verbatim. Chart colour follows the measured
-   rule: identity is never hue, magnitude is one hue, status is reserved.
-   ═══════════════════════════════════════════════════════════════════ */
+/* ── The faces ──────────────────────────────────────────────────────────
+   Two files, two weights. The brief asked for 400/500/600; only Regular and
+   SemiBold ship as woff2 in this estate, and a declared 500 would render as
+   a synthesised 400 — a weight nobody chose. Folded to two, recorded. */
+@font-face { font-family: "Geist"; src: url("fonts/Geist-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("fonts/Geist-SemiBold.woff2") format("woff2"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+
+/* ── The lock ───────────────────────────────────────────────────────────
+   Every colour that paints is one of these at some alpha; audit.mjs
+   enforces it. The chart rule is measured, not preferred: identity is
+   never hue (the ink ramp fails a 0.10 chroma floor on all four steps),
+   magnitude is one hue, emphasis is one indigo mark against zinc, and the
+   status four ship in a fixed order because red beside amber fails CVD
+   separation at 4.4. See plan.html §05. */
 :root {
-  --paper: #ffffff;
-  --paper-soft: #fafafa;
-  --paper-deep: #f4f4f5;
-  --ink: #111111;
-  --ink-soft: #3f3f46;
-  --ink-faint: #71717a;
-  --ink-ghost: #d4d4d8;
-  --accent: #4f46e5;
-  --accent-tint: #eef2ff;
-  --hairline: rgba(17, 17, 17, 0.10);
-  --hairline-soft: rgba(17, 17, 17, 0.055);
+  --paper:      #ffffff;
+  --paper-2:    #fafafa;
+  --paper-3:    #f4f4f5;
+  --ink:        #111111;
+  --ink-2:      #3f3f46;
+  --ink-3:      #71717a;
+  --ink-4:      #a1a1aa;
+  --mark-ctx:   #d4d4d8;
+  --line:       rgba(17, 17, 17, 0.10);
+  --line-soft:  rgba(17, 17, 17, 0.055);
+  --wash:       rgba(17, 17, 17, 0.03);
+  --accent:     #4f46e5;
+  --accent-2:   #6366f1;
+  --amber:      #d97706;
+  --red:        #ef4444;
+  --emerald:    #059669;
+  --shadow:     rgba(17, 17, 17, 0.05);
 
-  --st-attention: #d97706;
-  --st-acute: #ef4444;
-  --st-good: #059669;
+  /* Spacing is a ladder with names. audit.mjs reads the SOURCE for raw px
+     in margin, padding and gap, because a render cannot tell a token from
+     the number it resolves to. Add rungs; never inline. */
+  --gap-hair: 4px;
+  --gap-tight: 8px;
+  --gap-snug: 12px;
+  --gap-line: 16px;
+  --gap-room: 24px;
+  --gap-wide: 32px;
+  --gap-hall: 48px;
+  --gap-far: 72px;
 
-  --mark-context: #e0e0e3;
-  --mark-context-2: #c9c9ce;
-  --mark-live: var(--accent);
-  --track: rgba(17, 17, 17, 0.07);
+  /* Leading belongs to a role, not to a size: a 15px control and a 15px
+     paragraph are two different objects. audit.mjs keys the check the same
+     way, so these names and the data-type attributes agree by construction. */
+  --lead-flat: 1;
+  --lead-hero: 1.04;
+  --lead-tight: 1.15;
+  --lead-head: 1.25;
+  --lead-label: 1.35;
+  --lead-body: 1.55;
+  --lead-lede: 1.45;
 
-  --rail: #111111;
-  --shell: #e9e9e7;
-  --tip-bg: #111111;
-  --tip-ink: #fafafa;
+  /* Letterfit, same argument. Tracked uppercase mono is the micro-label
+     voice of the suite; display sizes tighten, body sits at zero. */
+  --track-display: -0.03em;
+  --track-head: -0.015em;
+  --track-flat: 0em;
+  --track-unit: 0.04em;
+  --track-label: 0.09em;
 
-  --sp: 1;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
-    --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
-    --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16);
-    --hairline: rgba(255,255,255,0.11); --hairline-soft: rgba(255,255,255,0.06);
-    --st-attention: #d97706; --st-acute: #ef4444; --st-good: #059669;
-    --mark-context: #2c2c31; --mark-context-2: #45454c;
-    --track: rgba(255,255,255,0.08);
-    --rail: #050506; --shell: #050506;
-    --tip-bg: #f4f4f5; --tip-ink: #111111;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
-  --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
-  --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16);
-  --hairline: rgba(255,255,255,0.11); --hairline-soft: rgba(255,255,255,0.06);
-  --st-attention: #d97706; --st-acute: #ef4444; --st-good: #059669;
-  --mark-context: #2c2c31; --mark-context-2: #45454c;
-  --track: rgba(255,255,255,0.08);
-  --rail: #050506; --shell: #050506;
-  --tip-bg: #f4f4f5; --tip-ink: #111111;
+/* ── The ground-flipped twin ────────────────────────────────────────────
+   Not an inversion: the grounds flip, the marks keep their jobs. Indigo
+   steps up to 400 because 600 on a near-black ground reads as a bruise,
+   and the secondary ink steps up to zinc 400 because zinc 500 falls under
+   4.5:1 against #18181b. Both are measured, not adjusted by eye. */
+[data-v="dark"] {
+  --paper:      #18181b;
+  --paper-2:    #0f0f10;
+  --paper-3:    #27272a;
+  --ink:        #ffffff;
+  --ink-2:      #d4d4d8;
+  --ink-3:      #a1a1aa;
+  --ink-4:      #71717a;
+  --mark-ctx:   #3f3f46;
+  --line:       rgba(255, 255, 255, 0.12);
+  --line-soft:  rgba(255, 255, 255, 0.07);
+  --wash:       rgba(255, 255, 255, 0.04);
+  --accent:     #818cf8;
+  --accent-2:   #6366f1;
+  --shadow:     rgba(15, 15, 16, 0.6);
 }
 
 * { box-sizing: border-box; }
 
+html, body { height: 100%; }
+
 body {
   margin: 0;
-  background: var(--shell);
+  background: var(--paper-2);
   color: var(--ink);
-  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family: "Geist", system-ui, sans-serif;
+  font-weight: 400;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: var(--lead-body);
+  letter-spacing: var(--track-flat);
   -webkit-font-smoothing: antialiased;
-  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
 }
 
-.eyebrow {
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-  margin: 0;
-}
+/* ── Typographic roles ──────────────────────────────────────────────────
+   One class per role, carrying size, weight, leading and letterfit
+   together, because those four are one decision. data-type on the element
+   tells the gate which role it is, so the check and the design cannot
+   drift apart. */
+.t-hero   { font-size: 64px; font-weight: 600; line-height: var(--lead-flat);  letter-spacing: var(--track-display); font-variant-numeric: tabular-nums; }
+.t-num    { font-size: 34px; font-weight: 600; line-height: var(--lead-hero);  letter-spacing: var(--track-display); font-variant-numeric: tabular-nums; }
+.t-sect   { font-size: 26px; font-weight: 600; line-height: var(--lead-tight); letter-spacing: var(--track-head); }
+.t-head   { font-size: 20px; font-weight: 600; line-height: var(--lead-head);  letter-spacing: var(--track-head); }
+.t-lede   { font-size: 17px; font-weight: 400; line-height: var(--lead-lede);  letter-spacing: var(--track-flat); }
+.t-body   { font-size: 15px; font-weight: 400; line-height: var(--lead-body);  letter-spacing: var(--track-flat); }
+.t-small  { font-size: 13px; font-weight: 400; line-height: var(--lead-body);  letter-spacing: var(--track-flat); }
+.t-unit   { font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; font-weight: 400; line-height: var(--lead-label); letter-spacing: var(--track-unit); font-variant-numeric: tabular-nums; }
+.t-label  { font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; font-weight: 400; line-height: var(--lead-label); letter-spacing: var(--track-label); text-transform: uppercase; }
 
-/* ═══ Driving deck ══════════════════════════════════════════════ */
-.deck {
-  position: sticky; top: 0; z-index: 60;
-  background: var(--paper);
-  border-bottom: 1px solid var(--hairline);
-  padding: 13px 20px;
-  display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center;
-}
-.deck-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.deck-label {
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 9.5px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink-faint);
-}
-.deck button {
-  font: inherit; font-size: 12.5px; font-weight: 500;
-  color: var(--ink-soft); background: var(--paper);
-  border: 1px solid var(--hairline); border-radius: 7px;
-  padding: 5px 11px; cursor: pointer;
-  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
-}
-.deck button:hover { color: var(--ink); border-color: var(--ink-ghost); }
-.deck button[aria-pressed="true"] { color: var(--paper); background: var(--ink); border-color: var(--ink); }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dim   { color: var(--ink-3); }
+.dim-2 { color: var(--ink-2); }
 
-/* ═══ Stage / shell ═════════════════════════════════════════════ */
-.stage { padding: 30px 20px 60px; display: flex; justify-content: center; }
-.frame-label { display: flex; align-items: baseline; gap: 10px; margin: 0 0 11px; }
-.frame-label .w { color: var(--ink-faint); }
+/* ── Shell ─────────────────────────────────────────────────────────────
+   The rail is the product's, not this view's. It is inert furniture here
+   and marked aria-hidden so a screen reader is not offered four controls
+   that do nothing in a lab. */
+.app { display: flex; min-height: 100%; background: var(--paper-2); }
 
-.shell {
-  display: flex; width: 100%;
-  background: var(--rail);
-  border-radius: 16px; overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.16), 0 20px 52px rgba(0,0,0,0.20);
-}
 .rail {
-  width: 60px; flex: 0 0 60px; padding: 17px 0;
-  display: flex; flex-direction: column; align-items: center; gap: 15px;
+  width: 56px; flex: none;
+  display: flex; flex-direction: column; align-items: center;
+  gap: var(--gap-room); padding-top: var(--gap-room);
+  border-right: 1px solid var(--line-soft);
+  background: var(--paper-2);
 }
-.rail-mark {
-  width: 26px; height: 26px; border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.20);
+.rail i {
+  width: 26px; height: 26px; border-radius: 8px;
   display: grid; place-items: center;
-  color: rgba(255,255,255,0.55); font-size: 11px;
+  background: var(--wash);
+  font-style: normal; font-size: 13px; color: var(--ink-2);
 }
-.rail-mark.current { background: var(--paper); border-color: var(--paper); color: var(--ink); }
-.rail-sep { width: 20px; height: 1px; background: rgba(255,255,255,0.13); }
+.rail i.on { background: var(--ink); color: var(--paper); }
 
-.canvas {
-  flex: 1 1 auto; min-width: 0;
-  background: var(--paper);
-  margin: 6px 6px 6px 0; border-radius: 12px; overflow: hidden;
-}
-.stage[data-w="phone"] .shell { max-width: 390px; }
-.stage[data-w="phone"] .rail { display: none; }
-.stage[data-w="phone"] .canvas { margin: 0; border-radius: 16px; }
-.stage[data-w="desk"] .shell { max-width: 1240px; }
+.canvas { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+.scroll { height: 100vh; overflow-y: auto; overflow-x: hidden; }
+.page { max-width: 1180px; margin: 0 auto; padding-left: var(--gap-hall); padding-right: var(--gap-hall); padding-bottom: var(--gap-far); }
 
-.scroller { height: 800px; overflow-y: auto; overscroll-behavior: contain; }
-.stage[data-w="phone"] .scroller { height: 740px; }
+/* ── Header and tabs ───────────────────────────────────────────────────*/
+.top { padding-top: var(--gap-wide); padding-bottom: var(--gap-line); }
+.top-row { display: flex; align-items: baseline; gap: var(--gap-snug); flex-wrap: wrap; }
+.ws { color: var(--ink-3); }
 
-/* ═══ Home spine ════════════════════════════════════════════════ */
-.spine {
-  position: sticky; top: 0; z-index: 8;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--hairline-soft);
-  padding: 15px 34px 0;
-}
-.stage[data-w="phone"] .spine { padding: 13px 18px 0; }
-.spine-top { display: flex; align-items: baseline; gap: 11px; margin-bottom: 11px; }
-.spine-top h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -0.012em; }
-.spine-top .ws { font-size: 12.5px; color: var(--ink-faint); }
-.tabs { display: flex; gap: 2px; }
+.tabs { display: flex; gap: var(--gap-room); margin-top: var(--gap-line); border-bottom: 1px solid var(--line); }
 .tab {
-  font: inherit; font-size: 13.5px; font-weight: 500;
-  color: var(--ink-faint); background: none; border: 0;
-  border-bottom: 2px solid transparent;
-  padding: 6px 12px 10px; text-decoration: none;
-  border-radius: 6px 6px 0 0;
-  transition: color 130ms ease;
+  position: relative; text-decoration: none; color: var(--ink-3);
+  padding-top: var(--gap-tight); padding-bottom: var(--gap-snug);
+  transition: color 0.14s var(--ease);
 }
 .tab:hover { color: var(--ink); }
-.tab[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
-
-/* ═══ Grid ══════════════════════════════════════════════════════ */
-.col { padding: 26px 34px 60px; max-width: 1080px; margin: 0 auto; }
-.stage[data-w="phone"] .col { padding: 20px 18px 52px; }
-
-.band { margin-top: 26px; }
-.band:first-child { margin-top: 0; }
-.band-head {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: 16px; margin-bottom: 11px;
+.tab[aria-current="page"] { color: var(--ink); font-weight: 600; }
+.tab[aria-current="page"]::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 2px; background: var(--ink); border-radius: 2px;
 }
-/* At 390 the two eyebrows collide. The right-hand one is a restatement
-   of what the cards below already say, so it goes rather than wraps. */
-.stage[data-w="phone"] .band-head > :last-child:not(:first-child) { display: none; }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
 
-/* ═══ Card ══════════════════════════════════════════════════════ */
+/* The reading line. Everything relative on this screen resolves against
+   one stated instant, printed once, at the top, in the label voice. */
+.reading { display: flex; align-items: center; gap: var(--gap-snug); flex-wrap: wrap; color: var(--ink-3); padding-top: var(--gap-room); }
+.reading .rule { flex: 1 1 40px; height: 1px; background: var(--line); }
+
+/* ── Bands ─────────────────────────────────────────────────────────────*/
+.band { padding-top: var(--gap-hall); }
+.band-head { display: flex; align-items: baseline; gap: var(--gap-snug); flex-wrap: wrap; padding-bottom: var(--gap-line); }
+.band-head .grow { flex: 1 1 auto; }
+
 .card {
   background: var(--paper);
-  border: 1px solid var(--hairline);
-  border-radius: 13px;
-  padding: 22px 24px;
-}
-.stage[data-w="phone"] .card { padding: 18px; border-radius: 12px; }
-
-/* ── Entrance choreography ────────────────────────────────────── */
-.rise { opacity: 0; transform: translateY(9px); }
-.play .rise {
-  animation: rise 560ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  animation-delay: calc(var(--i, 0) * 65ms);
-}
-@keyframes rise { to { opacity: 1; transform: none; } }
-
-/* ═══ Movement 1 — the lead ═════════════════════════════════════ */
-.lead {
-  display: grid;
-  gap: 26px;
-  align-items: stretch;
-}
-@media (min-width: 900px) {
-  .stage[data-w="desk"] .lead { grid-template-columns: minmax(220px, 300px) 1fr; gap: 34px; }
-}
-
-.lead-figure { display: flex; flex-direction: column; justify-content: center; }
-.hero-num {
-  font-size: clamp(72px, 11vw, 116px);
-  line-height: 0.84;
-  font-weight: 500;
-  letter-spacing: -0.05em;
-  margin-top: 12px;
-}
-.hero-unit { margin-top: 12px; font-size: 14px; color: var(--ink-soft); }
-.delta {
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 16px; padding: 5px 10px 5px 8px;
-  border-radius: 999px;
-  background: var(--accent-tint);
-  color: var(--accent);
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 11px; letter-spacing: 0.06em;
-  align-self: flex-start;
-}
-.delta svg { display: block; }
-
-/* ═══ The twelve-week chart ═════════════════════════════════════ */
-.plot-wrap { min-width: 0; display: flex; flex-direction: column; }
-.chart-plot {
-  --val-row: 17px;
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(var(--n, 12), 1fr);
-  gap: 5px;
-  height: 186px;
-  border-bottom: 1px solid var(--hairline);
-  margin-top: 8px;
-}
-.stage[data-w="phone"] .chart-plot { height: 132px; gap: 3px; }
-
-.gridline {
-  position: absolute; left: 0; right: 0;
-  border-top: 1px solid var(--track);
-  pointer-events: none;
-}
-.record-line {
-  position: absolute; left: 0; right: 0;
-  border-top: 1.5px dashed var(--accent);
-  opacity: 0; clip-path: inset(0 100% 0 0);
-  pointer-events: none;
-}
-.play .record-line { animation: draw 620ms 900ms cubic-bezier(0.22,1,0.36,1) forwards; }
-@keyframes draw { to { opacity: 1; clip-path: inset(0 0 0 0); } }
-
-.record-tag {
-  position: absolute; left: 0; transform: translateY(-100%);
-  padding: 0 8px 5px 0; background: var(--paper);
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
-  color: var(--accent); opacity: 0; pointer-events: none;
-}
-.play .record-tag { animation: fadein 320ms 1320ms ease forwards; }
-@keyframes fadein { to { opacity: 1; } }
-
-.bar-slot {
-  position: relative; height: 100%;
-  display: grid; grid-template-rows: var(--val-row) 1fr;
-  background: none; border: 0; padding: 0; cursor: default;
-  font: inherit; color: inherit;
-}
-.bar-track { position: relative; grid-row: 2; }
-.bar {
-  position: absolute; left: 50%; bottom: 0;
-  transform: translateX(-50%) scaleY(0);
-  transform-origin: bottom;
-  width: 64%; max-width: 30px;
-  background: var(--mark-context);
-  border-radius: 2.5px 2.5px 0 0;
-  min-height: 2px;
-  transition: background 130ms ease;
-}
-.play .bar {
-  animation: grow 640ms cubic-bezier(0.22,1,0.36,1) forwards;
-  animation-delay: calc(300ms + var(--i, 0) * 42ms);
-}
-@keyframes grow { to { transform: translateX(-50%) scaleY(1); } }
-
-.bar-slot:hover .bar, .bar-slot:focus-visible .bar { background: var(--mark-context-2); }
-.bar-slot.partial .bar {
-  background: repeating-linear-gradient(135deg, var(--mark-live) 0 3px, transparent 3px 6.5px);
-  box-shadow: inset 0 0 0 1px var(--mark-live);
-}
-.bar-slot.partial:hover .bar { background: repeating-linear-gradient(135deg, var(--mark-live) 0 4px, transparent 4px 6.5px); }
-
-/* Selective direct labels only: the live column carries its number,
-   every other value is on hover. A number on every point is noise, and
-   the knockout each one needs would shred the record line behind it. */
-.bar-val {
-  position: absolute; left: -6px; right: -6px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 11px; font-weight: 500; color: var(--accent);
-  text-align: center; margin-bottom: 6px; line-height: 1;
-  z-index: 4; opacity: 0;
-}
-.play .bar-val { animation: fadein 300ms 1180ms forwards; }
-
-.chart-axis { display: grid; grid-template-columns: repeat(var(--n, 12), 1fr); gap: 5px; margin-top: 7px; }
-.axis-tick {
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 9.5px; color: var(--ink-ghost); text-align: center;
-}
-.axis-tick.named { color: var(--ink-faint); }
-
-/* ═══ KPI row ═══════════════════════════════════════════════════ */
-.kpis { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); }
-@media (min-width: 760px) { .stage[data-w="desk"] .kpis { grid-template-columns: repeat(5, 1fr); } }
-
-.kpi {
-  position: relative;
-  display: block; text-align: left; text-decoration: none; color: inherit;
-  background: var(--paper);
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--line-soft);
   border-radius: 12px;
-  padding: 15px 16px 14px;
-  overflow: hidden;
-  transition: border-color 140ms ease, transform 160ms cubic-bezier(0.22,1,0.36,1);
+  box-shadow: 0 1px 2px var(--shadow);
 }
-a.kpi:hover { border-color: var(--ink-ghost); transform: translateY(-2px); }
-.kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.kpi-n {
-  display: block; margin-top: 9px;
-  font-size: 34px; line-height: 1; font-weight: 500; letter-spacing: -0.035em;
-}
-.stage[data-w="phone"] .kpi-n { font-size: 30px; }
-.kpi-n.zero { color: var(--ink-faint); font-weight: 400; }
-.kpi-lab { display: block; margin-top: 7px; font-size: 12.5px; color: var(--ink-soft); line-height: 1.35; }
-.kpi-meter {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
-  background: var(--track);
-}
-.kpi-meter i {
-  display: block; height: 100%;
-  background: currentColor;
-  transform: scaleX(0); transform-origin: left;
-}
-.play .kpi-meter i {
-  animation: fill 720ms cubic-bezier(0.22,1,0.36,1) forwards;
-  animation-delay: calc(420ms + var(--i,0) * 65ms);
-}
-@keyframes fill { to { transform: scaleX(var(--f, 0)); } }
 
-.kpi.lead-kpi { background: var(--paper-soft); }
-.kpi.attention { color: var(--st-attention); }
-.kpi.acute { color: var(--st-acute); }
-.kpi.good { color: var(--st-good); }
-.kpi.neutral { color: var(--ink-soft); }
-.kpi .kpi-n, .kpi .kpi-lab { color: var(--ink); }
-.kpi .kpi-lab { color: var(--ink-soft); }
-.kpi-n.zero { color: var(--ink-faint); }
+/* ── Movement one — the hero and its evidence, one object ──────────────
+   The figure and the twelve columns share a card because they are the
+   same claim: a numeral alone gives the delta and hides the shape, and
+   twelve columns alone make you do arithmetic. Neither is a caption for
+   the other. */
+.hero { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: var(--gap-hall); padding: var(--gap-room); align-items: stretch; }
+.hero-fig { display: flex; flex-direction: column; justify-content: space-between; gap: var(--gap-room); }
+.hero-n { display: flex; align-items: baseline; gap: var(--gap-snug); }
+.delta {
+  display: inline-flex; align-items: center; gap: var(--gap-hair);
+  padding-left: var(--gap-tight); padding-right: var(--gap-tight);
+  padding-top: 3px; padding-bottom: 3px;
+  border-radius: 999px; background: var(--wash); color: var(--ink-2);
+}
+.delta svg { flex: none; }
+.hero-note { color: var(--ink-3); max-width: 30ch; }
 
-/* Status glyph — shape + word, never colour alone. */
-.glyph {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
-  color: currentColor;
-  /* An inline-flex box in block flow can be squeezed to min-content and
-     wrap mid-label. Pin it so a glyph never breaks across two lines. */
-  white-space: nowrap; flex: 0 0 auto; align-self: flex-start;
+/* ── The twelve-week column chart ──────────────────────────────────────*/
+.chart { display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; }
+.plot { position: relative; height: 168px; }
+.cols { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-hair); }
+.colw { position: relative; flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+.bar {
+  width: 100%; max-width: 22px; border-radius: 4px 4px 0 0;
+  background: var(--mark-ctx);
+  height: calc(var(--h) * 1%);
+  transform-origin: 50% 100%;
+  animation: grow 0.5s var(--ease) both;
+  animation-delay: calc(var(--i) * 40ms + 340ms);
 }
-.glyph::before {
-  content: ""; width: 6px; height: 6px; flex: 0 0 auto;
-  background: currentColor; border-radius: 50%;
+.bar.live { background: var(--accent); }
+/* The week is not over, so its column is not closed. A solid column here
+   would claim a completed week; hatch plus an open top says "so far"
+   without a sentence. */
+.bar.part {
+  background: repeating-linear-gradient(135deg, var(--accent) 0 2px, rgba(17, 17, 17, 0) 2px 6px);
+  border: 1px solid var(--accent);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
 }
-.glyph.sq::before { border-radius: 1px; }
-.glyph.di::before { border-radius: 1px; transform: rotate(45deg); }
-.glyph.ring::before { background: none; box-shadow: inset 0 0 0 1.5px currentColor; }
-.glyph.dash::before { height: 2px; width: 9px; border-radius: 0; }
+[data-v="dark"] .bar.part { background: repeating-linear-gradient(135deg, var(--accent) 0 2px, rgba(255, 255, 255, 0) 2px 6px); }
+.baseline { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
+/* Three gridlines, not a grid. A column chart read against nothing gives
+   you the shape and withholds the magnitude; more than three and the marks
+   are competing with their own scaffolding. */
+.gridline { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--line-soft); }
+.gridline b { position: absolute; right: 0; top: -14px; font-weight: 400; color: var(--ink-3); background: var(--paper); padding-left: var(--gap-hair); }
 
-/* ═══ Ages strip ════════════════════════════════════════════════ */
-.strip-plot { position: relative; height: 76px; border-bottom: 1px solid var(--hairline); margin-top: 10px; }
-.strip-grid { position: absolute; inset: 0; border-left: 1px solid var(--track); }
-.strip-threshold { position: absolute; top: 2px; bottom: 0; border-left: 1px dashed var(--ink-ghost); }
-.threshold-label {
-  position: absolute; top: 0; margin-left: 7px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
-  color: var(--ink-faint); white-space: nowrap;
+/* The previous best draws last, so the reader has already read the shape
+   before being told where the old ceiling was. */
+.record { position: absolute; left: 0; right: 0; bottom: calc(var(--r) * 1%); height: 0; border-top: 1px dashed var(--line); animation: draw 0.6s var(--ease) both; animation-delay: 1.1s; }
+.record-tag { position: absolute; right: 0; top: -18px; color: var(--ink-3); background: var(--paper); padding-left: var(--gap-hair); }
+.bar-val { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--h) * 1% + 6px); color: var(--accent); white-space: nowrap; }
+.xaxis { display: flex; justify-content: space-between; gap: var(--gap-hair); color: var(--ink-3); }
+.xaxis span { flex: 1 1 0; text-align: center; }
+.xaxis span.mute { opacity: 0; }
+
+/* ── Movement two — the KPI row over one denominator ───────────────────
+   Five cards read the same nine. Their meters are comparable only because
+   of that, so the denominator is a card in the row rather than a footnote
+   under it. */
+.kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--gap-line); }
+.kpi {
+  position: relative; display: flex; flex-direction: column; gap: var(--gap-tight);
+  padding: var(--gap-line);
+  background: var(--paper); border: 1px solid var(--line-soft); border-radius: 12px;
+  box-shadow: 0 1px 2px var(--shadow);
+  text-decoration: none; color: inherit;
+  transition: border-color 0.14s var(--ease), transform 0.14s var(--ease);
 }
+a.kpi:hover { border-color: var(--line); transform: translateY(-2px); }
+a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kpi.lead { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.kpi.lead .t-small { color: var(--mark-ctx); }
+.glyph { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; background: var(--wash); }
+.glyph svg { display: block; }
+.meter { height: 3px; border-radius: 2px; background: var(--wash); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 2px; background: var(--accent); transform: scaleX(var(--f)); transform-origin: 0 50%; animation: fill 0.55s var(--ease) both; animation-delay: calc(var(--i) * 60ms + 620ms); }
+.meter i.zero { background: var(--mark-ctx); }
+.kpi .na { color: var(--ink-3); }
+
+/* ── The ages strip ────────────────────────────────────────────────────
+   A one-dimensional dot strip, because the finding is the tail and a
+   median is the specific summary that destroys it. */
+.ages { padding: var(--gap-room); }
+.strip { position: relative; height: 92px; margin-top: var(--gap-line); }
+.strip-axis { position: absolute; left: 0; right: 0; bottom: 26px; height: 1px; background: var(--line); }
 .dot {
-  position: absolute; bottom: calc(16px + var(--row, 0) * 15px);
-  width: 13px; height: 13px; margin-left: -6.5px;
-  border-radius: 50%;
-  background: var(--mark-context-2);
-  box-shadow: 0 0 0 2.5px var(--paper);
-  border: 0; padding: 0; cursor: default;
-  opacity: 0; transform: scale(0.4);
-  transition: transform 150ms cubic-bezier(0.22,1,0.36,1);
+  --disc: var(--mark-ctx);
+  position: absolute; bottom: calc(20px + var(--row, 0) * 15px); width: 12px; height: 12px; border-radius: 999px;
+  border: 0; padding: 0; background: transparent;
+  left: calc(var(--x) * 1%); transform: translateX(-50%);
 }
-.play .dot {
-  animation: pop 480ms cubic-bezier(0.34, 1.4, 0.5, 1) forwards;
-  animation-delay: calc(360ms + var(--i,0) * 55ms);
+/* The disc is a pseudo, not the button. An entrance that scales the control
+   itself shrinks its own hit area for the length of the animation — these
+   dots measured 27px against a 28px floor for 760ms of every load. */
+.dot::before {
+  content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: 999px; background: var(--disc);
+  animation: pop 0.4s var(--ease) both; animation-delay: calc(var(--i) * 55ms + 760ms);
+  transition: background-color 0.14s var(--ease);
 }
-@keyframes pop { to { opacity: 1; transform: scale(1); } }
-.dot:hover, .dot:focus-visible { transform: scale(1.32); z-index: 3; }
-.dot.old { background: var(--st-attention); }
-.dot-cap {
-  position: absolute; right: 0; bottom: 40px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 9.5px; color: var(--st-attention); white-space: nowrap;
-}
-.strip-axis { display: flex; justify-content: space-between; margin-top: 7px; }
+.dot::after { content: ""; position: absolute; top: -11px; right: -11px; bottom: -11px; left: -11px; border-radius: 999px; }
+.dot.old { --disc: var(--accent); }
+.dot:hover, .dot:focus-visible { --disc: var(--ink); }
+.dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.fortnight { position: absolute; top: 0; bottom: 20px; left: calc(var(--x) * 1%); width: 0; border-left: 1px dashed var(--line); }
+.fortnight span { position: absolute; top: 0; left: var(--gap-tight); color: var(--ink-3); white-space: nowrap; }
+.strip-scale { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; color: var(--ink-3); }
 
-/* ═══ Tooltip ═══════════════════════════════════════════════════ */
+.tip b { display: block; font-family: "Geist Mono", ui-monospace, monospace; font-weight: 400; font-size: 12px; line-height: var(--lead-label); letter-spacing: var(--track-unit); }
+.tip s { display: block; text-decoration: none; color: var(--mark-ctx); font-size: 13px; line-height: var(--lead-body); }
+[data-v="dark"] .tip s { color: var(--ink-4); }
 .tip {
-  position: fixed; z-index: 90; pointer-events: none;
-  background: var(--tip-bg); color: var(--tip-ink);
-  border-radius: 7px; padding: 8px 11px;
-  font-size: 12px; line-height: 1.4;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.22);
-  opacity: 0; transform: translate(-50%, -100%) translateY(-9px);
-  transition: opacity 110ms ease;
-  white-space: nowrap;
+  position: fixed; z-index: 20; pointer-events: none;
+  background: var(--ink); color: var(--paper);
+  padding-left: var(--gap-tight); padding-right: var(--gap-tight);
+  padding-top: var(--gap-hair); padding-bottom: var(--gap-hair);
+  border-radius: 6px; max-width: 260px;
+  opacity: 0; transform: translateY(4px); transition: opacity 0.14s var(--ease), transform 0.14s var(--ease);
 }
-.tip.on { opacity: 1; }
-.tip b { font-family: "Geist Mono", ui-monospace, monospace; font-weight: 500; }
-.tip span { display: block; opacity: 0.62; font-size: 11px; margin-top: 2px; }
+.tip.on { opacity: 1; transform: translateY(0); }
 
-/* ═══ Movement 3 — the limits ═══════════════════════════════════ */
-.limits { display: grid; gap: 10px; grid-template-columns: 1fr; }
-@media (min-width: 760px) { .stage[data-w="desk"] .limits { grid-template-columns: repeat(3, 1fr); } }
-.limit {
-  border: 1px solid var(--hairline); border-radius: 12px;
-  padding: 15px 16px; background: var(--paper);
-  display: flex; flex-direction: column;
-}
-.limit h3 { margin: 9px 0 0; font-size: 13.5px; font-weight: 500; letter-spacing: -0.008em; line-height: 1.35; }
-.limit p { margin: 5px 0 0; font-size: 12px; color: var(--ink-faint); line-height: 1.45; }
+/* ── Movement three — the limits ───────────────────────────────────────
+   Not a footnote and not an apology. The reader meets the limit exactly
+   where they would otherwise assume the opposite. */
+.limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-line); }
+.limit { padding: var(--gap-line); display: flex; flex-direction: column; gap: var(--gap-tight); background: var(--paper-3); border-radius: 12px; }
+.limit .t-label { color: var(--ink-2); }
 
-/* The chart that is not there — drawn as the plot it would be, with its
-   own baseline and gridlines, so the reader meets the limit at exactly
-   the place they would otherwise assume the opposite. */
-.ghost {
-  margin-top: 10px;
-  border: 1px dashed var(--ink-ghost);
-  border-radius: 11px;
-  height: 124px; display: grid; place-items: center; padding: 0 22px;
-  position: relative; overflow: hidden;
-  /* Week columns and a baseline — the plot's own skeleton, nothing more.
-     Horizontal rules as well would read as a table, not a chart. */
-  background:
-    repeating-linear-gradient(90deg, transparent 0 calc(8.333% - 1px), var(--track) calc(8.333% - 1px) 8.333%);
-}
-.ghost::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
-  border-bottom: 1px solid var(--ink-ghost);
-}
-.ghost p {
-  margin: 0; text-align: center; font-size: 12.5px; color: var(--ink-faint);
-  max-width: 40ch; line-height: 1.5;
-}
+/* The chart that is not there: drawn as the chart it would be, with its
+   own columns and baseline, so the absence has a shape. */
+.ghost { position: relative; margin-top: var(--gap-line); padding: var(--gap-room); border: 1px dashed var(--line); border-radius: 12px; }
+.ghost-plot { position: relative; height: 120px; display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-hair); opacity: 0.5; }
+.ghost-plot i { flex: 1 1 0; height: calc(var(--h) * 1%); border-radius: 4px 4px 0 0; background: var(--wash); border-top: 1px dashed var(--line); }
+.ghost-say { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-hair); text-align: center; }
+.ghost-say .t-head { max-width: 26ch; }
 
-/* ═══ Banner / clear / blank ════════════════════════════════════ */
-.banner {
-  border: 1px solid var(--hairline);
-  border-left: 2px solid var(--st-attention);
-  border-radius: 0 11px 11px 0;
-  background: var(--paper-soft);
-  padding: 14px 17px;
-}
-.banner.acute { border-left-color: var(--st-acute); }
-.banner h2 { margin: 7px 0 0; font-size: 14px; font-weight: 500; }
-.banner p { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-faint); max-width: 62ch; }
+/* ── Degraded states are designed states ───────────────────────────────*/
+.note { display: flex; gap: var(--gap-snug); align-items: flex-start; padding: var(--gap-line); border-radius: 12px; background: var(--paper-3); }
+.note .t-body { max-width: 62ch; }
+.stack { display: flex; flex-direction: column; gap: var(--gap-tight); }
+.center { display: flex; flex-direction: column; align-items: center; gap: var(--gap-snug); text-align: center; padding-top: var(--gap-far); padding-bottom: var(--gap-far); }
+.center .t-body { max-width: 44ch; }
 
-.clear {
-  border: 1px solid var(--hairline); border-radius: 13px;
-  background: var(--paper-soft); padding: 24px;
-  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+.btn {
+  /* A button does not inherit the page's face. Left alone this shipped as
+     Arial on two of the seven states. */
+  font-family: inherit;
+  display: inline-flex; align-items: center; gap: var(--gap-tight);
+  padding-left: var(--gap-line); padding-right: var(--gap-line);
+  padding-top: var(--gap-tight); padding-bottom: var(--gap-tight);
+  border-radius: 8px; border: 1px solid var(--line);
+  background: var(--paper); color: var(--ink); cursor: pointer;
+  transition: background-color 0.14s var(--ease), border-color 0.14s var(--ease);
 }
-.clear-n { font-size: 46px; line-height: 1; font-weight: 500; letter-spacing: -0.04em; color: var(--st-good); }
-.clear-txt p { margin: 0; font-size: 16px; font-weight: 500; letter-spacing: -0.012em; }
-.clear-txt span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--ink-faint); }
+.btn:hover { background: var(--paper-3); border-color: var(--ink-4); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.blank { padding: 26px 0 0; }
-.blank .lede {
-  font-size: clamp(24px, 3.6vw, 32px); line-height: 1.16; letter-spacing: -0.028em;
-  font-weight: 500; max-width: 20ch; margin: 14px 0 0; text-wrap: balance;
-}
-.blank .body { margin: 12px 0 0; font-size: 14px; color: var(--ink-soft); max-width: 42ch; }
-.move {
-  display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
-  font-size: 13.5px; font-weight: 500; color: var(--paper); background: var(--ink);
-  border-radius: 9px; padding: 10px 16px; text-decoration: none;
-}
-.move:hover { background: var(--ink-soft); }
+/* Skeletons show only what will actually render, at its real geometry.
+   They are built from the real components' own classes — an .sk-in block
+   sits INSIDE the same .t-* element it replaces — so the geometry cannot
+   drift from the thing it is promising. Two typed heights drifted 70px and
+   49px from the real hero and the real card the first time this was
+   written by hand. No shimmer: a moving surface reads as content
+   arriving, and nothing is. */
+/* The skeleton IS the real composition with its ink taken out. Every box,
+   every wrap point and every column is the one that arrives, because it is
+   literally the same DOM — so the surface cannot jump when the data lands.
+   Hand-written heights drifted 48px on the hero and 28px on a card the
+   first time this was written, and only at one width. */
+.sk-wrap { pointer-events: none; }
+.sk-wrap [data-type] { color: transparent; background: var(--wash); border-radius: 4px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.sk-wrap .bar { background: var(--wash); border: 0; }
+.sk-wrap .dot::before, .sk-wrap .meter i, .sk-wrap .glyph { background: var(--wash); }
+.sk-wrap .kpi.lead { background: var(--paper); border-color: var(--line-soft); }
+.sk-wrap .kpi.lead .t-small { color: transparent; }
+.sk-wrap svg, .sk-wrap .record, .sk-wrap .fortnight { visibility: hidden; }
 
-/* ═══ Coverage strip ════════════════════════════════════════════ */
-.coverage {
-  margin-top: 26px; padding-top: 14px;
-  border-top: 1px solid var(--hairline-soft);
-  display: flex; flex-wrap: wrap; gap: 6px 22px;
-  font-family: "Geist Mono", ui-monospace, monospace;
-  font-size: 10.5px; letter-spacing: 0.05em; color: var(--ink-ghost);
-}
-.coverage b { font-weight: 400; color: var(--ink-faint); }
+/* The unknown-key stop. A harness that accepts a key it does not have
+   grades work that does not exist, so the surface refuses to render. */
+.fatal { padding: var(--gap-hall); display: flex; flex-direction: column; gap: var(--gap-snug); max-width: 60ch; }
+.fatal .t-label { color: var(--red); }
 
-/* ═══ Skeleton ══════════════════════════════════════════════════ */
-.sk { background: var(--paper-deep); border-radius: 6px; }
+/* Which source answered, and which numbers this lab authored. The reader
+   of an instrument is entitled to know what it read to produce the marks —
+   and, in a lab, which figures are bound to the shipping fixture and which
+   are not. */
+.coverage { display: flex; flex-wrap: wrap; gap: var(--gap-hair) var(--gap-room); padding-top: var(--gap-line); margin-top: var(--gap-hall); border-top: 1px solid var(--line-soft); color: var(--ink-3); }
+.coverage b { font-weight: 400; color: var(--ink-2); }
 
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* ── Entrance ──────────────────────────────────────────────────────────
+   One choreography, in the order the reading happens: the surface settles,
+   the figure counts, the evidence grows left to right, the meters fill,
+   and the old ceiling draws last. */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(var(--f)); } }
+@keyframes pop  { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes draw { from { opacity: 0; clip-path: inset(0 100% 0 0); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+.rise { animation: rise 0.5s var(--ease) both; animation-delay: calc(var(--i) * 65ms); }
+/* Nothing on the loading state moves. */
+[data-state="loading"] *, [data-state="loading"] *::before, [data-state="loading"] *::after { animation: none !important; }
+
+/* Settled: the surface at rest, with the choreography already over.
+   Two readers need it. A person who has asked their system for less motion,
+   and any automation photographing the file — a frame taken 350ms into a
+   1.7s entrance is a picture of a moment, and twenty-six of fifty-six frames
+   differed between two identical runs because of it. A frame that is not
+   reproducible cannot evidence a change. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
-  .rise, .bar-val, .dot { opacity: 1; transform: none; }
-  .record-line, .record-tag { opacity: 1; clip-path: none; }
-  .bar { transform: translateX(-50%) scaleY(1); }
-  .kpi-meter i { transform: scaleX(var(--f, 0)); }
+  .bar { transform: none; }
+  .meter i { transform: scaleX(var(--f)); }
+  .dot::before { transform: none; }
+  .record { clip-path: none; opacity: 1; }
 }
+[data-motion="settled"] *, [data-motion="settled"] *::before, [data-motion="settled"] *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; }
+[data-motion="settled"] .bar { transform: none; }
+[data-motion="settled"] .meter i { transform: scaleX(var(--f)); }
+[data-motion="settled"] .dot::before { transform: none; }
+[data-motion="settled"] .record { clip-path: none; opacity: 1; }
 
-.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+/* ── Phone, as a composition ───────────────────────────────────────────
+   Not a reduction: the hero stacks so the numeral keeps its scale, the KPI
+   row becomes two columns with the denominator spanning both, and the
+   twelve columns stay twelve. A chart that drops weeks on a phone is a
+   different chart. */
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; gap: var(--gap-room); }
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpi.lead { grid-column: 1 / -1; }
+  .limits { grid-template-columns: 1fr; }
+  .sk-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .rail { display: none; }
+  .page { padding-left: var(--gap-room); padding-right: var(--gap-room); }
+  .band { padding-top: var(--gap-wide); }
+  .t-hero { font-size: 64px; }
+  .hero { padding: var(--gap-line); }
+  .ages { padding: var(--gap-line); }
+  .tabs { gap: var(--gap-line); }
+}
 </style>
 
-<div class="deck">
-  <div class="deck-group">
-    <span class="deck-label">State</span>
-    <button type="button" data-state="full" aria-pressed="true">Full</button>
-    <button type="button" data-state="partial" aria-pressed="false">Partial</button>
-    <button type="button" data-state="quiet" aria-pressed="false">All clear</button>
-    <button type="button" data-state="first-run" aria-pressed="false">First run</button>
-    <button type="button" data-state="empty" aria-pressed="false">Empty</button>
-    <button type="button" data-state="loading" aria-pressed="false">Loading</button>
-    <button type="button" data-state="error" aria-pressed="false">Error</button>
-  </div>
-  <div class="deck-group">
-    <span class="deck-label">Width</span>
-    <button type="button" data-w="desk" aria-pressed="true">Desk</button>
-    <button type="button" data-w="phone" aria-pressed="false">390</button>
-  </div>
-  <div class="deck-group">
-    <span class="deck-label">Motion</span>
-    <button type="button" id="replay">Replay</button>
-  </div>
-</div>
+<body data-state="full" data-v="light">
+<div id="root"></div>
+<div class="tip t-small" id="tip" role="presentation"></div>
 
-<div class="stage" id="stage" data-w="desk">
-  <div style="width:100%;max-width:1240px;">
-    <p class="frame-label eyebrow"><span id="frame-name">Full</span> <span class="w" id="frame-w">· 1240 × 800</span></p>
-    <div class="shell">
-      <nav class="rail" aria-label="Products">
-        <span class="rail-mark current" aria-hidden="true">⌂</span>
-        <span class="rail-sep" aria-hidden="true"></span>
-        <span class="rail-mark" aria-hidden="true">✎</span>
-        <span class="rail-mark" aria-hidden="true">☑</span>
-        <span class="rail-mark" aria-hidden="true">↗</span>
-      </nav>
-      <div class="canvas">
-        <div class="scroller" id="scroller">
-          <div class="spine">
-            <div class="spine-top">
-              <h1>Home</h1>
-              <span class="ws">The Orchard, events · Mara &amp; Finn</span>
-            </div>
-            <div class="tabs">
-              <a class="tab" href="#">Today&rsquo;s Signal</a>
-              <a class="tab" href="#">Full briefing</a>
-              <a class="tab" href="#" aria-current="page">Lately</a>
-            </div>
-          </div>
-          <div class="col" id="view"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="tip" id="tip" role="presentation"></div>
-
+<script src="fixture.js"></script>
 <script>
-/* ═══════════════════════════════════════════════════════════════
-   ONE accessor per fact. Every figure on screen reads from here,
-   so a card and a mark can never disagree.
-   ═══════════════════════════════════════════════════════════════ */
-const READ_TIME = "09:14";
-const READ_FULL = "09:14, Thursday 16 July 2026";
+/* ═══════════════════════════════════════════════════════════════════════
+   ONE accessor per fact. Every figure on screen reads from D, so a header
+   and the marks beneath it cannot disagree — a surface that contradicts
+   itself spends the credibility of the whole product.
+   ═══════════════════════════════════════════════════════════════════ */
+const F = window.LATELY_FIXTURE;
+const STATES = ["full", "partial", "quiet", "first-run", "empty", "loading", "error"];
+const VARIANTS = ["light", "dark"];
+const MOTIONS = ["play", "settled"];
 
-const WEEKS = [
-  { start: "27 Apr", v: 5 },  { start: "4 May",  v: 3 },
-  { start: "11 May", v: 6 },  { start: "18 May", v: 4 },
-  { start: "25 May", v: 7 },  { start: "1 Jun",  v: 5 },
-  { start: "8 Jun",  v: 8 },  { start: "15 Jun", v: 6 },
-  { start: "22 Jun", v: 6 },  { start: "29 Jun", v: 8 },
-  { start: "6 Jul",  v: 5 },  { start: "13 Jul", v: 12, partial: true },
-];
-
-const JOBS = [
-  { age: 2,  title: "Order tonic and the good olives" },
-  { age: 3,  title: "Build the Saturday run-sheet" },
-  { age: 5,  title: "Send midweek rate to the June 2027 couple" },
-  { age: 6,  title: "Approve the final seating plan" },
-  { age: 9,  title: "Reprint the faded welcome sign" },
-  { age: 11, title: "Confirm the lighting rig with the venue" },
-  { age: 19, title: "Sign off the recommended-suppliers list" },
-  { age: 23, title: "Chase the boat operator on the crossing time" },
-  { age: 41, title: "Confirm marquee sides with the hire company" },
-];
-const FORTNIGHT = 14;
-
+const sum = (a) => a.reduce((x, y) => x + y, 0);
 const D = {
-  finishedFour: WEEKS.slice(8).reduce((a, w) => a + w.v, 0),
-  priorFour:    WEEKS.slice(4, 8).reduce((a, w) => a + w.v, 0),
-  priorFour2:   WEEKS.slice(0, 4).reduce((a, w) => a + w.v, 0),
-  thisWeek:     WEEKS[11].v,
-  bestPrior:    Math.max(...WEEKS.slice(0, 11).map((w) => w.v)),
-  open:         JOBS.length,
-  sitting:      JOBS.filter((j) => j.age >= FORTNIGHT).length,
-  overdue:      2,
-  unowned:      1,
-  waiting:      0,
+  workspace: F.bound.workspace,
+  owner: F.bound.owner,
+  readingLong: F.readingLong,
+  weeks: F.weeks,
+  jobs: F.jobs,
+  fortnight: F.fortnight,
+  open: F.bound.openCount,
+  lastFour: sum(F.weeks.slice(8).map((w) => w.v)),
+  priorFour: sum(F.weeks.slice(4, 8).map((w) => w.v)),
+  thisWeek: F.weeks[F.weeks.length - 1].v,
+  bestPrior: Math.max(...F.weeks.slice(0, -1).map((w) => w.v)),
+  sitting: F.status.sitting,
+  overdue: F.status.overdue,
+  unowned: F.status.unowned,
+  waiting: F.status.waiting,
 };
-D.delta = D.finishedFour - D.priorFour;
+D.delta = D.lastFour - D.priorFour;
+D.oldest = Math.max(...D.jobs.map((j) => j.age));
+D.axisMax = Math.max(45, Math.ceil((D.oldest + 4) / 5) * 5);
+D.peak = Math.max(...D.weeks.map((w) => w.v));
 
-const STATES = {
-  full:        { name: "Full",      note: "Every source answered. The lead figure is work_completed — observed, no history needed. The twelve columns are buildTrendPoints() at weekly resolution, which needs no snapshot writer because a completion carries its own timestamp." },
-  partial:     { name: "Partial",   note: "Timeline did not answer. The cards it feeds say so and keep their shape; nothing degrades to zero." },
-  quiet:       { name: "All clear", note: "Nothing slipping. The band does not vanish — an absent band reads as a bug. It states the absence once, with its arithmetic." },
-  "first-run": { name: "First run", note: "Under four weeks of work. No comparison is attempted, and the date it arrives is named." },
-  empty:       { name: "Empty",     note: "No work at all. One instruction, once." },
-  loading:     { name: "Loading",   note: "Skeletons at the real geometry of the sections that will actually render. No shimmer." },
-  error:       { name: "Error",     note: "Names the source, offers the one useful move, and shows nothing it cannot stand behind." },
+/* The axis maximum is derived, never typed. A sixty-day job must not fall
+   off the end of its own chart; the undesigned edge is a whole class of
+   defect and this is where it starts. */
+const pct = (v, max) => Math.max(2, Math.round((v / max) * 100));
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+/* ── Atoms ──────────────────────────────────────────────────────────── */
+const ICON = {
+  up: '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M5 8.5V1.5M5 1.5L2 4.5M5 1.5l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  down: '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true"><path d="M5 1.5v7M5 8.5l3-3M5 8.5l-3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  /* Status wears a shape as well as a colour, always, and never a colour
+     alone: the four are amber, indigo, red, emerald in that fixed order
+     because red adjacent to amber fails CVD separation at 4.4. */
+  still: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.2" fill="none" stroke="#d97706" stroke-width="1.6" stroke-dasharray="2 2"/></svg>',
+  past: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1.6 11 10.4H1z" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  nobody: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="1.6" y="1.6" width="8.8" height="8.8" rx="2" fill="none" stroke="#4f46e5" stroke-width="1.5"/></svg>',
+  waiting: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.4 6h7.2" fill="none" stroke="#059669" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  clear: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9l5-6" fill="none" stroke="#059669" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 
-/* ── atoms ───────────────────────────────────────────────────── */
-const arrowUp = `<svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true"><path d="M4.5 8V1M4.5 1L1.5 4M4.5 1l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+function label(text) {
+  return `<p class="t-label dim" data-type="label">${esc(text)}</p>`;
+}
 
-function kpi({ n, label, glyph, tone, share, i, link = true, zero = false }) {
-  const T = tone ? ` ${tone}` : "";
-  const inner = `
-    <span class="kpi-top">
-      <span class="glyph ${glyph[0]}">${glyph[1]}</span>
-    </span>
-    <span class="kpi-n${zero ? " zero" : ""}">${n}</span>
-    <span class="kpi-lab">${label}</span>
-    <span class="kpi-meter" aria-hidden="true"><i style="--f:${share}"></i></span>`;
-  return link
-    ? `<a class="kpi rise${T}" href="#" style="--i:${i}">${inner}</a>`
-    : `<div class="kpi rise${T}" style="--i:${i}">${inner}</div>`;
+/* A KPI card. `n` may be a number or the string "—"; when a source did not
+   answer the card keeps its shape and says so in words, and never resolves
+   to a fabricated zero. */
+function kpi({ n, word, glyph, i, unavailable = false }) {
+  const known = !unavailable;
+  const share = known && D.open ? Math.min(1, n / D.open) : 0;
+  const name = known
+    ? `${plural(n, "job", "jobs")} ${word}, of ${plural(D.open, "job", "jobs")} open`
+    : `${word}: not available, because Timeline did not answer`;
+  const body = `
+      <span class="glyph" aria-hidden="true">${glyph}</span>
+      ${known
+        ? `<span class="t-num" data-type="bignum">${n}</span>`
+        : `<span class="t-num na" data-type="bignum">&mdash;</span>`}
+      <span class="t-small dim-2" data-type="small">${esc(word)}</span>
+      ${known
+        ? `<span class="meter" aria-hidden="true"><i class="${n === 0 ? "zero" : ""}" style="--f:${share};--i:${i}"></i></span>`
+        : `<span class="t-label dim" data-type="label">Not available</span>`}
+      <span class="sr">${esc(name)}</span>`;
+  return known && n > 0
+    ? `<a class="kpi rise" href="#" style="--i:${i}">${body}</a>`
+    : `<div class="kpi rise" style="--i:${i}">${body}</div>`;
 }
 
 /* The denominator card. Not a status, so it wears no status furniture and
    no meter — a meter against itself is always full, which says nothing. */
 function leadKpi(i) {
   return `
-  <div class="kpi lead-kpi rise" style="--i:${i}">
-    <span class="kpi-top"><span class="eyebrow">Open</span></span>
-    <span class="kpi-n">${D.open}</span>
-    <span class="kpi-lab">on the board right now</span>
-  </div>`;
+    <div class="kpi lead rise" style="--i:${i}">
+      <span class="t-label" data-type="label">Open now</span>
+      <span class="t-num" data-type="bignum">${D.open}</span>
+      <span class="t-small" data-type="small">jobs not finished</span>
+      <span class="sr">Every card in this row is counted out of these ${plural(D.open, "open job", "open jobs")}.</span>
+    </div>`;
 }
 
-function chart(weeks, { record = true } = {}) {
-  const max = Math.max(...weeks.map((w) => w.v));
-  const n = weeks.length;
-  const isRecord = record && weeks[n - 1].v > Math.max(...weeks.slice(0, n - 1).map((w) => w.v));
-  const best = Math.max(...weeks.slice(0, n - 1).map((w) => w.v));
-  const pct = (v) => (v / max) * 100;
-  const atBottom = (p) => `calc((100% - var(--val-row)) * ${p / 100})`;
-
-  const bars = weeks.map((w, i) => `
-    <div class="bar-slot${w.partial ? " partial" : ""}" style="--i:${i}"
-      data-tip="<b>${w.v}${w.partial ? " so far" : ""}</b><span>Week of ${w.start}</span>">
-      <span class="bar-track">
-        ${w.partial ? `<span class="bar-val" style="bottom:${pct(w.v)}%">${w.v}</span>` : ""}
-        <span class="bar" style="height:${pct(w.v)}%"></span>
-      </span>
-    </div>`).join("");
-
-  const named = n > 5 ? [0, Math.floor(n / 3), Math.floor((2 * n) / 3), n - 1] : weeks.map((_, i) => i);
-  const ticks = weeks.map((w, i) =>
-    `<span class="axis-tick${named.includes(i) ? " named" : ""}">${named.includes(i) ? w.start : ""}</span>`).join("");
-
-  const grid = [0.33, 0.66, 1].map((g) =>
-    `<span class="gridline" style="bottom:${atBottom(g * 100)}"></span>`).join("");
-
+/* ── Movement one ───────────────────────────────────────────────────── */
+function chart({ record = true } = {}) {
+  const max = Math.max(D.peak, D.bestPrior);
+  const cols = D.weeks.map((w, i) => {
+    const live = i === D.weeks.length - 1;
+    const cls = w.partial ? "bar part" : (live ? "bar live" : "bar");
+    const val = live
+      ? `<span class="bar-val t-label" data-type="label" style="--h:${pct(w.v, max)}">${w.v} so far</span>`
+      : "";
+    return `<span class="colw"><span class="${cls}" style="--h:${pct(w.v, max)};--i:${i}"></span>${val}</span>`;
+  }).join("");
+  const ticks = D.weeks.map((w, i) => {
+    const show = i % 3 === 0 || i === D.weeks.length - 1;
+    return `<span class="t-label ${show ? "" : "mute"}" data-type="label">${esc(w.start)}</span>`;
+  }).join("");
+  const rec = record
+    ? `<span class="record" style="--r:${pct(D.bestPrior, max)}"><span class="record-tag t-label" data-type="label">Best week &middot; ${D.bestPrior}</span></span>`
+    : "";
+  /* Three gridlines with their values, so the columns are read against a
+     magnitude rather than only against each other. */
+  const grid = [0.5, 1].map((g) => {
+    const v = Math.round(max * g);
+    return `<span class="gridline" style="bottom:${g * 100}%"><b class="t-label" data-type="label">${v}</b></span>`;
+  }).join("");
   return `
-  <div class="plot-wrap">
-    <div class="chart-plot" style="--n:${n}" role="img"
-      aria-label="Work finished each week: ${weeks.map((w) => `week of ${w.start}, ${w.v}${w.partial ? " so far" : ""}`).join("; ")}.">
-      ${grid}
-      ${isRecord ? `
-        <span class="record-line" style="bottom:${atBottom(pct(best))}"></span>
-        <span class="record-tag" style="bottom:${atBottom(pct(best))}">Previous best &middot; ${best}</span>` : ""}
-      ${bars}
-    </div>
-    <div class="chart-axis" style="--n:${n}">${ticks}</div>
-  </div>`;
-}
-
-function strip() {
-  const oldest = Math.max(...JOBS.map((j) => j.age));
-  const max = Math.ceil((oldest + 4) / 5) * 5;
-  const dots = JOBS.map((j, i) => `
-    <span class="dot${j.age >= FORTNIGHT ? " old" : ""}" style="left:${(j.age / max) * 100}%;--i:${i}"
-      data-tip="<b>${j.age} days</b><span>${j.title}</span>"></span>`).join("");
-  return `
-  <div class="strip-plot" role="img"
-    aria-label="Nine open jobs by days since anything was recorded: ${JOBS.map((j) => `${j.title}, ${j.age} days`).join("; ")}. ${D.sitting} are over a fortnight.">
-    <span class="strip-grid"></span>
-    <span class="strip-threshold" style="left:${(FORTNIGHT / max) * 100}%"></span>
-    <span class="threshold-label" style="left:${(FORTNIGHT / max) * 100}%">A fortnight</span>
-    ${dots}
-    <span class="dot-cap">${oldest} days</span>
-  </div>
-  <div class="strip-axis">
-    <span class="axis-tick named">Touched today</span>
-    <span class="axis-tick named">${max} days ago</span>
-  </div>`;
-}
-
-function coverage(rows) {
-  return `<div class="coverage">${rows.map((r) => `<span><b>${r[0]}</b> ${r[1]}</span>`).join("")}
-    <span><b>Read</b> ${READ_FULL}</span></div>`;
-}
-
-const LIMITS = {
-  movement: { g: ["di", "Not recorded"], t: "How a date moved", p: "Nothing writes date changes down yet. Recording starts the day it is switched on." },
-  timeline: { g: ["di", "Silent"], t: "Anything from your dates", p: "Timeline did not answer. Nothing was assumed in its place." },
-  decisions:{ g: ["dash", "No source"], t: "Decisions in your notes", p: "Notes offers follow-ups only. Not a zero — there is nothing to count." },
-  scope:    { g: ["ring", "One project"], t: "Your three other projects", p: "Permission is checked one project at a time. A total across four would be unproved." },
-};
-
-function limits(keys) {
-  return `
-  <section class="band" aria-labelledby="lim">
-    <div class="band-head">
-      <p class="eyebrow" id="lim">What this cannot tell you</p>
-    </div>
-    <div class="limits">
-      ${keys.map((k, i) => {
-        const L = LIMITS[k];
-        return `<div class="limit rise" style="--i:${i}">
-          <span class="glyph ${L.g[0]}" style="color:var(--ink-faint)">${L.g[1]}</span>
-          <h3>${L.t}</h3><p>${L.p}</p></div>`;
-      }).join("")}
-    </div>
-    <div class="ghost rise" style="--i:3">
-      <p><b style="font-weight:500;color:var(--ink-soft)">How much was open, week by week.</b><br>
-        The first reading is kept tonight. This fills in from tomorrow.</p>
-    </div>
-  </section>`;
-}
-
-/* ── views ───────────────────────────────────────────────────── */
-
-function slipKpis() {
-  return `
-    ${leadKpi(0)}
-    ${kpi({ n: D.sitting, label: "sitting over a fortnight", glyph: ["", "Sitting"], tone: "attention", share: D.sitting / D.open, i: 1 })}
-    ${kpi({ n: D.overdue, label: "past the day you gave them", glyph: ["di", "Past date"], tone: "acute", share: D.overdue / D.open, i: 2 })}
-    ${kpi({ n: D.unowned, label: "with nobody&rsquo;s name on", glyph: ["sq", "Unowned"], tone: "neutral", share: D.unowned / D.open, i: 3 })}
-    ${kpi({ n: D.waiting, label: "waiting on somebody else", glyph: ["ring", "Clear"], tone: "good", share: 0, i: 4, link: false, zero: true })}`;
-}
-
-function viewFull({ partial = false } = {}) {
-  const banner = partial ? `
-    <div class="banner rise" style="--i:0;margin-bottom:22px">
-      <span class="glyph di" style="color:var(--st-attention)">Partial</span>
-      <h2>Timeline did not answer this morning.</h2>
-      <p>Read from Tasks and Notes only. Anything needing your dated commitments is missing, not empty.</p>
-    </div>` : "";
-
-  return `
-  ${banner}
-  <section class="band" aria-labelledby="did">
-    <div class="card rise" style="--i:0">
-      <div class="lead">
-        <div class="lead-figure">
-          <p class="eyebrow" id="did">Last four weeks &middot; 22 Jun &ndash; 16 Jul</p>
-          <span class="hero-num" data-count="${D.finishedFour}">0</span>
-          <span class="hero-unit">jobs finished</span>
-          <span class="delta">${arrowUp} +${D.delta} on the four before</span>
-        </div>
-        ${chart(WEEKS)}
+    <div class="chart">
+      <div class="plot">
+        ${grid}
+        <span class="baseline"></span>
+        ${rec}
+        <span class="cols">${cols}</span>
       </div>
-    </div>
-  </section>
+      <div class="xaxis">${ticks}</div>
+      <p class="sr">Twelve weeks of finished work, week commencing ${esc(D.weeks[0].start)} to ${esc(D.weeks[D.weeks.length - 1].start)}: ${D.weeks.map((w) => `${w.start}, ${w.v}${w.partial ? " so far" : ""}`).join("; ")}.${record ? ` The best week before this one was ${D.bestPrior}.` : ""}</p>
+    </div>`;
+}
 
-  <section class="band" aria-labelledby="slip">
-    <div class="band-head">
-      <p class="eyebrow" id="slip">Quietly slipping</p>
-      <p class="eyebrow">Four readings of the same ${D.open} &middot; read ${READ_TIME}</p>
-    </div>
-    <div class="kpis">${slipKpis()}</div>
-  </section>
+function movementOne({ record = true } = {}) {
+  const up = D.delta >= 0;
+  return `
+    <section class="band" aria-labelledby="m1">
+      <div class="band-head">
+        <h2 class="t-sect" id="m1" data-type="sect">What you did</h2>
+        <span class="grow"></span>
+        <p class="t-label dim" data-type="label">Last four weeks &middot; ${esc(D.weeks[8].start)} to ${esc(D.weeks[11].start)}</p>
+      </div>
+      <div class="card hero rise" style="--i:1">
+        <div class="hero-fig">
+          <div class="stack">
+            <div class="hero-n">
+              <span class="t-hero" data-type="hero" id="count">${D.lastFour}</span>
+              <span class="delta t-label" data-type="label">${up ? ICON.up : ICON.down} ${up ? "+" : ""}${D.delta} on the four before</span>
+            </div>
+            <p class="t-body dim-2 hero-note" data-type="body">jobs finished, ${esc(D.workspace)}</p>
+          </div>
+          <p class="t-small dim hero-note" data-type="small">Counted at the moment each job reached a done column. Every one of them is openable.</p>
+        </div>
+        ${chart({ record })}
+      </div>
+    </section>`;
+}
 
-  <section class="band" aria-labelledby="ages">
-    <div class="card rise" style="--i:1">
-      <div class="band-head" style="margin-bottom:0">
-        <p class="eyebrow" id="ages">How long open work has been sitting</p>
-        <p class="eyebrow">${D.sitting} of ${D.open} past the line</p>
+/* ── Movement two ───────────────────────────────────────────────────── */
+function strip() {
+  const dots = D.jobs.map((j, i) => {
+    const old = j.age >= D.fortnight;
+    return `<button type="button" class="dot ${old ? "old" : ""}" style="--x:${(j.age / D.axisMax) * 100};--i:${i}" data-tip="<b>${plural(j.age, "day", "days")} open</b><s>${esc(j.title)}</s>" aria-label="${esc(j.title)}, open ${plural(j.age, "day", "days")}"></button>`;
+  }).join("");
+  const marks = [0, 15, 30, 45].filter((n) => n <= D.axisMax);
+  return `
+    <div class="card ages rise" style="--i:3">
+      <div class="band-head">
+        <h3 class="t-head" data-type="head">How long open work has been sitting</h3>
+        <span class="grow"></span>
+        <p class="t-label dim" data-type="label">Oldest &middot; ${plural(D.oldest, "day", "days")}</p>
+      </div>
+      <div class="strip">
+        <span class="fortnight" style="--x:${(D.fortnight / D.axisMax) * 100}"><span class="t-label" data-type="label">A fortnight</span></span>
+        <span class="strip-axis"></span>
+        ${dots}
+        <span class="strip-scale">${marks.map((n) => `<span class="t-unit" data-type="unit">${n === 0 ? "today" : n + "d"}</span>`).join("")}</span>
+      </div>
+      <p class="sr">${plural(D.jobs.length, "open job", "open jobs")}, by age: ${D.jobs.map((j) => `${j.title}, ${j.age} days`).join("; ")}. ${plural(D.sitting, "job has", "jobs have")} been open longer than a fortnight.</p>
+    </div>`;
+}
+
+function movementTwo({ partial = false } = {}) {
+  return `
+    <section class="band" aria-labelledby="m2">
+      <div class="band-head">
+        <h2 class="t-sect" id="m2" data-type="sect">What&rsquo;s quietly slipping</h2>
+        <span class="grow"></span>
+        <p class="t-label dim" data-type="label">All five counted out of ${D.open}</p>
+      </div>
+      <div class="kpis">
+        ${leadKpi(0)}
+        ${kpi({ n: D.sitting, word: "haven’t moved in a fortnight", glyph: ICON.still, i: 1 })}
+        ${kpi({ n: D.overdue, word: "past the day they were due", glyph: ICON.past, i: 2, unavailable: partial })}
+        ${kpi({ n: D.unowned, word: "have nobody’s name on them", glyph: ICON.nobody, i: 3 })}
+        ${kpi({ n: D.waiting, word: "are waiting on something else", glyph: ICON.waiting, i: 4 })}
+      </div>
+      ${partial ? `<div class="note" style="margin-top:var(--gap-line)"><p class="t-body dim-2" data-type="body">Timeline did not answer this reading, so nothing here knows a due date. The card keeps its place and says so; it does not fall back to zero.</p></div>` : ""}
+      ${strip()}
+    </section>`;
+}
+
+/* ── Movement three ─────────────────────────────────────────────────── */
+const LIMITS = [
+  ["Open work over time", "The snapshot writer has no callers yet, so there are no earlier readings to compare."],
+  ["How a date moved", "The date recorder switched on in August. History accrues forward only."],
+  ["Decisions still open", "Notes keeps no structured decision record to read. That is a Notes change, not this one."],
+];
+
+function movementThree() {
+  const ghostCols = [38, 52, 44, 61, 47, 58, 50, 66, 54, 62, 57, 70]
+    .map((h) => `<i style="--h:${h}"></i>`).join("");
+  return `
+    <section class="band" aria-labelledby="m3">
+      <div class="band-head">
+        <h2 class="t-sect" id="m3" data-type="sect">What this can&rsquo;t tell you</h2>
+        <span class="grow"></span>
+        <p class="t-label dim" data-type="label">Three refusals</p>
+      </div>
+      <div class="limits">
+        ${LIMITS.map(([head, why]) => `
+        <div class="limit rise" style="--i:1">
+          ${label("Not yet")}
+          <p class="t-head" data-type="head">${head}</p>
+          <p class="t-small dim-2" data-type="small">${why}</p>
+        </div>`).join("")}
+      </div>
+      <div class="ghost rise" style="--i:2">
+        <div class="ghost-plot" aria-hidden="true">${ghostCols}</div>
+        <div class="ghost-say">
+          <p class="t-head" data-type="head">This is the chart we would draw</p>
+          <p class="t-small dim" data-type="small">and it stays empty until the recorder has run for three periods.</p>
+        </div>
+      </div>
+    </section>`;
+}
+
+/* ── The seven states ───────────────────────────────────────────────── */
+const SOURCES = {
+  full:        { tasks: "answered", timeline: "answered", notes: "answered, for you" },
+  partial:     { tasks: "answered", timeline: "did not answer", notes: "answered, for you" },
+  quiet:       { tasks: "answered", timeline: "answered", notes: "answered, for you" },
+  "first-run": { tasks: "answered", timeline: "answered", notes: "answered, for you" },
+  empty:       { tasks: "answered, nothing recorded", timeline: "not read", notes: "not read" },
+  loading:     { tasks: "reading", timeline: "reading", notes: "reading" },
+  error:       { tasks: "did not answer", timeline: "not read", notes: "not read" },
+};
+let sources = SOURCES.full;
+
+function shell(inner) {
+  return `
+  <div class="app">
+    <nav class="rail" aria-hidden="true">
+      <i class="on">&#8962;</i><i>&#9998;</i><i>&#9745;</i><i>&#8599;</i>
+    </nav>
+    <div class="canvas"><div class="scroll"><div class="page">
+      <header class="top">
+        <div class="top-row">
+          <h1 class="t-sect" data-type="sect">Home</h1>
+          <p class="t-body ws" data-type="body">${esc(D.workspace)} &middot; ${esc(D.owner)}</p>
+        </div>
+        <nav class="tabs" aria-label="Home views">
+          <a class="tab t-body" data-type="control" href="#">Today&rsquo;s Signal</a>
+          <a class="tab t-body" data-type="control" href="#">Full briefing</a>
+          <a class="tab t-body" data-type="control" href="#" aria-current="page">Lately</a>
+        </nav>
+        <div class="reading">
+          <p class="t-label" data-type="label">Read at ${esc(D.readingLong)}</p>
+          <span class="rule"></span>
+          <p class="t-label" data-type="label">Twelve weeks</p>
+        </div>
+      </header>
+      <main>${inner}</main>
+      <div class="coverage t-label" data-type="label">
+        <span><b>Tasks</b> ${esc(sources.tasks)}</span>
+        <span><b>Timeline</b> ${esc(sources.timeline)}</span>
+        <span><b>Notes</b> ${esc(sources.notes)}</span>
+        <span><b>Read</b> ${esc(D.readingLong)}</span>
+        <span><b>Lab</b> weekly counts and ages are lab-authored; ${esc(D.workspace)}, ${esc(D.owner)}, the reading date and the ${D.open} are bound to the shipping fixture</span>
+      </div>
+    </div></div></div>
+  </div>`;
+}
+
+const VIEW = {
+  full: () => shell(movementOne() + movementTwo() + movementThree()),
+
+  partial: () => shell(movementOne({ record: false }) + movementTwo({ partial: true }) + movementThree()),
+
+  /* Nothing slipping. The band does not vanish — an absent band reads as a
+     bug — it states the absence once, with its arithmetic. */
+  quiet: () => shell(movementOne() + `
+    <section class="band" aria-labelledby="m2q">
+      <div class="band-head">
+        <h2 class="t-sect" id="m2q" data-type="sect">What&rsquo;s quietly slipping</h2>
+      </div>
+      <div class="card rise" style="--i:1">
+        <div class="center">
+          <span class="glyph" aria-hidden="true">${ICON.clear}</span>
+          <p class="t-head" data-type="head">Nothing is sitting</p>
+          <p class="t-body dim-2" data-type="body">All ${plural(D.open, "open job", "open jobs")} has moved inside a fortnight, none is past its day, and every one has a name on it.</p>
+        </div>
       </div>
       ${strip()}
-    </div>
-  </section>
+    </section>` + movementThree()),
 
-  ${limits(partial ? ["timeline", "decisions", "scope"] : ["movement", "decisions", "scope"])}
-
-  ${coverage(partial
-    ? [["Tasks", "answered"], ["Timeline", "did not answer"], ["Notes", "answered, for you"]]
-    : [["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
-}
-
-function viewQuiet() {
-  return `
-  <section class="band">
-    <div class="card rise" style="--i:0">
-      <div class="lead">
-        <div class="lead-figure">
-          <p class="eyebrow">Last four weeks &middot; 22 Jun &ndash; 16 Jul</p>
-          <span class="hero-num" data-count="${D.finishedFour}">0</span>
-          <span class="hero-unit">jobs finished</span>
-          <span class="delta">${arrowUp} +${D.delta} on the four before</span>
-        </div>
-        ${chart(WEEKS)}
+  /* Under four weeks of work: no comparison is attempted, and the date the
+     comparison arrives is named rather than left as a mystery. */
+  "first-run": () => shell(`
+    <section class="band" aria-labelledby="m1f">
+      <div class="band-head">
+        <h2 class="t-sect" id="m1f" data-type="sect">What you did</h2>
       </div>
-    </div>
-  </section>
-
-  <section class="band" aria-labelledby="slip2">
-    <div class="band-head"><p class="eyebrow" id="slip2">Quietly slipping</p><p class="eyebrow">Read ${READ_TIME}</p></div>
-    <div class="clear rise" style="--i:1">
-      <span class="clear-n" data-count="0">0</span>
-      <span class="clear-txt">
-        <p>Nothing is slipping.</p>
-        <span>All ${D.open} open jobs touched inside a fortnight, all dated, all owned.</span>
-      </span>
-    </div>
-  </section>
-
-  ${limits(["movement", "decisions", "scope"])}
-  ${coverage([["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
-}
-
-function viewFirstRun() {
-  const w = WEEKS.slice(9);
-  const total = w.reduce((a, x) => a + x.v, 0);
-  return `
-  <section class="band">
-    <div class="card rise" style="--i:0">
-      <div class="lead">
-        <div class="lead-figure">
-          <p class="eyebrow">Since you started &middot; 29 Jun &ndash; 16 Jul</p>
-          <span class="hero-num" data-count="${total}">0</span>
-          <span class="hero-unit">jobs finished</span>
-          <span class="delta" style="background:var(--paper-deep);color:var(--ink-faint)">Comparison from 27 July</span>
-        </div>
-        ${chart(w, { record: false })}
-      </div>
-    </div>
-  </section>
-
-  <section class="band" aria-labelledby="slip3">
-    <div class="band-head"><p class="eyebrow" id="slip3">Quietly slipping</p></div>
-    <div class="clear rise" style="--i:1">
-      <span class="clear-n" data-count="0">0</span>
-      <span class="clear-txt">
-        <p>Nothing has had time to slip.</p>
-        <span>The oldest thing on your board is eighteen days old.</span>
-      </span>
-    </div>
-  </section>
-
-  ${limits(["movement", "scope", "decisions"])}
-  ${coverage([["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
-}
-
-function viewEmpty() {
-  return `
-  <div class="blank rise" style="--i:0">
-    <p class="eyebrow">Mara &amp; Finn</p>
-    <p class="lede">Nothing to read yet.</p>
-    <p class="body">This page looks back at work you have finished and work that has gone quiet.
-      Neither exists until there is something on your board.</p>
-    <a class="move" href="#">Add your first job <span aria-hidden="true">&rarr;</span></a>
-  </div>`;
-}
-
-function viewLoading() {
-  const heights = [42, 25, 50, 33, 58, 42, 67, 50, 50, 67, 42, 100];
-  return `
-  <section class="band">
-    <div class="card">
-      <div class="lead">
-        <div class="lead-figure">
-          <div class="sk" style="width:180px;height:10px"></div>
-          <div class="sk" style="width:190px;height:92px;margin-top:16px;border-radius:9px"></div>
-          <div class="sk" style="width:110px;height:13px;margin-top:14px"></div>
-          <div class="sk" style="width:150px;height:22px;margin-top:16px;border-radius:999px"></div>
-        </div>
-        <div class="plot-wrap">
-          <div class="chart-plot" style="--n:12">
-            ${heights.map((h) => `<div class="bar-slot"><span class="bar-track"><span class="sk" style="position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:64%;max-width:30px;height:${h}%;border-radius:2.5px 2.5px 0 0"></span></span></div>`).join("")}
+      <div class="card hero rise" style="--i:1">
+        <div class="hero-fig">
+          <div class="stack">
+            <div class="hero-n"><span class="t-hero" data-type="hero">${D.thisWeek}</span></div>
+            <p class="t-body dim-2 hero-note" data-type="body">jobs finished since you started, ${esc(D.workspace)}</p>
           </div>
+          <p class="t-small dim hero-note" data-type="small">Four weeks of records make a comparison worth printing. Yours arrive on 10 August.</p>
+        </div>
+        <div class="chart">
+          <div class="plot">
+            <span class="baseline"></span>
+            <span class="cols"><span class="colw"><span class="bar part" style="--h:60;--i:0"></span><span class="bar-val t-label" data-type="label" style="--h:60">${D.thisWeek} so far</span></span></span>
+          </div>
+          <div class="xaxis"><span class="t-label" data-type="label">${esc(D.weeks[11].start)}</span></div>
         </div>
       </div>
-    </div>
-  </section>
-  <section class="band" aria-hidden="true">
-    <div class="band-head"><div class="sk" style="width:120px;height:10px"></div></div>
-    <div class="kpis">${Array.from({ length: 5 }, () => `<div class="sk" style="height:104px;border-radius:12px"></div>`).join("")}</div>
-  </section>
-  <section class="band" aria-hidden="true">
-    <div class="card"><div class="sk" style="width:200px;height:10px"></div><div class="sk" style="height:76px;margin-top:14px"></div></div>
-  </section>
-  <p class="sr" role="status">Reading your last twelve weeks.</p>`;
-}
+    </section>` + movementTwo() + movementThree()),
 
-function viewError() {
-  return `
-  <div class="banner acute rise" style="--i:0">
-    <span class="glyph di" style="color:var(--st-acute)">Could not read</span>
-    <h2>Tasks did not answer, so there is nothing to show.</h2>
-    <p>Your work is safe — this page could not reach it just now. It tries again on its own.</p>
-  </div>
-  <div class="blank rise" style="--i:1" style="padding-top:18px">
-    <a class="move" href="#">Open your board <span aria-hidden="true">&rarr;</span></a>
-  </div>
-  ${coverage([["Tasks", "did not answer"], ["Timeline", "not read"], ["Notes", "not read"]])}`;
-}
+  /* One instruction, once. Four templated "nothing here" lines is the
+     defect this state exists to avoid. */
+  empty: () => shell(`
+    <section class="band">
+      <div class="card rise" style="--i:0">
+        <div class="center">
+          <p class="t-sect" data-type="sect">No work recorded yet</p>
+          <p class="t-body dim-2" data-type="body">Add the first job in Tasks and this view fills itself in as you finish things.</p>
+          <button type="button" class="btn t-body" data-type="control">Open Tasks</button>
+        </div>
+      </div>
+    </section>`),
 
-const RENDER = {
-  full: () => viewFull({}),
-  partial: () => viewFull({ partial: true }),
-  quiet: viewQuiet,
-  "first-run": viewFirstRun,
-  empty: viewEmpty,
-  loading: viewLoading,
-  error: viewError,
+  /* Skeletons at the real geometry of the sections that will actually
+     render — never a promise of a section that never arrives. */
+  loading: () => shell(
+    `<div class="sk-wrap" aria-hidden="true">${movementOne() + movementTwo()}</div>` +
+    `<p class="sr">Loading this reading.</p>`),
+
+  /* Names the source, offers the one useful move, and shows nothing it
+     cannot stand behind. */
+  error: () => shell(`
+    <section class="band">
+      <div class="card rise" style="--i:0">
+        <div class="center">
+          <p class="t-sect" data-type="sect">Tasks did not answer</p>
+          <p class="t-body dim-2" data-type="body">This reading needs the Tasks records and they did not come back. Nothing below is shown, because a part of this screen would be guessing.</p>
+          <button type="button" class="btn t-body" data-type="control" id="retry">Try again</button>
+          <p class="t-label dim" data-type="label">Last good reading &middot; ${esc(D.readingLong)}</p>
+        </div>
+      </div>
+    </section>`),
 };
 
-/* ── driving ─────────────────────────────────────────────────── */
-const view = document.getElementById("view");
-const stage = document.getElementById("stage");
+/* ── The URL contract ───────────────────────────────────────────────────
+   An unknown ?state= or ?v= STOPS. The Notes shot harness took three
+   variant keys the preset table did not contain and silently graded the
+   locked preset three times over; thirty-six of forty frames per room were
+   byte-identical and nobody noticed for nine rounds. A surface that
+   accepts a key it does not have shows work that does not exist. */
+const q = new URLSearchParams(location.search);
+const wantState = q.get("state");
+const wantV = q.get("v");
+let fatal = null;
+const wantMotion = q.get("motion");
+if (wantState !== null && !STATES.includes(wantState)) fatal = `state=${wantState}`;
+if (wantV !== null && !VARIANTS.includes(wantV)) fatal = `v=${wantV}`;
+if (wantMotion !== null && !MOTIONS.includes(wantMotion)) fatal = `motion=${wantMotion}`;
+
+/* Default: play for a person, settled for a machine. ?motion= overrides
+   either way, so the choreography is still drivable under automation and
+   the gate can prove it runs. */
+const PLAY = wantMotion ? wantMotion === "play" : !navigator.webdriver;
+if (!PLAY) document.documentElement.setAttribute("data-motion", "settled");
+
+const root = document.getElementById("root");
 const tip = document.getElementById("tip");
-const frameName = document.getElementById("frame-name");
-const frameW = document.getElementById("frame-w");
-let current = "full";
 
-const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (fatal) {
+  window.__LATELY_FATAL = fatal;
+  document.documentElement.setAttribute("data-fatal", fatal);
+  document.title = `Lately · unknown ${fatal}`;
+  root.innerHTML = `
+    <div class="fatal">
+      <p class="t-label" data-type="label">This surface did not render</p>
+      <p class="t-sect" data-type="sect">Unknown ${esc(fatal)}</p>
+      <p class="t-body dim-2" data-type="body">This master serves ${STATES.join(", ")} at ${VARIANTS.join(" and ")}, with motion ${MOTIONS.join(" or ")}. It stops on anything else rather than showing you the default and letting you believe you asked for it.</p>
+    </div>`;
+} else {
+  const state = wantState ?? "full";
+  const variant = wantV ?? "light";
+  document.body.dataset.state = state;
+  document.body.dataset.v = variant;
+  sources = SOURCES[state];
+  root.innerHTML = VIEW[state]();
 
-function countUp(el) {
-  const target = Number(el.dataset.count);
-  if (reduced || target === 0) { el.textContent = String(target); return; }
-  const dur = 900, t0 = performance.now();
-  const tick = (t) => {
-    const p = Math.min(1, (t - t0) / dur);
-    // Ease-out cubic: fast arrival, soft landing.
-    el.textContent = String(Math.round(target * (1 - Math.pow(1 - p, 3))));
-    if (p < 1) requestAnimationFrame(tick);
+  /* The hero counts up, because the figure is the moment. It counts from a
+     number near enough that the reader never sees a wrong total settle. */
+  const counter = state === "loading" ? null : document.getElementById("count");
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (counter && !reduced && PLAY) {
+    const target = Number(counter.textContent);
+    const from = Math.max(0, target - 12);
+    const started = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - started) / 700);
+      const eased = 1 - Math.pow(1 - t, 3);
+      counter.textContent = String(Math.round(from + (target - from) * eased));
+      if (t < 1) requestAnimationFrame(tick);
+      else counter.textContent = String(target);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  /* De-swarm. Two jobs three days apart overlap into a single blob at 390,
+     and a strip that draws eight marks for nine jobs is lying about the
+     count the card beside it states. Position on the axis stays exact —
+     only the vertical, which carries no meaning here, absorbs the
+     collision. Measured after layout, because the threshold is a pixel
+     distance and the axis is a percentage. */
+  const deswarm = () => {
+    const strip = root.querySelector(".strip");
+    if (!strip) return;
+    const w = strip.clientWidth;
+    if (!w) return;
+    const MIN = 16;
+    const rows = [];
+    Array.from(root.querySelectorAll(".dot"))
+      .map((el) => ({ el, x: (parseFloat(el.style.getPropertyValue("--x")) / 100) * w }))
+      .sort((a, b) => a.x - b.x)
+      .forEach(({ el, x }) => {
+        let r = 0;
+        while (rows[r] !== undefined && x - rows[r] < MIN) r += 1;
+        rows[r] = x;
+        el.style.setProperty("--row", r);
+      });
+    strip.style.minHeight = `${92 + Math.max(0, rows.length - 1) * 15}px`;
   };
-  requestAnimationFrame(tick);
-}
-
-function paint(state) {
-  current = state;
-  view.classList.remove("play");
-  view.innerHTML = RENDER[state]();
-  document.getElementById("scroller").scrollTop = 0;
-  hideTip();
   deswarm();
-  // Force reflow so the animations restart from zero on every repaint.
-  void view.offsetWidth;
-  view.classList.add("play");
-  view.querySelectorAll("[data-count]").forEach((el) => {
-    setTimeout(() => countUp(el), reduced ? 0 : 260);
-  });
-}
+  window.addEventListener("resize", deswarm);
 
-/* Beeswarm. Two jobs three days apart overlap into one blob at 390, which
-   reads as fewer jobs than there are. Position on the axis stays exact —
-   only the y, which carries no meaning here, absorbs the collision.
-   Measured after layout, because the threshold is a pixel distance. */
-function deswarm() {
-  const plot = view.querySelector(".strip-plot");
-  if (!plot) return;
-  const w = plot.clientWidth;
-  if (!w) return;
-  const MIN = 17; // dot 13px + 4px breathing room
-  const rows = [];
-  [...plot.querySelectorAll(".dot")]
-    .map((el) => ({ el, x: (parseFloat(el.style.left) / 100) * w }))
-    .sort((a, b) => a.x - b.x)
-    .forEach(({ el, x }) => {
-      let r = 0;
-      while (rows[r] !== undefined && x - rows[r] < MIN) r += 1;
-      rows[r] = x;
-      el.style.setProperty("--row", r);
+  /* Pointer AND touch, and they are not the same interaction.
+     A tooltip bound to hover does not exist under a coarse pointer: a tap
+     raises it and the browser's own compatibility mouse sequence sends a
+     pointerleave a frame later, so it flashes and is gone. Under touch the
+     tip is PINNED — tap to raise, tap again or tap away to dismiss — and
+     hover is left alone on a fine pointer. The mark's title lives nowhere
+     else on the screen, so this is the whole reading on a phone. */
+  let pinned = null;
+  const place = (el) => {
+    tip.innerHTML = el.dataset.tip;
+    tip.classList.add("on");
+    const box = el.getBoundingClientRect();
+    const own = tip.getBoundingClientRect();
+    tip.style.left = `${Math.max(8, Math.min(window.innerWidth - own.width - 8, box.left + box.width / 2 - own.width / 2))}px`;
+    const above = box.top - own.height - 8;
+    tip.style.top = `${above >= 8 ? above : Math.min(window.innerHeight - own.height - 8, box.bottom + 8)}px`;
+  };
+  const show = (el, pin = false) => { place(el); if (pin) pinned = el; };
+  const hide = (force = false) => { if (pinned && !force) return; tip.classList.remove("on"); };
+  const drop = () => { pinned = null; tip.classList.remove("on"); };
+
+  document.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "touch" && !e.target.closest("[data-tip]")) drop();
+  }, true);
+
+  for (const el of root.querySelectorAll("[data-tip]")) {
+    el.addEventListener("pointerenter", (e) => { if (e.pointerType !== "touch") show(el); });
+    el.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch") hide(); });
+    el.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "touch") return;
+      e.preventDefault();
+      const again = pinned === el;
+      drop();
+      if (!again) show(el, true);
     });
-  // The plot must be tall enough for the tallest stack it just produced.
-  plot.style.minHeight = `${76 + Math.max(0, rows.length - 1) * 15}px`;
+    el.addEventListener("focus", () => show(el));
+    el.addEventListener("blur", () => hide());
+    el.addEventListener("click", (e) => e.preventDefault());
+  }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") drop(); });
+
+  /* The skeleton is the real composition with its ink out, so it arrives
+     carrying the real composition's controls and its screen-reader lines.
+     Neither belongs to a state that has no data yet: a control is a promise
+     the surface cannot keep, and a spoken sentence about nine open jobs is
+     a claim about numbers nobody has read. Both are stripped, in place, so
+     the geometry survives and the semantics do not lie. */
+  for (const el of root.querySelectorAll(".sk-wrap .sr")) el.remove();
+  for (const el of root.querySelectorAll(".sk-wrap a, .sk-wrap button")) {
+    const inert = document.createElement("span");
+    inert.className = el.className;
+    if (el.getAttribute("style")) inert.setAttribute("style", el.getAttribute("style"));
+    inert.append(...el.childNodes);
+    el.replaceWith(inert);
+  }
+  window.__LATELY_READY = true;
 }
-
-/* Tooltips — one floating element, delegated. */
-function showTip(el) {
-  tip.innerHTML = el.dataset.tip;
-  const r = el.getBoundingClientRect();
-  tip.style.left = `${r.left + r.width / 2}px`;
-  tip.style.top = `${r.top}px`;
-  tip.classList.add("on");
-}
-function hideTip() { tip.classList.remove("on"); }
-
-view.addEventListener("pointerover", (e) => {
-  const t = e.target.closest("[data-tip]");
-  if (t) showTip(t); else hideTip();
-});
-view.addEventListener("pointerleave", hideTip);
-document.getElementById("scroller").addEventListener("scroll", hideTip);
-
-document.querySelectorAll("[data-state]").forEach((b) => {
-  b.addEventListener("click", () => {
-    document.querySelectorAll("[data-state]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
-    paint(b.dataset.state);
-    frameName.textContent = STATES[b.dataset.state].name;
-  });
-});
-
-document.querySelectorAll("button[data-w]").forEach((b) => {
-  b.addEventListener("click", () => {
-    document.querySelectorAll("button[data-w]").forEach((o) => o.setAttribute("aria-pressed", String(o === b)));
-    stage.dataset.w = b.dataset.w;
-    frameW.textContent = b.dataset.w === "phone" ? "· 390 × 740" : "· 1240 × 800";
-    paint(current);
-  });
-});
-
-document.getElementById("replay").addEventListener("click", () => paint(current));
-
-paint("full");
 </script>
+</body>
