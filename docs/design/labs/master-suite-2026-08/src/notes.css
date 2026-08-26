@@ -1426,6 +1426,11 @@
   --r-chip: 4px; --r-ctl: 4px; --r-card: 6px; --r-paper: 6px; --r-sheet: 8px;
 }
 [data-app="notes"][data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+/* Round 1 made the dock avatar an honest door — it says plainly that it is
+   not here yet — and left it wearing `cursor: pointer` from the rule above,
+   so it went on inviting the press it then refuses. One rule for every
+   closed control in this product rather than one for this control. */
+[data-app="notes"] [aria-disabled="true"] { cursor: default; }
 [data-app="notes"][data-radius="sharp"] .dock,
 [data-app="notes"][data-radius="sharp"] .dockField,
 [data-app="notes"][data-radius="sharp"] .chip,

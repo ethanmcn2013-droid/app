@@ -361,13 +361,40 @@ body {
   line-height: 1.28;               /* Notes' --lh-tight */
   margin-top: 8px;
 }
-.rail [aria-disabled="true"], .rail [aria-disabled="true"] svg { color: var(--on-ink-2); }
+/* A closed door may not wear the cursor of an open one. Tasks has said
+   `cursor: default` on every aria-disabled control since its own lab; the
+   spine never did, so the three tiles that say plainly they are not here
+   yet still answered the pointer as though they were. The ink step that
+   would ALSO separate closed from live on this ground is a live design
+   question and is recorded open, not decided here — see panel/round-3.json,
+   `closed-doors-are-still-invisible`. */
+.rail [aria-disabled="true"], .rail [aria-disabled="true"] svg {
+  color: var(--on-ink-2);
+  cursor: default;
+}
 
 /* The spine's focus ring is the spine's, not the mounted product's. Tasks
    sets 2px of offset and Notes sets 3px; without this the same tile would
-   answer the keyboard differently depending on which sheet was open. */
+   answer the keyboard differently depending on which sheet was open.
+
+   WHITE, not indigo, and that is the load-bearing half. Indigo #4f46e5 on
+   the rail's composited ink measures 2.56:1 — under the 3:1 floor WCAG 2.2
+   SC 1.4.11 sets for a focus indicator — and the spine is the FIRST tab
+   stop in all three products, so it was the first focus indication a
+   keyboard user ever got here. White on the same ground is 16.1:1.
+
+   This is not a divergence from the suite's indigo focus language. It is
+   the same call the product already makes in the only other two places
+   that sit on ink rather than on the sheet: notes.css gives the dictation
+   overlay a white ring, and the phone dock another (18.88:1 there, because
+   the dock is rgb(17,17,17) and the rail composites to rgb(33,33,33) —
+   different grounds, same reason). The spine was the third such place and
+   nobody had written the rule for it.
+
+   Do not unify this back to indigo. tools/ring.mjs measures it from real
+   pixels and will fail. */
 .rail button:focus-visible, .rail [tabindex]:focus-visible {
-  outline: 2px solid var(--indigo);
+  outline: 2px solid var(--white);
   outline-offset: 2px;
 }
 
@@ -3717,6 +3744,11 @@ body {
   --r-chip: 4px; --r-ctl: 4px; --r-card: 6px; --r-paper: 6px; --r-sheet: 8px;
 }
 [data-app="notes"][data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+/* Round 1 made the dock avatar an honest door — it says plainly that it is
+   not here yet — and left it wearing `cursor: pointer` from the rule above,
+   so it went on inviting the press it then refuses. One rule for every
+   closed control in this product rather than one for this control. */
+[data-app="notes"] [aria-disabled="true"] { cursor: default; }
 [data-app="notes"][data-radius="sharp"] .dock,
 [data-app="notes"][data-radius="sharp"] .dockField,
 [data-app="notes"][data-radius="sharp"] .chip,
@@ -11489,6 +11521,50 @@ window.__SUITE.register("tasks", {
       };
     }
     paint();
+    /* And the case the narrowness above does not cover: undo pressed from
+       somewhere that is NOT the strip, whose own control the repaint then
+       removes. Sending across the seam puts focus on `.deskFactLink`; the
+       revert takes that link away, and the keyboard was left on the body —
+       the same defect round 1 closed twice on the Tasks side and never
+       drove on this one.
+
+       Sited here, after the paint, and conditioned on focus actually having
+       been lost, so it cannot fight a destination another path already
+       chose. That is what keeps the cross-room case above intact: if undo
+       from inside search lands the caret somewhere real, this never runs.
+       Ordered by preference, not by document order — a selector list would
+       pick whichever came first in the tree. */
+    const keepPlace = () => {
+      if (document.activeElement && document.activeElement !== document.body) return true;
+      const chain = [
+        '[data-act="send"]',
+        state === "review" ? ".handBody" : ".readBody",
+        ".readBody", ".handBody",
+        ".idxRow[data-cursor]",
+        phone.matches ? ".phoneField" : ".topField",
+      ];
+      for (const sel of chain) {
+        const back = mount.querySelector(sel);
+        if (!back) continue;
+        back.focus();
+        /* Stop when focus LANDS, not when a selector matches. On a phone the
+           peel sheet and the reading body are both still in the tree after
+           the revert and both are display:none, so focus() is refused and
+           returns nothing to say so — breaking on existence left the
+           keyboard on the body while four working destinations sat further
+           down this list. */
+        if (document.activeElement === back) break;
+      }
+      return document.activeElement && document.activeElement !== document.body;
+    };
+    /* Three times, and only while focus is still on the body. One call was
+       enough at 1440 and not at 390: the phone path lands a second repaint
+       after this one, which took the restored focus straight back off again.
+       Each attempt is a no-op once focus is somewhere real, so this cannot
+       fight a destination another path chose. */
+    if (!keepPlace()) {
+      requestAnimationFrame(() => { if (!keepPlace()) setTimeout(keepPlace, 140); });
+    }
     return true;
   }
 
@@ -13099,10 +13175,21 @@ window.__SUITE.register("tasks", {
     const lede = crossed ? note.task : showsMatch ? "" : note.title;
     const rest = crossed ? "" : showsMatch ? hit : note.rest;
     const when = crossed ? note.crossedWhen || note.when : note.when;
+    /* Joined conditionally, not stripped. Every note body already ends in a
+       full stop, so a plain `+ ". "` doubled it on all fourteen rows —
+       "…come back twice.. Spoken." — and Notes stays mounted under Tasks and
+       Timeline, so that is 98 sightings, not 14. The crossed arm was always
+       clean, which is what showed the join and not the content was at fault.
+       Testing for the terminal mark rather than removing one also keeps a
+       question or an exclamation intact instead of flattening it to a
+       statement, and supplies the stop a capture with no punctuation at all
+       never had. The closing bracket class covers a body that ends inside
+       quotes or parentheses. */
+    const head = `${note.title} ${note.rest || ""}`.trim();
+    const stop = /[.!?…][”"’')\]]*$/.test(head) ? "" : ".";
     const name = crossed
       ? `${note.task}. In Tasks, ${note.lane}. Sent to Tasks ${when}. The note it came from stayed in Notes.`
-      : `${note.title} ${note.rest || ""}`.trim() +
-        `. ${src.label}. ${note.when}.${note.pending ? " Still to decide." : note.sent ? " In Tasks." : " Kept."}`;
+      : `${head}${stop} ${src.label}. ${note.when}.${note.pending ? " Still to decide." : note.sent ? " In Tasks." : " Kept."}`;
     const tag = crossed
       ? `<span class="idxTag">${esc(note.lane)}</span>`
       : note.sent
@@ -16122,7 +16209,22 @@ window.__SUITE.register("tasks", {
     return h("section.b-behind", {}, [
       listed
         ? h("div.b-behindHead", {}, head)
-        : h("details.b-behindDetails", {}, [
+        : h("details.b-behindDetails", {
+          /* Bound at construction, not delegated: `toggle` does not bubble,
+             so a listener on the root never hears it. Opening the past
+             revealed three rows that all landed below the fold at 1440 and
+             1920 — the sheet moved 43 of the 373px it had — so the answer to
+             pressing the disclosure was, at the two commonest desk sizes,
+             nothing you could see. `nearest` scrolls the minimum that brings
+             the last row in, which is a no-op at the widths where the sheet
+             already hits its bottom stop. */
+          on: { toggle: function (event) {
+            var d = event.currentTarget;
+            if (!d.open) return;
+            var rows = d.querySelectorAll(".b-behindRow");
+            if (rows.length) rows[rows.length - 1].scrollIntoView({ block: "nearest" });
+          } },
+        }, [
           h("summary.b-behindSummary", {}, head),
           rowsNode,
         ]),

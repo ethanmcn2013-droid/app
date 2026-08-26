@@ -1086,7 +1086,22 @@
     return h("section.b-behind", {}, [
       listed
         ? h("div.b-behindHead", {}, head)
-        : h("details.b-behindDetails", {}, [
+        : h("details.b-behindDetails", {
+          /* Bound at construction, not delegated: `toggle` does not bubble,
+             so a listener on the root never hears it. Opening the past
+             revealed three rows that all landed below the fold at 1440 and
+             1920 — the sheet moved 43 of the 373px it had — so the answer to
+             pressing the disclosure was, at the two commonest desk sizes,
+             nothing you could see. `nearest` scrolls the minimum that brings
+             the last row in, which is a no-op at the widths where the sheet
+             already hits its bottom stop. */
+          on: { toggle: function (event) {
+            var d = event.currentTarget;
+            if (!d.open) return;
+            var rows = d.querySelectorAll(".b-behindRow");
+            if (rows.length) rows[rows.length - 1].scrollIntoView({ block: "nearest" });
+          } },
+        }, [
           h("summary.b-behindSummary", {}, head),
           rowsNode,
         ]),

@@ -28,6 +28,7 @@ import { spine as spineKeys } from "./tools/spine.mjs";
 import { truth } from "./tools/truth.mjs";
 import { craft } from "./tools/craft.mjs";
 import { reach } from "./tools/reach.mjs";
+import { ring } from "./tools/ring.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -888,6 +889,7 @@ if (run("spinekeys")) await spineKeys({ browser, url: SUITE_URL, check, head });
 if (run("truth")) await truth({ browser, url: SUITE_URL, check, head, lab: LAB });
 if (run("craft")) await craft({ browser, url: SUITE_URL, check, head });
 if (run("reach")) await reach({ browser, url: SUITE_URL, check, head, lab: LAB });
+if (run("ring")) await ring({ browser, url: SUITE_URL, check, head, PNG });
 if (run("labgates")) await labGates();
 
 await browser.close();

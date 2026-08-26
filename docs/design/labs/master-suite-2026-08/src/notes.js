@@ -329,6 +329,50 @@
       };
     }
     paint();
+    /* And the case the narrowness above does not cover: undo pressed from
+       somewhere that is NOT the strip, whose own control the repaint then
+       removes. Sending across the seam puts focus on `.deskFactLink`; the
+       revert takes that link away, and the keyboard was left on the body —
+       the same defect round 1 closed twice on the Tasks side and never
+       drove on this one.
+
+       Sited here, after the paint, and conditioned on focus actually having
+       been lost, so it cannot fight a destination another path already
+       chose. That is what keeps the cross-room case above intact: if undo
+       from inside search lands the caret somewhere real, this never runs.
+       Ordered by preference, not by document order — a selector list would
+       pick whichever came first in the tree. */
+    const keepPlace = () => {
+      if (document.activeElement && document.activeElement !== document.body) return true;
+      const chain = [
+        '[data-act="send"]',
+        state === "review" ? ".handBody" : ".readBody",
+        ".readBody", ".handBody",
+        ".idxRow[data-cursor]",
+        phone.matches ? ".phoneField" : ".topField",
+      ];
+      for (const sel of chain) {
+        const back = mount.querySelector(sel);
+        if (!back) continue;
+        back.focus();
+        /* Stop when focus LANDS, not when a selector matches. On a phone the
+           peel sheet and the reading body are both still in the tree after
+           the revert and both are display:none, so focus() is refused and
+           returns nothing to say so — breaking on existence left the
+           keyboard on the body while four working destinations sat further
+           down this list. */
+        if (document.activeElement === back) break;
+      }
+      return document.activeElement && document.activeElement !== document.body;
+    };
+    /* Three times, and only while focus is still on the body. One call was
+       enough at 1440 and not at 390: the phone path lands a second repaint
+       after this one, which took the restored focus straight back off again.
+       Each attempt is a no-op once focus is somewhere real, so this cannot
+       fight a destination another path chose. */
+    if (!keepPlace()) {
+      requestAnimationFrame(() => { if (!keepPlace()) setTimeout(keepPlace, 140); });
+    }
     return true;
   }
 
@@ -1939,10 +1983,21 @@
     const lede = crossed ? note.task : showsMatch ? "" : note.title;
     const rest = crossed ? "" : showsMatch ? hit : note.rest;
     const when = crossed ? note.crossedWhen || note.when : note.when;
+    /* Joined conditionally, not stripped. Every note body already ends in a
+       full stop, so a plain `+ ". "` doubled it on all fourteen rows —
+       "…come back twice.. Spoken." — and Notes stays mounted under Tasks and
+       Timeline, so that is 98 sightings, not 14. The crossed arm was always
+       clean, which is what showed the join and not the content was at fault.
+       Testing for the terminal mark rather than removing one also keeps a
+       question or an exclamation intact instead of flattening it to a
+       statement, and supplies the stop a capture with no punctuation at all
+       never had. The closing bracket class covers a body that ends inside
+       quotes or parentheses. */
+    const head = `${note.title} ${note.rest || ""}`.trim();
+    const stop = /[.!?…][”"’')\]]*$/.test(head) ? "" : ".";
     const name = crossed
       ? `${note.task}. In Tasks, ${note.lane}. Sent to Tasks ${when}. The note it came from stayed in Notes.`
-      : `${note.title} ${note.rest || ""}`.trim() +
-        `. ${src.label}. ${note.when}.${note.pending ? " Still to decide." : note.sent ? " In Tasks." : " Kept."}`;
+      : `${head}${stop} ${src.label}. ${note.when}.${note.pending ? " Still to decide." : note.sent ? " In Tasks." : " Kept."}`;
     const tag = crossed
       ? `<span class="idxTag">${esc(note.lane)}</span>`
       : note.sent

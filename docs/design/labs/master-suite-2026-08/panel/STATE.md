@@ -7,13 +7,29 @@ here depends on a conversation being remembered.
 
 | | |
 |---|---|
-| Round budget | **3**, set by the founder before round 1 |
-| Round 1 | **complete and closed.** `panel/round-1.json` |
-| Round 2 | **complete and closed.** `panel/round-2.json` · 3 seats · 7 confirmed, all fixed |
-| Round 3 | **running** — full seven seats, `--final`. Run `wf_acb8cc61-531`, task `wp6t3jkrq` |
-| Gates | both green at round 2 close · **249** behaviour assertions · `node gate.mjs` and `node verify.mjs` |
-| Artifact | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 — **not yet republished since round 0**; republish at the close |
-| Branch | `design/master-suite-2026-08`, pushed through `Round 2` |
+| Round budget | **3**, set by the founder before round 1. **All three are spent.** |
+| Round 1 | complete · 7 seats · 27 confirmed · `panel/round-1.json` |
+| Round 2 | complete · 3 seats · 7 confirmed · `panel/round-2.json` |
+| Round 3 | complete · 7 seats · 6 confirmed · `panel/round-3.json` |
+| Gates | **all four green** · verify 270 · interaction-check 45 · prove-check 4 · gate.mjs |
+| Ending | **NOT MET.** The method ends on two consecutive rounds with no blocking and no misleading, on a frozen surface. Round 3 confirmed 2 blocking and 1 misleading. `round-metrics.mjs` says "Not finished." |
+| Artifact | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 |
+| Branch | `design/master-suite-2026-08` |
+
+## If a fourth round is authorised
+
+Everything round 3 confirmed is closed. A round 4 would be the first round
+with a chance of being clean, and the ending needs **two** clean rounds, so the
+honest minimum from here is two more rounds, not one.
+
+The one finding deliberately NOT taken whole is
+`closed-doors-are-still-invisible`. Its cursor half is fixed and gated. Its
+ink-density half is a founder's decision: ten of sixteen chrome controls on the
+Tasks sheet paint `--ink-3` (0.62), the same token live micro-labels use,
+against 0.72 for the live control beside them. The seat's fix sets type in
+`--ink-4`, whose own declaration reads "decorative only, never type". Deciding
+it needs either a new stated alpha in the palette lock or a decision to lift
+live secondary controls instead.
 
 ## Round 3 — collecting it
 

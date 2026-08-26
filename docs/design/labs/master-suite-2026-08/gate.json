@@ -1493,6 +1493,96 @@
       "detail": "inside the viewport in every lane driven"
     },
     {
+      "section": "ring",
+      "name": "tasks @390 · the spine's focus ring clears 3:1",
+      "ok": true,
+      "detail": "measured from pixels, every rail stop ≥ 3:1"
+    },
+    {
+      "section": "ring",
+      "name": "tasks @1440 · the spine's focus ring clears 3:1",
+      "ok": true,
+      "detail": "measured from pixels, every rail stop ≥ 3:1"
+    },
+    {
+      "section": "ring",
+      "name": "timeline @390 · the spine's focus ring clears 3:1",
+      "ok": true,
+      "detail": "measured from pixels, every rail stop ≥ 3:1"
+    },
+    {
+      "section": "ring",
+      "name": "timeline @1440 · the spine's focus ring clears 3:1",
+      "ok": true,
+      "detail": "measured from pixels, every rail stop ≥ 3:1"
+    },
+    {
+      "section": "ring",
+      "name": "notes seam undo @390 · keeps the person's place",
+      "ok": true,
+      "detail": "focus on idxRow"
+    },
+    {
+      "section": "ring",
+      "name": "notes seam undo @1440 · keeps the person's place",
+      "ok": true,
+      "detail": "focus on act"
+    },
+    {
+      "section": "ring",
+      "name": "notes.notebook · no index row doubles its full stop",
+      "ok": true,
+      "detail": "every row joins cleanly"
+    },
+    {
+      "section": "ring",
+      "name": "tasks.board · no index row doubles its full stop",
+      "ok": true,
+      "detail": "every row joins cleanly"
+    },
+    {
+      "section": "ring",
+      "name": "timeline.owner-flight · no index row doubles its full stop",
+      "ok": true,
+      "detail": "every row joins cleanly"
+    },
+    {
+      "section": "ring",
+      "name": "timeline behind-you @1280 · opening it shows something",
+      "ok": true,
+      "detail": "0 of 3 rows below the fold"
+    },
+    {
+      "section": "ring",
+      "name": "timeline behind-you @1440 · opening it shows something",
+      "ok": true,
+      "detail": "0 of 3 rows below the fold"
+    },
+    {
+      "section": "ring",
+      "name": "timeline behind-you @1920 · opening it shows something",
+      "ok": true,
+      "detail": "0 of 3 rows below the fold"
+    },
+    {
+      "section": "ring",
+      "name": "tasks.board · no closed door wears an open door's cursor",
+      "ok": true,
+      "detail": "every closed control reads default"
+    },
+    {
+      "section": "ring",
+      "name": "notes.notebook · no closed door wears an open door's cursor",
+      "ok": true,
+      "detail": "every closed control reads default"
+    },
+    {
+      "section": "ring",
+      "name": "timeline.owner-flight · no closed door wears an open door's cursor",
+      "ok": true,
+      "detail": "every closed control reads default"
+    },
+    {
       "section": "lab gates",
       "name": "Tasks · audit.mjs",
       "ok": true,
