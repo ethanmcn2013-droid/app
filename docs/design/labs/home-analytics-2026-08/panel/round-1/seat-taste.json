@@ -1,0 +1,88 @@
+{
+  "seat": "Product taste and emotional resonance",
+  "score": 7.4,
+  "signOff": false,
+  "findings": [
+    {
+      "id": "best-week-line-has-no-name",
+      "severity": "misleading",
+      "element": ".record-tag inside .record, the dashed benchmark rule across the twelve-week plot",
+      "problem": "The label \"Best week · 8\" never paints. The `draw` keyframe ends on `clip-path: inset(0 0 0 0)`, and because `.record` is a 1px-tall border box that inset clips to a 1px strip — so the tag, which sits at `top: -18px`, is clipped out of existence. Animation values outrank the ordinary `[data-motion=\"settled\"] .record { clip-path: none }` declaration, and `animation-fill-mode: both` keeps the final keyframe applied forever, so the tag is missing in every mode I drove: motion=play after the entrance finishes, motion=settled, prefers-reduced-motion, light and dark. The element measures 102.7 × 14.8px at (1162, 433) with visibility visible and opacity 1 — it is laid out and it is not on screen. Verified by pixel: the corner of the plot where it belongs is blank paper.",
+      "consequence": "A dashed horizontal rule crosses the chart at two-thirds height with nothing naming it. The owner reads it as a target, an average, or a quota — the three things it is not. They cannot tell whether this week beat, met or missed anything, which is half the answer to the question the page exists to ask. The last beat of a 1.8-second entrance is a line wiping in to reveal a label that isn't there, so the choreography's payoff is an unexplained mark.",
+      "fix": "Move the label out of the animated element. Wrap the benchmark in a zero-height positioning parent that is not animated, animate only the rule itself, and hang `.record-tag` off the parent: `<span class=\"record-wrap\" style=\"--r:…\"><span class=\"record\"></span><span class=\"record-tag t-label\">Best week · 8</span></span>`, with `.record-wrap { position:absolute; left:0; right:0; bottom: calc(var(--r) * 1%); height:0; }`, `.record { position:absolute; inset:0; border-top:1px dashed var(--line); animation: draw …; }` and `.record-tag { position:absolute; right:0; top:-18px; }`. Give the tag its own fade so it arrives after the rule finishes wiping.",
+      "assertion": "In state full at 390/768/1280/1440 and both grounds, after the entrance settles: `.record-tag` has a rendered rect of non-zero area, no ancestor reports a `clip-path` other than `none`, and a pixel sampled at the tag's centre differs from the sampled `.card` background — proving the string is painted, not merely laid out.",
+      "cost": 1.2
+    },
+    {
+      "id": "live-week-label-collides-with-its-own-axis",
+      "severity": "defect",
+      "element": ".bar-val (\"12 so far\") over the top gridline label in .gridline b",
+      "problem": "Three faults in the one mark the whole page is built to emphasise. (1) The label overlaps the top gridline label at every width I drove — 390, 560, 768, 900, 1280, 1440 — and in both grounds; measured at 1440 the two rects share x 1246–1265 and y 382–390, so indigo \"12 SO FAR\" and grey \"12\" print on top of each other and neither reads. (2) At 390 the label runs from x 304 to 372 while the plot ends at 349 and the hero card ends at 366 — it overhangs its own card by 6px and sits on the page ground. (3) Its position is static while the column animates: at 300ms of the entrance the label is at full opacity at the top-right of a completely empty plot, labelling nothing for roughly 700ms.",
+      "consequence": "The reader's eye goes to the one indigo mark on the screen and finds a pile of overlapping glyphs where the axis maximum should be. They cannot read the top of the scale, and the object that is supposed to say \"this week is running hot and isn't finished\" instead says \"something is broken here\". On a phone the value hangs outside the card. This is the first thing a discerning stranger looks at and the first thing that tells them nobody checked the finished frame at full size.",
+      "fix": "Give the live column's value its own lane. Reserve a 20px band above the plot (`.plot { margin-top: var(--gap-room) }`) and place `.bar-val` in it at `bottom: 100%`, right-clamped to the plot box: `left: min(50%, calc(100% - 50%))` is not enough — set `transform: translateX(-50%)` only while the column's centre is more than half the label's width from the plot edge, otherwise pin the label's right edge to the plot's right edge. Suppress the top gridline's numeric label when the live column reaches the top of the scale, since the bar's own value states it. Animate the label with `opacity` on the same delay as its column's `grow` so it arrives with the mark rather than ahead of it.",
+      "assertion": "In states full, partial and first-run at 390/768/1280/1440 and both grounds: `.bar-val`'s rect intersects no `.gridline b` rect, and its right edge is inside the `.hero` card's content box. With ?motion=play, `.bar-val` computed opacity is 0 until its own `.bar` has reached at least 90% of its settled height.",
+      "cost": 1.0
+    },
+    {
+      "id": "dark-denominator-card-is-a-glare-panel",
+      "severity": "defect",
+      "element": ".kpi.lead (\"Open now / 9 / jobs not finished\") on v=dark",
+      "problem": "`.kpi.lead` paints `background: var(--ink)`, and in the twin `--ink` is `#ffffff`. The denominator card therefore becomes a full white slab — the brightest object on the entire dark page by a wide margin, brighter than every numeral, and it sits in the middle of the KPI row. The file's own comment says the twin is \"not an inversion: the grounds flip, the marks keep their jobs\". This object's job did not survive the flip: in light it is the gravest, quietest plate in the row; in dark it is the loudest thing on screen.",
+      "consequence": "At night the eye is dragged to the one card in the row that carries no status and needs no attention, while the indigo meters — the marks that say what is actually slipping — lose the row entirely. The page's emphasis hierarchy inverts in the dark, which is the opposite of what the twin is for, and a bare white rectangle on a #0f0f10 ground is physically uncomfortable to look at in the room where a dark theme gets used.",
+      "fix": "In `[data-v=\"dark\"]`, give `.kpi.lead` the densest available plate rather than the brightest: `background: var(--paper-3)` (#27272a), `border-color: var(--ink-4)` (#71717a) at full 1px so it still reads as the anchor object, numeral and label at `var(--ink)` and `var(--ink-3)`. Nothing leaves the eighteen. Keep the light rule exactly as it is.",
+      "assertion": "With v=dark in states full, partial and quiet: the relative luminance of the computed background of `.kpi.lead` is lower than the relative luminance of the computed background of every other `.kpi` in the row, and its numeral still clears 4.5:1 against that background.",
+      "cost": 0.9
+    },
+    {
+      "id": "twelve-weeks-claimed-where-no-twelve-weeks-exist",
+      "severity": "misleading",
+      "element": "the scope label in .reading (\"Twelve weeks\"), printed by shell() on every state",
+      "problem": "The reading line is part of the shell, so \"Twelve weeks\" prints unconditionally. I drove all seven states: first-run draws one column and says Twelve weeks; empty draws no chart at all and says Twelve weeks; error draws nothing, says \"Tasks did not answer\", and still says Read at 09:14 and Twelve weeks at the top — the same instant the card below calls the last good reading.",
+      "consequence": "The owner this page is written for is the one on a young account, and first-run is the state they live in. They read \"Twelve weeks\" across the top, then see a single column, and the available inference is that eleven weeks were empty — that they did nothing for nearly three months. That is exactly the \"we don't know\" read as \"it's zero\" that the honest-degradation contract exists to prevent, arriving through the header instead of through a card. On empty and error the surface states the scope of a reading that never happened.",
+      "fix": "Derive the scope label from the weeks actually drawn, in the same one-accessor discipline as every other fact: `D.scope = drawnWeeks === 12 ? \"Twelve weeks\" : drawnWeeks > 0 ? plural(drawnWeeks, \"week\", \"weeks\") : null`, and render the `.reading` label only when `D.scope` is non-null. On error, replace \"Read at …\" with \"Asked at …\" so the header does not claim a reading the card below says failed.",
+      "assertion": "For each of the seven states: the text of the second `.reading` label names the count of `.bar` elements actually rendered (\"Twelve weeks\" only when that count is 12), and when the count is 0 the label is absent from the DOM.",
+      "cost": 0.9
+    },
+    {
+      "id": "kpi-meters-off-a-common-baseline",
+      "severity": "defect",
+      "element": ".meter inside the five .kpi cards of \"What's quietly slipping\"",
+      "problem": "The row's stated argument is that the five meters are comparable because they read one denominator — that is why the denominator is a card in the row and not a footnote. But `.kpi` is a plain column flex with a gap, so each meter sits wherever its label stops. Measured at 1440 and 1280: the meters for \"3\" and \"2\" sit at y 910, the meters for \"1\" and \"0\" at y 930, because their labels wrap to two lines. In partial it is worse — four different heights across five cards, with \"Not available\" landing at a fifth.",
+      "consequence": "The one comparison the row is built to support cannot be made by eye. The reader has to measure four bars that start on four different lines, which is precisely the work the shared denominator was supposed to remove. It also reads, immediately, as a row that was never looked at as a row — five cards that happen to sit beside each other rather than one instrument.",
+      "fix": "Pin the meter to the bottom of every card: add `margin-top: auto` to `.meter` and to the `.t-label` that stands in for it on an unavailable card, and set `.kpi { min-height: … }` from the tallest label so all five cards agree. The numerals already align at the top; this makes both edges of the row true.",
+      "assertion": "In states full and partial, at 1280 and 1440, both grounds: every `.meter` and every stand-in \"Not available\" label inside `.kpis` reports the same `getBoundingClientRect().top` to within 1px.",
+      "cost": 0.7
+    },
+    {
+      "id": "first-run-plot-is-a-stranded-mark",
+      "severity": "defect",
+      "element": "the single-column chart in the first-run hero card",
+      "problem": "The first-run plot draws one hatched column, centred in a 686px-wide field, with zero gridlines, no scale, no other week, and a hard-coded height: the markup is `style=\"--h:60\"`, a literal, so the column renders at the same height whether the value is 1 or 100. Every other state derives its heights from the data through `pct()`. The result on screen is one narrow candy-striped bar floating in an empty white rectangle, which reads as a rendering failure rather than a designed state.",
+      "consequence": "The state a new owner meets on day three is the one that looks broken. They are given a mark whose height means nothing next to a numeral that means everything, on a surface whose whole claim is that the marks carry the reading. The empty field beside the column reads as missing content rather than as \"you have one week so far\", which is the honest and rather good thing this state is trying to say.",
+      "fix": "Draw the frame the data will fill. Keep the twelve column slots at their real pitch, render the eleven weeks before the first as the ghost treatment already used in movement three (`--wash` fill, dashed top, no value), and draw the live column in its true slot at the right-hand end. Restore the gridlines and derive the column height with `pct(D.thisWeek, max)` from the same accessor every other state uses — no literal.",
+      "assertion": "With state=first-run at all four viewports: `.gridline` count is >= 2 with the top line labelled with the drawn value; the live `.bar`'s `--h` equals `pct(D.thisWeek, max)` computed from the fixture rather than a constant; and the plot renders a slot for every week in the twelve-week window.",
+      "cost": 0.8
+    },
+    {
+      "id": "ghost-plot-orphaned-from-its-refusal",
+      "severity": "defect",
+      "element": ".ghost inside \"What this can't tell you\"",
+      "problem": "Three refusal tiles sit above one drawn-but-empty plot, and nothing ties the plot to any of them. Its caption — \"and it stays empty until the recorder has run for three periods\" — names a cause that belongs to exactly one tile (\"Open work over time\", whose stated reason is that the snapshot writer has no callers). The other two have entirely different, separately named causes: the date recorder only switched on in August, and the third is a Notes change. The plot is presented as the answer to a question the reader has to guess.",
+      "consequence": "The reader cannot tell which refusal they are looking at, and the caption invites the wrong generalisation: that all three of these arrive once the recorder has run. Two of them do not, and one of them is not this product's change at all. The movement's whole value is that the limit is stated where the reader would otherwise assume the opposite, and an unattributed illustration undoes that.",
+      "fix": "Bind the plot to its tile. Give the first `.limit` heading an id, put `aria-labelledby` on `.ghost` pointing at it, and open the ghost's own copy with the tile's name so the tie is visible as well as spoken: heading \"Open work over time — the chart we would draw\", sub-line unchanged. If the other two refusals deserve a drawn form, they get their own; one plot answers one refusal.",
+      "assertion": "`.ghost` carries `aria-labelledby` resolving to the heading of exactly one `.limit` tile, and that tile's heading text appears verbatim inside `.ghost`'s visible copy.",
+      "cost": 0.5
+    },
+    {
+      "id": "hero-count-starts-from-a-number-that-means-nothing",
+      "severity": "refinement",
+      "element": "the count-up on #count in the hero figure",
+      "problem": "The one animated numeral on the page counts from `target - 12` — 19 on this fixture — to 31 over 700ms. Nineteen is not a fact. The number it should count from is on screen two centimetres away: the delta pill says \"+5 on the four before\", so the four before is 26, and 26 is a real figure the reader can be shown earning its way to 31.",
+      "consequence": "The page's only piece of emotional choreography spends itself on an arbitrary number. Counting 19 → 31 is decoration; counting 26 → 31 is the argument the page is making, performed. As it stands the entrance is pleasant and forgettable, which is the honest summary of the whole surface: nothing here is a moment you would remember or show anyone.",
+      "fix": "Set `const from = D.lastFour - D.delta;` in place of `Math.max(0, target - 12)`, clamped at 0, and hold the delta pill at opacity 0 until the count lands so the \"+5\" arrives as the conclusion of the count rather than as a caption printed before it. When the delta is negative the count runs down, which is equally true and equally worth seeing.",
+      "assertion": "With ?motion=play in state full, the first painted value of `#count` equals `D.lastFour - D.delta` (the previous four weeks' total), and the `.delta` pill's computed opacity is 0 until `#count` reads `D.lastFour`.",
+      "cost": 0.4
+    }
+  ],
+  "biggestWin": "Make the live week the moment, because right now it is the page's most-looked-at object and its most-broken one. Four changes to a single mark: land \"12 so far\" clear of the axis label and inside its card at every width; fade it in with its own column instead of hanging it over an empty plot for the first 700ms; render \"Best week · 8\" so the dashed rule that crosses the chart finally has a name and the last beat of the entrance delivers something; and start the hero count at 26 — the four weeks before, already on screen as \"+5\" — so the reader watches the delta being earned rather than a decorative tick-up from nineteen. That is the difference between a page that is correct and a page you remember. Everything else on this surface — the honest-degradation cards, the skeleton built from the real DOM, the refusals movement — is already at or near the bar; this one object is what stops a discerning stranger believing a studio finished it."
+}

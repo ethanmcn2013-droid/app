@@ -1,0 +1,416 @@
+[
+  {
+    "id": "quiet-state-denies-its-own-evidence",
+    "seat": "Brand and copy",
+    "severity": "misleading",
+    "file": "quiet-state-denies-its-own-evidence.md"
+  },
+  {
+    "id": "best-week-label-never-paints",
+    "seat": "Brand and copy",
+    "severity": "misleading",
+    "file": "best-week-label-never-paints.md"
+  },
+  {
+    "id": "live-column-value-collides-with-the-scale",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "live-column-value-collides-with-the-scale.md"
+  },
+  {
+    "id": "error-state-invents-a-last-good-reading",
+    "seat": "Brand and copy",
+    "severity": "misleading",
+    "file": "error-state-invents-a-last-good-reading.md"
+  },
+  {
+    "id": "four-week-delta-counts-an-unfinished-week",
+    "seat": "Brand and copy",
+    "severity": "misleading",
+    "file": "four-week-delta-counts-an-unfinished-week.md"
+  },
+  {
+    "id": "refusals-written-in-the-studio-vocabulary",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "refusals-written-in-the-studio-vocabulary.md"
+  },
+  {
+    "id": "august-inside-a-july-reading",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "august-inside-a-july-reading.md"
+  },
+  {
+    "id": "first-run-outlived-by-its-own-marks",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "first-run-outlived-by-its-own-marks.md"
+  },
+  {
+    "id": "status-phrases-do-not-agree-in-number",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "status-phrases-do-not-agree-in-number.md"
+  },
+  {
+    "id": "age-axis-labels-are-laid-out-by-flexbox-not-by-value",
+    "seat": "Brand and copy",
+    "severity": "defect",
+    "file": "age-axis-labels-are-laid-out-by-flexbox-not-by-value.md"
+  },
+  {
+    "id": "openable-promises-a-move-the-surface-does-not-carry",
+    "seat": "Brand and copy",
+    "severity": "refinement",
+    "file": "openable-promises-a-move-the-surface-does-not-carry.md"
+  },
+  {
+    "id": "two-capitalisation-rules-in-one-tab-strip",
+    "seat": "Brand and copy",
+    "severity": "refinement",
+    "file": "two-capitalisation-rules-in-one-tab-strip.md"
+  },
+  {
+    "id": "fortnight-marker-lands-beside-a-fifteen-day-tick",
+    "seat": "Brand and copy",
+    "severity": "refinement",
+    "file": "fortnight-marker-lands-beside-a-fifteen-day-tick.md"
+  },
+  {
+    "id": "partial-week-folded-into-the-headline",
+    "seat": "Measured evidence",
+    "severity": "misleading",
+    "file": "partial-week-folded-into-the-headline.md"
+  },
+  {
+    "id": "record-tag-never-paints",
+    "seat": "Measured evidence",
+    "severity": "misleading",
+    "file": "record-tag-never-paints.md"
+  },
+  {
+    "id": "chart-corner-collision",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "chart-corner-collision.md"
+  },
+  {
+    "id": "ua-margins-run-the-vertical-rhythm",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "ua-margins-run-the-vertical-rhythm.md"
+  },
+  {
+    "id": "partial-column-is-closed-at-the-top",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "partial-column-is-closed-at-the-top.md"
+  },
+  {
+    "id": "age-scale-labels-are-not-on-the-axis",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "age-scale-labels-are-not-on-the-axis.md"
+  },
+  {
+    "id": "kpi-plural-breaks-at-one",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "kpi-plural-breaks-at-one.md"
+  },
+  {
+    "id": "tip-detaches-from-its-mark-on-scroll",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "tip-detaches-from-its-mark-on-scroll.md"
+  },
+  {
+    "id": "chart-is-announced-twice",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "chart-is-announced-twice.md"
+  },
+  {
+    "id": "terminal-states-lose-their-heading-and-announce-nothing",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "terminal-states-lose-their-heading-and-announce-nothing.md"
+  },
+  {
+    "id": "date-refusal-gives-the-wrong-reason",
+    "seat": "Measured evidence",
+    "severity": "defect",
+    "file": "date-refusal-gives-the-wrong-reason.md"
+  },
+  {
+    "id": "dead-rules-and-stale-comments",
+    "seat": "Measured evidence",
+    "severity": "refinement",
+    "file": "dead-rules-and-stale-comments.md"
+  },
+  {
+    "id": "coverage-strip-sits-outside-every-landmark",
+    "seat": "Measured evidence",
+    "severity": "refinement",
+    "file": "coverage-strip-sits-outside-every-landmark.md"
+  },
+  {
+    "id": "mark-hit-theft-at-390",
+    "seat": "Interaction and states",
+    "severity": "misleading",
+    "file": "mark-hit-theft-at-390.md"
+  },
+  {
+    "id": "stale-tip-strands-on-scroll",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "stale-tip-strands-on-scroll.md"
+  },
+  {
+    "id": "focusable-while-invisible-during-entrance",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "focusable-while-invisible-during-entrance.md"
+  },
+  {
+    "id": "live-value-collides-with-axis-label",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "live-value-collides-with-axis-label.md"
+  },
+  {
+    "id": "no-pressed-state-anywhere",
+    "seat": "Interaction and states",
+    "severity": "defect",
+    "file": "no-pressed-state-anywhere.md"
+  },
+  {
+    "id": "best-week-line-has-no-name",
+    "seat": "Product taste and emotional resonance",
+    "severity": "misleading",
+    "file": "best-week-line-has-no-name.md"
+  },
+  {
+    "id": "live-week-label-collides-with-its-own-axis",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "live-week-label-collides-with-its-own-axis.md"
+  },
+  {
+    "id": "dark-denominator-card-is-a-glare-panel",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "dark-denominator-card-is-a-glare-panel.md"
+  },
+  {
+    "id": "twelve-weeks-claimed-where-no-twelve-weeks-exist",
+    "seat": "Product taste and emotional resonance",
+    "severity": "misleading",
+    "file": "twelve-weeks-claimed-where-no-twelve-weeks-exist.md"
+  },
+  {
+    "id": "kpi-meters-off-a-common-baseline",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "kpi-meters-off-a-common-baseline.md"
+  },
+  {
+    "id": "first-run-plot-is-a-stranded-mark",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "first-run-plot-is-a-stranded-mark.md"
+  },
+  {
+    "id": "ghost-plot-orphaned-from-its-refusal",
+    "seat": "Product taste and emotional resonance",
+    "severity": "defect",
+    "file": "ghost-plot-orphaned-from-its-refusal.md"
+  },
+  {
+    "id": "hero-count-starts-from-a-number-that-means-nothing",
+    "seat": "Product taste and emotional resonance",
+    "severity": "refinement",
+    "file": "hero-count-starts-from-a-number-that-means-nothing.md"
+  },
+  {
+    "id": "record-tag-never-paints",
+    "seat": "Typography",
+    "severity": "misleading",
+    "file": "record-tag-never-paints.md"
+  },
+  {
+    "id": "bar-val-overprints-axis-max",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "bar-val-overprints-axis-max.md"
+  },
+  {
+    "id": "kpi-row-shares-no-line",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "kpi-row-shares-no-line.md"
+  },
+  {
+    "id": "ua-margins-set-the-vertical-rhythm",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "ua-margins-set-the-vertical-rhythm.md"
+  },
+  {
+    "id": "label-voice-set-on-a-paragraph",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "label-voice-set-on-a-paragraph.md"
+  },
+  {
+    "id": "reading-rule-dangles-at-390",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "reading-rule-dangles-at-390.md"
+  },
+  {
+    "id": "count-templated-onto-a-fixed-verb",
+    "seat": "Typography",
+    "severity": "defect",
+    "file": "count-templated-onto-a-fixed-verb.md"
+  },
+  {
+    "id": "rail-glyphs-outside-the-locked-faces",
+    "seat": "Typography",
+    "severity": "refinement",
+    "file": "rail-glyphs-outside-the-locked-faces.md"
+  },
+  {
+    "id": "record-line-ships-without-its-label",
+    "seat": "UI composition",
+    "severity": "misleading",
+    "file": "record-line-ships-without-its-label.md"
+  },
+  {
+    "id": "live-column-value-overprints-the-axis-maximum",
+    "seat": "UI composition",
+    "severity": "defect",
+    "file": "live-column-value-overprints-the-axis-maximum.md"
+  },
+  {
+    "id": "kpi-meters-do-not-share-a-line",
+    "seat": "UI composition",
+    "severity": "defect",
+    "file": "kpi-meters-do-not-share-a-line.md"
+  },
+  {
+    "id": "ua-margins-are-the-real-spacing-ladder",
+    "seat": "UI composition",
+    "severity": "defect",
+    "file": "ua-margins-are-the-real-spacing-ladder.md"
+  },
+  {
+    "id": "reading-rule-orphans-at-phone-width",
+    "seat": "UI composition",
+    "severity": "defect",
+    "file": "reading-rule-orphans-at-phone-width.md"
+  },
+  {
+    "id": "axis-ticks-go-ragged-between-560-and-900",
+    "seat": "UI composition",
+    "severity": "defect",
+    "file": "axis-ticks-go-ragged-between-560-and-900.md"
+  },
+  {
+    "id": "ghost-plot-reads-as-texture-not-as-a-chart",
+    "seat": "UI composition",
+    "severity": "refinement",
+    "file": "ghost-plot-reads-as-texture-not-as-a-chart.md"
+  },
+  {
+    "id": "quiet-state-contradicts-its-own-evidence",
+    "seat": "UX and information design",
+    "severity": "blocking",
+    "file": "quiet-state-contradicts-its-own-evidence.md"
+  },
+  {
+    "id": "record-line-never-names-itself",
+    "seat": "UX and information design",
+    "severity": "misleading",
+    "file": "record-line-never-names-itself.md"
+  },
+  {
+    "id": "hero-total-folds-the-unfinished-week",
+    "seat": "UX and information design",
+    "severity": "misleading",
+    "file": "hero-total-folds-the-unfinished-week.md"
+  },
+  {
+    "id": "openable-is-a-promise-nothing-keeps",
+    "seat": "UX and information design",
+    "severity": "misleading",
+    "file": "openable-is-a-promise-nothing-keeps.md"
+  },
+  {
+    "id": "first-run-shows-a-41-day-old-job",
+    "seat": "UX and information design",
+    "severity": "misleading",
+    "file": "first-run-shows-a-41-day-old-job.md"
+  },
+  {
+    "id": "live-column-label-collides-with-the-scale",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "live-column-label-collides-with-the-scale.md"
+  },
+  {
+    "id": "ua-margins-defeat-the-space-ladder",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "ua-margins-defeat-the-space-ladder.md"
+  },
+  {
+    "id": "kpi-row-has-no-shared-baseline",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "kpi-row-has-no-shared-baseline.md"
+  },
+  {
+    "id": "twelve-columns-withhold-their-own-numbers",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "twelve-columns-withhold-their-own-numbers.md"
+  },
+  {
+    "id": "ghost-caption-sits-on-the-ghost-columns",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "ghost-caption-sits-on-the-ghost-columns.md"
+  },
+  {
+    "id": "kpi-row-and-ages-card-share-an-edge",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "kpi-row-and-ages-card-share-an-edge.md"
+  },
+  {
+    "id": "count-of-one-takes-a-plural-verb",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "count-of-one-takes-a-plural-verb.md"
+  },
+  {
+    "id": "partial-drops-the-best-week-unannounced",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "partial-drops-the-best-week-unannounced.md"
+  },
+  {
+    "id": "first-run-plot-has-no-scale",
+    "seat": "UX and information design",
+    "severity": "defect",
+    "file": "first-run-plot-has-no-scale.md"
+  },
+  {
+    "id": "error-state-stamps-a-successful-read",
+    "seat": "UX and information design",
+    "severity": "refinement",
+    "file": "error-state-stamps-a-successful-read.md"
+  }
+]

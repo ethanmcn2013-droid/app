@@ -1,0 +1,138 @@
+{
+  "seat": "Brand and copy",
+  "score": 7.4,
+  "signOff": false,
+  "findings": [
+    {
+      "id": "quiet-state-denies-its-own-evidence",
+      "severity": "misleading",
+      "element": "State quiet - the \"Nothing is sitting\" card and the ages strip directly beneath it, inside the same band",
+      "problem": "The card prints \"Nothing is sitting\" and \"All 9 open jobs has moved inside a fortnight, none is past its day, and every one has a name on it.\" The strip immediately below it, in the same section, is headed \"Oldest . 41 days\", draws three indigo marks to the right of the \"A fortnight\" line, and carries the spoken line \"3 jobs have been open longer than a fortnight.\" The quiet VIEW zeroes the status counts but calls strip() on the same job set as the full state, so the headline and its evidence are read from different facts.",
+      "consequence": "The single question this screen exists to answer - what has quietly slipped while I wasn't looking - is answered \"nothing\" over evidence that three jobs have, one of them for six weeks. An owner who glances at the strip catches the product contradicting itself, and after that every other figure on the surface is something she has to go and verify herself. This is the credibility of the whole product spent in one card.",
+      "fix": "Make the quiet state quiet in its data as well as its headline. Give state=quiet its own job set whose maximum age is below D.fortnight (drop the 19, 23 and 41-day jobs, leaving the six under fourteen days), so the strip's marks, its \"Oldest . N days\" label and its spoken summary all agree with the card above them. Correct the card's sentence to \"All 9 open jobs have moved inside a fortnight, none is past its day, and every one has a name on it.\"",
+      "assertion": "In state=quiet, and in both grounds: the count of .dot.old elements is 0, the N in the strip's \"Oldest . N days\" label is less than the fortnight threshold, and the strip's screen-reader line contains \"0 jobs have been open longer than a fortnight\" - all asserted in the same check as the presence of the \"Nothing is sitting\" heading, so the headline and the evidence can never be proved apart.",
+      "cost": 1.1
+    },
+    {
+      "id": "best-week-label-never-paints",
+      "severity": "misleading",
+      "element": ".record-tag - \"Best week . 8\", the only label on the dashed previous-best line across the twelve-week chart",
+      "problem": ".record is a zero-height element and the draw keyframes end on clip-path: inset(0 0 0 0) with fill both. A zero-inset clip on a 0px-tall box clips every descendant, so the tag, which sits at top:-18px outside that box, is never painted. Measured at 390, 768, 1280 and 1440, on ?motion=play after the choreography ends, on the default settled surface, and under prefers-reduced-motion - the clip-path: none overrides in both the reduced-motion and [data-motion=\"settled\"] blocks lose to the animation's own fill. document.elementFromPoint over the centre of the tag's box returns .colw; a screenshot of the box is a flat 212-byte white strip. Removing the clip in the page makes \"BEST WEEK . 8\" appear immediately - and reveals that it also overprints the hatched live column.",
+      "consequence": "A dashed rule crosses the chart between two labelled gridlines at 6 and 12 with nothing naming it. The reader takes it for part of the scale or for a target somebody set. The one comparison this chart exists to make - this stretch against your own best - is legible only to a screen-reader user, who is told it in words, while the sighted owner is left with an unexplained line.",
+      "fix": "Separate the rule from its label so the reveal animates something with height. Make .record a plain positioned container carrying no animation, move the dashed border onto a child <span class=\"record-line\"> (position:absolute; left:0; right:0; top:0; border-top:1px dashed var(--line)), move animation: draw onto that child, and leave .record-tag outside the animated element. Repoint the clip-path: none overrides in the reduced-motion and [data-motion=\"settled\"] blocks at .record-line. Then place the tag so it clears the live column - anchor it left:0 rather than right:0, at the opposite end of the plot from the live week's value.",
+      "assertion": "At every declared viewport and in both grounds, and separately under ?motion=play (after the entrance has ended), under the settled default and under prefers-reduced-motion: reduce, document.elementFromPoint at the centre of .record-tag returns .record-tag itself, and a screenshot clipped to its box is not a single flat colour.",
+      "cost": 1
+    },
+    {
+      "id": "live-column-value-collides-with-the-scale",
+      "severity": "defect",
+      "element": ".bar-val - \"12 so far\" over the live column, against the top gridline label \"12\"",
+      "problem": "The live column is the tallest, so its value label sits exactly on the top gridline, whose own number is right-aligned in the same corner. Their boxes intersect at 1440, 1280, 768 and 390 - measured, not judged by eye: bar-val 1204..1272 against gridline 1246..1265 at 1440, and 304..372 against 330..349 at 390. The label also runs past the plot's right edge at every width, and at 390 it runs 6px past the hero card's right border, so the words break the card. At 390 the lower gridline label \"6\" prints on top of the hatched column as well.",
+      "consequence": "The two numbers the reader most needs at the moment she looks at the chart - how many this week, and how high the scale goes - are printed on top of each other on every screen size, and on a phone the top line of the chart's own caption spills outside the card that contains it. The most important mark on the surface is the least readable one.",
+      "fix": "Move the numeric gridline labels to the left edge of the plot, where nothing else lands: in .gridline b replace right: 0; padding-left: var(--gap-hair) with left: 0; padding-right: var(--gap-hair). Then clamp the live value so it cannot leave the plot: when the live column is the last column, set .bar-val to right: 0; left: auto; transform: none.",
+      "assertion": "At 390, 768, 1280 and 1440, in both grounds and in every state that draws a chart, the bounding box of .bar-val intersects no .gridline b, no .record-tag and no .bar, and lies entirely inside the bounding box of .plot.",
+      "cost": 0.5
+    },
+    {
+      "id": "error-state-invents-a-last-good-reading",
+      "severity": "misleading",
+      "element": "State error - \"Last good reading . 09:14, Thursday 16 July 2026\", against the header's \"Read at 09:14, Thursday 16 July 2026\" and the coverage strip's \"Read 09:14, Thursday 16 July 2026\"",
+      "problem": "The reading failed. The only timestamp the surface holds is the instant of the attempt that failed, and it is printed three times under three labels, one of which asserts that a reading succeeded at that instant. The state that exists to say \"we could not read this\" prints, in the same card, a fact it does not have.",
+      "consequence": "The reader is told a good reading exists at exactly the moment she is told nothing came back. If she believes the line, she believes she is looking at figures that are minutes old when the product has none at all. Fabricating a last good reading is the same defect as fabricating a zero, committed on the one state built to prevent it.",
+      "fix": "Print the last good reading only when one exists, from its own timestamp. In state=error, when there is no earlier successful reading, replace the line with \"Nothing has been read today.\"; when there is one, print its own instant. Drop the header's \"Read at ...\" line in state=error, since no reading was taken - the reading line renders only for states that produced one.",
+      "assertion": "In state=error, in both grounds: the string \"Last good reading\" never appears carrying the same timestamp as any other line on the page, and the header's \"Read at\" line is absent.",
+      "cost": 0.7
+    },
+    {
+      "id": "four-week-delta-counts-an-unfinished-week",
+      "severity": "misleading",
+      "element": ".delta - \"+5 on the four before\" - and the band label \"Last four weeks . 22 Jun to 13 Jul\"",
+      "problem": "The last of those four weeks is the current, unfinished one. The chart says so twice, ten centimetres to the right - hatched, open-topped, captioned \"12 so far\" - but the hero folds it into a total of 31 and subtracts four complete weeks from it. Neither the numeral, the pill nor the band label says the window is incomplete. The reading instant is Thursday, so this is three weeks and four days measured against four whole weeks.",
+      "consequence": "The owner asking whether she is getting on top of this reads a like-for-like improvement of +5 that is not like-for-like. It is the single arithmetic she will repeat out loud, and the hero is the only place on the screen where the unfinished week is silently treated as finished - the exact treatment the hatched column exists to refuse.",
+      "fix": "Qualify both strings whenever the last week in the window is partial. Delta pill: \"+5 so far, on the four before\" (mirroring the column's own \"12 so far\"). Band label: \"Last four weeks . 22 Jun to 13 Jul . this week not over\". Where no week in the window is partial, neither qualifier is printed.",
+      "assertion": "Whenever the final week in the drawn window carries partial=true, the .delta text contains \"so far\" and the band label states that the week is not over; when no drawn week is partial, neither string is present.",
+      "cost": 0.8
+    },
+    {
+      "id": "refusals-written-in-the-studio-vocabulary",
+      "severity": "defect",
+      "element": "Movement three - the three refusal tiles and the ghost caption in every state",
+      "problem": "The three explanations read: \"The snapshot writer has no callers yet, so there are no earlier readings to compare.\", \"The date recorder switched on in August. History accrues forward only.\", \"Notes keeps no structured decision record to read. That is a Notes change, not this one.\" The ghost adds \"This is the chart we would draw\" and \"and it stays empty until the recorder has run for three periods.\" Snapshot writer, callers, date recorder, structured decision record, accrues, three periods - this is the vocabulary of the team that built it. \"We\" appears here and nowhere else on the surface, and the lowercase \"and it stays empty...\" is the second half of a sentence broken across two type roles. The ghost also never says which of the three refusals it draws.",
+      "consequence": "This movement is the product's signature - the reason it is not another dashboard - and it is the worst-written thing on the screen. A venue owner learns nothing about her own situation from it: she cannot tell whether to wait, to do something, or to ignore it, and the register drops from a product speaking plainly to an engineer explaining a component. It reads as an internal ticket pasted into the page.",
+      "fix": "Rewrite the four strings in the reader's language. Tile one: \"Nothing has been saved about how much was open in earlier weeks, so there is nothing yet to compare this with.\" Tile two: \"Dates have only been recorded since {recordStart}. Anything moved before then is not in it.\" Tile three: \"Notes has no record of which decisions are still open, so this cannot count them. That would be a change in Notes.\" Ghost heading: \"This is the chart that will appear here\". Ghost caption, as a whole sentence: \"Once open work has been counted for three weeks running, it fills in.\" Give the ghost card the first tile's title above it so it is clear which refusal it draws.",
+      "assertion": "Across all seven states and both grounds, no rendered visible string contains \"snapshot writer\", \"callers\", \"recorder\", \"structured\", \"accrues\", \"periods\", or the first person \"we\"; and no visible paragraph begins with a lowercase conjunction.",
+      "cost": 0.9
+    },
+    {
+      "id": "august-inside-a-july-reading",
+      "severity": "defect",
+      "element": "Refusal tile two - \"The date recorder switched on in August.\" against the reading line \"Read at 09:14, Thursday 16 July 2026\"",
+      "problem": "The sentence is in the past tense about a month that has not happened at the instant the surface states as now. It is the lab's own build month typed into product copy, hard-coded in the LIMITS table while every other date on the screen is derived from the fixture.",
+      "consequence": "An owner reading on 16 July is told something happened in August. She cannot resolve it. The one screen that anchors every relative fact to a single stated instant, printed once at the top in the label voice, contradicts that instant in its own body copy - and the leak tells her the words were typed against somebody else's calendar rather than her reading.",
+      "fix": "Derive it. Add recordStart to fixture.js beside readingDate, bound to the same source and rendered through the same formatter as the reading line, and fail the build if it is later than readingDate. Use it in the tile: \"Dates have only been recorded since {recordStart}.\"",
+      "assertion": "Every date and month named in any rendered string, in every state and both grounds, resolves to an instant on or before the instant printed in the reading line; no month name is hard-coded in a template string.",
+      "cost": 0.4
+    },
+    {
+      "id": "first-run-outlived-by-its-own-marks",
+      "severity": "defect",
+      "element": "State first-run - the hero \"12 jobs finished since you started\", the header's \"Twelve weeks\", and the ages strip's \"Oldest . 41 days\"",
+      "problem": "The state exists for a workspace with fewer than four weeks of records: it draws one column, and says the comparison arrives on 10 August. The same screen then states that three jobs have not moved in a fortnight and that the oldest open job has been sitting 41 days - six weeks, which would mean four weeks of records already exist and the comparison is overdue. Above both, the header's window label still reads \"Twelve weeks\" over a chart with one column; it reads the same on empty and error, where nothing is drawn at all.",
+      "consequence": "A new owner - the reader with the least reason to trust this yet - is given two incompatible accounts of how long she has been using the product, on the one screen whose job is to prove the product is careful. One of the two numbers must be wrong and she has no way to tell which.",
+      "fix": "Give first-run its own job ages, none greater than the days between the first recorded week and the reading instant, so the strip cannot outrun the record it sits under. Make the header's window label read the window actually drawn: \"One week\" in first-run, \"Twelve weeks\" where twelve are drawn, and no label at all in empty and error, where none are.",
+      "assertion": "In state=first-run, the largest age on the ages strip is less than or equal to the number of days between the first drawn week and the reading instant, and the header's window label names the number of weeks actually drawn; in states empty and error the header prints no window label.",
+      "cost": 0.6
+    },
+    {
+      "id": "status-phrases-do-not-agree-in-number",
+      "severity": "defect",
+      "element": "The five status phrases in \"What's quietly slipping\", their screen-reader lines, and the quiet state's summary sentence",
+      "problem": "Each phrase is a fixed plural string printed under whatever number arrives. The shipped fixture renders \"1\" over \"have nobody's name on them\" and speaks \"1 job have nobody's name on them, of 9 jobs open\". The quiet state prints and speaks \"All 9 open jobs has moved inside a fortnight\". Four of the five phrases are finite verb phrases and the fifth, \"past the day they were due\", is not, so one row carries two grammars for one class of fact. The unavailable card's spoken line is headless: \"past the day they were due: not available, because Timeline did not answer\".",
+      "consequence": "Three agreement errors on the busiest row on the screen, one of them read aloud verbatim to a screen-reader user. On a surface whose whole claim is that somebody chose every word, text that does not agree with its own numeral reads as machine-generated and cheapens every carefully written line around it.",
+      "fix": "Carry both forms and pick by n. \"hasn't moved in a fortnight\" / \"haven't moved in a fortnight\"; \"is past the day it was due\" / \"are past the day they were due\"; \"has nobody's name on it\" / \"have nobody's name on them\"; \"is waiting on something else\" / \"are waiting on something else\". Quiet: \"All 9 open jobs have moved inside a fortnight...\". Unavailable card's spoken line: \"Jobs past the day they were due: not available, because Timeline did not answer.\"",
+      "assertion": "Rendered with the status count set to 0, 1 and 2 in turn, every KPI card's visible phrase and its screen-reader line agree in number with the numeral above them; and in no state and neither ground does any rendered sentence match the pattern \"1 job\" followed by have or are, or the word jobs followed by has or is.",
+      "cost": 0.5
+    },
+    {
+      "id": "age-axis-labels-are-laid-out-by-flexbox-not-by-value",
+      "severity": "defect",
+      "element": ".strip-scale - the ticks today / 15d / 30d / 45d under the ages strip",
+      "problem": "The marks are spread by justify-content: space-between, so they land at 0, 33.3, 66.7 and 100 per cent of the strip whatever their values, while every dot is positioned at age / axisMax. The two agree today only because the shipped oldest age, 41, happens to round axisMax to exactly 45. Proven by raising the oldest job to 46: axisMax becomes 50, the ticks stay at 1.9 / 34.7 / 66.8 / 98.9 per cent while 15, 30 and 45 days truly fall at 30, 60 and 90 per cent - the scale detaches from its own marks by up to 100px at 1440.",
+      "consequence": "For any workspace whose oldest open job is not within four days of a multiple of five - most of them - every dot is read against the wrong number, and the reader takes a job that has been sitting three weeks for a job that has been sitting a month. The axis is the only thing on the strip that turns a position into a fact.",
+      "fix": "Position each tick by its value rather than by flex order: give .strip-scale position: relative and render each mark as position: absolute; left: calc(var(--x) * 1%); transform: translateX(-50%), with --x set to value / axisMax * 100 exactly as the dots and the fortnight marker already are. Clamp the first and last so they do not leave the strip.",
+      "assertion": "For oldest ages of 41, 46 and 58, every tick's centre on the ages strip sits within 4px of the position a dot of that many days would occupy, at 390, 768, 1280 and 1440.",
+      "cost": 0.6
+    },
+    {
+      "id": "openable-promises-a-move-the-surface-does-not-carry",
+      "severity": "refinement",
+      "element": "Hero small print - \"Counted at the moment each job reached a done column. Every one of them is openable.\"",
+      "problem": "Nothing on this surface opens a finished job. The numeral is not a control, the twelve columns carry no interaction at all, and the only links in the view are the three status cards, which are about open work. \"Openable\" is also not a word this audience uses, and it is the only coined word on an otherwise plain-English screen.",
+      "consequence": "The reader takes the sentence as an invitation, looks for the way in, and finds none. An advertised affordance that does not exist costs more than saying nothing.",
+      "fix": "Replace with \"Counted when each job reached a done column. Each one is a real job, and you can open it in Tasks.\"",
+      "assertion": "The string \"openable\" appears in no rendered state in either ground, and the hero's provenance sentence names the product where a finished job can be opened.",
+      "cost": 0.2
+    },
+    {
+      "id": "two-capitalisation-rules-in-one-tab-strip",
+      "severity": "refinement",
+      "element": "The tab strip - \"Today's Signal\", \"Full briefing\", \"Lately\"",
+      "problem": "Two sibling destinations, both proper names of surfaces in this product, are capitalised by two different rules on the same line. The signed-in naming contract names it the Full Briefing.",
+      "consequence": "One of the three destinations is demoted from a name to a description, in every state and both grounds, on the most-read line of the page. It is the kind of inconsistency the benchmark products never ship, and once seen it is visible every time.",
+      "fix": "Render the tab \"Full Briefing\", matching Today's Signal and the naming contract.",
+      "assertion": "In every state and both grounds the tab strip's three labels are exactly \"Today's Signal\", \"Full Briefing\" and \"Lately\".",
+      "cost": 0.2
+    },
+    {
+      "id": "fortnight-marker-lands-beside-a-fifteen-day-tick",
+      "severity": "refinement",
+      "element": "The ages strip - the \"A fortnight\" marker at 14 days against the ticks today / 15d / 30d / 45d",
+      "problem": "The product's one named threshold is fourteen days, and it is what three of the five status cards are counted on. The axis is ruled in fives, so the threshold line stands one day left of a 15d tick and its label prints directly above it, 40px apart at 1440 and closer at 768.",
+      "consequence": "A reader ruling the threshold off the axis reads it as fifteen days, and a job at fourteen days sits on the wrong side of the number she just read. The threshold is the whole basis of the slipping story.",
+      "fix": "Rule the axis on the threshold rather than on fives: marks at 0, 14, 28 and 42, labelled today, 14d, 28d, 42d, so the fortnight marker and a tick coincide.",
+      "assertion": "Every tick on the ages strip is zero or a whole multiple of the fortnight threshold, and the \"A fortnight\" marker's position equals a tick's position.",
+      "cost": 0.2
+    }
+  ],
+  "biggestWin": "Rewrite \"What this can't tell you\" in the owner's language. Three movements carry this product and two of them are already excellent - \"What you did\" and \"What's quietly slipping\" are as well-judged as anything Linear ships. The third, which is the only one no competitor has, is currently written in the vocabulary of the team that built it: snapshot writers, callers, a date recorder, structured decision records, three periods, and a \"we\" that appears nowhere else on the surface. Four rewritten sentences and one derived date would turn the surface's most distinctive idea from a designer's note into the line the owner repeats to her partner - and it costs nothing but the writing. That said, the most urgent change is not that one: state quiet currently answers \"nothing is sitting\" over a strip showing three jobs past the fortnight and an oldest of 41 days, and the chart's dashed previous-best line has no visible label at all because the entrance animation clips it out of existence in every motion mode. Fix those two before anything else. Overall this reads as strong, genuinely premium work on its flagship state and desk width - the movement titles, the coverage strip, the hatched partial week and the drawn-but-empty plot are award-level thinking - undone by copy that was not held to the same standard across the other six states. What remains is polish and a small build, not a different decision: about a day of writing and half a day of chart and state work."
+}

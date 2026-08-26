@@ -1,0 +1,58 @@
+{
+  "seat": "Interaction and states",
+  "score": 8.3,
+  "signOff": false,
+  "findings": [
+    {
+      "id": "mark-hit-theft-at-390",
+      "severity": "misleading",
+      "element": ".dot on the ages strip (\"How long open work has been sitting\"), 390x844 with touch",
+      "problem": "The de-swarm stacks colliding marks on a 15px row pitch, but each mark carries a 34x34 hit expander (.dot::after, inset -11px). A row-1 mark's box therefore covers the row-0 mark's visible disc. Driven with a real touchscreen tap at 390: tapping the exact centre of mark 0 (\"Order tonic and the good olives, open 2 days\") raises the label for mark 1 (\"3 days open · Confirm the Harbour wall cordon with the harbourmaster\"), and tapping the centre of mark 2 (\"Send the midweek rate to the June 2027 couple, open 5 days\") raises mark 3 (\"6 days open · Approve the final seating plan\"). Only 32% and 43% of those two marks' own hit boxes resolve to themselves. Reproduces identically on full, partial, quiet and first-run. The behaviour gate's closest-pair rule measures euclidean centre distance (16.5px, passes its 12px floor) and is blind to occlusion; audit.mjs measures target size, not who is on top.",
+      "consequence": "On the phone — where the tooltip is the only place a job's title and age appear at all — the owner touches one mark and is told a different job's name and a different number of days. She reads \"3 days\" off a mark that means 2 days, on the exact object the strip exists to let her interrogate. Two of nine open jobs cannot be inspected at all by pointer, and nothing on screen tells her the reading she got is not the mark she touched.",
+      "fix": "Make the row pitch and the hit expander agree so no mark's box can reach another's centre. In deswarm(), raise MIN from 16 to 20; change the row offset to a 20px pitch (.dot { bottom: calc(20px + var(--row, 0) * 20px); } and strip.style.minHeight = `${92 + Math.max(0, rows.length - 1) * 20}px`); and clamp the expander vertically so it cannot cross a row: .dot::after { top: -8px; right: -11px; bottom: -8px; left: -11px; } — a 34x28 target, still above the 28px floor audit.mjs enforces. Half-height then reaches 14px against a 20px pitch, and half-width 17px against a 20px minimum separation, so every mark owns its own centre at every density.",
+      "assertion": "At every declared viewport, with touch set from the config, for every .dot: document.elementFromPoint(centreX, centreY).closest('.dot') === that dot. Assert it on full, partial, quiet and first-run.",
+      "cost": 1.1
+    },
+    {
+      "id": "stale-tip-strands-on-scroll",
+      "severity": "defect",
+      "element": "#tip, raised by keyboard focus or pinned by touch",
+      "problem": "The tip is position: fixed and placed once from getBoundingClientRect. Nothing re-places or dismisses it on scroll or resize. A fine pointer is fine — a wheel scroll fires pointerleave and the tip is correctly dismissed (measured: on=false). The other two input modes are not. Keyboard: focus mark 8, scroll the .scroll container 260px, and the tip stays on, 332px away from its mark, floating over the \"What's quietly slipping\" section. Touch at 390: tap-to-pin mark 8, scroll 300px, and the pinned black label \"41 days open · Confirm the marquee sides with the hire company\" sits 372px from its mark, directly on top of a KPI card's .t-num numeral. Resizing 390 to 768 while pinned leaves the tip at (122,344) while its mark moves to (639,512).",
+      "consequence": "On touch the pin is the intended gesture and scrolling is the natural next move, so the most common two-step on a phone leaves a high-contrast label about one job parked on top of a different card's big number. The reader has to work out that the label is stale before she can trust either figure, and the one mechanism that carries job titles on a phone becomes something she learns not to use.",
+      "fix": "Track the element that raised the tip in one variable (set it in show(), clear it in drop() and in hide(true)), then re-place or retire it whenever the geometry moves. Add: window.addEventListener('scroll', onMove, true) and window.addEventListener('resize', onMove), where onMove() { if (!showing || !tip.classList.contains('on')) return; const b = showing.getBoundingClientRect(); if (b.bottom < 0 || b.top > innerHeight) { drop(); return; } place(showing); }. Capture phase is required so the .scroll container's own scroll event is caught.",
+      "assertion": "With a mark focused by keyboard, and again with a mark pinned by a real touch tap at 390, scroll the .scroll container by 300px: the tip is either dismissed or its box is within 24px of its mark's box. Repeat after changing the viewport from 390x844 to 768x1024 with the tip pinned.",
+      "cost": 0.8
+    },
+    {
+      "id": "focusable-while-invisible-during-entrance",
+      "severity": "defect",
+      "element": "a.kpi.rise and .dot::before, at ?motion=play",
+      "problem": "The entrance animates opacity from 0 with staggered delays (rise up to 260ms delay, .dot::before up to 760ms + 55ms per mark) while every control is focusable from the first frame. Measured at ?motion=play: 1203ms elapse before no focusable element is at effective opacity below 0.1 — 12 invisible focusables at ready, still 3 at 900ms. Four Tab presses immediately after __LATELY_READY land on the \"3 haven't moved in a fortnight\" KPI link at effective opacity 0.000; its 2px focus outline inherits that opacity, so nothing at all is painted. The behaviour gate's \"nothing invisible can take focus\" rule runs on the settled surface (default under webdriver), so this condition has never been evaluated by it — the same blind-gate class as the coarse-pointer and sub-720px misses in the defect library.",
+      "consequence": "A keyboard user who starts tabbing on arrival — the fastest users, and the ones for whom the ring is the only wayfinding — loses the ring entirely for over a second. There is no way to tell whether focus has entered the page, stalled, or left it, and the next Tab is a guess.",
+      "fix": "Let the first keyboard engagement end the choreography. Add, alongside the existing keydown handler: document.addEventListener('keydown', (e) => { if (e.key === 'Tab') document.documentElement.setAttribute('data-motion', 'settled'); }, { capture: true, once: true }); and the same on the first focusin inside #root. The existing [data-motion=\"settled\"] block already snaps every animation to 1ms with zero delay and restores the settled transforms, so the surface is complete before focus lands on the first control.",
+      "assertion": "Open ?motion=play, wait for __LATELY_READY, then press Tab five times. After each press, the effective opacity of document.activeElement (the product of its own and its ancestors' opacity, multiplied by its ::before opacity when it carries class dot) is >= 0.9.",
+      "cost": 0.7
+    },
+    {
+      "id": "live-value-collides-with-axis-label",
+      "severity": "defect",
+      "element": ".bar-val (\"12 so far\") against .gridline b (\"12\") in the twelve-week chart",
+      "problem": "The gridline values are anchored to the plot's right edge (.gridline b { right: 0 }) and the live column is the last column, so its value label is anchored to the same edge. They overlap by 154 square pixels at 1440, 1280, 900, 768, 560 and 390 — every width measured — printing \"12 SO FAR\" through the axis's own \"12\". The label also overhangs the plot box to the right, by 7px at 1440 rising to 23px at 390, where it breaks the card's right edge. It is visible in the delivered light-full frames at both 1440x960 and 390x844.",
+      "consequence": "The one number the chart prints — the figure carrying the whole \"so far\" reading of the unfinished week, and the only indigo type on the screen — is rendered on top of another number. At a glance it reads as a rendering fault, which is the last impression an instrument arguing for its own honesty can afford.",
+      "fix": "Move the axis values to the left edge, where no column label competes for the space: .gridline b { right: auto; left: 0; padding-left: 0; padding-right: var(--gap-hair); }. Then keep the live column's value inside the plot by anchoring it to that column's right edge instead of its centre: .cols .colw:last-child .bar-val { left: auto; right: 0; transform: none; }.",
+      "assertion": "At 1440x960, 1280x900, 768x1024 and 390x844, the .bar-val box intersects no .gridline b box and no .record-tag box, and its box lies entirely inside the .plot box.",
+      "cost": 0.6
+    },
+    {
+      "id": "no-pressed-state-anywhere",
+      "severity": "defect",
+      "element": "a.kpi, .dot, .tab, .btn",
+      "problem": "The file contains no :active rule at all. Measured with the primary button actually held down: a.kpi, .dot and .tab all compute identically under hover and under press (transform, background, border, colour, ::before background all unchanged), and .btn's press is byte-identical to its hover. Separately, .dot — the surface's only genuinely interactive object — computes cursor: default, while a.kpi, .tab and .btn all compute pointer, so the nine marks give the pointer less acknowledgement than the cards that go nowhere.",
+      "consequence": "Under a coarse pointer there is no hover, so the press is the only channel by which the surface can confirm a touch registered — and it says nothing. Tapping a mark and tapping 2px beside it feel identical, which is exactly the ambiguity that makes a person tap a third and fourth time. On the desk, the marks never invite the pointer in the first place, so the reading that lives only in the tooltip stays undiscovered.",
+      "fix": "Declare a pressed state for each control after the hover and focus rules, using tokens already in the lock: a.kpi:active { transform: translateY(0); border-color: var(--ink-4); } · .btn:active { background: var(--paper-3); border-color: var(--ink-3); transform: translateY(1px); } · .tab:active { color: var(--ink-2); } · .dot:active::before { transform: scale(0.82); } (on the pseudo, so the hit area is untouched). Add cursor: pointer to the .dot rule.",
+      "assertion": "For each of a.kpi, .dot, .tab and .btn: the computed style read with the primary pointer held down over the element differs from the computed style read on hover alone. And getComputedStyle(document.querySelector('.dot')).cursor === 'pointer'.",
+      "cost": 0.5
+    }
+  ],
+  "biggestWin": "Fix the mark hit-testing on the ages strip so every mark owns its own centre at 390. Everything else on this surface is polish; this one is the surface returning a wrong fact in response to a deliberate gesture, on the device the audience actually holds, in the one place a job's name and age appear at all. It is a ten-line change to the de-swarm pitch and the hit expander, plus one elementFromPoint assertion in the gate, and it turns the strip from something a phone user learns to distrust into the most interrogable object on the screen."
+}

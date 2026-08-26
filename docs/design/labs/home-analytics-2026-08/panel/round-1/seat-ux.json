@@ -1,0 +1,158 @@
+{
+  "seat": "UX and information design",
+  "score": 7.0,
+  "signOff": false,
+  "findings": [
+    {
+      "id": "quiet-state-contradicts-its-own-evidence",
+      "severity": "blocking",
+      "element": "?state=quiet — the \"What's quietly slipping\" card and the ages strip directly beneath it",
+      "problem": "The quiet state prints \"Nothing is sitting\" and \"All 9 open jobs has moved inside a fortnight, none is past its day, and every one has a name on it\" in a card whose bottom edge touches a second card headed \"How long open work has been sitting\", labelled \"Oldest · 41 days\", drawing three indigo past-the-fortnight dots, and spoken as \"3 jobs have been open longer than a fortnight.\" The quiet view calls strip() unmodified, so it renders the full state's nine jobs — including a job open 41 days — under a headline that says none of them exists. The numbers on this surface all run through one accessor D; the sentences do not, so the claim and the evidence are free to disagree and here they do.",
+      "consequence": "A venue owner reading the state whose whole job is to say \"you are on top of it\" is told nothing is sitting and shown, two centimetres lower, that three things are sitting and one has been sitting six weeks. There is no reading of that screen that is true. The product's single asset is that its numbers can be believed, and this state spends it — and it is a state a healthy account sees most often.",
+      "fix": "Derive the quiet state's sentence from the same data the strip draws. In VIEW.quiet, compute sitting/overdue/unowned from D and render the reassurance card only when all three are 0 and D.jobs.every(j => j.age < D.fortnight); otherwise render movementTwo(). Ship the quiet state against a quiet fixture (all nine ages under 14, status counts 0) rather than the full one, so the strip beneath the claim shows nine grey dots left of the fortnight rule and the head reads \"Oldest · 11 days\". Fix the agreement in the same line: \"All 9 open jobs have moved inside a fortnight\".",
+      "assertion": "In every state, no claim contradicts the marks beside it: in state=quiet, document.querySelectorAll('.dot.old').length === 0, every .dot aria-label parses to an age below D.fortnight, the ages card's \"Oldest\" label reads fewer than 14 days, and the strip's .sr line does not contain the phrase \"have been open longer than a fortnight\". Run at 390, 768, 1280 and 1440 on both grounds.",
+      "cost": 2.0
+    },
+    {
+      "id": "record-line-never-names-itself",
+      "severity": "misleading",
+      "element": ".record / .record-tag — \"Best week · 8\" on the twelve-week column chart",
+      "problem": "The dashed previous-best line is drawn; its label is never painted, in any state, at any width, on either ground, in both motion modes. .record is height:0, and the `draw` keyframes' `to` state sets clip-path: inset(0 0 0 0), which clips to that zero-height border box and removes the absolutely positioned .record-tag at top:-18px. Because an animated value outranks the author declaration, the `[data-motion=\"settled\"] .record { clip-path: none }` escape never wins. Measured: after two frames the computed clip-path is inset(0px 0% 0px 0px); patching it to none makes \"BEST WEE…8\" appear. Even unclipped the tag paints under .cols (later in DOM, both positioned, z-index auto) and the live column cuts it in half. The .sr line still says \"The best week before this one was 8\", so the spoken surface carries a fact the drawn surface does not.",
+      "consequence": "The reader sees an unexplained dashed rule across the chart that carries their most important comparison — is this week beating my best? — and has to guess what it means: a target, an average, a limit. A chart that draws a reference line and refuses to name it is worse than one with no line at all, and this surface names every other mark it draws. A screen-reader user is told the fact; a sighted user is not.",
+      "fix": "Animate only opacity in the `draw` keyframes and drop clip-path entirely, or give .record `height: 1px` and `overflow: visible` and animate `clip-path` on a separate zero-height inner rule element that carries no text. Move the .record element after .cols in chart() so its tag paints above the columns, and inset .record-tag by var(--gap-tight) from the right so the live column never crosses it. Keep the .sr sentence as is.",
+      "assertion": "In state=full at 390, 768, 1280 and 1440 on both grounds, after two animation frames: the .record-tag's bounding box is non-empty, its computed clip is not clipping it out (elementsFromPoint at its centre includes .record-tag), its rendered pixels differ from the card ground, and no .bar box intersects it. Prove the check by restoring clip-path: inset(0 0 0 0) and watching it fail.",
+      "cost": 1.4
+    },
+    {
+      "id": "hero-total-folds-the-unfinished-week",
+      "severity": "misleading",
+      "element": ".hero-n — the 64px \"31\", the \"+5 on the four before\" chip, and the band-head window label",
+      "problem": "The protected partial-bucket treatment is honoured in the chart and abandoned in the headline that dominates the screen. lastFour sums weeks 8–11 (6+8+5+12 = 31) where week 11 is the hatched, open-topped, four-days-old current week, and compares it against four complete weeks (26) as a clean \"+5\". Nothing on the numeral or the chip says the window is still running. The window label compounds it: \"Last four weeks · 22 Jun to 13 Jul\" names a period ending three days before the stated reading instant of Thursday 16 July, because it prints week-start dates as if they were the window's bounds.",
+      "consequence": "The delta is the one sentence answering \"am I getting on top of this, or just busy?\", and it is computed over an incomplete period. On this fixture the partial week happens to run hot, so it flatters; on a Monday morning the same arithmetic prints a large negative and tells an owner they are slipping when in fact the window is one day old. The reader has no way to see which they are looking at, on the single number the whole page is built to deliver.",
+      "fix": "Carry the partial mark into the headline. When D.weeks[11].partial is true, render the chip as \"+5 so far · this week still running\" (t-label, same pill, no new colour or weight), and change the window label to name the real bounds: \"Last four weeks · 22 Jun to 16 Jul\", ending on D.readingDate rather than on the last bucket's start.",
+      "assertion": "In state=full and state=partial, when the final week bucket carries partial:true, the .delta element's text matches the incomplete-window marker (contains \"so far\" or \"still running\"), and the movement-one band-head label's end date equals the fixture's reading date, not D.weeks[11].start. Assert at all four viewports.",
+      "cost": 1.3
+    },
+    {
+      "id": "openable-is-a-promise-nothing-keeps",
+      "severity": "misleading",
+      "element": ".hero-fig .t-small — \"Counted at the moment each job reached a done column. Every one of them is openable.\"",
+      "problem": "Nothing on this surface opens a finished job. Driven at 1440: the twelve .colw columns carry no tabindex, no data-tip, no title and no child control (anyTabbable false, anyTip false); the hero numeral is a plain span; the only focusable elements on the page are three tab links, three KPI links and nine age dots. The sentence advertises an affordance that exists nowhere in any of the seven states.",
+      "consequence": "The one line of copy attached to the biggest number on the page tells the reader they can act on it, and then the reader clicks the 31, clicks a column, and nothing happens. For the audience this is written for — someone who has never used a tool like this — a promise that does not answer is not a missing feature, it is evidence the screen is broken. Advertising is a promise, and this page checks nobody's.",
+      "fix": "Either draw the affordance or delete the claim. Preferred: make each .colw a button with an accessible name of the form \"Week commencing 8 Jun, 8 jobs finished — open them\", raising the same tip the dots raise (this also closes twelve-columns-withhold-their-own-numbers). If the port cannot land the destination, cut the second sentence and let the line read \"Counted at the moment each job reached a done column.\"",
+      "assertion": "For every state and both grounds, any rendered sentence containing the word \"openable\" (or \"open them\") requires at least one focusable element inside the same section whose accessible name names what it opens; otherwise the assertion fails. Prove it by re-adding the sentence with the columns inert and watching it fail.",
+      "cost": 0.9
+    },
+    {
+      "id": "first-run-shows-a-41-day-old-job",
+      "severity": "misleading",
+      "element": "?state=first-run — the ages strip and KPI row beneath the first-run hero",
+      "problem": "The first-run hero says \"12 jobs finished since you started\" and \"Four weeks of records make a comparison worth printing. Yours arrive on 10 August.\" The same screen then renders movementTwo() unchanged: nine open jobs on an axis running to 45 days, a head reading \"Oldest · 41 days\", three dots past the fortnight rule, and a spoken line naming a job open 41 days. An account that does not yet have four weeks of history cannot hold a job that has been open for six weeks.",
+      "consequence": "The state built to make a new owner's first week feel considered instead shows them an account that is six weeks old and already behind. It is impossible data, and the reader either believes the product has invented work for them or concludes the page does not know what it is looking at. Same root cause as the quiet state: a degraded state assembled from full-state parts without reconciling the parts to the state's own claim.",
+      "fix": "Give first-run its own slice of the fixture. Cap job ages and the axis maximum at the history the state claims: filter D.jobs to ages under 28, recompute D.axisMax from that slice (so the scale ends at 15d, not 45d), recompute the four status counts from the same slice, and derive \"Yours arrive on\" from D.readingDate plus 28 days rather than the typed literal \"10 August\", which also carries no year.",
+      "assertion": "In state=first-run at all four viewports: every .dot aria-label parses to an age strictly less than the number of days of history the state claims, the ages axis maximum is less than that same number, no .dot carries the .old class, and the \"Yours arrive on\" date equals the fixture reading date plus 28 days.",
+      "cost": 1.1
+    },
+    {
+      "id": "live-column-label-collides-with-the-scale",
+      "severity": "defect",
+      "element": ".bar-val \"12 so far\" against .gridline b \"12\", on the twelve-week chart",
+      "problem": "The live column's value label overlaps the top gridline's value label in every state that draws a chart, at every viewport. Measured: at 1440 the label occupies x 1204–1272, y 385–400 and the gridline label occupies x 1246–1265, y 392–407 — the two strings sit on top of each other. At 390 it is worse: the label runs to x 372 while the card's right edge is x 366, so it escapes the card by 6px into the page gutter. Both are visible in the shipped frames (light-full--1440x960.png, light-full--390x844.png).",
+      "consequence": "The most important mark on the page — this week, live, the only column that names its own number — is unreadable, and reads as two numbers piled on each other. On a phone it also breaks the card edge, which is the one line telling the reader where the object ends. The label happens to collide precisely because the live column is the tallest, so the defect is guaranteed on every account that is having a good week.",
+      "fix": "Give the value label the plot's right edge to work with. Set .bar-val to clamp inside the plot (left: 50%, translateX(-50%) with a max-width, plus a right: 0/translate: 0 branch for the last column so it right-aligns to the plot instead of centring on the bar), and suppress the top gridline's numeral when the live column reaches it — the label already states the value. Add overflow guards so the label can never cross the .card border.",
+      "assertion": "In every state that draws .bar-val, at 390, 768, 1280 and 1440 on both grounds: the .bar-val box intersects no .gridline b box and no .record-tag box, and its left and right edges lie inside its enclosing .card's padding box.",
+      "cost": 0.8
+    },
+    {
+      "id": "ua-margins-defeat-the-space-ladder",
+      "severity": "defect",
+      "element": "every p, h1, h2, h3 on the surface — the stylesheet carries no margin reset",
+      "problem": "The space ladder is declared as 4·8·12·16·24·32·48·72 named tokens and audit.mjs proves it by reading the source for raw px — so it cannot see the browser's own 1em margins, which nothing in the stylesheet resets. Measured at 1440 in state=full: 32 elements inside header and main carry computed margins of 11, 13, 15, 17, 20 or 22px, none of which is a rung. The consequence is concrete: a .limit tile declares gap: var(--gap-tight) (8px) between its three lines and renders them 39px and 41px apart, and the two gaps differ from each other because the margin is font-size-relative. The tile stands 216px tall instead of roughly 110px. The audit gate reports \"space ladder pass\".",
+      "consequence": "Nothing on this page is spaced the way it was drawn. The vertical rhythm — the thing that makes a dense instrument read as one system rather than a stack of boxes — is set by the browser's default paragraph margin, scaled by whatever font size each line happens to use, so no two card interiors share a rhythm and the protected \"What this can't tell you\" tiles are five times looser than every other card. It is the difference between a page that reads as drawn and one that reads as assembled, and it is the largest single gap between this surface and the Linear/Stripe/Vercel bar it is being held to.",
+      "fix": "Add `h1, h2, h3, p { margin: 0; }` immediately after the `*` rule, then re-walk the seven states at four widths and restore intended separation with the existing gap tokens where a gap disappears (the .top-row baseline row, the .reading row, .band-head, .limit, .center, .hero-fig, .note and the .coverage strip). Every restored value must be a rung.",
+      "assertion": "At 390, 768, 1280 and 1440, in all seven states and both grounds: every element inside header, main and .coverage has computed marginTop/Bottom/Left/Right equal to 0 or a member of {4,8,12,16,24,32,48,72}. Prove the check by deleting the reset and watching 32 elements fail.",
+      "cost": 1.6
+    },
+    {
+      "id": "kpi-row-has-no-shared-baseline",
+      "severity": "defect",
+      "element": ".kpis — the five cards over the shared denominator",
+      "problem": "The row whose entire argument is that five numbers are comparable because they share one denominator does not put those five numbers, or their five meters, on a common line. Measured at 1440 and 1280 in state=full: the lead card's numeral top is 833 and the other four are 839; the meters of \"haven't moved\" and \"past the day\" sit at y 910 while \"nobody's name\" and \"waiting on\" sit at y 930, a 20px step, because the third and fourth labels wrap to two lines and the card is a plain flex column that pushes the meter down. The step moves with the viewport and with the wording, so it is different at every width.",
+      "consequence": "Comparison across a row is done by running the eye along a line. Break the line and the reader has to compare bar lengths at two different heights, which is exactly the work the shared denominator was introduced to remove. The 20px step also reads as a mistake — five identical cards that do not line up look like a layout that gave up, which is the opposite of the instrument register the page is reaching for.",
+      "fix": "Make .kpi a grid rather than a flex column: `display: grid; grid-template-rows: 20px auto 1fr auto;` so glyph, numeral, label and meter each own a track and the meter is pinned to the last row in every card. Give the lead card the same four tracks with its t-label occupying the glyph row, so its numeral shares the numeral row. Apply at every width.",
+      "assertion": "In state=full and state=partial at 390, 768, 1280 and 1440 on both grounds: all .kpi .t-num boxes share a top within 1px, and all .kpi .meter boxes share a top within 1px, within each rendered row of the grid.",
+      "cost": 1.0
+    },
+    {
+      "id": "twelve-columns-withhold-their-own-numbers",
+      "severity": "defect",
+      "element": ".cols — the twelve week columns inside the hero card",
+      "problem": "Eleven of the twelve columns give the reader no number by any means. Driven at 1440: no .colw is focusable, none carries data-tip or title, and the only visible value on the plot is the live column's \"12 so far\". Magnitude is available only by eye against two gridlines at 6 and 12. In the same card, and in the ages strip one section below, every single dot names its fact on hover, on touch and on focus — so one surface teaches the reader that marks answer when you point at them, and its largest chart does not.",
+      "consequence": "The reader who wants to know what a good week looks like for them — the second question the page exists to answer — cannot read one. They can see that a column is taller, and must estimate its value against a gridline. Two interaction models inside one card also mean the reader learns the wrong lesson from whichever they meet first: point at the columns and nothing happens, so they stop pointing at the dots too.",
+      "fix": "Make each .colw a button carrying the same data-tip contract the dots use — `<b>8 finished</b><s>week commencing 8 Jun</s>` — with aria-label \"Week commencing 8 Jun, 8 jobs finished\", so pointer, touch and focus all raise it through the existing show/place/hide model with no new code path. The partial column's tip says \"12 so far, week not over\".",
+      "assertion": "In every state that draws .cols, at all four viewports: every .colw is focusable with an accessible name containing both its week and its count; a real pointer move over each raises #tip with text matching that count; a real touch on each pins it; keyboard focus alone raises it and Escape dismisses it.",
+      "cost": 1.0
+    },
+    {
+      "id": "ghost-caption-sits-on-the-ghost-columns",
+      "severity": "defect",
+      "element": ".ghost — the protected drawn-but-empty plot in \"What this can't tell you\"",
+      "problem": "The caption is laid over the marks. Measured at 1440: \"and it stays empty until the recorder has run for three periods.\" intersects 6 of the 12 ghost columns and the head \"This is the chart we would draw\" intersects 1, because .ghost-say is position: absolute; inset: 0 centred over a .ghost-plot drawn at opacity 0.5. The columns themselves are var(--wash) with a 1px dashed top and no baseline, so at 50% opacity behind text they do not read as a chart at all — they read as pale blocks behind a sentence.",
+      "consequence": "This is the movement the brief protects and asks to be made more beautiful, and it is the one composition on the page where text and marks are stacked on top of each other. The idea — draw the absence as the chart it would be — only lands if the reader recognises a chart; here they see grey rectangles crossed out by a caption, so the most original thing on the surface reads as a rendering error.",
+      "fix": "Stop overlaying. Make .ghost a two-row stack: the head and its line above, the ghost plot below at full opacity with a real baseline (a 1px --line rule under the columns) and its own faint value axis, separated by var(--gap-room). Keep the dashed container border and the wash fill; the absence is already carried by the dashed border and the empty axis and does not need transparency as well.",
+      "assertion": "At all four viewports on both grounds: no .ghost-say text box intersects any .ghost-plot i box, the ghost plot renders at opacity 1, and a baseline rule is present beneath the ghost columns.",
+      "cost": 0.7
+    },
+    {
+      "id": "kpi-row-and-ages-card-share-an-edge",
+      "severity": "defect",
+      "element": ".kpis and the .card.ages beneath it inside movement two",
+      "problem": "There is zero space between them. Measured at 1440 in state=full, the ages card's top equals the KPI row's bottom exactly (gap 0), so the two cards' 1px hairlines stack into a doubled seam and read as one card that has cracked. The same is true in the quiet state, where the reassurance card and the ages card touch. movementTwo() concatenates `${strip()}` after .kpis with no separating token.",
+      "consequence": "Two separate objects — a row of counts and a distribution over time — merge into one ambiguous shape, so the reader cannot tell where the claim ends and the evidence begins. It is also the only place on the page where the space ladder is not applied at all, which makes it read as an oversight rather than a decision.",
+      "fix": "Wrap movement two's contents in a flex column with `gap: var(--gap-line)`, or add `margin-top: var(--gap-line)` to .ages, so the KPI row and the ages card are separated by a rung at every width. Apply the same separation in the quiet state between the reassurance card and the strip.",
+      "assertion": "In state=full, state=partial, state=quiet and state=first-run at all four viewports: the vertical distance between the .kpis (or reassurance .card) bottom and the .ages top is greater than 0 and is a member of the space ladder.",
+      "cost": 0.5
+    },
+    {
+      "id": "count-of-one-takes-a-plural-verb",
+      "severity": "defect",
+      "element": "kpi() word strings and the quiet state's sentence",
+      "problem": "The card words are written as plural predicates and pinned to a numeral that can be 1, with no agreement step. On screen the third card reads \"1 / have nobody's name on them\" and its accessible name reads \"1 job have nobody's name on them, of 9 jobs open\". In the quiet state the single sentence reads \"All 9 open jobs has moved inside a fortnight\". Both are in the shipped frames.",
+      "consequence": "Voice is one of the three things this product says are non-negotiable, and the two visible grammar errors are both on the sentences a first-time owner reads most carefully — the one card that names a specific problem and the one line that tells them everything is fine. A screen that cannot conjugate a verb does not read as an instrument, and for the audience this is written for it reads as unfinished software.",
+      "fix": "Give kpi() a paired word — { one, many } — and select on n: \"has nobody's name on it\" / \"have nobody's name on them\", \"is past the day it was due\" / \"are past the day they were due\", \"hasn't moved in a fortnight\" / \"haven't moved in a fortnight\", \"is waiting on something else\" / \"are waiting on something else\". Fix the quiet sentence to \"All 9 open jobs have moved inside a fortnight\".",
+      "assertion": "Across all seven states and both grounds, every rendered sentence and every accessible name passes an agreement check written to a file (never through a shell): no string contains \"jobs has\", and no string in which the leading count is 1 is followed by \"have\", \"are\" or \"haven't\". Prove the check by restoring the current strings and watching it fail on three of them.",
+      "cost": 0.6
+    },
+    {
+      "id": "partial-drops-the-best-week-unannounced",
+      "severity": "defect",
+      "element": "?state=partial — movementOne({ record: false })",
+      "problem": "The partial state's declared degradation is that Timeline did not answer, which is the due-date source. Tasks answered, so the twelve weekly counts and the previous best are fully known. The state nonetheless removes the previous-best reference line and drops \"The best week before this one was 8\" from the chart's spoken line, with no note and no \"unavailable\" statement, while the note beneath the KPI row explains only the Timeline outage. The honest-degradation contract that governs this surface says a missing source resolves to unavailable in words, never to silence.",
+      "consequence": "A reader moving between a good reading and a degraded one loses a mark from a chart for a reason the screen never gives, so they cannot tell whether the previous best is unknown, zero, or simply gone. The state teaches that when something is wrong, marks disappear quietly — precisely the belief this product's whole honesty architecture exists to prevent.",
+      "fix": "Restore record: true in VIEW.partial — the best week is knowable from the source that answered. If the state is meant to exercise a no-history path, make that its own condition and have the chart say so in words where the record line would sit, in the same form the unavailable KPI card uses.",
+      "assertion": "For each state, the set of marks that disappear relative to state=full is exactly the set sourced from the sources that state records as not answering; any other absent mark must be accompanied by an on-screen 'not available' statement naming why. Assert specifically that state=partial draws .record and its spoken 'best week' sentence.",
+      "cost": 0.5
+    },
+    {
+      "id": "first-run-plot-has-no-scale",
+      "severity": "defect",
+      "element": "?state=first-run — the single-column chart in the hero card",
+      "problem": "The first-run plot is the full plot with eleven columns deleted rather than a composition for one week. One hatched column sits at the horizontal centre of a plot roughly 660px wide at 1440, on a full-width baseline, with one x-label and — unlike every other state — no gridlines and no value axis. Its height is a typed literal (`--h:60`), so the bar's length encodes nothing; a reader comparing its height to the twelve-week chart they will see next week is comparing a real value to a constant.",
+      "consequence": "The state a new owner meets first is the one place the page shows a mark that means nothing, in a composition that reads as a chart that failed to load. It is also the state with the most room to be delightful and the least done to it — the opposite of the brief's ask that the degraded states be designed states.",
+      "fix": "Draw first-run as its own object: give the plot the same two gridlines with their values, derive the single bar's height from that scale (12 against a max of 12), and either narrow the plot to the width of a few columns so the single week sits at real scale beside empty weeks yet to come, or draw the eleven weeks that have not happened as faint placeholder slots so the reader sees the shape the chart is growing into.",
+      "assertion": "In state=first-run at all four viewports: the plot renders at least two .gridline elements with numeric labels, and the single .bar's --h resolves from the rendered value and the gridline maximum rather than from a literal (assert --h equals round(value / max * 100)).",
+      "cost": 0.6
+    },
+    {
+      "id": "error-state-stamps-a-successful-read",
+      "severity": "refinement",
+      "element": "?state=error — the .coverage strip against the card's \"Last good reading\"",
+      "problem": "On the state that says \"Tasks did not answer\", the coverage strip still prints \"Read 09:14, Thursday 16 July 2026\" — the same instant the card above calls \"Last good reading · 09:14, Thursday 16 July 2026\". One moment carries two names with opposite meanings on one screen: the reading that failed, and the last one that worked.",
+      "consequence": "The reader trying to work out how stale the screen is gets two labels for one timestamp and cannot tell whether anything was read at all. The page's own rule is one grammar per fact, and the error state is where an anchored time matters most.",
+      "fix": "In the error state, have the coverage strip label the attempt rather than the reading — \"Tried 09:14, Thursday 16 July 2026\" — and let the card's \"Last good reading\" carry a genuinely earlier instant from the fixture. Apply the same wording to the loading state, where \"Read\" is also premature.",
+      "assertion": "In state=error and state=loading, the coverage strip does not use the label \"Read\" for the current instant, and in state=error the coverage strip's timestamp differs from the card's \"Last good reading\" timestamp.",
+      "cost": 0.3
+    }
+  ],
+  "biggestWin": "Reset the browser's inherited margins and put the KPI row on one baseline grid. Right now 32 elements carry off-ladder 11–22px margins the source-reading audit cannot see, so a limit tile that declares 8px between its lines renders them 39 and 41 apart, and the five cards built to be compared put their numerals on two lines and their meters on two more. One `h1,h2,h3,p{margin:0}` plus a four-track grid on .kpi re-tunes every card in all seven states at all four widths, and it is the single change that moves this from a page that reads as assembled to one that reads as drawn. Everything else in the ledger is correctness — the quiet state saying nothing is sitting above three things sitting, and the chart's Best-week label that has never once painted — and those are must-fix, not lift. To the founder question: what remains is polish and one small build, not a different decision. The direction, the metric set, the honesty architecture and the motion contract are right and should not be re-opened. Call it two to three days: half a day of composition (margins, baseline grid, the two collisions, the ghost stack), half a day of correctness (the record clip, the partial-week delta, the agreement strings, the openable claim), and one to two days rebuilding quiet and first-run as states with their own fixture slices instead of the full state with pieces removed — which is where both of the worst findings came from and where the class will keep coming back until each state derives its sentences from the same accessor its marks already use."
+}

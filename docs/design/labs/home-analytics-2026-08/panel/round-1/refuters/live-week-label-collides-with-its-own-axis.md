@@ -1,0 +1,144 @@
+Adversarially verify one design-review finding against the artifact. Default to REFUTED when uncertain.
+
+FINDING id=live-week-label-collides-with-its-own-axis
+Seat: Product taste and emotional resonance
+Element: .bar-val ("12 so far") over the top gridline label in .gridline b
+Problem: Three faults in the one mark the whole page is built to emphasise. (1) The label overlaps the top gridline label at every width I drove — 390, 560, 768, 900, 1280, 1440 — and in both grounds; measured at 1440 the two rects share x 1246–1265 and y 382–390, so indigo "12 SO FAR" and grey "12" print on top of each other and neither reads. (2) At 390 the label runs from x 304 to 372 while the plot ends at 349 and the hero card ends at 366 — it overhangs its own card by 6px and sits on the page ground. (3) Its position is static while the column animates: at 300ms of the entrance the label is at full opacity at the top-right of a completely empty plot, labelling nothing for roughly 700ms.
+Consequence claimed: The reader's eye goes to the one indigo mark on the screen and finds a pile of overlapping glyphs where the axis maximum should be. They cannot read the top of the scale, and the object that is supposed to say "this week is running hot and isn't finished" instead says "something is broken here". On a phone the value hangs outside the card. This is the first thing a discerning stranger looks at and the first thing that tells them nobody checked the finished frame at full size.
+Severity claimed: defect
+Proposed fix: Give the live column's value its own lane. Reserve a 20px band above the plot (`.plot { margin-top: var(--gap-room) }`) and place `.bar-val` in it at `bottom: 100%`, right-clamped to the plot box: `left: min(50%, calc(100% - 50%))` is not enough — set `transform: translateX(-50%)` only while the column's centre is more than half the label's width from the plot edge, otherwise pin the label's right edge to the plot's right edge. Suppress the top gridline's numeric label when the live column reaches the top of the scale, since the bar's own value states it. Animate the label with `opacity` on the same delay as its column's `grow` so it arrives with the mark rather than ahead of it.
+
+Score against this standard: the work of an award-winning design studio that
+iterated on this product for months. 10 is that studio's best shipped work.
+Benchmarks to hold it against, by name: Linear, Stripe, Vercel, xAI/Grok,
+SpaceX. Score the ARTIFACT, not the effort. A polite 8 that should be a 6
+makes the panel worthless.
+
+WHAT YOU ARE REVIEWING
+One owner, one Project, looking back over twelve weeks to answer one
+question: **am I actually getting on top of this, or just busy?** Behind it:
+what has quietly slipped while I wasn't looking, and is this stretch better
+or worse than my normal.
+The audience: A venue owner, wedding planner or small-studio operator — the 80% not in.
+
+CONSTRAINTS THAT ARE NOT NEGOTIABLE (do not propose breaking these):
+- Palette is exactly 18 colours: Ink #111111, Ink 2 (zinc 700) #3f3f46, Ink 3 (zinc 500) #71717a, Ink 4 (zinc 400) #a1a1aa, Ink 5 (zinc 300) #d4d4d8, Line (zinc 200) #e4e4e7, Paper 3 (zinc 100) #f4f4f5, Paper 2 #fafafa, Paper #ffffff, Indigo 600 #4f46e5, Indigo 500 #6366f1, Indigo 400 #818cf8, Amber 600 #d97706, Red 500 #ef4444, Emerald 600 #059669, Ground (dark) #0f0f10, Ground 2 (dark) #18181b, Ground 3 (dark) #27272a, plus tints of those at
+  stated alpha. NO other hue may be introduced. Status and hierarchy are
+  expressed by ink density, weight and fill, not by colour.
+- Type is Geist and Geist Mono at weights 400 and 600 only.
+- The locked architecture:
+  - The route, the name and the place: `/app/home/analytics`, tab **Lately**,
+    a tab strip beside Today's Signal and the Full Briefing. No rail icon, no
+    wordmark, no marketing page.
+  - The question, and the three movements.
+  - The metric set. Seven real-now metrics used, two named as refusals, four
+    cut. The table is `plan.html` §03. **A seat may not propose a metric that
+    is not in that table.**
+- Protected objects (polish, never redesign):
+  - **The honest-degradation contract.** A missing source resolves to
+    *unavailable*, never to a fabricated zero. A reader can never mistake "we
+    don't know" for "it's zero".
+  - **The "What this can't tell you" movement.** May be made more beautiful;
+    may not be shrunk to a footnote or removed.
+  - **The drawn-but-empty plot.** The trend the product cannot produce is
+    drawn as the chart it would be.
+  - **The partial-bucket treatment.** The current week is hatched and
+    open-topped because the week is not over.
+  - **The shared denominator.** All five KPI cards read the same 9.
+Findings that amount to "add a colour", "add a weight" or "restructure the
+locked architecture" are out of scope and will be discarded.
+
+MEASURED BASELINE. Two automated gates guard this master and both pass:
+- C:\Users\ethan\.claude\skills\elevate\scripts\audit.mjs --lab=C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08
+  (palette lock, weights, families, WCAG AA contrast against the real
+  composited backdrop, hit targets, radii, motion, type ramp, leading)
+- C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\interaction-check.mjs
+READ the behaviour gate. Everything it asserts is already proven; a finding
+that restates one of those assertions is worthless and will be refuted on
+sight. Spend your findings on what automation cannot see.
+
+Before scoring, also read the paid-for defect library at
+C:\Users\ethan\.claude\skills\elevate\references\lessons.md — those classes have
+been found and fixed once already; check whether they are creeping back,
+and spend the rest of your attention past them.
+
+FRAMES (read the images):
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-full--1440x960.png    full
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-partial--1440x960.png    partial
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-quiet--1440x960.png    quiet
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-first-run--1440x960.png    first-run
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-empty--1440x960.png    empty
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-loading--1440x960.png    loading
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-error--1440x960.png    error
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-full--390x844.png    full at 390x844
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-full--768x1024.png    full at 768x1024
+C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\shots\light-full--1280x900.png    full at 1280x900
+Source: C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\lately.html
+
+GRADE BY DRIVING, NOT ONLY BY READING FRAMES. Open the master in Playwright
+(chromium; import { chromium } from "@playwright/test") at
+file://C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\lately.html?v=light&state=<state> and operate it:
+tab through everything, press what looks pressable, exercise the keyboard
+model end to end, resize across 390/768/1280/1440, and watch what every
+repaint does to scroll position and focus.
+
+Say plainly what this is: name the score, name what earned it, and name what
+still stands between it and finished in terms a founder can act on — is what
+remains polish, a build, or a different decision, and roughly how big. Do not
+inflate to be kind and do not deflate to look rigorous.
+
+HOW THIS ENGAGEMENT ENDS, so you know what your answer is for. It ends when
+two consecutive rounds confirm no finding classed blocking or misleading,
+both gates green, on a frozen surface. It does NOT end on a score, and your
+score gates nothing — it is recorded and reported. That is deliberate:
+across 45 recorded rounds, seven blind seats scoring one artifact disagree
+with a standard deviation of 0.335, so a unanimous 9.5 would need true
+quality of 9.94 to pass half the time and 10.23 to pass reliably, which is
+off the scale. Score honestly and put your real weight into the severity
+classes, because those are what actually decide when this stops.
+
+Refute if: it is factually wrong about the frames or the code; it is already handled; it would violate a non-negotiable constraint; it is taste stated as a defect with no argument; the fix would make the work worse; or it restates something the gates already prove. Also judge the PROPOSED FIX, not only the problem: say what it would plausibly break, what must be re-measured after it lands, and whether its numbers are right against the real source. A correct problem with a wrong fix is REFUTED, with the corrected fix in sharpenedFix. Also judge the SEVERITY. An overstated class is a reason to refute the whole finding; an understated one is corrected in your reason. blocking = the product will not do what it says; misleading = the product asserts something untrue; defect = visibly wrong but passable; refinement = nothing is wrong. Confirm only if real, specific, and an improvement at the declared bar. Echo the finding id back exactly so the verdict can be matched to its finding.
+
+Return ONLY a JSON object matching:
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "real",
+    "reason"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "real": {
+      "type": "boolean"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "sharpenedFix": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "blocking",
+        "misleading",
+        "defect",
+        "refinement"
+      ],
+      "description": "your verdict on the class, which may correct the seat's"
+    },
+    "breaks": {
+      "type": "string",
+      "description": "what this fix would plausibly break, and what to re-measure after it lands"
+    }
+  }
+}
+
+
+Write the JSON to C:\Users\ethan\signal-studio-workspace\_wt-home-analytics\docs\design\labs\home-analytics-2026-08\panel\round-1\refuters\live-week-label-collides-with-its-own-axis.json.
+
+ENVIRONMENT NOTE: @playwright/test resolves only from C:\Users\ethan\signal-studio-workspace\collateral — run driving scripts with that as the working directory, and keep throwaway scripts out of the lab.

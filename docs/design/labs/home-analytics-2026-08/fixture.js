@@ -25,6 +25,7 @@ window.LATELY_FIXTURE = {
   },
   "readingTime": "09:14",
   "readingLong": "09:14, Thursday 16 July 2026",
+  "readingShort": "16 Jul",
   "weeks": [
     {
       "start": "27 Apr",
@@ -101,8 +102,8 @@ window.LATELY_FIXTURE = {
   ],
   "jobs": [
     {
-      "age": 2,
       "title": "Order tonic and the good olives",
+      "age": 2,
       "source": "lab"
     },
     {
@@ -111,13 +112,13 @@ window.LATELY_FIXTURE = {
       "source": "fixture"
     },
     {
-      "age": 5,
       "title": "Send the midweek rate to the June 2027 couple",
+      "age": 5,
       "source": "lab"
     },
     {
-      "age": 6,
       "title": "Approve the final seating plan",
+      "age": 6,
       "source": "lab"
     },
     {
@@ -126,8 +127,8 @@ window.LATELY_FIXTURE = {
       "source": "fixture"
     },
     {
-      "age": 11,
       "title": "Reprint the faded welcome sign",
+      "age": 11,
       "source": "lab"
     },
     {
@@ -136,21 +137,193 @@ window.LATELY_FIXTURE = {
       "source": "fixture"
     },
     {
-      "age": 23,
       "title": "Chase the boat operator on the crossing time",
+      "age": 23,
       "source": "lab"
     },
     {
-      "age": 41,
       "title": "Confirm the marquee sides with the hire company",
+      "age": 41,
       "source": "lab"
     }
   ],
   "fortnight": 14,
+  "accountDays": 3,
+  "comparisonArrives": "10 August 2026",
   "status": {
     "sitting": 3,
     "overdue": 2,
     "unowned": 1,
     "waiting": 0
+  },
+  "scopes": {
+    "full": {
+      "jobs": [
+        {
+          "title": "Order tonic and the good olives",
+          "age": 2,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the Harbour wall cordon with the harbourmaster",
+          "age": 3,
+          "source": "fixture"
+        },
+        {
+          "title": "Send the midweek rate to the June 2027 couple",
+          "age": 5,
+          "source": "lab"
+        },
+        {
+          "title": "Approve the final seating plan",
+          "age": 6,
+          "source": "lab"
+        },
+        {
+          "title": "Book the pier lighting for the ceremony hour",
+          "age": 9,
+          "source": "fixture"
+        },
+        {
+          "title": "Reprint the faded welcome sign",
+          "age": 11,
+          "source": "lab"
+        },
+        {
+          "title": "Agree the late boat return time with the skipper",
+          "age": 19,
+          "source": "fixture"
+        },
+        {
+          "title": "Chase the boat operator on the crossing time",
+          "age": 23,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the marquee sides with the hire company",
+          "age": 41,
+          "source": "lab"
+        }
+      ],
+      "status": {
+        "sitting": 3,
+        "overdue": 2,
+        "unowned": 1,
+        "waiting": 0
+      },
+      "oldest": 41
+    },
+    "quiet": {
+      "jobs": [
+        {
+          "title": "Order tonic and the good olives",
+          "age": 1,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the Harbour wall cordon with the harbourmaster",
+          "age": 2,
+          "source": "fixture"
+        },
+        {
+          "title": "Send the midweek rate to the June 2027 couple",
+          "age": 3,
+          "source": "lab"
+        },
+        {
+          "title": "Approve the final seating plan",
+          "age": 4,
+          "source": "lab"
+        },
+        {
+          "title": "Book the pier lighting for the ceremony hour",
+          "age": 6,
+          "source": "fixture"
+        },
+        {
+          "title": "Reprint the faded welcome sign",
+          "age": 7,
+          "source": "lab"
+        },
+        {
+          "title": "Chase the boat operator on the crossing time",
+          "age": 9,
+          "source": "lab"
+        },
+        {
+          "title": "Agree the late boat return time with the skipper",
+          "age": 11,
+          "source": "fixture"
+        },
+        {
+          "title": "Confirm the marquee sides with the hire company",
+          "age": 12,
+          "source": "lab"
+        }
+      ],
+      "status": {
+        "sitting": 0,
+        "overdue": 0,
+        "unowned": 0,
+        "waiting": 0
+      },
+      "oldest": 12
+    },
+    "first-run": {
+      "jobs": [
+        {
+          "title": "Confirm the Harbour wall cordon with the harbourmaster",
+          "age": 1,
+          "source": "fixture"
+        },
+        {
+          "title": "Order tonic and the good olives",
+          "age": 1,
+          "source": "lab"
+        },
+        {
+          "title": "Send the midweek rate to the June 2027 couple",
+          "age": 1,
+          "source": "lab"
+        },
+        {
+          "title": "Book the pier lighting for the ceremony hour",
+          "age": 2,
+          "source": "fixture"
+        },
+        {
+          "title": "Approve the final seating plan",
+          "age": 2,
+          "source": "lab"
+        },
+        {
+          "title": "Reprint the faded welcome sign",
+          "age": 2,
+          "source": "lab"
+        },
+        {
+          "title": "Agree the late boat return time with the skipper",
+          "age": 3,
+          "source": "fixture"
+        },
+        {
+          "title": "Chase the boat operator on the crossing time",
+          "age": 3,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the marquee sides with the hire company",
+          "age": 3,
+          "source": "lab"
+        }
+      ],
+      "status": {
+        "sitting": 0,
+        "overdue": 0,
+        "unowned": 1,
+        "waiting": 0
+      },
+      "oldest": 3
+    }
   }
 };

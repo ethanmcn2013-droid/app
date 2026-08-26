@@ -582,6 +582,379 @@ async function tap(page, selector) {
   await page.close();
 }
 
+/* ══ round 1, batch 1 ═══════════════════════════════════════════════
+   Written before the fixes and watched failing. Each one guards a finding
+   seven blind seats raised and a fresh refuter confirmed on the problem.
+   Appended into interaction-check.mjs by panel/append-assertions.mjs. */
+
+/* ua-margins-set-the-vertical-rhythm · the declared ladder is the only
+   thing setting vertical space. The source gate cannot see a UA margin,
+   because the number never appears in the stylesheet. */
+{
+  const LADDER = [0, 4, 8, 12, 16, 24, 32, 48, 72];
+  for (const state of config.states) {
+    for (const vp of [{ width: 1440, height: 960 }, { width: 390, height: 844 }]) {
+      const page = await open({ state, reducedMotion: true, viewport: vp, touch: vp.width <= 480 });
+      const bad = await page.evaluate((ladder) => {
+        const out = [];
+        for (const el of document.querySelectorAll("header, header *, main, main *, .coverage, .coverage *")) {
+          if (el.closest(".sr")) continue;
+          const cs = getComputedStyle(el);
+          for (const prop of ["marginTop", "marginBottom"]) {
+            const v = Math.round(parseFloat(cs[prop]) * 100) / 100;
+            if (!Number.isFinite(v) || v === 0) continue;
+            if (!ladder.includes(v)) out.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0] + " " + prop + " " + v);
+          }
+        }
+        return out;
+      }, LADDER);
+      ok("every margin is a rung on the declared ladder · " + state + " @ " + vp.width, bad.length === 0, bad.length + ": " + bad.slice(0, 3).join(" | "));
+      await page.close();
+    }
+  }
+}
+
+/* bar-val-overprints-axis-max · the chart's right-edge labels each own
+   their space, and none of them leaves the card. */
+{
+  for (const state of ["full", "partial", "quiet"]) {
+    for (const vp of config.viewports) {
+      const page = await open({ state, reducedMotion: true, viewport: { width: vp.width, height: vp.height }, touch: Boolean(vp.isMobile) });
+      const clash = await page.evaluate(() => {
+        const labels = Array.from(document.querySelectorAll(".plot .gridline b, .plot .record-tag, .plot .bar-val"));
+        const hit = (a, b) => !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+        const boxes = labels.map((el) => ({ el: String(el.className), r: el.getBoundingClientRect() }))
+          .filter((b) => b.r.width > 0 && b.r.height > 0);
+        const overlaps = [];
+        for (let i = 0; i < boxes.length; i++) {
+          for (let j = i + 1; j < boxes.length; j++) {
+            if (hit(boxes[i].r, boxes[j].r)) overlaps.push(boxes[i].el + " x " + boxes[j].el);
+          }
+        }
+        const card = document.querySelector(".card.hero");
+        const cr = card ? card.getBoundingClientRect() : null;
+        const escaped = cr ? boxes.filter((b) => b.r.right > cr.right + 0.5 || b.r.left < cr.left - 0.5).map((b) => b.el) : [];
+        return { overlaps, escaped };
+      });
+      ok("no two chart labels overprint · " + state + " @ " + vp.name, clash.overlaps.length === 0, clash.overlaps.join(", "));
+      ok("no chart label leaves its card · " + state + " @ " + vp.name, clash.escaped.length === 0, clash.escaped.join(", "));
+      await page.close();
+    }
+  }
+}
+
+/* record-tag-never-paints · the previous best is named on screen, not only
+   in the spoken line. Laid out is not painted: the tag must hit-test as
+   itself, with no clipped ancestor, in every motion mode. */
+{
+  for (const variant of config.variants) {
+    for (const vp of config.viewports) {
+      const page = await open({ state: "full", variant, reducedMotion: true, viewport: { width: vp.width, height: vp.height }, touch: Boolean(vp.isMobile) });
+      const painted = await page.evaluate(() => {
+        const tag = document.querySelector(".record-tag");
+        if (!tag) return { ok: false, why: "no tag" };
+        const r = tag.getBoundingClientRect();
+        if (r.width < 8 || r.height < 8) return { ok: false, why: "box " + Math.round(r.width) + "x" + Math.round(r.height) };
+        for (let n = tag; n && n !== document.body; n = n.parentElement) {
+          const cp = getComputedStyle(n).clipPath;
+          if (cp && cp !== "none") return { ok: false, why: String(n.className) + " clip-path " + cp };
+        }
+        const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return { ok: Boolean(at && (at === tag || tag.contains(at))), why: at ? String(at.className) || at.tagName : "nothing" };
+      });
+      ok("the previous best names itself on screen · " + variant + " @ " + vp.name, painted.ok, painted.why);
+      await page.close();
+    }
+  }
+}
+
+/* partial-column-is-closed-at-the-top · the edge that carries the meaning
+   is the top one. The retired assertion measured the bottom edge, which
+   sits on the baseline and is invisible, so it certified its own opposite. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const edges = await page.evaluate(() => {
+    const bar = document.querySelector(".plot .colw:last-child .bar");
+    const cs = getComputedStyle(bar);
+    const solid = document.querySelector(".plot .colw:first-child .bar");
+    const cs2 = getComputedStyle(solid);
+    return {
+      topOpen: parseFloat(cs.borderTopWidth) === 0,
+      radiusFlat: parseFloat(cs.borderTopLeftRadius) === 0 && parseFloat(cs.borderTopRightRadius) === 0,
+      rails: parseFloat(cs.borderLeftWidth) > 0 && parseFloat(cs.borderRightWidth) > 0,
+      hatched: cs.backgroundImage.includes("gradient"),
+      finishedIsCapped: parseFloat(cs2.borderTopLeftRadius) > 0,
+    };
+  });
+  ok("the unfinished week is open at the edge a reader can see", edges.topOpen && edges.radiusFlat, JSON.stringify(edges));
+  ok("the unfinished week keeps its two rails and its hatch", edges.rails && edges.hatched, JSON.stringify(edges));
+  ok("a finished week is capped, so the two shapes differ", edges.finishedIsCapped);
+  await page.close();
+}
+
+/* kpi-row-shares-no-line · the five cards are comparable only if their
+   figures and their marks each sit on one line. */
+{
+  for (const state of ["full", "partial"]) {
+    for (const w of [1280, 1440]) {
+      const page = await open({ state, reducedMotion: true, viewport: { width: w, height: 960 } });
+      const rows = await page.evaluate(() => {
+        const nums = Array.from(document.querySelectorAll(".kpi .t-num")).map((e) => Math.round(e.getBoundingClientRect().top));
+        const marks = Array.from(document.querySelectorAll(".kpi .meter, .kpi > .t-label.dim")).map((e) => Math.round(e.getBoundingClientRect().bottom));
+        const span = (a) => (a.length ? Math.max(...a) - Math.min(...a) : 0);
+        return { numSpan: span(nums), markSpan: span(marks), n: nums.length, m: marks.length };
+      });
+      ok("every figure in the row shares one line · " + state + " @ " + w, rows.numSpan <= 1, rows.numSpan + "px across " + rows.n);
+      ok("every mark in the row shares one floor · " + state + " @ " + w, rows.markSpan <= 1, rows.markSpan + "px across " + rows.m);
+      await page.close();
+    }
+  }
+}
+
+/* kpi-row-and-ages-card-share-an-edge · a rung, not a doubled hairline. */
+{
+  const LADDER = [4, 8, 12, 16, 24, 32, 48, 72];
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    const page = await open({ state, reducedMotion: true });
+    const gap = await page.evaluate(() => {
+      const ages = document.querySelector(".card.ages");
+      if (!ages) return null;
+      const prev = ages.previousElementSibling;
+      if (!prev) return null;
+      return Math.round(ages.getBoundingClientRect().top - prev.getBoundingClientRect().bottom);
+    });
+    ok("the ages card stands off its neighbour by a rung · " + state, gap !== null && LADDER.includes(gap), gap + "px");
+    await page.close();
+  }
+}
+
+/* axis-ticks-go-ragged · the ruler is one line at every width, and every
+   tick it still shows lands inside the card. The bands were measured, not
+   guessed: 1140-901 and 792 down both wrap; 900-793 does not. */
+{
+  for (const w of [1440, 1141, 1140, 1000, 901, 900, 793, 792, 768, 560, 390]) {
+    const page = await open({ state: "full", reducedMotion: true, viewport: { width: w, height: 960 }, touch: w <= 480 });
+    const axis = await page.evaluate(() => {
+      const spans = Array.from(document.querySelectorAll(".xaxis span")).filter((s) => getComputedStyle(s).display !== "none");
+      const hs = spans.map((s) => Math.round(s.getBoundingClientRect().height));
+      const card = document.querySelector(".card.hero").getBoundingClientRect();
+      const out = spans.filter((s) => {
+        const r = s.getBoundingClientRect();
+        return r.width > 0 && (r.right > card.right + 0.5 || r.left < card.left - 0.5);
+      }).length;
+      const doc = document.documentElement;
+      return { max: Math.max(...hs), min: Math.min(...hs), shown: spans.length, out, overflow: doc.scrollWidth - doc.clientWidth };
+    });
+    ok("the week ruler stays on one line · " + w, axis.max === axis.min && axis.max <= 16, axis.min + "-" + axis.max + "px over " + axis.shown + " ticks");
+    ok("no week tick leaves the card · " + w, axis.out === 0 && axis.overflow <= 1, axis.out + " out, overflow " + axis.overflow);
+    await page.close();
+  }
+}
+
+/* reading-rule-dangles-at-390 · a connector joins two things or it is not
+   drawn. No mark is left at the end of a wrapped line. */
+{
+  for (const w of [390, 480, 560, 570, 600, 768, 1440]) {
+    const page = await open({ state: "full", reducedMotion: true, viewport: { width: w, height: 844 }, touch: w <= 480 });
+    const reading = await page.evaluate(() => {
+      const rule = document.querySelector(".reading .rule");
+      const parts = Array.from(document.querySelectorAll(".reading p"));
+      const tops = parts.map((p) => Math.round(p.getBoundingClientRect().top));
+      return {
+        oneLine: new Set(tops).size === 1,
+        ruleShown: rule ? getComputedStyle(rule).display !== "none" : false,
+      };
+    });
+    ok("the reading rule is drawn only when it joins something · " + w, reading.oneLine === reading.ruleShown, JSON.stringify(reading));
+    await page.close();
+  }
+}
+
+/* ══ round 1, batch 2 ═══════════════════════════════════════════════
+   The degraded states were assembled from full-state parts and never
+   reconciled to their own claims, so two of them stated one thing and drew
+   another. Written before the fixes and watched failing. */
+
+/* quiet-state-contradicts-its-own-evidence · no claim may contradict the
+   marks beside it. This is asserted for every state that draws a strip,
+   not only the one where it was found, because the class is the assembly
+   and not the state. */
+{
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    for (const variant of config.variants) {
+      const page = await open({ state, variant, reducedMotion: true });
+      const claim = await page.evaluate(() => {
+        /* main, not body: body.textContent includes the <script>
+           element, so a template literal in the source matched and the
+           assertion graded the code rather than the page. */
+        const text = (document.querySelector("main") || document.body).textContent;
+        const dots = Array.from(document.querySelectorAll(".dot"));
+        const ages = dots.map((d) => {
+          const m = (d.getAttribute("aria-label") || "").match(/open (\d+) days?/);
+          return m ? Number(m[1]) : null;
+        });
+        const head = document.querySelector(".card.ages .band-head .t-label");
+        const oldestLabel = head ? Number((head.textContent.match(/(\d+)/) || [])[1]) : null;
+        const sr = document.querySelector(".card.ages .sr");
+        const spoken = sr ? Number((sr.textContent.match(/(\d+) (?:job has|jobs have) been open longer/) || [])[1]) : null;
+        const card = Array.from(document.querySelectorAll(".kpi")).find((c) => /fortnight/.test(c.textContent));
+        const claimed = card ? Number((card.querySelector(".t-num").textContent || "").trim()) : null;
+        return {
+          reassures: /Nothing is sitting/.test(text),
+          old: dots.filter((d) => d.classList.contains("old")).length,
+          maxAge: ages.length ? Math.max(...ages) : null,
+          oldestLabel,
+          spoken,
+          claimed,
+          fortnight: window.LATELY_FIXTURE.fortnight,
+        };
+      });
+      if (claim.reassures) {
+        ok(`nothing is sitting means nothing is drawn sitting · ${state} @ ${variant}`,
+          claim.old === 0 && claim.spoken === 0 && claim.maxAge < claim.fortnight,
+          JSON.stringify(claim));
+      }
+      ok(`the oldest label is the oldest mark · ${state} @ ${variant}`,
+        claim.oldestLabel === claim.maxAge, `${claim.oldestLabel} vs ${claim.maxAge}`);
+      if (claim.claimed !== null) {
+        ok(`the fortnight card equals the marks past the line · ${state} @ ${variant}`,
+          claim.claimed === claim.old && claim.claimed === claim.spoken,
+          `card ${claim.claimed}, marks ${claim.old}, spoken ${claim.spoken}`);
+      }
+      await page.close();
+    }
+  }
+}
+
+/* first-run-shows-a-41-day-old-job · an account cannot hold work older
+   than the account. The bound is the days of record the state itself
+   claims, not a number typed into a filter. */
+{
+  const page = await open({ state: "first-run", reducedMotion: true });
+  const age = await page.evaluate(() => {
+    const f = window.LATELY_FIXTURE;
+    const first = document.querySelector(".xaxis span");
+    const ages = Array.from(document.querySelectorAll(".dot")).map((d) => {
+      const m = (d.getAttribute("aria-label") || "").match(/open (\d+) days?/);
+      return m ? Number(m[1]) : null;
+    });
+    const start = new Date(f.weeks[f.weeks.length - 1].iso + "T00:00:00Z");
+    const read = new Date(f.bound.readingDate + "T00:00:00Z");
+    const accountDays = Math.round((read - start) / 86400000);
+    return { max: ages.length ? Math.max(...ages) : null, accountDays, dots: ages.length, firstTick: first ? first.textContent : null };
+  });
+  ok("no job is older than the account that holds it", age.max !== null && age.max <= age.accountDays,
+    `oldest ${age.max}, account ${age.accountDays} days`);
+  ok("first-run still draws every open job", age.dots === 9, `${age.dots}`);
+  await page.close();
+}
+
+/* age-axis-labels-are-laid-out-by-flexbox-not-by-value · every tick sits
+   where its value sits. The shipped fixture's oldest job rounds the axis
+   to exactly 45, which is the only reason the two ever agreed. */
+{
+  for (const state of ["full", "quiet", "first-run"]) {
+    for (const vp of config.viewports) {
+      const page = await open({ state, reducedMotion: true, viewport: { width: vp.width, height: vp.height }, touch: Boolean(vp.isMobile) });
+      const ticks = await page.evaluate(() => {
+        const strip = document.querySelector(".strip");
+        if (!strip) return null;
+        const box = strip.getBoundingClientRect();
+        const marks = Array.from(document.querySelectorAll(".strip-scale span"));
+        const axisMax = Number(strip.dataset.axisMax);
+        const worst = marks.map((m) => {
+          const days = /today/i.test(m.textContent) ? 0 : Number((m.textContent.match(/(\d+)/) || [])[1]);
+          const want = box.left + (days / axisMax) * box.width;
+          const r = m.getBoundingClientRect();
+          const got = days === 0 ? r.left : (days === axisMax ? r.right : (r.left + r.right) / 2);
+          return Math.abs(got - want);
+        });
+        const inside = marks.every((m) => {
+          const r = m.getBoundingClientRect();
+          return r.left >= box.left - 1 && r.right <= box.right + 1;
+        });
+        return { worst: marks.length ? Math.max(...worst) : 0, inside, n: marks.length, axisMax };
+      });
+      if (ticks) {
+        ok(`every age tick stands on its own value · ${state} @ ${vp.name}`, ticks.worst <= 4, `${Math.round(ticks.worst)}px off over ${ticks.n} ticks`);
+        ok(`no age tick leaves the strip · ${state} @ ${vp.name}`, ticks.inside);
+      }
+      await page.close();
+    }
+  }
+}
+
+/* The axis maximum is derived from the data, so a short account gets a
+   short axis and a long tail still fits. A floor typed at 45 forced a
+   three-day-old account to draw a six-week ruler. */
+{
+  for (const state of ["full", "quiet", "first-run"]) {
+    const page = await open({ state, reducedMotion: true });
+    const axis = await page.evaluate(() => {
+      const strip = document.querySelector(".strip");
+      if (!strip) return null;
+      const ages = Array.from(document.querySelectorAll(".dot")).map((d) => Number((d.getAttribute("aria-label").match(/open (\d+)/) || [])[1]));
+      const max = Number(strip.dataset.axisMax);
+      const rule = document.querySelector(".fortnight");
+      return { max, oldest: Math.max(...ages), fortnight: window.LATELY_FIXTURE.fortnight, ruleDrawn: Boolean(rule) };
+    });
+    if (axis) {
+      ok(`the age axis is derived from its own data · ${state}`, axis.max >= axis.oldest && axis.max < axis.oldest + 10,
+        `max ${axis.max}, oldest ${axis.oldest}`);
+      ok(`the fortnight rule is drawn only where it can be crossed · ${state}`,
+        axis.ruleDrawn === (axis.fortnight <= axis.max), `rule ${axis.ruleDrawn}, max ${axis.max}`);
+    }
+    await page.close();
+  }
+}
+
+/* first-run-plot-has-no-scale · a mark whose height is a typed literal
+   encodes nothing. The single week stands at the pitch it will hold when
+   the twelve-week chart arrives, and it says in words what it draws. */
+{
+  const page = await open({ state: "first-run", reducedMotion: true });
+  const plot = await page.evaluate(() => {
+    const bar = document.querySelector(".plot .bar");
+    const sr = document.querySelector(".chart .sr");
+    const f = window.LATELY_FIXTURE;
+    return {
+      h: bar ? Number(bar.style.getPropertyValue("--h")) : null,
+      value: f.weeks[f.weeks.length - 1].v,
+      spoken: sr ? sr.textContent : "",
+      width: bar ? Math.round(bar.getBoundingClientRect().width) : null,
+    };
+  });
+  ok("the first-run mark's height comes from its value, not a literal", plot.h === 100, `--h ${plot.h}`);
+  ok("the first-run chart has a spoken equivalent", /finished/.test(plot.spoken) && plot.spoken.length > 20, plot.spoken.slice(0, 60));
+  ok("the first-run mark stands at a real column's width", plot.width !== null && plot.width <= 60, `${plot.width}px`);
+  await page.close();
+}
+
+/* count-of-one-takes-a-plural-verb · every sentence agrees with its own
+   numeral, on screen and in the accessibility tree, at 0, 1 and more. */
+{
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    const page = await open({ state, reducedMotion: true });
+    const grammar = await page.evaluate(() => {
+      const bad = [];
+      const check = (s, where) => {
+        if (!s) return;
+        if (/\bjobs\s+(has|is|was)\b/.test(s)) bad.push(`${where}: ${s.slice(0, 60)}`);
+        if (/\b1 job\s+(have|are|were|haven't|aren't)\b/.test(s)) bad.push(`${where}: ${s.slice(0, 60)}`);
+        if (/\bAll 1 open job\b/.test(s)) bad.push(`${where}: ${s.slice(0, 60)}`);
+      };
+      for (const el of document.querySelectorAll(".kpi")) {
+        check(el.textContent, "card");
+        check(el.querySelector(".sr")?.textContent, "card name");
+      }
+      for (const el of document.querySelectorAll("main p, main span, .sr")) check(el.textContent, "copy");
+      return bad;
+    });
+    ok(`every sentence agrees with its own numeral · ${state}`, grammar.length === 0, grammar.slice(0, 3).join(" | "));
+    await page.close();
+  }
+}
+
 ok("zero console errors across every state and both grounds", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));
 
 await browser.close();
