@@ -16,6 +16,29 @@ here depends on a conversation being remembered.
 | Artifact | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 |
 | Branch | `design/master-suite-2026-08` |
 
+
+## Closing artifacts — published 2026-08-26
+
+| | |
+|---|---|
+| Suite | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 |
+| Report | https://claude.ai/code/artifact/42a27dec-1879-4341-9f96-86921f978124 |
+| Console | https://claude.ai/code/artifact/a1300890-6c2c-4d36-9ce3-4a9e6420b6d7 |
+
+Rebuild them with, from inside this lab:
+
+```
+node <skill>/scripts/pack-shots.mjs   --lab=.   # frames.json first, or the report has none
+node <skill>/scripts/build-report.mjs --lab=.
+node <skill>/scripts/build-console.mjs --lab=.
+node <skill>/scripts/verify-console.mjs --lab=.
+```
+
+Feedback for the skill itself was filed at
+`~/.claude/skills/elevate/feedback/entries/2026-08-26-master-suite.md`.
+Do not read the other entries before filing your own — the blind rule there
+works the same way the panel's does.
+
 ## If a fourth round is authorised
 
 Everything round 3 confirmed is closed. A round 4 would be the first round
