@@ -241,10 +241,15 @@ h3 {
 .note strong { color: var(--t1); font-weight: 600; }
 
 /* ── the set index ──────────────────────────────────────────────────── */
-.setIx { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); }
+/* five across, mirroring the five in the rail. Four-and-one wrapping
+   reads as an accident; the set has exactly five members and the block
+   should say so at a glance. */
+.setIx { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 700px) { .setIx { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1020px) { .setIx { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .setIxCard {
   display: block;
-  padding: 20px 20px 22px;
+  padding: 17px 17px 19px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--plate);
@@ -262,8 +267,8 @@ a.setIxCard:hover { border-color: var(--ind-line); background: var(--ind-wash); 
   color: var(--t4);
   font-variant-numeric: tabular-nums;
 }
-.setIxCard b { display: block; margin: 9px 0 7px; font-size: 16.5px; font-weight: 600; letter-spacing: -0.016em; }
-.setIxCard span { display: block; font-size: 14px; line-height: 1.5; color: var(--t3); }
+.setIxCard b { display: block; margin: 9px 0 7px; font-size: 15.5px; font-weight: 600; letter-spacing: -0.018em; text-wrap: balance; }
+.setIxCard span { display: block; font-size: 13.5px; line-height: 1.48; color: var(--t3); text-wrap: pretty; }
 .setIxCard.is-here { border-color: var(--ind-line); background: var(--ind-wash); }
 .setIxCard.is-here i { color: var(--indigo); }
 

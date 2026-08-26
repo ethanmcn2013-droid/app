@@ -66,7 +66,10 @@ function stripFam(html) {
   let s = html;
   s = s.replace(/<!--fam:start-->[\s\S]*?<!--fam:end-->\n?/g, "");
   s = s.replace(/<style id="famCss">[\s\S]*?<\/style>\n?/g, "");
-  return s;
+  // Each pass appended one more newline than it stripped, so a file grew a
+  // blank line every time this ran. Normalise the tail instead, and the
+  // second run of this script over an unchanged set writes nothing at all.
+  return s.replace(/\s+$/, "\n");
 }
 
 function ensureFonts(html, builtPath) {
