@@ -58,7 +58,19 @@
      happened and offers the way back. */
   function briefly(record) {
     var name = nameOf(record);
-    return name.length <= 44 ? name : name.slice(0, 43).replace(/[s,;:]+$/, "") + "…";
+    if (name.length <= 44) return name;
+    /* To the last WHOLE word. A raw character slice cut six of six
+       ordinary wedding titles mid-word - "Champagne and canapes on the
+       west terrace b..." - which is the first entry under Typography in
+       the paid-for defect library. The floor of 20 stops a single very
+       long first word from collapsing the sentence to an ellipsis. */
+    var cut = name.slice(0, 43);
+    var space = cut.lastIndexOf(" ");
+    if (space >= 20) cut = cut.slice(0, space);
+    /* An ESCAPED \s. Written unescaped this class matched the letter s,
+       so a name ending in one lost it before the ellipsis. The dash is
+       here so a cut inside "make-up" leaves no hanging hyphen. */
+    return cut.replace(/[\s,;:–—-]+$/, "") + "…";
   }
 
   /* A guest list is the owner list minus what the owner hid, and it is
@@ -115,6 +127,19 @@
     ]);
   }
 
+  /* The count in place, for when the day itself moves. countBlock builds
+     one of three shapes, so only the figure-and-unit shape is repainted
+     here; the other two mean the day has arrived or gone, and neither is
+     reachable from the owner's editor, whose ceiling IS the day. */
+  function paintHorizonCount(field) {
+    if (!field) return;
+    var said = F.countdown(daysFrom(F.today, F.project.primaryDate.date));
+    var num = field.querySelector(".b-count .b-num");
+    var unit = field.querySelector(".b-count .b-unit");
+    if (num) num.textContent = said.num;
+    if (unit) unit.textContent = said.unit;
+  }
+
   function horizon(opts) {
     var o = opts || {};
     var clock = o.clock || F.today;
@@ -156,13 +181,26 @@
      row on it read "14 days away" under a heading saying "days back" -
      in the visible text and in the accessible name both. */
   /* The day is the project's, not a moment that happens to sit on it.
-     The fixture seeds a milestone for it, so identity is resolved by
-     that milestone's id where one exists and by the date otherwise -
-     and never by a date match alone, which any second moment on the
-     day would also satisfy. */
+     Identity is the id, FULL STOP - not the id re-validated against the
+     date, because the moment the day is legitimately moved that guard
+     would fail and drop straight back to the collision it exists to
+     prevent. The date scan survives only as the one-time seeder for a
+     project whose primaryDate carries no id yet, and it stamps the id
+     the first time it runs so a later arrival can never take it.
+
+     This comment used to describe exactly this behaviour beside code
+     that did a bare date scan; the fix it claimed had never landed. */
   function theDayRecord() {
+    var pin = F.project.primaryDate;
+    if (pin.id) {
+      var held = recordFor(pin.id);
+      if (held) return held;
+    }
     for (var i = 0; i < F.milestones.length; i++) {
-      if (F.milestones[i].date === F.project.primaryDate.date) return F.milestones[i];
+      if (F.milestones[i].date === pin.date) {
+        pin.id = F.milestones[i].id;
+        return F.milestones[i];
+      }
     }
     return null;
   }
@@ -219,8 +257,17 @@
          origin said the same day again in the same full form 200px
          away, and on paper both always print together. The origin
          keeps its anchoring job at the short form its own column
-         speaks on every other medium. */
-      text: "Today, " + F.fmt.medium(clock),
+         speaks on every other medium.
+
+         And on paper it stops saying "today". A sheet cannot be
+         reloaded: it dates itself in three other places absolutely -
+         the unit, the stamp and every row's own date - and this was the
+         one deictic string left on it, printed and read weeks later.
+         "From" rather than a bare date, so the zero mark still says
+         what it is instead of reading as a moment whose name was cut. */
+      text: o.medium === "print"
+        ? "From " + F.fmt.weekdayShort(clock) + " " + F.fmt.short(clock)
+        : "Today, " + F.fmt.medium(clock),
     }));
     ahead(clock, o.owner).forEach(function (item) {
       var node = row(item, daysFrom(clock, item.date), o.owner);
@@ -723,6 +770,19 @@
        record, so a date written to the DOM alone survived exactly as
        long as the owner stayed on one screen. */
     if (record) record.date = iso;
+    /* And the PROJECT, when the row being moved is the day. setTitle
+       already writes the project's label here for exactly this reason;
+       the date was left behind, so one press in the day's own editor
+       moved the milestone while the largest type on the surface went on
+       reading the date it used to be - and every distance on the page
+       is measured from that number. */
+    if (record && isTheDay(record)) {
+      F.project.primaryDate.date = iso;
+      var fieldEl = item.closest(".b-field");
+      var whenEl = fieldEl && fieldEl.querySelector(".b-when");
+      if (whenEl) whenEl.textContent = F.fmt.longYear(iso);
+      paintHorizonCount(fieldEl);
+    }
     item.setAttribute("data-away", String(away));
     item.setAttribute("data-date", iso);
     item.querySelector(".b-away").textContent = String(away);
@@ -843,7 +903,18 @@
     var top = measureEl.getBoundingClientRect().top + away * px + push;
     if (!fixed) top -= pane.getBoundingClientRect().top;
     if (top >= 16 && top + height <= free) return;
-    var delta = Math.round(top - Math.max(16, (free - height) / 2));
+    /* The MINIMUM correction that puts the row back in the band, not a
+       re-centre. A row two pixels past the edge used to move the whole
+       plan by 287 - the lock promises this control "moves the item on
+       the measure while you hold it, and moves nothing else", and a
+       pane that bolts a third of a screen because a moment crossed a
+       boundary by two pixels is the opposite of that. Re-centring
+       survives only as the fallback for a row too tall to fit. */
+    var pad = 24;
+    var delta;
+    if (height + pad * 2 > free) delta = Math.round(top - Math.max(16, (free - height) / 2));
+    else if (top < 16) delta = Math.round(top - pad);
+    else delta = Math.round(top + height - (free - pad));
     if (fixed) window.scrollBy(0, delta);
     else pane.scrollTop += delta;
   }
@@ -1060,7 +1131,13 @@
             h("span", { text: "in " + F.fmt.dayCount(away) }),
           ]),
         ]),
-        h("p.b-ceiling#b-edit-when-hint", { text: "" }),
+        /* role=status, exactly as #b-empty-hint one screen away. The
+           describedby relationship is correct and does update, but a
+           description is only spoken when the reader arrives at the
+           field - so the editor announced acceptance and said nothing
+           at all when it REFUSED. Not alert: assertive would cut across
+           the reversibility bar and the readout on the accepted path. */
+        h("p.b-ceiling#b-edit-when-hint", { role: "status", text: "" }),
       ]),
       /* The day is not a moment and does not get a moment's controls.
          Hiding it would hide the thing every figure on the page is
@@ -1363,8 +1440,13 @@
         }
         return;
       }
-      if (name === "preview") { cameFromOwner = true; go("desk"); return; }
-      if (name === "publish") { cameFromOwner = true; go("publish"); return; }
+      /* The owner's most repeated loop is: find a row, change it, check
+         what the guest sees, come back, next row - and the return leg
+         threw the plan back to the top every time. The row's ID is kept,
+         not only the offset: the plan can be shorter on return, after a
+         hide or a delete, and a raw offset then lands on the wrong row. */
+      if (name === "preview") { cameFromOwner = true; markPlace(root); go("desk"); return; }
+      if (name === "publish") { cameFromOwner = true; markPlace(root); go("publish"); return; }
       if (name === "owner") { cameFromOwner = false; go("owner-flight"); }
     });
 
@@ -1553,6 +1635,48 @@
 
   var states = {};
 
+  /* Where the owner was standing when they left for the guest's view.
+     Held as a row id first and offsets second: the plan can be shorter
+     on return, after a hide or a delete, and a raw offset then clamps
+     onto whatever row happens to be there instead. */
+  var placeMark = null;
+  function markPlace(root) {
+    var pane = paneOf(root);
+    var rows = root ? [...root.querySelectorAll(".b-measure:not(.b-back) .b-item")] : [];
+    var edge = pane ? pane.getBoundingClientRect().top : 0;
+    var seen = rows.filter(function (el) {
+      return el.getBoundingClientRect().bottom > edge + 8;
+    })[0];
+    placeMark = {
+      y: window.scrollY,
+      pane: pane ? pane.scrollTop : null,
+      id: seen ? seen.getAttribute("data-id") : null,
+      /* Where in the frame that row was sitting, so the return puts it
+         back at the same height rather than flush to the top edge -
+         being returned to the right row at the wrong offset still reads
+         as a jump. */
+      at: seen ? seen.getBoundingClientRect().top : 0,
+    };
+  }
+  /* Restored after the remount, on the frame the rows actually exist. */
+  function takePlace(root) {
+    var mark = placeMark;
+    placeMark = null;
+    if (!mark || !root) return;
+    requestAnimationFrame(function () {
+      var row0 = mark.id && root.querySelector('.b-item[data-id="' + mark.id + '"]');
+      var pane = paneOf(root);
+      if (row0) {
+        var box = row0.getBoundingClientRect();
+        if (pane) pane.scrollTop += box.top - pane.getBoundingClientRect().top - 16;
+        else window.scrollBy(0, box.top - mark.at);
+        return;
+      }
+      if (pane && mark.pane !== null) pane.scrollTop = mark.pane;
+      else window.scrollTo(0, mark.y);
+    });
+  }
+
   function ownerSurface(opts) {
     var node = field([
       bar(F.project.name, [
@@ -1638,7 +1762,13 @@
     return node;
   };
 
-  states["owner-flight"] = function () { return ownerSurface({}); };
+  states["owner-flight"] = function () {
+    var built = ownerSurface({});
+    /* On the frame after the rows exist, put the owner back where they
+       were standing when they left to look at the guest's view. */
+    requestAnimationFrame(function () { takePlace(document.querySelector(".b-field")); });
+    return built;
+  };
   states["owner-editing"] = function () {
     return ownerSurface({ open: "demo-audience-item-invitations" });
   };
@@ -1692,7 +1822,11 @@
       h("div.b-empty", {}, [
         h("h1.b-who", { text: sibling.name }),
         h("p.b-emptyTitle", { "data-type": "headline", text: "When is the day?" }),
-        h("p.b-emptyBody", { text: "Everything on this page is measured from it, so it is the only thing needed to start." }),
+        /* "plan", not "page". This was the only string in the product
+           that called the object a page - and it is the first sentence
+           a new owner ever reads, on the screen where they are learning
+           what the thing is called. */
+        h("p.b-emptyBody", { text: "Everything on this plan is measured from it, so it is the only thing needed to start." }),
         h("div.b-emptyForm", {}, [
           h("label.b-label", { for: "b-empty-date", text: "The day" }),
           h("input.b-input", {
@@ -1827,8 +1961,24 @@
     pick.addRange(range);
   }
 
+  /* The day the plan was actually handed over, or null when that has not
+     happened yet - the SAME test pressHead() uses, so the headline, the
+     card and the caption can never disagree about whether a send has
+     occurred. */
+  function sentDay() {
+    var at = F.publication.publishedAt;
+    return at && F.days(String(at).slice(0, 10), F.today) >= 1
+      ? String(at).slice(0, 10)
+      : null;
+  }
+
   function card() {
-    var said = F.countdown(F.toDay());
+    /* Measured from the day it CLAIMS. The figure was built from today
+       and captioned "when this was sent", so on a plan sent yesterday
+       the two largest figures on the publish screen disagreed by a day
+       and the caption between them was what made it legible. */
+    var sent = sentDay();
+    var said = F.countdown(F.days(sent || F.today, F.project.primaryDate.date));
     var when = F.fmt.longYear(F.project.primaryDate.date);
     /* A chat client caches a preview at the moment it is sent, so the
        card has to be true a month later. The figure stays, because the
@@ -1836,7 +1986,10 @@
        was true. */
     var figure = said.state === "ahead"
       ? [h("p.b-ogNum.num", { text: said.num }),
-        h("p.b-ogDate", { text: said.unit + " away when this was sent" })]
+        /* The qualifier only when there is a send to qualify. Before one,
+           the figure is simply the distance, and the screen's own
+           headline says sending comes next. */
+        h("p.b-ogDate", { text: said.unit + (sent ? " away when this was sent" : " away") })]
       : [h("p.b-ogWord", { text: said.state === "today" ? said.word : "The day" }),
         h("p.b-ogDate", { text: when })];
     /* Named with the very strings it paints, so the name and the picture
@@ -1844,7 +1997,7 @@
        while the name said "79 days to", dropping the one qualifier that
        keeps a cached preview honest a month later. */
     var figureSaid = said.state === "ahead"
-      ? said.num + " " + said.unit + " away when this was sent"
+      ? said.num + " " + said.unit + (sent ? " away when this was sent" : " away")
       : (said.state === "today" ? said.word : "The day");
     return h("a.b-unfurl", {
       href: F.shareUrlFull,
@@ -2003,9 +2156,15 @@
      swap round 2 caught. */
   states.day = function () {
     var clock = F.project.primaryDate.date;
+    /* No sort. The record carries no time, so nothing here can promise
+       the order they HAPPEN - but alphabetical was a promise of its own,
+       and a false one: it printed dinner before drinks, and it made the
+       one screen the company is judged by the only surface that
+       disagreed with the phone and the printed sheet about the order of
+       the very same four moments. Record order is what every other
+       surface already prints. */
     var todayItems = F.live()
-      .filter(function (m) { return m.date && daysFrom(clock, m.date) === 0; })
-      .sort(function (a, b) { return a.title.localeCompare(b.title); });
+      .filter(function (m) { return m.date && daysFrom(clock, m.date) === 0; });
     return h("div.tl-device", {}, [
       field([
         h("div.b-dayWrap", {}, [
@@ -2022,7 +2181,7 @@
         todayItems.length ? h("section.b-dayNow", {}, [
           h("h2.b-behindLabel", { text: todayItems.length > 1 ? "Happening today" : "Happening now" }),
           h("div", {}, todayItems.map(function (m) {
-            return h("p.b-dayNowTitle", { "data-type": "title", text: m.title });
+            return h("p.b-dayNowTitle", { "data-type": "title", text: nameOf(m) });
           })),
         ]) : null,
         behindBlock({ clock: clock, back: true }),
@@ -2136,7 +2295,15 @@
            column. Four full-bleed bars stood in for 106, 107, 227 and
            188 pixels of ink - the only filled panels in a hairline
            product, and a mass that collapsed on arrival. */
-        h("div.b-skel", { style: "width:107px;height:86px;margin:0 0 10px -5px" }),
+        /* The count slab is DERIVED from the count it stands for, not a
+           literal measured once against a 96px numeral. The display tier
+           moves with the reader's own text size now, so a fixed 86 was a
+           frame promising a figure 34px shorter than the one that
+           arrives. 0.9 is the numeral's painted height against its own
+           size at this face. */
+        h("div.b-skel", {
+          style: "width:107px;height:calc(var(--size-count) * 0.9);margin:0 0 10px -5px",
+        }),
         h("div.b-skel", { style: "width:227px;height:26px;margin-bottom:8px" }),
         h("div.b-skel", { style: "width:188px;height:23px;margin-bottom:12px" }),
         h("div.b-skel", { style: "width:92px;height:15px" }),
@@ -2231,6 +2398,14 @@
          over a column that reserved nothing for it. */
       reserve(document.querySelector("[data-editor-open]"));
       markFolds(document.querySelector(".b-field"));
+      /* And the reversibility band, for the same reason. It was measured
+         once, when the bar was filled, and never again - so a window
+         narrowed across the docked boundary kept the band the OTHER
+         width produced, and at maximum scroll the opaque bar covered the
+         foot with no scroll left to free it. reserveUndo returns early
+         unless the bar is filled and fixed, so this is a no-op at every
+         desk width and in every empty state. */
+      reserveUndo(document.querySelector(".b-field"));
     },
   };
 })();

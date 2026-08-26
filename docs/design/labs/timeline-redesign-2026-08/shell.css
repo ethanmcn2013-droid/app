@@ -114,11 +114,19 @@
      tracking ladders are bound to, so a component picks one word and
      gets its size, its letterfit and its leading together. */
   /* The READING half of the ladder is in rem, so a reader who has set
-     a larger text size in their browser gets one. The display half
-     stays in pixels: those objects are composed against a fixed stage
-     and a rem count at a 24px root clips the day, the sheet and the
-     phone. At the default root every value below is byte-identical to
-     the pixels it replaces. */
+     a larger text size in their browser gets one. At the default root
+     every value below is byte-identical to the pixels it replaces.
+
+     The DISPLAY half used to be flat pixels, and that was a freeze, not
+     a decision: a reader at a 24px root got reading text at 1.5x with
+     the count, the ceremonial figure and the publish headline frozen -
+     so the hierarchy the whole composition rests on collapsed for the
+     one reader who had asked for help. A straight rem swap is genuinely
+     wrong, and measurably: the day word overflows its column by 36px at
+     390 and the count block by 65px at 1440. clamp() is the answer to
+     both. Each floor IS today's pixel value, so nothing moves at the
+     default root and the audit's ramp is unchanged; each ceiling caps
+     growth near 1.25x, which is what the fixed stage can actually hold. */
   --size-label: 0.6875rem;    /* mono micro-labels · 11px */
   --size-labelWide: 0.75rem;  /* the ceremonial top line · 12px */
   --size-data: 0.8125rem;     /* mono figures and fields · 13px */
@@ -127,11 +135,11 @@
   --size-date: 1.25rem;       /* the ceremonial date line · 20px */
   --size-head: 1.5rem;        /* a moment title at desk width · 24px */
   --size-title: 1.875rem;     /* a screen's own headline · 30px */
-  --size-titleWide: 38px;     /* the publish headline */
-  --size-figure: 48px;        /* a figure that is not the count */
-  --size-card: 64px;          /* the count on the unfurl card */
-  --size-count: 96px;         /* the count on a phone */
-  --size-countWide: 148px;    /* the count at desk width */
+  --size-titleWide: clamp(38px, 2.375rem, 48px);   /* the publish headline */
+  --size-figure: clamp(48px, 3rem, 60px);          /* a figure that is not the count */
+  --size-card: clamp(64px, 4rem, 80px);            /* the count on the unfurl card */
+  --size-count: clamp(96px, 6rem, 120px);          /* the count on a phone */
+  --size-countWide: clamp(148px, 9.25rem, 185px);  /* the count at desk width */
 
   /* The stage is how one page can show a phone artifact, a desk artifact
      and an A4 sheet honestly. Each state declares the medium it belongs

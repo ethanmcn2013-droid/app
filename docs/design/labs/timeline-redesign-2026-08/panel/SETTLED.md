@@ -9,7 +9,9 @@ Raised and refuted in three consecutive rounds each, now closed: the
 editor's reserved band, the desk editor's foot below the fold, and an
 arrival animation for the audience.
 
-**59 settled items, rounds 7–10.**
+**59 settled items, rounds 7-11.** Round 11 added none: thirteen findings
+were filed, eight met a refuter, and every one of the eight was confirmed.
+The ledger stops growing when the panel stops padding.
 
 ## accent-spent-twice-never-on-the-event
 `brand` · refuted in round 7

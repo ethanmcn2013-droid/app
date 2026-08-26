@@ -593,6 +593,45 @@
           "problem": "The focus ring token is scoped per ground, but .b-chat is a messaging-app plate that is hard white in BOTH rooms, so on ink the ring resolves to white and paints onto white. Measured on the real composite at 1440x960 and 390x844: the ring on .b-unfurl computes rgb(255,255,255) and the pixel six pixels outside it is white on all four sides, in publish and in unfurl - 1.00:1, and a whole-viewport diff of focused against unfocused changes ZERO pixels. The same element on paper reads indigo at 6.29:1. On state=unfurl that card is the ONLY focusable element on the screen, so an ink-room keyboard user tabbing that state gets no indicator at all. The gate asserted only outlineWidth > 0, which was true the whole time."
         }
       ]
+    },
+    {
+      "round": 12,
+      "scores": {
+        "UI composition": 9.4,
+        "Typography": 9.3,
+        "Interaction and states": 9.3,
+        "UX and information design": 9.3,
+        "Brand and copy": 9.1,
+        "Product taste and emotional resonance": 9.4,
+        "Measured evidence": 9.4
+      },
+      "findings": 19,
+      "confirmed": 19,
+      "refuted": 0,
+      "fixed": 19,
+      "headline": "Six of seven seats sit at 9.3 or above and the floor held at 9.1, but the number worth reading is the other one: nineteen findings filed, ten refuters spent, and not one refutation - thirty-two consecutive confirmed findings across two rounds, several of which the refuters found WORSE than filed. The panel is accurate and the supply of true findings has not run out, which is the whole finding of this round. The heaviest was mine. theDayRecord() identified the day - the single object the entire composition is measured from - by scanning for the first milestone whose date matched, while three separate comments in the same file claimed identity was resolved by id and 'never by a date match alone'. No primaryDate.id existed anywhere in the lab. Round 9 recorded that fix as done and it had landed nowhere, so for three rounds the comments asserted a fix that did not exist, and any second moment on the wedding day took the day's own mark. Its other half: moving the day in its own editor wrote the milestone's date and not the project's, so the largest type on the surface went on reading the date the day used to be while every distance on the page was measured from it. That is the worst class this engagement has produced, because no gate can see a comment that lies. Four more findings landed on round 11's own fixes. briefly() - written last round to stop a long title growing the undo band back over the first field's label - trimmed by raw character count and cut six of six ordinary wedding titles mid-word, and its trailing-whitespace class was written [s,;:] rather than [\\s,;:], so it matched the letter s. That is the same backslash-through-a-shell error that had already produced two vacuous gate assertions this session; it is now a process rule, not a bug: anything carrying a regex is written to file and verified against its own inputs. The morning screen was the only surface in the artifact that imposed an order of its own, sorting the day's moments alphabetically, so it printed dinner before drinks and disagreed with the phone and the printed sheet about the very same four moments; the gate now asserts cross-surface AGREEMENT rather than record order, so it survives the founder later giving the model a time. The publish card's figure was built from today and captioned 'days away when this was sent'; on a plan sent yesterday the two largest figures on the screen disagreed by a day. The keepsake still said 'Today, 16 July' - the one deictic string on a sheet that dates itself absolutely in three other places. The editor announced every acceptance and said nothing at all when it refused, the describedby relationship being correct but spoken only on arrival. The reversibility band was measured once and never again, so a window narrowed across the docked boundary kept the other width's reserve and the opaque bar covered the foot at maximum scroll. keepInBand re-centred the whole plan when a row crossed the band edge by two pixels. The display tier was frozen in flat pixels, so a reader at a 24px root got reading text at 1.5x with the count unmoved - the ramp now clamps, floors at today's pixels and ceilings at what the fixed stage holds. Three of my nine red checks passed VACUOUSLY on the first run and were caught before they were trusted: one seeded a moment after the render and called settle(), which re-places rows rather than building them; one re-dated past moments that never reach the morning screen and compared two empty strings; one never closed the editor and so never entered the fixed-position regime it existed to test. And one standing assertion had to be corrected rather than satisfied - 'states today on the surface' asserted the literal word as a proxy for anchoring, which is right on a screen and wrong on paper. The behaviour gate grew 787 to 844.",
+      "worst": [
+        {
+          "seat": "UX and information design",
+          "cost": 0.5,
+          "problem": "The single object the whole composition is measured from is identified by scanning F.milestones for the FIRST record whose date equals F.project.primaryDate.date - a date match alone, which the function's own comment says it never does. Three comments in render-b.js describe identity resolved by id; no primaryDate.id exists anywhere in the lab, and isTheDay() merely delegates to the date scan, so every consumer that 'uses isTheDay instead' inherits the defect rather than escaping it. Round 9's id fix landed nowhere: the comments are not misplaced, they are false. Driven on both grounds, a second moment placed on the wedding date and before it in the array takes the day's own anchor mark."
+        },
+        {
+          "seat": "Brand and copy",
+          "cost": 0.4,
+          "problem": "setAway() writes record.date without ever writing F.project.primaryDate.date, so one press of a stepper in the day's own editor severs the day from the project. Driven at 1440x960 on both grounds: the row moves to 26 September while .b-when goes on reading 'Saturday 3 October 2026' and the count beside it goes on counting to the date the day used to be - and every figure on the page is measured from that number."
+        },
+        {
+          "seat": "Product taste and emotional resonance",
+          "cost": 0.3,
+          "problem": "The lock promises the date control 'moves the item on the measure while you hold it, and moves nothing else'. At desk it moves everything else. From a cold owner-editing at 1440x960 the edited row's copy sits 445px into a 664px pane; one press of Move a week later puts its bottom at 650 against a band of 648 - two pixels past - and keepInBand does not correct by two, it re-centres, scrolling the pane 287px in a single assignment. Reproduced on both grounds with no contrived starting scroll."
+        },
+        {
+          "seat": "UX and information design",
+          "cost": 0.3,
+          "problem": "briefly(), round 11's own fix for the four-line undo bar, trims by raw character count: every one of six ordinary wedding titles of 49-55 characters cut mid-word, byte-identical in all four room/width combinations - 'Champagne and canapes on the west terrace b...'. That is the first entry under Typography in the paid-for defect library. Its trailing-whitespace class was written [s,;:] rather than [\\s,;:], so it matched the letter s and a name ending in one lost it before the ellipsis."
+        }
+      ]
     }
   ]
 }

@@ -92,7 +92,11 @@
     slug: "mara-finn",
     name: "Mara & Finn",
     oneLiner: "What is settled, what comes next, and what the couple can share.",
-    primaryDate: { label: "Wedding day", date: "2026-10-03" },
+    /* The day is a milestone the project POINTS AT, by id. Three comments
+       in render-b.js claimed identity was resolved this way and no id
+       existed anywhere, so the day was whichever moment matched its date
+       first - and any second moment on the wedding day took it. */
+    primaryDate: { label: "Wedding day", date: "2026-10-03", id: "demo-audience-item-wedding" },
   };
 
   var SIBLINGS = [

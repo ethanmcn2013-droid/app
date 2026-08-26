@@ -214,6 +214,9 @@
   function unhide(el) {
     el.removeAttribute("aria-hidden");
     el.removeAttribute("data-trimmed");
+    /* Including the tooltip, or a string that fitted after a resize kept
+       promising a longer form it no longer has. */
+    el.removeAttribute("title");
     var twin = el.nextElementSibling;
     if (twin && twin.getAttribute("data-clamp-full") === "true") twin.remove();
   }
@@ -221,10 +224,14 @@
   function clamp(el) {
     var full = el.getAttribute("data-full") || el.textContent;
     el.setAttribute("data-full", full);
-    el.setAttribute("title", full);
     el.textContent = full;
     unhide(el);
     if (!over(el)) return;
+    /* The tooltip belongs to the trim, so it is stamped AFTER the test.
+       Stamped before it, every title in the product carried a hover
+       tooltip byte-identical to the words already on screen - noise on
+       every row, and a promise of more that was not there. */
+    el.setAttribute("title", full);
     var words = full.split(" ");
     while (words.length > 1 && over(el)) {
       words.pop();

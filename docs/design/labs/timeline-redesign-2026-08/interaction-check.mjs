@@ -360,10 +360,26 @@ for (const state of ["owner-flight", "owner-editing", "desk", "publish", "owner-
 }
 
 /* ── unanchored time ─────────────────────────────────────────────── */
-for (const state of ["phone", "desk", "print", "owner-flight", "day"]) {
+/* Every countdown names the day it is counting FROM, or it means
+   nothing. This asserted the literal word "today" as a proxy for that,
+   which is right on a screen and wrong on paper: a sheet cannot be
+   reloaded, so it anchors itself absolutely and the word "today" on it
+   is a lie the day after it is printed. The property is the anchor, not
+   the word - round 12 removed the sheet's last deictic string and this
+   assertion, testing the proxy, failed on the fix. */
+for (const state of ["phone", "desk", "owner-flight", "day"]) {
   const page = await open({ state });
   ok(`states today on the surface · ${state}`,
     await page.evaluate(() => /today/i.test(document.body.innerText)));
+  await page.close();
+}
+{
+  const page = await open({ state: "print" });
+  const said = flat9(await page.evaluate(() => document.body.innerText));
+  const anchor = flat9(FIXTURE.fmt.longYear(FIXTURE.today));
+  ok("the sheet anchors its own figures to a date", said.includes(anchor), anchor);
+  ok("the sheet anchors them without saying 'today'", !/\btoday\b/i.test(said),
+    (said.match(/[^.\n]*today[^.\n]*/i) || [""])[0]);
   await page.close();
 }
 
@@ -3735,6 +3751,377 @@ for (const room of ["paper", "ink"]) {
   });
   ok("the past carries no ring that means 'this one'",
     widths.length > 0 && new Set(widths).size === 1, widths.join(","));
+  await page.close();
+}
+
+
+/* ═══ round 12 ═════════════════════════════════════════════════════ */
+
+for (const variant of config.variants) {
+  /* The day is the project's, by ID. Three comments in render-b.js
+     claimed identity was resolved this way beside code that did a bare
+     date scan, and no id existed anywhere in the lab - so any second
+     moment landing on the wedding day took the day's own mark. */
+  {
+    const page = await open({ state: "owner-flight", variant });
+    const anchors = await page.evaluate(async () => {
+      const F = window.__TLFIXTURE;
+      F.milestones.unshift({
+        id: "interloper", title: "Photographs by the lake",
+        date: F.project.primaryDate.date, state: "next",
+      });
+      /* mount(), not settle(): settle re-places the rows that exist and
+         would never build one for a moment added after the render - the
+         first version of this check proved nothing for exactly that
+         reason. */
+      window.__TLCORE.mount();
+      await new Promise((r) => setTimeout(r, 400));
+      const found = [...document.querySelectorAll('.b-item[data-anchor="true"]')]
+        .map((el) => el.getAttribute("data-id"));
+      F.milestones.shift();
+      return found;
+    });
+    ok(`a second moment on the day cannot claim to be the day · ${variant}`,
+      anchors.length === 1 && /wedding/.test(String(anchors[0])), anchors.join(","));
+    await page.close();
+  }
+
+  /* ...and when the day itself moves, the project moves with it. The
+     milestone's date was written and the project's was not, so the
+     largest type on the surface went on reading the date the day used
+     to be - and every distance on the page is measured from it. */
+  {
+    const page = await open({ state: "owner-flight", variant });
+    const moved = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const F = window.__TLFIXTURE;
+      const dayRow = [...document.querySelectorAll('.b-measure:not(.b-back) .b-item')]
+        .find((el) => el.getAttribute("data-anchor") === "true");
+      if (!dayRow) return { none: true };
+      dayRow.querySelector(".b-grab").click();
+      await wait(350);
+      const step = document.querySelector('.b-step[data-delta="-7"]');
+      if (!step || step.getAttribute("aria-disabled") === "true") return { locked: true };
+      step.click();
+      await wait(450);
+      const field = document.querySelector(".b-field");
+      return {
+        rowDate: dayRow.getAttribute("data-date"),
+        projectDate: F.project.primaryDate.date,
+        when: (field.querySelector(".b-when") || {}).textContent || "",
+        count: (field.querySelector(".b-count .b-num") || {}).textContent || "",
+      };
+    });
+    ok(`moving the day moves the project's own date · ${variant}`,
+      !moved.none && !moved.locked && moved.rowDate === moved.projectDate, JSON.stringify(moved));
+    ok(`the horizon follows the day it is measured from · ${variant}`,
+      !moved.none && !moved.locked
+        && flat9(moved.when).includes(FIXTURE.fmt.long(moved.projectDate).replace(/\u00a0/g, " ")),
+      JSON.stringify(moved));
+    await page.close();
+  }
+
+  /* The morning agrees with every other surface about the order of the
+     same moments. Asserted as cross-surface AGREEMENT rather than as
+     record order, so it still holds if the founder later gives the
+     model a time - state=day was the only surface in the artifact that
+     imposed an order of its own, and it printed dinner before drinks. */
+  {
+    const seed = `
+      var FX = window.__TLFIXTURE;
+      var onDay = FX.project.primaryDate.date;
+      var fwd = FX.milestones.filter(function (m) {
+        return m.state !== "cancelled" && m.date && FX.daysTo(m.date) > 0 && m.date !== onDay;
+      });
+      fwd[0].date = onDay; fwd[0].title = "Zebra arrival";
+      fwd[1].date = onDay; fwd[1].title = "Ceremony at St John's";
+      fwd[2].date = onDay; fwd[2].title = "";
+    `;
+    const order = {};
+    for (const state of ["day", "print", "phone"]) {
+      const page = await open({ state, variant });
+      order[state] = await page.evaluate(async (s) => {
+        // eslint-disable-next-line no-eval
+        eval(s);
+        window.__TLCORE.mount();
+        await new Promise((r) => setTimeout(r, 400));
+        const sel = document.querySelectorAll(".b-dayNowTitle").length
+          ? ".b-dayNowTitle" : ".b-title";
+        return [...document.querySelectorAll(sel)]
+          .map((el) => el.textContent.trim())
+          .filter((x) => ["Zebra arrival", "Ceremony at St John's", "Untitled moment"].includes(x))
+          .join(" | ");
+      }, seed);
+      await page.close();
+    }
+    ok(`the morning prints the day in the sheet's order · ${variant}`,
+      order.day === order.print && order.day.length > 0, JSON.stringify(order));
+    ok(`the morning prints the day in the phone's order · ${variant}`,
+      order.day === order.phone && order.day.length > 0, JSON.stringify(order));
+    ok(`a moment with no title is still named on the morning · ${variant}`,
+      order.day.includes("Untitled moment"), JSON.stringify(order));
+  }
+
+  /* The reversibility sentence shortens the NAME to a whole word. A raw
+     character slice cut six of six ordinary wedding titles mid-word. */
+  {
+    const page = await open({ state: "owner-flight", variant });
+    const titles = [
+      "Photographs with both families by the lake before dinner",
+      "Champagne and canapes on the west terrace beforehand",
+      "Hair and make-up for the bridesmaids at the hotel",
+    ];
+    const said = await page.evaluate(async (list) => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const out = [];
+      for (const title of list) {
+        document.querySelector('.b-measure:not(.b-back) .b-item .b-grab').click();
+        await wait(300);
+        const input = document.querySelector("#b-edit-title");
+        input.value = title;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        await wait(250);
+        document.querySelector('.b-step[data-delta="7"]').click();
+        await wait(400);
+        out.push(document.querySelector(".b-undoText").textContent);
+      }
+      return out;
+    }, titles);
+    /* Decidable against the title that produced it: the kept text must
+       end where the original has a space. */
+    const cut = said.map((line, i) => {
+      const s = flat9(line);
+      const e = s.indexOf("\u2026");
+      if (e < 1) return null;
+      const next = titles[i].charAt(s.slice(0, e).length);
+      return next && !/\s/.test(next) ? titles[i].slice(0, s.slice(0, e).length) + "|" + next : null;
+    }).filter(Boolean);
+    ok(`the reversibility sentence never cuts mid-word · ${variant}`,
+      cut.length === 0, JSON.stringify(cut));
+    ok(`the reversibility sentence still offers the way back · ${variant}`,
+      said.every((s) => /moved 7 days later/.test(flat9(s))), flat9(said[0]));
+    await page.close();
+  }
+
+  /* The editor's refusal is ANNOUNCED, not only described. The
+     describedby relationship was correct and updating, but a description
+     is spoken on arrival at the field - so the editor announced every
+     acceptance and said nothing at all when it refused. */
+  {
+    const page = await open({ state: "owner-editing", variant });
+    const wired = await page.evaluate(() => {
+      const hint = document.querySelector("#b-edit-when-hint");
+      return { role: hint && hint.getAttribute("role"), live: hint && hint.getAttribute("aria-live") };
+    });
+    ok(`the editor's refusal is announced, not only described · ${variant}`,
+      wired.role === "status" || wired.live === "polite", JSON.stringify(wired));
+    await page.close();
+  }
+
+  /* The keepsake speaks no deixis. Paper cannot be reloaded: the sheet
+     dates itself absolutely in three places and this was the one string
+     left that meant nothing weeks later. */
+  {
+    const page = await open({ state: "print", variant, viewport: { width: 900, height: 1200 } });
+    const deictic = await page.evaluate(() => {
+      const out = [];
+      const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let n;
+      while ((n = walk.nextNode())) {
+        const text = n.textContent.trim();
+        if (!text) continue;
+        const el = n.parentElement;
+        const cs = getComputedStyle(el);
+        if (cs.visibility === "hidden" || cs.display === "none") continue;
+        if (el.getBoundingClientRect().height === 0) continue;
+        if (/\b(today|tomorrow|yesterday|now)\b/i.test(text)) out.push(text);
+      }
+      return out;
+    });
+    ok(`the printed keepsake speaks no deixis · ${variant}`,
+      deictic.length === 0, JSON.stringify(deictic));
+    await page.close();
+  }
+
+  /* The card's figure is measured from the day it CLAIMS. It was built
+     from today and captioned "when this was sent", so on a plan sent
+     yesterday the two largest figures on the publish screen disagreed
+     by a day and the caption between them made it legible. */
+  {
+    const page = await open({ state: "publish", variant });
+    const card = await page.evaluate(() => {
+      const F = window.__TLFIXTURE;
+      const num = document.querySelector(".b-ogNum");
+      const cap = document.querySelector(".b-ogDate");
+      const at = F.publication.publishedAt;
+      return {
+        figure: num ? Number(num.textContent.trim()) : null,
+        caption: cap ? cap.textContent.trim() : "",
+        fromSent: at ? F.days(String(at).slice(0, 10), F.project.primaryDate.date) : null,
+        fromToday: F.days(F.today, F.project.primaryDate.date),
+      };
+    });
+    ok(`the card's figure is measured from the day it claims · ${variant}`,
+      !/when this was sent/.test(flat9(card.caption)) || card.figure === card.fromSent,
+      JSON.stringify(card));
+    ok(`the card qualifies its figure only once there is a send · ${variant}`,
+      card.fromSent === null ? !/when this was sent/.test(flat9(card.caption)) : true,
+      JSON.stringify(card));
+    await page.close();
+  }
+
+  /* The owner comes back to where they were. Their most repeated loop is
+     find a row, change it, check what the guest sees, come back - and
+     the return leg threw the plan to the top every time. */
+  {
+    const page = await open({
+      state: "owner-flight", variant,
+      viewport: { width: 390, height: 844 }, touch: true,
+    });
+    const place = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      window.scrollTo(0, document.documentElement.scrollHeight);
+      await wait(250);
+      const before = Math.round(window.scrollY);
+      document.querySelector('[data-act="preview"]').click();
+      await wait(450);
+      document.querySelector('[data-act="owner"]').click();
+      await wait(450);
+      return { before, after: Math.round(window.scrollY) };
+    });
+    ok(`Back to the plan returns the owner to where they were · ${variant}`,
+      place.before > 0 && Math.abs(place.after - place.before) <= 24, JSON.stringify(place));
+    await page.close();
+  }
+
+  /* The reversibility band is re-measured when the width changes. It was
+     measured once, when the bar was filled, so a window narrowed across
+     the docked boundary kept the band the OTHER width produced - and at
+     maximum scroll the opaque bar covered the foot with no scroll left
+     to free it. */
+  {
+    const page = await open({ state: "owner-flight", variant, viewport: { width: 844, height: 390 } });
+    await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      document.querySelector('.b-measure:not(.b-back) .b-item .b-grab').click();
+      await wait(350);
+      document.querySelector('.b-step[data-delta="7"]').click();
+      await wait(400);
+      const panel = document.querySelector("#b-edit");
+      if (panel) panel.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      await wait(350);
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(700);
+    const band = await page.evaluate(() => {
+      const bar = document.querySelector(".b-undo");
+      return {
+        reserve: document.querySelector(".b-field").style.getPropertyValue("--b-undo"),
+        barH: bar ? Math.round(bar.getBoundingClientRect().height) : null,
+        position: bar ? getComputedStyle(bar).position : null,
+        empty: bar ? bar.getAttribute("data-empty") : null,
+      };
+    });
+    /* Only meaningful in the regime the reserve is actually read in. */
+    const entered = band.position === "fixed" && band.empty === "false";
+    ok(`the undo band is re-measured when the width changes · ${variant}`,
+      entered && Math.abs(parseFloat(band.reserve || "0") - (band.barH + 24)) <= 2,
+      JSON.stringify({ ...band, entered }));
+    await page.close();
+  }
+
+  /* A tooltip exists only where a word was actually removed. Every title
+     in the product carried one byte-identical to the words already on
+     screen: noise on every row, and a promise of more that was not
+     there. */
+  for (const state of ["owner-flight", "phone", "desk"]) {
+    for (const w of [1440, 390]) {
+      const page = await open({ state, variant, viewport: { width: w, height: 900 } });
+      await page.waitForTimeout(300);
+      const idle = await page.evaluate(() =>
+        [...document.querySelectorAll("[data-clamp]")]
+          .filter((el) => el.getAttribute("title") !== null
+            && el.getAttribute("title") === el.textContent.trim())
+          .map((el) => el.textContent.trim().slice(0, 24)));
+      ok(`no title repeats the words already on screen · ${state} · ${variant} @ ${w}`,
+        idle.length === 0, JSON.stringify(idle.slice(0, 3)));
+      await page.close();
+    }
+  }
+
+  /* The display tier moves with the reader's own text size. It was flat
+     pixels, so a reader at a 24px root got reading text at 1.5x with the
+     count frozen - the hierarchy the whole composition rests on
+     collapsed for the one reader who had asked for help. A straight rem
+     swap is measurably wrong, so the ramp clamps: floors are today's
+     pixels, ceilings are what the fixed stage can hold. */
+  for (const w of [390, 1440]) {
+    const page = await open({ state: "owner-flight", variant, viewport: { width: w, height: 900 } });
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Page.enable");
+    await cdp.send("Page.setFontSizes", { fontSizes: { standard: 24, fixed: 24 } });
+    await page.reload({ waitUntil: "load" });
+    await page.waitForTimeout(400);
+    const grown = await page.evaluate(() => {
+      const size = (s) => {
+        const el = document.querySelector(s);
+        return el ? Math.round(parseFloat(getComputedStyle(el).fontSize)) : null;
+      };
+      return {
+        root: Math.round(parseFloat(getComputedStyle(document.documentElement).fontSize)),
+        count: size(".b-num"),
+        title: size(".b-title"),
+        sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
+    });
+    const floor = w >= 1024 ? 148 : 96;
+    ok(`the count grows with the reader's text size · ${variant} @ ${w}`,
+      grown.root === 24 && grown.count > floor, JSON.stringify(grown));
+    ok(`nothing scrolls sideways at a 24px root · ${variant} @ ${w}`,
+      grown.sideways <= 1, JSON.stringify(grown));
+    await page.close();
+  }
+
+  /* The loading frame promises the figure that is actually coming. The
+     count slab was a literal 86px measured once against a 96px numeral,
+     so once the display tier could grow the frame promised a figure 34px
+     shorter than the one that arrived. */
+  for (const root of [16, 24]) {
+    const seen = {};
+    for (const state of ["loading", "phone"]) {
+      const page = await open({ state, variant, viewport: { width: 390, height: 844 } });
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Page.enable");
+      await cdp.send("Page.setFontSizes", { fontSizes: { standard: root, fixed: root } });
+      await page.reload({ waitUntil: "load" });
+      await page.waitForTimeout(350);
+      seen[state] = await page.evaluate(() => {
+        const box = (s) => {
+          const el = document.querySelector(s);
+          return el ? Math.round(el.getBoundingClientRect().height) : null;
+        };
+        const who = document.querySelector(".b-who");
+        return { slab: box(".b-skel"), count: box(".b-count"), whoY: who ? Math.round(who.getBoundingClientRect().top) : null };
+      });
+      await page.close();
+    }
+    ok(`the loading frame promises the count that arrives · ${variant} @ root ${root}`,
+      seen.loading.slab !== null && Math.abs(seen.loading.slab - seen.phone.count) <= 2,
+      JSON.stringify(seen));
+    ok(`the loading frame opens where the arrived page opens · ${variant} @ root ${root}`,
+      seen.loading.whoY === seen.phone.whoY, JSON.stringify(seen));
+  }
+}
+
+/* The first sentence a new owner reads calls the object what the rest of
+   the product calls it. "page" appeared exactly once, on the screen
+   where a person is learning the thing's name. */
+{
+  const page = await open({ state: "owner-empty" });
+  const said = await page.evaluate(() => document.body.innerText);
+  ok("nothing in the product calls the plan a page", !/on this page/i.test(said),
+    (said.match(/[^.]*on this page[^.]*\./i) || [""])[0]);
   await page.close();
 }
 

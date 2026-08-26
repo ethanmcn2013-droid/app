@@ -58,8 +58,18 @@
   color: var(--fore);
   margin: 0 0 var(--gap-item);
 }
-/* The publish screen's own captions are the machine speaking. */
-.b-press .b-who { color: var(--fore-62); }
+/* The publish screen's own captions are the machine speaking. And they
+   are SECTION heads, not ceremonial top lines: --size-labelWide is
+   declared as "the ceremonial top line, and only that", and every other
+   section head in the product - DAYS AWAY, BEHIND YOU, HAPPENING NOW -
+   sets at --size-label. "What lands in the message" and "The link" were
+   the two that took the wider spec and did not earn it. The card's own
+   .b-ogWho keeps it, because there it really is the top line. */
+.b-press .b-who {
+  color: var(--fore-62);
+  font-size: var(--size-label);
+  letter-spacing: var(--track-label);
+}
 .b-count { display: flex; align-items: baseline; gap: var(--gap-snug); margin: 0 0 var(--gap-snug); }
 .b-num {
   font-family: var(--mono);
@@ -139,8 +149,15 @@
   text-transform: uppercase;
   color: var(--fore-62);
   margin: var(--gap-item) 0 0;
-  width: 76px;
-  text-align: right;
+  /* min-width, not width: at a raised root font size the string outgrows
+     a fixed box and hangs off the margin it is supposed to sit on. */
+  min-width: 76px;
+  /* Left, so the head's own edge is a decision rather than wherever the
+     string happens to end. Right-aligned in a fixed box it sat on no
+     edge the rest of the column uses; left, it joins the one every
+     other head in the room already stands on. The day figures keep
+     their own right-aligned lane and do not move. */
+  text-align: left;
   white-space: nowrap;
 }
 .b-rail { position: absolute; left: 90px; top: 6px; bottom: 0; width: 1px; background: var(--fore-16); }
@@ -507,8 +524,11 @@
   /* 96, not 76: SAT 22 AUG is 84px at this letterfit, so every
      two-digit day was breaking the weekday off its own date. nowrap
      makes a future overrun a visible collision the gate can catch
-     rather than a silent second line. */
-  width: 96px;
+     rather than a silent second line. min-width, because 96 is the
+     floor the string needs at the DEFAULT root - a reader who has
+     raised their text size needs more, and a fixed box gave them an
+     overrun instead. */
+  min-width: 96px;
   white-space: nowrap;
   flex: none;
 }
@@ -1369,13 +1389,17 @@
   }
   [data-medium="sheet"] .b-when, [data-medium="full"] .b-when { font-size: var(--size-title); letter-spacing: var(--track-head); }
   [data-medium="sheet"] .b-measure, [data-medium="full"] .b-measure { padding-left: 124px; }  /* off-ladder: measure geometry */
-  [data-medium="sheet"] .b-measureHead, [data-medium="full"] .b-measureHead { width: 84px; }
+  [data-medium="sheet"] .b-measureHead, [data-medium="full"] .b-measureHead { min-width: 84px; }
   /* The 20px above this head is the only air between the gap note and
      the measure when the field is ONE track, so it is taken back only
      where the columns actually stand side by side - scoped to the
      column's own first block, because the head's parent is the wrapper
      measure() returns and at desk that wrapper carries no class. */
-  [data-medium="full"] .b-two > * > *:first-child > .b-measureHead { margin-top: 0; }
+  /* The sheet stands its columns side by side too, and it was left out:
+     on the printed A4 the two heads that name the spread did not open
+     on one line. */
+  [data-medium="full"] .b-two > * > *:first-child > .b-measureHead,
+  [data-medium="sheet"] .b-two > * > *:first-child > .b-measureHead { margin-top: 0; }
   [data-medium="sheet"] .b-rail, [data-medium="full"] .b-rail { left: 100px; }
   [data-medium="sheet"] .b-item, [data-medium="full"] .b-item { left: 124px; }
   [data-medium="sheet"] .b-origin, [data-medium="full"] .b-origin { left: 124px; }
@@ -1676,6 +1700,12 @@
      editor lost its tie to the row it edits. Same rule as the tick -
      a forced palette may repaint any fill but cannot flatten a shape,
      so the meaning moves into an edge. */
+  /* The one owner-written string at the head of the column, and the
+     page's only h1. A forced palette drops the display number's own
+     backplate into the same paint phase, and it took the bottom half of
+     the couple's name with it. Lifted, not spaced: extra clearance also
+     works and moves the horizon at every width from 768 up. */
+  .b-who { position: relative; z-index: 1; }
   .b-skel { background: Canvas; border: 1px solid CanvasText; }
   /* An outline, not a box-shadow: Chromium drops box-shadow entirely in
      a forced palette, so the 12px halo cannot stand in for the plate.
