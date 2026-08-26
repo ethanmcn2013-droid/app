@@ -1811,6 +1811,66 @@
       "detail": "none → matrix(1.12, 0, 0, 1.12, 0, 0)"
     },
     {
+      "section": "delight",
+      "name": "task panel @1280 · opens, takes focus, and never strands a lane",
+      "ok": true,
+      "detail": "opened:true focus:true stranded:0 (board scrolls)"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1280 · Escape closes it and hands the card back",
+      "ok": true,
+      "detail": "closed:true card:true"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1280 · it does not say \"Not set\" about a dated task",
+      "ok": true,
+      "detail": "Due = Milestone 1 Aug"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1440 · opens, takes focus, and never strands a lane",
+      "ok": true,
+      "detail": "opened:true focus:true stranded:0 (board scrolls)"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1440 · Escape closes it and hands the card back",
+      "ok": true,
+      "detail": "closed:true card:true"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1440 · it does not say \"Not set\" about a dated task",
+      "ok": true,
+      "detail": "Due = Milestone 1 Aug"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1920 · opens, takes focus, and never strands a lane",
+      "ok": true,
+      "detail": "opened:true focus:true stranded:0 (everything fits)"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1920 · Escape closes it and hands the card back",
+      "ok": true,
+      "detail": "closed:true card:true"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1920 · it does not say \"Not set\" about a dated task",
+      "ok": true,
+      "detail": "Due = Milestone 1 Aug"
+    },
+    {
+      "section": "delight",
+      "name": "Enter opens the same expanded task a press does",
+      "ok": true,
+      "detail": "true"
+    },
+    {
       "section": "lab gates",
       "name": "Tasks · audit.mjs",
       "ok": true,

@@ -185,4 +185,77 @@ export async function delight({ browser, url, check, head }) {
       drop.pipAfter !== drop.pipBefore, `${drop.pipBefore} → ${drop.pipAfter}`);
     await page.close();
   }
+
+  /* ── the expanded task ──────────────────────────────────────────
+     Four routes reach it — a press, a drop, Enter, and pointerup — and
+     repointing three of them at the new panel left the fourth quietly
+     toggling an inline note nobody could see. So the assertion drives
+     more than one door. */
+  for (const width of [1280, 1440, 1920]) {
+    const page = await open(width);
+    const r = await page.evaluate(async () => {
+      const card = document.querySelector('.board [data-lane="doing"] .card');
+      const id = card.dataset.id;
+      const box = card.querySelector(".cardTitle").getBoundingClientRect();
+      const at = { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2, bubbles: true };
+      card.dispatchEvent(new PointerEvent("pointerdown", at));
+      card.querySelector(".cardTitle").dispatchEvent(new PointerEvent("pointerup", at));
+      await new Promise((r) => setTimeout(r, 400));
+      const panel = document.querySelector(".taskPanel");
+      const board = document.querySelector(".board");
+      const out = {
+        opened: Boolean(panel),
+        focused: document.activeElement === panel,
+        /* The board must NARROW, not be covered — the round-2 defect. */
+        boardScrolls: board.scrollWidth > board.clientWidth,
+        covered: (() => {
+          if (!panel) return null;
+          const p = panel.getBoundingClientRect();
+          const max = board.scrollWidth - board.clientWidth;
+          return [...board.querySelectorAll("[data-lane]")].filter((t) => {
+            const b = t.getBoundingClientRect();
+            const clear = b.right - (max - board.scrollLeft) <= p.left + 0.5;
+            return !clear && Math.min(b.right, p.right) - Math.max(b.left, p.left) > 1;
+          }).length;
+        })(),
+        /* The panel and the card must agree about the date. */
+        panelDue: (document.querySelector(".tpFact dd") || {}).textContent || "",
+        cardChip: (card.querySelector(".when, .chip, [class*=when]") || {}).textContent || "",
+      };
+      /* Escape closes it and gives the card back. */
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 350));
+      out.closedByEsc = !document.querySelector(".taskPanel");
+      out.backOnCard = document.activeElement && document.activeElement.dataset &&
+        document.activeElement.dataset.id === id;
+      return out;
+    });
+    /* `stranded === 0` is the requirement; scrolling is only the MEANS.
+       At 1920 all five lanes fit beside the panel and the board has no
+       travel at all — demanding a scroller there fails a board that is
+       behaving perfectly, which is what the first version of this did. */
+    check("delight", `task panel @${width} · opens, takes focus, and never strands a lane`,
+      r.opened && r.focused && r.covered === 0,
+      `opened:${r.opened} focus:${r.focused} stranded:${r.covered}` +
+      (r.boardScrolls ? " (board scrolls)" : " (everything fits)"));
+    check("delight", `task panel @${width} · Escape closes it and hands the card back`,
+      r.closedByEsc && r.backOnCard, `closed:${r.closedByEsc} card:${r.backOnCard}`);
+    check("delight", `task panel @${width} · it does not say "Not set" about a dated task`,
+      !/not set/i.test(r.panelDue), `Due = ${r.panelDue}`);
+    await page.close();
+  }
+
+  /* Enter is the fourth route and must reach the same surface. */
+  {
+    const page = await open(1440);
+    const viaKey = await page.evaluate(async () => {
+      const card = document.querySelector('.board [data-lane="todo"] .card');
+      card.focus();
+      card.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 400));
+      return Boolean(document.querySelector(".taskPanel"));
+    });
+    check("delight", "Enter opens the same expanded task a press does", viaKey === true, String(viaKey));
+    await page.close();
+  }
 }

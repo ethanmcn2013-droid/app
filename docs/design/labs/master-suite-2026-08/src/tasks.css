@@ -1236,7 +1236,7 @@
    white with no edge: it sliced the Waiting column mid-word and erased
    Done entirely, which read as the board breaking rather than a panel
    opening. */
-[data-app="tasks"]:has(.drawer) .sheet {
+[data-app="tasks"]:has(.drawer, .taskPanel) .sheet {
   margin-right: calc(388px + var(--inset));
   transition: margin-right var(--dur) var(--curve);
 }
@@ -1244,14 +1244,14 @@
    narrowed board gave the card a 105px measure, which is half what the
    specimen sheet designs it at. What does not fit scrolls, snaps and fades
    at the edge instead. */
-[data-app="tasks"]:has(.drawer) .board {
+[data-app="tasks"]:has(.drawer, .taskPanel) .board {
   grid-template-columns: none;
   grid-auto-flow: column;
   grid-auto-columns: minmax(258px, 1fr);
   scroll-snap-type: x proximity;
   scroll-padding-left: 16px;
 }
-[data-app="tasks"]:has(.drawer) .tray { scroll-snap-align: start; }
+[data-app="tasks"]:has(.drawer, .taskPanel) .tray { scroll-snap-align: start; }
 /* Both of the rules that used to sit here — dropping the season fact when the
    drawer opened, and letting the name shrink to nothing with it — are gone.
    Opening the drawer takes the sheet under 1200, so the header stacks and
@@ -1848,7 +1848,7 @@
     grid-auto-columns: minmax(258px, 1fr);
   }
   [data-app="tasks"] .drawer { width: 364px; }
-  [data-app="tasks"]:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+  [data-app="tasks"]:has(.drawer, .taskPanel) .sheet { margin-right: calc(364px + var(--inset)); }
 }
 /* The chrome yields before the name of the project does. Visually hidden
    rather than removed, so the controls keep their accessible names. */
@@ -1883,7 +1883,7 @@
   [data-app="tasks"] .headFacts { gap: 12px; }
   [data-app="tasks"] .dockField { min-width: 148px; }
   [data-app="tasks"] .drawer { left: var(--inset); width: auto; }
-  [data-app="tasks"]:has(.drawer) .sheet { margin-right: 0; }
+  [data-app="tasks"]:has(.drawer, .taskPanel) .sheet { margin-right: 0; }
 }
 @media (max-width: 720px) {
   [data-app="tasks"] { --inset: 9px; }
@@ -2042,4 +2042,148 @@
 @media (prefers-reduced-motion: reduce) {
   [data-app="tasks"] .projMenu { animation: none; }
   [data-app="tasks"] .projSwitch svg { transition: none; }
+}
+
+/* ── the expanded task ─────────────────────────────────────────────
+   The most polished surface in the application, and the polish is almost
+   entirely restraint: one column, four ranks of type, a great deal of
+   white, and no control that is not doing something.
+
+   It takes the Planning drawer's geometry so the sheet's existing
+   accommodation applies unchanged — the board narrows and scrolls rather
+   than being covered, which is the defect two seats found in round 2 and
+   is not worth reintroducing on a new panel. */
+[data-app="tasks"] .taskPanel {
+  position: absolute;
+  right: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: 388px;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  box-shadow: var(--ring), var(--float);
+  display: flex; flex-direction: column;
+  z-index: 5; overflow: hidden;
+  animation: tpIn var(--motion-base) var(--curve) both;
+}
+@keyframes tpIn {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: none; }
+}
+[data-app="tasks"] .taskPanel:focus { outline: none; }
+[data-app="tasks"] .tpHead {
+  flex: none;
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 12px 12px 20px;
+}
+/* The lane is the first thing on the panel because "what state is this in"
+   is the question a person opens a task to answer half the time. It reuses
+   the tray's own pip so the board and the panel cannot drift apart about
+   what a lane looks like. */
+[data-app="tasks"] .tpLane {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-2);
+}
+[data-app="tasks"] .tpLane[data-tone="flight"] .pip { background: var(--ink-1); }
+[data-app="tasks"] .tpLane[data-tone="done"] .pip {
+  background: var(--ink-1); box-shadow: inset 0 0 0 1.5px var(--white);
+}
+[data-app="tasks"] .tpClose { margin-left: auto; }
+[data-app="tasks"] .tpBody {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 0 20px 24px;
+  display: grid; gap: 24px; align-content: start;
+}
+[data-app="tasks"] .tpTitleRow {
+  display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
+}
+[data-app="tasks"] .tpTick { margin-top: 3px; }
+[data-app="tasks"] .tpTitle {
+  margin: 0;
+  font-size: 20px; font-weight: 600; letter-spacing: var(--tr-19);
+  line-height: 26px;
+  color: var(--ink-1);
+  text-wrap: balance;
+}
+/* A finished task says so in the same language the card does. */
+[data-app="tasks"] .tpTitle[data-done] { color: var(--ink-2); text-decoration: line-through; text-decoration-color: var(--ink-4); }
+[data-app="tasks"] .tpSection { display: grid; gap: 9px; }
+/* One rank for every section label in the panel, and it is the same rank
+   the trays use — a panel that invents its own micro-label scale is a panel
+   that reads as a different product. */
+[data-app="tasks"] .tpSection h3 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+[data-app="tasks"] .tpNote {
+  margin: 0;
+  font-size: 14px; font-weight: 400; line-height: 22px;
+  letter-spacing: var(--tr-14);
+  color: var(--ink-1);
+  /* The one measure on the panel that is read as prose rather than scanned. */
+  max-width: 46ch;
+}
+[data-app="tasks"] .tpNone {
+  margin: 0;
+  font-size: 13px; font-weight: 400; line-height: 20px;
+  letter-spacing: var(--tr-13);
+  color: var(--ink-3);
+}
+/* A definition list, not a form. Nothing here is an input, because none of
+   it is editable yet and a disabled field is a worse lie than a plain fact. */
+[data-app="tasks"] .tpFacts { margin: 0; display: grid; gap: 1px; }
+[data-app="tasks"] .tpFact {
+  display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: baseline;
+  padding: 7px 0;
+  border-top: 1px solid var(--line-soft);
+}
+[data-app="tasks"] .tpFact:first-child { border-top: 0; padding-top: 0; }
+[data-app="tasks"] .tpFact dt {
+  font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
+  color: var(--ink-3);
+}
+[data-app="tasks"] .tpFact dd {
+  margin: 0;
+  font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
+  color: var(--ink-1);
+}
+[data-app="tasks"] .tpActs {
+  margin: 0; padding: 0; list-style: none;
+  display: grid; gap: 7px;
+}
+[data-app="tasks"] .tpActs li {
+  position: relative; padding-left: 16px;
+  font-size: 13px; font-weight: 400; line-height: 20px;
+  letter-spacing: var(--tr-13);
+  color: var(--ink-2);
+}
+[data-app="tasks"] .tpActs li::before {
+  content: ""; position: absolute; left: 0; top: 8px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--ink-4);
+}
+/* Progressive disclosure, and named honestly. "Subtasks, attachments and
+   comments" is what is behind it; dressing that up as a feature that exists
+   would be the panel making a promise the product cannot keep. */
+[data-app="tasks"] .tpMore { border-top: 1px solid var(--line-soft); padding-top: 16px; }
+[data-app="tasks"] .tpMore summary {
+  cursor: pointer; list-style: none;
+  font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
+  color: var(--ink-2);
+  padding: 6px 0; margin: -6px 0;
+}
+[data-app="tasks"] .tpMore summary::-webkit-details-marker { display: none; }
+[data-app="tasks"] .tpMore summary:hover { color: var(--ink-1); }
+[data-app="tasks"] .tpMore p { margin: 10px 0 0; }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .taskPanel { animation: none; }
+}
+/* A phone has no room beside the board, so the panel takes the sheet. The
+   accommodation above already sets margin-right: 0 at this width. */
+@media (max-width: 900px) {
+  [data-app="tasks"] .taskPanel { left: var(--inset); width: auto; }
 }

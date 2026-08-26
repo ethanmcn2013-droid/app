@@ -50,6 +50,7 @@ let clientOnly = null;  /* one couple, the venue's own way of looking       */
 let todayOnly = false;  /* the question a venue actually opens this to ask  */
 let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
+let openTaskId = null;  /* the task whose expanded surface is open          */
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
@@ -884,6 +885,110 @@ function milestoneTasks() {
   return allTasks().filter((t) => t.milestone);
 }
 
+/* ── the expanded task ─────────────────────────────────────────────
+   A side panel, not a modal. Three reasons, and they are all about the
+   board rather than about the panel: the work a task belongs to stays on
+   screen beside it, so "what else is connected to this" is answered by
+   looking rather than by a field; the sheet already knows how to make room
+   for a right-hand panel, so the board narrows and scrolls instead of being
+   covered; and a modal would break the one claim this suite makes, which is
+   that you are always looking at one sheet being re-filled.
+
+   The hierarchy is the design. A person opening a task asks four questions
+   in this order — what is this, what has to happen, who and when, what is
+   it attached to — so the panel answers them in that order and puts
+   everything else behind a summary. It is deliberately NOT a field for
+   every property a task could carry: the brief asks for hierarchy and
+   simplicity, and an enterprise settings panel is what you get when every
+   property is given equal rank.
+
+   Empty states say what is missing rather than hiding the row. A task with
+   no note shows that it has no note; that is a fact about the work, and a
+   panel that hides it is a panel that pretends every task is finished. */
+function taskPanel() {
+  const task = openTaskId && taskById(openTaskId);
+  if (!task) return "";
+  const lane = B.columns.find((c) => c.id === task.lane) || B.columns[0];
+  const done = task.lane === "done";
+  const t = timeOf(task);
+
+  const fact = (label, value, extra) =>
+    '<div class="tpFact"' + (extra || "") + "><dt>" + esc(label) + "</dt><dd>" +
+      (value ? esc(value) : '<span class="tpNone">Not set</span>') + "</dd></div>";
+
+  /* Activity is derived from what the task already carries rather than
+     invented as a new field. A history nobody wrote is a history nobody
+     can trust. */
+  const acts = [];
+  if (task.fromNote) acts.push("Came from a note in Notes");
+  if (task.milestone) acts.push(task.milestone);
+  if (task.quiet) acts.push(task.quiet);
+  if (task.completedAt) acts.push("Finished " + dateLabel(task.completedAt));
+
+  return (
+    '<aside class="taskPanel" role="dialog" aria-modal="false" tabindex="-1"' +
+      ' aria-labelledby="tpTitle">' +
+      '<div class="tpHead">' +
+        '<span class="tpLane" data-tone="' + lane.tone + '">' +
+          '<span class="pip" aria-hidden="true"></span>' + esc(lane.name) + "</span>" +
+        '<button type="button" class="ghost tpClose" data-act="task-close" aria-label="Close task">' +
+          I.close + "</button>" +
+      "</div>" +
+      '<div class="tpBody">' +
+        '<div class="tpTitleRow">' +
+          '<button type="button" class="tick tpTick" data-act="tick" data-id="' + task.id + '"' +
+            ' role="checkbox" aria-checked="' + (done ? "true" : "false") + '"' +
+            ' aria-label="' + (done ? "Mark not done" : "Mark done") + '"></button>' +
+          '<h2 class="tpTitle" id="tpTitle"' + (done ? " data-done" : "") + ">" + esc(task.title) + "</h2>" +
+        "</div>" +
+
+        '<section class="tpSection">' +
+          "<h3>What has to happen</h3>" +
+          (task.note
+            ? "<p class=\"tpNote\">" + esc(task.note) + "</p>"
+            : '<p class="tpNone">Nothing written down yet.</p>') +
+        "</section>" +
+
+        '<section class="tpSection">' +
+          "<h3>The facts</h3>" +
+          '<dl class="tpFacts">' +
+            /* timeOf(), not task.due. `due` is only set on plainly-dated
+               tasks — a milestone, a Done receipt and a waiting hold all
+               carry their date somewhere else, so reading the raw field
+               told a person "Not set" about a task whose own card, four
+               inches away, said 1 Aug. The card and the panel read the
+               same accessor now, so they cannot disagree again. */
+            fact("Due", t.kind === "none" ? "" :
+              t.kind === "done" ? "Finished " + t.label :
+              t.kind === "milestone" ? "Milestone " + t.label : (task.due || t.label)) +
+            fact("Priority", task.priority) +
+            fact("Project", B.workspace) +
+            fact("Tag", task.tag) +
+            fact("With", task.contact) +
+          "</dl>" +
+        "</section>" +
+
+        (acts.length
+          ? '<section class="tpSection"><h3>Activity</h3><ul class="tpActs">' +
+            acts.map((a) => "<li>" + esc(a) + "</li>").join("") + "</ul></section>"
+          : "") +
+
+        /* Everything a task could carry and this one does not. Behind a
+           summary, because progressive disclosure is the difference between
+           a panel and a form — and named honestly rather than dressed up as
+           features that exist. */
+        '<details class="tpMore"><summary>Subtasks, attachments and comments</summary>' +
+          '<p class="tpNone">' +
+            (task.comments
+              ? task.comments + (task.comments === 1 ? " comment" : " comments") +
+                " on this task. Reading them is not here yet."
+              : "No subtasks, attachments or comments on this task yet.") +
+          "</p></details>" +
+      "</div>" +
+    "</aside>"
+  );
+}
+
 function drawer() {
   const p = B.planning;
   const rows = drawerTab === "milestones" ? milestoneTasks() : undatedTasks();
@@ -1115,7 +1220,12 @@ function renderApp() {
     state === "loading" ? loading()
     : state === "cards" ? specimens()
     : '<main class="sheet">' + head() + views() + board() + footPill() + dock() + "</main>";
-  return sheet + (state === "planning" ? drawer() : "") + cardMenu();
+  /* One panel at a time on the right-hand edge: Planning and an open task
+     would otherwise stack on the same 388px and the second would win
+     silently. Opening a task closes Planning, which is also the honest
+     reading — you have stopped planning the season and started on one
+     thing. */
+  return sheet + (openTaskId ? taskPanel() : state === "planning" ? drawer() : "") + cardMenu();
 }
 
 /* The live region is created once and never re-rendered. A region that is
@@ -1948,6 +2058,18 @@ function onKey(event) {
       carriedId = null; carriedFrom = null;
       refocus = true; mount(); return;
     }
+    /* The open task, before the filters. Innermost first is the whole rule
+       of this branch and an open panel is the innermost thing on the sheet. */
+    if (openTaskId) {
+      event.preventDefault();
+      const was = openTaskId;
+      openTaskId = null;
+      mount();
+      const card = document.querySelector('.card[data-id="' + was + '"]');
+      if (card) card.focus();
+      say("Task closed.");
+      return;
+    }
     if (openNoteId) {
       event.preventDefault();
       focusId = openNoteId;
@@ -2015,10 +2137,19 @@ function onKey(event) {
 
   if (key === "Enter") {
     event.preventDefault();
-    if (!card.hasAttribute("aria-expanded")) { say("There is no note on this task yet."); return; }
-    openNoteId = openNoteId === id ? null : id;
-    say(openNoteId ? "Showing the whole note." : "Note closed.");
-    refocus = true; mount(); return;
+    /* Enter opens the task, the same surface a press opens. FOUR routes
+       reached the old inline note — click, drop, Enter and pointerup — and
+       repointing three of them left the fourth quietly toggling a thing
+       nobody could see any more. */
+    openTaskId = openTaskId === id ? null : id;
+    openNoteId = null;
+    refocus = true; mount();
+    if (openTaskId) {
+      const panel = document.querySelector(".taskPanel");
+      if (panel) panel.focus();
+      say(taskById(id).title + ". Task open.");
+    } else { say("Task closed."); }
+    return;
   }
   if (DIR[key]) {
     event.preventDefault();
@@ -2140,6 +2271,16 @@ function onClick(event) {
     mount();
     const field = document.querySelector(".card[data-draft] .cardTitle");
     if (field) field.focus();
+    return;
+  }
+  if (what === "task-close") {
+    const was = openTaskId;
+    openTaskId = null;
+    mount();
+    /* Back to the card it came from, not to the body. */
+    const card = was && document.querySelector('.card[data-id="' + was + '"]');
+    if (card) card.focus();
+    say("Task closed.");
     return;
   }
   if (what === "search-clear") {
@@ -2326,11 +2467,21 @@ function onClick(event) {
   /* Finishing a selection is not a click on the card. */
   if (String(getSelection())) return;
   focusId = card.dataset.id;
-  if (!card.hasAttribute("aria-expanded")) { say("There is no note on this task yet."); return; }
-  openNoteId = openNoteId === card.dataset.id ? null : card.dataset.id;
+  /* A press on a card opens the task, whether or not it has a note. The
+     inline expansion this replaced could only ever show one field, and a
+     card with nothing written on it answered a press by saying so — which
+     is a product telling a person their own task is not worth opening. */
+  openTaskId = openTaskId === card.dataset.id ? null : card.dataset.id;
+  openNoteId = null;
   refocus = true;
-  say(openNoteId ? "Showing the whole note." : "Note closed.");
   mount();
+  if (openTaskId) {
+    const panel = document.querySelector(".taskPanel");
+    if (panel) panel.focus();
+    say(taskById(openTaskId).title + ". Task open.");
+  } else {
+    say("Task closed.");
+  }
 }
 
 /* The pointer gets the same model as the keyboard: the tray it is over
@@ -2461,15 +2612,27 @@ function onDrop(event) {
     const id2 = pressAt.id;
     pressAt = null;
     carriedId = null; carriedFrom = null; overLane = null;
+    /* The SECOND route into an open task, and it has to agree with the
+       first. A press that barely travelled arrives here as a drop rather
+       than as a click, so this branch opened the note independently — and
+       when the click path was repointed at the expanded panel, this one
+       went on toggling an inline note nobody could see any more. Two
+       handlers, one gesture, two different answers. */
     const node = document.querySelector('.card[data-id="' + id2 + '"]');
-    if (node && !node.hasAttribute("aria-expanded")) say("There is no note on this task yet.");
-    if (node && node.hasAttribute("aria-expanded") && !String(getSelection())) {
+    if (node && !String(getSelection())) {
       focusId = id2;
-      openNoteId = openNoteId === id2 ? null : id2;
+      openTaskId = openTaskId === id2 ? null : id2;
+      openNoteId = null;
       refocus = true;
-      say(openNoteId ? "Showing the whole note." : "Note closed.");
     }
     mount();
+    if (openTaskId === id2) {
+      const panel = document.querySelector(".taskPanel");
+      if (panel) panel.focus();
+      say(taskById(id2).title + ". Task open.");
+    } else if (node) {
+      say("Task closed.");
+    }
     return;
   }
   if (!carriedId || !overLane) return;
@@ -3019,15 +3182,17 @@ if (host) {
     const card = event.target.closest && event.target.closest(".card[data-id]");
     if (!card || card.dataset.id !== was.id) return;
     if (String(getSelection())) return;
-    if (!card.hasAttribute("aria-expanded")) { say("There is no note on this task yet."); return; }
     /* The click may or may not survive; whichever fires first wins and the
        other finds the state already settled on the same card. */
-    if (openNoteId === was.id) return;
+    if (openTaskId === was.id) return;
     focusId = was.id;
-    openNoteId = was.id;
+    openTaskId = was.id;
+    openNoteId = null;
     refocus = true;
-    say("Showing the whole note.");
     mount();
+    const panel = document.querySelector(".taskPanel");
+    if (panel) panel.focus();
+    say(taskById(was.id).title + ". Task open.");
   });
   /* A half-written task was stranded by any click on empty sheet: focus fell
      to nothing, the draft stayed on the board still holding the words, and the
