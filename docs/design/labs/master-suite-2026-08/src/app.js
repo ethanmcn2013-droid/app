@@ -69,6 +69,12 @@ window.__SUITE = (function () {
     : PRODUCTS.indexOf(deck.getAttribute("data-product")) >= 0
       ? deck.getAttribute("data-product")
       : "tasks";
+  /* `?state=` belongs to whichever product was deep-linked, and to no other.
+     Nothing writes a live state back into `query`, so once the operator moves
+     on, the departing product's state is a stale value that the next reload
+     would hand to a product that has never heard of it. Remembered here, at
+     the one moment it is still true. */
+  var stateOwner = current;
   var hosts = {};
   var registry = {};
   var railCurrent = null;
@@ -288,14 +294,24 @@ window.__SUITE = (function () {
   function writeUrl() {
     var next = new URLSearchParams();
     next.set("p", current);
-    ["state", "v", "ground", "layout"].forEach(function (key) {
+    /* `v`, `ground` and `layout` are the suite's own and travel with it:
+       params() hands the last two to Timeline whether or not Timeline is on
+       the floor, by design. Only `state` is product-specific. */
+    ["v", "ground", "layout"].forEach(function (key) {
       var value = query.get(key);
       if (value) next.set(key, value);
     });
+    if (current === stateOwner && query.get("state")) next.set("state", query.get("state"));
     try {
-      history.replaceState(null, "", location.pathname + "?" + next.toString());
+      /* Qualified deliberately. An unqualified `history` here resolved to a
+         `const history` at the top level of another product's script and
+         threw on every navigation — the URL contract never wrote once in the
+         composed document, and the catch below quietly swallowed it. */
+      window.history.replaceState(null, "", location.pathname + "?" + next.toString());
     } catch (err) {
-      /* Deep links still arrive; this one just cannot be written back. */
+      /* An opaque-origin sandbox raises SecurityError, and Chromium rate-limits
+         rapid successive replaceState. Deep links still arrive either way;
+         this one just cannot be written back. */
     }
   }
 

@@ -266,6 +266,1216 @@
     },
     {
       "section": "console",
+      "name": "tasks @1440",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "notes @1440",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "timeline @1440",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "tasks @1280",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "notes @1280",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "timeline @1280",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "tasks @768",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "notes @768",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "timeline @768",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "tasks @390",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "notes @390",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "console",
+      "name": "timeline @390",
+      "ok": true,
+      "detail": "clean"
+    },
+    {
+      "section": "seam",
+      "name": "a note lifts onto the desk",
+      "ok": true,
+      "detail": "Ask the venue whether the ballroom can b"
+    },
+    {
+      "section": "seam",
+      "name": "words are picked",
+      "ok": true,
+      "detail": "Ask the venue whether the ballroom can be accessed"
+    },
+    {
+      "section": "seam",
+      "name": "the peel control is live",
+      "ok": true
+    },
+    {
+      "section": "seam",
+      "name": "the peel carries the words",
+      "ok": true,
+      "detail": "“Ask the venue whether the ballroom can be acce…”"
+    },
+    {
+      "section": "seam",
+      "name": "send is reachable",
+      "ok": true
+    },
+    {
+      "section": "seam",
+      "name": "the card is on the board",
+      "ok": true,
+      "detail": "#seam_n03_1"
+    },
+    {
+      "section": "seam",
+      "name": "…in the lane the seam chose",
+      "ok": true,
+      "detail": "To do"
+    },
+    {
+      "section": "seam",
+      "name": "the note offers the way through",
+      "ok": true
+    },
+    {
+      "section": "seam",
+      "name": "it opens Tasks",
+      "ok": true,
+      "detail": "tasks"
+    },
+    {
+      "section": "seam",
+      "name": "and reveals the card",
+      "ok": true,
+      "detail": "visible true, focused true — “Opened in Tasks. Your note stayed in Notes.”"
+    },
+    {
+      "section": "seam",
+      "name": "undo is offered",
+      "ok": true
+    },
+    {
+      "section": "seam",
+      "name": "the card is gone from the board",
+      "ok": true,
+      "detail": "13 cards (was 13)"
+    },
+    {
+      "section": "seam",
+      "name": "and gone from the ledger",
+      "ok": true
+    },
+    {
+      "section": "seam",
+      "name": "the board is back where it started",
+      "ok": true,
+      "detail": "13 → 13"
+    },
+    {
+      "section": "spine",
+      "name": "mouse → notes",
+      "ok": true,
+      "detail": "product notes, active notes, showing notes, inert tasks+timeline"
+    },
+    {
+      "section": "spine",
+      "name": "mouse → timeline",
+      "ok": true,
+      "detail": "product timeline, active timeline, showing timeline, inert notes+tasks"
+    },
+    {
+      "section": "spine",
+      "name": "mouse → tasks",
+      "ok": true,
+      "detail": "product tasks, active tasks, showing tasks, inert notes+timeline"
+    },
+    {
+      "section": "spine",
+      "name": "mouse → timeline",
+      "ok": true,
+      "detail": "product timeline, active timeline, showing timeline, inert notes+tasks"
+    },
+    {
+      "section": "spine",
+      "name": "mouse → notes",
+      "ok": true,
+      "detail": "product notes, active notes, showing notes, inert tasks+timeline"
+    },
+    {
+      "section": "spine",
+      "name": "mouse → tasks",
+      "ok": true,
+      "detail": "product tasks, active tasks, showing tasks, inert notes+timeline"
+    },
+    {
+      "section": "spine",
+      "name": "the arrows walk the capsule",
+      "ok": true,
+      "detail": "timeline → inbox → help"
+    },
+    {
+      "section": "spine",
+      "name": "Enter opens the door",
+      "ok": true,
+      "detail": "notes"
+    },
+    {
+      "section": "spine",
+      "name": "the roving stop follows",
+      "ok": true,
+      "detail": "notes"
+    },
+    {
+      "section": "spine",
+      "name": "focus lands in the new sheet",
+      "ok": true
+    },
+    {
+      "section": "spine",
+      "name": "the board survives the round trip",
+      "ok": true,
+      "detail": "1 cards / filter true → 1 / true"
+    },
+    {
+      "section": "spine",
+      "name": "a half-written note survives it too",
+      "ok": true,
+      "detail": "\"Half a thought about the marquee\""
+    },
+    {
+      "section": "spine",
+      "name": "home says it is not here yet",
+      "ok": true,
+      "detail": "{\"disabled\":true,\"says\":true,\"reachable\":true}"
+    },
+    {
+      "section": "spine",
+      "name": "inbox says it is not here yet",
+      "ok": true,
+      "detail": "{\"disabled\":true,\"says\":true,\"reachable\":true}"
+    },
+    {
+      "section": "spine",
+      "name": "help says it is not here yet",
+      "ok": true,
+      "detail": "{\"disabled\":true,\"says\":true,\"reachable\":true}"
+    },
+    {
+      "section": "spine",
+      "name": "mark says it is not here yet",
+      "ok": true,
+      "detail": "{\"disabled\":true,\"says\":true,\"reachable\":true}"
+    },
+    {
+      "section": "spine",
+      "name": "me says it is not here yet",
+      "ok": true,
+      "detail": "{\"disabled\":true,\"says\":true,\"reachable\":true}"
+    },
+    {
+      "section": "spine",
+      "name": "at 390 Tasks folds the dock into the capsule",
+      "ok": true,
+      "detail": "rail true, dock false"
+    },
+    {
+      "section": "spine",
+      "name": "…and carries the add verb there",
+      "ok": true
+    },
+    {
+      "section": "spine",
+      "name": "at 390 Notes folds the capsule into the dock",
+      "ok": true,
+      "detail": "rail false, 3 suite tiles in the dock"
+    },
+    {
+      "section": "spine",
+      "name": "…and those tiles are real doors",
+      "ok": true,
+      "detail": "tasks"
+    },
+    {
+      "section": "contract",
+      "name": "no famRail travelled",
+      "ok": true
+    },
+    {
+      "section": "contract",
+      "name": "no console panel travelled",
+      "ok": true
+    },
+    {
+      "section": "contract",
+      "name": "self-contained",
+      "ok": true,
+      "detail": "no external reference"
+    },
+    {
+      "section": "contract",
+      "name": "no page skeleton authored",
+      "ok": true
+    },
+    {
+      "section": "contract",
+      "name": "a title is set",
+      "ok": true
+    },
+    {
+      "section": "contract",
+      "name": "fonts inlined",
+      "ok": true
+    },
+    {
+      "section": "contract",
+      "name": "tasks @1440 · palette",
+      "ok": true,
+      "detail": "ink, paper, indigo"
+    },
+    {
+      "section": "contract",
+      "name": "tasks @1440 · weights",
+      "ok": true,
+      "detail": "400 600"
+    },
+    {
+      "section": "contract",
+      "name": "tasks @1440 · families",
+      "ok": true,
+      "detail": "Geist Geist Mono"
+    },
+    {
+      "section": "contract",
+      "name": "notes @1440 · palette",
+      "ok": true,
+      "detail": "ink, paper, indigo"
+    },
+    {
+      "section": "contract",
+      "name": "notes @1440 · weights",
+      "ok": true,
+      "detail": "400 600"
+    },
+    {
+      "section": "contract",
+      "name": "notes @1440 · families",
+      "ok": true,
+      "detail": "Geist"
+    },
+    {
+      "section": "contract",
+      "name": "timeline @1440 · palette",
+      "ok": true,
+      "detail": "ink, paper, indigo"
+    },
+    {
+      "section": "contract",
+      "name": "timeline @1440 · weights",
+      "ok": true,
+      "detail": "400 600"
+    },
+    {
+      "section": "contract",
+      "name": "timeline @1440 · families",
+      "ok": true,
+      "detail": "Geist Geist Mono"
+    },
+    {
+      "section": "contract",
+      "name": "tasks @390 · palette",
+      "ok": true,
+      "detail": "ink, paper, indigo"
+    },
+    {
+      "section": "contract",
+      "name": "tasks @390 · weights",
+      "ok": true,
+      "detail": "400 600"
+    },
+    {
+      "section": "contract",
+      "name": "tasks @390 · families",
+      "ok": true,
+      "detail": "Geist Geist Mono"
+    },
+    {
+      "section": "contract",
+      "name": "notes @390 · palette",
+      "ok": true,
+      "detail": "ink, paper, indigo"
+    },
+    {
+      "section": "contract",
+      "name": "notes @390 · weights",
+      "ok": true,
+      "detail": "400 600"
+    },
+    {
+      "section": "contract",
+      "name": "notes @390 · families",
+      "ok": true,
+      "detail": "Geist"
+    },
+    {
+      "section": "contract",
+      "name": "timeline @390 · palette",
+      "ok": true,
+      "detail": "ink, paper, indigo"
+    },
+    {
+      "section": "contract",
+      "name": "timeline @390 · weights",
+      "ok": true,
+      "detail": "400 600"
+    },
+    {
+      "section": "contract",
+      "name": "timeline @390 · families",
+      "ok": true,
+      "detail": "Geist Geist Mono"
+    },
+    {
+      "section": "contract",
+      "name": "tasks · the locked configuration",
+      "ok": true,
+      "detail": "cards elevated · radius soft · density comfortable · indigo subtle · type calm"
+    },
+    {
+      "section": "contract",
+      "name": "notes · the locked configuration",
+      "ok": true,
+      "detail": "paper stacked · index airy · radius soft · indigo subtle · type calm"
+    },
+    {
+      "section": "contract",
+      "name": "timeline · the locked configuration",
+      "ok": true,
+      "detail": "ground paper · spacing measured · past folded · accent structure · state owner-flight"
+    },
+    {
+      "section": "contract",
+      "name": "no switch UI",
+      "ok": true,
+      "detail": "0 found"
+    },
+    {
+      "section": "grounds",
+      "name": "paper is the ground",
+      "ok": true,
+      "detail": "paper"
+    },
+    {
+      "section": "grounds",
+      "name": "paper paints the right way round",
+      "ok": true,
+      "detail": "wash rgba(17, 17, 17, 0.04), rgba(17, 17, 17, · type rgb(17, 17, 17)"
+    },
+    {
+      "section": "grounds",
+      "name": "paper · the pixel agrees",
+      "ok": true,
+      "detail": "rgb(255, 255, 255)"
+    },
+    {
+      "section": "grounds",
+      "name": "ink is the ground",
+      "ok": true,
+      "detail": "ink"
+    },
+    {
+      "section": "grounds",
+      "name": "ink paints the right way round",
+      "ok": true,
+      "detail": "wash rgb(17, 17, 17), rgb(17, 17, 17) · type rgb(255, 255, 255)"
+    },
+    {
+      "section": "grounds",
+      "name": "ink · the pixel agrees",
+      "ok": true,
+      "detail": "rgb(17, 17, 17)"
+    },
+    {
+      "section": "grounds",
+      "name": "print forces paper",
+      "ok": true,
+      "detail": "rgb(255, 255, 255)"
+    },
+    {
+      "section": "motion",
+      "name": "tasks stands still",
+      "ok": true,
+      "detail": "nothing moves"
+    },
+    {
+      "section": "motion",
+      "name": "notes stands still",
+      "ok": true,
+      "detail": "nothing moves"
+    },
+    {
+      "section": "motion",
+      "name": "timeline stands still",
+      "ok": true,
+      "detail": "nothing moves"
+    },
+    {
+      "section": "orientation",
+      "name": "@1920 opens across",
+      "ok": true,
+      "detail": "data-layout across, measure across true"
+    },
+    {
+      "section": "orientation",
+      "name": "@1440 opens across",
+      "ok": true,
+      "detail": "data-layout across, measure across true"
+    },
+    {
+      "section": "orientation",
+      "name": "@1024 opens across",
+      "ok": true,
+      "detail": "data-layout across, measure across true"
+    },
+    {
+      "section": "orientation",
+      "name": "@900 opens down",
+      "ok": true,
+      "detail": "data-layout down, measure across false"
+    },
+    {
+      "section": "orientation",
+      "name": "@390 opens down",
+      "ok": true,
+      "detail": "data-layout down, measure across false"
+    },
+    {
+      "section": "orientation",
+      "name": "?layout= wins at 1440",
+      "ok": true,
+      "detail": "down"
+    },
+    {
+      "section": "orientation",
+      "name": "?layout= wins at 1200",
+      "ok": true,
+      "detail": "across"
+    },
+    {
+      "section": "orientation",
+      "name": "the control switches the measure",
+      "ok": true,
+      "detail": "true → false"
+    },
+    {
+      "section": "orientation",
+      "name": "…and says which one is on",
+      "ok": true,
+      "detail": "true"
+    },
+    {
+      "section": "orientation",
+      "name": "…and keeps the keyboard on the control",
+      "ok": true,
+      "detail": "down"
+    },
+    {
+      "section": "orientation",
+      "name": "…and announces it",
+      "ok": true,
+      "detail": "“The measure runs down the page.”"
+    },
+    {
+      "section": "orientation",
+      "name": "…leaving nothing of the other axis behind",
+      "ok": true,
+      "detail": "0 rows still carrying across geometry"
+    },
+    {
+      "section": "orientation",
+      "name": "and back again",
+      "ok": true,
+      "detail": "across true, 0 stale tops"
+    },
+    {
+      "section": "orientation",
+      "name": "the control is a real target on a phone",
+      "ok": true,
+      "detail": "74×44+6 57×44+6"
+    },
+    {
+      "section": "orientation",
+      "name": "@1920 nothing paints outside the track",
+      "ok": true,
+      "detail": "0px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1920 no two labels collide",
+      "ok": true,
+      "detail": "0 overlapping · 20.28px per day"
+    },
+    {
+      "section": "orientation",
+      "name": "@1920 the whole approach is in one frame",
+      "ok": true,
+      "detail": "20.28px per day, no scroll"
+    },
+    {
+      "section": "orientation",
+      "name": "@1920 the scale is at or above the floor",
+      "ok": true,
+      "detail": "20.28px per day · 7 days reads as 142px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1600 nothing paints outside the track",
+      "ok": true,
+      "detail": "0px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1600 no two labels collide",
+      "ok": true,
+      "detail": "0 overlapping · 16.23px per day"
+    },
+    {
+      "section": "orientation",
+      "name": "@1600 the whole approach is in one frame",
+      "ok": true,
+      "detail": "16.23px per day, no scroll"
+    },
+    {
+      "section": "orientation",
+      "name": "@1600 the scale is at or above the floor",
+      "ok": true,
+      "detail": "16.23px per day · 7 days reads as 114px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1440 nothing paints outside the track",
+      "ok": true,
+      "detail": "0px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1440 no two labels collide",
+      "ok": true,
+      "detail": "0 overlapping · 14.2px per day"
+    },
+    {
+      "section": "orientation",
+      "name": "@1440 the whole approach is in one frame",
+      "ok": true,
+      "detail": "14.2px per day, no scroll"
+    },
+    {
+      "section": "orientation",
+      "name": "@1440 the scale is at or above the floor",
+      "ok": true,
+      "detail": "14.2px per day · 7 days reads as 99px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1280 nothing paints outside the track",
+      "ok": true,
+      "detail": "0px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1280 no two labels collide",
+      "ok": true,
+      "detail": "0 overlapping · 12.18px per day"
+    },
+    {
+      "section": "orientation",
+      "name": "@1280 the whole approach is in one frame",
+      "ok": true,
+      "detail": "12.18px per day, no scroll"
+    },
+    {
+      "section": "orientation",
+      "name": "@1280 the scale is at or above the floor",
+      "ok": true,
+      "detail": "12.18px per day · 7 days reads as 85px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1024 nothing paints outside the track",
+      "ok": true,
+      "detail": "0px"
+    },
+    {
+      "section": "orientation",
+      "name": "@1024 no two labels collide",
+      "ok": true,
+      "detail": "0 overlapping · 8.94px per day"
+    },
+    {
+      "section": "orientation",
+      "name": "@1024 the whole approach is in one frame",
+      "ok": true,
+      "detail": "8.94px per day, no scroll"
+    },
+    {
+      "section": "orientation",
+      "name": "@1024 the scale is at or above the floor",
+      "ok": true,
+      "detail": "8.94px per day · 7 days reads as 63px"
+    },
+    {
+      "section": "orientation",
+      "name": "timeline @390 · the sheet does not cover the spine",
+      "ok": true,
+      "detail": "sheet overruns the capsule by -9px"
+    },
+    {
+      "section": "orientation",
+      "name": "timeline @390 · a suite tile answers the finger",
+      "ok": true
+    },
+    {
+      "section": "orientation",
+      "name": "tasks @390 · the sheet does not cover the spine",
+      "ok": true,
+      "detail": "sheet overruns the capsule by -9px"
+    },
+    {
+      "section": "orientation",
+      "name": "tasks @390 · a suite tile answers the finger",
+      "ok": true
+    },
+    {
+      "section": "orientation",
+      "name": "timeline @390 · the spine is a way out",
+      "ok": true,
+      "detail": "notes"
+    },
+    {
+      "section": "orientation",
+      "name": "the day figure is above the paper floor",
+      "ok": true,
+      "detail": "7.62:1 at alpha 0.72"
+    },
+    {
+      "section": "orientation",
+      "name": "the wordmark is tracked one way",
+      "ok": true,
+      "detail": "tasks -0.374px · notes -0.374px"
+    },
+    {
+      "section": "orientation",
+      "name": "tasks.board · every leading is declared",
+      "ok": true,
+      "detail": "none left to the browser"
+    },
+    {
+      "section": "orientation",
+      "name": "notes.notebook · every leading is declared",
+      "ok": true,
+      "detail": "none left to the browser"
+    },
+    {
+      "section": "orientation",
+      "name": "timeline.owner-flight · every leading is declared",
+      "ok": true,
+      "detail": "none left to the browser"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @1440 · one press, one tile",
+      "ok": true,
+      "detail": "walked timeline inbox help me mark home notes tasks timeline · wanted timeline inbox help me mark home notes tasks timeline"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @1440 · the keys stay on the spine",
+      "ok": true,
+      "detail": "focus never left the rail"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @1440 · every tile the walk can reach",
+      "ok": true,
+      "detail": "8 of 8 reached"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @1440 · it walks back",
+      "ok": true,
+      "detail": "tasks"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @1440 · Home and End land on the ends",
+      "ok": true,
+      "detail": "mark … me · wanted mark … me"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @1440 · one tab stop in the group",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "section": "spine",
+      "name": "notes @1440 · one press, one tile",
+      "ok": true,
+      "detail": "walked tasks timeline inbox help me mark home notes tasks · wanted tasks timeline inbox help me mark home notes tasks"
+    },
+    {
+      "section": "spine",
+      "name": "notes @1440 · the keys stay on the spine",
+      "ok": true,
+      "detail": "focus never left the rail"
+    },
+    {
+      "section": "spine",
+      "name": "notes @1440 · every tile the walk can reach",
+      "ok": true,
+      "detail": "8 of 8 reached"
+    },
+    {
+      "section": "spine",
+      "name": "notes @1440 · it walks back",
+      "ok": true,
+      "detail": "notes"
+    },
+    {
+      "section": "spine",
+      "name": "notes @1440 · Home and End land on the ends",
+      "ok": true,
+      "detail": "mark … me · wanted mark … me"
+    },
+    {
+      "section": "spine",
+      "name": "notes @1440 · one tab stop in the group",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "section": "spine",
+      "name": "timeline @1440 · one press, one tile",
+      "ok": true,
+      "detail": "walked inbox help me mark home notes tasks timeline inbox · wanted inbox help me mark home notes tasks timeline inbox"
+    },
+    {
+      "section": "spine",
+      "name": "timeline @1440 · the keys stay on the spine",
+      "ok": true,
+      "detail": "focus never left the rail"
+    },
+    {
+      "section": "spine",
+      "name": "timeline @1440 · every tile the walk can reach",
+      "ok": true,
+      "detail": "8 of 8 reached"
+    },
+    {
+      "section": "spine",
+      "name": "timeline @1440 · it walks back",
+      "ok": true,
+      "detail": "timeline"
+    },
+    {
+      "section": "spine",
+      "name": "timeline @1440 · Home and End land on the ends",
+      "ok": true,
+      "detail": "mark … me · wanted mark … me"
+    },
+    {
+      "section": "spine",
+      "name": "timeline @1440 · one tab stop in the group",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @390 · one press, one tile",
+      "ok": true,
+      "detail": "walked timeline add me home notes tasks timeline · wanted timeline add me home notes tasks timeline"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @390 · the keys stay on the spine",
+      "ok": true,
+      "detail": "focus never left the rail"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @390 · every tile the walk can reach",
+      "ok": true,
+      "detail": "6 of 6 reached"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @390 · it walks back",
+      "ok": true,
+      "detail": "tasks"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @390 · Home and End land on the ends",
+      "ok": true,
+      "detail": "home … me · wanted home … me"
+    },
+    {
+      "section": "spine",
+      "name": "tasks @390 · one tab stop in the group",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "section": "spine",
+      "name": "notes @390 · the capsule stands down",
+      "ok": true,
+      "detail": "0 tiles"
+    },
+    {
+      "section": "spine",
+      "name": "the notebook still answers its own arrows",
+      "ok": true,
+      "detail": "cursor n01 → n02"
+    },
+    {
+      "section": "spine",
+      "name": "one spine, one rover",
+      "ok": true,
+      "detail": "1 rails, 1 keyboard groups called rail"
+    },
+    {
+      "section": "truth",
+      "name": "the crossing lands",
+      "ok": true,
+      "detail": "seam_n03_1"
+    },
+    {
+      "section": "truth",
+      "name": "…carrying only the words that were picked",
+      "ok": true,
+      "detail": "76 chars picked, 78 chars kept back"
+    },
+    {
+      "section": "truth",
+      "name": "…and the picked words are actually there",
+      "ok": true,
+      "detail": "looking for “Ask the venue whethe” in the card"
+    },
+    {
+      "section": "truth",
+      "name": "the world holds the wedding once",
+      "ok": true,
+      "detail": "2026-10-03"
+    },
+    {
+      "section": "truth",
+      "name": "Timeline agrees with it",
+      "ok": true,
+      "detail": "2026-10-03 vs 2026-10-03"
+    },
+    {
+      "section": "truth",
+      "name": "the notebook agrees with it",
+      "ok": true,
+      "detail": "Saturday 3 October, in 79 days"
+    },
+    {
+      "section": "truth",
+      "name": "and the head says the same day",
+      "ok": true,
+      "detail": "“Mara & Finn Saturday 3 October, in 79 days”"
+    },
+    {
+      "section": "truth",
+      "name": "the couple is the same couple",
+      "ok": true,
+      "detail": "Mara & Finn vs Mara & Finn"
+    },
+    {
+      "section": "truth",
+      "name": "the ledger counts every crossing",
+      "ok": true,
+      "detail": "6 counted, 6 notes actually badged"
+    },
+    {
+      "section": "truth",
+      "name": "notes @1440 · the account tiles agree",
+      "ok": true,
+      "detail": "railAvatar:not-yet dockAvatar:not-yet"
+    },
+    {
+      "section": "truth",
+      "name": "tasks @1440 · the account tiles agree",
+      "ok": true,
+      "detail": "railAvatar:not-yet dockAvatar:not-yet"
+    },
+    {
+      "section": "truth",
+      "name": "notes @390 · the account tiles agree",
+      "ok": true,
+      "detail": "dockAvatar:not-yet"
+    },
+    {
+      "section": "truth",
+      "name": "timeline across · the gap sentence names the nearest moment",
+      "ok": true,
+      "detail": "nearest 16 → 23 days · wants “8 August” · says “Nothing is planned until 8 August.”"
+    },
+    {
+      "section": "truth",
+      "name": "timeline down · the gap sentence names the nearest moment",
+      "ok": true,
+      "detail": "nearest 16 → 23 days · wants “8 August” · says “Nothing is planned until 8 August.”"
+    },
+    {
+      "section": "truth",
+      "name": "no product shadows window.history",
+      "ok": true,
+      "detail": "history === window.history"
+    },
+    {
+      "section": "truth",
+      "name": "the URL follows the spine",
+      "ok": true,
+      "detail": "{\"p\":\"notes\",\"state\":null,\"deck\":\"notes\"}"
+    },
+    {
+      "section": "truth",
+      "name": "a departing product's state does not follow it",
+      "ok": true,
+      "detail": "state=null"
+    },
+    {
+      "section": "truth",
+      "name": "src/fixture.js · the header declares the one wedding day",
+      "ok": true,
+      "detail": "3 October"
+    },
+    {
+      "section": "truth",
+      "name": "tools/world.head.js · the header declares the one wedding day",
+      "ok": true,
+      "detail": "3 October"
+    },
+    {
+      "section": "craft",
+      "name": "Win32 · one modifier, one notation",
+      "ok": true,
+      "detail": "8 caps, all “Ctrl …”"
+    },
+    {
+      "section": "craft",
+      "name": "Win32 · no modifier is joined with a plus",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "section": "craft",
+      "name": "Win32 · all three products read one keyboard",
+      "ok": true,
+      "detail": "ctrl"
+    },
+    {
+      "section": "craft",
+      "name": "MacIntel · one modifier, one notation",
+      "ok": true,
+      "detail": "8 caps, all “⌘…”"
+    },
+    {
+      "section": "craft",
+      "name": "MacIntel · no modifier is joined with a plus",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "section": "craft",
+      "name": "MacIntel · all three products read one keyboard",
+      "ok": true,
+      "detail": "cmd"
+    },
+    {
+      "section": "craft",
+      "name": "tasks.board @390 · every control answers over 28px",
+      "ok": true,
+      "detail": "measured by pointer, not by stylesheet"
+    },
+    {
+      "section": "craft",
+      "name": "tasks.board @1440 · every control answers over 28px",
+      "ok": true,
+      "detail": "measured by pointer, not by stylesheet"
+    },
+    {
+      "section": "craft",
+      "name": "notes.notebook @390 · every control answers over 28px",
+      "ok": true,
+      "detail": "measured by pointer, not by stylesheet"
+    },
+    {
+      "section": "craft",
+      "name": "notes.notebook @1440 · every control answers over 28px",
+      "ok": true,
+      "detail": "measured by pointer, not by stylesheet"
+    },
+    {
+      "section": "craft",
+      "name": "timeline.owner-flight @390 · every control answers over 28px",
+      "ok": true,
+      "detail": "measured by pointer, not by stylesheet"
+    },
+    {
+      "section": "craft",
+      "name": "timeline.owner-flight @1440 · every control answers over 28px",
+      "ok": true,
+      "detail": "measured by pointer, not by stylesheet"
+    },
+    {
+      "section": "reach",
+      "name": "no product rule asks for a suite ancestor inside itself",
+      "ok": true,
+      "detail": "5 anchors clear across four sheets"
+    },
+    {
+      "section": "reach",
+      "name": "tasks planning @1280 · no lane is stranded under the drawer",
+      "ok": true,
+      "detail": "every lane reachable, 566px of travel"
+    },
+    {
+      "section": "reach",
+      "name": "tasks planning @1440 · no lane is stranded under the drawer",
+      "ok": true,
+      "detail": "every lane reachable, 406px of travel"
+    },
+    {
+      "section": "reach",
+      "name": "tasks planning @1920 · no lane is stranded under the drawer",
+      "ok": true,
+      "detail": "every lane reachable, 0px of travel"
+    },
+    {
+      "section": "reach",
+      "name": "tasks rover @390 · the walk never leaves the board",
+      "ok": true,
+      "detail": "every step inside the box"
+    },
+    {
+      "section": "reach",
+      "name": "tasks tick @390 · the completed card lands on screen",
+      "ok": true,
+      "detail": "344..362 against 9..381"
+    },
+    {
+      "section": "reach",
+      "name": "tasks rover @768 · the walk never leaves the board",
+      "ok": true,
+      "detail": "every step inside the box"
+    },
+    {
+      "section": "reach",
+      "name": "tasks tick @768 · the completed card lands on screen",
+      "ok": true,
+      "detail": "644..662 against 88..756"
+    },
+    {
+      "section": "reach",
+      "name": "tasks rover @1000 · the walk never leaves the board",
+      "ok": true,
+      "detail": "every step inside the box"
+    },
+    {
+      "section": "reach",
+      "name": "tasks tick @1000 · the completed card lands on screen",
+      "ok": true,
+      "detail": "914..932 against 100..982"
+    },
+    {
+      "section": "reach",
+      "name": "tasks rover @1280 · the walk never leaves the board",
+      "ok": true,
+      "detail": "every step inside the box"
+    },
+    {
+      "section": "reach",
+      "name": "tasks tick @1280 · the completed card lands on screen",
+      "ok": true,
+      "detail": "1028..1046 against 100..1262"
+    },
+    {
+      "section": "reach",
+      "name": "tasks rover @1440 · the walk never leaves the board",
+      "ok": true,
+      "detail": "every step inside the box"
+    },
+    {
+      "section": "reach",
+      "name": "tasks tick @1440 · the completed card lands on screen",
+      "ok": true,
+      "detail": "1172..1190 against 100..1422"
+    },
+    {
+      "section": "lab gates",
+      "name": "Tasks · audit.mjs",
+      "ok": true,
+      "detail": "PASS"
+    },
+    {
+      "section": "lab gates",
+      "name": "Notes · notes-audit.mjs",
+      "ok": true,
+      "detail": "PASS"
+    },
+    {
+      "section": "lab gates",
+      "name": "Timeline · elevate audit.mjs (scoped to #tl)",
+      "ok": true,
+      "detail": "PASS"
+    },
+    {
+      "section": "console",
       "name": "the composed file is silent",
       "ok": true,
       "detail": "0 errors"

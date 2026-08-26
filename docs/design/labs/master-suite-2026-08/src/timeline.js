@@ -833,8 +833,48 @@
     measureEl.setAttribute("data-scrolls", span > usable + 1 ? "true" : "false");
   }
 
+  /* The gap sentence, for both instruments.
+     It used to live at the foot of place()'s down branch, below the
+     dispatch — so in `across`, which is the default and the one every
+     shipped frame shows, it was never written after the first render. The
+     owner could move the nearest moment three weeks later, or delete it
+     outright, and the head went on naming a date that now held nothing.
+     The comment there called that "a plain falsehood"; its guard only
+     covered the empty case, in the branch across never reached.
+
+     It reads the nearest UPCOMING row rather than the first one in the
+     document: placeAcross deliberately never reparents, so after a move
+     the DOM order is not the date order.
+
+     Still ONE WRITER, and still above the dispatch — the sentence depends
+     on the dates, not on where either instrument puts the pixels, so it is
+     correct before either one runs. */
+  function writeGap(measureEl) {
+    /* The back rail carries negative days in the same .b-field as the
+       horizon. Left unguarded it would find no upcoming row and clobber a
+       true sentence with "Nothing is planned yet." Latent while the
+       fixture has no past; lethal the day it grows one. */
+    if (measureEl.getAttribute("data-back") === "true") return;
+    var field = measureEl.closest(".b-field");
+    var note = field && field.querySelector(".b-gapNote");
+    if (!note) return;
+    var soonest = null;
+    Array.prototype.forEach.call(measureEl.querySelectorAll(".b-item"), function (el) {
+      var away = Number(el.getAttribute("data-away"));
+      if (!(away > 0)) return;
+      if (!soonest || away < Number(soonest.getAttribute("data-away"))) soonest = el;
+    });
+    var atRest = soonest
+      ? gapSentence(soonest.getAttribute("data-date"))
+      : "Nothing is planned yet.";
+    if (field) field.__gapAtRest = atRest;
+    if (field && field.__gapSpeak) field.__gapSpeak();
+    else note.textContent = atRest;
+  }
+
   function place(measureEl) {
     if (!measureEl) return;
+    writeGap(measureEl);
     /* One entry point, two instruments. Every caller — the settle, both
        editor paths — asks for the measure to be placed and does not need
        to know which way it runs. */
@@ -940,25 +980,6 @@
       if (index === 0) el.setAttribute("data-lead", "true");
     });
 
-    var field = measureEl.closest(".b-field");
-    var note = field && field.querySelector(".b-gapNote");
-    /* The guard, not the wording of one instance: with no rows at all
-       the sentence used to freeze on whatever it last said - after
-       deleting farthest-first it went on naming a date that now holds
-       nothing, which is a plain falsehood rather than a stale phrasing. */
-    if (note) {
-      /* ONE WRITER. place() used to paint the at-rest sentence on every
-         repaint while speak() painted the scrolled one only on scroll,
-         so a move, a resize, fonts.ready or a keystroke snapped the line
-         back to a fact about the top of a plan the owner was not looking
-         at. place() computes; speak() paints. */
-      var atRest = items.length
-        ? gapSentence(items[0].getAttribute("data-date"))
-        : "Nothing is planned yet.";
-      if (field) field.__gapAtRest = atRest;
-      if (field && field.__gapSpeak) field.__gapSpeak();
-      else note.textContent = atRest;
-    }
     /* The measure is at least the horizon, and taller if the words at
        the foot of it need the room. A rail that ends above its own last
        row is the undesigned edge a panel looks for first. */

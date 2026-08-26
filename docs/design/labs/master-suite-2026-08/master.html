@@ -1534,13 +1534,22 @@ body {
   font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
 }
 
+/* NOTE — round 2. This block read `.floor:has(.drawer)` in the lab, where
+   `.floor` was the lab's own root element. Composing three products scoped
+   every product rule under its app compound, which turned the root into a
+   demanded DESCENDANT — `[data-app="tasks"] .floor` — and in the suite the
+   floor is `#deck`, the app's PARENT. Five rules matched nothing from the
+   day this document was composed, so the accommodation described directly
+   below never ran and the defect it was written to fix came back. The
+   condition now sits on the app element, which is what actually contains
+   the drawer. tools/reach.mjs gates the whole class, not this instance. */
 /* ── planning drawer ───────────────────────────────────────────── */
 /* The sheet moves over to make room, so the ink floor shows through an
    18px gutter and draws the seam. Before this the drawer was white on
    white with no edge: it sliced the Waiting column mid-word and erased
    Done entirely, which read as the board breaking rather than a panel
    opening. */
-[data-app="tasks"] .floor:has(.drawer) .sheet {
+[data-app="tasks"]:has(.drawer) .sheet {
   margin-right: calc(388px + var(--inset));
   transition: margin-right var(--dur) var(--curve);
 }
@@ -1548,14 +1557,14 @@ body {
    narrowed board gave the card a 105px measure, which is half what the
    specimen sheet designs it at. What does not fit scrolls, snaps and fades
    at the edge instead. */
-[data-app="tasks"] .floor:has(.drawer) .board {
+[data-app="tasks"]:has(.drawer) .board {
   grid-template-columns: none;
   grid-auto-flow: column;
   grid-auto-columns: minmax(258px, 1fr);
   scroll-snap-type: x proximity;
   scroll-padding-left: 16px;
 }
-[data-app="tasks"] .floor:has(.drawer) .tray { scroll-snap-align: start; }
+[data-app="tasks"]:has(.drawer) .tray { scroll-snap-align: start; }
 /* Both of the rules that used to sit here — dropping the season fact when the
    drawer opened, and letting the name shrink to nothing with it — are gone.
    Opening the drawer takes the sheet under 1200, so the header stacks and
@@ -2152,7 +2161,7 @@ body {
     grid-auto-columns: minmax(258px, 1fr);
   }
   [data-app="tasks"] .drawer { width: 364px; }
-  [data-app="tasks"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+  [data-app="tasks"]:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
 /* The chrome yields before the name of the project does. Visually hidden
    rather than removed, so the controls keep their accessible names. */
@@ -2187,7 +2196,7 @@ body {
   [data-app="tasks"] .headFacts { gap: 12px; }
   [data-app="tasks"] .dockField { min-width: 148px; }
   [data-app="tasks"] .drawer { left: var(--inset); width: auto; }
-  [data-app="tasks"] .floor:has(.drawer) .sheet { margin-right: 0; }
+  [data-app="tasks"]:has(.drawer) .sheet { margin-right: 0; }
 }
 @media (max-width: 720px) {
   [data-app="tasks"] { --inset: 9px; }
@@ -6634,8 +6643,8 @@ body {
 /* ═══════════════════════════════════════════════════════════════════
    ONE WORLD.
 
-   The Orchard, events. Orla, venue manager. Mara & Finn on Saturday 18
-   July, and the review clock pinned to Thursday 16 July 2026. Three
+   The Orchard, events. Orla, venue manager. Mara & Finn on Saturday 3
+   October, and the review clock pinned to Thursday 16 July 2026. Three
    products, one venue, one cast, one day.
 
    Everything below this header is the three labs' own data files, in
@@ -6964,15 +6973,15 @@ window.NOTES = (function () {
    */
   /* One grammar for every name, one meaning for every slot, and an order
      by what the venue is actually facing rather than by whichever date is
-     nearest. A college reading due today does not outrank a wedding in two
-     days, and a panel seat was right to say that sorting by proximity made
-     the pile open on the wrong thing.
+     nearest. A college reading due today does not outrank a wedding eleven
+     weeks out, and a panel seat was right to say that sorting by proximity
+     made the pile open on the wrong thing.
 
      stake 1  a day the venue is running. The business.
      stake 2  a commitment with a date on it that is not the business.
      stake 3  standing work that never stops and has no date.  */
   const SUBJECTS = {
-    "mara-finn": { label: "Mara & Finn", when: "Saturday 18 July", days: 2, stake: 1 },
+    "mara-finn": { label: "Mara & Finn", when: null, days: null, stake: 1 },  /* world.foot.js derives these from WORLD.wedding. */
     "the-house": { label: "The house", when: null, days: null, stake: 3 },
     "the-studio": { label: "The studio", when: null, days: null, stake: 3 },
     "the-course": { label: "The course", when: "Thursday 16 July", days: 0, stake: 2 },
@@ -7229,7 +7238,7 @@ window.NOTES = (function () {
     /* The venue's own next date, from the review fixture's project. The
        head states it because a notebook that does not know what is coming
        is a notebook that could belong to anyone. */
-    next: { key: "mara-finn", label: "Mara & Finn", when: "Saturday 18 July", days: 2 },
+    next: { key: "mara-finn", label: "Mara & Finn", when: null, days: null },  /* derived; see world.foot.js */
 
     counts: {
       notebook: notes.length,
@@ -7809,6 +7818,12 @@ window.__SUITE = (function () {
     : PRODUCTS.indexOf(deck.getAttribute("data-product")) >= 0
       ? deck.getAttribute("data-product")
       : "tasks";
+  /* `?state=` belongs to whichever product was deep-linked, and to no other.
+     Nothing writes a live state back into `query`, so once the operator moves
+     on, the departing product's state is a stale value that the next reload
+     would hand to a product that has never heard of it. Remembered here, at
+     the one moment it is still true. */
+  var stateOwner = current;
   var hosts = {};
   var registry = {};
   var railCurrent = null;
@@ -8028,14 +8043,24 @@ window.__SUITE = (function () {
   function writeUrl() {
     var next = new URLSearchParams();
     next.set("p", current);
-    ["state", "v", "ground", "layout"].forEach(function (key) {
+    /* `v`, `ground` and `layout` are the suite's own and travel with it:
+       params() hands the last two to Timeline whether or not Timeline is on
+       the floor, by design. Only `state` is product-specific. */
+    ["v", "ground", "layout"].forEach(function (key) {
       var value = query.get(key);
       if (value) next.set(key, value);
     });
+    if (current === stateOwner && query.get("state")) next.set("state", query.get("state"));
     try {
-      history.replaceState(null, "", location.pathname + "?" + next.toString());
+      /* Qualified deliberately. An unqualified `history` here resolved to a
+         `const history` at the top level of another product's script and
+         threw on every navigation — the URL contract never wrote once in the
+         composed document, and the catch below quietly swallowed it. */
+      window.history.replaceState(null, "", location.pathname + "?" + next.toString());
     } catch (err) {
-      /* Deep links still arrive; this one just cannot be written back. */
+      /* An opaque-origin sandbox raises SecurityError, and Chromium rate-limits
+         rapid successive replaceState. Deep links still arrive either way;
+         this one just cannot be written back. */
     }
   }
 
@@ -9001,7 +9026,7 @@ function footPill() {
       '<div class="carry">' +
       '<span class="carryName">' + what + "</span>" +
       '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
-      (history.length > 1 ? "<em>" + (history.length - 1) + " more</em>" : "") +
+      (undoHistory.length > 1 ? "<em>" + (undoHistory.length - 1) + " more</em>" : "") +
       "<em><kbd>" + MOD + "Z</kbd></em>" +
       "</div>"
     );
@@ -9700,7 +9725,12 @@ function flyCompleted(target) {
   return travel;
 }
 
-const history = [];
+/* NOT `history`. A `const` at the top level of a classic script creates a
+   global lexical binding that shadows `window.history` for every script in
+   the document — so app.js's `writeUrl()` was calling `replaceState` on this
+   array, throwing on every navigation, and the URL contract silently never
+   wrote. It stood alone in its own lab and only broke once composed. */
+const undoHistory = [];
 let undoing = false;
 
 function clearUndo() {
@@ -9714,8 +9744,8 @@ function clearUndo() {
 function arm(act) {
   if (undoing) return;
   clearTimeout(undoTimer);
-  history.push(act);
-  if (history.length > 10) history.shift();
+  undoHistory.push(act);
+  if (undoHistory.length > 10) undoHistory.shift();
   undone = act;
   /* The strip retires; the record does not. Nothing that used to be true
      stops being true because six seconds passed. */
@@ -9771,9 +9801,9 @@ function toggleDone(id) {
     task.lane = back;
     task.prevLane = null;
     task.completedAt = null;
-    for (let i = history.length - 1; i >= 0; i -= 1) {
+    for (let i = undoHistory.length - 1; i >= 0; i -= 1) {
       /* The stack must not go on offering to redo something already undone. */
-      if (history[i].id === id && history[i].kind === "done") history.splice(i, 1);
+      if (undoHistory[i].id === id && undoHistory[i].kind === "done") undoHistory.splice(i, 1);
     }
     /* Every card that was already Done when the board opened has no prevLane,
        so the fallback put it in column one and the product announced "is back
@@ -9808,14 +9838,14 @@ function toggleDone(id) {
 }
 
 function undoLast() {
-  const act = history.pop();
+  const act = undoHistory.pop();
   if (!act) { say("Nothing left to undo."); return; }
   clearUndo();
   undoing = true;
   try { runUndo(act); } finally { undoing = false; }
   /* The strip now shows whatever is left beneath, so the operator can see
      the way back is still open. */
-  if (history.length) { undone = history[history.length - 1]; clearTimeout(undoTimer);
+  if (undoHistory.length) { undone = undoHistory[undoHistory.length - 1]; clearTimeout(undoTimer);
     undoTimer = setTimeout(() => { undone = null; mount(); }, 6000); }
   mount();
 }
@@ -10826,6 +10856,10 @@ function restorePlace(target, kept) {
   const aim = part === "card" ? node : node.querySelector("." + part) || node;
   if (!kept.id && !refocus) return;
   aim.focus({ preventScroll: true });
+  /* The board follows the ring sideways. Not while a flight is pending —
+     mount() reveals after the card lands, so the transport keeps its own
+     choice about whether to move the board. */
+  if (!flyId) reveal(target, aim);
   /* Scoped to the column, deliberately: a general scrollIntoView nudges the
      horizontally snapped board on a phone and undoes the restore above. */
   const scroller = node.closest(".trayBody");
@@ -10864,6 +10898,48 @@ function onScroll() {
   });
 }
 
+/* ── reveal ────────────────────────────────────────────────────────
+   Round 2, three findings, one hole: focus moved and the board did not
+   follow it. Walking the rover right into Done put the ring at x=1161
+   against a board ending at 1262 with scrollLeft 0 — at every width from
+   390 to 1440 — and a completion flew the card into a lane that was off
+   screen. The ring was simply not anywhere.
+
+   Sited once, on the element about to hold focus, rather than per gesture.
+   Three things it has to respect:
+
+   · The 96px fades. Stopping at the scroller's own edge leaves the card
+     under the gradient — 96 of its 101 visible px at 1280 — so it is inset
+     by the fade on whichever side it is approaching. At the ends of the
+     travel the fade is off and the clamp gives the inset back.
+   · The snap. `x mandatory` below 720 pulls any unsuspended write straight
+     back, which is the trap the vertical keep below already documents.
+   · The flight. `flyCompleted` writes scrollLeft itself and deliberately
+     refuses to sweep a narrow board mid-transport. This never runs while a
+     flight is pending; mount() calls it once the card has landed instead.
+     The card still flies to where the hand is; the ring catches up after. */
+var FADE = 96;
+function reveal(target, el) {
+  if (!el || el === document.body) return;
+  const board = target.querySelector(".board");
+  if (!board) return;
+  const gap = board.scrollWidth - board.clientWidth;
+  if (gap <= 0) return;
+  const box = board.getBoundingClientRect();
+  const card = el.getBoundingClientRect();
+  if (!card.width && !card.height) return;
+  let to = board.scrollLeft;
+  if (card.right > box.right - FADE) to += card.right - (box.right - FADE);
+  else if (card.left < box.left + FADE) to -= (box.left + FADE) - card.left;
+  to = Math.min(Math.max(to, 0), gap);
+  if (Math.abs(to - board.scrollLeft) < 1) return;
+  const snap = board.style.scrollSnapType;
+  board.style.scrollSnapType = "none";
+  void board.scrollWidth;
+  board.scrollLeft = to;
+  requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
+}
+
 function mount() {
   const target = window.__SUITE.host("tasks");
   if (!target) return;
@@ -10878,7 +10954,11 @@ function mount() {
   retrim(target);
   bindScroll(target);
   const travelled = flyCompleted(target);
-  if (travelled) settleRest(target, before, travelled);
+  if (travelled) {
+    settleRest(target, before, travelled);
+    /* The card has landed. Wherever it went, the ring is now findable. */
+    setTimeout(() => reveal(target, document.activeElement), travelled + 60);
+  }
   refocus = false;
   refocusPart = null;
 }
@@ -10895,7 +10975,7 @@ window.__signal = {
     todayOnly = false; menuFor = null;
     openNoteId = null; flyId = null; flyFrom = null; draftLane = null; draftText = "";
     drawerTab = "nodate"; picked.clear();
-    history.length = 0;
+    undoHistory.length = 0;
     clearUndo();
   },
 };
@@ -15733,8 +15813,48 @@ window.__SUITE.register("tasks", {
     measureEl.setAttribute("data-scrolls", span > usable + 1 ? "true" : "false");
   }
 
+  /* The gap sentence, for both instruments.
+     It used to live at the foot of place()'s down branch, below the
+     dispatch — so in `across`, which is the default and the one every
+     shipped frame shows, it was never written after the first render. The
+     owner could move the nearest moment three weeks later, or delete it
+     outright, and the head went on naming a date that now held nothing.
+     The comment there called that "a plain falsehood"; its guard only
+     covered the empty case, in the branch across never reached.
+
+     It reads the nearest UPCOMING row rather than the first one in the
+     document: placeAcross deliberately never reparents, so after a move
+     the DOM order is not the date order.
+
+     Still ONE WRITER, and still above the dispatch — the sentence depends
+     on the dates, not on where either instrument puts the pixels, so it is
+     correct before either one runs. */
+  function writeGap(measureEl) {
+    /* The back rail carries negative days in the same .b-field as the
+       horizon. Left unguarded it would find no upcoming row and clobber a
+       true sentence with "Nothing is planned yet." Latent while the
+       fixture has no past; lethal the day it grows one. */
+    if (measureEl.getAttribute("data-back") === "true") return;
+    var field = measureEl.closest(".b-field");
+    var note = field && field.querySelector(".b-gapNote");
+    if (!note) return;
+    var soonest = null;
+    Array.prototype.forEach.call(measureEl.querySelectorAll(".b-item"), function (el) {
+      var away = Number(el.getAttribute("data-away"));
+      if (!(away > 0)) return;
+      if (!soonest || away < Number(soonest.getAttribute("data-away"))) soonest = el;
+    });
+    var atRest = soonest
+      ? gapSentence(soonest.getAttribute("data-date"))
+      : "Nothing is planned yet.";
+    if (field) field.__gapAtRest = atRest;
+    if (field && field.__gapSpeak) field.__gapSpeak();
+    else note.textContent = atRest;
+  }
+
   function place(measureEl) {
     if (!measureEl) return;
+    writeGap(measureEl);
     /* One entry point, two instruments. Every caller — the settle, both
        editor paths — asks for the measure to be placed and does not need
        to know which way it runs. */
@@ -15840,25 +15960,6 @@ window.__SUITE.register("tasks", {
       if (index === 0) el.setAttribute("data-lead", "true");
     });
 
-    var field = measureEl.closest(".b-field");
-    var note = field && field.querySelector(".b-gapNote");
-    /* The guard, not the wording of one instance: with no rows at all
-       the sentence used to freeze on whatever it last said - after
-       deleting farthest-first it went on naming a date that now holds
-       nothing, which is a plain falsehood rather than a stale phrasing. */
-    if (note) {
-      /* ONE WRITER. place() used to paint the at-rest sentence on every
-         repaint while speak() painted the scrolled one only on scroll,
-         so a move, a resize, fonts.ready or a keystroke snapped the line
-         back to a fact about the top of a plan the owner was not looking
-         at. place() computes; speak() paints. */
-      var atRest = items.length
-        ? gapSentence(items[0].getAttribute("data-date"))
-        : "Nothing is planned yet.";
-      if (field) field.__gapAtRest = atRest;
-      if (field && field.__gapSpeak) field.__gapSpeak();
-      else note.textContent = atRest;
-    }
     /* The measure is at least the horizon, and taller if the words at
        the foot of it need the room. A rail that ends above its own last
        row is the undesigned edge a panel looks for first. */

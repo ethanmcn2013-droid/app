@@ -1062,13 +1062,22 @@
   font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
 }
 
+/* NOTE — round 2. This block read `.floor:has(.drawer)` in the lab, where
+   `.floor` was the lab's own root element. Composing three products scoped
+   every product rule under its app compound, which turned the root into a
+   demanded DESCENDANT — `[data-app="tasks"] .floor` — and in the suite the
+   floor is `#deck`, the app's PARENT. Five rules matched nothing from the
+   day this document was composed, so the accommodation described directly
+   below never ran and the defect it was written to fix came back. The
+   condition now sits on the app element, which is what actually contains
+   the drawer. tools/reach.mjs gates the whole class, not this instance. */
 /* ── planning drawer ───────────────────────────────────────────── */
 /* The sheet moves over to make room, so the ink floor shows through an
    18px gutter and draws the seam. Before this the drawer was white on
    white with no edge: it sliced the Waiting column mid-word and erased
    Done entirely, which read as the board breaking rather than a panel
    opening. */
-[data-app="tasks"] .floor:has(.drawer) .sheet {
+[data-app="tasks"]:has(.drawer) .sheet {
   margin-right: calc(388px + var(--inset));
   transition: margin-right var(--dur) var(--curve);
 }
@@ -1076,14 +1085,14 @@
    narrowed board gave the card a 105px measure, which is half what the
    specimen sheet designs it at. What does not fit scrolls, snaps and fades
    at the edge instead. */
-[data-app="tasks"] .floor:has(.drawer) .board {
+[data-app="tasks"]:has(.drawer) .board {
   grid-template-columns: none;
   grid-auto-flow: column;
   grid-auto-columns: minmax(258px, 1fr);
   scroll-snap-type: x proximity;
   scroll-padding-left: 16px;
 }
-[data-app="tasks"] .floor:has(.drawer) .tray { scroll-snap-align: start; }
+[data-app="tasks"]:has(.drawer) .tray { scroll-snap-align: start; }
 /* Both of the rules that used to sit here — dropping the season fact when the
    drawer opened, and letting the name shrink to nothing with it — are gone.
    Opening the drawer takes the sheet under 1200, so the header stacks and
@@ -1680,7 +1689,7 @@
     grid-auto-columns: minmax(258px, 1fr);
   }
   [data-app="tasks"] .drawer { width: 364px; }
-  [data-app="tasks"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+  [data-app="tasks"]:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
 /* The chrome yields before the name of the project does. Visually hidden
    rather than removed, so the controls keep their accessible names. */
@@ -1715,7 +1724,7 @@
   [data-app="tasks"] .headFacts { gap: 12px; }
   [data-app="tasks"] .dockField { min-width: 148px; }
   [data-app="tasks"] .drawer { left: var(--inset); width: auto; }
-  [data-app="tasks"] .floor:has(.drawer) .sheet { margin-right: 0; }
+  [data-app="tasks"]:has(.drawer) .sheet { margin-right: 0; }
 }
 @media (max-width: 720px) {
   [data-app="tasks"] { --inset: 9px; }

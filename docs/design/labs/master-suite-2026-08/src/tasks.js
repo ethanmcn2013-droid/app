@@ -776,7 +776,7 @@ function footPill() {
       '<div class="carry">' +
       '<span class="carryName">' + what + "</span>" +
       '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
-      (history.length > 1 ? "<em>" + (history.length - 1) + " more</em>" : "") +
+      (undoHistory.length > 1 ? "<em>" + (undoHistory.length - 1) + " more</em>" : "") +
       "<em><kbd>" + MOD + "Z</kbd></em>" +
       "</div>"
     );
@@ -1475,7 +1475,12 @@ function flyCompleted(target) {
   return travel;
 }
 
-const history = [];
+/* NOT `history`. A `const` at the top level of a classic script creates a
+   global lexical binding that shadows `window.history` for every script in
+   the document — so app.js's `writeUrl()` was calling `replaceState` on this
+   array, throwing on every navigation, and the URL contract silently never
+   wrote. It stood alone in its own lab and only broke once composed. */
+const undoHistory = [];
 let undoing = false;
 
 function clearUndo() {
@@ -1489,8 +1494,8 @@ function clearUndo() {
 function arm(act) {
   if (undoing) return;
   clearTimeout(undoTimer);
-  history.push(act);
-  if (history.length > 10) history.shift();
+  undoHistory.push(act);
+  if (undoHistory.length > 10) undoHistory.shift();
   undone = act;
   /* The strip retires; the record does not. Nothing that used to be true
      stops being true because six seconds passed. */
@@ -1546,9 +1551,9 @@ function toggleDone(id) {
     task.lane = back;
     task.prevLane = null;
     task.completedAt = null;
-    for (let i = history.length - 1; i >= 0; i -= 1) {
+    for (let i = undoHistory.length - 1; i >= 0; i -= 1) {
       /* The stack must not go on offering to redo something already undone. */
-      if (history[i].id === id && history[i].kind === "done") history.splice(i, 1);
+      if (undoHistory[i].id === id && undoHistory[i].kind === "done") undoHistory.splice(i, 1);
     }
     /* Every card that was already Done when the board opened has no prevLane,
        so the fallback put it in column one and the product announced "is back
@@ -1583,14 +1588,14 @@ function toggleDone(id) {
 }
 
 function undoLast() {
-  const act = history.pop();
+  const act = undoHistory.pop();
   if (!act) { say("Nothing left to undo."); return; }
   clearUndo();
   undoing = true;
   try { runUndo(act); } finally { undoing = false; }
   /* The strip now shows whatever is left beneath, so the operator can see
      the way back is still open. */
-  if (history.length) { undone = history[history.length - 1]; clearTimeout(undoTimer);
+  if (undoHistory.length) { undone = undoHistory[undoHistory.length - 1]; clearTimeout(undoTimer);
     undoTimer = setTimeout(() => { undone = null; mount(); }, 6000); }
   mount();
 }
@@ -2601,6 +2606,10 @@ function restorePlace(target, kept) {
   const aim = part === "card" ? node : node.querySelector("." + part) || node;
   if (!kept.id && !refocus) return;
   aim.focus({ preventScroll: true });
+  /* The board follows the ring sideways. Not while a flight is pending —
+     mount() reveals after the card lands, so the transport keeps its own
+     choice about whether to move the board. */
+  if (!flyId) reveal(target, aim);
   /* Scoped to the column, deliberately: a general scrollIntoView nudges the
      horizontally snapped board on a phone and undoes the restore above. */
   const scroller = node.closest(".trayBody");
@@ -2639,6 +2648,48 @@ function onScroll() {
   });
 }
 
+/* ── reveal ────────────────────────────────────────────────────────
+   Round 2, three findings, one hole: focus moved and the board did not
+   follow it. Walking the rover right into Done put the ring at x=1161
+   against a board ending at 1262 with scrollLeft 0 — at every width from
+   390 to 1440 — and a completion flew the card into a lane that was off
+   screen. The ring was simply not anywhere.
+
+   Sited once, on the element about to hold focus, rather than per gesture.
+   Three things it has to respect:
+
+   · The 96px fades. Stopping at the scroller's own edge leaves the card
+     under the gradient — 96 of its 101 visible px at 1280 — so it is inset
+     by the fade on whichever side it is approaching. At the ends of the
+     travel the fade is off and the clamp gives the inset back.
+   · The snap. `x mandatory` below 720 pulls any unsuspended write straight
+     back, which is the trap the vertical keep below already documents.
+   · The flight. `flyCompleted` writes scrollLeft itself and deliberately
+     refuses to sweep a narrow board mid-transport. This never runs while a
+     flight is pending; mount() calls it once the card has landed instead.
+     The card still flies to where the hand is; the ring catches up after. */
+var FADE = 96;
+function reveal(target, el) {
+  if (!el || el === document.body) return;
+  const board = target.querySelector(".board");
+  if (!board) return;
+  const gap = board.scrollWidth - board.clientWidth;
+  if (gap <= 0) return;
+  const box = board.getBoundingClientRect();
+  const card = el.getBoundingClientRect();
+  if (!card.width && !card.height) return;
+  let to = board.scrollLeft;
+  if (card.right > box.right - FADE) to += card.right - (box.right - FADE);
+  else if (card.left < box.left + FADE) to -= (box.left + FADE) - card.left;
+  to = Math.min(Math.max(to, 0), gap);
+  if (Math.abs(to - board.scrollLeft) < 1) return;
+  const snap = board.style.scrollSnapType;
+  board.style.scrollSnapType = "none";
+  void board.scrollWidth;
+  board.scrollLeft = to;
+  requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
+}
+
 function mount() {
   const target = window.__SUITE.host("tasks");
   if (!target) return;
@@ -2653,7 +2704,11 @@ function mount() {
   retrim(target);
   bindScroll(target);
   const travelled = flyCompleted(target);
-  if (travelled) settleRest(target, before, travelled);
+  if (travelled) {
+    settleRest(target, before, travelled);
+    /* The card has landed. Wherever it went, the ring is now findable. */
+    setTimeout(() => reveal(target, document.activeElement), travelled + 60);
+  }
   refocus = false;
   refocusPart = null;
 }
@@ -2670,7 +2725,7 @@ window.__signal = {
     todayOnly = false; menuFor = null;
     openNoteId = null; flyId = null; flyFrom = null; draftLane = null; draftText = "";
     drawerTab = "nodate"; picked.clear();
-    history.length = 0;
+    undoHistory.length = 0;
     clearUndo();
   },
 };

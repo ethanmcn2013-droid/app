@@ -24,7 +24,7 @@ Tuesday and on a phone on a Saturday.
 ## Fixture
 
 `src/fixture.js` — one world, asserted at load. The Orchard, events; Orla, venue
-manager (OR); Mara & Finn on Saturday 18 July; the review clock pinned to **Thursday
+manager (OR); Mara & Finn on Saturday 3 October; the review clock pinned to **Thursday
 16 July 2026**. Every string is lifted from the product's own review fixtures
 (`src/lib/review-suite-fixture.ts`, `tasks-demo.ts`, `notes-demo.ts`,
 `vocabulary.ts`), including curled apostrophes and en dashes, which are pinned by a

@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    ONE WORLD.
 
-   The Orchard, events. Orla, venue manager. Mara & Finn on Saturday 18
-   July, and the review clock pinned to Thursday 16 July 2026. Three
+   The Orchard, events. Orla, venue manager. Mara & Finn on Saturday 3
+   October, and the review clock pinned to Thursday 16 July 2026. Three
    products, one venue, one cast, one day.
 
    Everything below this header is the three labs' own data files, in

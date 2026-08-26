@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    ONE WORLD.
 
-   The Orchard, events. Orla, venue manager. Mara & Finn on Saturday 18
-   July, and the review clock pinned to Thursday 16 July 2026. Three
+   The Orchard, events. Orla, venue manager. Mara & Finn on Saturday 3
+   October, and the review clock pinned to Thursday 16 July 2026. Three
    products, one venue, one cast, one day.
 
    Everything below this header is the three labs' own data files, in
@@ -331,15 +331,15 @@ window.NOTES = (function () {
    */
   /* One grammar for every name, one meaning for every slot, and an order
      by what the venue is actually facing rather than by whichever date is
-     nearest. A college reading due today does not outrank a wedding in two
-     days, and a panel seat was right to say that sorting by proximity made
-     the pile open on the wrong thing.
+     nearest. A college reading due today does not outrank a wedding eleven
+     weeks out, and a panel seat was right to say that sorting by proximity
+     made the pile open on the wrong thing.
 
      stake 1  a day the venue is running. The business.
      stake 2  a commitment with a date on it that is not the business.
      stake 3  standing work that never stops and has no date.  */
   const SUBJECTS = {
-    "mara-finn": { label: "Mara & Finn", when: "Saturday 18 July", days: 2, stake: 1 },
+    "mara-finn": { label: "Mara & Finn", when: null, days: null, stake: 1 },  /* world.foot.js derives these from WORLD.wedding. */
     "the-house": { label: "The house", when: null, days: null, stake: 3 },
     "the-studio": { label: "The studio", when: null, days: null, stake: 3 },
     "the-course": { label: "The course", when: "Thursday 16 July", days: 0, stake: 2 },
@@ -596,7 +596,7 @@ window.NOTES = (function () {
     /* The venue's own next date, from the review fixture's project. The
        head states it because a notebook that does not know what is coming
        is a notebook that could belong to anyone. */
-    next: { key: "mara-finn", label: "Mara & Finn", when: "Saturday 18 July", days: 2 },
+    next: { key: "mara-finn", label: "Mara & Finn", when: null, days: null },  /* derived; see world.foot.js */
 
     counts: {
       notebook: notes.length,
