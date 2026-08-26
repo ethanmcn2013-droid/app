@@ -104,6 +104,23 @@
   let pickRestored = false;
   /* Which note the restored mark has already been offered for. */
   let promotedFor = null;
+  /* True for exactly the one repaint that lifts a note onto the desk. */
+  let lifting = false;
+  /* THE CEILING THE PRODUCT ACTUALLY HOLDS.
+     The lab printed "n / 4000" in five places and enforced nothing, so
+     it stated a ceiling it did not hold. The number is wrong as well as
+     unenforced: src/modules/notes/lib/notes-hybrid.ts sets
+     MAX_NOTE_BODY_CHARS = 10_000, enforced in the hybrid, the hook and
+     the server action. Enforcing 4000 here would replace a permissive
+     lie with a strict one and refuse a 4,500-character note the real
+     product saves — a lost thought on the writing surface, which is this
+     product's own third named risk. The over-limit sentence is the
+     product's too, verbatim from Composer.tsx. */
+  const MAX_BODY = 10000;
+  const counterText = (n) =>
+    n > MAX_BODY
+      ? `${(n - MAX_BODY).toLocaleString("en-IE")} character${n - MAX_BODY === 1 ? "" : "s"} over. Trim it or split it in two.`
+      : `${n.toLocaleString("en-IE")} / ${MAX_BODY.toLocaleString("en-IE")}`;
   /* "1 words picked." came off a bare split().length in four places. */
   const wordsPicked = (t) => {
     const n = String(t || "").trim().split(/\s+/).filter(Boolean).length;
@@ -149,7 +166,7 @@
     const host = mount.querySelector(".top") || mount.querySelector(".dock");
     if (host) host.toggleAttribute("data-live", live);
     for (const node of mount.querySelectorAll(".topMeta[data-count], .dockCount")) {
-      node.textContent = `${draft.length} / 4000`;
+      node.textContent = counterText(draft.length);
     }
   }
 
@@ -591,6 +608,27 @@
     paint();
     setTimeout(() => {
       settling = null;
+      /* decide() sets refocus to the card and it holds — until this
+         repaint fires at 220ms with refocus already consumed and
+         rebuilds the card, dropping the keyboard on the body after every
+         single decision, in the one room built to be run from the
+         keyboard. Restoring it blindly is worse and was measured so:
+         after k then Escape the caret is in the capture field and a
+         stale .handBody target would be null-but-truthy, skipping the
+         caret fallback entirely; after k then t the caret is in the
+         wording field and this would yank it out mid-typing. So restore
+         only what is still true: the card is still on screen AND the
+         keyboard has not already gone somewhere newer. */
+      const card = mount.querySelector(".handBody");
+      const active = document.activeElement;
+      /* Restore where the keyboard is ALREADY the card — this repaint is
+         about to destroy that element — or where it has been dropped on
+         the body. Never over a newer destination: after Escape the caret
+         is in the capture field and after t it is in the wording field,
+         and both must survive. */
+      const onCard = active && card && (active === card || card.contains(active));
+      const adrift = !active || active === document.body;
+      if (card && (onCard || adrift)) refocus = { kind: "act", sel: ".handBody" };
       paint();
     }, 220);
   }
@@ -878,6 +916,14 @@
       /* The sentence asking for a pick cannot survive the pick. Both were
          on screen at once, twenty pixels apart, contradicting each other. */
       nudge = null;
+      /* setPick clears this when the person acts; offerPick set `picked`
+         and never touched it, so dragging across a different sentence on
+         a note carrying a standing pick moved the mark and still said
+         "Picked before, and still here" — the guarantee relabelled as
+         somebody else's. Strictly inside this branch: offerPick also
+         runs on release with no text, and clearing there would relabel a
+         mark nobody touched. */
+      pickRestored = false;
       /* A drag was the one pick route that never claimed the keyboard,
          so a real mouse pick left activeElement on BODY once the repaint
          landed — and then the arrow keys the margin advertises in the
@@ -1117,7 +1163,11 @@
     cursorId = id;
     const note = work().find((n) => n.id === id);
     promotePick(note);
-    if (note) say(`Open. ${note.title}`);
+    /* The architecture's verb: reading LIFTS a note onto the desk. */
+    lifting = true;
+    /* The title usually ends in its own full stop, so a bare join
+       printed "…keep it.. Open on the desk." */
+    if (note) say(`Open. ${note.title.replace(/[.?!]+$/, "")}. Open on the desk.`);
     refocus = { kind: "read" };
     paint();
   }
@@ -1355,7 +1405,7 @@
     const tiles = o.tight ? SUITE.filter(([k]) => k !== "more") : SUITE;
     return `<div class="railGroup">${tiles.map(
       ([k, name]) =>
-        `<button class="railTile" type="button"${k === "notes" ? ' data-active aria-current="page"' : ""} aria-label="${name}${k === "notes" ? ", the page you are on" : ""}">${I[k]}</button>`,
+        `<button class="railTile" type="button" data-act="suite-${k}"${k === "notes" ? ' data-active aria-current="page"' : ""} aria-label="${name}${k === "notes" ? ", the page you are on" : ""}">${I[k]}</button>`,
     ).join("")}</div>`;
   }
 
@@ -1369,12 +1419,12 @@
           ${tiles
             .map(
               ([k, name]) =>
-                `<button class="railTile" type="button"${k === "notes" ? ' data-active aria-current="page"' : ""} aria-label="${name}${k === "notes" ? ", the page you are on" : ""}">${I[k]}</button>`,
+                `<button class="railTile" type="button" data-act="suite-${k}"${k === "notes" ? ' data-active aria-current="page"' : ""} aria-label="${name}${k === "notes" ? ", the page you are on" : ""}">${I[k]}</button>`,
             )
             .join("")}
         </div>
         <span class="railSpacer"></span>
-        <button class="railAvatar" type="button" aria-label="${esc(N.operator.role)}. Account and settings">${N.operator.initials}</button>
+        <button class="railAvatar" type="button" data-act="account" aria-label="${esc(N.operator.role)}. Account and settings">${N.operator.initials}</button>
       </nav>`;
   }
 
@@ -1456,7 +1506,7 @@
          from under the suite row and left it with nine live pixels of
          thirty-six. The count appears when it is worth knowing. */
       (draft.length >= 3600
-        ? `<span class="dockCount tab commitPart">${draft.length} / 4000</span>`
+        ? `<span class="dockCount tab commitPart">${esc(counterText(draft.length))}</span>`
         : "") +
       `<button class="dockGlyph commitPart" data-ink type="button" data-act="keep" aria-label="Save it">${I.check}</button>`;
     /* On a wide screen the capture field is on the desk's paper, and
@@ -1482,7 +1532,7 @@
                  <div class="dockRow" data-suite>
                    <span class="dockRule" aria-hidden="true"></span>
                    ${railTiles({ tight: true })}
-                   <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
+                   <button class="dockAvatar" type="button" data-act="account" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>
                  </div>`
               : `${backToWriting}${
                    /* While the sheet is searching, the query field is at
@@ -1501,7 +1551,7 @@
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
                  <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
                  <span class="dockRule" aria-hidden="true"></span>
-                 <button class="dockAvatar" type="button" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>`
+                 <button class="dockAvatar" type="button" data-act="account" aria-label="${attr(N.operator.role)}. Account and settings">${N.operator.initials}</button>`
           }
         </div>
       </div>`;
@@ -1530,7 +1580,7 @@
     const n = o.behind === undefined ? 2 : o.behind;
     return `
       <section class="desk" aria-label="${attr(o.label || "Write a note")}">
-        <div class="pile"><div class="paperStack">${behind(n)}${inner}</div>${o.under || ""}</div>
+        <div class="pile"><div class="paperStack"${lifting ? " data-lifting" : ""}>${behind(n)}${inner}</div>${o.under || ""}</div>
       </section>`;
   }
 
@@ -1591,7 +1641,7 @@
           <textarea class="topField" rows="2" aria-label="Write a note" placeholder="${esc(N.copy.placeholder)}">${esc(draft)}</textarea>
           <div class="topFoot">
             <span class="topMeta restPart">${esc(N.copy.privacyLong)}</span>
-            <span class="topMeta tab commitPart" data-count>${draft.length} / 4000</span>
+            <span class="topMeta tab commitPart" data-count>${esc(counterText(draft.length))}</span>
             <span class="spacer commitPart"></span>
             <button class="act commitPart" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>
           </div>
@@ -1723,7 +1773,7 @@
           <div class="deskWrite">
             <textarea class="readBody readEdit" rows="4" aria-label="Write on this note">${esc(editDraft)}</textarea>
             <div class="topFoot">
-              <span class="topMeta tab" data-count>${editDraft.length} / 4000</span>
+              <span class="topMeta tab" data-count>${esc(counterText(editDraft.length))}</span>
               <span class="spacer"></span>
               <button class="act" data-quiet type="button" data-act="cancel-edit">${esc(N.copy.cancel)}</button>
               <button class="act" data-ink type="button" data-act="save-edit">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>
@@ -1926,7 +1976,7 @@
       <div class="indexWrap">
         <div class="indexHead">
           <span>${esc(o.title || "Your notes")}</span>${o.mode === "crossed" || o.noDays ? "" : `<kbd class="headKbd">${MOD === "⌘" ? "⌘↓" : "Ctrl ↓"}</kbd>`}
-          <span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>
+          ${o.count === null ? "" : `<span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>`}
           ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
         <ul class="index" id="index" role="list" aria-label="${attr(o.title || "Your notes")}">${rows.join("")}</ul>
@@ -1979,6 +2029,14 @@
       </section>`;
   }
 
+  /* An index with nothing in it says what belongs there, once. Landing
+     here from the first-use empty used to give a headed, rowless column
+     over six hundred pixels of blank ground — the product replacing its
+     best-written empty with its worst. */
+  function firstEmpty() {
+    return `<p class="idxEmpty">Nothing here yet. The first thing you write lands at the top.</p>`;
+  }
+
   const notebook = () => {
     const rows = visible();
     const open = openId ? work().find((n) => n.id === openId) : null;
@@ -1986,14 +2044,14 @@
     if (phone.matches) {
       return {
         desk: "",
-        body: indexOf(rows, { title: "Your notes", count: `${c.total} notes` }),
+        body: indexOf(rows, { title: "Your notes", count: `${c.total} notes`, empty: firstEmpty() }),
         dock: true,
         over: open ? phoneSheet(open) : "",
       };
     }
     return {
       desk: open ? readSheet(open) : topSheet(),
-      body: indexOf(rows, { title: "Your notes", count: `${c.total} notes` }),
+      body: indexOf(rows, { title: "Your notes", count: `${c.total} notes`, empty: firstEmpty() }),
       dock: true,
     };
   };
@@ -2208,7 +2266,8 @@
                   <div class="piece">
                     <textarea class="pieceField" rows="1" data-i="${i}" aria-label="Note ${i + 1} of ${pieces.length}">${esc(p)}</textarea>
                     <button class="drop" type="button" data-act="drop-piece" data-i="${i}" aria-label="Drop note ${i + 1}">${I.close}</button>
-                  </div>`,
+                  </div>
+                  ${i < pieces.length - 1 ? `<button class="joinSeam" type="button" data-act="join-piece" data-i="${i}" aria-label="${attr(N.copy.joinLabel)}">${esc(N.copy.join)}</button>` : ""}`,
                   )
                   .join("")}
               </div>
@@ -2246,7 +2305,8 @@
             <div class="piece">
               <textarea class="pieceField" rows="1" data-i="${i}" aria-label="Note ${i + 1} of ${pieces.length}">${esc(p)}</textarea>
               <button class="drop" type="button" data-act="drop-piece" data-i="${i}" aria-label="Drop note ${i + 1}">${I.close}</button>
-            </div>`,
+            </div>
+            ${i < pieces.length - 1 ? `<button class="joinSeam" type="button" data-act="join-piece" data-i="${i}" aria-label="${attr(N.copy.joinLabel)}">${esc(N.copy.join)}</button>` : ""}`,
             )
             .join("")}
         </div>
@@ -2333,11 +2393,19 @@
           </div>
         </div>`,
       body: indexOf(rows, {
-        title: query ? "Found" : "Everything you wrote",
+        /* The eyebrow read FOUND over a count of nought, over a headline
+           saying no note says it, over a body saying nothing is close —
+           one fact four times, the first of them untrue. The panel
+           below states the miss in full, so the head above it stops
+           counting: null is a sentinel, not "", because indexOf falls
+           back to a note count on anything falsy. */
+        title: query ? (rows.length ? "Found" : "Nothing matched") : "Everything you wrote",
         count: query
-          ? rows.length === 1
-            ? `1 of ${counts().total} notes has “${query}” in it`
-            : `${rows.length} of ${counts().total} notes have “${query}” in them`
+          ? rows.length === 0
+            ? null
+            : rows.length === 1
+              ? `1 of ${counts().total} notes has “${query}” in it`
+              : `${rows.length} of ${counts().total} notes have “${query}” in them`
           : `${counts().total} notes`,
         noDays: true,
         empty: `
@@ -2582,6 +2650,7 @@
     if (indexAfter) indexAfter.scrollTop = scroll;
     const readAfter = mount.querySelector(".readBody, .handBody");
     if (readAfter && readScroll) readAfter.scrollTop = readScroll;
+    lifting = false;
     trimRows();
     /* The desk budget is written in terms the CSS can read, so the note
        yields to the peel before the second plane does. Zero when no
@@ -2740,7 +2809,7 @@
          this field survives. */
       editDraft = writing.value;
       const count = mount.querySelector("[data-count]");
-      if (count) count.textContent = `${editDraft.length} / 4000`;
+      if (count) count.textContent = counterText(editDraft.length);
       return;
     }
     const field = e.target.closest(".topField, .phoneField");
@@ -2882,6 +2951,34 @@
     const act = e.target.closest("[data-act]");
     if (!act) return;
     const a = act.dataset.act;
+    /* THE SUITE SPINE ANSWERED NOTHING.
+       Six controls per screen, in all ten states, carrying the strongest
+       hover affordance in the product — white on a raised fill, held on
+       press — and no behaviour at all. Each names where it goes rather
+       than six sharing one sentence, which would only move them into the
+       open more-answers-with-nothing finding. None changes the room:
+       this is a lab of Notes, and a tile that evacuated a room somebody
+       was mid-review in while announcing it was opening Tasks would be a
+       control that says one thing and does another. */
+    if (a && a.startsWith("suite-")) {
+      const where = a.slice(6);
+      if (where === "notes") {
+        say("You are on Notes.");
+        return;
+      }
+      if (where === "more") {
+        /* Not a surface in the suite: the rest of Signal Studio. */
+        say("The rest of Signal Studio is on another screen.");
+        return;
+      }
+      const entry = SUITE.find(([k]) => k === where);
+      say(`${entry ? entry[1] : where} is another surface in this suite. This lab is the Notes one.`);
+      return;
+    }
+    if (a === "account") {
+      say(`${N.operator.role}. Account and settings are on another screen.`);
+      return;
+    }
     if (a === "filing" || a === "refile") {
       picker = picker ? null : a === "filing" ? "capture" : "note";
       refocus = { kind: "act", sel: `[data-act="${a}"]` };
@@ -2988,6 +3085,29 @@
       openNote(act.dataset.id);
       return;
     }
+    /* One spoken thought came back as two notes with no way to make it
+       whole again: the only controls were drop, add, discard and keep,
+       so the sole route back to one note was to delete half of what the
+       person said. The seam between two pieces offers to put them back
+       together, in their own order, and it is undoable exactly as
+       dropping one is. */
+    if (a === "join-piece") {
+      const i = Number(act.dataset.i);
+      if (i < 0 || i >= pieces.length - 1) return;
+      const before = pieces.slice();
+      pieces = [
+        ...pieces.slice(0, i),
+        `${pieces[i].trim()} ${pieces[i + 1].trim()}`.trim(),
+        ...pieces.slice(i + 2),
+      ];
+      say(`Put back together. ${pieces.length === 1 ? "One note" : `${pieces.length} notes`} now.`);
+      offerUndo("Put back together.", "Separated again.", () => {
+        pieces = before;
+      });
+      refocus = { kind: "field", sel: ".pieceField", end: true };
+      paint();
+      return;
+    }
     if (a === "drop-piece") {
       const i = Number(act.dataset.i);
       const dropped = pieces[i];
@@ -3027,6 +3147,13 @@
     }
     if (a === "keep" || a === "first") {
       if (a === "first") {
+        /* The product's first press did nothing at all: this room renders
+           no capture field — the empty replaces the desk — so the repaint
+           redrew the same room and the refocus found nothing. It has to
+           leave the room to keep the promise on its own label. Landing
+           bare would be worse, so the room it lands in says what belongs
+           there rather than heading an empty column. */
+        state = "notebook";
         refocus = { kind: "field", sel: phone.matches ? ".phoneField" : ".topField" };
         paint();
         return;

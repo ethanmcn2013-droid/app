@@ -3213,6 +3213,234 @@ const said = (page) => page.locator("#say").textContent();
   await page.close();
 }
 
+
+/* ══════════════════════════════════════════════════════════════════
+   ROUND 13
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── the suite spine answers for itself ──────────────────────────── */
+{
+  /* Six controls per screen, in all ten states, carrying the strongest
+     hover affordance in the product and no behaviour at all. Each names
+     where it goes — six sharing one sentence would only move them into
+     more-answers-with-nothing — and none evacuates the room somebody is
+     standing in. */
+  const page = await open("?state=review");
+  const controls = await page.locator(".rail .railTile, .railAvatar").count();
+  ok("the spine has controls to answer for", controls >= 4);
+  const silent = [];
+  for (let i = 0; i < controls; i += 1) {
+    await page.evaluate(() => (document.querySelector(".sr").textContent = ""));
+    await page.locator(".rail .railTile, .railAvatar").nth(i).click();
+    await page.waitForTimeout(300);
+    const heard = await said(page);
+    if (!heard.trim()) {
+      silent.push(await page.locator(".rail .railTile, .railAvatar").nth(i).getAttribute("aria-label"));
+    }
+    ok(
+      `the spine keeps the room it is standing in (${i})`,
+      (await page.locator(".hand").count()) === 1,
+    );
+  }
+  ok("and nothing in the spine answers a press with silence", silent.length === 0, silent.join(" · "));
+  await page.close();
+}
+
+/* ── the head is whole across the tablet band ────────────────────── */
+{
+  /* 155px of "Saturday 18 July, in 2 days" laid into 32px at 721, 63 at
+     768, 96 at 820, 148 at 900 — printing "Sat…" and the mid-word
+     "Saturday 18 July, in 2 d…", with the venue name clipped beside it.
+     A breakpoint would only move the snap from 720 to 959, so the row
+     wraps and the facts keep their own width. */
+  for (const width of [721, 768, 820, 900, 912, 958, 1024, 1440]) {
+    const page = await open("", { width, height: 1024 });
+    const whole = await page.evaluate(() => {
+      const date = document.querySelector(".headNext .dateStamp") || document.querySelector(".headNext span");
+      const name = document.querySelector(".headName");
+      const clipped = (el) => (el ? el.scrollWidth > el.clientWidth + 1 : false);
+      return { date: !clipped(date), name: !clipped(name) };
+    });
+    ok(`${width}: the date the venue is facing is printed whole`, whole.date);
+    ok(`${width}: and so is the venue's name`, whole.name);
+    await page.close();
+  }
+}
+
+/* ── the ceiling is the one the product actually holds ───────────── */
+{
+  /* The lab printed "n / 4000" in five places and enforced nothing.
+     MAX_NOTE_BODY_CHARS is 10_000 in notes-hybrid.ts, the hook and the
+     server action, so enforcing 4000 here would refuse a note the real
+     product saves. The over-limit sentence is Composer.tsx's, verbatim. */
+  const page = await open();
+  const at = async (n) => {
+    await page.evaluate((len) => {
+      const f = document.querySelector(".topField");
+      f.value = "x".repeat(len);
+      f.dispatchEvent(new Event("input", { bubbles: true }));
+    }, n);
+    await page.waitForTimeout(620);
+    return page.evaluate(() => document.querySelector("[data-count]")?.textContent || "");
+  };
+  ok("the counter names the product's own ceiling", (await at(40)).includes("10,000"), await at(40));
+  const over = await at(10500);
+  ok("and past it, it states the overage in the product's words", /500 characters over/.test(over), over);
+  await page.keyboard.press("Control+Enter");
+  await page.waitForTimeout(800);
+  ok("and a note past the ceiling still saves, because nothing is ever lost", /^Saved\./.test(await said(page)), (await said(page)).slice(0, 30));
+  await page.close();
+}
+
+/* ── a search that found nothing is not headed Found ─────────────── */
+{
+  const page = await open("?state=search");
+  await page.locator("#q").fill("");
+  await page.keyboard.type("linenzzz", { delay: 12 });
+  await page.waitForTimeout(760);
+  const head = await page.evaluate(() => ({
+    eyebrow: document.querySelector(".indexHead span")?.textContent.trim(),
+    count: document.querySelector(".indexHead .cnt")?.textContent.trim() ?? null,
+    headline: document.querySelector(".noHits .emptyTitle")?.textContent.trim() ?? null,
+  }));
+  ok("a search that found nothing says so", head.eyebrow === "Nothing matched", JSON.stringify(head));
+  ok("and does not count to nought above a panel that already says it", head.count === null, JSON.stringify(head));
+  await page.locator("#q").fill("");
+  await page.keyboard.type("orchard", { delay: 12 });
+  await page.waitForTimeout(760);
+  const hit = await page.evaluate(() => ({
+    eyebrow: document.querySelector(".indexHead span")?.textContent.trim(),
+    count: document.querySelector(".indexHead .cnt")?.textContent.trim() ?? null,
+  }));
+  ok("and a search that found something still counts it", hit.eyebrow === "Found" && /notes? ha/.test(hit.count || ""), JSON.stringify(hit));
+  await page.close();
+}
+
+/* ── the settle does not eat the decision's focus ─────────────────── */
+{
+  /* decide() sets the card as the destination and it holds until the
+     settling repaint at 220ms rebuilds the card with refocus already
+     consumed, dropping the keyboard on the body after every single
+     decision, in the one room built to be run from the keyboard. */
+  const page = await open("?state=review");
+  await page.locator(".handBody").focus();
+  await page.keyboard.press("k");
+  await page.waitForTimeout(700);
+  ok(
+    "the keyboard is still on the card 700ms after a decision",
+    await page.evaluate(() => document.activeElement.classList.contains("handBody")),
+    await page.evaluate(() => (document.activeElement.className || document.activeElement.tagName).split(" ")[0]),
+  );
+  await page.close();
+}
+{
+  /* And never over a newer destination: leaving the room within the
+     settle window must keep the capture caret. */
+  const page = await open("?state=review");
+  await page.locator(".handBody").focus();
+  await page.keyboard.press("k");
+  await page.waitForTimeout(80);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(700);
+  await page.keyboard.type("Tonic and olives", { delay: 0 });
+  await page.waitForTimeout(300);
+  ok(
+    "and a decision then Escape still leaves the caret where the next thought goes",
+    (await page.locator(".topField").inputValue()).includes("Tonic"),
+    await page.evaluate(() => (document.activeElement.className || document.activeElement.tagName).split(" ")[0]),
+  );
+  await page.close();
+}
+
+/* ── the product's first press keeps its own promise ─────────────── */
+{
+  /* The ink-filled primary on the first-use empty did nothing at all:
+     that room renders no capture field, so the repaint redrew the same
+     room and the refocus found nothing. And the room it now lands in
+     says what belongs there rather than heading an empty column. */
+  const page = await open("?state=nothing");
+  await page.locator('[data-act="first"]').first().click();
+  await page.waitForTimeout(700);
+  await page.keyboard.type("Marquee sides for Saturday", { delay: 0 });
+  await page.waitForTimeout(300);
+  ok(
+    "pressing Write the first one puts the caret where you write",
+    (await page.locator(".topField").inputValue()).includes("Marquee"),
+  );
+  ok(
+    "and the room it lands in has words for having nothing in it",
+    (await page.locator(".idxRow").count()) > 0 || (await page.locator(".idxEmpty").count()) === 1,
+  );
+  await page.close();
+}
+
+/* ── one spoken thought can be made whole again ──────────────────── */
+{
+  /* Speech came back as two notes and the only route back to one was to
+     delete half of what the person said. */
+  for (const width of [1440, 390]) {
+    const page = await open("?state=readback", { width, height: width === 390 ? 844 : 960 });
+    const before = await page.evaluate(() => [...document.querySelectorAll(".pieceField")].map((f) => f.value));
+    ok(`${width}: there is a seam offering to put them back together`, (await page.locator(".joinSeam").count()) >= 1);
+    await page.locator(".joinSeam").first().click();
+    await page.waitForTimeout(620);
+    const after = await page.evaluate(() => [...document.querySelectorAll(".pieceField")].map((f) => f.value));
+    ok(
+      `${width}: and it joins them in the order they were spoken`,
+      after.length === before.length - 1 && after[0] === `${before[0].trim()} ${before[1].trim()}`,
+      `${before.length} then ${after.length}`,
+    );
+    await page.keyboard.press("Control+z");
+    await page.waitForTimeout(620);
+    const undone = await page.evaluate(() => [...document.querySelectorAll(".pieceField")].map((f) => f.value));
+    ok(`${width}: and it can be taken back`, JSON.stringify(undone) === JSON.stringify(before));
+    await page.close();
+  }
+}
+
+/* ── reading lifts ───────────────────────────────────────────────── */
+{
+  /* The architecture's own verb. The note hard-cut onto the desk in one
+     frame while its source row stayed printed below — the same sentence
+     in two places with no motion connecting them and nothing saying
+     which was which. */
+  const page = await open();
+  await page.locator(".idxRow").nth(3).click();
+  await page.waitForTimeout(40);
+  ok(
+    "the paper lifts rather than cutting onto the desk",
+    await page.evaluate(() => {
+      const p = document.querySelector(".paperStack");
+      return p.hasAttribute("data-lifting") && getComputedStyle(p).animationName === "liftIn";
+    }),
+  );
+  await page.waitForTimeout(520);
+  ok("and it settles", await page.evaluate(() => Number(getComputedStyle(document.querySelector(".paperStack")).opacity) > 0.99));
+  ok("the row it came from holds its place and says where it went", (await page.locator(".idxRow[data-open]").count()) === 1);
+  ok("and says it in words, not only in ink", /Open on the desk/.test(await said(page)), (await said(page)).slice(-30));
+  ok("and does not say it with a doubled stop", !/\.\./.test(await said(page)), await said(page));
+  await page.close();
+}
+
+/* ── a drag owns the pick it makes ───────────────────────────────── */
+{
+  /* setPick cleared the restored flag when the person acted; offerPick
+     never touched it, so dragging across a different sentence moved the
+     mark and still called it somebody else's. */
+  const page = await open();
+  await page.locator(".idxRow").nth(2).click();
+  await page.waitForTimeout(400);
+  const box = await page.locator(".readBody .sent").nth(1).boundingBox();
+  await page.mouse.move(box.x + 20, box.y + 8);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 160, box.y + 8, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(560);
+  const bar = await page.locator(".pickBar").textContent();
+  ok("a drag on a restored note takes ownership of the mark", !/Picked before/.test(bar), bar.trim().slice(0, 60));
+  await page.close();
+}
+
 ok("no console errors anywhere", errors.length === 0, [...new Set(errors)].slice(0, 3).join(" · "));
 
 await browser.close();

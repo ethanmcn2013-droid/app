@@ -366,6 +366,12 @@ window.NOTES = (function () {
       /* Shown in the pick band at rest, so the mechanism is visible
          before the black button is pressed rather than only after a
          refused press. Short, because it sits under a note. */
+      /* Speech comes back in more than one note. The product does not
+       implement a pause rule, so it must not claim one: this states
+       only what is observable — that it came back separated, and that
+       they can be put back together. */
+      join: "Put these back together",
+      joinLabel: "Put this note and the next one back together as one",
       pickLabel: "To make a task",
       pickHint: "Tap a sentence, drag across the words, or walk them with the arrow keys.",
       payload:
