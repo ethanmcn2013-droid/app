@@ -400,9 +400,38 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
   const empty = rounds.length === 0;
   const latest = rounds[rounds.length - 1] || { scores: {} };
   const lowest = empty ? NaN : Math.min(...Object.values(latest.scores));
-  const totalFindings = rounds.reduce((n, r) => n + r.findings, 0);
-  const totalFixed = rounds.reduce((n, r) => n + r.fixed, 0);
-  const totalRefuted = rounds.reduce((n, r) => n + r.refuted, 0);
+  /* A round record may carry a count or the findings themselves, and the
+     two shapes have both been written by real engagements — scripts/round-
+     metrics.mjs already tolerates either. Without this, an array reaches
+     `0 + r.refuted`, coerces to a string, and the page prints
+     "0[object Object],[object Object]…" where a number belongs. */
+  const size = (v) =>
+    Array.isArray(v) ? v.length : typeof v === "number" ? v : 0;
+  /* `confirmed` is the modern name for what this shell called `fixed`, and
+     an unadjudicated finding was still raised even though it has no verdict. */
+  const fixedOf = (r) => (r.fixed !== undefined ? size(r.fixed) : size(r.confirmed));
+  const raisedOf = (r) =>
+    r.findings !== undefined
+      ? size(r.findings)
+      : fixedOf(r) + size(r.refuted) + size(r.unadjudicated);
+
+  const totalFindings = rounds.reduce((n, r) => n + raisedOf(r), 0);
+  const totalFixed = rounds.reduce((n, r) => n + fixedOf(r), 0);
+  const totalRefuted = rounds.reduce((n, r) => n + size(r.refuted), 0);
+
+  /* Seats sat, not seats assumed. This read "7" as a literal, so a round
+     that rotated three seats — or any panel that is not seven — was
+     misreported by the page that exists to report it. */
+  const seatCounts = rounds
+    .map((r) => (Array.isArray(r.seatsSat) ? r.seatsSat.length : size(r.scores && Object.keys(r.scores))))
+    .filter((n) => n > 0);
+  const seatLabel = seatCounts.length === 0
+    ? "—"
+    : Math.min(...seatCounts) === Math.max(...seatCounts)
+      ? "" + seatCounts[0]
+      : Math.min(...seatCounts) + "–" + Math.max(...seatCounts);
+  const seatWord = seatCounts.length && Math.min(...seatCounts) === Math.max(...seatCounts)
+    ? "seats each" : "seats per round";
 
   document.getElementById("footCounts").textContent =
     "Across " + rounds.length + " round" + (rounds.length === 1 ? "" : "s") +
@@ -411,7 +440,7 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
 
   document.getElementById("facts").innerHTML = [
     ["" + rounds.length, "rounds"],
-    ["7", "seats each"],
+    [seatLabel, seatWord],
     ["" + totalFindings, "findings raised"],
     ["" + totalRefuted, "refused"],
     ["" + totalFixed, "fixed"],
@@ -433,23 +462,33 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     /* One lane per round, stacked, so an earlier score sits under the current
        one rather than hidden behind it. */
     const lane = Math.max(3, Math.floor(18 / rounds.length) - 2);
+    /* A seat that did not sit a round has no score for it, and the method
+       prescribes exactly that: seven seats at round 1, at an audit and at
+       the close, a rotating three between. An absent score is a gap, never
+       a zero — drawing it as one would show a seat that skipped a round as
+       a seat that failed it. */
+    const sat = function (r) { return typeof r.scores[seat] === "number"; };
     const bars = rounds.map(function (r, i) {
+      if (!sat(r)) return "";
       const isLast = i === rounds.length - 1;
       return '<i style="left:0;width:' + (r.scores[seat] * 10) + "%;top:" + (2 + i * (lane + 2)) +
         "px;height:" + lane + 'px"' + (isLast ? " data-latest" : "") + "></i>";
     }).join("");
     const marks = rounds.map(function (r, i) {
       const isLast = i === rounds.length - 1;
+      if (!sat(r)) return '<span style="opacity:0.35">\u2014</span>';
       return "<span" + (isLast ? ' style="color:var(--ink-1)"' : "") + ">" + r.scores[seat].toFixed(1) + "</span>";
     }).join("");
-    const first = rounds[0].scores[seat];
-    const last = latest.scores[seat];
-    const delta = last - first;
+    /* The delta spans the rounds this seat actually sat, not round 1 to now. */
+    const satRounds = rounds.filter(sat);
+    const first = satRounds.length ? satRounds[0].scores[seat] : null;
+    const last = satRounds.length ? satRounds[satRounds.length - 1].scores[seat] : null;
+    const delta = first === null ? null : last - first;
     row.innerHTML =
       '<span class="seat">' + seat + "</span>" +
       '<span class="track">' + bars + '<b style="left:' + GATE * 10 + '%"></b></span>' +
       '<span class="scores">' + marks +
-      (rounds.length > 1 ? '<span class="delta">' + (delta >= 0 ? "+" : "") + delta.toFixed(1) + "</span>" : "") +
+      (satRounds.length > 1 ? '<span class="delta">' + (delta >= 0 ? "+" : "") + delta.toFixed(1) + "</span>" : "") +
       "</span>";
     chart.appendChild(row);
   });
