@@ -17,6 +17,7 @@
   --acc: #8b83ff;
   --acc-deep: #4f46e5;
   --acc-wash: rgba(79, 70, 229, 0.16);
+  --acc-edge: rgba(139, 131, 255, 0.34);
   --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --dur: 140ms;
@@ -138,6 +139,20 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
   .panel { position: static; max-height: none; }
 }
 @media (max-width: 620px) { .wrap { padding: 0 14px 70px; } }
+/* ── the elevation set ─────────────────────────────────────────────
+   Four artifacts, one engagement. The same component carries the set on
+   every page of it, and on every product's set, so a reader who learns
+   it once knows where they are anywhere. */
+.setNav { margin: 88px 0 0; padding: 30px 0 0; border-top: 1px solid var(--t1); }
+.setNav > p.setEyebrow { margin: 0 0 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--t3); }
+.setGrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.setCard { display: block; text-decoration: none; color: inherit; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; background: var(--panel); transition: border-color 140ms cubic-bezier(0.23,1,0.32,1), background-color 140ms cubic-bezier(0.23,1,0.32,1); }
+a.setCard:hover { border-color: var(--t3); background: var(--panel-2); }
+a.setCard:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.setCard[aria-current] { border-color: var(--acc-edge); background: var(--acc-wash); }
+.setCard b { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 600; letter-spacing: -0.016em; color: var(--t1); }
+.setCard em { display: block; margin-top: 3px; font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t3); }
+.setCard span { display: block; margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--t2); }
 </style>
 <style>
 /*__CSS__*/
@@ -218,6 +233,20 @@ h2 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
   The master: <code>docs/design/labs/notes-2026-08/notebook.js</code> and <code>master.css</code>.
   The gates: <code>scripts/design/notes-audit.mjs</code> and <code>scripts/design/notes-interaction-check.mjs</code>.
 </p>
+
+<nav class="setNav" aria-label="The Notes elevation set">
+  <p class="setEyebrow">The Notes elevation · three artifacts</p>
+  <div class="setGrid">
+    <div class="setCard" aria-current="page"><b>Design Console</b><em>The notebook itself, live</em><span>Every design decision as a switch, the master as it stands.</span></div>
+    <a class="setCard" href="https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25" target="_blank" rel="noopener"><b>Elevation Log</b><em>Fourteen rounds, scored</em><span>The brief, every seat, every finding, and the port plan.</span></a>
+    <a class="setCard" href="https://claude.ai/code/artifact/9764061d-9ae6-4a58-858b-b8e54060cd11" target="_blank" rel="noopener"><b>Fourteen Rounds</b><em>The method, rated</em><span>A critical retrospective on the loop that produced this.</span></a>
+  </div>
+  <p class="setEyebrow" style="margin: 30px 0 20px;">The other two elevations</p>
+  <div class="setGrid">
+    <a class="setCard" href="https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6" target="_blank" rel="noopener"><b>Tasks · Nineteen Rounds</b><em>Sibling elevation</em><span>The same method, run against the Tasks board.</span></a>
+    <a class="setCard" href="https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd" target="_blank" rel="noopener"><b>Timeline · Twelve Rounds</b><em>Sibling elevation</em><span>The same method, run against the Timeline plan.</span></a>
+  </div>
+</nav>
 
 </div>
 

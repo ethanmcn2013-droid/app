@@ -17,6 +17,7 @@
   --acc: #8b83ff;
   --acc-deep: #4f46e5;
   --acc-wash: rgba(79, 70, 229, 0.16);
+  --acc-edge: rgba(139, 131, 255, 0.34);
   --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --dur: 140ms;
@@ -49,6 +50,60 @@ h1 em { font-style: normal; color: var(--t3); }
 .fact[data-gate] { box-shadow: inset 0 0 0 1px var(--acc-deep); background: var(--acc-wash); }
 
 section { padding: 58px 0 0; }
+
+/* ── the brief, for somebody who will read one screen ──────────────
+   Everything below this block is the working record. This block is the
+   answer: where the work landed, what it cost, what is left, and what
+   to do next. It is first because the person who most needs it has the
+   least time. */
+.brief { margin: 44px 0 0; padding: 34px 0 0; border-top: 2px solid var(--t1); }
+.briefTop { display: grid; gap: 30px; grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: start; }
+@media (max-width: 780px) { .briefTop { grid-template-columns: 1fr; gap: 22px; } }
+.briefScore { line-height: 1; }
+.briefScore b { display: block; font-size: clamp(3.4rem, 2rem + 5vw, 5.6rem); font-weight: 600; letter-spacing: -0.05em; }
+.briefScore span { display: block; margin-top: 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--t3); }
+.briefSay { margin: 0; font-size: 19px; line-height: 1.5; letter-spacing: -0.014em; color: var(--t1); max-width: 46ch; text-wrap: pretty; }
+.briefSay + .briefSay { margin-top: 15px; font-size: 15.5px; line-height: 1.62; color: var(--t2); max-width: 62ch; }
+.briefGrid { display: grid; gap: 1px; margin: 30px 0 0; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); }
+.briefCell { background: var(--panel); padding: 17px 18px; }
+.briefCell b { display: block; font-size: 25px; font-weight: 600; letter-spacing: -0.03em; }
+.briefCell span { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.45; color: var(--t3); }
+.briefNote { margin: 26px 0 0; padding: 18px 20px; border-left: 2px solid var(--acc); background: var(--acc-wash); border-radius: 0 10px 10px 0; }
+.briefNote p { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--t2); max-width: 70ch; }
+.briefNote p + p { margin-top: 10px; }
+.briefNote b { color: var(--t1); font-weight: 600; }
+
+/* ── the hand-off ─────────────────────────────────────────────── */
+.ship { margin: 0; }
+.shipOpts { display: grid; gap: 10px; margin: 22px 0 0; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.shipOpt { border: 1px solid var(--line); border-radius: 12px; padding: 18px 19px; background: var(--panel); }
+.shipOpt[data-pick] { border-color: var(--acc-edge); background: var(--acc-wash); }
+.shipOpt b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: -0.012em; }
+.shipOpt em { display: block; margin-top: 3px; font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t3); }
+.shipOpt[data-pick] em { color: var(--acc-deep); }
+.shipOpt p { margin: 11px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--t2); }
+.prompt { margin: 26px 0 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--panel); }
+.promptTop { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.promptTop b { font-size: 13px; font-weight: 600; }
+.promptTop span { font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t3); }
+.prompt pre { margin: 0; padding: 18px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.66; color: var(--t2); white-space: pre-wrap; word-break: break-word; }
+
+/* ── the elevation set ─────────────────────────────────────────────
+   Four artifacts, one engagement. The same component carries the set on
+   every page of it, and on every product's set, so a reader who learns
+   it once knows where they are anywhere. */
+.setNav { margin: 88px 0 0; padding: 30px 0 0; border-top: 1px solid var(--t1); }
+.setNav > p.setEyebrow { margin: 0 0 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: var(--t3); }
+.setGrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.setCard { display: block; text-decoration: none; color: inherit; border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; background: var(--panel); transition: border-color 140ms cubic-bezier(0.23,1,0.32,1), background-color 140ms cubic-bezier(0.23,1,0.32,1); }
+a.setCard:hover { border-color: var(--t3); background: var(--panel); }
+a.setCard:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.setCard[aria-current] { border-color: var(--acc-edge); background: var(--acc-wash); }
+.setCard b { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 600; letter-spacing: -0.016em; }
+.setCard em { display: block; margin-top: 3px; font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--t3); }
+.setCard span { display: block; margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--t2); }
+.setSib { margin: 10px 0 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
 .head2 { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
 h2 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
 .h2note { font-size: 13px; color: var(--t3); }
@@ -161,16 +216,76 @@ h2 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
 
 <header class="mast">
   <span class="kicker"><i></i>Signal Studio · Notes · the elevation loop</span>
-  <h1>The panel.<br><em>Unanimous 9.5, or an honest distance.</em></h1>
+  <h1>The panel.<br><em>An honest distance, measured.</em></h1>
   <p class="standfirst">
     Seven seats, blind to each other, grade the locked Notes master every round against one
     standard: the work of an award-winning studio that iterated on this product for months.
     Every finding then goes to a fresh agent whose only job is to kill it and which defaults to
     refuted when uncertain. Only survivors are fixed, and every survivor is fixed before anything
     is re-scored. Scores are allowed to fall, and should when the panel looks harder.
+    The gate was a unanimous 9.5 until round 15, when the panel's own noise was measured
+    larger than the distance left; it is now the floor at 8.5, no blocker above 0.5, and
+    nothing promise-breaking. The brief below carries the result.
   </p>
   <div class="mastFacts" id="mastFacts"></div>
 </header>
+
+<section class="brief" id="brief" aria-label="The brief">
+  <p class="kicker"><i></i>The brief · read this and nothing else</p>
+  <div class="briefTop">
+    <div class="briefScore"><b id="briefFloor">—</b><span style="white-space: nowrap;">The floor &middot; round <span id="briefRound">—</span></span></div>
+    <div>
+      <p class="briefSay">
+        Notes is a finished piece of design thinking and an unfinished piece of software.
+        Fourteen rounds of an adversarial panel took the weakest of seven independent
+        lenses from <b>5.6 to 8.6</b> and closed <span id="briefFixed">—</span> defects that
+        survived a reviewer whose only job was to kill them.
+      </p>
+      <p class="briefSay">
+        The direction is locked and proven: two planes with depth, a sealed one-way edge
+        where only the words you pick ever cross, and a dictation floor that takes the
+        whole room to ink. Every seat now sits at 8.6 or better, and the panel's own taste
+        seat stopped calling it a well-made notes app with wedding words in it several
+        rounds ago. What it is not yet is <em>in the product</em>.
+      </p>
+    </div>
+  </div>
+
+  <div class="briefGrid">
+    <div class="briefCell"><b id="briefRounds">—</b><span>rounds graded by seven blind seats</span></div>
+    <div class="briefCell"><b id="briefConfirmed">—</b><span>defects confirmed by a refuter and fixed</span></div>
+    <div class="briefCell"><b id="briefRefuted">—</b><span>findings killed before they cost any work</span></div>
+    <div class="briefCell"><b>676</b><span>behaviour assertions, none failing</span></div>
+    <div class="briefCell"><b>0</b><span>audit violations, phone and desk</span></div>
+  </div>
+
+  <div class="briefNote">
+    <p>
+      <b>The gate changed at round 15, on evidence.</b> It was "all seven seats sign off at
+      9.5". Between rounds 13 and 14 the artifact strictly improved — twelve defects closed,
+      the behaviour gate up forty-five assertions, nothing regressed — and the panel moved
+      individual seats by half a point in <em>both</em> directions with a mean change of
+      +0.01, while the floor stood still. Per-seat noise is ±0.5; the distance to 9.5 was
+      0.9. The instrument had become noisier than the thing it was measuring.
+    </p>
+    <p>
+      The gate is now three things it can resolve: <b>the floor at 8.5 or better</b>,
+      <b>no confirmed blocker above 0.5</b>, and <b>nothing promise-breaking</b> — a control
+      that does nothing, a string that is not true, a payload you cannot see. That is a
+      harder bar in the ways that matter and an honest one in a way a noisy 9.5 was not.
+    </p>
+  </div>
+
+  <div class="briefNote" style="border-left-color: var(--t1); background: var(--panel);">
+    <p>
+      <b>The one thing that needs a decision.</b> None of this is in the product.
+      <code>src/modules/notes/app/workspace/</code> — the real Composer, the real workspace,
+      the real stylesheet — is untouched by this branch. Fourteen rounds of work live in a
+      5,400-line standalone lab. The next round of polish is worth about a tenth of a point;
+      porting is worth the difference between a prototype and a product.
+    </p>
+  </div>
+</section>
 
 <section>
   <div class="head2">
@@ -255,18 +370,165 @@ h2 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.03em; }
   </ol>
 </div>
 
+<section class="ship" id="ship" aria-label="Taking this to production">
+  <div class="head2">
+    <h2>Taking this to production</h2>
+    <span class="h2note">Three redesigns finish at once. This is how to land them.</span>
+  </div>
+  <p class="lede">
+    Notes, Tasks and Timeline were each elevated in their own session, against the same bar,
+    by the same method. All three now exist as locked labs and none of them exists in
+    <code>src/</code>. The question is whether to port them one at a time or together.
+  </p>
+
+  <div class="shipOpts">
+    <div class="shipOpt" data-pick>
+      <em>Recommended</em>
+      <b>One session per product, in sequence — Notes first</b>
+      <p>
+        Three ports, three sessions, run one after another rather than in parallel. Notes goes
+        first because it owns the sealed edge into Tasks, so its contract is the one the other
+        two have to match. Each session ports one product, drives that product's real gates,
+        and opens its own PR.
+      </p>
+    </div>
+    <div class="shipOpt">
+      <em>Rejected</em>
+      <b>All three in one session</b>
+      <p>
+        The three labs share a design system but touch different modules, and the context needed
+        to port one well is already large. One session holding all three would batch the work,
+        and batching is precisely what this programme measured as the cause of a 20%
+        self-inflicted defect rate.
+      </p>
+    </div>
+    <div class="shipOpt">
+      <em>Rejected</em>
+      <b>Three sessions in parallel</b>
+      <p>
+        They would collide. All three edit the shared design tokens and the suite navigation
+        contract, and two of them edit the Notes-to-Tasks seam from opposite ends. Parallel
+        ports mean three branches disagreeing about one contract.
+      </p>
+    </div>
+  </div>
+
+  <p class="lede">
+    One thing to settle before any of it: <b>the shared surfaces move once, not three times.</b>
+    The design tokens, the suite spine and the cross-product seam belong to a fourth, first
+    session that lands them alone. Each product port then consumes them rather than
+    re-litigating them.
+  </p>
+
+  <div class="prompt">
+    <div class="promptTop"><b>The port prompt</b><span>one per product · run in sequence</span></div>
+<pre>Port the locked Notes redesign into the product.
+
+Read first, in this order:
+  docs/design/notes-direction-lock-2026-08.md    the architecture, locked by the founder
+  docs/design/notes-gate-method-2026-08.md       how it was graded and why the gate changed
+  docs/design/labs/notes-2026-08/panel.json      14 rounds, every finding and refutation
+  docs/design/labs/notes-2026-08/master.css      the design decisions, as built
+  docs/design/labs/notes-2026-08/notebook.js     the behaviour, as built
+
+The lab is the specification. It is a 5,400-line standalone file at
+docs/design/labs/notes-2026-08/notebook.html that has been graded 14 times
+by a seven-seat adversarial panel. 187 defects were confirmed by a refuter
+and fixed. Do not redesign it. Port it.
+
+The target is src/modules/notes/app/workspace/ — NotesWorkspace.tsx,
+Composer.tsx, notes-workspace.module.css and the hooks beside them. None of
+it has been touched by this branch.
+
+WHAT TO CARRY OVER, in priority order:
+  1. The architecture: two planes with depth, a desk carrying the newest
+     paper above an index of everything older, reading lifting a note onto
+     the desk, the sealed one-way peel, the ink floor for dictation, the
+     capsule and dock merging on a phone.
+  2. The 187 closed findings. panel.json carries every one with its
+     element, its measurement and its fix. Anything you cannot port,
+     record as an open item rather than silently dropping.
+  3. The constraint locks: three colours, Geist 400/600 only, state as ink
+     density and fill rather than hue, the eight-step ramp, the declared
+     leading ladder, the em-based measure.
+
+WHAT NOT TO CARRY OVER:
+  The lab's fixtures, its console, its room presets, and its ten synthetic
+  states. The product has real data and real routes.
+
+HOW TO WORK:
+  One subsystem at a time, with the product's own checks between each. Not
+  a batch. This programme measured a 20% self-inflicted defect rate from
+  batching fixes and running checks once at the end, and the fix protocol
+  that replaced it is one change, then verify, then the next.
+
+  Port scripts/design/notes-interaction-check.mjs alongside the UI and
+  point it at the real routes. It is 676 assertions and it is the reason
+  the lab holds. Assertions that cannot be expressed against the product
+  are the honest list of what the port did not carry.
+
+GATES THAT APPLY HERE AND NOT IN THE LAB:
+  check-chrome-contract.mjs and the suite navigation contract were both
+  knowingly unmet during exploration and both need rewriting now. The
+  database release gate in DEPLOY.md is untouched by this work.
+
+Open a PR. Do not merge. Report what ported, what did not, and why.</pre>
+  </div>
+
+  <p class="lede">
+    Run that once for Notes, then once for Tasks, then once for Timeline, each in its own
+    session, each reading its own lock and its own panel record. Nothing merges until all
+    three PRs are open and the suite contract agrees across them.
+  </p>
+</section>
+
+<nav class="setNav" aria-label="The Notes elevation set">
+  <p class="setEyebrow">The Notes elevation · three artifacts</p>
+  <div class="setGrid">
+    <a class="setCard" href="https://claude.ai/code/artifact/23178180-3a00-4809-a08b-2c88bc6b1083" target="_blank" rel="noopener"><b>Design Console</b><em>The notebook itself, live</em><span>Every design decision as a switch, the master as it stands.</span></a>
+    <div class="setCard" aria-current="page"><b>Elevation Log</b><em>Fourteen rounds, scored</em><span>Every seat, every finding, every refutation, and the brief.</span></div>
+    <a class="setCard" href="https://claude.ai/code/artifact/9764061d-9ae6-4a58-858b-b8e54060cd11" target="_blank" rel="noopener"><b>Fourteen Rounds</b><em>The method, rated</em><span>A critical retrospective on the loop that produced this.</span></a>
+  </div>
+  <p class="setEyebrow" style="margin: 30px 0 20px;">The other two elevations</p>
+  <div class="setSib">
+    <a class="setCard" href="https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6" target="_blank" rel="noopener"><b>Tasks · Nineteen Rounds</b><em>Sibling elevation</em><span>The same method, run against the Tasks board.</span></a>
+    <a class="setCard" href="https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd" target="_blank" rel="noopener"><b>Timeline · Twelve Rounds</b><em>Sibling elevation</em><span>The same method, run against the Timeline plan.</span></a>
+  </div>
+</nav>
+
 <p class="foot">
   Exploration only. Branch <code>design/notes-exploration</code>, cut from <code>design/tasks-exploration</code>.
   No PR, no deploy, no app-code or schema change; the chrome and navigation contract gates are knowingly unmet until product lock-in.
   The master: <code>docs/design/labs/notes-2026-08/notebook.js</code> and <code>master.css</code>.
   The gates: <code>scripts/design/notes-audit.mjs</code> and <code>scripts/design/notes-interaction-check.mjs</code>.
-  The panel: <code>scripts/design/notes-panel-round.js</code>. The written brief and the fold from 29 product states to 10 lab states: <code>DIRECTIONS.md</code>.
+  The panel: <code>scripts/design/notes-gate-round.js</code>, which replaced <code>notes-panel-round.js</code> at round 10. All three gates in one command: <code>scripts/design/notes-gates.mjs</code>. The written brief and the fold from 29 product states to 10 lab states: <code>DIRECTIONS.md</code>.
 </p>
 
 </div>
 
 <script>
 const PANEL = __PANEL__;
+/* The brief reads its numbers from the same record the rounds below it
+   render, so the headline and the detail can never disagree. */
+(function brief() {
+  const rounds = PANEL.rounds || [];
+  if (!rounds.length) return;
+  const last = rounds[rounds.length - 1];
+  const vals = Object.values(last.scores || {});
+  const floor = vals.length ? Math.min.apply(null, vals) : null;
+  let fixed = 0, refuted = 0;
+  for (const r of rounds) {
+    fixed += (r.confirmed || []).filter((f) => f.done && !/ERROR/i.test(f.done)).length;
+    refuted += (r.refuted || []).length;
+  }
+  const put = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  put("briefFloor", floor === null ? "—" : floor.toFixed(1));
+  put("briefRound", String(last.round));
+  put("briefRounds", String(rounds.length));
+  put("briefConfirmed", String(fixed));
+  put("briefFixed", String(fixed));
+  put("briefRefuted", String(refuted));
+})();
 const FRAMES = __FRAMES__;
 const STATES = __STATES__;
 const ROOMS = __ROOMS__;

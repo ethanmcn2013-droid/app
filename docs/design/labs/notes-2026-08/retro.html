@@ -1,0 +1,461 @@
+<title>Fourteen Rounds</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+/* A retrospective on a method, held to the palette that method policed:
+   Ink, Indigo, White and tints of those three, Geist at 400 and 600. It
+   is a scorecard and an argument, so it is a narrow column of prose with
+   the evidence pulled wide beside it. */
+:root {
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+  --ink-1: var(--ink);
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --ink-3: rgba(17, 17, 17, 0.60);
+  --ink-4: rgba(17, 17, 17, 0.26);
+  --wash: rgba(17, 17, 17, 0.04);
+  --line-soft: rgba(17, 17, 17, 0.07);
+  --line: rgba(17, 17, 17, 0.12);
+  --indigo-wash: rgba(79, 70, 229, 0.09);
+  --indigo-line: rgba(79, 70, 229, 0.30);
+  --paper: var(--white);
+  --plate: rgba(17, 17, 17, 0.03);
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --measure: 35rem;
+  --wide: 64rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0c0c0d; --ink-1: #f5f5f6;
+    --ink-2: rgba(245,245,246,0.72); --ink-3: rgba(245,245,246,0.58); --ink-4: rgba(245,245,246,0.28);
+    --wash: rgba(255,255,255,0.05); --line-soft: rgba(255,255,255,0.08); --line: rgba(255,255,255,0.14);
+    --indigo: #7d76f1; --indigo-wash: rgba(125,118,241,0.15); --indigo-line: rgba(125,118,241,0.38);
+    --plate: rgba(255,255,255,0.04);
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0c0c0d; --ink-1: #f5f5f6;
+  --ink-2: rgba(245,245,246,0.72); --ink-3: rgba(245,245,246,0.58); --ink-4: rgba(245,245,246,0.28);
+  --wash: rgba(255,255,255,0.05); --line-soft: rgba(255,255,255,0.08); --line: rgba(255,255,255,0.14);
+  --indigo: #7d76f1; --indigo-wash: rgba(125,118,241,0.15); --indigo-line: rgba(125,118,241,0.38);
+  --plate: rgba(255,255,255,0.04);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink-1); font-family: var(--sans); font-size: 16px; line-height: 1.62; -webkit-font-smoothing: antialiased; }
+.page { max-width: var(--wide); margin: 0 auto; padding: 0 28px 120px; }
+.col { max-width: var(--measure); }
+.kicker { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+.mast { padding: 84px 0 40px; border-bottom: 1px solid var(--ink-1); }
+.mast h1 { margin: 18px 0 0; font-size: clamp(2.6rem, 1.3rem + 4.2vw, 4.6rem); font-weight: 600; letter-spacing: -0.045em; line-height: 0.96; text-wrap: balance; }
+.stand { margin: 24px 0 0; max-width: 42rem; font-size: 19px; line-height: 1.55; color: var(--ink-2); }
+.byline { margin: 28px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); }
+
+.verdict { margin: 48px 0 0; display: grid; gap: 32px; grid-template-columns: minmax(0, auto) minmax(0, 1fr); align-items: start; }
+@media (max-width: 720px) { .verdict { grid-template-columns: 1fr; gap: 20px; } }
+.bigScore { line-height: 1; }
+.bigScore b { display: block; font-size: clamp(4rem, 2rem + 7vw, 7rem); font-weight: 600; letter-spacing: -0.055em; }
+.bigScore i { font-style: normal; color: var(--ink-4); }
+.bigScore span { display: block; margin-top: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--ink-3); }
+.verdict p { margin: 0; font-size: 17px; line-height: 1.58; color: var(--ink-2); max-width: 40rem; }
+.verdict p + p { margin-top: 14px; }
+.verdict b { color: var(--ink-1); font-weight: 600; }
+
+h2 { margin: 76px 0 0; font-size: 27px; font-weight: 600; letter-spacing: -0.032em; line-height: 1.16; text-wrap: balance; }
+h3 { margin: 40px 0 0; font-size: 18px; font-weight: 600; letter-spacing: -0.018em; }
+p.body { margin: 16px 0 0; max-width: var(--measure); color: var(--ink-2); }
+p.body b { color: var(--ink-1); font-weight: 600; }
+p.body code, .body code { font-family: var(--mono); font-size: 0.87em; background: var(--wash); padding: 1px 5px; border-radius: 4px; color: var(--ink-1); }
+
+.rule { margin: 64px 0 0; border: 0; border-top: 1px solid var(--line-soft); }
+.tbl { width: 100%; margin: 24px 0 0; border-collapse: collapse; font-size: 14px; }
+.tbl th { text-align: left; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); font-weight: 400; padding: 0 14px 9px 0; border-bottom: 1px solid var(--line); }
+.tbl td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line-soft); color: var(--ink-2); vertical-align: top; }
+.tbl td:first-child { color: var(--ink-1); font-weight: 600; white-space: nowrap; }
+.tbl .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.up { color: var(--indigo); }
+.scroller { overflow-x: auto; }
+
+.grade { display: grid; gap: 1px; margin: 28px 0 0; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.gradeCell { background: var(--paper); padding: 18px 20px; }
+.gradeCell b { display: block; font-size: 30px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; }
+.gradeCell b small { font-size: 15px; color: var(--ink-4); font-weight: 600; }
+.gradeCell em { display: block; margin-top: 8px; font-style: normal; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+.gradeCell span { display: block; margin-top: 8px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+
+.pull { margin: 34px 0 0; padding: 22px 26px; border-left: 2px solid var(--indigo); background: var(--indigo-wash); border-radius: 0 12px 12px 0; }
+.pull p { margin: 0; font-size: 16.5px; line-height: 1.55; color: var(--ink-1); max-width: 42rem; }
+.pull p + p { margin-top: 12px; font-size: 15px; color: var(--ink-2); }
+
+.finding { margin: 26px 0 0; padding: 20px 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--plate); }
+.finding b { display: block; font-size: 15.5px; font-weight: 600; letter-spacing: -0.014em; }
+.finding em { display: block; margin-top: 3px; font-style: normal; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+.finding p { margin: 12px 0 0; font-size: 14.5px; line-height: 1.58; color: var(--ink-2); }
+.finding p code { font-family: var(--mono); font-size: 0.87em; }
+
+ol.steps { margin: 22px 0 0; padding: 0 0 0 20px; max-width: var(--measure); color: var(--ink-2); }
+ol.steps li { margin: 0 0 14px; padding-left: 6px; }
+ol.steps b { color: var(--ink-1); font-weight: 600; }
+
+.prompt { margin: 30px 0 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--plate); }
+.promptTop { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--line); background: var(--wash); }
+.promptTop b { font-size: 13px; font-weight: 600; }
+.promptTop span { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+.prompt pre { margin: 0; padding: 18px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.66; color: var(--ink-2); white-space: pre-wrap; word-break: break-word; }
+
+/* ── the elevation set ─────────────────────────────────────────────
+   Four artifacts, one engagement. The same component carries the set on
+   every page of it, and on every product's set, so a reader who learns
+   it once knows where they are anywhere. */
+.setNav { margin: 88px 0 0; padding: 30px 0 0; border-top: 1px solid var(--ink-1); }
+.setNav > p.kicker { margin: 0 0 20px; }
+.setGrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.setCard { display: block; text-decoration: none; color: inherit; border: 1px solid var(--line-soft); border-radius: 12px; padding: 18px 20px; background: var(--paper); transition: border-color 140ms cubic-bezier(0.23,1,0.32,1), background-color 140ms cubic-bezier(0.23,1,0.32,1); }
+a.setCard:hover { border-color: var(--line); background: var(--wash); }
+a.setCard:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+.setCard[aria-current] { border-color: var(--indigo-line); background: var(--indigo-wash); }
+.setCard b { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 600; letter-spacing: -0.016em; color: var(--ink-1); }
+.setCard em { display: block; margin-top: 3px; font-style: normal; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-3); }
+.setCard span { display: block; margin-top: 9px; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.foot { margin: 40px 0 0; font-family: var(--mono); font-size: 11px; line-height: 1.7; color: var(--ink-3); }
+</style>
+
+<div class="page">
+
+<header class="mast">
+  <p class="kicker">Signal Studio · Notes · a retrospective on the method</p>
+  <h1>Fourteen&nbsp;Rounds</h1>
+  <p class="stand">
+    An adversarial seven-seat panel took the weakest lens on Signal Notes from 5.6 to 8.6 and
+    closed 195 defects. It also spent nine of those fourteen rounds unable to finish, wrote four
+    of one round's twenty findings itself, and passed a gate that could not see a broken gesture.
+    This is what the method is worth, and what it costs.
+  </p>
+  <p class="byline">Written by the session that ran it · 26 August 2026</p>
+</header>
+
+<section class="verdict">
+  <div class="bigScore">
+    <b>7<i>/10</i></b>
+    <span>The elevate skill, as run</span>
+  </div>
+  <div>
+    <p>
+      <b>The panel is the best defect-finding instrument I have used, and the loop around it was
+      the thing holding the work back.</b> Rated as an idea, the method is a nine: seven blind
+      specialists, an adversarial refuter that defaults to killing findings, two automated gates,
+      and a score that is the lowest seat rather than the average. Almost nothing else finds a
+      Save button with nine live pixels of thirty-six, or a peel that announces the words it is
+      about to send and then sends different ones.
+    </p>
+    <p>
+      Rated as it was actually configured, it is a five, and the average is the honest number.
+      The seat schema forced three findings from every seat whatever it thought, which made the
+      programme's own terminating condition <b>arithmetically unreachable</b>. Nine rounds and 189
+      findings went by before anyone noticed. The four rounds after that change moved the floor
+      further than the nine before it.
+    </p>
+  </div>
+</section>
+
+<div class="grade">
+  <div class="gradeCell"><b>9<small>/10</small></b><em>The panel</em><span>Seven blind lenses plus an adversarial refuter. Finds things nothing else finds.</span></div>
+  <div class="gradeCell"><b>4<small>/10</small></b><em>The loop, as configured</em><span>A quota that made passing impossible, and no way for a seat to say "this is done".</span></div>
+  <div class="gradeCell"><b>8<small>/10</small></b><em>The gates</em><span>Real, driven, and repeatedly caught lying — which is the point.</span></div>
+  <div class="gradeCell"><b>5<small>/10</small></b><em>The fix protocol</em><span>Batching caused a 20% self-inflicted defect rate before it changed.</span></div>
+  <div class="gradeCell"><b>3<small>/10</small></b><em>The terminating condition</em><span>Unanimous 9.5 from fresh seats is a draw, not a standard.</span></div>
+</div>
+
+<h2>What actually happened</h2>
+<p class="body">
+  Fourteen rounds. Nine on the original loop, five on a rebuilt one. The break between them is
+  visible in every column.
+</p>
+
+<div class="scroller">
+<table class="tbl">
+  <thead><tr><th>Rounds</th><th>Loop</th><th class="num">Floor</th><th class="num">Findings/round</th><th class="num">Agents/round</th><th>Could it ever pass?</th></tr></thead>
+  <tbody>
+    <tr><td>1&ndash;9</td><td>Original panel</td><td class="num">5.6 &rarr; 7.1</td><td class="num">20&ndash;30</td><td class="num">42</td><td>No &mdash; see below</td></tr>
+    <tr><td>10&ndash;14</td><td>Gate round</td><td class="num"><span class="up">6.6 &rarr; 8.6</span></td><td class="num">1&ndash;12</td><td class="num">10&ndash;22</td><td>Yes</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="pull">
+  <p>
+    <b>The single most expensive line in the method was five words long.</b>
+    The seat schema carried <code>findings: { minItems: 3 }</code>.
+  </p>
+  <p>
+    Seven seats times three is twenty-one. The observed minimum confirmed count across eight
+    recorded rounds is <b>exactly twenty-one</b>. A seat that believed the work had reached the
+    bar was still contractually obliged to invent three defects, so a unanimous 9.5 could never
+    happen no matter how good the artifact became. The loop was not converging slowly. It was
+    incapable of converging.
+  </p>
+</div>
+
+<h2>The four things that were wrong, and what they cost</h2>
+
+<div class="finding">
+  <em>Cost: nine rounds</em>
+  <b>The panel could not pass</b>
+  <p>
+    The quota above. Fixed at round 10 by making findings optional and adding an explicit
+    sign-off boolean. Typography signed the work off at 9.5 in round 10 &mdash; the first time in
+    the programme's history any seat had been <em>able</em> to.
+  </p>
+</div>
+
+<div class="finding">
+  <em>Cost: most of the fixing in nine rounds</em>
+  <b>The work missed the binding constraint</b>
+  <p>
+    The gate is the lowest seat. Across eight rounds the floor seat rotated through five different
+    seats while every round fixed the findings of all seven, so most of the work each round could
+    not raise the score by definition. Now only seats within 0.3 of the floor raise blockers.
+  </p>
+</div>
+
+<div class="finding">
+  <em>Cost: a 20% self-inflicted defect rate</em>
+  <b>The loop manufactured its own defects</b>
+  <p>
+    Round 9 confirmed twenty findings and <b>four were caused by round 8's fixes</b>: a lede regex
+    whose <code>\s</code> was lost to shell escaping, silently disabling a whole rule and being
+    reported to the founder as a design outcome; a click handler that made the word-safe drag
+    shipped in the same batch unreachable; a desk budget that forgot the peel and deleted the
+    second plane; and a gate rule that failed the correct technique while never checking the real
+    defect. All of it from landing twenty fixes in one batch and running the gates once at the end.
+  </p>
+</div>
+
+<div class="finding">
+  <em>Cost: 120 duplicate PNGs per round, 26MB</em>
+  <b>It graded work that did not exist</b>
+  <p>
+    The shot harness rendered three extra "rooms" from URL parameters that were not keys in the
+    preset table, so all three fell back to the locked preset, and no CSS keyed off the variant
+    attribute. Verified by checksum: <b>36 of each room's 40 frames were byte-identical</b> to the
+    locked frames. The four that differed did so because the dictation waveform used
+    <code>Math.random()</code>.
+  </p>
+</div>
+
+<h2>The most valuable thing the method produced</h2>
+<p class="body">
+  Not any single fix. <b>Four times in five rounds, a seat proved that one of the two gates was
+  lying</b> &mdash; and each of those was worth more than the blocker that exposed it, because a
+  blind gate hides an unknown number of defects rather than one.
+</p>
+
+<div class="scroller">
+<table class="tbl">
+  <thead><tr><th>Round</th><th>The gate was blind to</th><th>What it had been hiding</th></tr></thead>
+  <tbody>
+    <tr><td>9</td><td>Real pointer gestures</td><td>The primary pick gesture was completely broken while the gate passed, because it proved the gesture with a scripted <code>Selection</code> object instead of a drag.</td></tr>
+    <tr><td>10</td><td>Touch</td><td>Every phone assertion opened its viewport with a <em>mouse</em>, so the coarse-pointer branch &mdash; the one governing the surface the architecture singles out &mdash; was never evaluated by any of them.</td></tr>
+    <tr><td>12</td><td>Contrast below 720px</td><td>The contrast pass only ran at 1440, where the dictation room is a white sheet. On a phone it is an ink floor, and the person's own dictated words were sitting at contrast 1.00. Invisible.</td></tr>
+    <tr><td>14</td><td>Asymmetric hit targets</td><td>Target growth was computed as one symmetric number from the <em>minimum</em> inset, so an expander growing only vertically &mdash; the correct shape for a round control among butted siblings &mdash; computed as zero.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<p class="body">
+  There is a lesson under all four. <b>A gate that has never failed is not evidence of quality; it
+  is an untested claim.</b> After round 12 every new gate rule was proved by deliberately breaking
+  the thing it watched and confirming it failed, before restoring it. That took about ninety
+  seconds a rule and should be mandatory.
+</p>
+
+<hr class="rule">
+
+<h2>Where the method finally stopped, and why</h2>
+<p class="body">
+  Not at 9.5. The terminating condition was changed at round 15 on evidence, and this is the
+  evidence. Between rounds 13 and 14 the artifact <b>strictly improved</b>: twelve confirmed
+  defects closed, the behaviour gate up forty-five assertions, nothing regressed.
+</p>
+
+<div class="scroller">
+<table class="tbl">
+  <thead><tr><th>Seat</th><th class="num">Round 13</th><th class="num">Round 14</th><th class="num">Change</th></tr></thead>
+  <tbody>
+    <tr><td>Typography</td><td class="num">9.4</td><td class="num">8.9</td><td class="num">&minus;0.5</td></tr>
+    <tr><td>UI composition</td><td class="num">9.0</td><td class="num">8.7</td><td class="num">&minus;0.3</td></tr>
+    <tr><td>Product taste</td><td class="num">8.6</td><td class="num">9.1</td><td class="num">+0.5</td></tr>
+    <tr><td>Brand and copy</td><td class="num">8.8</td><td class="num">9.2</td><td class="num">+0.4</td></tr>
+    <tr><td>Interaction</td><td class="num">8.7</td><td class="num">8.9</td><td class="num">+0.2</td></tr>
+    <tr><td>UX / Evidence</td><td class="num">8.7</td><td class="num">8.6</td><td class="num">&minus;0.1</td></tr>
+    <tr><td>Mean change</td><td class="num">&mdash;</td><td class="num">&mdash;</td><td class="num"><b>+0.01</b></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="pull">
+  <p>
+    <b>Per-seat noise is &plusmn;0.5. The remaining distance to 9.5 was 0.9. The per-round signal
+    is +0.01.</b>
+  </p>
+  <p>
+    The instrument had become noisier than the thing it was measuring. Typography also signed off
+    at 9.5 in round 10 and un-signed three times since, on strictly better work. A unanimous 9.5
+    from fresh blind seats is not a standard; it is a draw with a good prize. The gate is now the
+    floor at 8.5 or better, no confirmed blocker above 0.5, and nothing promise-breaking &mdash; a
+    control that does nothing, a string that is not true, a payload you cannot see.
+  </p>
+</div>
+
+<hr class="rule">
+
+<h2>What to do differently</h2>
+<p class="body">
+  Nine changes, in the order I would make them. The first three are the ones that would have
+  saved this programme most of its cost.
+</p>
+
+<ol class="steps">
+  <li><b>Let a seat say the work is finished.</b> No minimum finding count, ever. Add an explicit
+  sign-off boolean. This is the difference between a loop that can terminate and one that cannot,
+  and it is one line of schema.</li>
+
+  <li><b>Only the binding constraint sets the work queue.</b> If the score is the minimum seat,
+  fixing anything else cannot move it. Grade all seven, park the ones above the floor, and take
+  blockers only from seats within a band of the floor. Non-floor seats still report &mdash; three
+  of them caught a regression I had introduced, for free, without spending a blocker on it.</li>
+
+  <li><b>One fix, then verify, then the next.</b> Never a batch. The 20% self-inflicted rate came
+  entirely from batching. And "verify" means re-driving the specific claim, not just re-running the
+  gates: <code>seam-pick-desync</code> was recorded as fixed at round 9 and had never landed,
+  because the patch threw before writing and no assertion covered it. It was counted as closed for
+  three rounds until the panel found it again.</li>
+
+  <li><b>A finding is only closed when something asserts it.</b> Directly from the above. The
+  record now stores the gate's assertion count per round and says so out loud if a round closes
+  findings without the gate growing.</li>
+
+  <li><b>Prove every new gate rule by breaking what it watches.</b> Ninety seconds. A rule that has
+  never fired is not a rule.</li>
+
+  <li><b>Give the refuter the fix, not just the problem.</b> The single highest-leverage change
+  made mid-programme. The refuter caught that a proposed character-limit fix used the wrong number
+  &mdash; it read the <em>product's</em> source and found the real ceiling was 10,000, so enforcing
+  4,000 would have refused a note the shipped product saves. It also caught that reversing an
+  existing animation would pop the type 1.77&times; on handover. Both would have shipped.</li>
+
+  <li><b>Hand every seat the closed ledger.</b> 195 ids. Six had already been fixed twice before
+  this existed, and one class &mdash; the studio's private vocabulary reaching the accessibility
+  tree &mdash; was raised three separate times.</li>
+
+  <li><b>Grade one configuration.</b> Not four. The founder had already chosen one and three of
+  the four were byte-identical fallbacks to it.</li>
+
+  <li><b>Decide the terminating condition against the measurement's noise floor, before starting.</b>
+  Run the same artifact past two independent panels once, early. If they disagree by more than the
+  distance you are trying to close, your bar is unreachable by construction and you should find
+  that out in round two, not round fourteen.</li>
+</ol>
+
+<hr class="rule">
+
+<h2>The honest case against this method</h2>
+<p class="body">
+  Three things a reader should weigh before adopting it.
+</p>
+<p class="body">
+  <b>It is expensive.</b> Roughly 1.2 to 3 million subagent tokens per round, and fourteen rounds.
+  The rebuilt loop cut that by about two thirds &mdash; ten agents instead of forty-two &mdash; but
+  it is still a large instrument for a design review.
+</p>
+<p class="body">
+  <b>It rewards what it can measure.</b> Every seat drives a file and cites selectors, so findings
+  skew towards the measurable: contrast ratios, hit targets, focus order, string grammar. The taste
+  seat exists to counterweight that and it is the seat whose score moves most between rounds, which
+  is exactly what you would expect of the one lens that cannot be instrumented.
+</p>
+<p class="body">
+  <b>It produced a beautiful prototype and no product.</b> Fourteen rounds and 195 fixes live in a
+  5,400-line standalone lab. <code>src/modules/notes/app/workspace/</code> is untouched. That was
+  always the plan &mdash; exploration first, implementation later &mdash; but the method has no
+  built-in sense of when exploration has stopped paying, and it went at least two rounds past that
+  point before anyone asked.
+</p>
+
+<hr class="rule">
+
+<h2>For the session that reads all three of these</h2>
+<p class="body">
+  Notes, Tasks and Timeline each ran this method independently and each wrote one of these. The
+  prompt below is for the session that takes all three and decides what the skill should become.
+</p>
+
+<div class="prompt">
+  <div class="promptTop"><b>The synthesis prompt</b><span>run once, with all three retrospectives</span></div>
+<pre>You are being given three independent retrospectives on the same design
+method. Notes, Tasks and Timeline were each elevated in their own session,
+by the same skill, against the same bar, with no contact between the
+sessions. Each has rated the method and said what it would change.
+
+  Notes    · Fourteen Rounds  · https://claude.ai/code/artifact/9764061d-9ae6-4a58-858b-b8e54060cd11
+  Tasks    · Nineteen Rounds  · https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6
+  Timeline · Twelve Rounds    · https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd
+
+Read all three before writing anything.
+
+WHAT I WANT OUT OF THIS
+A rewritten skill, not a summary of three opinions. Specifically:
+  1. The changes all three sessions independently arrived at. Agreement
+     across three blind runs is the strongest signal in this whole
+     exercise - treat those as settled and make them the defaults.
+  2. The changes only one session found. Judge each on its argument, not
+     on the fact that only one session raised it. One session may have
+     been the only one to hit that failure mode.
+  3. Where the three disagree, say so explicitly and pick, with reasoning.
+     Do not average them.
+
+THINGS TO INTERROGATE RATHER THAN ACCEPT
+  - Each session rated the skill. Do the ratings actually mean the same
+    thing? Compare what each was rating before you compare the numbers.
+  - Each proposes a terminating condition. A method that cannot terminate
+    is the most expensive defect any of these found; make sure the one you
+    choose can be resolved by the measurement, and say how you know.
+  - At least one session measured the panel's own noise floor. If the
+    others did not, that number governs every score in their reports too.
+
+WHAT TO PRODUCE
+  - A rewritten skill definition, complete enough to run unchanged.
+  - A short list of what was removed and why, so nothing quietly returns.
+  - The failure modes each session hit, as a checklist the next run is
+    seeded with, in the shape of the existing defect library.
+
+Be critical of all three, including where they are self-serving. Each was
+written by the session that ran the method, and each has an interest in
+its own work looking well-governed.</pre>
+</div>
+
+<nav class="setNav" aria-label="The Notes elevation set">
+  <p class="kicker">The Notes elevation · three artifacts</p>
+  <div class="setGrid">
+    <a class="setCard" href="https://claude.ai/code/artifact/23178180-3a00-4809-a08b-2c88bc6b1083" target="_blank" rel="noopener"><b>Design Console</b><em>The notebook itself, live</em><span>Every design decision as a switch, the master as it stands.</span></a>
+    <a class="setCard" href="https://claude.ai/code/artifact/ecd1d852-3294-44b3-95e7-4582d57a2b25" target="_blank" rel="noopener"><b>Elevation Log</b><em>Fourteen rounds, scored</em><span>The brief, every seat, every finding, and the port plan.</span></a>
+    <div class="setCard" aria-current="page"><b>Fourteen Rounds</b><em>The method, rated</em><span>A critical retrospective on the loop that produced this.</span></div>
+  </div>
+  <p class="kicker" style="margin: 30px 0 20px;">The other two elevations</p>
+  <div class="setGrid">
+    <a class="setCard" href="https://claude.ai/code/artifact/75144b7c-e8ad-46f8-a6a8-66e3208f12f6" target="_blank" rel="noopener"><b>Tasks · Nineteen Rounds</b><em>Sibling elevation</em><span>The same method, run against the Tasks board.</span></a>
+    <a class="setCard" href="https://claude.ai/code/artifact/cb05ac34-2d21-4cbe-8f6b-4367577a08dd" target="_blank" rel="noopener"><b>Timeline · Twelve Rounds</b><em>Sibling elevation</em><span>The same method, run against the Timeline plan.</span></a>
+  </div>
+</nav>
+
+<p class="foot">
+  Exploration only. Branch <code>design/notes-exploration</code>. No PR, no deploy, no app-code or
+  schema change. The record this is drawn from: <code>docs/design/labs/notes-2026-08/panel.json</code>,
+  fourteen rounds. The method as it now stands:
+  <code>docs/design/notes-gate-method-2026-08.md</code> and
+  <code>scripts/design/notes-gate-round.js</code>.
+</p>
+
+</div>
