@@ -1,0 +1,1709 @@
+/* Tasks · Studio Floor — GENERATED ONCE by tools/split.mjs from floor.html <style>, then hand-edited.
+   Every selector is scoped to [data-app="tasks"] so the three products
+   share one document without sharing one :root. Do not remove the scope.
+   The floor, the spine and the sheet's base geometry are shell.css's. */
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   STUDIO FLOOR — the locked Tasks direction.
+   PHASE 1: the palette is locked to three brand colours and nothing else.
+
+     Ink      #111111   the room, the type, and every weight of emphasis
+     Indigo   #4f46e5   the accent, spent once
+     White    #ffffff   the sheet the work lives on
+
+   Every other value on this screen is one of those three at a stated
+   alpha. There are no other hues anywhere: no red, no amber, no green,
+   no beige, no independent grey. State is expressed by ink DENSITY and
+   FILL rather than by hue, which is the whole reason this palette can
+   be this small.
+
+     overdue          a filled ink chip, white type. The loudest object.
+     due today        an outlined chip, ink at full strength, 600.
+     next milestone   indigo. The one earned accent in the view.
+     everything else  plain.
+
+   Type is Geist at 400 and 600. No other weight appears anywhere.
+
+     ?v=locked | a | b | c
+     ?state=board | cards | dense | empty | loading | planning
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-app="tasks"] {
+  /* ── the three ─────────────────────────────────────────────── */
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  /* ── ink, at stated alphas (over white) ────────────────────── */
+  --ink-1: var(--ink);                       /* primary type       21:1 */
+  --ink-2: rgba(17, 17, 17, 0.72);           /* secondary type    7.4:1 */
+  --ink-3: rgba(17, 17, 17, 0.62);           /* micro labels      5.3:1 */
+  --ink-4: rgba(17, 17, 17, 0.28);           /* decorative only, never type */
+
+  /* The alpha ladder. Four steps for surfaces and rules, and no value is
+     allowed to sit between them. Nothing on a white surface goes above
+     8%: a heavier rule reads as a box, and this product does not draw
+     boxes. 16% exists only for a hover edge. */
+  --wash: rgba(17, 17, 17, 0.04);
+  --line-soft: rgba(17, 17, 17, 0.06);
+  --line: rgba(17, 17, 17, 0.08);
+  --wash-2: rgba(17, 17, 17, 0.08);
+  --line-strong: rgba(17, 17, 17, 0.16);
+
+  /* ── white, at stated alphas (over the ink floor) ──────────── */
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.62);     /* 7.7:1 on ink            */
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  /* ── indigo, at stated alphas ──────────────────────────────── */
+  --indigo-ink: var(--indigo);               /* 6.3:1 on white          */
+  --indigo-wash: rgba(79, 70, 229, 0.09);
+  --indigo-deep: #4338ca;                    /* the indigo ramp, one step darker */
+  --indigo-line: rgba(79, 70, 229, 0.32);
+  --indigo-ring: rgba(79, 70, 229, 0.16);
+
+  /* ── the ladder ────────────────────────────────────────────── */
+  /* 4 - 6 - 8 - 12 - 16 - pill. Six steps, no seventh. */
+  /* One tracking curve, by size, declared once. Every letter-spacing in
+     the file is a token from this ladder — before this there were three
+     values inside the 13px band alone and the curve ran backwards. */
+  --tr-19: -0.026em; --tr-18: -0.022em; --tr-15: -0.016em; --tr-14: -0.014em;
+  --tr-13: -0.010em; --tr-12: -0.006em; --tr-11: 0em; --tr-10: 0.004em;
+  /* One polarity branch on the same curve: reversed out of ink, type needs a
+     hair more room to hold the same colour. */
+  --tr-rev: 0.008em;
+  --r-xs: 4px;
+  --r-chip: 6px;
+  --r-ctl: 8px;
+  --r-card: 12px;
+  --r-sheet: 16px;
+  --r-pill: 999px;
+
+  --inset: 18px; --dock-w: 442px;
+  --rail: 64px;
+  --tap: 44px;
+
+  /* One duration and one curve for the whole product. Any other value
+     has to be argued for in writing. Tooltips are the single exception,
+     and they leave three times faster than they arrive. */
+  --dur: var(--motion-fast);                 /* 140ms                   */
+  --curve: var(--ease-out);
+  --dur-out: 50ms;
+
+  /* Borders are rings, so thickening one on hover cannot move a single
+     pixel of layout. Elevation is stacked micro-shadows plus the ring,
+     never one soft blur. */
+  --ring: 0 0 0 1px var(--line);
+  --ring-strong: 0 0 0 1px var(--line-strong);
+  --raise: 0 1px 1px rgba(17, 17, 17, 0.02), 0 2px 3px rgba(17, 17, 17, 0.03);
+  /* Shadow alphas are their own ladder: 2 - 3 - 6 - 8 - 16. They never
+     mix with the surface ladder because a shadow is not a surface. */
+  --float: 0 1px 1px rgba(17, 17, 17, 0.03), 0 4px 8px rgba(17, 17, 17, 0.03), 0 14px 28px rgba(17, 17, 17, 0.06);
+  /* One heavy shadow exists in this product. It is a card in flight. */
+  --lift: 0 1px 2px rgba(17, 17, 17, 0.06), 0 4px 10px rgba(17, 17, 17, 0.08), 0 22px 44px rgba(17, 17, 17, 0.16);
+}
+
+[data-app="tasks"] { background: var(--ink); color: var(--ink-1); }
+[data-app="tasks"] {
+  background: var(--ink);
+  color: var(--ink-1);
+  font-feature-settings: "ss01", "cv01";
+}
+
+/* Tabular is for digits that stack in a column or tick in place. Prose keeps
+   Geist's proportional figures, which is why "5 of 13 done" reads as a
+   sentence and a tray count reads as a number. */
+/* A header chip is a number that ticks in place, which is the rule this
+   list exists for: at eleven overdue, completing one shoved every fact
+   beside it by 3.39px. */
+[data-app="tasks"] .late,
+[data-app="tasks"] .undated,
+[data-app="tasks"] .trayCount,
+[data-app="tasks"] .when,
+[data-app="tasks"] .cardFoot .cm,
+[data-app="tasks"] .ghost em,
+[data-app="tasks"] .drawerTab em,
+[data-app="tasks"] .axisEnds,
+[data-app="tasks"] .axis {
+  font-variant-numeric: tabular-nums;
+}
+/* The count belongs to the label beside it, not to the prose. The negative
+   margin absorbs the trailing tracking cell so the digits stay flush with
+   the content edge the name and the note align to. */
+[data-app="tasks"] .trayCount {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; margin-right: -0.1em;
+}
+
+/* Every interactive thing answers the keyboard the same way. */
+/* Outline only. Setting a radius here overrode every element's own, which
+   squared off the completion circle for keyboard users and nobody else. */
+[data-app="tasks"] a:focus-visible,
+[data-app="tasks"] button:focus-visible,
+[data-app="tasks"] [tabindex]:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+/* Buttons, not href-less anchors. An anchor with no href carries no role,
+   so the whole spine was a row of focusable generics inside a nav that
+   contained no links. The reset below means the change costs no pixels. */
+[data-app="tasks"] .segItem,
+[data-app="tasks"] .dockAvatar,
+[data-app="tasks"] .late {
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 0; padding: 0;
+  -webkit-appearance: none;
+}
+/* Three things that looked like controls and were spans. The account disc
+   is the only way out of the product; the overdue count is the only filter
+   an operator reaches for on a Saturday. Both now answer the keyboard. */
+[data-app="tasks"] .dockAvatar,
+[data-app="tasks"] .late { cursor: pointer; }
+
+/* ── the sheet ─────────────────────────────────────────────────
+   White against ink needs no shadow. Contrast is the elevation. */
+/* Above the reference width the columns stop growing and the grid was left
+   packed to one side, so the head, the view row and the board no longer shared
+   an edge. The sheet is capped at the width five full columns need and centres
+   on the floor, so every edge stays one edge. */
+[data-app="tasks"] .sheet { max-width: 1592px; margin-inline: auto; }
+/* Where the board runs past the sheet, the last column dissolves instead of
+   being guillotined. Off by default, on wherever the board actually
+   overflows. Same mask idiom as the dock scrim, and no new hue. */
+[data-app="tasks"] .sheet::after {
+  content: "";
+  /* 118 was the board's top only while the header was one line. The header
+     stacks under 1200px of sheet, which pushes the board down ~100px, so a
+     96px white gradient was rising above the board and washing the right end
+     of the tools row — "Display" rendered paler than "Sort" beside it, and a
+     live control read as disabled. Measured, not assumed. */
+  position: absolute; right: 0; top: var(--fade-top, 118px); bottom: 0;
+  /* 44px against a 258px column left roughly 150px of sliced card at full
+     opacity before the fade began, so every truncated word stayed legible
+     against a hard edge. 96px dissolves the cut characters; past ~104 it
+     starts eating a legible card on the left edge once scrollLeft > 0. */
+  width: 96px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 46%, var(--white) 100%);
+  opacity: 0; pointer-events: none; z-index: 1;
+  transition: opacity var(--dur) var(--curve);
+}
+[data-app="tasks"] .sheet[data-more-right]::after { opacity: 1; }
+/* The mirror. A one-sided signal says nothing about the column behind you. */
+[data-app="tasks"] .sheet::before {
+  content: "";
+  position: absolute; left: 0; top: var(--fade-top, 118px); bottom: 0;
+  width: 96px; z-index: 1;
+  background: linear-gradient(270deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.7) 46%, var(--white) 100%);
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--dur) var(--curve);
+}
+[data-app="tasks"] .sheet[data-more-left]::before { opacity: 1; }
+
+[data-app="tasks"] .head {
+  flex: none;
+  display: flex; align-items: center; gap: 14px;
+  /* 28px is the sheet's one leading edge. The view pill, the tray label
+     and every card's left edge resolve to the same x. */
+  padding: 0 28px; height: 60px;
+}
+[data-app="tasks"] .word { font-size: 15px; letter-spacing: var(--tr-15); }
+[data-app="tasks"] .word {
+  display: inline-flex; align-items: baseline;
+  font-size: 17px; font-weight: 600; letter-spacing: var(--tr-18);
+  color: var(--ink-1); flex: none;
+}
+/* The sheet's own claim is that indigo means the next milestone. Spending it
+   on a wordmark full stop and a rail dot made the claim false in two places
+   before the operator reached a card. */
+[data-app="tasks"] .word::after {
+  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
+  background: var(--ink-1); margin-left: 2px;
+}
+[data-app="tasks"] .headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
+/* The name does not shrink. It was the only thing in the row allowed to, so
+   it was the first thing to go: "The Orcha…" at 1240 while the season line
+   beside it kept every character. The band stacks instead. */
+[data-app="tasks"] .headName {
+  /* The sheet's own title is the largest thing on it. Four sizes inside a 2px
+     band, all at 600, gave the top of the scale no rank at all — and with
+     Planning open the drawer's h2 was setting the same venue name larger than
+     the board's own h1. */
+  font-size: 20px; font-weight: 600; letter-spacing: var(--tr-19);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 0 0 auto; min-width: 0;
+}
+[data-app="tasks"] .headFacts {
+  display: flex; align-items: center; gap: 14px;
+  font-size: 13px; font-weight: 400; color: var(--ink-2);
+  letter-spacing: var(--tr-13); white-space: nowrap; min-width: 0;
+}
+/* The one number that changes in place while the operator watches it. Left
+   proportional, the whole band jittered on every tick. */
+[data-app="tasks"] .headFacts b { font-weight: 600; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+/* The band had six facts at one size, one weight and one colour, so the eye
+   had nowhere to land first and the row read as a ticker. Three ranks now,
+   and no new size or weight to get them: today's date and the season are
+   context and step back to ink-3; the counts keep ink-2 with their figures at
+   ink-1; the two chips and the one link stay the only things in the row that
+   look like something you can press. */
+[data-app="tasks"] .headFacts .today,
+[data-app="tasks"] .headFacts > span:last-child { color: var(--ink-3); }
+[data-app="tasks"] .headFacts .ratio { color: var(--ink-2); }
+/* The one moment on this board worth a beat of its own. */
+[data-app="tasks"] .ratio[data-all] { font-weight: 600; color: var(--ink-1); animation: settleIn 320ms var(--curve); }
+@media (prefers-reduced-motion: reduce) { [data-app="tasks"] .ratio[data-all] { animation: none; } }
+/* Overdue reads as the loudest object in the header for the same reason
+   it does on a card: it is filled ink, not a colour. */
+/* A control in persistent chrome may not change its x because a sibling was
+   added, removed or widened. Pressing the overdue chip widened it and slid its
+   neighbour 12px; clearing the last overdue task removed it and slid the
+   neighbour 89px — so a pointer resting on the chip's own centre was left
+   sitting on a different control with a different consequence.
+   The chip reserves the box its widest form needs, so pressing it cannot
+   widen it and its neighbours cannot be pushed.
+   THE RULE: no chrome control's box may change because of a sibling's value or
+   presence. */
+[data-app="tasks"] .late {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 92px;
+  height: 22px; padding: 0 9px;
+  transition: box-shadow var(--dur) var(--curve);
+  border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white);
+  font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+}
+/* The chip is 22px because that is the size the header wants; the target
+   it answers to is 44, taken behind the two facts either side of it. */
+[data-app="tasks"] .late::before { content: ""; position: absolute; inset: -11px -6px; }
+[data-app="tasks"] .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+
+/* ── the header, stacked ───────────────────────────────────────────
+   Below 1200px of sheet the band stops being one line. The name takes a line
+   of its own and the facts wrap beneath it, which is the same shape the phone
+   has always used — so the tablet stops being the one breakpoint that shows
+   strictly less than the phone, and no control can be pushed off the sheet.
+   Nothing is dropped: once the name has its own line, all six facts fit at
+   every width down to 720. The stamp comes from measureEdges. */
+[data-app="tasks"] .sheet[data-head="stack"] .head {
+  height: auto; display: grid; padding: 14px 28px 0;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: "word actions" "name name" "facts facts";
+  align-items: center; column-gap: 12px; row-gap: 10px;
+}
+[data-app="tasks"] .sheet[data-head="stack"] .word { grid-area: word; }
+[data-app="tasks"] .sheet[data-head="stack"] .headActions { grid-area: actions; justify-self: end; margin-left: 0; min-width: 0; }
+[data-app="tasks"] .sheet[data-head="stack"] .headName { grid-area: name; width: auto; min-width: 0; }
+[data-app="tasks"] .sheet[data-head="stack"] .headFacts {
+  grid-area: facts; display: flex; flex-wrap: wrap;
+  font-size: 13px; column-gap: 12px; row-gap: 7px;
+}
+[data-app="tasks"] .sheet[data-head="stack"] .headFacts > span { display: inline; }
+[data-app="tasks"] .sheet[data-head="stack"] .headFacts .late { display: inline-flex; }
+[data-app="tasks"] .sheet[data-head="stack"] .headRule { display: none; }
+/* The switcher capsule sat flush against the filled ink chip above it: the
+   fact row's bottom edge and the capsule's top edge measured the same pixel.
+   18px, so the band-to-switcher separation reads larger than the 22px rhythm
+   inside the band itself, and so the chips' own 11px overhang clears it. */
+[data-app="tasks"] .sheet[data-head="stack"] .views { padding-top: 18px; }
+/* When the row cannot fit, the tools keep their glyph and drop their word. */
+[data-app="tasks"] .views[data-fold] .viewTools .ghost > span {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+[data-app="tasks"] .views[data-fold="gone"] .viewTools { display: none; }
+
+[data-app="tasks"] .ghost {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 34px; padding: 0 11px;
+  border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; color: var(--ink-2);
+  letter-spacing: var(--tr-13); white-space: nowrap;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+[data-app="tasks"] .ghost svg { width: 15px; height: 15px; color: var(--ink-3); }
+[data-app="tasks"] .ghost:not([aria-disabled="true"]):hover { background: var(--wash); color: var(--ink-1); }
+[data-app="tasks"] .ghost:not([aria-disabled="true"]):hover svg { color: var(--ink-2); }
+[data-app="tasks"] .ghost em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--ink-1); }
+[data-app="tasks"] .headSearch { display: none; }
+
+/* 25 on the left because the segmented pill carries its own 3px of optical
+   inset; the two edges then land on the same line as the header and cards. */
+[data-app="tasks"] .views { flex: none; display: flex; align-items: center; padding: 0 28px 14px 25px; }
+[data-app="tasks"] .seg { display: inline-flex; gap: 2px; padding: 3px; background: var(--wash); border-radius: var(--r-pill); }
+[data-app="tasks"] .segItem {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 32px; padding: 0 14px;
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-13);
+  transition: color var(--dur) var(--curve);
+}
+[data-app="tasks"] .segItem svg { width: 15px; height: 15px; }
+[data-app="tasks"] .segItem:not([aria-disabled="true"]):hover { color: var(--ink-1); }
+[data-app="tasks"] .segItem[data-active] {
+  background: var(--white); color: var(--ink-1); font-weight: 600;
+  box-shadow: var(--ring), var(--raise);
+}
+[data-app="tasks"] .viewTools { margin-left: auto; display: flex; gap: 2px; }
+
+/* ── trays ─────────────────────────────────────────────────────
+   Ruled columns, not filled boxes. The sheet stays one surface. */
+[data-app="tasks"] .board {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(258px, 312px));
+  /* `safe` is load-bearing: a centred grid that overflows puts its leading
+     content out of reach of the scroller, which is exactly what the board
+     becomes below 1100. It centres when it fits and starts when it does not. */
+  /* The sheet has one leading edge and everything resolves to it. Centring
+     the grid abandoned it the moment the columns did not fill the width. */
+  justify-content: safe start;
+  grid-auto-rows: 100%;
+  gap: 0;
+  /* The dock's band is real layout, not something masked over. 48px of dock
+     plus 18px of inset plus the float shadow's reach. */
+  /* 18px of clearance above the dock and 18px below it, so the sheet's one
+     floating object sits on the true optical centre of its own band. */
+  padding: 0 16px 84px;
+  /* The board scrolls sideways between columns. Each column scrolls itself
+     vertically, so reaching the foot of one never drags another away. */
+  overflow-x: auto; overflow-y: hidden;
+  /* The board is a scroller from 1439 down, so the snap belongs to it at
+     every width rather than below a threshold 239px late. */
+  scroll-snap-type: x proximity; scroll-padding-left: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+[data-app="tasks"] .tray { scroll-snap-align: start; }
+/* A `start` target alone gives the 1201-1439 band nowhere to resolve to: the
+   fifth column can be reached but never sit flush. With an `end` target on the
+   last tray the frame settles on a whole column at either end instead of
+   resting permanently on a slice. */
+[data-app="tasks"] .tray:last-child { scroll-snap-align: end; }
+[data-app="tasks"] .tray {
+  min-width: 0;
+  display: flex; flex-direction: column;
+  padding: 14px 12px 0;
+  min-height: 0;
+  border-left: 1px solid var(--line-soft);
+  transition: background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .tray:first-child { border-left: 0; }
+
+[data-app="tasks"] .trayHead {
+  flex: none; padding: 0 0 12px;
+  background: var(--white);
+}
+[data-app="tasks"] .trayTop { display: flex; align-items: center; gap: 8px; }
+[data-app="tasks"] .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-4); flex: none; }
+[data-app="tasks"] .tray[data-tone="flight"] .pip { background: var(--ink-1); }
+[data-app="tasks"] .tray[data-tone="done"] .pip { background: var(--ink-1); box-shadow: inset 0 0 0 1.5px var(--white); }
+/* Every micro-label in the product is one rule: Geist Mono, 11px,
+   uppercase, +0.1em, weight 400. Tracking carries the hierarchy, so a
+   small label is never bolded to make it matter. */
+[data-app="tasks"] .trayName {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-1);
+}
+/* One declaration, so the round-7 mono rule above applies as written. */
+[data-app="tasks"] .trayCount { margin-left: auto; font-weight: 400; color: var(--ink-3); }
+[data-app="tasks"] .trayNote { min-height: 1.4em; }
+/* Five rules declared a size with no tracking beside it and computed to 0em,
+   against a file whose token block claims every letter-spacing is on the
+   ladder. "Add here" sat four pixels under a card note at the same size and
+   a different tracking, five times in every frame. */
+[data-app="tasks"] .trayAdd,
+[data-app="tasks"] .trayEmpty { letter-spacing: var(--tr-13); }
+[data-app="tasks"] .specNote { letter-spacing: var(--tr-12); }
+[data-app="tasks"] .emptyBoard button { letter-spacing: var(--tr-14); }
+[data-app="tasks"] .trayNote { margin: 7px 0 0; font-size: 12px; font-weight: 400; line-height: 1.4; color: var(--ink-3); letter-spacing: var(--tr-12); }
+/* A column with more in it than fits fades at its own foot, the same mask
+   idiom the sheet's right edge uses. Before this the fourth card was simply
+   cut through the middle of a word with nothing to say there was more. */
+[data-app="tasks"] .trayBody {
+  flex: 0 1 auto; min-height: 0;
+  overflow-y: auto;
+  display: grid; gap: 8px; align-content: start;
+  padding: 2px 6px 8px; margin: 0 -6px;
+  /* A column is a list of discrete objects, so it rests on one. `proximity`
+     leaves it resting anywhere, and a 26px ramp over a 19px line box then
+     renders a bold title at about 40% ink — the one thing on this sheet that
+     read as a rendering fault rather than a decision. Snapped, with 20px of
+     scroll padding, a card's ink sits 32px clear of the boundary — its own
+     12px, the 8px gutter, the previous card's 12px — so the ramp can never
+     cross a line of type. */
+  scroll-snap-type: y mandatory; scroll-padding: 20px 0;
+}
+/* A hairline, not a fade. A gradient at the top of a column can be made to
+   land in the gutter by snapping, but the bottom edge falls wherever the
+   column's height puts it — so half the time it rendered a bold title at
+   about 40% ink, which reads as a rendering fault rather than as "there is
+   more this way". A rule says the same thing and never touches a glyph. */
+/* Drawn on the tray, above the cards, because an inset shadow on the
+   scroller is painted under its own content and a card at the foot covers
+   the very line that says there is more of it. */
+[data-app="tasks"] .tray { position: relative; }
+[data-app="tasks"] .tray::after,
+[data-app="tasks"] .tray::before {
+  content: ""; position: absolute; left: 6px; right: 6px; height: 1px;
+  background: var(--line); z-index: 2; pointer-events: none;
+  opacity: 0; transition: opacity var(--dur) var(--curve);
+}
+[data-app="tasks"] .tray::before { top: var(--body-top, 0px); }
+[data-app="tasks"] .tray::after { top: var(--body-bottom, 0px); }
+[data-app="tasks"] .tray:has(.trayBody[data-above])::before { opacity: 1; }
+[data-app="tasks"] .tray:has(.trayBody[data-more])::after { opacity: 1; }
+
+/* ═══ THE CARD ═══════════════════════════════════════════════════
+   One optical baseline: the completion control sits in a fixed gutter,
+   the title starts at a fixed x, and every line under it aligns to that
+   same x. Nothing below the title can move the title. */
+/* Every ring on a card is written to one custom property. Done and Next are
+   states; hover, focus, selection and drag are interactions. Before this the
+   state rules were declared later at equal specificity and silently deleted
+   the focus ring on exactly the cards a keyboard user reaches first. */
+[data-app="tasks"] .card {
+  scroll-snap-align: start;
+  position: relative;
+  background: var(--white);
+  border-radius: var(--r-card);
+  /* --card-rest is what the card looks like when nothing is happening to
+     it, and is what a preset may change. --card-ring is what is happening to
+     it, and only the interaction rules may set that. Sharing one property
+     let a preset delete the focus ring. */
+  --card-rest: var(--ring);
+  /* A preset owns two things and only two: what a card looks like at rest,
+     and what it looks like under the pointer. Both are tokens. The moment a
+     preset selects on :hover directly it wins the cascade against every
+     interaction rule, whatever property it writes — measured: rewriting the
+     preset to set --card-ring instead of box-shadow still erased the focus
+     ring, one layer deeper, because (0,3,0) outranks (0,2,0). Presets do not
+     select on state. */
+  --card-hover: var(--ring-strong), var(--raise);
+  --card-ring: var(--card-rest);
+  box-shadow: var(--card-ring);
+  padding: 12px 12px 12px 11px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 8px; row-gap: 6px;
+  cursor: grab;
+  transition: box-shadow var(--dur) var(--curve), transform var(--dur) var(--curve);
+}
+/* The buttons inside a card stay buttons. */
+[data-app="tasks"] .card .tick,
+[data-app="tasks"] .card .cardDots { cursor: pointer; }
+
+/* Completing a task is the one thing this board exists to do, so the circle
+   is a real control with its own hover, focus, active and keyboard path, not
+   a decorative span that lit up when the pointer was anywhere on the card. */
+[data-app="tasks"] .tick {
+  grid-column: 1; grid-row: 1;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 0; padding: 0; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; -webkit-appearance: none;
+  background: none;
+  box-shadow: inset 0 0 0 1.4px var(--ink-4);
+  margin-top: 1px;
+  display: grid; place-items: center;
+  color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+/* The hit area is 32px without the circle growing by a pixel. */
+[data-app="tasks"] .tick::before { content: ""; position: absolute; inset: -7px; border-radius: 50%; }
+[data-app="tasks"] .tick svg { width: 11px; height: 11px; stroke-width: 2.4; }
+/* The card hints. The control itself answers one step darker, so the ring
+   means "you are on it" rather than "you are somewhere near it". */
+[data-app="tasks"] .card:hover .tick,
+[data-app="tasks"] .card[data-force="hover"] .tick { background: var(--wash); }
+[data-app="tasks"] .tick:hover { box-shadow: inset 0 0 0 1.4px var(--ink-1); background: var(--wash-2); }
+/* The card-level hover wash outranked the tick's own pressed state, so the
+   most-pressed control in the product had no active state inside a card. */
+[data-app="tasks"] .card .tick:active,
+[data-app="tasks"] .card[data-force="hover"] .tick:active { background: var(--line-strong); }
+[data-app="tasks"] .tick:focus-visible { outline: 2px solid var(--indigo); outline-offset: 3px; }
+
+/* The top-right of a card belongs to the time fact and nothing else. */
+/* The clamp lives on the row, not on the title. overflow:hidden on the
+   title made it establish its own formatting context, which is a block's
+   instruction to avoid floats rather than flow around them — so the date
+   chip was stealing width from all three lines instead of one. */
+/* Re-measured at round 16 across board, dense and filtered: `pretty` beside
+   the float now removes 14 of the product's one-word last lines and leaves the
+   three-line count unchanged at 21, with nothing pushed past the clamp. The
+   earlier reading that it made things worse was taken before the chip geometry
+   settled. Greedy `wrap` was the only text in the file with no widow control
+   at all, which is the real objection.
+   THE RULE: no text block may have two wrapping laws switched by a sibling. */
+[data-app="tasks"] .cardTitleRow:has(.when) .cardTitle { text-wrap: pretty; }
+[data-app="tasks"] .cardTitleRow {
+  grid-column: 2; grid-row: 1; min-width: 0;
+  max-height: calc(14px * 1.36 * 3); overflow: hidden;
+}
+[data-app="tasks"] .cardTitle {
+  font-size: 14px; line-height: 1.36; font-weight: 600;
+  letter-spacing: var(--tr-14); color: var(--ink-1); margin: 0;
+  min-width: 0;
+  /* Titles are clamped to three lines, so they sit inside the balancer's own
+     line cap. Notes keep `pretty`, which is the right tool for a paragraph. */
+  text-wrap: balance;
+  /* But not around a float: balancing against a chip that only occupies the
+     first line produces a one-word opening line, which is the exact rag it
+     is there to prevent. */
+  overflow-wrap: break-word;
+  /* Three lines, clamped by the row above; the trim happens at a word
+     boundary in the renderer. A character-level clamp is what produces
+     "dinner 5.30p...", which is the difference between typeset copy and
+     text poured into a box. */
+  display: block;
+}
+[data-app="tasks"] .cardNote {
+  grid-column: 2; grid-row: 2;
+  margin: 0; font-size: 13px; line-height: 1.45; font-weight: 400;
+  color: var(--ink-2); letter-spacing: var(--tr-13);
+  text-wrap: pretty;
+  display: block; max-height: calc(1.45em * 2); overflow: hidden;
+  transition: color var(--dur) var(--curve);
+}
+[data-app="tasks"] .card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
+/* Opened in place. The clipped half of a note is the half that carries the
+   deadline, and the only route to it used to be a hover tooltip: no keyboard,
+   no touch, no iPad on a venue desk. */
+[data-app="tasks"] .card[data-open] .cardNote { max-height: none; color: var(--ink-1); }
+/* An open card is being read, not carried, so its words can be taken. */
+[data-app="tasks"] .card[data-open] .cardTitle,
+[data-app="tasks"] .card[data-open] .cardNote { user-select: text; cursor: text; }
+[data-app="tasks"] .cardFoot {
+  grid-column: 2; grid-row: 3;
+  /* One line, always. Wrapping put the actions button on a second row and
+     left a card with an empty band under its own content. What runs out of
+     room truncates; the button never moves. */
+  display: flex; align-items: center; flex-wrap: nowrap; gap: 10px;
+  min-height: 24px; min-width: 0;
+  font-size: 12px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-12);
+}
+[data-app="tasks"] .cardFoot > .who,
+[data-app="tasks"] .cardFoot > .tag,
+[data-app="tasks"] .cardFoot > .hi {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Whose wedding it is never shrinks. Everything else in the row yields
+   first, in a stated order, rather than every token losing pixels in
+   proportion to its own length. */
+[data-app="tasks"] .cardFoot > .who { flex: 0 0 auto; position: relative; cursor: pointer; }
+[data-app="tasks"] .cardFoot > .who::before { content: ""; position: absolute; inset: -7px; }
+[data-app="tasks"] .cardFoot > .who:hover { text-decoration: underline; text-underline-offset: 3px; }
+[data-app="tasks"] .cardFoot > .who[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 3px; }
+[data-app="tasks"] .cardFoot > .tag { flex: 0 3 auto; }
+[data-app="tasks"] .cardFoot > .hi { flex: 0 1 auto; color: var(--ink-2); }
+[data-app="tasks"] .cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
+[data-app="tasks"] .cardFoot .cm svg { width: 12px; height: 12px; }
+[data-app="tasks"] .cardFoot .grow { margin-left: auto; display: inline-flex; flex: none; }
+/* Right-aligning one content glyph to the reserved menu slot left an
+   invisible hole in every card foot, on the sheet whose own caption reads
+   "no empty slots". The row simply reads left to right. */
+[data-app="tasks"] .cardFoot .grow { margin-left: 0; flex: none; }
+[data-app="tasks"] .cardFoot .grow + .cardDots { margin-left: auto; }
+[data-app="tasks"] .cardFoot .cm { flex: none; }
+[data-app="tasks"] .cardFoot .grow svg { width: 13px; height: 13px; color: var(--ink-4); }
+/* The menu sits at the end of the foot row, in space that is always
+   reserved for it, so revealing it moves nothing and it can never paint over
+   a title or a date. `visibility` rather than `opacity`, so a hidden control
+   is genuinely out of the tab order rather than an invisible tab stop. */
+[data-app="tasks"] .cardDots {
+  position: relative;
+  margin: -3px 0 -3px auto;
+  width: 24px; height: 24px; border-radius: var(--r-chip);
+  display: grid; place-items: center; color: var(--ink-3);
+  background: transparent;
+  visibility: hidden;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+/* A 32px target around a 24px glyph, without the glyph growing. */
+[data-app="tasks"] .cardDots::before { content: ""; position: absolute; inset: -4px; border-radius: 50%; }
+[data-app="tasks"] .cardDots svg { width: 15px; height: 15px; }
+[data-app="tasks"] .card:hover .cardDots,
+[data-app="tasks"] .card[data-force="hover"] .cardDots,
+[data-app="tasks"] .card:focus-within .cardDots { visibility: visible; }
+[data-app="tasks"] .cardDots:hover { background: var(--wash-2); color: var(--ink-1); }
+
+/* The time fact. Right-aligned on the title's own line, so a tray reads
+   as a column of dates. Severity is fill, never hue. */
+[data-app="tasks"] .when {
+  float: right; margin: 0 0 0 9px; max-width: 38%;
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 19px; padding: 0 8px;
+  border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: var(--tr-11); white-space: nowrap;
+  color: var(--ink-3);
+  background: var(--wash);
+}
+/* Reversed out of ink, on the same curve, one branch. */
+[data-app="tasks"] .carry { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
+/* The reversed branch belongs to the filled chip only. The outlined "N today"
+   chip is ink on white, like .when[data-t="today"] on a card, and falls
+   through to the base tr-12 the way the same condition does there. */
+[data-app="tasks"] .late:not([data-soft]) { letter-spacing: calc(var(--tr-12) + var(--tr-rev)); }
+/* The idle dock paints ink on wash, which is not reversed out, so the
+   branch is scoped to the state it describes. */
+[data-app="tasks"] .dock:not([data-idle]) .dockPrimary { letter-spacing: calc(var(--tr-13) + var(--tr-rev)); }
+[data-app="tasks"] .when[data-t="overdue"] { background: var(--ink); color: var(--white); font-weight: 600; letter-spacing: calc(var(--tr-11) + var(--tr-rev)); }
+[data-app="tasks"] .when[data-t="today"] { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink-1); font-weight: 600; }
+[data-app="tasks"] .when[data-t="milestone"] { background: var(--indigo-wash); color: var(--indigo-ink); font-weight: 600; }
+[data-app="tasks"] .when[data-t="none"] { display: none; }
+/* Done and waiting used to render pixel-identical — same transparent ground,
+   same ink-3, same hairline ring, same weight — so finished work and an
+   ageing blocker were the same object on a Saturday-morning scan. They are
+   two silhouettes now. Done keeps the hairline: it is a record, a closed box.
+   Waiting drops the ring entirely and is bare text on the card's own ground:
+   nothing is owed by the operator, so nothing is drawn around it. No new
+   mark, no new colour, and no second tick on a card that already has one. */
+[data-app="tasks"] .when[data-t="done"] {
+  background: none; box-shadow: 0 0 0 1px var(--line); color: var(--ink-3);
+}
+[data-app="tasks"] .when[data-t="waiting"] {
+  background: none; box-shadow: none; padding: 0; color: var(--ink-3);
+}
+
+/* Two different taxonomies were sharing one slot. Which couple a task
+   belongs to is the question a venue asks on a Saturday; which area of the
+   house it touches is background. They now read at different ranks. */
+[data-app="tasks"] .tag {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink-3); white-space: nowrap;
+}
+[data-app="tasks"] .who {
+  font-size: 12px; font-weight: 600; color: var(--ink-1);
+  letter-spacing: var(--tr-12); white-space: nowrap;
+}
+/* The board's most useful filter looked exactly like the inert label beside
+   it: no underline, no border, ink at full strength. A dotted rule at rest
+   says this is a control; the solid one on hover says it is the one under the
+   pointer. Every pointer type, not only the ones without hover. */
+[data-app="tasks"] .cardFoot > .who { text-decoration: underline dotted currentColor; text-underline-offset: 3px; }
+[data-app="tasks"] .cardFoot .who + .tag { padding-left: 10px; border-left: 1px solid var(--line); }
+/* Severity is expressed by ink, not by weight. Bolding a 12px token to make
+   it matter is the thing the micro-label rule above exists to prevent. */
+[data-app="tasks"] .hi { color: var(--ink-1); font-weight: 400; white-space: nowrap; }
+
+/* Done. Never struck through: the work happened, it was not a mistake. */
+[data-app="tasks"] .card[data-done] { background: transparent; --card-rest: 0 0 0 1px var(--line-soft); }
+/* Ink alone carries done — the transparent card, the hairline ring, the
+   suppressed date chip and the filled tick already say it four times over.
+   Dropping the weight as well inverted the card's internal rank and made the
+   partner name outrank the work. The whole card de-escalates together. */
+[data-app="tasks"] .card[data-done] .cardTitle { color: var(--ink-2); }
+[data-app="tasks"] .card[data-done] .who { font-weight: 400; color: var(--ink-2); }
+[data-app="tasks"] .card[data-done] .tick { background: var(--ink); box-shadow: none; color: var(--white); }
+
+/* The one earned indigo in a resting view. */
+[data-app="tasks"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo), var(--float); }
+
+/* ── interaction, declared after every state ────────────────────── */
+[data-app="tasks"] .card:hover,
+[data-app="tasks"] .card[data-force="hover"] { --card-ring: var(--card-hover); }
+/* An open card outranks the focus ring on the custom property, so a card
+   opened by keyboard had no focus indicator at all. The ring is drawn as a
+   real outline, which no card state can overwrite, and the property keeps only
+   the halo — so focus survives whatever the card is doing.
+   THE RULE: keyboard focus is never carried by a property another state may
+   set. */
+[data-app="tasks"] .card:focus-visible,
+[data-app="tasks"] .card[data-force="focus"] {
+  --card-ring: 0 0 0 4px var(--indigo-ring);
+}
+[data-app="tasks"] .card[data-force="focus"],
+[data-app="tasks"] .card[data-force="moving"] {
+  outline: 2px solid var(--indigo); outline-offset: 2px;
+}
+[data-app="tasks"] .card[data-force="drag"] {
+  transform: rotate(-1.4deg) scale(1.02);
+  cursor: grabbing;
+  --card-ring: var(--lift);
+}
+/* The slot the card came out of, while the card is elsewhere. Declared after
+   the drag block so it actually wins: it kept the lift for a round because it
+   was declared before it. It reads as a hole rather than a ghosted card —
+   inset edge, no fill, no shadow — and keeps its shape so the board does not
+   reflow under the hand. */
+[data-app="tasks"] .card[data-vacated] {
+  transform: none;
+  background: none;
+  --card-ring: inset 0 0 0 1px var(--line-strong);
+  opacity: 1;
+}
+[data-app="tasks"] .card[data-vacated] > * { opacity: 0.25; }
+/* Picked up by keyboard: the same lift without the tilt, because a card
+   moved with the arrow keys is not being carried by a hand. */
+/* Lifted, not tilted: nothing is carrying it, but it is unmistakably out of
+   the stack and it outranks the resting focus ring. */
+/* Declared after hover, or hover deletes it. An open card is lifted off the
+   tray to be read, which is a rank above the card under the pointer. */
+/* A card you are merely reading was drawn in full-strength ink and the
+   product's heaviest shadow — a firmer edge than an overdue card, for the
+   least urgent state on the board. It steps onto the existing ladder: 1.5px
+   at ink-4 is still firmer and darker than hover's 1px at 0.16, so the rank
+   survives without spending the alarm. */
+[data-app="tasks"] .card[data-open] { --card-ring: 0 0 0 1.5px var(--ink-4), var(--float); }
+[data-app="tasks"] .card[data-force="moving"] {
+  --card-ring: 0 0 0 1.5px var(--indigo), 0 0 0 5px var(--indigo-ring), var(--lift);
+  transform: scale(1.02);
+}
+@media (prefers-reduced-motion: reduce) { [data-app="tasks"] .card[data-force="moving"] { transform: none; } }
+
+/* ── the destination, not just the hand ─────────────────────────── */
+/* Drag is the board's defining gesture, and half of it was undesigned: the
+   card in flight had a lift and the tray it was heading for had nothing. */
+[data-app="tasks"] .tray[data-over] { background: var(--wash); }
+[data-app="tasks"] .tray[data-over] .trayHead {
+  background: linear-gradient(var(--wash), var(--wash)), var(--white);
+}
+[data-app="tasks"] .dropLine { height: 2px; border-radius: 1px; background: var(--ink-1); }
+
+/* ── empty and add ─────────────────────────────────────────────── */
+/* Two lines are always reserved, so the Add task row does not move from
+   column to column with the length of a sentence. */
+[data-app="tasks"] .trayEmpty {
+  padding: 8px 4px 4px;
+  font-size: 13px; font-weight: 400; line-height: 1.45;
+  color: var(--ink-2);
+  min-height: calc(1.45em * 2 + 12px);
+}
+/* A column with more in it than fits takes the rest of the tray, so its
+   scroller is as tall as the sheet allows. */
+/* There used to be a rule here growing the scroller whenever the fold flag was
+   set — and the fold flag is computed from the scroller's own height. A measure
+   pass that resizes the box it measures cannot converge: after one completion
+   the source column stayed pinned at 623px against 252px of live content, drew
+   a "more below" fold over nothing, and threw its Add row to the foot of the
+   tray, holding that for six seconds on the most common act in the product.
+   The coupling is gone rather than inverted: making the growth unconditional
+   fixed the lie and cost every resting column its content-hugging height, which
+   is worse. The body hugs its content and scrolls when the tray runs out, both
+   from `flex: 0 1 auto` alone, and the flag is now purely presentational.
+   THE RULE: no attribute a measure pass writes may participate in the layout
+   that same pass measures. */
+/* On the card's own two verticals: the plus centred on the tick, the label
+   on the title. */
+[data-app="tasks"] .trayAdd {
+  display: flex; align-items: center; gap: 13px;
+  height: 36px; padding: 0 8px 0 12px; margin-top: 4px;
+  border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  flex: none;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .trayAdd svg { width: 16px; height: 16px; }
+[data-app="tasks"] .trayAdd:hover { color: var(--ink-1); background: var(--wash); }
+
+/* ── the completion moment ─────────────────────────────────────────
+   The board's whole emotional output was a filled ink overdue chip: the
+   only thing designed to be felt was bad news, and finishing work resolved
+   silently. Completing a task now gets one beat of its own — the circle
+   settles, the check draws, the card's ring resolves to done in the same
+   breath. No colour, no bounce, and it yields to reduced motion. */
+@keyframes tickSettle {
+  0%   { transform: scale(1); }
+  38%  { transform: scale(0.86); }
+  100% { transform: scale(1); }
+}
+@keyframes checkDraw {
+  from { stroke-dasharray: 22; stroke-dashoffset: 22; }
+  to   { stroke-dasharray: 22; stroke-dashoffset: 0; }
+}
+/* It used to fade from opacity 0, so on the exact landing frame the header
+   read " of  done" with two holes in it and the digits re-entered lighter than
+   the words around them — hierarchy inverted for 150ms in the one moment the
+   freeze was lifted for. It settles in place. */
+@keyframes settleIn { from { transform: translateY(2px); } }
+[data-app="tasks"] .card[data-just-done] .tick { animation: tickSettle 320ms var(--curve); }
+[data-app="tasks"] .card[data-just-done] .tick svg path { animation: checkDraw 320ms var(--curve) 60ms both; }
+/* The rest of the board answers in the same breath: the card's ring and
+   title resolve to done, and the counts that changed settle in rather than
+   snapping. */
+[data-app="tasks"] .card[data-just-done] { transition: box-shadow 320ms var(--curve); }
+
+[data-app="tasks"] .card[data-just-done] .cardTitle { transition: color 320ms var(--curve); }
+[data-app="tasks"] .trayCount[data-changed],
+[data-app="tasks"] .headFacts b[data-changed] { animation: settleIn 320ms var(--curve); }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .card[data-just-done] .tick,
+  [data-app="tasks"] .card[data-just-done] .tick svg path,
+  [data-app="tasks"] .trayCount[data-changed],
+  [data-app="tasks"] .headFacts b[data-changed] { animation: none; }
+}
+
+/* The card's own menu. Drag is a pointer gesture and Space is a keyboard
+   one; on a touch screen there was no way at all to move a card. */
+[data-app="tasks"] .cardMenu {
+  position: absolute; z-index: 8; min-width: 188px;
+  padding: 5px; border-radius: var(--r-ctl);
+  background: var(--white);
+  box-shadow: var(--ring), var(--float);
+  display: grid; gap: 1px;
+}
+[data-app="tasks"] .cardMenu p {
+  margin: 0; padding: 8px 9px 6px;
+  font-size: 11px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--font-mono, ui-monospace, monospace); color: var(--ink-3);
+}
+[data-app="tasks"] .cardMenu button {
+  display: flex; align-items: center; gap: 9px;
+  min-height: 34px; padding: 0 9px; border-radius: var(--r-chip);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-1); background: none; border: 0; text-align: left; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .cardMenu button:hover { background: var(--wash); }
+[data-app="tasks"] .cardMenu button[aria-current] { font-weight: 600; }
+[data-app="tasks"] .cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
+[data-app="tasks"] .menuVeil { position: fixed; inset: 0; z-index: 7; }
+
+/* Painted at the same weight as a live control, four view tabs and three
+   tools promised a Schedule and a Calendar that do not exist. They are drawn
+   as what they are — coming, not broken — and they answer the keyboard by
+   saying so rather than by doing nothing. */
+/* Quiet, but legible: ink-4 is decorative by the file's own rule and never
+   type, so the label sits at ink-3 and only the glyph drops to ink-4. */
+[data-app="tasks"] [aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+[data-app="tasks"] [aria-disabled="true"]:hover { background: none; color: var(--ink-3); }
+[data-app="tasks"] [aria-disabled="true"] svg { color: var(--ink-4); }
+
+/* The composer is a card, not a dialog: the thing being made looks like the
+   thing it will be, in the column it will live in. */
+[data-app="tasks"] .card[data-draft] { --card-ring: 0 0 0 1.5px var(--indigo); cursor: default; }
+/* The draft grows with the sentence and snaps back to the three-line clamp
+   the moment Enter turns it into a card. Safe for float containment: a draft
+   renders no date chip inside the row. */
+[data-app="tasks"] .card[data-draft] .cardTitleRow { max-height: none; overflow: visible; }
+[data-app="tasks"] .card[data-draft] .cardTitle {
+  outline: none; min-height: 19px; cursor: text;
+  text-wrap: pretty;
+}
+/* ink-4 is decorative by this file's rule and never type. 400 so it cannot
+   be mistaken for a title already written. */
+[data-app="tasks"] .card[data-draft] .cardTitle:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3); font-weight: 400;
+}
+/* On a touch screen the hint names two keys the operator does not have, so
+   it becomes the two controls it was describing. */
+[data-app="tasks"] .draftHint { gap: 8px; }
+[data-app="tasks"] .draftDo { height: 28px; padding: 0 12px; border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white); font-size: 12px; font-weight: 600;
+  letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
+[data-app="tasks"] .draftDrop { height: 28px; padding: 0 10px; border-radius: var(--r-chip);
+  background: none; color: var(--ink-2); font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px;
+  letter-spacing: var(--tr-12); border: 0; cursor: pointer; }
+[data-app="tasks"] .draftDrop:hover { background: var(--wash); color: var(--ink-1); }
+[data-app="tasks"] .draftDo::before,
+[data-app="tasks"] .draftDrop::before { content: ""; position: absolute; inset: -8px -4px; }
+[data-app="tasks"] .draftDo,
+[data-app="tasks"] .draftDrop { position: relative; }
+/* The filtered count says what it is showing and out of what. */
+/* "1 of 3" put the only lowercase word in the product inside a tracked mono
+   cell, where 0.1em makes "of" read as code, and it flattened the slot: the
+   figure the operator wants shared its rank with a denominator and a
+   preposition. Figures and a solidus only, the numerator carrying the darker
+   ink and the denominator stepping back.
+   The denominator steps back to ink-3 and not to ink-4: measured, ink-4 on a
+   white sheet is 1.89:1 at 11px, which is a rank the operator cannot read.
+   The rank comes from the numerator stepping forward instead. */
+/* Two trackings inside one figure put the numerator on 0.1em and the
+   denominator on 0.04em, so the number's own ink edge moved when a filter came
+   on. It inherits the cell's tracking. */
+[data-app="tasks"] .trayCount .ofAll { color: var(--ink-3); }
+[data-app="tasks"] .board[data-filtered] .tray:not([data-empty]) .trayCount { color: var(--ink-1); }
+[data-app="tasks"] .draftHint {
+  grid-column: 2; grid-row: 3;
+  margin: 0; min-height: 24px; display: flex; align-items: center;
+  font-size: 12px; font-weight: 400; letter-spacing: var(--tr-12);
+  color: var(--ink-3);
+}
+
+/* The count of tasks with no day, said in words where a thumb and a screen
+   reader can both reach it. */
+[data-app="tasks"] .undated {
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
+  color: var(--ink-2); background: none; border: 0; padding: 0;
+  cursor: pointer; text-underline-offset: 3px;
+}
+[data-app="tasks"] .undated {
+  position: relative;
+  /* A dotted rule at rest says this is a control; the solid one on hover
+     says it is the one under the pointer. */
+  text-decoration: underline dotted currentColor; text-underline-offset: 3px;
+}
+/* A word in a sentence, at the size the sentence is set; the target it
+   answers to is taken behind the facts either side of it. */
+[data-app="tasks"] .undated::before { content: ""; position: absolute; inset: -14px -6px; }
+[data-app="tasks"] .undated:hover { color: var(--ink-1); text-decoration: underline solid currentColor; }
+
+/* ── the dock ──────────────────────────────────────────────────── */
+[data-app="tasks"] .dock {
+  /* The foot is one object in three states, so the strip and the dock share
+     a declared width instead of each arriving at their own. */
+  width: var(--dock-w); box-sizing: border-box;
+  position: absolute; left: 50%; bottom: 18px;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px;
+  /* A shrink-to-fit box at left:50% can never be wider than half its
+     container, which is why both labels wrapped on a tablet. */
+  width: max-content; max-width: calc(100% - var(--inset) * 2);
+  background: var(--white);
+  border-radius: var(--r-pill);
+  box-shadow: var(--ring), var(--float);
+  z-index: 3;
+}
+[data-app="tasks"] .dockField {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 38px; padding: 0 14px 0 13px;
+  min-width: 196px;
+  border-radius: var(--r-pill);
+  background: var(--wash);
+  white-space: nowrap;
+  font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+[data-app="tasks"] .dockField:not([aria-disabled="true"]):hover { background: var(--wash-2); color: var(--ink-2); }
+[data-app="tasks"] .dockField svg { width: 16px; height: 16px; }
+/* One keycap in the product. The two that existed disagreed on size,
+   tracking and radius, which is the kind of drift a design system is for. */
+[data-app="tasks"] .dockField kbd,
+[data-app="tasks"] .carry kbd {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: var(--tr-10);
+  border-radius: 5px; padding: 3px 5px;
+}
+[data-app="tasks"] .dockField kbd { margin-left: auto; border: 1px solid var(--line); color: var(--ink-3); }
+[data-app="tasks"] .carry kbd { background: var(--chrome); color: var(--on-ink-1); }
+/* The one deliberate exception to the tracking curve: mono forces each arrow
+   into a narrow cell, and at 10px the shafts touch. */
+[data-app="tasks"] .carry kbd[data-keys="arrows"] { letter-spacing: 0.28em; padding-inline: 6px 3px; }
+[data-app="tasks"] .dockPrimary {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 17px 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white);
+  font-size: 13px; font-weight: 600; letter-spacing: var(--tr-13);
+  white-space: nowrap;
+  transition: transform var(--dur) var(--curve);
+}
+[data-app="tasks"] .dockPrimary svg { width: 16px; height: 16px; }
+[data-app="tasks"] .dockPrimary:active { transform: scale(0.985); }
+[data-app="tasks"] .dockRule { width: 1px; height: 22px; background: var(--line); margin: 0 3px; }
+/* The foot is one object at one width from the first paint to the board; it
+   simply cannot be used yet. */
+[data-app="tasks"] .dock[data-idle] { box-shadow: var(--ring); }
+[data-app="tasks"] .dock[data-idle] .dockPrimary { background: var(--wash-2); color: var(--ink-3); }
+[data-app="tasks"] .dock[data-idle] .dockField,
+[data-app="tasks"] .dock[data-idle] .dockAvatar { color: var(--ink-3); }
+[data-app="tasks"] .dock[data-idle] .dockAvatar { background: var(--wash-2); }
+[data-app="tasks"] .dockAvatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--ink); color: var(--white);
+  display: grid; place-items: center;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+}
+
+/* ── planning drawer ───────────────────────────────────────────── */
+/* The sheet moves over to make room, so the ink floor shows through an
+   18px gutter and draws the seam. Before this the drawer was white on
+   white with no edge: it sliced the Waiting column mid-word and erased
+   Done entirely, which read as the board breaking rather than a panel
+   opening. */
+[data-app="tasks"] .floor:has(.drawer) .sheet {
+  margin-right: calc(388px + var(--inset));
+  transition: margin-right var(--dur) var(--curve);
+}
+/* A card has one floor, in every state. Squeezing five trays into the
+   narrowed board gave the card a 105px measure, which is half what the
+   specimen sheet designs it at. What does not fit scrolls, snaps and fades
+   at the edge instead. */
+[data-app="tasks"] .floor:has(.drawer) .board {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(258px, 1fr);
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 16px;
+}
+[data-app="tasks"] .floor:has(.drawer) .tray { scroll-snap-align: start; }
+/* Both of the rules that used to sit here — dropping the season fact when the
+   drawer opened, and letting the name shrink to nothing with it — are gone.
+   Opening the drawer takes the sheet under 1200, so the header stacks and
+   there is room for the name and every fact at once. Room is made by giving
+   the name its own line, never by clipping the name of the project the
+   operator is looking at, and never by spending the one fact this product has
+   that no other task board does. */
+[data-app="tasks"] .drawer {
+  position: absolute;
+  right: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: 388px;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column;
+  z-index: 5; overflow: hidden;
+}
+[data-app="tasks"] .drawerHead { padding: 20px 22px 18px; }
+[data-app="tasks"] .drawerTop { display: flex; align-items: center; }
+[data-app="tasks"] .drawerKicker {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+/* 16, not 19: the mono PLANNING kicker above it already says this is a panel,
+   and at 19 the drawer was setting the venue name larger than the board's own
+   h1 — the same string, twice on screen, the side panel winning. */
+[data-app="tasks"] .drawerHead h2 { margin: 12px 0 4px; font-size: 16px; font-weight: 600; letter-spacing: var(--tr-15); }
+/* An em value computes at the ancestor's size and inherits as pixels, so a
+   badge that steps down to 11px inside 13px type keeps the 13px tracking
+   unless it is told otherwise. */
+[data-app="tasks"] .drawerLine,
+[data-app="tasks"] .drawerSummary,
+[data-app="tasks"] .drawerTab,
+[data-app="tasks"] .drawerAdd,
+[data-app="tasks"] .drawerHelp .selectAll { letter-spacing: var(--tr-13); }
+[data-app="tasks"] .drawerTab em,
+[data-app="tasks"] .ghost em,
+[data-app="tasks"] .axisEnds span { letter-spacing: var(--tr-11); }
+[data-app="tasks"] .drawerHelp,
+[data-app="tasks"] .drawerRow,
+[data-app="tasks"] .drawerRow .sched,
+[data-app="tasks"] .drawerEmpty { letter-spacing: var(--tr-12); }
+/* A drawer row is a short clamped title, not a paragraph, so it takes the
+   balancer like .cardTitle rather than pretty like a note. */
+[data-app="tasks"] .drawerRow > span { text-wrap: balance; }
+[data-app="tasks"] .drawerLine { margin: 0; font-size: 13px; font-weight: 400; color: var(--ink-3); }
+[data-app="tasks"] .axis { margin: 22px 0 8px; height: 4px; background: var(--wash); border-radius: 2px; position: relative; }
+[data-app="tasks"] .axis i { position: absolute; inset: 0 auto 0 0; width: 11.3%; background: var(--ink); border-radius: 2px; }
+[data-app="tasks"] .axis b {
+  position: absolute; left: 11.3%; top: 50%;
+  width: 10px; height: 10px; margin: -5px 0 0 -5px;
+  border-radius: 50%; background: var(--indigo);
+  box-shadow: 0 0 0 3px var(--white);
+}
+[data-app="tasks"] .axisEnds {
+  display: flex; justify-content: space-between;
+  font-size: 11px; font-weight: 400; letter-spacing: var(--tr-11); color: var(--ink-3);
+}
+[data-app="tasks"] .drawerSummary { margin: 14px 0 0; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+[data-app="tasks"] .drawerTabs { display: flex; gap: 3px; padding: 0 22px 12px; }
+[data-app="tasks"] .drawerTab {
+  height: 32px; padding: 0 12px; border-radius: var(--r-pill);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .drawerTab:hover { color: var(--ink-1); }
+[data-app="tasks"] .drawerTab[data-active] { background: var(--wash); color: var(--ink-1); font-weight: 600; }
+[data-app="tasks"] .drawerTab em { font-style: normal; font-size: 11px; margin-left: 6px; color: var(--ink-3); }
+[data-app="tasks"] .drawerHelp { padding: 0 22px 12px; margin: 0; font-size: 12px; font-weight: 400; color: var(--ink-3); line-height: 1.5; }
+/* Once indigo means "select all", it stops meaning "the next thing that
+   matters". This is the same ink-on-quiet pattern every other control in
+   the file already uses. */
+[data-app="tasks"] .drawerHelp .selectAll {
+  color: var(--ink-1);
+  float: right; margin-left: 12px; font-weight: 600; font-size: 13px;
+  display: inline-flex; align-items: center; min-height: 28px;
+}
+[data-app="tasks"] .drawerHelp .selectAll:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line); }
+[data-app="tasks"] .drawerRows { overflow: auto; padding: 0 12px 16px; display: grid; gap: 4px; align-content: start; }
+[data-app="tasks"] .drawerRow {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 10px;
+  border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; line-height: 1.4; letter-spacing: var(--tr-13);
+  transition: background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .drawerRow:hover { background: var(--wash); }
+[data-app="tasks"] .box {
+  width: 15px; height: 15px; border-radius: 4px;
+  box-shadow: inset 0 0 0 1.4px var(--ink-4);
+  flex: none; padding: 0; position: relative;
+  transition: box-shadow var(--dur) var(--curve);
+}
+[data-app="tasks"] .box::before { content: ""; position: absolute; inset: -8px; }
+/* A picked row changed zero pixels: the attribute was emitted and never
+   styled, so five picked rows were confirmed only by a line of type. It takes
+   the product's own filled-ink mark and the same check the card's tick draws. */
+[data-app="tasks"] .box[aria-checked="true"] { background: var(--ink); box-shadow: none; color: var(--white); }
+[data-app="tasks"] .box[aria-checked="true"] svg { display: block; }
+[data-app="tasks"] .box svg { display: none; width: 11px; height: 11px; }
+[data-app="tasks"] .drawerRow[data-picked] { background: var(--wash); }
+[data-app="tasks"] .box:not([aria-checked="true"]):hover { box-shadow: inset 0 0 0 1.4px var(--ink-2); }
+/* Scoped to the schedule control. Unscoped, this also claimed the row's
+   checkbox and pushed it off the left margin on any row with slack. */
+[data-app="tasks"] .drawerRow .sched {
+  margin-left: auto; flex: none;
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 28px; padding: 0 6px; border-radius: var(--r-chip);
+  font-size: 12px; font-weight: 400; color: var(--ink-2);
+  transition: background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .drawerRow .sched:hover { background: var(--wash-2); color: var(--ink-1); }
+[data-app="tasks"] .drawerRow .sched svg { width: 13px; height: 13px; color: var(--ink-3); }
+[data-app="tasks"] .drawerRow .sched[aria-expanded="true"] { background: var(--wash-2); color: var(--ink-1); }
+/* A milestone row states its date rather than offering to set one. */
+[data-app="tasks"] .drawerRow .schedDate { font-size: 12px; letter-spacing: var(--tr-12); color: var(--ink-3); white-space: nowrap; }
+/* The day menu is the card menu's idiom, because there should be one anchored
+   menu in this product and not two. */
+[data-app="tasks"] .drawerRow { position: relative; }
+/* The menu is a child of the drawer's own scroller, which clips it: on the
+   last of five rows only a 13px sliver rendered. It is positioned against the
+   viewport from its trigger's measured rect, the way the card menu already
+   is, so it cannot be clipped by the box it opened from. */
+[data-app="tasks"] .dayMenu {
+  position: fixed; z-index: 20; min-width: 168px;
+  padding: 5px; border-radius: var(--r-ctl);
+  background: var(--white); box-shadow: var(--ring), var(--float);
+  display: grid; gap: 1px;
+}
+[data-app="tasks"] .dayMenu button {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 13px; letter-spacing: var(--tr-13); color: var(--ink-1);
+  text-align: left; padding: 0 9px; min-height: 34px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+[data-app="tasks"] .dayMenu button:not([aria-disabled="true"]):hover { background: var(--wash); }
+[data-app="tasks"] .dayMenu button[aria-disabled="true"] { color: var(--ink-3); cursor: default; }
+[data-app="tasks"] .dayMenu button svg { width: 13px; height: 13px; color: var(--ink-3); }
+/* The verb appears only when there is a picked set to apply it to. */
+[data-app="tasks"] .drawerBulk { position: relative; padding: 10px 16px 0; }
+[data-app="tasks"] .drawerDo {
+  appearance: none; border: 0; cursor: pointer; font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit;
+  width: 100%; min-height: 40px; padding: 0 14px; border-radius: var(--r-ctl);
+  background: var(--ink); color: var(--white);
+  font-size: 13px; font-weight: 600; letter-spacing: calc(var(--tr-13) + var(--tr-rev));
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+[data-app="tasks"] .drawerDo svg { width: 13px; height: 13px; }
+
+[data-app="tasks"] .drawerAdd {
+  margin: 6px 12px 18px; padding: 0 10px;
+  display: flex; align-items: center; gap: 9px;
+  min-height: 34px; border-radius: var(--r-chip);
+  font-size: 13px; font-weight: 400; color: var(--ink-3);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .drawerAdd:hover { color: var(--ink-1); background: var(--wash); }
+[data-app="tasks"] .drawerAdd svg { width: 15px; height: 15px; }
+
+/* ── loading ───────────────────────────────────────────────────── */
+[data-app="tasks"] .sk { display: block; background: var(--wash); border-radius: 5px; animation: breathe 1.8s var(--ease-in-out) infinite; }
+/* While a card is in the operator's hand the sheet says what is happening
+   and how to finish it. It is the only instruction in the product, it exists
+   only while the hand is full, and it leaves the moment the card lands. */
+[data-app="tasks"] .carry {
+  min-width: 0;
+  /* Held back until the act it reports has finished. */
+  transition: opacity var(--dur) var(--curve);
+  position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%);
+  z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap; gap: 10px;
+  width: max-content; min-width: min(var(--dock-w), calc(100% - 36px));
+  max-width: min(760px, calc(100% - 36px)); box-sizing: border-box;
+  min-height: 36px; padding: 0 6px 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--ink-1); color: var(--on-ink-1);
+  font-size: 12px; letter-spacing: var(--tr-12);
+  box-shadow: var(--lift);
+  animation: carryIn var(--dur) var(--curve);
+}
+/* An Add row stands down only where the strip actually covers it, measured
+   after layout. Before this the board blinked out its primary create
+   affordance, in all five columns, after every single completion. */
+[data-app="tasks"] .trayAdd[data-under] { opacity: 0; pointer-events: none; }
+[data-app="tasks"] .trayAdd { transition: opacity var(--dur) var(--curve); }
+[data-app="tasks"] .carry b { font-weight: 600; }
+[data-app="tasks"] .carry[data-waiting] { opacity: 0; pointer-events: none; }
+[data-app="tasks"] .carryName {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  flex: 0 1 auto; min-width: 24ch; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* A hint is one phrase and never breaks. Wrapping put "put it back" in white
+   type outside the black pill on a phone, at the exact instant the operator
+   is holding a card and most needs to trust the board. */
+[data-app="tasks"] .carry em { white-space: nowrap; flex: none; }
+/* The one sentence on this board worth reading twice. It is set in the strip's
+   own full-strength ink rather than its quiet one, because it is the answer
+   and not the shortcut hint beside it. Nothing else changes: no colour, no
+   motion of its own, no object that was not already on screen. */
+[data-app="tasks"] .carry .clearNote { color: var(--on-ink-1); }
+[data-app="tasks"] .carryDo {
+  flex: none; height: 26px; padding: 0 10px; border-radius: var(--r-pill);
+  background: var(--chrome-active); color: var(--on-ink-1);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 12px; font-weight: 600; letter-spacing: var(--tr-12);
+  border: 0; cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+[data-app="tasks"] .carryDo:hover { background: rgba(255, 255, 255, 0.22); }
+[data-app="tasks"] .carryDo { position: relative; }
+[data-app="tasks"] .carryDo::before { content: ""; position: absolute; inset: -9px -6px; }
+[data-app="tasks"] .carry em {
+  font-style: normal; color: var(--on-ink-2);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+
+@keyframes carryIn { from { opacity: 0; transform: translate(-50%, 6px) } }
+@media (prefers-reduced-motion: reduce) { [data-app="tasks"] .carry { animation: none } }
+
+/* A completed card travels from where the eye already is to where it lands,
+   rather than teleporting a thousand pixels to the right. It flies as a
+   fixed-position copy over the whole sheet, because the real node is inside
+   a column scroller that would clip both the card and its shadow. */
+/* The shell carries the distance; the card inside it carries the lift. */
+[data-app="tasks"] .cardFly { position: fixed; margin: 0; z-index: 60; pointer-events: none; }
+/* The flying card paints its own ground. A finished card is transparent because
+   the white sheet is behind it, which stops being true the moment it is lifted
+   into an overlay.
+   THE RULE: anything lifted off the sheet carries its own opaque surface. */
+[data-app="tasks"] .card.cardGhost { background: var(--white); }
+/* The ring rides with the card so a keyboard operator can see where they are
+   while it travels. */
+[data-app="tasks"] .cardGhost[data-carries-focus] { outline: 2px solid var(--indigo); outline-offset: 2px; }
+[data-app="tasks"] .cardGhost {
+  position: static; margin: 0; width: 100%; height: 100%;
+  pointer-events: none; box-shadow: var(--card-rest);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .cardFly,
+  [data-app="tasks"] .cardGhost { animation: none !important; transition: none; }
+}
+
+/* A completed tick still answers the pointer, so putting the work back is
+   as visible as finishing it. The done rule outranked the hover rule, which
+   made un-completing invisible. */
+[data-app="tasks"] .card[data-done] .tick:hover,
+[data-app="tasks"] .card[data-done] .tick:focus-visible {
+  box-shadow: 0 0 0 4px var(--wash-2);
+}
+
+/* The filter is a state of the board, and it says so where the board is
+   looked at rather than only in the live region. */
+[data-app="tasks"] .late { transition: box-shadow var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+[data-app="tasks"] .late:hover { box-shadow: 0 0 0 3px var(--wash-2); }
+/* Today is serious and nothing has gone wrong yet, so it takes the outlined
+   chip the card already uses for the same fact rather than the filled one. */
+[data-app="tasks"] .late[data-soft] { background: none; color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--ink-1); }
+[data-app="tasks"] .late[data-soft]:hover { box-shadow: inset 0 0 0 1px var(--ink-1), 0 0 0 3px var(--wash-2); }
+[data-app="tasks"] .late[data-soft][aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--ink-1), 0 0 0 3px var(--ink-4); }
+[data-app="tasks"] .late[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--ink-4); }
+[data-app="tasks"] .late[aria-pressed="true"]:hover { box-shadow: 0 0 0 3px var(--ink-2); }
+[data-app="tasks"] .late svg { width: 11px; height: 11px; margin-left: 3px; margin-right: -2px; }
+
+/* In a forced palette the browser throws away every box-shadow, which on
+   this board is the focus ring, the picked-up card, the card's own edge and
+   the entire severity language. Each is restated in system colours. */
+@media (forced-colors: active) {
+  [data-app="tasks"] .card { border: 1px solid CanvasText; }
+  [data-app="tasks"] .card:focus-visible,
+  [data-app="tasks"] .card[data-force="focus"] { outline: 3px solid Highlight; outline-offset: 2px; }
+  [data-app="tasks"] .card[data-force="moving"],
+  [data-app="tasks"] .card[data-force="drag"] { outline: 3px solid Highlight; outline-offset: 2px; }
+  [data-app="tasks"] .card[data-open] { outline: 2px solid CanvasText; outline-offset: 2px; }
+  [data-app="tasks"] .when { border: 1px solid CanvasText; }
+  [data-app="tasks"] .when[data-t="overdue"] { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  [data-app="tasks"] .when[data-t="today"] { border-width: 2px; }
+  [data-app="tasks"] .tick { border: 1px solid CanvasText; }
+  /* Colour is how an unfinished tick hides its check, and a forced palette
+     overrides colour — so every card read as done. */
+  [data-app="tasks"] .card:not([data-done]) .tick svg { display: none; }
+  [data-app="tasks"] .card[data-done] .tick { forced-color-adjust: none; background: CanvasText; color: Canvas; }
+  /* Both are 1px ink at low alpha, which a forced palette resolves to the
+     page background. */
+  [data-app="tasks"] .dropLine { forced-color-adjust: none; background: Highlight; }
+  [data-app="tasks"] .tray::before,
+  [data-app="tasks"] .tray::after { forced-color-adjust: none; background: CanvasText; }
+  [data-app="tasks"] .dock,
+  [data-app="tasks"] .carry,
+  [data-app="tasks"] .cardMenu,
+  [data-app="tasks"] .drawer { border: 1px solid CanvasText; }
+  [data-app="tasks"] .trayBody[data-above],
+  [data-app="tasks"] .trayBody[data-more] { border-block: 1px solid CanvasText; }
+}
+
+@keyframes breathe { 0%, 100% { opacity: 1 } 50% { opacity: 0.45 } }
+@media (prefers-reduced-motion: reduce) { [data-app="tasks"] .sk { animation: none; opacity: 0.7; } }
+/* The card's own box, so the skeleton and the card cannot drift apart. */
+[data-app="tasks"] .loadCard {
+  background: var(--white); box-shadow: var(--ring); border-radius: var(--r-card);
+  padding: 12px 12px 12px 11px;
+  display: grid; grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 8px; row-gap: 6px;
+}
+[data-app="tasks"] .loadCard .sk { grid-column: 2; }
+/* The card the payload brings leads with an 18px circle in a reserved
+   gutter. A skeleton that does not reserve it promises a different object. */
+[data-app="tasks"] .loadCard .skTick {
+  grid-column: 1; grid-row: 1 / span 2;
+  width: 18px; height: 18px; border-radius: 50%; align-self: start;
+}
+[data-app="tasks"] .loadCard { min-height: 98px; align-content: start; }
+[data-app="tasks"] .loadCard[data-tall] { min-height: 124px; }
+/* 78 is the dock's bottom (18) plus its height (48) plus a 12px gap. */
+[data-app="tasks"] .loadSay {
+  position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
+  font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
+  color: var(--ink-3); z-index: 4;
+}
+
+/* ── card specimen sheet ───────────────────────────────────────── */
+[data-app="tasks"] .spec { flex: 1; min-height: 0; overflow: auto; padding: 4px 28px 32px; }
+[data-app="tasks"] .specGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 26px 20px; }
+/* Every caption in a row starts on one baseline, with no hard-coded height
+   to go stale as the specimens change. The page that argues the system is
+   ruled cannot have its own captions on four different lines. */
+[data-app="tasks"] .specCell { display: grid; gap: 9px; grid-template-rows: auto 1fr auto; align-content: stretch; }
+[data-app="tasks"] .specLabel {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+/* An invisible board, laid out by the real rules, so --tray-card is the
+   width a tray actually gives a card at this viewport rather than a number
+   typed into the stylesheet and left to go stale. */
+[data-app="tasks"] .specProbe { position: absolute; visibility: hidden; pointer-events: none; left: 0; right: 0; height: 0; overflow: hidden; }
+[data-app="tasks"] .specProbe .board { grid-auto-rows: 0; padding-bottom: 0; }
+[data-app="tasks"] .specStage {
+  background: var(--wash); border-radius: var(--r-card);
+  padding: 13px; width: calc(var(--tray-card, 234px) + 26px); max-width: 100%;
+  display: flex; align-items: center;
+}
+[data-app="tasks"] .specStage .card { width: var(--tray-card, 234px); max-width: 100%; }
+[data-app="tasks"] .specTray { padding: 8px; border-left: 0; width: calc(var(--tray-card, 234px) + 16px); border-radius: var(--r-card); }
+/* The specimen sheet is rendered by the same rules it documents. */
+[data-app="tasks"] .specTray .trayBody { padding: 0 6px; margin: 0 -6px; gap: 8px; }
+[data-app="tasks"] .specNote { font-size: 12px; font-weight: 400; line-height: 1.45; color: var(--ink-2); margin: 0; max-width: 268px; }
+[data-app="tasks"] .specLabel { max-width: 268px; }
+/* ch is the advance of the zero glyph, not a character: 64ch measured 92 to
+   99 characters a line on the only block of running prose in the product. */
+[data-app="tasks"] .specIntro { max-width: 46ch; letter-spacing: var(--tr-13); margin: 0 0 24px; font-size: 13px; font-weight: 400; line-height: 1.55; color: var(--ink-2); }
+
+/* A finger needs 44px. A mouse does not, and inflating every control to
+   44 on a desktop board is how a dense product stops being dense. */
+@media (pointer: coarse) {
+
+  [data-app="tasks"] .cardDots,
+  [data-app="tasks"] .ghost,
+  [data-app="tasks"] .trayAdd,
+  [data-app="tasks"] .drawerTab,
+  [data-app="tasks"] .drawerRow button,
+  [data-app="tasks"] .drawerAdd,
+  [data-app="tasks"] .drawerHelp a {
+    min-height: 44px; min-width: 44px;
+  }
+  /* Permanently present, because a finger never hovers, and quieter than
+     the desktop reveal so it does not compete with the title. The title row
+     reserves the whole 44px column, and the title releases its 62% floor so
+     it can reflow into what is actually left. */
+  /* A finger never hovers, so the menu is simply present, and quieter than
+     the desktop reveal so it does not compete with the title. */
+  [data-app="tasks"] .cardDots { visibility: visible; color: var(--ink-4); }
+  [data-app="tasks"] .cardDots::before { inset: -10px; }
+  [data-app="tasks"] .cardTitle { min-width: 0; }
+  [data-app="tasks"] .dockField kbd { display: none; }
+  /* The circle stays 18px; only what a finger can land on grows. */
+  [data-app="tasks"] .tick::before { inset: -13px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE DECISION LAYER
+
+   Six design decisions, each isolated on its own root attribute, so a
+   change to one cannot leak into another. The three named variants are
+   nothing more than three preset combinations of these six, which is
+   why every combination stays on-brand: none of them can reach a colour
+   that is not Ink, Indigo or White.
+
+     data-cards    flat | bordered | elevated
+     data-radius   sharp | soft | round
+     data-density  comfortable | compact
+     data-indigo   subtle | forward
+     data-type     calm | expressive
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── card style ────────────────────────────────────────────────── */
+/* Flat: no ring at rest. Space does the separating, and the card only
+   acquires an edge when you point at it. */
+/* The presets set the RESTING ring, never box-shadow: setting the property
+   outranks the custom property the whole state system is carried in, which
+   deleted the focus ring, the selection ring and the in-hand lift in two of
+   the four variants. */
+[data-app="tasks"][data-cards="flat"] .card { --card-rest: none; --card-hover: none; }
+/* Background is not part of the ring system, so a preset may still say it. */
+[data-app="tasks"][data-cards="flat"] .card:hover,
+[data-app="tasks"][data-cards="flat"] .card[data-force="hover"] { background: var(--wash); }
+[data-app="tasks"][data-cards="flat"] .card[data-done] { --card-rest: none; background: var(--wash); }
+[data-app="tasks"][data-cards="flat"] .card[data-next] { --card-rest: 0 0 0 1px var(--indigo-line); --card-hover: 0 0 0 1px var(--indigo); }
+[data-app="tasks"][data-cards="flat"] .trayBody { gap: 2px; }
+[data-app="tasks"][data-cards="flat"] .loadCard { box-shadow: none; background: var(--wash); }
+
+/* Elevated: the card is an object at rest, and picking it up only
+   deepens something that was already there. */
+[data-app="tasks"][data-cards="elevated"] .card { --card-rest: var(--ring), var(--raise); --card-hover: var(--ring-strong), var(--float); }
+/* A finished card does not lift under the pointer. It has settled — that is
+   the whole reading the locked default makes true — so its hairline firms and
+   nothing rises. One hover value for every card meant a Done card and a live
+   To do card computed a byte-identical shadow. */
+[data-app="tasks"][data-cards="elevated"] .card[data-done] { --card-rest: 0 0 0 1px var(--line-soft); --card-hover: 0 0 0 1px var(--line-strong); }
+/* The preset and .card[data-next] are both (0,2,0) and the preset is declared
+   later, so elevated was deleting the one earned indigo from the only
+   combination that ships — while the specimen sheet printed a caption
+   asserting it under a card that did not have it. */
+[data-app="tasks"][data-cards="elevated"] .card[data-next] {
+  --card-rest: 0 0 0 1px var(--indigo-line), var(--raise);
+  --card-hover: 0 0 0 1px var(--indigo), var(--float);
+}
+[data-app="tasks"][data-cards="elevated"] .loadCard { box-shadow: var(--ring), var(--raise); }
+
+/* ── corner radius ─────────────────────────────────────────────── */
+[data-app="tasks"][data-radius="sharp"] {
+  --r-chip: 4px; --r-ctl: 4px; --r-card: 4px; --r-sheet: 8px;
+}
+[data-app="tasks"][data-radius="sharp"] .seg,
+[data-app="tasks"][data-radius="sharp"] .segItem,
+[data-app="tasks"][data-radius="sharp"] .dock,
+[data-app="tasks"][data-radius="sharp"] .dockField,
+[data-app="tasks"][data-radius="sharp"] .dockPrimary,
+[data-app="tasks"][data-radius="sharp"] .when,
+[data-app="tasks"][data-radius="sharp"] .late,
+[data-app="tasks"][data-radius="sharp"] .drawerTab,
+[data-app="tasks"][data-radius="sharp"] .ghost { border-radius: 4px; }
+[data-app="tasks"][data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+
+[data-app="tasks"][data-radius="round"] {
+  --r-chip: 8px; --r-ctl: 12px; --r-card: 16px; --r-sheet: 24px;
+}
+[data-app="tasks"][data-radius="round"] .specStage { border-radius: 16px; }
+
+/* ── density ───────────────────────────────────────────────────── */
+/* Compact is not "the same thing, smaller". Lines that earn their place
+   at comfortable density stop earning it here, so the note clamps to
+   one line and the tray note goes away entirely. */
+[data-app="tasks"][data-density="compact"] .card { padding: 8px 10px 8px 9px; row-gap: 4px; column-gap: 7px; grid-template-columns: 20px minmax(0, 1fr); }
+[data-app="tasks"][data-density="compact"] .cardTitle { font-size: 13px; line-height: 1.32; max-height: calc(1.32em * 2); }
+[data-app="tasks"][data-density="compact"] .cardNote { font-size: 12px; line-height: 1.38; max-height: 1.38em; }
+[data-app="tasks"][data-density="compact"] .cardFoot { min-height: 0; font-size: 11px; gap: 8px; }
+[data-app="tasks"][data-density="compact"] .trayBody { gap: 5px; }
+[data-app="tasks"][data-density="compact"] .tray { padding: 12px 9px 6px; }
+[data-app="tasks"][data-density="compact"] .trayNote { display: none; }
+[data-app="tasks"][data-density="compact"] .trayHead { padding-bottom: 9px; }
+[data-app="tasks"][data-density="compact"] .head { height: 52px; }
+[data-app="tasks"][data-density="compact"] .views { padding-bottom: 10px; }
+[data-app="tasks"][data-density="compact"] .tick { width: 16px; height: 16px; }
+[data-app="tasks"][data-density="compact"] .tick svg { width: 10px; height: 10px; }
+[data-app="tasks"][data-density="compact"] .when { height: 18px; font-size: 10.5px; padding: 0 7px; }
+[data-app="tasks"][data-density="compact"] .drawerRow { padding: 8px 10px; }
+[data-app="tasks"][data-density="compact"] .loadCard { padding: 9px; gap: 7px; }
+
+/* ── indigo intensity ──────────────────────────────────────────── */
+/* Forward does not add indigo everywhere. It moves the accent from the
+   one dated milestone onto the one thing you are most likely to do
+   next, and lets the spine say which product you are in. */
+/* Indigo marks intent, never status. Forward moves the accent onto the
+   thing you are most likely to do next and onto the product you are in.
+   Overdue stays ink, because a warning is not a brand moment, and done
+   stays ink, because completed work should not be the loudest thing on
+   the board. */
+[data-app="tasks"][data-indigo="forward"] .dockPrimary { background: var(--indigo); }
+[data-app="tasks"][data-indigo="forward"] .dockPrimary:hover { background: var(--indigo-deep); }
+[data-app="tasks"][data-indigo="forward"] .segItem[data-active] { color: var(--indigo-ink); }
+[data-app="tasks"][data-indigo="forward"] .card[data-next] { --card-rest: 0 0 0 1.5px var(--indigo); --card-hover: 0 0 0 1.5px var(--indigo), var(--float); }
+[data-app="tasks"][data-indigo="forward"] .when[data-t="milestone"] { background: var(--indigo); color: var(--white); }
+[data-app="tasks"][data-indigo="forward"] .trayAdd:hover,
+[data-app="tasks"][data-indigo="forward"] .drawerAdd:hover { color: var(--indigo-ink); }
+
+/* ── type scale ────────────────────────────────────────────────── */
+/* Expressive widens the gaps in the scale rather than making everything
+   bigger. The title grows, the supporting lines hold, and the tracking
+   curve steepens so hierarchy is carried by shape, not by size alone. */
+[data-app="tasks"][data-type="expressive"] .headName { font-size: 22px; letter-spacing: var(--tr-19); }
+[data-app="tasks"][data-type="expressive"] .word { font-size: 19px; }
+[data-app="tasks"][data-type="expressive"] .cardTitle { font-size: 15px; line-height: 1.34; letter-spacing: var(--tr-15); }
+[data-app="tasks"][data-type="expressive"] .cardNote { font-size: 13px; }
+[data-app="tasks"][data-type="expressive"] .trayName { font-size: 11px; letter-spacing: 0.14em; }
+[data-app="tasks"][data-type="expressive"] .drawerHead h2 { font-size: 22px; letter-spacing: var(--tr-19); }
+[data-app="tasks"][data-type="expressive"] .specIntro { font-size: 14px; }
+[data-app="tasks"][data-type="expressive"] .headFacts { font-size: 13px; }
+
+/* ── responsive ────────────────────────────────────────────────── */
+/* UI composition · the filtered board was one card marooned in a field of
+   full-height empty rules. A column that did not answer collapses to its head,
+   so the answer is what the eye lands on.
+   `flex: 0 1 auto` was written here and never worked: .board is a grid, and a
+   flex shorthand on a grid item does nothing. `align-self: start` is the grid
+   mechanism that does what the line above always claimed.
+   The rule stays on the collapsed head rather than being dropped. Rendered
+   both ways, the short rules read as a header row of five cells and keep each
+   count tied to its own name; without them the counts drift against the next
+   column's title. */
+/* Every tray tops out at its own content, not at the tallest one, so the
+   answering column stops running 500px of hairline past its last card into
+   blank sheet. max-height is load-bearing: .board is grid-auto-rows:100% with
+   overflow-y hidden, so without it a filter returning ten cards would grow
+   past the row and be clipped with no scroll route. */
+[data-app="tasks"] .board[data-filtered] .tray { align-self: start; max-height: 100%; }
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayBody,
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayAdd { display: none; }
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayHead { padding-bottom: 0; }
+/* The step back is drawn with the ink ladder, not with element opacity.
+   Opacity composites the declared colour, so the audit read #111 and passed
+   while the pixel rendered #888 — 3.54:1, under AA — and it halved the tray's
+   own hairline at the same time, drawing the four column rules at three
+   different weights. Ink keeps the recession legible and the rules even. */
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayName { color: var(--ink-2); }
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .trayCount { color: var(--ink-3); }
+[data-app="tasks"] .board[data-filtered] .tray[data-empty] .pip { background: rgba(17, 17, 17, 0.14); }
+
+/* The column scroller is NOT a tab stop. It was one by accident — an unnamed,
+   unroled div taking focus and painting the accent ring, two stops on a dense
+   board — and the ring here made that look deliberate. The keyboard route into
+   a column's hidden cards is the roving card itself: the arrows walk it and
+   the board scrolls to follow, which is a better route than focusing a box
+   and pressing Down. axe still reports scrollable-region-focusable; that is a
+   known and deliberate divergence, answered by the roving model rather than
+   by a focusable div nobody can name. */
+
+/* A blank board makes its one offer once. Five Add rows behind a centred
+   "Add the first task" is the same offer six times. */
+[data-app="tasks"] .board[data-blank] .trayAdd,
+[data-app="tasks"] .board[data-blank] .trayEmpty { display: none; }
+
+/* Taste · emptiness is the state this board spends most of its life in, and
+   it had no design. One centred sentence and one action, inside the sheet,
+   instead of four identical Add rows over a white void. */
+/* On a blank board the interior rules had nothing to rule between, and the
+   one instruction landed dead inside them: the hairlines at 632 and 890 ran
+   18px off each shoulder of the sentence, so it read as "Review is empty"
+   rather than "the board is empty". The rules go, the five heads stay, and
+   the sentence is parented to the sheet because nothing else is drawn on it. */
+[data-app="tasks"] .board[data-blank] .tray { border-left-color: transparent; }
+[data-app="tasks"] .emptyBoard {
+  /* Centred on the region it fills, not on the sheet: the old `inset: 0`
+     included the 60px band and the 52px switcher, which put the block 82px
+     above the optical centre of the void it sits in. The extra padding biases
+     it up deliberately rather than by accident. */
+  position: absolute; inset: 130px 0 84px;
+  display: grid; place-content: center; justify-items: center;
+  gap: 14px; text-align: center; padding: 0 24px 44px;
+  pointer-events: none;
+}
+[data-app="tasks"] .emptyBoard p {
+  margin: 0; max-width: 34ch;
+  font-size: 15px; font-weight: 400; letter-spacing: var(--tr-15);
+  color: var(--ink-2); text-wrap: balance;
+}
+[data-app="tasks"] .emptyBoard b {
+  /* A message inside the board, not a second page title. */
+  display: block; font-size: 16px; font-weight: 600;
+  letter-spacing: var(--tr-15); color: var(--ink-1); margin-bottom: 6px;
+}
+[data-app="tasks"] .emptyBoard button {
+  pointer-events: auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong); background: var(--white);
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
+  cursor: pointer; transition: background var(--motion-fast) var(--curve);
+}
+[data-app="tasks"] .emptyBoard button:hover { background: var(--wash); }
+[data-app="tasks"] .emptyBoard button svg { width: 16px; height: 16px; }
+/* Quieter than the instruction it follows: an example, not a second ask. */
+[data-app="tasks"] .emptyBoard .emptyEg {
+  font-size: 13px; letter-spacing: var(--tr-13);
+  color: var(--ink-3); max-width: 40ch; margin-top: -2px;
+}
+
+@media (max-width: 1200px) {
+  /* The board becomes a horizontal scroller at 1439, not at 1200: five 258px
+     columns total 1290px of content, which fits in exactly one viewport. What
+     changes here is only the column sizing. The snap that stops a column
+     being sliced at the sheet's straight edge, mid-word, is on .board
+     unconditionally — leaving it here left a 239px band with none. */
+  [data-app="tasks"] .board {
+    grid-template-columns: none; grid-auto-flow: column;
+    grid-auto-columns: minmax(258px, 1fr);
+  }
+  [data-app="tasks"] .drawer { width: 364px; }
+  [data-app="tasks"] .floor:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
+}
+/* The chrome yields before the name of the project does. Visually hidden
+   rather than removed, so the controls keep their accessible names. */
+/* Measured, not guessed. With the labels forced on at every width, the gap
+   between the facts and the controls is 121px at 1100, 41px at 1020 and 21px
+   at 1000 — so the old 1100 threshold was stripping the words off the
+   controls a full 120px before anything was competing for the room. That band
+   is exactly what the panel kept marking as thin. 1020 is where the two
+   groups actually start closing on each other. */
+@media (max-width: 1020px) {
+  [data-app="tasks"] .head .ghost > span {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  /* The count goes with the word it counts. Left on its own beside a bare
+     icon it read as a stray 5 — a number is not information until something
+     names what there are five of. The hidden label still carries both into
+     the accessible name, so nothing is lost to a screen reader. */
+  [data-app="tasks"] .head .ghost > em { display: none; }
+}
+@media (max-width: 900px) {
+  [data-app="tasks"] { --inset: 12px; }
+  /* The date and the day count used to be dropped here, on the reasoning that
+     they could wait for a wider screen. With the name on a line of its own
+     there is no wider screen to wait for: the facts wrap instead, and the
+     tablet keeps the anchor that makes every "14 Jul" on a card legible. */
+  /* The chip needs inline-flex to centre its own contents. The ratio is a
+     sentence: making it a flex container turns " of " and " done" into
+     anonymous flex items and strips the spaces around them. */
+  [data-app="tasks"] .headFacts .late { display: inline-flex; }
+  [data-app="tasks"] .headFacts .ratio { display: inline; }
+  [data-app="tasks"] .headFacts { gap: 12px; }
+  [data-app="tasks"] .dockField { min-width: 148px; }
+  [data-app="tasks"] .drawer { left: var(--inset); width: auto; }
+  [data-app="tasks"] .floor:has(.drawer) .sheet { margin-right: 0; }
+}
+@media (max-width: 720px) {
+  [data-app="tasks"] { --inset: 9px; }
+  [data-app="tasks"] .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  /* The stacked header itself is shared now — the sheet is under 1200 long
+     before the phone is reached, so it is already in the grid shape. What is
+     left here is only what is genuinely phone: a tighter leading edge and a
+     name set one step larger, because a 390 measure can carry it. */
+  [data-app="tasks"] .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
+  [data-app="tasks"] .sheet[data-head="stack"] .headName { font-size: 19px; }
+  [data-app="tasks"] .headSearch { display: inline-flex; }
+  /* Only the way out survives, because there is no keyboard here to teach. */
+  /* The shortcut hint goes; the depth ("1 more") stays, because it is the
+     only signal a second undo is waiting. A keycap on a touch device spent
+     46px of a 336px strip on a key the operator cannot press, and cost the
+     best sentence in the product to an ellipsis. */
+  [data-app="tasks"] .carry kbd { display: none; }
+  [data-app="tasks"] .carry em:empty { display: none; }
+  /* The switcher loses its icons rather than its fourth view. Cutting
+     "Calendar" mid-word at the sheet edge read as a broken layout. */
+  [data-app="tasks"] .views { padding: 14px 16px 12px; }
+  [data-app="tasks"] .seg { width: 100%; }
+  [data-app="tasks"] .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
+  [data-app="tasks"] .segItem svg { display: none; }
+  [data-app="tasks"] .viewTools { display: none; }
+  [data-app="tasks"] .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
+  /* No dock on a phone, so no clearance to reserve. */
+  [data-app="tasks"] .tray { scroll-snap-align: start; padding-bottom: 8px; }
+  [data-app="tasks"] .trayBody { padding-bottom: 4px; }
+  [data-app="tasks"] .sheet::after,
+  [data-app="tasks"] .sheet::before { display: none; }
+  [data-app="tasks"] .dock { display: none; }
+  [data-app="tasks"] .drawer { top: 60px; bottom: calc(60px + var(--inset) * 2); }
+  [data-app="tasks"] .loadSay { bottom: 72px; }
+  [data-app="tasks"] .spec { padding: 4px 16px 24px; }
+}
+

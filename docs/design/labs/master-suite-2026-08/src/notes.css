@@ -1,0 +1,1745 @@
+/* Notes · The Stack — GENERATED ONCE by tools/split.mjs from master.css, then hand-edited.
+   Every selector is scoped to [data-app="notes"] so the three products
+   share one document without sharing one :root. Do not remove the scope.
+   The floor, the spine and the sheet's base geometry are shell.css's. */
+
+/* ═══════════════════════════════════════════════════════════════════
+   NOTES · THE STACK — the locked master.
+
+   Two planes with depth between them. The upper plane is a desk carrying
+   the newest piece of paper; the lower plane is an index carrying
+   everything older. Reading lifts a note out of the index onto the desk.
+   Dictating takes the whole floor to ink.
+
+   The palette is exactly three colours and their stated alphas:
+
+     Ink      #111111   the floor, the type, every weight of emphasis
+     Indigo   #4f46e5   the accent, spent once
+     White    #ffffff   the paper the work lives on
+
+   There are no other hues anywhere: no red, no amber, no green, no
+   independent grey. State is ink DENSITY and FILL, never colour.
+
+     waiting on you   a filled ink dot on the note's own mark
+     in Tasks         an outlined chip, ink at full strength
+     the one indigo   the live edge of whatever you are doing right now
+     held / failed    ink, outlined or filled. Never red.
+
+   Type is Geist at 400 and 600. No other weight appears anywhere.
+
+     ?v=locked | quiet | studio | press
+     ?state=notebook | capture | voice | readback | review | seam
+            | search | pressure | nothing | not-yet
+   ═══════════════════════════════════════════════════════════════════ */
+
+[data-app="notes"] {
+  --scrim-h: 96px;
+  /* ── the three ─────────────────────────────────────────────── */
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  /* ── ink, at stated alphas over white ──────────────────────── */
+  --ink-1: var(--ink);                     /* primary type        21:1 */
+  --ink-2: rgba(17, 17, 17, 0.72);         /* secondary type     7.4:1 */
+  --ink-3: rgba(17, 17, 17, 0.62);         /* micro labels       5.3:1 */
+  /* Decorative only, and the gate enforces it. At 0.30 over white this is
+     1.99:1 — it was carrying uppercase labels, timestamps and the index's
+     source marks, all of which failed AA. Nothing that has to be read may
+     use it. */
+  --ink-4: rgba(17, 17, 17, 0.30);
+
+  /* The surface ladder. Four steps, and no value sits between them.
+     Nothing on white goes above 9%: a heavier rule reads as a box, and
+     this product does not draw boxes around a person's own writing. */
+  --wash: rgba(17, 17, 17, 0.035);
+  --line-soft: rgba(17, 17, 17, 0.055);
+  --line: rgba(17, 17, 17, 0.09);
+  --line-strong: rgba(17, 17, 17, 0.16);
+
+  /* ── white, at stated alphas over the ink floor ────────────── */
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.62);   /* 7.7:1 on ink             */
+  --on-ink-3: rgba(255, 255, 255, 0.42);   /* large type only          */
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  /* ── indigo, at stated alphas ──────────────────────────────── */
+  --indigo-ink: var(--indigo);             /* 6.3:1 on white           */
+  --indigo-deep: #4338ca;
+  --indigo-wash: rgba(79, 70, 229, 0.08);
+  --indigo-line: rgba(79, 70, 229, 0.32);
+  --indigo-ring: rgba(79, 70, 229, 0.16);
+
+  /* ── the ladders ───────────────────────────────────────────── */
+  /* The type ramp. Eight steps and no ninth, because eighteen ad-hoc
+     sizes on half-pixel increments is not a system, it is a habit — a
+     panel seat counted eleven of them crammed into the 10 to 15 band
+     alone. Every font-size in this file is one of these.
+
+       11  the uppercase micro label
+       12  metadata, timestamps, the sentence under a control
+       13  a control's own words
+       15  the index row, and any dense list
+       17  a note being read, and the field it is written in
+       20  the question at the top of a decision
+       27  an empty state's one sentence
+       34  the words arriving while somebody is speaking            */
+  --t-11: 11px; --t-12: 12px; --t-13: 13px; --t-15: 15px;
+  --t-17: 17px; --t-20: 20px; --t-27: 27px; --t-34: 34px;
+
+  /* Five leadings, declared, because leading left to the browser is
+     leading that shifts by a pixel between a note's words and the facts
+     beside them on every row of the index. Eleven raw ratios had grown up
+     beside the three, which is a ladder in the comment and none in the
+     file. The steps, by job: a display line, a tight one, the working
+     line, a secondary-prose line, and the line a note is read at. */
+  --lh-title: 1.22;
+  --lh-tight: 1.28;
+  --lh-base: 1.45;
+  --lh-note: 1.55;
+  --lh-read: 1.62;
+
+  /* One tracking curve, by size, declared once. Every letter-spacing in
+     this file is a token from it. */
+  --tr-34: -0.034em; --tr-27: -0.030em; --tr-21: -0.026em; --tr-18: -0.021em;
+  --tr-16: -0.016em; --tr-14: -0.012em; --tr-12: -0.006em; --tr-11: 0em;
+  --tr-cap: 0.075em;
+
+  /* 4 - 6 - 8 - 12 - 14 - 16 - pill. No seventh step. */
+  --r-xs: 4px;
+  --r-chip: 6px;
+  --r-ctl: 8px;
+  --r-card: 12px;
+  --r-paper: 14px;
+  --r-sheet: 16px;
+  --r-pill: 999px;
+
+  /* The lower plane's own ground. Two planes with different jobs were
+     the same white, separated by one hairline, which is why the resting
+     frame read as a compose box on a list rather than a desk above an
+     index. A tint of ink, so the lock holds. */
+  --ground: rgba(17, 17, 17, 0.026);
+
+  --inset: 18px;
+  --rail: 64px;
+  --tap: 44px;
+  --gutter: 30px;
+
+  /* One measure for every surface that carries a person's own writing.
+     Calibrated in em rather than ch: Geist's average glyph is about
+     0.45em, so 31em lands near 68 characters per line at any size and
+     self-scales with the type ramp, which `ch` does not.
+     Before this the field a person types their thought into ran the full
+     width of the sheet — 145 characters per line at 1440 — and this is a
+     product whose entire content is somebody's own sentences. */
+  --measure: 31em;
+
+  /* One column for both planes. The desk was frozen at 716px from 1100
+     upward while the index grew with the window, so at 1920 the two
+     objects the architecture calls stacked planes shared neither edge and
+     a 1056px void sat beside the paper. --measure still caps the writing
+     lines inside it; --stack is what the two planes agree on. */
+  --stack: min(100%, 1060px);
+
+  /* One duration and one curve for the whole product. Any other value
+     has to be argued for in writing. The one exception is the paper
+     settle, which is the direction's own signature and is declared and
+     named below. */
+  --dur: 140ms;
+  --dur-out: 50ms;
+  --dur-settle: 220ms;
+  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+
+  /* Borders are rings, so thickening one on hover cannot move a pixel of
+     layout. Depth is stacked micro-shadows plus the ring, never one soft
+     blur — a blur is a haze, and paper is not hazy. */
+  --ring: 0 0 0 1px var(--line);
+  --ring-strong: 0 0 0 1px var(--line-strong);
+  --raise: 0 1px 1px rgba(17, 17, 17, 0.02), 0 2px 3px rgba(17, 17, 17, 0.03);
+  --paper: 0 1px 1px rgba(17, 17, 17, 0.04), 0 3px 6px rgba(17, 17, 17, 0.04), 0 10px 22px rgba(17, 17, 17, 0.06);
+  --paper-lift: 0 2px 3px rgba(17, 17, 17, 0.05), 0 8px 16px rgba(17, 17, 17, 0.07), 0 26px 52px rgba(17, 17, 17, 0.14);
+}
+
+/* The colour is set on html, not only on body. Without it every node in
+   the document head inherits the initial black, which is a colour this
+   product does not have. */
+[data-app="notes"] { background: var(--ink); color: var(--ink-1); }
+[data-app="notes"] {
+  background: var(--ink); color: var(--ink-1);
+  font-feature-settings: "ss01", "cv01";
+  overflow: hidden;
+}
+
+/* Tabular for digits that stack in a column or tick in place. Prose keeps
+   Geist's proportional figures, so "14 notes" reads as a sentence and a
+   timestamp column reads as a column. */
+[data-app="notes"] .tab { font-variant-numeric: tabular-nums; }
+
+/* Every interactive thing answers the keyboard the same way. Outline
+   only: setting a radius here overrides each element's own. */
+[data-app="notes"] a:focus-visible,
+[data-app="notes"] button:focus-visible,
+[data-app="notes"] [tabindex]:focus-visible,
+[data-app="notes"] input:focus-visible,
+[data-app="notes"] textarea:focus-visible,
+[data-app="notes"] [contenteditable]:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 3px;
+}
+[data-app="notes"] .reset,
+[data-app="notes"] .headAct,
+[data-app="notes"] .chip,
+[data-app="notes"] .act,
+[data-app="notes"] .verb,
+[data-app="notes"] .mini,
+[data-app="notes"] .idxRow,
+[data-app="notes"] .dockGlyph,
+[data-app="notes"] .dockField,
+[data-app="notes"] .dockAvatar,
+[data-app="notes"] .drop,
+[data-app="notes"] .picker,
+[data-app="notes"] .darkAct,
+[data-app="notes"] .undoAct {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0;
+  -webkit-appearance: none;
+}
+
+/* The head belongs to the column, not to the sheet. At 1920 both planes
+   held a 1000px column while the wordmark sat at x=130 and the account at
+   x=1872 — the chrome untethered from everything under it. */
+/* THE HEAD WRAPS RATHER THAN SHRINKS.
+   Between 721 and 958 the date the venue is facing was amputated at
+   every width — 155px of "Saturday 18 July, in 2 days" laid into 32px
+   at 721, 63 at 768, 96 at 820, 148 at 900 — printing "Sat…" and, worse,
+   the mid-word "Saturday 18 July, in 2 d…". The venue name was clipped
+   with it. A breakpoint would only move the snap from 720 to 959, so
+   the row wraps instead: the facts keep their own width and take a
+   second line when the row genuinely cannot hold them, which has no
+   discontinuity anywhere. */
+[data-app="notes"] .head {
+  flex: none; width: var(--stack); margin: 0 auto;
+  display: flex; align-items: center; gap: 13px; padding: 10px var(--gutter);
+  min-height: 62px; flex-wrap: wrap; row-gap: 4px;
+}
+/* The subject and its date are one fact and never shrink; if they do
+   not fit beside the wordmark they go below it whole. */
+[data-app="notes"] .headNext { flex: none; }
+[data-app="notes"] .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; letter-spacing: var(--tr-18); flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
+[data-app="notes"] .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
+[data-app="notes"] .headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
+/* What the house is facing, at the head of the sheet. The head's top-line
+   fact had been a generic count of unread items while the thing that
+   actually presses on this person — a wedding in two days with notes
+   unresolved — was already in the data and printed only as a group rule. */
+/* A control, because the fact it carries is one the notebook can be
+   narrowed to: the product knew the house was facing Mara & Finn on
+   Saturday, printed it in its largest type and then did nothing with it.
+   Its hit area reaches the whole row without the row growing — the same
+   expander the desk's facts already use. */
+[data-app="notes"] .headNext {
+  position: relative; display: inline-flex; align-items: baseline; gap: 8px; flex: 0 1 auto;
+  min-width: 0; overflow: hidden; cursor: pointer; border-radius: var(--r-chip);
+}
+[data-app="notes"] .headNext::before { content: ""; position: absolute; inset: -11px -9px; }
+[data-app="notes"] .headNext:hover b { color: var(--ink); }
+[data-app="notes"] .headNext[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--indigo); }
+[data-app="notes"] .headNext b { white-space: nowrap; font-size: var(--t-15); line-height: var(--lh-base); font-weight: 600; letter-spacing: var(--tr-16); color: var(--ink-1); white-space: nowrap; }
+[data-app="notes"] .headNext span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-app="notes"] .headName { margin: 0; font-size: var(--t-15); font-weight: 400; color: var(--ink-2); letter-spacing: var(--tr-14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 5ch; line-height: var(--lh-base); }
+[data-app="notes"] .headActions { margin-left: auto; display: flex; align-items: center; gap: 2px; flex: none; }
+[data-app="notes"] .headAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: var(--t-13); color: var(--ink-2); letter-spacing: var(--tr-14); cursor: pointer; white-space: nowrap;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve); line-height: var(--lh-base); }
+[data-app="notes"] .headAct svg { width: 15px; height: 15px; color: var(--ink-3); }
+[data-app="notes"] .headAct:hover { background: var(--wash); color: var(--ink-1); }
+
+/* The one filled object in the head. A count of outstanding decisions is
+   the only genuinely urgent thing in Notes, and it reads as filled ink
+   rather than as a colour. */
+[data-app="notes"] .chip { white-space: nowrap; flex: none; }
+[data-app="notes"] .chip {
+  display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: var(--r-pill);
+  background: var(--ink); color: var(--white); font-size: var(--t-12); font-weight: 600; letter-spacing: var(--tr-12);
+  cursor: pointer; position: relative; flex: none;
+  transition: background-color var(--dur) var(--curve); line-height: var(--lh-base); }
+/* The chip is 26px because that is the size the head wants; the target it
+   answers to is 44, taken behind the wordmark and the actions either
+   side of it. */
+[data-app="notes"] .chip::before { content: ""; position: absolute; inset: -9px -6px; }
+[data-app="notes"] .chip:hover { background: #000; }
+[data-app="notes"] .chip[data-off] { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); font-weight: 400; }
+
+/* ── the desk ──────────────────────────────────────────────────── */
+/* Both planes resolve to one content column. The index carries its gutter
+   as padding inside the stack, so the desk's paper has to be the stack
+   minus that same gutter for the two to share an edge — otherwise the
+   paper sits 30px outside every row beneath it. */
+[data-app="notes"] .desk { flex: none; position: relative; padding: 6px 0 var(--gutter); display: flex; justify-content: center; }
+[data-app="notes"] .pile { position: relative; width: min(calc(100% - var(--gutter) * 2), calc(var(--stack) - var(--gutter) * 2)); }
+/* The paper and the sheets behind it. Anything hung off the paper — the
+   task peeled from a note — sits outside this box, so the ghosts cannot
+   stretch behind it. */
+[data-app="notes"] .paperStack { position: relative; }
+/* The sheets behind. Decoration, hidden from the reader: the notes they
+   stand for are in the index below, and naming them twice gives a screen
+   reader a duplicate notebook. */
+[data-app="notes"] .behind {
+  position: absolute; left: 0; right: 0; top: 0; height: 100%;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--raise);
+  transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
+}
+[data-app="notes"] .behind[data-n="1"] { transform: translateY(11px) scale(0.982); opacity: 0.92; }
+[data-app="notes"] .behind[data-n="2"] { transform: translateY(22px) scale(0.964); opacity: 0.66; }
+[data-app="notes"] .behind[data-n="3"] { transform: translateY(33px) scale(0.946); opacity: 0.4; }
+
+/* The paper is as wide as what is written on it, plus its own margins.
+   A 1262px card holding a 527px column is not a piece of paper on a desk,
+   it is a big empty rectangle with a paragraph in the corner — and it
+   made the index, which is full width, out-shout the plane it is meant to
+   sit beneath. */
+/* The paper fills the stack; the writing on it keeps the measure. A cap
+   on the paper as well produced two competing widths and a dead gutter
+   between them. */
+/* The desk is a two-column plane. It was 1000px wide doing 527px of work
+   in every state, so the plane the architecture calls the desk optically
+   receded behind the index it is meant to lift off. The writing keeps the
+   measure; everything that is true ABOUT the writing goes in a margin
+   beside it, which is also where the peel opens. */
+/* Two real columns, both on row one. Spanning the margin across twenty
+   rows made Chromium invent seventeen phantom tracks and distribute the
+   margin's surplus across them, so the paper's height was the taller
+   column plus an arbitrary remainder — a mystery foot of 37px in one
+   state and 77px in another. */
+[data-app="notes"] .top[data-two] {
+  /* The writing column IS the measure. Given a share of the paper it was
+     wider than the measure and capped inside itself, so a twenty-word
+     note floated in a column of dead white with the margin cramped
+     beside it. The margin takes whatever is left. */
+  display: grid; grid-template-columns: minmax(0, var(--measure)) minmax(276px, 1fr); column-gap: 34px;
+  align-items: start; grid-template-rows: auto;
+}
+[data-app="notes"] .top[data-two] > .deskWrite { grid-column: 1; grid-row: 1; min-width: 0; }
+[data-app="notes"] .top[data-two] > .deskAside { grid-column: 2; grid-row: 1; }
+/* The foot was auto-placed into column one, so the read-mode action row
+   ran out of a 496px track and wrapped "Put it back Esc" onto its own
+   line at 1280, 1440 and 1600 alike. The foot belongs to the paper, not
+   to the writing column. Spanning it also gives the desk back the
+   height the wrap was costing, which is where the index's extra rows
+   come from. */
+[data-app="notes"] .top[data-two] > .topFoot { grid-column: 1 / -1; }
+[data-app="notes"] .deskAside {
+  align-self: start; padding-left: 30px; box-shadow: inset 1px 0 0 var(--line-soft);
+  display: grid; align-content: start; gap: 13px;
+}
+/* THE DATE REGISTER. This product's whole world is one date, and that
+   date was set three ways on one screen — one weight in the head, another
+   in the group rule, a third in the row. A venue operator and a couple
+   orient by it, so it is one declared setting, recognisable on sight
+   anywhere in the product. */
+[data-app="notes"] .dateStamp {
+  font-size: var(--t-13); font-weight: 400; letter-spacing: var(--tr-14);
+  line-height: var(--lh-base); color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+[data-app="notes"] .deskVerbs { display: flex; flex-wrap: wrap; gap: 4px; margin-left: -8px; }
+[data-app="notes"] .deskFact { display: grid; gap: 3px; }
+[data-app="notes"] .deskFact b {
+  font-size: var(--t-11); line-height: var(--lh-base); font-weight: 600;
+  letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3);
+}
+[data-app="notes"] .deskFact span { font-size: var(--t-13); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1); }
+/* The link out to the task the note became. The drawn rule is the
+   underline; the thing a pointer lands on is the 28 behind it. */
+/* This was an <a> with no working href — no role, no behaviour, and a
+   tab stop. It is a button now, which leaves zero anchors in the
+   document; the expander and the underline are kept verbatim so the
+   audit's hit-target and contrast rows do not move. */
+[data-app="notes"] .deskFactLink { position: relative; display: inline-block; color: var(--ink-1); text-decoration: none; border-bottom: 1px solid var(--line-strong); background: none; border-left: 0; border-right: 0; border-top: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; }
+[data-app="notes"] .deskFactLink::before { content: ""; position: absolute; inset: -8px -6px; }
+[data-app="notes"] .deskFactLink:hover { border-bottom-color: var(--ink-2); }
+[data-app="notes"] .deskFact .filingBtn { justify-self: start; margin-left: -10px; }
+
+[data-app="notes"] .top {
+  position: relative; background: var(--white); border-radius: var(--r-paper);
+  padding-bottom: 14px;
+  box-shadow: var(--ring), var(--paper); padding: 22px 24px 14px;
+  transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve);
+}
+/* The sheet wakes from a custom property the renderer sets on the root,
+   because writing an attribute into the tree while somebody is typing
+   destroys the browser's own undo history. Nothing in the document
+   changes; only a number does. */
+[data-app="notes"] .top[data-live],
+[data-app="notes"][style*="--writing: 1"] .top { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper-lift); }
+/* The focused object is the paper, not the rectangle inside it. A default
+   outline around a two-line field held at a 31em measure drew a large
+   empty box across the resting state; the sheet lighting up says the same
+   thing in the direction's own language, and says it about the object a
+   person thinks they are writing on. */
+[data-app="notes"] .top:has(.topField:focus-visible) { box-shadow: 0 0 0 1px var(--indigo), var(--paper-lift); }
+[data-app="notes"] .topField:focus-visible { outline: none; }
+[data-app="notes"] .dock:has(.phoneField:focus-visible) { box-shadow: 0 0 0 1px var(--indigo), var(--paper); }
+[data-app="notes"] .phoneField:focus-visible { outline: none; }
+/* A sheet leaving for the pile. One overshoot-free settle, inside the
+   motion budget, and it never runs when the machine asks for stillness. */
+/* The words in the air. Outside the render tree, on its own layer, and
+   removed by the animation's own finish handler. */
+[data-app="notes"] .fly {
+  position: fixed; z-index: 20; pointer-events: none;
+  font-family: var(--font-sans); font-weight: 400; color: var(--ink-1);
+  transform-origin: 0 0;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+
+/* The sheet leaves for the pile. The transition list has to name opacity
+   or the fade can only snap, which is exactly what it did. */
+[data-app="notes"] .top { transition: box-shadow var(--dur-settle) var(--curve), transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve); }
+[data-app="notes"] .top[data-settling] { transform: translateY(14px) scale(0.972); opacity: 0; }
+/* And the row it became is marked while it settles, so the eye is told
+   where the words went rather than being left to find them. This is the
+   one moment the whole direction exists for. */
+@keyframes arrive {
+  from { background: var(--indigo-wash); box-shadow: inset 2px 0 0 var(--indigo); }
+  to { background: transparent; box-shadow: inset 0 0 0 0 var(--indigo); }
+}
+[data-app="notes"] .idxRow[data-arriving] { animation: arrive 620ms var(--curve) both; }
+
+/* READING LIFTS.
+   The architecture's own verb is that reading lifts a note out of the
+   index onto the desk, and the note hard-cut onto the desk in one frame
+   while its source row stayed printed below — the same sentence in two
+   places with no motion connecting them and nothing saying which was
+   which. Capture got 520ms of eased travel and a comment calling it THE
+   MOMENT; the act performed ten times more often got none of it.
+   Deliberately NOT a reversed flyWords: that machinery clamps scale to
+   1, so reversed it renders the ghost at an effective 9.6px and hands
+   over to a 17px paragraph — a 1.77x pop, which is the arrives-before-
+   it-travels defect re-created in the other direction. The paper lifts
+   and the words are simply on it. */
+@keyframes liftIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+[data-app="notes"] .paperStack[data-lifting] { animation: liftIn var(--dur-settle) var(--curve) both; }
+/* And the row it came from holds its place and says where it went, in
+   ink density rather than the cursor wash, so the two are connected
+   without the row vacating — the note never leaves. */
+[data-app="notes"] .idxRow[data-open] { background: var(--wash); box-shadow: inset 2px 0 0 var(--line-strong); }
+[data-app="notes"] .idxRow[data-open] .idxText { color: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="notes"] .paperStack[data-lifting] { animation: none; }
+}
+
+[data-app="notes"] .topField {
+  width: 100%; border: 0; outline: 0; background: none; resize: none; display: block;
+  font-family: inherit; font-weight: 400; color: var(--ink-1);
+  field-sizing: content; min-height: calc(var(--lh-read) * 2em); max-height: 42vh; overflow: auto;
+  max-width: var(--measure);
+}
+[data-app="notes"] .topField::placeholder { color: var(--ink-3); }
+[data-app="notes"] .topFoot { display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+[data-app="notes"] .topFoot .spacer { flex: 1; }
+/* THE COMMIT IS ALWAYS THERE.
+   It used to be inserted 450ms after the first keystroke, so the control
+   that makes a thought safe was missing for the whole of the three
+   seconds this product is named for, and on a phone, which has no
+   chord, that was the only way to keep a note. Both states are in the
+   tree now and only visibility changes, written during the input event
+   as a custom property. visibility:hidden also leaves the tab order, so
+   nothing is ever invisible-but-focusable. The resting line is taken
+   out of flow so the live row keeps its designed geometry either way
+   and nothing reflows on the first character. */
+[data-app="notes"] .topFoot { position: relative; }
+[data-app="notes"] .topFoot .restPart {
+  visibility: var(--rest-vis, visible);
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+}
+[data-app="notes"] .topFoot .commitPart,
+[data-app="notes"] .dock .commitPart { visibility: var(--commit-vis, hidden); }
+/* The dock counter carries the same fact in the same grammar as the
+   desk. It used to be a bare number, aria-hidden, so on a phone the
+   limit did not exist and nobody was told how close they were. */
+[data-app="notes"] .dockCount { font-variant-numeric: tabular-nums; }
+[data-app="notes"] .topMeta { font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; line-height: var(--lh-base); }
+[data-app="notes"] .topMeta kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 7px; }
+
+[data-app="notes"] .verb {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: var(--r-chip);
+  font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); line-height: var(--lh-base); }
+[data-app="notes"] .verb svg { width: 16px; height: 16px; }
+[data-app="notes"] .verb:hover { color: var(--ink-1); background: var(--wash); }
+
+[data-app="notes"] .act {
+  display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: var(--r-ctl);
+  font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer; white-space: nowrap;
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve), background-color var(--dur) var(--curve); line-height: var(--lh-base); }
+[data-app="notes"] .act svg { width: 15px; height: 15px; flex: none; }
+[data-app="notes"] .act:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+[data-app="notes"] .act[data-primary] { background: var(--indigo); color: var(--white); box-shadow: none; font-weight: 600; }
+[data-app="notes"] .act[data-primary]:hover { background: var(--indigo-deep); }
+[data-app="notes"] .act[data-ink] { background: var(--ink); color: var(--white); box-shadow: none; font-weight: 600; }
+[data-app="notes"] .act[data-ink]:hover { background: #000; }
+[data-app="notes"] .act[data-quiet] { box-shadow: none; color: var(--ink-3); }
+[data-app="notes"] .act[data-quiet]:hover { box-shadow: none; background: var(--wash); color: var(--ink-1); }
+[data-app="notes"] .act[disabled] { opacity: 0.4; cursor: default; }
+/* The one act that cannot be got back by pressing the same button again.
+   It sat in the same weight and the same row as Decide later, which is
+   how a queue loses a note to a mis-tap. */
+[data-app="notes"] .act[data-destroy] { color: var(--ink-3); }
+[data-app="notes"] .act[data-destroy]:hover { background: var(--ink); color: var(--white); box-shadow: none; }
+[data-app="notes"] .act[data-destroy]:hover svg { color: var(--white); }
+[data-app="notes"] .act kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; }
+
+/* A note lifted out of the index and read on the desk. Grafted from
+   direction B: the metadata is out of the text column, and the words are
+   prose at a held measure, because a note being read is the one place in
+   Notes where a person's own writing is the entire content. */
+[data-app="notes"] .readSrc { display: flex; align-items: center; gap: 9px; font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); margin: 0 0 12px; flex-wrap: wrap; line-height: var(--lh-base); }
+[data-app="notes"] .readSrc svg { width: 14px; height: 14px; flex: none; }
+[data-app="notes"] .readSrc .sep { width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--ink-4); flex: none; }
+[data-app="notes"] .readSrc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line-strong); }
+[data-app="notes"] .readSrc a:hover { color: var(--ink-1); border-color: var(--ink-2); }
+/* Every surface that carries a person's own writing sets it identically:
+   same size, same leading, same tracking. The same sentence was rendering
+   at four different leadings depending on which surface it happened to be
+   on, which is a thing a reader feels and cannot name. */
+[data-app="notes"] .readBody,
+[data-app="notes"] .handBody,
+[data-app="notes"] .topField,
+[data-app="notes"] .pieceField,
+[data-app="notes"] .peelField,
+[data-app="notes"] .saidHead {
+  font-size: var(--t-17); line-height: var(--lh-read); letter-spacing: var(--tr-18);
+}
+/* The note is the pick surface, so it is a tab stop with a name, and a
+   keyboard walks its sentences. Sealed edges that only seal for people
+   with a mouse are not sealed. */
+[data-app="notes"] .readBody:focus-visible,
+[data-app="notes"] .handBody:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 6px; border-radius: var(--r-xs);
+}
+[data-app="notes"] .readBody {
+  margin: 0; max-width: var(--measure); text-wrap: pretty;
+  font-weight: 400; color: var(--ink-1);
+}
+[data-app="notes"] .readBody .lede { font-weight: 600; }
+[data-app="notes"] .readLong { max-width: var(--measure); }
+/* The desk is capped to its content and content has no ceiling, so one
+   nine-hundred-word note squeezed the index — the second of the two
+   locked planes — to two rows. The paper scrolls inside itself instead.
+
+   The cap used to be a flat 46vh, with a SECOND flat cap of 31vh for
+   any note over 150 words, so a long note was given a smaller window
+   than a short one and the pressure room — the room built to prove long
+   notes survive — was the room where four lines of a debrief were cut
+   away above three lines of blank paper. One window now, and it is not
+   a fraction of the viewport but the room the desk actually has: the
+   height the sheet's own chrome takes, plus the floor the index is
+   owed, subtracted from the screen. A short screen therefore clips
+   sooner rather than eating the plane below, and what clips says so. */
+[data-app="notes"] .readBody {
+  /* measured, not guessed: 311px is the sheet, head, foot and dock the
+     desk carries around the writing at read (measured at 1280, its
+     widest); 224px is five index rows
+     and their heading, the floor the second plane is owed. */
+  --desk-chrome: 311px;
+  --index-floor: 224px;
+  /* The smallest window a note may be given before the peel starts
+     yielding instead. Lower than the old hard 200px arm, because the
+     measured fade and the counting line already declare a clip
+     honestly, and because a floor that outranks the second plane is
+     not a floor for the second plane. */
+  --note-min: 120px;
+  /* Nothing in this sum used to account for the peel, so opening the
+     seam — the signature gesture — added about 248px to the desk and
+     drove the index to 13px at 1280x800 and to nothing at all at
+     1440x960: thirty-seven notes still counted in the header with no
+     pointer route to any of them. The architecture is locked as two
+     planes; the gesture deleted one. paint() measures the open peel
+     and writes --peel-h, so the note yields first. */
+  max-height: max(var(--note-min), calc(100vh - var(--desk-chrome) - var(--index-floor) - var(--peel-h, 0px)));
+  overflow: auto;
+}
+/* This clamp was once 31vh, against 46vh for every shorter note, so a
+   150-word note got a SMALLER window than a 149-word one and the panel
+   read four lines of a debrief cut away above three lines of blank
+   paper. One window for every note the desk lifts: the length of a note
+   may decide whether it scrolls, never how much of it you are given.
+   The plane below keeps its share because the foot now spans the paper
+   and the pick band no longer reserves itself before there is a pick. */
+/* .readLong now carries no height of its own. The length of a note
+   decides whether it scrolls, never how much of it you are given. */
+/* A fade is a measurement, not a decoration. notebook.js sets
+   data-clipped only when the body genuinely overflows, and clears it at
+   the end of the scroll, so this gradient never claims there is more to
+   read when there is not. */
+[data-app="notes"] .readBody[data-clipped],
+[data-app="notes"] .handBody[data-clipped] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+}
+/* And the fade gets words, because a gradient is not a fact. */
+[data-app="notes"] .clipLine {
+  margin: 6px 0 0; font-size: var(--t-12); line-height: var(--lh-note);
+  letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400;
+}
+[data-app="notes"] .clipLine[hidden] { display: none; }
+[data-app="notes"] .readBody::-webkit-scrollbar { width: 8px; }
+
+/* ── the index ─────────────────────────────────────────────────── */
+[data-app="notes"] .indexWrap {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center;
+  background: var(--ground); border-top: 1px solid var(--line-soft); padding-top: 18px;
+}
+[data-app="notes"] .indexHead {
+  flex: none; width: var(--stack); display: flex; align-items: center; gap: 12px; padding: 0 var(--gutter) 8px;
+  font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
+[data-app="notes"] .indexHead::after { content: ""; flex: 1; height: 1px; background: var(--line-soft); }
+[data-app="notes"] .indexHead .cnt { text-transform: none; letter-spacing: var(--tr-12); font-weight: 400; color: var(--ink-3); font-size: var(--t-12); white-space: nowrap; line-height: var(--lh-base); }
+/* The dock floats over the foot of the sheet, so the last row of the pile
+   needs clearance rather than being scrimmed out of legibility. Scrolled
+   to the end, the oldest note used to sit under solid white. */
+/* A real list of real items, because the rows are the most-used control
+   in the product and role="listitem" on a button replaced its button role
+   on the accessibility tree. The list semantics live on the elements; the
+   markers do not. */
+[data-app="notes"] .index,
+[data-app="notes"] .idxGroupRows { list-style: none; margin: 0; padding-inline: 0; }
+[data-app="notes"] .idxItem,
+[data-app="notes"] .idxSection { list-style: none; display: block; }
+[data-app="notes"] .idxSection { position: relative; }
+/* Every arrow press past the first screenful used to park the focused
+   row completely behind the floating dock — block:"nearest" aligns it
+   flush to the scrollport bottom, which is below the scrim. */
+[data-app="notes"] .index { flex: 1; width: var(--stack); min-height: 0; overflow: auto; scroll-padding-top: 66px; scroll-padding-bottom: var(--walk-reserve, 160px); padding: 0 var(--gutter) 132px; scrollbar-width: thin; overflow-anchor: none; }
+/* A day rule says when you wrote it. A subject rule says what it is
+   about, and carries the date the venue is actually facing — which is the
+   only thing on this surface that a notebook belonging to somebody else
+   could not also say. */
+/* The subject rule is the one line on this surface that could not belong
+   to any other product, and it was set thirteen percent SMALLER than the
+   rows beneath it, in the same weight and the same ink. It leads now, and
+   it stays with what it heads while the pile scrolls. */
+/* The rule that heads a group and the first sentence of the rows beneath
+   it were byte-identical type — 15px, 600, full ink, both — so the surface
+   a venue owner spends her whole session in had no rank at all, only
+   indentation and a hairline. The heading takes the step above. */
+/* The lower plane got a ground of its own last round, and the one
+   element that stays on screen while that plane scrolls kept painting
+   white on it: a band inset ten pixels from the rows with hard edges,
+   reading as a white card floating on grey with grey slivers at both
+   ends. Two stacked layers of the plane's own token over white
+   composite to exactly the value the plane renders, so the band
+   disappears and no fourth colour is introduced. */
+[data-app="notes"] .idxDay {
+  position: sticky; top: 0; z-index: 2;
+  background: linear-gradient(var(--ground), var(--ground)), var(--white);
+  margin: 0; padding: 20px 0 7px; font-size: var(--t-17); font-weight: 600;
+  letter-spacing: var(--tr-18); text-transform: none; color: var(--ink-1);
+  display: flex; align-items: baseline; gap: 10px; line-height: var(--lh-base);
+}
+[data-app="notes"] .idxDay::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-soft);
+}
+/* The rule was opaque across its own band and hard-edged at the foot, so
+   at most resting scroll offsets it cut the row travelling under it
+   horizontally through the x-height: the bottom halves of somebody's own
+   letters, cleanly sliced. The same reasoning the trim already applies on
+   the x axis - a half-sliced letter reads as damage, not as truncation -
+   applied to the y. A row now dissolves into the rule instead. */
+[data-app="notes"] .idxDay::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 15px;
+  background: linear-gradient(to bottom, var(--ground), rgba(17, 17, 17, 0)),
+              linear-gradient(to bottom, var(--white), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+/* Each group is its own sticky context, so a rule is pushed out by the
+   next one instead of every rule in the pile piling up at the top. */
+[data-app="notes"] .idxGroup { display: contents; }
+[data-app="notes"] .idxSection { position: relative; }
+/* A subject the venue is facing inside the week reads at full ink; one
+   with no date sits back. Density, not colour, exactly as the palette
+   lock requires. */
+[data-app="notes"] .idxDay[data-soon] { color: var(--ink-1); }
+[data-app="notes"] .idxDay[data-undated] { color: var(--ink-2); }
+[data-app="notes"] .idxDayNote { text-transform: none; }
+[data-app="notes"] .idxDay[data-soon] .idxDayNote { color: var(--ink-1); }
+
+[data-app="notes"] .groupBy { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--r-pill); background: var(--wash); margin-left: auto; flex: none; }
+/* The drawn control is 24px because that is the size the index head
+   wants beside an 11px label; the thing a pointer lands on is the 40
+   behind it. */
+[data-app="notes"] .groupBtn {
+  position: relative;
+  height: 24px; padding: 0 10px; border-radius: var(--r-pill); cursor: pointer;
+  font-size: var(--t-12); font-weight: 400; letter-spacing: var(--tr-11); color: var(--ink-3);
+  text-transform: none;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); line-height: var(--lh-base); }
+[data-app="notes"] .groupBtn::before { content: ""; position: absolute; inset: -8px -2px; }
+[data-app="notes"] .groupBtn:hover { color: var(--ink-1); }
+[data-app="notes"] .groupBtn[data-on] { background: var(--white); color: var(--ink-1); font-weight: 600; box-shadow: var(--ring), var(--raise); }
+
+/* The metadata columns are fixed, so the right-hand verticals hold down
+   the whole index instead of stepping in and out with the length of each
+   timestamp. And the fill is calc(100% + 20px) rather than 100%: a
+   percentage resolves against the containing block and cancelled the
+   right half of the negative margin, so every row's highlight ran 10px
+   past the column every other object on the sheet resolves to. */
+[data-app="notes"] .idxRow {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr) 76px 92px; column-gap: 13px; align-items: center;
+  width: calc(100% + 20px); text-align: left; padding: 9px 10px; margin: 0 -10px; border-radius: var(--r-chip); cursor: pointer;
+  position: relative; transition: background-color var(--dur) var(--curve);
+}
+[data-app="notes"] .idxTag { justify-self: start; }
+[data-app="notes"] .idxWhen { justify-self: end; }
+[data-app="notes"] .idxRow + .idxRow::before { content: ""; position: absolute; left: 10px; right: 10px; top: 0; height: 1px; background: var(--line-soft); }
+[data-app="notes"] .idxRow:hover { background: var(--wash); }
+[data-app="notes"] .idxRow:hover::before,
+[data-app="notes"] .idxRow:hover + .idxRow::before { opacity: 0; }
+[data-app="notes"] .idxRow[data-open] { background: var(--wash); }
+/* The row a keyboard is on. The board has one tab stop; the arrows walk
+   it, and the row it is on has to be visible without hovering. */
+/* At rest the cursor takes the ink tint the list already owns. Indigo is
+   the colour of a live keyboard, a search hit and words about to cross -
+   at load, before a key is pressed, it was none of those, and it was the
+   loudest object on the paper. It lights only while the pile has focus. */
+[data-app="notes"] .idxRow[data-cursor] { background: var(--wash); scroll-margin-top: 66px; }
+/* The search field lives outside the pile, so :focus-within never fired
+   and the drawn cursor was painted in the same 3.5% ink as hover — two
+   rows marked identically, one of them by the mouse resting anywhere. A
+   hit is one of indigo's three sanctioned jobs, so in search the cursor
+   takes it, and the pointer stands down. */
+[data-app="notes"] .index:focus-within .idxRow[data-cursor],
+[data-app="notes"][data-searching] .idxRow[data-cursor] { background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line); }
+[data-app="notes"][data-searching] .idxRow[data-cursor] { box-shadow: inset 2px 0 0 var(--indigo), inset 0 0 0 1px var(--indigo-line); }
+[data-app="notes"][data-searching] .idxRow:hover:not([data-cursor]) { background: none; }
+[data-app="notes"] .idxRow[data-cursor]::before,
+[data-app="notes"] .idxRow[data-cursor] + .idxRow::before { opacity: 0; }
+[data-app="notes"] .idxMark { color: var(--ink-3); display: grid; place-items: center; position: relative; }
+[data-app="notes"] .idxMark svg { width: 15px; height: 15px; }
+[data-app="notes"] .idxMark i { position: absolute; top: -3px; right: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--ink-1); box-shadow: 0 0 0 2px var(--white); }
+/* The dot's halo has to be the surface behind it, and on the row the
+   keyboard is holding that surface is white under an indigo wash — which
+   is two of the three, not a fourth colour mixed by hand. */
+[data-app="notes"] .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--wash); }
+[data-app="notes"] .index:focus-within .idxRow[data-cursor] .idxMark i,
+[data-app="notes"][data-searching] .idxRow[data-cursor] .idxMark i { box-shadow: 0 0 0 2px var(--white), 0 0 0 2px var(--indigo-wash); }
+/* The trim is measured in the file and cut at a word boundary. The
+   ellipsis is the backstop for the case where four words still do not
+   fit: without it the browser sliced a letter in half against the status
+   pill, which reads as damage rather than as a truncation. */
+[data-app="notes"] .idxText { font-size: var(--t-15); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1); min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+[data-app="notes"] .idxFrom { display: none; }
+/* Density, not weight. The 48-character sentence rule is right and the
+   payment was wrong: every row on screen opened in semibold, so the
+   emphasis meant nothing and the pile read as a wall of headlines rather
+   than as somebody's notes. 600 is reserved in the index for the two
+   things that are genuinely momentary — the row the keyboard is on and a
+   search hit. The lede keeps its rank in ink. */
+[data-app="notes"] .idxText b { font-weight: 400; color: var(--ink-1); }
+[data-app="notes"] .idxText span { color: var(--ink-2); }
+[data-app="notes"] .index:focus-within .idxRow[data-cursor] .idxText b,
+[data-app="notes"][data-searching] .idxRow[data-cursor] .idxText b { font-weight: 600; }
+[data-app="notes"] .idxText mark { font-weight: 600; }
+[data-app="notes"] .idxTag {
+  font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-11); color: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line); border-radius: var(--r-pill); padding: 3px 8px; white-space: nowrap; line-height: var(--lh-base); }
+[data-app="notes"] .idxTag[data-quiet] { box-shadow: none; color: var(--ink-3); font-weight: 400; }
+[data-app="notes"] .idxWhen { font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); white-space: nowrap; line-height: var(--lh-base); }
+[data-app="notes"] mark { background: var(--indigo-wash); box-shadow: 0 0 0 1px var(--indigo-line); border-radius: var(--r-xs); color: inherit; padding: 0 1px; }
+
+/* ── the dock ──────────────────────────────────────────────────── */
+[data-app="notes"] .dockWrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 0 18px; display: flex; justify-content: center; pointer-events: none; z-index: 3; }
+/* The scrim is what actually erases a row, so it is a token and the
+   things that must clear it read that token rather than guessing from
+   the dock height. Reserving --dock-h alone parked a walked row at 65%
+   white wash: clear of the pill, still inside the fade, and the fix
+   would have been recorded as done. */
+[data-app="notes"] .dockWrap::before {
+  content: ""; position: absolute; left: 1px; right: 1px; bottom: 0; height: var(--scrim-h, 96px);
+  background: linear-gradient(to top, var(--white) 66%, rgba(255, 255, 255, 0)); pointer-events: none;
+}
+[data-app="notes"] .dock {
+  position: relative; pointer-events: auto; display: flex; align-items: center; gap: 3px; padding: 5px;
+  background: var(--white); border-radius: var(--r-pill); box-shadow: var(--ring), var(--paper);
+  max-width: calc(100% - var(--gutter) * 2);
+}
+[data-app="notes"] .dockField {
+  display: inline-flex; align-items: center; gap: 9px; height: 36px; padding: 0 14px 0 12px; border-radius: var(--r-pill);
+  min-width: 236px; background: var(--wash); color: var(--ink-3); font-size: var(--t-13); letter-spacing: var(--tr-14); cursor: pointer;
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve); line-height: var(--lh-base); }
+[data-app="notes"] .dockField:hover { background: rgba(17, 17, 17, 0.06); color: var(--ink-2); }
+[data-app="notes"] .dockField svg { width: 15px; height: 15px; flex: none; }
+[data-app="notes"] .dockField span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+[data-app="notes"] .dockField kbd { font: inherit; margin-left: auto; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); flex: none; }
+[data-app="notes"] .dockGlyph { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; flex: none; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+/* The one filled control in the dock, and it only exists when there is
+   something to keep. */
+[data-app="notes"] .dockGlyph[data-ink] { background: var(--ink); color: var(--white); }
+[data-app="notes"] .dockGlyph[data-ink]:hover { background: #000; }
+[data-app="notes"] .dockGlyph svg { width: 17px; height: 17px; }
+[data-app="notes"] .dockGlyph:hover { color: var(--ink-1); background: var(--wash); }
+[data-app="notes"] .dockRule { width: 1px; height: 20px; background: var(--line); margin: 0 4px; flex: none; }
+[data-app="notes"] .dockAvatar { width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--white); display: grid; place-items: center; font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-indent: var(--tr-cap); margin: 0 3px 0 1px; cursor: pointer; flex: none; line-height: var(--lh-tight); }
+
+/* ── the way back ──────────────────────────────────────────────── */
+/* The only reversible surface in the product, and it waits while you are
+   reading it. Nothing this product does is unreversible except delete,
+   and delete says so before it happens. */
+/* Above the dock and clear of the last row, rather than across the words
+   of whatever note happens to be at the foot of the pile. */
+/* Outside the pile's own scroll region AND with its band reserved. Being
+   outside the scroller was not enough: the pile scrolled under it, so at
+   most offsets the strip still sat on top of a row's words. While it is
+   live the pile is shorter by exactly its height, so the last row ends
+   above it at every scroll position rather than only at the end. */
+/* Shortening the scroller, not padding it, and by the strip's whole
+   reach rather than its height. Padding the scroll content leaves the box
+   the same height, so a row still travelled under the strip at every
+   offset but the last. The box now ends above the strip's top edge, and
+   the foot padding inside it comes down by the same amount so the pile
+   does not grow a second empty band. */
+[data-app="notes"] .sheet[data-undo] .indexWrap { padding-bottom: 128px; }
+[data-app="notes"] .sheet[data-undo] .index { padding-bottom: 20px; }
+[data-app="notes"] .undo {
+  position: absolute; left: 50%; bottom: 78px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 15px;
+  background: var(--ink); color: var(--white); border-radius: var(--r-pill);
+  box-shadow: var(--paper-lift); font-size: var(--t-13); letter-spacing: var(--tr-14);
+  z-index: 5; white-space: nowrap; max-width: calc(100% - var(--gutter) * 2); line-height: var(--lh-base); }
+[data-app="notes"] .undo span { overflow: hidden; text-overflow: ellipsis; }
+[data-app="notes"] .undoAct {
+  display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: var(--r-pill);
+  background: var(--white); color: var(--ink); font-size: var(--t-13); font-weight: 600; letter-spacing: var(--tr-12); cursor: pointer; flex: none; line-height: var(--lh-base); }
+[data-app="notes"] .undoAct svg { width: 13px; height: 13px; }
+[data-app="notes"] .undoAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; opacity: 0.55; }
+/* The chord that reaches the index, printed where the index is named. */
+[data-app="notes"] .headKbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px var(--line); margin-left: 8px; color: var(--ink-3); }
+[data-app="notes"] .undoFor { font-size: var(--t-11); line-height: var(--lh-base); color: var(--on-ink-2); letter-spacing: var(--tr-11); flex: none; }
+[data-app="notes"] .confirm { display: inline-flex; align-items: center; gap: 9px; font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-14); }
+[data-app="notes"] .confirm svg { width: 15px; height: 15px; color: var(--ink-2); }
+
+/* ── the phone's read-and-decide sheet ─────────────────────────── */
+/* There is no desk on a phone, so a note opens as a sheet over the pile.
+   Without it the product was capture-only on the device the thought
+   actually arrives on: a row could be tapped and nothing happened. */
+[data-app="notes"] .phoneSheet {
+  position: absolute; inset: 0; z-index: 7; background: var(--white);
+  border-radius: var(--r-sheet); display: flex; flex-direction: column;
+}
+[data-app="notes"] .phoneSheetTop {
+  flex: none; display: flex; align-items: center; gap: 10px;
+  padding: 12px var(--gutter) 10px; border-bottom: 1px solid var(--line-soft);
+}
+[data-app="notes"] .phoneSheetTop .spacer { flex: 1; }
+[data-app="notes"] .phoneSheetTop .act { padding-left: 6px; }
+[data-app="notes"] .phoneSheetTop .act svg { transform: rotate(90deg); }
+[data-app="notes"] .phoneSheetBody { flex: 1; min-height: 0; overflow: auto; padding: 16px var(--gutter) 24px; }
+[data-app="notes"] .phoneSheetBody .readBody { max-height: none; }
+[data-app="notes"] .phoneSheetBody .peel { width: 100%; margin: 12px 0 0; }
+[data-app="notes"] .phoneSheetBody .peel { margin-top: 12px; padding-top: 15px; }
+[data-app="notes"] .phoneSheetFoot {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line-soft);
+}
+[data-app="notes"] .phoneSheetFoot .act[data-primary] { flex: 1; justify-content: center; min-height: 44px; }
+
+/* ── voice: the floor goes to ink ──────────────────────────────── */
+/* Absolute inside the floor, not fixed to the viewport. The floor is
+   already the full height of the screen, so standalone the two are
+   identical — but fixed escapes any container the floor is placed in, and
+   the moment the master was compiled into the console the dictation
+   screen covered the whole page including its own controls. */
+[data-app="notes"] .dark { position: absolute; inset: 0; background: var(--ink); color: var(--on-ink-1); z-index: 9; display: flex; flex-direction: column; }
+[data-app="notes"] .darkTop { flex: none; display: flex; align-items: center; gap: 12px; padding: 26px 32px 0; }
+[data-app="notes"] .darkTag { display: inline-flex; align-items: center; gap: 10px; font-size: var(--t-12); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; line-height: var(--lh-base); }
+[data-app="notes"] .darkTag .rec { width: 8px; height: 8px; border-radius: 50%; background: var(--white); animation: recPulse 1.5s var(--curve) infinite; }
+@keyframes recPulse { 50% { opacity: 0.28; } }
+[data-app="notes"] .darkTime { font-size: var(--t-12); font-weight: 600; color: var(--on-ink-2); letter-spacing: var(--tr-12); line-height: var(--lh-base); }
+[data-app="notes"] .darkTop .spacer { flex: 1; }
+[data-app="notes"] .darkBody { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: 0 32px; overflow: auto; }
+/* The same measure as every other surface a person's words appear on.
+   It was running 78 characters against everything else's 69. */
+/* 1.28 is display leading, which the ladder reserves for a tight one.
+   The same sentence got 1.62 on the desk and 1.28 on ink, at the one
+   moment a person is least able to look carefully. */
+[data-app="notes"] .darkCol { max-width: var(--measure); width: 100%; margin: 0 auto; font-size: var(--t-34); }
+[data-app="notes"][data-type="calm"] .darkCol { font-size: var(--t-27); }
+[data-app="notes"] .darkSaid { width: 100%; margin: 0; font-size: var(--t-34); font-weight: 400; line-height: var(--lh-base); letter-spacing: var(--tr-34); text-wrap: pretty; }
+
+[data-app="notes"] .darkSaid .tail { color: var(--on-ink-3); }
+/* The floor holds exactly two objects and they did not share an edge:
+   the wave began 31.5px left of the "A" in "Ask" and overhung on the
+   right, because one carried a dead 31em rule and the other a live
+   900px one. They sit in one column now, and because --measure is
+   em-based that column is declared once at the transcript's own size
+   rather than copied to a second site that would not know when the
+   first changed — which is how the dead rule came to be dead. */
+[data-app="notes"] .darkWave { display: flex; align-items: center; gap: 4px; height: 40px; width: 100%; margin: 40px 0 0; }
+[data-app="notes"] .darkWave i { width: 3px; border-radius: 2px; background: var(--on-ink-2); transition: height var(--dur) var(--curve); }
+[data-app="notes"] .darkFoot { flex: none; padding: 0 32px 34px; display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+/* The disclosure. It is not negotiable and it is not hidden behind a
+   press: the browser's speech engine is a third party the person did not
+   choose, and they are entitled to know while it is listening. */
+/* The one thing on this screen that must be readable is the sentence
+   saying the words are leaving the device. At --on-ink-3 it measured
+   4.1:1 and failed AA, which for a disclosure is not a nicety. */
+/* 62ch was the one measure in the file declared in ch, and it resolved
+   to about ninety characters — the legally required disclosure set as
+   the smallest type in the room AND the longest line in it, which is
+   how you set something to be skipped. The tint is deliberate and stays
+   (raised once already from a value that failed AA); the line length
+   was what made it unread. */
+[data-app="notes"] .darkNote { max-width: var(--measure); text-wrap: pretty; margin: 0; font-size: var(--t-12); line-height: var(--lh-read); color: var(--on-ink-2); letter-spacing: var(--tr-12); }
+[data-app="notes"] .darkFoot .spacer { flex: 1; }
+[data-app="notes"] .darkAct {
+  display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border-radius: var(--r-pill);
+  font-size: var(--t-15); letter-spacing: var(--tr-14); cursor: pointer;
+  color: var(--on-ink-2); box-shadow: inset 0 0 0 1px var(--chrome-line);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); line-height: var(--lh-base); }
+[data-app="notes"] .darkAct svg { width: 17px; height: 17px; }
+/* THE READBACK LIVES ON INK NOW.
+   Round 11 moved the phone readback into the .dark overlay — the right
+   room, because the words came out of it — and left every line wearing
+   its light-room tint. Measured at 390: .saidHead, .saidHint and
+   .pieceField all sat at contrast 1.00 against rgb(17,17,17). The
+   person's own dictated words were invisible. The audit could not see
+   it because its contrast pass only ever ran at 1440, where this room
+   is a white sheet; the coarse pass at 360/390 measures targets only. */
+[data-app="notes"] .dark .saidHead { color: var(--on-ink-1); }
+[data-app="notes"] .dark .saidHint { color: var(--on-ink-2); }
+[data-app="notes"] .dark .piece { background: var(--chrome); box-shadow: none; }
+[data-app="notes"] .dark .pieceField { color: var(--on-ink-1); }
+[data-app="notes"] .dark .piece::before { background: var(--on-ink-2); }
+[data-app="notes"] .dark .drop { color: var(--on-ink-2); }
+[data-app="notes"] .dark .drop:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+
+/* The floor advertises its two keys now, so its keycaps need the same
+   rule every other keycap in the product has, or they arrive in the
+   browser's monospace and break the type lock. */
+[data-app="notes"] .darkAct kbd { font: inherit; font-size: var(--t-11); font-weight: 600; padding: 1px 5px; border-radius: var(--r-xs); box-shadow: inset 0 0 0 1px currentColor; opacity: 0.55; margin-left: 7px; }
+[data-app="notes"] .darkAct:hover { color: var(--on-ink-1); background: var(--chrome); }
+[data-app="notes"] .darkAct[data-primary] { background: var(--white); color: var(--ink); box-shadow: none; font-weight: 600; }
+[data-app="notes"] .darkAct[data-primary]:hover { background: #f2f2f2; }
+[data-app="notes"] .dark :focus-visible { outline-color: var(--white); }
+
+/* ── the read-back ─────────────────────────────────────────────── */
+/* One line stating what happened, in the person's own type. It was a
+   panel reprinting the whole transcript above the very fields that hold
+   it, so somebody who had just spoken read their own sentences twice at
+   the exact moment the product is asking to be trusted. */
+[data-app="notes"] .saidHead { margin: 0 0 2px; max-width: var(--measure); color: var(--ink-2); text-wrap: pretty; }
+/* The hint sits on the fields it describes, at the heading's own left
+   edge, rather than in the row where the commit and the destroy live.
+   Its own class, because .topMeta is a row token. */
+[data-app="notes"] .saidHint {
+  margin: 0; max-width: var(--measure); font-size: var(--t-12); line-height: var(--lh-note);
+  letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400;
+}
+[data-app="notes"] .pieces { display: grid; gap: 9px; margin-top: 14px; }
+[data-app="notes"] .piece {
+  position: relative; max-width: calc(var(--measure) + 4em); padding: 15px 44px 15px 18px; border-radius: var(--r-paper);
+  background: var(--white); box-shadow: var(--ring), var(--raise);
+  color: var(--ink-1);
+  transition: box-shadow var(--dur) var(--curve);
+}
+[data-app="notes"] .piece:focus-within { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); }
+/* `font: inherit` is a shorthand and it resets size, leading and tracking.
+   Naming the parts leaves the shared writing rule standing — the same
+   defect the phone capture field had, in two more places. */
+[data-app="notes"] .pieceField { width: 100%; border: 0; outline: 0; background: none; resize: none; display: block; font-family: inherit; font-weight: 400; color: inherit; field-sizing: content; }
+[data-app="notes"] .drop { position: absolute; right: 8px; top: 50%; margin-top: -16px; width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: var(--ink-3); cursor: pointer; transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve); }
+[data-app="notes"] .drop:hover { color: var(--ink-1); background: var(--wash); }
+[data-app="notes"] .drop svg { width: 15px; height: 15px; }
+[data-app="notes"] .piece::before { content: ""; position: absolute; left: 8px; top: 12px; bottom: 12px; width: 2px; border-radius: 2px; background: var(--line-strong); }
+[data-app="notes"] .piece:focus-within::before { background: var(--indigo); }
+
+/* ── the hand ──────────────────────────────────────────────────── */
+[data-app="notes"] .hand { position: relative; }
+/* The cards behind stretch to the height of their own container, so the
+   container has to be the cards and nothing else. Given the whole hand,
+   they painted straight over the line that says the decisions can be
+   undone, which is the one sentence in this state that has to be read. */
+[data-app="notes"] .handStack { position: relative; }
+[data-app="notes"] .handCard {
+  position: absolute; left: 0; right: 0; top: 0; height: 100%;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--raise);
+  transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
+}
+[data-app="notes"] .handCard[data-n="1"] { transform: translateY(12px) scale(0.972); opacity: 0.9; }
+[data-app="notes"] .handCard[data-n="2"] { transform: translateY(24px) scale(0.944); opacity: 0.6; }
+[data-app="notes"] .handCard[data-n="3"] { transform: translateY(36px) scale(0.916); opacity: 0.32; }
+/* A fixed height, because the card is a card in a hand: working the queue
+   made the second plane bob by 34px on every keystroke as each note's
+   length changed the card under it.
+
+   And a fixed WIDTH, on the desk's own column, because the card was
+   shrink-wrapping its content: its left edge, its pips, its body and its
+   actions all moved between cards, so a queue of eight looked like eight
+   different objects. It resolves to the same writing column plus margin
+   the desk does, so the card lands on the paper's own edge. */
+[data-app="notes"] .hand,
+[data-app="notes"] .handStack { width: min(100%, calc(var(--measure) + 276px + 34px + 48px)); }
+[data-app="notes"] .handTop {
+  position: relative; background: var(--white); border-radius: var(--r-paper);
+  box-shadow: var(--ring), var(--paper-lift); padding: 24px 26px 18px;
+  width: min(100%, calc(var(--measure) + 276px + 34px + 48px));
+  /* Fixed at 272px, the card could not hold its own contents: pressing
+     T — the key the card itself advertises — inserted the pick hint and
+     pushed the action row clean off the paper onto the grey, where it
+     painted over "Nothing is decided until you say so, and every
+     decision can be put back". The product's reassurance line, covered
+     by its own buttons, in the queue whose whole job is reassurance.
+     The 272px stays as a FLOOR, which is what stopped the second plane
+     bobbing from card to card; only a card that has grown a hint grows,
+     and it grows downward into a band that is already reserved. */
+  height: 272px; display: flex; flex-direction: column;
+  transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
+}
+/* Three lines of somebody's own writing, always. Opening the peel took
+   the body's flex share down to a single line, so on a short note the
+   words being decided about were the smallest thing on the card. */
+[data-app="notes"] .handTop .handBody { flex: 1; overflow: auto; min-height: calc(var(--lh-read) * 3em); }
+/* ONLY the card that has grown a hint grows. Making the height
+   automatic for every card let the plane bob between cards — measured
+   459, then 501 — which is the exact thing the fixed height was bought
+   to stop. The resting queue is still one still frame; a refused card
+   grows by the hint's own height and the cards behind track it, so the
+   foot stays on the paper instead of landing on the grey over the line
+   that promises every decision can be put back. */
+[data-app="notes"] .handTop:has(.nudge),
+[data-app="notes"] .handTop:has(.handConfirm) { height: auto; min-height: 272px; }
+[data-app="notes"] .handCard { height: 100%; width: min(100%, calc(var(--measure) + 276px + 34px + 48px)); }
+[data-app="notes"] .handStack { min-height: 272px; }
+[data-app="notes"] .handTop[data-settling] { transform: translateY(-14px) scale(0.985); opacity: 0; }
+[data-app="notes"] .handQ { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+[data-app="notes"] .handTitle { margin: 0; font-size: var(--t-20); font-weight: 600; letter-spacing: var(--tr-21); line-height: var(--lh-tight); }
+[data-app="notes"] .handOf { font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); line-height: var(--lh-base); }
+[data-app="notes"] .pips { margin-left: auto; display: flex; gap: 4px; align-items: center; }
+[data-app="notes"] .pips i { width: 15px; height: 3px; border-radius: 2px; background: var(--line-strong); transition: background-color var(--dur) var(--curve); }
+[data-app="notes"] .pips i[data-done] { background: var(--ink-1); }
+[data-app="notes"] .pips i[data-now] { background: var(--indigo); }
+[data-app="notes"] .handBody { margin: 0; max-width: var(--measure); text-wrap: pretty; color: var(--ink-1); }
+[data-app="notes"] .handFoot { display: flex; align-items: center; gap: 8px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line-soft); flex-wrap: wrap; }
+[data-app="notes"] .handFoot .spacer { flex: 1; }
+[data-app="notes"] .deckNote { margin: 52px 0 0; font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); display: flex; align-items: center; gap: 9px; line-height: var(--lh-base); }
+[data-app="notes"] .deckNote svg { width: 14px; height: 14px; flex: none; }
+
+/* ── filing ────────────────────────────────────────────────────── */
+/* One control saying where the words will go, in the place they are
+   written. Before it, the subject axis was a rendering of pre-tagged
+   fixture data and every note a person actually wrote was filed silently
+   under one default. */
+[data-app="notes"] .filing { position: relative; display: inline-flex; }
+[data-app="notes"] .filingBtn {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 10px;
+  border-radius: var(--r-chip); cursor: pointer;
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-14);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow var(--dur) var(--curve), color var(--dur) var(--curve);
+}
+[data-app="notes"] .filingBtn:hover { color: var(--ink-1); box-shadow: inset 0 0 0 1px var(--line-strong); }
+[data-app="notes"] .filingBtn svg { width: 14px; height: 14px; color: var(--ink-3); }
+[data-app="notes"] .filingBtn svg:last-child { width: 13px; height: 13px; margin-left: -2px; }
+[data-app="notes"] .readSrc .filingBtn { height: 26px; padding: 0 8px; box-shadow: none; font-size: var(--t-12); color: var(--ink-3); }
+[data-app="notes"] .readSrc .filingBtn:hover { box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-1); }
+[data-app="notes"] .pickerPop {
+  position: absolute; left: 0; bottom: calc(100% + 7px); z-index: 8; min-width: 232px;
+  background: var(--white); border-radius: var(--r-card); box-shadow: var(--ring), var(--paper-lift);
+  padding: 5px; display: grid; gap: 1px;
+}
+[data-app="notes"] .readSrc .pickerPop { top: calc(100% + 7px); bottom: auto; }
+[data-app="notes"] .pickerRow {
+  display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--r-chip); cursor: pointer; background: none; border: 0;
+  font-size: var(--t-13); line-height: var(--lh-base); letter-spacing: var(--tr-14); color: var(--ink-1);
+}
+[data-app="notes"] .pickerRow em { margin-left: auto; font-style: normal; font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3); white-space: nowrap; }
+[data-app="notes"] .pickerRow:hover { background: var(--wash); }
+[data-app="notes"] .pickerRow[aria-selected="true"] { background: var(--indigo-wash); font-weight: 600; }
+
+/* ── picking ───────────────────────────────────────────────────── */
+/* Highlighting words in a note raises one control, beside the words, in
+   the product's own language. It is the only place in Notes where an
+   affordance appears because of something a person did rather than
+   because of where they are. */
+[data-app="notes"] .readBody::selection,
+[data-app="notes"] .readBody *::selection { background: var(--indigo-wash); }
+/* An overlay, not a layout event. Raising it grew the desk by 72px and
+   pushed the whole index down while the person was still holding a
+   selection, which is the one moment nothing should move. */
+/* Beside the words, not on top of the row that acts on them. It was
+   landing exactly on the note's own action row and covering three
+   controls. */
+/* The slot is always there, so raising the control costs no layout and
+   the page cannot move under the hand holding a selection. */
+/* The band was reserved at all times so the foot would not jump when a
+   pick landed. At rest that put 54px of blank paper directly under the
+   cut of a clipped note, and the composition then asserted that the
+   note ended mid-sentence with room to spare. It reserves itself when
+   it has something to hold, and the foot's jump is bought back by the
+   foot spanning the paper instead of half of it. */
+[data-app="notes"] .pickSlot { min-height: 54px; margin-top: 10px; }
+/* :empty does not match: the template leaves whitespace between the two
+   conditional children. :has() asks the question that is actually being
+   asked — does this band hold a pick bar or a nudge. */
+[data-app="notes"] .pickSlot:not(:has(*)) { min-height: 0; margin-top: 0; }
+/* It states what is picked and what will happen to it. It used to carry
+   its own filled primary beside the note's filled primary, two ink
+   buttons live at the same instant with nothing saying which honoured
+   the pick. */
+[data-app="notes"] .pickBar {
+  position: relative; z-index: 3; margin: 0;
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px;
+  border-radius: var(--r-chip); background: var(--indigo-wash);
+  box-shadow: inset 0 0 0 1px var(--indigo-line);
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-14);
+}
+[data-app="notes"] .pickBar svg { width: 15px; height: 15px; color: var(--indigo); flex: none; }
+[data-app="notes"] .pickCount { font-weight: 600; color: var(--ink-1); }
+[data-app="notes"] .pickBar .act { margin-left: auto; }
+[data-app="notes"] .nudge {
+  position: relative; z-index: 3; background: var(--white);
+  display: flex; align-items: flex-start; gap: 9px; padding: 11px 13px;
+  border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--ink-1);
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-1); letter-spacing: var(--tr-14);
+  max-width: var(--measure);
+}
+[data-app="notes"] .nudge svg { width: 15px; height: 15px; flex: none; margin-top: 1px; }
+
+/* ── the seam ──────────────────────────────────────────────────── */
+[data-app="notes"] .peelBoundary {
+  margin: 11px 0 0; max-width: var(--measure);
+  font-size: var(--t-13); line-height: var(--lh-base); color: var(--ink-2); letter-spacing: var(--tr-14);
+}
+/* The words that were picked, printed above the wording they became, so
+   the two can be compared without either being covered. */
+[data-app="notes"] .peelFrom {
+  margin: 11px 0 0; padding: 8px 11px; border-radius: var(--r-chip);
+  background: var(--indigo-wash); box-shadow: inset 0 0 0 1px var(--indigo-line);
+  max-width: var(--measure);
+}
+[data-app="notes"] .peelFrom b {
+  display: block; font-size: var(--t-11); line-height: var(--lh-base); font-weight: 600;
+  letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px;
+}
+/* On the one surface whose promise is that only the words you picked ever
+   cross, the words you picked were set smaller and lighter than the
+   wording derived from them. They lead. */
+[data-app="notes"] .peelFrom span { font-size: var(--t-17); line-height: var(--lh-read); color: var(--ink-1); letter-spacing: var(--tr-18); font-weight: 600; }
+[data-app="notes"] .peel .peelLabel { display: block; }
+[data-app="notes"] .peel #peel-label { margin-top: 14px; }
+[data-app="notes"] .idxDayTail { white-space: nowrap; }
+[data-app="notes"] .idxDayTail {
+  margin-left: auto; text-transform: none; letter-spacing: var(--tr-12); font-weight: 400;
+  font-size: var(--t-12); line-height: var(--lh-base); color: var(--ink-3);
+}
+/* A pick that wraps used to render as four disjoint fragments with a
+   full ring on each, so the interior ones carried a hairline above AND
+   below the whole measure and the passage read as struck through — on
+   the one object this product exists to render. It clones across line
+   boxes now and the mark rides the baseline. Horizontal padding only:
+   vertical padding tightened the stack to 3.5px of air. */
+[data-app="notes"] .pick {
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  background: var(--indigo-wash); box-shadow: inset 0 -1px 0 var(--indigo-line);
+  border-radius: var(--r-xs); padding: 0 3px; margin: 0 -3px;
+}
+/* A sentence is the instrument. It carries the pick treatment at rest
+   on hover, so what a press will do is visible before the press —
+   the same wash and the same hairline, no new colour. */
+[data-app="notes"] .readBody .sent,
+[data-app="notes"] .handBody .sent { cursor: pointer; border-radius: var(--r-xs); transition: background-color var(--dur) var(--curve); }
+[data-app="notes"] .readBody .sent:hover,
+[data-app="notes"] .handBody .sent:hover { background: var(--indigo-wash); }
+[data-app="notes"] .readBody .sent:hover .pick,
+[data-app="notes"] .handBody .sent:hover .pick { background: none; }
+/* The instruction under the note, in the band the pick bar will take. */
+/* A later .deskFact span rule overrode every one of these, so a chrome
+   instruction set at the same size, leading, tracking and full-strength
+   ink as the facts beside a person's own note. The selector list is
+   extended rather than replaced: specificity is per-selector, so the
+   bare .pickHint costs nothing and keeps it styled anywhere else it is
+   ever rendered. */
+[data-app="notes"] .pickHint,
+[data-app="notes"] .deskFact span.pickHint {
+  margin: 0; font-size: var(--t-12); line-height: var(--lh-note);
+  letter-spacing: var(--tr-12); color: var(--ink-3); font-weight: 400;
+  max-width: var(--measure); text-wrap: pretty;
+}
+/* The architecture calls this a second, SMALLER piece of paper peeled off
+   the note. It was 4px wider and 2.3 times the area of the note it came
+   from, which made the person's own sentence a strip and the form the
+   room. */
+/* THE CARET IS GONE.
+   `.peel::before` was a 13px square rotated 45 degrees pinned above the
+   box: a tooltip caret, and the only carted object anywhere in the
+   product. Everything else on this sheet commits to paper — the desk
+   has real depth, the pile has a ground — and then the one surface
+   carrying the reason this product exists borrowed a software-tool
+   pattern. The architecture calls it a second, smaller piece of paper
+   peeled off the note, and paper does not point at what it came from;
+   it comes out from under it. So the smaller sheet tucks UNDER the
+   note's own edge, which also satisfies the lock literally: the note is
+   never covered, the peel is. */
+[data-app="notes"] .peel {
+  /* 560 and 56 were on no ladder in this file: the peel started 32px
+     right of the note it came from and ended 62px inside the aside,
+     aligning with nothing. Bound to the footprint of the words it
+     carries — 24px is the paper own padding, so its left edge lands on
+     the note first character and its right edge on the note last. */
+  position: relative; width: min(var(--measure), calc(100% - 48px)); margin: -10px 0 0 24px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 25px 17px 16px;
+}
+/* Both are position:relative with z-index:auto, so the later sibling was
+   painting over the note. The note wins its own edge. */
+[data-app="notes"] .paperStack { z-index: 1; }
+/* It arrives, because a piece of paper being peeled off another one is
+   the single gesture this product is named for. */
+/* The product is named for this gesture and the file did not perform
+   it: nine pixels and 0.35 degrees, which at 560px wide is about three
+   pixels of corner lift — below the threshold at which anybody reads
+   rotation as a physical event, so driven live it looked identical to a
+   dropdown fading in. It hinges from the corner that is still attached
+   now, and 2.2 degrees carries the far corner about twenty-one pixels,
+   which reads as a sheet swinging down. */
+@keyframes peelIn {
+  from { opacity: 0; transform: rotate(-2.2deg) translateY(-14px); }
+  to { opacity: 1; transform: none; }
+}
+[data-app="notes"] .pile > .peel { transform-origin: 32px 0; }
+/* The peel carries its own budget too. Subtracting it from the note
+   alone was not enough: on the ordinary path the note is far shorter
+   than its cap, so there was nothing to reclaim and the peel ate the
+   plane regardless. It scrolls inside itself, and because its commit
+   row is already sticky the send, the cancel and the destination stay
+   reachable at any height — only the wording region moves. */
+/* THE PAYLOAD IS NEVER BEHIND THE BUTTON THAT SENDS IT.
+   The peel scrolled itself with the commit row pinned inside that same
+   scrollport, so the one thing this object exists to show — the words
+   that actually cross — was what got pushed under an opaque bar and cut
+   mid-glyph. Round 12 pinned the row to stop it being laid out under
+   the dock; that was right, and putting it INSIDE the scroller was not.
+   The row is a flex item below the content now, so it is always visible
+   and never over anything. And the box has a floor as well as a
+   ceiling: at 1366x768 the old ceiling alone left about forty pixels of
+   scrolling region, which is starvation rather than occlusion. The note
+   yields first — paint() writes --peel-h for exactly that. */
+[data-app="notes"] .pile > .peel {
+  display: flex; flex-direction: column;
+  /* The floor fits the object's own contents: heading, boundary, label,
+     a three-line wording field and the commit row. Below about 820px of
+     viewport that floor and the note's own floor together exceed what
+     the index is owed, and the index is what yields — while a peel is
+     open the person is completing a crossing, the note is never covered
+     because the peel sits under it, and the pile is whole again the
+     moment the peel closes. Measured at 768: the index keeps three rows
+     and its scroll. */
+  max-height: max(330px, calc(100vh - var(--desk-chrome, 311px) - var(--index-floor, 224px) - var(--note-min, 120px)));
+  /* NOT overflow:hidden. .peelScroll already bounds the height, and
+     clipping here swallowed the destination listbox, which is absolutely
+     positioned out of the commit row — the control opened and could not
+     be pressed. */
+  overflow: visible;
+}
+/* The note paints over the peel by design — the smaller sheet tucks ten
+   pixels under its edge — but that also put the note over the peel's own
+   destination listbox, which opens upward out of the commit row: the
+   control opened and could not be pressed. The peel rises only while
+   its list is open, so the tuck is unchanged at rest. */
+[data-app="notes"] .pile > .peel:has(.pickerPop) { z-index: 2; }
+[data-app="notes"] .peelScroll { flex: 1; min-height: 0; overflow: auto; }
+[data-app="notes"] .pile > .peel { animation: peelIn var(--dur-settle) var(--curve) both; }
+@media (prefers-reduced-motion: reduce) { [data-app="notes"] .pile > .peel { animation: none; } }
+[data-app="notes"] .deskAside .peelFrom { margin-top: 0; }
+[data-app="notes"] .peelTop { display: flex; align-items: center; gap: 9px; }
+[data-app="notes"] .peelMark { width: 22px; height: 22px; border-radius: var(--r-chip); background: var(--ink); color: var(--white); display: grid; place-items: center; flex: none; }
+[data-app="notes"] .peelMark svg { width: 13px; height: 13px; }
+[data-app="notes"] .peelLabel { font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
+/* It looks editable at rest. Its only editable control was invisible
+   until it took focus, on the one screen where a stranger has to be shown
+   what they can change. */
+[data-app="notes"] .peelField {
+  width: 100%; margin-top: 8px; padding: 9px 11px; border-radius: var(--r-chip);
+  box-shadow: inset 0 0 0 1px var(--line); border: 0; outline: 0; background: none; resize: none; display: block;
+  font-family: inherit; font-weight: 600; color: var(--ink-1);
+  field-sizing: content; min-height: 40px; max-width: var(--measure);
+}
+[data-app="notes"] .peelField:focus-visible { box-shadow: inset 0 0 0 1px var(--indigo); outline: none; }
+[data-app="notes"] .peelField::placeholder { color: var(--ink-3); font-weight: 400; }
+/* Off a long note the commit row was laid out underneath the floating
+   dock, and the sheet does not scroll, so the product's second promise
+   was unreachable by pointer in the room built to prove long notes
+   survive — a real click at its centre hit the dock's search field. It
+   sticks to the foot of the peel's own box, so it can never be laid out
+   somewhere the peel cannot show it. */
+[data-app="notes"] .peelRow {
+  display: flex; align-items: center; gap: 8px; margin-top: 13px; padding-top: 11px;
+  border-top: 1px solid var(--line-soft); flex-wrap: wrap;
+  background: var(--white); padding-bottom: 2px; flex: none;
+}
+[data-app="notes"] .picker { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: var(--r-chip); box-shadow: inset 0 0 0 1px var(--line); font-size: var(--t-13); letter-spacing: var(--tr-14); color: var(--ink-1); cursor: pointer; line-height: var(--lh-base); }
+[data-app="notes"] .picker:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
+[data-app="notes"] .picker svg { width: 14px; height: 14px; color: var(--ink-3); }
+[data-app="notes"] .picker b { font-weight: 400; color: var(--ink-3); }
+[data-app="notes"] .peelRow .spacer { flex: 1; }
+[data-app="notes"] .peelWhy { margin: 12px 0 0; max-width: var(--measure); text-wrap: pretty; font-size: var(--t-13); line-height: var(--lh-note); color: var(--ink-3); letter-spacing: var(--tr-12); }
+[data-app="notes"] .peel[data-receipt] { box-shadow: 0 0 0 1px var(--ink-1), var(--paper); }
+[data-app="notes"] .peel[data-receipt] .peelMark { background: var(--ink); }
+[data-app="notes"] .peelSent { margin: 11px 0 0; max-width: var(--measure); font-size: var(--t-17); font-weight: 600; line-height: var(--lh-base); letter-spacing: var(--tr-16); }
+[data-app="notes"] .noHits { padding: 26px 0 0; }
+[data-app="notes"] .stays { display: inline-flex; align-items: center; gap: 7px; font-size: var(--t-12); color: var(--ink-3); letter-spacing: var(--tr-12); margin-top: 12px; line-height: var(--lh-base); }
+[data-app="notes"] .stays svg { width: 13px; height: 13px; }
+
+/* ── search ────────────────────────────────────────────────────── */
+[data-app="notes"] .searchTop { flex: none; width: var(--stack); margin: 0 auto; padding: 6px var(--gutter) 18px; }
+[data-app="notes"] .searchBar {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--white); border-radius: var(--r-paper); box-shadow: var(--ring), var(--paper); padding: 14px 18px;
+  transition: box-shadow var(--dur) var(--curve);
+}
+[data-app="notes"] .searchBar:focus-within { box-shadow: 0 0 0 1px var(--indigo-line), var(--paper); }
+[data-app="notes"] .searchBar svg { width: 18px; height: 18px; color: var(--ink-3); flex: none; }
+[data-app="notes"] .searchBar input { flex: 1; min-width: 0; min-height: 30px; padding: 3px 0; border: 0; outline: 0; background: none; font: inherit; font-size: var(--t-17); letter-spacing: var(--tr-18); color: var(--ink-1); line-height: var(--lh-base); }
+[data-app="notes"] .searchBar input::placeholder { color: var(--ink-3); }
+/* On the ladder, and a real target: the drawn chip is 18px tall and the
+   thing a finger lands on is the 44 behind it. */
+[data-app="notes"] .searchBar .esc {
+  position: relative; font-size: var(--t-11); font-weight: 600; padding: 3px 8px; border-radius: var(--r-xs);
+  box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); flex: none; cursor: pointer; line-height: var(--lh-base); }
+[data-app="notes"] .searchBar .esc::before { content: ""; position: absolute; inset: -12px -10px; }
+
+/* ── every empty ───────────────────────────────────────────────── */
+[data-app="notes"] .emptyTitle { margin: 0; font-size: var(--t-27); font-weight: 600; line-height: var(--lh-title); letter-spacing: var(--tr-27); text-wrap: balance; }
+[data-app="notes"] .emptyBody { margin: 12px 0 0; font-size: var(--t-17); line-height: var(--lh-note); color: var(--ink-2); letter-spacing: var(--tr-16); max-width: var(--measure); text-wrap: pretty; }
+[data-app="notes"] .emptyMove { margin-top: 20px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+[data-app="notes"] .specs { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 8px 0 8px; }
+[data-app="notes"] .spec { border-radius: var(--r-paper); box-shadow: var(--ring); padding: 20px 22px 22px; }
+[data-app="notes"] .specName { margin: 0 0 12px; font-size: var(--t-11); font-weight: 600; letter-spacing: var(--tr-cap); text-transform: uppercase; color: var(--ink-3); line-height: var(--lh-base); }
+[data-app="notes"] .spec .emptyTitle { font-size: var(--t-17); letter-spacing: var(--tr-21); }
+[data-app="notes"] .spec .emptyBody { font-size: var(--t-15); margin-top: 8px; }
+[data-app="notes"] .spec .emptyMove { margin-top: 14px; }
+/* A caption ran a longer line at 12px than the 15px body directly above
+   it, in all four cards, because it carried no measure at all. */
+[data-app="notes"] .specWhy { max-width: var(--measure); margin: 13px 0 0; font-size: var(--t-12); line-height: var(--lh-note); color: var(--ink-3); letter-spacing: var(--tr-12); text-wrap: pretty; }
+
+/* ── not yet ───────────────────────────────────────────────────── */
+[data-app="notes"] .states { display: grid; gap: 11px; padding: 4px 0 8px; }
+[data-app="notes"] .state { display: flex; align-items: flex-start; gap: 13px; padding: 16px 18px; border-radius: var(--r-paper); box-shadow: inset 0 0 0 1px var(--line); }
+[data-app="notes"] .state svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--ink-2); }
+[data-app="notes"] .state b { display: block; font-size: var(--t-15); font-weight: 600; letter-spacing: var(--tr-14); line-height: var(--lh-tight); }
+[data-app="notes"] .state p { margin: 5px 0 0; font-size: var(--t-13); line-height: var(--lh-note); color: var(--ink-2); letter-spacing: var(--tr-14); max-width: var(--measure); text-wrap: pretty; }
+[data-app="notes"] .state .act { margin-left: auto; align-self: center; }
+/* Held on this device is the product keeping its promise, so it is stated
+   in ink at full strength, not in a warning colour. */
+[data-app="notes"] .state[data-tone="hold"] { box-shadow: inset 0 0 0 1px var(--ink-1); }
+/* The single destructive act is the one filled object in the family. */
+[data-app="notes"] .state[data-tone="destroy"] { background: var(--ink); box-shadow: none; color: var(--white); }
+[data-app="notes"] .state[data-tone="destroy"] p { color: var(--on-ink-2); }
+[data-app="notes"] .state[data-tone="destroy"] svg { color: var(--white); }
+[data-app="notes"] .state[data-tone="destroy"] .act { box-shadow: inset 0 0 0 1px var(--chrome-line); color: var(--on-ink-2); }
+[data-app="notes"] .state[data-tone="destroy"] .act[data-ink] { background: var(--white); color: var(--ink); }
+[data-app="notes"] .state[data-tone="destroy"] :focus-visible { outline-color: var(--white); }
+[data-app="notes"] .sk { height: 11px; border-radius: 2px; background: var(--wash); }
+[data-app="notes"] .sk + .sk { margin-top: 9px; }
+[data-app="notes"] .skelRow { padding: 12px 0; border-top: 1px solid var(--line-soft); }
+/* Found by the measure rule the moment it existed: the sentence that
+   tells you what is loading ran the full 1000px of the sheet, 77em at
+   13px, which is more than twice the ceiling the file argues for. */
+[data-app="notes"] .skelSay { max-width: var(--measure); text-align: center; padding: 20px 0 0; margin: 0 auto; font-size: var(--t-13); color: var(--ink-3); letter-spacing: var(--tr-14); line-height: var(--lh-base); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   THE DECISION LAYER
+
+   Five design decisions, each isolated on its own root attribute, so a
+   change to one cannot leak into another. The three finished rooms are
+   nothing but three preset combinations of these five, which is why
+   every combination stays on brand: none of them can reach a colour that
+   is not Ink, Indigo or White.
+
+     data-paper    flat | stacked | deep
+     data-index    airy | tight
+     data-radius   sharp | soft | round
+     data-indigo   subtle | forward
+     data-type     calm | expressive
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── how the pile reads ────────────────────────────────────────── */
+/* Flat: no pile. The newest note is simply the top of the index, and the
+   direction gives up its signature in exchange for the whole sheet. */
+[data-app="notes"][data-paper="flat"] .behind { display: none; }
+[data-app="notes"][data-paper="flat"] .top { box-shadow: var(--ring); }
+[data-app="notes"][data-paper="flat"] .top[data-live] { box-shadow: 0 0 0 1px var(--indigo-line); }
+[data-app="notes"][data-paper="flat"] .handCard { display: none; }
+[data-app="notes"][data-paper="flat"] .handTop { box-shadow: var(--ring), var(--raise); }
+[data-app="notes"][data-paper="flat"] .desk { padding-bottom: 20px; }
+
+/* Deep: three sheets behind instead of two, and the shadow carries
+   further, so the pile reads as a season rather than as a week. */
+[data-app="notes"][data-paper="deep"] .behind[data-n="1"] { transform: translateY(13px) scale(0.978); }
+[data-app="notes"][data-paper="deep"] .behind[data-n="2"] { transform: translateY(26px) scale(0.956); }
+[data-app="notes"][data-paper="deep"] .top { box-shadow: var(--ring), var(--paper-lift); }
+[data-app="notes"][data-paper="deep"] .desk { padding-bottom: calc(var(--gutter) + 14px); }
+
+/* ── index density ─────────────────────────────────────────────── */
+/* Tight is not "the same thing, smaller". The preview stops earning its
+   place, so the row carries the title alone and the day rule takes the
+   width the preview gave back. */
+[data-app="notes"][data-index="tight"] .idxRow { padding: 7px 10px; column-gap: 11px; }
+[data-app="notes"][data-index="tight"] .idxText { font-size: var(--t-15); }
+[data-app="notes"][data-index="tight"] .idxText span { display: none; }
+[data-app="notes"][data-index="tight"] .idxDay { padding: 13px 0 4px; }
+[data-app="notes"][data-index="tight"] .idxTag { padding: 2px 7px; }
+
+/* ── corner radius ─────────────────────────────────────────────── */
+[data-app="notes"][data-radius="sharp"] {
+  --r-chip: 4px; --r-ctl: 4px; --r-card: 6px; --r-paper: 6px; --r-sheet: 8px;
+}
+[data-app="notes"][data-radius="sharp"] .dockAvatar { border-radius: 8px; }
+[data-app="notes"][data-radius="sharp"] .dock,
+[data-app="notes"][data-radius="sharp"] .dockField,
+[data-app="notes"][data-radius="sharp"] .chip,
+[data-app="notes"][data-radius="sharp"] .idxTag,
+[data-app="notes"][data-radius="sharp"] .undo,
+[data-app="notes"][data-radius="sharp"] .undoAct,
+[data-app="notes"][data-radius="sharp"] .darkAct,
+[data-app="notes"][data-radius="sharp"] .dockGlyph { border-radius: 4px; }
+
+[data-app="notes"][data-radius="round"] {
+  --r-chip: 8px; --r-ctl: 12px; --r-card: 16px; --r-paper: 20px; --r-sheet: 24px;
+}
+
+/* ── indigo intensity ──────────────────────────────────────────── */
+/* Subtle spends the accent on the live edge of the thing you are doing
+   now, and nowhere else. Forward spends it on the primary action too,
+   so the next move is the loudest object on the sheet. */
+[data-app="notes"][data-indigo="subtle"] .act[data-primary] { background: var(--ink); }
+[data-app="notes"][data-indigo="subtle"] .act[data-primary]:hover { background: #000; }
+[data-app="notes"][data-indigo="forward"] .chip { background: var(--indigo); }
+[data-app="notes"][data-indigo="forward"] .chip:hover { background: var(--indigo-deep); }
+[data-app="notes"][data-indigo="forward"] .idxRow[data-open] { box-shadow: inset 2px 0 0 var(--indigo); }
+[data-app="notes"][data-indigo="forward"] .undo { background: var(--indigo); }
+[data-app="notes"][data-indigo="forward"] .word::after { width: 5.5px; height: 5.5px; }
+
+/* ── the type of the note object ───────────────────────────────── */
+/* Expressive raises the read note and the hand, which are the two places
+   in Notes where the content is entirely a person's own writing, and
+   leaves every label where it was. */
+[data-app="notes"][data-type="expressive"] .readBody { font-size: var(--t-20); line-height: var(--lh-read); letter-spacing: var(--tr-21); }
+[data-app="notes"][data-type="expressive"] .readLong { font-size: var(--t-17); line-height: var(--lh-read); }
+[data-app="notes"][data-type="expressive"] .handBody { font-size: var(--t-20); line-height: var(--lh-note); letter-spacing: var(--tr-21); }
+[data-app="notes"][data-type="expressive"] .topField { font-size: var(--t-20); }
+[data-app="notes"][data-type="expressive"] .emptyTitle { font-size: var(--t-27); letter-spacing: var(--tr-34); }
+[data-app="notes"][data-type="expressive"] .darkSaid { font-size: var(--t-34); }
+[data-app="notes"][data-type="calm"] .readBody { font-size: var(--t-17); }
+[data-app="notes"][data-type="calm"] .handBody { font-size: var(--t-17); }
+[data-app="notes"][data-type="calm"] .darkSaid { font-size: var(--t-27); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   NARROW
+   ═══════════════════════════════════════════════════════════════════ */
+/* Below this the margin would be wider than the writing it annotates, so
+   it folds under it instead. Across the whole tablet band the facts were
+   winning: a 203px writing column against a 296px margin at 721. */
+@media (max-width: 1080px) {
+  [data-app="notes"] .top[data-two] { grid-template-columns: minmax(0, 1fr); row-gap: 18px; }
+  [data-app="notes"] .top[data-two] > .deskAside { grid-column: 1; grid-row: 2; padding-left: 0; box-shadow: none; border-top: 1px solid var(--line-soft); padding-top: 16px; }
+  [data-app="notes"] .deskAside { grid-auto-flow: column; grid-auto-columns: max-content; justify-content: start; gap: 26px; }
+  [data-app="notes"] .top[data-two] .deskAside .peel { grid-column: 1 / -1; }
+}
+
+@media (max-width: 900px) {
+  [data-app="notes"] { --inset: 12px; --gutter: 22px; }
+  [data-app="notes"] .specs { grid-template-columns: minmax(0, 1fr); }
+  [data-app="notes"] .dockField { min-width: 168px; }
+}
+@media (max-width: 720px) {
+  /* A measure has a floor as well as a ceiling. .state is a nowrap flex
+     row, so the prose column collapsed beside a button that kept its
+     full width: 6.7 to 13.8 em against 31 on a desk, in the room that
+     exists to be read calmly. The row wraps and the prose keeps a real
+     column. min-width: 0 rather than a fixed floor — a 240px floor
+     overflows a 270px track at 320 and gives the pile a horizontal
+     scrollbar below that, which is the guillotine class this programme
+     has already paid for twice. */
+  [data-app="notes"] .state { flex-wrap: wrap; }
+  [data-app="notes"] .state > *:not(svg) { min-width: 0; flex: 1 1 240px; }
+  [data-app="notes"] .state .act { flex: 0 0 auto; margin-left: 30px; }
+  [data-app="notes"] { --inset: 9px; --gutter: 16px; }
+  [data-app="notes"] .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+  [data-app="notes"] .headName { display: none; }
+  /* One row, four objects, no wrapping and a sheet that clips: the couple,
+     the date and the notebook's count were laid out past the sheet's right
+     edge and simply did not print. The head takes two rows on a phone —
+     the wordmark and the acts above, what the house is facing below. */
+  [data-app="notes"] .head {
+    display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto;
+    height: auto; padding: 9px var(--gutter) 7px; row-gap: 1px; column-gap: 10px; align-items: center;
+  }
+  [data-app="notes"] .head .word { grid-column: 1; grid-row: 1; }
+  [data-app="notes"] .head .headRule { display: none; }
+  [data-app="notes"] .head .headActions { grid-column: 3; grid-row: 1; }
+  /* The count sits at the end of the second row rather than wrapping
+     inside its own pill — "8 still to" over "decide" is a count broken in
+     half, which is the one thing a count must not be. */
+  [data-app="notes"] .head .chip { grid-column: 3; grid-row: 2; justify-self: end; align-self: center; }
+  [data-app="notes"] .head .headNext {
+    grid-column: 1 / 3; grid-row: 2; white-space: normal; overflow: visible;
+    flex-wrap: wrap; column-gap: 7px; row-gap: 0; min-width: 0;
+  }
+  [data-app="notes"] .head .headNext b,
+  [data-app="notes"] .head .headNext span { white-space: normal; overflow: visible; }
+  [data-app="notes"] .head .headNext span { font-size: var(--t-12); letter-spacing: var(--tr-12); }
+  /* Grafted from direction A. The desk's paper costs most of an 844px
+     screen before a single note is visible, so on a phone capture moves
+     into the dock, which is where a thumb already is. */
+  [data-app="notes"] .desk { display: none; }
+  [data-app="notes"] .indexWrap { padding-top: 6px; }
+  [data-app="notes"] .index { padding-bottom: 128px; }
+  [data-app="notes"] .dock { width: calc(100% - var(--gutter) * 2); max-width: none; padding: 6px 6px 6px 14px; align-items: flex-end; }
+  [data-app="notes"] .dockCount { align-self: center; font-size: var(--t-11); color: var(--ink-3); letter-spacing: var(--tr-11); padding: 0 4px 10px; flex: none; }
+  [data-app="notes"] .indexHead { flex-wrap: wrap; row-gap: 8px; }
+  [data-app="notes"] .groupBy { margin-left: 0; }
+  [data-app="notes"] .index { padding-bottom: 148px; }
+  [data-app="notes"] .dockField { display: none; }
+  [data-app="notes"] .phoneField {
+    display: block; flex: 1; min-width: 0;
+    /* The one surface that set a person's own words smaller than every
+       other surface set them. The dock gives the field a full-width row;
+       the twelve pixels come out of the dock's padding, not the type. */
+    font: inherit; font-size: var(--t-17); line-height: var(--lh-read); letter-spacing: var(--tr-18); color: var(--ink-1);
+    field-sizing: content; min-height: calc(1.5em * 2); max-height: 40vh; padding: 8px 0;
+  }
+  [data-app="notes"] .phoneField::placeholder { color: var(--ink-3); }
+
+  [data-app="notes"] .dock .dockRule { display: none; }
+  /* The row gives its width to the words. The desktop four-column grid
+     survived verbatim onto a 360px row: 247px of fixed furniture inside
+     it, 113px left for the writing, every note cut to three or four
+     words. The words take the row over two lines; the facts about them
+     take a quiet second line under it. */
+  [data-app="notes"] .idxRow {
+    grid-template-columns: 20px minmax(0, 1fr);
+    row-gap: 3px; column-gap: 12px; padding: 11px 10px; align-items: start;
+  }
+  [data-app="notes"] .idxMark { padding-top: 2px; }
+  /* Two lines of the person's own words. -webkit-box cannot do it here:
+     a grid item's display is blockified, so the clamp is silently
+     discarded and the row collapses back to one line. A max-height of two
+     leadings does the same job and survives being a grid item. */
+  [data-app="notes"] .idxText {
+    white-space: normal; text-overflow: clip; overflow: hidden;
+    max-height: calc(var(--lh-base) * 2em);
+  }
+  [data-app="notes"] .idxText span { color: var(--ink-3); }
+  [data-app="notes"][data-index="tight"] .idxText span { display: none; }
+  /* One line, not three ragged columns. The heading is a three-item flex
+     row with no phone treatment, so at 390 each item wrapped
+     independently and the first group rendered as six lines. */
+  [data-app="notes"] .idxDay { flex-wrap: wrap; row-gap: 2px; column-gap: 8px; padding: 16px 0 6px; font-size: var(--t-15); }
+  [data-app="notes"] .idxDay .idxDayNote { font-size: var(--t-12); }
+  [data-app="notes"] .idxDay .idxDayTail { margin-left: 0; font-size: var(--t-12); }
+  /* And the clamp admits it is a clamp — in the sentence, not over it.
+     The pseudo-element was absolutely positioned at the box's right edge,
+     which is not where line two ends, so it landed in the middle of a
+     word and half a glyph showed through the gradient beside it. The trim
+     now pops whole words off the second line until the ellipsis fits, in
+     the flow, exactly as the desktop row already does on its one line. */
+  [data-app="notes"] .idxText { position: relative; }
+  [data-app="notes"] .idxTag,
+  [data-app="notes"] .idxWhen { grid-column: 2; grid-row: 2; font-size: var(--t-12); }
+  [data-app="notes"] .idxTag { justify-self: start; box-shadow: none; padding: 0; color: var(--ink-3); font-weight: 400; }
+  [data-app="notes"] .idxWhen { justify-self: end; }
+  [data-app="notes"][data-index="tight"] .idxText { max-height: calc(var(--lh-base) * 1em); }
+
+  /* The capsule and the dock are one object, which is the locked
+     behaviour and had not happened: a white capture pill floated inside
+     the sheet with the dark rail as a separate bar below it, two stacked
+     floating objects taking 163px of an 844px screen. Now the dock is
+     ink, the suite tiles ride in it, and there is one thing at the foot
+     of the phone rather than two. */
+  [data-app="notes"] .dockWrap {
+    position: fixed; left: var(--inset); right: var(--inset);
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    padding: 0; z-index: 6;
+  }
+  /* The fade was 96px tall and painted UNDER a 118px opaque dock, so
+     the edge a person actually sees on the device where the index is
+     scrolled most was a hard cut through a row. Keyed to the dock top
+     rather than to the scroller bottom, so it fades what is visible. */
+  [data-app="notes"] .dockWrap::before { display: block; height: 40px; bottom: 100%; }
+  /* One object, two rows. The field a person writes in cannot share a
+     372px line with three verbs, four suite tiles and an account disc —
+     it collapsed to a 40px column wrapping one word per line. The words
+     get the top of the object; everything that acts on them gets the
+     foot of it. */
+  [data-app="notes"] .dock {
+    width: 100%; border-radius: 18px; padding: 4px 8px 8px;
+    background: var(--ink); box-shadow: none; align-items: center;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 6px;
+  }
+  [data-app="notes"] .dock .phoneField { grid-column: 1 / -1; padding: 10px 6px 8px; }
+  [data-app="notes"] .dockRow { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  [data-app="notes"] .dockRow[data-verbs] { grid-column: 1; }
+  [data-app="notes"] .dockRow[data-suite] { grid-column: 2; justify-self: end; }
+  [data-app="notes"] .dock .phoneField { color: var(--on-ink-1); }
+  [data-app="notes"] .dock .phoneField::placeholder { color: var(--on-ink-2); }
+  [data-app="notes"] .dock .dockGlyph { color: var(--on-ink-2); }
+  [data-app="notes"] .dock .dockGlyph:hover { color: var(--on-ink-1); background: var(--chrome-active); }
+  [data-app="notes"] .dock .dockGlyph[data-ink] { background: var(--white); color: var(--ink); }
+  [data-app="notes"] .dock .dockCount { color: var(--on-ink-2); }
+  [data-app="notes"] .dock .dockRule { display: block; background: var(--chrome-line); margin: 0 4px; height: 18px; }
+  [data-app="notes"] .dock:has(.phoneField:focus-visible) { box-shadow: 0 0 0 2px var(--indigo); }
+  [data-app="notes"] .dock :focus-visible { outline-color: var(--white); }
+  [data-app="notes"] .dock .railGroup { display: flex; gap: 0; }
+  [data-app="notes"] .dock .railTile { width: 36px; height: 36px; border-radius: 10px; color: var(--on-ink-2); }
+  [data-app="notes"] .dock .railTile svg { width: 17px; height: 17px; }
+  [data-app="notes"] .dock .railTile[data-active] { background: var(--chrome-active); color: var(--on-ink-1); }
+  [data-app="notes"] .dock .railTile[data-active]::after { display: none; }
+  [data-app="notes"] .dock .dockAvatar { width: 30px; height: 30px; margin: 0 0 0 4px; background: var(--white); color: var(--ink); }
+  [data-app="notes"] .dock .dockGlyph,
+  [data-app="notes"] .dock .dockCount { margin-bottom: 0; }
+  /* At 360 the two dock rows want 330px of a 326px foot, so the suite
+     row was painted over the right third of the commit control and a
+     real tap at the white check silently failed to save — nine live
+     pixels of thirty-six, no error, no announcement, the thought just
+     not captured. The decorative divider is the thing that gives: it
+     separates two groups that a 4px gap already separates, and it is
+     the only item in the foot that is not a target. */
+  @media (max-width: 380px) {
+    [data-app="notes"] .dock .dockRule { display: none; }
+    [data-app="notes"] .dock .dockAvatar { margin-left: 2px; }
+  }
+  [data-app="notes"] .sheet { height: calc(100dvh - 68px - var(--inset) * 2 - env(safe-area-inset-bottom)); }
+  /* The dock floats over the foot of the pile and its height was guessed
+     at 22px against a bar that measures 103, so the last row of somebody's
+     notebook sat underneath it on every phone. paint() measures the dock
+     and writes --dock-h; the pile reserves exactly that. */
+  [data-app="notes"] .index { padding-bottom: calc(var(--dock-h, 103px) + 16px); scroll-padding-bottom: calc(var(--dock-h, 103px) + 16px); }
+  [data-app="notes"] .undo { bottom: 88px; }
+  [data-app="notes"] .sheet[data-undo] .indexWrap { padding-bottom: var(--undo-band, 140px); }
+  [data-app="notes"] .sheet[data-undo] .index { padding-bottom: 12px; }
+  /* The one place the ramp bends, and it bends by dropping a step rather
+     than inventing a value: 34 does not fit a 390 screen. */
+  [data-app="notes"] .darkSaid { font-size: var(--t-27); }
+  [data-app="notes"][data-type="expressive"] .darkSaid { font-size: var(--t-27); }
+  [data-app="notes"] .darkWave { margin-top: 26px; }
+  [data-app="notes"] .handCard[data-n="3"] { display: none; }
+  [data-app="notes"] .peel { margin-left: 12px; margin-right: 0; }
+  [data-app="notes"] .searchTop { padding-top: 10px; }
+}
+/* The phone field is rendered by the file only on a phone, so it is never
+   an invisible control at a wide width. Its own colours are declared here
+   rather than inherited, because a field that inherits the user agent's
+   black and its 118-grey border is carrying two colours this product does
+   not have. */
+/* `font: inherit` is a shorthand, and it reset the size, the leading and
+   the tracking the media block had already declared for this field —
+   which is the one surface the whole product exists for. Naming the
+   parts leaves the media block's values standing. */
+[data-app="notes"] .phoneField {
+  border: 0; outline: 0; resize: none; background: none;
+  font-family: inherit; font-weight: 400; color: var(--ink-1);
+}
+
+@media (pointer: coarse) {
+  /* A finger needs 44px. A mouse does not, and inflating every control to
+     44 on a desktop sheet is how a dense index stops being dense. */
+  [data-app="notes"] .verb,
+  [data-app="notes"] .headAct,
+  [data-app="notes"] .dockGlyph,
+  [data-app="notes"] .act,
+  [data-app="notes"] .drop,
+  [data-app="notes"] .picker,
+  [data-app="notes"] .chip { min-height: 44px; }
+  [data-app="notes"] .chip { padding: 0 14px; }
+  [data-app="notes"] .idxRow { padding-top: 12px; padding-bottom: 12px; }
+  [data-app="notes"][data-index="tight"] .idxRow { padding-top: 10px; padding-bottom: 10px; }
+  [data-app="notes"] .dockField kbd,
+  [data-app="notes"] .topMeta kbd,
+  [data-app="notes"] .act kbd,
+  [data-app="notes"] .undoAct kbd,
+  [data-app="notes"] .darkAct kbd,
+  [data-app="notes"] .headKbd { display: none; }
+
+  /* This block set a height on seven selectors and never touched the
+     merged dock's own contents, which is the one surface the locked
+     architecture singles out for the phone. Measured at 390 with a real
+     touch pointer: the suite navigation was 36x36, the avatar 30x30,
+     the product's single reversibility control 76x30, and the filing
+     button inside the phone read sheet 34 tall. Neither gate could see
+     it — the audit measures at 1440 with a mouse and the behaviour
+     check opens 390 without hasTouch — so the whole branch was dead
+     code in both. It is measured now; see the coarse pass in
+     notes-audit.mjs. */
+  /* .dockGlyph and .dockAvatar are round, so a 44px min-height on a 36px
+     and a 30px control drew them as ellipses in a row of squares. Their
+     targets grow underneath instead, which is the technique the rest of
+     this block already uses. */
+  [data-app="notes"] .dock .railTile,
+  [data-app="notes"] .groupBtn,
+  [data-app="notes"] .undoAct,
+  [data-app="notes"] .readSrc .filingBtn { min-height: 44px; }
+  [data-app="notes"] .dock .dockGlyph,
+  [data-app="notes"] .dock .dockAvatar { min-height: 0; position: relative; }
+  /* Negative insets, which is the form the audit measures the union
+     from and the form .chip and the search Esc already use. 36 + 2x4 and
+     30 + 2x7 both reach 44. */
+  [data-app="notes"] .dock .dockGlyph::before { content: ""; position: absolute; inset: -4px 0; }
+  [data-app="notes"] .dock .dockAvatar::before { content: ""; position: absolute; inset: -7px 0; }
+  /* Where the drawn box has to stay small, the target grows underneath
+     it rather than redrawing it — the technique .chip and the search
+     bar's Esc already use. Vertical only: the rail tiles sit at a 0px
+     gap and the glyphs at 2px, so a symmetric 44-wide union on butted
+     siblings would overlap, and a tap on the edge of Notes landing on
+     Tasks is worse than a 36px target. */
+  [data-app="notes"] .dock .railTile,
+  [data-app="notes"] .dockAvatar { position: relative; }
+  [data-app="notes"] .dock .railTile::before,
+  [data-app="notes"] .dockAvatar::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%;
+    height: 44px; margin-top: -22px;
+  }
+  /* Width is bought in real layout instead, by letting the dock's own
+     padding give it up. Capture is the three-second promise and outranks
+     a navigation tile, so the field is never squeezed for this. */
+  [data-app="notes"] .dock[data-suite] .railTile,
+  [data-app="notes"] .dock .dockRow[data-suite] .railTile { min-width: 44px; }
+  /* Found by the coarse pass the moment it existed: on a phone the
+     search field itself was 31px tall and its Esc 42px — the field a
+     person types their query into, below the floor, in the one state
+     where the keyboard is already up. */
+  [data-app="notes"] .searchBar input,
+  [data-app="notes"] .searchBar .esc { min-height: 44px; }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-app="notes"] * { animation-duration: 0ms !important; animation-iteration-count: 1 !important; transition-duration: 0ms !important; }
+}
+
+/* An index with nothing in it, which the first-use empty now lands on. */
+[data-app="notes"] .idxEmpty {
+  margin: 0; padding: 18px var(--gutter) 0; max-width: var(--measure);
+  font-size: var(--t-15); line-height: var(--lh-note); letter-spacing: var(--tr-16);
+  color: var(--ink-3); font-weight: 400;
+}
+
+/* The seam between two pieces speech came back as. Quiet at rest —
+   splitting is usually right and this is an offer, not a repair — and
+   it takes a finger. */
+[data-app="notes"] .joinSeam {
+  display: block; width: 100%; margin: 0; padding: 7px 0; border: 0; background: none;
+  font: inherit; font-size: var(--t-12); line-height: var(--lh-note); letter-spacing: var(--tr-12);
+  color: var(--ink-3); cursor: pointer; text-align: left; padding-left: 18px;
+  transition: color var(--dur) var(--curve);
+}
+[data-app="notes"] .joinSeam:hover { color: var(--ink-1); }
+[data-app="notes"] .dark .joinSeam { color: var(--on-ink-2); }
+[data-app="notes"] .dark .joinSeam:hover { color: var(--on-ink-1); }
+@media (pointer: coarse) { [data-app="notes"] .joinSeam { min-height: 44px; } }
+

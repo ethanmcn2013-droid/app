@@ -1,0 +1,285 @@
+/* ═══════════════════════════════════════════════════════════════════
+   THE STUDIO FLOOR — the suite's own chrome, and the only stylesheet in
+   this file that is not scoped to one product.
+
+   It owns exactly three things:
+
+     the floor    the ink the whole app sits on
+     the spine    the floating capsule carrying the suite
+     the sheet    the base geometry of the one white sheet lifted off it
+
+   Everything else belongs to a product and is scoped to it, because the
+   three products do not agree about what a token means. `--paper` is the
+   case that settles the argument: Notes declares it as a three-layer
+   shadow and Timeline declares it as #ffffff, both at :root, and each is
+   right inside its own room. Unscoped, one of them paints the wrong thing
+   on every surface it touches.
+
+   The floor is NOT the console chrome. The console — the 320px panel of
+   decision switches, its header, its prose, the famRail — is apparatus for
+   reviewing the product and not one pixel of it is here. The ink floor is
+   the product: "a floor the whole app sits on, not a frame drawn around
+   it." It stays exactly as the Tasks lock drew it.
+   ═══════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── the three ─────────────────────────────────────────────── */
+  --ink: #111111;
+  --indigo: #4f46e5;
+  --white: #ffffff;
+
+  --ink-1: var(--ink);
+
+  /* ── white, at stated alphas over the ink floor ────────────── */
+  /* Byte-identical in the Tasks and Notes shells. The spine is the one
+     object both products already drew the same way, which is why it can
+     be hoisted without a decision. */
+  --on-ink-1: #ffffff;
+  --on-ink-2: rgba(255, 255, 255, 0.62);     /* 7.7:1 on ink            */
+  --chrome: rgba(255, 255, 255, 0.07);
+  --chrome-line: rgba(255, 255, 255, 0.10);
+  --chrome-active: rgba(255, 255, 255, 0.14);
+
+  --r-sheet: 16px;
+  --inset: 18px;
+  --rail: 64px;
+  --tap: 44px;
+
+  /* Tasks reaches these through foundation.css and Notes states the
+     resolved values. Identical either way; the indirection is kept
+     because foundation.css is where reduced motion zeroes them. */
+  --dur: var(--motion-fast);                 /* 140ms                   */
+  --curve: var(--ease-out);
+}
+
+/* The floor, and nothing behind it. This page does not follow the
+   viewer's light/dark setting: every ground is painted. */
+html { background: var(--ink); color: var(--ink-1); }
+body {
+  background: var(--ink);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv01";
+  overflow: hidden;
+}
+
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* ── the floor ───────────────────────────────────────────────── */
+.floor {
+  height: 100dvh;
+  padding: var(--inset);
+  padding-left: calc(var(--inset) * 2 + var(--rail));
+  position: relative;
+}
+
+/* Each product is one child of the floor, and it generates no box of its
+   own: `display: contents` means the sheet and every overlay beside it
+   are laid out as direct children of the floor, exactly as they were when
+   each product rendered its own. The element exists to carry the scope
+   and the product's decisions, not to add a layer.
+   The product that is not on screen keeps its DOM, its scroll and its
+   focus — a suite that rebuilds a board every time you glance at Notes is
+   a suite whose demo dies on the second click. */
+.app { display: contents; }
+
+/* Timeline is the exception, and deliberately: its artifact IS the sheet,
+   so its app element is the sheet rather than a wrapper around one. */
+.app[data-app="timeline"] {
+  display: block;
+  /* The artifact scrolls inside the sheet the way the board and the index
+     do. On its own page it scrolled the window; there is no window to
+     scroll here, and 100dvh has been re-based on this box. */
+  overflow: auto;
+  height: 100%;
+}
+#tl { min-height: 100%; }
+
+/* Last, and it has to be: an author rule beats the UA's own [hidden]
+   whatever its specificity, so `display: contents` would keep a hidden
+   product on the floor. This is the rule that takes it off. */
+.app[hidden] { display: none; }
+
+/* ── the spine ─────────────────────────────────────────────────
+   On an ink floor the capsule is a lighter cut in the same material,
+   not an object dropped onto it. Lifted verbatim from floor.html; the
+   only change is that it is now rendered once for three products
+   instead of once each for two. */
+.rail {
+  position: absolute;
+  left: var(--inset); top: var(--inset); bottom: var(--inset);
+  width: var(--rail);
+  background: var(--chrome);
+  box-shadow: inset 0 0 0 1px var(--chrome-line);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 0;
+  z-index: 4;
+}
+.railMark {
+  width: var(--tap); height: var(--tap);
+  display: grid; place-items: center;
+  color: var(--on-ink-1);
+  position: relative;
+  border-radius: 12px;
+}
+.railMark svg { width: 19px; height: 19px; }
+/* Ink, not indigo. The Tasks lock states the rule at class level: "the
+   accent is spent only on what the specimen sheet says it means", and it
+   names the rail dot as one of the two places that made the claim false.
+   Notes' own master still painted this dot indigo; the rail is one object
+   now, so it takes the rule that was argued rather than the one that was
+   inherited. Recorded in COMPOSITION.md. */
+.railMark i {
+  position: absolute; right: 9px; bottom: 10px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--on-ink-1);
+}
+.railDivider { width: 18px; height: 1px; background: var(--chrome-line); margin: 8px 0 10px; }
+.railGroup, .railUtil { display: grid; gap: 4px; }
+/* Buttons, not href-less anchors. The reset means the change costs no
+   pixels. */
+.railTile, .railMark, .railAvatar {
+  font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 0; padding: 0;
+  -webkit-appearance: none;
+}
+.railAvatar { cursor: pointer; }
+.railTile {
+  width: var(--tap); height: var(--tap);
+  border-radius: 12px;
+  display: grid; place-items: center;
+  color: var(--on-ink-2);
+  position: relative;
+  cursor: pointer;
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
+}
+.railTile svg { width: 19px; height: 19px; }
+.railTile:not([aria-disabled="true"]):hover { color: var(--on-ink-1); background: var(--chrome-active); }
+.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+/* The capsule points at the sheet it opened. */
+.railTile[data-active]::after {
+  content: "";
+  position: absolute; right: -12px; top: 50%;
+  width: 7px; height: 7px; margin-top: -3.5px;
+  transform: rotate(45deg);
+  background: var(--chrome);
+  box-shadow: inset -1px 1px 0 var(--chrome-line);
+  border-radius: 1.5px;
+}
+.railSpacer { flex: 1; }
+.railAdd { display: none; }
+/* The one place the two shells genuinely disagreed and both could not be
+   right. Tasks set this disc at 10px / 0.04em with the browser choosing
+   the leading; Notes set it at 11px / 0.075em with a compensating indent
+   and a declared leading. Notes' values are the ones a rule defends — its
+   lock declares an eight-step ramp "and no ninth", its gate enforces both
+   the ramp and the leading, and 10px is on no ladder in either lab. So the
+   spine takes Notes' disc, and the cost is one pixel of type size on the
+   Tasks surface. Recorded in COMPOSITION.md; the numbers are written out
+   rather than tokenised because the shell may not depend on a product. */
+.railAvatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--chrome-active);
+  box-shadow: inset 0 0 0 1px var(--chrome-line);
+  color: var(--on-ink-1);
+  display: grid; place-items: center;
+  font-size: 11px;                 /* Notes' --t-11  */
+  font-weight: 600;
+  letter-spacing: 0.075em;         /* Notes' --tr-cap */
+  /* The trailing letter-space would push two capitals off centre. */
+  text-indent: 0.075em;
+  line-height: 1.28;               /* Notes' --lh-tight */
+  margin-top: 8px;
+}
+.rail [aria-disabled="true"], .rail [aria-disabled="true"] svg { color: var(--on-ink-2); }
+
+/* The spine's focus ring is the spine's, not the mounted product's. Tasks
+   sets 2px of offset and Notes sets 3px; without this the same tile would
+   answer the keyboard differently depending on which sheet was open. */
+.rail button:focus-visible, .rail [tabindex]:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
+
+/* ── the sheet ─────────────────────────────────────────────────
+   White against ink needs no shadow. Contrast is the elevation. Both
+   products stated this rule byte for byte; each keeps its own additions
+   (Tasks' scroll fades and its 1592px cap, Notes' two planes) in its own
+   sheet. */
+.sheet {
+  height: 100%;
+  background: var(--white);
+  border-radius: var(--r-sheet);
+  display: flex; flex-direction: column;
+  position: relative; min-width: 0; overflow: hidden;
+}
+
+/* ── the spine, under the decisions ──────────────────────────────
+   The rail stands outside all three products, so it cannot read a
+   decision from a product's own root. app.js mirrors the mounted
+   product's radius and indigo onto the deck, and these read it there —
+   which is how `?radius=sharp` still reaches the capsule. */
+#deck[data-radius="sharp"] .rail,
+#deck[data-radius="sharp"] .railTile,
+#deck[data-radius="sharp"] .railAdd { border-radius: 8px; }
+#deck[data-radius="sharp"] .railAvatar { border-radius: 8px; }
+#deck[data-radius="round"] .rail { border-radius: 24px; }
+#deck[data-radius="round"] .railTile,
+#deck[data-radius="round"] .railAdd { border-radius: 16px; }
+#deck[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
+#deck[data-indigo="forward"] .railMark i { box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.28); }
+
+/* ── the phone ───────────────────────────────────────────────────
+   Both locks say the same thing — on a phone the capsule and the dock are
+   the same object — and the two products merge them in opposite
+   directions. Tasks folds the dock into the capsule and carries the add
+   verb there; Notes folds the capsule into the dock and hides the
+   capsule. Neither was redesigned: the merge target follows the mounted
+   product, so each surface is what it was at 390. */
+/* The floor's own inset steps. Both products declared these identically,
+   and both declared them on :root inside their own stylesheet — which,
+   scoped, is a token the floor and the spine standing outside them can no
+   longer see. The step belongs to the floor, so it lives with the floor. */
+@media (max-width: 900px) {
+  :root { --inset: 12px; }
+}
+
+@media (max-width: 720px) {
+  :root { --inset: 9px; }
+  .floor { padding: var(--inset) var(--inset) 0; }
+  .rail {
+    left: var(--inset); right: var(--inset); top: auto;
+    bottom: calc(var(--inset) + env(safe-area-inset-bottom));
+    width: auto; height: 60px;
+    flex-direction: row; justify-content: space-around;
+    border-radius: 18px; padding: 0 8px;
+  }
+  .railMark, .railDivider, .railSpacer { display: none; }
+  .railGroup { display: flex; gap: 2px; flex: 1; justify-content: space-around; }
+  .railUtil { display: none; }
+  .railTile[data-active]::after { right: auto; left: 50%; top: -12px; margin: 0 0 0 -3.5px; }
+  .railAdd {
+    display: grid; place-items: center;
+    width: var(--tap); height: var(--tap); border-radius: 14px;
+    background: var(--white); color: var(--ink-1);
+    margin: 0 2px 0 8px;
+  }
+  .railAdd svg { width: 20px; height: 20px; }
+  .railAvatar { margin: 0; }
+  .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
+
+  /* Notes' answer: the separate capsule stands down, its tiles are in the
+     dock, and the sheet takes the whole floor back. */
+  #deck[data-product="notes"] .rail { display: none; }
+  #deck[data-product="notes"] .sheet {
+    height: calc(100dvh - 68px - var(--inset) * 2 - env(safe-area-inset-bottom));
+  }
+  /* Timeline has no dock and no add verb: the capsule is the way out and
+     it carries only the suite. */
+  #deck[data-product="timeline"] .railAdd { display: none; }
+}

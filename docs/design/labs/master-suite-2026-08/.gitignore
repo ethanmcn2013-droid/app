@@ -1,0 +1,13 @@
+# The wrapped copies exist only so a local browser can open a file that is
+# page CONTENT. They are written by tools/wrap.mjs on every gate run and are
+# 1 MB each; master.html is the artefact and it is committed.
+_wrapped.html
+_gate-*.html
+
+# Working looks taken while building.
+_look*.png
+
+# The repointed copies of the three labs' own gates, and their scratch config.
+# tools/gates.mjs writes them fresh every run out of the labs themselves —
+# committing them would be committing a second copy of somebody else's gate.
+gates/
