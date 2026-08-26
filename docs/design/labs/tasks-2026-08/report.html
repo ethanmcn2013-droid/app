@@ -149,6 +149,85 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
 .scores span:last-child { font-size: 15px; font-weight: 600; color: var(--ink-1); }
 .delta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
 
+/* ── the executive summary ─────────────────────────────────────── */
+.exec {
+  margin: 0 0 8px;
+  border-top: 1px solid var(--ink-1);
+  padding: 56px 0 0;
+}
+.execLede {
+  margin: 20px 0 0; max-width: 46rem;
+  font-size: 19px; line-height: 1.55; color: var(--ink-1);
+}
+.execLede b { font-weight: 600; }
+.execGrid {
+  margin: 40px 0 0; display: grid; gap: 1px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  background: var(--line-soft); border: 1px solid var(--line-soft); border-radius: 12px;
+  overflow: hidden;
+}
+.execCell { background: var(--paper); padding: 20px 22px; }
+.execCell b {
+  display: block; font-size: 30px; font-weight: 600;
+  letter-spacing: -0.035em; font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.execCell span {
+  display: block; margin-top: 6px;
+  font-family: var(--font-mono); font-size: 10.5px; font-weight: 400;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.execCell em { display: block; margin-top: 10px; font-style: normal; font-size: 13px; color: var(--ink-2); }
+
+.finding {
+  margin: 40px 0 0; padding: 24px 28px; max-width: 46rem;
+  border-left: 2px solid var(--indigo); background: var(--indigo-wash);
+  border-radius: 0 10px 10px 0;
+}
+.finding h3 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.018em; }
+.finding p { margin: 12px 0 0; color: var(--ink-2); font-size: 15px; line-height: 1.6; }
+.finding p b { color: var(--ink-1); font-weight: 600; }
+
+.plan { margin: 32px 0 0; display: grid; gap: 12px; max-width: 48rem; counter-reset: step; }
+.step {
+  border: 1px solid var(--line-soft); border-radius: 12px;
+  background: var(--plate); padding: 22px 24px;
+  position: relative;
+}
+.step::before {
+  counter-increment: step; content: "Phase " counter(step);
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.step h3 { margin: 8px 0 0; font-size: 17px; font-weight: 600; letter-spacing: -0.018em; }
+.step p { margin: 10px 0 0; font-size: 14.5px; color: var(--ink-2); }
+.step ul { margin: 12px 0 0; padding-left: 18px; }
+.step li { margin: 6px 0 0; font-size: 14px; color: var(--ink-2); }
+.step li::marker { color: var(--ink-4); }
+.step[data-first] { border-color: var(--indigo-line); background: var(--indigo-wash); }
+.step[data-first]::before { color: var(--indigo); }
+
+.prompt {
+  margin: 24px 0 0; max-width: 48rem;
+  border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+}
+.promptHead {
+  padding: 12px 18px; background: var(--wash);
+  border-bottom: 1px solid var(--line-soft);
+  font-family: var(--font-mono); font-size: 10.5px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+.prompt pre {
+  margin: 0; padding: 20px 18px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 12.5px; line-height: 1.65;
+  color: var(--ink-1); white-space: pre-wrap; word-break: break-word;
+}
+.warn {
+  margin: 28px 0 0; max-width: 46rem; padding: 18px 22px;
+  border: 1px solid var(--line); border-radius: 10px;
+  font-size: 14px; color: var(--ink-2);
+}
+.warn b { color: var(--ink-1); font-weight: 600; }
+
 /* ── rounds ────────────────────────────────────────────────────── */
 .round { padding: 56px 0 0; }
 .roundHead { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-top: 1px solid var(--ink-1); padding-top: 24px; }
@@ -273,6 +352,91 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     <div class="facts" id="facts"></div>
   </header>
 
+  <section class="exec" id="summary">
+    <p class="kicker">Executive summary</p>
+    <h2 style="margin:10px 0 0">What this cost, what it bought, and where it stopped</h2>
+
+    <p class="execLede">
+      Nineteen rounds of an independent panel, <b>639 findings raised and 421
+      fixed</b>, every one of them put to a fresh agent whose job was to refute
+      it. The work is being stopped at roughly <b>8.4</b> against a 9.5 gate.
+      That number needs its caveat stated plainly, and the reason it is not
+      higher is worth more than the number itself.
+    </p>
+    <p class="execLede" style="font-size:16px;color:var(--ink-2);margin-top:16px">
+      The final round returned a floor of <b>7.3</b>, and that figure is real but
+      not representative: it was set by a single seat, on a defect introduced by
+      the previous round's own remediation and fixed immediately after. The other
+      six seats returned 8.2, 8.3, 8.3, 8.4, 8.4 and 8.6, and the round before it
+      ran 8.2 to 8.7 across all seven. <b>8.4 is the settled reading of the
+      artifact; 7.3 is the reading of a mistake.</b> Both are in the record
+      below, unedited.
+    </p>
+
+    <div class="execGrid">
+      <div class="execCell">
+        <b>8.4</b><span>where it stopped</span>
+        <em>The settled reading. Round 18 ran 8.2 to 8.7 across all seven seats; the gate was 9.5, unanimous, lowest seat wins.</em>
+      </div>
+      <div class="execCell">
+        <b>8.6</b><span>the high-water mark</span>
+        <em>Round 9. The floor never regained it across ten further rounds.</em>
+      </div>
+      <div class="execCell">
+        <b>360</b><span>assertions in the gate</span>
+        <em>From 186. Every one added because a seat found the defect it guards.</em>
+      </div>
+      <div class="execCell">
+        <b>34%</b><span>of findings refuted</span>
+        <em>218 of 639, flat across all nineteen rounds. The panel never softened.</em>
+      </div>
+    </div>
+
+    <div class="finding">
+      <h3>The finding that matters</h3>
+      <p>
+        The work was never the constraint. <b>The loop was.</b> From round 9
+        onward the panel stopped finding the same defects getting smaller and
+        started finding new defects in whatever had been built since the last
+        panel. Across rounds 12 to 15 that accounted for <b>53%, 39%, 54% and
+        68%</b> of each round's confirmed defect cost — rising, not falling.
+      </p>
+      <p>
+        Freezing the surface stopped the decline and halved the cost per round,
+        but it did not produce a climb: four frozen rounds read 8.3, 8.2, 8.2,
+        then 7.3. What moved the floor in the last two rounds was not the
+        artifact at all — it was <b>defects introduced by the remediation
+        itself</b>, twice in a row, each caught only by the next full round.
+        That is the point at which the loop stopped grading the product and
+        started grading its own repairs, and it is the reason this stops here
+        rather than at round twenty.
+      </p>
+      <p>
+        That is the real ceiling. A 9.5 unanimous bar is an AND across seven
+        expert lenses where the score is the lowest seat: it requires a state in
+        which nobody, across seven different ways of looking, can find anything
+        worth more than a few tenths — on a sweep that reliably produces 25 to
+        35 findings. No round of nineteen produced fewer than 16 confirmed
+        defects. <b>The bar as written is reachable only by an artifact that has
+        stopped changing</b> — and each attempt to close the last point cost a
+        full round to discover an error the author could not see.
+      </p>
+    </div>
+
+    <div class="warn">
+      <b>What was bought.</b> The score is the least valuable thing this
+      produced. The durable assets are a 360-assertion behaviour gate that
+      drives the real board rather than reading it, an audit that reads rendered
+      pixels rather than declared values, a preflight that refuses to start a
+      round when the frames are stale or the app has drifted from its master,
+      and a written record of every finding and every refutation. Three defects
+      found here had been live and invisible for more than ten rounds — including
+      a drag threshold that silently swallowed the board's primary gesture on
+      ordinary trackpad hardware, invisible to 232 assertions because every one
+      of them clicked with a teleport.
+    </div>
+  </section>
+
   <section class="section" id="scores">
     <div class="sectionHead">
       <p class="kicker">01 · the gate</p>
@@ -333,6 +497,166 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
       </p>
     </div>
     <div class="variants" id="variantRow"></div>
+  </section>
+
+  <section class="section" id="shipping">
+    <div class="sectionHead">
+      <p class="kicker">06 &middot; shipping it</p>
+      <h2>Getting three elevated products into production</h2>
+      <p>
+        Tasks, Notes and Timeline are being elevated in three separate sessions.
+        The question is how they reach production. This is the recommendation and
+        the reasoning, written by the session that did Tasks and made the mistakes.
+      </p>
+    </div>
+
+    <div class="finding">
+      <h3>Do not give all three to one session</h3>
+      <p>
+        It is the obvious answer and it is the wrong one. This session's own
+        record is the argument: on the two occasions a large change was landed
+        in a single pass, <b>the change introduced a defect its author could not
+        see</b>, and each one cost a full review round to find. One agent
+        integrating three products at once is that failure mode at three times
+        the surface area, with no panel between the mistake and production.
+      </p>
+      <p>
+        Equally, do not simply run three merges one after another. The three
+        products <b>share their chrome</b> — the spine, the dock, the floor, the
+        motion contract and the token layer are one system across all of them.
+        Three sessions each merging their own version of a shared surface
+        produces three incompatible answers, and whichever lands last silently
+        overwrites the other two.
+      </p>
+    </div>
+
+    <div class="plan">
+      <div class="step" data-first>
+        <h3>Reconcile the shared chrome, alone, before any product ships</h3>
+        <p>
+          One short session whose only job is the surface all three touch: the
+          spine, the dock, the ink floor, the motion tokens and the radius and
+          shadow ladders. It ships nothing else. This is the only part that
+          genuinely cannot be parallelised, and it is small.
+        </p>
+        <ul>
+          <li>Read all three masters, list every place they disagree about a shared object, and resolve each disagreement once.</li>
+          <li>Rewrite <code>check-chrome-contract.mjs</code> and <code>board-pass3-contract.test.mjs</code> to the settled answer — both are knowingly unmet today and both need one coherent rewrite, not three.</li>
+          <li>Merge that alone. Nothing else moves until it is on main.</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <h3>Port one product, in verified increments, and prove the pipeline</h3>
+        <p>
+          Tasks first, because it has the gate. Not as one drop: the port is a
+          translation, not a copy. The lab master is a single file with its own
+          render loop; the app is React over server state. <b>The CSS transfers
+          mechanically and the behaviour does not</b> — that is exactly how this
+          project shipped a stacked-header stylesheet with nothing to stamp it,
+          and left the defect it was meant to fix live in production.
+        </p>
+        <ul>
+          <li>Run <code>extract-floor-css.mjs</code> for the stylesheet, then port each behaviour by hand and assert it.</li>
+          <li>Put <code>extract-floor-css.mjs --check</code> in CI. Master-to-app drift reached 209 lines here, silently, because re-running it was a thing somebody had to remember.</li>
+          <li>Make <code>floor-prod-check.mjs</code> a merge gate, so the app is held to the assertions the lab is held to.</li>
+        </ul>
+      </div>
+
+      <div class="step">
+        <h3>Port the other two against a pipeline that is already proven</h3>
+        <p>
+          Now they can run in parallel or in sequence, and it stops mattering
+          which: the contested surface is decided, the contracts are rewritten,
+          and the drift check is in CI. Each product session integrates only its
+          own product.
+        </p>
+      </div>
+
+      <div class="step">
+        <h3>Elevate the shipped app, not the lab</h3>
+        <p>
+          Once a product is in production its master has done its job. Run the
+          panel against the running app from then on, or the lab and the app
+          drift apart again — which is precisely what happened here between
+          rounds 11 and 12, and it cost a round to discover.
+        </p>
+      </div>
+    </div>
+
+    <div class="sectionHead" style="padding-top:56px">
+      <p class="kicker">The prompt</p>
+      <h2>What to give the chrome session</h2>
+      <p>
+        Start a session in the worktree, in plan mode, and give it this. It is
+        deliberately narrow: it forbids product work, because the whole point of
+        the phase is that the shared surface is settled before anything else
+        moves.
+      </p>
+    </div>
+
+    <div class="prompt">
+      <div class="promptHead">Phase 1 &middot; the chrome reconciliation session</div>
+      <pre>Reconcile the shared suite chrome across the three elevated design masters,
+and ship nothing else.
+
+Three products have been elevated in parallel against the Studio Floor
+direction: Tasks, Notes and Timeline. Each has a lab master, a scored panel
+record, and its own behaviour gate. They share one chrome: the floating spine
+that carries the suite, the dock at the foot of the sheet, the ink floor, the
+motion contract, and the radius, shadow and tracking ladders.
+
+Read before touching anything:
+  docs/design/tasks-direction-lock-2026-08.md   the locked direction and config
+  docs/design/labs/*/floor.html                 all three masters
+  docs/design/labs/*/panel.json                 all three records
+  docs/DELIGHT_CATALOG.md                       what is allowed to move, and why
+  scripts/design/interaction-check.mjs          the behaviour gate Tasks earned
+
+YOUR SCOPE IS THE SHARED CHROME AND NOTHING ELSE.
+Do not port a product. Do not touch a board, a note list or a timeline. If a
+change would improve one product and not the other two, it is out of scope and
+belongs to that product's own session.
+
+What to produce:
+1. A written list of every place the three masters disagree about a shared
+   object, with the disagreement stated in one line each.
+2. One resolution per disagreement, argued from the direction lock and the
+   panel records rather than from preference. Where two masters were panelled
+   to different conclusions on the same object, say so and pick, giving the
+   reason.
+3. The reconciled chrome, implemented once.
+4. check-chrome-contract.mjs and board-pass3-contract.test.mjs rewritten to the
+   settled answer. Both are knowingly unmet today and the direction lock records
+   that they need rewriting at implementation. They get one rewrite, not three.
+5. Assertions for every resolution, in the style of the existing gate: drive the
+   real thing with real pointer travel, never locator.click(), and state the
+   class-level rule each assertion protects rather than the instance.
+
+Hard-won rules from the Tasks elevation, which cost nineteen rounds to learn:
+- Fix the rule, not the instance. A defect class fixed on three selectors came
+  back on a fourth; a guard fixed on one control came back on its sibling.
+- No attribute a measure pass writes may participate in the layout that same
+  pass measures.
+- The CSS transfers mechanically and the behaviour does not. A stylesheet ported
+  without its behaviour ships dead rules and leaves the defect live.
+- Land it in small verified increments. Every large single-pass change in that
+  engagement introduced a defect its author could not see.
+
+Do not merge anything else while this is open, and do not start a product port
+until this is on main.</pre>
+    </div>
+
+    <div class="warn">
+      <b>One thing to decide before any of it.</b> The 9.5 gate was written
+      against an artifact at rest and has been applied to a growing product.
+      Decide now whether production ships at the bar the panel actually
+      certified &mdash; Tasks at 8.4, with the resting board scoring
+      consistently higher than the whole &mdash; or whether the gate is
+      re-scoped to the resting board and the rest reviewed but not gating. It is
+      a founder decision, it takes a sentence, and leaving it open is what lets a
+      shipped product be judged against a bar nobody agreed applied to it.
+    </div>
   </section>
 
   <section class="section" id="links">
@@ -428,17 +752,23 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     /* One lane per round, stacked, so an earlier score sits under the current
        one rather than hidden behind it. */
     const lane = Math.max(3, Math.floor(18 / rounds.length) - 2);
+    /* From round 16 a converge round runs five seats, not seven, so a seat can
+       genuinely be absent from a round. An absent seat draws no bar and prints
+       no figure rather than inventing one. */
+    const seen = rounds.filter(function (r) { return typeof r.scores[seat] === "number"; });
     const bars = rounds.map(function (r, i) {
-      const isLast = i === rounds.length - 1;
+      if (typeof r.scores[seat] !== "number") return "";
+      const isLast = r === seen[seen.length - 1];
       return '<i style="left:0;width:' + (r.scores[seat] * 10) + "%;top:" + (2 + i * (lane + 2)) +
         "px;height:" + lane + 'px"' + (isLast ? " data-latest" : "") + "></i>";
     }).join("");
-    const marks = rounds.map(function (r, i) {
-      const isLast = i === rounds.length - 1;
+    const marks = seen.map(function (r, i) {
+      const isLast = i === seen.length - 1;
       return "<span" + (isLast ? ' style="color:var(--ink-1)"' : "") + ">" + r.scores[seat].toFixed(1) + "</span>";
     }).join("");
-    const first = rounds[0].scores[seat];
-    const last = latest.scores[seat];
+    if (!seen.length) return;
+    const first = seen[0].scores[seat];
+    const last = seen[seen.length - 1].scores[seat];
     const delta = last - first;
     row.innerHTML =
       '<span class="seat">' + seat + "</span>" +
