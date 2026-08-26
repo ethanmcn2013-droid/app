@@ -1,0 +1,844 @@
+<title>Lately: The Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+:root {
+  --paper: #ffffff;
+  --paper-soft: #fafafa;
+  --paper-deep: #f4f4f5;
+  --ink: #111111;
+  --ink-soft: #3f3f46;
+  --ink-faint: #71717a;
+  --ink-ghost: #d4d4d8;
+  --accent: #4f46e5;
+  --accent-tint: #eef2ff;
+  --hairline: rgba(17, 17, 17, 0.10);
+  --hairline-soft: rgba(17, 17, 17, 0.06);
+  --st-attention: #d97706;
+  --st-acute: #ef4444;
+  --st-good: #059669;
+  --shell: #ececeb;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+    --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+    --accent: #6366f1; --accent-tint: rgba(79, 70, 229, 0.16);
+    --hairline: rgba(255,255,255,0.10); --hairline-soft: rgba(255,255,255,0.06);
+    --st-attention: #d97706; --st-acute: #ef4444; --st-good: #059669;
+    --shell: #050506;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+  --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+  --accent: #6366f1; --accent-tint: rgba(79, 70, 229, 0.16);
+  --hairline: rgba(255,255,255,0.10); --hairline-soft: rgba(255,255,255,0.06);
+  --st-attention: #d97706; --st-acute: #ef4444; --st-good: #059669;
+  --shell: #050506;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 15.5px;
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+.mono, code { font-family: "Geist Mono", ui-monospace, "SF Mono", monospace; }
+
+.wrap { max-width: 1140px; margin: 0 auto; padding: 0 28px; }
+.col { max-width: 720px; }
+
+/* ── Masthead ─────────────────────────────────────────────────── */
+.mast {
+  border-bottom: 1px solid var(--ink);
+  padding: 58px 0 30px;
+  margin-bottom: 0;
+}
+.eyebrow {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0;
+}
+h1 {
+  margin: 18px 0 0;
+  font-size: clamp(38px, 5.4vw, 60px);
+  line-height: 1.02;
+  letter-spacing: -0.038em;
+  font-weight: 500;
+  max-width: 17ch;
+  text-wrap: balance;
+}
+.dek {
+  margin: 22px 0 0;
+  font-size: 18px;
+  line-height: 1.58;
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+.meta {
+  margin: 28px 0 0;
+  display: flex; flex-wrap: wrap; gap: 6px 30px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.05em; color: var(--ink-faint);
+}
+.meta b { color: var(--ink-soft); font-weight: 400; }
+
+/* ── Sections ─────────────────────────────────────────────────── */
+section { padding: 52px 0; border-bottom: 1px solid var(--hairline-soft); }
+section:last-of-type { border-bottom: 0; }
+.shead { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+.snum {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.1em; color: var(--accent);
+  flex: 0 0 auto; padding-top: 3px;
+}
+h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 31px);
+  line-height: 1.16;
+  letter-spacing: -0.028em;
+  font-weight: 500;
+  max-width: 22ch;
+  text-wrap: balance;
+}
+h3 {
+  margin: 34px 0 0;
+  font-size: 17px; font-weight: 600; letter-spacing: -0.012em;
+}
+h4 {
+  margin: 26px 0 0;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.13em; text-transform: uppercase;
+  font-weight: 400; color: var(--ink-faint);
+}
+p { margin: 14px 0 0; max-width: 68ch; }
+p.lead { font-size: 17.5px; color: var(--ink-soft); max-width: 62ch; }
+ul, ol { margin: 14px 0 0; padding-left: 20px; max-width: 68ch; }
+li { margin-top: 7px; }
+li::marker { color: var(--ink-ghost); }
+strong { font-weight: 600; }
+code {
+  font-size: 0.87em;
+  background: var(--paper-deep);
+  padding: 1.5px 5px;
+  border-radius: 4px;
+  color: var(--ink-soft);
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+/* ── The claim device: a statement with its receipt ───────────── */
+.claim {
+  margin: 26px 0 0;
+  padding: 20px 22px;
+  background: var(--paper-soft);
+  border: 1px solid var(--hairline-soft);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 9px 9px 0;
+}
+.claim p { margin: 0; font-size: 16px; }
+.claim p + p { margin-top: 10px; font-size: 13.5px; color: var(--ink-faint); }
+.claim.warn { border-left-color: var(--st-attention); }
+.claim.acute { border-left-color: var(--st-acute); }
+
+/* ── Tables ───────────────────────────────────────────────────── */
+.tw { overflow-x: auto; margin: 26px 0 0; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+th, td {
+  text-align: left; vertical-align: top;
+  padding: 11px 16px 11px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+th {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  font-weight: 400; color: var(--ink-faint);
+  border-bottom: 1px solid var(--hairline);
+  white-space: nowrap;
+}
+td.k { font-family: "Geist Mono", ui-monospace, monospace; font-size: 12px; color: var(--ink); white-space: nowrap; }
+td.src { font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; color: var(--ink-faint); }
+tr:last-child td { border-bottom: 0; }
+
+/* Verdict chips — icon + word, never colour alone. */
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.09em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.chip::before { content: ""; width: 6px; height: 6px; flex: 0 0 auto; background: currentColor; border-radius: 50%; }
+.chip.now { color: var(--st-good); }
+.chip.fix { color: var(--st-attention); }
+.chip.fix::before { border-radius: 1px; }
+.chip.infra { color: var(--st-acute); }
+.chip.infra::before { border-radius: 1px; transform: rotate(45deg); }
+.chip.cut { color: var(--ink-faint); }
+.chip.cut::before { border-radius: 0; height: 1px; width: 9px; }
+.chip.animate { color: var(--accent); }
+.chip.restrained { color: var(--ink-faint); }
+.chip.restrained::before { background: none; box-shadow: inset 0 0 0 1px currentColor; }
+
+/* ── Validator output ─────────────────────────────────────────── */
+pre {
+  margin: 20px 0 0;
+  padding: 18px 20px;
+  background: var(--ink);
+  color: #e4e4e7;
+  border-radius: 9px;
+  overflow-x: auto;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.72;
+}
+pre .pass { color: #6ee7b7; }
+pre .fail { color: #fca5a5; }
+pre .warn { color: #fcd34d; }
+pre .dim { color: #a1a1aa; }
+
+/* ── Swatch row ───────────────────────────────────────────────── */
+.swatches { display: flex; flex-wrap: wrap; gap: 12px; margin: 22px 0 0; }
+.sw { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--ink-soft); }
+.sw i {
+  width: 26px; height: 26px; border-radius: 6px; display: block;
+  box-shadow: inset 0 0 0 1px var(--hairline);
+}
+.sw code { background: none; padding: 0; font-size: 11px; color: var(--ink-faint); }
+
+/* ── Movement diagram ─────────────────────────────────────────── */
+.moves { margin: 30px 0 0; display: grid; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 10px; overflow: hidden; }
+@media (min-width: 720px) { .moves { grid-template-columns: repeat(3, 1fr); } }
+.move { background: var(--paper); padding: 22px 20px; }
+.move .n {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+}
+.move h5 { margin: 10px 0 0; font-size: 16px; font-weight: 500; letter-spacing: -0.014em; }
+.move p { margin: 8px 0 0; font-size: 13px; color: var(--ink-faint); max-width: none; }
+
+/* ── Tense spine ──────────────────────────────────────────────── */
+.tense { margin: 26px 0 0; display: grid; gap: 10px; }
+.tense-row {
+  display: grid; grid-template-columns: 108px 1fr; gap: 18px;
+  padding: 13px 0; border-top: 1px solid var(--hairline-soft);
+  align-items: baseline;
+}
+.tense-row:first-child { border-top: 1px solid var(--hairline); }
+.tense-row .t {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint);
+}
+.tense-row.here .t { color: var(--accent); }
+.tense-row b { font-weight: 500; }
+.tense-row span.q { color: var(--ink-faint); }
+
+.cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 24px;
+  padding: 11px 17px;
+  background: var(--ink); color: var(--paper);
+  border-radius: 9px; text-decoration: none;
+  font-size: 14px; font-weight: 500;
+}
+.cta:hover { background: var(--ink-soft); }
+
+footer { padding: 46px 0 76px; color: var(--ink-faint); font-size: 13px; }
+footer p { max-width: 68ch; }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Signal Studio &middot; Home &middot; design plan</p>
+  <h1>Home has a present tense and a future tense. This is the past one.</h1>
+  <p class="dek">A plan for the third thing on Home&rsquo;s spine — the tab an owner opens
+    to find out whether they are getting on top of their work, or just busy. It is
+    built on seven metrics that are real today, and it names the two that are not.</p>
+  <div class="meta">
+    <span><b>Branch</b> design/home-analytics-2026-08</span>
+    <span><b>Off</b> design/timeline-redesign-2026-08 @ fb9d3cbe</span>
+    <span><b>Date</b> 26 August 2026</span>
+    <span><b>Status</b> for review — no <code style="background:none;padding:0">src/</code> touched</span>
+  </div>
+</header>
+
+<!-- ═══ 0 · The amendment ═══════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">00</span><h2>Before anything else: the audit is out of date</h2></div>
+  <p class="lead">The brief is built on <code>ANALYTICS_TRUTH.md</code>, and instructs me to verify
+    its findings rather than take them on trust. I did. Most of them have been fixed.</p>
+  <p>The audit was taken against commit <code>3682bf7</code>. The newest checkout is at
+    <code>fb9d3cbe</code>, and two commits sit between them — <code>e108b835</code>
+    (&ldquo;Wave 4: the Analytics truth foundation&rdquo;, 13 Aug) and <code>6e4024cd</code>
+    (&ldquo;T146: the app starts remembering how plans move&rdquo;, 17 Aug). Between them they
+    close six of the ten release-blocking defects and ship writers for a seventh.</p>
+  <p>This matters more than any layout decision in this document. The last attempt stopped
+    because the data was not there. Most of it now is.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Finding</th><th>The audit said</th><th>At <code style="background:none">fb9d3cbe</code></th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td class="k">R1</td><td>Three <code>projectId</code> spaces joined as if identical</td>
+        <td><span class="chip now">Fixed</span> Branded types per space; the false join removed</td>
+        <td class="src">contracts.ts · service.ts:560</td></tr>
+      <tr><td class="k">R2</td><td>Blocked work always 0 — reads a lane retired by <code>0024</code></td>
+        <td><span class="chip now">Fixed</span> Resolves through <code>effectiveColumnKey</code></td>
+        <td class="src">providers/tasks.ts:155</td></tr>
+      <tr><td class="k">R3</td><td>Done read with <code>isTaskDone(row, null)</code></td>
+        <td><span class="chip now">Fixed</span> Reads the workspace&rsquo;s real ColumnConfig; an unreadable one is disclosed</td>
+        <td class="src">e108b835</td></tr>
+      <tr><td class="k">R4</td><td>Two of thirteen metrics can never be <code>available</code></td>
+        <td><span class="chip fix">Still two</span> — but both now have shipped writers behind default-off flags</td>
+        <td class="src">metric-registry.ts:186–215</td></tr>
+      <tr><td class="k">R6</td><td>Dead <code>/app/trends</code> links reach the evidence drawer</td>
+        <td><span class="chip now">Fixed</span> <code>trendHref()</code> deleted; a test pins that it is never minted</td>
+        <td class="src">rules.ts:134 · rules-safety.test.ts:192</td></tr>
+      <tr><td class="k">R7</td><td>No snapshot writer is ever called; no cron exists</td>
+        <td><span class="chip fix">Cron exists</span> 02:30 UTC nightly, behind <code>SIGNAL_ANALYTICS_SNAPSHOTS_ENABLED</code>, default off</td>
+        <td class="src">api/cron/analytics-snapshots/route.ts:94 · vercel.json</td></tr>
+      <tr><td class="k">R10</td><td>Unordered 2,000-row read</td>
+        <td><span class="chip now">Fixed</span> Ordered by id; truncation disclosed as a deterministic prefix</td>
+        <td class="src">metric-registry.ts:57</td></tr>
+      <tr><td class="k">—</td><td>&ldquo;Zero tests import a provider. All 47 cases run over fixtures.&rdquo;</td>
+        <td><span class="chip now">No longer true</span> A live provider test runs against a real database</td>
+        <td class="src">providers/tasks-provider.live.test.ts</td></tr>
+      <tr><td class="k">—</td><td>&ldquo;No trend or historical comparison is producible.&rdquo;</td>
+        <td><span class="chip fix">Over-broad</span> True of state trends. False of event trends — see §01</td>
+        <td class="src">trend-series.ts:13–16, 55</td></tr>
+      <tr><td class="k">—</td><td>A dedicated <code>SIGNAL_HOME_ANALYTICS_ENABLED</code> is required</td>
+        <td><span class="chip now">Already exists</span> Written, documented, default off</td>
+        <td class="src">feature-flag.ts:45</td></tr>
+      <tr><td class="k">SEC</td><td>Preview deployments serve synthetic data with no authentication</td>
+        <td><span class="chip infra">Still open</span> Unchanged at HEAD. This plan closes it — see §08</td>
+        <td class="src">policy.ts:53–63 · access-mode.ts:66</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="claim warn">
+    <p>Two things the audit got exactly right, and this plan keeps: <strong>Note bodies never
+      enter the analytics domain</strong>, enforced at contract level, and <strong>a missing
+      source degrades to <code>unavailable</code>, never to a fabricated zero</strong>. Both
+      are load-bearing for everything below.</p>
+    <p>One more thing the audit was right about and I could not verify: it opens by amending a
+      research report that does not exist in the workspace. I did not go looking. The registry
+      in the code is a better source than either document, because it fails the build when it drifts.</p>
+  </div>
+</section>
+
+<!-- ═══ 1 · The trend finding ═══════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">01</span><h2>The finding that unlocks the view</h2></div>
+  <p class="lead">&ldquo;No trend is producible&rdquo; conflated two different things. Separating
+    them is what lets this view have a chart at all.</p>
+
+  <h4>A state trend needs a snapshot</h4>
+  <p>&ldquo;How much was open last Tuesday&rdquo; is a question about a moment that has passed.
+    Nobody wrote the answer down at the time, and it cannot be reconstructed. It needs the
+    snapshot writer, which exists but has never run. <strong>This plan refuses every state
+    trend</strong> until snapshots have accrued.</p>
+
+  <h4>An event trend needs only the event&rsquo;s own timestamp</h4>
+  <p>&ldquo;How much did I finish each week&rdquo; is a question about events that each carry
+    their own date. <code>tasks.completed_at</code> is the durable completion moment
+    (migration <code>0025</code>, <code>providers/tasks.ts:158</code>). And the machinery to
+    bucket it already exists and is already careful:</p>
+
+  <div class="claim">
+    <p><code>buildTrendPoints()</code> declares <code>work_completed</code> a trend metric,
+      buckets it at <strong>seven days when the period is 93 days or under</strong>, and
+      <strong>skips any bucket not wholly inside the provider&rsquo;s covered window</strong>
+      rather than zero-filling it.</p>
+    <p>trend-series.ts:13–16, 55, 62 — &ldquo;A partial bucket could contain records but cannot
+      safely represent zeroes for the uncovered part of its interval.&rdquo;</p>
+  </div>
+
+  <p>An 84-day period is twelve weekly buckets. That is the chart in §04, and it needs no new
+    infrastructure, no cron, and no flag beyond the view&rsquo;s own. The honesty is not
+    something the design adds — it is already in the function.</p>
+</section>
+
+<!-- ═══ 2 · The question ════════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">02</span><h2>The question it exists for</h2></div>
+
+  <div class="claim">
+    <p style="font-size:19px;letter-spacing:-0.015em"><strong>&ldquo;Am I actually getting on
+      top of this, or am I just busy?&rdquo;</strong></p>
+    <p>The two behind it: <em>What has quietly slipped while I wasn&rsquo;t looking?</em> and
+      <em>Is this stretch better or worse than my normal?</em></p>
+  </div>
+
+  <p>Home already has two tenses and this is the third. That is the whole argument for where
+    it sits and why it does not compete with what is already there:</p>
+
+  <div class="tense">
+    <div class="tense-row"><span class="t">Present</span>
+      <span><b>Today&rsquo;s Signal</b> &mdash; <span class="q">what needs me right now?</span> Three rows, ranked, at <code>/app/home</code>.</span></div>
+    <div class="tense-row"><span class="t">Today</span>
+      <span><b>Full briefing</b> &mdash; <span class="q">what crossed a line today?</span> The read of record, at <code>/app/home/briefing</code>.</span></div>
+    <div class="tense-row here"><span class="t">Past</span>
+      <span><b>Lately</b> &mdash; <span class="q">how have I been doing, and what has gone quiet?</span> At <code>/app/home/analytics</code>.</span></div>
+  </div>
+
+  <p>Nothing in Lately is urgent. That is deliberate and it is the whole reason it can be a
+    separate tab rather than another module on the front door: an owner opens Today&rsquo;s
+    Signal every morning under time pressure, and opens Lately on a Friday afternoon with a
+    coffee. Two different readers of the same data, and the composition serves the second one.</p>
+
+  <h3>The name</h3>
+  <p>The route is <code>/app/home/analytics</code> and the internal name stays <em>Analytics</em>.
+    The tab says <strong>Lately</strong>.</p>
+  <p>A venue owner does not say &ldquo;analytics&rdquo;, and the suite&rsquo;s audience is the
+    80% not in tech (<code>docs/FIRST_CONTACT_TEST.md</code>). The naming contract governs
+    <em>product</em> names, and Home is explicitly not marketed as a product
+    (<code>SUITE_URL_AND_NAMING_CONTRACT.md:18</code>), so a plain-English tab label inside it
+    breaches nothing. <code>analytics.signalstudio.ie</code> already redirects to a marketing
+    page, which is further evidence the word is not free as a product noun.</p>
+  <p><strong>This is the one decision in the plan that needs the founder rather than the
+    evidence.</strong> If &ldquo;Lately&rdquo; is wrong, the composition is unaffected — only
+    the word changes.</p>
+</section>
+
+<!-- ═══ 3 · The metrics ═════════════════════════════════════════ -->
+<section>
+  <div class="shead"><span class="snum">03</span><h2>Every metric, with its honesty rating</h2></div>
+  <p class="lead col">Thirteen metrics exist in the registry. Eleven can reach <code>available</code>
+    against live providers. This view uses seven of them, and says out loud why it left the
+    other six alone.</p>
+  <p class="col">The ratings are not my judgement. They are read from
+    <code>metric-registry.ts</code>, which is a module rather than a document precisely so
+    that a metric whose stated capability drifts from its real one fails the build
+    (<code>metric-registry.test.ts</code>).</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>Metric</th><th>Honesty</th><th>In this view</th><th>What it actually says</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td class="k">work_completed</td><td><span class="chip now">Real now</span></td><td>Hero &amp; chart</td>
+        <td>Tasks that reached a done-meaning column, at their completion instant. Observed.</td><td class="src">registry:66</td></tr>
+      <tr><td class="k">open_work</td><td><span class="chip now">Real now</span></td><td>The denominator</td>
+        <td>Not in a done column at the moment of reading. Point in time, no history needed.</td><td class="src">registry:81</td></tr>
+      <tr><td class="k">open_work_age</td><td><span class="chip now">Real now</span></td><td>The ages strip</td>
+        <td>Median and oldest age of open work, from creation.</td><td class="src">registry:106</td></tr>
+      <tr><td class="k">stalled_work</td><td><span class="chip now">Real now</span></td><td>&ldquo;Haven&rsquo;t moved&rdquo;</td>
+        <td>Open work with no meaningful activity past a threshold. Describes the record, never a person.</td><td class="src">registry:120</td></tr>
+      <tr><td class="k">open_overdue_work</td><td><span class="chip now">Real now</span></td><td>&ldquo;Past the day&rdquo;</td>
+        <td>Open work past its due date. Undated work is excluded and cannot be overdue.</td><td class="src">registry:92</td></tr>
+      <tr><td class="k">unowned_work</td><td><span class="chip now">Real now</span></td><td>&ldquo;Nobody&rsquo;s name&rdquo;</td>
+        <td>Open work with no assignee recorded.</td><td class="src">registry:151</td></tr>
+      <tr><td class="k">blocked_work</td><td><span class="chip now">Real now</span></td><td>&ldquo;Waiting on&rdquo;</td>
+        <td>Explicit (Waiting column) and inferred (unresolved dependency), reported separately, never merged. <strong>Fixed by R2</strong> — was always 0.</td><td class="src">registry:136</td></tr>
+      <tr><td class="k">completion_pace_change</td><td><span class="chip fix">Real, but silent</span></td><td><span class="chip cut">Cut</span></td>
+        <td>Reachable, but returns <code>insufficient_history</code> until three prior periods exist. The chart makes the comparison visible instead — see §04.</td><td class="src">registry:163</td></tr>
+      <tr><td class="k">workload_distribution</td><td><span class="chip now">Real now</span></td><td><span class="chip cut">Cut</span></td>
+        <td>Counts assignments, not effort or capacity. At a three-person venue it is noise, and it is one bad reading away from being a productivity score.</td><td class="src">registry:238</td></tr>
+      <tr><td class="k">follow_up_completion</td><td><span class="chip now">Real now</span></td><td><span class="chip cut">Cut</span></td>
+        <td>Viewer-scoped: two members of one workspace legitimately see different numbers from the same query. A shared reading cannot carry a per-reader total without explaining itself at length.</td><td class="src">registry:220</td></tr>
+      <tr><td class="k">cross_product_milestone_risk</td><td><span class="chip fix">Real, but partial</span></td><td><span class="chip cut">Cut</span></td>
+        <td>One-legged — it can see connected tasks and never connected decisions, and resolves <code>partial</code> because of it. Today&rsquo;s Signal already answers &ldquo;what threatens a date&rdquo; better.</td><td class="src">registry:252</td></tr>
+      <tr><td class="k">milestone_movement</td><td><span class="chip infra">Needs infrastructure</span></td><td>Named as a refusal</td>
+        <td>The date recorder shipped 17 Aug behind <code>SIGNAL_MILESTONE_DATE_HISTORY_ENABLED</code>, default off. <strong>History accrues forward only</strong> — movement before enablement is permanently unrecorded.</td><td class="src">registry:186</td></tr>
+      <tr><td class="k">open_decisions</td><td><span class="chip infra">Needs infrastructure</span></td><td>Named as a refusal</td>
+        <td>Notes declares <code>follow_up_read</code> and <code>cross_product_links</code> only. There is no structured decision record to read. Making it reachable is a Notes-lane change, not an analytics one.</td><td class="src">registry:205</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="claim col">
+    <p>Nothing on the screen is sourced from anywhere but this table. There is no thirteenth
+      number invented for the composition, and no metric shown that the registry does not back.</p>
+  </div>
+</section>
+
+<!-- ═══ 4 · The composition ═════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">04</span><h2>The composition, and why that order</h2></div>
+  <p class="lead">Three movements. The eye hits a very large number first, and that is the argument.</p>
+
+  <div class="moves">
+    <div class="move">
+      <span class="n">Movement one</span>
+      <h5>What you did</h5>
+      <p>The hero numeral and the twelve-week chart. Answers the question the tab exists for,
+        before the reader has scrolled.</p>
+    </div>
+    <div class="move">
+      <span class="n">Movement two</span>
+      <h5>What&rsquo;s quietly slipping</h5>
+      <p>Four counts and the ages strip. The thing Today&rsquo;s Signal structurally cannot show.</p>
+    </div>
+    <div class="move">
+      <span class="n">Movement three</span>
+      <h5>What this can&rsquo;t tell you</h5>
+      <p>The refusals, at full section weight. Not a footnote and not an apology.</p>
+    </div>
+  </div>
+
+  <h3>Why &ldquo;what you did&rdquo; comes first</h3>
+  <p>Every existing surface in Signal Studio is a demand. Tasks shows what is undone. Timeline
+    shows what is coming. Today&rsquo;s Signal shows what needs you. <strong>Nothing in the
+    product has ever told an owner they did well</strong>, and an owner who has just cleared
+    their best four weeks since spring deserves to be told so before being handed a list of
+    problems.</p>
+  <p>It is also the honest order. The completions count is the most trustworthy number on the
+    page — observed, no history requirement, every one of it openable. Leading with the
+    strongest evidence and descending to the weakest is the shape of a good report.</p>
+
+  <h3>Why movement two earns the view&rsquo;s existence</h3>
+  <p>Today&rsquo;s Signal ranks by what crossed a line today. Work that is quietly slipping
+    crosses no line — it just sits. A job untouched for 41 days generates no event, has no due
+    date passing, and triggers no rule. <strong>It is invisible to the front door by
+    construction.</strong> That gap is the reason this tab is not a duplicate of the briefing.</p>
+
+  <h3>How it sits beside the other two</h3>
+  <p>A tab strip under the Home header, three items, <code>aria-current="page"</code> on the
+    active one, real links so it works without JavaScript. Today&rsquo;s Signal stays the
+    default and the dominant module; nothing about <code>/app/home</code> changes except that a
+    third tab appears. Lately gets no rail icon, no wordmark, no marketing page — it is a view,
+    not a product.</p>
+
+  <a class="cta" href="https://claude.ai/code/artifact/9973453b-6d1b-4f10-88fb-c626e1e286e6">
+    Drive the prototype <span aria-hidden="true">&rarr;</span></a>
+</section>
+
+<!-- ═══ 5 · The charts ══════════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">05</span><h2>The charts, and the colour rule the suite inherits</h2></div>
+  <p class="lead">Two charts ship. Both were chosen with the <code>dataviz</code> form heuristic
+    and both had to beat the sentence that would otherwise have replaced them.</p>
+
+  <h3>Chart one &mdash; twelve weeks of finished work</h3>
+  <p><strong>Form:</strong> column chart, emphasis (one live mark in the accent, the rest in the
+    de-emphasis grey). <strong>Job:</strong> change over time. <strong>It is a picture of:</strong>
+    whether this is a good week or a turned corner.</p>
+  <p><strong>Why it beats the sentence.</strong> &ldquo;31 this month against a usual 22&rdquo;
+    gives the delta and hides the shape. Twelve columns tell you whether the number is a spike
+    or a climb, and that distinction is the entire difference between &ldquo;good month&rdquo;
+    and &ldquo;I have turned this around.&rdquo; A sentence cannot carry twelve values.</p>
+  <p><strong>The honest detail that matters most:</strong> the current week is not over, so its
+    column is drawn open-topped and hatched, labelled &ldquo;so far&rdquo;. A solid column there
+    would claim a completed week. <code>buildTrendPoints()</code> would in fact drop that bucket
+    entirely; drawing it as incomplete is more useful than dropping it, and equally honest.</p>
+
+  <h3>Chart two &mdash; how long open work has been sitting</h3>
+  <p><strong>Form:</strong> one-dimensional dot strip. <strong>Job:</strong> distribution.
+    <strong>It is a picture of:</strong> the tail.</p>
+  <p><strong>Why it beats the sentence.</strong> On the prototype&rsquo;s nine open jobs the
+    median age is 9 days &mdash; a true sentence that hides the three sitting at 19, 23 and 41.
+    The tail <em>is</em> the finding, and a median is the specific summary that destroys it. The strip also draws the fortnight
+    threshold in place, so the count above it (&ldquo;3 haven&rsquo;t moved in over a
+    fortnight&rdquo;) is <em>explained by the picture</em> rather than asserted beside it.</p>
+
+  <h4>What I deliberately did not chart</h4>
+  <ul>
+    <li><strong>Open work over time.</strong> The most obvious analytics chart in existence, and
+      it needs the snapshot writer. Refusing it is the honesty proof for everything else on the
+      page — and it is drawn as an empty framed plot with its own sentence, rather than hidden.</li>
+    <li><strong>A burndown or any forecast.</strong> There is no accepted baseline to burn down
+      against. Drawing one would mean inventing the line.</li>
+    <li><strong>A completion-rate percentage or gauge.</strong> A ratio hides its denominator,
+      and this audience is not an analyst audience. Counts with the denominator beside them.</li>
+    <li><strong>A sparkline in the hero.</strong> The twelve-week chart already carries the
+      reading; a second miniature of it would be decoration.</li>
+    <li><strong>Anything per-person.</strong> See <code>workload_distribution</code> above.</li>
+  </ul>
+
+  <h3>The categorical-colour collision, settled by measurement</h3>
+  <p>A three-colour lock cannot seat a six-series legend. The brief asks me to solve this
+    deliberately and write down the rule, because every future chart in the suite inherits it.
+    So here is the rule, and here is the measurement that forced it.</p>
+
+  <div class="claim">
+    <p><strong>Signal Analytics has no categorical palette. Identity is never carried by hue.</strong></p>
+    <p>Magnitude is one hue (indigo, sequential). Emphasis is one indigo mark against zinc
+      context. Identity — which label, which week, which job — is carried by <em>position and
+      direct label</em>. Status is a reserved four that never doubles as a series colour.</p>
+  </div>
+
+  <p>The tempting cheat is to run categorical series off the ink ramp — zinc 700 / 500 / 400 /
+    300, four &ldquo;colours&rdquo; that stay inside the lock. It fails, and not marginally:</p>
+
+  <pre><span class="dim">$ node scripts/validate_palette.js "#3f3f46,#71717a,#a1a1aa,#d4d4d8" --mode light</span>
+
+  <span class="fail">[FAIL]</span> Lightness band      outside band: #3f3f46 0.370 · #d4d4d8 0.871
+  <span class="fail">[FAIL]</span> Chroma floor        below floor (reads gray): 0.012 · 0.014 · 0.013 · 0.005
+  <span class="pass">[PASS]</span> CVD separation      worst adjacent ΔE 15.9 (protan)
+  <span class="pass">[PASS]</span> Normal-vision floor worst adjacent ΔE 15.9
+  <span class="warn">[WARN]</span> Contrast vs surface below 3:1 — #a1a1aa 2.56 · #d4d4d8 1.48
+
+  <span class="fail">→ FAILED</span>  <span class="dim">exit 1</span></pre>
+
+  <p>All four steps sit below the 0.10 chroma floor by an order of magnitude — they read as grey
+    because they <em>are</em> grey, and a grey cannot do identity work. That is the measured
+    reason the rule above is the rule, rather than a stylistic preference.</p>
+
+  <h4>The palette that does ship, and its measurements</h4>
+  <div class="swatches">
+    <span class="sw"><i style="background:#4f46e5"></i><span>Indigo 600<br><code>#4f46e5</code> live mark</span></span>
+    <span class="sw"><i style="background:#d4d4d8"></i><span>Zinc 300<br><code>#d4d4d8</code> context mark</span></span>
+    <span class="sw"><i style="background:#d97706"></i><span>Amber 600<br><code>#d97706</code> attention</span></span>
+    <span class="sw"><i style="background:#ef4444"></i><span>Red 500<br><code>#ef4444</code> acute</span></span>
+    <span class="sw"><i style="background:#059669"></i><span>Emerald 600<br><code>#059669</code> clear</span></span>
+  </div>
+
+  <ul>
+    <li><strong>Status set, fixed order</strong> <code>amber → indigo → red → emerald</code>.
+      Light on white: all six checks PASS. Dark on <code>#0f0f10</code>: all six PASS, worst
+      adjacent ΔE 9.6 deutan / 31.7 normal. The order is load-bearing — red beside amber fails
+      CVD separation at 4.4, so they are never adjacent.</li>
+    <li><strong>Emphasis pair</strong> <code>#4f46e5</code> against <code>#71717a</code>:
+      ΔE 20.1 protan, 22.0 normal, both above 3:1 on surface. The grey fails the chroma floor
+      by design — it is the de-emphasis mark, not a series.</li>
+    <li><strong>Sequential indigo</strong> for magnitude: usable from indigo 500 up. Indigo 300
+      measures 1.99:1 on white and indigo 400 measures 2.98:1, so either requires a visible
+      label or the table view. Recorded so nobody re-derives it.</li>
+    <li>Every status mark ships with its word and its own shape — a dot, a rotated square, a
+      ring. Nothing on this surface is distinguished by colour alone.</li>
+  </ul>
+
+  <div class="claim warn">
+    <p><strong>A design-system finding, measured in passing.</strong> The dark theme in
+      <code>ds-foundation/tokens/tokens.css</code> does not redefine <code>--status-flight</code>,
+      <code>--status-blocked</code> or <code>--status-done</code>. At their light values,
+      <code>#f59e0b</code> (L 0.769) and <code>#10b981</code> (L 0.696) both sit above the dark
+      lightness band of 0.48–0.67.</p>
+    <p>Latent rather than live — the file states no product sets <code>data-theme="dark"</code>
+      before launch. Worth a token pass before one does. Snapping each one step darker resolves it.</p>
+  </div>
+</section>
+
+<!-- ═══ 6 · Delight ═════════════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">06</span><h2>The delight, with verdicts</h2></div>
+  <p class="lead">Two moments, in the catalogue&rsquo;s own animate-or-restrained format
+    (<code>docs/DELIGHT_CATALOG.md</code>). One of each, which is the point.</p>
+
+  <h3>L1 &middot; The previous-best line draws itself &nbsp;<span class="chip animate">Animate</span></h3>
+  <p>When the current week is higher than any of the eleven before it, a dashed indigo rule
+    draws left-to-right at the previous best and tags itself. 520ms, 340ms after paint,
+    <code>cubic-bezier(0.22, 1, 0.36, 1)</code>; the tag fades in behind it.</p>
+  <p><strong>The argument.</strong> This is the first time the product has ever congratulated
+    the owner, and it does it with a fact rather than a flourish — the line is the previous
+    number, drawn where it falls. The motion is what makes the reader understand that the bar
+    <em>passed</em> something, which a static line at the same position does not communicate.
+    It is the Timeline <code>79 days</code> move — one expressive element carrying the whole
+    composition — turned into something that can happen more than once.</p>
+  <p><strong>The conditions.</strong> It draws only when the claim is true; there is no
+    animation on an ordinary week. It resolves instantly and fully legibly under
+    <code>prefers-reduced-motion</code>. It is the only motion on the surface, which is why it
+    lands — BRAND &sect;5.1&rsquo;s &ldquo;one earned celebration&rdquo; logic, applied outside HQ.</p>
+
+  <h3>L2 &middot; The chart that is not there &nbsp;<span class="chip restrained">Restrained</span></h3>
+  <p>In movement three, the state trend the product cannot draw is not rendered as a grey box
+    saying &ldquo;no data&rdquo;. It is rendered as <em>the chart that would have been there</em>
+    — a dashed empty frame with its own faint gridlines and one sentence in the middle of the
+    plot area: &ldquo;The first reading is kept tonight. This fills in from tomorrow, one day at
+    a time.&rdquo;</p>
+  <p><strong>The argument.</strong> The Plan Trace variant in Wave 5 found the right instinct —
+    state the limit at the exact place the reader would otherwise assume the opposite — and this
+    is that instinct given a whole device. A reader learns what the product does not know at
+    the moment they are most likely to assume it does. It also converts the single most
+    embarrassing gap in the domain into the most memorable thing on the page.</p>
+  <p><strong>Verdict restrained, deliberately.</strong> No motion. The drawing is the moment;
+    animating an absence would be the product performing its own limitation.</p>
+
+  <h4>Candidates rejected</h4>
+  <ul>
+    <li><strong>Count-up on the hero numeral.</strong> Restrained. HQ uses count-ups to say
+      &ldquo;this resolved from a live source&rdquo;; here the number is a plain count and the
+      motion would be decoration on the most important figure on the page.</li>
+    <li><strong>Staggered entrance on the ages dots.</strong> Restrained. Family F4 (item
+      arrival) has no shipped reference anywhere in the suite; inventing one here would set a
+      register for a family nine other sites will inherit, which is a decision for the catalogue,
+      not for this view.</li>
+  </ul>
+</section>
+
+<!-- ═══ 7 · States & phone ══════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">07</span><h2>Every state, and the phone</h2></div>
+  <p class="lead">On a young account these are most of the real screen time. All seven are built
+    and driveable in the prototype.</p>
+
+  <div class="tw">
+  <table style="min-width:560px">
+    <thead><tr><th>State</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Full</td><td>All three sources answered. The reference composition.</td></tr>
+      <tr><td class="k">Partial</td><td>Timeline did not answer. A banner states it once; the refusal slot for date movement <em>changes its sentence</em> to name the real cause. A reason that is wrong is worse than no reason.</td></tr>
+      <tr><td class="k">All clear</td><td>Nothing slipping. The section does not vanish — an absent section reads as a bug. It states the absence once, with the arithmetic behind it, in its own object rather than as a list row with a <code>0</code> beside it.</td></tr>
+      <tr><td class="k">First run</td><td>Work exists but under four weeks of it. The hero counts what is there, does not attempt a comparison, and names the date the comparison arrives.</td></tr>
+      <tr><td class="k">Empty</td><td>No work at all. <strong>One instruction, once.</strong> Not four templated &ldquo;Nothing here&rdquo; lines.</td></tr>
+      <tr><td class="k">Loading</td><td>Skeletons only for sections that will actually render, at their real geometry — twelve columns, four rows, one strip. No shimmer. A polite <code>role="status"</code> line.</td></tr>
+      <tr><td class="k">Error</td><td>Names the source, says what it means in the owner&rsquo;s terms, offers the one useful move, and shows <em>nothing</em> it cannot stand behind.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Designed against the paid-for defect library</h3>
+  <p>The elevate lessons name failure classes an analytics view walks straight into. Each is
+    closed by construction rather than by review:</p>
+  <ul>
+    <li><strong>Self-contradicting counts.</strong> Every figure derives from one accessor
+      object. The header&rsquo;s &ldquo;9 open&rdquo;, the strip&rsquo;s nine dots and the
+      &ldquo;3 haven&rsquo;t moved&rdquo; count are all computed from the same array — they
+      cannot disagree.</li>
+    <li><strong>Unanchored time.</strong> The reading time is stated on screen, and every
+      relative phrase resolves against it.</li>
+    <li><strong>State carried only visually.</strong> Every status mark carries its word; both
+      charts carry a full sentence <code>aria-label</code> naming every value.</li>
+    <li><strong>Loading that promises sections that never render.</strong> The skeleton is the
+      real geometry of the real sections.</li>
+    <li><strong>The undesigned edge.</strong> A derived axis maximum, so a 60-day job cannot
+      fall off the end of its own chart; a knocked-out label so the record line never strikes
+      through a value.</li>
+  </ul>
+
+  <h3>Phone</h3>
+  <p>390px is the same composition, not a reduced one. Twelve columns still fit and stay
+    legible — verified in the prototype at 390 — because the chart is narrow marks with a
+    sparse axis rather than a dense grid. The hero numeral is the element that gains most from
+    the narrow measure. The only things that change: the rail is replaced by the shell&rsquo;s
+    mobile nav, the &ldquo;Open →&rdquo; affordance drops (it does not exist on touch and the
+    whole row is the target), and the axis labels wrap to two lines.</p>
+</section>
+
+<!-- ═══ 8 · Data and privacy ════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">08</span><h2>Data, privacy, and the finding that has to close</h2></div>
+
+  <h4>What it reads</h4>
+  <p>Task rows and their activity for one Project, through the existing authorized providers.
+    Timeline milestones for the same Project. Nothing else.</p>
+
+  <h4>What it must never read</h4>
+  <ul>
+    <li><strong>Note bodies.</strong> The Notes provider query names its columns and never names
+      <code>body</code>; <code>NoteRecord.exposure</code> is <code>approved_extract</code> at
+      contract level. This survives untouched.</li>
+    <li><strong>Email.</strong> <code>PersonRef</code> deliberately excludes it.</li>
+    <li><strong>Anything outside one Project.</strong> Every provider binds to one workspace and
+      <code>policy.ts</code> revalidates exactly one membership. A portfolio total across four
+      Projects would be a number nobody has proved the reader may see. The view states this as a
+      first-class refusal rather than quietly scoping down.</li>
+  </ul>
+
+  <div class="claim acute">
+    <p><strong>The open security finding, and how this plan closes it.</strong>
+      <code>authorizeAnalyticsRequest</code> returns a synthetic principal
+      <code>signal-${mode}</code> for <code>demo</code> and <code>review</code> modes and
+      <strong>never calls <code>auth()</code></strong> (policy.ts:53–63). Preview deployments
+      default to <code>review</code> (access-mode.ts:66). With the domain flag on, anyone
+      holding a preview URL sees a fabricated portfolio. It is masked only because the flag
+      404s first.</p>
+    <p>Verified unchanged at <code>fb9d3cbe</code>.</p>
+  </div>
+
+  <p>This view must not inherit that posture, and the fix is not &ldquo;keep the flag off&rdquo;
+    — deny-by-default by accident of a flag is not deny-by-default. Three changes, all in
+    phase one:</p>
+  <ol>
+    <li>The Home Analytics route requires a real signed-in principal in <em>every</em> mode.
+      Fixture data may be what is served in review mode; it is never what is served
+      <em>unauthenticated</em>.</li>
+    <li>On a non-production deployment the route additionally requires reviewer allowlisting —
+      the posture the Wave 5 lab gate already built for itself
+      (<code>lib/analytics-lab/gate.ts</code>) rather than a second invention.</li>
+    <li>Failure is 404, never a redirect. A redirect confirms the route exists.</li>
+  </ol>
+  <p>The Wave 5 lab index states the honest consequence of exactly this posture, and it applies
+    here: those conditions make a surface unreachable on every environment this repo can
+    currently deploy. Serving Lately from a protected preview needs a review posture that
+    authenticates for real. That posture does not exist yet, and building it is phase one work,
+    not a footnote.</p>
+</section>
+
+<!-- ═══ 9 · Build sequence ══════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">09</span><h2>The build sequence</h2></div>
+
+  <h3>Phase 1 &mdash; the view, on what is already true</h3>
+  <p>Ships the whole composition using the seven real-now metrics. Depends on nothing that does
+    not exist. Adds <code>ANALYTICS_APP_PATH = "/app/home/analytics"</code> to
+    <code>product-urls.ts</code> beside <code>BRIEFING_APP_PATH</code>, the tab strip in Home,
+    and the route behind <code>SIGNAL_HOME_ANALYTICS_ENABLED</code> — which already exists and
+    already means the right thing.</p>
+  <p><strong>Cannot be faked:</strong> the authentication fix in §08. It ships in this phase or
+    the phase does not ship.</p>
+  <p><strong>Can be faked for review:</strong> the data, through the existing fixture path —
+    behind real authentication.</p>
+
+  <h3>Phase 2 &mdash; switch on the recorders</h3>
+  <p>Enable <code>SIGNAL_ANALYTICS_SNAPSHOTS_ENABLED</code> and
+    <code>SIGNAL_MILESTONE_DATE_HISTORY_ENABLED</code>. Both are pure writers; neither changes a
+    rendered surface. <strong>Do this as early as possible and independently of the view</strong>,
+    because both accrue forward only — every day they stay off is a day of history that can
+    never be recovered. This is the one item in the plan with a real deadline attached to
+    doing nothing.</p>
+
+  <h3>Phase 3 &mdash; the refusals start resolving</h3>
+  <p>Roughly thirty days after phase 2, the state trend has enough snapshots to draw and the
+    empty framed plot in movement three fills in — <em>the same frame, now with marks in it</em>,
+    which is the payoff the ghost chart was designed to earn. Once a milestone date has moved
+    since enablement, <code>milestone_movement</code> flips to reachable and its refusal card
+    becomes a reading. Sixteen weeks after a workspace starts,
+    <code>completion_pace_change</code> stops returning <code>insufficient_history</code>.</p>
+  <p>No new design is needed for any of this. The states are already built; they simply stop
+    being the ones that render.</p>
+
+  <h3>Phase 4 &mdash; elevate</h3>
+  <p>Hand the surface to the loop. Not before phase 1 is real against real data — the lessons
+    are explicit that a ledger cannot close over a surface that is still growing.</p>
+</section>
+
+<!-- ═══ 10 · Cuts ═══════════════════════════════════════════════ -->
+<section class="col">
+  <div class="shead"><span class="snum">10</span><h2>What I would cut, and did</h2></div>
+
+  <h3>The Label ledger</h3>
+  <p>Wave 5&rsquo;s Evidence Ledger is the best-argued of the five compositions: one table of
+    every label in the Project, exceptions living inside it as its first rows rather than
+    repeated above it, so reading order and completeness become one object. I liked it enough
+    to build it before cutting it.</p>
+  <p><strong>Why it goes.</strong> It answers &ldquo;where is the work concentrated&rdquo;, and
+    that is not the question this tab exists for. It also requires the reader to hold a
+    denominator caveat — labels overlap, so six rows sum to 12 across 9 items — which is
+    exactly the kind of arithmetic the first-contact test says a newcomer should never be asked
+    to do. The ledger is a good surface. It belongs inside Tasks, where labels live.</p>
+
+  <h3>A period selector</h3>
+  <p>Four weeks / twelve weeks / this year, as a control at the top. Every analytics surface has
+    one and it is the single most obvious thing to build.</p>
+  <p><strong>Why it goes.</strong> Changing the period silently changes the bucket size —
+    <code>buildTrendPoints</code> switches from weekly to monthly above 93 days — so the same
+    chart would mean two different things depending on a control the reader does not know is
+    doing that. It would also let a reader select a period the data cannot cover and get a
+    chart with holes in it. One fixed, well-chosen window that the copy can name precisely is
+    more honest than a control that invites a question the data cannot answer. Revisit once
+    snapshots have a year behind them.</p>
+</section>
+
+<footer class="col">
+  <p><strong>Scope kept.</strong> No file under <code>src/</code> was modified. No PR, no
+    migration, no flag turned on, no existing artifact republished, and the elevate loop was not
+    started. Work sits on <code>design/home-analytics-2026-08</code>, cut fresh from
+    <code>design/timeline-redesign-2026-08</code> at <code>fb9d3cbe</code>.</p>
+  <p><strong>Where the evidence is thin.</strong> Every metric rating is read from the registry
+    and every remediation claim is read from the code at HEAD — but nothing here has been run
+    against a live production workspace, because no analytics surface reaches one. The twelve-week
+    chart is derived from the machinery rather than observed from real output. That is the one
+    claim in this plan I would want to see proven before phase 1 ships, and proving it is a
+    day&rsquo;s work: enable the domain flag on a properly authenticated preview and read one
+    real workspace.</p>
+</footer>
+
+</div>

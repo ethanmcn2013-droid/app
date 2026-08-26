@@ -1,0 +1,1208 @@
+<title>Lately</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════
+   Lately — the third tab inside Home.
+   Tokens are the Signal DS (ds-foundation/tokens/tokens.css) verbatim.
+   Nothing here invents a colour. Chart colour follows the rule proved
+   by scripts/validate_palette.js and recorded in the plan.
+   ═══════════════════════════════════════════════════════════════════ */
+:root {
+  --paper: #ffffff;
+  --paper-soft: #fafafa;
+  --paper-deep: #f4f4f5;
+  --ink: #111111;
+  --ink-soft: #3f3f46;
+  --ink-faint: #71717a;
+  --ink-ghost: #d4d4d8;
+  --accent: #4f46e5;
+  --accent-tint: #eef2ff;
+  --hairline: rgba(17, 17, 17, 0.10);
+  --hairline-soft: rgba(17, 17, 17, 0.06);
+
+  /* Status — reserved meaning, never a series colour. Fixed order
+     amber → indigo → red → emerald; light mode passes all six checks. */
+  --st-attention: #d97706;
+  --st-acute: #ef4444;
+  --st-good: #059669;
+
+  /* Chart. Magnitude is one hue. Context is zinc. Identity is never hue. */
+  --mark-context: #d4d4d8;
+  --mark-live: var(--accent);
+  --mark-grid: rgba(17, 17, 17, 0.07);
+
+  --rail: #111111;
+  --rail-ink: rgba(255, 255, 255, 0.55);
+
+  --shell: #e8e8e6;
+  --focus: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f0f10;
+    --paper-soft: #161618;
+    --paper-deep: #1d1d20;
+    --ink: #f4f4f5;
+    --ink-soft: #d4d4d8;
+    --ink-faint: #a1a1aa;
+    --ink-ghost: #3f3f46;
+    --accent: #6366f1;
+    --accent-tint: rgba(79, 70, 229, 0.16);
+    --hairline: rgba(255, 255, 255, 0.10);
+    --hairline-soft: rgba(255, 255, 255, 0.06);
+    /* Snapped one step darker: at #f59e0b / #10b981 both sit above the
+       dark lightness band. Measured — see the plan's colour section. */
+    --st-attention: #d97706;
+    --st-acute: #ef4444;
+    --st-good: #059669;
+    --mark-context: #3f3f46;
+    --mark-grid: rgba(255, 255, 255, 0.08);
+    --rail: #050506;
+    --shell: #050506;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f0f10;
+  --paper-soft: #161618;
+  --paper-deep: #1d1d20;
+  --ink: #f4f4f5;
+  --ink-soft: #d4d4d8;
+  --ink-faint: #a1a1aa;
+  --ink-ghost: #3f3f46;
+  --accent: #6366f1;
+  --accent-tint: rgba(79, 70, 229, 0.16);
+  --hairline: rgba(255, 255, 255, 0.10);
+  --hairline-soft: rgba(255, 255, 255, 0.06);
+  --st-attention: #d97706;
+  --st-acute: #ef4444;
+  --st-good: #059669;
+  --mark-context: #3f3f46;
+  --mark-grid: rgba(255, 255, 255, 0.08);
+  --rail: #050506;
+  --shell: #050506;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--shell);
+  color: var(--ink);
+  font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: "Geist Mono", ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+}
+
+/* ── Micro-label: the suite's tracked uppercase mono ────────────── */
+.eyebrow {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+/* ═══ Driving deck ══════════════════════════════════════════════ */
+.deck {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--paper);
+  border-bottom: 1px solid var(--hairline);
+  padding: 14px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 28px;
+  align-items: center;
+}
+.deck-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.deck-label {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.deck button {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--hairline);
+  border-radius: 7px;
+  padding: 5px 11px;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.deck button:hover { color: var(--ink); border-color: var(--ink-ghost); }
+.deck button[aria-pressed="true"] {
+  color: var(--paper);
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.deck button:focus-visible,
+a:focus-visible,
+.dot:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.deck-note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  flex-basis: 100%;
+  max-width: 78ch;
+}
+
+/* ═══ Stage ═════════════════════════════════════════════════════ */
+.stage {
+  padding: 34px 20px 64px;
+  display: flex;
+  justify-content: center;
+}
+
+.frame-label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.frame-label .w { color: var(--ink-faint); }
+
+/* The app shell: dark rail + warm card, as the suite ships. */
+.shell {
+  display: flex;
+  background: var(--rail);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.18), 0 18px 48px rgba(0,0,0,0.20);
+  width: 100%;
+}
+.rail {
+  width: 62px;
+  flex: 0 0 62px;
+  padding: 18px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.rail-mark {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.22);
+  display: grid; place-items: center;
+  color: var(--rail-ink);
+  font-size: 11px;
+}
+.rail-mark.current {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+.rail-sep { width: 20px; height: 1px; background: rgba(255,255,255,0.14); }
+
+.canvas {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--paper);
+  margin: 6px 6px 6px 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Phone frame */
+.stage[data-w="phone"] .shell { max-width: 390px; }
+.stage[data-w="phone"] .rail { display: none; }
+.stage[data-w="phone"] .canvas { margin: 0; border-radius: 16px; }
+.stage[data-w="desk"] .shell { max-width: 1180px; }
+
+.scroller {
+  height: 760px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.stage[data-w="phone"] .scroller { height: 720px; }
+
+/* ═══ Home spine ════════════════════════════════════════════════ */
+.spine {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--paper);
+  border-bottom: 1px solid var(--hairline-soft);
+  padding: 16px 40px 0;
+}
+.stage[data-w="phone"] .spine { padding: 14px 20px 0; }
+.spine-top { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.spine-top h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.spine-top .ws { font-size: 13px; color: var(--ink-faint); }
+
+.tabs { display: flex; gap: 2px; }
+.tab {
+  appearance: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-faint);
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 7px 13px 11px;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 6px 6px 0 0;
+  transition: color 120ms ease;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-current="page"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ═══ Column ════════════════════════════════════════════════════ */
+.col {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 34px 40px 72px;
+}
+.stage[data-w="phone"] .col { padding: 26px 20px 64px; }
+
+section + section { margin-top: 52px; }
+.stage[data-w="phone"] section + section { margin-top: 44px; }
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--hairline);
+  margin-bottom: 22px;
+}
+
+/* ═══ Movement 1 — the hero ═════════════════════════════════════ */
+.hero-figure {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 14px;
+}
+.hero-num {
+  font-size: clamp(76px, 15vw, 132px);
+  line-height: 0.82;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.hero-unit {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+.hero-read {
+  margin: 22px 0 0;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.012em;
+  max-width: 34ch;
+  text-wrap: balance;
+}
+.stage[data-w="phone"] .hero-read { font-size: 17.5px; }
+.hero-sub {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  max-width: 48ch;
+}
+.hero-rule {
+  height: 1px;
+  background: var(--accent);
+  margin: 26px 0 0;
+  transform-origin: left;
+}
+
+/* ═══ The twelve-week chart ═════════════════════════════════════ */
+.chart {
+  margin-top: 30px;
+}
+.chart-plot {
+  --val-row: 17px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+  align-items: stretch;
+  height: 148px;
+  border-bottom: 1px solid var(--hairline);
+  position: relative;
+}
+.stage[data-w="phone"] .chart-plot { height: 116px; gap: 4px; }
+
+/* The record line — drawn only when the claim is true. */
+.record-line {
+  position: absolute;
+  left: 0; right: 0;
+  border-top: 1px dashed var(--accent);
+  opacity: 0;
+  pointer-events: none;
+}
+.record-line.on { animation: draw-record 520ms 340ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+@keyframes draw-record {
+  from { opacity: 0; clip-path: inset(0 100% 0 0); }
+  to   { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+.record-tag {
+  position: absolute;
+  left: 0;
+  transform: translateY(-100%);
+  padding-bottom: 5px;
+  background: var(--paper);
+  padding-right: 8px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0;
+  pointer-events: none;
+}
+.record-tag.on { animation: fade-tag 300ms 760ms ease forwards; }
+@keyframes fade-tag { to { opacity: 1; } }
+
+/* The value label gets its own row, so a full-height bar can never push
+   its own label out of the plot. The record line is offset by the same
+   row height, so line and bar top are measured from one baseline. */
+.bar-slot {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-rows: var(--val-row) 1fr;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+/* The label rides on top of its own bar rather than sitting in a
+   detached number row, so a column and its value are one object. */
+.bar-track { position: relative; grid-row: 2; }
+.bar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 62%;
+  max-width: 34px;
+  background: var(--mark-context);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+}
+.bar-slot.live .bar { background: var(--mark-live); }
+/* Partial bucket: open-topped and hatched. The week is not over. */
+.bar-slot.partial .bar {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--mark-live) 0 3px,
+    transparent 3px 6px
+  );
+  border: 1px solid var(--mark-live);
+  border-bottom: 0;
+  border-radius: 3px 3px 0 0;
+}
+.bar-val {
+  position: absolute;
+  left: 0; right: 0;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+  text-align: center;
+  margin-bottom: 4px;
+  line-height: 1;
+  /* Knocks the record line out from behind its own value, so a column
+     label is never struck through by the rule it sits beside. */
+  z-index: 2;
+  background: var(--paper);
+  padding: 1px 0 2px;
+}
+.bar-slot.live .bar-val, .bar-slot.partial .bar-val { color: var(--accent); font-weight: 500; }
+
+.chart-axis {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+.stage[data-w="phone"] .chart-axis { gap: 4px; }
+.axis-tick {
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 9.5px;
+  color: var(--ink-ghost);
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.axis-tick.named { color: var(--ink-faint); }
+
+.chart-caption {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+  max-width: 60ch;
+}
+
+/* ═══ Movement 2 — quietly slipping ═════════════════════════════ */
+.slip-list { list-style: none; margin: 0; padding: 0; }
+.slip {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+  text-decoration: none;
+  color: inherit;
+}
+.slip:last-child { border-bottom: 0; }
+a.slip:hover .slip-claim { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--ink-ghost); }
+.slip-count {
+  font-size: 27px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  min-width: 2.2ch;
+  text-align: right;
+  flex: 0 0 auto;
+}
+.slip-count.none { color: var(--ink-faint); font-weight: 400; }
+.slip-body { min-width: 0; flex: 1 1 auto; }
+.slip-claim { display: block; font-size: 14.5px; line-height: 1.45; }
+.slip-why { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.5; color: var(--ink-faint); max-width: 54ch; }
+.slip-open {
+  flex: 0 0 auto;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.stage[data-w="phone"] .slip-open { display: none; }
+
+/* Status marks — icon + word, never colour alone. */
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.mark::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+.mark.attention { color: var(--st-attention); }
+.mark.acute { color: var(--st-acute); }
+.mark.good { color: var(--st-good); }
+.mark.acute::before { border-radius: 1px; transform: rotate(45deg); }
+.mark.good::before { border-radius: 50%; box-shadow: inset 0 0 0 2px var(--paper); }
+
+/* All clear — an absence stated once, with its arithmetic. */
+.clear {
+  border: 1px solid var(--hairline-soft);
+  background: var(--paper-soft);
+  border-radius: 10px;
+  padding: 22px 24px;
+}
+.clear-claim {
+  margin: 12px 0 0;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+.clear-work { margin: 8px 0 0; font-size: 13px; color: var(--ink-faint); max-width: 54ch; }
+
+/* ═══ The ages strip ════════════════════════════════════════════ */
+.strip { margin-top: 30px; }
+.strip-plot {
+  position: relative;
+  height: 54px;
+  border-bottom: 1px solid var(--hairline);
+}
+.strip-grid {
+  position: absolute; inset: 0;
+  border-left: 1px solid var(--mark-grid);
+}
+.dot {
+  position: absolute;
+  bottom: 14px;
+  width: 11px; height: 11px;
+  margin-left: -5.5px;
+  border-radius: 50%;
+  background: var(--mark-context);
+  border: 2px solid var(--paper);
+  padding: 0;
+  cursor: default;
+}
+.dot.old { background: var(--st-attention); }
+.dot-label {
+  position: absolute;
+  right: 0;
+  bottom: 32px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px;
+  color: var(--st-attention);
+  white-space: nowrap;
+}
+/* The threshold the count above is made of, drawn where it falls. */
+.strip-threshold {
+  position: absolute;
+  top: 4px; bottom: 0;
+  border-left: 1px dashed var(--ink-ghost);
+}
+.threshold-label {
+  position: absolute;
+  top: 0;
+  margin-left: 7px;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+.strip-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+/* ═══ Movement 3 — the refusals ═════════════════════════════════ */
+.refusals { list-style: none; margin: 0; padding: 0; }
+.refusal {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--hairline-soft);
+}
+.refusal:last-child { border-bottom: 0; }
+.refusal h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.refusal p { margin: 5px 0 0; font-size: 13px; color: var(--ink-faint); max-width: 62ch; }
+
+/* The chart that is not there — drawn, not hidden. */
+.ghost-chart {
+  margin-top: 16px;
+  border: 1px dashed var(--ink-ghost);
+  border-radius: 8px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+  padding: 0 22px;
+  background:
+    repeating-linear-gradient(90deg, var(--mark-grid) 0 1px, transparent 1px 60px);
+}
+.ghost-chart p {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  max-width: 44ch;
+}
+
+/* ═══ Coverage footer ═══════════════════════════════════════════ */
+.coverage {
+  margin-top: 52px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hairline);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+}
+.cov { display: flex; align-items: baseline; gap: 7px; font-size: 12.5px; color: var(--ink-faint); }
+.cov .src { color: var(--ink-soft); }
+
+/* ═══ Banner (partial / stale / error) ══════════════════════════ */
+.banner {
+  margin-bottom: 30px;
+  padding: 15px 17px;
+  border-radius: 9px;
+  border: 1px solid var(--hairline);
+  border-left: 2px solid var(--st-attention);
+  background: var(--paper-soft);
+}
+.banner.acute { border-left-color: var(--st-acute); }
+.banner h2 { margin: 6px 0 0; font-size: 14.5px; font-weight: 500; }
+.banner p { margin: 5px 0 0; font-size: 13px; color: var(--ink-faint); max-width: 58ch; }
+
+/* ═══ Empty / first-run ═════════════════════════════════════════ */
+.blank { padding: 12px 0 0; }
+.blank .lede {
+  font-size: 21px;
+  line-height: 1.42;
+  letter-spacing: -0.016em;
+  max-width: 26ch;
+  margin: 16px 0 0;
+  text-wrap: balance;
+}
+.blank .body { margin: 12px 0 0; font-size: 14px; color: var(--ink-soft); max-width: 46ch; }
+.blank .move {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 22px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--paper);
+  background: var(--ink);
+  border-radius: 8px;
+  padding: 9px 15px;
+  text-decoration: none;
+}
+.blank .move:hover { background: var(--ink-soft); }
+
+/* ═══ Loading — sized to the real geometry ══════════════════════ */
+.sk { background: var(--paper-deep); border-radius: 5px; }
+.sk-row { display: flex; flex-direction: column; gap: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0ms !important; animation-delay: 0ms !important; transition-duration: 0ms !important; }
+  .record-line { opacity: 1; clip-path: none; }
+  .record-tag { opacity: 1; }
+}
+
+.sr {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+</style>
+
+<div class="deck">
+  <div class="deck-group">
+    <span class="deck-label">State</span>
+    <button type="button" data-state="full" aria-pressed="true">Full</button>
+    <button type="button" data-state="partial" aria-pressed="false">Partial</button>
+    <button type="button" data-state="quiet" aria-pressed="false">All clear</button>
+    <button type="button" data-state="first-run" aria-pressed="false">First run</button>
+    <button type="button" data-state="empty" aria-pressed="false">Empty</button>
+    <button type="button" data-state="loading" aria-pressed="false">Loading</button>
+    <button type="button" data-state="error" aria-pressed="false">Error</button>
+  </div>
+  <div class="deck-group">
+    <span class="deck-label">Width</span>
+    <button type="button" data-w="desk" aria-pressed="true">Desk</button>
+    <button type="button" data-w="phone" aria-pressed="false">390</button>
+  </div>
+  <p class="deck-note" id="deck-note"></p>
+</div>
+
+<div class="stage" id="stage" data-w="desk">
+  <div style="width:100%;max-width:1180px;">
+    <p class="frame-label eyebrow"><span id="frame-name">Full</span> <span class="w" id="frame-w">· 1180 × 760</span></p>
+    <div class="shell">
+      <nav class="rail" aria-label="Products">
+        <span class="rail-mark current" aria-hidden="true">⌂</span>
+        <span class="rail-sep" aria-hidden="true"></span>
+        <span class="rail-mark" aria-hidden="true">✎</span>
+        <span class="rail-mark" aria-hidden="true">☑</span>
+        <span class="rail-mark" aria-hidden="true">↗</span>
+      </nav>
+      <div class="canvas">
+        <div class="scroller" id="scroller">
+          <div class="spine">
+            <div class="spine-top">
+              <h1>Home</h1>
+              <span class="ws">The Orchard, events · Mara &amp; Finn</span>
+            </div>
+            <div class="tabs">
+              <a class="tab" href="#">Today&rsquo;s Signal</a>
+              <a class="tab" href="#">Full briefing</a>
+              <a class="tab" href="#" aria-current="page">Lately</a>
+            </div>
+          </div>
+          <div class="col" id="view"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   One accessor per fact. Every number the screen shows comes from
+   this object — the header can never disagree with the list beneath
+   it, because both read the same field.
+   ═══════════════════════════════════════════════════════════════ */
+
+const READ_AT = "09:14, Thursday 16 July 2026";
+
+/* Twelve weeks of completions. Weekly buckets, exactly what
+   buildTrendPoints() emits for an 84-day period. The last bucket is
+   partial — the week is not over — and is drawn as such. */
+const WEEKS = [
+  { start: "27 Apr", v: 5 },
+  { start: "4 May",  v: 3 },
+  { start: "11 May", v: 6 },
+  { start: "18 May", v: 4 },
+  { start: "25 May", v: 7 },
+  { start: "1 Jun",  v: 5 },
+  { start: "8 Jun",  v: 8 },
+  { start: "15 Jun", v: 6 },
+  { start: "22 Jun", v: 6 },
+  { start: "29 Jun", v: 8 },
+  { start: "6 Jul",  v: 5 },
+  { start: "13 Jul", v: 12, partial: true },
+];
+
+const AGES = [2, 3, 5, 6, 9, 11, 19, 23, 41];
+const OLD_THRESHOLD = 14;
+
+const D = {
+  finishedFour: WEEKS.slice(8).reduce((a, w) => a + w.v, 0),   // 31
+  priorFours: [
+    WEEKS.slice(0, 4).reduce((a, w) => a + w.v, 0),            // 18
+    WEEKS.slice(4, 8).reduce((a, w) => a + w.v, 0),            // 26
+  ],
+  thisWeek: WEEKS[11].v,
+  bestPriorWeek: Math.max(...WEEKS.slice(0, 11).map((w) => w.v)),
+  openWork: AGES.length,
+  stalled: AGES.filter((a) => a >= OLD_THRESHOLD).length,
+  overdue: 2,
+  unowned: 1,
+  waiting: 0,
+};
+
+const STATES = {
+  full: {
+    name: "Full",
+    note: "Everything resolves. Tasks and Timeline both answered; Notes answered for this reader. The hero is work_completed — observed, no history needed. The twelve columns are buildTrendPoints() at weekly resolution, which needs no snapshot writer because a completion carries its own timestamp.",
+  },
+  partial: {
+    name: "Partial",
+    note: "Timeline did not answer. The sections it feeds state that plainly and keep their shape; nothing degrades to zero. This is the common state on a young account, so it is designed, not caught.",
+  },
+  quiet: {
+    name: "All clear",
+    note: "Nothing is slipping. The section does not vanish — an absent section reads as a bug — it states the absence once, with the arithmetic behind it.",
+  },
+  "first-run": {
+    name: "First run",
+    note: "A workspace with work but under four weeks of it. The hero cannot make a comparison, so it does not pretend to; it counts what is there and says when the comparison arrives.",
+  },
+  empty: {
+    name: "Empty",
+    note: "No work at all. One instruction, once — not four templated 'Nothing here' lines.",
+  },
+  loading: {
+    name: "Loading",
+    note: "Skeletons for the sections that will actually render, at their real geometry. No shimmer, no invented sections.",
+  },
+  error: {
+    name: "Error",
+    note: "The read failed. It says which source, what it means, and what to do — and shows nothing it cannot stand behind.",
+  },
+};
+
+/* ── pieces ──────────────────────────────────────────────────── */
+
+function eyebrow(text) {
+  return `<p class="eyebrow">${text}</p>`;
+}
+
+function chart({ live = true } = {}) {
+  const max = Math.max(...WEEKS.map((w) => w.v));
+  const isRecord = WEEKS[11].v > D.bestPriorWeek;
+  const recordPct = (D.bestPriorWeek / max) * 100;
+
+  const bars = WEEKS.map((w) => {
+    const h = (w.v / max) * 100;
+    return `
+      <div class="bar-slot${w.partial ? " partial" : ""}">
+        <span class="bar-track">
+          <span class="bar-val" style="bottom:${h}%">${w.v}</span>
+          <span class="bar" style="height:${h}%"></span>
+        </span>
+      </div>`;
+  }).join("");
+
+  // Label a quarter of the weeks. Twelve dates is a wall; two is a gap
+  // the eye has to interpolate across.
+  const NAMED = [0, 4, 8, 11];
+  const ticks = WEEKS.map((w, i) =>
+    `<span class="axis-tick${NAMED.includes(i) ? " named" : ""}">${NAMED.includes(i) ? w.start : ""}</span>`,
+  ).join("");
+
+  return `
+  <div class="chart">
+    <div class="chart-plot" role="img"
+      aria-label="Work finished each week for twelve weeks: ${WEEKS.map((w) => `week of ${w.start}, ${w.v}${w.partial ? ", so far" : ""}`).join("; ")}.">
+      ${isRecord ? `<span class="record-line${live ? " on" : ""}" style="bottom:calc((100% - var(--val-row)) * ${recordPct / 100})"></span>
+      <span class="record-tag${live ? " on" : ""}" style="bottom:calc((100% - var(--val-row)) * ${recordPct / 100})">Previous best · ${D.bestPriorWeek}</span>` : ""}
+      ${bars}
+    </div>
+    <div class="chart-axis">${ticks}</div>
+    <p class="chart-caption">Each column is one week&rsquo;s finished work. The last one is hatched because
+      this week is not over — ${D.thisWeek} so far, counted at ${READ_AT.split(",")[0]}.</p>
+  </div>`;
+}
+
+function strip() {
+  const oldest = Math.max(...AGES);
+  // The axis end is derived from the data, never a constant. A hard-coded
+  // 45 would push a 60-day job off the end of its own chart.
+  const max = Math.ceil((oldest + 4) / 5) * 5;
+  const dots = AGES.map((a) => {
+    const old = a >= OLD_THRESHOLD;
+    return `<span class="dot${old ? " old" : ""}" style="left:${(a / max) * 100}%"
+      title="${a} days since anything was recorded"></span>`;
+  }).join("");
+  return `
+  <div class="strip">
+    <div class="strip-plot" role="img"
+      aria-label="Nine open jobs by days since anything was recorded: ${AGES.join(", ")} days. ${D.stalled} are over a fortnight; the oldest is ${oldest} days.">
+      <span class="strip-grid"></span>
+      <span class="strip-threshold" style="left:${(OLD_THRESHOLD / max) * 100}%"></span>
+      <span class="threshold-label" style="left:${(OLD_THRESHOLD / max) * 100}%">A fortnight</span>
+      ${dots}
+      <span class="dot-label">${oldest} days</span>
+    </div>
+    <div class="strip-axis">
+      <span class="axis-tick named">Touched today</span>
+      <span class="axis-tick named">${max} days ago</span>
+    </div>
+    <p class="chart-caption">One dot per open job, placed by how long since anything was recorded
+      against it. Everything right of the line is what the ${D.stalled} above are counting.
+      This describes the record, never a person.</p>
+  </div>`;
+}
+
+function slip(count, claim, why, open, mark) {
+  const none = count === 0;
+  const tag = mark ? `<span class="mark ${mark[0]}">${mark[1]}</span> ` : "";
+  const inner = `
+      <span class="slip-count${none ? " none" : ""}">${none ? "0" : count}</span>
+      <span class="slip-body">
+        <span class="slip-claim">${tag}${claim}</span>
+        <span class="slip-why">${why}</span>
+      </span>
+      ${none ? "" : `<span class="slip-open">Open →</span>`}`;
+  return none
+    ? `<li class="slip">${inner}</li>`
+    : `<li><a class="slip" href="#">${inner}</a></li>`;
+}
+
+/* The all-clear is its own object, not a slip row with a zero in it.
+   A "0" sitting beside "Nothing is slipping" is two grammars for one
+   fact, and the reader has to reconcile them. */
+function clearBlock(claim, working) {
+  return `
+  <div class="clear">
+    <span class="mark good">Clear</span>
+    <p class="clear-claim">${claim}</p>
+    <p class="clear-work">${working}</p>
+  </div>`;
+}
+
+function coverage(rows) {
+  return `<div class="coverage">${rows.map((r) =>
+    `<span class="cov"><span class="src">${r[0]}</span> ${r[1]}</span>`).join("")}
+    <span class="cov"><span class="src">Read</span> ${READ_AT}</span></div>`;
+}
+
+function refusals(items) {
+  return `
+  <section aria-labelledby="cannot">
+    <div class="section-head">
+      <p class="eyebrow" id="cannot">What this cannot tell you</p>
+    </div>
+    <ul class="refusals">${items.map((i) => `
+      <li class="refusal">
+        <h3>${i.t}</h3>
+        <p>${i.p}</p>
+        ${i.ghost ? `<div class="ghost-chart"><p>${i.ghost}</p></div>` : ""}
+      </li>`).join("")}
+    </ul>
+  </section>`;
+}
+
+const REFUSAL_MOVEMENT = {
+  t: "Whether a date has moved, and by how much",
+  p: "Nothing has been writing dates down yet, so a date that has moved three times looks exactly like one that never moved. Recording starts the day it is switched on — it cannot be filled in backwards.",
+};
+const REFUSAL_DECISIONS = {
+  t: "Decisions taken in your notes",
+  p: "Notes keeps your writing private and offers this reading follow-ups only. There is no decision to count, so nothing is counted — this is not a zero.",
+};
+const REFUSAL_ONE_PROJECT = {
+  t: "Anything outside Mara &amp; Finn",
+  p: "This reading covers one project. You have three others; each is read on its own, because permission is checked one project at a time and a total across all four would be a number nobody has proved you may see.",
+};
+/* In the partial state the milestone refusal changes cause: it is not
+   that nothing was written down, it is that Timeline did not answer.
+   Same slot, different sentence — a reason that is wrong is worse than
+   no reason at all. */
+const REFUSAL_TIMELINE_SILENT = {
+  t: "Anything that comes from your dates",
+  p: "Timeline did not answer this morning, so nothing here counted your commitments or the work behind them. Nothing was assumed in their place. This usually clears on its own.",
+};
+const REFUSAL_OPEN_OVER_TIME = {
+  t: "How much was open last month",
+  p: "Finished work carries its own date, so the twelve weeks above are real. How much was open on a past Tuesday is not — nobody wrote it down at the time.",
+  ghost: "The first reading is kept tonight. This fills in from tomorrow, one day at a time.",
+};
+
+/* ── the views ───────────────────────────────────────────────── */
+
+function viewFull({ partial = false } = {}) {
+  const cov = partial
+    ? [["Tasks", "answered"], ["Timeline", "did not answer"], ["Notes", "answered, for you"]]
+    : [["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]];
+
+  const banner = partial ? `
+    <div class="banner">
+      <span class="mark attention">Partial</span>
+      <h2>Timeline did not answer this morning.</h2>
+      <p>What you see below is read from Tasks and Notes only. Anything that needs your dated
+        commitments is missing rather than empty, and says so where it sits.</p>
+    </div>` : "";
+
+  return `
+  ${banner}
+  <section aria-labelledby="did">
+    ${eyebrow("Last four weeks · 22 Jun – 16 Jul")}
+    <div class="hero-figure">
+      <span class="hero-num">${D.finishedFour}</span>
+      <span class="hero-unit">jobs finished</span>
+    </div>
+    <p class="hero-read" id="did">Your best four weeks since the spring.</p>
+    <p class="hero-sub">The four weeks before this were ${D.priorFours[1]}, and the four before those ${D.priorFours[0]}.
+      Every one of the ${D.finishedFour} is a job you marked done — you can open any of them.</p>
+    <div class="hero-rule"></div>
+    ${chart({ live: true })}
+  </section>
+
+  <section aria-labelledby="slipping">
+    <div class="section-head">
+      <p class="eyebrow" id="slipping">Quietly slipping</p>
+      <p class="eyebrow">${D.openWork} open</p>
+    </div>
+    <ul class="slip-list">
+      ${slip(D.stalled, "haven&rsquo;t moved in over a fortnight", "Nothing recorded against them since 27 June. The oldest is 41 days.", true, ["attention", "Sitting"])}
+      ${slip(D.overdue, "are past the day you gave them", "The pier cordon and the lighting walk-through. Both are behind the walkthrough on 24 July.", true, ["acute", "Past date"])}
+      ${slip(D.unowned, "has nobody&rsquo;s name on it", "&ldquo;Confirm the lighting rig with the venue.&rdquo; Due 22 July.", true, null)}
+      ${slip(D.waiting, "are waiting on somebody else", "Nothing is sitting in Waiting. This is a real zero — the column was read.", false, ["good", "Clear"])}
+    </ul>
+    ${strip()}
+  </section>
+
+  ${refusals(
+    partial
+      ? [REFUSAL_TIMELINE_SILENT, REFUSAL_DECISIONS, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME]
+      : [REFUSAL_MOVEMENT, REFUSAL_DECISIONS, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME],
+  )}
+
+  ${coverage(cov)}`;
+}
+
+function viewQuiet() {
+  return `
+  <section aria-labelledby="did">
+    ${eyebrow("Last four weeks · 22 Jun – 16 Jul")}
+    <div class="hero-figure">
+      <span class="hero-num">${D.finishedFour}</span>
+      <span class="hero-unit">jobs finished</span>
+    </div>
+    <p class="hero-read" id="did">Your best four weeks since the spring.</p>
+    <p class="hero-sub">The four weeks before this were ${D.priorFours[1]}, and the four before those ${D.priorFours[0]}.</p>
+    <div class="hero-rule"></div>
+    ${chart({ live: true })}
+  </section>
+
+  <section aria-labelledby="slipping">
+    <div class="section-head">
+      <p class="eyebrow" id="slipping">Quietly slipping</p>
+      <p class="eyebrow">9 open</p>
+    </div>
+    ${clearBlock(
+      "Nothing is slipping.",
+      "All nine open jobs have been touched inside the last fortnight, all nine have a day on them, and all nine have somebody&rsquo;s name against them. Read at " + READ_AT.split(",")[0] + ".",
+    )}
+  </section>
+
+  ${refusals([REFUSAL_MOVEMENT, REFUSAL_DECISIONS, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME])}
+  ${coverage([["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
+}
+
+function viewFirstRun() {
+  const w = WEEKS.slice(9);
+  const total = w.reduce((a, x) => a + x.v, 0);
+  const max = Math.max(...w.map((x) => x.v));
+  const bars = w.map((x) => {
+    const h = (x.v / max) * 100;
+    return `
+    <div class="bar-slot${x.partial ? " partial" : ""}">
+      <span class="bar-track">
+        <span class="bar-val" style="bottom:${h}%">${x.v}</span>
+        <span class="bar" style="height:${h}%"></span>
+      </span>
+    </div>`;
+  }).join("");
+  return `
+  <section aria-labelledby="did">
+    ${eyebrow("Since you started · 29 Jun – 16 Jul")}
+    <div class="hero-figure">
+      <span class="hero-num">${total}</span>
+      <span class="hero-unit">jobs finished</span>
+    </div>
+    <p class="hero-read" id="did">Three weeks in. Too early to say whether that is a lot.</p>
+    <p class="hero-sub">Once you have four full weeks behind you — around 27 July — this will start
+      telling you whether a week was better or worse than your normal.</p>
+    <div class="hero-rule"></div>
+    <div class="chart">
+      <div class="chart-plot" style="grid-template-columns:repeat(3,1fr);max-width:280px" role="img"
+        aria-label="Work finished each week since starting: ${w.map((x) => `week of ${x.start}, ${x.v}${x.partial ? ", so far" : ""}`).join("; ")}.">
+        ${bars}
+      </div>
+      <div class="chart-axis" style="grid-template-columns:repeat(3,1fr);max-width:280px">
+        ${w.map((x) => `<span class="axis-tick named">${x.start}</span>`).join("")}
+      </div>
+      <p class="chart-caption">Three weeks so far. Nine more and this becomes a shape you can read.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="slipping">
+    <div class="section-head">
+      <p class="eyebrow" id="slipping">Quietly slipping</p>
+      <p class="eyebrow">6 open</p>
+    </div>
+    ${clearBlock(
+      "Nothing has had time to slip yet.",
+      "The oldest thing on your board is eighteen days old. This section starts earning its place once something has been sitting longer than that.",
+    )}
+  </section>
+
+  ${refusals([REFUSAL_MOVEMENT, REFUSAL_ONE_PROJECT, REFUSAL_OPEN_OVER_TIME])}
+  ${coverage([["Tasks", "answered"], ["Timeline", "answered"], ["Notes", "answered, for you"]])}`;
+}
+
+function viewEmpty() {
+  return `
+  <div class="blank">
+    ${eyebrow("Mara & Finn")}
+    <p class="lede">There is nothing here to read yet.</p>
+    <p class="body">This page looks back at work you have finished and work that has gone quiet.
+      Neither exists until there is something on your board.</p>
+    <a class="move" href="#">Add your first job <span aria-hidden="true">→</span></a>
+  </div>`;
+}
+
+function viewLoading() {
+  const bar = (h) => `<div class="bar-slot"><span class="bar-track"><span class="sk bar" style="height:${h}%"></span></span></div>`;
+  return `
+  <section aria-label="Loading this reading">
+    <div class="sk" style="width:180px;height:11px"></div>
+    <div class="sk" style="width:230px;height:104px;margin-top:20px;border-radius:8px"></div>
+    <div class="sk" style="width:300px;height:19px;margin-top:24px"></div>
+    <div class="sk" style="width:100%;max-width:420px;height:14px;margin-top:12px"></div>
+    <div class="sk" style="height:1px;margin-top:26px"></div>
+    <div class="chart-plot" style="margin-top:30px;border-bottom-color:var(--hairline-soft)">
+      ${[42, 25, 50, 33, 58, 42, 67, 50, 50, 67, 42, 100].map(bar).join("")}
+    </div>
+  </section>
+  <section aria-hidden="true">
+    <div class="section-head"><div class="sk" style="width:130px;height:11px"></div></div>
+    <div class="sk-row" style="gap:22px">
+      <div class="sk" style="height:70px"></div>
+      <div class="sk" style="height:70px"></div>
+      <div class="sk" style="height:70px"></div>
+      <div class="sk" style="height:70px"></div>
+    </div>
+    <div class="sk" style="height:54px;margin-top:30px;border-radius:0"></div>
+  </section>
+  <p class="sr" role="status">Reading your last twelve weeks.</p>`;
+}
+
+function viewError() {
+  return `
+  <div class="banner acute">
+    <span class="mark acute">Could not read</span>
+    <h2>Tasks did not answer, so there is nothing to show.</h2>
+    <p>Your work is safe — this page could not reach it just now. It tries again on its own;
+      if it is still like this in an hour, the board itself will tell you more.</p>
+  </div>
+  <div class="blank">
+    <p class="body" style="margin-top:0">Nothing below is shown, because everything on this page is
+      counted from Tasks and none of it could be counted.</p>
+    <a class="move" href="#">Open your board <span aria-hidden="true">→</span></a>
+  </div>
+  ${coverage([["Tasks", "did not answer"], ["Timeline", "not read"], ["Notes", "not read"]])}`;
+}
+
+const RENDER = {
+  full: () => viewFull({}),
+  partial: () => viewFull({ partial: true }),
+  quiet: viewQuiet,
+  "first-run": viewFirstRun,
+  empty: viewEmpty,
+  loading: viewLoading,
+  error: viewError,
+};
+
+/* ── driving ─────────────────────────────────────────────────── */
+const view = document.getElementById("view");
+const stage = document.getElementById("stage");
+const note = document.getElementById("deck-note");
+const frameName = document.getElementById("frame-name");
+const frameW = document.getElementById("frame-w");
+let current = "full";
+
+function paint(state) {
+  current = state;
+  view.innerHTML = RENDER[state]();
+  note.textContent = STATES[state].note;
+  frameName.textContent = STATES[state].name;
+  document.getElementById("scroller").scrollTop = 0;
+}
+
+document.querySelectorAll("[data-state]").forEach((b) => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("[data-state]").forEach((o) =>
+      o.setAttribute("aria-pressed", String(o === b)));
+    paint(b.dataset.state);
+  });
+});
+
+document.querySelectorAll("[data-w]").forEach((b) => {
+  if (!b.dataset.w || b.tagName !== "BUTTON") return;
+  b.addEventListener("click", () => {
+    document.querySelectorAll("button[data-w]").forEach((o) =>
+      o.setAttribute("aria-pressed", String(o === b)));
+    stage.dataset.w = b.dataset.w;
+    frameW.textContent = b.dataset.w === "phone" ? "· 390 × 720" : "· 1180 × 760";
+    paint(current);
+  });
+});
+
+paint("full");
+</script>
