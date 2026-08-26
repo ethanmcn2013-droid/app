@@ -163,7 +163,7 @@ body {
   width: 26px; height: 26px; border-radius: 8px;
   display: grid; place-items: center;
   background: var(--wash);
-  font-style: normal; font-size: 13px; color: var(--ink-2);
+  color: var(--ink-2);
 }
 .rail i.on { background: var(--ink); color: var(--paper); }
 
@@ -261,6 +261,11 @@ body {
   mask-image: linear-gradient(to top, #000 72%, transparent 100%);
 }
 [data-v="dark"] .bar.part { background: repeating-linear-gradient(135deg, var(--accent) 0 2px, rgba(255, 255, 255, 0) 2px 6px); }
+/* The plate keeps its job in the twin without keeping its luminance.
+   Pure white here is 34% more emitted light than Ink 5 and sits in the
+   middle of a row whose real marks are 3px meters. */
+[data-v="dark"] .kpi.lead { background: var(--ink-2); border-color: var(--ink-2); }
+[data-v="dark"] .sk-wrap .kpi.lead { background: var(--paper); border-color: var(--line-soft); }
 .baseline { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
 /* One week, at the width and pitch it will hold when the other eleven
    arrive. Drawing eleven faint slots beside it would be indistinguishable
@@ -317,6 +322,7 @@ body {
 }
 a.kpi:hover { border-color: var(--line); transform: translateY(-2px); }
 a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a.kpi:active { transform: translateY(0); }
 .kpi.lead { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .kpi.lead .t-small { color: var(--mark-ctx); }
 .glyph { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; background: var(--wash); }
@@ -341,8 +347,8 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .strip-axis { position: absolute; left: 0; right: 0; bottom: 26px; height: 1px; background: var(--line); }
 .dot {
   --disc: var(--mark-ctx);
-  position: absolute; bottom: calc(20px + var(--row, 0) * 15px); width: 12px; height: 12px; border-radius: 999px;
-  border: 0; padding: 0; background: transparent;
+  position: absolute; bottom: calc(20px + var(--row, 0) * 20px); width: 12px; height: 12px; border-radius: 999px;
+  border: 0; padding: 0; background: transparent; cursor: pointer;
   left: calc(var(--x) * 1%); transform: translateX(-50%);
 }
 /* The disc is a pseudo, not the button. An entrance that scales the control
@@ -354,9 +360,16 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   animation: pop 0.4s var(--ease) both; animation-delay: calc(var(--i) * 55ms + 760ms);
   transition: background-color 0.14s var(--ease);
 }
-.dot::after { content: ""; position: absolute; top: -11px; right: -11px; bottom: -11px; left: -11px; border-radius: 999px; }
+/* The expander is a stadium, not a circle, and it is shorter than the
+   row pitch. At -11px on every side a stacked mark's box reached its
+   neighbour's centre, and euclidean distance — which the gate was
+   measuring — cannot see occlusion. 34x28 still clears the 28px floor. */
+.dot::after { content: ""; position: absolute; top: -8px; right: -11px; bottom: -8px; left: -11px; border-radius: 14px; }
 .dot.old { --disc: var(--accent); }
 .dot:hover, .dot:focus-visible { --disc: var(--ink); }
+/* On the property, not on the pseudo's transform: the pop keyframes run
+   with fill:both and would outrank a plain declaration forever. */
+.dot:active { --disc: var(--ink-2); }
 .dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .fortnight { position: absolute; top: 0; bottom: 20px; left: calc(var(--x) * 1%); width: 0; border-left: 1px dashed var(--line); }
 .fortnight span { position: absolute; top: 0; left: var(--gap-tight); color: var(--ink-3); white-space: nowrap; }
@@ -391,11 +404,15 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* The chart that is not there: drawn as the chart it would be, with its
    own columns and baseline, so the absence has a shape. */
-.ghost { position: relative; margin-top: var(--gap-line); padding: var(--gap-room); border: 1px dashed var(--line); border-radius: 12px; }
+/* A figure carries a UA margin; the ladder is the only thing that sets
+   space here. The columns stand on a baseline, drawn as faintly as they
+   are, so the absence has the shape of a chart rather than a texture. */
+.ghost { position: relative; margin: var(--gap-line) 0 0; padding: var(--gap-room); border: 1px dashed var(--line); border-radius: 12px; }
+.ghost-plot::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
 .ghost-plot { position: relative; height: 120px; display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-hair); opacity: 0.5; }
 .ghost-plot i { flex: 1 1 0; height: calc(var(--h) * 1%); border-radius: 4px 4px 0 0; background: var(--wash); border-top: 1px dashed var(--line); }
 .ghost-say { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-snug); text-align: center; }
-.ghost-say .t-head { max-width: 26ch; }
+.ghost-say .t-head { max-width: 34ch; }
 
 /* ── Degraded states are designed states ───────────────────────────────*/
 .note { display: flex; gap: var(--gap-snug); align-items: flex-start; padding: var(--gap-line); border-radius: 12px; background: var(--paper-3); }
@@ -420,6 +437,7 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 .btn:hover { background: var(--paper-3); border-color: var(--ink-4); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn:active { border-color: var(--ink-3); transform: translateY(1px); }
 
 /* Skeletons show only what will actually render, at its real geometry.
    They are built from the real components' own classes — an .sk-in block
@@ -631,6 +649,18 @@ const ICON = {
   clear: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9l5-6" fill="none" stroke="#059669" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 
+/* The rail is drawn, not set. Geist carries none of the three characters
+   this used to use, so an OS fallback painted them — a filled pencil beside
+   three outlines, and a different shape on every machine. audit.mjs reads
+   the authored family, never the painted one, so it could not see it.
+   Sixteen on sixteen, at 1.5 stroke, the same pen as ICON. */
+const RAIL = {
+  home: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 7 8 2.5 13.5 7v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  notes: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11.2 2.8a1.7 1.7 0 0 1 2.4 2.4L6.4 12.4l-3.2.8.8-3.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  tasks: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.2 7.3 10l3.4-3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  timeline: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
 function label(text) {
   return `<p class="t-label dim" data-type="label">${esc(text)}</p>`;
 }
@@ -706,25 +736,29 @@ function chart({ record = true } = {}) {
   }).join("");
   return `
     <div class="chart">
-      <div class="plot">
+      <div class="plot" aria-hidden="true">
         ${grid}
         <span class="baseline"></span>
         ${rec}
         <span class="cols">${cols}</span>
       </div>
-      <div class="xaxis">${ticks}</div>
+      <div class="xaxis" aria-hidden="true">${ticks}</div>
       <p class="sr">Twelve weeks of finished work, week commencing ${esc(D.weeks[0].start)} to ${esc(D.weeks[D.weeks.length - 1].start)}: ${D.weeks.map((w) => `${w.start}, ${w.v}${w.partial ? " so far" : ""}`).join("; ")}.${record ? ` The best week before this one was ${D.bestPrior}.` : ""}</p>
     </div>`;
 }
 
-function movementOne({ record = true } = {}) {
+/* The previous best is drawn whenever it is knowable — two or more weeks
+   of record — and never switched off per state. A mark that vanishes for
+   a reason the screen does not give teaches that when something is
+   wrong, marks disappear quietly. */
+function movementOne({ record = D.weeks.length > 1 } = {}) {
   const up = D.delta >= 0;
   return `
     <section class="band" aria-labelledby="m1">
       <div class="band-head">
         <h2 class="t-sect" id="m1" data-type="sect">What you did</h2>
         <span class="grow"></span>
-        <p class="t-label dim" data-type="label">Last four weeks &middot; ${esc(D.weeks[8].start)} to ${esc(D.weeks[11].start)}</p>
+        <p class="t-label dim" data-type="label">Last four weeks &middot; ${esc(D.weeks[D.weeks.length - 4].start)} to ${esc(D.readingShort)}</p>
       </div>
       <div class="card hero rise" style="--i:1">
         <div class="hero-fig">
@@ -733,9 +767,9 @@ function movementOne({ record = true } = {}) {
               <span class="t-hero" data-type="hero" id="count">${D.lastFour}</span>
               <span class="delta t-label" data-type="label">${up ? ICON.up : ICON.down} ${up ? "+" : ""}${D.delta} on the four before</span>
             </div>
-            <p class="t-body dim-2 hero-note" data-type="body">jobs finished, ${esc(D.workspace)}</p>
+            <p class="t-body dim-2 hero-note" data-type="body">jobs finished, ${esc(D.workspace)}${D.weeks[D.weeks.length - 1].partial ? " &mdash; this week still running" : ""}</p>
           </div>
-          <p class="t-small dim hero-note" data-type="small">Counted at the moment each job reached a done column. Every one of them is openable.</p>
+          <p class="t-small dim hero-note" data-type="small">Counted at the moment each job reached a done column.</p>
         </div>
         ${chart({ record })}
       </div>
@@ -787,10 +821,14 @@ function movementTwo({ partial = false } = {}) {
 }
 
 /* ── Movement three ─────────────────────────────────────────────────── */
+/* Written for the owner, not for the team that built it. The second tile
+   states a condition rather than a start date: nothing records a date move
+   yet, so naming the month one begins would be a fact the fixture does not
+   hold — and the month it used to name had not happened at the reading. */
 const LIMITS = [
-  ["Open work over time", "The snapshot writer has no callers yet, so there are no earlier readings to compare."],
-  ["How a date moved", "The date recorder switched on in August. History accrues forward only."],
-  ["Decisions still open", "Notes keeps no structured decision record to read. That is a Notes change, not this one."],
+  ["Open work over time", "Nothing was written down about how much was open in earlier weeks, so there is nothing yet to compare this against."],
+  ["How a date moved", "When a date gets moved, nothing keeps a record of it yet. Once something does, only moves from that day on will be in it."],
+  ["Decisions still open", "Notes doesn’t keep a list of which decisions are still open, so nothing here can count them. That would be a change in Notes."],
 ];
 
 function movementThree() {
@@ -811,13 +849,13 @@ function movementThree() {
           <p class="t-small dim-2" data-type="small">${why}</p>
         </div>`).join("")}
       </div>
-      <div class="ghost rise" style="--i:2">
+      <figure class="ghost rise" style="--i:2">
         <div class="ghost-plot" aria-hidden="true">${ghostCols}</div>
-        <div class="ghost-say">
-          <p class="t-head" data-type="head">This is the chart we would draw</p>
-          <p class="t-small dim" data-type="small">and it stays empty until the recorder has run for three periods.</p>
-        </div>
-      </div>
+        <figcaption class="ghost-say">
+          <p class="t-head" data-type="head">Open work over time — the chart that would go here</p>
+          <p class="t-small dim" data-type="small">Once open work starts being counted each week, it fills in after about a month.</p>
+        </figcaption>
+      </figure>
     </section>`;
 }
 
@@ -837,7 +875,7 @@ function shell(inner) {
   return `
   <div class="app">
     <nav class="rail" aria-hidden="true">
-      <i class="on">&#8962;</i><i>&#9998;</i><i>&#9745;</i><i>&#8599;</i>
+      <i class="on">${RAIL.home}</i><i>${RAIL.notes}</i><i>${RAIL.tasks}</i><i>${RAIL.timeline}</i>
     </nav>
     <div class="canvas"><div class="scroll"><div class="page">
       <header class="top">
@@ -847,7 +885,7 @@ function shell(inner) {
         </div>
         <nav class="tabs" aria-label="Home views">
           <a class="tab t-body" data-type="control" href="#">Today&rsquo;s Signal</a>
-          <a class="tab t-body" data-type="control" href="#">Full briefing</a>
+          <a class="tab t-body" data-type="control" href="#">Full Briefing</a>
           <a class="tab t-body" data-type="control" href="#" aria-current="page">Lately</a>
         </nav>
         <div class="reading">
@@ -857,13 +895,14 @@ function shell(inner) {
         </div>
       </header>
       <main>${inner}</main>
-      <div class="coverage t-label" data-type="label">
+      <footer class="coverage t-label" data-type="label" aria-label="What this reading was built from">
         <span><b>Tasks</b> ${esc(sources.tasks)}</span>
         <span><b>Timeline</b> ${esc(sources.timeline)}</span>
         <span><b>Notes</b> ${esc(sources.notes)}</span>
         <span><b>Read</b> ${esc(D.readingLong)}</span>
-        <span><b>Lab</b> weekly counts and ages are lab-authored; ${esc(D.workspace)}, ${esc(D.owner)}, the reading date and the ${D.open} are bound to the shipping fixture</span>
-      </div>
+        <span><b>Lab</b> counts and ages are lab-authored</span>
+        <span><b>Bound</b> workspace, owner, reading date and the ${D.open}</span>
+      </footer>
     </div></div></div>
   </div>`;
 }
@@ -871,7 +910,7 @@ function shell(inner) {
 const VIEW = {
   full: () => shell(movementOne() + movementTwo() + movementThree()),
 
-  partial: () => shell(movementOne({ record: false }) + movementTwo({ partial: true }) + movementThree()),
+  partial: () => shell(movementOne() + movementTwo({ partial: true }) + movementThree()),
 
   /* Nothing slipping. The band does not vanish — an absent band reads as a
      bug — it states the absence once, with its arithmetic. */
@@ -906,11 +945,11 @@ const VIEW = {
           <p class="t-small dim hero-note" data-type="small">Four weeks of records make a comparison worth printing. Yours arrive on ${esc(D.comparisonArrives)}.</p>
         </div>
         <div class="chart">
-          <div class="plot solo">
+          <div class="plot solo" aria-hidden="true">
             <span class="baseline"></span>
             <span class="cols"><span class="colw"><span class="bar part" style="--h:100;--i:0"></span><span class="bar-val t-label" data-type="label" style="--h:100">${D.thisWeek} so far</span></span></span>
           </div>
-          <div class="xaxis"><span class="t-label" data-type="label">${esc(D.weeks[0].start)}</span></div>
+          <div class="xaxis" aria-hidden="true"><span class="t-label" data-type="label">${esc(D.weeks[0].start)}</span></div>
           <p class="sr">This week so far: ${D.thisWeek} jobs finished, week commencing ${esc(D.weeks[0].start)}. There is no earlier week to compare it with; twelve weeks of history are not recorded yet.</p>
         </div>
       </div>
@@ -919,10 +958,10 @@ const VIEW = {
   /* One instruction, once. Four templated "nothing here" lines is the
      defect this state exists to avoid. */
   empty: () => shell(`
-    <section class="band">
+    <section class="band" aria-labelledby="mEmpty">
       <div class="card rise" style="--i:0">
         <div class="center">
-          <p class="t-sect" data-type="sect">No work recorded yet</p>
+          <h2 class="t-sect" id="mEmpty" data-type="sect">No work recorded yet</h2>
           <p class="t-body dim-2" data-type="body">Add the first job in Tasks and this view fills itself in as you finish things.</p>
           <button type="button" class="btn t-body" data-type="control">Open Tasks</button>
         </div>
@@ -933,18 +972,19 @@ const VIEW = {
      render — never a promise of a section that never arrives. */
   loading: () => shell(
     `<div class="sk-wrap" aria-hidden="true">${movementOne() + movementTwo()}</div>` +
-    `<p class="sr">Loading this reading.</p>`),
+    `<p class="sr" role="status">Loading this reading.</p>`),
 
   /* Names the source, offers the one useful move, and shows nothing it
      cannot stand behind. */
   error: () => shell(`
-    <section class="band">
+    <section class="band" aria-labelledby="mError">
       <div class="card rise" style="--i:0">
         <div class="center">
-          <p class="t-sect" data-type="sect">Tasks did not answer</p>
-          <p class="t-body dim-2" data-type="body">This reading needs the Tasks records and they did not come back. Nothing below is shown, because a part of this screen would be guessing.</p>
+          <div role="alert">
+            <h2 class="t-sect" id="mError" data-type="sect">Tasks did not answer</h2>
+            <p class="t-body dim-2" data-type="body">This reading needs the Tasks records and they did not come back. Nothing below is shown, because a part of this screen would be guessing.</p>
+          </div>
           <button type="button" class="btn t-body" data-type="control" id="retry">Try again</button>
-          <p class="t-label dim" data-type="label">Last good reading &middot; ${esc(D.readingLong)}</p>
         </div>
       </div>
     </section>`),
@@ -1000,7 +1040,9 @@ if (fatal) {
     if (!strip) return;
     const w = strip.clientWidth;
     if (!w) return;
-    const MIN = 16;
+    /* 20px, against a 17px expander half-width, so no mark's box can
+       reach another mark's centre at any density. */
+    const MIN = 20;
     const rows = [];
     Array.from(root.querySelectorAll(".dot"))
       .map((el) => ({ el, x: (parseFloat(el.style.getPropertyValue("--x")) / 100) * w }))
@@ -1011,7 +1053,7 @@ if (fatal) {
         rows[r] = x;
         el.style.setProperty("--row", r);
       });
-    strip.style.minHeight = `${92 + Math.max(0, rows.length - 1) * 15}px`;
+    strip.style.minHeight = `${92 + Math.max(0, rows.length - 1) * 20}px`;
   };
   /* The reading line's connector, measured after layout. */
   const reading = root.querySelector(".reading");
@@ -1027,7 +1069,7 @@ if (fatal) {
      fallback face is a measurement of a page nobody sees, and the
      reading line wraps at a different width in each. */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
-  window.addEventListener("resize", relayout);
+  window.addEventListener("resize", () => { relayout(); queueMove(); });
 
   /* Pointer AND touch, and they are not the same interaction.
      A tooltip bound to hover does not exist under a coarse pointer: a tap
@@ -1037,8 +1079,10 @@ if (fatal) {
      hover is left alone on a fine pointer. The mark's title lives nowhere
      else on the screen, so this is the whole reading on a phone. */
   let pinned = null;
+  /* Filling and placing are separated so the scroll handler can reposition
+     without re-parsing the tip's markup on every frame. */
+  const fill = (el) => { tip.innerHTML = el.dataset.tip; };
   const place = (el) => {
-    tip.innerHTML = el.dataset.tip;
     tip.classList.add("on");
     const box = el.getBoundingClientRect();
     const own = tip.getBoundingClientRect();
@@ -1046,9 +1090,30 @@ if (fatal) {
     const above = box.top - own.height - 8;
     tip.style.top = `${above >= 8 ? above : Math.min(window.innerHeight - own.height - 8, box.bottom + 8)}px`;
   };
-  const show = (el, pin = false) => { place(el); if (pin) pinned = el; };
-  const hide = (force = false) => { if (pinned && !force) return; tip.classList.remove("on"); };
-  const drop = () => { pinned = null; tip.classList.remove("on"); };
+  let showing = null;
+  const show = (el, pin = false) => { showing = el; fill(el); place(el); if (pin) pinned = el; };
+  const hide = (force = false) => { if (pinned && !force) return; tip.classList.remove("on"); showing = null; };
+  const drop = () => { pinned = null; showing = null; tip.classList.remove("on"); };
+
+  /* The surface scrolls inside .scroll, not the document, so no scroll
+     event reaches a window listener without capture. A focus-raised tip
+     is hidden and restored when its mark comes back; only a touch pin is
+     retired, because dropping a focused mark's label leaves a visibly
+     focused mark with no name anywhere on the screen. */
+  let queued = false;
+  const onMove = () => {
+    queued = false;
+    if (!showing) return;
+    const b = showing.getBoundingClientRect();
+    if (b.bottom < 0 || b.top > window.innerHeight) {
+      if (pinned) drop(); else tip.classList.remove("on");
+      return;
+    }
+    if (pinned === showing || document.activeElement === showing) tip.classList.add("on");
+    if (tip.classList.contains("on")) place(showing);
+  };
+  const queueMove = () => { if (!queued) { queued = true; requestAnimationFrame(onMove); } };
+  window.addEventListener("scroll", queueMove, { capture: true, passive: true });
 
   document.addEventListener("pointerdown", (e) => {
     if (e.pointerType === "touch" && !e.target.closest("[data-tip]")) drop();

@@ -260,7 +260,11 @@ for (const state of config.states) {
   /* Provenance: which source answered, and which numbers this lab authored. */
   const cover = await page.evaluate(() => document.querySelector(".coverage")?.textContent ?? "");
   ok("the surface says which sources answered", /Tasks/.test(cover) && /Timeline/.test(cover) && /Notes/.test(cover));
-  ok("the surface says which of its numbers are lab-authored", /lab-authored/.test(cover) && /bound to the shipping fixture/.test(cover));
+  /* Both halves, and each of them short enough for the stamp voice it
+     is set in: which figures the lab authored, and which are bound to
+     the shipping fixture. A single sentence carrying both ran to 134
+     characters of tracked uppercase mono. */
+  ok("the surface says which of its numbers are lab-authored", /lab-authored/.test(cover) && /Bound/.test(cover) && /reading date/.test(cover));
 
   /* The current bucket is drawn open-topped and hatched: the week is not
      over, and a solid column there claims a completed week. */
@@ -953,6 +957,373 @@ async function tap(page, selector) {
     ok(`every sentence agrees with its own numeral · ${state}`, grammar.length === 0, grammar.slice(0, 3).join(" | "));
     await page.close();
   }
+}
+
+/* ══ round 1, batch 3 ═══════════════════════════════════════════════
+   Honesty in the headline, the error state and the accessibility tree.
+   Written before the fixes and watched failing. */
+
+/* hero-total-folds-the-unfinished-week · the surface quarantines the
+   running week everywhere except the one number the whole page is built
+   around. Drop the running bucket and the same window reads 19 against
+   26 — the printed sign is produced entirely by the unflagged week. */
+{
+  for (const state of ["full", "partial", "quiet"]) {
+    const page = await open({ state, reducedMotion: true });
+    const hero = await page.evaluate(() => {
+      const f = window.LATELY_FIXTURE;
+      const band = document.querySelector('[id^="m1"]')?.closest(".band");
+      const label = band?.querySelector(".band-head .t-label")?.textContent ?? "";
+      const note = document.querySelector(".hero-note")?.textContent ?? "";
+      const last = f.weeks[f.weeks.length - 1];
+      return { label, note, partial: Boolean(last.partial), readingShort: f.readingShort, lastStart: last.start };
+    });
+    if (hero.partial) {
+      ok(`the running week is named where the figure is read · ${state}`,
+        /still running/.test(hero.note), hero.note.slice(0, 80));
+      ok(`the window ends on the reading, not on a week's first day · ${state}`,
+        hero.label.includes(hero.readingShort) && !hero.label.trim().endsWith(hero.lastStart), hero.label);
+    }
+    await page.close();
+  }
+}
+
+/* error-state-invents-a-last-good-reading · the state built to say the
+   reading failed must not stamp a successful one at the instant of the
+   failure. The fixture holds no earlier reading, so there is none to print. */
+{
+  const page = await open({ state: "error", reducedMotion: true });
+  const err = await page.evaluate(() => {
+    const text = (document.querySelector("main") || document.body).textContent;
+    const want = window.LATELY_FIXTURE.readingLong;
+    let n = 0, i = 0;
+    while ((i = text.indexOf(want, i)) >= 0) { n += 1; i += want.length; }
+    return { claimsLastGood: /Last good reading/.test(text), instances: n };
+  });
+  ok("the error state claims no reading it does not hold", !err.claimsLastGood, `${err.instances} stamps`);
+  await page.close();
+}
+
+/* mark-hit-theft-at-390 · a stacked mark's expander covered its
+   neighbour's centre, so a tap on one mark answered with another job's
+   name and another day count. Euclidean distance cannot see occlusion. */
+{
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    for (const vp of config.viewports) {
+      const page = await open({ state, reducedMotion: true, viewport: { width: vp.width, height: vp.height }, touch: Boolean(vp.isMobile) });
+      await page.locator(".dot").first().scrollIntoViewIfNeeded();
+      await page.waitForTimeout(80);
+      const own = await page.evaluate(() => {
+        /* elementFromPoint is viewport-relative, so a strip below the fold
+           reports every mark as stolen. Scroll it into view first — the
+           first version of this check failed 9 of 9 at every width and was
+           measuring the fold, not the occlusion. */
+        const dots = Array.from(document.querySelectorAll(".dot"));
+        const stolen = [];
+        for (const d of dots) {
+          const r = d.getBoundingClientRect();
+          const at = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+          const owner = at ? at.closest(".dot") : null;
+          if (owner !== d) stolen.push((d.getAttribute("aria-label") || "").slice(0, 30));
+        }
+        return { stolen, n: dots.length };
+      });
+      ok(`every mark owns its own centre · ${state} @ ${vp.name}`, own.stolen.length === 0, `${own.stolen.length} of ${own.n}: ${own.stolen.slice(0, 2).join(" | ")}`);
+      await page.close();
+    }
+  }
+}
+
+/* two-capitalisation-rules-in-one-tab-strip · the naming contract names
+   the surface the Full Briefing. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const tabs = await page.evaluate(() => Array.from(document.querySelectorAll(".tab")).map((t) => t.textContent.trim()));
+  ok("the tab strip names every surface the way the contract does",
+    JSON.stringify(tabs) === JSON.stringify(["Today’s Signal", "Full Briefing", "Lately"]), tabs.join(" | "));
+  await page.close();
+}
+
+/* partial-drops-the-best-week-unannounced · a mark may not vanish for a
+   reason the screen never gives. Timeline governs due dates; the twelve
+   weekly counts and the previous best come from Tasks, which answered. */
+{
+  const page = await open({ state: "partial", reducedMotion: true });
+  const kept = await page.evaluate(() => ({
+    record: Boolean(document.querySelector(".record-tag")),
+    spoken: /best week/i.test(document.querySelector(".chart .sr")?.textContent ?? ""),
+    columns: document.querySelectorAll(".plot .bar").length,
+  }));
+  ok("a degraded state loses only what its unanswered source fed", kept.record && kept.spoken && kept.columns === 12, JSON.stringify(kept));
+  await page.close();
+}
+
+/* chart-is-announced-twice · the chart has a written equivalent, and the
+   visual furniture beside it is not read out as a second, looser copy —
+   including eight x-axis dates that are not on the screen at all. */
+{
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    const page = await open({ state, reducedMotion: true });
+    const heard = await page.evaluate(() => {
+      const chart = document.querySelector(".chart");
+      if (!chart) return null;
+      const leaves = [];
+      const walk = (el) => {
+        if (el.getAttribute && el.getAttribute("aria-hidden") === "true") return;
+        for (const n of el.childNodes) {
+          if (n.nodeType === 3 && n.textContent.trim()) leaves.push(n.textContent.trim());
+          else if (n.nodeType === 1) walk(n);
+        }
+      };
+      walk(chart);
+      const sr = chart.querySelector(".sr");
+      const invisibleText = Array.from(chart.querySelectorAll("*")).filter((el) => {
+        const cs = getComputedStyle(el);
+        const own = Array.from(el.childNodes).some((n) => n.nodeType === 3 && n.textContent.trim());
+        return own && parseFloat(cs.opacity) === 0 && cs.visibility !== "hidden" && el.getAttribute("aria-hidden") !== "true";
+      }).length;
+      return { leaves: leaves.length, spoken: Boolean(sr), invisibleText };
+    });
+    if (heard) {
+      ok(`the chart is announced once · ${state}`, heard.spoken && heard.leaves === 1, `${heard.leaves} text leaves in the tree`);
+      ok(`no invisible label carries live text · ${state}`, heard.invisibleText === 0, `${heard.invisibleText}`);
+    }
+    await page.close();
+  }
+}
+
+/* terminal-states-lose-their-heading-and-announce-nothing · the two
+   states where something has gone wrong are the two a reader navigating
+   by heading finds empty, and neither ever announces. */
+{
+  for (const state of config.states) {
+    const page = await open({ state, reducedMotion: true });
+    const structure = await page.evaluate(() => {
+      const heads = Array.from(document.querySelectorAll("main h1, main h2, main h3"));
+      const sections = Array.from(document.querySelectorAll("main section"));
+      const unlabelled = sections.filter((s) => {
+        const id = s.getAttribute("aria-labelledby");
+        return !id || !document.getElementById(id);
+      }).length;
+      return {
+        heads: heads.length,
+        unlabelled,
+        status: document.querySelectorAll("[role=status]").length,
+        alert: document.querySelectorAll("[role=alert]").length,
+      };
+    });
+    ok(`every state offers a heading inside main · ${state}`, structure.heads > 0, `${structure.heads}`);
+    ok(`every section names itself · ${state}`, structure.unlabelled === 0, `${structure.unlabelled} unlabelled`);
+    if (state === "loading") ok("the loading state announces politely", structure.status === 1 && structure.alert === 0, JSON.stringify(structure));
+    if (state === "error") ok("the error state announces assertively", structure.alert === 1 && structure.status === 0, JSON.stringify(structure));
+    if (state !== "loading" && state !== "error") {
+      ok(`no live region where nothing is happening · ${state}`, structure.status === 0 && structure.alert === 0, JSON.stringify(structure));
+    }
+    await page.close();
+  }
+}
+
+/* ══ round 1, batch 4 ═══════════════════════════════════════════════
+   Provenance, the twin, the refusals and the tooltip's anchor.
+   Written before the fixes and watched failing. */
+
+/* coverage-strip-sits-outside-every-landmark · the surface's provenance
+   apparatus is the thing that makes its honesty checkable, and it was the
+   one region landmark navigation could not reach. */
+{
+  for (const state of config.states) {
+    const page = await open({ state, reducedMotion: true });
+    const marks = await page.evaluate(() => {
+      const strip = document.querySelector(".coverage");
+      const orphans = Array.from(document.querySelectorAll("header, main, footer, aside, [role]"))
+        .length;
+      return {
+        tag: strip ? strip.tagName.toLowerCase() : null,
+        named: strip ? Boolean(strip.getAttribute("aria-label")) : false,
+        inMain: strip ? Boolean(strip.closest("main")) : false,
+        landmarks: orphans,
+      };
+    });
+    ok(`the provenance strip is a landmark of its own · ${state}`,
+      marks.tag === "footer" && marks.named && !marks.inMain, JSON.stringify(marks));
+    await page.close();
+  }
+}
+
+/* dark-denominator-card-is-a-glare-panel · the twin flips the grounds and
+   the marks keep their jobs. The denominator plate inverted to pure white
+   and became the brightest object on a near-black page, in the middle of
+   the row whose actual status marks are 3px meters. */
+{
+  const page = await open({ state: "full", variant: "dark", reducedMotion: true });
+  const lum = await page.evaluate(() => {
+    const rel = (rgb) => {
+      const [r, g, b] = rgb.match(/[\d.]+/g).slice(0, 3).map(Number).map((v) => {
+        const s = v / 255;
+        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const lead = document.querySelector(".kpi.lead");
+    const others = Array.from(document.querySelectorAll(".kpi:not(.lead)"));
+    const ratio = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+    const plate = rel(getComputedStyle(lead).backgroundColor);
+    const numeral = rel(getComputedStyle(lead.querySelector(".t-num")).color);
+    return {
+      plate,
+      brightest: Math.max(...others.map((o) => rel(getComputedStyle(o).backgroundColor))),
+      contrast: ratio(plate, numeral),
+    };
+  });
+  ok("the denominator plate is not the brightest thing on the dark ground", lum.plate < 0.9, `luminance ${lum.plate.toFixed(3)}`);
+  ok("the denominator plate still reads as its own kind of surface", Math.abs(lum.plate - lum.brightest) > 0.05, `${lum.plate.toFixed(3)} vs ${lum.brightest.toFixed(3)}`);
+  ok("its figure still clears AA on that plate", lum.contrast >= 4.5, `${lum.contrast.toFixed(2)}:1`);
+  await page.close();
+}
+
+/* stale-tip-strands-on-scroll · the tip is placed once in viewport
+   coordinates and the surface scrolls inside its own container, so a
+   pinned label ends up naming a mark it no longer points at. A focused
+   mark is hidden and restored; only a touch pin is retired. */
+{
+  const page = await open({ state: "full", viewport: { width: 390, height: 844 }, touch: true });
+  await page.locator(".dot").first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(120);
+  const box = await page.locator(".dot").first().boundingBox();
+  await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+  await page.waitForTimeout(200);
+  const before = await page.evaluate(() => document.getElementById("tip").classList.contains("on"));
+  await page.evaluate(() => document.querySelector(".scroll").scrollBy(0, 260));
+  await page.waitForTimeout(220);
+  const after = await page.evaluate(() => {
+    const t = document.getElementById("tip");
+    if (!t.classList.contains("on")) return { on: false, drift: 0 };
+    const anchor = document.querySelector(".dot");
+    const a = anchor.getBoundingClientRect();
+    const r = t.getBoundingClientRect();
+    return { on: true, drift: Math.round(Math.abs(r.bottom - a.top)) };
+  });
+  ok("a pinned label is dismissed or follows its mark", before && (!after.on || after.drift <= 24), JSON.stringify(after));
+  await page.close();
+}
+
+/* august-inside-a-july-reading · a refusal that names a month the reading
+   has not reached cannot be resolved either way. Every date on the surface
+   resolves against the stated instant. */
+{
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    const page = await open({ state, reducedMotion: true });
+    const dates = await page.evaluate(() => {
+      const text = (document.querySelector("main") || document.body).innerText;
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const found = [];
+      for (const m of months) {
+        const re = new RegExp("\\\\b" + m + "\\\\b(?!\\\\s+\\\\d{4})", "g");
+        if (re.test(text)) found.push(m);
+      }
+      return found;
+    });
+    ok(`no month is named without its year · ${state}`, dates.length === 0, dates.join(", "));
+    await page.close();
+  }
+}
+
+/* refusals-written-in-the-studio-vocabulary · the movement that is the
+   product's signature was written in the vocabulary of the team that built
+   it, and is the only place on the surface that says "we". */
+{
+  for (const state of ["full", "partial", "quiet", "first-run"]) {
+    const page = await open({ state, reducedMotion: true });
+    const voice = await page.evaluate(() => {
+      const text = (document.querySelector("main") || document.body).innerText;
+      const banned = ["snapshot writer", "callers", "recorder", "structured", "accrues", "periods", "provider"];
+      const hits = banned.filter((w) => new RegExp("\\\\b" + w + "\\\\b", "i").test(text));
+      const firstPerson = /\bwe\b/i.test(text);
+      const lowerStart = Array.from(document.querySelectorAll("main p"))
+        .map((p) => p.textContent.trim())
+        .filter((t) => /^(and|but|or|so)\b/i.test(t));
+      return { hits, firstPerson, lowerStart };
+    });
+    ok(`the refusals speak the reader's language · ${state}`, voice.hits.length === 0, voice.hits.join(", "));
+    ok(`the surface never says "we" · ${state}`, !voice.firstPerson);
+    ok(`no sentence begins as the back half of another · ${state}`, voice.lowerStart.length === 0, voice.lowerStart.join(" | "));
+    await page.close();
+  }
+}
+
+/* ghost-plot-orphaned-from-its-refusal · three refusals with separate
+   causes sat above one drawn-but-empty plot that named none of them. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const ghost = await page.evaluate(() => {
+    const fig = document.querySelector(".ghost");
+    const tiles = Array.from(document.querySelectorAll(".limit .t-head")).map((h) => h.textContent.trim());
+    const head = fig?.querySelector(".t-head")?.textContent.trim() ?? "";
+    const plot = fig?.querySelector(".ghost-plot");
+    const baseline = plot ? getComputedStyle(plot, "::after").content !== "none" : false;
+    return { tag: fig ? fig.tagName.toLowerCase() : null, head, tiles, baseline };
+  });
+  ok("the drawn-but-empty plot names the refusal it draws",
+    ghost.tiles.some((t) => ghost.head.includes(t)), `"${ghost.head}" against ${ghost.tiles.join(" | ")}`);
+  ok("it is marked up as the figure it is", ghost.tag === "figure");
+  ok("its columns stand on a baseline", ghost.baseline);
+  await page.close();
+}
+
+/* rail-glyphs-outside-the-locked-faces · three of the four rail marks were
+   painted by whatever the operating system supplied, because Geist carries
+   none of them. The audit reads the authored family, never the painted one. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const rail = await page.evaluate(() => {
+    const marks = Array.from(document.querySelectorAll(".rail i"));
+    return {
+      n: marks.length,
+      withText: marks.filter((m) => m.textContent.trim().length > 0).length,
+      withSvg: marks.filter((m) => m.querySelector("svg")).length,
+    };
+  });
+  ok("no rail mark is set in a face the lock does not own", rail.withText === 0 && rail.withSvg === rail.n, JSON.stringify(rail));
+  await page.close();
+}
+
+/* openable-is-a-promise-nothing-keeps · nothing on this surface opens a
+   finished job, so the line inviting the reader to try was an affordance
+   the screen does not carry. */
+{
+  for (const state of ["full", "partial", "quiet", "loading"]) {
+    const page = await open({ state, reducedMotion: true });
+    const claim = await page.evaluate(() => (document.querySelector("main") || document.body).innerText);
+    ok(`no sentence advertises a move the surface does not carry · ${state}`, !/openable/i.test(claim));
+    await page.close();
+  }
+}
+
+/* no-pressed-state-anywhere · under a coarse pointer there is no hover, so
+   a press is the only channel that can confirm a touch landed on a card. */
+{
+  const page = await open({ state: "full", reducedMotion: true });
+  const press = await page.evaluate(() => {
+    const read = (sel, pseudo) => {
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      const cs = getComputedStyle(el, pseudo);
+      return cs.transform + "|" + cs.backgroundColor + "|" + cs.borderColor;
+    };
+    const has = (sel) => Array.from(document.styleSheets).some((sh) => {
+      let rules; try { rules = sh.cssRules; } catch { return false; }
+      return Array.from(rules || []).some((r) => r.selectorText && r.selectorText.includes(sel));
+    });
+    return {
+      kpi: has("a.kpi:active"),
+      btn: has(".btn:active"),
+      dot: has(".dot:active"),
+      cursor: getComputedStyle(document.querySelector(".dot")).cursor,
+    };
+  });
+  ok("the marks invite the pointer", press.cursor === "pointer", press.cursor);
+  ok("every control acknowledges a press", press.kpi && press.btn && press.dot, JSON.stringify(press));
+  await page.close();
 }
 
 ok("zero console errors across every state and both grounds", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));

@@ -105,6 +105,11 @@
 }
 
 * { box-sizing: border-box; }
+/* The ladder is the only thing that sets vertical space. Left to the
+   browser, 27 elements carried 748px of margin in seven values, none
+   of them a rung, each scaled by its own font size — and audit.mjs
+   reads the SOURCE for raw px, so it could never see them. */
+h1, h2, h3, h4, p { margin: 0; }
 
 html, body { height: 100%; }
 
@@ -156,7 +161,7 @@ body {
   width: 26px; height: 26px; border-radius: 8px;
   display: grid; place-items: center;
   background: var(--wash);
-  font-style: normal; font-size: 13px; color: var(--ink-2);
+  color: var(--ink-2);
 }
 .rail i.on { background: var(--ink); color: var(--paper); }
 
@@ -186,11 +191,15 @@ body {
 /* The reading line. Everything relative on this screen resolves against
    one stated instant, printed once, at the top, in the label voice. */
 .reading { display: flex; align-items: center; gap: var(--gap-snug); flex-wrap: wrap; color: var(--ink-3); padding-top: var(--gap-room); }
-.reading .rule { flex: 1 1 40px; height: 1px; background: var(--line); }
+/* The connector takes only leftover space. At a 40px basis the rule
+   itself decided the wrap, so hiding it un-wrapped the row and showing
+   it wrapped again — the measurement oscillated between two true
+   answers. At a zero basis the two stamps alone decide. */
+.reading .rule { flex: 1 1 0; min-width: 0; height: 1px; background: var(--line); }
 
 /* ── Bands ─────────────────────────────────────────────────────────────*/
 .band { padding-top: var(--gap-hall); }
-.band-head { display: flex; align-items: baseline; gap: var(--gap-snug); flex-wrap: wrap; padding-bottom: var(--gap-line); }
+.band-head { display: flex; align-items: baseline; gap: var(--gap-snug); flex-wrap: wrap; padding-bottom: var(--gap-room); }
 .band-head .grow { flex: 1 1 auto; }
 
 .card {
@@ -206,7 +215,7 @@ body {
    twelve columns alone make you do arithmetic. Neither is a caption for
    the other. */
 .hero { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: var(--gap-hall); padding: var(--gap-room); align-items: stretch; }
-.hero-fig { display: flex; flex-direction: column; justify-content: space-between; gap: var(--gap-room); }
+.hero-fig { display: flex; flex-direction: column; justify-content: space-between; gap: var(--gap-wide); }
 .hero-n { display: flex; align-items: baseline; gap: var(--gap-snug); }
 .delta {
   display: inline-flex; align-items: center; gap: var(--gap-hair);
@@ -218,9 +227,12 @@ body {
 .hero-note { color: var(--ink-3); max-width: 30ch; }
 
 /* ── The twelve-week column chart ──────────────────────────────────────*/
-.chart { display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; }
+/* A label rail on the right. The axis maximum, the previous-best tag
+   and the live week's value all anchor to this edge; giving the marks
+   a gutter is what lets three labels coexist without dodging. */
+.chart { --gutter: 34px; display: flex; flex-direction: column; gap: var(--gap-tight); min-width: 0; }
 .plot { position: relative; height: 168px; }
-.cols { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-hair); }
+.cols { position: absolute; top: 0; bottom: 0; left: 0; right: var(--gutter); display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-hair); }
 .colw { position: relative; flex: 1 1 0; height: 100%; display: flex; align-items: flex-end; justify-content: center; }
 .bar {
   width: 100%; max-width: 22px; border-radius: 4px 4px 0 0;
@@ -234,14 +246,33 @@ body {
 /* The week is not over, so its column is not closed. A solid column here
    would claim a completed week; hatch plus an open top says "so far"
    without a sentence. */
+/* Two rails and a fill that runs out of the top. The bottom edge sits
+   on the baseline and is invisible, so opening it said nothing; the
+   top is the edge a reader reads a week's completeness from. */
 .bar.part {
   background: repeating-linear-gradient(135deg, var(--accent) 0 2px, rgba(17, 17, 17, 0) 2px 6px);
-  border: 1px solid var(--accent);
-  border-bottom: 0;
-  border-radius: 4px 4px 0 0;
+  border: 0;
+  border-left: 1px solid var(--accent);
+  border-right: 1px solid var(--accent);
+  border-radius: 0;
+  -webkit-mask-image: linear-gradient(to top, #000 72%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 72%, transparent 100%);
 }
 [data-v="dark"] .bar.part { background: repeating-linear-gradient(135deg, var(--accent) 0 2px, rgba(255, 255, 255, 0) 2px 6px); }
+/* The plate keeps its job in the twin without keeping its luminance.
+   Pure white here is 34% more emitted light than Ink 5 and sits in the
+   middle of a row whose real marks are 3px meters. */
+[data-v="dark"] .kpi.lead { background: var(--ink-2); border-color: var(--ink-2); }
+[data-v="dark"] .sk-wrap .kpi.lead { background: var(--paper); border-color: var(--line-soft); }
 .baseline { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
+/* One week, at the width and pitch it will hold when the other eleven
+   arrive. Drawing eleven faint slots beside it would be indistinguishable
+   from eleven weeks of zero, which the honest-degradation contract
+   forbids; and a gridline derived from a single datum labels the datum
+   with itself. So there is no scale here, because there is not one. */
+.plot.solo .cols { right: auto; width: 57px; }
+.plot.solo .baseline { right: auto; width: 57px; }
+.plot.solo .colw .bar-val { left: 0; right: auto; transform: none; }
 /* Three gridlines, not a grid. A column chart read against nothing gives
    you the shape and withholds the magnitude; more than three and the marks
    are competing with their own scaffolding. */
@@ -250,12 +281,29 @@ body {
 
 /* The previous best draws last, so the reader has already read the shape
    before being told where the old ceiling was. */
-.record { position: absolute; left: 0; right: 0; bottom: calc(var(--r) * 1%); height: 0; border-top: 1px dashed var(--line); animation: draw 0.6s var(--ease) both; animation-delay: 1.1s; }
-.record-tag { position: absolute; right: 0; top: -18px; color: var(--ink-3); background: var(--paper); padding-left: var(--gap-hair); }
+/* The rule animates; the label does not live inside it. A clip-path
+   keyframe with fill:both outranks any plain author declaration, so
+   anything that must paint has to sit outside the clipped box. */
+.record { position: absolute; left: 0; right: var(--gutter); bottom: calc(var(--r) * 1%); height: 0; border-top: 1px dashed var(--line); animation: draw 0.6s var(--ease) both; animation-delay: 1.1s; }
+.record-tag { position: absolute; z-index: 1; left: 0; bottom: calc(var(--r) * 1%); color: var(--ink-3); background: var(--paper); padding-right: var(--gap-hair); margin-bottom: 4px; animation: rise 0.4s var(--ease) both; animation-delay: 1.5s; }
 .bar-val { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--h) * 1% + 6px); color: var(--accent); white-space: nowrap; }
-.xaxis { display: flex; justify-content: space-between; gap: var(--gap-hair); color: var(--ink-3); }
-.xaxis span { flex: 1 1 0; text-align: center; }
-.xaxis span.mute { opacity: 0; }
+/* The live week is the last column, so its value right-aligns to the
+   rail's edge rather than centring over a mark at the plot's edge. */
+.colw:last-child .bar-val { left: auto; right: 0; transform: none; }
+.xaxis { display: flex; justify-content: space-between; gap: var(--gap-hair); color: var(--ink-3); padding-right: var(--gutter); }
+.xaxis span { flex: 1 1 0; min-width: 0; white-space: nowrap; text-align: center; }
+/* visibility, not opacity: an opacity-0 label is invisible to the eye
+   and fully present in the accessibility tree. */
+.xaxis span.mute { visibility: hidden; }
+/* The two bands where a tick wraps, measured rather than guessed:
+   1140-901 and 792 down. 900-793 is the widest the plot ever gets,
+   because the hero stacks there, and needs no thinning. */
+@media (max-width: 1140px) and (min-width: 901px), (max-width: 792px) {
+  .xaxis span:not(:only-child) { display: none; }
+  .xaxis span:not(:only-child):first-child,
+  .xaxis span:not(:only-child):nth-child(7),
+  .xaxis span:not(:only-child):last-child { display: block; flex: 0 0 auto; }
+}
 
 /* ── Movement two — the KPI row over one denominator ───────────────────
    Five cards read the same nine. Their meters are comparable only because
@@ -272,9 +320,17 @@ body {
 }
 a.kpi:hover { border-color: var(--line); transform: translateY(-2px); }
 a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a.kpi:active { transform: translateY(0); }
 .kpi.lead { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .kpi.lead .t-small { color: var(--mark-ctx); }
 .glyph { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 6px; background: var(--wash); }
+/* One top slot, one floor. The lead card leads with a label where the
+   others lead with a glyph, so its slot is grown to match rather than
+   its numeral nudged; the word block takes the slack so a label that
+   wraps to two lines cannot move the mark beneath it. */
+.kpi.lead > .t-label { height: 20px; display: flex; align-items: center; }
+.kpi > .t-small { flex: 1 1 auto; }
+.kpi > .meter, .kpi > .t-label.dim { margin-top: auto; }
 .glyph svg { display: block; }
 .meter { height: 3px; border-radius: 2px; background: var(--wash); overflow: hidden; }
 .meter i { display: block; height: 100%; border-radius: 2px; background: var(--accent); transform: scaleX(var(--f)); transform-origin: 0 50%; animation: fill 0.55s var(--ease) both; animation-delay: calc(var(--i) * 60ms + 620ms); }
@@ -284,13 +340,13 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* ── The ages strip ────────────────────────────────────────────────────
    A one-dimensional dot strip, because the finding is the tail and a
    median is the specific summary that destroys it. */
-.ages { padding: var(--gap-room); }
+.ages { padding: var(--gap-room); margin-top: var(--gap-line); }
 .strip { position: relative; height: 92px; margin-top: var(--gap-line); }
 .strip-axis { position: absolute; left: 0; right: 0; bottom: 26px; height: 1px; background: var(--line); }
 .dot {
   --disc: var(--mark-ctx);
-  position: absolute; bottom: calc(20px + var(--row, 0) * 15px); width: 12px; height: 12px; border-radius: 999px;
-  border: 0; padding: 0; background: transparent;
+  position: absolute; bottom: calc(20px + var(--row, 0) * 20px); width: 12px; height: 12px; border-radius: 999px;
+  border: 0; padding: 0; background: transparent; cursor: pointer;
   left: calc(var(--x) * 1%); transform: translateX(-50%);
 }
 /* The disc is a pseudo, not the button. An entrance that scales the control
@@ -302,13 +358,27 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   animation: pop 0.4s var(--ease) both; animation-delay: calc(var(--i) * 55ms + 760ms);
   transition: background-color 0.14s var(--ease);
 }
-.dot::after { content: ""; position: absolute; top: -11px; right: -11px; bottom: -11px; left: -11px; border-radius: 999px; }
+/* The expander is a stadium, not a circle, and it is shorter than the
+   row pitch. At -11px on every side a stacked mark's box reached its
+   neighbour's centre, and euclidean distance — which the gate was
+   measuring — cannot see occlusion. 34x28 still clears the 28px floor. */
+.dot::after { content: ""; position: absolute; top: -8px; right: -11px; bottom: -8px; left: -11px; border-radius: 14px; }
 .dot.old { --disc: var(--accent); }
 .dot:hover, .dot:focus-visible { --disc: var(--ink); }
+/* On the property, not on the pseudo's transform: the pop keyframes run
+   with fill:both and would outrank a plain declaration forever. */
+.dot:active { --disc: var(--ink-2); }
 .dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .fortnight { position: absolute; top: 0; bottom: 20px; left: calc(var(--x) * 1%); width: 0; border-left: 1px dashed var(--line); }
 .fortnight span { position: absolute; top: 0; left: var(--gap-tight); color: var(--ink-3); white-space: nowrap; }
-.strip-scale { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; color: var(--ink-3); }
+/* Every tick stands where its value stands. Distributed by flexbox the
+   marks landed on 0/33/67/100% of the strip whatever they said, and
+   agreed with the dots only because the shipped oldest job rounds the
+   axis to exactly 45. */
+.strip-scale { position: absolute; left: 0; right: 0; bottom: 0; height: 17px; color: var(--ink-3); }
+.strip-scale span { position: absolute; bottom: 0; left: calc(var(--x) * 1%); transform: translateX(-50%); }
+.strip-scale span:first-child { transform: none; }
+.strip-scale span:last-child { transform: translateX(-100%); }
 
 .tip b { display: block; font-family: "Geist Mono", ui-monospace, monospace; font-weight: 400; font-size: 12px; line-height: var(--lead-label); letter-spacing: var(--track-unit); }
 .tip s { display: block; text-decoration: none; color: var(--mark-ctx); font-size: 13px; line-height: var(--lead-body); }
@@ -327,22 +397,29 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
    Not a footnote and not an apology. The reader meets the limit exactly
    where they would otherwise assume the opposite. */
 .limits { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap-line); }
-.limit { padding: var(--gap-line); display: flex; flex-direction: column; gap: var(--gap-tight); background: var(--paper-3); border-radius: 12px; }
+.limit { padding: var(--gap-line); display: flex; flex-direction: column; gap: var(--gap-snug); background: var(--paper-3); border-radius: 12px; }
 .limit .t-label { color: var(--ink-2); }
 
 /* The chart that is not there: drawn as the chart it would be, with its
    own columns and baseline, so the absence has a shape. */
-.ghost { position: relative; margin-top: var(--gap-line); padding: var(--gap-room); border: 1px dashed var(--line); border-radius: 12px; }
+/* A figure carries a UA margin; the ladder is the only thing that sets
+   space here. The columns stand on a baseline, drawn as faintly as they
+   are, so the absence has the shape of a chart rather than a texture. */
+.ghost { position: relative; margin: var(--gap-line) 0 0; padding: var(--gap-room); border: 1px dashed var(--line); border-radius: 12px; }
+.ghost-plot::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
 .ghost-plot { position: relative; height: 120px; display: flex; align-items: flex-end; justify-content: space-between; gap: var(--gap-hair); opacity: 0.5; }
 .ghost-plot i { flex: 1 1 0; height: calc(var(--h) * 1%); border-radius: 4px 4px 0 0; background: var(--wash); border-top: 1px dashed var(--line); }
-.ghost-say { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-hair); text-align: center; }
-.ghost-say .t-head { max-width: 26ch; }
+.ghost-say { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--gap-snug); text-align: center; }
+.ghost-say .t-head { max-width: 34ch; }
 
 /* ── Degraded states are designed states ───────────────────────────────*/
 .note { display: flex; gap: var(--gap-snug); align-items: flex-start; padding: var(--gap-line); border-radius: 12px; background: var(--paper-3); }
 .note .t-body { max-width: 62ch; }
-.stack { display: flex; flex-direction: column; gap: var(--gap-tight); }
-.center { display: flex; flex-direction: column; align-items: center; gap: var(--gap-snug); text-align: center; padding-top: var(--gap-far); padding-bottom: var(--gap-far); }
+.stack { display: flex; flex-direction: column; gap: var(--gap-line); }
+/* .center composes the quiet, empty and error states, so the reset
+   lands here hardest: its gaps were 53/27/23px of borrowed margin. */
+.center { display: flex; flex-direction: column; align-items: center; gap: var(--gap-line); text-align: center; padding-top: var(--gap-far); padding-bottom: var(--gap-far); }
+.center .btn { margin-top: var(--gap-tight); }
 .center .t-body { max-width: 44ch; }
 
 .btn {
@@ -358,6 +435,7 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 }
 .btn:hover { background: var(--paper-3); border-color: var(--ink-4); }
 .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn:active { border-color: var(--ink-3); transform: translateY(1px); }
 
 /* Skeletons show only what will actually render, at its real geometry.
    They are built from the real components' own classes — an .sk-in block
@@ -437,6 +515,16 @@ a.kpi:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .limits { grid-template-columns: 1fr; }
   .sk-row { grid-template-columns: repeat(2, 1fr); }
 }
+/* When the reading wraps, the connector joins the date to the page
+   edge and points at nothing while its other end sits on the line
+   below. It is retired and the two stamps join with the middot the
+   rest of the surface already uses — LEADING the second stamp, since
+   a trailing one is the same dangling mark in a heavier weight.
+   Measured from the rendered box, not from a typed breakpoint: the
+   wrap width moved the first time the margins were corrected. */
+.reading[data-wrapped] { gap: var(--gap-tight); }
+.reading[data-wrapped] .rule { display: none; }
+.reading[data-wrapped] p:not(:first-child)::before { content: "\00b7\00a0"; }
 @media (max-width: 560px) {
   .rail { display: none; }
   .page { padding-left: var(--gap-room); padding-right: var(--gap-room); }
@@ -480,6 +568,7 @@ window.LATELY_FIXTURE = {
   },
   "readingTime": "09:14",
   "readingLong": "09:14, Thursday 16 July 2026",
+  "readingShort": "16 Jul",
   "weeks": [
     {
       "start": "27 Apr",
@@ -556,8 +645,8 @@ window.LATELY_FIXTURE = {
   ],
   "jobs": [
     {
-      "age": 2,
       "title": "Order tonic and the good olives",
+      "age": 2,
       "source": "lab"
     },
     {
@@ -566,13 +655,13 @@ window.LATELY_FIXTURE = {
       "source": "fixture"
     },
     {
-      "age": 5,
       "title": "Send the midweek rate to the June 2027 couple",
+      "age": 5,
       "source": "lab"
     },
     {
-      "age": 6,
       "title": "Approve the final seating plan",
+      "age": 6,
       "source": "lab"
     },
     {
@@ -581,8 +670,8 @@ window.LATELY_FIXTURE = {
       "source": "fixture"
     },
     {
-      "age": 11,
       "title": "Reprint the faded welcome sign",
+      "age": 11,
       "source": "lab"
     },
     {
@@ -591,22 +680,194 @@ window.LATELY_FIXTURE = {
       "source": "fixture"
     },
     {
-      "age": 23,
       "title": "Chase the boat operator on the crossing time",
+      "age": 23,
       "source": "lab"
     },
     {
-      "age": 41,
       "title": "Confirm the marquee sides with the hire company",
+      "age": 41,
       "source": "lab"
     }
   ],
   "fortnight": 14,
+  "accountDays": 3,
+  "comparisonArrives": "10 August 2026",
   "status": {
     "sitting": 3,
     "overdue": 2,
     "unowned": 1,
     "waiting": 0
+  },
+  "scopes": {
+    "full": {
+      "jobs": [
+        {
+          "title": "Order tonic and the good olives",
+          "age": 2,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the Harbour wall cordon with the harbourmaster",
+          "age": 3,
+          "source": "fixture"
+        },
+        {
+          "title": "Send the midweek rate to the June 2027 couple",
+          "age": 5,
+          "source": "lab"
+        },
+        {
+          "title": "Approve the final seating plan",
+          "age": 6,
+          "source": "lab"
+        },
+        {
+          "title": "Book the pier lighting for the ceremony hour",
+          "age": 9,
+          "source": "fixture"
+        },
+        {
+          "title": "Reprint the faded welcome sign",
+          "age": 11,
+          "source": "lab"
+        },
+        {
+          "title": "Agree the late boat return time with the skipper",
+          "age": 19,
+          "source": "fixture"
+        },
+        {
+          "title": "Chase the boat operator on the crossing time",
+          "age": 23,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the marquee sides with the hire company",
+          "age": 41,
+          "source": "lab"
+        }
+      ],
+      "status": {
+        "sitting": 3,
+        "overdue": 2,
+        "unowned": 1,
+        "waiting": 0
+      },
+      "oldest": 41
+    },
+    "quiet": {
+      "jobs": [
+        {
+          "title": "Order tonic and the good olives",
+          "age": 1,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the Harbour wall cordon with the harbourmaster",
+          "age": 2,
+          "source": "fixture"
+        },
+        {
+          "title": "Send the midweek rate to the June 2027 couple",
+          "age": 3,
+          "source": "lab"
+        },
+        {
+          "title": "Approve the final seating plan",
+          "age": 4,
+          "source": "lab"
+        },
+        {
+          "title": "Book the pier lighting for the ceremony hour",
+          "age": 6,
+          "source": "fixture"
+        },
+        {
+          "title": "Reprint the faded welcome sign",
+          "age": 7,
+          "source": "lab"
+        },
+        {
+          "title": "Chase the boat operator on the crossing time",
+          "age": 9,
+          "source": "lab"
+        },
+        {
+          "title": "Agree the late boat return time with the skipper",
+          "age": 11,
+          "source": "fixture"
+        },
+        {
+          "title": "Confirm the marquee sides with the hire company",
+          "age": 12,
+          "source": "lab"
+        }
+      ],
+      "status": {
+        "sitting": 0,
+        "overdue": 0,
+        "unowned": 0,
+        "waiting": 0
+      },
+      "oldest": 12
+    },
+    "first-run": {
+      "jobs": [
+        {
+          "title": "Confirm the Harbour wall cordon with the harbourmaster",
+          "age": 1,
+          "source": "fixture"
+        },
+        {
+          "title": "Order tonic and the good olives",
+          "age": 1,
+          "source": "lab"
+        },
+        {
+          "title": "Send the midweek rate to the June 2027 couple",
+          "age": 1,
+          "source": "lab"
+        },
+        {
+          "title": "Book the pier lighting for the ceremony hour",
+          "age": 2,
+          "source": "fixture"
+        },
+        {
+          "title": "Approve the final seating plan",
+          "age": 2,
+          "source": "lab"
+        },
+        {
+          "title": "Reprint the faded welcome sign",
+          "age": 2,
+          "source": "lab"
+        },
+        {
+          "title": "Agree the late boat return time with the skipper",
+          "age": 3,
+          "source": "fixture"
+        },
+        {
+          "title": "Chase the boat operator on the crossing time",
+          "age": 3,
+          "source": "lab"
+        },
+        {
+          "title": "Confirm the marquee sides with the hire company",
+          "age": 3,
+          "source": "lab"
+        }
+      ],
+      "status": {
+        "sitting": 0,
+        "overdue": 0,
+        "unowned": 1,
+        "waiting": 0
+      },
+      "oldest": 3
+    }
   }
 };
 </script>
@@ -621,27 +882,77 @@ const STATES = ["full", "partial", "quiet", "first-run", "empty", "loading", "er
 const VARIANTS = ["light", "dark"];
 const MOTIONS = ["play", "settled"];
 
+/* ── The URL contract, read BEFORE the accessor ──────────────────
+   An unknown ?state=, ?v= or ?motion= STOPS. The Notes shot harness
+   took three variant keys the preset table did not contain and
+   silently graded the locked preset three times over; thirty-six of
+   forty frames per room were byte-identical and nobody noticed for
+   nine rounds. A surface that accepts a key it does not have shows
+   work that does not exist.
+   It is read here, above D, because a state has to be known before
+   its facts can be: assembling a degraded state out of the full
+   state's numbers is what let the quiet state say nothing was
+   sitting over three marks that were. */
+const q = new URLSearchParams(location.search);
+const wantState = q.get("state");
+const wantV = q.get("v");
+const wantMotion = q.get("motion");
+let fatal = null;
+if (wantState !== null && !STATES.includes(wantState)) fatal = `state=${wantState}`;
+if (wantV !== null && !VARIANTS.includes(wantV)) fatal = `v=${wantV}`;
+if (wantMotion !== null && !MOTIONS.includes(wantMotion)) fatal = `motion=${wantMotion}`;
+
+/* Default: play for a person, settled for a machine. ?motion=
+   overrides either way, so the choreography is still drivable under
+   automation and the gate can prove it runs. */
+const PLAY = wantMotion ? wantMotion === "play" : !navigator.webdriver;
+if (!PLAY) document.documentElement.setAttribute("data-motion", "settled");
+
+const state = fatal ? "full" : (wantState ?? "full");
+const variant = fatal ? "light" : (wantV ?? "light");
+
 const sum = (a) => a.reduce((x, y) => x + y, 0);
+
+/* The state's own slice of the fixture. Emitted and guarded by
+   derive-fixture.mjs, which fails the build if a scope's sentence and
+   its marks disagree — so the contradiction cannot come back by hand. */
+const SCOPE = F.scopes[state] ?? F.scopes.full;
 const D = {
   workspace: F.bound.workspace,
   owner: F.bound.owner,
   readingLong: F.readingLong,
-  weeks: F.weeks,
-  jobs: F.jobs,
+  weeks: state === "first-run" ? F.weeks.slice(-1) : F.weeks,
+  jobs: SCOPE.jobs,
   fortnight: F.fortnight,
+  accountDays: F.accountDays,
+  comparisonArrives: F.comparisonArrives,
+  readingShort: F.readingShort,
   open: F.bound.openCount,
   lastFour: sum(F.weeks.slice(8).map((w) => w.v)),
   priorFour: sum(F.weeks.slice(4, 8).map((w) => w.v)),
   thisWeek: F.weeks[F.weeks.length - 1].v,
   bestPrior: Math.max(...F.weeks.slice(0, -1).map((w) => w.v)),
-  sitting: F.status.sitting,
-  overdue: F.status.overdue,
-  unowned: F.status.unowned,
-  waiting: F.status.waiting,
+  sitting: SCOPE.status.sitting,
+  overdue: SCOPE.status.overdue,
+  unowned: SCOPE.status.unowned,
+  waiting: SCOPE.status.waiting,
 };
 D.delta = D.lastFour - D.priorFour;
 D.oldest = Math.max(...D.jobs.map((j) => j.age));
-D.axisMax = Math.max(45, Math.ceil((D.oldest + 4) / 5) * 5);
+/* Derived, never typed, and with no floor: a floor of 45 forced a
+   three-day-old account to draw a six-week ruler, and it was only
+   because the full state's oldest job rounds to exactly 45 that the
+   hard-coded ticks ever agreed with the marks they label. */
+D.axisMax = Math.max(5, Math.ceil((D.oldest + 2) / 5) * 5);
+/* A threshold nothing can cross is not drawn. On a three-day-old
+   account the fortnight line sits past the end of the axis, and a rule
+   no mark can reach reads as a rule every mark has beaten. */
+D.showsFortnight = D.fortnight <= D.axisMax;
+D.scaleMarks = D.axisMax <= 10
+  ? [0, D.axisMax]
+  : D.axisMax <= 20
+    ? [0, Math.round(D.axisMax / 2), D.axisMax]
+    : [0, Math.round(D.axisMax / 3), Math.round((2 * D.axisMax) / 3), D.axisMax];
 D.peak = Math.max(...D.weeks.map((w) => w.v));
 
 /* The axis maximum is derived, never typed. A sixty-day job must not fall
@@ -666,6 +977,18 @@ const ICON = {
   clear: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9l5-6" fill="none" stroke="#059669" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 
+/* The rail is drawn, not set. Geist carries none of the three characters
+   this used to use, so an OS fallback painted them — a filled pencil beside
+   three outlines, and a different shape on every machine. audit.mjs reads
+   the authored family, never the painted one, so it could not see it.
+   Sixteen on sixteen, at 1.5 stroke, the same pen as ICON. */
+const RAIL = {
+  home: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 7 8 2.5 13.5 7v6a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  notes: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M11.2 2.8a1.7 1.7 0 0 1 2.4 2.4L6.4 12.4l-3.2.8.8-3.2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>',
+  tasks: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 8.2 7.3 10l3.4-3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  timeline: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
 function label(text) {
   return `<p class="t-label dim" data-type="label">${esc(text)}</p>`;
 }
@@ -673,18 +996,23 @@ function label(text) {
 /* A KPI card. `n` may be a number or the string "—"; when a source did not
    answer the card keeps its shape and says so in words, and never resolves
    to a fabricated zero. */
+/* The phrase comes in both numbers and is picked by the count. A fixed
+   plural under a numeral that can be 1 printed "1 have nobody's name on
+   them" on screen and spoke it aloud. Zero keeps the plural, which is
+   already correct. */
 function kpi({ n, word, glyph, i, unavailable = false }) {
   const known = !unavailable;
+  const phrase = n === 1 ? word.one : word.many;
   const share = known && D.open ? Math.min(1, n / D.open) : 0;
   const name = known
-    ? `${plural(n, "job", "jobs")} ${word}, of ${plural(D.open, "job", "jobs")} open`
-    : `${word}: not available, because Timeline did not answer`;
+    ? `${plural(n, "job", "jobs")} ${phrase}, of ${plural(D.open, "job", "jobs")} open`
+    : `Jobs ${word.many}: not available, because Timeline did not answer`;
   const body = `
       <span class="glyph" aria-hidden="true">${glyph}</span>
       ${known
         ? `<span class="t-num" data-type="bignum">${n}</span>`
         : `<span class="t-num na" data-type="bignum">&mdash;</span>`}
-      <span class="t-small dim-2" data-type="small">${esc(word)}</span>
+      <span class="t-small dim-2" data-type="small">${esc(known ? phrase : word.many)}</span>
       ${known
         ? `<span class="meter" aria-hidden="true"><i class="${n === 0 ? "zero" : ""}" style="--f:${share};--i:${i}"></i></span>`
         : `<span class="t-label dim" data-type="label">Not available</span>`}
@@ -721,8 +1049,12 @@ function chart({ record = true } = {}) {
     const show = i % 3 === 0 || i === D.weeks.length - 1;
     return `<span class="t-label ${show ? "" : "mute"}" data-type="label">${esc(w.start)}</span>`;
   }).join("");
+  /* --r is an inline custom property, so a sibling inherits nothing:
+     it is repeated deliberately, not by accident. */
+  const r = pct(D.bestPrior, max);
   const rec = record
-    ? `<span class="record" style="--r:${pct(D.bestPrior, max)}"><span class="record-tag t-label" data-type="label">Best week &middot; ${D.bestPrior}</span></span>`
+    ? `<span class="record" style="--r:${r}"></span>` +
+      `<span class="record-tag t-label" data-type="label" style="--r:${r}">Best week &middot; ${D.bestPrior}</span>`
     : "";
   /* Three gridlines with their values, so the columns are read against a
      magnitude rather than only against each other. */
@@ -732,25 +1064,29 @@ function chart({ record = true } = {}) {
   }).join("");
   return `
     <div class="chart">
-      <div class="plot">
+      <div class="plot" aria-hidden="true">
         ${grid}
         <span class="baseline"></span>
         ${rec}
         <span class="cols">${cols}</span>
       </div>
-      <div class="xaxis">${ticks}</div>
+      <div class="xaxis" aria-hidden="true">${ticks}</div>
       <p class="sr">Twelve weeks of finished work, week commencing ${esc(D.weeks[0].start)} to ${esc(D.weeks[D.weeks.length - 1].start)}: ${D.weeks.map((w) => `${w.start}, ${w.v}${w.partial ? " so far" : ""}`).join("; ")}.${record ? ` The best week before this one was ${D.bestPrior}.` : ""}</p>
     </div>`;
 }
 
-function movementOne({ record = true } = {}) {
+/* The previous best is drawn whenever it is knowable — two or more weeks
+   of record — and never switched off per state. A mark that vanishes for
+   a reason the screen does not give teaches that when something is
+   wrong, marks disappear quietly. */
+function movementOne({ record = D.weeks.length > 1 } = {}) {
   const up = D.delta >= 0;
   return `
     <section class="band" aria-labelledby="m1">
       <div class="band-head">
         <h2 class="t-sect" id="m1" data-type="sect">What you did</h2>
         <span class="grow"></span>
-        <p class="t-label dim" data-type="label">Last four weeks &middot; ${esc(D.weeks[8].start)} to ${esc(D.weeks[11].start)}</p>
+        <p class="t-label dim" data-type="label">Last four weeks &middot; ${esc(D.weeks[D.weeks.length - 4].start)} to ${esc(D.readingShort)}</p>
       </div>
       <div class="card hero rise" style="--i:1">
         <div class="hero-fig">
@@ -759,9 +1095,9 @@ function movementOne({ record = true } = {}) {
               <span class="t-hero" data-type="hero" id="count">${D.lastFour}</span>
               <span class="delta t-label" data-type="label">${up ? ICON.up : ICON.down} ${up ? "+" : ""}${D.delta} on the four before</span>
             </div>
-            <p class="t-body dim-2 hero-note" data-type="body">jobs finished, ${esc(D.workspace)}</p>
+            <p class="t-body dim-2 hero-note" data-type="body">jobs finished, ${esc(D.workspace)}${D.weeks[D.weeks.length - 1].partial ? " &mdash; this week still running" : ""}</p>
           </div>
-          <p class="t-small dim hero-note" data-type="small">Counted at the moment each job reached a done column. Every one of them is openable.</p>
+          <p class="t-small dim hero-note" data-type="small">Counted at the moment each job reached a done column.</p>
         </div>
         ${chart({ record })}
       </div>
@@ -774,7 +1110,7 @@ function strip() {
     const old = j.age >= D.fortnight;
     return `<button type="button" class="dot ${old ? "old" : ""}" style="--x:${(j.age / D.axisMax) * 100};--i:${i}" data-tip="<b>${plural(j.age, "day", "days")} open</b><s>${esc(j.title)}</s>" aria-label="${esc(j.title)}, open ${plural(j.age, "day", "days")}"></button>`;
   }).join("");
-  const marks = [0, 15, 30, 45].filter((n) => n <= D.axisMax);
+  const marks = D.scaleMarks;
   return `
     <div class="card ages rise" style="--i:3">
       <div class="band-head">
@@ -782,11 +1118,11 @@ function strip() {
         <span class="grow"></span>
         <p class="t-label dim" data-type="label">Oldest &middot; ${plural(D.oldest, "day", "days")}</p>
       </div>
-      <div class="strip">
-        <span class="fortnight" style="--x:${(D.fortnight / D.axisMax) * 100}"><span class="t-label" data-type="label">A fortnight</span></span>
+      <div class="strip" data-axis-max="${D.axisMax}">
+        ${D.showsFortnight ? `<span class="fortnight" style="--x:${(D.fortnight / D.axisMax) * 100}"><span class="t-label" data-type="label">A fortnight</span></span>` : ""}
         <span class="strip-axis"></span>
         ${dots}
-        <span class="strip-scale">${marks.map((n) => `<span class="t-unit" data-type="unit">${n === 0 ? "today" : n + "d"}</span>`).join("")}</span>
+        <span class="strip-scale">${marks.map((n) => `<span class="t-unit" data-type="unit" style="--x:${(n / D.axisMax) * 100}">${n === 0 ? "today" : n + "d"}</span>`).join("")}</span>
       </div>
       <p class="sr">${plural(D.jobs.length, "open job", "open jobs")}, by age: ${D.jobs.map((j) => `${j.title}, ${j.age} days`).join("; ")}. ${plural(D.sitting, "job has", "jobs have")} been open longer than a fortnight.</p>
     </div>`;
@@ -802,10 +1138,10 @@ function movementTwo({ partial = false } = {}) {
       </div>
       <div class="kpis">
         ${leadKpi(0)}
-        ${kpi({ n: D.sitting, word: "haven’t moved in a fortnight", glyph: ICON.still, i: 1 })}
-        ${kpi({ n: D.overdue, word: "past the day they were due", glyph: ICON.past, i: 2, unavailable: partial })}
-        ${kpi({ n: D.unowned, word: "have nobody’s name on them", glyph: ICON.nobody, i: 3 })}
-        ${kpi({ n: D.waiting, word: "are waiting on something else", glyph: ICON.waiting, i: 4 })}
+        ${kpi({ n: D.sitting, word: { one: "hasn’t moved in a fortnight", many: "haven’t moved in a fortnight" }, glyph: ICON.still, i: 1 })}
+        ${kpi({ n: D.overdue, word: { one: "is past the day it was due", many: "past the day they were due" }, glyph: ICON.past, i: 2, unavailable: partial })}
+        ${kpi({ n: D.unowned, word: { one: "has nobody’s name on it", many: "have nobody’s name on them" }, glyph: ICON.nobody, i: 3 })}
+        ${kpi({ n: D.waiting, word: { one: "is waiting on something else", many: "are waiting on something else" }, glyph: ICON.waiting, i: 4 })}
       </div>
       ${partial ? `<div class="note" style="margin-top:var(--gap-line)"><p class="t-body dim-2" data-type="body">Timeline did not answer this reading, so nothing here knows a due date. The card keeps its place and says so; it does not fall back to zero.</p></div>` : ""}
       ${strip()}
@@ -813,10 +1149,14 @@ function movementTwo({ partial = false } = {}) {
 }
 
 /* ── Movement three ─────────────────────────────────────────────────── */
+/* Written for the owner, not for the team that built it. The second tile
+   states a condition rather than a start date: nothing records a date move
+   yet, so naming the month one begins would be a fact the fixture does not
+   hold — and the month it used to name had not happened at the reading. */
 const LIMITS = [
-  ["Open work over time", "The snapshot writer has no callers yet, so there are no earlier readings to compare."],
-  ["How a date moved", "The date recorder switched on in August. History accrues forward only."],
-  ["Decisions still open", "Notes keeps no structured decision record to read. That is a Notes change, not this one."],
+  ["Open work over time", "Nothing was written down about how much was open in earlier weeks, so there is nothing yet to compare this against."],
+  ["How a date moved", "When a date gets moved, nothing keeps a record of it yet. Once something does, only moves from that day on will be in it."],
+  ["Decisions still open", "Notes doesn’t keep a list of which decisions are still open, so nothing here can count them. That would be a change in Notes."],
 ];
 
 function movementThree() {
@@ -837,13 +1177,13 @@ function movementThree() {
           <p class="t-small dim-2" data-type="small">${why}</p>
         </div>`).join("")}
       </div>
-      <div class="ghost rise" style="--i:2">
+      <figure class="ghost rise" style="--i:2">
         <div class="ghost-plot" aria-hidden="true">${ghostCols}</div>
-        <div class="ghost-say">
-          <p class="t-head" data-type="head">This is the chart we would draw</p>
-          <p class="t-small dim" data-type="small">and it stays empty until the recorder has run for three periods.</p>
-        </div>
-      </div>
+        <figcaption class="ghost-say">
+          <p class="t-head" data-type="head">Open work over time — the chart that would go here</p>
+          <p class="t-small dim" data-type="small">Once open work starts being counted each week, it fills in after about a month.</p>
+        </figcaption>
+      </figure>
     </section>`;
 }
 
@@ -863,7 +1203,7 @@ function shell(inner) {
   return `
   <div class="app">
     <nav class="rail" aria-hidden="true">
-      <i class="on">&#8962;</i><i>&#9998;</i><i>&#9745;</i><i>&#8599;</i>
+      <i class="on">${RAIL.home}</i><i>${RAIL.notes}</i><i>${RAIL.tasks}</i><i>${RAIL.timeline}</i>
     </nav>
     <div class="canvas"><div class="scroll"><div class="page">
       <header class="top">
@@ -873,7 +1213,7 @@ function shell(inner) {
         </div>
         <nav class="tabs" aria-label="Home views">
           <a class="tab t-body" data-type="control" href="#">Today&rsquo;s Signal</a>
-          <a class="tab t-body" data-type="control" href="#">Full briefing</a>
+          <a class="tab t-body" data-type="control" href="#">Full Briefing</a>
           <a class="tab t-body" data-type="control" href="#" aria-current="page">Lately</a>
         </nav>
         <div class="reading">
@@ -883,13 +1223,14 @@ function shell(inner) {
         </div>
       </header>
       <main>${inner}</main>
-      <div class="coverage t-label" data-type="label">
+      <footer class="coverage t-label" data-type="label" aria-label="What this reading was built from">
         <span><b>Tasks</b> ${esc(sources.tasks)}</span>
         <span><b>Timeline</b> ${esc(sources.timeline)}</span>
         <span><b>Notes</b> ${esc(sources.notes)}</span>
         <span><b>Read</b> ${esc(D.readingLong)}</span>
-        <span><b>Lab</b> weekly counts and ages are lab-authored; ${esc(D.workspace)}, ${esc(D.owner)}, the reading date and the ${D.open} are bound to the shipping fixture</span>
-      </div>
+        <span><b>Lab</b> counts and ages are lab-authored</span>
+        <span><b>Bound</b> workspace, owner, reading date and the ${D.open}</span>
+      </footer>
     </div></div></div>
   </div>`;
 }
@@ -897,7 +1238,7 @@ function shell(inner) {
 const VIEW = {
   full: () => shell(movementOne() + movementTwo() + movementThree()),
 
-  partial: () => shell(movementOne({ record: false }) + movementTwo({ partial: true }) + movementThree()),
+  partial: () => shell(movementOne() + movementTwo({ partial: true }) + movementThree()),
 
   /* Nothing slipping. The band does not vanish — an absent band reads as a
      bug — it states the absence once, with its arithmetic. */
@@ -910,7 +1251,7 @@ const VIEW = {
         <div class="center">
           <span class="glyph" aria-hidden="true">${ICON.clear}</span>
           <p class="t-head" data-type="head">Nothing is sitting</p>
-          <p class="t-body dim-2" data-type="body">All ${plural(D.open, "open job", "open jobs")} has moved inside a fortnight, none is past its day, and every one has a name on it.</p>
+          <p class="t-body dim-2" data-type="body">${D.open === 1 ? "The one open job has" : `All ${D.open} open jobs have`} moved inside a fortnight, none is past its day, and every one has a name on it.</p>
         </div>
       </div>
       ${strip()}
@@ -929,14 +1270,15 @@ const VIEW = {
             <div class="hero-n"><span class="t-hero" data-type="hero">${D.thisWeek}</span></div>
             <p class="t-body dim-2 hero-note" data-type="body">jobs finished since you started, ${esc(D.workspace)}</p>
           </div>
-          <p class="t-small dim hero-note" data-type="small">Four weeks of records make a comparison worth printing. Yours arrive on 10 August.</p>
+          <p class="t-small dim hero-note" data-type="small">Four weeks of records make a comparison worth printing. Yours arrive on ${esc(D.comparisonArrives)}.</p>
         </div>
         <div class="chart">
-          <div class="plot">
+          <div class="plot solo" aria-hidden="true">
             <span class="baseline"></span>
-            <span class="cols"><span class="colw"><span class="bar part" style="--h:60;--i:0"></span><span class="bar-val t-label" data-type="label" style="--h:60">${D.thisWeek} so far</span></span></span>
+            <span class="cols"><span class="colw"><span class="bar part" style="--h:100;--i:0"></span><span class="bar-val t-label" data-type="label" style="--h:100">${D.thisWeek} so far</span></span></span>
           </div>
-          <div class="xaxis"><span class="t-label" data-type="label">${esc(D.weeks[11].start)}</span></div>
+          <div class="xaxis" aria-hidden="true"><span class="t-label" data-type="label">${esc(D.weeks[0].start)}</span></div>
+          <p class="sr">This week so far: ${D.thisWeek} jobs finished, week commencing ${esc(D.weeks[0].start)}. There is no earlier week to compare it with; twelve weeks of history are not recorded yet.</p>
         </div>
       </div>
     </section>` + movementTwo() + movementThree()),
@@ -944,10 +1286,10 @@ const VIEW = {
   /* One instruction, once. Four templated "nothing here" lines is the
      defect this state exists to avoid. */
   empty: () => shell(`
-    <section class="band">
+    <section class="band" aria-labelledby="mEmpty">
       <div class="card rise" style="--i:0">
         <div class="center">
-          <p class="t-sect" data-type="sect">No work recorded yet</p>
+          <h2 class="t-sect" id="mEmpty" data-type="sect">No work recorded yet</h2>
           <p class="t-body dim-2" data-type="body">Add the first job in Tasks and this view fills itself in as you finish things.</p>
           <button type="button" class="btn t-body" data-type="control">Open Tasks</button>
         </div>
@@ -958,44 +1300,26 @@ const VIEW = {
      render — never a promise of a section that never arrives. */
   loading: () => shell(
     `<div class="sk-wrap" aria-hidden="true">${movementOne() + movementTwo()}</div>` +
-    `<p class="sr">Loading this reading.</p>`),
+    `<p class="sr" role="status">Loading this reading.</p>`),
 
   /* Names the source, offers the one useful move, and shows nothing it
      cannot stand behind. */
   error: () => shell(`
-    <section class="band">
+    <section class="band" aria-labelledby="mError">
       <div class="card rise" style="--i:0">
         <div class="center">
-          <p class="t-sect" data-type="sect">Tasks did not answer</p>
-          <p class="t-body dim-2" data-type="body">This reading needs the Tasks records and they did not come back. Nothing below is shown, because a part of this screen would be guessing.</p>
+          <div role="alert">
+            <h2 class="t-sect" id="mError" data-type="sect">Tasks did not answer</h2>
+            <p class="t-body dim-2" data-type="body">This reading needs the Tasks records and they did not come back. Nothing below is shown, because a part of this screen would be guessing.</p>
+          </div>
           <button type="button" class="btn t-body" data-type="control" id="retry">Try again</button>
-          <p class="t-label dim" data-type="label">Last good reading &middot; ${esc(D.readingLong)}</p>
         </div>
       </div>
     </section>`),
 };
 
-/* ── The URL contract ───────────────────────────────────────────────────
-   An unknown ?state= or ?v= STOPS. The Notes shot harness took three
-   variant keys the preset table did not contain and silently graded the
-   locked preset three times over; thirty-six of forty frames per room were
-   byte-identical and nobody noticed for nine rounds. A surface that
-   accepts a key it does not have shows work that does not exist. */
-const q = new URLSearchParams(location.search);
-const wantState = q.get("state");
-const wantV = q.get("v");
-let fatal = null;
-const wantMotion = q.get("motion");
-if (wantState !== null && !STATES.includes(wantState)) fatal = `state=${wantState}`;
-if (wantV !== null && !VARIANTS.includes(wantV)) fatal = `v=${wantV}`;
-if (wantMotion !== null && !MOTIONS.includes(wantMotion)) fatal = `motion=${wantMotion}`;
-
-/* Default: play for a person, settled for a machine. ?motion= overrides
-   either way, so the choreography is still drivable under automation and
-   the gate can prove it runs. */
-const PLAY = wantMotion ? wantMotion === "play" : !navigator.webdriver;
-if (!PLAY) document.documentElement.setAttribute("data-motion", "settled");
-
+/* The keys were read at the top of this script, above the accessor, so
+   that a state could own its own facts. What is left here is the render. */
 const root = document.getElementById("root");
 const tip = document.getElementById("tip");
 
@@ -1010,8 +1334,6 @@ if (fatal) {
       <p class="t-body dim-2" data-type="body">This master serves ${STATES.join(", ")} at ${VARIANTS.join(" and ")}, with motion ${MOTIONS.join(" or ")}. It stops on anything else rather than showing you the default and letting you believe you asked for it.</p>
     </div>`;
 } else {
-  const state = wantState ?? "full";
-  const variant = wantV ?? "light";
   document.body.dataset.state = state;
   document.body.dataset.v = variant;
   sources = SOURCES[state];
@@ -1046,7 +1368,9 @@ if (fatal) {
     if (!strip) return;
     const w = strip.clientWidth;
     if (!w) return;
-    const MIN = 16;
+    /* 20px, against a 17px expander half-width, so no mark's box can
+       reach another mark's centre at any density. */
+    const MIN = 20;
     const rows = [];
     Array.from(root.querySelectorAll(".dot"))
       .map((el) => ({ el, x: (parseFloat(el.style.getPropertyValue("--x")) / 100) * w }))
@@ -1057,10 +1381,23 @@ if (fatal) {
         rows[r] = x;
         el.style.setProperty("--row", r);
       });
-    strip.style.minHeight = `${92 + Math.max(0, rows.length - 1) * 15}px`;
+    strip.style.minHeight = `${92 + Math.max(0, rows.length - 1) * 20}px`;
   };
-  deswarm();
-  window.addEventListener("resize", deswarm);
+  /* The reading line's connector, measured after layout. */
+  const reading = root.querySelector(".reading");
+  const measureReading = () => {
+    if (!reading) return;
+    reading.removeAttribute("data-wrapped");
+    const tops = Array.from(reading.querySelectorAll("p")).map((p) => Math.round(p.getBoundingClientRect().top));
+    if (new Set(tops).size > 1) reading.setAttribute("data-wrapped", "");
+  };
+  const relayout = () => { deswarm(); measureReading(); };
+  relayout();
+  /* Again once the faces have swapped. A measurement taken against the
+     fallback face is a measurement of a page nobody sees, and the
+     reading line wraps at a different width in each. */
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+  window.addEventListener("resize", () => { relayout(); queueMove(); });
 
   /* Pointer AND touch, and they are not the same interaction.
      A tooltip bound to hover does not exist under a coarse pointer: a tap
@@ -1070,8 +1407,10 @@ if (fatal) {
      hover is left alone on a fine pointer. The mark's title lives nowhere
      else on the screen, so this is the whole reading on a phone. */
   let pinned = null;
+  /* Filling and placing are separated so the scroll handler can reposition
+     without re-parsing the tip's markup on every frame. */
+  const fill = (el) => { tip.innerHTML = el.dataset.tip; };
   const place = (el) => {
-    tip.innerHTML = el.dataset.tip;
     tip.classList.add("on");
     const box = el.getBoundingClientRect();
     const own = tip.getBoundingClientRect();
@@ -1079,9 +1418,30 @@ if (fatal) {
     const above = box.top - own.height - 8;
     tip.style.top = `${above >= 8 ? above : Math.min(window.innerHeight - own.height - 8, box.bottom + 8)}px`;
   };
-  const show = (el, pin = false) => { place(el); if (pin) pinned = el; };
-  const hide = (force = false) => { if (pinned && !force) return; tip.classList.remove("on"); };
-  const drop = () => { pinned = null; tip.classList.remove("on"); };
+  let showing = null;
+  const show = (el, pin = false) => { showing = el; fill(el); place(el); if (pin) pinned = el; };
+  const hide = (force = false) => { if (pinned && !force) return; tip.classList.remove("on"); showing = null; };
+  const drop = () => { pinned = null; showing = null; tip.classList.remove("on"); };
+
+  /* The surface scrolls inside .scroll, not the document, so no scroll
+     event reaches a window listener without capture. A focus-raised tip
+     is hidden and restored when its mark comes back; only a touch pin is
+     retired, because dropping a focused mark's label leaves a visibly
+     focused mark with no name anywhere on the screen. */
+  let queued = false;
+  const onMove = () => {
+    queued = false;
+    if (!showing) return;
+    const b = showing.getBoundingClientRect();
+    if (b.bottom < 0 || b.top > window.innerHeight) {
+      if (pinned) drop(); else tip.classList.remove("on");
+      return;
+    }
+    if (pinned === showing || document.activeElement === showing) tip.classList.add("on");
+    if (tip.classList.contains("on")) place(showing);
+  };
+  const queueMove = () => { if (!queued) { queued = true; requestAnimationFrame(onMove); } };
+  window.addEventListener("scroll", queueMove, { capture: true, passive: true });
 
   document.addEventListener("pointerdown", (e) => {
     if (e.pointerType === "touch" && !e.target.closest("[data-tip]")) drop();
