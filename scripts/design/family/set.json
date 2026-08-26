@@ -1,5 +1,6 @@
 {
   "note": "The canonical map of the August 2026 elevation family. Three products, five documents each. Every artifact's top rail is generated from this file, so a URL is corrected in one place and lands in fifteen pages.",
+  "excluded": "The master suite artefact (docs/design/labs/master-suite-2026-08, branch design/master-suite-2026-08) is deliberately NOT in this file and must never be added. Every page listed here is apparatus for reviewing the products and carries the ink famRail. The master is the products themselves, in production, and its whole brief is that not one pixel of console chrome appears in it. apply.mjs patches this file's targets idempotently, so registering the master would inject the black family rail into the one page that must never have it — silently, on some later run. Its URL belongs in the record, not in this list.",
   "docs": [
     {
       "slot": "ceo",
