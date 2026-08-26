@@ -170,7 +170,10 @@
     }
   }
 
-  const MOD = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl";
+  /* One keycap helper for the suite — one detection, one join. This file
+     printed four notations for one modifier and used a different platform
+     test from Timeline. window.__SUITE.key() is the only one now. */
+  const cap = window.__SUITE.key;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   /* Capture lives on the desk's paper on a wide screen and in the dock on a
      phone, and exactly one of them is ever rendered. Rendering both and
@@ -1625,7 +1628,7 @@
                       in, and exactly one control by that name exists. */
                    state === "search"
                      ? `<button class="dockGlyph" type="button" data-act="search" aria-current="true" data-ink aria-label="Search, open">${I.search}</button>`
-                     : `<button class="dockField" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}<span>Search everything you wrote</span><kbd>${MOD === "⌘" ? "⌘K" : "Ctrl K"}</kbd></button>`
+                     : `<button class="dockField" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}<span>Search everything you wrote</span><kbd>${cap("K")}</kbd></button>`
                  }
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
@@ -1642,7 +1645,7 @@
     return `
       <div class="undo" role="status">
         <span>${esc(undone.label)}</span>
-        <button class="undoAct" type="button" data-act="undo">${I.undo}Undo<kbd>${MOD}+Z</kbd></button>
+        <button class="undoAct" type="button" data-act="undo">${I.undo}Undo<kbd>${cap("Z")}</kbd></button>
         <span class="undoFor tab">for ${Math.max(1, undoLeft)} seconds</span>
       </div>`;
   }
@@ -1723,7 +1726,7 @@
             <span class="topMeta restPart">${esc(N.copy.privacyLong)}</span>
             <span class="topMeta tab commitPart" data-count>${esc(counterText(draft.length))}</span>
             <span class="spacer commitPart"></span>
-            <button class="act commitPart" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>
+            <button class="act commitPart" data-ink type="button" data-act="keep">${I.check}${esc(N.copy.save)}<kbd>${cap("Enter")}</kbd></button>
           </div>
         </div>
         <div class="deskAside">
@@ -1858,7 +1861,7 @@
               <span class="topMeta tab" data-count>${esc(counterText(editDraft.length))}</span>
               <span class="spacer"></span>
               <button class="act" data-quiet type="button" data-act="cancel-edit">${esc(N.copy.cancel)}</button>
-              <button class="act" data-ink type="button" data-act="save-edit">${I.check}${esc(N.copy.save)}<kbd>${MOD}+Enter</kbd></button>
+              <button class="act" data-ink type="button" data-act="save-edit">${I.check}${esc(N.copy.save)}<kbd>${cap("Enter")}</kbd></button>
             </div>
           </div>
           ${aside}
@@ -2057,7 +2060,7 @@
     return `
       <div class="indexWrap">
         <div class="indexHead">
-          <span>${esc(o.title || "Your notes")}</span>${o.mode === "crossed" || o.noDays ? "" : `<kbd class="headKbd">${MOD === "⌘" ? "⌘↓" : "Ctrl ↓"}</kbd>`}
+          <span>${esc(o.title || "Your notes")}</span>${o.mode === "crossed" || o.noDays ? "" : `<kbd class="headKbd">${cap("↓")}</kbd>`}
           ${o.count === null ? "" : `<span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>`}
           ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
@@ -2327,7 +2330,7 @@
             <p class="darkNote">${esc(N.copy.voiceDisclosure)}</p>
             <span class="spacer"></span>
             <button class="darkAct" type="button" data-act="voice-cancel">Cancel<kbd>Esc</kbd></button>
-            <button class="darkAct" data-primary type="button" data-act="voice-stop">${I.stop}Stop and read it back<kbd>${MOD}+Enter</kbd></button>
+            <button class="darkAct" data-primary type="button" data-act="voice-stop">${I.stop}Stop and read it back<kbd>${cap("Enter")}</kbd></button>
           </div>
         </section>`,
     };
@@ -2398,7 +2401,7 @@
           <button class="verb" type="button" data-act="add-piece">${I.plus}Add another</button>
           <span class="spacer"></span>
           <button class="act" data-quiet type="button" data-act="discard-speech">Discard</button>
-          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Keep ${keepWhich(pieces.length)}<kbd>${MOD}+Enter</kbd></button>
+          <button class="act" data-ink type="button" data-act="keep-both">${I.check}Keep ${keepWhich(pieces.length)}<kbd>${cap("Enter")}</kbd></button>
         </div>
       </div>`,
       { behind: 1, label: "What came back" },

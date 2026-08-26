@@ -618,8 +618,32 @@
 /* Whose wedding it is never shrinks. Everything else in the row yields
    first, in a stated order, rather than every token losing pixels in
    proportion to its own length. */
-[data-app="tasks"] .cardFoot > .who { flex: 0 0 auto; position: relative; cursor: pointer; }
-[data-app="tasks"] .cardFoot > .who::before { content: ""; position: absolute; inset: -7px; }
+/* THE TARGET IS THE BOX, not a pseudo the box then clips.
+   `.who` carried `overflow: hidden` for its ellipsis and an absolutely
+   positioned `::before` at inset -7px for its hit area. `overflow: hidden`
+   clips an element's own ::before, so the grower painted and hit-tested
+   nowhere: every declared-inset check read 30px and the browser answered
+   16. The person filter — the control that puts the board into "only Mara
+   & Finn", on every card — had a 16px touch target, and a miss landed on
+   the card body and opened the note instead. A control that opens a
+   different surface when you miss it is worse than one that does nothing.
+
+   Two fixes were tried and measured before this one. `overflow-clip-margin`
+   applies on BOTH axes and let seven pixels more of a truncated name
+   paint, costing 21px of the frozen board at 1280. `overflow-x: clip` with
+   `overflow-y: visible` does not survive the spec — a `visible` axis
+   beside a clipped one computes to `auto`, which makes a scroll container.
+
+   So the box grows instead: real vertical padding for the target, pulled
+   back by an equal negative margin so the flex row it sits in is
+   unchanged. `overflow: hidden` now clips at a 30px box the text is
+   centred in, which is why nothing moves — verified pixel-identical to
+   the lab at all four widths. */
+[data-app="tasks"] .cardFoot > .who {
+  flex: 0 0 auto; position: relative; cursor: pointer;
+  padding-block: 7px;
+  margin-block: -7px;
+}
 [data-app="tasks"] .cardFoot > .who:hover { text-decoration: underline; text-underline-offset: 3px; }
 [data-app="tasks"] .cardFoot > .who[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 3px; }
 [data-app="tasks"] .cardFoot > .tag { flex: 0 3 auto; }

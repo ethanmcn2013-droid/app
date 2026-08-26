@@ -1173,8 +1173,10 @@
      restored nothing and cleared itself as though it had worked. */
   /* The undo handler has always accepted either modifier; the keycap
      named only one of them. */
-  var MAC_KEYS = /Mac|iPhone|iPad/.test(
-    (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "");
+  /* This file read navigator.userAgentData.platform first, which reports
+     "macOS" and does not match /Mac|iPhone|iPad/ — so on a Mac this
+     product printed Ctrl while the notebook beside it printed the command
+     glyph. One detection now, at suite scope. */
   var history = [];
   /* Monotonic for the life of the project. Minting from milestones.length
      reissued live ids after a delete, which silently wrote one moment's
@@ -1185,7 +1187,7 @@
     return h("div.b-undo", { role: "status", "data-empty": "true" }, [
       h("span.b-undoText", { text: "" }),
       h("button.b-undoAct", { type: "button", disabled: "disabled", tabindex: "-1", text: "Undo" }),
-      h("kbd", { text: MAC_KEYS ? "⌘ Z" : "Ctrl Z" }),
+      h("kbd", { text: window.__SUITE.key("Z") }),
     ]);
   }
 

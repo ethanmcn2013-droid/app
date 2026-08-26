@@ -16,3 +16,9 @@ _scaffold/
 # tools/gates.mjs writes them fresh every run out of the labs themselves —
 # committing them would be committing a second copy of somebody else's gate.
 gates/
+
+# Seat scratch — agents write probes here while driving the file.
+_m.mjs
+_zz_*.mjs
+_verify.out
+_round1.json

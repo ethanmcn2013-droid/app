@@ -147,6 +147,33 @@ window.__SUITE = (function () {
     }
   }
 
+  /* ── the keycap ───────────────────────────────────────────────
+     One modifier, four printings, in one document. Notes printed
+     "Ctrl K" in the dock and "Ctrl+Z" on the undo bar — space and plus on
+     the same sheet, in the same frame — and Timeline printed "Ctrl Z"
+     with a stray space before the letter. On a Mac it got worse: Notes
+     printed "⌘+Z", a form macOS does not use and no premium product
+     prints.
+
+     And the DETECTION differed, which is the load-bearing half. Notes and
+     Tasks read `navigator.platform`; Timeline read
+     `navigator.userAgentData.platform` first, which reports "macOS" and
+     does not match /Mac|iPhone|iPad/ — so on one Mac, in one document,
+     Notes printed ⌘ and Timeline printed Ctrl. The application could tell
+     one person she had two different keyboards.
+
+     Tasks' join is the one promoted, because it was already right: ⌘
+     abuts its letter, per Apple's own convention, and Ctrl is a word so
+     it takes a space. The words stay words — "Enter", not ↵. Orla reads
+     Enter off her keyboard, and ⌘ already renders 18px against 10.7px
+     for "A" in the same declared stack, which is a glyph resolving out of
+     Geist into a system fallback. One unmeasured glyph is enough. */
+  var MAC = /mac|iphone|ipad/i.test(
+    navigator.platform || (navigator.userAgentData && navigator.userAgentData.platform) || navigator.userAgent || "");
+  function keycap(rest) {
+    return MAC ? "⌘" + rest : "Ctrl " + rest;
+  }
+
   /* ── the live region ──────────────────────────────────────────
      One region for the suite. Two products each appending their own would
      put two elements with id="say" in one document, and a region that is
@@ -436,6 +463,9 @@ window.__SUITE = (function () {
     current: function () { return current; },
     region: region,
     say: say,
+    /* Every <kbd> in all three products comes through here. */
+    key: keycap,
+    mac: function () { return MAC; },
     go: go,
     cross: cross,
     uncross: uncross,

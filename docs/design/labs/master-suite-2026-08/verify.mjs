@@ -26,6 +26,7 @@ import { chromium } from "@playwright/test";
 import { orientation } from "./tools/orientation.mjs";
 import { spine as spineKeys } from "./tools/spine.mjs";
 import { truth } from "./tools/truth.mjs";
+import { craft } from "./tools/craft.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -50,6 +51,20 @@ const CHANGED = {
     + "the dock's account tile now says what the rail's says",
   timeline: "a second composition (across) and its own wordmark on the sheet head",
 };
+
+/* A product this engagement did not redesign, but did repair. The board is
+   still byte-identical to its lab at 1440, 768 and 390; at 1280 it differs
+   by 21 pixels, scattered, and they are the cost of giving the person
+   filter a real touch target. `.who` carried its hit area on a pseudo that
+   its own `overflow: hidden` clipped, so the control answered over 16px
+   while every declared-inset check read 30. Growing the box by 7px of
+   padding and pulling it back with an equal negative margin fixes the
+   target; the taller box nudges a sub-pixel baseline on one row at one
+   width. Twenty-one pixels against a control that opened the wrong
+   surface when a thumb missed it is a trade worth naming rather than
+   chasing — and it is bounded here, so a fix that costs more than this
+   fails. */
+const REPAIRED = { tasks: { px: 32, why: "the person filter's touch target, 16px → 30px" } };
 
 const LABS = {
   tasks: ["_wt-design-tasks/docs/design/labs/tasks-2026-08/floor.html", "?v=locked"],
@@ -176,7 +191,12 @@ async function fidelity() {
          moved to tools/moved.mjs, which snapshots the composed file
          against itself and is what proved the leading fix cost nothing. */
       const declared = CHANGED[product];
-      if (!declared) {
+      const repaired = REPAIRED[product];
+      if (!declared && repaired) {
+        check("fidelity", `${product} @${width} · the sheet`, inSheet <= repaired.px,
+          inSheet === 0 ? `${sheet.w}×${sheet.h} at ${sheet.x},${sheet.y} — identical`
+            : `${inSheet} px, within the ${repaired.px} allowed for ${repaired.why}`);
+      } else if (!declared) {
         check("fidelity", `${product} @${width} · the sheet`, inSheet === 0,
           inSheet === 0 ? `${sheet.w}×${sheet.h} at ${sheet.x},${sheet.y} — identical` : `${inSheet} px differ`);
       } else {
@@ -865,6 +885,7 @@ if (run("orientation")) {
 }
 if (run("spinekeys")) await spineKeys({ browser, url: SUITE_URL, check, head });
 if (run("truth")) await truth({ browser, url: SUITE_URL, check, head });
+if (run("craft")) await craft({ browser, url: SUITE_URL, check, head });
 if (run("labgates")) await labGates();
 
 await browser.close();

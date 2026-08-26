@@ -253,9 +253,19 @@
    Saturday, printed it in its largest type and then did nothing with it.
    Its hit area reaches the whole row without the row growing — the same
    expander the desk's facts already use. */
+/* THE RULE, not the patch: an element may not both clip its overflow and
+   rely on its own pseudo-element for its hit target. `overflow: hidden`
+   clips a ::before, and here the ::before IS the target — inset -11px
+   -9px on a 22px control, which every declared-inset check reads as 44
+   and passes while the browser hit-tests 22. Round 1 found this class on
+   `.who` in Tasks; the pointer-based assertion written to close that one
+   found this one on the next run, which is the difference between a check
+   that reads a stylesheet and one that asks the browser.
+   `clip` keeps the ellipsis; the margin is the grower's own inset. */
 [data-app="notes"] .headNext {
   position: relative; display: inline-flex; align-items: baseline; gap: 8px; flex: 0 1 auto;
-  min-width: 0; overflow: hidden; cursor: pointer; border-radius: var(--r-chip);
+  min-width: 0; overflow: clip; overflow-clip-margin: 11px;
+  cursor: pointer; border-radius: var(--r-chip);
 }
 [data-app="notes"] .headNext::before { content: ""; position: absolute; inset: -11px -9px; }
 [data-app="notes"] .headNext:hover b { color: var(--ink); }
