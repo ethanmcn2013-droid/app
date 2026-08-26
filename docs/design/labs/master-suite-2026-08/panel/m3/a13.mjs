@@ -1,0 +1,15 @@
+import { launch, open } from "./drive.mjs";
+const b = await launch();
+const p = await open(b, { state: "tasks.board", width:1440, height:960 });
+await p.evaluate(()=>{window.__ann=[];for(const t of document.querySelectorAll("[aria-live],[role=status],[role=alert],[role=log]"))new MutationObserver(()=>window.__ann.push((t.textContent||"").trim().slice(0,120))).observe(t,{childList:true,subtree:true,characterData:true});});
+const dump=async(tag)=>console.log(tag,"ANN",JSON.stringify(await p.evaluate(()=>{const x=window.__ann;window.__ann=[];return x;})));
+const cur = async()=>await p.evaluate(()=>{const a=document.activeElement;return (a.tagName.toLowerCase()+"."+String(a.className).split(" ")[0])+" | "+(a.getAttribute("aria-label")||a.textContent||"").trim().replace(/\s+/g," ").slice(0,44)+" | lane:"+(a.closest(".tray")?.getAttribute("aria-label")||"-");});
+await p.evaluate(()=>{const c=[...document.querySelectorAll("article.card")].find(x=>x.tabIndex===0); c&&c.focus();});
+await p.keyboard.press("ArrowRight"); await p.keyboard.press("ArrowRight"); await p.waitForTimeout(150);
+console.log("on", await cur());
+await p.keyboard.press("Space"); await p.waitForTimeout(250); await dump("pickup"); console.log("picked", await cur());
+await p.keyboard.press("ArrowRight"); await p.waitForTimeout(250); await dump("right"); console.log("moved", await cur());
+await p.keyboard.press("Enter"); await p.waitForTimeout(400); await dump("drop"); console.log("dropped", await cur());
+console.log("waiting lane label now:", await p.evaluate(()=>document.querySelectorAll(".tray")[3]?.getAttribute("aria-label")));
+console.log("trayAdd map:", JSON.stringify(await p.evaluate(()=>[...document.querySelectorAll(".trayAdd")].map(e=>e.getAttribute("aria-label")+":"+e.tabIndex))));
+await p.close(); await b.close();

@@ -1,0 +1,12 @@
+import { launch, open } from "./drive.mjs";
+const b = await launch();
+const p = await open(b, { state: "notes.seam", width:1440, height:960 });
+const t0 = await p.evaluate(()=>document.body.innerText);
+await p.locator('.index[aria-label="Already in Tasks"] .idxRow').nth(1).click({force:true});
+await p.waitForTimeout(800);
+const t1 = await p.evaluate(()=>document.body.innerText);
+const a=t0.split("\n"), c=t1.split("\n");
+console.log("ADDED:", c.filter(x=>!a.includes(x)).join(" | ").slice(0,400));
+console.log("REMOVED:", a.filter(x=>!c.includes(x)).join(" | ").slice(0,400));
+await p.screenshot({path:"panel/m3/row-click.png"});
+await p.close(); await b.close();

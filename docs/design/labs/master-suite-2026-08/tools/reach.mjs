@@ -167,4 +167,96 @@ export async function reach({ browser, url, check, head, lab }) {
 
     await page.close();
   }
+
+  /* ── round 3 · a rect that can be zero ──────────────────────────
+     The suite sets `display: contents` on every `.app`, so the app element
+     has NO BOX: getBoundingClientRect() on it is all zeros. Tasks anchored
+     its card menu to that rect —
+
+         const frame = window.__SUITE.host("tasks").getBoundingClientRect();
+         const top = Math.min(box.bottom - frame.top + 6, frame.height - 250);
+
+     — so `top` resolved to `0 - 250` at every card, in every lane, at every
+     width, with every pointer. The only route to moving a card that a mouse,
+     a finger and a keyboard can all take rendered 250px above the top of the
+     screen, under a transparent full-viewport veil that then ate the next
+     click. It survived to the final round because no gate ever opened it.
+
+     Two assertions, and the static one is the more valuable: this is the
+     same shape as the dead drawer selector — a composition property that
+     silently zeroes something a product wrote against its own root. */
+  const zeroed = [];
+  for (const file of ["tasks.js", "notes.js", "timeline.js", "app.js"]) {
+    let js;
+    try { js = await readFile(path.join(lab, "src", file), "utf8"); }
+    catch { continue; }
+    js = js.replace(/\/\*[\s\S]*?\*\//g, " ");
+    /* The host measured for geometry, directly or through a variable that
+       is assigned nothing else. */
+    const direct = /__SUITE\.host\([^)]*\)\s*\.\s*getBoundingClientRect/g;
+    for (const m of js.matchAll(direct)) zeroed.push(file + " · " + m[0]);
+    const named = /(?:const|let|var)\s+(\w+)\s*=\s*window\.__SUITE\.host\(/g;
+    for (const m of js.matchAll(named)) {
+      const re = new RegExp("\\b" + m[1] + "\\s*\\.\\s*getBoundingClientRect");
+      if (re.test(js)) zeroed.push(file + " · " + m[1] + ".getBoundingClientRect()");
+    }
+  }
+  check("reach", "no geometry is measured from an app element that has no box",
+    zeroed.length === 0,
+    zeroed.length ? zeroed.slice(0, 3).join(" | ")
+      : "display:contents rects are never used as an origin");
+
+  /* And the menu itself, on screen, at every width. */
+  for (const width of [390, 768, 1280, 1440, 1920]) {
+    const page = await open("?v=paper&state=tasks.board", width);
+    const seen = await page.evaluate(async () => {
+      const out = [];
+      /* Lane names, not lane nodes. Tasks re-renders on every mount, so a
+         node captured before the first menu opens is detached by the second
+         iteration and its click does nothing — which reads as "no menu". */
+      const names = [...document.querySelectorAll(".board [data-lane]")]
+        .map((el) => el.dataset.lane).slice(0, 3);
+      for (const name of names) {
+        const lane = document.querySelector('.board [data-lane="' + name + '"]');
+        const dots = lane && lane.querySelector(".card .cardDots, .card [data-act='menu']");
+        if (!dots) { out.push(name + " no dots"); continue; }
+        dots.click();
+        await new Promise((r) => setTimeout(r, 260));
+        const menu = document.querySelector(".cardMenu");
+        if (!menu) { out.push(name + " no menu"); continue; }
+        const r = menu.getBoundingClientRect();
+        const inside = r.top >= 0 && r.bottom <= innerHeight &&
+          r.left >= 0 && r.right <= innerWidth;
+        const hit = document.elementFromPoint(
+          Math.min(Math.max(r.left + r.width / 2, 1), innerWidth - 1),
+          Math.min(Math.max(r.top + r.height / 2, 1), innerHeight - 1));
+        const answers = Boolean(hit && (hit === menu || menu.contains(hit)));
+        if (!inside || !answers) {
+          out.push(name +
+            ` [${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}]` +
+            (inside ? " covered" : " off screen"));
+        }
+        /* A coarse pointer needs 44px, and this menu is the only route to
+           moving a card that a finger has: drag wants a pointer that hovers,
+           Space-carry wants a keyboard. The seat that found the menu also
+           predicted this, because until the fix the markup had never been
+           painted for any gate to measure. */
+        if (matchMedia("(pointer: coarse)").matches) {
+          const small = [...menu.querySelectorAll("button")]
+            .filter((el) => el.getBoundingClientRect().height < 44);
+          if (small.length) {
+            out.push(name + " " + small.length + " items under 44px (" +
+              Math.round(small[0].getBoundingClientRect().height) + ")");
+          }
+        }
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        await new Promise((r) => setTimeout(r, 160));
+      }
+      return out;
+    });
+    check("reach", `tasks card menu @${width} · opens on screen and answers`,
+      seen.length === 0,
+      seen.length ? seen.join(" · ") : "inside the viewport in every lane driven");
+    await page.close();
+  }
 }

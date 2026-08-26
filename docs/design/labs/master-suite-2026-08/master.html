@@ -1382,6 +1382,17 @@ body {
   transition: background-color var(--dur) var(--curve);
 }
 [data-app="tasks"] .cardMenu button:hover { background: var(--wash); }
+/* A finger, on the one route to moving a card that a finger has. The menu
+   items are 34px tall, which is right for a mouse and eleven short of the
+   floor for a thumb — and this menu is the ONLY move affordance on a phone:
+   drag needs a pointer that can hover, Space-carry needs a keyboard. Raised
+   where the pointer is coarse rather than everywhere, so the desk menu keeps
+   its density. src/tasks.js derives the menu height from this, and then
+   corrects against the painted box, so the number below does not have to be
+   kept in two places. */
+@media (pointer: coarse) {
+  [data-app="tasks"] .cardMenu button { min-height: 44px; }
+}
 [data-app="tasks"] .cardMenu button[aria-current] { font-weight: 600; }
 [data-app="tasks"] .cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
 [data-app="tasks"] .menuVeil { position: fixed; inset: 0; z-index: 7; }
@@ -10288,17 +10299,62 @@ function onClick(event) {
   if (what === "menu") {
     const card = act.closest(".card");
     const box = act.getBoundingClientRect();
-    const host = window.__SUITE.host("tasks");
-    const frame = host.getBoundingClientRect();
-    /* Anchored to the control, kept inside the sheet. */
-    const left = Math.min(box.left - frame.left, frame.width - 200);
-    const top = Math.min(box.bottom - frame.top + 6, frame.height - 250);
-    menuAt = "left:" + Math.max(8, Math.round(left)) + "px;top:" + Math.round(top) + "px";
+    /* NEVER measure the app element. The suite gives every `.app` a
+       `display: contents` so each product's sheet lays out as a direct child
+       of the floor — which means the app element has NO BOX, and its rect is
+       all zeros. This read `frame.height - 250` off that zero and resolved to
+       -250 at every card, in every lane, at every width, with every pointer:
+       the one route to moving a card that a mouse, a finger and a keyboard
+       can all take rendered 250px above the top of the screen, under a
+       transparent full-viewport veil that then ate the next click. It
+       survived three rounds because no gate ever opened it.
+
+       The rule, and it is general: never clamp against a rect that can be
+       zero. A `display: contents` ancestor may not decide where a popover
+       lands. tools/reach.mjs gates the class. */
+    const frame = document.querySelector(".floor").getBoundingClientRect();
+    /* Derived, not typed. A hardcoded height rots the moment a lane is
+       added or removed, and the clamp fails silently when it does. */
+    const MW = 200, MH = 46 + 35 * B.columns.length;
+    /* Below the control, or flipped above it when there is no room below. */
+    let top = box.bottom + MH > innerHeight
+      ? box.top - frame.top - MH - 6
+      : box.bottom - frame.top + 6;
+    /* Bounded at BOTH ends: the flip can push it off the top of a short
+       viewport just as easily as the drop can push it off the bottom. */
+    const floorLimit = innerHeight - frame.top - MH - 8;
+    top = Math.max(8 - frame.top, Math.min(top, floorLimit));
+    const left = Math.max(8, Math.min(box.left - frame.left, innerWidth - frame.left - MW));
+    menuAt = "left:" + Math.round(left) + "px;top:" + Math.round(top) + "px";
     menuFor = menuFor === card.dataset.id ? null : card.dataset.id;
     focusId = card.dataset.id;
     mount();
     /* The declared roving stop and the actual focus must agree, or Enter
        straight after opening means "move to the first column". */
+    /* The menu exists now, so stop guessing its height: correct against the
+       box the browser actually painted, before focus moves into it. On a
+       phone the dock sits at the foot of the floor, so the bottom limit is
+       the dock's top rather than the window's. */
+    const painted = document.querySelector(".cardMenu");
+    if (painted) {
+      const r = painted.getBoundingClientRect();
+      /* Only when the dock actually IS a bottom bar. At desk widths the same
+         element is the spine capsule, up near the top-left — clamping "above
+         the dock" against that puts the menu off the TOP of the screen, which
+         is the bug this correction was added to fix, reintroduced from the
+         other side. It counts only if it sits in the lower half. */
+      const dock = document.querySelector(".dock, .rail");
+      const dockTop = dock ? dock.getBoundingClientRect().top : 0;
+      const isFootBar = dockTop > innerHeight / 2 && dockTop < innerHeight;
+      const bottomLimit = (isFootBar ? dockTop : innerHeight) - 8;
+      const dy = Math.min(0, bottomLimit - r.bottom) || Math.max(0, 8 - r.top);
+      const dx = Math.min(0, innerWidth - 8 - r.right) || Math.max(0, 8 - r.left);
+      if (dy || dx) {
+        menuAt = "left:" + Math.round(parseFloat(painted.style.left || 0) + dx) +
+          "px;top:" + Math.round(parseFloat(painted.style.top || 0) + dy) + "px";
+        painted.setAttribute("style", menuAt);
+      }
+    }
     const first = document.querySelector(".cardMenu button[aria-current]") ||
       document.querySelector(".cardMenu button");
     if (first) first.focus();

@@ -1457,6 +1457,42 @@
       "detail": "1172..1190 against 100..1422"
     },
     {
+      "section": "reach",
+      "name": "no geometry is measured from an app element that has no box",
+      "ok": true,
+      "detail": "display:contents rects are never used as an origin"
+    },
+    {
+      "section": "reach",
+      "name": "tasks card menu @390 · opens on screen and answers",
+      "ok": true,
+      "detail": "inside the viewport in every lane driven"
+    },
+    {
+      "section": "reach",
+      "name": "tasks card menu @768 · opens on screen and answers",
+      "ok": true,
+      "detail": "inside the viewport in every lane driven"
+    },
+    {
+      "section": "reach",
+      "name": "tasks card menu @1280 · opens on screen and answers",
+      "ok": true,
+      "detail": "inside the viewport in every lane driven"
+    },
+    {
+      "section": "reach",
+      "name": "tasks card menu @1440 · opens on screen and answers",
+      "ok": true,
+      "detail": "inside the viewport in every lane driven"
+    },
+    {
+      "section": "reach",
+      "name": "tasks card menu @1920 · opens on screen and answers",
+      "ok": true,
+      "detail": "inside the viewport in every lane driven"
+    },
+    {
       "section": "lab gates",
       "name": "Tasks · audit.mjs",
       "ok": true,

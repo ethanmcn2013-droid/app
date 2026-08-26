@@ -54,6 +54,15 @@ for (const v of verdicts) byId.set(v.id, v);
 
 const confirmed = [];
 const refuted = [];
+/* A finding whose refuter never RAN is not a refuted finding. The
+   default-to-REFUTED contract binds a refuter that reached a verdict; an
+   agent killed by a session limit reached nothing. Round 3 lost 25 of 36
+   refuters that way and this file called them all refutations, which would
+   have recorded a 97% refute rate off 11 actual verdicts — the same class of
+   error as a selector that matches nothing failing nothing, and as the seam
+   check that passed because the field the fix read had gone with the fix.
+   Absence is not a pass. It is counted, named, and kept out of the rate. */
+const unadjudicated = [];
 for (const seat of seats) {
   for (const f of seat.findings) {
     const v = byId.get(f.id);
@@ -67,19 +76,19 @@ for (const seat of seats) {
       if (v.severity) row.severity = v.severity;
       if (v.sharpenedFix) row.sharpenedFix = v.sharpenedFix;
       if (v.breaks) row.breaks = v.breaks;
+      (kept ? confirmed : refuted).push(row);
     } else {
-      /* No verdict reached this finding. Defaulting to refuted is the
-         method; recording that it was never judged is the honesty. */
-      row.verdict = "no refuter result recorded";
+      row.verdict = "NO REFUTER RESULT — never adjudicated";
+      unadjudicated.push(row);
     }
-    (kept ? confirmed : refuted).push(row);
   }
 }
 
 const severity = { blocking: 0, misleading: 0, defect: 0, refinement: 0 };
 for (const f of confirmed) if (severity[f.severity] !== undefined) severity[f.severity]++;
 
-const raised = confirmed.length + refuted.length;
+const raised = confirmed.length + refuted.length + unadjudicated.length;
+const judged = confirmed.length + refuted.length;
 const entry = {
   round,
   seatsSat: seats.map((s) => s.seat),
@@ -88,8 +97,15 @@ const entry = {
   headline: "",
   confirmed,
   refuted: refuted.map((f) => ({ seat: f.seat, id: f.id, problem: f.problem, why: f.verdict || f.why || "" })),
+  /* Raised, never judged. Kept whole rather than summarised: these are the
+     ones a re-run has to adjudicate, and they are not evidence of anything
+     until it does. */
+  unadjudicated,
   severity,
-  refuteRate: raised ? Math.round((refuted.length / raised) * 1000) / 1000 : 0,
+  /* Measured against what was actually judged, not against what was raised.
+     A rate computed over unjudged findings is a number about the harness. */
+  refuteRate: judged ? Math.round((refuted.length / judged) * 1000) / 1000 : 0,
+  judged,
   selfInflicted: null,
   frozen: false,
   gatesGreen: null,
@@ -108,10 +124,17 @@ for (const f of [...confirmed].sort((a, b) => (order[a.severity] ?? 9) - (order[
   );
 }
 process.stdout.write(
-  `raised ${raised} · confirmed ${confirmed.length} · refuted ${refuted.length} ` +
-  `(${Math.round((refuted.length / Math.max(1, raised)) * 100)}%)\n` +
+  `raised ${raised} · judged ${judged} · confirmed ${confirmed.length} · ` +
+  `refuted ${refuted.length} ` +
+  `(${Math.round((refuted.length / Math.max(1, judged)) * 100)}% of judged)\n` +
   `blocking ${severity.blocking} · misleading ${severity.misleading} · ` +
-  `defect ${severity.defect} · refinement ${severity.refinement}\n`,
+  `defect ${severity.defect} · refinement ${severity.refinement}\n` +
+  (unadjudicated.length
+    ? `\n  !!  ${unadjudicated.length} findings NEVER ADJUDICATED — their refuters did not run.\n` +
+      `      They are neither confirmed nor refuted, and this round is INCOMPLETE\n` +
+      `      until they are judged. Listed whole in panel/round-${round}.json under\n` +
+      `      "unadjudicated". Re-run the panel to close them.\n`
+    : ""),
 );
 
 await writeFile(path.join(LAB, `panel/round-${round}.json`), JSON.stringify(entry, null, 2) + "\n");

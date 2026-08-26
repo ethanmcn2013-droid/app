@@ -1,0 +1,11 @@
+import { launch, open } from "./drive.mjs";
+const b = await launch();
+const p = await open(b, { state: "tasks.board", width:1440, height:960 });
+await p.evaluate(()=>{window.__a=[];for(const t of document.querySelectorAll("[aria-live],[role=status]"))new MutationObserver(()=>window.__a.push((t.textContent||"").trim().slice(0,160))).observe(t,{childList:true,subtree:true,characterData:true});});
+const st=async()=>await p.evaluate(()=>({trays:[...document.querySelectorAll(".tray")].map(t=>t.getAttribute("aria-label")).join(" / "),undated:document.querySelector(".undated")?.outerHTML.replace(/\s+/g," ").slice(0,220)}));
+console.log("before", JSON.stringify(await st()));
+await p.locator(".undated").click(); await p.waitForTimeout(600);
+console.log("ann", JSON.stringify(await p.evaluate(()=>window.__a)));
+console.log("after", JSON.stringify(await st()));
+await p.screenshot({path:"panel/m3/undated.png"});
+await p.close(); await b.close();

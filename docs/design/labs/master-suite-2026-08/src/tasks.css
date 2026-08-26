@@ -910,6 +910,17 @@
   transition: background-color var(--dur) var(--curve);
 }
 [data-app="tasks"] .cardMenu button:hover { background: var(--wash); }
+/* A finger, on the one route to moving a card that a finger has. The menu
+   items are 34px tall, which is right for a mouse and eleven short of the
+   floor for a thumb — and this menu is the ONLY move affordance on a phone:
+   drag needs a pointer that can hover, Space-carry needs a keyboard. Raised
+   where the pointer is coarse rather than everywhere, so the desk menu keeps
+   its density. src/tasks.js derives the menu height from this, and then
+   corrects against the painted box, so the number below does not have to be
+   kept in two places. */
+@media (pointer: coarse) {
+  [data-app="tasks"] .cardMenu button { min-height: 44px; }
+}
 [data-app="tasks"] .cardMenu button[aria-current] { font-weight: 600; }
 [data-app="tasks"] .cardMenu button[aria-current]::after { content: "here"; margin-left: auto; color: var(--ink-3); font-weight: 400; font-size: 12px; }
 [data-app="tasks"] .menuVeil { position: fixed; inset: 0; z-index: 7; }
