@@ -1,3 +1,17 @@
+<!--fam:start-->
+<nav class="famRail" data-fam-ground="paper" aria-label="The Tasks elevation — five documents">
+  <div class="famRail-in">
+    <a class="famRail-mark" href="https://claude.ai/code/artifact/457fc8fe-4171-41b0-ad45-a3ba8d993b85"><span class="famRail-dot"></span><b>Signal Studio</b><i>/</i><em>Tasks</em></a>
+    <ol class="famRail-set"><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/457fc8fe-4171-41b0-ad45-a3ba8d993b85"><span class="famRail-n">01</span><span class="famRail-t">CEO Report</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/ec6277a9-49d3-4f69-a568-8fbb0c98f6c6"><span class="famRail-n">02</span><span class="famRail-t">Design Console</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/1da5fc96-aae2-4980-8c79-f417ff30dc88"><span class="famRail-n">03</span><span class="famRail-t">Elevation Log</span></a></li><li class="famRail-item"><a class="famRail-link" href="https://claude.ai/code/artifact/e58b1fcc-274d-43bf-9314-2af5bb435d7b"><span class="famRail-n">04</span><span class="famRail-t">The 9.5 Question</span></a></li><li class="famRail-item is-here"><span class="famRail-link" aria-current="page"><span class="famRail-n">05</span><span class="famRail-t">Nineteen Rounds</span></span></li></ol>
+    <div class="famRail-sibs"><span class="famRail-sibsLabel">also elevated</span><a class="famRail-sib" href="https://claude.ai/code/artifact/ad46252f-e1d6-48e3-b0cb-ecdd950280d4">Notes</a><a class="famRail-sib" href="https://claude.ai/code/artifact/30aa3dd7-97d7-4e4e-bfac-48d331488862">Timeline</a></div>
+  </div>
+</nav>
+<script>/* keep the current document in view when the rail has to scroll */
+(function(){try{var r=document.querySelector('.famRail-set .is-here');if(!r)return;
+var s=r.closest('.famRail-set');if(!s)return;
+requestAnimationFrame(function(){var o=r.offsetLeft-(s.clientWidth-r.offsetWidth)/2;
+if(s.scrollWidth>s.clientWidth+2)s.scrollLeft=Math.max(0,o);});}catch(e){}})();</script>
+<!--fam:end-->
 <title>Nineteen Rounds</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -490,15 +504,7 @@ td.dim { color: var(--ink-4); }
     </p>
   </section>
 
-  <nav class="setNav" aria-label="The Tasks elevation set">
-    <p class="kicker">The Tasks elevation &middot; four documents</p>
-    <div class="setGrid">
-      <a class="setCard" href="https://claude.ai/code/artifact/ec6277a9-49d3-4f69-a568-8fbb0c98f6c6" target="_blank" rel="noopener"><b>Design Console</b><em>The board itself, live</em><span>Every decision switchable, the master as it stands.</span></a>
-      <a class="setCard" href="https://claude.ai/code/artifact/1da5fc96-aae2-4980-8c79-f417ff30dc88" target="_blank" rel="noopener"><b>Elevation Log</b><em>Nineteen rounds, scored</em><span>Every seat, every finding, every refutation.</span></a>
-      <a class="setCard" href="https://claude.ai/code/artifact/e58b1fcc-274d-43bf-9314-2af5bb435d7b" target="_blank" rel="noopener"><b>The 9.5 Question</b><em>Why it stopped where it did</em><span>The diagnosis, the evidence, and the loop rebuilt.</span></a>
-      <div class="setCard" aria-current="page"><b>Nineteen Rounds</b><em>The method, rated</em><span>A critical retrospective on the loop itself.</span></div>
-    </div>
-  </nav>
+  
   <p class="foot">
     Evidence: <code>docs/design/labs/tasks-2026-08/panel.json</code> (19 rounds,
     scored, every finding and refutation recorded),
@@ -510,3 +516,195 @@ td.dim { color: var(--ink-4); }
   </p>
 
 </div>
+
+
+
+
+<style id="famCss">
+/* ── the family rail ────────────────────────────────────────────────────
+   One band, five documents, always at the top. It is the only chrome the
+   three elevations share, so it carries the whole burden of making them
+   read as one operation: the same dot, the same numbering, the same
+   indigo under whichever document you are standing in.
+   ──────────────────────────────────────────────────────────────────── */
+.famRail {
+  --f-ink: #111111;
+  --f-indigo: #4f46e5;
+  --f-paper: #ffffff;
+  --f-1: var(--f-ink);
+  --f-2: rgba(17, 17, 17, 0.66);
+  --f-3: rgba(17, 17, 17, 0.44);
+  --f-line: rgba(17, 17, 17, 0.11);
+  --f-wash: rgba(17, 17, 17, 0.045);
+  --f-veil: rgba(255, 255, 255, 0.86);
+  --f-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  position: sticky;
+  top: 0;
+  z-index: 9000;
+  font-family: var(--f-sans);
+  background: var(--f-veil);
+  border-bottom: 1px solid var(--f-line);
+  color: var(--f-1);
+  -webkit-font-smoothing: antialiased;
+}
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .famRail { -webkit-backdrop-filter: saturate(1.6) blur(14px); backdrop-filter: saturate(1.6) blur(14px); }
+}
+
+/* the ink ground — consoles are instruments and stay dark either way */
+.famRail[data-fam-ground="ink"] {
+  --f-1: #f6f6f7;
+  --f-2: rgba(246, 246, 247, 0.62);
+  --f-3: rgba(246, 246, 247, 0.40);
+  --f-line: rgba(255, 255, 255, 0.13);
+  --f-wash: rgba(255, 255, 255, 0.06);
+  --f-indigo: #8b84f3;
+  --f-veil: rgba(12, 12, 13, 0.86);
+}
+@media (prefers-color-scheme: dark) {
+  .famRail[data-fam-ground="paper"]:not([data-fam-force="light"]) {
+    --f-1: #f6f6f7;
+    --f-2: rgba(246, 246, 247, 0.62);
+    --f-3: rgba(246, 246, 247, 0.40);
+    --f-line: rgba(255, 255, 255, 0.13);
+    --f-wash: rgba(255, 255, 255, 0.06);
+    --f-indigo: #8b84f3;
+    --f-veil: rgba(12, 12, 13, 0.86);
+  }
+}
+:root[data-theme="dark"] .famRail[data-fam-ground="paper"] {
+  --f-1: #f6f6f7;
+  --f-2: rgba(246, 246, 247, 0.62);
+  --f-3: rgba(246, 246, 247, 0.40);
+  --f-line: rgba(255, 255, 255, 0.13);
+  --f-wash: rgba(255, 255, 255, 0.06);
+  --f-indigo: #8b84f3;
+  --f-veil: rgba(12, 12, 13, 0.86);
+}
+:root[data-theme="light"] .famRail[data-fam-ground="paper"] {
+  --f-1: #111111;
+  --f-2: rgba(17, 17, 17, 0.66);
+  --f-3: rgba(17, 17, 17, 0.44);
+  --f-line: rgba(17, 17, 17, 0.11);
+  --f-wash: rgba(17, 17, 17, 0.045);
+  --f-indigo: #4f46e5;
+  --f-veil: rgba(255, 255, 255, 0.86);
+}
+
+.famRail * { box-sizing: border-box; }
+.famRail-in {
+  display: flex;
+  align-items: stretch;
+  gap: 26px;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 24px;
+  min-height: 52px;
+}
+
+/* the mark */
+.famRail-mark {
+  display: flex; align-items: center; gap: 8px;
+  flex: 0 0 auto;
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: -0.006em;
+  color: var(--f-2);
+  white-space: nowrap;
+  border: 0; background: none; padding: 0;
+}
+.famRail-mark b { font-weight: 500; color: var(--f-1); }
+.famRail-mark i { font-style: normal; color: var(--f-3); margin: 0 1px; }
+.famRail-mark em { font-style: normal; font-weight: 500; color: var(--f-1); }
+a.famRail-mark:hover em { color: var(--f-indigo); }
+.famRail-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--f-indigo); flex: 0 0 auto;
+}
+
+/* the five */
+.famRail-set {
+  display: flex; align-items: stretch; gap: 2px;
+  list-style: none; margin: 0; padding: 0;
+  flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  scroll-behavior: smooth;
+}
+.famRail-set::-webkit-scrollbar { display: none; }
+.famRail-item { display: flex; flex: 0 0 auto; }
+.famRail-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 11px;
+  text-decoration: none;
+  color: var(--f-2);
+  font-size: 13px;
+  letter-spacing: -0.004em;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 140ms ease, background-color 140ms ease;
+}
+a.famRail-link:hover { color: var(--f-1); background: var(--f-wash); }
+a.famRail-link:focus-visible {
+  outline: 2px solid var(--f-indigo); outline-offset: -3px; border-radius: 3px;
+}
+.famRail-n {
+  font-family: var(--f-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: 0.06em; color: var(--f-3);
+  font-variant-numeric: tabular-nums;
+  transition: color 140ms ease;
+}
+a.famRail-link:hover .famRail-n { color: var(--f-2); }
+.famRail-item.is-here .famRail-link {
+  color: var(--f-1); font-weight: 500;
+  border-bottom-color: var(--f-indigo);
+  cursor: default;
+}
+.famRail-item.is-here .famRail-n { color: var(--f-indigo); }
+.famRail-item.is-soon .famRail-link { color: var(--f-3); cursor: default; }
+
+/* the other two elevations */
+.famRail-sibs {
+  display: flex; align-items: center; gap: 12px;
+  flex: 0 0 auto; padding-left: 22px;
+  border-left: 1px solid var(--f-line);
+}
+.famRail-sibsLabel {
+  font-family: var(--f-mono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--f-3);
+}
+.famRail-sib {
+  font-size: 13px; text-decoration: none; color: var(--f-2);
+  white-space: nowrap;
+  transition: color 140ms ease;
+}
+a.famRail-sib:hover { color: var(--f-indigo); }
+a.famRail-sib:focus-visible { outline: 2px solid var(--f-indigo); outline-offset: 2px; border-radius: 3px; }
+.famRail-sib.is-soon { color: var(--f-3); }
+
+@media (max-width: 1180px) {
+  .famRail-sibsLabel { display: none; }
+  .famRail-in { gap: 18px; }
+}
+@media (max-width: 900px) {
+  .famRail-mark b, .famRail-mark i { display: none; }
+  .famRail-in { padding: 0 16px; gap: 14px; }
+  .famRail-sibs { padding-left: 14px; gap: 10px; }
+}
+@media (max-width: 620px) {
+  .famRail-sibs { display: none; }
+  .famRail-link { padding: 0 9px; }
+  .famRail-t { display: none; }
+  .famRail-item.is-here .famRail-t { display: inline; }
+  .famRail-n { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .famRail-set { scroll-behavior: auto; }
+  .famRail-link, .famRail-n, .famRail-sib { transition: none; }
+}
+@media print { .famRail { display: none; } }
+</style>

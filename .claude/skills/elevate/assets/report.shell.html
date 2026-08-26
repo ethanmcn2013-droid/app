@@ -147,6 +147,12 @@ code { font-family: var(--font-mono); font-size: 0.9em; }
 .scores { display: flex; gap: 10px; align-items: baseline; font-variant-numeric: tabular-nums; }
 .scores span { font-size: 13px; color: var(--ink-4); }
 .scores span:last-child { font-size: 15px; font-weight: 600; color: var(--ink-1); }
+@media (max-width: 760px) {
+  /* a round-by-round score history does not fit a phone, and the track
+     beside it already draws the same history — keep the current round */
+  .scores { min-width: 0; }
+  .scores span:not(:last-child) { display: none; }
+}
 .delta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
 
 /* ── rounds ────────────────────────────────────────────────────── */
