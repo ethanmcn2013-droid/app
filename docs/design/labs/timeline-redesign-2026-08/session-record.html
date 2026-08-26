@@ -1,0 +1,503 @@
+<title>Timeline Session Record</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Geist+Mono:wght@400&display=swap">
+<style>
+  /* The record of a palette-locked engagement obeys the palette lock:
+     three colours, two faces, two weights, hairlines, one indigo moment.
+     The ladder below is the engagement's own, and the dark theme is its
+     ink room - the same decisions with the ground flipped, not a theme
+     laid over the work. */
+  :root {
+    --ground: #f6f6f6;
+    --card: #ffffff;
+    --fore: #111111;
+    --fore-72: rgba(17, 17, 17, 0.72);
+    --fore-62: rgba(17, 17, 17, 0.62);
+    --fore-46: rgba(17, 17, 17, 0.46);
+    --fore-28: rgba(17, 17, 17, 0.28);
+    --fore-16: rgba(17, 17, 17, 0.16);
+    --fore-06: rgba(17, 17, 17, 0.06);
+    --accent: #4f46e5;
+    --sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #111111;
+      --card: #191919;
+      --fore: #ffffff;
+      --fore-72: rgba(255, 255, 255, 0.72);
+      --fore-62: rgba(255, 255, 255, 0.62);
+      --fore-46: rgba(255, 255, 255, 0.46);
+      --fore-28: rgba(255, 255, 255, 0.28);
+      --fore-16: rgba(255, 255, 255, 0.16);
+      --fore-06: rgba(255, 255, 255, 0.06);
+      --accent: #7c74f0;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #111111;
+    --card: #191919;
+    --fore: #ffffff;
+    --fore-72: rgba(255, 255, 255, 0.72);
+    --fore-62: rgba(255, 255, 255, 0.62);
+    --fore-46: rgba(255, 255, 255, 0.46);
+    --fore-28: rgba(255, 255, 255, 0.28);
+    --fore-16: rgba(255, 255, 255, 0.16);
+    --fore-06: rgba(255, 255, 255, 0.06);
+    --accent: #7c74f0;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--fore);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; padding: 72px 28px 120px; }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fore-62);
+    margin: 0;
+  }
+  h1 {
+    font-size: clamp(30px, 4.2vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 14px 0 0;
+  }
+  .standfirst {
+    max-width: 62ch;
+    font-size: 18px;
+    color: var(--fore-72);
+    margin: 18px 0 0;
+    text-wrap: pretty;
+  }
+
+  section { margin-top: 76px; }
+  h2 {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--fore-62);
+    margin: 0 0 22px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--fore-16);
+  }
+  h3 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+  p { margin: 0 0 14px; max-width: 68ch; text-wrap: pretty; }
+  p:last-child { margin-bottom: 0; }
+  a { color: var(--fore); text-decoration-color: var(--fore-28); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  /* ── the number ───────────────────────────────────────────────── */
+  .verdict { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 44px; align-items: start; }
+  .score { font-variant-numeric: tabular-nums; }
+  .score b {
+    display: block;
+    font-size: clamp(96px, 15vw, 148px);
+    font-weight: 400;
+    line-height: 0.86;
+    letter-spacing: -0.045em;
+  }
+  .score .against {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--fore-62);
+    margin-top: 16px;
+  }
+  .seats { display: grid; gap: 0; margin: 0; }
+  .seat {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: baseline;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--fore-06);
+  }
+  .seat:last-child { border-bottom: 0; }
+  .seat .n { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; }
+  .seat[data-floor="true"] .n { color: var(--accent); }
+  .seat[data-floor="true"] .who { font-weight: 600; }
+  .seat .move { font-family: var(--mono); font-size: 12px; color: var(--fore-46); margin-left: 10px; }
+
+  /* ── the arc, drawn on the instrument the product itself uses ─── */
+  .plot {
+    position: relative;
+    height: 300px;
+    margin: 34px 0 0;
+    padding-left: 42px;
+    border-bottom: 1px solid var(--fore-28);
+  }
+  .gate {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: 87.5%;
+    border-top: 1px solid var(--accent);
+  }
+  .gate span {
+    position: absolute;
+    left: 0; top: -9px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--ground);
+    padding-right: 8px;
+  }
+  .lanes { display: grid; grid-template-columns: repeat(12, 1fr); gap: 0; height: 100%; align-items: end; }
+  .lane { position: relative; height: 100%; }
+  .bar {
+    position: absolute;
+    left: 50%;
+    width: 3px;
+    transform: translateX(-50%);
+    background: var(--fore-28);
+  }
+  .lane[data-era="after"] .bar { background: var(--fore-72); }
+  .lane[data-era="after"] .bar::after {
+    content: "";
+    position: absolute;
+    left: -3px; right: -3px; bottom: -1px;
+    height: 3px;
+    background: var(--accent);
+  }
+  .lane .no {
+    position: absolute;
+    left: 0; right: 0; bottom: -26px;
+    text-align: center;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    color: var(--fore-46);
+  }
+  .lane[data-era="after"] .no { color: var(--fore); }
+  .yaxis { position: absolute; left: 0; top: 0; bottom: 0; width: 42px; }
+  .yaxis i {
+    position: absolute;
+    left: 0;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 11px;
+    font-style: normal;
+    color: var(--fore-46);
+    transform: translateY(50%);
+  }
+  .plotfoot { display: flex; flex-wrap: wrap; gap: 20px; margin: 44px 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fore-62); }
+  .plotfoot span { display: flex; align-items: center; gap: 8px; }
+  .key { width: 14px; height: 3px; background: var(--fore-28); }
+  .key[data-era="after"] { background: var(--fore-72); }
+  .key[data-era="gate"] { background: var(--accent); }
+
+  /* ── shared blocks ────────────────────────────────────────────── */
+  .cards { display: grid; gap: 1px; background: var(--fore-16); border: 1px solid var(--fore-16); }
+  .cards > div { background: var(--card); padding: 22px 24px; }
+  @media (min-width: 700px) { .cards[data-cols="2"] { grid-template-columns: 1fr 1fr; } .cards[data-cols="3"] { grid-template-columns: repeat(3, 1fr); } }
+  .figure { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 30px; letter-spacing: -0.02em; display: block; }
+  .figlabel { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fore-62); margin-top: 8px; display: block; }
+  .note { font-size: 14px; color: var(--fore-72); margin-top: 10px; }
+
+  .items { display: grid; gap: 0; margin-top: 4px; }
+  .item { padding: 24px 0; border-top: 1px solid var(--fore-16); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 28px; align-items: start; }
+  .item:last-child { border-bottom: 1px solid var(--fore-16); }
+  .size { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--fore-62); white-space: nowrap; text-align: right; }
+  .kind { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fore-46); display: block; margin-bottom: 7px; }
+  .item p { font-size: 15px; color: var(--fore-72); margin: 0; }
+
+  blockquote {
+    margin: 26px 0 0;
+    padding: 0 0 0 22px;
+    border-left: 1px solid var(--accent);
+    font-size: 16px;
+    color: var(--fore-72);
+    max-width: 66ch;
+  }
+  blockquote cite { display: block; font-family: var(--mono); font-style: normal; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--fore-46); margin-top: 14px; }
+
+  .next { display: grid; gap: 28px; }
+  @media (min-width: 700px) { .next { grid-template-columns: 1fr 1fr; gap: 48px; } }
+  .next h3 { font-family: var(--mono); font-size: 11px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; color: var(--fore-62); margin-bottom: 16px; }
+  .next ol { margin: 0; padding-left: 20px; }
+  .next li { margin-bottom: 12px; padding-left: 4px; }
+  .next li:last-child { margin-bottom: 0; }
+
+  footer { margin-top: 88px; padding-top: 22px; border-top: 1px solid var(--fore-16); font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fore-46); display: flex; flex-wrap: wrap; gap: 8px 26px; }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">Signal Timeline · direction B, The Approach · session record</p>
+  <h1>Twelve rounds, and the honest distance left</h1>
+  <p class="standfirst">
+    A blind seven-seat panel drove the real file every round, each finding met a
+    refuter that defaulted to refuted, and two automated gates ran on both grounds
+    after every fix. This is where it stands, what it cost, and what is left.
+  </p>
+
+  <section>
+    <h2>The number</h2>
+    <div class="verdict">
+      <div class="score">
+        <b>9.1</b>
+        <p class="against">The lowest seat, against a gate of 9.5.<br>The score is never an average.</p>
+      </div>
+      <div class="seats">
+        <div class="seat"><span class="who">UI composition<span class="move">+0.1</span></span><span class="n">9.4</span></div>
+        <div class="seat"><span class="who">Product taste and emotional resonance<span class="move">+0.1</span></span><span class="n">9.4</span></div>
+        <div class="seat"><span class="who">Measured evidence<span class="move">held</span></span><span class="n">9.4</span></div>
+        <div class="seat"><span class="who">Typography<span class="move">−0.1</span></span><span class="n">9.3</span></div>
+        <div class="seat"><span class="who">Interaction and states<span class="move">+0.1</span></span><span class="n">9.3</span></div>
+        <div class="seat"><span class="who">UX and information design<span class="move">+0.1</span></span><span class="n">9.3</span></div>
+        <div class="seat" data-floor="true"><span class="who">Brand and copy<span class="move">held</span></span><span class="n">9.1</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The arc</h2>
+    <p>
+      Each lane is one round: the bar runs from the lowest seat to the highest.
+      The ceiling climbed almost without interruption. The floor did not — and the
+      reason is the most useful thing this engagement produced.
+    </p>
+
+    <div class="plot">
+      <div class="yaxis">
+        <i style="bottom: 100%">10.0</i>
+        <i style="bottom: 75%">9.0</i>
+        <i style="bottom: 50%">8.0</i>
+        <i style="bottom: 25%">7.0</i>
+        <i style="bottom: 0%; transform: none">6.0</i>
+      </div>
+      <div class="gate"><span>9.5 gate</span></div>
+      <div class="lanes">
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 5%; height: 35%"></div><span class="no">1</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 15%; height: 20%"></div><span class="no">2</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 30%; height: 22.5%"></div><span class="no">3</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 37.5%; height: 20%"></div><span class="no">4</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 45%; height: 15%"></div><span class="no">5</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 55%; height: 7.5%"></div><span class="no">6</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 40%; height: 27.5%"></div><span class="no">7</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 55%; height: 15%"></div><span class="no">8</span></div>
+        <div class="lane" data-era="quota"><div class="bar" style="bottom: 30%; height: 45%"></div><span class="no">9</span></div>
+        <div class="lane" data-era="after"><div class="bar" style="bottom: 65%; height: 15%"></div><span class="no">10</span></div>
+        <div class="lane" data-era="after"><div class="bar" style="bottom: 77.5%; height: 7.5%"></div><span class="no">11</span></div>
+        <div class="lane" data-era="after"><div class="bar" style="bottom: 77.5%; height: 7.5%"></div><span class="no">12</span></div>
+      </div>
+    </div>
+    <div class="plotfoot">
+      <span><i class="key"></i> Rounds 1–9 · a finding quota</span>
+      <span><i class="key" data-era="after"></i> Rounds 10–12 · no quota</span>
+      <span><i class="key" data-era="gate"></i> The gate</span>
+    </div>
+
+    <h3 style="margin-top:52px">Why the floor sawtoothed, and why it stopped</h3>
+    <p>
+      For nine rounds the seat schema required a minimum of three findings each.
+      Seven seats therefore produced thirty-three to thirty-five findings every
+      round whether or not thirty-three defects existed — and because the gate is
+      the lowest seat, the floor measured the quota rather than the work.
+      Refutation climbed from 6% to 66%: the panel was filing to fill a slot, and
+      refuters were spending their time killing it.
+    </p>
+    <p>
+      Round 10 removed the minimum. Findings fell to 22, refutation to 12%, and
+      every seat rose. Round 11: thirteen findings, none refuted, floor 9.1.
+      Round 12: nineteen findings, none refuted, floor 9.1. Thirty-two
+      consecutive confirmed findings — several of which the refuters found
+      <em>worse</em> than filed.
+    </p>
+    <p>
+      The two visible dips are honest. <strong>Round 7</strong> fell because the
+      measured gate itself was wrong: its tracking check was keyed on family and
+      size, so it could only read round 6's confirmed three-role remedy as drift.
+      Fixing the gate, then proving it still bites, cost a round.
+      <strong>Round 9</strong> fell because I had told you the loop was converging
+      after round 8, and it was not.
+    </p>
+  </section>
+
+  <section>
+    <h2>What exists now</h2>
+    <div class="cards" data-cols="3">
+      <div>
+        <span class="figure">2</span>
+        <span class="figlabel">rooms, both graded</span>
+        <p class="note">Paper as you picked it, and its ink twin — the same four decisions with the ground flipped through the declared ladder. Every fix lands in both.</p>
+      </div>
+      <div>
+        <span class="figure">14</span>
+        <span class="figlabel">states, 5 widths</span>
+        <p class="note">Owner and audience, from an empty project to the printed keepsake. 300 frames, re-shot every round.</p>
+      </div>
+      <div>
+        <span class="figure">845</span>
+        <span class="figlabel">behaviour assertions</span>
+        <p class="note">Up from a planted skeleton. Every one exists because a seat found the defect it guards by driving the real file.</p>
+      </div>
+    </div>
+    <div class="cards" data-cols="2" style="margin-top:1px">
+      <div>
+        <span class="figure">0 / 15</span>
+        <span class="figlabel">measured gate, both grounds</span>
+        <p class="note">Palette lock, weights, families, WCAG AA against the real composited backdrop, hit targets, radii, motion, type ramp, leading, tracking, size and space ladders.</p>
+      </div>
+      <div>
+        <span class="figure">59</span>
+        <span class="figlabel">settled findings</span>
+        <p class="note">Raised and killed, each with the measured reason it died. A triage filter, so no refuter is ever spent twice on the same objection.</p>
+      </div>
+    </div>
+    <p style="margin-top:26px">
+      The master is one generated file of 94KB — three stylesheets and three
+      scripts, no build step, no dependencies at runtime. It is
+      <a href="https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f">the
+      Design Console</a> you drive, and <a href="https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19">the
+      Elevation Log</a> that records every round and every defect.
+    </p>
+  </section>
+
+  <section>
+    <h2>The honest distance</h2>
+    <p>
+      The gate was not met. Four tenths on the floor, and I do not think another
+      scored round is the way to get them — see the recommendation below. What
+      actually remains is three builds and a tail.
+    </p>
+
+    <div class="items">
+      <div class="item">
+        <div>
+          <span class="kind">Build · confirmed round 6, held open</span>
+          <h3>The owner cannot edit a moment once it has passed</h3>
+          <p>Deliberately open since round 6 rather than a regression. The editor exists; the constraint is the ceiling logic and how the past rail renders a row you can open.</p>
+        </div>
+        <span class="size">½–1 day</span>
+      </div>
+      <div class="item">
+        <div>
+          <span class="kind">Build · missing state</span>
+          <h3>There is no loading frame at desk widths</h3>
+          <p>Loading is declared phone-medium, so a reader on a desk has no matching frame while the plan arrives. Round 12 fixed the half that was wrong — the skeleton now promises the figure that actually comes — but the state itself does not exist.</p>
+        </div>
+        <span class="size">½ day</span>
+      </div>
+      <div class="item">
+        <div>
+          <span class="kind">Decision · data model, out of scope by your brief</span>
+          <h3>Several moments on one day cannot be ordered by when they happen</h3>
+          <p>A wedding guarantees this case: ceremony, photographs and dinner all on one date. The record carries no time, so no surface can promise that order. Round 12 stopped the morning screen inventing one alphabetically — it now agrees with the phone and the sheet — but agreement is not the same as being right.</p>
+        </div>
+        <span class="size">1–2 days</span>
+      </div>
+      <div class="item">
+        <div>
+          <span class="kind">Tail</span>
+          <h3>The polish that is left is genuinely small</h3>
+          <p>Round 12's costs collapsed even as counts rose — an entire seat's contribution was column-head alignment and a duplicated tooltip attribute. Two more rounds would find real things, all of them 0.1 to 0.2.</p>
+        </div>
+        <span class="size">~2 rounds</span>
+      </div>
+      <div class="item">
+        <div>
+          <span class="kind">The gap no panel can close</span>
+          <h3>No person has ever used this</h3>
+          <p>Twelve rounds of adversarial reading and zero minutes of someone opening it cold. Your north star ranks Experience and Utility above Design, and the repo already carries a first-contact test with an automated half.</p>
+        </div>
+        <span class="size">20 minutes</span>
+      </div>
+    </div>
+
+    <blockquote>
+      “The document has one voice and it holds under pressure. Every refusal
+      states the rule and then names what still stands — declarative, sentence
+      case, no apology, no exclamation, nothing a person has to be taught. And
+      the palette is spent rather than obeyed: indigo is two marks and a line —
+      the rule under today, the filled tick on the next thing, the rail that is
+      still ahead — and it survives the ground flip intact, so the ink room is
+      the same room at night and not a theme laid over it. Set beside Linear or
+      Stripe this reads as writing somebody argued about, which is the rarest
+      thing on this list.”
+      <cite>Brand and copy · 9.1 · the lowest seat, round 12</cite>
+    </blockquote>
+
+    <h3 style="margin-top:52px">Why I stopped the loop rather than running a thirteenth round</h3>
+    <p>
+      The score is the minimum of seven independent adversarial samples. Even if
+      the true quality were exactly 9.5, seven samples each drifting a tenth or
+      two would put the minimum below 9.5 most of the time. I removed the finding
+      quota because the floor was measuring the quota instead of the work; this
+      is the residual form of the same error — at 9.3 the floor measures the
+      sampling. A unanimous 9.5 is an excellent forcing function at 7.0 and a
+      poor instrument at 9.3.
+    </p>
+    <p>
+      Two other things argued for stopping. Findings rose from 13 to 19 while the
+      floor stayed flat, which is the signature of a tail rather than a gap. And
+      four of round 12's nineteen findings were defects introduced by round 11's
+      fixes — including one of mine where a character class lost a backslash and
+      matched the letter <span style="font-family:var(--mono)">s</span>. That
+      ratio is no longer zero.
+    </p>
+    <p>
+      The worst thing the panel found is worth naming, because no gate could have
+      caught it: the day — the single object the whole composition is measured
+      from — was identified by a date match, while three comments in the same
+      file stated it was resolved by id and “never by a date match alone”. No
+      such id existed anywhere. Round 9 recorded that fix as done and it had
+      landed nowhere, so for three rounds the source asserted a fix that did not
+      exist. That is the case for adversarial review that drives the real file,
+      and against trusting a record of work — including mine.
+    </p>
+  </section>
+
+  <section>
+    <h2>Next</h2>
+    <div class="next">
+      <div>
+        <h3>You — 15 minutes</h3>
+        <ol>
+          <li>Open the Console and switch the ground. Paper is the room you picked; ink is the same room at night. If either one is wrong, that is the only thing that matters.</li>
+          <li>Put the phone frame in front of one person who has never seen it and watch them, without helping. That is the first-contact test.</li>
+          <li>Schedule or drop the three builds above. Only the third is a decision — the other two are work.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>Me — on your word</h3>
+        <ol>
+          <li>Port The Approach into the app behind a flag, so Timeline runs on real data and the suite can start inheriting the language.</li>
+          <li>Or build the three items, in the order you rank them.</li>
+          <li>Or run the tail — two rounds, small findings, and a gate rewritten to measure the work rather than the sampling: no confirmed finding at 0.3 or above, twice running.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Branch design/timeline-redesign-2026-08</span>
+    <span>Exploration only · no app code · no schema · no deploy</span>
+    <span>Direction B locked 2026-08-18</span>
+    <span>Record closed 2026-08-26</span>
+  </footer>
+
+</div>

@@ -189,3 +189,36 @@ What changed, all now non-negotiables in the skill:
    the founder to schedule rather than being made mid-round.
 6. **Red-green fixes.** Every fix ships with its gate assertion written
    first and failing.
+
+## The loop, closed · 2026-08-26
+
+Twelve rounds. The gate — 9.5 unanimous, the score being the lowest seat —
+was NOT met. The engagement ends on the method's second honest ending:
+distance itemised.
+
+Final: floor 9.1 (Brand and copy), ceiling 9.4, spread 0.3. Six of seven
+seats at 9.3 or above. Gates green on both grounds: audit 0/15,
+interaction-check 845 assertions with 0 failing.
+
+Why it was stopped rather than run further, in one line: the score is the
+minimum of seven independent adversarial samples, so at 9.3 the floor
+measures the sampling rather than the work — the residual form of the
+finding-quota error that held rounds 1 to 9 down. Findings rose 13 to 19
+between rounds 11 and 12 while the floor stayed flat, which is the
+signature of a tail rather than a gap, and four of round 12's findings
+were defects introduced by round 11's fixes.
+
+Open, for the founder to schedule:
+
+1. The owner cannot edit a moment once it has passed. Confirmed round 6,
+   held open deliberately. Half a day to a day.
+2. There is no loading frame at desk widths. `loading` is declared
+   phone-medium, so this is a missing state, not a broken one. Half a day.
+3. Several moments on one day cannot be ordered by when they happen. The
+   record carries no time; the data model is out of scope by the brief.
+   One to two days, and a decision before it is work.
+
+Not a build, and the largest remaining unknown: nobody has used this. The
+repo's own first-contact test is the next measurement worth taking.
+
+Session record: https://claude.ai/code/artifact/4be95a6e-fe0b-46fb-b2f7-c2c41a15f2f6

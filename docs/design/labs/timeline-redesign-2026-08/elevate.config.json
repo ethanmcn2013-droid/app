@@ -132,7 +132,8 @@
   },
   "artifacts": {
     "console": "https://claude.ai/code/artifact/2939f1fe-3139-4e31-8edf-c85538d35d0f",
-    "log": "https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19"
+    "log": "https://claude.ai/code/artifact/ae236f5f-b80f-4db0-aa51-bcda60090e19",
+    "record": "https://claude.ai/code/artifact/4be95a6e-fe0b-46fb-b2f7-c2c41a15f2f6"
   },
   "report": {
     "title": "Timeline Elevation Log",
