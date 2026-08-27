@@ -81,7 +81,11 @@ async function authorize(label) {
       scope: SCOPE,
       access_type: "offline",
       prompt: "consent select_account",
-      include_granted_scopes: "true",
+      // NOT include_granted_scopes. Finding 1: that flag is incremental
+      // authorization — it merges every scope this user already granted
+      // this project into the returned token. Account A had Clerk's
+      // sign-in scopes, so asking for one scope returned four. We want one
+      // scope, minted for one purpose, revocable on its own.
       state,
     });
 
