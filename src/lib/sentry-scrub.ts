@@ -22,6 +22,36 @@ const REDACTED_HEADERS = new Set([
 
 const SENSITIVE_KEY = /(token|code|secret|authorization|cookie|password|credential)/i;
 
+/**
+ * WP-2. Key-name matching catches `refreshToken` and `refresh_token_cipher`
+ * because both contain "token" — but it does nothing for a credential that
+ * turns up inside a message string, which is exactly where one lands when
+ * an SDK stringifies a failed request. These are the shapes Project Drive
+ * introduces, matched on their own distinctive prefixes:
+ *
+ *   1//0g…      a Google OAuth refresh token
+ *   ya29.…      a Google OAuth access token
+ *   GOCSPX-…    a Google OAuth client secret
+ *   sb1.1.…     one of our own sealed envelopes (see secret-box.ts)
+ *
+ * The sealed envelope is not a secret — that is the point of sealing it —
+ * but it is still a per-customer credential blob, and Sentry is not where
+ * it belongs.
+ */
+const CREDENTIAL_SHAPES: ReadonlyArray<RegExp> = [
+  /\b1\/\/[A-Za-z0-9_-]{10,}/g,
+  /\bya29\.[A-Za-z0-9._-]{10,}/g,
+  /\bGOCSPX-[A-Za-z0-9_-]{10,}/g,
+  /\bsb1\.\d+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
+];
+
+/** Replace anything shaped like a provider credential, wherever it sits. */
+export function redactCredentialShapes(value: string): string {
+  let out = value;
+  for (const shape of CREDENTIAL_SHAPES) out = out.replace(shape, "[redacted]");
+  return out;
+}
+
 export function redactSensitiveUrl(value: string): string {
   const withoutBearerPaths = value.replace(
     /\/(s|share|invite|redeem|oauth)\/[^/?#]+/gi,
@@ -34,7 +64,9 @@ export function redactSensitiveUrl(value: string): string {
 }
 
 function redactSensitiveText(value: string): string {
-  return redactSensitiveUrl(value).replace(
+  // Shapes first: a bare credential in a message has no key name and no
+  // query-string framing for the two passes below to catch it by.
+  return redactSensitiveUrl(redactCredentialShapes(value)).replace(
     /\b(token|code|secret|authorization|credential)\s*[:=]\s*[^\s,;]+/gi,
     "$1=[redacted]",
   );
