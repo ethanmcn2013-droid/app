@@ -172,11 +172,27 @@ a day and no risk, but leaves the Signal-native fallback — the one D7 calls
 load-bearing — able to carry almost nothing. Or move the bytes off the function
 path entirely.
 
-The founder chose the second. The browser now asks the server for a Vercel Blob
-token scoped to one pathname, one size and one content-type set, PUTs the bytes
-straight to the store (multipart, resumable), and calls a finalize action that
-re-authorizes and inspects what actually landed. Nothing but metadata crosses a
-function, so the 4.5 MB cap stops applying and 50 MB is a number we can keep.
+The founder chose the second. The browser now asks the server for a URL signed for one pathname, one size
+and one content-type set, PUTs the bytes straight to the store, and calls a
+finalize action that re-authorizes and inspects what actually landed. Nothing
+but metadata crosses a function, so the 4.5 MB cap stops applying and 50 MB is
+a number we can keep.
+
+**A presigned URL rather than `@vercel/blob/client`.** The client helper does
+the same job and costs 36.7 KB gzip in every browser that loads the app, which
+breached the bundle ratchet — and that ratchet is a founder decision, not an
+edit. Presigning leaves the browser a bare `fetch(url, { method: "PUT" })` and
+no library at all: measured 941.4 KB with the helper, 905.4 KB without it,
+against a 904.7 KB baseline. It is also the stronger posture. The client token
+could not constrain the ACCESS MODE — the browser passed its own — so a
+modified client could have written a private-by-policy attachment as a public
+object at a pathname we already know. A presigned URL bakes `access: "private"`
+in server-side, and the delegation is `put`-only, single-pathname and expiring.
+
+The trade is multipart: one `PUT` carries the whole file, so a dropped
+connection restarts rather than resumes. At a 50 MB ceiling that is a worse
+minute, not a broken feature, and WP-6 moves large files onto Drive's own
+resumable sessions regardless.
 
 **This is deliberately the same shape as WP-6.** Server mints a scoped session,
 browser sends the bytes to the provider, server verifies at finalize and treats
@@ -203,3 +219,6 @@ pattern is already established and already tested.
   validation is re-applied to the bytes read back out of the store, and a
   claim row abandoned by a killed browser is swept rather than left holding
   quota forever.
+- `next.config.ts` `connect-src` now admits `vercel.com` and
+  `*.blob.vercel-storage.com`. The browser originates two requests it never
+  used to; without this an enforced policy would break every attachment.

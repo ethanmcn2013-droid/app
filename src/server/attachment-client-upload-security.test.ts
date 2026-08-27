@@ -31,7 +31,15 @@ import { MAX_UPLOAD_BYTES } from "@/lib/upload-limit";
  * handed back by a browser is a claim, never evidence.
  */
 
-const read = (p: string) => readFileSync(p, "utf8");
+/**
+ * Source, with line endings normalized.
+ *
+ * These assertions read code as text, and this repo is worked on from
+ * Windows: a checkout can hand back CRLF and turn an assertion about
+ * ORDER into an assertion about the checkout. Normalizing here keeps the
+ * test measuring what it means to measure.
+ */
+const read = (p: string) => readFileSync(p, "utf8").replace(/\r\n/g, "\n");
 
 const PNG = new Uint8Array([
   0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d,
@@ -174,7 +182,7 @@ describe("the path proves itself before it does anything", () => {
   const finalize = read("src/server/actions/attachment-uploads.ts");
   const claim = read("src/server/attachments/client-upload.ts");
 
-  it("the token route refuses demo before it reads a body", () => {
+  it("the signing route refuses demo before it reads a body", () => {
     // Hard rule §2.10. Ordering is the assertion: an early return that
     // happens after the work is not an early return.
     const demoAt = route.indexOf("isDemoMode()");
@@ -182,6 +190,27 @@ describe("the path proves itself before it does anything", () => {
     assert.ok(demoAt > -1, "the route must check demo mode");
     assert.ok(bodyAt > -1, "the route must read a body");
     assert.ok(demoAt < bodyAt, "the demo check must come first");
+  });
+
+  it("the route proves the caller before it signs anything", () => {
+    const claimAt = route.indexOf("authorizeUploadClaim(");
+    const signAt = route.indexOf("issueSignedToken(");
+    assert.ok(claimAt > -1, "the route must authorize a claim");
+    assert.ok(signAt > -1, "the route must sign a URL");
+    assert.ok(
+      claimAt < signAt,
+      "a URL is a credential; nothing may be signed before the proof",
+    );
+  });
+
+  it("a failure to sign does not leave a claim holding quota", () => {
+    const catchAt = route.indexOf("} catch {", route.indexOf("issueSignedToken("));
+    assert.ok(catchAt > -1, "signing must be guarded");
+    assert.match(
+      route.slice(catchAt, catchAt + 400),
+      /releaseUploadClaim\(/,
+      "the reserved row must be released when no URL is issued",
+    );
   });
 
   it("every action on this path early-returns under demo", () => {
@@ -258,7 +287,7 @@ describe("the path proves itself before it does anything", () => {
     );
   });
 
-  it("the token is scoped to one pathname, size and type set", () => {
+  it("the signed URL is scoped to one pathname, size and type set", () => {
     assert.match(
       route,
       /addRandomSuffix: false/,
@@ -268,21 +297,70 @@ describe("the path proves itself before it does anything", () => {
     assert.match(
       route,
       /allowOverwrite: false/,
-      "a second token must not be able to replace accepted bytes",
+      "a second URL must not be able to replace accepted bytes",
     );
     assert.match(route, /maximumSizeInBytes: claim\.claim\.maximumSizeInBytes/);
     assert.match(
       route,
       /allowedContentTypes: claim\.claim\.allowedContentTypes/,
     );
-  });
-
-  it("the route ignores the pathname the browser asked for", () => {
     assert.match(
       route,
-      /onBeforeGenerateToken: async \(_clientPathname/,
-      "the client's requested pathname must be unused; the server composes " +
-        "the pathname from the workspace it proved",
+      /operations: \["put"\]/,
+      "the delegation must not be able to read or delete anything",
     );
+    assert.match(
+      route,
+      /validUntil/,
+      "an upload permit must expire",
+    );
+  });
+
+  it("the destination is the server's, never the browser's", () => {
+    assert.match(
+      route,
+      /pathname: claim\.claim\.pathname/,
+      "the URL must be signed for the pathname the server composed from " +
+        "the workspace it proved",
+    );
+    assert.doesNotMatch(
+      route,
+      /pathname:\s*(?:asked|body)\./,
+      "a browser-supplied pathname must never reach the signature",
+    );
+  });
+
+  it("the browser cannot ask for a world-readable object", () => {
+    // The client-token flow let the browser pass its own access mode. A
+    // presigned URL bakes it in here, so a modified client cannot write
+    // this board's attachment as a public object.
+    assert.match(route, /access: "private"/);
+  });
+
+  it("no upload library is shipped to the browser", () => {
+    // 36.7 KB gzip, in every browser that loads the app, breaching the
+    // bundle ratchet — which is a founder decision, not an edit.
+    const client = read(
+      "src/components/app/detail-panel/resources-section.tsx",
+    );
+    assert.doesNotMatch(
+      client,
+      /@vercel\/blob/,
+      "the browser sends bytes with a bare fetch; no SDK belongs here",
+    );
+    assert.match(client, /method: "PUT"/, "the upload is a plain PUT");
+  });
+
+  it("the hosts the browser now calls are allowed by the policy", () => {
+    const config = read("next.config.ts");
+    const connect = /`connect-src[^`]*`/.exec(config)?.[0] ?? "";
+    assert.match(
+      connect,
+      /\$\{blobUpload\}/,
+      "connect-src must admit the upload hosts, or an enforced policy " +
+        "breaks every attachment",
+    );
+    assert.match(config, /https:\/\/vercel\.com/);
+    assert.match(config, /https:\/\/\*\.blob\.vercel-storage\.com/);
   });
 });

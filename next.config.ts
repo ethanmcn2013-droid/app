@@ -31,6 +31,15 @@ const clerkHosts =
   "https://*.signalstudio.ie https://*.clerk.accounts.dev https://*.clerk.com https://clerk-telemetry.com";
 const turnstile = "https://challenges.cloudflare.com";
 
+// WP-0: attachment bytes go from the browser straight to Vercel Blob, so
+// the browser now originates two requests it never used to. `vercel.com`
+// is the control-plane host a presigned PUT is signed against; the
+// `*.blob.vercel-storage.com` wildcard covers the object host the response
+// names. Both are browser-originated, so both belong in the policy — the
+// server-side calls in src/server/storage.ts do not.
+const blobUpload =
+  "https://vercel.com https://*.blob.vercel-storage.com";
+
 const googleTag = "https://www.googletagmanager.com";
 const googleAnalytics =
   "https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com";
@@ -58,7 +67,7 @@ function buildCsp({
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: https:`,
     `font-src 'self' data:`,
-    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com${tagConnect}`,
+    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com ${blobUpload}${tagConnect}`,
     `frame-src 'self' ${turnstile} https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
     `worker-src 'self' blob:`,
     `frame-ancestors ${frameAncestors}`,
