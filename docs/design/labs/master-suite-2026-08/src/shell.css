@@ -65,7 +65,13 @@
   /* Tasks reaches these through foundation.css and Notes states the
      resolved values. Identical either way; the indirection is kept
      because foundation.css is where reduced motion zeroes them. */
-  --dur: var(--motion-fast);                 /* 140ms                   */
+  /* The five authoring names, restated for the shell's own scope. The
+     values come from foundation.css, which is where reduced motion zeroes
+     them and where the vocabulary is written down. */
+  --dur-quick: var(--motion-instant);        /*  80ms · instant         */
+  --dur: var(--motion-fast);                 /* 140ms · frequent        */
+  --dur-settle: var(--motion-base);          /* 220ms · occasional      */
+  --dur-rare: var(--motion-slow);            /* 400ms · rare, 3 places  */
   --curve: var(--ease-out);
 }
 
@@ -133,7 +139,67 @@ body {
    product on the floor. This is the rule that takes it off. */
 .app[hidden] { display: none; }
 
-/* THE SWITCH HAS A MOTION. Every other transition in this suite is
+/* ═══ THE PRODUCT SWITCH ══════════════════════════════════════════
+   Two names, and only two. Only one sheet is rendered at a time — the
+   other two products are `[hidden]`, so they are not painted and cannot
+   collide on the name. That is what makes a single static name safe here
+   and unsafe almost everywhere else.
+
+   The sheet and the active rail tile CARRY: they are the same object
+   before and after, so the browser interpolates their boxes across the
+   change and nothing about them blinks. */
+.sheet { view-transition-name: sheet; }
+.railTile[data-active] { view-transition-name: rail-active; }
+
+::view-transition-group(sheet),
+::view-transition-group(rail-active) {
+  animation-duration: var(--dur-settle, 220ms);
+  animation-timing-function: var(--curve, cubic-bezier(0.23, 1, 0.32, 1));
+}
+
+/* THE PAPER IS THE THING THAT CARRIES, so the paper has to be painted by
+   the GROUP and not by either snapshot. Found on a frame, not in the
+   rules: with the hand-off below and nothing behind it, the sheet's own
+   white background faded out with its contents and the ink floor came
+   through — 35% into the switch the board was a sheet of charcoal, and
+   the change read as the paper being taken away and a new one brought,
+   which is the opposite of what carrying it is for.
+
+   The group is the box the browser interpolates between the two states.
+   Painting it in the sheet's own paper and its own radius means that at
+   the instant neither snapshot is showing, what is on screen is a blank
+   sheet at exactly the right size — so the sheet never leaves, and only
+   what is printed on it changes. */
+::view-transition-group(sheet) {
+  background: var(--white);
+  border-radius: var(--r-sheet);
+}
+
+/* FADE THROUGH, NOT ACROSS. The browser's default cross-fade runs both
+   snapshots at 50% opacity through the middle of the transition, and two
+   dense text layouts at half opacity read as mud rather than as a change
+   — a board of thirteen cards showing through a notebook of fourteen
+   rows. Outgoing gone by 40%, incoming from 40% on, so the two layouts
+   never overlap at any frame. The sheet and the rail tile still carry for
+   the full 220ms underneath; only the genuinely new content fades.
+
+   Verified by capturing the mid-transition frame rather than by reasoning
+   about it: the groups were slowed to 4s and screenshot at 35% and 50%
+   through. Before, both layouts were legible at once; after, neither is.
+   tools/switch.mjs holds that measurement. */
+::view-transition-old(sheet) { animation: carry-out 88ms cubic-bezier(.4, 0, 1, 1) both; }
+::view-transition-new(sheet) { animation: carry-in 132ms cubic-bezier(0, 0, .2, 1) 88ms both; }
+@keyframes carry-out { to { opacity: 0; } }
+@keyframes carry-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The names come off, so there is no transition to run at all — the
+     JS guard above already returns before `startViewTransition`, and this
+     is the same decision stated where a reader looks for it. */
+  .sheet, .railTile[data-active] { view-transition-name: none; }
+}
+
+/* THE FALLBACK ENTRANCE. Every other transition in this suite is
    declared and gated and the one between two PRODUCTS — the largest
    change of state the shell can make — was a hard cut: the board is
    there, then it is not, with no frame telling you which direction
@@ -152,7 +218,7 @@ body {
 }
 .app[data-arriving] > .sheet,
 .app[data-arriving][data-app="timeline"] {
-  animation: suiteArrive var(--motion-fast, 140ms) var(--curve, ease) both;
+  animation: suiteArrive var(--dur, 140ms) var(--curve, ease) both;
 }
 
 /* ── the spine ─────────────────────────────────────────────────
@@ -551,7 +617,10 @@ body {
   border-radius: 50%;
   background: var(--status-done, #15803d);
   opacity: 0;
-  animation: burstOut var(--motion-slow) var(--curve) var(--d, 0ms) both;
+  /* The OCCASIONAL tier by default. This ran at `--dur-rare` on every
+     completion, which spent the suite's rare speed on its most frequent
+     good event; `[data-rare]` below is the lane actually clearing. */
+  animation: burstOut var(--dur-settle) var(--curve) var(--d, 0ms) both;
 }
 /* Every third particle is indigo — the accent agreeing rather than a
    second colour competing. */
@@ -561,8 +630,16 @@ body {
   border-radius: 50%;
   background: none;
   box-shadow: 0 0 0 2px var(--status-done, #15803d);
-  animation: burstRing var(--motion-slow) var(--curve) both;
+  animation: burstRing var(--dur-settle) var(--curve) both;
 }
+/* ONE OF THE THREE RARE MOMENTS: a lane cleared because the work in it is
+   finished, as distinct from a lane that is empty because it is new. The
+   particles travel the same path and take a beat longer over it — the
+   difference between "done" and "that is the last of them" is a difference
+   of weight, not of vocabulary. */
+.burst[data-rare] i,
+.burst[data-rare] .burstRing { animation-duration: var(--dur-rare); }
+
 @keyframes burstOut {
   0%   { transform: translate3d(0, 0, 0) scale(0.4); opacity: 0; }
   16%  { transform: translate3d(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3), 0) scale(1); opacity: 1; }

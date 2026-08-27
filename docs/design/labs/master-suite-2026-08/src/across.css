@@ -50,7 +50,7 @@
   padding: 6px 12px;
   border-radius: 999px;
   position: relative;
-  transition: color var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
+  transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 /* A 27px pill is under the target floor on its own, and the first draft of
    this expander did not fix it: it was written with `top: 50%` and a
@@ -164,7 +164,7 @@
   /* Position is the quantity on this axis too, so a moment that is moved
      animates the distance rather than decorating a state change. One
      declared duration, one declared easing; reduced motion removes it. */
-  transition: left var(--t-slow) var(--ease);
+  transition: left var(--dur-settle) var(--curve);
 }
 [data-app="timeline"] .b-measure[data-across="true"] .b-tick {
   left: 0;

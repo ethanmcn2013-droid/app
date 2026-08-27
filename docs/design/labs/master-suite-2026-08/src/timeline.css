@@ -44,10 +44,17 @@
 
   /* Motion is physics. One easing family, three durations, and a
      reduced-motion escape that is honoured completely below. */
-  --ease: cubic-bezier(0.23, 1, 0.32, 1);
-  --t-fast: 0.08s;
-  --t-base: 0.14s;
-  --t-slow: 0.22s;
+  /* `--ease`, `--t-fast`, `--t-base` and `--t-slow` were this product's
+     private names for four values the other two products already had
+     names for. `--t-` is the TYPE prefix — `--t-11` through `--t-34` are
+     pixel sizes — so `--t-base: 0.14s` had one prefix meaning two
+     dimensions, in the one file that used it for both. The values are
+     unchanged to the millisecond; only the names are gone. */
+  --dur-quick: var(--motion-instant);        /*  80ms · was --t-fast    */
+  --dur: var(--motion-fast);                 /* 140ms · was --t-base    */
+  --dur-settle: var(--motion-base);          /* 220ms · was --t-slow    */
+  --dur-rare: var(--motion-slow);            /* 400ms · rare, 3 places  */
+  --curve: var(--ease-out);                  /*         was --ease      */
 
   --sans: "Geist", system-ui, -apple-system, sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
@@ -584,7 +591,7 @@
      renders the change of the quantity rather than decorating a state
      change. One declared duration, one declared easing; reduced motion
      removes it completely (shell.css). */
-  transition: top var(--t-slow) var(--ease);
+  transition: top var(--dur-settle) var(--curve);
 }
 [data-app="timeline"] .b-away {
   position: absolute;
@@ -776,7 +783,7 @@
   text-decoration-color: var(--fore-16);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
-  transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
 [data-app="timeline"] .b-item:not([data-editing="true"]) .b-grab::after { content: ""; position: absolute; inset: 0; }
 [data-app="timeline"] .b-item:hover .b-grab,
@@ -796,7 +803,7 @@
   background: var(--fore-04);
   box-shadow: 0 0 0 12px var(--fore-04);
   border-radius: 4px;
-  transition: background-color var(--t-fast) var(--ease);
+  transition: background-color var(--dur-quick) var(--curve);
 }
 [data-app="timeline"] .b-item[data-crowded="true"] .b-copy { box-shadow: 0 0 0 12px var(--back); background: var(--back); border-radius: 4px; }
 [data-app="timeline"] .b-item[data-editing="true"] .b-copy {
@@ -828,7 +835,7 @@
   border-radius: 4px;
   cursor: pointer;
   list-style: none;
-  transition: background var(--t-fast) var(--ease);
+  transition: background var(--dur-quick) var(--curve);
 }
 [data-app="timeline"] .b-behindSummary::-webkit-details-marker { display: none; }
 /* Drawn the way the row control is drawn, because it IS a control: a
@@ -1093,7 +1100,7 @@
   line-height: var(--lead-label);
   letter-spacing: var(--track-body);
   color: var(--fore);
-  transition: border-color var(--t-base) var(--ease), background-color var(--t-base) var(--ease);
+  transition: border-color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 [data-app="timeline"] .b-act:hover { border-color: var(--fore-46); background: var(--fore-06); }
 [data-app="timeline"] .b-act[data-primary="true"] { background: var(--fore); color: var(--back); border-color: var(--fore); }
@@ -1217,7 +1224,7 @@
   line-height: var(--lead-label);
   letter-spacing: var(--track-data);
   text-align: center;
-  transition: background-color var(--t-base) var(--ease);
+  transition: background-color var(--dur) var(--curve);
 }
 [data-app="timeline"] .b-step:hover { background: var(--fore-06); }
 /* The readout is two facts, so it is set as the two lines its reserve
@@ -1264,7 +1271,7 @@
   line-height: var(--lead-label);
   letter-spacing: var(--track-body);
   color: var(--fore-72);
-  transition: background-color var(--t-base) var(--ease), color var(--t-base) var(--ease);
+  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
 }
 [data-app="timeline"] .b-seg button + button { border-left: 1px solid var(--fore-28); }
 [data-app="timeline"] .b-seg button[aria-pressed="true"] { background: var(--fore); color: var(--back); }

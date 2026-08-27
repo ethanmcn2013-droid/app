@@ -1700,7 +1700,19 @@ function moveTo(id, lane, index, preview) {
    the accent colour is the product agreeing with you rather than
    congratulating you. */
 var celebrating = 0;
-function celebrate(anchor) {
+/* TWO TIERS, because finishing a task and finishing a LANE are not the
+   same size of event. This burst ran at `--dur-rare` — 400ms, the suite's
+   rare tier — on every completion, and completing a task is the most
+   frequent good thing that happens on this board. A tier spent on the
+   frequent case is not a rare tier; it is just the slowest speed, applied
+   everywhere it fits.
+
+   So the ordinary completion settles at 220ms, and the 400ms treatment is
+   kept for the completion that empties the lane it came from — which is
+   the moment the vocabulary in foundation.css reserves it for, and which
+   this board could not previously tell apart from a lane that is empty
+   because it is new. */
+function celebrate(anchor, rare) {
   if (!anchor || !anchor.getBoundingClientRect) return;
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const box = anchor.getBoundingClientRect();
@@ -1709,6 +1721,7 @@ function celebrate(anchor) {
   const frame = floor.getBoundingClientRect();
   const burst = document.createElement("span");
   burst.className = "burst";
+  if (rare) burst.setAttribute("data-rare", "");
   burst.setAttribute("aria-hidden", "true");
   burst.style.left = Math.round(box.left - frame.left + box.width / 2) + "px";
   burst.style.top = Math.round(box.top - frame.top + box.height / 2) + "px";
@@ -1727,7 +1740,9 @@ function celebrate(anchor) {
   burst.innerHTML = dots;
   floor.appendChild(burst);
   const id = ++celebrating;
-  setTimeout(() => { burst.remove(); if (id === celebrating) celebrating = 0; }, 520);
+  /* Cleared a little after the animation it holds, whichever it is. */
+  setTimeout(() => { burst.remove(); if (id === celebrating) celebrating = 0; },
+    rare ? 520 : 340);
 }
 
 function completed(task, cleared) {
@@ -1736,16 +1751,32 @@ function completed(task, cleared) {
      replaces the node. */
   const from = document.querySelector('.card[data-id="' + task.id + '"] .tick') ||
     document.querySelector('.card[data-id="' + task.id + '"]');
-  celebrate(from);
+  /* A LANE CLEARED BECAUSE THE WORK IN IT IS FINISHED. `task.prevLane` is
+     set by the caller one line before this, so the lane the card came from
+     is still known here — and asking whether anything is left in it is the
+     difference between a lane that is empty because it is done and one
+     that is empty because it is new. The suite could not say that before.
+     Clearing the last overdue task is the same size of event and shares
+     the tier. */
+  const emptied = Boolean(
+    task.prevLane && task.prevLane !== "done" &&
+    !allTasks().some((t) => t.lane === task.prevLane),
+  );
+  celebrate(from, emptied || cleared);
   arm({ kind: "done", id: task.id, title: task.title, cleared: cleared });
   if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
     lateOnly = false;
     say(task.title + " done. Nothing is overdue, so the filter is off.");
     return;
   }
-  say(cleared
-    ? task.title + " done. Nothing is overdue."
-    : task.title + " done. Press " + MOD + "Z to undo.");
+  /* And it is SAID, in the order of what matters: an empty lane is a fact
+     about the board, being on time is a fact about the day, and the undo
+     key is a fact about the last three seconds. */
+  say(emptied
+    ? task.title + " done. " + laneName(task.prevLane) + " is clear."
+    : cleared
+      ? task.title + " done. Nothing is overdue."
+      : task.title + " done. Press " + MOD + "Z to undo.");
 }
 
 /* Finishing a task was a silent teleport to a column a thousand pixels away,
@@ -1914,7 +1945,7 @@ function flyCompleted(target) {
     return 380;
   }
 
-  /* --motion-fast governs a state change; this is a journey across the
+  /* --dur governs a state change; this is a journey across the
      sheet, and a fixed 260ms reads as a teleport at 1000px and as a lag at
      120px. Stated here rather than added to the token ladder. */
   const travel = Math.round(Math.min(460, Math.max(220, 170 + Math.hypot(dx, dy) * 0.22)));
@@ -2605,9 +2636,19 @@ function onClick(event) {
       say("That note is not in this notebook.");
       return;
     }
-    window.__SUITE.go("notes", { announce: false, focus: false });
-    if (notes.api.open(id)) say("Opened the note this came from.");
-    else say("That note is not in this notebook.");
+    /* The sentence goes INSIDE the hook, because whether the note opened
+       is not known until the frame it opens on. Read outside it, `landed`
+       is still false on every journey — a product announcing a failure it
+       has not had yet. */
+    window.__SUITE.go("notes", {
+      announce: false,
+      focus: false,
+      then: function () {
+        say(notes.api.open(id)
+          ? "Opened the note this came from."
+          : "That note is not in this notebook.");
+      },
+    });
     return;
   }
   if (what === "client") {

@@ -159,10 +159,16 @@
      has to be argued for in writing. The one exception is the paper
      settle, which is the direction's own signature and is declared and
      named below. */
-  --dur: 140ms;
-  --dur-out: 50ms;
-  --dur-settle: 220ms;
-  --curve: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Stated as the primitives rather than as literals. Notes zeroes its own
+     motion with a blanket `* { animation-duration: 0ms !important }` under
+     reduced motion, which works — but it left this product's durations as
+     the only three in the suite that did not answer to the one switch in
+     foundation.css. Same values, one mechanism. */
+  --dur-quick: var(--motion-instant);        /*  80ms · instant         */
+  --dur: var(--motion-fast);                 /* 140ms · frequent        */
+  --dur-settle: var(--motion-base);          /* 220ms · occasional      */
+  --dur-rare: var(--motion-slow);            /* 400ms · rare, 3 places  */
+  --curve: var(--ease-out);
 
   /* Borders are rings, so thickening one on hover cannot move a pixel of
      layout. Depth is stacked micro-shadows plus the ring, never one soft

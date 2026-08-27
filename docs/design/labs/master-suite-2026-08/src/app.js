@@ -279,7 +279,16 @@ window.__SUITE = (function () {
     }
     current = product;
     railCurrent = product;
-    apply();
+    /* The arrival, as one closure, run on whichever frame the DOM actually
+       changes on. It used to sit inline below `apply()` and was correct
+       only because `apply()` was synchronous. */
+    apply({ crossing: true, after: function () { arrive(product, o); } });
+    if (o.announce !== false) say(LABEL[product] + ". " + summary(product));
+    writeUrl();
+    return true;
+  }
+
+  function arrive(product, o) {
     paintRail();
     /* A sheet that was off the floor was measuring a box with no width:
        every trim, fade, scrim reserve and clamp in it was computed
@@ -288,12 +297,26 @@ window.__SUITE = (function () {
        caret, so nothing it was holding is spent to get the measurements
        back. */
     show(product);
-    /* And it ARRIVES rather than appearing. Stamped after `show`, so the
-       product has already repainted and the frame that fades in is the
-       finished one. Cleared on the animation's own end — and on a timer
-       as well, because an element that is hidden again mid-flight never
-       fires `animationend` and would keep the attribute for good. */
-    var arriving = hostOf(product);
+    /* THE FALLBACK ENTRANCE, and only the fallback. Round 5 landed a
+       140ms fade-and-lift on the incoming product because the switch had
+       no motion at all. The view transition above is strictly better where
+       it runs — it carries the sheet and the active rail tile across the
+       change rather than fading the whole product in — so the two must not
+       both play. Where `startViewTransition` is missing, this is still the
+       only frame the switch gets, so it stays. */
+    /* No entrance under reduced motion, and none where the transition
+       runs. The CSS zeroes the animation under the preference anyway, but
+       stamping an attribute that names a motion onto a product for a
+       reader who asked not to be moved is the wrong shape of honest. */
+    var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var transitioning = (Boolean(document.startViewTransition) && !reduced) || reduced;
+    /* A CONDITIONAL, NOT AN EARLY RETURN. The first draft of this returned
+       here when the transition was running — and jumped clean over the
+       focus move eight lines below, so every switch in a browser with view
+       transitions left the keyboard on the rail tile. Two gate rules
+       caught it, one of them the seam's own "focus lands in the new
+       sheet". Nothing about a transition changes where focus belongs. */
+    var arriving = transitioning ? null : hostOf(product);
     var box = arriving && arriving.classList.contains("app")
       ? arriving
       : (arriving && arriving.closest ? arriving.closest(".app") : null);
@@ -319,9 +342,18 @@ window.__SUITE = (function () {
         sheet.focus({ preventScroll: true });
       }
     }
-    if (o.announce !== false) say(LABEL[product] + ". " + summary(product));
-    writeUrl();
-    return true;
+    /* AND WHATEVER THE CALLER MEANT TO DO ON ARRIVAL. Every cross-product
+       journey in this suite is "go there, then land on the thing" — the
+       seam opening its task, a card opening its note — and every one of
+       them used to write the second half on the line after `go()`, which
+       was correct only while `go()` was synchronous. Wrapping the switch
+       in a view transition made the DOM change a frame later, so all of
+       them ran against the product that was still hidden: the reveal
+       reached a card that was not rendered and focus went nowhere.
+
+       One hook, run on the frame the product actually arrives on, so a
+       journey cannot be written the wrong way round again. */
+    if (typeof o.then === "function") o.then();
   }
 
   /* What the product being opened has to say for itself, in one line, so
@@ -347,7 +379,57 @@ window.__SUITE = (function () {
     if (entry && typeof entry.show === "function") entry.show();
   }
 
-  function apply() {
+  /* THE ONE MISSING FRAME. This shell mounts all three products at once
+     and never tears one down, which is the strongest thing about it — but
+     `go()` toggled `hidden` and `inert` with nothing interpolating between
+     two products that are in the same document at that instant.
+
+     Because both DOMs already coexist this is the SAME-DOCUMENT form: no
+     navigation, no `@view-transition` at-rule, no two-page opt-in, no
+     same-origin question. One `startViewTransition` call per switch.
+
+     It WRAPS the mutation and never delays it. The old architecture
+     carried a deliberate 120ms switch delay and it was removed on purpose;
+     a transition that postponed the swap would trade away the exact thing
+     mounting all three products exists to provide. `applyNow` runs inside
+     the callback, synchronously, on the frame it would have run on
+     anyway — the browser snapshots around it.
+
+     Guarded on BOTH the preference and the capability, and the fallback is
+     the whole function: a browser without view transitions gets the switch
+     it always got, instantly. */
+  function apply(opts) {
+    var o = opts || {};
+    var after = typeof o.after === "function" ? o.after : function () {};
+    var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    /* Only a PRODUCT CHANGE is worth a frame. `apply()` is also the
+       re-projection path — it runs when a project is renamed or switched
+       under a product that is not moving — and animating that would put a
+       220ms crossfade on a rename. */
+    if (!o.crossing || reduced || !document.startViewTransition) {
+      applyNow();
+      after();
+      return null;
+    }
+    /* EVERYTHING THAT DEPENDS ON THE NEW DOM GOES IN THE CALLBACK. This is
+       the part that is easy to get wrong and expensive to notice: the
+       callback does not run synchronously — the browser captures the old
+       state first — so a `go()` that carried on past this line was still
+       looking at the OLD DOM. It painted the rail, repainted a product
+       that was still `hidden`, and moved focus to a sheet that was not
+       rendered yet, so every switch in a browser with view transitions
+       left the keyboard on the rail tile. The seam gate caught it.
+
+       Running the arrival inside the callback is also what makes the new
+       snapshot correct: the browser captures AFTER this returns, so what
+       it captures is the repainted product rather than a stale one. */
+    return document.startViewTransition(function () {
+      applyNow();
+      after();
+    });
+  }
+
+  function applyNow() {
     deck.setAttribute("data-product", current);
     PRODUCTS.forEach(function (key) {
       var host = hostOf(key);
@@ -462,8 +544,7 @@ window.__SUITE = (function () {
       say("That task is not on this board.");
       return false;
     }
-    go("tasks", { announce: false, focus: false });
-    api.reveal(id);
+    go("tasks", { announce: false, focus: false, then: function () { api.reveal(id); } });
     say("Opened in Tasks. Your note stayed in Notes.");
     return true;
   }

@@ -175,17 +175,30 @@ export async function roundFive({ browser, url, check, head }) {
           ms: cs ? cs.animationDuration : "0s",
         };
       });
+      /* THE SWITCH HAS A FRAME — by whichever of the two paths this
+         browser can take. Round 5 landed a fade-and-lift entrance because
+         the switch had no motion at all; the motion pass then landed a
+         same-document view transition, which is strictly better where it
+         runs and makes the entrance the FALLBACK. This rule was written
+         against the entrance and would now fail on the better path, which
+         is the same staleness the whole of round 5 was about. What it
+         actually cares about is that the switch is never a hard cut. */
+      const vt = await page.evaluate(() => typeof document.startViewTransition === "function");
       if (reduced) {
         check("round5", "reduced motion · the switch does not animate",
-          !!m && m.name === "none", m ? m.name + " / " + m.ms : "no app");
+          !!m && m.name === "none" && m.stamped === false,
+          m ? m.name + " / stamped " + m.stamped : "no app");
+      } else if (vt) {
+        check("round5", "the switch has a frame · carried by the view transition",
+          !!m && m.stamped === false, "the entrance stands down where the transition runs");
       } else {
-        check("round5", "the incoming product arrives rather than appearing",
+        check("round5", "the switch has a frame · carried by the fallback entrance",
           !!m && m.stamped === true && m.name !== "none",
           m ? m.name + " / " + m.ms : "no app");
         check("round5", "and it takes the spine's own 140ms",
           !!m && parseFloat(m.ms) === 0.14, m ? m.ms : "-");
       }
-      /* And it clears itself, or the attribute is a permanent stamp. */
+      /* And nothing is left stamped, on either path. */
       if (!reduced) {
         await page.waitForTimeout(600);
         const left = await page.evaluate(() =>

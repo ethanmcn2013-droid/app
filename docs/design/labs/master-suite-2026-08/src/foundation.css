@@ -84,12 +84,75 @@
   --shadow-float: 0 1px 2px rgba(17, 17, 17, 0.04), 0 6px 16px rgba(17, 17, 17, 0.04);
   --shadow-modal: 0 4px 8px rgba(17, 17, 17, 0.04), 0 16px 40px rgba(17, 17, 17, 0.07);
 
+  /* ═══ THE MOTION VOCABULARY ═══════════════════════════════════════
+     Settled 2026-08-27, after an audit found three speeds answering to
+     four names between them and a `--t-` prefix that meant both TIME and
+     TYPE. Two reviewers could not tell whether two components moved
+     identically without resolving the aliases first, which is the entire
+     job the token was there to do.
+
+     FIVE names, one per value, and no others may be written:
+
+       --dur-quick    80ms   INSTANT     a press answering, a tick
+       --dur         140ms   FREQUENT    hover, focus, filter, open, close
+       --dur-settle  220ms   OCCASIONAL  a card lands, a panel opens, the
+                                         product changes under you
+       --dur-rare    400ms   RARE        three places in the whole suite,
+                                         listed below and nowhere else
+       --curve                           one easing, everywhere
+
+     Retired into these: `--t-fast` `--t-base` `--t-slow` `--ease` (this
+     was Timeline's private set) and `--motion-instant` `--motion-fast`
+     `--motion-base` `--motion-slow` `--ease-out` (written directly in
+     eighteen places). `--dur-out: 50ms` was declared in two products and
+     used by neither, ever, and is deleted — a fifth speed nothing moves
+     at is still a speed a reviewer has to hold in their head.
+
+     The `--motion-*` and `--ease-*` values below stay as PRIMITIVES, not
+     authoring tokens: they exist so this one file can zero every duration
+     under reduced motion in one place. Write `--dur`, never
+     `--motion-fast`. `--t-` is reserved for TYPE — `--t-11` through
+     `--t-34` are pixel sizes and nothing else may take that prefix.
+     `--ease-in-out` has exactly one use in the suite and stays a
+     primitive rather than earning a name.
+
+     WHAT EARNS THE RARE TIER. A moment is rare if it happens a few times
+     in a project rather than a few times an hour, and if it marks
+     something BECOMING TRUE rather than something being done:
+
+       1. A LANE CLEARED because the work in it is finished — distinct
+          from a lane that is empty because it is new. The suite could not
+          tell those two apart before; it says so out loud now.
+       2. A TIMELINE PUBLISHED, where a plan becomes visible to other
+          people for the first time.
+       3. A NOTE BECOMING A TASK through the seam. Not built — the data
+          half exists and the visible carry does not. Listed so the third
+          slot is spoken for and the tier cannot quietly grow past three.
+
+     Ceiling 480ms, bounce ≤ 0.35, three places, no confetti. The
+     per-task completion burst sat here at 400ms and does not any more:
+     finishing a task is the most frequent good thing that happens on this
+     board, and a tier spent on the frequent case is not a rare tier. It
+     moved to `--dur-settle`, and the 400ms treatment is now reserved for
+     the completion that CLEARS ITS LANE.
+
+     Bounce budget by frequency: 0 above a few times an hour, ≤0.15
+     occasional, ≤0.35 rare. Nothing in a wedding-coordination tool has
+     ever needed more than that.
+     ══════════════════════════════════════════════════════════════════ */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --motion-instant: 80ms;
   --motion-fast: 140ms;
   --motion-base: 220ms;
   --motion-slow: 400ms;
+
+  /* The five an author writes. */
+  --dur-quick: var(--motion-instant);
+  --dur: var(--motion-fast);
+  --dur-settle: var(--motion-base);
+  --dur-rare: var(--motion-slow);
+  --curve: var(--ease-out);
 
   /* The Tasks board's own Done green (T·132 canon, AA at 4.58:1). Kept as an
      --x- extension exactly as the product does, never as a redefinition of

@@ -98,9 +98,13 @@
   /* One duration and one curve for the whole product. Any other value
      has to be argued for in writing. Tooltips are the single exception,
      and they leave three times faster than they arrive. */
-  --dur: var(--motion-fast);                 /* 140ms                   */
+  --dur-quick: var(--motion-instant);        /*  80ms · instant         */
+  --dur: var(--motion-fast);                 /* 140ms · frequent        */
+  --dur-settle: var(--motion-base);          /* 220ms · occasional      */
+  --dur-rare: var(--motion-slow);            /* 400ms · rare, 3 places  */
   --curve: var(--ease-out);
-  --dur-out: 50ms;
+  /* `--dur-out: 50ms` was declared here and in Notes and used by neither
+     product, ever. Deleted rather than adopted. */
 
   /* Borders are rings, so thickening one on hover cannot move a single
      pixel of layout. Elevation is stacked micro-shadows plus the ring,
@@ -536,7 +540,7 @@
   width: 8px; height: 8px; border-radius: 50%; flex: none;
   background: var(--pip, var(--ink-3));
   box-shadow: none;
-  transition: transform var(--motion-instant) var(--curve);
+  transition: transform var(--dur-quick) var(--curve);
 }
 [data-app="tasks"] .tray[data-lane="todo"],
 [data-app="tasks"] .tpLane[data-lane="todo"] { --pip: var(--status-todo); --over: var(--wash-todo); }
@@ -984,7 +988,7 @@
   /* On the ladder: 80ms is `--motion-instant`, and the arrival is the half
      the eye is on. Off-ladder durations are a motion violation in this
      product’s own audit, and six of mine were. */
-  transition: background-color var(--motion-instant) var(--curve);
+  transition: background-color var(--dur-quick) var(--curve);
 }
 [data-app="tasks"] .tray[data-over] .trayHead {
   background: linear-gradient(var(--wash), var(--wash)), var(--white);
@@ -1008,7 +1012,7 @@
 [data-app="tasks"] .dropLine {
   height: 2px; border-radius: 1px; background: var(--ink-1);
   transform-origin: left center;
-  animation: dropLineIn var(--motion-instant) var(--curve) both;
+  animation: dropLineIn var(--dur-quick) var(--curve) both;
 }
 @keyframes dropLineIn {
   from { transform: scaleX(0.24); opacity: 0; }
@@ -1018,7 +1022,7 @@
    brief asks for a settle, not a bounce, and anything with a second
    oscillation reads as a toy. */
 [data-app="tasks"] .card[data-settling] {
-  animation: cardSettle var(--motion-base) cubic-bezier(0.22, 1.1, 0.36, 1) both;
+  animation: cardSettle var(--dur-settle) cubic-bezier(0.22, 1.1, 0.36, 1) both;
 }
 @keyframes cardSettle {
   from { transform: translateY(-2px) scale(0.994); }
@@ -1262,8 +1266,8 @@
   font-size: 13px; font-weight: 400; color: var(--ink-3); letter-spacing: var(--tr-13);
   box-shadow: inset 0 0 0 1px transparent;
   transition:
-    width var(--motion-base) var(--curve),
-    padding var(--motion-base) var(--curve),
+    width var(--dur-settle) var(--curve),
+    padding var(--dur-settle) var(--curve),
     background-color var(--dur) var(--curve),
     box-shadow var(--dur) var(--curve),
     color var(--dur) var(--curve);
@@ -2002,7 +2006,7 @@
   min-height: 40px; padding: 0 16px; border-radius: var(--r-pill);
   border: 1px solid var(--line-strong); background: var(--white);
   font-family: inherit; font-size: inherit; font-weight: inherit; line-height: inherit; font-size: 14px; font-weight: 600; color: var(--ink-1);
-  cursor: pointer; transition: background var(--motion-fast) var(--curve);
+  cursor: pointer; transition: background var(--dur) var(--curve);
 }
 [data-app="tasks"] .emptyBoard button:hover { background: var(--wash); }
 [data-app="tasks"] .emptyBoard button svg { width: 16px; height: 16px; }
@@ -2226,8 +2230,8 @@
   border-radius: var(--r-ctl);
   color: var(--ink-3); cursor: pointer;
   opacity: 0;
-  transition: opacity var(--motion-instant) var(--curve), color var(--motion-instant) var(--curve),
-              background-color var(--motion-instant) var(--curve);
+  transition: opacity var(--dur-quick) var(--curve), color var(--dur-quick) var(--curve),
+              background-color var(--dur-quick) var(--curve);
 }
 [data-app="tasks"] .projEdit svg { width: 15px; height: 15px; }
 [data-app="tasks"] .projRow:hover .projEdit,
@@ -2276,7 +2280,7 @@
 [data-app="tasks"] .tpScrim {
   position: fixed; inset: 0; z-index: 40;
   background: rgba(17, 17, 17, 0.32);
-  animation: tpScrimIn var(--motion-base) var(--curve) both;
+  animation: tpScrimIn var(--dur-settle) var(--curve) both;
   cursor: default;
 }
 @keyframes tpScrimIn { from { opacity: 0; } to { opacity: 1; } }
@@ -2294,7 +2298,7 @@
               0 32px 64px rgba(17, 17, 17, 0.14);
   display: flex; flex-direction: column;
   overflow: hidden;
-  animation: tpIn var(--motion-base) cubic-bezier(0.22, 1.1, 0.36, 1) both;
+  animation: tpIn var(--dur-settle) cubic-bezier(0.22, 1.1, 0.36, 1) both;
 }
 /* Up and out, once, damped. It arrives rather than appears, and it does not
    bounce — a second oscillation on a work surface reads as a toy. */
@@ -2443,7 +2447,7 @@
   border-radius: var(--r-sheet);
   box-shadow: 0 0 0 1px var(--line), var(--float);
   display: grid; gap: 1px;
-  animation: toolIn var(--motion-instant) var(--curve) both;
+  animation: toolIn var(--dur-quick) var(--curve) both;
 }
 [data-app="tasks"] .toolPop[data-tool="share"] { width: 320px; }
 @keyframes toolIn {
@@ -2466,7 +2470,7 @@
   border-radius: var(--r-ctl);
   text-align: left; cursor: pointer;
   color: var(--ink-1);
-  transition: background-color var(--motion-instant) var(--curve);
+  transition: background-color var(--dur-quick) var(--curve);
 }
 [data-app="tasks"] .toolItem:hover { background: var(--wash); }
 [data-app="tasks"] .toolItem b { display: block; font-weight: 400; }

@@ -35,6 +35,7 @@ import { delight } from "./tools/delight.mjs";
 import { flow } from "./tools/flow.mjs";
 import { naming } from "./tools/naming.mjs";
 import { roundFive } from "./tools/round5.mjs";
+import { switchFrame } from "./tools/switch.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -961,6 +962,7 @@ if (run("projects")) await projects({ browser, url: SUITE_URL, check, head });
 if (run("delight")) await delight({ browser, url: SUITE_URL, check, head });
 if (run("naming")) await naming({ browser, url: SUITE_URL, check, head });
 if (run("round5")) await roundFive({ browser, url: SUITE_URL, check, head });
+if (run("switch")) await switchFrame({ browser, url: SUITE_URL, check, head, lab: LAB });
 if (run("flow")) await flow({ browser, url: SUITE_URL, check, head });
 if (run("labgates")) await labGates();
 
