@@ -4,7 +4,7 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "20536 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "20614 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -34,7 +34,7 @@
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "10981 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "11051 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -64,7 +64,7 @@
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "9406 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "9449 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -94,7 +94,7 @@
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "1007 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "1026 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -1742,7 +1742,7 @@
       "section": "delight",
       "name": "completion via tick · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 12 dots · widest 4.2px · brightest 0.96"
+      "detail": "1 burst · 12 dots · widest 3.8px · brightest 0.93"
     },
     {
       "section": "delight",
@@ -1896,9 +1896,15 @@
     },
     {
       "section": "delight",
-      "name": "every status dot has a rim of its own hue",
+      "name": "every status dot is flat — no rim, no glow, no gradient",
       "ok": true,
-      "detail": "todo · doing · review · waiting · done"
+      "detail": "five flat dots, at rest and under a dragged card"
+    },
+    {
+      "section": "delight",
+      "name": "a dot answers by growing, not by changing colour",
+      "ok": true,
+      "detail": "colour holds through the drop state"
     },
     {
       "section": "delight",
@@ -1916,7 +1922,7 @@
       "section": "delight",
       "name": "task panel @1280 · wears the lane's own colour",
       "ok": true,
-      "detail": "rgb(67, 56, 202)"
+      "detail": "rgb(79, 70, 229)"
     },
     {
       "section": "delight",
@@ -1940,7 +1946,7 @@
       "section": "delight",
       "name": "task panel @1440 · wears the lane's own colour",
       "ok": true,
-      "detail": "rgb(67, 56, 202)"
+      "detail": "rgb(79, 70, 229)"
     },
     {
       "section": "delight",
@@ -1964,7 +1970,7 @@
       "section": "delight",
       "name": "task panel @1920 · wears the lane's own colour",
       "ok": true,
-      "detail": "rgb(67, 56, 202)"
+      "detail": "rgb(79, 70, 229)"
     },
     {
       "section": "delight",

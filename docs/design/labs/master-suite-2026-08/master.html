@@ -1108,13 +1108,9 @@ body {
 [data-app="tasks"] {
   --status-todo: var(--ink-3);
   --status-doing: #4f46e5;
-  --status-doing-rim: #4338ca;
   --status-review: #eab308;
-  --status-review-rim: #a16207;
   --status-waiting: #f97316;
-  --status-waiting-rim: #c2410c;
   --status-done: #22c55e;
-  --status-done-rim: #15803d;
 
   /* BALANCED BY LUMINANCE, not by a shared alpha. One alpha across five
      hues is five different weights on screen: at 11% the indigo sat 16%
@@ -1130,25 +1126,35 @@ body {
   --wash-waiting: rgba(249, 115, 22, 0.115);
   --wash-done: rgba(34, 197, 94, 0.135);
 }
+/* FLAT. One colour, no rim, no halo, no depth of any kind.
+   The rim was meant to give a bright dot an edge against paper, and at 8px
+   it did not read as an edge — it read as a glow, or as a dot painted in
+   two colours with a light centre and a dark outside. The founder said so
+   and they are right: an inset ring on a 8px circle is 1.5px of dark on
+   a 5px core, which is not an outline, it is a gradient.
+
+   The dot is the LIGHT colour of the pair, which is the founder's call and
+   a defensible one: every lane's name is set in type directly beside its
+   dot, so the colour is a second reading of something already written. No
+   information here is carried by colour alone, and a dot that reads
+   unmistakably as its own colour is worth more than a dot that clears a
+   contrast bar it does not need to clear on its own. */
 [data-app="tasks"] .pip {
   width: 8px; height: 8px; border-radius: 50%; flex: none;
   background: var(--pip, var(--ink-3));
-  /* The rim is inset so the dot keeps its 8px footprint and the board's
-     rhythm does not move. */
-  box-shadow: inset 0 0 0 1.5px var(--pip-rim, transparent);
-  transition: transform var(--motion-instant) var(--curve),
-              box-shadow var(--motion-instant) var(--curve);
+  box-shadow: none;
+  transition: transform var(--motion-instant) var(--curve);
 }
 [data-app="tasks"] .tray[data-lane="todo"],
 [data-app="tasks"] .tpLane[data-lane="todo"] { --pip: var(--status-todo); --over: var(--wash-todo); }
 [data-app="tasks"] .tray[data-lane="doing"],
-[data-app="tasks"] .tpLane[data-lane="doing"] { --pip: var(--status-doing); --pip-rim: var(--status-doing-rim); --over: var(--wash-doing); }
+[data-app="tasks"] .tpLane[data-lane="doing"] { --pip: var(--status-doing); --over: var(--wash-doing); }
 [data-app="tasks"] .tray[data-lane="review"],
-[data-app="tasks"] .tpLane[data-lane="review"] { --pip: var(--status-review); --pip-rim: var(--status-review-rim); --over: var(--wash-review); }
+[data-app="tasks"] .tpLane[data-lane="review"] { --pip: var(--status-review); --over: var(--wash-review); }
 [data-app="tasks"] .tray[data-lane="waiting"],
-[data-app="tasks"] .tpLane[data-lane="waiting"] { --pip: var(--status-waiting); --pip-rim: var(--status-waiting-rim); --over: var(--wash-waiting); }
+[data-app="tasks"] .tpLane[data-lane="waiting"] { --pip: var(--status-waiting); --over: var(--wash-waiting); }
 [data-app="tasks"] .tray[data-lane="done"],
-[data-app="tasks"] .tpLane[data-lane="done"] { --pip: var(--status-done); --pip-rim: var(--status-done-rim); --over: var(--wash-done); }
+[data-app="tasks"] .tpLane[data-lane="done"] { --pip: var(--status-done); --over: var(--wash-done); }
 /* Every micro-label in the product is one rule: Geist Mono, 11px,
    uppercase, +0.1em, weight 400. Tracking carries the hierarchy, so a
    small label is never bolded to make it matter. */
@@ -1575,11 +1581,13 @@ body {
    the eye lands on the right column without the dot becoming a thing that
    moves. No pulse: a repeating animation asks for attention the interaction
    has already got. */
-/* The dot answers by growing and taking a halo of its own colour — not by
-   changing colour, because it is already the right one. */
+/* The dot answers by growing, and by nothing else. It used to take a halo
+   of its own colour as well, which is a glow by another name — and the
+   whole point of the dot is that it is flat. The founder's own brief asked
+   for "10-15%"; 25% is the smallest step that still reads as deliberate at
+   8px, and it is the only thing that moves. */
 [data-app="tasks"] .tray[data-over] .pip {
-  transform: scale(1.3);
-  box-shadow: 0 0 0 3px var(--over);
+  transform: scale(1.25);
 }
 
 /* The insertion line arrives rather than appearing. 90ms of width is under
@@ -2810,11 +2818,11 @@ body {
   content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px;
   background: var(--tp-accent, var(--ink-4));
 }
-[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="todo"]) { --tp-accent: var(--status-todo-rim, var(--status-todo)); }
-[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="doing"]) { --tp-accent: var(--status-doing-rim, var(--status-doing)); }
-[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="review"]) { --tp-accent: var(--status-review-rim, var(--status-review)); }
-[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="waiting"]) { --tp-accent: var(--status-waiting-rim, var(--status-waiting)); }
-[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="done"]) { --tp-accent: var(--status-done-rim, var(--status-done)); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="todo"]) { --tp-accent: var(--status-todo); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="doing"]) { --tp-accent: var(--status-doing); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="review"]) { --tp-accent: var(--status-review); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="waiting"]) { --tp-accent: var(--status-waiting); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="done"]) { --tp-accent: var(--status-done); }
 
 [data-app="tasks"] .tpHead {
   flex: none;

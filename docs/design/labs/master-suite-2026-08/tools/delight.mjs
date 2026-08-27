@@ -228,23 +228,49 @@ export async function delight({ browser, url, check, head }) {
       Math.max(...drops) - Math.min(...drops) <= 4,
       washes.map((w) => `${w.lane} ${w.drop.toFixed(1)}%`).join(" · "));
 
-    /* And the dot: a bright fill with a deep rim of its own hue, so it
-       reads as its colour AND has an edge against paper. */
-    const dots = await page.evaluate(() => {
+    /* And the dot: FLAT. One colour, no rim, no halo, no gradient, at rest
+       and while a card is over it.
+
+       This assertion is the inverse of the one it replaces, which required
+       a rim. The rim was there to give a bright dot an edge on white, and
+       at 8px it did not read as an edge — it read as a glow, or as a dot
+       painted in two colours with a light centre and a dark outside. The
+       founder said exactly that. A gate can hold a shape; it cannot tell
+       you the shape is the wrong idea. */
+    const dots = await page.evaluate(async () => {
+      const read = (pip) => {
+        const cs = getComputedStyle(pip);
+        return { shadow: cs.boxShadow, image: cs.backgroundImage, fill: cs.backgroundColor };
+      };
       const out = [];
       for (const tray of document.querySelectorAll(".board [data-lane]")) {
         const pip = tray.querySelector(".pip");
         if (!pip) continue;
-        const cs = getComputedStyle(pip);
-        out.push({ lane: tray.dataset.lane, fill: cs.backgroundColor, rim: cs.boxShadow });
+        const rest = read(pip);
+        tray.setAttribute("data-over", "");
+        await new Promise((r) => setTimeout(r, 180));
+        const over = read(tray.querySelector(".pip"));
+        tray.removeAttribute("data-over");
+        out.push({ lane: tray.dataset.lane, rest, over });
       }
       return out;
     });
-    const rimmed = dots.filter((d) => d.lane !== "todo")
-      .every((d) => /rgba?\(\s*\d+,\s*\d+,\s*\d+(,\s*(0?\.\d+|1))?\s*\)/.test(d.rim) && !/rgba\(0, 0, 0, 0\)/.test(d.rim));
-    check("delight", "every status dot has a rim of its own hue",
-      rimmed, dots.map((d) => d.lane).join(" · "));
-    const fills = new Set(dots.map((d) => d.fill));
+    const flat = (d) =>
+      d.shadow === "none" && (d.image === "none" || !d.image) &&
+      /^rgba?\(/.test(d.fill);
+    const notFlat = dots.filter((d) => !flat(d.rest) || !flat(d.over));
+    check("delight", "every status dot is flat — no rim, no glow, no gradient",
+      notFlat.length === 0,
+      notFlat.length
+        ? notFlat.map((d) => `${d.lane} rest:${d.rest.shadow} over:${d.over.shadow}`).slice(0, 2).join(" | ")
+        : "five flat dots, at rest and under a dragged card");
+    /* The lane's colour must not change when a card arrives over it — the
+       dot grows, and that is all it does. */
+    const shifted = dots.filter((d) => d.rest.fill !== d.over.fill);
+    check("delight", "a dot answers by growing, not by changing colour",
+      shifted.length === 0,
+      shifted.length ? shifted.map((d) => d.lane).join(" ") : "colour holds through the drop state");
+    const fills = new Set(dots.map((d) => d.rest.fill));
     check("delight", "all five lanes look different from each other",
       fills.size === dots.length, `${fills.size} distinct fills across ${dots.length} lanes`);
     await page.close();
