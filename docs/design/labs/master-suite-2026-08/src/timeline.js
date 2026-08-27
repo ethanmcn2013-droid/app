@@ -2201,6 +2201,12 @@
 
   /* ── the states ───────────────────────────────────────────────── */
 
+  /* Has this project a day to measure from? Everything on the owner's
+     surface is `daysFromToday × pixels-per-day` against it. */
+  function hasDay() {
+    return Boolean(F.project && F.project.primaryDate && F.project.primaryDate.date);
+  }
+
   var states = {};
 
   /* Where the owner was standing when they left for the guest's view.
@@ -2383,7 +2389,14 @@
   }
 
   states["owner-empty"] = function () {
-    var sibling = F.siblings[1];      /* Aisling & Tom — real, and genuinely empty */
+    /* The project this surface is actually showing, when there is one.
+       It was hardcoded to a sibling — "Aisling & Tom" — which is right for
+       the gated demo state and wrong the moment a real project with no
+       dated work routes here, because it would then name somebody else's
+       wedding on your own empty plan. */
+    var sibling = (F.project && F.project.name && !hasDay())
+      ? { name: F.project.name }
+      : F.siblings[1];
     var started = null;
     var node = field([
       bar(sibling.name, [inert("Nothing to preview yet")]),
@@ -2950,6 +2963,14 @@
     forces: function (state) { return state === "print" ? { ground: "paper" } : null; },
     render: function (state) {
       history.length = 0;
+      /* ONE branch, above the horizon and the measure, rather than a guard
+         at each of the twenty-two places `primaryDate.date` is read. A
+         project with no dated work is not a broken project — it is a new
+         one, and this product already has a designed surface for it. It
+         threw a TypeError and rendered eight characters instead. */
+      if (!hasDay() && state !== "loading" && state !== "print") {
+        state = "owner-empty";
+      }
       var node = (states[state] || states.phone)();
       if (state === "loading") {
         var f = node.querySelector(".b-field");

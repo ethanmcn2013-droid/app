@@ -319,4 +319,135 @@ export async function projects({ browser, url, check, head }) {
       ok, dot.none ? "no wordmark" : dot.out.map((d) => `${d.preset}:${d.radius}/${d.bg}`).join(" "));
     await page.close();
   }
+
+  /* ── round 4 · three blocking defects, all in the new work ──────
+     Every one of these is a surface this engagement built after round 3
+     and then asserted rather than DROVE. The gate said "a new project is
+     empty" and checked the board; it never walked to the Timeline. */
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(String(e)));
+    await page.goto(url + "?v=paper&state=tasks.board");
+    await page.waitForTimeout(800);
+
+    /* A NEW PROJECT HAS NO DATED WORK, and the Timeline dereferences
+       `F.project.primaryDate.date`. It threw and rendered a blank sheet. */
+    const made = await page.evaluate(async () => {
+      const b = document.querySelector('[data-act="projects"]');
+      if (b.getAttribute("aria-expanded") !== "true") b.click();
+      await new Promise((r) => setTimeout(r, 320));
+      document.querySelector('[data-act="project-new"]').click();
+      await new Promise((r) => setTimeout(r, 320));
+      const f = document.querySelector(".projField");
+      f.value = "Kitchen refit";
+      f.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 900));
+      /* Walk the spine to it, which is what a person does next. */
+      document.querySelector('.rail [data-rail="timeline"]').click();
+      await new Promise((r) => setTimeout(r, 900));
+      const host = document.querySelector('[data-app="timeline"]');
+      return {
+        text: (host.textContent || "").trim().length,
+        hidden: host.hasAttribute("hidden"),
+      };
+    });
+    check("projects", "a project with no dated work still renders a Timeline",
+      made.text > 60 && !made.hidden && errors.length === 0,
+      `${made.text} characters${errors.length ? " · " + errors[0].slice(0, 90) : ""}`);
+    await page.close();
+  }
+
+  /* THE PROJECT MENU DISMISSES LIKE ITS SIX SIBLINGS. Share, Planning,
+     More, Filter, Sort and Display all close on Escape and on a press
+     outside. The switcher did neither, and the press outside fell THROUGH
+     it and opened whatever was under it. */
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await page.goto(url + "?v=paper&state=tasks.board");
+    await page.waitForTimeout(800);
+    const dismiss = await page.evaluate(async () => {
+      const open = async () => {
+        const b = document.querySelector('[data-act="projects"]');
+        if (b.getAttribute("aria-expanded") !== "true") b.click();
+        await new Promise((r) => setTimeout(r, 320));
+      };
+      await open();
+      (document.activeElement || document.body).dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 320));
+      const afterEsc = {
+        gone: !document.querySelector(".projMenu"),
+        expanded: document.querySelector('[data-act="projects"]').getAttribute("aria-expanded"),
+      };
+      await open();
+      const card = document.querySelector(".board .card");
+      const r = card.getBoundingClientRect();
+      const at = { clientX: r.x + r.width / 2, clientY: r.y + r.height / 2, bubbles: true };
+      card.dispatchEvent(new PointerEvent("pointerdown", at));
+      card.dispatchEvent(new PointerEvent("pointerup", at));
+      card.click();
+      await new Promise((r) => setTimeout(r, 450));
+      return {
+        ...afterEsc,
+        closedByPress: !document.querySelector(".projMenu"),
+        /* And the press that closed it must not ALSO have done something
+           else — a light dismiss that falls through is two acts for one
+           press, and the second one is never the one that was meant. */
+        fellThrough: Boolean(document.querySelector(".taskPanel")),
+      };
+    });
+    check("projects", "the project menu closes on Escape, like its six siblings",
+      dismiss.gone && dismiss.expanded === "false",
+      `gone:${dismiss.gone} expanded:${dismiss.expanded}`);
+    check("projects", "a press outside closes it and does not fall through",
+      dismiss.closedByPress && !dismiss.fellThrough,
+      `closed:${dismiss.closedByPress} fellThrough:${dismiss.fellThrough}`);
+    await page.close();
+  }
+
+  /* THE MORE MENU IS READABLE WHERE IT ACTUALLY OPENS. It is painted for
+     the ink floor and opens over the WHITE SHEET — 208 of its 216px land
+     on white at 1440, all of it at 390. Measured as composited pixels,
+     because the stylesheet's own values look perfectly reasonable. */
+  for (const width of [1440, 390]) {
+    const page = await browser.newPage({
+      viewport: { width, height: width < 500 ? 844 : 900 },
+      hasTouch: width < 500, isMobile: width < 500,
+    });
+    await page.goto(url + "?v=paper&state=tasks.board");
+    await page.waitForTimeout(750);
+    const pop = await page.evaluate(async () => {
+      const plus = document.querySelector('.rail [data-rail="more"]');
+      if (!plus || plus.offsetParent === null) return { noPlus: true };
+      plus.click();
+      await new Promise((r) => setTimeout(r, 350));
+      const el = document.querySelector(".morePop");
+      if (!el) return { noPop: true };
+      const lum = ([r, g, b]) => {
+        const f = (v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); };
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const num = (s) => (String(s).match(/[\d.]+/g) || []).map(Number);
+      /* The panel's own ground, composited over whatever is behind it. */
+      const bg = num(getComputedStyle(el).backgroundColor);
+      const a = bg.length > 3 ? bg[3] : 1;
+      const behind = [255, 255, 255];       /* the sheet it opens over */
+      const ground = [0, 1, 2].map((i) => bg[i] * a + behind[i] * (1 - a));
+      const item = document.querySelector(".moreItem");
+      const ink = num(getComputedStyle(item).color);
+      const ia = ink.length > 3 ? ink[3] : 1;
+      const text = [0, 1, 2].map((i) => ink[i] * ia + ground[i] * (1 - ia));
+      const ratio = (() => {
+        const [x, y] = [lum(text), lum(ground)].sort((m, n) => n - m);
+        return (x + 0.05) / (y + 0.05);
+      })();
+      const b = el.getBoundingClientRect();
+      return { ratio, opaque: a >= 0.98, onSheet: b.right > 100, groundHex: ground.map(Math.round) };
+    });
+    check("projects", `the More menu is readable where it opens @${width}`,
+      !pop.noPlus && !pop.noPop && pop.opaque === true && pop.ratio >= 4.5,
+      pop.noPop ? "no panel" : `ground rgb(${pop.groundHex}) · text ${pop.ratio.toFixed(2)}:1 · opaque:${pop.opaque}`);
+    await page.close();
+  }
 }

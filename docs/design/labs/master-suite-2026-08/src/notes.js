@@ -1606,12 +1606,12 @@
       <header class="head">
         <span class="word">notes</span>
         <span class="headRule" aria-hidden="true"></span>
-        <h1 class="headName">${esc(N.workspace)}</h1>
+        <h1 class="headName">All your notes</h1>
         ${nextUp()}
         ${chip ? `<span class="headRule" aria-hidden="true"></span>${chip}` : ""}
         <div class="headActions">
           <button class="headAct" type="button" data-act="privacy" aria-label="${attr(N.copy.privacy)}. ${attr(N.copy.privacyLong)}.">${I.lock}<span>${esc(N.copy.privacy)}</span></button>
-          <button class="headAct" type="button" data-act="options" aria-label="Notes options">${I.dots}</button>
+          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="Notes options are on another screen. Not here yet.">${I.dots}</button>
         </div>
       </header>`;
   }
@@ -1653,7 +1653,7 @@
                  <div class="dockRow" data-verbs>
                    <button class="dockGlyph" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}</button>
                    <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
                    ${commit}
                  </div>
                  <div class="dockRow" data-suite>
@@ -1676,7 +1676,7 @@
                  }
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockAvatar" type="button" data-act="account" aria-disabled="true" title="Your account, in Signal Studio. Not here yet." aria-label="${attr(N.operator.role)}. Not here yet.">${N.operator.initials}</button>`
           }
@@ -1778,7 +1778,7 @@
           <span class="deskFact"><b>${esc(N.copy.otherWaysLabel)}</b>
             <span class="deskVerbs">
               <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
-              <button class="verb" type="button" data-act="photo">${I.photo}${esc(N.copy.photo)}</button>
+              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
             </span>
           </span>
         </div>

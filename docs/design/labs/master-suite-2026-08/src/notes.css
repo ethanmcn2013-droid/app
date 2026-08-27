@@ -1430,6 +1430,14 @@
    not here yet — and left it wearing `cursor: pointer` from the rule above,
    so it went on inviting the press it then refuses. One rule for every
    closed control in this product rather than one for this control. */
+/* A closed door in Notes looks closed, the way it does in the two other
+   products. Four verbs here answered a press ONLY in the live region —
+   same innerText, same node count, no title, no mark — so a sighted reader
+   pressed them and nothing whatsoever happened. Notes had the cursor rule
+   and not the ink one. */
+[data-app="notes"] .verb[aria-disabled="true"],
+[data-app="notes"] .dockGlyph[aria-disabled="true"],
+[data-app="notes"] .headAct[aria-disabled="true"] { color: var(--ink-3); }
 [data-app="notes"] [aria-disabled="true"] { cursor: default; }
 [data-app="notes"][data-radius="sharp"] .dock,
 [data-app="notes"][data-radius="sharp"] .dockField,

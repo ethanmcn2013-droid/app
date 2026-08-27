@@ -1,0 +1,20 @@
+import { chromium } from "@playwright/test";
+const URL = "file://C:/Users/ethan/signal-studio-workspace/_wt-master-suite/docs/design/labs/master-suite-2026-08/_gate-suite.html?v=paper&state=tasks.board";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 960 } });
+await p.goto(URL); await p.waitForTimeout(900);
+const counts = ()=>p.evaluate(()=>[...document.querySelectorAll('.tray')].map(n=>n.querySelectorAll('.card[data-id]').length));
+const act = ()=>p.evaluate(()=>{const a=document.activeElement;return a.className+'|'+(a.dataset?a.dataset.id||'':'')+'|'+a.tagName;});
+await (await p.$('.card[data-id]')).focus();
+await p.keyboard.press('Space'); await p.waitForTimeout(150);
+await p.keyboard.press('ArrowRight'); await p.waitForTimeout(150);
+await p.keyboard.press('Enter'); await p.waitForTimeout(250);
+console.log('counts w/ panel', JSON.stringify(await counts()), 'active', await act());
+await p.keyboard.press('Escape'); await p.waitForTimeout(250);
+console.log('counts after Esc', JSON.stringify(await counts()), 'active', await act(), 'panel', await p.evaluate(()=>!!document.querySelector('.taskPanel')));
+await p.keyboard.press('Tab'); await p.waitForTimeout(200);
+console.log('after Tab active', await act());
+// does the tick in the panel still work / is board inert to pointer?
+console.log('aria-hidden on sheet?', await p.evaluate(()=>document.querySelector('.sheet')?.getAttribute('aria-hidden')));
+console.log('inert?', await p.evaluate(()=>document.querySelector('.sheet')?.hasAttribute('inert')));
+await b.close();

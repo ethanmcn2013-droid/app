@@ -781,7 +781,12 @@ function head() {
         : "") +
       (undated ? '<button type="button" class="undated" data-act="planning" title="Open Planning to see the ' +
         undated + ' tasks with no day">' + undated + " with no day</button>" : "") +
-      "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
+      /* The season names itself; the day count only appears when there IS
+         one. A project created this morning has no span, and printing the
+         clause anyway read "New project, day null of null" — a fresh lie
+         introduced by the fix for the previous one. */
+      "<span>" + esc(B.season) +
+        (p.day && p.of ? ", day " + p.day + " of " + p.of : "") + "</span>" +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search"' + notYet(SEARCH) + ">" +
@@ -1206,8 +1211,11 @@ function taskPanel() {
    already states it. One source, so the axis cannot disagree with the line
    printed six pixels above it. */
 function periodEnds() {
-  const parts = String(B.period || "").split(/\s*[–—-]\s*/);
-  return parts.length === 2 ? parts : [B.period || "", ""];
+  /* A project may have no period at all — a new one has not been given a
+     day yet — and the axis has to say nothing rather than invent ends. */
+  if (!B.period) return [];
+  const parts = String(B.period).split(/\s*[–—-]\s*/);
+  return parts.length === 2 ? parts : [B.period, ""];
 }
 
 function drawer() {
@@ -2282,6 +2290,15 @@ function onKey(event) {
   if (key === "Escape") {
     /* Innermost first: menu, carried card, open note, then the filters in
        the order they were most likely just set, then the drawer. */
+    if (projOpen) {
+      event.preventDefault();
+      projOpen = false; projEdit = null; projNew = false;
+      mount();
+      const back = document.querySelector('[data-act="projects"]');
+      if (back) back.focus();
+      say("Projects, closed.");
+      return;
+    }
     if (toolOpen) {
       event.preventDefault();
       const was = toolOpen;
@@ -2293,15 +2310,13 @@ function onKey(event) {
     }
     if (dayFor) { event.preventDefault(); dayFor = null; mount(); return; }
     if (closeMenu()) { event.preventDefault(); return; }
-    if (carriedId) {
-      event.preventDefault();
-      const title = taskById(carriedId).title;
-      moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
-      say("Move cancelled. " + title + " is back " + inLane(carriedFrom.lane) + ".");
-      carriedId = null; carriedFrom = null;
-      refocus = true; mount(); return;
-    }
-    /* The open task, before the filters. Innermost first is the whole rule
+    /* THE OPEN TASK IS THE INNERMOST LAYER, above the carry.
+       A picked-up card survived the opening of the modal, and Escape was
+       then eaten by the carry: the card was thrown back where it started,
+       the dialog stayed open, and focus parked under the scrim. One
+       keystroke destroyed work and said nothing. Escape belongs to the
+       topmost open layer, and a modal is topmost by definition.
+       (was: after the carry) Innermost first is the whole rule
        of this branch and an open panel is the innermost thing on the sheet. */
     if (openTaskId) {
       event.preventDefault();
@@ -2312,6 +2327,14 @@ function onKey(event) {
       if (card) card.focus();
       say("Task closed.");
       return;
+    }
+    if (carriedId) {
+      event.preventDefault();
+      const title = taskById(carriedId).title;
+      moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
+      say("Move cancelled. " + title + " is back " + inLane(carriedFrom.lane) + ".");
+      carriedId = null; carriedFrom = null;
+      refocus = true; mount(); return;
     }
     if (openNoteId) {
       event.preventDefault();
@@ -2411,6 +2434,26 @@ function onClick(event) {
     const inside = event.target.closest &&
       (event.target.closest(".toolPop") || event.target.closest('[data-act="tool"]'));
     if (!inside) { toolOpen = null; mount(); }
+  }
+  /* The project menu dismisses like its six siblings. Share, Planning,
+     More, Filter, Sort and Display all closed on a press outside and on
+     Escape; the switcher did neither — and worse, the press that should
+     have closed it FELL THROUGH and opened whatever was under it, so one
+     press did two things and the second was never the one meant. */
+  if (projOpen) {
+    const inside = event.target.closest &&
+      (event.target.closest(".projMenu") || event.target.closest('[data-act="projects"]'));
+    if (!inside) {
+      projOpen = false; projEdit = null; projNew = false;
+      mount();
+      /* Consumed, unlike the tool pops: those sit over their own toolbar
+         and a press past them is unambiguous, while this one covers the
+         board itself. A light dismiss that also opens a task is two acts
+         for one press. */
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
   }
   const off = event.target.closest && event.target.closest('[aria-disabled="true"]');
   if (off) {
@@ -3525,6 +3568,22 @@ if (host) {
      within 8px on the same card is a click, whatever the drag machinery
      thinks, and it opens the note the press began on. */
   host.addEventListener("pointerdown", (event) => {
+    /* The light dismiss has to happen HERE, not on click. A card opens on
+       `pointerup`, which fires first — so closing the menu on click closed
+       it a beat after the press had already opened whatever was under it.
+       Closing on pointerdown and clearing the press means the gesture does
+       one thing: it dismisses. */
+    if (projOpen) {
+      const inside = event.target.closest &&
+        (event.target.closest(".projMenu") || event.target.closest('[data-act="projects"]'));
+      if (!inside) {
+        projOpen = false; projEdit = null; projNew = false;
+        mount();
+        pressAt = null; pressedControl = null;
+        event.preventDefault();
+        return;
+      }
+    }
     const card = event.target.closest && event.target.closest(".card[data-id]");
     /* The repaint waits for the click. Repainting here destroys the control
        the press landed on before its click can fire, so ending the carry

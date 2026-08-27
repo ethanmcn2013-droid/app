@@ -169,7 +169,15 @@ window.__SUITE = (function () {
       "</div>" +
       '<span class="railSpacer"></span>' +
       '<div class="railUtil">' +
-        util("plus", "More", ' aria-expanded="' + (moreOpen ? "true" : "false") +
+        /* `more`, not `plus`. The plus path is the create mark — it is on
+           five "Add here" buttons, the dock's "Add task" and the phone
+           capsule's own add — and the More door drew it byte-identically.
+           At 390 the two land 52px apart in the same dock, told apart only
+           by fill, and fill is what this system uses for "primary", so the
+           thinner of the two plus signs read as the secondary ADD. The grid
+           mark has been in the icon set the whole time and rendered zero
+           times. */
+        util("more", "More", ' aria-expanded="' + (moreOpen ? "true" : "false") +
           '" aria-haspopup="menu"' + (moreOpen ? " data-open" : "")) +
         util("settings", "Settings", notYet(NOT_YET.settings)) +
       "</div>" +
@@ -459,7 +467,7 @@ window.__SUITE = (function () {
        panel. Sited before the tile test so a press on the floor closes it
        too, and after nothing, so it cannot be skipped by an early return. */
     var insideMore = event.target.closest &&
-      (event.target.closest(".morePop") || event.target.closest('[data-rail="plus"]'));
+      (event.target.closest(".morePop") || event.target.closest('[data-rail="more"]'));
     if (moreOpen && !insideMore) { moreOpen = false; paintRail(); }
 
     var door = event.target.closest && event.target.closest(".moreItem");
@@ -475,10 +483,10 @@ window.__SUITE = (function () {
     var key = tile.dataset.rail;
     railCurrent = key;
 
-    if (key === "plus") {
+    if (key === "more") {
       moreOpen = !moreOpen;
       paintRail();
-      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      var plus = deck.querySelector('.rail [data-rail="more"]');
       if (plus) plus.focus();
       say(moreOpen ? "More, open." : "More, closed.");
       return;
@@ -528,7 +536,7 @@ window.__SUITE = (function () {
       event.stopPropagation();
       moreOpen = false;
       paintRail();
-      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      var plus = deck.querySelector('.rail [data-rail="more"]');
       if (plus) plus.focus();
       say("More, closed.");
       return;

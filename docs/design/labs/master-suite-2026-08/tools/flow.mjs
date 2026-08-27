@@ -138,7 +138,7 @@ export async function flow({ browser, url, check, head }) {
 
   /* 8 · More, via the plus. Then Settings. */
   await step("the plus opens More, and Settings is reachable and honest", async () => {
-    document.querySelector('.rail [data-rail="plus"]').click();
+    document.querySelector('.rail [data-rail="more"]').click();
     await new Promise((r) => setTimeout(r, 320));
     const doors = [...document.querySelectorAll(".morePop .moreItem")].length;
     /* On the FOCUSED element, which is what a browser does. The rail's

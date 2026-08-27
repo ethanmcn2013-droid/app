@@ -626,7 +626,7 @@ window.NOTES = (function () {
       handoffBoundary:
         "Your note stays here. Tasks only ever receives the exact words you pick and check below.",
       sourceLabel: "The words you picked",
-      destinationLabel: "Which project",
+      destinationLabel: "This task is filed under",
       wordingLabel: "The task wording",
       /* Shown in the pick band at rest, so the mechanism is visible
          before the black button is pressed rather than only after a

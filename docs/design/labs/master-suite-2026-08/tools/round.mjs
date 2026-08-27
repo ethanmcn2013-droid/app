@@ -54,6 +54,27 @@ for (const v of verdicts) byId.set(v.id, v);
 
 const confirmed = [];
 const refuted = [];
+/* ── "your fix is wrong" is not "you are wrong" ──────────────────────
+   A refuter returns `real: false` for two completely different verdicts:
+   the finding is WRONG, and the finding is RIGHT but its proposed remedy
+   is not. The contract asks for the second explicitly — "A correct problem
+   with a wrong fix is REFUTED, with the corrected fix in sharpenedFix" —
+   and this file has been counting both as refutations since round 1.
+
+   Round 4 is where that became impossible to miss: 26 of 34 refutations
+   said in their own first line that the problem is real and must not be
+   discarded, one of them at severity `blocking`, and the round reported
+   itself as the first clean round of the engagement. The refuters kept the
+   severity while rejecting the fix — `{ real: false, severity: "blocking" }`
+   — so the truth was in the record the whole time and the tally threw it
+   away.
+
+   This is the same shape as the two absences this file has already been
+   bitten by: a missing verdict read as a refutation, and now a rejected
+   FIX read as a rejected FINDING. A standing problem is remediation work,
+   it carries the refuter's own severity, and it counts against the ending. */
+const standing = [];
+const STANDS = /refuted on the fix|problem is real|must not be discarded|not on the problem|do not discard/i;
 /* A finding whose refuter never RAN is not a refuted finding. The
    default-to-REFUTED contract binds a refuter that reached a verdict; an
    agent killed by a session limit reached nothing. Round 3 lost 25 of 36
@@ -76,7 +97,9 @@ for (const seat of seats) {
       if (v.severity) row.severity = v.severity;
       if (v.sharpenedFix) row.sharpenedFix = v.sharpenedFix;
       if (v.breaks) row.breaks = v.breaks;
-      (kept ? confirmed : refuted).push(row);
+      if (kept) confirmed.push(row);
+      else if (STANDS.test(String(v.reason || ""))) standing.push(row);
+      else refuted.push(row);
     } else {
       row.verdict = "NO REFUTER RESULT — never adjudicated";
       unadjudicated.push(row);
@@ -84,11 +107,13 @@ for (const seat of seats) {
   }
 }
 
+/* Severity counts CONFIRMED plus STANDING. A problem whose fix was rejected
+   is still a problem on the surface, and the ending is stated in severity. */
 const severity = { blocking: 0, misleading: 0, defect: 0, refinement: 0 };
-for (const f of confirmed) if (severity[f.severity] !== undefined) severity[f.severity]++;
+for (const f of confirmed.concat(standing)) if (severity[f.severity] !== undefined) severity[f.severity]++;
 
-const raised = confirmed.length + refuted.length + unadjudicated.length;
-const judged = confirmed.length + refuted.length;
+const raised = confirmed.length + standing.length + refuted.length + unadjudicated.length;
+const judged = confirmed.length + standing.length + refuted.length;
 const entry = {
   round,
   seatsSat: seats.map((s) => s.seat),
@@ -101,9 +126,14 @@ const entry = {
      ones a re-run has to adjudicate, and they are not evidence of anything
      until it does. */
   unadjudicated,
+  /* Right about the problem, wrong about the remedy. Remediation work, at
+     the refuter's own severity, with its sharpenedFix. */
+  standing,
   severity,
   /* Measured against what was actually judged, not against what was raised.
      A rate computed over unjudged findings is a number about the harness. */
+  /* Only the findings that were actually wrong. Counting fix-refutations
+     here reported a 94% refute rate on a round with 28 standing problems. */
   refuteRate: judged ? Math.round((refuted.length / judged) * 1000) / 1000 : 0,
   judged,
   selfInflicted: null,
@@ -115,7 +145,7 @@ const entry = {
 };
 
 const order = { blocking: 0, misleading: 1, defect: 2, refinement: 3 };
-for (const f of [...confirmed].sort((a, b) => (order[a.severity] ?? 9) - (order[b.severity] ?? 9))) {
+for (const f of [...confirmed, ...standing].sort((a, b) => (order[a.severity] ?? 9) - (order[b.severity] ?? 9))) {
   process.stdout.write(
     `${String(f.severity || "?").padEnd(11)} ${f.id}\n` +
     `            ${f.seat}\n` +
@@ -125,7 +155,7 @@ for (const f of [...confirmed].sort((a, b) => (order[a.severity] ?? 9) - (order[
 }
 process.stdout.write(
   `raised ${raised} · judged ${judged} · confirmed ${confirmed.length} · ` +
-  `refuted ${refuted.length} ` +
+  `standing ${standing.length} · refuted ${refuted.length} ` +
   `(${Math.round((refuted.length / Math.max(1, judged)) * 100)}% of judged)\n` +
   `blocking ${severity.blocking} · misleading ${severity.misleading} · ` +
   `defect ${severity.defect} · refinement ${severity.refinement}\n` +

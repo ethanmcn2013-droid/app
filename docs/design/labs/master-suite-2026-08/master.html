@@ -207,6 +207,11 @@ button {
   /* The accent, lifted for a dark ground. The rail is the only place in
      the suite that needs it. */
   --indigo-on-ink: #a5b4fc;
+  /* Elevation ON the ink ground. `--float` is tuned for a white sheet and
+     is nearly invisible against ink, so a panel that lifts off the rail
+     had nothing holding it off the floor. */
+  --float-ink: 0 2px 6px rgba(17, 17, 17, 0.30), 0 16px 36px rgba(17, 17, 17, 0.36);
+  --on-ink-3: rgba(255, 255, 255, 0.42);
   --t-11: 11px;
   --lh-tight: 1.28;
 
@@ -576,13 +581,25 @@ body {
    they sit one press away, still in the tab order, still saying plainly
    that they are not here yet. The panel is chrome, not sheet: it is the
    rail's own object and it wears the rail's ink. */
+/* OPAQUE INK, because of where it OPENS.
+   It was painted for the ink floor — `--chrome` is white at 7% alpha, which
+   is a tint of whatever is behind it — and it opens BESIDE the rail, over
+   the white sheet. 208 of its 216px land on white at 1440; at 390 all of
+   it does. Composited, its label measured 1.00:1: four doors that were
+   present, focusable, correctly labelled and completely invisible. Pressing
+   a control in the spine and seeing nothing happen is the most reachable
+   "this app is broken" moment a suite can have.
+
+   The panel belongs to the rail, so it keeps the rail's ink rather than
+   becoming a white sheet object — it just has to bring its own ground
+   instead of borrowing one. */
 .morePop {
   position: absolute;
   left: calc(100% + 10px); bottom: 62px;
   width: 216px;
   padding: 7px;
-  background: var(--chrome);
-  box-shadow: inset 0 0 0 1px var(--chrome-line), var(--float);
+  background: linear-gradient(var(--chrome), var(--chrome)), var(--ink);
+  box-shadow: inset 0 0 0 1px var(--chrome-line), var(--float-ink);
   border-radius: 16px;
   display: grid; gap: 1px;
   z-index: 6;
@@ -623,6 +640,13 @@ body {
 /* A closed door does not light up under the pointer. It answers when
    pressed — the sentence is spoken — and that is the whole affordance. */
 .moreItem:hover { background: var(--chrome-active); }
+/* Specificity, not colour. `.rail [aria-disabled="true"]` is (0,2,0) and
+   `.moreItem` is (0,1,0), so every ink value declared above lost to the
+   rail's own disabled rule and the doors painted at the rail's dimmed
+   weight on a panel that is no longer the rail's ground. */
+.rail .moreItem[aria-disabled="true"] { color: var(--on-ink-1); }
+.rail .moreItem[aria-disabled="true"] svg { color: var(--on-ink-2); }
+.rail .moreItem[aria-disabled="true"] em { color: var(--on-ink-3); }
 .railTile[data-open] { color: var(--on-ink-1); background: var(--chrome-active); }
 @media (max-width: 720px) {
   /* The dock has no room beside it; the panel comes up off the dock. */
@@ -4559,6 +4583,14 @@ body {
    not here yet — and left it wearing `cursor: pointer` from the rule above,
    so it went on inviting the press it then refuses. One rule for every
    closed control in this product rather than one for this control. */
+/* A closed door in Notes looks closed, the way it does in the two other
+   products. Four verbs here answered a press ONLY in the live region —
+   same innerText, same node count, no title, no mark — so a sighted reader
+   pressed them and nothing whatsoever happened. Notes had the cursor rule
+   and not the ink one. */
+[data-app="notes"] .verb[aria-disabled="true"],
+[data-app="notes"] .dockGlyph[aria-disabled="true"],
+[data-app="notes"] .headAct[aria-disabled="true"] { color: var(--ink-3); }
 [data-app="notes"] [aria-disabled="true"] { cursor: default; }
 [data-app="notes"][data-radius="sharp"] .dock,
 [data-app="notes"][data-radius="sharp"] .dockField,
@@ -8125,7 +8157,7 @@ window.NOTES = (function () {
       handoffBoundary:
         "Your note stays here. Tasks only ever receives the exact words you pick and check below.",
       sourceLabel: "The words you picked",
-      destinationLabel: "Which project",
+      destinationLabel: "This task is filed under",
       wordingLabel: "The task wording",
       /* Shown in the pick band at rest, so the mechanism is visible
          before the black button is pressed rather than only after a
@@ -8956,7 +8988,9 @@ window.NOTES = (function () {
     p.name = next;
     p.board.workspace = next;
     p.board.planning.project = next;
-    p.board.planning.line = p.kind + " \u00b7 " + p.board.period;
+    /* Guarded: renaming an undated project must not resurrect a span it
+       never had, or print "· null". */
+    p.board.planning.line = p.board.period ? p.kind + " \u00b7 " + p.board.period : p.kind;
     p.timeline.workspace.name = next;
     p.timeline.project.name = next;
     /* If it is the one on screen, the surfaces have to hear about it now. */
@@ -8982,13 +9016,19 @@ window.NOTES = (function () {
       board: {
         workspace: next,
         season: "New project",
-        period: "6 Jul \u2013 10 Oct",
-        progress: { done: 0, total: 0, overdue: 0, day: 1, of: 97, left: 96, undated: 0 },
+        /* NULL, not The Orchard's wedding season. These were hard-copied
+           from the venue, so a project created on a Thursday opened
+           reading "day 1 of 97" with a Planning axis measuring 6 Jul to
+           10 Oct — a season nobody had typed, on somebody else's dates.
+           `null` survives the JSON round-trip in replace(); an absent key
+           does not, and `period` is in BOARD_KEYS. */
+        period: null,
+        progress: { done: 0, total: 0, overdue: 0, day: null, of: null, left: null, undated: 0 },
         tasks: [],
         planning: {
           title: "Planning",
           project: next,
-          line: "New project \u00b7 6 Jul \u2013 10 Oct",
+          line: "New project",
           summary: "Nothing planned yet",
           help: "Give each task a day, or drag it onto the Schedule or Calendar view.",
           unscheduled: [],
@@ -9284,7 +9324,15 @@ window.__SUITE = (function () {
       "</div>" +
       '<span class="railSpacer"></span>' +
       '<div class="railUtil">' +
-        util("plus", "More", ' aria-expanded="' + (moreOpen ? "true" : "false") +
+        /* `more`, not `plus`. The plus path is the create mark — it is on
+           five "Add here" buttons, the dock's "Add task" and the phone
+           capsule's own add — and the More door drew it byte-identically.
+           At 390 the two land 52px apart in the same dock, told apart only
+           by fill, and fill is what this system uses for "primary", so the
+           thinner of the two plus signs read as the secondary ADD. The grid
+           mark has been in the icon set the whole time and rendered zero
+           times. */
+        util("more", "More", ' aria-expanded="' + (moreOpen ? "true" : "false") +
           '" aria-haspopup="menu"' + (moreOpen ? " data-open" : "")) +
         util("settings", "Settings", notYet(NOT_YET.settings)) +
       "</div>" +
@@ -9574,7 +9622,7 @@ window.__SUITE = (function () {
        panel. Sited before the tile test so a press on the floor closes it
        too, and after nothing, so it cannot be skipped by an early return. */
     var insideMore = event.target.closest &&
-      (event.target.closest(".morePop") || event.target.closest('[data-rail="plus"]'));
+      (event.target.closest(".morePop") || event.target.closest('[data-rail="more"]'));
     if (moreOpen && !insideMore) { moreOpen = false; paintRail(); }
 
     var door = event.target.closest && event.target.closest(".moreItem");
@@ -9590,10 +9638,10 @@ window.__SUITE = (function () {
     var key = tile.dataset.rail;
     railCurrent = key;
 
-    if (key === "plus") {
+    if (key === "more") {
       moreOpen = !moreOpen;
       paintRail();
-      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      var plus = deck.querySelector('.rail [data-rail="more"]');
       if (plus) plus.focus();
       say(moreOpen ? "More, open." : "More, closed.");
       return;
@@ -9643,7 +9691,7 @@ window.__SUITE = (function () {
       event.stopPropagation();
       moreOpen = false;
       paintRail();
-      var plus = deck.querySelector('.rail [data-rail="plus"]');
+      var plus = deck.querySelector('.rail [data-rail="more"]');
       if (plus) plus.focus();
       say("More, closed.");
       return;
@@ -10502,7 +10550,12 @@ function head() {
         : "") +
       (undated ? '<button type="button" class="undated" data-act="planning" title="Open Planning to see the ' +
         undated + ' tasks with no day">' + undated + " with no day</button>" : "") +
-      "<span>" + esc(B.season) + ", day " + p.day + " of " + p.of + "</span>" +
+      /* The season names itself; the day count only appears when there IS
+         one. A project created this morning has no span, and printing the
+         clause anyway read "New project, day null of null" — a fresh lie
+         introduced by the fix for the previous one. */
+      "<span>" + esc(B.season) +
+        (p.day && p.of ? ", day " + p.day + " of " + p.of : "") + "</span>" +
     "</div>" +
     '<div class="headActions">' +
       '<button class="ghost headSearch" aria-label="Search"' + notYet(SEARCH) + ">" +
@@ -10927,8 +10980,11 @@ function taskPanel() {
    already states it. One source, so the axis cannot disagree with the line
    printed six pixels above it. */
 function periodEnds() {
-  const parts = String(B.period || "").split(/\s*[–—-]\s*/);
-  return parts.length === 2 ? parts : [B.period || "", ""];
+  /* A project may have no period at all — a new one has not been given a
+     day yet — and the axis has to say nothing rather than invent ends. */
+  if (!B.period) return [];
+  const parts = String(B.period).split(/\s*[–—-]\s*/);
+  return parts.length === 2 ? parts : [B.period, ""];
 }
 
 function drawer() {
@@ -12003,6 +12059,15 @@ function onKey(event) {
   if (key === "Escape") {
     /* Innermost first: menu, carried card, open note, then the filters in
        the order they were most likely just set, then the drawer. */
+    if (projOpen) {
+      event.preventDefault();
+      projOpen = false; projEdit = null; projNew = false;
+      mount();
+      const back = document.querySelector('[data-act="projects"]');
+      if (back) back.focus();
+      say("Projects, closed.");
+      return;
+    }
     if (toolOpen) {
       event.preventDefault();
       const was = toolOpen;
@@ -12014,15 +12079,13 @@ function onKey(event) {
     }
     if (dayFor) { event.preventDefault(); dayFor = null; mount(); return; }
     if (closeMenu()) { event.preventDefault(); return; }
-    if (carriedId) {
-      event.preventDefault();
-      const title = taskById(carriedId).title;
-      moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
-      say("Move cancelled. " + title + " is back " + inLane(carriedFrom.lane) + ".");
-      carriedId = null; carriedFrom = null;
-      refocus = true; mount(); return;
-    }
-    /* The open task, before the filters. Innermost first is the whole rule
+    /* THE OPEN TASK IS THE INNERMOST LAYER, above the carry.
+       A picked-up card survived the opening of the modal, and Escape was
+       then eaten by the carry: the card was thrown back where it started,
+       the dialog stayed open, and focus parked under the scrim. One
+       keystroke destroyed work and said nothing. Escape belongs to the
+       topmost open layer, and a modal is topmost by definition.
+       (was: after the carry) Innermost first is the whole rule
        of this branch and an open panel is the innermost thing on the sheet. */
     if (openTaskId) {
       event.preventDefault();
@@ -12033,6 +12096,14 @@ function onKey(event) {
       if (card) card.focus();
       say("Task closed.");
       return;
+    }
+    if (carriedId) {
+      event.preventDefault();
+      const title = taskById(carriedId).title;
+      moveTo(carriedId, carriedFrom.lane, carriedFrom.index);
+      say("Move cancelled. " + title + " is back " + inLane(carriedFrom.lane) + ".");
+      carriedId = null; carriedFrom = null;
+      refocus = true; mount(); return;
     }
     if (openNoteId) {
       event.preventDefault();
@@ -12132,6 +12203,26 @@ function onClick(event) {
     const inside = event.target.closest &&
       (event.target.closest(".toolPop") || event.target.closest('[data-act="tool"]'));
     if (!inside) { toolOpen = null; mount(); }
+  }
+  /* The project menu dismisses like its six siblings. Share, Planning,
+     More, Filter, Sort and Display all closed on a press outside and on
+     Escape; the switcher did neither — and worse, the press that should
+     have closed it FELL THROUGH and opened whatever was under it, so one
+     press did two things and the second was never the one meant. */
+  if (projOpen) {
+    const inside = event.target.closest &&
+      (event.target.closest(".projMenu") || event.target.closest('[data-act="projects"]'));
+    if (!inside) {
+      projOpen = false; projEdit = null; projNew = false;
+      mount();
+      /* Consumed, unlike the tool pops: those sit over their own toolbar
+         and a press past them is unambiguous, while this one covers the
+         board itself. A light dismiss that also opens a task is two acts
+         for one press. */
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
   }
   const off = event.target.closest && event.target.closest('[aria-disabled="true"]');
   if (off) {
@@ -13246,6 +13337,22 @@ if (host) {
      within 8px on the same card is a click, whatever the drag machinery
      thinks, and it opens the note the press began on. */
   host.addEventListener("pointerdown", (event) => {
+    /* The light dismiss has to happen HERE, not on click. A card opens on
+       `pointerup`, which fires first — so closing the menu on click closed
+       it a beat after the press had already opened whatever was under it.
+       Closing on pointerdown and clearing the press means the gesture does
+       one thing: it dismisses. */
+    if (projOpen) {
+      const inside = event.target.closest &&
+        (event.target.closest(".projMenu") || event.target.closest('[data-act="projects"]'));
+      if (!inside) {
+        projOpen = false; projEdit = null; projNew = false;
+        mount();
+        pressAt = null; pressedControl = null;
+        event.preventDefault();
+        return;
+      }
+    }
     const card = event.target.closest && event.target.closest(".card[data-id]");
     /* The repaint waits for the click. Repainting here destroys the control
        the press landed on before its click can fire, so ending the carry
@@ -14949,12 +15056,12 @@ window.__SUITE.register("tasks", {
       <header class="head">
         <span class="word">notes</span>
         <span class="headRule" aria-hidden="true"></span>
-        <h1 class="headName">${esc(N.workspace)}</h1>
+        <h1 class="headName">All your notes</h1>
         ${nextUp()}
         ${chip ? `<span class="headRule" aria-hidden="true"></span>${chip}` : ""}
         <div class="headActions">
           <button class="headAct" type="button" data-act="privacy" aria-label="${attr(N.copy.privacy)}. ${attr(N.copy.privacyLong)}.">${I.lock}<span>${esc(N.copy.privacy)}</span></button>
-          <button class="headAct" type="button" data-act="options" aria-label="Notes options">${I.dots}</button>
+          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="Notes options are on another screen. Not here yet.">${I.dots}</button>
         </div>
       </header>`;
   }
@@ -14996,7 +15103,7 @@ window.__SUITE.register("tasks", {
                  <div class="dockRow" data-verbs>
                    <button class="dockGlyph" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}</button>
                    <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
                    ${commit}
                  </div>
                  <div class="dockRow" data-suite>
@@ -15019,7 +15126,7 @@ window.__SUITE.register("tasks", {
                  }
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo">${I.photo}</button>
+                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockAvatar" type="button" data-act="account" aria-disabled="true" title="Your account, in Signal Studio. Not here yet." aria-label="${attr(N.operator.role)}. Not here yet.">${N.operator.initials}</button>`
           }
@@ -15121,7 +15228,7 @@ window.__SUITE.register("tasks", {
           <span class="deskFact"><b>${esc(N.copy.otherWaysLabel)}</b>
             <span class="deskVerbs">
               <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
-              <button class="verb" type="button" data-act="photo">${I.photo}${esc(N.copy.photo)}</button>
+              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
             </span>
           </span>
         </div>
@@ -19475,6 +19582,12 @@ window.__SUITE.register("tasks", {
 
   /* ── the states ───────────────────────────────────────────────── */
 
+  /* Has this project a day to measure from? Everything on the owner's
+     surface is `daysFromToday × pixels-per-day` against it. */
+  function hasDay() {
+    return Boolean(F.project && F.project.primaryDate && F.project.primaryDate.date);
+  }
+
   var states = {};
 
   /* Where the owner was standing when they left for the guest's view.
@@ -19657,7 +19770,14 @@ window.__SUITE.register("tasks", {
   }
 
   states["owner-empty"] = function () {
-    var sibling = F.siblings[1];      /* Aisling & Tom — real, and genuinely empty */
+    /* The project this surface is actually showing, when there is one.
+       It was hardcoded to a sibling — "Aisling & Tom" — which is right for
+       the gated demo state and wrong the moment a real project with no
+       dated work routes here, because it would then name somebody else's
+       wedding on your own empty plan. */
+    var sibling = (F.project && F.project.name && !hasDay())
+      ? { name: F.project.name }
+      : F.siblings[1];
     var started = null;
     var node = field([
       bar(sibling.name, [inert("Nothing to preview yet")]),
@@ -20224,6 +20344,14 @@ window.__SUITE.register("tasks", {
     forces: function (state) { return state === "print" ? { ground: "paper" } : null; },
     render: function (state) {
       history.length = 0;
+      /* ONE branch, above the horizon and the measure, rather than a guard
+         at each of the twenty-two places `primaryDate.date` is read. A
+         project with no dated work is not a broken project — it is a new
+         one, and this product already has a designed surface for it. It
+         threw a TypeError and rendered eight characters instead. */
+      if (!hasDay() && state !== "loading" && state !== "print") {
+        state = "owner-empty";
+      }
       var node = (states[state] || states.phone)();
       if (state === "loading") {
         var f = node.querySelector(".b-field");

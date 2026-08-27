@@ -54,6 +54,11 @@
   /* The accent, lifted for a dark ground. The rail is the only place in
      the suite that needs it. */
   --indigo-on-ink: #a5b4fc;
+  /* Elevation ON the ink ground. `--float` is tuned for a white sheet and
+     is nearly invisible against ink, so a panel that lifts off the rail
+     had nothing holding it off the floor. */
+  --float-ink: 0 2px 6px rgba(17, 17, 17, 0.30), 0 16px 36px rgba(17, 17, 17, 0.36);
+  --on-ink-3: rgba(255, 255, 255, 0.42);
   --t-11: 11px;
   --lh-tight: 1.28;
 
@@ -423,13 +428,25 @@ body {
    they sit one press away, still in the tab order, still saying plainly
    that they are not here yet. The panel is chrome, not sheet: it is the
    rail's own object and it wears the rail's ink. */
+/* OPAQUE INK, because of where it OPENS.
+   It was painted for the ink floor — `--chrome` is white at 7% alpha, which
+   is a tint of whatever is behind it — and it opens BESIDE the rail, over
+   the white sheet. 208 of its 216px land on white at 1440; at 390 all of
+   it does. Composited, its label measured 1.00:1: four doors that were
+   present, focusable, correctly labelled and completely invisible. Pressing
+   a control in the spine and seeing nothing happen is the most reachable
+   "this app is broken" moment a suite can have.
+
+   The panel belongs to the rail, so it keeps the rail's ink rather than
+   becoming a white sheet object — it just has to bring its own ground
+   instead of borrowing one. */
 .morePop {
   position: absolute;
   left: calc(100% + 10px); bottom: 62px;
   width: 216px;
   padding: 7px;
-  background: var(--chrome);
-  box-shadow: inset 0 0 0 1px var(--chrome-line), var(--float);
+  background: linear-gradient(var(--chrome), var(--chrome)), var(--ink);
+  box-shadow: inset 0 0 0 1px var(--chrome-line), var(--float-ink);
   border-radius: 16px;
   display: grid; gap: 1px;
   z-index: 6;
@@ -470,6 +487,13 @@ body {
 /* A closed door does not light up under the pointer. It answers when
    pressed — the sentence is spoken — and that is the whole affordance. */
 .moreItem:hover { background: var(--chrome-active); }
+/* Specificity, not colour. `.rail [aria-disabled="true"]` is (0,2,0) and
+   `.moreItem` is (0,1,0), so every ink value declared above lost to the
+   rail's own disabled rule and the doors painted at the rail's dimmed
+   weight on a panel that is no longer the rail's ground. */
+.rail .moreItem[aria-disabled="true"] { color: var(--on-ink-1); }
+.rail .moreItem[aria-disabled="true"] svg { color: var(--on-ink-2); }
+.rail .moreItem[aria-disabled="true"] em { color: var(--on-ink-3); }
 .railTile[data-open] { color: var(--on-ink-1); background: var(--chrome-active); }
 @media (max-width: 720px) {
   /* The dock has no room beside it; the panel comes up off the dock. */

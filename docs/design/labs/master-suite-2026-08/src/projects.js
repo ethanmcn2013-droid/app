@@ -411,7 +411,9 @@
     p.name = next;
     p.board.workspace = next;
     p.board.planning.project = next;
-    p.board.planning.line = p.kind + " \u00b7 " + p.board.period;
+    /* Guarded: renaming an undated project must not resurrect a span it
+       never had, or print "· null". */
+    p.board.planning.line = p.board.period ? p.kind + " \u00b7 " + p.board.period : p.kind;
     p.timeline.workspace.name = next;
     p.timeline.project.name = next;
     /* If it is the one on screen, the surfaces have to hear about it now. */
@@ -437,13 +439,19 @@
       board: {
         workspace: next,
         season: "New project",
-        period: "6 Jul \u2013 10 Oct",
-        progress: { done: 0, total: 0, overdue: 0, day: 1, of: 97, left: 96, undated: 0 },
+        /* NULL, not The Orchard's wedding season. These were hard-copied
+           from the venue, so a project created on a Thursday opened
+           reading "day 1 of 97" with a Planning axis measuring 6 Jul to
+           10 Oct — a season nobody had typed, on somebody else's dates.
+           `null` survives the JSON round-trip in replace(); an absent key
+           does not, and `period` is in BOARD_KEYS. */
+        period: null,
+        progress: { done: 0, total: 0, overdue: 0, day: null, of: null, left: null, undated: 0 },
         tasks: [],
         planning: {
           title: "Planning",
           project: next,
-          line: "New project \u00b7 6 Jul \u2013 10 Oct",
+          line: "New project",
           summary: "Nothing planned yet",
           help: "Give each task a day, or drag it onto the Schedule or Calendar view.",
           unscheduled: [],
