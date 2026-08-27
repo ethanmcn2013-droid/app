@@ -1059,10 +1059,18 @@ function taskPanel() {
   if (task.completedAt) acts.push("Finished " + dateLabel(task.completedAt));
 
   return (
-    '<aside class="taskPanel" role="dialog" aria-modal="false" tabindex="-1"' +
+    /* A CENTRED MODAL, not a side panel. The first build put it on the
+       right-hand edge so the board stayed visible beside it; the founder
+       looked at it and asked for the centre of the screen. They are right,
+       and the reason is about attention rather than layout: a task you have
+       opened is the only thing you are doing, and a panel at the edge reads
+       as a detail inspector for the board rather than as the task itself.
+       Centre it and the room goes quiet around it. */
+    '<div class="tpScrim" data-act="task-close"></div>' +
+    '<aside class="taskPanel" role="dialog" aria-modal="true" tabindex="-1"' +
       ' aria-labelledby="tpTitle">' +
       '<div class="tpHead">' +
-        '<span class="tpLane" data-tone="' + lane.tone + '">' +
+        '<span class="tpLane" data-lane="' + lane.id + '">' +
           '<span class="pip" aria-hidden="true"></span>' + esc(lane.name) + "</span>" +
         '<button type="button" class="ghost tpClose" data-act="task-close" aria-label="Close task">' +
           I.close + "</button>" +
@@ -1526,13 +1534,16 @@ function celebrate(anchor) {
   burst.style.left = Math.round(box.left - frame.left + box.width / 2) + "px";
   burst.style.top = Math.round(box.top - frame.top + box.height / 2) + "px";
   let dots = '<i class="burstRing"></i>';
-  for (let i = 0; i < 8; i++) {
-    /* Not evenly spaced to the degree — a perfect octagon reads as a
-       graphic. Two degrees of jitter, deterministic so a shot is stable. */
-    const a = (i * 45 + (i % 3) * 2) * (Math.PI / 180);
-    dots += '<i style="--dx:' + Math.round(Math.cos(a) * 26) +
-      "px;--dy:" + Math.round(Math.sin(a) * 26) +
-      "px;--d:" + (i % 2 ? 18 : 0) + 'ms"></i>';
+  const N = 12;
+  for (let i = 0; i < N; i++) {
+    /* Not evenly spaced to the degree — a perfect twelve-point star reads
+       as a graphic. Three degrees of jitter and two radii, deterministic so
+       a screenshot is stable. */
+    const a = (i * (360 / N) + (i % 3) * 3) * (Math.PI / 180);
+    const r = i % 3 === 0 ? 42 : 34;
+    dots += '<i style="--dx:' + Math.round(Math.cos(a) * r) +
+      "px;--dy:" + Math.round(Math.sin(a) * r) +
+      "px;--d:" + (i % 3) * 14 + 'ms"></i>';
   }
   burst.innerHTML = dots;
   floor.appendChild(burst);
@@ -3356,6 +3367,25 @@ if (host) {
   /* Escape leaves the field: first press clears what is in it, second gives
      the board back. A field you cannot get out of by the key everyone tries
      is a trap, however good it looks. */
+  /* A modal has to BE modal to the keyboard as well as to the pointer. It
+     declares aria-modal="true", the scrim takes every press, and Tab is
+     kept inside — without this a reader tabs straight out of the dialog
+     onto a board they cannot see and cannot get back from. */
+  host.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const panel = document.querySelector(".taskPanel");
+    if (!panel) return;
+    const stops = [...panel.querySelectorAll(
+      'button, a[href], summary, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
+      .filter((el) => el.offsetParent !== null);
+    if (!stops.length) { event.preventDefault(); panel.focus(); return; }
+    const first = stops[0], last = stops[stops.length - 1];
+    const on = document.activeElement;
+    if (!panel.contains(on)) { event.preventDefault(); (event.shiftKey ? last : first).focus(); return; }
+    if (event.shiftKey && on === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && on === last) { event.preventDefault(); first.focus(); }
+  });
+
   host.addEventListener("keydown", (event) => {
     const search = event.target.closest && event.target.closest(".dockInput");
     if (!search || event.key !== "Escape") return;

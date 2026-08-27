@@ -597,14 +597,20 @@ body {
 }
 
 /* ── the completion moment ─────────────────────────────────────────
-   Eight hairline particles and one ring, 420ms, drawn on the FLOOR rather
-   than inside the sheet so it cannot be clipped by a tray's overflow and
-   cannot affect a single layout box. pointer-events: none throughout —
-   the board answers the whole time it is running.
+   Twelve particles and a ring, drawn on the FLOOR so it cannot be clipped
+   by a tray's overflow and cannot affect a single layout box.
+   pointer-events: none throughout — the board answers the whole time.
 
-   The restraint is the design. Two pixels of particle, a ring that never
-   exceeds 44px, no confetti, no colour outside the lock, and nothing still
-   on screen by the time a hand reaches the next card. */
+   THE FIRST BUILD WAS TOO QUIET AND THE FOUNDER SAID SO. 3px dots on a
+   26px radius at half opacity finished before the eye arrived: it was a
+   celebration you had to already be looking at. This is 5px on a 42px
+   radius, at full opacity, held a beat longer. It is still under half a
+   second and still nothing like confetti — the restraint is in the size,
+   the count and the palette, not in making it invisible.
+
+   Green, because green now MEANS done in this product. A completion
+   burst in the colour of the lane the card just landed in is the
+   interface agreeing with you. */
 .burst {
   position: absolute; z-index: 30;
   width: 0; height: 0;
@@ -612,39 +618,32 @@ body {
 }
 .burst i {
   position: absolute; left: 0; top: 0;
-  width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
+  width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
   border-radius: 50%;
-  background: var(--indigo);
+  background: var(--status-done, #15803d);
   opacity: 0;
   animation: burstOut var(--motion-slow) var(--curve) var(--d, 0ms) both;
 }
-/* Every second particle is ink, so the moment reads as the product's own
-   two colours rather than as one accent doing a trick. */
-.burst i:nth-child(2n) { background: var(--ink-1); opacity: 0; }
+/* Every third particle is indigo — the accent agreeing rather than a
+   second colour competing. */
+.burst i:nth-child(3n) { background: var(--indigo); }
 .burst .burstRing {
-  width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  width: 22px; height: 22px; margin: -11px 0 0 -11px;
   border-radius: 50%;
   background: none;
-  box-shadow: 0 0 0 1.5px var(--indigo);
+  box-shadow: 0 0 0 2px var(--status-done, #15803d);
   animation: burstRing var(--motion-slow) var(--curve) both;
 }
-/* The particle is at FULL size for the part of the flight the eye is on,
-   and only shrinks as it dies. The first draft ran 0.6 → 0.3 across the
-   whole 380ms, which meant a 3px dot was never wider than one physical
-   pixel and the whole burst was invisible while measuring as present —
-   nine nodes, correct colours, animating, and nothing on screen. */
 @keyframes burstOut {
-  0%   { transform: translate3d(0, 0, 0) scale(0.5); opacity: 0; }
-  18%  { transform: translate3d(calc(var(--dx) * 0.34), calc(var(--dy) * 0.34), 0) scale(1); opacity: 1; }
-  100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.55); opacity: 0; }
+  0%   { transform: translate3d(0, 0, 0) scale(0.4); opacity: 0; }
+  16%  { transform: translate3d(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3), 0) scale(1); opacity: 1; }
+  70%  { opacity: 0.9; }
+  100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.5); opacity: 0; }
 }
-/* The ring is the quietest part of it. At half opacity and 2.4x it was the
-   loudest thing on the sheet for a tenth of a second, which is the opposite
-   of the brief. */
 @keyframes burstRing {
-  0%   { transform: scale(0.35); opacity: 0; }
-  26%  { opacity: 0.3; }
-  100% { transform: scale(2); opacity: 0; }
+  0%   { transform: scale(0.3); opacity: 0; }
+  22%  { opacity: 0.55; }
+  100% { transform: scale(2.6); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   /* Nothing at all. A shorter celebration is still a celebration, and the
@@ -1085,9 +1084,41 @@ body {
   background: var(--white);
 }
 [data-app="tasks"] .trayTop { display: flex; align-items: center; gap: 8px; }
-[data-app="tasks"] .pip { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-4); flex: none; }
-[data-app="tasks"] .tray[data-tone="flight"] .pip { background: var(--ink-1); }
-[data-app="tasks"] .tray[data-tone="done"] .pip { background: var(--ink-1); box-shadow: inset 0 0 0 1.5px var(--white); }
+/* ── the status dot ────────────────────────────────────────────────
+   A lane's colour is INFORMATION and it is on at rest, not only while
+   something is being dragged over it. The first build kept the dots
+   monochrome to protect the four-colour lock and the founder read the
+   result plainly: "the coloured dots aren't noticeable at all". They were
+   right — an --ink-4 dot is 2:1 on white, which is a smudge.
+
+   Deep rather than bright, on purpose. Every one clears 4.9:1 on white,
+   past AA for text and well past the 3:1 an indicator needs, so the system
+   gains meaning without gaining volume. Keyed on data-lane rather than
+   data-tone, because three of the five lanes share the tone "neutral" and
+   the whole point is that they no longer look alike. */
+[data-app="tasks"] {
+  --status-todo: var(--ink-3);
+  --status-doing: var(--indigo);
+  --status-review: #a16207;
+  --status-waiting: #c2410c;
+  --status-done: #15803d;
+}
+[data-app="tasks"] .pip {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--status-todo);
+  transition: transform var(--motion-instant) var(--curve),
+              box-shadow var(--motion-instant) var(--curve);
+}
+[data-app="tasks"] .tray[data-lane="todo"] .pip,
+[data-app="tasks"] .tpLane[data-lane="todo"] .pip { background: var(--status-todo); }
+[data-app="tasks"] .tray[data-lane="doing"] .pip,
+[data-app="tasks"] .tpLane[data-lane="doing"] .pip { background: var(--status-doing); }
+[data-app="tasks"] .tray[data-lane="review"] .pip,
+[data-app="tasks"] .tpLane[data-lane="review"] .pip { background: var(--status-review); }
+[data-app="tasks"] .tray[data-lane="waiting"] .pip,
+[data-app="tasks"] .tpLane[data-lane="waiting"] .pip { background: var(--status-waiting); }
+[data-app="tasks"] .tray[data-lane="done"] .pip,
+[data-app="tasks"] .tpLane[data-lane="done"] .pip { background: var(--status-done); }
 /* Every micro-label in the product is one rule: Geist Mono, 11px,
    uppercase, +0.1em, weight 400. Tracking carries the hierarchy, so a
    small label is never bolded to make it matter. */
@@ -1488,14 +1519,18 @@ body {
    lane the accent already means — In progress, in motion right now — takes
    indigo. If the lock is spent later, it is these three declarations that
    change and nothing else. */
-[data-app="tasks"] {
-  --over-neutral: rgba(17, 17, 17, 0.028);
-  --over-flight: rgba(79, 70, 229, 0.05);
-  --over-done: rgba(17, 17, 17, 0.045);
-}
-[data-app="tasks"] .tray[data-over] { background: var(--over-neutral); }
-[data-app="tasks"] .tray[data-tone="flight"][data-over] { background: var(--over-flight); }
-[data-app="tasks"] .tray[data-tone="done"][data-over] { background: var(--over-done); }
+/* The drop tint, per lane, in that lane's own colour. The first build sat
+   at 2.8% and the founder could not see it at all — which is the correct
+   verdict: "1-3%" is a sensible instinct and it is under the threshold
+   where a tint survives being composited over white on a real screen. 7%
+   of a deep hue still reads as white paper with something happening on it;
+   it is noticeable at a glance and nowhere near a coloured panel. */
+[data-app="tasks"] .tray[data-lane="todo"] { --over: rgba(17, 17, 17, 0.05); }
+[data-app="tasks"] .tray[data-lane="doing"] { --over: rgba(79, 70, 229, 0.07); }
+[data-app="tasks"] .tray[data-lane="review"] { --over: rgba(161, 98, 7, 0.07); }
+[data-app="tasks"] .tray[data-lane="waiting"] { --over: rgba(194, 65, 12, 0.07); }
+[data-app="tasks"] .tray[data-lane="done"] { --over: rgba(21, 128, 61, 0.07); }
+[data-app="tasks"] .tray[data-over] { background: var(--over, rgba(17, 17, 17, 0.05)); }
 /* Into and out of the drop state, not snapped. The brief's own test is that
    the canvas still reads as white, so what has to be fast is the ARRIVAL —
    the eye needs the target named the instant the card crosses in — and the
@@ -1513,12 +1548,12 @@ body {
    the eye lands on the right column without the dot becoming a thing that
    moves. No pulse: a repeating animation asks for attention the interaction
    has already got. */
-[data-app="tasks"] .pip {
-  transition: transform var(--motion-instant) var(--curve), background-color var(--motion-instant) var(--curve);
+/* The dot answers by growing and taking a halo of its own colour — not by
+   changing colour, because it is already the right one. */
+[data-app="tasks"] .tray[data-over] .pip {
+  transform: scale(1.3);
+  box-shadow: 0 0 0 3px var(--over);
 }
-[data-app="tasks"] .tray[data-over] .pip { transform: scale(1.12); background: var(--ink-2); }
-[data-app="tasks"] .tray[data-tone="flight"][data-over] .pip { background: var(--indigo); }
-[data-app="tasks"] .tray[data-tone="done"][data-over] .pip { background: var(--ink-1); }
 
 /* The insertion line arrives rather than appearing. 90ms of width is under
    the threshold where a person reads it as an animation and over the one
@@ -1893,7 +1928,7 @@ body {
    white with no edge: it sliced the Waiting column mid-word and erased
    Done entirely, which read as the board breaking rather than a panel
    opening. */
-[data-app="tasks"]:has(.drawer, .taskPanel) .sheet {
+[data-app="tasks"]:has(.drawer) .sheet {
   margin-right: calc(388px + var(--inset));
   transition: margin-right var(--dur) var(--curve);
 }
@@ -1901,14 +1936,14 @@ body {
    narrowed board gave the card a 105px measure, which is half what the
    specimen sheet designs it at. What does not fit scrolls, snaps and fades
    at the edge instead. */
-[data-app="tasks"]:has(.drawer, .taskPanel) .board {
+[data-app="tasks"]:has(.drawer) .board {
   grid-template-columns: none;
   grid-auto-flow: column;
   grid-auto-columns: minmax(258px, 1fr);
   scroll-snap-type: x proximity;
   scroll-padding-left: 16px;
 }
-[data-app="tasks"]:has(.drawer, .taskPanel) .tray { scroll-snap-align: start; }
+[data-app="tasks"]:has(.drawer) .tray { scroll-snap-align: start; }
 /* Both of the rules that used to sit here — dropping the season fact when the
    drawer opened, and letting the name shrink to nothing with it — are gone.
    Opening the drawer takes the sheet under 1200, so the header stacks and
@@ -2505,7 +2540,7 @@ body {
     grid-auto-columns: minmax(258px, 1fr);
   }
   [data-app="tasks"] .drawer { width: 364px; }
-  [data-app="tasks"]:has(.drawer, .taskPanel) .sheet { margin-right: calc(364px + var(--inset)); }
+  [data-app="tasks"]:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
 /* The chrome yields before the name of the project does. Visually hidden
    rather than removed, so the controls keep their accessible names. */
@@ -2540,7 +2575,7 @@ body {
   [data-app="tasks"] .headFacts { gap: 12px; }
   [data-app="tasks"] .dockField { min-width: 148px; }
   [data-app="tasks"] .drawer { left: var(--inset); width: auto; }
-  [data-app="tasks"]:has(.drawer, .taskPanel) .sheet { margin-right: 0; }
+  [data-app="tasks"]:has(.drawer) .sheet { margin-right: 0; }
 }
 @media (max-width: 720px) {
   [data-app="tasks"] { --inset: 9px; }
@@ -2702,73 +2737,89 @@ body {
 }
 
 /* ── the expanded task ─────────────────────────────────────────────
-   The most polished surface in the application, and the polish is almost
-   entirely restraint: one column, four ranks of type, a great deal of
-   white, and no control that is not doing something.
+   A centred modal. The first build was a right-hand panel so the board
+   stayed beside it; the founder asked for the centre and they are right —
+   a task you have opened is the only thing you are doing, and a panel at
+   the edge reads as an inspector for the board rather than as the work.
 
-   It takes the Planning drawer's geometry so the sheet's existing
-   accommodation applies unchanged — the board narrows and scrolls rather
-   than being covered, which is the defect two seats found in round 2 and
-   is not worth reintroducing on a new panel. */
-[data-app="tasks"] .taskPanel {
-  position: absolute;
-  right: var(--inset); top: var(--inset); bottom: var(--inset);
-  width: 388px;
-  background: var(--white);
-  border-radius: var(--r-sheet);
-  box-shadow: var(--ring), var(--float);
-  display: flex; flex-direction: column;
-  z-index: 5; overflow: hidden;
-  animation: tpIn var(--motion-base) var(--curve) both;
+   The delight is in the arrival and in the room. The scrim takes the board
+   back a step, the card comes up and settles, and once it is there nothing
+   moves: one column, four ranks of type, and a great deal of white. */
+[data-app="tasks"] .tpScrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(17, 17, 17, 0.32);
+  animation: tpScrimIn var(--motion-base) var(--curve) both;
+  cursor: default;
 }
+@keyframes tpScrimIn { from { opacity: 0; } to { opacity: 1; } }
+
+[data-app="tasks"] .taskPanel {
+  position: fixed; z-index: 41;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(580px, calc(100vw - 48px));
+  max-height: min(760px, calc(100dvh - 64px));
+  background: var(--white);
+  border-radius: 20px;
+  box-shadow: 0 1px 1px rgba(17, 17, 17, 0.04),
+              0 8px 24px rgba(17, 17, 17, 0.09),
+              0 32px 64px rgba(17, 17, 17, 0.14);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  animation: tpIn var(--motion-base) cubic-bezier(0.22, 1.1, 0.36, 1) both;
+}
+/* Up and out, once, damped. It arrives rather than appears, and it does not
+   bounce — a second oscillation on a work surface reads as a toy. */
 @keyframes tpIn {
-  from { opacity: 0; transform: translateX(10px); }
-  to   { opacity: 1; transform: none; }
+  from { opacity: 0; transform: translate(-50%, calc(-50% + 12px)) scale(0.975); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 [data-app="tasks"] .taskPanel:focus { outline: none; }
+
+/* The lane's own colour is the first thing on the card, as a hairline along
+   its top edge. It is the only place colour is spent here, and it says the
+   one thing a person opens a task to check. */
+[data-app="tasks"] .taskPanel::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px;
+  background: var(--tp-accent, var(--ink-4));
+}
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="todo"]) { --tp-accent: var(--status-todo); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="doing"]) { --tp-accent: var(--status-doing); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="review"]) { --tp-accent: var(--status-review); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="waiting"]) { --tp-accent: var(--status-waiting); }
+[data-app="tasks"] .taskPanel:has(.tpLane[data-lane="done"]) { --tp-accent: var(--status-done); }
+
 [data-app="tasks"] .tpHead {
   flex: none;
   display: flex; align-items: center; gap: 10px;
-  padding: 14px 12px 12px 20px;
+  padding: 20px 18px 14px 28px;
 }
-/* The lane is the first thing on the panel because "what state is this in"
-   is the question a person opens a task to answer half the time. It reuses
-   the tray's own pip so the board and the panel cannot drift apart about
-   what a lane looks like. */
 [data-app="tasks"] .tpLane {
-  display: inline-flex; align-items: center; gap: 7px;
+  display: inline-flex; align-items: center; gap: 8px;
   font-family: var(--font-mono);
   font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--ink-2);
 }
-[data-app="tasks"] .tpLane[data-tone="flight"] .pip { background: var(--ink-1); }
-[data-app="tasks"] .tpLane[data-tone="done"] .pip {
-  background: var(--ink-1); box-shadow: inset 0 0 0 1.5px var(--white);
-}
 [data-app="tasks"] .tpClose { margin-left: auto; }
 [data-app="tasks"] .tpBody {
   flex: 1; min-height: 0; overflow-y: auto;
-  padding: 0 20px 24px;
-  display: grid; gap: 24px; align-content: start;
+  padding: 0 28px 30px;
+  display: grid; gap: 26px; align-content: start;
 }
 [data-app="tasks"] .tpTitleRow {
-  display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start;
+  display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start;
 }
-[data-app="tasks"] .tpTick { margin-top: 3px; }
+[data-app="tasks"] .tpTick { margin-top: 4px; }
 [data-app="tasks"] .tpTitle {
   margin: 0;
-  font-size: 20px; font-weight: 600; letter-spacing: var(--tr-19);
-  line-height: 26px;
+  font-size: 27px; font-weight: 600; letter-spacing: -0.03em;
+  line-height: 34px;
   color: var(--ink-1);
   text-wrap: balance;
 }
-/* A finished task says so in the same language the card does. */
 [data-app="tasks"] .tpTitle[data-done] { color: var(--ink-2); text-decoration: line-through; text-decoration-color: var(--ink-4); }
-[data-app="tasks"] .tpSection { display: grid; gap: 9px; }
-/* One rank for every section label in the panel, and it is the same rank
-   the trays use — a panel that invents its own micro-label scale is a panel
-   that reads as a different product. */
+[data-app="tasks"] .tpSection { display: grid; gap: 10px; }
 [data-app="tasks"] .tpSection h3 {
   margin: 0;
   font-family: var(--font-mono);
@@ -2778,11 +2829,10 @@ body {
 }
 [data-app="tasks"] .tpNote {
   margin: 0;
-  font-size: 14px; font-weight: 400; line-height: 22px;
-  letter-spacing: var(--tr-14);
+  font-size: 15px; font-weight: 400; line-height: 24px;
+  letter-spacing: var(--tr-15);
   color: var(--ink-1);
-  /* The one measure on the panel that is read as prose rather than scanned. */
-  max-width: 46ch;
+  max-width: 52ch;
 }
 [data-app="tasks"] .tpNone {
   margin: 0;
@@ -2794,8 +2844,8 @@ body {
    it is editable yet and a disabled field is a worse lie than a plain fact. */
 [data-app="tasks"] .tpFacts { margin: 0; display: grid; gap: 1px; }
 [data-app="tasks"] .tpFact {
-  display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: baseline;
-  padding: 7px 0;
+  display: grid; grid-template-columns: 108px 1fr; gap: 14px; align-items: baseline;
+  padding: 9px 0;
   border-top: 1px solid var(--line-soft);
 }
 [data-app="tasks"] .tpFact:first-child { border-top: 0; padding-top: 0; }
@@ -2810,10 +2860,10 @@ body {
 }
 [data-app="tasks"] .tpActs {
   margin: 0; padding: 0; list-style: none;
-  display: grid; gap: 7px;
+  display: grid; gap: 9px;
 }
 [data-app="tasks"] .tpActs li {
-  position: relative; padding-left: 16px;
+  position: relative; padding-left: 18px;
   font-size: 13px; font-weight: 400; line-height: 20px;
   letter-spacing: var(--tr-13);
   color: var(--ink-2);
@@ -2821,12 +2871,9 @@ body {
 [data-app="tasks"] .tpActs li::before {
   content: ""; position: absolute; left: 0; top: 8px;
   width: 5px; height: 5px; border-radius: 50%;
-  background: var(--ink-4);
+  background: var(--tp-accent, var(--ink-4));
 }
-/* Progressive disclosure, and named honestly. "Subtasks, attachments and
-   comments" is what is behind it; dressing that up as a feature that exists
-   would be the panel making a promise the product cannot keep. */
-[data-app="tasks"] .tpMore { border-top: 1px solid var(--line-soft); padding-top: 16px; }
+[data-app="tasks"] .tpMore { border-top: 1px solid var(--line-soft); padding-top: 18px; }
 [data-app="tasks"] .tpMore summary {
   cursor: pointer; list-style: none;
   font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
@@ -2835,15 +2882,22 @@ body {
 }
 [data-app="tasks"] .tpMore summary::-webkit-details-marker { display: none; }
 [data-app="tasks"] .tpMore summary:hover { color: var(--ink-1); }
-[data-app="tasks"] .tpMore p { margin: 10px 0 0; }
+[data-app="tasks"] .tpMore p { margin: 12px 0 0; }
 @media (prefers-reduced-motion: reduce) {
-  [data-app="tasks"] .taskPanel { animation: none; }
+  [data-app="tasks"] .taskPanel, [data-app="tasks"] .tpScrim { animation: none; }
 }
-/* A phone has no room beside the board, so the panel takes the sheet. The
-   accommodation above already sets margin-right: 0 at this width. */
-@media (max-width: 900px) {
-  [data-app="tasks"] .taskPanel { left: var(--inset); width: auto; }
+/* A phone gets the same object, with room for a thumb. */
+@media (max-width: 720px) {
+  [data-app="tasks"] .taskPanel {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 96px);
+    border-radius: 18px;
+  }
+  [data-app="tasks"] .tpHead { padding: 16px 14px 12px 20px; }
+  [data-app="tasks"] .tpBody { padding: 0 20px 24px; gap: 22px; }
+  [data-app="tasks"] .tpTitle { font-size: 20px; line-height: 26px; letter-spacing: var(--tr-19); }
 }
+
 
 /* ── the control surfaces ──────────────────────────────────────────
    Filter, Sort, Display and Share. One shape for all four: a small panel
@@ -10445,10 +10499,18 @@ function taskPanel() {
   if (task.completedAt) acts.push("Finished " + dateLabel(task.completedAt));
 
   return (
-    '<aside class="taskPanel" role="dialog" aria-modal="false" tabindex="-1"' +
+    /* A CENTRED MODAL, not a side panel. The first build put it on the
+       right-hand edge so the board stayed visible beside it; the founder
+       looked at it and asked for the centre of the screen. They are right,
+       and the reason is about attention rather than layout: a task you have
+       opened is the only thing you are doing, and a panel at the edge reads
+       as a detail inspector for the board rather than as the task itself.
+       Centre it and the room goes quiet around it. */
+    '<div class="tpScrim" data-act="task-close"></div>' +
+    '<aside class="taskPanel" role="dialog" aria-modal="true" tabindex="-1"' +
       ' aria-labelledby="tpTitle">' +
       '<div class="tpHead">' +
-        '<span class="tpLane" data-tone="' + lane.tone + '">' +
+        '<span class="tpLane" data-lane="' + lane.id + '">' +
           '<span class="pip" aria-hidden="true"></span>' + esc(lane.name) + "</span>" +
         '<button type="button" class="ghost tpClose" data-act="task-close" aria-label="Close task">' +
           I.close + "</button>" +
@@ -10912,13 +10974,16 @@ function celebrate(anchor) {
   burst.style.left = Math.round(box.left - frame.left + box.width / 2) + "px";
   burst.style.top = Math.round(box.top - frame.top + box.height / 2) + "px";
   let dots = '<i class="burstRing"></i>';
-  for (let i = 0; i < 8; i++) {
-    /* Not evenly spaced to the degree — a perfect octagon reads as a
-       graphic. Two degrees of jitter, deterministic so a shot is stable. */
-    const a = (i * 45 + (i % 3) * 2) * (Math.PI / 180);
-    dots += '<i style="--dx:' + Math.round(Math.cos(a) * 26) +
-      "px;--dy:" + Math.round(Math.sin(a) * 26) +
-      "px;--d:" + (i % 2 ? 18 : 0) + 'ms"></i>';
+  const N = 12;
+  for (let i = 0; i < N; i++) {
+    /* Not evenly spaced to the degree — a perfect twelve-point star reads
+       as a graphic. Three degrees of jitter and two radii, deterministic so
+       a screenshot is stable. */
+    const a = (i * (360 / N) + (i % 3) * 3) * (Math.PI / 180);
+    const r = i % 3 === 0 ? 42 : 34;
+    dots += '<i style="--dx:' + Math.round(Math.cos(a) * r) +
+      "px;--dy:" + Math.round(Math.sin(a) * r) +
+      "px;--d:" + (i % 3) * 14 + 'ms"></i>';
   }
   burst.innerHTML = dots;
   floor.appendChild(burst);
@@ -12742,6 +12807,25 @@ if (host) {
   /* Escape leaves the field: first press clears what is in it, second gives
      the board back. A field you cannot get out of by the key everyone tries
      is a trap, however good it looks. */
+  /* A modal has to BE modal to the keyboard as well as to the pointer. It
+     declares aria-modal="true", the scrim takes every press, and Tab is
+     kept inside — without this a reader tabs straight out of the dialog
+     onto a board they cannot see and cannot get back from. */
+  host.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const panel = document.querySelector(".taskPanel");
+    if (!panel) return;
+    const stops = [...panel.querySelectorAll(
+      'button, a[href], summary, input, textarea, select, [tabindex]:not([tabindex="-1"])')]
+      .filter((el) => el.offsetParent !== null);
+    if (!stops.length) { event.preventDefault(); panel.focus(); return; }
+    const first = stops[0], last = stops[stops.length - 1];
+    const on = document.activeElement;
+    if (!panel.contains(on)) { event.preventDefault(); (event.shiftKey ? last : first).focus(); return; }
+    if (event.shiftKey && on === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && on === last) { event.preventDefault(); first.focus(); }
+  });
+
   host.addEventListener("keydown", (event) => {
     const search = event.target.closest && event.target.closest(".dockInput");
     if (!search || event.key !== "Escape") return;

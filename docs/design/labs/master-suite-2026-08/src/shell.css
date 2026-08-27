@@ -444,14 +444,20 @@ body {
 }
 
 /* ── the completion moment ─────────────────────────────────────────
-   Eight hairline particles and one ring, 420ms, drawn on the FLOOR rather
-   than inside the sheet so it cannot be clipped by a tray's overflow and
-   cannot affect a single layout box. pointer-events: none throughout —
-   the board answers the whole time it is running.
+   Twelve particles and a ring, drawn on the FLOOR so it cannot be clipped
+   by a tray's overflow and cannot affect a single layout box.
+   pointer-events: none throughout — the board answers the whole time.
 
-   The restraint is the design. Two pixels of particle, a ring that never
-   exceeds 44px, no confetti, no colour outside the lock, and nothing still
-   on screen by the time a hand reaches the next card. */
+   THE FIRST BUILD WAS TOO QUIET AND THE FOUNDER SAID SO. 3px dots on a
+   26px radius at half opacity finished before the eye arrived: it was a
+   celebration you had to already be looking at. This is 5px on a 42px
+   radius, at full opacity, held a beat longer. It is still under half a
+   second and still nothing like confetti — the restraint is in the size,
+   the count and the palette, not in making it invisible.
+
+   Green, because green now MEANS done in this product. A completion
+   burst in the colour of the lane the card just landed in is the
+   interface agreeing with you. */
 .burst {
   position: absolute; z-index: 30;
   width: 0; height: 0;
@@ -459,39 +465,32 @@ body {
 }
 .burst i {
   position: absolute; left: 0; top: 0;
-  width: 3px; height: 3px; margin: -1.5px 0 0 -1.5px;
+  width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
   border-radius: 50%;
-  background: var(--indigo);
+  background: var(--status-done, #15803d);
   opacity: 0;
   animation: burstOut var(--motion-slow) var(--curve) var(--d, 0ms) both;
 }
-/* Every second particle is ink, so the moment reads as the product's own
-   two colours rather than as one accent doing a trick. */
-.burst i:nth-child(2n) { background: var(--ink-1); opacity: 0; }
+/* Every third particle is indigo — the accent agreeing rather than a
+   second colour competing. */
+.burst i:nth-child(3n) { background: var(--indigo); }
 .burst .burstRing {
-  width: 18px; height: 18px; margin: -9px 0 0 -9px;
+  width: 22px; height: 22px; margin: -11px 0 0 -11px;
   border-radius: 50%;
   background: none;
-  box-shadow: 0 0 0 1.5px var(--indigo);
+  box-shadow: 0 0 0 2px var(--status-done, #15803d);
   animation: burstRing var(--motion-slow) var(--curve) both;
 }
-/* The particle is at FULL size for the part of the flight the eye is on,
-   and only shrinks as it dies. The first draft ran 0.6 → 0.3 across the
-   whole 380ms, which meant a 3px dot was never wider than one physical
-   pixel and the whole burst was invisible while measuring as present —
-   nine nodes, correct colours, animating, and nothing on screen. */
 @keyframes burstOut {
-  0%   { transform: translate3d(0, 0, 0) scale(0.5); opacity: 0; }
-  18%  { transform: translate3d(calc(var(--dx) * 0.34), calc(var(--dy) * 0.34), 0) scale(1); opacity: 1; }
-  100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.55); opacity: 0; }
+  0%   { transform: translate3d(0, 0, 0) scale(0.4); opacity: 0; }
+  16%  { transform: translate3d(calc(var(--dx) * 0.3), calc(var(--dy) * 0.3), 0) scale(1); opacity: 1; }
+  70%  { opacity: 0.9; }
+  100% { transform: translate3d(var(--dx), var(--dy), 0) scale(0.5); opacity: 0; }
 }
-/* The ring is the quietest part of it. At half opacity and 2.4x it was the
-   loudest thing on the sheet for a tenth of a second, which is the opposite
-   of the brief. */
 @keyframes burstRing {
-  0%   { transform: scale(0.35); opacity: 0; }
-  26%  { opacity: 0.3; }
-  100% { transform: scale(2); opacity: 0; }
+  0%   { transform: scale(0.3); opacity: 0; }
+  22%  { opacity: 0.55; }
+  100% { transform: scale(2.6); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   /* Nothing at all. A shorter celebration is still a celebration, and the

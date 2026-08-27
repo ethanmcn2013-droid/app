@@ -4,7 +4,7 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "16984 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "19944 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -34,7 +34,7 @@
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "7444 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "10304 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -64,7 +64,7 @@
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "7203 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "8949 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -94,13 +94,13 @@
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "90 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "878 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @390 · the spine",
       "ok": true,
-      "detail": "13861 px, in x 44–364, y 35–826.5"
+      "detail": "13861 px, in x 33.5–380.5, y 35–826.5"
     },
     {
       "section": "fidelity",
@@ -1742,7 +1742,7 @@
       "section": "delight",
       "name": "completion via tick · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 8 dots · widest 2.6px · brightest 0.67"
+      "detail": "1 burst · 12 dots · widest 3.8px · brightest 0.93"
     },
     {
       "section": "delight",
@@ -1754,7 +1754,7 @@
       "section": "delight",
       "name": "completion via keyboard · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 8 dots · widest 2.6px · brightest 0.67"
+      "detail": "1 burst · 12 dots · widest 4.2px · brightest 0.96"
     },
     {
       "section": "delight",
@@ -1836,21 +1836,27 @@
     },
     {
       "section": "delight",
-      "name": "the drop tint is faint enough that the sheet still reads white",
+      "name": "the drop tint is visible but the sheet still reads white",
       "ok": true,
-      "detail": "rgba(17, 17, 17, 0.043) — alpha 0.043"
+      "detail": "rgba(21, 128, 61, 0.07) — alpha 0.07"
     },
     {
       "section": "delight",
       "name": "the lane's own dot answers the drop",
       "ok": true,
-      "detail": "none → matrix(1.12, 0, 0, 1.12, 0, 0)"
+      "detail": "none → matrix(1.3, 0, 0, 1.3, 0, 0)"
     },
     {
       "section": "delight",
-      "name": "task panel @1280 · opens, takes focus, and never strands a lane",
+      "name": "task panel @1280 · opens centred, modal, and inside the viewport",
       "ok": true,
-      "detail": "opened:true focus:true stranded:0 (board scrolls)"
+      "detail": "opened:true focus:true centred:true inView:true modal:true"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1280 · wears the lane's own colour",
+      "ok": true,
+      "detail": "rgb(79, 70, 229)"
     },
     {
       "section": "delight",
@@ -1866,9 +1872,15 @@
     },
     {
       "section": "delight",
-      "name": "task panel @1440 · opens, takes focus, and never strands a lane",
+      "name": "task panel @1440 · opens centred, modal, and inside the viewport",
       "ok": true,
-      "detail": "opened:true focus:true stranded:0 (board scrolls)"
+      "detail": "opened:true focus:true centred:true inView:true modal:true"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1440 · wears the lane's own colour",
+      "ok": true,
+      "detail": "rgb(79, 70, 229)"
     },
     {
       "section": "delight",
@@ -1884,9 +1896,15 @@
     },
     {
       "section": "delight",
-      "name": "task panel @1920 · opens, takes focus, and never strands a lane",
+      "name": "task panel @1920 · opens centred, modal, and inside the viewport",
       "ok": true,
-      "detail": "opened:true focus:true stranded:0 (everything fits)"
+      "detail": "opened:true focus:true centred:true inView:true modal:true"
+    },
+    {
+      "section": "delight",
+      "name": "task panel @1920 · wears the lane's own colour",
+      "ok": true,
+      "detail": "rgb(79, 70, 229)"
     },
     {
       "section": "delight",

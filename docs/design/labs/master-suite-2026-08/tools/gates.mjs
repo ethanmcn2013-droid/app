@@ -29,6 +29,34 @@ const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7);
 
 await mkdir(OUT, { recursive: true });
 
+
+/* ── the suite's palette is wider than any one lab's ──────────────
+   Each engagement's audit hardcodes its own colour lock, and each was
+   right about the product it graded. The composed suite carries three
+   MORE — amber, orange and green for lane state — added on the founder's
+   explicit instruction after the monochrome version was reviewed and the
+   verdict was "the coloured dots aren't noticeable at all".
+
+   Extending the copies here rather than editing the frozen labs is the
+   whole point of this file: it repoints somebody else's gate at our file,
+   and the palette that gate enforces has to be OUR palette or it is
+   grading a product that does not exist. The labs themselves are
+   untouched and still right about themselves. */
+const STATUS_HUES = [
+  '  { name: "Status amber", rgb: [161, 98, 7] },',
+  '  { name: "Status orange", rgb: [194, 65, 12] },',
+  '  { name: "Status green", rgb: [21, 128, 61] },',
+].join("\n");
+
+function widenPalette(text, label) {
+  const at = text.indexOf("const ALLOWED = [");
+  if (at < 0) throw new Error(label + ": no palette lock found to widen");
+  const close = text.indexOf("];", at);
+  if (close < 0) throw new Error(label + ": palette lock has no end");
+  if (text.slice(at, close).includes("Status amber")) return text;
+  return text.slice(0, close) + STATUS_HUES + "\n" + text.slice(close);
+}
+
 function patch(text, from, to, label) {
   const hits = text.split(from).length - 1;
   if (hits !== 1) throw new Error(`${label}: expected 1 match for «${from.slice(0, 70)}…», found ${hits}`);
@@ -60,6 +88,7 @@ async function tasks() {
     "tasks-audit url",
   );
   const out = path.join(OUT, "tasks-audit.mjs");
+  text = widenPalette(text, "tasks-audit");
   await writeFile(out, text);
   return { name: "Tasks · audit.mjs", cwd: path.join(WS, "_wt-design-tasks"), file: out, args: [] };
 }
@@ -88,6 +117,7 @@ async function notes() {
     "notes-audit stylesheet",
   );
   const out = path.join(OUT, "notes-audit.mjs");
+  text = widenPalette(text, "notes-audit");
   await writeFile(out, text);
   return { name: "Notes · notes-audit.mjs", cwd: path.join(WS, "_wt-design-notes"), file: out, args: [] };
 }

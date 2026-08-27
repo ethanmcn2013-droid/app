@@ -69,7 +69,7 @@ export async function delight({ browser, url, check, head }) {
     }, route);
 
     check("delight", `completion via ${route} · one burst, and it is visible`,
-      seen.bursts === 1 && seen.dots === 8 && seen.widest >= 2 && seen.brightest > 0.2 && seen.ringGrew,
+      seen.bursts === 1 && seen.dots === 12 && seen.widest >= 2 && seen.brightest > 0.2 && seen.ringGrew,
       `${seen.bursts} burst · ${seen.dots} dots · widest ${seen.widest.toFixed(1)}px · brightest ${seen.brightest.toFixed(2)}`);
     check("delight", `completion via ${route} · it clears itself away`,
       seen.cleanedUp === 0, `${seen.cleanedUp} left behind`);
@@ -179,8 +179,11 @@ export async function delight({ browser, url, check, head }) {
       tray.removeAttribute("data-over");
       return { bg: cs.backgroundColor, alpha: m.length > 3 ? m[3] : 1, pipBefore, pipAfter };
     });
-    check("delight", "the drop tint is faint enough that the sheet still reads white",
-      drop.alpha > 0 && drop.alpha <= 0.06, `${drop.bg} — alpha ${drop.alpha}`);
+    /* Raised from 0.06 after the founder reviewed the 2.8% version and could
+       not see it at all. 7% of a deep hue still reads as white paper with
+       something happening on it. */
+    check("delight", "the drop tint is visible but the sheet still reads white",
+      drop.alpha > 0 && drop.alpha <= 0.09, `${drop.bg} — alpha ${drop.alpha}`);
     check("delight", "the lane's own dot answers the drop",
       drop.pipAfter !== drop.pipBefore, `${drop.pipBefore} → ${drop.pipAfter}`);
     await page.close();
@@ -202,22 +205,37 @@ export async function delight({ browser, url, check, head }) {
       card.querySelector(".cardTitle").dispatchEvent(new PointerEvent("pointerup", at));
       await new Promise((r) => setTimeout(r, 400));
       const panel = document.querySelector(".taskPanel");
-      const board = document.querySelector(".board");
+      const scrim = document.querySelector(".tpScrim");
       const out = {
         opened: Boolean(panel),
         focused: document.activeElement === panel,
-        /* The board must NARROW, not be covered — the round-2 defect. */
-        boardScrolls: board.scrollWidth > board.clientWidth,
-        covered: (() => {
+        /* CENTRED, and modal. It was a right-hand panel until the founder
+           asked for the middle of the screen; the assertion moved with the
+           design rather than being deleted. A modal must actually be modal —
+           the scrim covers the viewport and takes the press, so the board
+           behind it cannot be operated by accident. */
+        centred: (() => {
           if (!panel) return null;
-          const p = panel.getBoundingClientRect();
-          const max = board.scrollWidth - board.clientWidth;
-          return [...board.querySelectorAll("[data-lane]")].filter((t) => {
-            const b = t.getBoundingClientRect();
-            const clear = b.right - (max - board.scrollLeft) <= p.left + 0.5;
-            return !clear && Math.min(b.right, p.right) - Math.max(b.left, p.left) > 1;
-          }).length;
+          const b = panel.getBoundingClientRect();
+          return Math.abs((b.left + b.width / 2) - innerWidth / 2) <= 1 &&
+                 Math.abs((b.top + b.height / 2) - innerHeight / 2) <= 1;
         })(),
+        inViewport: (() => {
+          if (!panel) return null;
+          const b = panel.getBoundingClientRect();
+          return b.top >= 0 && b.left >= 0 && b.bottom <= innerHeight + 1 && b.right <= innerWidth + 1;
+        })(),
+        scrimCovers: (() => {
+          if (!scrim) return false;
+          const b = scrim.getBoundingClientRect();
+          const card = document.querySelector(".board .card");
+          const c = card.getBoundingClientRect();
+          const hit = document.elementFromPoint(c.x + c.width / 2, c.y + c.height / 2);
+          return b.width >= innerWidth && b.height >= innerHeight &&
+                 Boolean(hit && hit.classList.contains("tpScrim"));
+        })(),
+        /* The lane's colour is on the card's own top edge. */
+        accent: panel ? getComputedStyle(panel, "::before").backgroundColor : "",
         /* The panel and the card must agree about the date. */
         panelDue: (document.querySelector(".tpFact dd") || {}).textContent || "",
         cardChip: (card.querySelector(".when, .chip, [class*=when]") || {}).textContent || "",
@@ -234,10 +252,11 @@ export async function delight({ browser, url, check, head }) {
        At 1920 all five lanes fit beside the panel and the board has no
        travel at all — demanding a scroller there fails a board that is
        behaving perfectly, which is what the first version of this did. */
-    check("delight", `task panel @${width} · opens, takes focus, and never strands a lane`,
-      r.opened && r.focused && r.covered === 0,
-      `opened:${r.opened} focus:${r.focused} stranded:${r.covered}` +
-      (r.boardScrolls ? " (board scrolls)" : " (everything fits)"));
+    check("delight", `task panel @${width} · opens centred, modal, and inside the viewport`,
+      r.opened && r.focused && r.centred && r.inViewport && r.scrimCovers,
+      `opened:${r.opened} focus:${r.focused} centred:${r.centred} inView:${r.inViewport} modal:${r.scrimCovers}`);
+    check("delight", `task panel @${width} · wears the lane's own colour`,
+      /rgb/.test(r.accent) && r.accent !== "rgba(0, 0, 0, 0)", r.accent);
     check("delight", `task panel @${width} · Escape closes it and hands the card back`,
       r.closedByEsc && r.backOnCard, `closed:${r.closedByEsc} card:${r.backOnCard}`);
     check("delight", `task panel @${width} · it does not say "Not set" about a dated task`,

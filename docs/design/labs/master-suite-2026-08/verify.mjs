@@ -748,8 +748,16 @@ async function contract() {
           const [r, g, b, a] = m[1].split(",").map(Number);
           if (a === 0) return true;
           const is = (R, G, B) => r === R && g === G && b === B;
-          /* Ink · Paper · Indigo, and the one darker indigo step. */
-          return is(17, 17, 17) || is(255, 255, 255) || is(79, 70, 229) || is(67, 56, 202) || is(0, 0, 0);
+          /* Ink · Paper · Indigo, and the one darker indigo step —
+             PLUS the three status hues, added 2026-08-27 on the founder's
+             explicit instruction. The monochrome version was built first,
+             reviewed, and the verdict was "the coloured dots aren't
+             noticeable at all". An --ink-4 dot is 2:1 on white; these are
+             4.9:1 or better, deep rather than bright, and they carry lane
+             STATE and nothing else. This spends the four-colour lock. It
+             was raised as a founder's call before it was spent. */
+          return is(17, 17, 17) || is(255, 255, 255) || is(79, 70, 229) || is(67, 56, 202) || is(0, 0, 0) ||
+                 is(161, 98, 7) || is(194, 65, 12) || is(21, 128, 61);
         };
         for (const el of document.querySelectorAll(".app:not([hidden]) *, .rail, .rail *")) {
           const cs = getComputedStyle(el);
