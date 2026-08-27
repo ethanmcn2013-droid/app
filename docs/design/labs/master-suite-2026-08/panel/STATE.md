@@ -1,161 +1,132 @@
-# Where this engagement is · master-suite · budget 3 rounds
+# Where this engagement is · master-suite
 
-**Read this first on any resumed session.** Everything below is on disk; nothing
-here depends on a conversation being remembered.
+**Read this first on any resumed session.** Everything below is on disk;
+nothing here depends on a conversation being remembered.
+
+Last worked: **2026-08-27**, session ended by the founder mid-task —
+"stop everything and save everything, resume Monday". Everything is
+committed, pushed and published. Nothing is half-applied.
 
 ## Position
 
 | | |
 |---|---|
-| Round budget | **3**, set by the founder before round 1. **All three are spent.** |
-| Round 1 | complete · 7 seats · 27 confirmed · `panel/round-1.json` |
-| Round 2 | complete · 3 seats · 7 confirmed · `panel/round-2.json` |
-| Round 3 | complete · 7 seats · 6 confirmed · `panel/round-3.json` |
-| Gates | **all four green** · verify 270 · interaction-check 45 · prove-check 4 · gate.mjs |
-| Ending | **NOT MET.** The method ends on two consecutive rounds with no blocking and no misleading, on a frozen surface. Round 3 confirmed 2 blocking and 1 misleading. `round-metrics.mjs` says "Not finished." |
+| Rounds | **5 run.** 1–3 on 2026-08-26, 4–5 on 2026-08-27. |
+| Round 5 | 29 raised · 25 stood · 4 refuted · **all 25 closed** · `panel/round-5.json` |
+| Scores | floor 7.2 → **8.6**, ceiling 9.0, spread 1.40 → **0.40**, and the engagement's **first sign-off** |
+| Gates | **all four green** · `verify.mjs` **485** · `gate.mjs` · `interaction-check.mjs` 45 · `tools/prove-check.mjs` 4 |
+| Ending | **NOT MET.** Two consecutive rounds with no standing blocking or misleading, on a **frozen** surface. Round 5 stood 4 blocking and 6 misleading, and the surface has not been frozen since — three build passes have landed on top of it. |
+| Branch | `design/master-suite-2026-08` @ `3d8fae3b`, pushed |
 | Artifact | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 |
-| Branch | `design/master-suite-2026-08` |
-
-
-## Closing artifacts — published 2026-08-26
-
-| | |
-|---|---|
-| Suite | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 |
 | Report | https://claude.ai/code/artifact/42a27dec-1879-4341-9f96-86921f978124 |
 | Console | https://claude.ai/code/artifact/a1300890-6c2c-4d36-9ce3-4a9e6420b6d7 |
 
-Rebuild them with, from inside this lab:
+## What landed after round 5, in order
+
+Three passes, all committed, all gated green, none of them panel work.
+
+**1 · The motion pass** (`3f6ec1ab`) — from a parallel session's audit.
+
+- The product switch is a **same-document view transition**. `apply()`
+  wraps, `applyNow()` mutates. Measured cost of the wrap: **25ms** against
+  a 220ms animation.
+- **The motion vocabulary is five names**, one per value, written down in
+  `src/foundation.css` where the primitives are:
+  `--dur-quick` 80 · `--dur` 140 · `--dur-settle` 220 · `--dur-rare` 400 ·
+  `--curve`. 43 uses rewritten. `--dur-out` deleted. `--t-` is reserved
+  for TYPE.
+- **The rare tier is three places**: a lane cleared because the work is
+  finished (built), a timeline published (not built), a note becoming a
+  task (not built). The completion burst was at 400ms on every completion
+  and now settles at 220; 400 is kept for the completion that clears its
+  lane.
+
+**2 · The interaction pass** (`6c82c552`) — four techniques from
+transitions.dev and liquid-gooey, adapted to the vocabulary above rather
+than pasted.
+
+- **morph** — a control becoming the surface it opens, six places, on
+  `__SUITE.morph`. The pair name is LENT for one transition; a static name
+  collides and Chromium skips the transition in silence.
+- **accordion** — the dialog's `<details>` became a button and a
+  `0fr → 1fr` grid panel.
+- **stack** — the undo strip is three deep; the two beneath are `inert`
+  and `aria-hidden`, and the "N more" count stays in words.
+- **travel** — `__SUITE.travel`, an accent moving between adjacent slots
+  as liquid, on the rail (down) and Notes' group switch (across).
+
+**3 · List, and the switcher's travel** (`3d8fae3b`) — the wiring held
+back in pass 2, plus the live view it needed.
+
+## Three things about the goo that cost an afternoon each
+
+Written down because none of them is in any reference and all three
+present as "the effect simply does nothing".
+
+1. **`filterUnits="userSpaceOnUse"`.** A percentage region is a percentage
+   of the object bounding box. The first host tried was a 0×0 anchor,
+   where that region is empty and the element is not painted at all.
+2. **The shapes must be opaque.** The ramp is `18a − 7`, so anything under
+   ~39% alpha is driven to zero. The rail's accent is 16%: draw the blobs
+   opaque and fade the LAYER — CSS applies `filter` before `opacity`.
+3. **The tail needs a different CURVE, not a longer duration.** Sharing
+   `--curve` (a hard ease-out) puts both blobs at the destination at once.
+   The tail eases IN, hangs back, and snaps home. That is what draws the
+   band.
+
+**Where the goo does not go, measured:** the completion burst. Applied
+there it erased it — 365 green pixels of particles became 61, and the 61
+were the Done lane's own dot. Twelve 5px particles travelling 40px apart
+never touch, and shapes have to overlap to merge.
+
+## Open, and the order to take them in
+
+1. **The List view and the switcher's travel have NO ASSERTIONS.** This is
+   the first job. Everything else in `tools/material.mjs` was written
+   against its fix; these two shipped green on a gate that does not look
+   at them. Add to `tools/material.mjs`: the list renders the same rows as
+   the board under the same filters, the lane is stated in type, `walk()`
+   is one-axis, the drag paths stay on `.card`, and the switcher travels.
+2. **The list at 390 is unverified.** The fold rule is written and was
+   never driven.
+3. **Round 6, on a FROZEN surface.** Rounds 4 and 5 ran 86% and 79%
+   self-inflicted because building continued between them; three more
+   build passes have landed since. No round is worth buying until the
+   surface stops moving.
+4. Timeline's wordmark sits 20px lower and 10px right of the other two.
+   Flagged in round 5, not changed.
+
+## Traps this lab has already paid for
+
+- **`tools/split.mjs --force` regenerates `src/` from the frozen labs and
+  once ate a whole round's work silently.** `src/` is the living source.
+  Do not run it.
+- State names are `<product>.<state>` with a **dot**; a colon cannot be a
+  Windows filename.
+- **Absence reads as a pass, eight times now.** A dead selector, a
+  `display: contents` zero rect, a missing refuter verdict, a rejected fix
+  counted as a rejected finding, `visibility: hidden` hiding a control
+  from a target audit, a count read off the wrong element (NaN passes
+  every comparison), a claim guarded behind `if (the menu offered it)`,
+  and `.listBoard` losing to `.board` on source order. Write the existence
+  check BEFORE the claim, every time.
+- **A helper that defers owns everything that depends on the deferral.**
+  `startViewTransition` runs its callback a frame late, and three separate
+  callers focused nodes that did not exist yet. `go()` takes a `then`,
+  `openCard()` takes a `land`, and `apply()` takes an `after` for exactly
+  this reason.
+
+## Driving it
 
 ```
-node <skill>/scripts/pack-shots.mjs   --lab=.   # frames.json first, or the report has none
-node <skill>/scripts/build-report.mjs --lab=.
-node <skill>/scripts/build-console.mjs --lab=.
-node <skill>/scripts/verify-console.mjs --lab=.
+_gate-suite.html?state=<product>.<state>&v=paper|ink&layout=across|down
 ```
 
-Feedback for the skill itself was filed at
-`~/.claude/skills/elevate/feedback/entries/2026-08-26-master-suite.md`.
-Do not read the other entries before filing your own — the blind rule there
-works the same way the panel's does.
+`tasks.board` `tasks.dense` `tasks.planning` `tasks.filtered`
+`notes.notebook` `notes.seam` `notes.voice` `notes.capture`
+`timeline.owner-flight` `timeline.desk` `timeline.phone`
 
-## If a fourth round is authorised
-
-Everything round 3 confirmed is closed. A round 4 would be the first round
-with a chance of being clean, and the ending needs **two** clean rounds, so the
-honest minimum from here is two more rounds, not one.
-
-The one finding deliberately NOT taken whole is
-`closed-doors-are-still-invisible`. Its cursor half is fixed and gated. Its
-ink-density half is a founder's decision: ten of sixteen chrome controls on the
-Tasks sheet paint `--ink-3` (0.62), the same token live micro-labels use,
-against 0.72 for the live control beside them. The seat's fix sets type in
-`--ink-4`, whose own declaration reads "decorative only, never type". Deciding
-it needs either a new stated alpha in the palette lock or a decision to lift
-live secondary controls instead.
-
-## Round 3 — collecting it
-
-Workflow run `wf_acb8cc61-531` (task `wp6t3jkrq`), **seven** seats, final round.
-The notification truncates; the journal does not. Build the record from the journal:
-
-```
-node tools/round.mjs "C:/Users/ethan/.claude/projects/C--Users-ethan/7c0de329-febd-4a7e-ab6a-74379c009573/subagents/workflows/wf_acb8cc61-531/journal.jsonl" 3
-```
-
-Round 2's journal, if it is ever needed again, is `wf_0abbeaf9-34e`.
-
-That writes `panel/round-3.json` and prints every confirmed finding in severity
-order. Then merge it into `panel.json`'s `rounds` array — `tools/merge2.mjs` is the
-working example, copy it for round 3 — and run:
-
-```
-node ../../../../../.claude/skills/elevate/scripts/ledger.mjs --lab=. --check
-node ../../../../../.claude/skills/elevate/scripts/round-metrics.mjs --lab=. 
-```
-
-`round-metrics.mjs` is **the only thing allowed to say the engagement may stop.**
-
-## The loop, in order
-
-1. `node tools/round.mjs <journal> <n>` — the record, from the journal.
-2. Fix confirmed findings in batches of **≤ 8**, severity order.
-   **Write the assertion first and watch it fail** before the fix. The assertion
-   modules are `tools/spine.mjs`, `tools/truth.mjs`, `tools/craft.mjs`,
-   `tools/orientation.mjs` — add to the right one or start another and wire it
-   into `verify.mjs` beside the others.
-3. `node build.mjs && node tools/wrap.mjs` then `node verify.mjs` between batches.
-4. `node ../../../../../.claude/skills/elevate/scripts/shots.mjs --lab=.`
-5. Write `panel/round-<n+1>-notes.md`, then
-   `panel-round.mjs --lab=. --round=<n+1>` (add `--final` and drop `--seats` for
-   round 3 — the closing round is full-panel), then run it with the Workflow tool.
-6. Commit and push every round.
-
-## What round 2 cost, in one line
-
-The Planning drawer covered a fifth of the board at every desk width. The lab
-had **already fixed that** and its comment is still in the file; scoping each
-product under its app compound turned the lab's root `.floor` into a demanded
-DESCENDANT, and in the suite the floor is `#deck`, the app's PARENT. Five rules
-matched nothing from the day the document was composed. **A selector that
-matches nothing fails nothing** — which is why `tools/reach.mjs` gates the class
-and not the instance. Assume there are more of these.
-
-## Open from round 1 — ten defects, known and classed
-
-Named in `panel/round-1.json` under `open`. Read any of them in full with
-`node tools/show.mjs 1 <id>`.
-
-`spoken-copy-below-the-visible-standard` · `waiting-lane-is-keyboard-inert` ·
-`undo-drops-focus-on-body` · `undo-drops-focus-to-body` ·
-`three-eyebrows-for-one-role` · `done-is-the-name-of-a-lane` ·
-`undo-lies-outside-the-tick` · `phone-undo-strip-eats-the-row-and-its-own-sentence` ·
-`closed-doors-are-indistinguishable` · `ledger-time-reads-as-completion`
-
-`three-eyebrows-for-one-role` is the letterfit question and is the one the
-founder's own brief invites: three products, three ratified tracking curves,
-one application — a system or three?
-
-## What the gates cannot see, and is therefore the panel's
-
-1. **Letterfit is not mechanically gated.** Stated and proved unfixable in
-   `tools/exclusions.mjs`; the shared check groups across three products, two of
-   them hidden but in the DOM, and a per-product rerun cannot see *role*.
-2. **A contrast residue is OPEN** — keycaps in the dictation state where the
-   shared model, a render proof and the eye disagree. `gate.mjs` prints it every
-   run as OPEN rather than passing or failing it.
-3. **Two frames are not byte-reproducible** — `notes.voice` at 768 and 1440 has a
-   live waveform and a running clock.
-
-## Traps this engagement has already paid for
-
-- **`node tools/split.mjs --force` regenerates `src/` from the frozen labs.** It
-  ate a whole round's work once, silently, and the behaviour gate then PASSED the
-  seam's privacy assertion because the field the fix read had gone with the fix.
-  It now copies what it replaces into `_source/.replaced/` first. **`src/` is the
-  living source. Do not run split again.**
-- **Never write regexes or apostrophe-heavy text through a bash heredoc.** It ate
-  escapes three times in this engagement. Use the editor tool.
-- **State names are `<product>.<state>` with a DOT.** A colon cannot be a filename
-  on Windows, and the shot harness names every frame after its state — it
-  collapsed forty frames into three without erroring.
-- **`--only=<section>`** on `verify.mjs`: `fidelity console seam spine contract
-  grounds motion orientation truth craft reach spinekeys labgates`.
-- **Write the assertion first and watch it fail — then check the failure is the
-  product's and not the assertion's.** Round 2 wrote four assertions that failed
-  for the wrong reason: a node held across a Tasks repaint is detached and
-  measures 0x0; an ASCII space does not match the non-breaking space the horizon
-  binds a date with; a local-midnight date read back in UTC lands a day early;
-  and a CSS scan that does not strip comments matches its own note. Each was
-  caught by a result *contradicting* a seat rather than confirming it. A green
-  assertion you never watched fail correctly is not evidence.
-
-## The founder's standing asks, from round 1
-
-1. Timeline in two orientations with a toggle — built; `across` at ≥1024, `down`
-   below, `?layout=across|down`.
-2. Use the horizontal space — done and measured; whether it is now *right* rather
-   than merely *wider* is still the panel's to say.
-3. *"Not held back by old contracts and restraints."* The pixel-fidelity contract
-   from the first brief no longer binds; `verify.mjs`'s `CHANGED` and `REPAIRED`
-   declarations record what this engagement has deliberately moved past.
+No gated state, must be driven by hand: the List view (press List), the
+project switcher, the expanded task, Filter / Sort / Display / Share, the
+search at the foot, the completion moment, the drop tints, the rail's `+`,
+and every travelling accent.
