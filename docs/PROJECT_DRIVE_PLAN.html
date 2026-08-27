@@ -1,0 +1,531 @@
+<title>Project Drive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --paper: #ffffff; --paper-soft: #fafafa; --paper-deep: #f4f4f5;
+    --ink: #111111; --ink-soft: #3f3f46; --ink-faint: #71717a; --ink-ghost: #d4d4d8;
+    --accent: #4f46e5; --accent-tint: #eef2ff; --accent-soft: rgba(79,70,229,0.12);
+    --hairline: rgba(17,17,17,0.10); --hairline-soft: rgba(17,17,17,0.06);
+    --status-done: #10b981; --status-flight: #f59e0b; --status-blocked: #ef4444;
+    --keep-tint: rgba(16,185,129,0.10); --warn-tint: rgba(245,158,11,0.10); --stop-tint: rgba(239,68,68,0.10);
+    --term-bg: #18181b; --term-ink: #f4f4f5; --term-dim: #a1a1aa;
+    --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --text-title: clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
+    --text-section: clamp(1.375rem, 1.1rem + 1.3vw, 2rem);
+    --text-heading: 1.25rem; --text-body-lg: 1.0625rem; --text-body: 0.9375rem;
+    --text-body-sm: 0.8125rem; --text-caption: 0.75rem; --text-label: 0.6875rem;
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px;
+    --space-6: 24px; --space-7: 32px; --space-8: 40px; --space-9: 48px; --space-10: 64px; --space-11: 80px;
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-pill: 999px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+      --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+      --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16); --accent-soft: rgba(79,70,229,0.22);
+      --hairline: rgba(255,255,255,0.12); --hairline-soft: rgba(255,255,255,0.07);
+      --status-done: #34d399; --status-flight: #fbbf24; --status-blocked: #f87171;
+      --keep-tint: rgba(52,211,153,0.14); --warn-tint: rgba(251,191,36,0.14); --stop-tint: rgba(248,113,113,0.14);
+      --term-bg: #09090b; --term-ink: #f4f4f5; --term-dim: #71717a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+    --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+    --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16); --accent-soft: rgba(79,70,229,0.22);
+    --hairline: rgba(255,255,255,0.12); --hairline-soft: rgba(255,255,255,0.07);
+    --status-done: #34d399; --status-flight: #fbbf24; --status-blocked: #f87171;
+    --keep-tint: rgba(52,211,153,0.14); --warn-tint: rgba(251,191,36,0.14); --stop-tint: rgba(248,113,113,0.14);
+    --term-bg: #09090b; --term-ink: #f4f4f5; --term-dim: #71717a;
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-sans); font-size: var(--text-body-lg);
+    line-height: 1.62; -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 60rem; margin: 0 auto;
+    padding: var(--space-10) var(--space-5) var(--space-11);
+    display: flex; flex-direction: column; gap: var(--space-10);
+  }
+  .measure { max-width: 44rem; }
+  p { margin: 0; }
+  strong { font-weight: 600; color: var(--ink); }
+  em { font-style: italic; }
+  code {
+    font-family: var(--font-mono); font-size: 0.86em; background: var(--paper-deep);
+    border-radius: var(--radius-sm); padding: 1px 5px; color: var(--ink-soft);
+  }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+  }
+
+  .masthead {
+    display: flex; flex-direction: column; gap: var(--space-4);
+    padding-bottom: var(--space-8); border-bottom: 1px solid var(--hairline);
+  }
+  .masthead h1 {
+    margin: 0; font-size: var(--text-title); line-height: 1.06; letter-spacing: -0.035em;
+    font-weight: 600; text-wrap: balance; max-width: 16ch;
+  }
+  .standfirst { color: var(--ink-soft); max-width: 38rem; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin-top: var(--space-2);
+    font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-faint);
+  }
+  .meta b { font-weight: 500; color: var(--ink-soft); }
+
+  .section { display: flex; flex-direction: column; gap: var(--space-6); }
+  .section-head { display: flex; flex-direction: column; gap: var(--space-2); }
+  .section-head h2 {
+    margin: 0; font-size: var(--text-section); font-weight: 600;
+    letter-spacing: -0.022em; line-height: 1.14; text-wrap: balance;
+  }
+  .section-head p { color: var(--ink-faint); font-size: var(--text-body); max-width: 44rem; }
+  h3 { margin: 0; font-size: var(--text-heading); font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; }
+  h4 {
+    margin: 0; font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .stack-tight { display: flex; flex-direction: column; gap: var(--space-3); }
+  .body { color: var(--ink-soft); font-size: var(--text-body-lg); }
+  .body-sm { color: var(--ink-soft); font-size: var(--text-body); }
+
+  .panel {
+    display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6);
+    background: var(--paper-soft); border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  }
+  .note {
+    display: flex; flex-direction: column; gap: var(--space-2);
+    padding: var(--space-4) var(--space-5); background: var(--warn-tint);
+    border-left: 2px solid var(--status-flight); border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-size: var(--text-body); color: var(--ink-soft);
+  }
+  .note .note-head {
+    font-family: var(--font-mono); font-size: var(--text-label); letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: 500; color: var(--ink);
+  }
+  .note.keep { background: var(--keep-tint); border-left-color: var(--status-done); }
+  .note.stop { background: var(--stop-tint); border-left-color: var(--status-blocked); }
+
+  .chip {
+    display: inline-flex; align-items: center; font-family: var(--font-mono);
+    font-size: var(--text-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px var(--space-2); border-radius: var(--radius-sm); white-space: nowrap;
+  }
+  .chip-keep { background: var(--keep-tint); color: var(--status-done); }
+  .chip-warn { background: var(--warn-tint); color: var(--status-flight); }
+  .chip-stop { background: var(--stop-tint); color: var(--status-blocked); }
+  .chip-flat { background: var(--paper-deep); color: var(--ink-faint); }
+  .chip-accent { background: var(--accent-soft); color: var(--accent); }
+
+  .scroll { overflow-x: auto; border: 1px solid var(--hairline); border-radius: var(--radius-lg); }
+  table { width: 100%; border-collapse: collapse; font-size: var(--text-body-sm); min-width: 36rem; }
+  thead th {
+    text-align: left; font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint);
+    padding: var(--space-3) var(--space-4); background: var(--paper-deep);
+    border-bottom: 1px solid var(--hairline); white-space: nowrap;
+  }
+  tbody td {
+    padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--hairline-soft);
+    color: var(--ink-soft); vertical-align: top; line-height: 1.5;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 500; }
+  td.mono { font-family: var(--font-mono); }
+
+  .cmd { border-radius: var(--radius-md); overflow: hidden; background: var(--term-bg); }
+  .cmd-label {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+    padding: var(--space-2) var(--space-4); background: rgba(255,255,255,0.05);
+    font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--term-dim);
+  }
+  .copy {
+    font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--term-dim);
+    background: transparent; border: 1px solid rgba(255,255,255,0.14);
+    border-radius: var(--radius-sm); padding: 3px var(--space-2); cursor: pointer;
+  }
+  .copy:hover { color: var(--term-ink); border-color: rgba(255,255,255,0.3); }
+  .cmd pre {
+    margin: 0; padding: var(--space-5); overflow-x: auto; font-family: var(--font-mono);
+    font-size: var(--text-body-sm); line-height: 1.7; color: var(--term-ink); white-space: pre-wrap;
+  }
+
+  /* Work-package rail */
+  .packages { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-4); }
+  .wp {
+    display: grid; grid-template-columns: 3rem minmax(0,1fr); gap: var(--space-5);
+    align-items: start; padding: var(--space-5) var(--space-6);
+    background: var(--paper-soft); border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  }
+  .wp.critical { border-color: var(--status-blocked); background: var(--stop-tint); }
+  .wp.floor { border-color: var(--status-flight); background: var(--warn-tint); }
+  .wp-num {
+    width: 3rem; padding-top: 2px;
+    font-family: var(--font-mono); font-size: var(--text-caption); font-weight: 500;
+    letter-spacing: 0.06em; color: var(--ink-faint); font-variant-numeric: tabular-nums;
+  }
+  .wp-body { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+  .wp-title { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: baseline; }
+  .wp-title h3 { font-size: var(--text-heading); }
+  .wp-goal { color: var(--ink-soft); font-size: var(--text-body); }
+  .wp-accept {
+    font-size: var(--text-body-sm); color: var(--ink-faint);
+    padding-top: var(--space-2); border-top: 1px solid var(--hairline-soft);
+  }
+  .wp-accept b {
+    font-family: var(--font-mono); font-size: var(--text-label); letter-spacing: 0.07em;
+    text-transform: uppercase; color: var(--ink-faint); font-weight: 500;
+  }
+
+  .list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-3); }
+  .list li {
+    display: grid; grid-template-columns: auto minmax(0,1fr); gap: var(--space-3);
+    align-items: baseline; font-size: var(--text-body); color: var(--ink-soft);
+  }
+  .list .marker { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-ghost); }
+  .list.stop .marker { color: var(--status-blocked); }
+  .list.ask .marker { color: var(--accent); }
+
+  .split { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-5); }
+  @media (min-width: 46rem) { .split { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+  hr.sep { border: none; border-top: 1px solid var(--hairline); margin: 0; }
+  footer {
+    padding-top: var(--space-7); border-top: 1px solid var(--hairline);
+    font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-faint);
+    display: flex; flex-direction: column; gap: var(--space-2);
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Build plan · handoff to implementation</p>
+    <h1>Project Drive</h1>
+    <p class="standfirst">
+      Nine work packages that take board files into the owner's Google Drive,
+      with invited members reaching that board's folder and nothing else. The
+      plan lives in the repository so the terminal session can read, work and
+      update it. This page is your copy.
+    </p>
+    <div class="meta">
+      <span><b>Plan</b> docs/projects/project-drive/</span>
+      <span><b>Branch</b> claude/signal-studio-google-drive-en0n5y</span>
+      <span><b>Date</b> 2026-08-27</span>
+      <span><b>Status</b> planning complete · nothing built</span>
+    </div>
+  </header>
+
+  <!-- ══ HANDOFF ═══════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Start here</p>
+      <h2>What to paste into the terminal</h2>
+      <p>
+        The plan is three committed files. The session reads them, works the
+        packages in order, and records what it did — so a later session, or a
+        different machine, picks up exactly where this one stopped.
+      </p>
+    </div>
+
+    <div class="cmd">
+      <div class="cmd-label">
+        <span>Hand off to Claude Code</span>
+        <button class="copy" type="button" data-copy="handoff">Copy</button>
+      </div>
+<pre id="handoff">Read docs/projects/project-drive/PROJECT.md, then DECISIONS.md, then STATUS.md.
+
+Work the packages in order, starting at WP-0. Do not start a package until the
+previous one's acceptance criteria are met and recorded in STATUS.md.
+
+Before writing any code, read the files listed in PROJECT.md section 0 — the
+ADR on project identity governs every server action in this feature, and the
+migration ledger contract means 0028 is not just a .sql file.
+
+Treat section 2 (hard rules) as invariants: each one needs enforcement in code
+AND a contract test, in the style this repo already uses. Section 6 lists the
+decisions you must bring to me rather than make yourself.
+
+Update STATUS.md at the end of every package, before opening a PR.</pre>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>File</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">PROJECT.md</td><td>The build plan. Read-first list, hard rules, repo traps, nine work packages with acceptance criteria and gates, scope fence, stop-and-ask list</td></tr>
+          <tr><td class="mono">DECISIONS.md</td><td>Ten decisions already taken, with reasoning — so the session builds rather than re-litigates</td></tr>
+          <tr><td class="mono">STATUS.md</td><td>The living board. Package status, six open questions with owners, and an evidence log where claims need proof</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ PACKAGES ══════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">The sequence</p>
+      <h2>Nine packages, dependency-ordered</h2>
+      <p>
+        Two of them are not about Drive at all, and both come first. The order
+        is load-bearing: each package de-risks the next.
+      </p>
+    </div>
+
+    <ul class="packages">
+      <li class="wp floor">
+        <span class="wp-num">WP-0</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Fix the floor</h3><span class="chip chip-warn">blocks everything</span></div>
+          <p class="wp-goal">
+            The Signal-native upload path is the fallback this whole design leans
+            on, and right now the product itself says it does not work. Establish
+            whether the storage token is provisioned, make the four contradictory
+            file-size numbers agree, and make the settings copy true.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;a real 5 MB PDF uploads and downloads again in production, and settings tells the truth.</p>
+        </div>
+      </li>
+
+      <li class="wp">
+        <span class="wp-num">WP-1</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Spike the Drive chain</h3><span class="chip chip-flat">throwaway branch</span></div>
+          <p class="wp-goal">
+            Two real Google accounts, seven steps: connect, create the folder,
+            share it, upload from a browser, confirm the second account opens the
+            file with no request-access, revoke, confirm access is lost — and
+            confirm the parent folder was never visible. Publish the consent screen
+            the same day, or Google's seven-day token expiry will look like our bug
+            for a week.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;<code>SPIKE-FINDINGS.md</code> answers all seven with observed behaviour.</p>
+        </div>
+      </li>
+
+      <li class="wp">
+        <span class="wp-num">WP-2</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Secrets substrate</h3></div>
+          <p class="wp-goal">
+            There is no cryptography anywhere in this repository today. Build
+            encrypted storage with key versioning before there is a refresh token
+            to put in it — not after.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;no plaintext token can reach the database, the logs, or Sentry.</p>
+        </div>
+      </li>
+
+      <li class="wp">
+        <span class="wp-num">WP-3</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Schema</h3><span class="chip chip-flat">migration 0028</span></div>
+          <p class="wp-goal">
+            Three new tables and four additive columns. In this repository a
+            migration is a ledger entry, a reviewed receipt and a journal entry as
+            well as SQL — and the receipt stays marked <em>not authorized for
+            production</em> until you say otherwise.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;<code>pnpm db:contract</code> passes and a second migrate run is a no-op.</p>
+        </div>
+      </li>
+
+      <li class="wp">
+        <span class="wp-num">WP-4</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>The connection</h3></div>
+          <p class="wp-goal">
+            Connect, disconnect, reconnect. One scope, pinned by a test. Signed
+            single-use handshake. Account deletion revokes at Google in the order
+            the Notes module already established.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;reconnecting a <em>different</em> Google account is detected rather than silently adopted.</p>
+        </div>
+      </li>
+
+      <li class="wp critical">
+        <span class="wp-num">WP-5</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Folder and sharing</h3><span class="chip chip-stop">security-critical</span></div>
+          <p class="wp-goal">
+            One folder per board, shared with exactly that board's members, wired
+            to the four places membership changes. Every grant path calls one guard
+            function that refuses before the API call: never the parent folder,
+            never another board's folder, never anything but a named user.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;a second account opens the board's files with no request-access step, loses them on removal, and never sees the parent folder.</p>
+        </div>
+      </li>
+
+      <li class="wp">
+        <span class="wp-num">WP-6</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Upload</h3><span class="chip chip-accent">the capability win</span></div>
+          <p class="wp-goal">
+            Bytes go browser to Google. We mint the session; the token never
+            leaves the server; the client's claimed file id is verified against our
+            own stamp and the board's folder before it is believed. One decision —
+            stamping each upload with a private id — removes the duplicate-file
+            problem entirely.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;a 400 MB file attaches, and killing the browser mid-upload then retrying produces one file, not two.</p>
+        </div>
+      </li>
+
+      <li class="wp">
+        <span class="wp-num">WP-7</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Surfaces</h3></div>
+          <p class="wp-goal">
+            It should feel like nothing changed, except that bigger files work.
+            The attach control keeps its shape. Settings gains Connections. And
+            the board gains <strong>“Who can open this board's files”</strong>,
+            read live from Drive rather than from our own records.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;the plain-language and experience-registry gates both pass, with evidence at all four screen sizes.</p>
+        </div>
+      </li>
+
+      <li class="wp">
+        <span class="wp-num">WP-8</span>
+        <div class="wp-body">
+          <div class="wp-title"><h3>Resilience and launch</h3></div>
+          <p class="wp-goal">
+            The invisible half that decides whether this is sellable: the repair
+            pass for failed revocations, the storage-owner handover, and the
+            privacy wording. Plus the Signal HQ records the repo contract requires.
+          </p>
+          <p class="wp-accept"><b>Done when</b> &nbsp;a removed member cannot retain access through a failed revocation, and the owner can see that is true.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ RULES ═════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Non-negotiable</p>
+      <h2>Ten rules, each one enforced by a test</h2>
+      <p>
+        These are what turn the safety story from a promise into something a
+        build can fail on. The plan requires code enforcement <em>and</em> a
+        contract test for every one.
+      </p>
+    </div>
+
+    <div class="split">
+      <div class="stack-tight">
+        <h4>Scope and reach</h4>
+        <ul class="list stop">
+          <li><span class="marker">1</span><span>The only scope ever requested is the narrow one. Widening it must fail the build.</span></li>
+          <li><span class="marker">2</span><span>Never share the <code>Signal Studio</code> parent folder — that would expose every board at once.</span></li>
+          <li><span class="marker">3</span><span>Named users only. Never “anyone with the link”, never a whole domain.</span></li>
+          <li><span class="marker">4</span><span>A grant only ever targets the folder recorded on that board's own row.</span></li>
+          <li><span class="marker">5</span><span>Share-link guests are never granted anything in Drive.</span></li>
+        </ul>
+      </div>
+      <div class="stack-tight">
+        <h4>Data and trust</h4>
+        <ul class="list stop">
+          <li><span class="marker">6</span><span>Signal Studio never deletes someone's Drive file as a side effect of tidying a task.</span></li>
+          <li><span class="marker">7</span><span>Access tokens are never stored. Refresh tokens are encrypted.</span></li>
+          <li><span class="marker">8</span><span>The caller's permission is proved on the object's own board before any Google call.</span></li>
+          <li><span class="marker">9</span><span>A file id from the browser is never evidence — verify it carries our stamp and sits in the right folder.</span></li>
+          <li><span class="marker">10</span><span>Demo mode never reaches Google or the real database.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ ASK ═══════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Your desk</p>
+      <h2>Five things the session will bring to you</h2>
+      <p>The plan tells it not to decide these alone. Two are worth thinking about before it asks.</p>
+    </div>
+
+    <ul class="list ask">
+      <li><span class="marker">·</span><span><strong>Is the storage token provisioned in production?</strong> This is question one, and it blocks WP-0. Settings currently tells every customer that uploads are not active — either that is true, or the copy is stale. Worth knowing before the session starts.</span></li>
+      <li><span class="marker">·</span><span><strong>Do members get edit or view-only access in Drive?</strong> The plan proposes <em>edit</em>, because editing a shared Sheet in place is much of why putting files in Drive is worth doing. Reversible, but people will notice.</span></li>
+      <li><span class="marker">·</span><span><strong>When may migration 0028 run against production?</strong> The receipt stays marked unauthorized until you say so — matching how the last migration was handled.</span></li>
+      <li><span class="marker">·</span><span><strong>Which file-size number becomes the truth</strong> in WP-0, given four places currently disagree.</span></li>
+      <li><span class="marker">·</span><span><strong>The privacy wording.</strong> Files will sit in a member's personal Drive; that is a real change to what you tell customers, and it changes what account deletion can promise.</span></li>
+    </ul>
+
+    <div class="note">
+      <span class="note-head">One thing the plan deliberately holds back</span>
+      <p>
+        Letting people attach files they <em>already have</em> in Drive — the
+        picker — is genuinely valuable and entirely additive. It is deferred only
+        because it needs a second Google component and would delay the capability
+        you actually asked for. It is the obvious next package once this ships,
+        and the schema already has room for it.
+      </p>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ DONE ══════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">The finish line</p>
+      <h2>What “done” means</h2>
+    </div>
+    <div class="panel">
+      <ul class="list">
+        <li><span class="marker">✓</span><span>All ten rules enforced in code and proved by a contract test.</span></li>
+        <li><span class="marker">✓</span><span>Every gate green: lint, types, the full test suite, the migration contract, plain-language, and the experience registry.</span></li>
+        <li><span class="marker">✓</span><span>Two real Google accounts walk the whole lifecycle — connect, attach, second member opens, member removed, access lost.</span></li>
+        <li><span class="marker">✓</span><span><strong>Signal Studio's own storage still works with Drive disconnected.</strong> The feature can be switched off at any moment without a customer losing a file.</span></li>
+        <li><span class="marker">✓</span><span><code>STATUS.md</code> reflects reality, and the dispatch entry is written.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <p>Signal Studio · Project Drive · build plan · 2026-08-27</p>
+    <p>Plan of record: docs/projects/project-drive/ — PROJECT.md, DECISIONS.md, STATUS.md. This page renders it; the repository holds it.</p>
+    <p>Rationale: docs/PROJECT_FILES_IN_DRIVE.html. Current-state map: docs/CONNECTED_STORAGE_REVIEW.html.</p>
+  </footer>
+
+</div>
+
+<script>
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var el = document.getElementById(btn.getAttribute("data-copy"));
+      if (!el) return;
+      var done = function () {
+        var was = btn.textContent;
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = was; }, 1400);
+      };
+      try {
+        navigator.clipboard.writeText(el.textContent).then(done, function () {});
+      } catch (e) { /* clipboard unavailable — the text is selectable anyway */ }
+    });
+  });
+</script>
