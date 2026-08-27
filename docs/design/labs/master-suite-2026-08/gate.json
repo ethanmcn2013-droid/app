@@ -4,7 +4,7 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "30746 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "30920 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -34,7 +34,7 @@
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "14437 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "14611 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -64,7 +64,7 @@
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "10613 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "10787 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -94,7 +94,7 @@
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "9076 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "9208 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -2581,19 +2581,19 @@
       "section": "switch",
       "name": "the two layouts never overlap mid-transition",
       "ok": true,
-      "detail": "mid 0.6% of the sheet in edges against 4.6% before and 4.4% after — 13% of the lighter one"
+      "detail": "mid 0.5% of the sheet in edges against 4.6% before and 4.4% after — 11% of the lighter one"
     },
     {
       "section": "switch",
       "name": "every switch lands, both paths",
       "ok": true,
-      "detail": "with 50/70/78ms · without 15/6/37ms"
+      "detail": "with 47/60/60ms · without 16/6/51ms"
     },
     {
       "section": "switch",
       "name": "the mutation is wrapped, not postponed",
       "ok": true,
-      "detail": "66ms with the transition against 19ms without — the wrap costs 47ms, and the animation it starts runs 220ms after it"
+      "detail": "56ms with the transition against 25ms without — the wrap costs 31ms, and the animation it starts runs 220ms after it"
     },
     {
       "section": "switch",

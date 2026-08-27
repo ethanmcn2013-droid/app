@@ -428,6 +428,156 @@
 }
 [data-app="tasks"] .viewTools { margin-left: auto; display: flex; gap: 2px; }
 
+/* ═══ THE LIST ═══════════════════════════════════════════════════
+   The same work, read down instead of across. It is not a board with one
+   column: a column is a place and a list has no places, so everything the
+   board says by POSITION this has to say in type — which is exactly one
+   fact, the lane, and it is set at the column head's own size with the
+   column head's own pip because it is the same fact.
+
+   One grid, five columns, so every row's tick, lane, words, tags and day
+   line up down the page. A list whose columns do not line up is a list
+   you have to read rather than scan, and scanning is the only reason to
+   choose it over the board. */
+/* `.board.listBoard`, not `.listBoard`. The board declares itself a
+   five-column grid a hundred lines below this one, at the same
+   specificity, so a plain class here lost on order alone — and the loss
+   was silent and total: the list inherited `repeat(5, minmax(258px,
+   372px))`, every row's `1fr` had nothing to distribute, and the title
+   column collapsed to zero. Thirteen rows rendered with a tick, a lane,
+   a tag and a date, and no task in any of them. */
+[data-app="tasks"] .board.listBoard {
+  display: block;
+  overflow: auto;
+  padding: 0 25px 28px;
+}
+[data-app="tasks"] .lrows {
+  width: 100%;
+  display: grid;
+  /* tick · lane · words · tags · day. `minmax(0, 1fr)` on the words, or a
+     long title pushes the day off the sheet instead of wrapping. */
+  grid-template-columns: 34px 132px minmax(0, 1fr) auto 74px;
+  align-items: start;
+  column-gap: 14px;
+}
+[data-app="tasks"] .lrow {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+  min-height: 44px;
+  padding: 7px 10px 7px 4px;
+  border-radius: var(--r-card, 8px);
+  border-bottom: 1px solid var(--line-soft);
+  cursor: pointer;
+  transition: background-color var(--dur) var(--curve);
+}
+/* Colour and nothing else. No translation on hover anywhere in this
+   suite: a row that moves under the pointer is the most reliable way to
+   make a tool that is used all day tiring to use. */
+[data-app="tasks"] .lrow:hover { background: var(--wash); }
+[data-app="tasks"] .lrow:focus-visible {
+  outline: 2px solid var(--indigo);
+  outline-offset: -1px;
+}
+[data-app="tasks"] .lrow:last-child { border-bottom: 0; }
+
+[data-app="tasks"] .lrow .tick { margin: 0; }
+[data-app="tasks"] .lrowLane {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: var(--t-11); font-weight: 600;
+  letter-spacing: var(--tr-cap); text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+[data-app="tasks"] .lrowSay { min-width: 0; }
+[data-app="tasks"] .lrowTitle {
+  margin: 0;
+  font-size: 14px; font-weight: 500; color: var(--ink-1);
+  letter-spacing: var(--tr-14);
+  line-height: var(--lh-tight);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+[data-app="tasks"] .lrowNote {
+  margin: 3px 0 0;
+  font-size: 13px; font-weight: 400; color: var(--ink-2);
+  letter-spacing: var(--tr-13);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+[data-app="tasks"] .lrowMeta {
+  display: inline-flex; align-items: center; gap: 10px;
+  white-space: nowrap;
+}
+[data-app="tasks"] .lrowWho {
+  font-size: 12px; font-weight: 500; color: var(--ink-2);
+  letter-spacing: var(--tr-12);
+  border-bottom: 1px solid var(--line-strong);
+}
+/* A finished row reads finished: the same treatment the board's done card
+   already carries, so the two views agree about what done looks like. */
+[data-app="tasks"] .lrow[data-done] .lrowTitle { color: var(--ink-3); }
+[data-app="tasks"] .lrow[data-done] .lrowNote { color: var(--ink-3); }
+/* NOT FLOATED. The chip floats right inside a card, where it sits in the
+   title's own text flow; in a grid cell a float takes it out of flow
+   entirely and it escapes the row — one landed in the rail, sixty pixels
+   outside the sheet. */
+[data-app="tasks"] .lrow .when { float: none; margin: 0; max-width: none; justify-self: end; }
+[data-app="tasks"] .lrow .when[data-t="none"] { visibility: hidden; }
+[data-app="tasks"] .listSaid {
+  margin: 18px 0 0;
+  font-size: 13px; color: var(--ink-2); letter-spacing: var(--tr-13);
+}
+
+/* Below the two-column boundary there is no room for five columns, so the
+   row folds to two lines: the words with their day, and the lane with the
+   tags under them. Nothing is dropped — a list that hides a column on a
+   phone is a list that answers a different question there. */
+@media (max-width: 720px) {
+  [data-app="tasks"] .lrows { grid-template-columns: 34px minmax(0, 1fr) 74px; }
+  [data-app="tasks"] .lrow { padding: 9px 6px; row-gap: 4px; }
+  [data-app="tasks"] .lrowLane { grid-column: 2; grid-row: 2; }
+  [data-app="tasks"] .lrowSay { grid-column: 2; grid-row: 1; }
+  [data-app="tasks"] .lrowMeta { grid-column: 3; grid-row: 2; justify-self: end; }
+  [data-app="tasks"] .lrow .when { grid-column: 3; grid-row: 1; }
+}
+
+/* The segmented control's own travelling accent — the same liquid the
+   rail uses going down, on the other axis. See `travel` in app.js and the
+   note beside Notes' group switch, which is the same code. */
+[data-app="tasks"] .seg { position: relative; }
+[data-app="tasks"] .segGoo {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  filter: url(#goo);
+}
+[data-app="tasks"] .segGoo i {
+  position: absolute;
+  left: var(--x, 0px); top: var(--y, 0px);
+  width: var(--w, 40px); height: var(--h, 32px);
+  border-radius: var(--r-pill);
+  background: var(--white);
+  transition: left var(--dur) var(--curve), top var(--dur) var(--curve),
+              width var(--dur) var(--curve);
+}
+[data-app="tasks"] .segGoo .gooTail {
+  transition-duration: var(--dur-settle);
+  transition-timing-function: cubic-bezier(0.72, 0, 0.86, 0.16);
+}
+/* While the pill is in the air the tab does not paint its own, or the row
+   shows the accent in two places at once. The WORD keeps its weight and
+   colour throughout — that is what says which view you are on, and it
+   must not blink. The ring and the raise come back with the pill: a
+   shadow inside a gooey filter is blurred and thresholded with the shape,
+   which turns a crisp 1px ring into a grey smear. */
+[data-app="tasks"] .seg[data-gooing] .segItem[data-active] {
+  background: none;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .segGoo { display: none; }
+}
+
 /* ── trays ─────────────────────────────────────────────────────
    Ruled columns, not filled boxes. The sheet stays one surface. */
 [data-app="tasks"] .board {
@@ -542,15 +692,25 @@
   box-shadow: none;
   transition: transform var(--dur-quick) var(--curve);
 }
+/* THE LIST'S ROWS JOIN THE LANE MAPPING. `--pip` is set on the tray, the
+   dialog's lane chip and now the list row, because all three are places a
+   lane's colour has to appear and the colour belongs to the lane rather
+   than to any one of them. Without this the list's five lanes all painted
+   the fallback grey — five different states, one dot, no information. */
 [data-app="tasks"] .tray[data-lane="todo"],
+[data-app="tasks"] .lrow[data-lane="todo"],
 [data-app="tasks"] .tpLane[data-lane="todo"] { --pip: var(--status-todo); --over: var(--wash-todo); }
 [data-app="tasks"] .tray[data-lane="doing"],
+[data-app="tasks"] .lrow[data-lane="doing"],
 [data-app="tasks"] .tpLane[data-lane="doing"] { --pip: var(--status-doing); --over: var(--wash-doing); }
 [data-app="tasks"] .tray[data-lane="review"],
+[data-app="tasks"] .lrow[data-lane="review"],
 [data-app="tasks"] .tpLane[data-lane="review"] { --pip: var(--status-review); --over: var(--wash-review); }
 [data-app="tasks"] .tray[data-lane="waiting"],
+[data-app="tasks"] .lrow[data-lane="waiting"],
 [data-app="tasks"] .tpLane[data-lane="waiting"] { --pip: var(--status-waiting); --over: var(--wash-waiting); }
 [data-app="tasks"] .tray[data-lane="done"],
+[data-app="tasks"] .lrow[data-lane="done"],
 [data-app="tasks"] .tpLane[data-lane="done"] { --pip: var(--status-done); --over: var(--wash-done); }
 /* Every micro-label in the product is one rule: Geist Mono, 11px,
    uppercase, +0.1em, weight 400. Tracking carries the hierarchy, so a

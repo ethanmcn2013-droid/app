@@ -52,6 +52,7 @@ let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
 let openTaskId = null;  /* the task whose expanded surface is open          */
 let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
+let view = "board";     /* board | list — the two views that are real       */
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
@@ -91,6 +92,19 @@ const UNIFORM_ASSIGNEES = true;
 /* The three couples the review fixture names. Everything else in the tag
    field is an area of the house. */
 const CLIENTS = new Set(["Mara & Finn", "Nora & Cian", "Aisling & Tom"]);
+
+/* The views that exist. Schedule and Calendar are still closed doors and
+   still say so; keeping the list here rather than in four conditions is
+   what makes adding the third one a one-line change. */
+/* WHAT COUNTS AS A ROW. The board's card and the list's row are the same
+   task under two shapes, and every handler that reaches for one has to
+   reach for the other or the list is a picture of a board rather than a
+   view of it. Declared once, because there are five such handlers and the
+   next person to add a sixth will find this rather than a sixth literal. */
+const ROW_SEL = ".card[data-id], .lrow[data-id]";
+
+const LIVE_VIEWS = ["Board", "List"];
+const VIEW_NAME = { board: "Board", list: "List" };
 
 /* WHICH NOTE THIS CAME FROM, asked of the one map that already knows. The
    fixture has carried a note→task link since round 1 and this is its
@@ -898,10 +912,18 @@ function views() {
     B.views.map((v) => '<button type="button" role="tab" class="segItem"' +
       /* A tablist whose active tab computes selected=false announces the
          product's primary view switcher as four unselected tabs. */
-      (v === "Board"
-        ? ' data-active aria-current="true" aria-selected="true"'
+      /* Board and List are real and say so; Schedule and Calendar are not
+         and say that instead. The row used to draw all four at the same
+         weight, which promised two views nobody had built — and then drew
+         all four as closed doors but one, which was true until List
+         shipped. It is the same rule either way: a control that works
+         looks like one, and a control that does not says why. */
+      (LIVE_VIEWS.includes(v)
+        ? (v === VIEW_NAME[view]
+            ? ' data-active aria-current="true" aria-selected="true"'
+            : ' aria-selected="false"') + ' data-act="view" data-view="' + v.toLowerCase() + '"'
         : ' aria-selected="false"' + notYet(SOON)) +
-      ' tabindex="' + (v === "Board" ? "0" : "-1") + '">' + icons[v] + "<span>" + v + "</span></button>").join("") +
+      ' tabindex="' + (v === VIEW_NAME[view] ? "0" : "-1") + '">' + icons[v] + "<span>" + v + "</span></button>").join("") +
     /* Three real controls where three closed doors used to be. Each one
        carries its own live state on its face — a filter that is on says so
        without being opened, because "what is currently active" is the one
@@ -922,6 +944,86 @@ function views() {
       }).join("") +
       (toolOpen ? toolPop(toolOpen) : "") +
     "</div></div>"
+  );
+}
+
+/* THE LIST IS THE BOARD, READ DOWN. Every row comes through `tasksFor`,
+   lane by lane in lane order, so the list inherits every filter, the
+   search, the sort and the density from the board without knowing that
+   any of them exist. A second query here would be a second set of bugs
+   and, worse, a second answer: the head says "5 of 13 done" about the
+   project, and a list that disagreed with the board about which 13 would
+   make one of the two a liar. */
+function listRows() {
+  return laneIds().flatMap((id) => tasksFor(id));
+}
+
+/* One row. It carries what the board carries and one thing the board did
+   not have to say: WHICH LANE. On the board that is position — the column
+   the card is sitting in — and a list has no columns, so the fact has to
+   become type. It is the column head's own pip and name, at the column
+   head's own size, because it is the same fact. */
+function listRow(task, stop) {
+  const done = task.lane === "done";
+  const time = timeOf(task);
+  const show = time.kind !== "none" && time.label !== "";
+  const lane = B.columns.find((c) => c.id === task.lane) || { name: "" };
+  const bits = [];
+  if (task.tag) {
+    bits.push(CLIENTS.has(task.tag)
+      ? '<span class="lrowWho">' + bindName(esc(task.tag)) + "</span>"
+      : '<span class="tag">' + esc(task.tag) + "</span>");
+  }
+  if (task.priority && !done) {
+    bits.push('<span class="hi">' + esc(task.priority) + '<span class="sr"> priority</span></span>');
+  }
+  if (task.comments) bits.push('<span class="cm">' + I.comment + task.comments + "</span>");
+  return (
+    '<article class="lrow" data-id="' + esc(task.id) + '"' +
+      ' data-lane="' + esc(task.lane) + '"' + (done ? " data-done" : "") +
+      ' tabindex="' + (stop ? "0" : "-1") + '"' +
+      ' aria-label="' + esc(task.title) + '"' +
+      ' aria-keyshortcuts="Enter ArrowUp ArrowDown">' +
+      '<button type="button" class="tick" data-act="tick" tabindex="-1"' +
+        ' role="checkbox" aria-checked="' + (done ? "true" : "false") +
+        '" aria-label="' + (done ? "Mark not done" : "Mark done") + '">' + I.check + "</button>" +
+      '<span class="lrowLane"><span class="pip" aria-hidden="true"></span>' +
+        esc(lane.name) + "</span>" +
+      '<div class="lrowSay">' +
+        '<p class="lrowTitle">' + bindName(esc(task.title)) + "</p>" +
+        (showNotes && task.note
+          ? '<p class="lrowNote">' + esc(task.note) + "</p>"
+          : "") +
+      "</div>" +
+      '<span class="lrowMeta">' + bits.join("") + "</span>" +
+      (show
+        ? '<span class="when" data-t="' + esc(time.kind) + '">' + esc(time.label) + "</span>"
+        : '<span class="when" data-t="none" aria-hidden="true"></span>') +
+    "</article>"
+  );
+}
+
+function listView() {
+  const rows = listRows();
+  if (!rows.includes(taskById(focusId))) focusId = (rows[0] || {}).id || null;
+  if (!rows.length) {
+    return (
+      '<div class="board listBoard" data-blank>' +
+      '<div class="emptyBoard"><p><b>Nothing matches.</b>' + esc(filterSentence()) +
+      '</p><button type="button" data-act="clear">Show all work</button></div></div>'
+    );
+  }
+  return (
+    '<div class="board listBoard"' + (filtering() ? " data-filtered" : "") +
+      ' role="application"' +
+      ' aria-label="Task list, arrow keys to move between tasks, Enter to open one">' +
+      '<div class="lrows">' +
+        rows.map((t) => listRow(t, t.id === focusId)).join("") +
+      "</div>" +
+      (filtering()
+        ? '<p class="listSaid">' + esc(filterSentence()) + "</p>"
+        : "") +
+    "</div>"
   );
 }
 
@@ -1651,7 +1753,8 @@ function renderApp() {
   const sheet =
     state === "loading" ? loading()
     : state === "cards" ? specimens()
-    : '<main class="sheet">' + head() + views() + board() + footPill() + dock() + "</main>";
+    : '<main class="sheet">' + head() + views() +
+      (view === "list" ? listView() : board()) + footPill() + dock() + "</main>";
   /* One panel at a time on the right-hand edge: Planning and an open task
      would otherwise stack on the same 388px and the second would win
      silently. Opening a task closes Planning, which is also the honest
@@ -2337,6 +2440,19 @@ function runUndo(act) {
 }
 
 function walk(dx, dy) {
+  /* A LIST HAS ONE AXIS. The board's walk is two-dimensional because the
+     board is; asking it to walk a single column made left and right jump
+     to whichever lane happened to hold a row at the same index, which is
+     a position that means nothing once the columns are gone. Down is the
+     next row and up is the one before it, and that is the whole model. */
+  if (view === "list") {
+    const rows = listRows();
+    const at = rows.findIndex((t) => t.id === focusId);
+    if (at < 0) { focusId = (rows[0] || {}).id || null; return; }
+    const next = rows[at + (dy || dx)];
+    if (next) focusId = next.id;
+    return;
+  }
   const at = place(focusId);
   if (!at) return;
   if (dy) {
@@ -2623,7 +2739,7 @@ function onKey(event) {
 
   }
 
-  const card = event.target.closest && event.target.closest(".card[data-id]");
+  const card = event.target.closest && event.target.closest(ROW_SEL);
   if (!card) return;
 
   /* The card's own controls answer for themselves. Before this, Space on a
@@ -2732,7 +2848,7 @@ function onClick(event) {
 
   if (what === "tick") {
     event.preventDefault();
-    toggleDone(act.closest(".card").dataset.id);
+    toggleDone(act.closest(".card, .lrow").dataset.id);
     return;
   }
   if (what === "source") {
@@ -2873,6 +2989,41 @@ function onClick(event) {
       },
       () => document.querySelector('[data-app="tasks"] .card[data-draft]'),
     );
+    return;
+  }
+  if (what === "view") {
+    const next = act.dataset.view;
+    if (!next || next === view) {
+      say("You are on " + VIEW_NAME[view] + ".");
+      return;
+    }
+    /* THE ACCENT TRAVELS ACROSS, the same liquid the rail uses going down
+       and Notes' group switch uses on this axis. Both boxes are measured
+       before the repaint, because every tab is rendered at rest and only
+       `data-active` moves between them — so the destination's box is known
+       before it becomes the destination.
+
+       This is the wiring that was held back while List was a closed door:
+       an accent cannot travel between two slots when only one of them can
+       ever be on. Schedule and Calendar are still doors, and the day one
+       of them opens it is this same line and no other. */
+    const seg = document.querySelector('[data-app="tasks"] .seg');
+    const fromTab = seg && seg.querySelector(".segItem[data-active]");
+    const toTab = seg && seg.querySelector('.segItem[data-view="' + next + '"]');
+    const fromBox = fromTab ? fromTab.getBoundingClientRect() : null;
+    const toBox = toTab ? toTab.getBoundingClientRect() : null;
+    view = next;
+    /* A view change is not a filter change, so nothing about what is shown
+       moves — but the thing the keyboard is standing on has to still be
+       on screen, and the two views order their rows the same way. */
+    say(VIEW_NAME[view] + ". " + filterSentence());
+    mount();
+    const back = document.querySelector('[data-app="tasks"] .segItem[data-active]');
+    if (back) back.focus();
+    const after = document.querySelector('[data-app="tasks"] .seg');
+    if (after && fromBox && toBox && window.__SUITE.travel) {
+      window.__SUITE.travel(after, fromBox, toBox, { cls: "segGoo", ms: 460 });
+    }
     return;
   }
   if (what === "tool") {
@@ -3182,7 +3333,7 @@ function onClick(event) {
   /* Clicking the card was the obvious thing it looked like and did nothing,
      while the half of the note that carries the deadline was unreachable by
      keyboard and on touch. */
-  const card = event.target.closest && event.target.closest(".card[data-id]");
+  const card = event.target.closest && event.target.closest(ROW_SEL);
   if (!card || !card.closest(".board")) return;
   /* Finishing a selection is not a click on the card. */
   if (String(getSelection())) return;
@@ -3233,6 +3384,11 @@ function stopEdge(board) {
 }
 
 function onDragStart(event) {
+  /* THE BOARD'S CARD ONLY. Carrying a row from one lane to another is
+     what the board is FOR, and a list has no lanes to carry between —
+     so the two drag paths stay on `.card` while every other handler
+     reads `ROW_SEL`. A list row is not draggable in the markup either;
+     this is the second lock rather than the first. */
   const card = event.target.closest && event.target.closest(".card[data-id]");
   if (!card || !card.closest(".board")) return;
   /* The whole card is draggable, so the browser's 4px drag threshold was
@@ -4002,7 +4158,7 @@ if (host) {
         return;
       }
     }
-    const card = event.target.closest && event.target.closest(".card[data-id]");
+    const card = event.target.closest && event.target.closest(ROW_SEL);
     /* The repaint waits for the click. Repainting here destroys the control
        the press landed on before its click can fire, so ending the carry
        would have eaten the very completion it was meant to make room for. */
@@ -4022,7 +4178,7 @@ if (host) {
     pressedControl = null;
     if (!was || carriedId) return;
     if (Math.hypot(event.clientX - was.x, event.clientY - was.y) >= 8) return;
-    const card = event.target.closest && event.target.closest(".card[data-id]");
+    const card = event.target.closest && event.target.closest(ROW_SEL);
     if (!card || card.dataset.id !== was.id) return;
     if (String(getSelection())) return;
     /* The click may or may not survive; whichever fires first wins and the
