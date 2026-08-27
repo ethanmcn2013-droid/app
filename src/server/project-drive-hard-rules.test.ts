@@ -52,7 +52,10 @@ function allSources(dir = SRC, out: string[] = []): string[] {
 
 /** Source with comments stripped — a rule is about code, not prose. */
 function codeOf(path: string): string {
+  // Line endings normalized: a Windows checkout can hand back CRLF and
+  // turn an assertion about order into one about the checkout.
   return readFileSync(path, "utf8")
+    .replace(/\r\n/g, "\n")
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:'"`\\])\/\/[^\n]*/g, "$1");
 }
@@ -376,7 +379,7 @@ describe("§2.10 · demo mode stops at the door", () => {
 
   it("every server action in the Drive surface does the same", () => {
     for (const path of driveSurfaceFiles()) {
-      const raw = readFileSync(path, "utf8");
+      const raw = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
       if (!/^["']use server["']/m.test(raw)) continue;
       for (const m of codeOf(path).matchAll(
         /export async function (\w+)/g,

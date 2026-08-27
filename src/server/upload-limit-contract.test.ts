@@ -35,7 +35,7 @@ import { SERVER_UPLOAD_LIMIT_BYTES, getQuota } from "@/lib/storage-config";
  * drifting.
  */
 
-const read = (p: string) => readFileSync(p, "utf8");
+const read = (p: string) => readFileSync(p, "utf8").replace(/\r\n/g, "\n");
 
 describe("upload limits: one source", () => {
   it("next.config.ts imports the limit instead of restating it", () => {

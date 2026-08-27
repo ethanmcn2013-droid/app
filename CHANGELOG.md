@@ -24,17 +24,24 @@ function request body over **4.5 MB** before the framework sees it. Every one
 of the four was unreachable. A 5 MB PDF could not be attached at all, and
 failed with a platform error the app never saw.
 
-So the bytes stopped going that way. The browser asks for an upload token
-scoped to one pathname, one size and one type set, sends the file straight to
-the store — multipart and resumable — and a finalize step re-proves the caller,
+So the bytes stopped going that way. The browser asks for a URL signed for one
+pathname, one size and one type set, sends the file straight to the store, and
+a finalize step re-proves the caller,
 confirms the file landed where we said, confirms nobody without credentials can
 read it, and re-reads its leading bytes through the same allowlist the old path
 used. A returned URL is a claim, never evidence. Deliberately the same shape
 Project Drive will use against Google Drive one provider later.
 
-Verified against the production store, not asserted: a 5 MB PDF written, read
-back through the download route's own call, refused to an anonymous request
-with a 403, then deleted. `scripts/verify-blob-store.mjs` reruns it.
+A presigned URL rather than the Blob client helper, for two reasons. The
+helper costs 36.7 KB gzip in every browser and breached the bundle ratchet,
+which is a founder decision rather than an edit. And it could not constrain the
+access mode — the browser passed its own — so a modified client could have
+written a private-by-policy attachment as a public object. Signing bakes that
+in server-side, and leaves the browser a bare PUT with no library at all.
+
+Verified against the production store, not asserted: 17 checks across both
+paths, including a signed URL refused when repointed at another pathname.
+`scripts/verify-blob-store.mjs` reruns it.
 
 Also closed: content validation would otherwise have been lost the moment the
 bytes stopped passing through our hands, and a claim row abandoned by a killed

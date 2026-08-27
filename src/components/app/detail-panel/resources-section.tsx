@@ -30,7 +30,6 @@ import {
   SERVER_ACTION_FILE_LIMIT_BYTES,
   formatUploadLimit,
 } from "@/lib/upload-limit";
-import { claimIdFromPathname } from "@/lib/attachment-claim";
 import {
   addLinkResourceAction,
   listTaskResourcesAction,
@@ -78,30 +77,41 @@ async function sendFile(
   file: File,
 ): Promise<UploadAttachmentResult | null> {
   try {
-    const { upload } = await import("@vercel/blob/client");
-    const blob = await upload(file.name, file, {
-      access: "private",
-      handleUploadUrl: "/api/attachments/upload",
-      // Split large files into parts, uploaded in parallel and retried
-      // individually. This is what makes 50 MB a usable number on a
-      // domestic connection rather than a theoretical one.
-      multipart: true,
-      contentType: file.type || "application/octet-stream",
-      clientPayload: JSON.stringify({
+    // 1. Ask the server what we are allowed to upload. It answers with a
+    //    URL signed for ONE destination, one size and one type — not with
+    //    a credential we could point anywhere.
+    const permit = await fetch("/api/attachments/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         taskId,
         filename: file.name,
         size: file.size,
         contentType: file.type || "application/octet-stream",
       }),
     });
+    if (!permit.ok) throw new Error(await refusalText(permit));
+    const { attachmentId, uploadUrl } = (await permit.json()) as {
+      attachmentId: string;
+      uploadUrl: string;
+    };
 
-    const finalized = await finalizeUpload(
-      claimIdFromPathname(blob.pathname),
-      blob.url,
-    );
-    if (!finalized.ok) {
-      throw new Error(finalizeMessage(finalized.reason));
-    }
+    // 2. The bytes, straight to the store. A bare PUT, so no upload
+    //    library ships to the browser.
+    const put = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!put.ok) throw new Error("The upload did not complete.");
+    const stored = (await put.json()) as { url?: string };
+    if (!stored.url) throw new Error("The upload did not complete.");
+
+    // 3. Nothing above is evidence. The server re-proves the caller,
+    //    confirms the blob is the one it signed for, and reads the bytes
+    //    back before the attachment becomes real.
+    const finalized = await finalizeUpload(attachmentId, stored.url);
+    if (!finalized.ok) throw new Error(finalizeMessage(finalized.reason));
     return null;
   } catch (err) {
     // The claim row was reserved before the browser was allowed to write,
@@ -116,6 +126,19 @@ async function sendFile(
     }
     throw err;
   }
+}
+
+/** The server's own sentence, when it sent one worth repeating. */
+async function refusalText(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    if (typeof body.error === "string" && body.error.length > 0) {
+      return body.error;
+    }
+  } catch {
+    // Fall through to the generic line below.
+  }
+  return "The upload could not be started.";
 }
 
 /** Refusals a person can act on. Anything else is a plain failure. */

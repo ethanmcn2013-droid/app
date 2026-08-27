@@ -59,7 +59,9 @@ status.
 | 2026-08-27 | The four contradictory numbers now derive from one constant | `pnpm test` → `src/server/upload-limit-contract.test.ts` | 11/11 passed. The test asserts source text, not just values, so a re-introduced literal fails CI even if it happens to match |
 | 2026-08-27 | The ten §2 hard rules are enforced, not just written | `pnpm test` → `src/server/project-drive-hard-rules.test.ts` | 18/18 passed. Two rules (§2.8, §2.10) have live targets in WP-0's own code; the other eight ratchet on the Drive surface and start asserting against real code the moment it appears |
 | 2026-08-27 | Client-direct upload cannot be steered by the browser | `pnpm test` → `src/server/attachment-client-upload-security.test.ts` | 20/20 passed: pathname is server-composed and exactly matched, prefix/suffix/escaped-separator impostors refused, content re-sniffed from the store, declared-vs-stored size mismatch refused |
-| 2026-08-27 | `lint`, `typecheck`, `test`, `build` | all four, on the WP-0 branch | All green, exit 0. The one Turbopack NFT warning was reproduced on a build WITHOUT the change and is pre-existing |
+| 2026-08-27 | The presigned upload works end to end, in production | `node scripts/verify-blob-store.mjs` | 17/17 passed across both paths. The one that matters: **a URL signed for one pathname is refused (403) when repointed at another** — without that, a member could write into any board in the store |
+| 2026-08-27 | The bundle ratchet is not breached | `pnpm perf:budgets` after `pnpm build` | Baseline 904.7 KB gzip; `@vercel/blob/client` took it to 941.4 KB, over the 940 KB ceiling — a real regression, caught by CI on PR #159. Replacing the client helper with a presigned URL and a bare `fetch` brings it to **905.4 KB**, +0.7 KB over baseline. The ceiling was NOT raised |
+| 2026-08-27 | `lint`, `typecheck`, `test`, `build`, `perf:budgets` | all five, on the WP-0 branch | All green, exit 0. The one Turbopack NFT warning was reproduced on a build WITHOUT the change and is pre-existing |
 
 ---
 
