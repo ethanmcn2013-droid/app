@@ -41,6 +41,11 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   // routes remain isolated (dev fallback file:signal.db).
   ["SIGNAL_DATABASE_URL", "Home briefing database (legacy name; briefing engine + preferences)"],
   ["SIGNAL_AUTH_TOKEN", "Home briefing database auth token (legacy name)"],
+  // WP-0. Without this on a Vercel deployment `chooseBackend()` returns
+  // "vercel-no-token" and every attachment upload throws at the moment a
+  // customer tries one — the least useful place to learn it is missing.
+  // It warns here instead, at boot, where an operator is looking.
+  ["BLOB_READ_WRITE_TOKEN", "attachment storage (Vercel Blob); uploads fail without it"],
 ];
 
 let validated = false;

@@ -150,3 +150,75 @@ entirely additive — it needs no folder tree, no upload path and no quota. It i
 deferred only because it requires a second Google component and would delay the
 capability the founder actually asked for. It is the obvious next package once
 this ships.
+
+## D11 · The upload ceiling is 50 MB, and the bytes stop crossing our servers
+
+**Decided 2026-08-27 by the founder**, answering Q4 in `STATUS.md`.
+
+WP-0 was scoped to make four contradictory file-size numbers agree. Reading
+Google's neighbours turned up a fifth that nobody had written down, and it was
+the one that bound: **Vercel refuses any function request or response body over
+4.5 MB** with `413 FUNCTION_PAYLOAD_TOO_LARGE`, before the framework or our code
+sees it (`https://vercel.com/docs/functions/limitations`, observed 2026-08-27).
+
+That made the package's own acceptance criterion impossible. `next.config.ts`
+was set to `8mb`, which is above the platform cap and therefore never fired;
+`SERVER_UPLOAD_LIMIT_BYTES` promised 50 MB; the free tier promised 10 MB; the
+toast said 50 MB. Every one of them was unreachable, and *a ~5 MB PDF could not
+be attached at all* — the exact thing WP-0 says must work in production.
+
+Two answers were possible. Cap everything at 4 MB, which is honest, costs half
+a day and no risk, but leaves the Signal-native fallback — the one D7 calls
+load-bearing — able to carry almost nothing. Or move the bytes off the function
+path entirely.
+
+The founder chose the second. The browser now asks the server for a URL signed for one pathname, one size
+and one content-type set, PUTs the bytes straight to the store, and calls a
+finalize action that re-authorizes and inspects what actually landed. Nothing
+but metadata crosses a function, so the 4.5 MB cap stops applying and 50 MB is
+a number we can keep.
+
+**A presigned URL rather than `@vercel/blob/client`.** The client helper does
+the same job and costs 36.7 KB gzip in every browser that loads the app, which
+breached the bundle ratchet — and that ratchet is a founder decision, not an
+edit. Presigning leaves the browser a bare `fetch(url, { method: "PUT" })` and
+no library at all: measured 941.4 KB with the helper, 905.4 KB without it,
+against a 904.7 KB baseline. It is also the stronger posture. The client token
+could not constrain the ACCESS MODE — the browser passed its own — so a
+modified client could have written a private-by-policy attachment as a public
+object at a pathname we already know. A presigned URL bakes `access: "private"`
+in server-side, and the delegation is `put`-only, single-pathname and expiring.
+
+The trade is multipart: one `PUT` carries the whole file, so a dropped
+connection restarts rather than resumes. At a 50 MB ceiling that is a worse
+minute, not a broken feature, and WP-6 moves large files onto Drive's own
+resumable sessions regardless.
+
+**This is deliberately the same shape as WP-6.** Server mints a scoped session,
+browser sends the bytes to the provider, server verifies at finalize and treats
+the returned id as a claim rather than as evidence. WP-6 will do it against
+Drive with `files.get`, `appProperties.signalResourceId` and `parents`; this
+does it against Blob with a pathname comparison, an anonymous-read check and a
+magic-number re-sniff. The work is not thrown away when Drive lands — the
+pattern is already established and already tested.
+
+**Consequences:**
+- The single source is `src/lib/upload-limit.ts`. No byte count for an upload
+  limit may appear anywhere else; `src/server/upload-limit-contract.test.ts`
+  asserts the source text, not just the values, so a re-introduced literal
+  fails CI even when it happens to match.
+- `bodySizeLimit` is now 4 MB — *below* the platform cap on purpose. A body
+  over our line gets a framework error naming the limit; a body over Vercel's
+  gets an opaque 413. Failing on our own line first is the difference between
+  a diagnosable error and a mystery.
+- `uploadAttachmentAction` survives as the fallback for a deployment with no
+  blob store, and is honestly capped at 3 MB.
+- The free tier's 10 MB stays. It is a plan promise, not a transport one, and
+  it is now reachable for the first time.
+- Two properties the old path got for free had to be rebuilt: content
+  validation is re-applied to the bytes read back out of the store, and a
+  claim row abandoned by a killed browser is swept rather than left holding
+  quota forever.
+- `next.config.ts` `connect-src` now admits `vercel.com` and
+  `*.blob.vercel-storage.com`. The browser originates two requests it never
+  used to; without this an enforced policy would break every attachment.

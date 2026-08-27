@@ -22,6 +22,15 @@ import {
   type UploadAttachmentResult,
 } from "@/server/actions/attachments";
 import {
+  abandonStaleUploads,
+  finalizeUpload,
+} from "@/server/actions/attachment-uploads";
+import {
+  MAX_UPLOAD_BYTES,
+  SERVER_ACTION_FILE_LIMIT_BYTES,
+  formatUploadLimit,
+} from "@/lib/upload-limit";
+import {
   addLinkResourceAction,
   listTaskResourcesAction,
   removeResourceAction,
@@ -29,10 +38,122 @@ import {
 } from "@/server/actions/resources";
 import { Popover } from "./popover";
 
-// Client-side hint only; the server is the authority on size limits.
-// Updated to match SERVER_UPLOAD_LIMIT_BYTES (50 MB) so the hint stays
-// aligned with the effective cap until client-direct multipart ships.
-const MAX_BYTES = 50 * 1024 * 1024;
+// Client-side hint only; the server is the authority on size limits, and
+// it re-checks this against the board's tier and remaining quota before it
+// will mint an upload token.
+//
+// WP-0: this used to be its own 50 MB literal, kept in step with
+// storage-config by a comment. It now reads the one constant every other
+// limit reads, so the toast below cannot drift from what the server will
+// actually accept.
+const MAX_BYTES = MAX_UPLOAD_BYTES;
+
+/**
+ * Send one file, by whichever transport this deployment actually has.
+ *
+ * WP-0. The bytes used to go through `uploadAttachmentAction`, which meant
+ * they crossed a Vercel Function — and Vercel refuses any function request
+ * body over 4.5 MB with a 413 the app never sees. The product advertised
+ * 50 MB, the framework was configured for 8 MB, and neither was reachable.
+ *
+ * The first attempt now writes straight to the store: the server mints a
+ * token scoped to one pathname and one size, the browser PUTs the bytes to
+ * Vercel Blob, and `finalizeUpload` re-authorizes and inspects what landed
+ * before the attachment becomes real. Nothing but metadata crosses a
+ * function, so the platform cap stops applying.
+ *
+ * The fallback is the old path, unchanged, for a deployment with no blob
+ * store — local disk in development, chiefly. It is tried only for a file
+ * small enough to survive a function body, because offering it for a 40 MB
+ * file would just replace one honest error with a confusing one.
+ *
+ * Returns the legacy result when the server action carried the file, and
+ * null when the store did — the storage-warning toast is the only caller
+ * that reads it, and the direct path reports quota through its refusal
+ * instead.
+ */
+async function sendFile(
+  taskId: string,
+  file: File,
+): Promise<UploadAttachmentResult | null> {
+  try {
+    // 1. Ask the server what we are allowed to upload. It answers with a
+    //    URL signed for ONE destination, one size and one type — not with
+    //    a credential we could point anywhere.
+    const permit = await fetch("/api/attachments/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taskId,
+        filename: file.name,
+        size: file.size,
+        contentType: file.type || "application/octet-stream",
+      }),
+    });
+    if (!permit.ok) throw new Error(await refusalText(permit));
+    const { attachmentId, uploadUrl } = (await permit.json()) as {
+      attachmentId: string;
+      uploadUrl: string;
+    };
+
+    // 2. The bytes, straight to the store. A bare PUT, so no upload
+    //    library ships to the browser.
+    const put = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+    });
+    if (!put.ok) throw new Error("The upload did not complete.");
+    const stored = (await put.json()) as { url?: string };
+    if (!stored.url) throw new Error("The upload did not complete.");
+
+    // 3. Nothing above is evidence. The server re-proves the caller,
+    //    confirms the blob is the one it signed for, and reads the bytes
+    //    back before the attachment becomes real.
+    const finalized = await finalizeUpload(attachmentId, stored.url);
+    if (!finalized.ok) throw new Error(finalizeMessage(finalized.reason));
+    return null;
+  } catch (err) {
+    // The claim row was reserved before the browser was allowed to write,
+    // so a failure here can leave one behind holding quota. Sweeping is
+    // best-effort and must never mask the real error.
+    void abandonStaleUploads(taskId).catch(() => {});
+
+    if (file.size <= SERVER_ACTION_FILE_LIMIT_BYTES) {
+      const fd = new FormData();
+      fd.append("file", file);
+      return await uploadAttachmentAction(taskId, fd);
+    }
+    throw err;
+  }
+}
+
+/** The server's own sentence, when it sent one worth repeating. */
+async function refusalText(res: Response): Promise<string> {
+  try {
+    const body = (await res.json()) as { error?: string };
+    if (typeof body.error === "string" && body.error.length > 0) {
+      return body.error;
+    }
+  } catch {
+    // Fall through to the generic line below.
+  }
+  return "The upload could not be started.";
+}
+
+/** Refusals a person can act on. Anything else is a plain failure. */
+function finalizeMessage(reason: string): string {
+  switch (reason) {
+    case "content-rejected":
+      return "That file's contents do not match its type. Re-export it and try again.";
+    case "size-mismatch":
+      return "The file changed while it was being sent. Try attaching it again.";
+    case "world-readable":
+      return "That upload was refused for safety. Try attaching it again.";
+    default:
+      return "The upload failed mid-flight.";
+  }
+}
 
 /**
  * Resources section in the task detail panel. Replaces the old
@@ -87,7 +208,7 @@ export function ResourcesSection({ task }: { task: Task }) {
 
       for (const file of list) {
         if (file.size > MAX_BYTES) {
-          toast(`${file.name} is over 50 MB`, {
+          toast(`${file.name} is over ${formatUploadLimit(MAX_BYTES)}`, {
             tone: "warn",
             body: "Trim it down or share a link instead.",
           });
@@ -108,18 +229,15 @@ export function ResourcesSection({ task }: { task: Task }) {
           setItems((cur) => (cur ? [...cur, placeholder] : [placeholder]));
         }, 300);
 
-        const fd = new FormData();
-        fd.append("file", file);
-
         startTransition(async () => {
           try {
-            const result: UploadAttachmentResult = await uploadAttachmentAction(task.id, fd);
+            const result = await sendFile(task.id, file);
             window.clearTimeout(placeholderTimer);
             // Refresh from server to get the canonical resource row.
             const rows = await listTaskResourcesAction(task.id);
             setItems(rows.map(toDisplayRow));
             // Surface calm storage-usage warning if a threshold was crossed.
-            if (result.warnThresholds.length > 0) {
+            if (result && result.warnThresholds.length > 0) {
               const highestThreshold = Math.max(
                 ...result.warnThresholds.map(Number),
               );

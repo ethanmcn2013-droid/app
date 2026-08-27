@@ -59,12 +59,28 @@ NEXT_PUBLIC_SITE_URL=https://app.signalstudio.ie
 NEXT_PUBLIC_STUDIO_URL=https://signalstudio.ie
 ```
 
+**`BLOB_READ_WRITE_TOKEN` is required for attachments** and is listed in
+`RECOMMENDED_IN_PRODUCTION` in `src/env.ts`, so its absence warns at boot.
+Without it, `chooseBackend()` returns `vercel-no-token` and every upload throws
+at the moment a customer tries one — serverless disk is ephemeral, so there is
+no fallback on Vercel. To confirm the store actually works, rather than merely
+that a variable is set:
+
+```bash
+vercel env pull .env.production --environment=production
+node scripts/verify-blob-store.mjs .env.production
+rm .env.production        # it holds live credentials
+```
+
+It writes one clearly-named scratch object, reads it back through the download
+route's own call, confirms an anonymous request is refused, and deletes it. No
+database row is created.
+
 Optional, provision deliberately (see INFRASTRUCTURE.md before adding):
 `ANTHROPIC_API_KEY` (+ `TASKS_AI_*` tuning), `SENTRY_DSN` /
 `NEXT_PUBLIC_SENTRY_DSN` / `SENTRY_ENVIRONMENT`, `POSTHOG_API_KEY` /
 `NEXT_PUBLIC_POSTHOG_HOST`, `UPSTASH_REDIS_REST_URL` /
-`UPSTASH_REDIS_REST_TOKEN`, `BLOB_READ_WRITE_TOKEN` (required if task
-attachments should work in production — serverless disk is ephemeral),
+`UPSTASH_REDIS_REST_TOKEN`,
 `RESEND_BCC_DEV`, `OUTBOX_DELIVERY_SECRET` / `SUITE_OUTBOX_CONSUMERS_JSON`,
 `NOTES_TO_TIMELINE_SECRET`, `NOTES_CAPTURE_INBOUND_SECRET`,
 `ADMIN_USER_IDS`, `SIGNAL_ALLOWLIST`, access-mode and feature flags.
