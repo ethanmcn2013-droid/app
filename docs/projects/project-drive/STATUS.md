@@ -5,7 +5,7 @@ the end of every work package, before opening a PR. A `done` mark is a claim
 that the package's acceptance criteria in `PROJECT.md` were met and the gates
 listed there passed — not that the code was written.
 
-**Last updated:** 2026-08-27 · WP-0 done. WP-1 blocked on Google Cloud credentials.
+**Last updated:** 2026-08-27 · WP-0 done and merged. Google is configured; WP-1 needs one email address and two consent clicks.
 
 ---
 
@@ -14,7 +14,7 @@ listed there passed — not that the code was written.
 | WP | Package | Status | Notes |
 |---|---|---|---|
 | 0 | Fix the floor | **done** | Q1 answered: the token IS provisioned. A fifth, binding number was found (Vercel's 4.5 MB body cap) and uploads moved browser → Blob so 50 MB is real. Ten §2 rules ratcheted |
-| 1 | Spike the Drive chain | not started | Output is `SPIKE-FINDINGS.md`. Publish the consent screen on day one |
+| 1 | Spike the Drive chain | **ready to run** | Harness written (`scripts/spike/drive-chain.mjs`, branch `spike/drive-chain`). Google is configured and credentials are in Vercel. Needs the second account's address, and a human to press Allow twice |
 | 2 | Secrets substrate | not started | No cryptography exists in this repo yet |
 | 3 | Schema (migration 0028) | not started | Ledger entry + review receipt + journal, not just SQL |
 | 4 | The connection | not started | |
@@ -34,6 +34,7 @@ that depends on it.
 |---|---|---|---|
 | ~~Q1~~ | ~~Is `BLOB_READ_WRITE_TOKEN` provisioned in production?~~ **Answered 2026-08-27: yes.** Present on the `app` project for Production, Preview and Development, created 24 days before. Uploads were live the whole time; the settings copy was simply false | — | closed |
 | Q2 | Exact consent-screen wording shown for `drive.file` | WP-1 | spike |
+| Q7 | The second Google account to test sharing with — an email address, not a secret | WP-1 | founder |
 | Q3 | CSP hosts needed for the Drive preview embed and the resumable PUT | WP-1, WP-6 | spike |
 | ~~Q4~~ | ~~Which single file-size number becomes the truth in WP-0~~ **Answered 2026-08-27 by the founder: 50 MB, made real by client-direct upload.** See D11 | — | closed |
 | Q5 | Does the founder authorize migration 0028 against production, and when | WP-3 | founder |
@@ -61,6 +62,9 @@ status.
 | 2026-08-27 | Client-direct upload cannot be steered by the browser | `pnpm test` → `src/server/attachment-client-upload-security.test.ts` | 20/20 passed: pathname is server-composed and exactly matched, prefix/suffix/escaped-separator impostors refused, content re-sniffed from the store, declared-vs-stored size mismatch refused |
 | 2026-08-27 | The presigned upload works end to end, in production | `node scripts/verify-blob-store.mjs` | 17/17 passed across both paths. The one that matters: **a URL signed for one pathname is refused (403) when repointed at another** — without that, a member could write into any board in the store |
 | 2026-08-27 | The bundle ratchet is not breached | `pnpm perf:budgets` after `pnpm build` | Baseline 904.7 KB gzip; `@vercel/blob/client` took it to 941.4 KB, over the 940 KB ceiling — a real regression, caught by CI on PR #159. Replacing the client helper with a presigned URL and a bare `fetch` brings it to **905.4 KB**, +0.7 KB over baseline. The ceiling was NOT raised |
+| 2026-08-27 | Google Cloud is configured for Project Drive | Driven directly in the founder's browser, screens verified after reload | Project `signal-studio-496621`. Drive API enabled. Consent screen already **In production** — Clerk's Google sign-in had required it, so the seven-day refresh-token trap never applied. Exactly one scope registered, `drive.file`, under *non-sensitive*; nothing sensitive or restricted. A **new** client `Signal Studio Drive` created alongside the untouched `Clerk production` |
+| 2026-08-27 | The consent screen's scope list was EMPTY before this change | Read before editing | Clerk's `openid`/`email`/`profile` are basic scopes Google does not register here. The feared "clearing the list breaks sign-in" case did not exist — worth recording, because the guide had been written to avoid a hazard that was not there |
+| 2026-08-27 | All three secrets are in Vercel, all three environments | `vercel env ls` | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` (encrypted), `PROVIDER_TOKEN_KEY` (encrypted, generated locally and never written to disk) |
 | 2026-08-27 | `lint`, `typecheck`, `test`, `build`, `perf:budgets` | all five, on the WP-0 branch | All green, exit 0. The one Turbopack NFT warning was reproduced on a build WITHOUT the change and is pre-existing |
 
 ---
