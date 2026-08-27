@@ -1,0 +1,1785 @@
+<title>What We Have</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Signal Design System tokens (vendored values, v2.0.1) ──────────
+     Source of truth: signal-ds/tokens.css. Mirrored here because an
+     artifact cannot import from node_modules. Values only — no new
+     colour is invented on this page. */
+  :root {
+    --paper:      #ffffff;
+    --paper-soft: #fafafa;
+    --paper-deep: #f4f4f5;
+
+    --ink:       #111111;
+    --ink-soft:  #3f3f46;
+    --ink-faint: #71717a;
+    --ink-ghost: #d4d4d8;
+
+    --accent:       #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-tint:  #eef2ff;
+    --accent-soft:  rgba(79, 70, 229, 0.12);
+
+    --hairline:      rgba(17, 17, 17, 0.10);
+    --hairline-soft: rgba(17, 17, 17, 0.06);
+
+    --status-done:    #10b981;
+    --status-flight:  #f59e0b;
+    --status-blocked: #ef4444;
+
+    --note-edge: #f59e0b;
+    --note-bg:   rgba(245, 158, 11, 0.06);
+
+    --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --text-title:   clamp(2rem, 1.4rem + 2.4vw, 3.25rem);
+    --text-section: clamp(1.375rem, 1.15rem + 1.1vw, 1.875rem);
+    --text-heading: 1.125rem;
+    --text-body-lg: 1.0625rem;
+    --text-body:    0.9375rem;
+    --text-body-sm: 0.8125rem;
+    --text-caption: 0.75rem;
+    --text-label:   0.6875rem;
+
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+    --space-9: 48px; --space-10: 64px; --space-11: 80px;
+
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-pill: 999px;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --motion-instant: 80ms;
+    --motion-fast: 140ms;
+    --motion-settle: 320ms;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0f0f10;
+      --paper-soft: #161618;
+      --paper-deep: #1d1d20;
+
+      --ink:       #f4f4f5;
+      --ink-soft:  #d4d4d8;
+      --ink-faint: #a1a1aa;
+      --ink-ghost: #3f3f46;
+
+      --accent:       #6366f1;
+      --accent-hover: #818cf8;
+      --accent-tint:  rgba(79, 70, 229, 0.16);
+      --accent-soft:  rgba(79, 70, 229, 0.20);
+
+      --hairline:      rgba(255, 255, 255, 0.10);
+      --hairline-soft: rgba(255, 255, 255, 0.06);
+
+      --note-edge: #d97706;
+      --note-bg:   rgba(245, 158, 11, 0.08);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:      #0f0f10;
+    --paper-soft: #161618;
+    --paper-deep: #1d1d20;
+
+    --ink:       #f4f4f5;
+    --ink-soft:  #d4d4d8;
+    --ink-faint: #a1a1aa;
+    --ink-ghost: #3f3f46;
+
+    --accent:       #6366f1;
+    --accent-hover: #818cf8;
+    --accent-tint:  rgba(79, 70, 229, 0.16);
+    --accent-soft:  rgba(79, 70, 229, 0.20);
+
+    --hairline:      rgba(255, 255, 255, 0.10);
+    --hairline-soft: rgba(255, 255, 255, 0.06);
+
+    --note-edge: #d97706;
+    --note-bg:   rgba(245, 158, 11, 0.08);
+  }
+
+  /* ── Base ─────────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-lg);
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  p, ul, ol, h1, h2, h3, h4, figure, table { margin: 0; }
+  ul, ol { padding-left: 1.15em; }
+  li { margin-bottom: var(--space-2); }
+  li:last-child { margin-bottom: 0; }
+  strong { font-weight: 600; color: var(--ink); }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── Page frame ───────────────────────────────────────────────────── */
+  .page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-11);
+    padding: var(--space-9) var(--space-5) var(--space-11);
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 47rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .wrap--wide { max-width: 74rem; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    font-weight: 500;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  h2 {
+    font-size: var(--text-section);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-size: var(--text-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .lede { font-size: var(--text-body-lg); color: var(--ink-soft); }
+  .small { font-size: var(--text-body); color: var(--ink-soft); }
+  .caption { font-size: var(--text-body-sm); color: var(--ink-faint); }
+
+  hr.rule {
+    border: 0;
+    border-top: 1px solid var(--hairline);
+    margin: 0;
+  }
+
+  /* ── Masthead ─────────────────────────────────────────────────────── */
+  .masthead { gap: var(--space-5); }
+
+  .masthead h1 {
+    font-size: var(--text-title);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    line-height: 1.03;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .masthead .thesis {
+    font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.3125rem);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: 34ch;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* ── Notes (amber-edged, guide convention) ────────────────────────── */
+  .note {
+    border-left: 2px solid var(--note-edge);
+    background: var(--note-bg);
+    padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .note .note-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--note-edge);
+    font-weight: 500;
+  }
+
+  .note h3 { font-size: var(--text-body-lg); }
+  .note p { font-size: var(--text-body); color: var(--ink-soft); }
+  .note code { font-size: 0.85em; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--paper-deep);
+    padding: 0.12em 0.38em;
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+  }
+
+  /* ── Tables ───────────────────────────────────────────────────────── */
+  .table-scroll { overflow-x: auto; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--text-body);
+    min-width: 30rem;
+  }
+
+  th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    padding: 0 var(--space-4) var(--space-3) 0;
+    border-bottom: 1px solid var(--hairline);
+    vertical-align: bottom;
+  }
+
+  td {
+    padding: var(--space-3) var(--space-4) var(--space-3) 0;
+    border-bottom: 1px solid var(--hairline-soft);
+    vertical-align: top;
+    color: var(--ink-soft);
+  }
+
+  td:first-child { color: var(--ink); font-weight: 500; }
+  th:last-child, td:last-child { padding-right: 0; }
+
+  .verdict {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .verdict--yes { color: var(--accent); }
+  .verdict--no  { color: var(--ink-faint); }
+
+  /* ── Prototype shell ──────────────────────────────────────────────── */
+  .proto {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-lg);
+    background: var(--paper);
+    overflow: hidden;
+  }
+
+  .proto-chrome {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--hairline);
+    background: var(--paper-soft);
+  }
+
+  .proto-title {
+    font-size: var(--text-body);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .proto-stamp {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+  }
+
+  .proto-body {
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  /* ── Distribution strip ───────────────────────────────────────────── */
+  .dist { display: flex; flex-direction: column; gap: var(--space-3); }
+
+  .dist-bar {
+    display: flex;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    gap: 2px;
+    background: transparent;
+  }
+
+  .dist-seg {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    font-weight: 500;
+    min-width: 2.1rem;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: flex-grow var(--motion-settle) var(--ease-out);
+    border-radius: var(--radius-sm);
+  }
+
+  .dist-seg[data-rung="considered"] { background: var(--paper-deep); color: var(--ink-faint); }
+  .dist-seg[data-rung="building"]   { background: var(--ink-ghost); color: var(--ink-soft); }
+  .dist-seg[data-rung="live"]       { background: var(--ink); color: var(--paper); }
+  .dist-seg[data-rung="proven"]     { background: var(--accent); color: #ffffff; }
+  .dist-seg[data-rung="cut"] {
+    background: transparent;
+    color: var(--ink-faint);
+    border: 1px dashed var(--hairline);
+  }
+
+  .dist-seg .seg-n { font-variant-numeric: tabular-nums; }
+  .dist-seg .seg-label { margin-left: 0.45em; opacity: 0.75; }
+
+  .dist-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-5);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+  }
+
+  .dist-key span {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .swatch {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    flex: none;
+  }
+  .swatch[data-rung="considered"] { background: var(--paper-deep); border: 1px solid var(--hairline); }
+  .swatch[data-rung="building"]   { background: var(--ink-ghost); }
+  .swatch[data-rung="live"]       { background: var(--ink); }
+  .swatch[data-rung="proven"]     { background: var(--accent); }
+  .swatch[data-rung="cut"]        { background: transparent; border: 1px dashed var(--ink-ghost); }
+
+  /* ── Controls ─────────────────────────────────────────────────────── */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .control-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .control-label {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-right: var(--space-2);
+    min-width: 4.5rem;
+  }
+
+  .chip {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    color: var(--ink-soft);
+    background: transparent;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-pill);
+    padding: var(--space-1) var(--space-3);
+    cursor: pointer;
+    transition: color var(--motion-fast) var(--ease-out),
+                border-color var(--motion-fast) var(--ease-out),
+                background-color var(--motion-fast) var(--ease-out);
+    line-height: 1.5;
+  }
+
+  .chip:hover { border-color: var(--ink-faint); color: var(--ink); }
+
+  .chip[aria-pressed="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  .chip .chip-n {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    opacity: 0.6;
+    margin-left: var(--space-1);
+  }
+
+  .search {
+    flex: 1 1 14rem;
+    min-width: 12rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+  }
+  .search::placeholder { color: var(--ink-faint); }
+  .search:focus { border-color: var(--accent); outline: none; }
+
+  /* ── The ledger ───────────────────────────────────────────────────── */
+  .ledger {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .row {
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+
+  .row-head {
+    display: grid;
+    grid-template-columns: 3.25rem minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--space-4);
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    padding: var(--space-3) var(--space-2);
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    transition: background-color var(--motion-fast) var(--ease-out);
+    border-radius: var(--radius-sm);
+  }
+
+  .row-head:hover { background: var(--paper-soft); }
+
+  .meter {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    transform: translateY(-1px);
+  }
+
+  .tick {
+    width: 7px;
+    height: 14px;
+    border-radius: 1.5px;
+    border: 1px solid var(--ink-ghost);
+    background: transparent;
+  }
+  .tick[data-on="ink"]    { background: var(--ink); border-color: var(--ink); }
+  .tick[data-on="accent"] { background: var(--accent); border-color: var(--accent); }
+
+  .meter[data-rung="cut"] {
+    position: relative;
+    width: 34px;
+  }
+  .meter[data-rung="cut"]::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 50%;
+    border-top: 1px solid var(--ink-faint);
+  }
+
+  .row-name {
+    font-size: var(--text-body);
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+
+  .row[data-rung="cut"] .row-name { color: var(--ink-faint); text-decoration: line-through; text-decoration-color: var(--ink-ghost); }
+  .row[data-rung="considered"] .row-name { color: var(--ink-soft); }
+
+  .row-plain {
+    display: block;
+    font-size: var(--text-body-sm);
+    font-weight: 400;
+    color: var(--ink-faint);
+    margin-top: 1px;
+  }
+
+  .row-lane {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  /* Drawer */
+  .drawer {
+    display: grid;
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+    gap: var(--space-4);
+    padding: 0 var(--space-2) var(--space-5);
+  }
+
+  .drawer-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    border-left: 1px solid var(--hairline);
+    padding-left: var(--space-4);
+    margin-left: -0.6rem;
+  }
+
+  .drawer p { font-size: var(--text-body); color: var(--ink-soft); max-width: 62ch; }
+
+  .facts {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: var(--space-2) var(--space-4);
+    font-size: var(--text-body-sm);
+  }
+
+  .fact-key {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-top: 2px;
+  }
+
+  .fact-val { color: var(--ink-soft); min-width: 0; overflow-wrap: anywhere; }
+
+  .fact-val .mono {
+    font-family: var(--font-mono);
+    font-size: 0.94em;
+    color: var(--ink);
+  }
+
+  .next {
+    font-size: var(--text-body-sm);
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+  }
+  .next b {
+    font-family: var(--font-mono);
+    font-size: var(--text-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .empty {
+    padding: var(--space-8) var(--space-2);
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: var(--text-body);
+  }
+
+  /* Load settle — the one orchestrated moment */
+  .row { animation: settle var(--motion-settle) var(--ease-out) both; }
+  @keyframes settle {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* ── Consumers diagram ────────────────────────────────────────────── */
+  .spine {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .spine-source {
+    border: 1px solid var(--accent);
+    background: var(--accent-tint);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .spine-source .mono {
+    font-family: var(--font-mono);
+    font-size: var(--text-body-sm);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .spine-arrow {
+    height: var(--space-5);
+    border-left: 1px solid var(--hairline);
+    margin-left: var(--space-6);
+  }
+
+  .consumers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 1px;
+    background: var(--hairline);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .consumer {
+    background: var(--paper);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .consumer .c-name {
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .consumer .c-desc { font-size: var(--text-caption); color: var(--ink-faint); line-height: 1.45; }
+
+  /* ── Phases ───────────────────────────────────────────────────────── */
+  .phases { display: flex; flex-direction: column; gap: 0; }
+
+  .phase {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: var(--space-5);
+    padding: var(--space-5) 0;
+    border-top: 1px solid var(--hairline);
+  }
+  .phase:last-child { border-bottom: 1px solid var(--hairline); }
+
+  .phase-when {
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+    padding-top: 3px;
+  }
+
+  .phase-body { display: flex; flex-direction: column; gap: var(--space-2); }
+  .phase-body h3 { font-size: var(--text-body-lg); }
+  .phase-body p { font-size: var(--text-body); color: var(--ink-soft); }
+
+  /* ── Decisions ────────────────────────────────────────────────────── */
+  .decisions { display: flex; flex-direction: column; gap: var(--space-5); }
+
+  .decision {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-left: var(--space-5);
+    border-left: 1px solid var(--hairline);
+  }
+  .decision .d-q { font-size: var(--text-body-lg); font-weight: 500; color: var(--ink); }
+  .decision .d-rec { font-size: var(--text-body); color: var(--ink-soft); }
+  .decision .d-rec b { color: var(--accent); font-weight: 600; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 34rem) {
+    .row-head { grid-template-columns: 3.25rem minmax(0, 1fr); }
+    .row-lane { display: none; }
+    .facts { grid-template-columns: 1fr; gap: var(--space-1) 0; }
+    .fact-key { padding-top: var(--space-2); }
+    .phase { grid-template-columns: 1fr; gap: var(--space-2); }
+    .control-label { min-width: 100%; }
+  }
+</style>
+
+<div class="page">
+
+  <!-- ── Masthead ──────────────────────────────────────────────────── -->
+  <header class="wrap masthead">
+    <div class="eyebrow">Signal Studio · proposal · operator report</div>
+    <h1>What we have</h1>
+    <p class="thesis">A live feature board, built as a machine-checked registry rather than a page. Its job is not to look impressive. Its job is to be impossible to disagree with.</p>
+    <div class="meta-row">
+      <span>27 August 2026</span>
+      <span>repo: ethanmcn2013-droid/app</span>
+      <span>branch: claude/signal-studio-feature-board-xv7ise</span>
+    </div>
+  </header>
+
+  <!-- ── The case ──────────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">The case</div>
+    <h2>You asked for a feature you already shipped</h2>
+    <p class="lede">Three findings from a scan of this repo, in order of how much they cost. None of them are opinions — each one is a file you can open.</p>
+
+    <div class="note">
+      <div class="note-label">Finding 1 · we under-claim</div>
+      <h3>Nudge is live. It has been for months.</h3>
+      <p><code>src/lib/nudges/generate-nudges.ts</code> holds seven rules — idle&#8209;doing, idle&#8209;review, past&#8209;due, blocker&#8209;cleared, review&#8209;pile, doing&#8209;empty, and an LLM narration slot. It runs server-side on <code>/app/inbox</code> against your real workspace column config, and again on <code>/app/my-tasks</code>. Dismissals persist. The copy bank has multiple variants per rule so the inbox doesn't read identically week over week.</p>
+      <p>You described it as a feature that could be cool. That gap — between what is built and what the person who built it believes is built — is the whole argument for this project.</p>
+    </div>
+
+    <div class="note">
+      <div class="note-label">Finding 2 · we over-claim</div>
+      <h3>The marketing site sells presence the app does not have.</h3>
+      <p><code>src/components/marketing/features.tsx</code> promises "cursors carry weight, cards lock when someone's in them, comments stream in with typing indicators." In the app: there is no card locking anywhere, no typing indicator, and <code>CursorsLayer</code> is imported by exactly one file — the marketing hero's own animation.</p>
+      <p>Realtime itself is real but deliberately off. <code>src/app/api/events/route.ts</code> says so in a comment: the in-process emitter only fans out inside one lambda, so "the SSE stream stays off in production so we don't ship a realtime UX that silently no-ops." That was a good call. Nobody told the marketing page.</p>
+    </div>
+
+    <div class="note">
+      <div class="note-label">Finding 3 · we lose things in between</div>
+      <h3>Dependencies are half-shipped and nothing says so.</h3>
+      <p><code>blockedBy</code> is in the schema, feeds the analytics provider, and drives the briefing's <code>dependency-stall</code> trigger with five locked phrasings. But <code>src/components/app/blockers/blocker-badge.tsx</code> has no importer at all. The data knows a task is blocked; the briefing will tell you at 7am; the board will not show it.</p>
+      <p>No status field would have caught this. Only evidence catches it.</p>
+    </div>
+
+    <p class="small">Two directions of drift, plus a feature stuck between rungs. A board that only records what someone typed into a status field would have caught none of the three.</p>
+  </section>
+
+  <!-- ── Diagnosis ─────────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">Diagnosis</div>
+    <h2>Five systems already answer "what have we got", and none of them agree</h2>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Where</th><th>What it says</th><th>Why it drifts</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Marketing features</td>
+            <td>Six features, hand-written</td>
+            <td>Hardcoded in a component. Nothing checks it against the app.</td>
+          </tr>
+          <tr>
+            <td>Experience registry</td>
+            <td>78 surfaces, Tasks only</td>
+            <td>Generated 26 July — before Notes and Timeline moved into this app on 12 August.</td>
+          </tr>
+          <tr>
+            <td>The dispatch</td>
+            <td>118 entries: 46 ships, 33 tightens, 8 cuts</td>
+            <td>A history of changes, not a picture of state. Nothing sums it.</td>
+          </tr>
+          <tr>
+            <td>Entitlements</td>
+            <td>Five tiers gating unnamed things</td>
+            <td>Knows who may use a feature; not which feature.</td>
+          </tr>
+          <tr>
+            <td>Signal HQ</td>
+            <td>Whatever is in <code>content/hq/features/</code></td>
+            <td>A different repo, synced by hand, in a table in AGENTS.md.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="lede">This repo runs nine <code>check-*</code> gates and 183 test files. It refuses to let a route vanish, a module boundary break, a tap target shrink below 44px, or the word "sprint" reach a customer. It has no opinion whatsoever about whether the product it describes is the product it ships.</p>
+    <p class="small">That is the gap. The feature board is not a visualisation project that produces a page. It is a consolidation project that happens to produce a page worth looking at.</p>
+  </section>
+
+  <!-- ── Prototype ─────────────────────────────────────────────────── -->
+  <section class="wrap wrap--wide">
+    <div class="wrap" style="max-width:47rem; padding:0;">
+      <div class="eyebrow">The thing itself</div>
+      <h2>The board, working, on real data</h2>
+      <p class="lede">Not a mock. Forty-eight entries seeded by scanning this repo today. Filter it, search it, open a row for its receipt. Every path shown is a real file or route.</p>
+    </div>
+
+    <div class="proto">
+      <div class="proto-chrome">
+        <div>
+          <div class="proto-title">What we have</div>
+          <div class="proto-stamp" id="stampLine">seeded from repo scan · 2026-08-27</div>
+        </div>
+        <div class="proto-stamp" id="countLine">48 of 48</div>
+      </div>
+
+      <div class="proto-body">
+        <div class="dist">
+          <div class="dist-bar" id="distBar" role="img" aria-label="Distribution of features across maturity rungs"></div>
+          <div class="dist-key">
+            <span><i class="swatch" data-rung="considered" aria-hidden="true"></i>Considered — written down, no code</span>
+            <span><i class="swatch" data-rung="building" aria-hidden="true"></i>Building — code exists, not reachable</span>
+            <span><i class="swatch" data-rung="live" aria-hidden="true"></i>Live — a customer can reach it</span>
+            <span><i class="swatch" data-rung="proven" aria-hidden="true"></i>Proven — live and carrying evidence</span>
+            <span><i class="swatch" data-rung="cut" aria-hidden="true"></i>Cut — tried, refused, removed</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="control-row">
+            <span class="control-label" id="rungLabel">Rung</span>
+            <div class="control-row" role="group" aria-labelledby="rungLabel" id="rungChips" style="gap:var(--space-2)"></div>
+          </div>
+          <div class="control-row">
+            <span class="control-label" id="laneLabel">Lane</span>
+            <div class="control-row" role="group" aria-labelledby="laneLabel" id="laneChips" style="gap:var(--space-2)"></div>
+          </div>
+          <div class="control-row">
+            <span class="control-label"><label for="searchInput">Find</label></span>
+            <input id="searchInput" class="search" type="search" placeholder="nudge, drive, briefing, cut…" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="ledger" id="ledger"></div>
+      </div>
+    </div>
+
+    <div class="wrap" style="max-width:47rem; padding:0;">
+      <p class="caption">Seed data only — a proposal's sample, not a certified registry. The point is the shape, and that every claim in it resolves to a path.</p>
+    </div>
+  </section>
+
+  <!-- ── The ladder ────────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">The idea</div>
+    <h2>Maturity, not a pipeline</h2>
+    <p class="lede">Every roadmap board in the market sorts by <em>when</em>. Dates are the part of a roadmap that is always wrong, and everyone reading one knows it. Sort by <em>how real</em> instead, and the board stops being a promise and starts being a statement of fact.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Rung</th><th>Means</th><th>Proven by</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Considered</td><td>Written down and argued. No code.</td><td>A decision record. Nothing else.</td></tr>
+          <tr><td>Building</td><td>Code exists. A customer cannot reach it.</td><td>Files present, route absent or flag closed.</td></tr>
+          <tr><td>Live</td><td>A customer can reach it today.</td><td>Route in the manifest, dispatch entry naming it.</td></tr>
+          <tr><td>Proven</td><td>Live, and carrying evidence.</td><td>Tests bound to it, a council score, or measured use.</td></tr>
+          <tr><td>Cut</td><td>Tried, refused, or removed.</td><td>A <code>cuts</code> entry in the dispatch.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Keep the Cut lane. It is the whole differentiator.</h3>
+    <p class="small">Every public roadmap is a wish list. Almost none of them publish what the team refused. This one can: the dispatch already carries eight <code>cuts</code> entries, and the brand already publishes a refusal list at <code>/principles</code>. "We built this and took it out, here is why" is the single most credible thing a product page can say, and nobody in the category is saying it. It is also the cheapest lane to fill — the entries already exist.</p>
+
+    <h3>Colour is not the encoding.</h3>
+    <p class="small">The board redesign in T·149 removed the amber lane dot, the green tick and the red overdue line on purpose — "it says which of those it is with ink, and never with a colour." This board holds that line. Maturity is a fill ramp: hairline, then ink, then the one indigo tick for Proven. It survives greyscale, colour blindness, and print, and it looks like the rest of the product rather than like a dashboard someone bolted on.</p>
+  </section>
+
+  <!-- ── How it stays true ─────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">The mechanism</div>
+    <h2>A hand-maintained board is a lie with a six-week fuse</h2>
+    <p class="lede">In a repo that machine-checks nine contracts on every commit, a board maintained by remembering to update it would be the only surface with no gate. It would be beautiful in week one and quietly wrong by October.</p>
+
+    <p class="small">So the registry is source, and a gate reads it:</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Gate</th><th>Fails when</th></tr></thead>
+        <tbody>
+          <tr><td>Route truth</td><td>A feature claims <code>live</code> and its route is not in <code>check-route-manifest.mjs</code>.</td></tr>
+          <tr><td>Orphan check</td><td>A feature names a file that has no importer — the blocker-badge case.</td></tr>
+          <tr><td>Dispatch binding</td><td>A <code>ships</code> entry names no feature id, or names one that does not exist.</td></tr>
+          <tr><td>Marketing truth</td><td>The marketing features page claims something not at <code>live</code> or above.</td></tr>
+          <tr><td>Staleness</td><td>A feature sits at <code>building</code> for 90 days with no dispatch entry.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="small">The staleness rule is the important one, and it is the one everybody leaves out. Registries do not rot because entries are wrong at the moment they are written. They rot because nobody is ever forced to look again. Ninety days of silence should break the build, and the fix should be allowed to be "this is cut" — recording a refusal must be as easy as recording a ship, or the board fills with polite fiction.</p>
+  </section>
+
+  <!-- ── One registry, five consumers ─────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">Architecture</div>
+    <h2>One registry, five consumers</h2>
+    <p class="lede">This is what turns a page into infrastructure. The board is the first thing to read the registry, not the only one — and the second reader is what pays for the first.</p>
+
+    <div class="spine">
+      <div class="spine-source">
+        <span class="mono">content/features/&lt;id&gt;.md</span>
+        <span class="caption">One file per feature. Front matter: id, name, lane, rung, visibility, gate, routes, evidence paths, dispatch ids. Body: what it is, in the voice a customer reads.</span>
+      </div>
+      <div class="spine-arrow" aria-hidden="true"></div>
+      <div class="consumers">
+        <div class="consumer">
+          <span class="c-name">The board</span>
+          <span class="c-desc">Internal now, public when earned. Generated at build.</span>
+        </div>
+        <div class="consumer">
+          <span class="c-name">Marketing features</span>
+          <span class="c-desc">Stops being six hardcoded cards. Cannot claim what is not live.</span>
+        </div>
+        <div class="consumer">
+          <span class="c-name">Pricing &amp; gates</span>
+          <span class="c-desc">Each tier lists the features it actually unlocks, by id.</span>
+        </div>
+        <div class="consumer">
+          <span class="c-name">The dispatch</span>
+          <span class="c-desc">Every ships entry binds to a feature id. History becomes queryable.</span>
+        </div>
+        <div class="consumer">
+          <span class="c-name">Signal HQ sync</span>
+          <span class="c-desc">The AGENTS.md sync table becomes mechanical instead of remembered.</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="small">There is a sixth reader worth naming: the next person or agent to open this repo. "Where does capture-by-email live?" is currently a twenty-minute archaeology problem. With the registry it is one file lookup. That alone probably repays the build.</p>
+  </section>
+
+  <!-- ── Delight ───────────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">Experience</div>
+    <h2>Delight, with verdicts written down</h2>
+    <p class="lede">The north star says delight is deliberate and every candidate moment gets an explicit animate-or-restrained verdict. Here are the eight candidates on this surface, decided in advance rather than sprinkled afterwards. Five are refusals.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Moment</th><th>Verdict</th><th>Reasoning</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Rows settle on load</td>
+            <td class="verdict verdict--yes">Animate</td>
+            <td>320ms, staggered ~14ms. The one moment the board says it read something real rather than rendered a list. Instant under reduced motion.</td>
+          </tr>
+          <tr>
+            <td>Filtering</td>
+            <td class="verdict verdict--yes">Animate</td>
+            <td>Rows that leave collapse; rows that stay <em>move</em>. The difference between a filter and a re-render is whether you can follow the thing you were looking at.</td>
+          </tr>
+          <tr>
+            <td>Promotion between rungs</td>
+            <td class="verdict verdict--yes">Animate</td>
+            <td>The moment worth spending on. A feature that moved since your last visit arrives having just moved, with a hairline trail from where it was. Once per feature, ever.</td>
+          </tr>
+          <tr>
+            <td>Opening a receipt</td>
+            <td class="verdict verdict--no">Restrained</td>
+            <td>It is a reading surface. 140ms, no bounce. Anything springier makes you wait to read a file path.</td>
+          </tr>
+          <tr>
+            <td>Search</td>
+            <td class="verdict verdict--no">Restrained</td>
+            <td>Instant, no debounce shimmer, no spinner. Forty rows in memory. A loading state here would be theatre.</td>
+          </tr>
+          <tr>
+            <td>Hover glow on rows</td>
+            <td class="verdict verdict--no">Refuse</td>
+            <td>The marketing feature cells use a blurred accent glow. At forty rows that is a disco. Hairline and an ink shift instead.</td>
+          </tr>
+          <tr>
+            <td>Counters ticking up</td>
+            <td class="verdict verdict--no">Refuse</td>
+            <td>Dashboard cliché, and it makes you wait to read a number you already wanted.</td>
+          </tr>
+          <tr>
+            <td>Sound</td>
+            <td class="verdict verdict--no">Refuse</td>
+            <td>No.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Utility ───────────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">Utility</div>
+    <h2>Four readers, one page</h2>
+    <p class="lede">A surface that needs explaining is not done. This one is a list of things with a mark next to each saying how real it is — which passes the first-contact test without a glossary, in any of the four readings below.</p>
+    <ul class="small">
+      <li><strong>You, now.</strong> What do I have, what is half-built, what did I refuse. Answered by the distribution strip before you read a single row.</li>
+      <li><strong>A collaborator or an agent.</strong> Where does this live in the code. Answered by the receipt.</li>
+      <li><strong>A prospect, later.</strong> Is any of this real. Answered by the fact that every claim is clickable — which is what a public roadmap has never once been able to say.</li>
+      <li><strong>The repo.</strong> CI reads it, marketing reads it, pricing reads it, HQ syncs from it.</li>
+    </ul>
+  </section>
+
+  <!-- ── Build order ───────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">Build order</div>
+    <h2>What I would build, in order</h2>
+
+    <div class="phases">
+      <div class="phase">
+        <div class="phase-when">Phase 1<br>~2 days</div>
+        <div class="phase-body">
+          <h3>The registry and the gate — no page at all</h3>
+          <p>Write <code>content/features/*.md</code> for the real estate, seeded from the scan behind the prototype above. Ship <code>scripts/check-features.mjs</code> with the five rules and wire it into the <code>test</code> chain beside the other nine gates. Fix the three findings this report opened with while writing the entries — that is the point of writing them.</p>
+          <p class="caption">Value even if you stop here: the drift is closed and cannot silently reopen.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-when">Phase 2<br>~2 days</div>
+        <div class="phase-body">
+          <h3>The board, internal, at <code>/app/features</code></h3>
+          <p>Generated from the registry at build time. Rows deep-link into demo mode, so "Open it" lands on the real running surface — <code>SIGNAL_ACCESS_MODE</code> and the review routes already exist, so that is close to free. Behind the operator gate. This is the prototype above, with real generated data behind it.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-when">Phase 3<br>~1 day</div>
+        <div class="phase-body">
+          <h3>Point the other consumers at it</h3>
+          <p>Marketing features reads the registry instead of its hardcoded six. Pricing lists features by id per tier. The dispatch convention gains a feature id per entry. The HQ sync table in AGENTS.md becomes a script.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-when">Later<br>a decision, not a build</div>
+        <div class="phase-body">
+          <h3>Public, at <code>signalstudio.ie/what-we-have</code></h3>
+          <p>Flip <code>visibility: public</code> per feature. Unpublished entries are filtered at generation, so they are absent from the bundle rather than hidden in it. The Cut lane goes public first — it is the part nobody else will copy.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="small">Five days of work, and roughly three of those are writing down things that are already true. The expensive part of this project is the honesty, not the code.</p>
+  </section>
+
+  <!-- ── Risks ─────────────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">Risks and refusals</div>
+    <h2>Three ways this goes wrong</h2>
+
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Risk</th><th>What it looks like</th><th>The refusal</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>It becomes a second backlog</td>
+            <td>Dates appear. Then owners. Then priorities. Then it is Tasks, worse.</td>
+            <td>The board records state, never plans. No dates, no assignees, no priorities, ever. <code>docs/founder-todos.md</code> already carries this exact warning about itself.</td>
+          </tr>
+          <tr>
+            <td>It exposes the roadmap</td>
+            <td>A competitor reads what you have not built yet.</td>
+            <td>Per-feature <code>visibility</code>, filtered at generation. Internal entries never reach the client bundle.</td>
+          </tr>
+          <tr>
+            <td>The rungs get gamed</td>
+            <td>Everything is "Live" because Live looks better than Building.</td>
+            <td>The rung is derived from evidence, not typed. If the route is missing, the gate fails and the claim does not ship.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="small">One more, quietly: this is the second time a "single source of truth" has been proposed for this material — HQ was the first, and the sync is still a table in a contributing guide that a human has to remember. If the board does not make that sync mechanical, it is a third disagreeing system rather than a fix. That is the bar I would hold it to.</p>
+  </section>
+
+  <!-- ── Decisions ─────────────────────────────────────────────────── -->
+  <section class="wrap">
+    <div class="eyebrow">What I need from you</div>
+    <h2>Four decisions</h2>
+
+    <div class="decisions">
+      <div class="decision">
+        <div class="d-q">Registry in this repo, or in Signal HQ?</div>
+        <div class="d-rec"><b>Recommend: this repo.</b> The evidence lives here — routes, tests, dispatch. A registry that cannot see its own evidence cannot be gated. HQ syncs from it, as it does for everything else.</div>
+      </div>
+      <div class="decision">
+        <div class="d-q">Does the Cut lane go public?</div>
+        <div class="d-rec"><b>Recommend: yes, and first.</b> It is the most credible and least copyable thing on the page, and the entries already exist. If it makes you uncomfortable, that is usually the signal that it is the interesting one.</div>
+      </div>
+      <div class="decision">
+        <div class="d-q">Does the marketing features page start reading the registry?</div>
+        <div class="d-rec"><b>Recommend: yes, in phase 3.</b> It is the surface that drifted furthest, and it is the one with a customer on the other end of it.</div>
+      </div>
+      <div class="decision">
+        <div class="d-q">Realtime presence — fix the app, or fix the claim?</div>
+        <div class="d-rec"><b>Recommend: fix the claim now, decide the app separately.</b> The marketing copy can be true this week. Whether presence is worth a substrate is a real product decision and should not be made under the pressure of an inaccurate sentence.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <hr class="rule">
+    <p class="caption">Prototype data seeded by scanning ethanmcn2013-droid/app on 27 August 2026. Styled with the vendored Signal DS token values (v2.0.1) — Geist, Geist Mono, paper and ink, one indigo. Nothing on this page invents a colour.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var RUNGS = [
+    { id: "considered", label: "Considered", ticks: 1 },
+    { id: "building",   label: "Building",   ticks: 2 },
+    { id: "live",       label: "Live",       ticks: 3 },
+    { id: "proven",     label: "Proven",     ticks: 4 },
+    { id: "cut",        label: "Cut",        ticks: 0 }
+  ];
+
+  var LANES = ["Home", "Notes", "Tasks", "Timeline", "Foundations"];
+
+  // Seeded from a repo scan on 2026-08-27. Every path is real.
+  var FEATURES = [
+    // ── Home ──────────────────────────────────────────────────────
+    { n: "Today's Signal", lane: "Home", rung: "live",
+      plain: "The day's one thing, on the front door.",
+      why: "Home is the authenticated front door. Today's Signal is the briefing capability that used to be presented as its own product.",
+      routes: ["/app/home"],
+      files: ["src/modules/signal/lib/briefing/build.ts", "src/modules/signal/server/briefing/signal-build-for-user.ts"],
+      dispatch: ["T·129 ships · Home is the front door, and the signal lives there now"],
+      gate: "free",
+      next: "Bind measured use to it and it reaches Proven." },
+
+    { n: "Full Briefing", lane: "Home", rung: "proven",
+      plain: "The long read behind today's signal, in the brand's voice.",
+      why: "Generated prose with locked phrasings per trigger, a voice contract, and selectivity rules so a wedding workspace does not read like a software team's.",
+      routes: ["/app/home/briefing"],
+      files: ["src/modules/signal/lib/briefing/prose.ts", "src/modules/signal/lib/briefing/voice.ts", "src/modules/signal/lib/briefing/triggers.ts"],
+      dispatch: ["T·111 ships · the briefing shows its working, and a task keeps its own words"],
+      gate: "free",
+      next: "Already at Proven — 22 test files in the signal module, including voice, prose, trigger and selectivity contracts." },
+
+    { n: "Daily digest", lane: "Home", rung: "live",
+      plain: "The morning email.",
+      why: "Cron-compiled per workspace. T·144 closed a cross-workspace leak: it now reads your workspace and only yours.",
+      routes: ["/api/cron/digest"],
+      files: ["src/server/cross-tenant-digest-mentions.test.ts", "src/app/api/health/digest/route.ts"],
+      dispatch: ["T·144 tightens · the daily digest reads your workspace, and only yours"],
+      gate: "free",
+      next: "Delivery and open rates would move it to Proven." },
+
+    { n: "Weekly digest", lane: "Home", rung: "live",
+      plain: "The Monday version.",
+      why: "Separate cron and snapshot path from the daily digest.",
+      routes: ["/api/cron/weekly-digest"],
+      files: ["src/app/api/cron/weekly-digest"],
+      dispatch: [],
+      gate: "free",
+      next: "No dispatch entry names it. That is a registry gap, not a product one." },
+
+    // ── Tasks ─────────────────────────────────────────────────────
+    { n: "The board (Studio Floor)", lane: "Tasks", rung: "proven",
+      plain: "One sheet, three colours, and it answers the keyboard.",
+      why: "Chosen from a four-way exploration, then taken through eleven rounds of a seven-seat quality panel — 350 findings raised, 243 confirmed and fixed. Ships at a stated 8.1–8.7 against a 9.5 bar, with the remaining days named rather than hidden.",
+      routes: ["/app/tasks"],
+      files: ["docs/design/FLOOR_CANON.md", "src/components/floor/floor-board.tsx", "scripts/design/extract-floor-css.mjs"],
+      dispatch: ["T·149 redesigns · the board is one sheet, three colours", "T·150 ships · the board locks to A·Air"],
+      gate: "free",
+      next: "Proven, and honestly short of the bar. The gap is recorded in the decision, not hidden." },
+
+    { n: "Four views", lane: "Tasks", rung: "live",
+      plain: "Board, list, timeline, calendar — the same tasks.",
+      why: "Board for momentum, list for triage, timeline for sequencing, calendar for commitments. Paths are typed constants, never invented in components.",
+      routes: ["/app/tasks", "/app/tasks/list", "/app/tasks/timeline", "/app/tasks/calendar"],
+      files: ["src/lib/product-urls.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "List, Schedule and Calendar keep their old interior inside the new shell until the redesign reaches them." },
+
+    { n: "Custom columns", lane: "Tasks", rung: "live",
+      plain: "Rename your lanes; they are yours.",
+      why: "Legacy configs resolve onto the shipped five columns with renames on top. Blank system renames and nameless custom columns are dropped at parse so no headerless lane can render.",
+      routes: ["/app/tasks"],
+      files: ["src/lib/board-config.ts", "src/lib/board-columns.ts", "src/lib/board-lanes.ts"],
+      dispatch: ["T·121 ships · the columns are yours", "T·151 tightens · legacy boards get their lane back"],
+      gate: "free",
+      next: "Three test files cover it. One usage signal from Proven." },
+
+    { n: "Nudges", lane: "Tasks", rung: "live",
+      plain: "Stuck work says so, without being told to.",
+      why: "Seven pure rules — idle-doing, idle-review, past-due, blocker-cleared, review-pile, doing-empty, plus an LLM narration slot. Multiple copy variants per rule so the inbox does not read identically week over week. Dry, observational, never preachy.",
+      routes: ["/app/inbox", "/app/my-tasks"],
+      files: ["src/lib/nudges/generate-nudges.ts", "src/components/app/my-week/nudges-rail.tsx", "src/components/app/inbox/inbox-app.tsx"],
+      dispatch: [],
+      gate: "free",
+      next: "No dispatch entry names it, and no test file covers the generator. Both are why it went invisible." },
+
+    { n: "Whole-board keyboard", lane: "Tasks", rung: "live",
+      plain: "One tab stop. Arrows walk it, space picks a card up.",
+      why: "Escape puts a card back exactly where it came from. Five stops at rest, five at peak season — it does not grow with the work on it.",
+      routes: ["/app/tasks"],
+      files: ["src/components/floor/use-floor-place.ts"],
+      dispatch: ["T·149 redesigns · the board answers the keyboard"],
+      gate: "free",
+      next: "Covered by the council's keyboard-only requirement." },
+
+    { n: "Command palette", lane: "Tasks", rung: "live",
+      plain: "Type the thing you want.",
+      why: "Reachable from the board, the sidebar and the page header.",
+      routes: ["/app/tasks"],
+      files: ["src/components/app/palette/command-palette.tsx"],
+      dispatch: [],
+      gate: "free",
+      next: "No test file names it." },
+
+    { n: "Cross-workspace search", lane: "Tasks", rung: "live",
+      plain: "Find a task in a project you are not looking at.",
+      why: "Mounted in the tasks runtime shell. In demo mode it filters the in-memory board rather than reaching a real tenant.",
+      routes: ["/app/tasks"],
+      files: ["src/components/app/cross-workspace-search.tsx"],
+      dispatch: [],
+      gate: "free",
+      next: "Tenant-scope tests cover the boundary; nothing covers the surface." },
+
+    { n: "Dependencies", lane: "Tasks", rung: "building",
+      plain: "A task can be waiting on another task.",
+      why: "Real in the data and real in the briefing — blockedBy is in the schema, feeds the analytics provider, and drives the dependency-stall trigger with five locked phrasings. Not visible on the board.",
+      routes: ["/app/home/briefing"],
+      files: ["src/modules/signal/lib/prose/dependency-stall.ts", "src/components/app/blockers/blocker-badge.tsx"],
+      dispatch: [],
+      gate: "free",
+      next: "blocker-badge.tsx has no importer. Wire it into the card, or cut it and say the briefing is where blocking lives." },
+
+    { n: "Realtime sync", lane: "Tasks", rung: "building",
+      plain: "Another tab's change arrives without a refresh.",
+      why: "SSE stream plus a client hook that coalesces bursts. Deliberately off in production: the in-process emitter only fans out inside one lambda, so a mutation in A is invisible to a subscriber in B.",
+      routes: ["/api/events"],
+      files: ["src/app/api/events/route.ts", "src/lib/tasks/use-realtime-sync.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "Needs a substrate — Upstash pub/sub, Pusher or Liveblocks — then REALTIME_ENABLED=true." },
+
+    { n: "Presence and cursors", lane: "Tasks", rung: "considered",
+      plain: "See where other people are working.",
+      why: "Currently exists only inside the marketing hero's own animation. No card locking, no typing indicators, no cursors anywhere in the app.",
+      routes: [],
+      files: ["src/components/showcase/cursors-layer.tsx", "src/components/showcase/cinematic-demo.tsx"],
+      dispatch: [],
+      gate: "—",
+      next: "The marketing site claims this today. Either build it on the realtime substrate, or correct the claim. The claim is the cheaper fix." },
+
+    { n: "Attachments", lane: "Tasks", rung: "live",
+      plain: "Put a file on a task.",
+      why: "Upload validation, image metadata stripping and an explicit image policy. Never writes to local disk in demo mode.",
+      routes: ["/api/attachments/[id]"],
+      files: ["src/lib/upload-validation.ts", "src/lib/image/policy.ts", "src/lib/image/metadata.ts"],
+      dispatch: [],
+      gate: "workspace",
+      next: "Upload security and metadata tests exist. Bind them and it is Proven." },
+
+    { n: "AI conversation tools", lane: "Tasks", rung: "live",
+      plain: "Summarise a thread; draft a reply.",
+      why: "Mounted in the task detail conversation feed, behind an AI-configured check.",
+      routes: ["/app/task/[id]"],
+      files: ["src/components/app/ai/conversation-summary.tsx", "src/components/app/ai/draft-reply-button.tsx"],
+      dispatch: [],
+      gate: "workspace",
+      next: "Covered by the wave-3 UI contract test." },
+
+    { n: "Focus mode", lane: "Tasks", rung: "live",
+      plain: "One task, nothing else.",
+      why: "Reachable from the tasks runtime shell and the task detail actions.",
+      routes: ["/app/task/[id]"],
+      files: ["src/components/app/focus-mode.tsx", "src/components/app/detail-panel/focus-window.tsx"],
+      dispatch: [],
+      gate: "free",
+      next: "No test names it." },
+
+    { n: "Import", lane: "Tasks", rung: "live",
+      plain: "Bring work in from somewhere else.",
+      why: "Its own route, in the protected route manifest.",
+      routes: ["/app/import"],
+      files: ["src/app/app/import"],
+      dispatch: [],
+      gate: "free",
+      next: "Registry entry would need to name which sources it accepts." },
+
+    { n: "Print views", lane: "Tasks", rung: "live",
+      plain: "A board that survives a printer.",
+      why: "Four dedicated print routes with their own layout — the venue manager's clipboard, not a browser print stylesheet.",
+      routes: ["/print/board", "/print/list", "/print/timeline", "/print/calendar"],
+      files: ["src/app/print/print-project.tsx"],
+      dispatch: [],
+      gate: "free",
+      next: "Underclaimed. Nothing on the marketing site mentions it." },
+
+    { n: "Calendar feed", lane: "Tasks", rung: "live",
+      plain: "Subscribe to your dates from any calendar app.",
+      why: "iCal generation behind a per-workspace route.",
+      routes: ["/api/calendar/[workspaceId]"],
+      files: ["src/lib/ical.ts"],
+      dispatch: [],
+      gate: "workspace",
+      next: "Underclaimed. Not on the marketing site either." },
+
+    // ── Notes ─────────────────────────────────────────────────────
+    { n: "Capture and extraction", lane: "Notes", rung: "live",
+      plain: "Write it down badly; the app finds the work in it.",
+      why: "A v2 extraction endpoint with an idempotency contract, so re-running a note does not duplicate what it found.",
+      routes: ["/app/notes", "/api/notes-extract/v2"],
+      files: ["src/modules/notes/server/extraction", "src/server/notes-extract-idempotency.test.ts"],
+      dispatch: ["N·25 ships · Notes learns to listen, look and decide"],
+      gate: "free",
+      next: "Contract and idempotency tests exist. Bind them and it is Proven." },
+
+    { n: "Capture by email", lane: "Notes", rung: "live",
+      plain: "Forward an email; it becomes a note.",
+      why: "A per-notebook capture address, entitlement-gated, with a demo fixture that shows a synthetic address rather than a real one.",
+      routes: ["/app/notes"],
+      files: ["src/modules/notes/server/actions/capture-email.ts", "src/modules/notes/server/notes-entitlements.ts"],
+      dispatch: [],
+      gate: "workspace",
+      next: "Underclaimed. This is a strong feature nobody outside the repo knows about." },
+
+    { n: "Notes to Tasks", lane: "Notes", rung: "live",
+      plain: "Turn a line of a note into a task.",
+      why: "The hybrid view model that lets a note and a board be the same material seen twice.",
+      routes: ["/app/notes"],
+      files: ["src/modules/notes/lib/notes-hybrid.ts", "src/modules/notes/lib/notes-view-model.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "Three test files cover it." },
+
+    { n: "Notes to Timeline", lane: "Notes", rung: "live",
+      plain: "Promote a note into a milestone.",
+      why: "The third leg of the cross-product journey the quality council requires end to end.",
+      routes: ["/app/notes", "/app/timeline"],
+      files: ["src/modules/notes/lib/timeline-promotion.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "Covered by the cross-suite journey receipt." },
+
+    // ── Timeline ──────────────────────────────────────────────────
+    { n: "Owner artifact", lane: "Timeline", rung: "proven",
+      plain: "The plan, as its owner sees it.",
+      why: "Contract, layout, model and accessibility tests all bound to it, plus a reorder model and date-history persistence.",
+      routes: ["/app/timeline/[projectSlug]"],
+      files: ["src/modules/timeline/lib/owner-artifact.ts", "src/modules/timeline/components/artifact/timeline-artifact.tsx"],
+      dispatch: ["T·103 ships · the owner room and the briefing use the front door"],
+      gate: "workspace",
+      next: "Proven — 35 test files in the timeline module, four of them bound to this surface." },
+
+    { n: "Published timeline", lane: "Timeline", rung: "live",
+      plain: "A link you send to people who will never sign in.",
+      why: "Published or bearer-linked artifacts on their own public origin. An established public path is never moved just to tidy the host topology.",
+      routes: ["/the-wedding", "timeline.signalstudio.ie/s/*"],
+      files: ["src/modules/timeline/lib/audience-timeline.ts", "src/modules/timeline/timeline-public-url-contract.test.ts"],
+      dispatch: [],
+      gate: "workspace",
+      next: "URL contract test exists; bind it." },
+
+    { n: "Qualified views", lane: "Timeline", rung: "live",
+      plain: "How many people actually looked.",
+      why: "A view only counts if it qualifies, so the number means something. Stored server-side with its own security test.",
+      routes: ["/app/timeline/audience"],
+      files: ["src/modules/timeline/lib/qualified-view.ts", "src/modules/timeline/lib/viewer-count.ts"],
+      dispatch: [],
+      gate: "workspace",
+      next: "Four tests cover it including the security boundary." },
+
+    { n: "Milestone date history", lane: "Timeline", rung: "live",
+      plain: "The app remembers when a date moved, and to what.",
+      why: "Plans that slip leave a trace instead of quietly rewriting themselves.",
+      routes: ["/app/timeline/[projectSlug]"],
+      files: ["src/modules/timeline/server/db/milestone-date-history.ts"],
+      dispatch: ["T·146 ships · the app starts remembering how plans move"],
+      gate: "workspace",
+      next: "One test file. Close to Proven." },
+
+    { n: "Project switching", lane: "Timeline", rung: "live",
+      plain: "The project you are in stays the project you chose.",
+      why: "Following someone's link opens their project without rewriting your own last-open one. Following a link is not the same as choosing a place to be.",
+      routes: ["/app/timeline"],
+      files: ["src/lib/projects/active-project-machine.ts", "src/modules/timeline/lib/project-switcher-model.ts"],
+      dispatch: ["T·147 ships · the project you are in moves into the frame", "T·148 tightens · a link stops deciding where you work"],
+      gate: "free",
+      next: "Seven test files across projects and the switcher." },
+
+    // ── Foundations ───────────────────────────────────────────────
+    { n: "Google Drive projects", lane: "Foundations", rung: "considered",
+      plain: "A project's files where the project is.",
+      why: "In flight as an idea. Zero code in this repo today — no OAuth scaffolding, no client, no route, no decision record.",
+      routes: [],
+      files: [],
+      dispatch: [],
+      gate: "—",
+      next: "The first artefact is a decision record, not a branch. What does a venue manager expect to happen when they attach a folder?" },
+
+    { n: "Entitlements and billing", lane: "Foundations", rung: "live",
+      plain: "Who has paid for what.",
+      why: "Five tiers on their own cross-product database, readable by every product repo. The tier vocabulary is locked to the public pricing page — renaming a value is a brand decision, not a technical one.",
+      routes: ["/app/settings"],
+      files: ["src/lib/entitlements-shared/tiers.ts", "src/server/stripe-contract.test.ts"],
+      dispatch: ["T·124 ships · money, narrowly"],
+      gate: "free",
+      next: "Contract test exists. Bind it and it is Proven." },
+
+    { n: "Comp codes", lane: "Foundations", rung: "live",
+      plain: "A code that grants access without a card.",
+      why: "Redemption route with expiry handling and its own security test.",
+      routes: ["/redeem/[code]"],
+      files: ["src/lib/comp-code.ts", "src/server/invitation-code-security.test.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "Security test bound; the surface is not." },
+
+    { n: "Named editions", lane: "Foundations", rung: "live",
+      plain: "Venue Edition and School Edition, in the header.",
+      why: "Bound to the entitlement source, not the tier — a plain paid workspace has no edition badge, and the slot renders nothing rather than inventing a label.",
+      routes: ["/app/settings"],
+      files: ["src/lib/entitlements-shared/tiers.ts"],
+      dispatch: [],
+      gate: "event",
+      next: "One test file. Close to Proven." },
+
+    { n: "Sharing and revocation", lane: "Foundations", rung: "live",
+      plain: "Send a link; take it back.",
+      why: "Token security and an explicit revocation contract — the taking-back half is the part most products skip.",
+      routes: ["/share/[token]"],
+      files: ["src/server/share-token-security.test.ts", "src/server/share-revocation-contract.test.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "Two tests bound. Proven on binding." },
+
+    { n: "Invitations", lane: "Foundations", rung: "live",
+      plain: "Bring someone into a project.",
+      why: "A full lifecycle contract covering valid, expired and revoked states, each with its own review route.",
+      routes: ["/invite/[token]"],
+      files: ["src/server/invite-lifecycle-contract.test.ts"],
+      dispatch: ["T·145 corrects · the front door lets in the people it invited"],
+      gate: "free",
+      next: "Lifecycle test bound." },
+
+    { n: "Published boards", lane: "Foundations", rung: "live",
+      plain: "A read-only board anyone can open.",
+      why: "Public lane derivation separate from the app's, plus an explicit noindex test so a customer's wedding does not turn up in search.",
+      routes: ["/p/[slug]"],
+      files: ["src/lib/public-board-lanes.ts", "src/app/p/published-wedding-noindex.test.mjs"],
+      dispatch: [],
+      gate: "workspace",
+      next: "Noindex and analytics-boundary tests bound." },
+
+    { n: "Embeds", lane: "Foundations", rung: "live",
+      plain: "A board inside somebody else's page.",
+      why: "Its own route on the tasks public origin.",
+      routes: ["/embed/[slug]"],
+      files: ["src/app/embed"],
+      dispatch: [],
+      gate: "workspace",
+      next: "Underclaimed and untested." },
+
+    { n: "Dark mode", lane: "Foundations", rung: "live",
+      plain: "The app at night.",
+      why: "One dark mapping, read from the design system rather than a second copy in the app — a drift that was silently winning the cascade until T·152.",
+      routes: ["/app/settings"],
+      files: ["src/ds/theme-overrides.css", "src/app/app/theme-resolver.test.ts"],
+      dispatch: ["T·138 ships · dark mode, and the words your board already uses", "T·152 tightens · tokens come from the package, not a copy"],
+      gate: "free",
+      next: "Three tests bound including the theme allow-list." },
+
+    { n: "Account export and erasure", lane: "Foundations", rung: "live",
+      plain: "Take your data; delete your account.",
+      why: "Both halves, with a unified erasure path across the products' separate databases.",
+      routes: ["/api/account/export", "/api/account/delete"],
+      files: ["src/server/account-export.test.ts", "src/server/account-erasure.test.ts"],
+      dispatch: ["T·76 ships · close your account from the avatar dropdown"],
+      gate: "free",
+      next: "Two tests bound. Proven on binding." },
+
+    { n: "Demo and review mode", lane: "Foundations", rung: "live",
+      plain: "Show the product to anyone, without a login or a real tenant.",
+      why: "Four access modes with a hard safety invariant: demo and review never query the real database. The seed board is a wedding venue's real Saturday, not a software sprint.",
+      routes: ["/review"],
+      files: ["src/lib/access-mode.ts", "DEMO_MODE.md", "src/server/demo/tasks-demo.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "This is what the feature board's deep links ride on. It is already the most valuable underclaimed thing here." },
+
+    { n: "Templates", lane: "Foundations", rung: "live",
+      plain: "Start from a plan somebody already made.",
+      why: "Generated from a synced source, with an anchoring contract so template dates land relative to the real event.",
+      routes: ["/welcome/plan"],
+      files: ["src/lib/templates.generated.ts", "src/lib/template-anchor.ts", "scripts/sync-templates.ts"],
+      dispatch: [],
+      gate: "free",
+      next: "Anchor and wedding-template contract tests bound." },
+
+    { n: "Analytics ledger", lane: "Foundations", rung: "building",
+      plain: "What the product can honestly say about itself.",
+      why: "A metric registry, scope rules, an origin policy and rules-safety checks — built carefully and held behind a flag. Neither flag hides UI on its own.",
+      routes: [],
+      files: ["src/modules/signal/lib/analytics/metric-registry.ts", "src/modules/signal/server/analytics/feature-flag.ts"],
+      dispatch: [],
+      gate: "studio",
+      next: "This is the substrate the Proven rung should eventually read from. Open the flag and the board gets real usage evidence." },
+
+    // ── Cut ───────────────────────────────────────────────────────
+    { n: "A second marketing site inside the app", lane: "Foundations", rung: "cut",
+      plain: "Marketing pages that lived behind the login.",
+      why: "The signed-in app was carrying marketing surfaces that belong on the marketing origin. Removed in the estate consolidation.",
+      routes: [], files: [],
+      dispatch: ["T·139 cuts · the app stops being a second marketing site"],
+      gate: "—",
+      next: "Cut. The marketing origin is the single place that story lives." },
+
+    { n: "The duplicate sidebar", lane: "Tasks", rung: "cut",
+      plain: "Two spines saying the same thing.",
+      why: "The top bar and the projects sidebar both named where you were. The capsule rail is now the only spine on Tasks.",
+      routes: [], files: [],
+      dispatch: ["T·115 cuts · the sidebar stops saying the same thing twice", "T·149 redesigns · one spine instead of two"],
+      gate: "—",
+      next: "Cut, and the board is better for it." },
+
+    { n: "Soft PM vocabulary", lane: "Foundations", rung: "cut",
+      plain: "Backlog, sprint, stakeholder, WIP.",
+      why: "Removed from the app the 80% live in, and now machine-enforced: check-first-contact-language.mjs scans rendered copy on every commit and the baseline may only shrink.",
+      routes: [], files: ["scripts/check-first-contact-language.mjs"],
+      dispatch: ["T·53 cuts · the soft PM vocabulary out of the app the 80% live in"],
+      gate: "—",
+      next: "Cut and gated. The strongest example of a refusal that stayed refused." },
+
+    { n: "The standing design fences", lane: "Foundations", rung: "cut",
+      plain: "Nine enforcement chains that governed the board's styling.",
+      why: "The ds-check hex and easing ratchet, the chrome and loading geometry contracts, the motion contract, the delight ground rules, the board styling contract and the Wave-0 council baseline. Retired by founder decision once the floor locked. Business contracts stood untouched.",
+      routes: [], files: ["docs/design/FLOOR_CANON.md"],
+      dispatch: ["T·150 ships · the design fences come down"],
+      gate: "—",
+      next: "Cut deliberately. What governs the surface now is the canon, the north star, and taste." },
+
+    { n: "log-cycle and check-cycles", lane: "Foundations", rung: "cut",
+      plain: "The cycle-logging scripts from this codebase's portfolio origins.",
+      why: "Retired 30 July, deleted 31 July. A shipped cycle's only records are now the dispatch entry and the Signal HQ record.",
+      routes: [], files: [],
+      dispatch: ["T·120 cuts · the scaffolding nobody used is gone"],
+      gate: "—",
+      next: "Cut. Worth showing publicly: this is a team that deletes things." },
+
+    { n: "The scroll-fade over the manifesto", lane: "Foundations", rung: "cut",
+      plain: "An effect that hid the manifesto from crawlers.",
+      why: "A visual flourish that cost search visibility on the page the brand rests on.",
+      routes: [], files: [],
+      dispatch: ["T·54 cuts · the scroll-fade that hid the manifesto from crawlers"],
+      gate: "—",
+      next: "Cut. The cheapest possible reminder that a nice effect can have a bill." }
+  ];
+
+  var state = { rung: "all", lane: "all", q: "" };
+  var openIds = Object.create(null);
+
+  var ledgerEl   = document.getElementById("ledger");
+  var distEl     = document.getElementById("distBar");
+  var countEl    = document.getElementById("countLine");
+  var rungChips  = document.getElementById("rungChips");
+  var laneChips  = document.getElementById("laneChips");
+  var searchEl   = document.getElementById("searchInput");
+
+  FEATURES.forEach(function (f, i) { f._id = "f" + i; });
+
+  function rungMeta(id) {
+    for (var i = 0; i < RUNGS.length; i++) if (RUNGS[i].id === id) return RUNGS[i];
+    return RUNGS[0];
+  }
+
+  function matches(f) {
+    if (state.rung !== "all" && f.rung !== state.rung) return false;
+    if (state.lane !== "all" && f.lane !== state.lane) return false;
+    if (state.q) {
+      var hay = (f.n + " " + f.plain + " " + f.why + " " + f.lane + " " + f.rung + " " +
+                 f.routes.join(" ") + " " + f.files.join(" ") + " " + f.dispatch.join(" ")).toLowerCase();
+      if (hay.indexOf(state.q) === -1) return false;
+    }
+    return true;
+  }
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  function buildMeter(rung) {
+    var meta = rungMeta(rung);
+    var m = el("span", "meter");
+    m.setAttribute("data-rung", rung);
+    m.setAttribute("aria-hidden", "true");
+    if (rung === "cut") return m;
+    for (var i = 1; i <= 4; i++) {
+      var t = el("span", "tick");
+      if (i <= meta.ticks) t.setAttribute("data-on", i === 4 ? "accent" : "ink");
+      m.appendChild(t);
+    }
+    return m;
+  }
+
+  function factRow(parent, key, node) {
+    parent.appendChild(el("div", "fact-key", key));
+    var v = el("div", "fact-val");
+    v.appendChild(node);
+    parent.appendChild(v);
+  }
+
+  function monoList(items, emptyText) {
+    var wrapNode = el("div");
+    if (!items || !items.length) {
+      wrapNode.appendChild(el("span", null, emptyText));
+      return wrapNode;
+    }
+    items.forEach(function (s, i) {
+      if (i) wrapNode.appendChild(document.createElement("br"));
+      wrapNode.appendChild(el("span", "mono", s));
+    });
+    return wrapNode;
+  }
+
+  function buildDrawer(f) {
+    var d = el("div", "drawer");
+    d.appendChild(el("div"));
+    var body = el("div", "drawer-body");
+
+    body.appendChild(el("p", null, f.why));
+
+    var facts = el("div", "facts");
+    factRow(facts, "Rung", el("span", null, rungMeta(f.rung).label));
+    factRow(facts, "Where", monoList(f.routes, "no route — nothing to open"));
+    factRow(facts, "In code", monoList(f.files, "no files"));
+    factRow(facts, "Dispatch", monoList(f.dispatch, "no entry names it"));
+    factRow(facts, "Gate", el("span", "mono", f.gate));
+    body.appendChild(facts);
+
+    var next = el("div", "next");
+    next.appendChild(el("b", null, f.rung === "cut" ? "Why it stays cut" : "What would move it a rung"));
+    next.appendChild(document.createTextNode(f.next));
+    body.appendChild(next);
+
+    d.appendChild(body);
+    return d;
+  }
+
+  function render(animate) {
+    var visible = FEATURES.filter(matches);
+
+    // Distribution strip — reflects the current filter.
+    distEl.innerHTML = "";
+    RUNGS.forEach(function (r) {
+      var n = visible.filter(function (f) { return f.rung === r.id; }).length;
+      if (!n) return;
+      var seg = el("div", "dist-seg");
+      seg.setAttribute("data-rung", r.id);
+      seg.setAttribute("title", n + " " + r.label.toLowerCase());
+      seg.appendChild(el("span", "seg-n", String(n)));
+      // The label only rides along when the segment has room for it —
+      // proportions stay honest, nothing truncates mid-word.
+      if (visible.length && n / visible.length >= 0.14) {
+        seg.appendChild(el("span", "seg-label", r.label.toLowerCase()));
+      }
+      seg.style.flex = n + " 1 0";
+      distEl.appendChild(seg);
+    });
+    if (!visible.length) {
+      var none = el("div", "dist-seg", "nothing matches");
+      none.setAttribute("data-rung", "cut");
+      none.style.flex = "1 1 0";
+      distEl.appendChild(none);
+    }
+
+    countEl.textContent = visible.length + " of " + FEATURES.length;
+
+    ledgerEl.innerHTML = "";
+    if (!visible.length) {
+      ledgerEl.appendChild(el("div", "empty", "Nothing matches. Try a shorter word."));
+      return;
+    }
+
+    visible.forEach(function (f, i) {
+      var row = el("div", "row");
+      row.setAttribute("data-rung", f.rung);
+      if (animate) {
+        row.style.animationDelay = Math.min(i * 14, 380) + "ms";
+      } else {
+        row.style.animation = "none";
+      }
+
+      var head = el("button", "row-head");
+      head.type = "button";
+      head.setAttribute("aria-expanded", openIds[f._id] ? "true" : "false");
+
+      head.appendChild(buildMeter(f.rung));
+
+      var mid = el("span");
+      mid.appendChild(el("span", "row-name", f.n));
+      mid.appendChild(el("span", "row-plain", f.plain));
+      head.appendChild(mid);
+
+      head.appendChild(el("span", "row-lane", f.lane));
+
+      head.addEventListener("click", function () {
+        openIds[f._id] = !openIds[f._id];
+        render(false);
+        var again = document.querySelector('[data-fid="' + f._id + '"] .row-head');
+        if (again) again.focus();
+      });
+
+      row.setAttribute("data-fid", f._id);
+      row.appendChild(head);
+      if (openIds[f._id]) row.appendChild(buildDrawer(f));
+
+      ledgerEl.appendChild(row);
+    });
+  }
+
+  function buildChips(container, values, key) {
+    var all = [{ id: "all", label: "All" }].concat(values);
+    all.forEach(function (v) {
+      var b = el("button", "chip");
+      b.type = "button";
+      b.setAttribute("aria-pressed", state[key] === v.id ? "true" : "false");
+      b.appendChild(document.createTextNode(v.label));
+      if (v.id !== "all") {
+        var n = FEATURES.filter(function (f) {
+          return key === "rung" ? f.rung === v.id : f.lane === v.id;
+        }).length;
+        b.appendChild(el("span", "chip-n", String(n)));
+      }
+      b.addEventListener("click", function () {
+        state[key] = v.id;
+        Array.prototype.forEach.call(container.children, function (c) {
+          c.setAttribute("aria-pressed", "false");
+        });
+        b.setAttribute("aria-pressed", "true");
+        render(true);
+      });
+      container.appendChild(b);
+    });
+  }
+
+  buildChips(rungChips, RUNGS.map(function (r) { return { id: r.id, label: r.label }; }), "rung");
+  buildChips(laneChips, LANES.map(function (l) { return { id: l, label: l }; }), "lane");
+
+  searchEl.addEventListener("input", function () {
+    state.q = searchEl.value.trim().toLowerCase();
+    render(false);
+  });
+
+  render(true);
+})();
+</script>
