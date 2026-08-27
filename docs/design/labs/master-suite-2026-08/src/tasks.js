@@ -69,6 +69,7 @@ let seq = 0;
 let undoTimer = null;
 let menuFor = null;     /* the card whose move menu is open                 */
 let queryText = "";     /* what the dock's search field holds               */
+let searchSaid = null;  /* the debounce for the search's own announcement   */
 let menuAt = "";
 let flyFrom = null;     /* where a completed card was, so it can travel     */
 let refocus = false;    /* the last change came from the keyboard          */
@@ -89,6 +90,27 @@ const UNIFORM_ASSIGNEES = true;
 /* The three couples the review fixture names. Everything else in the tag
    field is an area of the house. */
 const CLIENTS = new Set(["Mara & Finn", "Nora & Cian", "Aisling & Tom"]);
+
+/* WHICH NOTE THIS CAME FROM, asked of the one map that already knows. The
+   fixture has carried a note→task link since round 1 and this is its
+   inverse, published by the fixture itself rather than kept as a second
+   list here — two lists would disagree the first time one of them moved.
+   Returns null when the note is not in this project's notebook, and the
+   glyph then stays the badge it has always been rather than becoming a
+   door onto nothing. */
+function noteBehind(task) {
+  try {
+    const N = window.NOTES;
+    if (!N || typeof N.noteOf !== "function") return null;
+    const id = N.noteOf(task.id);
+    if (!id) return null;
+    const notes = window.__SUITE.of && window.__SUITE.of("notes");
+    if (notes && notes.api && typeof notes.api.has === "function" && !notes.api.has(id)) return null;
+    return id;
+  } catch (err) {
+    return null;
+  }
+}
 
 /* One accessor for the rendered set, and every header fact derived from it.
    Before this the header's total was recomputed for the dense board and its
@@ -186,11 +208,30 @@ function filterSentence() {
      across the sentence, the tooltip and the chip. */
   const adj = lateOnly ? "overdue " : "";
   const cond = todayOnly ? "due today" : "";
-  const scope = clientOnly ? " for " + clientOnly : "";
+  /* " for " belongs to a couple and " tagged " belongs to a tag. One
+     preposition served both, so the board announced itself "Showing 4
+     tasks for Venue." */
+  const scope = clientOnly ? (CLIENTS.has(clientOnly) ? " for " : " tagged ") + clientOnly : "";
   if (!shown) {
+    /* THE SEARCH BRANCH FIRST, because the search is the only filter whose
+       miss has a subject worth naming. Without it the sentence fell to the
+       chip branch and came out "Nothing on the board is. All 13 are
+       hidden." — a copula with nothing after it, printed as the product's
+       answer to a perfectly ordinary question. Notes has said this well
+       since round 1 ("No note says “marqueezzzz”.") and this is the same
+       sentence in the same voice, so the suite answers a miss one way. */
+    const q = queryText.trim();
+    if (q) {
+      return "Nothing on the board says \u201c" + q + "\u201d. All " + all +
+        " " + (all === 1 ? "is" : "are") + " hidden.";
+    }
     return (adj || cond
       ? "No " + adj + "task is " + (cond || "on the board") + scope + "."
-      : "Nothing on the board is" + scope + ".") +
+      /* And when the only filter is a couple, the sentence names them
+         rather than trailing off: "No task is for Mara & Finn." */
+      : scope
+        ? "No task is" + scope + "."
+        : "Nothing on the board matches.") +
       " All " + all + " " + (all === 1 ? "is" : "are") + " hidden.";
   }
   return "Showing " + shown + " " + adj + (shown === 1 ? "task" : "tasks") +
@@ -382,7 +423,22 @@ function card(task, force, stop) {
     "</div>" +
     (task.note ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
-      (task.fromNote ? '<span class="grow" role="img" aria-label="Came from a note in Notes" title="Came from a note">' + I.note + "</span>" : "") +
+      /* A DOOR, not a badge. This glyph has said "came from a note in
+         Notes" since round 1 and there was no way to go and read it —
+         the seam ran one way, and the note that produced the task you are
+         looking at was findable only by scrolling a pile in another
+         product. It is the same glyph in the same place at the same size;
+         what changed is that pressing it goes there. The 44px target is
+         the one `.cardDots` beside it already carries. */
+      (task.fromNote
+        ? (noteBehind(task)
+          ? '<button type="button" class="grow cardSrc" data-act="source"' +
+            ' data-note="' + esc(noteBehind(task)) + '"' +
+            ' tabindex="' + (stop ? "0" : "-1") + '"' +
+            ' aria-label="Open the note this came from"' +
+            ' title="Open the note this came from">' + I.note + "</button>"
+          : '<span class="grow" role="img" aria-label="Came from a note in Notes" title="Came from a note">' + I.note + "</span>")
+        : "") +
       '<button class="cardDots" data-act="menu" tabindex="' + (stop ? "0" : "-1") +
         '" aria-haspopup="menu" aria-expanded="' + (menuFor === task.id ? "true" : "false") +
         '" aria-label="Move this task">' + I.dots + "</button>" +
@@ -532,8 +588,15 @@ function notYet(what) {
   return ' aria-disabled="true" title="' + esc(what) + '"';
 }
 const SOON = "Board is the only view for now.";
-const TOOLS = "Filter, Sort and Display come with the other views.";
-const SEARCH = "Search comes with the other views.";
+/* BOTH OF THESE WERE TRUE WHEN THEY WERE WRITTEN AND ARE NOT NOW. Filter,
+   Sort and Display are live control surfaces on this board, and search is a
+   real field at the foot of this sheet that filters as you type. The
+   product's most distinctive quality is that it never lies about what it
+   can do — so a door that outlives the thing it was honest about becomes
+   the only lie on the surface. The head's magnifier is a shortcut to the
+   field, not a closed door. */
+const TOOLS = "Filter, Sort and Display are on this board.";
+const SEARCH = "Search is at the foot of the board.";
 /* Named, not templated: a door says what is behind it, then says it is not
    here yet. "Release" was a software vendor's word in a product whose bar is
    that a venue manager with no project-management background understands it
@@ -689,9 +752,21 @@ function toolPop(kind) {
     body =
       row("filter-set", "late", "Overdue", lateOnly, "Past its day") +
       row("filter-set", "today", "Due today", todayOnly, "Owed before tonight") +
-      (allTags().length
+      /* TWO GROUPS, because these are two kinds of thing. The list held
+         Venue, Enquiry, Bar and "Mara & Finn" under one heading reading
+         "By tag" — so the couple the whole board is about was filed as a
+         label alongside the bar. A person scanning for the couple looks
+         under the couple, and the sentence the filter prints has to agree:
+         "tagged Venue", but "for Mara & Finn". */
+      (allTags().filter((t) => !CLIENTS.has(t)).length
         ? '<p class="toolLabel">By tag</p>' +
-          allTags().map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
+          allTags().filter((t) => !CLIENTS.has(t))
+            .map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
+        : "") +
+      (allTags().filter((t) => CLIENTS.has(t)).length
+        ? '<p class="toolLabel">By couple</p>' +
+          allTags().filter((t) => CLIENTS.has(t))
+            .map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
         : "") +
       (filterCount()
         ? '<div class="toolFoot"><button type="button" class="toolClear" data-act="filter-clear">' +
@@ -1141,11 +1216,20 @@ function taskPanel() {
   /* Activity is derived from what the task already carries rather than
      invented as a new field. A history nobody wrote is a history nobody
      can trust. */
+  /* The activity line is the same door in words. A person reading the
+     panel is further into the task than a person scanning the board, so
+     this is where the journey is most likely to be wanted. */
+  const back = noteBehind(task);
   const acts = [];
-  if (task.fromNote) acts.push("Came from a note in Notes");
-  if (task.milestone) acts.push(task.milestone);
-  if (task.quiet) acts.push(task.quiet);
-  if (task.completedAt) acts.push("Finished " + dateLabel(task.completedAt));
+  if (task.fromNote) {
+    acts.push(back
+      ? '<button type="button" class="tpSrc" data-act="source" data-note="' + esc(back) +
+        '">Came from a note in Notes</button>'
+      : esc("Came from a note in Notes"));
+  }
+  if (task.milestone) acts.push(esc(task.milestone));
+  if (task.quiet) acts.push(esc(task.quiet));
+  if (task.completedAt) acts.push(esc("Finished " + dateLabel(task.completedAt)));
 
   return (
     /* A CENTRED MODAL, not a side panel. The first build put it on the
@@ -1200,7 +1284,10 @@ function taskPanel() {
 
         (acts.length
           ? '<section class="tpSection"><h3>Activity</h3><ul class="tpActs">' +
-            acts.map((a) => "<li>" + esc(a) + "</li>").join("") + "</ul></section>"
+            /* Already escaped where it is text and deliberately markup
+               where it is the door — escaping twice printed the button's
+               own source at a reader. */
+            acts.map((a) => "<li>" + (/^</.test(a) ? a : esc(a)) + "</li>").join("") + "</ul></section>"
           : "") +
 
         /* Everything a task could carry and this one does not. Behind a
@@ -2288,13 +2375,35 @@ function onKey(event) {
 
   /* Board-wide keys, live wherever focus is inside the sheet. */
   if ((event.metaKey || event.ctrlKey) && (key === "k" || key === "K")) {
-    /* The pill prints this key, so the key has to answer — with the same
-       sentence the pill's own tooltip carries. */
     event.preventDefault();
-    say("Search arrives with the other views.");
+    /* The search is REAL now. This branch still answered with the sentence
+       it carried when the field was a closed door — so the product filtered
+       thirteen cards to two as you typed and, in the same breath, told you
+       search was not here yet. An honest door that outlives the thing it
+       was honest about becomes the only lie on the surface.
+
+       Guarded on being RENDERED, not on existing: the dock is not painted
+       in every state, and a shortcut that focuses nothing is worse than one
+       that says why. */
+    const field = document.querySelector('[data-app="tasks"] .dockInput');
+    if (field && field.offsetParent !== null) {
+      field.focus();
+      field.select();
+      say("Search tasks.");
+    } else {
+      say("Search is at the foot of the board.");
+    }
     return;
   }
   if ((event.metaKey || event.ctrlKey) && (key === "z" || key === "Z")) {
+    /* Typed words own their own undo. The composer announced "Press Ctrl Z
+       to undo" and then handed the key to the BOARD's undo, so the one
+       thing a person had just typed was the one thing the advertised key
+       could not take back. Notes already ships this rule; the board did
+       not. The composer keeps running — tearing it down would lose the
+       draft the key was meant to protect. */
+    const composing = document.querySelector(".card[data-draft] .cardTitle");
+    if (composing && composing.contains(document.activeElement)) return;
     event.preventDefault();
     undoLast();
     return;
@@ -2480,6 +2589,25 @@ function onClick(event) {
   if (what === "tick") {
     event.preventDefault();
     toggleDone(act.closest(".card").dataset.id);
+    return;
+  }
+  if (what === "source") {
+    /* THE SEAM, BACKWARDS. Notes has been able to say where a note went
+       since round 1; this is the first time a task can say where it came
+       from. It uses the products' own front door — the spine's `go`, then
+       Notes' own lift — so the note arrives on the reading desk exactly as
+       it would if it had been opened from the pile, with the same focus
+       and the same announcement. */
+    event.preventDefault();
+    const id = act.dataset.note;
+    const notes = window.__SUITE.of && window.__SUITE.of("notes");
+    if (!id || !notes || !notes.api || typeof notes.api.open !== "function") {
+      say("That note is not in this notebook.");
+      return;
+    }
+    window.__SUITE.go("notes", { announce: false, focus: false });
+    if (notes.api.open(id)) say("Opened the note this came from.");
+    else say("That note is not in this notebook.");
     return;
   }
   if (what === "client") {
@@ -3155,6 +3283,35 @@ function measureEdges(target) {
       ? body.offsetTop
       : Math.round(body.getBoundingClientRect().top - tray.getBoundingClientRect().top);
     tray.style.setProperty("--body-top", top + "px");
+    /* THE FOOT LANDS IN A GUTTER. The scroller was whatever height the
+       column left it, so its bottom edge — and the hairline drawn on it —
+       fell wherever that happened to be: most often a third of the way
+       through a line of a card's title, which reads as a rendering fault
+       rather than as "there is more below". Trimmed to the bottom of the
+       last card that fits ENTIRELY, the edge always sits in the 8px
+       between two cards, and the leftover pixels fall to the tray's own
+       bottom padding above the Add row. No mask, no fade, no new colour,
+       and the snap model is untouched.
+
+       Cleared when the column no longer overflows, or a tray that once
+       scrolled keeps a short inline height for the rest of the session. */
+    const overflows = body.scrollHeight > body.clientHeight + 1;
+    if (!overflows) {
+      body.style.removeProperty("block-size");
+    } else {
+      body.style.removeProperty("block-size");
+      const room = body.clientHeight;
+      const cards = Array.prototype.slice.call(body.querySelectorAll(".card"));
+      let cut = 0;
+      for (const card of cards) {
+        const bottomOf = card.offsetTop - body.offsetTop + card.offsetHeight;
+        if (bottomOf <= room) cut = bottomOf;
+      }
+      /* Only ever trims, and only when a whole card actually fits — a
+         column whose first card is taller than the tray keeps its full
+         height rather than collapsing to nothing. */
+      if (cut > 0 && cut < room) body.style.blockSize = cut + "px";
+    }
     tray.style.setProperty("--body-bottom", top + body.clientHeight + "px");
   });
   const board = target.querySelector(".board");
@@ -3187,10 +3344,24 @@ function measureEdges(target) {
     const tools = target.querySelector(".viewTools");
     if (views && tools) {
       const edge = () => sheet.getBoundingClientRect().right - 8;
+      const seg = target.querySelector(".seg, .viewSeg, .views > :first-child");
+      /* SEPARATION, not overflow. The row folded only once it ran past the
+         sheet, so between about 1180 and 1090 the switcher and the tools
+         had already closed to nothing — touching, then visually one
+         object — while both were still inside the sheet and nothing had
+         fired. A gap of less than 24px between two groups IS the collision;
+         waiting for the edge means the row is already wrong by the time the
+         rule agrees. The old sheet-edge test is kept as the second
+         condition, so nothing that used to fold stops folding. */
+      const gap = () => {
+        if (!seg) return Infinity;
+        return tools.getBoundingClientRect().left - seg.getBoundingClientRect().right;
+      };
+      const past = () => tools.getBoundingClientRect().right > edge();
       views.removeAttribute("data-fold");
-      if (tools.getBoundingClientRect().right > edge()) {
+      if (gap() < 24 || past()) {
         views.setAttribute("data-fold", "words");
-        if (tools.getBoundingClientRect().right > edge()) views.setAttribute("data-fold", "gone");
+        if (gap() < 24 || past()) views.setAttribute("data-fold", "gone");
       }
     }
   }
@@ -3513,6 +3684,24 @@ if (host) {
         back.focus();
         try { back.setSelectionRange(at, at); } catch (err) { /* not all types allow it */ }
       }
+      /* And SAY what happened. The board stepped 13 → 11 → 9 → 8 → 2 → 0
+         cards and the live region said nothing at any step, including at
+         zero — so a reader who could not see the board had a field that
+         swallowed their typing and answered with silence. Notes' own search
+         has announced its result count since round 1; this is the same
+         sentence, in the same voice.
+
+         Debounced: one announcement per pause, not one per keystroke, or
+         the region reads every intermediate count out loud. */
+      clearTimeout(searchSaid);
+      searchSaid = setTimeout(() => {
+        const q = queryText.trim();
+        if (!q) { say("Search cleared. Showing everything."); return; }
+        const shown = B.columns.reduce((n, c) => n + tasksFor(c.id).length, 0);
+        say(shown
+          ? shown + (shown === 1 ? " task has " : " tasks have ") + '"' + q + '" in them.'
+          : 'No task says "' + q + '".');
+      }, 420);
     }
   });
   /* Naming a project. Enter commits, Escape abandons, and leaving the field

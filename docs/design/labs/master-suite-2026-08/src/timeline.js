@@ -735,6 +735,20 @@
       return Number(a.getAttribute("data-away")) - Number(b.getAttribute("data-away"));
     });
 
+    /* THE NEXT MARKER, in this orientation too. `data-lead` is what fills
+       the tick, lifts the title to 600 and takes the count to full ink —
+       three declared rules, all of them already gated, and every one of
+       them is stamped by the DOWN placer and by nothing else. Turn the
+       artifact across and the row that answers "what is next" looked
+       exactly like the four behind it. The reset stays so a leftover from
+       the other axis cannot survive an orientation switch, and the past
+       rail is excluded the way it is down the page: `.b-back` never
+       carries a lead, because nothing behind you is next. */
+    items.forEach(function (el) { el.removeAttribute("data-lead"); });
+    if (!measureEl.classList.contains("b-back") && items.length) {
+      items[0].setAttribute("data-lead", "true");
+    }
+
     /* Two moments on one day are one mark with two labels, exactly as
        they are down the page — by attribute, never by reparenting. */
     var ORDINAL = ["first", "second", "third", "fourth", "fifth"];
@@ -1247,11 +1261,39 @@
       return;
     }
     bar.setAttribute("data-empty", "false");
-    top.say.forEach(function (part) {
-      text.appendChild(typeof part === "number"
-        ? h("span.num", { text: String(part) })
-        : document.createTextNode(part));
-    });
+    /* WHAT JUST HAPPENED, or WHAT IS ON OFFER — and they are not the same
+       sentence. Every entry's `say` is written in the past tense because
+       it is composed at the moment the thing happens. After an undo the
+       bar repaints on the NEXT entry down and read it out in that same
+       tense — "Ceremony moved 2 days later." — describing an action the
+       owner had just reversed, one frame after reversing it, as though it
+       had happened again. The strip's job from that frame on is not to
+       report; it is to OFFER the next reversal.
+
+       One flag, set in `remember` and cleared by `undo`, so the tense is
+       decided in the two places the stack actually moves rather than in
+       six composed strings. */
+    if (top.fresh) {
+      top.say.forEach(function (part) {
+        text.appendChild(typeof part === "number"
+          ? h("span.num", { text: String(part) })
+          : document.createTextNode(part));
+      });
+    } else {
+      text.appendChild(document.createTextNode("Undo: "));
+      top.say.forEach(function (part) {
+        text.appendChild(typeof part === "number"
+          ? h("span.num", { text: String(part) })
+          : document.createTextNode(part));
+      });
+      /* And how deep it goes, the way the board's own strip says it. A
+         stack of four looked exactly like a stack of one. */
+      if (history.length > 1) {
+        text.appendChild(document.createTextNode(" "));
+        text.appendChild(h("span.num", { text: String(history.length - 1) }));
+        text.appendChild(document.createTextNode(" more."));
+      }
+    }
     button.disabled = false;
     button.removeAttribute("tabindex");
     root.setAttribute("data-undo", "true");
@@ -1278,6 +1320,10 @@
     entry.at = window.scrollY;
     var pane = paneOf(root);
     entry.paneAt = pane ? pane.scrollTop : null;
+    /* Fresh, and the only fresh one: everything under it is now an offer
+       rather than a report. */
+    history.forEach(function (e) { e.fresh = false; });
+    entry.fresh = true;
     history.push(entry);
     paintUndo(root);
   }
@@ -1289,6 +1335,10 @@
     /* Peek, then pop. Popping first is how pressing Undo after a delete
        used to restore nothing and empty the bar as though it had. */
     if (restored !== false) history.pop();
+    /* Whatever is on top now was NOT just done — it is what the next
+       press would reverse, and the strip says so in that tense. */
+    var next = history[history.length - 1];
+    if (next) next.fresh = false;
     /* Was the owner standing on the Undo control itself? paintUndo is
        about to disable it when the stack empties, and disabling the
        focused element drops focus to the body. */
@@ -2050,6 +2100,14 @@
         var live = document.querySelector(".b-undo");
         if (!live) return;
         event.preventDefault();
+        /* AN EMPTY STACK ANSWERS. The key was advertised on the strip and
+           on the two other products, and pressing it with nothing to
+           reverse did nothing at all and said nothing at all — which is
+           indistinguishable from the shortcut being broken. */
+        if (!history.length) {
+          window.__SUITE.say("Nothing left to undo.");
+          return;
+        }
         undo(live.closest(".b-field") || document.body);
       });
     }

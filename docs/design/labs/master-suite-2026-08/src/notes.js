@@ -1576,6 +1576,33 @@
       </button>${on ? `<button class="chip" data-quiet type="button" data-act="unscope">${I.close}All ${work().filter((n) => !n.deleted).length} notes</button>` : ""}`;
   }
 
+  /* THREE KINDS, and only the ones that happened. It read "8 notes went
+     through. 0 became tasks and the rest stayed here." — a zero printed as
+     a fact, with "the rest" standing in for all eight — and then offered
+     "See them in Tasks" as the only filled action, pointing at nothing.
+     A completion screen that names an outcome nobody produced is the flow
+     ending in a claim rather than a result. */
+  function emptyTally(decided) {
+    const task = decided.filter((d) => d.kind === "task").length;
+    const gone = decided.filter((d) => d.kind === "delete").length;
+    return { task: task, gone: gone, kept: decided.length - task - gone, all: decided.length };
+  }
+
+  function emptySentence(decided) {
+    const t = emptyTally(decided);
+    const noun = (n) => n + (n === 1 ? " note" : " notes");
+    if (!t.all) return "Nothing was waiting.";
+    const parts = [];
+    if (t.task) parts.push(noun(t.task) + (t.task === 1 ? " became a task" : " became tasks"));
+    if (t.gone) parts.push(noun(t.gone) + (t.gone === 1 ? " went" : " went"));
+    if (t.kept) parts.push(noun(t.kept) + " stayed here");
+    const went = noun(t.all) + " went through. ";
+    if (parts.length === 1) return went + parts[0][0].toUpperCase() + parts[0].slice(1) + ".";
+    const last = parts.pop();
+    const rest = parts.join(", ") + " and " + last;
+    return went + rest[0].toUpperCase() + rest.slice(1) + ".";
+  }
+
   function head() {
     const c = counts();
     /* The loudest object in every room — solid ink, 600, top of the
@@ -1600,7 +1627,12 @@
               scope
                 ? `${c.pending} still to decide in ${attr(scopeLabel())}. Go through them.`
                 : `Go through the ${c.pending} notes still to decide.`
-            }">${scope ? `${c.pending} still to decide in ${esc(scopeLabel())}` : `Go through ${c.pending}`}</button>`
+            }"/* A NUMBER NEEDS ITS NOUN. The chip read "Go through 8" — eight of
+                    what, on a screen holding notes, tasks, days and
+                    projects. The tooltip had the noun and the chip did not,
+                    and the chip is the thing you read. The accessible name
+                    below keeps the fuller sentence. */
+                >${scope ? `${c.pending} still to decide in ${esc(scopeLabel())}` : phone.matches ? `${c.pending} to decide` : `Go through ${c.pending} ${c.pending === 1 ? "note" : "notes"}`}</button>`
           : "";
     return `
       <header class="head">
@@ -2177,21 +2209,45 @@
     return `<p class="idxEmpty">Nothing here yet. The first thing you write lands at the top.</p>`;
   }
 
+  /* ONE PLACE decides what the index's head says, because the head kept
+     saying a number the rows underneath it did not add up to. It read
+     "Your notes · 14 notes" over a body built from `work().slice(0, 8)`,
+     and again over a query's two matches — the count taken from the
+     WORKSPACE while the list was taken from the SCREEN. A person counting
+     the rows to check finds eight, which teaches them the number is not
+     to be trusted, in the one product whose whole promise is that nothing
+     you wrote went missing.
+
+     The number is derived from the rows being rendered and cannot drift
+     from them. When the list is short of the whole — a search, a scope, a
+     cut — it says so, which is the sentence that was missing rather than
+     a smaller lie in place of a bigger one. */
+  function sheetIndex(rows, opts) {
+    const total = counts().total;
+    const noun = rows.length === 1 ? " note" : " notes";
+    return indexOf(rows, {
+      title: "Your notes",
+      count: rows.length === total
+        ? total + noun
+        : rows.length + " of " + total + noun,
+      ...opts,
+    });
+  }
+
   const notebook = () => {
     const rows = visible();
     const open = openId ? work().find((n) => n.id === openId) : null;
-    const c = counts();
     if (phone.matches) {
       return {
         desk: "",
-        body: indexOf(rows, { title: "Your notes", count: `${c.total} notes`, empty: firstEmpty() }),
+        body: sheetIndex(rows, { empty: firstEmpty() }),
         dock: true,
         over: open ? phoneSheet(open) : "",
       };
     }
     return {
       desk: open ? readSheet(open) : topSheet(),
-      body: indexOf(rows, { title: "Your notes", count: `${c.total} notes`, empty: firstEmpty() }),
+      body: sheetIndex(rows, { empty: firstEmpty() }),
       dock: true,
     };
   };
@@ -2208,10 +2264,7 @@
     const open = openId ? work().find((n) => n.id === openId) : work()[0];
     return {
       desk: readSheet(open),
-      body: indexOf(visible(), {
-        title: "Your notes",
-        count: `${counts().total} notes`,
-      }),
+      body: sheetIndex(visible(), {}),
       dock: true,
     };
   };
@@ -2239,15 +2292,23 @@
         desk: deskOf(
           `<div class="top">
             <h2 class="emptyTitle">Everything is decided.</h2>
-            <p class="emptyBody">${decided.length} notes went through. ${decided.filter((d) => d.kind === "task").length} became tasks and the rest stayed here.</p>
+            <p class="emptyBody">${emptySentence(decided)}</p>
             <div class="emptyMove">
-              <button class="act" data-ink type="button" data-act="tasks">${I.tasks}See them in Tasks</button>
-              <button class="act" type="button" data-act="notebook">${I.arrowRight}Back to your notes</button>
+              ${emptyTally(decided).task
+                ? `<button class="act" data-ink type="button" data-act="tasks">${I.tasks}See ${emptyTally(decided).task === 1 ? "it" : "them"} in Tasks</button>`
+                : ""}
+              <!-- The journey to Tasks is offered only when something went
+                   there. It was the ONLY filled action on this screen even
+                   when the tally read "0 became tasks" — the flow's most
+                   emphatic control pointing at nothing. When nothing
+                   crossed, "Back to your notes" is the whole answer and it
+                   takes the emphasis. -->
+              <button class="act"${emptyTally(decided).task ? "" : " data-ink"} type="button" data-act="notebook">${I.arrowRight}Back to your notes</button>
             </div>
           </div>`,
           { behind: 0, label: "Nothing left to decide" },
         ),
-        body: indexOf(work().filter((n) => !n.pending).slice(0, 8), { title: "Your notes", count: `${counts().total} notes`, noDays: true }),
+        body: sheetIndex(visible().filter((n) => !n.pending), { noDays: true }),
         dock: true,
       };
     }
@@ -2469,7 +2530,7 @@
       </div>`,
       { behind: 1, label: "What came back" },
     ),
-    body: indexOf(work().slice(0, 8), { title: "Your notes", count: `${counts().total} notes` }),
+    body: sheetIndex(visible(), {}),
     dock: true,
     };
   };
@@ -2751,6 +2812,23 @@
   /* ── paint ───────────────────────────────────────────────────── */
   const mount = window.__SUITE.host("notes");
 
+  /* The same field under a different class name. Called only when the
+     captured selector found nothing, which on this surface means the
+     repaint crossed a breakpoint and re-rendered the field into its other
+     skin. Matched on the accessible name, and on the piece index when
+     there is one. */
+  function sameField(caret) {
+    if (!caret.role) return null;
+    const fields = Array.from(mount.querySelectorAll("textarea, input"));
+    return (
+      fields.find(
+        (f) =>
+          f.getAttribute("aria-label") === caret.role &&
+          (caret.at == null || f.getAttribute("data-i") === caret.at),
+      ) || null
+    );
+  }
+
   function paint() {
     /* Nothing here may cost the operator their place. Both the index's
        scroll and the caret in whatever field they are typing in are
@@ -2774,6 +2852,26 @@
               : active.classList[0]
                 ? `.${active.classList[0]}`
                 : null,
+            /* AND THE ROLE, because the selector alone does not survive a
+               width change. The capture field is `.topField` on the desk
+               and `.phoneField` on the phone — one field, two class names —
+               so a repaint that crossed the breakpoint while somebody was
+               mid-sentence looked up `.topField`, found nothing, and
+               dropped both the caret AND the focus onto the body. The words
+               were kept; the place in them was not, and the next keystroke
+               went nowhere.
+
+               Fixed HERE rather than in the two breakpoint branches: any
+               field this product ever renders twice under two class names
+               is the same bug, and a rule that lists today's two names goes
+               stale the first time a third arrives. The aria-label already
+               names the field's ROLE and is identical across both, because
+               it has to be — it is what the field is called out loud. */
+            role: active.getAttribute("aria-label") || null,
+            /* The pieces are a numbered row of identical fields; the label
+               carries the number, so the role alone already separates them.
+               This keeps the note's own index as a second check. */
+            at: active.getAttribute("data-i"),
             start: active.selectionStart,
             end: active.selectionEnd,
           }
@@ -2924,8 +3022,9 @@
         }
       }
       refocus = null;
-    } else if (caret && caret.sel) {
-      const field = mount.querySelector(caret.sel);
+    } else if (caret && (caret.sel || caret.role)) {
+      const field =
+        (caret.sel && mount.querySelector(caret.sel)) || sameField(caret);
       if (field && field.setSelectionRange) {
         field.focus({ preventScroll: true });
         try {
@@ -3355,12 +3454,22 @@
     } else if (a === "notebook") {
       backToNotes();
     } else if (a === "tasks") {
-      /* A different journey: leaving for Tasks is not arriving to write,
-         so it does not take the capture caret, and it says where it is
-         going, which it never did. */
+      /* IT ACTUALLY OPENS TASKS NOW. This said "Opening Tasks. Your notes
+         stayed here." and then repainted NOTES — the primary filled action
+         on the flagship flow's completion screen announced a destination it
+         never went to. The seam's `open-task` has taken the real route
+         since round 1, three hundred lines above; this branch had its own.
+
+         The notebook state is still set and painted first, so coming back
+         by the rail lands where it always did. */
       state = "notebook";
-      say("Opening Tasks. Your notes stayed here.");
       paint();
+      if (window.__SUITE && window.__SUITE.go) {
+        say("Tasks. Your notes stayed here.");
+        window.__SUITE.go("tasks");
+        return;
+      }
+      say("Opening Tasks. Your notes stayed here.");
     } else if (a === "d-task") decide("task");
     else if (a === "d-keep") decide("keep");
     else if (a === "d-later") decide("later");
@@ -3901,7 +4010,25 @@
   /* The console drives the same file through this, and now so does the
      suite. `show` is paint(), which is the repaint that already restores
      scroll, focus and caret. */
-  window.__SUITE.register("notes", { show: paint, api: { paint: paint, state: () => state } });
+  /* `open` is the lift an index row already performs, named so another
+     product can ask for it. It is not a new path — it is `openNote`, the
+     one that clears a running search, promotes the pick, sets the cursor
+     and repaints — so a note opened from Tasks arrives exactly as a note
+     opened from the pile does, with the same focus and the same reading
+     desk. A second path would be a second set of bugs. */
+  window.__SUITE.register("notes", {
+    show: paint,
+    api: {
+      paint: paint,
+      state: () => state,
+      has: (id) => Boolean(work().find((n) => n.id === id)),
+      open: (id) => {
+        if (!work().find((n) => n.id === id)) return false;
+        openNote(id);
+        return true;
+      },
+    },
+  });
   window.NOTEBOOK = {
     paint,
     presets: PRESETS,

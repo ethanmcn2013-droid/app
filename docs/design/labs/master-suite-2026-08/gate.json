@@ -4,7 +4,7 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "20410 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "26223 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -16,7 +16,7 @@
       "section": "fidelity",
       "name": "notes @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "168612 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
+      "detail": "181766 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
     },
     {
       "section": "fidelity",
@@ -28,25 +28,25 @@
       "section": "fidelity",
       "name": "timeline @1440 · re-composed",
       "ok": true,
-      "detail": "14.84% of the frame — see §1b"
+      "detail": "14.85% of the frame — see §1b"
     },
     {
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "10921 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "13953 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1280 · the spine",
       "ok": true,
-      "detail": "8321 px, in x 28–1234.5, y 43.5–864"
+      "detail": "8321 px, in x 28–1235, y 43.5–864"
     },
     {
       "section": "fidelity",
       "name": "notes @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "155660 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
+      "detail": "168222 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
     },
     {
       "section": "fidelity",
@@ -58,13 +58,13 @@
       "section": "fidelity",
       "name": "timeline @1280 · re-composed",
       "ok": true,
-      "detail": "16.02% of the frame — see §1b"
+      "detail": "16.04% of the frame — see §1b"
     },
     {
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "9319 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "10281 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -76,13 +76,13 @@
       "section": "fidelity",
       "name": "notes @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "19606 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
+      "detail": "84548 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
     },
     {
       "section": "fidelity",
       "name": "notes @768 · the spine",
       "ok": true,
-      "detail": "8450 px, in x 22–699, y 22–870.5"
+      "detail": "8450 px, in x 22–734.5, y 22–870.5"
     },
     {
       "section": "fidelity",
@@ -94,19 +94,19 @@
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "1078 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "8761 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @390 · the spine",
       "ok": true,
-      "detail": "7658 px, in x 33.5–380, y 35–826.5"
+      "detail": "7658 px, in x 33.5–380.5, y 35–826.5"
     },
     {
       "section": "fidelity",
       "name": "notes @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "84458 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
+      "detail": "86203 px differ · the index column 1060 → 1440, the wedding moved to 3 October, the dock's account tile now says what the rail's says"
     },
     {
       "section": "fidelity",
@@ -575,6 +575,12 @@
       "section": "contract",
       "name": "fonts inlined",
       "ok": true
+    },
+    {
+      "section": "contract",
+      "name": "the 10px step is mono-only",
+      "ok": true,
+      "detail": ""
     },
     {
       "section": "contract",
@@ -1307,6 +1313,197 @@
       "detail": "3 October"
     },
     {
+      "section": "truth",
+      "name": "no shipped surface still apologises for itself",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "section": "truth",
+      "name": "Ctrl+K lands on the search that exists",
+      "ok": true,
+      "detail": "{\"onField\":true,\"said\":\"Search tasks.\"}"
+    },
+    {
+      "section": "truth",
+      "name": "and does not announce a door",
+      "ok": true,
+      "detail": "Search tasks."
+    },
+    {
+      "section": "truth",
+      "name": "the completion screen reached its end",
+      "ok": true,
+      "detail": "8 notes went through. 8 notes stayed here."
+    },
+    {
+      "section": "truth",
+      "name": "it does not print a zero as an outcome",
+      "ok": true,
+      "detail": "8 notes went through. 8 notes stayed here."
+    },
+    {
+      "section": "truth",
+      "name": "no journey to Tasks is offered when none went there",
+      "ok": true,
+      "detail": "not offered"
+    },
+    {
+      "section": "truth",
+      "name": "and the way back is still there",
+      "ok": true
+    },
+    {
+      "section": "truth",
+      "name": "notes.notebook · the index head is there to be read",
+      "ok": true,
+      "detail": "true / 14 rows"
+    },
+    {
+      "section": "truth",
+      "name": "notes.notebook · the index head counts the rows it lists",
+      "ok": true,
+      "detail": "head \"14 notes\" over 14 rows"
+    },
+    {
+      "section": "truth",
+      "name": "notes.seam · the index head is there to be read",
+      "ok": true,
+      "detail": "true / 3 rows"
+    },
+    {
+      "section": "truth",
+      "name": "notes.seam · the index head counts the rows it lists",
+      "ok": true,
+      "detail": "head \"3 so far, and every note stayed here\" over 3 rows"
+    },
+    {
+      "section": "truth",
+      "name": "the caret is in the field before the wall moves",
+      "ok": true,
+      "detail": "{\"onField\":true,\"words\":113,\"at\":8}"
+    },
+    {
+      "section": "truth",
+      "name": "crossing the breakpoint keeps the words",
+      "ok": true,
+      "detail": "Ring the marquee company back about the "
+    },
+    {
+      "section": "truth",
+      "name": "and puts the caret back in the field it became",
+      "ok": true,
+      "detail": "landed"
+    },
+    {
+      "section": "truth",
+      "name": "and keeps the caret where it was",
+      "ok": true,
+      "detail": "caret at 8, expected 8"
+    },
+    {
+      "section": "truth",
+      "name": "a search miss is measurable",
+      "ok": true,
+      "detail": "0 cards, said: Nothing matches.Nothing on the board says “zzqqxx”. All 13 are hidden.Show all work"
+    },
+    {
+      "section": "truth",
+      "name": "the miss sentence has no bare copula",
+      "ok": true,
+      "detail": "Nothing matches.Nothing on the board says “zzqqxx”. All 13 are hidden.Show all work"
+    },
+    {
+      "section": "truth",
+      "name": "the miss sentence names what was searched for",
+      "ok": true,
+      "detail": "Nothing matches.Nothing on the board says “zzqqxx”. All 13 are hidden.Show all work"
+    },
+    {
+      "section": "truth",
+      "name": "the filter menu separates couples from tags",
+      "ok": true,
+      "detail": "Filter / By tag / By couple"
+    },
+    {
+      "section": "truth",
+      "name": "no couple is filed under By tag",
+      "ok": true,
+      "detail": "Venue, Enquiry, Bar"
+    },
+    {
+      "section": "truth",
+      "name": "a tag is 'tagged', not 'for'",
+      "ok": true,
+      "detail": "Showing 4 tasks tagged Venue. 9 others are hidden."
+    },
+    {
+      "section": "truth",
+      "name": "a couple is 'for', not 'tagged'",
+      "ok": true,
+      "detail": "Showing 7 tasks for Mara & Finn. 6 others are hidden."
+    },
+    {
+      "section": "truth",
+      "name": "every closed door names a destination",
+      "ok": true,
+      "detail": "5 doors"
+    },
+    {
+      "section": "truth",
+      "name": "no closed door is a slogan",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "truth",
+      "name": "the speech fixture and the note it belongs to are one string",
+      "ok": true,
+      "detail": "note: Ask the venue whether the ballroom can be access | speech: Ask the venue whether the ballroom can be access"
+    },
+    {
+      "section": "truth",
+      "name": "the separated notes are the transcript, split",
+      "ok": true,
+      "detail": "Ask the venue whether the ballroom can be accessed from 8am "
+    },
+    {
+      "section": "truth",
+      "name": "the search field paints a ring when the keyboard is in it",
+      "ok": true,
+      "detail": "rest none → focus solid 2px"
+    },
+    {
+      "section": "truth",
+      "name": "the dock monogram is on the type ramp",
+      "ok": true,
+      "detail": "11px / 0.825px"
+    },
+    {
+      "section": "truth",
+      "name": "the two monograms are tracked the same",
+      "ok": true,
+      "detail": "0.825px vs 0.825px"
+    },
+    {
+      "section": "truth",
+      "name": "and the disc did not resize",
+      "ok": true,
+      "detail": "34px"
+    },
+    {
+      "section": "truth",
+      "name": "the review chip names what it counts",
+      "ok": true,
+      "detail": "Go through 8 notes"
+    },
+    {
+      "section": "truth",
+      "name": "and the fuller sentence is still the accessible name",
+      "ok": true,
+      "detail": "Go through the 8 notes still to decide."
+    },
+    {
       "section": "craft",
       "name": "Win32 · one modifier, one notation",
       "ok": true,
@@ -1832,7 +2029,7 @@
       "section": "delight",
       "name": "completion via keyboard · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 12 dots · widest 4.2px · brightest 0.96"
+      "detail": "1 burst · 12 dots · widest 3.8px · brightest 0.93"
     },
     {
       "section": "delight",
@@ -2175,6 +2372,168 @@
       "name": "Escape closes the dialog rather than silently undoing a move",
       "ok": true,
       "detail": "opened:true closed:true lane doing → doing"
+    },
+    {
+      "section": "round5",
+      "name": "the header never lets its two groups collide",
+      "ok": true,
+      "detail": "24px clear at every width 1060–1240"
+    },
+    {
+      "section": "round5",
+      "name": "down · exactly one moment is marked as next",
+      "ok": true,
+      "detail": "{\"items\":7,\"leads\":1,\"leadAway\":16,\"nearest\":16,\"inPast\":0,\"weight\":\"600\"}"
+    },
+    {
+      "section": "round5",
+      "name": "down · and it is the nearest one",
+      "ok": true,
+      "detail": "lead at 16, nearest 16"
+    },
+    {
+      "section": "round5",
+      "name": "down · nothing behind you is next",
+      "ok": true,
+      "detail": "0 leads on the past rail"
+    },
+    {
+      "section": "round5",
+      "name": "down · the marker reaches the type",
+      "ok": true,
+      "detail": "title weight 600"
+    },
+    {
+      "section": "round5",
+      "name": "across · exactly one moment is marked as next",
+      "ok": true,
+      "detail": "{\"items\":7,\"leads\":1,\"leadAway\":16,\"nearest\":16,\"inPast\":0,\"weight\":\"600\"}"
+    },
+    {
+      "section": "round5",
+      "name": "across · and it is the nearest one",
+      "ok": true,
+      "detail": "lead at 16, nearest 16"
+    },
+    {
+      "section": "round5",
+      "name": "across · nothing behind you is next",
+      "ok": true,
+      "detail": "0 leads on the past rail"
+    },
+    {
+      "section": "round5",
+      "name": "across · the marker reaches the type",
+      "ok": true,
+      "detail": "title weight 600"
+    },
+    {
+      "section": "round5",
+      "name": "a scrolling tray was found to measure",
+      "ok": true,
+      "detail": "4 overflowing trays"
+    },
+    {
+      "section": "round5",
+      "name": "no card is cut in half by the foot of its tray",
+      "ok": true,
+      "detail": "every foot lands in a gutter"
+    },
+    {
+      "section": "round5",
+      "name": "five notes were opened to measure",
+      "ok": true,
+      "detail": "491, 491, 491, 491, 491"
+    },
+    {
+      "section": "round5",
+      "name": "the index keeps one top whatever note is open",
+      "ok": true,
+      "detail": "tops: 491, 491, 491, 491, 491"
+    },
+    {
+      "section": "round5",
+      "name": "the incoming product arrives rather than appearing",
+      "ok": true,
+      "detail": "suiteArrive / 0.14s"
+    },
+    {
+      "section": "round5",
+      "name": "and it takes the spine's own 140ms",
+      "ok": true,
+      "detail": "0.14s"
+    },
+    {
+      "section": "round5",
+      "name": "the arrival attribute does not outlive the arrival",
+      "ok": true,
+      "detail": "0 left stamped"
+    },
+    {
+      "section": "round5",
+      "name": "reduced motion · the switch does not animate",
+      "ok": true,
+      "detail": "none / 0s"
+    },
+    {
+      "section": "round5",
+      "name": "two moves were made to measure",
+      "ok": true,
+      "detail": "{\"moved\":2,\"second\":\"Menu tasting at The Orchard moved 1 day later.\",\"afterUndo\":\"Undo: Menu tasting at The Orchard move"
+    },
+    {
+      "section": "round5",
+      "name": "a fresh action is reported in the past tense",
+      "ok": true,
+      "detail": "Menu tasting at The Orchard moved 1 day later."
+    },
+    {
+      "section": "round5",
+      "name": "after an undo the strip OFFERS the next reversal",
+      "ok": true,
+      "detail": "Undo: Menu tasting at The Orchard moved 1 day later."
+    },
+    {
+      "section": "round5",
+      "name": "and does not repeat the action just reversed as news",
+      "ok": true,
+      "detail": "was “Menu tasting at The Orchard moved 1 day later.”, now “Undo: Menu tasting at The Orchard moved 1 day later.”"
+    },
+    {
+      "section": "round5",
+      "name": "the card carries a door back to its note",
+      "ok": true,
+      "detail": "3 doors"
+    },
+    {
+      "section": "round5",
+      "name": "and it is a 44px target, like its neighbour",
+      "ok": true,
+      "detail": "44×44"
+    },
+    {
+      "section": "round5",
+      "name": "and it says where it goes",
+      "ok": true,
+      "detail": "Open the note this came from"
+    },
+    {
+      "section": "round5",
+      "name": "pressing it opens Notes on that note",
+      "ok": true,
+      "detail": "notes · desk true"
+    },
+    {
+      "section": "round5",
+      "name": "and the journey is announced",
+      "ok": true,
+      "detail": "Opened the note this came from."
+    },
+    {
+      "section": "round5",
+      "name": "the journey throws nothing",
+      "ok": true,
+      "detail": ""
     },
     {
       "section": "flow",

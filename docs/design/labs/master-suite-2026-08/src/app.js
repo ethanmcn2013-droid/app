@@ -97,7 +97,11 @@ window.__SUITE = (function () {
     home: "Every project in one list. Not here yet.",
     inbox: "What came in while you were working. Not here yet.",
     help: "Guides and support. Not here yet.",
-    settings: "Your workspace, your way. Not here yet.",
+    /* A NOUN PHRASE, like its four siblings. "Your workspace, your way"
+       is a slogan: it names no destination, so the one door whose whole
+       job is to say what is behind it said nothing, in the register the
+       rest of this product spent five rounds getting out of its copy. */
+    settings: "How this workspace behaves. Not here yet.",
     me: "Your account, in Signal Studio. Not here yet.",
   };
   /* The doors that used to sit in the rail. They are not deleted — deleting
@@ -105,7 +109,13 @@ window.__SUITE = (function () {
      move behind the plus, where the rail can be three products and nothing
      else and the doors are still one press and still in the tab order. */
   var MORE_DOORS = [
-    { key: "home", label: "All projects" },
+    /* "Home", not "All projects". The project switcher now ships a LIVE
+       All projects board carrying every task in the workspace, and this
+       door — which can be open on the same screen — said a thing by that
+       name was not here yet. Two objects with one name, one of them
+       working and the other denying it exists. The key was always `home`;
+       the label had drifted off it. */
+    { key: "home", label: "Home" },
     { key: "inbox", label: "Inbox" },
     { key: "help", label: "Help" },
   ];
@@ -278,6 +288,26 @@ window.__SUITE = (function () {
        caret, so nothing it was holding is spent to get the measurements
        back. */
     show(product);
+    /* And it ARRIVES rather than appearing. Stamped after `show`, so the
+       product has already repainted and the frame that fades in is the
+       finished one. Cleared on the animation's own end — and on a timer
+       as well, because an element that is hidden again mid-flight never
+       fires `animationend` and would keep the attribute for good. */
+    var arriving = hostOf(product);
+    var box = arriving && arriving.classList.contains("app")
+      ? arriving
+      : (arriving && arriving.closest ? arriving.closest(".app") : null);
+    if (box) {
+      box.removeAttribute("data-arriving");
+      /* Reading a layout property between the two flips restarts the
+         animation; without it a second switch to the same product in one
+         session plays nothing. */
+      void box.offsetWidth;
+      box.setAttribute("data-arriving", "true");
+      var clear = function () { box.removeAttribute("data-arriving"); };
+      box.addEventListener("animationend", clear, { once: true });
+      setTimeout(clear, 400);
+    }
     /* Focus moves to the sheet the spine just opened, and the arrival is
        announced on the region that was already there. A switch that
        leaves focus on the tile leaves a keyboard in the chrome. */
@@ -619,6 +649,11 @@ window.__SUITE = (function () {
     uncross: uncross,
     openTask: openTask,
     register: register,
+    /* One product asking another what it can do. The registry was private
+       and every cross-product journey had to be added to this surface by
+       hand — which is why the seam ran one way for five rounds: the door
+       back existed in Notes and Tasks had no way to ask for it. */
+    of: function (name) { return registry[name] || null; },
     reproject: reproject,
     /* Called once, after all three products have registered. */
     start: function () {

@@ -133,6 +133,28 @@ body {
    product on the floor. This is the rule that takes it off. */
 .app[hidden] { display: none; }
 
+/* THE SWITCH HAS A MOTION. Every other transition in this suite is
+   declared and gated and the one between two PRODUCTS — the largest
+   change of state the shell can make — was a hard cut: the board is
+   there, then it is not, with no frame telling you which direction
+   anything moved. 140ms is `--motion-fast`, already the token, already
+   the spine's own duration.
+
+   It is stamped on the incoming product's SHEET rather than on `.app`,
+   because `.app` is `display: contents` for two of the three and a box
+   that generates no frame cannot animate. Timeline's app element IS its
+   sheet, so it takes the same rule directly. The outgoing product is an
+   instant hide — no dead frame, and no scroller held open under the one
+   arriving. */
+@keyframes suiteArrive {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: none; }
+}
+.app[data-arriving] > .sheet,
+.app[data-arriving][data-app="timeline"] {
+  animation: suiteArrive var(--motion-fast, 140ms) var(--curve, ease) both;
+}
+
 /* ── the spine ─────────────────────────────────────────────────
    On an ink floor the capsule is a lighter cut in the same material,
    not an object dropped onto it. Lifted verbatim from floor.html; the
@@ -457,6 +479,9 @@ body {
   to   { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
+  /* The arrival is a motion like any other and goes out with them. */
+  .app[data-arriving] > .sheet,
+  .app[data-arriving][data-app="timeline"] { animation: none; }
   .morePop { animation: none; }
 }
 .morePop p {

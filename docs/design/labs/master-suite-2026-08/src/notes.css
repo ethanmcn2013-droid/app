@@ -358,6 +358,16 @@
 [data-app="notes"] .deskAside {
   align-self: start; padding-left: 30px; box-shadow: inset 1px 0 0 var(--line-soft);
   display: grid; align-content: start; gap: 13px;
+  /* RESERVED AT ONE HEIGHT. The desk was as tall as whatever metadata the
+     open note happened to carry, so the index beneath it started at a
+     different y for every note — arrow down the pile and the whole list
+     stepped up and down under the cursor, which reads as the page
+     twitching rather than as a selection moving. 275px is the tallest
+     configuration this column renders at desk widths, measured. The
+     already-empty lower half absorbs the reserve: it is the area "Write
+     on it" opens into, so none of it is wasted. Below 720 the desk is
+     `display: none` and this never applies. */
+  min-block-size: 275px;
 }
 /* THE DATE REGISTER. This product's whole world is one date, and that
    date was set three ways on one screen — one weight in the head, another

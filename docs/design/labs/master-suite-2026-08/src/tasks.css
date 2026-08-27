@@ -75,6 +75,15 @@
   /* One polarity branch on the same curve: reversed out of ink, type needs a
      hair more room to hold the same colour. */
   --tr-rev: 0.008em;
+  /* THE CAP STEP. Tasks' curve is indexed by size and had no entry for a
+     capital set on its own — a monogram, which is the one string in this
+     product that is a letterform rather than a word. It was reaching
+     across a scope boundary for Notes' `--tr-cap`, which resolves to
+     nothing here and silently computed `normal`: the declaration was
+     there, the tracking was not, and the disc sat 0.825px tighter than
+     the identical disc in the rail beside it. Same value as the other
+     two products, declared where this product can see it. */
+  --tr-cap: 0.075em;
   --r-xs: 4px;
   --r-chip: 6px;
   --r-ctl: 8px;
@@ -162,6 +171,37 @@
    an operator reaches for on a Saturday. Both now answer the keyboard. */
 [data-app="tasks"] .dockAvatar,
 [data-app="tasks"] .late { cursor: pointer; }
+
+/* THE DOOR BACK TO THE NOTE. The badge that said "came from a note" is
+   now the way to go and read it, so it is a button — reset to the glyph
+   it has always drawn, at the same size in the same slot, with the 44px
+   target its neighbour `.cardDots` already carries taken in negative
+   margin so the row's geometry does not move a pixel. */
+[data-app="tasks"] .cardSrc {
+  font: inherit; color: inherit; background: none; border: 0;
+  -webkit-appearance: none; cursor: pointer;
+  display: inline-grid; place-items: center;
+  inline-size: 24px; block-size: 24px;
+  padding: 10px; margin: -10px;
+  box-sizing: content-box;
+  border-radius: var(--r-chip, 6px);
+}
+[data-app="tasks"] .cardSrc:hover { color: var(--ink-1); }
+[data-app="tasks"] .cardSrc:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 2px;
+}
+/* The same journey in words, inside the panel. An activity line that is
+   a destination reads as one: the product's own link register, not a new
+   colour and not a new weight. */
+[data-app="tasks"] .tpSrc {
+  font: inherit; color: var(--indigo); background: none; border: 0;
+  padding: 0; cursor: pointer; text-align: left;
+  text-decoration: underline; text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+[data-app="tasks"] .tpSrc:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 2px;
+}
 
 /* ── the sheet ─────────────────────────────────────────────────
    White against ink needs no shadow. Contrast is the elevation. */
@@ -1240,6 +1280,16 @@
      step off it to buy 60ms of deliberateness is not a trade this product
      makes — the audit is the reason the motion reads as one system. */
 }
+/* AND THE RING. The block above is shared with `.is-live`, so the field
+   looked identical whether the keyboard was in it or a query was merely
+   running — the one control on the dock with no focused state, in a
+   product where every other control has carried one since round 1.
+   Declared after the interaction rules by the convention at :143, so the
+   state system is not overridden. */
+[data-app="tasks"] .dockField:focus-within {
+  outline: 2px solid var(--indigo);
+  outline-offset: 2px;
+}
 [data-app="tasks"] .dockField:focus-within svg { color: var(--ink-2); }
 [data-app="tasks"] .dockInput {
   font-family: inherit; font-size: inherit; font-weight: inherit;
@@ -1317,7 +1367,16 @@
   width: 34px; height: 34px; border-radius: 50%;
   background: var(--ink); color: var(--white);
   display: grid; place-items: center;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+  /* ON THE LADDER. This disc carried `font-size: 10px` and a hand-typed
+     `letter-spacing: 0.04em` — a ninth step under a ratified eight-step
+     ramp, on the one object that appears three times in this suite and is
+     set from the ramp in the other two. Byte-identical to `.railAvatar`
+     and to Notes' own `.dockAvatar` now. The ink grows 15.42px to 17.73px
+     inside a 34px disc and the dock's width does not move: it is a fixed
+     grid item. */
+  font-size: var(--t-11); font-weight: 600;
+  letter-spacing: var(--tr-cap); text-indent: var(--tr-cap);
+  line-height: var(--lh-tight);
 }
 
 /* NOTE — round 2. This block read `.floor:has(.drawer)` in the lab, where
@@ -2062,7 +2121,7 @@
    Grouped by size rather than by element, because the rule is about the
    metric and not about the component: on this board, a label of size N
    leads at round(1.3N). */
-[data-app="tasks"] .dockAvatar { line-height: 13px; }   /* 10px */
+/* The 13px line-height was the 10px step's partner and goes with it. */
 [data-app="tasks"] .trayName,
 [data-app="tasks"] .trayCount,
 [data-app="tasks"] .tag,

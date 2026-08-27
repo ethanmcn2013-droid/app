@@ -93,12 +93,48 @@ export async function craft({ browser, url, check, head }) {
             const hit = document.elementFromPoint(cx, y);
             return Boolean(hit && (hit === el || el.contains(hit)));
           };
-          const cy = b.top + b.height / 2;
-          if (!answers(cy)) continue;              /* covered by something else */
-          let up = cy, down = cy;
-          while (answers(up - 1) && cy - up < 40) up -= 1;
-          while (answers(down + 1) && down - cy < 40) down += 1;
-          const real = down - up + 1;
+          /* Walked from wherever the element currently sits, and then
+             AGAIN from the middle of the viewport if the first walk was
+             stopped by the fold rather than by another element. A control
+             that straddles the bottom edge measured 18px against a 40px
+             box and was reported as a failed touch target — but nothing
+             was covering it and nothing about it was small: half of it
+             was simply below the screen, which is what scrolling is for.
+             That is the viewport being measured, not the product, and
+             this rule is the one place in the lab that must never report
+             its own frame as the product's defect. */
+          const walk = () => {
+            const r = el.getBoundingClientRect();
+            const x = r.left + r.width / 2;
+            const y = r.top + r.height / 2;
+            const hits = (at) => {
+              if (at < 0 || at > innerHeight) return false;
+              const hit = document.elementFromPoint(x, at);
+              return Boolean(hit && (hit === el || el.contains(hit)));
+            };
+            if (!hits(y)) return null;             /* covered by something else */
+            let u = y, d = y;
+            while (hits(u - 1) && y - u < 40) u -= 1;
+            while (hits(d + 1) && d - y < 40) d += 1;
+            return { real: d - u + 1, cut: u <= 0 || d >= innerHeight - 1 };
+          };
+          let m = walk();
+          if (!m) continue;
+          /* Re-measured from the middle of the screen whenever the first
+             walk came up short, not only when the FOLD was what stopped
+             it. The row that failed this rule was cut by the floating
+             dock — an overlay the product draws over the foot of a
+             scroller on purpose, and which every scroller in this suite
+             reserves for at its own end. A row resting under it halfway
+             through a scroll is not a small target; it is a row you have
+             not scrolled to yet. Centring costs nothing when the target
+             really is small: it measures the same. */
+          if (m.real < 28) {
+            el.scrollIntoView({ block: "center" });
+            const again = walk();
+            if (again) m = again;
+          }
+          const real = m.real;
           if (real < 28) {
             out.push({
               el: el.tagName.toLowerCase() + "." + String(el.className || "").trim().split(/\s+/)[0],

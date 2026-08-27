@@ -25,7 +25,8 @@
 import { chromium } from "@playwright/test";
 import { orientation } from "./tools/orientation.mjs";
 import { spine as spineKeys } from "./tools/spine.mjs";
-import { truth } from "./tools/truth.mjs";
+import { truth, truthFive, truthFiveB } from "./tools/truth.mjs";
+import { blankComments } from "./tools/css.mjs";
 import { craft } from "./tools/craft.mjs";
 import { reach } from "./tools/reach.mjs";
 import { ring } from "./tools/ring.mjs";
@@ -33,6 +34,7 @@ import { projects } from "./tools/projects.mjs";
 import { delight } from "./tools/delight.mjs";
 import { flow } from "./tools/flow.mjs";
 import { naming } from "./tools/naming.mjs";
+import { roundFive } from "./tools/round5.mjs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -735,6 +737,33 @@ async function contract() {
   check("contract", "a title is set", /<title>[^<]+<\/title>/.test(file));
   check("contract", "fonts inlined", (file.match(/data:font\/woff2;base64/g) || []).length === 2);
 
+  /* THE TENTH STEP IS MONO-ONLY. `10` sits on the union ramp because two
+     mono micro-objects need it — one keycap and one count badge, both 16px
+     tall, where 11 does not fit — and for no other reason. The Tasks dock
+     monogram had quietly taken it too, with a hand-typed 0.04em beside it,
+     which is how a step that exists for a keycap becomes a ninth size for
+     prose. Deleting 10 from the ramp would fail the two rules that legit-
+     imately hold it; pinning it to `--font-mono` says what it is actually
+     for, and fails the next object that reaches for it. */
+  {
+    const offenders = [];
+    for (const sheet of ["src/tasks.css", "src/notes.css", "src/timeline.css", "src/shell.css"]) {
+      let css;
+      try { css = await readFile(path.join(LAB, sheet), "utf8"); } catch { continue; }
+      /* Comments blanked, or the prose explaining the rule counts as the
+         rule — the class of false pass this lab has now met five times. */
+      const bare = blankComments(css);
+      const rules = bare.match(/\{[^{}]*\}/g) || [];
+      for (const body of rules) {
+        if (!/font-size:\s*10px/.test(body)) continue;
+        if (/--font-mono/.test(body)) continue;
+        offenders.push(sheet + " · " + body.replace(/\s+/g, " ").trim().slice(0, 70));
+      }
+    }
+    check("contract", "the 10px step is mono-only", offenders.length === 0,
+      offenders.slice(0, 3).join(" | "));
+  }
+
   for (const width of [1440, 390]) {
     for (const product of ["tasks", "notes", "timeline"]) {
       const page = await openSuite(`?p=${product}`, width);
@@ -923,12 +952,15 @@ if (run("orientation")) {
 }
 if (run("spinekeys")) await spineKeys({ browser, url: SUITE_URL, check, head });
 if (run("truth")) await truth({ browser, url: SUITE_URL, check, head, lab: LAB });
+if (run("truth")) await truthFive({ browser, url: SUITE_URL, check, head, lab: LAB });
+if (run("truth")) await truthFiveB({ browser, url: SUITE_URL, check, head, lab: LAB });
 if (run("craft")) await craft({ browser, url: SUITE_URL, check, head });
 if (run("reach")) await reach({ browser, url: SUITE_URL, check, head, lab: LAB });
 if (run("ring")) await ring({ browser, url: SUITE_URL, check, head, PNG });
 if (run("projects")) await projects({ browser, url: SUITE_URL, check, head });
 if (run("delight")) await delight({ browser, url: SUITE_URL, check, head });
 if (run("naming")) await naming({ browser, url: SUITE_URL, check, head });
+if (run("round5")) await roundFive({ browser, url: SUITE_URL, check, head });
 if (run("flow")) await flow({ browser, url: SUITE_URL, check, head });
 if (run("labgates")) await labGates();
 

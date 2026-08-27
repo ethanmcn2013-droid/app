@@ -666,11 +666,18 @@ window.NOTES = (function () {
        notes it separates into. Real strings from the product's speech
        rehearsal, so the read-back state is not invented. */
     speech: {
+      /* n03'S OWN WORDS, to the byte. These read "from eight in the
+         morning" and "the whole setup window" while the note they belong
+         to — the note the seam then shows, the index lists and the desk
+         reads back — says "from 8am on the Saturday" and "the whole
+         morning setup". Dictate, look at what you said, and the product
+         had quietly rewritten it. n03.pick is already the first of these,
+         so all four surfaces now speak one string. */
       transcript:
-        "Ask the venue whether the ballroom can be accessed from eight in the morning. If not we lose the whole setup window and the florist has to come back twice.",
+        "Ask the venue whether the ballroom can be accessed from 8am on the Saturday. If not we lose the whole morning setup and the florist has to come back twice.",
       separated: [
-        "Ask the venue whether the ballroom can be accessed from eight in the morning.",
-        "If not we lose the whole setup window and the florist has to come back twice.",
+        "Ask the venue whether the ballroom can be accessed from 8am on the Saturday.",
+        "If not we lose the whole morning setup and the florist has to come back twice.",
       ],
     },
 
@@ -1024,6 +1031,14 @@ window.NOTES = (function () {
 
   /* What "In Tasks as …" opens. */
   N.taskOf = function (noteId) { return LINK[noteId] || null; };
+  /* AND BACK. The map has always been one-way: a note could say where it
+     went and the task it became could not say where it came from — so the
+     one seam this suite is built around was a door with a handle on one
+     side. Inverted here, from the same object, so the two directions
+     cannot disagree and no second list has to be kept true. */
+  var BACK = {};
+  Object.keys(LINK).forEach(function (noteId) { BACK[LINK[noteId]] = noteId; });
+  N.noteOf = function (taskId) { return BACK[taskId] || null; };
 
   /* ── the ledger tells the truth about the board ────────────────
      Notes' ledger column carries a Tasks LANE, and the two fixtures
