@@ -207,6 +207,36 @@ the client's detail page, which **does** offer a download control; take the
 value from the downloaded JSON; then disable and delete the first. Done
 here — the client now has exactly one enabled secret, matching Vercel.
 
+## Finding 11 · A gitignore added on one branch does not protect another
+
+Phase A writes `.spike-state.json`, which holds a live Google refresh
+token so phase B does not need a second consent. That file was gitignored
+**on the spike branch**. The WP-2 branch was cut from an earlier commit on
+the planning branch, so it inherited neither the ignore rule nor the
+knowledge that such a file existed — and `git add -A` picked it up.
+
+**GitHub's push protection caught it and refused the push**, naming the
+file, the line and the credential type. Nothing reached a branch.
+
+Handled the way it should be rather than the way that is quickest: the
+commit was unwound, the ignore rule added on this branch too, and **the
+refresh token revoked at Google** (`POST /revoke`, HTTP 200) rather than
+left valid on the argument that the object was unreachable. GitHub's
+scanner had already read it; that is enough to call it exposed.
+
+**The cost is one extra consent tomorrow** — phase A must be re-run to mint
+a fresh owner token before phase B, so the sequence is:
+
+```
+node --env-file=.env.spike scripts/spike/drive-chain.mjs a
+node --env-file=.env.spike scripts/spike/drive-chain.mjs b their@email
+```
+
+**The lesson worth keeping:** any scratch file that holds a live credential
+needs its ignore rule in the *first* commit that could create it, not the
+one that happens to notice. A throwaway spike is exactly where this slips,
+because the file feels temporary and the branch feels private.
+
 ---
 
 ## Still to observe
@@ -220,9 +250,10 @@ could not complete Google's identity challenge on the day of this run:
 - **7** · **the `Signal Studio` parent folder is unreachable by the
   member** — the claim the entire feature makes
 
-The spike is split into phases precisely so this costs one consent rather
-than two. The board folder, the file and the owner's grant are all still in
-place; `.spike-state.json` holds the owner's refresh token.
+The board folder, the file and the member's grant are all still in place in
+the owner's Drive. The owner's stored token was revoked (Finding 11), so
+phase A must be re-run first to mint a fresh one — two consents tomorrow
+rather than one.
 
 Against live documentation, still open:
 
