@@ -59,6 +59,35 @@ NEXT_PUBLIC_SITE_URL=https://app.signalstudio.ie
 NEXT_PUBLIC_STUDIO_URL=https://signalstudio.ie
 ```
 
+**`PROVIDER_TOKEN_KEY` encrypts stored provider refresh tokens.** Project
+Drive holds a long-lived Google credential per connected account, and this
+is the key that seals it before it touches the database (`secret-box.ts`,
+AES-256-GCM). Generate it once:
+
+```bash
+node -p "require('crypto').randomBytes(32).toString('base64')"
+```
+
+Set it in all three Vercel environments and mark it sensitive. **Then leave
+it alone.** Everything sealed with this key can only be read with this key,
+so changing it forces every customer who has connected their Drive to
+reconnect. That is survivable but visible, and not something to do by
+accident.
+
+Rotating it deliberately, when the time comes, is a three-step move rather
+than a swap — the envelope carries its key version precisely so there is no
+flag day:
+
+1. Add the new key as `PROVIDER_TOKEN_KEY`, bump
+   `PROVIDER_TOKEN_KEY_VERSION`, and move the old one into
+   `PROVIDER_TOKEN_KEY_RETIRED` as `{"1":"<old base64>"}`. New rows seal
+   with the new key; old rows still open.
+2. Re-seal the existing rows. `versionOf()` finds the ones still on the old
+   version without decrypting everything to look.
+3. Only once none remain, drop `PROVIDER_TOKEN_KEY_RETIRED`. Dropping it
+   early produces rows that fail with `unknown-key-version` — recoverable
+   only by putting the old key back.
+
 **`BLOB_READ_WRITE_TOKEN` is required for attachments** and is listed in
 `RECOMMENDED_IN_PRODUCTION` in `src/env.ts`, so its absence warns at boot.
 Without it, `chooseBackend()` returns `vercel-no-token` and every upload throws
