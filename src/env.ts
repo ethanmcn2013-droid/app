@@ -46,6 +46,12 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   // customer tries one — the least useful place to learn it is missing.
   // It warns here instead, at boot, where an operator is looking.
   ["BLOB_READ_WRITE_TOKEN", "attachment storage (Vercel Blob); uploads fail without it"],
+  // WP-2. The key that encrypts a customer's Google refresh token before
+  // it touches the database. Its absence does not stop the app booting —
+  // nothing reads it until a Drive connection exists — but it must be
+  // present and unchanged before the first one is made, because rotating
+  // it later forces every connected customer to reconnect.
+  ["PROVIDER_TOKEN_KEY", "encrypts stored provider refresh tokens (Project Drive)"],
 ];
 
 let validated = false;
