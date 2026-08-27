@@ -2557,19 +2557,19 @@
       "section": "switch",
       "name": "tasks · one rendered element per transition name",
       "ok": true,
-      "detail": "{\"root\":1,\"rail-active\":1,\"sheet\":1}"
+      "detail": "{\"root\":1,\"sheet\":1}"
     },
     {
       "section": "switch",
       "name": "notes · one rendered element per transition name",
       "ok": true,
-      "detail": "{\"root\":1,\"rail-active\":1,\"sheet\":1}"
+      "detail": "{\"root\":1,\"sheet\":1}"
     },
     {
       "section": "switch",
       "name": "timeline · one rendered element per transition name",
       "ok": true,
-      "detail": "{\"root\":1,\"rail-active\":1,\"sheet\":1}"
+      "detail": "{\"root\":1,\"sheet\":1}"
     },
     {
       "section": "switch",
@@ -2587,13 +2587,13 @@
       "section": "switch",
       "name": "every switch lands, both paths",
       "ok": true,
-      "detail": "with 63/86/58ms · without 18/8/59ms"
+      "detail": "with 50/70/78ms · without 15/6/37ms"
     },
     {
       "section": "switch",
       "name": "the mutation is wrapped, not postponed",
       "ok": true,
-      "detail": "69ms with the transition against 28ms without — the wrap costs 41ms, and the animation it starts runs 220ms after it"
+      "detail": "66ms with the transition against 19ms without — the wrap costs 47ms, and the animation it starts runs 220ms after it"
     },
     {
       "section": "switch",
@@ -2618,6 +2618,198 @@
       "name": "where the transition runs, the fallback entrance does not",
       "ok": true,
       "detail": "0 products stamped data-arriving"
+    },
+    {
+      "section": "material",
+      "name": "the Add button becomes the composer",
+      "ok": true,
+      "detail": "1 transitions"
+    },
+    {
+      "section": "material",
+      "name": "and folds back",
+      "ok": true,
+      "detail": "1 transitions"
+    },
+    {
+      "section": "material",
+      "name": "the card becomes its dialog",
+      "ok": true,
+      "detail": "1 transitions"
+    },
+    {
+      "section": "material",
+      "name": "and the dialog folds back into the card",
+      "ok": true,
+      "detail": "1 transitions"
+    },
+    {
+      "section": "material",
+      "name": "a tool word becomes its panel",
+      "ok": true,
+      "detail": "1 transitions"
+    },
+    {
+      "section": "material",
+      "name": "the project name becomes the project menu",
+      "ok": true,
+      "detail": "1 transitions"
+    },
+    {
+      "section": "material",
+      "name": "none of the six journeys throws",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "section": "material",
+      "name": "the morph name is lent, never kept",
+      "ok": true,
+      "detail": "0 left named"
+    },
+    {
+      "section": "material",
+      "name": "the dialog opens with its accordion closed",
+      "ok": true,
+      "detail": "{\"rows\":\"0px\",\"h\":0,\"opacity\":\"0\",\"turned\":\"matrix(1, 0, 0, 1, 0, 0)\",\"expanded\":\"false\",\"controls\":\"tpMorePanel\"}"
+    },
+    {
+      "section": "material",
+      "name": "and it is a button that says what it controls",
+      "ok": true,
+      "detail": "tpMorePanel"
+    },
+    {
+      "section": "material",
+      "name": "opening animates to a height nobody measured",
+      "ok": true,
+      "detail": "32px / 32px"
+    },
+    {
+      "section": "material",
+      "name": "the words arrive with the room to put them in",
+      "ok": true,
+      "detail": "1"
+    },
+    {
+      "section": "material",
+      "name": "and the chevron turns",
+      "ok": true,
+      "detail": "matrix(0, 1, -1, 0, 0, 0)"
+    },
+    {
+      "section": "material",
+      "name": "and it closes again to nothing",
+      "ok": true,
+      "detail": "0px"
+    },
+    {
+      "section": "material",
+      "name": "one act, one pill",
+      "ok": true,
+      "detail": "1 pills"
+    },
+    {
+      "section": "material",
+      "name": "three acts, three deep",
+      "ok": true,
+      "detail": "3 pills"
+    },
+    {
+      "section": "material",
+      "name": "the two beneath climb and shrink",
+      "ok": true,
+      "detail": "816@509 · 811@420 · 806@398"
+    },
+    {
+      "section": "material",
+      "name": "and fade back",
+      "ok": true,
+      "detail": "1.00 · 0.55 · 0.28"
+    },
+    {
+      "section": "material",
+      "name": "only the live pill is reachable",
+      "ok": true,
+      "detail": "[[1,false,false],[0,true,true],[0,true,true]]"
+    },
+    {
+      "section": "material",
+      "name": "the depth is still said in words",
+      "ok": true,
+      "detail": "Send midweek rate to the June 2027 walk-in couple doneUndo2 "
+    },
+    {
+      "section": "material",
+      "name": "the goo filter is in the document",
+      "ok": true,
+      "detail": "#goo"
+    },
+    {
+      "section": "material",
+      "name": "its region does not depend on a bounding box",
+      "ok": true,
+      "detail": "userSpaceOnUse"
+    },
+    {
+      "section": "material",
+      "name": "the accent is in the air",
+      "ok": true,
+      "detail": "layer present"
+    },
+    {
+      "section": "material",
+      "name": "and the two blobs are genuinely apart",
+      "ok": true,
+      "detail": "94px between head and tail"
+    },
+    {
+      "section": "material",
+      "name": "the shapes are opaque and the LAYER is faded",
+      "ok": true,
+      "detail": "blob opaque true · layer 0.16"
+    },
+    {
+      "section": "material",
+      "name": "the filter is on the layer",
+      "ok": true,
+      "detail": "url(\"#goo\")"
+    },
+    {
+      "section": "material",
+      "name": "nothing with words in it is filtered",
+      "ok": true,
+      "detail": "0 characters inside the filtered layer"
+    },
+    {
+      "section": "material",
+      "name": "the accent is in one place at a time",
+      "ok": true,
+      "detail": "rgba(0, 0, 0, 0)"
+    },
+    {
+      "section": "material",
+      "name": "at rest there is no layer and no filter anywhere",
+      "ok": true,
+      "detail": "{\"layer\":false,\"gooing\":0,\"accent\":\"rgba(165, 180, 252, 0.16)\"}"
+    },
+    {
+      "section": "material",
+      "name": "and the tile has its accent back",
+      "ok": true,
+      "detail": "rgba(165, 180, 252, 0.16)"
+    },
+    {
+      "section": "material",
+      "name": "reduced motion · nothing travels",
+      "ok": true,
+      "detail": "none"
+    },
+    {
+      "section": "material",
+      "name": "reduced motion · and the switch still lands",
+      "ok": true,
+      "detail": "timeline"
     },
     {
       "section": "flow",

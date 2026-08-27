@@ -290,7 +290,15 @@ export async function delight({ browser, url, check, head }) {
       const at = { clientX: box.x + box.width / 2, clientY: box.y + box.height / 2, bubbles: true };
       card.dispatchEvent(new PointerEvent("pointerdown", at));
       card.querySelector(".cardTitle").dispatchEvent(new PointerEvent("pointerup", at));
-      await new Promise((r) => setTimeout(r, 400));
+      /* SETTLED, not merely opened. The card now MORPHS into this dialog —
+         a 220ms view transition — and while it runs the browser paints
+         snapshot pseudo-elements over the page. `elementFromPoint` reaches
+         those rather than the scrim underneath, so a rule that measured at
+         400ms caught the tail of the morph at 1920 and reported a modal
+         that was not modal. The dialog is the same either way; what
+         changed is that there is now something in front of it for a fifth
+         of a second. */
+      await new Promise((r) => setTimeout(r, 700));
       const panel = document.querySelector(".taskPanel");
       const scrim = document.querySelector(".tpScrim");
       const out = {

@@ -1594,6 +1594,51 @@
   box-shadow: var(--lift);
   animation: carryIn var(--dur) var(--curve);
 }
+/* ═══ THE STACK ══════════════════════════════════════════════════
+   Ctrl+Z walks back through the history one act at a time. The strip said
+   so in text — "3 more" — and showed one pill; the depth is now visible as
+   depth. Newest in front at full size, the two beneath climbing a little
+   and shrinking a little, which is how a stack of paper behaves and how a
+   person already reads one.
+
+   The peek is small on purpose: this is a foot strip, not a notification
+   centre, and the whole stack has to stay clear of the dock beneath it. */
+[data-app="tasks"] {
+  --stack-peek: 7px;
+  --stack-depth-scale: 0.05;
+  --stack-depth-fade: 0.45;
+}
+/* The live one keeps every declaration it had; only its order is stated. */
+[data-app="tasks"] .carry[data-depth="0"] { z-index: 6; }
+/* Origin at the BOTTOM edge, so a shrinking pill stays sitting on the one
+   in front of it rather than floating off its own centre. */
+[data-app="tasks"] .carry[data-depth="1"],
+[data-app="tasks"] .carry[data-depth="2"] {
+  transform-origin: 50% 100%;
+  /* No entrance: the pills behind did not just happen. Re-running the
+     strip's own arrival on them made the whole stack flinch every time a
+     new act landed. */
+  animation: none;
+  transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
+  pointer-events: none;
+}
+[data-app="tasks"] .carry[data-depth="1"] {
+  z-index: 5;
+  transform: translateX(-50%) translateY(calc(var(--stack-peek) * -1))
+             scale(calc(1 - var(--stack-depth-scale)));
+  opacity: calc(1 - var(--stack-depth-fade));
+}
+[data-app="tasks"] .carry[data-depth="2"] {
+  z-index: 4;
+  transform: translateX(-50%) translateY(calc(var(--stack-peek) * -2))
+             scale(calc(1 - var(--stack-depth-scale) * 2));
+  opacity: calc(1 - var(--stack-depth-fade) * 1.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .carry[data-depth="1"],
+  [data-app="tasks"] .carry[data-depth="2"] { transition: none; }
+}
+
 /* An Add row stands down only where the strip actually covers it, measured
    after layout. Before this the board blinked out its primary create
    affordance, in all five columns, after every single completion. */
@@ -2405,15 +2450,77 @@
   width: 5px; height: 5px; border-radius: 50%;
   background: var(--tp-accent, var(--ink-4));
 }
+/* ═══ THE ACCORDION ══════════════════════════════════════════════
+   `grid-template-rows: 0fr → 1fr` is the whole technique: it animates to a
+   height nobody had to measure, with no JS, and the inner element clips.
+   It replaced a `<details>`, which cannot animate its own opening in any
+   browser without a Chromium-only property.
+
+   The words arrive AFTER the room to put them in — the panel opens over
+   220ms and the content fades and unblurs over the same span, so what you
+   see first is the space being made. */
 [data-app="tasks"] .tpMore { border-top: 1px solid var(--line-soft); padding-top: 18px; }
-[data-app="tasks"] .tpMore summary {
-  cursor: pointer; list-style: none;
+[data-app="tasks"] .tpMoreHead {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; text-align: left;
+}
+[data-app="tasks"] .tpMoreChevron {
+  display: inline-flex;
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform var(--dur-settle) var(--curve);
+  color: var(--ink-3);
+}
+/* ROTATED, not flipped. The reference flips a symmetric chevron with
+   `scaleY(-1)` because its glyph is drawn about the centre of its box;
+   this product's chevron points right at rest, so a quarter turn is the
+   same move for this shape. `non-scaling-stroke` keeps the hairline
+   constant either way. */
+/* SIZED. Every icon in this product is sized by the rule that places it —
+   the SVG carries a viewBox and no width — so an icon dropped into a new
+   slot without one renders at 0x0: present in the DOM, correct in the
+   accessibility tree, and completely invisible. It is the same shape of
+   defect as a selector that matches nothing. */
+[data-app="tasks"] .tpMoreChevron svg {
+  width: 15px; height: 15px;
+  vector-effect: non-scaling-stroke;
+}
+[data-app="tasks"] .tpMore[data-open="true"] .tpMoreChevron { transform: rotate(90deg); }
+[data-app="tasks"] .tpMorePanel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-settle) var(--curve);
+}
+[data-app="tasks"] .tpMore[data-open="true"] .tpMorePanel { grid-template-rows: 1fr; }
+[data-app="tasks"] .tpMoreInner {
+  overflow: hidden;
+  opacity: 0;
+  /* Explicit blur(0) rather than an unset filter: blur → none does not
+     interpolate, and the content would snap into focus at the end. */
+  filter: blur(2px);
+  transition: opacity var(--dur-settle) var(--curve), filter var(--dur-settle) var(--curve);
+}
+[data-app="tasks"] .tpMore[data-open="true"] .tpMoreInner { opacity: 1; filter: blur(0); }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .tpMorePanel,
+  [data-app="tasks"] .tpMoreInner,
+  [data-app="tasks"] .tpMoreChevron { transition: none; }
+}
+/* The head keeps every setting the <summary> had — this is the same
+   object with the same job, and its type had already been decided. */
+[data-app="tasks"] .tpMoreHead {
+  cursor: pointer;
   font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
   color: var(--ink-2);
   padding: 6px 0; margin: -6px 0;
+  transition: color var(--dur) var(--curve);
 }
-[data-app="tasks"] .tpMore summary::-webkit-details-marker { display: none; }
-[data-app="tasks"] .tpMore summary:hover { color: var(--ink-1); }
+[data-app="tasks"] .tpMoreHead:hover { color: var(--ink-1); }
+[data-app="tasks"] .tpMoreHead:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 3px;
+  border-radius: var(--r-chip);
+}
 [data-app="tasks"] .tpMore p { margin: 12px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   [data-app="tasks"] .taskPanel, [data-app="tasks"] .tpScrim { animation: none; }

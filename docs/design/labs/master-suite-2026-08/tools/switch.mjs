@@ -142,7 +142,10 @@ export async function switchFrame({ browser, url, check, head, lab }) {
         return tally;
       }, product);
       check("switch", `${product} · one rendered element per transition name`,
-        m.sheet === 1 && m["rail-active"] === 1,
+        /* Only the sheet is named now. The rail tile used to be, and the
+           accent travelling as liquid replaced it — two motions on one
+           object is one too many. */
+        m.sheet === 1 && m["rail-active"] === undefined,
         JSON.stringify(m));
     }
     await page.close();
@@ -159,8 +162,7 @@ export async function switchFrame({ browser, url, check, head, lab }) {
        the SHAPE of the hand-off is what is being looked at, not its
        speed. */
     await page.addStyleTag({ content: `
-      ::view-transition-group(sheet),
-      ::view-transition-group(rail-active) { animation-duration: 4000ms !important; }
+      ::view-transition-group(sheet) { animation-duration: 4000ms !important; }
       ::view-transition-old(sheet) { animation-duration: 1600ms !important; }
       ::view-transition-new(sheet) { animation-duration: 2400ms !important; animation-delay: 1600ms !important; }
     ` });

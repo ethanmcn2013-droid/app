@@ -3284,10 +3284,30 @@
       return;
     }
     if (a === "group-day" || a === "group-about") {
+      /* THE ACCENT TRAVELS ACROSS. Two buttons and one white pill that
+         used to switch off here and on there; it now stretches between
+         them as one piece of liquid and pinches off. Measured before the
+         repaint, because `paint()` replaces both buttons.
+
+         This is the second host for that effect and the same helper as
+         the rail's. The obvious third — the board's Board / List /
+         Schedule / Calendar switcher — has nothing to travel between:
+         three of those four are closed doors that say so, so the accent
+         has never moved off Board. One line wires it the day List ships,
+         and until then a travel there would be motion no one can reach. */
+      const bar = mount.querySelector(".groupBy");
+      const fromBtn = bar && bar.querySelector(".groupBtn[data-on]");
+      const toBtn = bar && bar.querySelector(`[data-act="${a}"]`);
+      const fromBox = fromBtn ? fromBtn.getBoundingClientRect() : null;
+      const toBox = toBtn ? toBtn.getBoundingClientRect() : null;
       group = a === "group-day" ? "day" : "about";
       say(group === "about" ? "Grouped by what each note is about." : "Grouped by when each note was written.");
       refocus = { kind: "act", sel: `[data-act="${a}"]` };
       paint();
+      const after = mount.querySelector(".groupBy");
+      if (after && fromBox && toBox && window.__SUITE.travel) {
+        window.__SUITE.travel(after, fromBox, toBox, { cls: "segGoo", ms: 460 });
+      }
       return;
     }
     if (a === "peel") { startPeel(openId); return; }

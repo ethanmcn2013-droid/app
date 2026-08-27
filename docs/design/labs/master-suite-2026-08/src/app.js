@@ -279,6 +279,27 @@ window.__SUITE = (function () {
     }
     current = product;
     railCurrent = product;
+    /* THE RAIL ANSWERS THE PRESS. It used to repaint inside the view
+       transition's callback along with everything else, which put the
+       accent's travel a snapshot behind the press — measured at about
+       100ms of nothing happening before the liquid moved at all, on a
+       220ms journey. The rail is chrome, not the sheet: it can and should
+       answer immediately, and the accent then travels alongside the
+       sheet's own crossfade rather than queueing behind it.
+
+       Both tiles are measured before the repaint because every tile is
+       rendered at rest — only `data-active` moves between them — so the
+       destination's box is known before it becomes the destination. */
+    var railNow = deck.querySelector(".rail");
+    var fromTile = railNow && railNow.querySelector(".railTile[data-active]");
+    var toTile = railNow && railNow.querySelector('.railTile[data-rail="' + product + '"]');
+    var fromBox = fromTile ? fromTile.getBoundingClientRect() : null;
+    var toBox = toTile ? toTile.getBoundingClientRect() : null;
+    paintRail();
+    var rail = deck.querySelector(".rail");
+    if (rail && fromBox && toBox) {
+      travel(rail, fromBox, toBox, { cls: "railGoo", ms: 700 });
+    }
     /* The arrival, as one closure, run on whichever frame the DOM actually
        changes on. It used to sit inline below `apply()` and was correct
        only because `apply()` was synchronous. */
@@ -289,7 +310,7 @@ window.__SUITE = (function () {
   }
 
   function arrive(product, o) {
-    paintRail();
+    /* The rail has already answered — see `go`. */
     /* A sheet that was off the floor was measuring a box with no width:
        every trim, fade, scrim reserve and clamp in it was computed
        against zero. The product repaints itself on arrival — with its own
@@ -549,6 +570,125 @@ window.__SUITE = (function () {
     return true;
   }
 
+  /* ── the accent travels ───────────────────────────────────────
+     An active indicator that moves between two adjacent slots, as liquid.
+     Two blobs are laid on the path — one leaving now, one leaving late —
+     inside a layer carrying the goo filter, which merges them into a band
+     that stretches out of the slot you left and pinches into the one you
+     arrived at. When the late one catches up there is nothing left to
+     merge and the band is gone.
+
+     It is a MOMENT, not a material. The layer is created for the move and
+     removed after it, so at rest there is no extra element and no filter
+     anywhere on the page — every resting pixel is the pixel it was.
+
+     Shared by the rail and the board's view switcher because it is one
+     idea: the rail travels down, the views travel across, and the only
+     difference between them is which axis the boxes differ on.
+
+     Nothing with text in it is ever inside the filtered layer. */
+  function travel(container, a, b, opts) {
+    var o = opts || {};
+    if (!container || !a || !b) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    /* RECTS, not elements. The control that was active is detached by the
+       time this runs — the rail rebuilds its own markup and the board
+       repaints every node on it — so the caller measures while the thing
+       is still on the floor and hands the numbers over. A first draft took
+       the elements and measured them here, and every rect was zeros.
+
+       A box with no size is also a box the filter cannot draw: the region
+       is computed against it, and the first host tried for this effect was
+       a 0x0 anchor that painted nothing at all. */
+    var frame = container.getBoundingClientRect();
+    if (!a.width || !b.width) return;
+    if (Math.round(a.top) === Math.round(b.top) &&
+        Math.round(a.left) === Math.round(b.left)) return;
+
+    var layer = container.querySelector("." + o.cls);
+    if (layer) layer.remove();
+    layer = document.createElement("span");
+    layer.className = o.cls;
+    layer.setAttribute("aria-hidden", "true");
+    layer.innerHTML = '<i class="gooHead"></i><i class="gooTail"></i>';
+    container.insertBefore(layer, container.firstChild);
+
+    var place = function (el, r) {
+      el.style.setProperty("--x", Math.round(r.left - frame.left) + "px");
+      el.style.setProperty("--y", Math.round(r.top - frame.top) + "px");
+      el.style.setProperty("--w", Math.round(r.width) + "px");
+      el.style.setProperty("--h", Math.round(r.height) + "px");
+    };
+    var head = layer.querySelector(".gooHead");
+    var tail = layer.querySelector(".gooTail");
+    place(head, a);
+    place(tail, a);
+    container.setAttribute("data-gooing", "true");
+
+    /* Read a layout property between the two placements or the browser
+       coalesces them and the blobs are simply born at the destination. */
+    void layer.offsetWidth;
+    place(head, b);
+    place(tail, b);
+
+    /* The timer lives on the container, so the rail and the board's views
+       cannot cancel each other's travel. */
+    clearTimeout(Number(container.dataset.gooTimer || 0));
+    container.dataset.gooTimer = setTimeout(function () {
+      if (layer.isConnected) layer.remove();
+      container.removeAttribute("data-gooing");
+    }, o.ms || 520);
+  }
+
+  /* ── this becomes that ────────────────────────────────────────
+     ONE HELPER, five journeys. A control that opens a surface is not
+     showing you a new object; it is BECOMING one. The composer is what
+     the Add button turned into. The task dialog is what the card turned
+     into. The rail's panel is what the plus turned into. Every one of
+     those was a hard cut — the button stayed where it was and a second
+     object appeared somewhere else, and the person had to work out for
+     themselves that the two were related.
+
+     Built on the view transition the switch already uses rather than on
+     five hand-tuned width/height tweens. The reference implementations of
+     this effect animate `width`, `height` and `border-radius` between two
+     HARDCODED sizes — 40px to 183×172 — which means every instance needs
+     its numbers kept true by hand, and none of them can morph between two
+     boxes whose size depends on content. Handing the browser two boxes and
+     one name costs no numbers at all and is correct at every width.
+
+     The name is applied IMPERATIVELY and for the length of the transition
+     only. A static name would collide: five Add buttons are rendered at
+     once, the card the dialog came from stays on the board behind it, and
+     a duplicate name makes Chromium skip the whole transition silently. */
+  function morph(from, mutate, findTo) {
+    var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!from || reduced || !document.startViewTransition) {
+      mutate();
+      return null;
+    }
+    from.style.setProperty("view-transition-name", "morph");
+    var landed = null;
+    var t = document.startViewTransition(function () {
+      mutate();
+      /* The old snapshot is already taken, so the name comes off the
+         control the instant the DOM changes — otherwise a control that
+         SURVIVES the mutation (the card behind its own dialog, the Add
+         button under its own composer) would still be carrying it when
+         the new state is captured, and the transition is skipped. */
+      if (from.isConnected) from.style.removeProperty("view-transition-name");
+      landed = typeof findTo === "function" ? findTo() : null;
+      if (landed) landed.style.setProperty("view-transition-name", "morph");
+    });
+    var clean = function () {
+      if (landed && landed.isConnected) landed.style.removeProperty("view-transition-name");
+      if (from && from.isConnected) from.style.removeProperty("view-transition-name");
+    };
+    if (t && t.finished && t.finished.then) t.finished.then(clean, clean);
+    else setTimeout(clean, 400);
+    return t;
+  }
+
   /* ── wiring ───────────────────────────────────────────────── */
   function register(name, api) { registry[name] = api; }
 
@@ -599,8 +739,20 @@ window.__SUITE = (function () {
     railCurrent = key;
 
     if (key === "more") {
-      moreOpen = !moreOpen;
-      paintRail();
+      /* THE PLUS BECOMES THE PANEL. A 40px round control on the ink floor
+         opening a panel of doors beside it — the canonical case for this,
+         and the one place in the suite where the two objects were most
+         obviously the same thing and least obviously connected. */
+      var wasOpen = moreOpen;
+      morph(
+        wasOpen ? deck.querySelector(".morePop") : tile,
+        function () { moreOpen = !moreOpen; paintRail(); },
+        function () {
+          return wasOpen
+            ? deck.querySelector('.rail [data-rail="more"]')
+            : deck.querySelector(".morePop");
+        },
+      );
       var plus = deck.querySelector('.rail [data-rail="more"]');
       if (plus) plus.focus();
       say(moreOpen ? "More, open." : "More, closed.");
@@ -729,6 +881,12 @@ window.__SUITE = (function () {
     cross: cross,
     uncross: uncross,
     openTask: openTask,
+    /* A control becoming the surface it opens. See `morph` above. */
+    morph: morph,
+    /* An active accent moving between two adjacent slots, as liquid. The
+       rail travels down and a segmented control travels across; it is one
+       idea and one implementation. See `travel` above. */
+    travel: travel,
     register: register,
     /* One product asking another what it can do. The registry was private
        and every cross-product journey had to be added to this surface by

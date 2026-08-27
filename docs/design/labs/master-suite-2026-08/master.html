@@ -365,10 +365,15 @@ body {
    before and after, so the browser interpolates their boxes across the
    change and nothing about them blinks. */
 .sheet { view-transition-name: sheet; }
-.railTile[data-active] { view-transition-name: rail-active; }
+/* The rail tile is NOT named here, and that is a decision rather than an
+   omission. It was — the tile carried across the switch the way the sheet
+   does — and then the accent learned to TRAVEL as liquid, which is a
+   better answer to the same question: not "this box became that box" but
+   "the accent went from here to there, and you watched it go". Two
+   motions on one object is one too many, and the one that reads at a
+   glance won. See `travel` in app.js. */
 
-::view-transition-group(sheet),
-::view-transition-group(rail-active) {
+::view-transition-group(sheet) {
   animation-duration: var(--dur-settle, 220ms);
   animation-timing-function: var(--curve, cubic-bezier(0.23, 1, 0.32, 1));
 }
@@ -409,11 +414,36 @@ body {
 @keyframes carry-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The names come off, so there is no transition to run at all — the
-     JS guard above already returns before `startViewTransition`, and this
-     is the same decision stated where a reader looks for it. */
-  .sheet, .railTile[data-active] { view-transition-name: none; }
+  /* The name comes off, so there is no transition to run at all — the JS
+     guard above already returns before `startViewTransition`, and this is
+     the same decision stated where a reader looks for it. */
+  .sheet { view-transition-name: none; }
 }
+
+/* ═══ THIS BECOMES THAT ══════════════════════════════════════════
+   The pair name `morph` is applied imperatively by `__SUITE.morph` and
+   lives only for the length of one transition, so exactly one control and
+   one surface ever carry it at once.
+
+   OVERLAPPED, not faded through. The product switch hands off cleanly
+   because two dense text layouts at once read as mud; a morph is the
+   opposite case — two small shapes where the SHAPE is the point, and a
+   gap between them reads as the control vanishing before its surface
+   arrives. So the outgoing leaves over 120ms and the incoming starts at
+   80ms, and for 40ms they are both present, which is what makes it read
+   as one object rather than two.
+
+   The 2px blur is borrowed from the reference implementations of this
+   effect and earns its place: it hides the fact that two very differently
+   proportioned pieces of type are being scaled through each other. */
+::view-transition-group(morph) {
+  animation-duration: var(--dur-settle, 220ms);
+  animation-timing-function: var(--curve, cubic-bezier(0.23, 1, 0.32, 1));
+}
+::view-transition-old(morph) { animation: morph-out 120ms var(--curve) both; }
+::view-transition-new(morph) { animation: morph-in 140ms var(--curve) 80ms both; }
+@keyframes morph-out { to { opacity: 0; filter: blur(2px); } }
+@keyframes morph-in { from { opacity: 0; filter: blur(2px); } }
 
 /* THE FALLBACK ENTRANCE. Every other transition in this suite is
    declared and gated and the one between two PRODUCTS — the largest
@@ -555,6 +585,90 @@ body {
   box-shadow: inset -1px 1px 0 var(--chrome-line);
   border-radius: 1.5px;
 }
+/* ═══ THE TRAVELLING ACCENT ══════════════════════════════════════
+   The rail's active tile is a filled box, and moving between products
+   used to mean one box switching off and another switching on — two
+   events, in two places, with nothing between them saying they were the
+   same accent. It now TRAVELS, as liquid: two blobs on one path, the
+   second lagging the first, merged by the goo filter into a band that
+   stretches out of the tile you left and pinches into the one you
+   arrived at.
+
+   It exists only DURING the move. At rest there is no extra element and
+   no filter anywhere on the page, so every resting pixel of this rail is
+   the pixel it was before — which is what makes this a moment rather than
+   a material, and keeps it out of the argument the suite already had
+   about glass. */
+.railGoo {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  /* FILTER FIRST, THEN FADE. The blobs are drawn OPAQUE and the whole
+     filtered result is taken down to the accent's own 16%.
+
+     This is not a nicety, it is the constraint the effect actually has. A
+     gooey filter works by pushing blurred ALPHA through a steep ramp —
+     18a − 7 — so anything under about 39% alpha is driven to zero and
+     erased. The rail's accent is `rgba(165, 180, 252, 0.16)`, and a first
+     version that painted the blobs in that colour rendered nothing at all
+     mid-travel: the tile you left went dark, the tile you arrived at lit
+     up, and between them was an empty rail. CSS applies `filter` before
+     `opacity`, so moving the transparency off the shapes and onto the
+     layer gives the filter something solid to merge and still lands on
+     exactly the colour the resting tile paints. */
+  filter: url(#goo);
+  opacity: 0.16;
+}
+.railGoo i {
+  position: absolute;
+  left: var(--x, 0px);
+  top: var(--y, 0px);
+  width: var(--w, 44px);
+  height: var(--h, 44px);
+  border-radius: var(--r-tile, 12px);
+  /* Opaque — the layer above carries the accent's transparency. */
+  background: #a5b4fc;
+  transition: top var(--dur-settle) var(--curve), left var(--dur-settle) var(--curve);
+}
+/* The tail leaves late and arrives late. The gap between the two is the
+   whole effect: while they are apart the filter draws the band between
+   them, and when the tail catches up the band pinches and disappears. */
+/* TWO SPEEDS ON ONE JOURNEY, and both inside the frequent-to-occasional
+   band. Changing product is something an operator does many times an
+   hour, so the vocabulary in foundation.css puts a ceiling of 220ms on
+   it — the rare tier is reserved for three moments and this is not one of
+   them, however well 400ms reads. The band exists for exactly as long as
+   the two blobs are apart, so the head arriving at 140 and the tail at
+   220 is the whole effect, over in a fifth of a second. */
+.railGoo .gooHead { transition-duration: var(--dur); }
+.railGoo .gooTail {
+  transition-duration: var(--dur-settle);
+  /* AND A DIFFERENT CURVE, which is what actually makes the band. The
+     suite's `--curve` is a hard ease-out — four fifths of the distance in
+     the first quarter of the time — so two blobs sharing it both arrive
+     almost at once and the merged shape is a blob with a soft trailing
+     edge, not a stretch. The tail eases IN instead: it hangs back in the
+     slot you left for most of the journey and then snaps home, so the
+     filter has two shapes genuinely far apart to draw a band between for
+     most of the 400ms.
+
+     This is the only easing in the suite that is not `--curve`, and it is
+     deliberate: it is not describing a thing arriving, it is describing
+     the thing that has not left yet. */
+  transition-timing-function: cubic-bezier(0.72, 0, 0.86, 0.16);
+}
+
+/* While it is in the air the tile does not paint its own accent, or the
+   board would show the accent in two places at once and the travelling
+   one would read as a third object rather than as the thing itself. The
+   GLYPH and the WORD keep their indigo throughout — colour on type is
+   what tells you which product you are on, and it must not blink. */
+.rail[data-gooing] .railTile[data-active] { background: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .railGoo { display: none; }
+}
+
 .railSpacer { flex: 1; }
 .railAdd { display: none; }
 /* The one place the two shells genuinely disagreed and both could not be
@@ -827,6 +941,7 @@ body {
   width: 0; height: 0;
   pointer-events: none;
 }
+
 .burst i {
   position: absolute; left: 0; top: 0;
   width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
@@ -2472,6 +2587,51 @@ body {
   box-shadow: var(--lift);
   animation: carryIn var(--dur) var(--curve);
 }
+/* ═══ THE STACK ══════════════════════════════════════════════════
+   Ctrl+Z walks back through the history one act at a time. The strip said
+   so in text — "3 more" — and showed one pill; the depth is now visible as
+   depth. Newest in front at full size, the two beneath climbing a little
+   and shrinking a little, which is how a stack of paper behaves and how a
+   person already reads one.
+
+   The peek is small on purpose: this is a foot strip, not a notification
+   centre, and the whole stack has to stay clear of the dock beneath it. */
+[data-app="tasks"] {
+  --stack-peek: 7px;
+  --stack-depth-scale: 0.05;
+  --stack-depth-fade: 0.45;
+}
+/* The live one keeps every declaration it had; only its order is stated. */
+[data-app="tasks"] .carry[data-depth="0"] { z-index: 6; }
+/* Origin at the BOTTOM edge, so a shrinking pill stays sitting on the one
+   in front of it rather than floating off its own centre. */
+[data-app="tasks"] .carry[data-depth="1"],
+[data-app="tasks"] .carry[data-depth="2"] {
+  transform-origin: 50% 100%;
+  /* No entrance: the pills behind did not just happen. Re-running the
+     strip's own arrival on them made the whole stack flinch every time a
+     new act landed. */
+  animation: none;
+  transition: transform var(--dur-settle) var(--curve), opacity var(--dur-settle) var(--curve);
+  pointer-events: none;
+}
+[data-app="tasks"] .carry[data-depth="1"] {
+  z-index: 5;
+  transform: translateX(-50%) translateY(calc(var(--stack-peek) * -1))
+             scale(calc(1 - var(--stack-depth-scale)));
+  opacity: calc(1 - var(--stack-depth-fade));
+}
+[data-app="tasks"] .carry[data-depth="2"] {
+  z-index: 4;
+  transform: translateX(-50%) translateY(calc(var(--stack-peek) * -2))
+             scale(calc(1 - var(--stack-depth-scale) * 2));
+  opacity: calc(1 - var(--stack-depth-fade) * 1.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .carry[data-depth="1"],
+  [data-app="tasks"] .carry[data-depth="2"] { transition: none; }
+}
+
 /* An Add row stands down only where the strip actually covers it, measured
    after layout. Before this the board blinked out its primary create
    affordance, in all five columns, after every single completion. */
@@ -3283,15 +3443,77 @@ body {
   width: 5px; height: 5px; border-radius: 50%;
   background: var(--tp-accent, var(--ink-4));
 }
+/* ═══ THE ACCORDION ══════════════════════════════════════════════
+   `grid-template-rows: 0fr → 1fr` is the whole technique: it animates to a
+   height nobody had to measure, with no JS, and the inner element clips.
+   It replaced a `<details>`, which cannot animate its own opening in any
+   browser without a Chromium-only property.
+
+   The words arrive AFTER the room to put them in — the panel opens over
+   220ms and the content fades and unblurs over the same span, so what you
+   see first is the space being made. */
 [data-app="tasks"] .tpMore { border-top: 1px solid var(--line-soft); padding-top: 18px; }
-[data-app="tasks"] .tpMore summary {
-  cursor: pointer; list-style: none;
+[data-app="tasks"] .tpMoreHead {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit; text-align: left;
+}
+[data-app="tasks"] .tpMoreChevron {
+  display: inline-flex;
+  transform: rotate(0deg);
+  transform-origin: center;
+  transition: transform var(--dur-settle) var(--curve);
+  color: var(--ink-3);
+}
+/* ROTATED, not flipped. The reference flips a symmetric chevron with
+   `scaleY(-1)` because its glyph is drawn about the centre of its box;
+   this product's chevron points right at rest, so a quarter turn is the
+   same move for this shape. `non-scaling-stroke` keeps the hairline
+   constant either way. */
+/* SIZED. Every icon in this product is sized by the rule that places it —
+   the SVG carries a viewBox and no width — so an icon dropped into a new
+   slot without one renders at 0x0: present in the DOM, correct in the
+   accessibility tree, and completely invisible. It is the same shape of
+   defect as a selector that matches nothing. */
+[data-app="tasks"] .tpMoreChevron svg {
+  width: 15px; height: 15px;
+  vector-effect: non-scaling-stroke;
+}
+[data-app="tasks"] .tpMore[data-open="true"] .tpMoreChevron { transform: rotate(90deg); }
+[data-app="tasks"] .tpMorePanel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-settle) var(--curve);
+}
+[data-app="tasks"] .tpMore[data-open="true"] .tpMorePanel { grid-template-rows: 1fr; }
+[data-app="tasks"] .tpMoreInner {
+  overflow: hidden;
+  opacity: 0;
+  /* Explicit blur(0) rather than an unset filter: blur → none does not
+     interpolate, and the content would snap into focus at the end. */
+  filter: blur(2px);
+  transition: opacity var(--dur-settle) var(--curve), filter var(--dur-settle) var(--curve);
+}
+[data-app="tasks"] .tpMore[data-open="true"] .tpMoreInner { opacity: 1; filter: blur(0); }
+@media (prefers-reduced-motion: reduce) {
+  [data-app="tasks"] .tpMorePanel,
+  [data-app="tasks"] .tpMoreInner,
+  [data-app="tasks"] .tpMoreChevron { transition: none; }
+}
+/* The head keeps every setting the <summary> had — this is the same
+   object with the same job, and its type had already been decided. */
+[data-app="tasks"] .tpMoreHead {
+  cursor: pointer;
   font-size: 13px; font-weight: 400; letter-spacing: var(--tr-13);
   color: var(--ink-2);
   padding: 6px 0; margin: -6px 0;
+  transition: color var(--dur) var(--curve);
 }
-[data-app="tasks"] .tpMore summary::-webkit-details-marker { display: none; }
-[data-app="tasks"] .tpMore summary:hover { color: var(--ink-1); }
+[data-app="tasks"] .tpMoreHead:hover { color: var(--ink-1); }
+[data-app="tasks"] .tpMoreHead:focus-visible {
+  outline: 2px solid var(--indigo); outline-offset: 3px;
+  border-radius: var(--r-chip);
+}
 [data-app="tasks"] .tpMore p { margin: 12px 0 0; }
 @media (prefers-reduced-motion: reduce) {
   [data-app="tasks"] .taskPanel, [data-app="tasks"] .tpScrim { animation: none; }
@@ -4156,6 +4378,48 @@ body {
 [data-app="notes"] .groupBtn::before { content: ""; position: absolute; inset: -8px -2px; }
 [data-app="notes"] .groupBtn:hover { color: var(--ink-1); }
 [data-app="notes"] .groupBtn[data-on] { background: var(--white); color: var(--ink-1); font-weight: 600; box-shadow: var(--ring), var(--raise); }
+
+/* ═══ THE ACCENT TRAVELS ACROSS ══════════════════════════════════
+   The same liquid the rail uses, on the other axis. Two blobs on one
+   path, the second hanging back, merged by the goo filter into a body
+   that stretches out of the button you left and pinches into the one you
+   pressed. It exists only while it is moving.
+
+   The pill this replaces for the length of the journey carries a ring and
+   a raise; the blob carries neither. A shadow inside a gooey filter is
+   blurred and thresholded along with the shape, which turns a crisp 1px
+   ring into a grey smear — so the travelling shape is the fill alone, and
+   the ring returns with the pill when it lands. */
+[data-app="notes"] .groupBy { position: relative; }
+[data-app="notes"] .segGoo {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  filter: url(#goo);
+}
+[data-app="notes"] .segGoo i {
+  position: absolute;
+  left: var(--x, 0px); top: var(--y, 0px);
+  width: var(--w, 40px); height: var(--h, 26px);
+  border-radius: var(--r-pill);
+  background: var(--white);
+  transition: left var(--dur) var(--curve), top var(--dur) var(--curve),
+              width var(--dur) var(--curve);
+}
+[data-app="notes"] .segGoo .gooTail {
+  transition-duration: var(--dur-settle);
+  /* Hangs back, then snaps home — see the rail's own note. */
+  transition-timing-function: cubic-bezier(0.72, 0, 0.86, 0.16);
+}
+/* While the accent is in the air the button does not paint its own, or
+   there would be two. The WORD keeps its weight and colour throughout. */
+[data-app="notes"] .groupBy[data-gooing] .groupBtn[data-on] {
+  background: none;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="notes"] .segGoo { display: none; }
+}
 
 /* The metadata columns are fixed, so the right-hand verticals hold down
    the whole index instead of stepping in and out with the length of each
@@ -7841,6 +8105,57 @@ body {
 }
 </style>
 
+<!-- THE GOOEY FILTER, and it has exactly one job: the accent that
+     travels between two adjacent slots — the rail's active tile moving
+     Notes to Tasks to Timeline, and the board's view pill moving Board to
+     List to Schedule to Calendar. Two blobs at slightly different points
+     on the same path, merged by this filter, read as one piece of liquid
+     stretching and pinching off rather than as a rectangle sliding.
+
+     Three primitives. Blur the alpha; run it through a steep contrast
+     ramp so two blurred shapes that touch resolve into one; draw the
+     crisp original back ON TOP of the merged silhouette. That last step
+     is what makes it usable rather than a party trick: a naive gooey
+     filter blurs everything under it, text included, and 'atop' means the
+     blur only ever produces the SHAPE.
+
+     Nothing with text in it is ever drawn through this filter. The
+     travelling layer sits behind the tiles and holds two empty spans.
+
+     color-interpolation-filters='sRGB' is load-bearing: the default is
+     linearRGB, which lightens the merged edge and turns a liquid pinch
+     into a grey halo. filterUnits='userSpaceOnUse' with an explicit
+     region is equally load-bearing — a region given in percentages is a
+     percentage of the object bounding box, and the first host tried for
+     this effect was a 0x0 anchor, where that region is empty and the
+     element is simply not painted.
+
+     WHERE IT DOES NOT GO, measured rather than assumed: the completion
+     burst. Applied there it erased it — 365 green pixels of particles
+     became 61, and the 61 were the Done lane's own dot. The burst is
+     twelve 5px particles travelling 34 to 42px apart; they never touch at
+     any frame, so a correctly-tuned filter has nothing to merge. Shapes
+     have to overlap to goo, which is why a travelling accent works and a
+     scatter cannot.
+
+     Values from the reference implementation: blur 6, contrast 18 with a
+     -7 offset. The offset puts the alpha threshold near the middle of the
+     blurred ramp; moving one without the other either dissolves the shape
+     or hard-edges it. -->
+<svg width="0" height="0" aria-hidden="true" focusable="false"
+     style="position:absolute">
+  <defs>
+    <filter id="goo" filterUnits="userSpaceOnUse"
+            x="-40" y="-40" width="400" height="400"
+            color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+      <feColorMatrix in="blur" type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+      <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+    </filter>
+  </defs>
+</svg>
+
 <div id="deck" class="floor" data-product="tasks">
   <!-- The spine is inserted here by app.js, once, before the sheets. -->
   <div class="app" data-app="notes" hidden inert></div>
@@ -9785,6 +10100,27 @@ window.__SUITE = (function () {
     }
     current = product;
     railCurrent = product;
+    /* THE RAIL ANSWERS THE PRESS. It used to repaint inside the view
+       transition's callback along with everything else, which put the
+       accent's travel a snapshot behind the press — measured at about
+       100ms of nothing happening before the liquid moved at all, on a
+       220ms journey. The rail is chrome, not the sheet: it can and should
+       answer immediately, and the accent then travels alongside the
+       sheet's own crossfade rather than queueing behind it.
+
+       Both tiles are measured before the repaint because every tile is
+       rendered at rest — only `data-active` moves between them — so the
+       destination's box is known before it becomes the destination. */
+    var railNow = deck.querySelector(".rail");
+    var fromTile = railNow && railNow.querySelector(".railTile[data-active]");
+    var toTile = railNow && railNow.querySelector('.railTile[data-rail="' + product + '"]');
+    var fromBox = fromTile ? fromTile.getBoundingClientRect() : null;
+    var toBox = toTile ? toTile.getBoundingClientRect() : null;
+    paintRail();
+    var rail = deck.querySelector(".rail");
+    if (rail && fromBox && toBox) {
+      travel(rail, fromBox, toBox, { cls: "railGoo", ms: 700 });
+    }
     /* The arrival, as one closure, run on whichever frame the DOM actually
        changes on. It used to sit inline below `apply()` and was correct
        only because `apply()` was synchronous. */
@@ -9795,7 +10131,7 @@ window.__SUITE = (function () {
   }
 
   function arrive(product, o) {
-    paintRail();
+    /* The rail has already answered — see `go`. */
     /* A sheet that was off the floor was measuring a box with no width:
        every trim, fade, scrim reserve and clamp in it was computed
        against zero. The product repaints itself on arrival — with its own
@@ -10055,6 +10391,125 @@ window.__SUITE = (function () {
     return true;
   }
 
+  /* ── the accent travels ───────────────────────────────────────
+     An active indicator that moves between two adjacent slots, as liquid.
+     Two blobs are laid on the path — one leaving now, one leaving late —
+     inside a layer carrying the goo filter, which merges them into a band
+     that stretches out of the slot you left and pinches into the one you
+     arrived at. When the late one catches up there is nothing left to
+     merge and the band is gone.
+
+     It is a MOMENT, not a material. The layer is created for the move and
+     removed after it, so at rest there is no extra element and no filter
+     anywhere on the page — every resting pixel is the pixel it was.
+
+     Shared by the rail and the board's view switcher because it is one
+     idea: the rail travels down, the views travel across, and the only
+     difference between them is which axis the boxes differ on.
+
+     Nothing with text in it is ever inside the filtered layer. */
+  function travel(container, a, b, opts) {
+    var o = opts || {};
+    if (!container || !a || !b) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    /* RECTS, not elements. The control that was active is detached by the
+       time this runs — the rail rebuilds its own markup and the board
+       repaints every node on it — so the caller measures while the thing
+       is still on the floor and hands the numbers over. A first draft took
+       the elements and measured them here, and every rect was zeros.
+
+       A box with no size is also a box the filter cannot draw: the region
+       is computed against it, and the first host tried for this effect was
+       a 0x0 anchor that painted nothing at all. */
+    var frame = container.getBoundingClientRect();
+    if (!a.width || !b.width) return;
+    if (Math.round(a.top) === Math.round(b.top) &&
+        Math.round(a.left) === Math.round(b.left)) return;
+
+    var layer = container.querySelector("." + o.cls);
+    if (layer) layer.remove();
+    layer = document.createElement("span");
+    layer.className = o.cls;
+    layer.setAttribute("aria-hidden", "true");
+    layer.innerHTML = '<i class="gooHead"></i><i class="gooTail"></i>';
+    container.insertBefore(layer, container.firstChild);
+
+    var place = function (el, r) {
+      el.style.setProperty("--x", Math.round(r.left - frame.left) + "px");
+      el.style.setProperty("--y", Math.round(r.top - frame.top) + "px");
+      el.style.setProperty("--w", Math.round(r.width) + "px");
+      el.style.setProperty("--h", Math.round(r.height) + "px");
+    };
+    var head = layer.querySelector(".gooHead");
+    var tail = layer.querySelector(".gooTail");
+    place(head, a);
+    place(tail, a);
+    container.setAttribute("data-gooing", "true");
+
+    /* Read a layout property between the two placements or the browser
+       coalesces them and the blobs are simply born at the destination. */
+    void layer.offsetWidth;
+    place(head, b);
+    place(tail, b);
+
+    /* The timer lives on the container, so the rail and the board's views
+       cannot cancel each other's travel. */
+    clearTimeout(Number(container.dataset.gooTimer || 0));
+    container.dataset.gooTimer = setTimeout(function () {
+      if (layer.isConnected) layer.remove();
+      container.removeAttribute("data-gooing");
+    }, o.ms || 520);
+  }
+
+  /* ── this becomes that ────────────────────────────────────────
+     ONE HELPER, five journeys. A control that opens a surface is not
+     showing you a new object; it is BECOMING one. The composer is what
+     the Add button turned into. The task dialog is what the card turned
+     into. The rail's panel is what the plus turned into. Every one of
+     those was a hard cut — the button stayed where it was and a second
+     object appeared somewhere else, and the person had to work out for
+     themselves that the two were related.
+
+     Built on the view transition the switch already uses rather than on
+     five hand-tuned width/height tweens. The reference implementations of
+     this effect animate `width`, `height` and `border-radius` between two
+     HARDCODED sizes — 40px to 183×172 — which means every instance needs
+     its numbers kept true by hand, and none of them can morph between two
+     boxes whose size depends on content. Handing the browser two boxes and
+     one name costs no numbers at all and is correct at every width.
+
+     The name is applied IMPERATIVELY and for the length of the transition
+     only. A static name would collide: five Add buttons are rendered at
+     once, the card the dialog came from stays on the board behind it, and
+     a duplicate name makes Chromium skip the whole transition silently. */
+  function morph(from, mutate, findTo) {
+    var reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!from || reduced || !document.startViewTransition) {
+      mutate();
+      return null;
+    }
+    from.style.setProperty("view-transition-name", "morph");
+    var landed = null;
+    var t = document.startViewTransition(function () {
+      mutate();
+      /* The old snapshot is already taken, so the name comes off the
+         control the instant the DOM changes — otherwise a control that
+         SURVIVES the mutation (the card behind its own dialog, the Add
+         button under its own composer) would still be carrying it when
+         the new state is captured, and the transition is skipped. */
+      if (from.isConnected) from.style.removeProperty("view-transition-name");
+      landed = typeof findTo === "function" ? findTo() : null;
+      if (landed) landed.style.setProperty("view-transition-name", "morph");
+    });
+    var clean = function () {
+      if (landed && landed.isConnected) landed.style.removeProperty("view-transition-name");
+      if (from && from.isConnected) from.style.removeProperty("view-transition-name");
+    };
+    if (t && t.finished && t.finished.then) t.finished.then(clean, clean);
+    else setTimeout(clean, 400);
+    return t;
+  }
+
   /* ── wiring ───────────────────────────────────────────────── */
   function register(name, api) { registry[name] = api; }
 
@@ -10105,8 +10560,20 @@ window.__SUITE = (function () {
     railCurrent = key;
 
     if (key === "more") {
-      moreOpen = !moreOpen;
-      paintRail();
+      /* THE PLUS BECOMES THE PANEL. A 40px round control on the ink floor
+         opening a panel of doors beside it — the canonical case for this,
+         and the one place in the suite where the two objects were most
+         obviously the same thing and least obviously connected. */
+      var wasOpen = moreOpen;
+      morph(
+        wasOpen ? deck.querySelector(".morePop") : tile,
+        function () { moreOpen = !moreOpen; paintRail(); },
+        function () {
+          return wasOpen
+            ? deck.querySelector('.rail [data-rail="more"]')
+            : deck.querySelector(".morePop");
+        },
+      );
       var plus = deck.querySelector('.rail [data-rail="more"]');
       if (plus) plus.focus();
       say(moreOpen ? "More, open." : "More, closed.");
@@ -10235,6 +10702,12 @@ window.__SUITE = (function () {
     cross: cross,
     uncross: uncross,
     openTask: openTask,
+    /* A control becoming the surface it opens. See `morph` above. */
+    morph: morph,
+    /* An active accent moving between two adjacent slots, as liquid. The
+       rail travels down and a segmented control travels across; it is one
+       idea and one implementation. See `travel` above. */
+    travel: travel,
     register: register,
     /* One product asking another what it can do. The registry was private
        and every cross-product journey had to be added to this surface by
@@ -10307,6 +10780,7 @@ let todayOnly = false;  /* the question a venue actually opens this to ask  */
 let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
 let openTaskId = null;  /* the task whose expanded surface is open          */
+let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
@@ -11310,6 +11784,45 @@ function dock() {
   );
 }
 
+/* THE CARD BECOMES THE DIALOG, and back. Both routes into the expanded
+   task — a press and Enter — and both routes out of it go through here,
+   because a journey that morphs on the way in and cuts on the way out is
+   worse than one that cuts both ways: the person is told the two objects
+   are the same thing and then told they are not.
+
+   `.card` is the object on the board; `.taskPanel` is the same task with
+   room to breathe. The card stays rendered behind the scrim, which is why
+   the pair name has to be lent rather than declared — see `__SUITE.morph`.
+
+   The card is looked up again INSIDE the mutation for the closing case,
+   because `mount()` replaces every node on the board: the element that was
+   the dialog's origin is not the element that ends up in its place. */
+/* The accordion is a property of one OPENING of the dialog, not of the
+   task, so it resets every time — an accordion that remembers is a dialog
+   that opens at a different height each time you open it. */
+function openCard(id, mutate, land) {
+  if (openTaskId !== id) moreOpen = false;
+  const card = () => document.querySelector('[data-app="tasks"] .card[data-id="' + id + '"]');
+  const opening = openTaskId !== id;
+  window.__SUITE.morph(
+    opening ? card() : document.querySelector(".taskPanel"),
+    () => {
+      mutate();
+      /* THE LANDING GOES IN HERE, not on the line after the call. The
+         transition runs the mutation a frame later, so every caller that
+         focused the dialog straight after `openCard` was reaching for a
+         node that did not exist yet — three gate rules went red at once,
+         all of them reading `focus:false` on a dialog that had opened
+         correctly. It is the same mistake the product switch made two
+         hours earlier, in the same shape, for the same reason: a helper
+         that defers has to own everything that depends on the deferral, or
+         every caller relearns it the hard way. */
+      if (typeof land === "function") land();
+    },
+    () => (opening ? document.querySelector(".taskPanel") : card()),
+  );
+}
+
 /* The composer. It is a card in the tray it belongs to, with the title as
    the only field, because a task is a sentence and everything else about it
    can be decided afterwards on the card itself. */
@@ -11340,6 +11853,19 @@ function draft() {
    THE RULE: no string is truncated at a character count when the box that
    holds it can measure itself. */
 function shortTitle(title) { return title || ""; }
+
+/* What an act reads as when it is no longer the live one — the same
+   subject, without the verb, because the pill behind is evidence that the
+   step exists rather than a second report of it. */
+function nameOf(act) {
+  if (!act) return "";
+  if (act.kind === "day") {
+    return act.count === 1
+      ? "<b>" + esc(shortTitle(act.title || "")) + "</b>"
+      : "<b>" + act.count + " tasks</b>";
+  }
+  return "<b>" + esc(shortTitle(act.title || "")) + "</b>";
+}
 
 /* One strip at the foot of the sheet, and the board's only statement of
    what it is currently doing. In hand beats just-finished beats filtered. */
@@ -11384,14 +11910,32 @@ function footPill() {
       : undone.kind === "add"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> added to " + esc(laneName(undone.toLane))
       : "<b>" + esc(shortTitle(undone.title)) + "</b> moved to " + esc(laneName(undone.toLane));
-    return (
-      '<div class="carry">' +
-      '<span class="carryName">' + what + "</span>" +
-      '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
-      (undoHistory.length > 1 ? "<em>" + (undoHistory.length - 1) + " more</em>" : "") +
-      "<em><kbd>" + MOD + "Z</kbd></em>" +
-      "</div>"
-    );
+    /* THREE DEEP. Ctrl+Z has always walked back through `undoHistory` one
+       act at a time, and the strip has always said how far back that goes
+       — "3 more" — while showing exactly one pill. The number was the only
+       evidence, and a number in a six-second strip is the least likely
+       thing on the board to be read.
+
+       The two acts beneath now sit behind the live one, each a little
+       smaller and a little further back, so the depth of the way back is
+       something you can SEE rather than something you have to parse. They
+       are `inert` and `aria-hidden`: only the top of the stack can be
+       undone by one press, so only the top carries a control — and the
+       "N more" text stays exactly where it was, because a reader who
+       cannot see the stack still needs the count. Form for one reader,
+       words for the other, saying the same thing. */
+    const behind = undoHistory.slice(0, -1).slice(-2).reverse();
+    const pill = (act, depth) =>
+      '<div class="carry" data-depth="' + depth + '"' +
+        (depth ? ' aria-hidden="true" inert' : "") + ">" +
+      '<span class="carryName">' + (depth ? nameOf(act) : what) + "</span>" +
+      (depth
+        ? ""
+        : '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
+          (undoHistory.length > 1 ? "<em>" + (undoHistory.length - 1) + " more</em>" : "") +
+          "<em><kbd>" + MOD + "Z</kbd></em>") +
+      "</div>";
+    return pill(undone, 0) + behind.map((a, i) => pill(a, i + 1)).join("");
   }
   /* When nothing matches, the centred block on the sheet says it — and it now
      names which filters are on, which is the only thing the strip carried
@@ -11550,13 +12094,36 @@ function taskPanel() {
            summary, because progressive disclosure is the difference between
            a panel and a form — and named honestly rather than dressed up as
            features that exist. */
-        '<details class="tpMore"><summary>Subtasks, attachments and comments</summary>' +
-          '<p class="tpNone">' +
-            (task.comments
-              ? task.comments + (task.comments === 1 ? " comment" : " comments") +
-                " on this task. Reading them is not here yet."
-              : "No subtasks, attachments or comments on this task yet.") +
-          "</p></details>" +
+        /* AN ACCORDION, not a <details>. The native element cannot animate
+           its own opening — the browser sets `display: none` on everything
+           under the summary, so there is no box to interpolate — and every
+           workaround for that is Chromium-only today (`::details-content`,
+           `interpolate-size`). This suite runs one motion system in every
+           browser, so this is a button and a panel, with `aria-expanded`
+           and `aria-controls` carrying exactly the semantics `<details>`
+           was giving for free.
+
+           The panel is a grid whose single row goes 0fr → 1fr, which is
+           the one way to animate to a height nobody measured. The inner
+           element clips, and fades and unblurs slightly behind the height
+           so the words arrive after the room to put them in. */
+        '<div class="tpMore" data-open="' + (moreOpen ? "true" : "false") + '">' +
+          '<button type="button" class="tpMoreHead" data-act="task-more"' +
+            ' aria-expanded="' + (moreOpen ? "true" : "false") + '"' +
+            ' aria-controls="tpMorePanel">' +
+            "<span>Subtasks, attachments and comments</span>" +
+            '<span class="tpMoreChevron">' + I.chevron + "</span>" +
+          "</button>" +
+          '<div class="tpMorePanel" id="tpMorePanel" role="region"' +
+            ' aria-label="Subtasks, attachments and comments">' +
+            '<div class="tpMoreInner"><p class="tpNone">' +
+              (task.comments
+                ? task.comments + (task.comments === 1 ? " comment" : " comments") +
+                  " on this task. Reading them is not here yet."
+                : "No subtasks, attachments or comments on this task yet.") +
+            "</p></div>" +
+          "</div>" +
+        "</div>" +
       "</div>" +
     "</aside>"
   );
@@ -12588,10 +13155,22 @@ function leaveDraft() {
 }
 
 function discardDraft() {
-  draftLane = null;
-  draftText = "";
-  say("Discarded.");
-  mount();
+  /* AND IT FOLDS BACK. The composer grew out of the Add button and used
+     to vanish, which tells the person the two objects were the same thing
+     on the way in and two different things on the way out. A journey that
+     morphs in one direction only is worse than one that cuts both ways.
+     The lane is read before it is cleared, because the button to fold
+     back into is the one belonging to the column being composed in. */
+  const lane = draftLane;
+  const card = document.querySelector('[data-app="tasks"] .card[data-draft]');
+  const backTo = () => document.querySelector(
+    '[data-app="tasks"] .tray[data-lane="' + lane + '"] .trayAdd');
+  window.__SUITE.morph(card, () => {
+    draftLane = null;
+    draftText = "";
+    say("Discarded.");
+    mount();
+  }, backTo);
   leaveDraft();
 }
 
@@ -12729,11 +13308,14 @@ function onKey(event) {
     if (openTaskId) {
       event.preventDefault();
       const was = openTaskId;
-      openTaskId = null;
-      mount();
-      const card = document.querySelector('.card[data-id="' + was + '"]');
-      if (card) card.focus();
-      say("Task closed.");
+      openCard(was, () => {
+        openTaskId = null;
+        mount();
+      }, () => {
+        const card = document.querySelector('.card[data-id="' + was + '"]');
+        if (card) card.focus();
+        say("Task closed.");
+      });
       return;
     }
     if (carriedId) {
@@ -12815,14 +13397,18 @@ function onKey(event) {
        reached the old inline note — click, drop, Enter and pointerup — and
        repointing three of them left the fourth quietly toggling a thing
        nobody could see any more. */
-    openTaskId = openTaskId === id ? null : id;
-    openNoteId = null;
-    refocus = true; mount();
-    if (openTaskId) {
-      const panel = document.querySelector(".taskPanel");
-      if (panel) panel.focus();
-      say(taskById(id).title + ". Task open.");
-    } else { say("Task closed."); }
+    openCard(id, () => {
+      openTaskId = openTaskId === id ? null : id;
+      openNoteId = null;
+      refocus = true;
+      mount();
+    }, () => {
+      if (openTaskId) {
+        const panel = document.querySelector(".taskPanel");
+        if (panel) panel.focus();
+        say(taskById(id).title + ". Task open.");
+      } else { say("Task closed."); }
+    });
     return;
   }
   if (DIR[key]) {
@@ -13000,17 +13586,42 @@ function onClick(event) {
       ? ".dockPrimary" : '.tray[data-lane="' + act.dataset.lane + '"] .trayAdd';
     openNoteId = null;
     say("New task " + inLane(draftLane) + ". Type it, then press Enter.");
-    mount();
-    const field = document.querySelector(".card[data-draft] .cardTitle");
-    if (field) field.focus();
+    /* THE BUTTON BECOMES THE CARD. "Add here" is a ghost button the width
+       of the column; the composer is a card in the same column with the
+       caret already in it. They are the same object one step apart, and
+       the board used to cut between them. */
+    window.__SUITE.morph(
+      act,
+      () => {
+        mount();
+        /* Inside, for the same reason the dialog's focus is: the composer
+           does not exist until the mutation runs, and a caret placed
+           before it lands on nothing. */
+        const field = document.querySelector(".card[data-draft] .cardTitle");
+        if (field) field.focus();
+      },
+      () => document.querySelector('[data-app="tasks"] .card[data-draft]'),
+    );
     return;
   }
   if (what === "tool") {
     const kind = act.dataset.tool;
-    toolOpen = toolOpen === kind ? null : kind;
-    mount();
-    const back = document.querySelector('[data-tool="' + kind + '"][data-act="tool"]');
-    if (back) back.focus();
+    const closing = toolOpen === kind;
+    /* Filter, Sort, Display and Share: a word in the header becoming a
+       panel of choices directly under it. Closing morphs the other way, so
+       the panel is seen to fold back into the word that opened it. */
+    window.__SUITE.morph(
+      closing ? document.querySelector('[data-app="tasks"] .toolPop') : act,
+      () => {
+        toolOpen = closing ? null : kind;
+        mount();
+        const back = document.querySelector('[data-tool="' + kind + '"][data-act="tool"]');
+        if (back) back.focus();
+      },
+      () => (closing
+        ? document.querySelector('[data-tool="' + kind + '"][data-act="tool"]')
+        : document.querySelector('[data-app="tasks"] .toolPop')),
+    );
     return;
   }
   if (what === "filter-set") {
@@ -13060,14 +13671,29 @@ function onClick(event) {
     say("Link copied. " + url);
     return;
   }
+  if (what === "task-more") {
+    /* No repaint. The whole point of the grid-rows technique is that the
+       panel is always rendered and only its row height changes, so a
+       mount() here would replace the node mid-transition and the height
+       would jump instead of travel. The attribute is the state. */
+    moreOpen = !moreOpen;
+    const box = act.closest(".tpMore");
+    if (box) box.setAttribute("data-open", moreOpen ? "true" : "false");
+    act.setAttribute("aria-expanded", moreOpen ? "true" : "false");
+    say(moreOpen ? "Subtasks, attachments and comments, open." : "Closed.");
+    return;
+  }
   if (what === "task-close") {
     const was = openTaskId;
-    openTaskId = null;
-    mount();
-    /* Back to the card it came from, not to the body. */
-    const card = was && document.querySelector('.card[data-id="' + was + '"]');
-    if (card) card.focus();
-    say("Task closed.");
+    openCard(was, () => {
+      openTaskId = null;
+      mount();
+    }, () => {
+      /* Back to the card it came from, not to the body. */
+      const card = was && document.querySelector('.card[data-id="' + was + '"]');
+      if (card) card.focus();
+      say("Task closed.");
+    });
     return;
   }
   if (what === "search-clear") {
@@ -13079,11 +13705,23 @@ function onClick(event) {
     return;
   }
   if (what === "projects") {
-    projOpen = !projOpen;
-    mount();
-    const back = document.querySelector('[data-act="projects"]');
-    if (back) back.focus();
-    say(projOpen ? "Projects, open." : "Projects, closed.");
+    const closing = projOpen;
+    /* The name of the project you are in, becoming the list of the ones
+       you could be in. The board's h1 is the control; the menu is the same
+       question with its answers shown. */
+    window.__SUITE.morph(
+      closing ? document.querySelector('[data-app="tasks"] .projMenu') : act,
+      () => {
+        projOpen = !projOpen;
+        mount();
+        const back = document.querySelector('[data-act="projects"]');
+        if (back) back.focus();
+        say(projOpen ? "Projects, open." : "Projects, closed.");
+      },
+      () => (closing
+        ? document.querySelector('[data-act="projects"]')
+        : document.querySelector('[data-app="tasks"] .projMenu')),
+    );
     return;
   }
   if (what === "rename") {
@@ -13431,19 +14069,24 @@ function onDrop(event) {
        handlers, one gesture, two different answers. */
     const node = document.querySelector('.card[data-id="' + id2 + '"]');
     if (node && !String(getSelection())) {
-      focusId = id2;
-      openTaskId = openTaskId === id2 ? null : id2;
-      openNoteId = null;
-      refocus = true;
+      openCard(id2, () => {
+        focusId = id2;
+        openTaskId = openTaskId === id2 ? null : id2;
+        openNoteId = null;
+        refocus = true;
+        mount();
+      }, () => {
+        if (openTaskId === id2) {
+          const panel = document.querySelector(".taskPanel");
+          if (panel) panel.focus();
+          say(taskById(id2).title + ". Task open.");
+        } else {
+          say("Task closed.");
+        }
+      });
+      return;
     }
     mount();
-    if (openTaskId === id2) {
-      const panel = document.querySelector(".taskPanel");
-      if (panel) panel.focus();
-      say(taskById(id2).title + ". Task open.");
-    } else if (node) {
-      say("Task closed.");
-    }
     return;
   }
   if (!carriedId || !overLane) return;
@@ -14114,14 +14757,24 @@ if (host) {
     /* The click may or may not survive; whichever fires first wins and the
        other finds the state already settled on the same card. */
     if (openTaskId === was.id) return;
-    focusId = was.id;
-    openTaskId = was.id;
-    openNoteId = null;
-    refocus = true;
-    mount();
-    const panel = document.querySelector(".taskPanel");
-    if (panel) panel.focus();
-    say(taskById(was.id).title + ". Task open.");
+    /* THE FOURTH ROUTE, and the one every real press takes. This file's own
+       comment eight hundred lines up says four routes reach this surface —
+       click, drop, Enter and pointerup — and warns that repointing three of
+       them leaves the fourth quietly doing its own thing. Morphing the
+       click path and not this one did exactly that: pressing a card cut
+       straight to the dialog while Enter and Escape morphed, so the same
+       journey had two different answers depending on the hand you used. */
+    openCard(was.id, () => {
+      focusId = was.id;
+      openTaskId = was.id;
+      openNoteId = null;
+      refocus = true;
+      mount();
+    }, () => {
+      const panel = document.querySelector(".taskPanel");
+      if (panel) panel.focus();
+      say(taskById(was.id).title + ". Task open.");
+    });
   });
   /* A half-written task was stranded by any click on empty sheet: focus fell
      to nothing, the draft stayed on the board still holding the words, and the
@@ -17469,10 +18122,30 @@ window.__SUITE.register("tasks", {
       return;
     }
     if (a === "group-day" || a === "group-about") {
+      /* THE ACCENT TRAVELS ACROSS. Two buttons and one white pill that
+         used to switch off here and on there; it now stretches between
+         them as one piece of liquid and pinches off. Measured before the
+         repaint, because `paint()` replaces both buttons.
+
+         This is the second host for that effect and the same helper as
+         the rail's. The obvious third — the board's Board / List /
+         Schedule / Calendar switcher — has nothing to travel between:
+         three of those four are closed doors that say so, so the accent
+         has never moved off Board. One line wires it the day List ships,
+         and until then a travel there would be motion no one can reach. */
+      const bar = mount.querySelector(".groupBy");
+      const fromBtn = bar && bar.querySelector(".groupBtn[data-on]");
+      const toBtn = bar && bar.querySelector(`[data-act="${a}"]`);
+      const fromBox = fromBtn ? fromBtn.getBoundingClientRect() : null;
+      const toBox = toBtn ? toBtn.getBoundingClientRect() : null;
       group = a === "group-day" ? "day" : "about";
       say(group === "about" ? "Grouped by what each note is about." : "Grouped by when each note was written.");
       refocus = { kind: "act", sel: `[data-act="${a}"]` };
       paint();
+      const after = mount.querySelector(".groupBy");
+      if (after && fromBox && toBox && window.__SUITE.travel) {
+        window.__SUITE.travel(after, fromBox, toBox, { cls: "segGoo", ms: 460 });
+      }
       return;
     }
     if (a === "peel") { startPeel(openId); return; }

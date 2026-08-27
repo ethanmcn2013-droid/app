@@ -724,6 +724,48 @@
 [data-app="notes"] .groupBtn:hover { color: var(--ink-1); }
 [data-app="notes"] .groupBtn[data-on] { background: var(--white); color: var(--ink-1); font-weight: 600; box-shadow: var(--ring), var(--raise); }
 
+/* ═══ THE ACCENT TRAVELS ACROSS ══════════════════════════════════
+   The same liquid the rail uses, on the other axis. Two blobs on one
+   path, the second hanging back, merged by the goo filter into a body
+   that stretches out of the button you left and pinches into the one you
+   pressed. It exists only while it is moving.
+
+   The pill this replaces for the length of the journey carries a ring and
+   a raise; the blob carries neither. A shadow inside a gooey filter is
+   blurred and thresholded along with the shape, which turns a crisp 1px
+   ring into a grey smear — so the travelling shape is the fill alone, and
+   the ring returns with the pill when it lands. */
+[data-app="notes"] .groupBy { position: relative; }
+[data-app="notes"] .segGoo {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  filter: url(#goo);
+}
+[data-app="notes"] .segGoo i {
+  position: absolute;
+  left: var(--x, 0px); top: var(--y, 0px);
+  width: var(--w, 40px); height: var(--h, 26px);
+  border-radius: var(--r-pill);
+  background: var(--white);
+  transition: left var(--dur) var(--curve), top var(--dur) var(--curve),
+              width var(--dur) var(--curve);
+}
+[data-app="notes"] .segGoo .gooTail {
+  transition-duration: var(--dur-settle);
+  /* Hangs back, then snaps home — see the rail's own note. */
+  transition-timing-function: cubic-bezier(0.72, 0, 0.86, 0.16);
+}
+/* While the accent is in the air the button does not paint its own, or
+   there would be two. The WORD keeps its weight and colour throughout. */
+[data-app="notes"] .groupBy[data-gooing] .groupBtn[data-on] {
+  background: none;
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-app="notes"] .segGoo { display: none; }
+}
+
 /* The metadata columns are fixed, so the right-hand verticals hold down
    the whole index instead of stepping in and out with the length of each
    timestamp. And the fill is calc(100% + 20px) rather than 100%: a

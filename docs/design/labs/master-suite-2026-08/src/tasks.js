@@ -51,6 +51,7 @@ let todayOnly = false;  /* the question a venue actually opens this to ask  */
 let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
 let openTaskId = null;  /* the task whose expanded surface is open          */
+let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
@@ -1054,6 +1055,45 @@ function dock() {
   );
 }
 
+/* THE CARD BECOMES THE DIALOG, and back. Both routes into the expanded
+   task — a press and Enter — and both routes out of it go through here,
+   because a journey that morphs on the way in and cuts on the way out is
+   worse than one that cuts both ways: the person is told the two objects
+   are the same thing and then told they are not.
+
+   `.card` is the object on the board; `.taskPanel` is the same task with
+   room to breathe. The card stays rendered behind the scrim, which is why
+   the pair name has to be lent rather than declared — see `__SUITE.morph`.
+
+   The card is looked up again INSIDE the mutation for the closing case,
+   because `mount()` replaces every node on the board: the element that was
+   the dialog's origin is not the element that ends up in its place. */
+/* The accordion is a property of one OPENING of the dialog, not of the
+   task, so it resets every time — an accordion that remembers is a dialog
+   that opens at a different height each time you open it. */
+function openCard(id, mutate, land) {
+  if (openTaskId !== id) moreOpen = false;
+  const card = () => document.querySelector('[data-app="tasks"] .card[data-id="' + id + '"]');
+  const opening = openTaskId !== id;
+  window.__SUITE.morph(
+    opening ? card() : document.querySelector(".taskPanel"),
+    () => {
+      mutate();
+      /* THE LANDING GOES IN HERE, not on the line after the call. The
+         transition runs the mutation a frame later, so every caller that
+         focused the dialog straight after `openCard` was reaching for a
+         node that did not exist yet — three gate rules went red at once,
+         all of them reading `focus:false` on a dialog that had opened
+         correctly. It is the same mistake the product switch made two
+         hours earlier, in the same shape, for the same reason: a helper
+         that defers has to own everything that depends on the deferral, or
+         every caller relearns it the hard way. */
+      if (typeof land === "function") land();
+    },
+    () => (opening ? document.querySelector(".taskPanel") : card()),
+  );
+}
+
 /* The composer. It is a card in the tray it belongs to, with the title as
    the only field, because a task is a sentence and everything else about it
    can be decided afterwards on the card itself. */
@@ -1084,6 +1124,19 @@ function draft() {
    THE RULE: no string is truncated at a character count when the box that
    holds it can measure itself. */
 function shortTitle(title) { return title || ""; }
+
+/* What an act reads as when it is no longer the live one — the same
+   subject, without the verb, because the pill behind is evidence that the
+   step exists rather than a second report of it. */
+function nameOf(act) {
+  if (!act) return "";
+  if (act.kind === "day") {
+    return act.count === 1
+      ? "<b>" + esc(shortTitle(act.title || "")) + "</b>"
+      : "<b>" + act.count + " tasks</b>";
+  }
+  return "<b>" + esc(shortTitle(act.title || "")) + "</b>";
+}
 
 /* One strip at the foot of the sheet, and the board's only statement of
    what it is currently doing. In hand beats just-finished beats filtered. */
@@ -1128,14 +1181,32 @@ function footPill() {
       : undone.kind === "add"
       ? "<b>" + esc(shortTitle(undone.title)) + "</b> added to " + esc(laneName(undone.toLane))
       : "<b>" + esc(shortTitle(undone.title)) + "</b> moved to " + esc(laneName(undone.toLane));
-    return (
-      '<div class="carry">' +
-      '<span class="carryName">' + what + "</span>" +
-      '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
-      (undoHistory.length > 1 ? "<em>" + (undoHistory.length - 1) + " more</em>" : "") +
-      "<em><kbd>" + MOD + "Z</kbd></em>" +
-      "</div>"
-    );
+    /* THREE DEEP. Ctrl+Z has always walked back through `undoHistory` one
+       act at a time, and the strip has always said how far back that goes
+       — "3 more" — while showing exactly one pill. The number was the only
+       evidence, and a number in a six-second strip is the least likely
+       thing on the board to be read.
+
+       The two acts beneath now sit behind the live one, each a little
+       smaller and a little further back, so the depth of the way back is
+       something you can SEE rather than something you have to parse. They
+       are `inert` and `aria-hidden`: only the top of the stack can be
+       undone by one press, so only the top carries a control — and the
+       "N more" text stays exactly where it was, because a reader who
+       cannot see the stack still needs the count. Form for one reader,
+       words for the other, saying the same thing. */
+    const behind = undoHistory.slice(0, -1).slice(-2).reverse();
+    const pill = (act, depth) =>
+      '<div class="carry" data-depth="' + depth + '"' +
+        (depth ? ' aria-hidden="true" inert' : "") + ">" +
+      '<span class="carryName">' + (depth ? nameOf(act) : what) + "</span>" +
+      (depth
+        ? ""
+        : '<button type="button" class="carryDo" data-act="undo">Undo</button>' +
+          (undoHistory.length > 1 ? "<em>" + (undoHistory.length - 1) + " more</em>" : "") +
+          "<em><kbd>" + MOD + "Z</kbd></em>") +
+      "</div>";
+    return pill(undone, 0) + behind.map((a, i) => pill(a, i + 1)).join("");
   }
   /* When nothing matches, the centred block on the sheet says it — and it now
      names which filters are on, which is the only thing the strip carried
@@ -1294,13 +1365,36 @@ function taskPanel() {
            summary, because progressive disclosure is the difference between
            a panel and a form — and named honestly rather than dressed up as
            features that exist. */
-        '<details class="tpMore"><summary>Subtasks, attachments and comments</summary>' +
-          '<p class="tpNone">' +
-            (task.comments
-              ? task.comments + (task.comments === 1 ? " comment" : " comments") +
-                " on this task. Reading them is not here yet."
-              : "No subtasks, attachments or comments on this task yet.") +
-          "</p></details>" +
+        /* AN ACCORDION, not a <details>. The native element cannot animate
+           its own opening — the browser sets `display: none` on everything
+           under the summary, so there is no box to interpolate — and every
+           workaround for that is Chromium-only today (`::details-content`,
+           `interpolate-size`). This suite runs one motion system in every
+           browser, so this is a button and a panel, with `aria-expanded`
+           and `aria-controls` carrying exactly the semantics `<details>`
+           was giving for free.
+
+           The panel is a grid whose single row goes 0fr → 1fr, which is
+           the one way to animate to a height nobody measured. The inner
+           element clips, and fades and unblurs slightly behind the height
+           so the words arrive after the room to put them in. */
+        '<div class="tpMore" data-open="' + (moreOpen ? "true" : "false") + '">' +
+          '<button type="button" class="tpMoreHead" data-act="task-more"' +
+            ' aria-expanded="' + (moreOpen ? "true" : "false") + '"' +
+            ' aria-controls="tpMorePanel">' +
+            "<span>Subtasks, attachments and comments</span>" +
+            '<span class="tpMoreChevron">' + I.chevron + "</span>" +
+          "</button>" +
+          '<div class="tpMorePanel" id="tpMorePanel" role="region"' +
+            ' aria-label="Subtasks, attachments and comments">' +
+            '<div class="tpMoreInner"><p class="tpNone">' +
+              (task.comments
+                ? task.comments + (task.comments === 1 ? " comment" : " comments") +
+                  " on this task. Reading them is not here yet."
+                : "No subtasks, attachments or comments on this task yet.") +
+            "</p></div>" +
+          "</div>" +
+        "</div>" +
       "</div>" +
     "</aside>"
   );
@@ -2332,10 +2426,22 @@ function leaveDraft() {
 }
 
 function discardDraft() {
-  draftLane = null;
-  draftText = "";
-  say("Discarded.");
-  mount();
+  /* AND IT FOLDS BACK. The composer grew out of the Add button and used
+     to vanish, which tells the person the two objects were the same thing
+     on the way in and two different things on the way out. A journey that
+     morphs in one direction only is worse than one that cuts both ways.
+     The lane is read before it is cleared, because the button to fold
+     back into is the one belonging to the column being composed in. */
+  const lane = draftLane;
+  const card = document.querySelector('[data-app="tasks"] .card[data-draft]');
+  const backTo = () => document.querySelector(
+    '[data-app="tasks"] .tray[data-lane="' + lane + '"] .trayAdd');
+  window.__SUITE.morph(card, () => {
+    draftLane = null;
+    draftText = "";
+    say("Discarded.");
+    mount();
+  }, backTo);
   leaveDraft();
 }
 
@@ -2473,11 +2579,14 @@ function onKey(event) {
     if (openTaskId) {
       event.preventDefault();
       const was = openTaskId;
-      openTaskId = null;
-      mount();
-      const card = document.querySelector('.card[data-id="' + was + '"]');
-      if (card) card.focus();
-      say("Task closed.");
+      openCard(was, () => {
+        openTaskId = null;
+        mount();
+      }, () => {
+        const card = document.querySelector('.card[data-id="' + was + '"]');
+        if (card) card.focus();
+        say("Task closed.");
+      });
       return;
     }
     if (carriedId) {
@@ -2559,14 +2668,18 @@ function onKey(event) {
        reached the old inline note — click, drop, Enter and pointerup — and
        repointing three of them left the fourth quietly toggling a thing
        nobody could see any more. */
-    openTaskId = openTaskId === id ? null : id;
-    openNoteId = null;
-    refocus = true; mount();
-    if (openTaskId) {
-      const panel = document.querySelector(".taskPanel");
-      if (panel) panel.focus();
-      say(taskById(id).title + ". Task open.");
-    } else { say("Task closed."); }
+    openCard(id, () => {
+      openTaskId = openTaskId === id ? null : id;
+      openNoteId = null;
+      refocus = true;
+      mount();
+    }, () => {
+      if (openTaskId) {
+        const panel = document.querySelector(".taskPanel");
+        if (panel) panel.focus();
+        say(taskById(id).title + ". Task open.");
+      } else { say("Task closed."); }
+    });
     return;
   }
   if (DIR[key]) {
@@ -2744,17 +2857,42 @@ function onClick(event) {
       ? ".dockPrimary" : '.tray[data-lane="' + act.dataset.lane + '"] .trayAdd';
     openNoteId = null;
     say("New task " + inLane(draftLane) + ". Type it, then press Enter.");
-    mount();
-    const field = document.querySelector(".card[data-draft] .cardTitle");
-    if (field) field.focus();
+    /* THE BUTTON BECOMES THE CARD. "Add here" is a ghost button the width
+       of the column; the composer is a card in the same column with the
+       caret already in it. They are the same object one step apart, and
+       the board used to cut between them. */
+    window.__SUITE.morph(
+      act,
+      () => {
+        mount();
+        /* Inside, for the same reason the dialog's focus is: the composer
+           does not exist until the mutation runs, and a caret placed
+           before it lands on nothing. */
+        const field = document.querySelector(".card[data-draft] .cardTitle");
+        if (field) field.focus();
+      },
+      () => document.querySelector('[data-app="tasks"] .card[data-draft]'),
+    );
     return;
   }
   if (what === "tool") {
     const kind = act.dataset.tool;
-    toolOpen = toolOpen === kind ? null : kind;
-    mount();
-    const back = document.querySelector('[data-tool="' + kind + '"][data-act="tool"]');
-    if (back) back.focus();
+    const closing = toolOpen === kind;
+    /* Filter, Sort, Display and Share: a word in the header becoming a
+       panel of choices directly under it. Closing morphs the other way, so
+       the panel is seen to fold back into the word that opened it. */
+    window.__SUITE.morph(
+      closing ? document.querySelector('[data-app="tasks"] .toolPop') : act,
+      () => {
+        toolOpen = closing ? null : kind;
+        mount();
+        const back = document.querySelector('[data-tool="' + kind + '"][data-act="tool"]');
+        if (back) back.focus();
+      },
+      () => (closing
+        ? document.querySelector('[data-tool="' + kind + '"][data-act="tool"]')
+        : document.querySelector('[data-app="tasks"] .toolPop')),
+    );
     return;
   }
   if (what === "filter-set") {
@@ -2804,14 +2942,29 @@ function onClick(event) {
     say("Link copied. " + url);
     return;
   }
+  if (what === "task-more") {
+    /* No repaint. The whole point of the grid-rows technique is that the
+       panel is always rendered and only its row height changes, so a
+       mount() here would replace the node mid-transition and the height
+       would jump instead of travel. The attribute is the state. */
+    moreOpen = !moreOpen;
+    const box = act.closest(".tpMore");
+    if (box) box.setAttribute("data-open", moreOpen ? "true" : "false");
+    act.setAttribute("aria-expanded", moreOpen ? "true" : "false");
+    say(moreOpen ? "Subtasks, attachments and comments, open." : "Closed.");
+    return;
+  }
   if (what === "task-close") {
     const was = openTaskId;
-    openTaskId = null;
-    mount();
-    /* Back to the card it came from, not to the body. */
-    const card = was && document.querySelector('.card[data-id="' + was + '"]');
-    if (card) card.focus();
-    say("Task closed.");
+    openCard(was, () => {
+      openTaskId = null;
+      mount();
+    }, () => {
+      /* Back to the card it came from, not to the body. */
+      const card = was && document.querySelector('.card[data-id="' + was + '"]');
+      if (card) card.focus();
+      say("Task closed.");
+    });
     return;
   }
   if (what === "search-clear") {
@@ -2823,11 +2976,23 @@ function onClick(event) {
     return;
   }
   if (what === "projects") {
-    projOpen = !projOpen;
-    mount();
-    const back = document.querySelector('[data-act="projects"]');
-    if (back) back.focus();
-    say(projOpen ? "Projects, open." : "Projects, closed.");
+    const closing = projOpen;
+    /* The name of the project you are in, becoming the list of the ones
+       you could be in. The board's h1 is the control; the menu is the same
+       question with its answers shown. */
+    window.__SUITE.morph(
+      closing ? document.querySelector('[data-app="tasks"] .projMenu') : act,
+      () => {
+        projOpen = !projOpen;
+        mount();
+        const back = document.querySelector('[data-act="projects"]');
+        if (back) back.focus();
+        say(projOpen ? "Projects, open." : "Projects, closed.");
+      },
+      () => (closing
+        ? document.querySelector('[data-act="projects"]')
+        : document.querySelector('[data-app="tasks"] .projMenu')),
+    );
     return;
   }
   if (what === "rename") {
@@ -3175,19 +3340,24 @@ function onDrop(event) {
        handlers, one gesture, two different answers. */
     const node = document.querySelector('.card[data-id="' + id2 + '"]');
     if (node && !String(getSelection())) {
-      focusId = id2;
-      openTaskId = openTaskId === id2 ? null : id2;
-      openNoteId = null;
-      refocus = true;
+      openCard(id2, () => {
+        focusId = id2;
+        openTaskId = openTaskId === id2 ? null : id2;
+        openNoteId = null;
+        refocus = true;
+        mount();
+      }, () => {
+        if (openTaskId === id2) {
+          const panel = document.querySelector(".taskPanel");
+          if (panel) panel.focus();
+          say(taskById(id2).title + ". Task open.");
+        } else {
+          say("Task closed.");
+        }
+      });
+      return;
     }
     mount();
-    if (openTaskId === id2) {
-      const panel = document.querySelector(".taskPanel");
-      if (panel) panel.focus();
-      say(taskById(id2).title + ". Task open.");
-    } else if (node) {
-      say("Task closed.");
-    }
     return;
   }
   if (!carriedId || !overLane) return;
@@ -3858,14 +4028,24 @@ if (host) {
     /* The click may or may not survive; whichever fires first wins and the
        other finds the state already settled on the same card. */
     if (openTaskId === was.id) return;
-    focusId = was.id;
-    openTaskId = was.id;
-    openNoteId = null;
-    refocus = true;
-    mount();
-    const panel = document.querySelector(".taskPanel");
-    if (panel) panel.focus();
-    say(taskById(was.id).title + ". Task open.");
+    /* THE FOURTH ROUTE, and the one every real press takes. This file's own
+       comment eight hundred lines up says four routes reach this surface —
+       click, drop, Enter and pointerup — and warns that repointing three of
+       them leaves the fourth quietly doing its own thing. Morphing the
+       click path and not this one did exactly that: pressing a card cut
+       straight to the dialog while Enter and Escape morphed, so the same
+       journey had two different answers depending on the hand you used. */
+    openCard(was.id, () => {
+      focusId = was.id;
+      openTaskId = was.id;
+      openNoteId = null;
+      refocus = true;
+      mount();
+    }, () => {
+      const panel = document.querySelector(".taskPanel");
+      if (panel) panel.focus();
+      say(taskById(was.id).title + ". Task open.");
+    });
   });
   /* A half-written task was stranded by any click on empty sheet: focus fell
      to nothing, the draft stayed on the board still holding the words, and the

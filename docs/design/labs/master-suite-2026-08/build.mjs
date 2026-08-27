@@ -154,6 +154,57 @@ const page = `<title>Signal Studio</title>
 ${css}
 </style>
 
+<!-- THE GOOEY FILTER, and it has exactly one job: the accent that
+     travels between two adjacent slots — the rail's active tile moving
+     Notes to Tasks to Timeline, and the board's view pill moving Board to
+     List to Schedule to Calendar. Two blobs at slightly different points
+     on the same path, merged by this filter, read as one piece of liquid
+     stretching and pinching off rather than as a rectangle sliding.
+
+     Three primitives. Blur the alpha; run it through a steep contrast
+     ramp so two blurred shapes that touch resolve into one; draw the
+     crisp original back ON TOP of the merged silhouette. That last step
+     is what makes it usable rather than a party trick: a naive gooey
+     filter blurs everything under it, text included, and 'atop' means the
+     blur only ever produces the SHAPE.
+
+     Nothing with text in it is ever drawn through this filter. The
+     travelling layer sits behind the tiles and holds two empty spans.
+
+     color-interpolation-filters='sRGB' is load-bearing: the default is
+     linearRGB, which lightens the merged edge and turns a liquid pinch
+     into a grey halo. filterUnits='userSpaceOnUse' with an explicit
+     region is equally load-bearing — a region given in percentages is a
+     percentage of the object bounding box, and the first host tried for
+     this effect was a 0x0 anchor, where that region is empty and the
+     element is simply not painted.
+
+     WHERE IT DOES NOT GO, measured rather than assumed: the completion
+     burst. Applied there it erased it — 365 green pixels of particles
+     became 61, and the 61 were the Done lane's own dot. The burst is
+     twelve 5px particles travelling 34 to 42px apart; they never touch at
+     any frame, so a correctly-tuned filter has nothing to merge. Shapes
+     have to overlap to goo, which is why a travelling accent works and a
+     scatter cannot.
+
+     Values from the reference implementation: blur 6, contrast 18 with a
+     -7 offset. The offset puts the alpha threshold near the middle of the
+     blurred ramp; moving one without the other either dissolves the shape
+     or hard-edges it. -->
+<svg width="0" height="0" aria-hidden="true" focusable="false"
+     style="position:absolute">
+  <defs>
+    <filter id="goo" filterUnits="userSpaceOnUse"
+            x="-40" y="-40" width="400" height="400"
+            color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+      <feColorMatrix in="blur" type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+      <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+    </filter>
+  </defs>
+</svg>
+
 <div id="deck" class="floor" data-product="tasks">
   <!-- The spine is inserted here by app.js, once, before the sheets. -->
   <div class="app" data-app="notes" hidden inert></div>

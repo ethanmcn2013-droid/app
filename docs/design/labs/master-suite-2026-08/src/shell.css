@@ -149,10 +149,15 @@ body {
    before and after, so the browser interpolates their boxes across the
    change and nothing about them blinks. */
 .sheet { view-transition-name: sheet; }
-.railTile[data-active] { view-transition-name: rail-active; }
+/* The rail tile is NOT named here, and that is a decision rather than an
+   omission. It was — the tile carried across the switch the way the sheet
+   does — and then the accent learned to TRAVEL as liquid, which is a
+   better answer to the same question: not "this box became that box" but
+   "the accent went from here to there, and you watched it go". Two
+   motions on one object is one too many, and the one that reads at a
+   glance won. See `travel` in app.js. */
 
-::view-transition-group(sheet),
-::view-transition-group(rail-active) {
+::view-transition-group(sheet) {
   animation-duration: var(--dur-settle, 220ms);
   animation-timing-function: var(--curve, cubic-bezier(0.23, 1, 0.32, 1));
 }
@@ -193,11 +198,36 @@ body {
 @keyframes carry-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  /* The names come off, so there is no transition to run at all — the
-     JS guard above already returns before `startViewTransition`, and this
-     is the same decision stated where a reader looks for it. */
-  .sheet, .railTile[data-active] { view-transition-name: none; }
+  /* The name comes off, so there is no transition to run at all — the JS
+     guard above already returns before `startViewTransition`, and this is
+     the same decision stated where a reader looks for it. */
+  .sheet { view-transition-name: none; }
 }
+
+/* ═══ THIS BECOMES THAT ══════════════════════════════════════════
+   The pair name `morph` is applied imperatively by `__SUITE.morph` and
+   lives only for the length of one transition, so exactly one control and
+   one surface ever carry it at once.
+
+   OVERLAPPED, not faded through. The product switch hands off cleanly
+   because two dense text layouts at once read as mud; a morph is the
+   opposite case — two small shapes where the SHAPE is the point, and a
+   gap between them reads as the control vanishing before its surface
+   arrives. So the outgoing leaves over 120ms and the incoming starts at
+   80ms, and for 40ms they are both present, which is what makes it read
+   as one object rather than two.
+
+   The 2px blur is borrowed from the reference implementations of this
+   effect and earns its place: it hides the fact that two very differently
+   proportioned pieces of type are being scaled through each other. */
+::view-transition-group(morph) {
+  animation-duration: var(--dur-settle, 220ms);
+  animation-timing-function: var(--curve, cubic-bezier(0.23, 1, 0.32, 1));
+}
+::view-transition-old(morph) { animation: morph-out 120ms var(--curve) both; }
+::view-transition-new(morph) { animation: morph-in 140ms var(--curve) 80ms both; }
+@keyframes morph-out { to { opacity: 0; filter: blur(2px); } }
+@keyframes morph-in { from { opacity: 0; filter: blur(2px); } }
 
 /* THE FALLBACK ENTRANCE. Every other transition in this suite is
    declared and gated and the one between two PRODUCTS — the largest
@@ -339,6 +369,90 @@ body {
   box-shadow: inset -1px 1px 0 var(--chrome-line);
   border-radius: 1.5px;
 }
+/* ═══ THE TRAVELLING ACCENT ══════════════════════════════════════
+   The rail's active tile is a filled box, and moving between products
+   used to mean one box switching off and another switching on — two
+   events, in two places, with nothing between them saying they were the
+   same accent. It now TRAVELS, as liquid: two blobs on one path, the
+   second lagging the first, merged by the goo filter into a band that
+   stretches out of the tile you left and pinches into the one you
+   arrived at.
+
+   It exists only DURING the move. At rest there is no extra element and
+   no filter anywhere on the page, so every resting pixel of this rail is
+   the pixel it was before — which is what makes this a moment rather than
+   a material, and keeps it out of the argument the suite already had
+   about glass. */
+.railGoo {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  /* FILTER FIRST, THEN FADE. The blobs are drawn OPAQUE and the whole
+     filtered result is taken down to the accent's own 16%.
+
+     This is not a nicety, it is the constraint the effect actually has. A
+     gooey filter works by pushing blurred ALPHA through a steep ramp —
+     18a − 7 — so anything under about 39% alpha is driven to zero and
+     erased. The rail's accent is `rgba(165, 180, 252, 0.16)`, and a first
+     version that painted the blobs in that colour rendered nothing at all
+     mid-travel: the tile you left went dark, the tile you arrived at lit
+     up, and between them was an empty rail. CSS applies `filter` before
+     `opacity`, so moving the transparency off the shapes and onto the
+     layer gives the filter something solid to merge and still lands on
+     exactly the colour the resting tile paints. */
+  filter: url(#goo);
+  opacity: 0.16;
+}
+.railGoo i {
+  position: absolute;
+  left: var(--x, 0px);
+  top: var(--y, 0px);
+  width: var(--w, 44px);
+  height: var(--h, 44px);
+  border-radius: var(--r-tile, 12px);
+  /* Opaque — the layer above carries the accent's transparency. */
+  background: #a5b4fc;
+  transition: top var(--dur-settle) var(--curve), left var(--dur-settle) var(--curve);
+}
+/* The tail leaves late and arrives late. The gap between the two is the
+   whole effect: while they are apart the filter draws the band between
+   them, and when the tail catches up the band pinches and disappears. */
+/* TWO SPEEDS ON ONE JOURNEY, and both inside the frequent-to-occasional
+   band. Changing product is something an operator does many times an
+   hour, so the vocabulary in foundation.css puts a ceiling of 220ms on
+   it — the rare tier is reserved for three moments and this is not one of
+   them, however well 400ms reads. The band exists for exactly as long as
+   the two blobs are apart, so the head arriving at 140 and the tail at
+   220 is the whole effect, over in a fifth of a second. */
+.railGoo .gooHead { transition-duration: var(--dur); }
+.railGoo .gooTail {
+  transition-duration: var(--dur-settle);
+  /* AND A DIFFERENT CURVE, which is what actually makes the band. The
+     suite's `--curve` is a hard ease-out — four fifths of the distance in
+     the first quarter of the time — so two blobs sharing it both arrive
+     almost at once and the merged shape is a blob with a soft trailing
+     edge, not a stretch. The tail eases IN instead: it hangs back in the
+     slot you left for most of the journey and then snaps home, so the
+     filter has two shapes genuinely far apart to draw a band between for
+     most of the 400ms.
+
+     This is the only easing in the suite that is not `--curve`, and it is
+     deliberate: it is not describing a thing arriving, it is describing
+     the thing that has not left yet. */
+  transition-timing-function: cubic-bezier(0.72, 0, 0.86, 0.16);
+}
+
+/* While it is in the air the tile does not paint its own accent, or the
+   board would show the accent in two places at once and the travelling
+   one would read as a third object rather than as the thing itself. The
+   GLYPH and the WORD keep their indigo throughout — colour on type is
+   what tells you which product you are on, and it must not blink. */
+.rail[data-gooing] .railTile[data-active] { background: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .railGoo { display: none; }
+}
+
 .railSpacer { flex: 1; }
 .railAdd { display: none; }
 /* The one place the two shells genuinely disagreed and both could not be
@@ -611,6 +725,7 @@ body {
   width: 0; height: 0;
   pointer-events: none;
 }
+
 .burst i {
   position: absolute; left: 0; top: 0;
   width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
