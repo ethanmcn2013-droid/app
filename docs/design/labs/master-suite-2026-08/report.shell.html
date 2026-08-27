@@ -83,6 +83,14 @@ body {
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 a { color: var(--indigo); }
 code { font-family: var(--font-mono); font-size: 0.9em; }
+/* A finding quotes commands, paths and selectors, and none of those carry
+   a break opportunity — one `node interaction-check.mjs` inside a round-3
+   item pushed a 390px report to a 456px scrollWidth, so the whole page
+   scrolled sideways to accommodate one line of prose in one finding.
+   Prose breaks at a word; code breaks anywhere, because there is nowhere
+   else for it to break. */
+code { overflow-wrap: anywhere; }
+.item p, .item li, .round p, .round li { overflow-wrap: break-word; }
 :focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; border-radius: 6px; }
 
 .wrap { max-width: var(--page); margin: 0 auto; padding: 0 24px; }
@@ -409,7 +417,17 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
     Array.isArray(v) ? v.length : typeof v === "number" ? v : 0;
   /* `confirmed` is the modern name for what this shell called `fixed`, and
      an unadjudicated finding was still raised even though it has no verdict. */
-  const fixedOf = (r) => (r.fixed !== undefined ? size(r.fixed) : size(r.confirmed));
+  /* AND THE STANDING ONES. A refuter returns `real: false` for two
+     different verdicts — the finding is WRONG, and the finding is RIGHT
+     but its remedy is not — and the collector files the second in its own
+     bucket. This shell only ever counted `confirmed`, so a round whose
+     refuters kept the severity while rejecting the remedy reported a
+     fraction of itself: round 5 raised 29 and this page said 7, closed 25
+     and this page said 3. A finding that stood is a finding that was
+     raised, and one that stood and was then fixed is a finding that was
+     fixed. */
+  const fixedOf = (r) =>
+    (r.fixed !== undefined ? size(r.fixed) : size(r.confirmed) + size(r.standing));
   const raisedOf = (r) =>
     r.findings !== undefined
       ? size(r.findings)
@@ -565,12 +583,25 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
      still looked plausible while half of it was missing. Read both shapes,
      and never assume a field. lessons.md L-14. */
   function count(v) { return Array.isArray(v) ? v.length : (typeof v === "number" ? v : 0); }
-  function raised(r) { return typeof r.findings === "number" ? r.findings : count(r.confirmed) + count(r.refuted); }
+  /* The same three buckets as the summary above — a page cannot print two
+     different numbers for one round and be believed about either. */
+  function raised(r) {
+    if (typeof r.findings === "number") return r.findings;
+    return count(r.confirmed) + count(r.standing) + count(r.refuted) + count(r.unadjudicated);
+  }
+  function closed(r) { return count(r.confirmed) + count(r.standing); }
   const RANK = { blocking: 0, misleading: 1, defect: 2, refinement: 3 };
   function worst(r) {
     if (Array.isArray(r.worst) && r.worst.length) return r.worst.slice(0, 4);
-    if (!Array.isArray(r.confirmed)) return [];
-    return r.confirmed.slice().sort(function (a, b) {
+    /* Drawn from everything that STOOD, not from `confirmed` alone. The
+       four most severe findings of rounds 4 and 5 were all standing, so
+       the page showed the round's worst as whatever happened to be in the
+       smaller bucket — and in one round showed nothing at all. */
+    const held = []
+      .concat(Array.isArray(r.confirmed) ? r.confirmed : [])
+      .concat(Array.isArray(r.standing) ? r.standing : []);
+    if (!held.length) return [];
+    return held.slice().sort(function (a, b) {
       const ra = RANK[a && a.severity] ?? 9, rb = RANK[b && b.severity] ?? 9;
       if (ra !== rb) return ra - rb;
       return (b && b.cost || 0) - (a && a.cost || 0);
@@ -595,7 +626,7 @@ td.num { font-variant-numeric: tabular-nums; color: var(--ink-3); }
         "<h3>" + low.toFixed(1) + " to " + high.toFixed(1) + "</h3>" +
         '<span class="pill">' + raised(round) + " raised</span>" +
         '<span class="pill">' + count(round.refuted) + " refused</span>" +
-        '<span class="pill">' + count(round.confirmed) + " fixed</span>" +
+        '<span class="pill">' + closed(round) + " fixed</span>" +
         (round.severity
           ? '<span class="pill">' + (round.severity.blocking + round.severity.misleading) + " blocking or misleading</span>"
           : "") +
