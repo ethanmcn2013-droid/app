@@ -2,285 +2,264 @@
 
 **Research sprint · 2026-08-27 · no code changed**
 
-Scope: a full interaction, motion and component audit of the shipping app,
-research into the products worth learning from, five competing motion
-directions, a recommended motion language, a token system, a component
+Scope: an interaction, motion and component review of the **August 2026
+composed suite** — the redesign that puts Notes, Tasks and Timeline on one
+floor — plus research into the products worth learning from, five competing
+motion directions, a recommended motion language, a token system, a component
 system, four inventories, a scored priority matrix, and a Monday brief.
 
-Everything below is measured against this repository at `a709e22`, the app
-booted in demo mode, and screenshots captured after the audit — not against
-a general impression of the product.
+Measured against the composed suite artifact and the repository at `a709e22`.
+Screenshots were captured from the artifact's own source, at `?p=tasks`,
+`?p=notes` and `?p=timeline`, after the final code state of this audit.
+
+> **Revision note.** The first draft of this playbook audited the *shipping*
+> app in demo mode and reported that the three products carried three
+> different chromes. That finding described the old surface and has been
+> withdrawn — the composed suite unified the chrome, and did so well. This
+> revision reviews the redesign on its own terms. Where the old finding
+> survives at all, it survives as a **delivery** observation (§2.5), not a
+> design one.
 
 ---
 
 ## 1. Executive summary
 
-**Signal Studio does not have a motion problem. It has a coherence problem
-wearing a motion costume.**
+**The redesign already solved the hard problem. What is left is one missing
+frame of continuity, and a token vocabulary that has three names for the same
+speed.**
 
-The instinct behind the sprint name — *components, components, components* —
-is right, and it is right for a reason the brief did not name: the reason
-Signal Studio does not yet feel like one obsessed-over product is not that
-its animations are missing. It is that there is no shared object between its
-surfaces to animate. Six findings, all measured:
+The composed suite is a genuinely strong piece of work, and the strongest
+part of it is architectural rather than visual. `app.js` mounts all three
+products at once and never tears one down:
 
-**1. The three products do not look like one product.** Tasks renders as a
-floating white sheet inset on an ink floor. Notes and Timeline render
-full-bleed white under a black header band, with a wider rail that carries
-text labels Tasks does not have, and a wordmark that sits outside the sheet
-rather than in its head. Three products, three chromes, three different
-primary buttons (Tasks: black pill · Notes: outline · Timeline: indigo pill).
-This is visible in §2.1 and is the single largest gap to "world-class".
+> *"Nothing is torn down. The product leaving keeps its DOM, its scroll, its
+> focus and every fact it was holding… Sort the board, read a note, come
+> back — the board is still sorted."*
 
-**2. The motion contract exists and is not held.** `src/lib/motion.ts`
-declares five durations and seven easing curves and calls itself "SIGNAL
-STUDIO MOTION CONTRACT v1". The stylesheets spend **32 distinct duration
-literals and 16 distinct cubic-bezier curves** — nine of them undeclared,
-including a `cubic-bezier(.34,1.56,.64,1)` overshoot used five times that
-appears in no contract. The language was written. It was never enforced.
+That is the substrate that "the interface transforms rather than replaces"
+requires, and it is already built. Almost every product that wants this
+effect has to rebuild its routing to get it. Signal Studio does not.
 
-**3. The suite's flagship transition is a curtain built to hide a transition
-the platform would now perform for free — and the curtain is what prevents
-it.** `suite-switcher-pills.tsx:219` calls `e.preventDefault()` on a real
-`<a href>` and hands off to `suiteJump()`, which paints a paper overlay and
-then sets `window.location.href` after a **deliberate 120 ms `setTimeout`**.
-Cross-document view transitions fire only for *user-initiated* same-origin
-navigations; a programmatic `location.href` assignment is specifically
-excluded. All three products are already on one origin. The product built
-the one thing that disqualifies it from the feature it wants.
+Five findings, all measured against the composed suite:
 
-The irony compounds: the only users who keep the real anchor navigation are
-those with `prefers-reduced-motion` — the branch that returns early at
-line 218.
+**1. The switch itself is a hard cut.** Everything is in place for
+continuity except the continuity. `go()` calls `apply()`, which does:
 
-**4. Nothing opts into view transitions.** Measured in the running app:
-`document.startViewTransition` is available, `@view-transition` rules found:
-**0**. Elements carrying `view-transition-name`: **0**. A product switch is
-`performance.getEntriesByType('navigation')[0].type === "navigate"` — a full
-document load, every time.
+```js
+host.toggleAttribute("hidden", !on);
+host.setAttribute("inert", "");
+```
 
-**5. There are no component primitives.** `src/components/primitives/`
-contains five files: dialog, toast, hint, context-actions, anchored-layer.
-There is no Button, Input, Select, Popover, Tooltip, Tabs, Card, Badge,
-Calendar, Skeleton or EmptyState primitive. The app contains **477 raw
-`<button>` elements**, each carrying its own Tailwind string. A hover
-transition cannot be made consistent across 477 independently authored
-buttons; it can be made consistent across one.
+Both products are in the same document at the same moment. Nothing
+interpolates between them. Because the DOMs coexist, the fix is a
+same-document `startViewTransition()` wrapped around `apply()` plus a
+`view-transition-name` on the sheet and the active rail tile — roughly five
+lines, no navigation involved, no cross-document caveats. **This is the
+single highest-return change available and it is far cheaper here than it
+would be in almost any other codebase.**
 
-**6. The date picker — the surface the brief singles out — has no keyboard
-navigation at all.** `due-calendar.tsx` has no `role="grid"`, no roving
-`tabIndex`, no `onKeyDown`. A keyboard user tabs through 42 sequential day
-buttons to change a due date. It is not a motion gap; it is a correctness gap
-sitting underneath one.
+**2. Three speeds carry four names between them.** In the composed suite:
+
+| Value | Names it answers to | Transition uses |
+|---|---|---|
+| 140ms | `--dur`, `--t-base`, `--motion-fast` | 46 · 5 · 1 |
+| 220ms | `--dur-settle`, `--t-slow`, `--motion-base` | 5 · 2 · 1 |
+| `cubic-bezier(.23,1,.32,1)` | `--ease`, `--curve`, `--ease-out` | — · 3 · — |
+
+Two reviewers cannot tell whether two components move identically without
+resolving the aliases first. Worse, `--t-` is overloaded across dimensions:
+`--t-base` is `0.14s` while `--t-11` … `--t-34` are type sizes in pixels.
+The prefix means both "time" and "type".
+
+**3. The ladder has no rare tier.** `--motion-slow: 400ms` is declared and
+used in **zero** transitions; in practice nothing moves for longer than
+220ms. That is correct for the frequent and occasional tiers and leaves the
+suite with no vocabulary at all for a moment that has earned one (§10).
+
+**4. Timeline's sheet head has no wordmark.** Tasks opens `tasks.` and Notes
+opens `notes.`, both with the dot, in the same position in the sheet head.
+Timeline opens straight into `The Orchard, events`. Three heads, two
+conventions — the one remaining chrome inconsistency, and a small fix.
+
+**5. The component layer is still bespoke.** The repository has no Button,
+Input, Select, Popover, Tooltip, Tabs, Card, Badge, Calendar or Skeleton
+primitive, and **477 raw `<button>` elements**. `due-calendar.tsx` has no
+`role="grid"`, no roving tabindex and no `onKeyDown` — 42 sequential tab
+stops to change a due date. The redesign did not touch this layer, and it is
+the layer every §9 micro-interaction depends on.
 
 ### What this means for the sprint
 
-The highest-value work is not *adding* motion. Ranked by how much each moves
-the "feels like one obsessed-over product" needle per unit of effort:
+The sprint name — *components, components, components* — is right, and the
+redesign has already cleared the work that would otherwise have had to come
+first. Ranked by return:
 
-| | Work | Why first |
+| | Work | Why |
 |---|---|---|
-| 1 | **Unify the chrome** across the three products | Without it, every transition animates between two things that disagree |
-| 2 | **Delete `suiteJump`, opt into view transitions** | Turns the worst transition into the best one; ~30 lines |
-| 3 | **Build the missing primitives** | The only way a hover state can be consistent |
-| 4 | **Enforce the motion contract with a gate** | The repo already gates contrast, tap targets and journeys — motion is the unguarded one |
-| 5 | **Then** spend motion on the moments that earn it | Correct order, and only now affordable |
-
-Items 1–4 contain almost no animation code. That is the finding.
+| 1 | **Wrap the switch in `startViewTransition`** | ~5 lines against an architecture already built for it |
+| 2 | **Collapse the four motion vocabularies to one** | Nothing else in the token system is ambiguous; this is |
+| 3 | **Build the missing primitives** | The only way a hover state can be consistent across 477 buttons |
+| 4 | **Calendar keyboard support** | A correctness gap, not a polish gap |
+| 5 | **Add a rare tier and spend it once** | The suite currently cannot express a reward |
 
 ### On restraint
 
-This codebase has already made most of the hard restraint calls, and made
-them well. Confetti is banned suite-wide; the completion reward is a drawn
-check in the system's own done-green (`showcase/celebration.tsx`). Reduced
-motion is handled globally by `MotionConfig reducedMotion="user"`, closing
-the JS half that 24 of 56 motion components never handled by hand. The
-9.5 gate (50/52, no dimension below 3) is genuinely demanding. The
-recommendations below are calibrated to a team that already exercises
-restraint — so they are mostly about *coherence and enforcement*, and the
-delight inventory in §10 is deliberately short.
+This team has already made the hard restraint calls, and the redesign
+strengthens them. Confetti is banned suite-wide. A moved milestone animates
+its `left` position with the note that this *"animates the distance rather
+than decorating a state change"* — which is precisely the right instinct,
+and is the thesis of §5 arrived at independently. Reduced motion is handled
+at the token level (`--t-*` collapse to `0ms`) and globally in React via
+`MotionConfig reducedMotion="user"`.
+
+The accessibility work in the composed suite is above the industry norm:
+hidden products are made `inert`, focus moves to the arriving sheet and the
+arrival is announced, coarse pointers get real 44px controls rather than
+expanders, and the spine's focus ring is white rather than indigo because
+indigo measured 2.56:1 on composited ink — under the 3:1 floor. That last
+one is a level of rigour most design systems never reach.
+
+**Recommendations below are calibrated accordingly.** They are mostly about
+finishing what the redesign started, and the delight inventory in §10 is
+deliberately short.
 
 ---
 
-## 2. Current Signal Studio UX audit
+## 2. Review of the composed suite
 
-Captured from the app running in demo mode at 1440×900, DPR 2, after the
-final code state of this audit.
+Screenshots captured from the artifact source at 1440×900, DPR 2.
 
-### 2.1 The coherence gap, measured
+### 2.1 What the redesign got right
 
-| | **Tasks** | **Notes** | **Timeline** |
-|---|---|---|---|
-| Sheet | Floats on ink floor, inset ~18px, radius 16px | Full-bleed white, no sheet | Full-bleed white, no sheet |
-| Header | None — the sheet head carries everything | Black band across full width | Black band across full width |
-| Rail width | 64px | ~84px | ~84px |
-| Rail labels | None (icon only) | Icon **+ word** | Icon **+ word** |
-| Wordmark | `tasks.` **inside** the sheet head, ink dot | `notes•` **on the floor**, indigo dot | `timeline•` **on the floor**, indigo dot |
-| Primary action | Black pill, "Add task" | Outline button, "Save note" | **Indigo pill**, "Share" |
-| Secondary | Segmented tab row | Text tabs with counts | Segmented control + outline |
+**One floor, one spine, one sheet — across all three.** The ink floor, the
+floating capsule and the single white sheet are now rendered once by the
+shell for every product. The rail carries an icon plus a 10px word, the
+active tile is indigo-tinted with an indigo glyph and label, and the brand
+dot is ink rather than indigo so the accent is spent in exactly one place.
+This was the largest open question in the suite and it is settled.
 
-The design lock in the founder's own artifact resolves most of these
-arguments already: one ink floor, one floating spine, one white sheet, the
-rail dot in ink rather than indigo, a 10px word under each product glyph.
-Tasks implements it. Notes and Timeline predate it. **The canon exists and
-two of three products have not adopted it.**
+**The primary action is one language.** Tasks' `Add task`, Notes'
+`Go through 8` and Timeline's `Get the link` are all the same black pill in
+the same weight. An earlier draft of this playbook flagged three different
+primary buttons; the redesign fixed it.
 
-This matters more than any transition. A shared-element transition between
-Tasks and Notes today would have to morph a floating radius-16 sheet into a
-full-bleed white field, and morph a 64px unlabelled rail into an 84px
-labelled one. The transition would be *correct* and would still look broken,
-because the two ends disagree.
+**The lane subtitles are the best writing in the product.** *"Held by a
+reply, a delivery, or a decision."* under WAITING; *"Being checked before it
+goes out."* under REVIEW. This explains a kanban board to someone who has
+never used one, without a tooltip, a tour, or a single word of jargon — it
+is the first-contact test passed inside the interface itself rather than
+alongside it. It should be treated as canon and extended: Notes' *"Yours
+until you send something on"* is the same move.
 
-### 2.2 What is already excellent — keep, do not touch
+**State survives a glance.** Sort the board, read a note, come back — the
+board is still sorted, the scroll position is intact, the caret is where it
+was. This is rarer than it sounds and it is the foundation of everything in
+§5.
 
-- **The restraint calls.** Confetti banned; the completion beat is a drawn
-  check in `--status-done` with two hairline rings. Correct, and rare.
-- **The reduced-motion architecture.** `MotionProvider` wraps the app in
-  `MotionConfig reducedMotion="user"`, so the 24 of 56 motion components
-  that never call `useReducedMotion()` are covered anyway. This is better
-  than most production React apps manage.
-- **The token discipline where it is enforced.** `--x-` extension prefix, a
-  `/* ds-allow */` escape-hatch convention, no raw hex in the dark block,
-  colour derivations that self-correct across themes.
-- **The measured gates.** `check-contrast.mjs`, `check-tap-target-scale.mjs`,
-  `check-first-contact-language.mjs`, `check-journey-coverage.mjs`, plus a
-  `ring.mjs` that measures focus rings from real pixels. Motion is the one
-  design dimension with no gate.
-- **The board itself.** Lane counts, quiet empty lanes ("Nothing here yet."),
-  per-lane add affordances, tabular figures, real hairlines. Genuinely good.
-- **The writing.** "Write the thought before it disappears…" is a better
-  placeholder than most products ship. `docs/FIRST_CONTACT_TEST.md` and its
-  automated half are a real competitive advantage.
-- **Prefetch + preconnect on the switcher.** Correct instinct, wasted by the
-  navigation model it feeds (§2.4).
+**Motion is already tokenised and scoped.** Product CSS is scoped under
+`[data-app="…"]`, transitions reference tokens rather than literals in the
+new surface, and the across-axis milestone move is written as a position
+interpolation *because position is the quantity* — not as a decoration.
 
-### 2.3 Motion drift, measured
+### 2.2 The switch — the one missing frame
 
-`src/lib/motion.ts` declares:
+`go(product)` → `apply()` → `hidden` / `inert` toggle. Instant.
 
-```
-MOTION_INSTANT 0.08 · FAST 0.14 · BASE 0.22 · MODERATE 0.32 · SLOW 0.48
-EASE_STANDARD · EASE_OUT · EASE_IN · EASE_OUT_EXPO · EASE_SPRING · EASE_SOFT · EASE_CINEMA
-```
+Everything that makes a shared-element transition possible is already true:
+both products are in the same document, both retain their DOM, and the shell
+already mirrors the arriving product's radius and accent onto the deck. The
+only thing absent is the interpolation.
 
-The stylesheets actually spend:
-
-- **32 distinct duration literals** — including 150ms (11×), 280ms (7×),
-  120ms (6×), 260ms (5×), 420ms (4×), 130ms, 100ms, 70ms, 60ms, 40ms.
-  Of the top five most-used durations, **only two are on the ladder.**
-- **16 distinct easing curves** after normalising spelling. The contract
-  declares seven. Nine are undeclared, notably:
-  - `cubic-bezier(.22,.7,.2,1)` — 5 uses, no contract entry
-  - `cubic-bezier(.34,1.56,.64,1)` — 5 uses, an overshoot spring, no entry
-  - `cubic-bezier(.22,.61,.36,1)` — 3 uses, no entry
-- Two curves are the *same curve written two ways* (`0.16,1,0.3,1` and
-  `.16,1,.3,1`; `0.34,1.56,0.64,1` and `.34,1.56,.64,1`) — the signature of
-  values copied between files rather than referenced from one.
-
-Worst-drift files: `signal-shell.module.css` (12 raw literals),
-`timeline-artifact.module.css` (9), `floor.module.css` (8), `globals.css` (8).
-
-`--motion-moderate: 320ms` is already annotated *"Legacy motion — v1 contract
-had five steps; 2.0 has four"* with a burn-down note. The burn-down has not
-happened.
-
-### 2.4 The product switch — the worst interaction in the suite
-
-The brief asks that Notes → Tasks → Timeline stop feeling like "page A
-disappears, page B appears". Today it is exactly that, by construction.
-
-`src/components/app/suite-switcher-pills.tsx`:
-
-```tsx
-onClick={(e) => {
-  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches)
-    return;                        // ← these users keep the real navigation
-  e.preventDefault();              // ← everyone else loses it
-  suiteJump(contextualAppUrl);
-}}
-```
-
-and `suiteJump()`:
+Because this is same-document, the mechanism is the simple one:
 
 ```js
-overlay.style.cssText = "...transition:opacity 260ms cubic-bezier(.32,0,.67,1)...";
-document.body.appendChild(overlay);
-requestAnimationFrame(() => { overlay.style.opacity = "1"; });
-window.setTimeout(() => { window.location.href = url; }, 120);   // ← deliberate delay
+function apply() {
+  if (!document.startViewTransition || reducedMotion) return applyNow();
+  document.startViewTransition(applyNow);
+}
 ```
 
-Four things are wrong here, in increasing order of importance:
+with `view-transition-name: sheet` on the sheet and a name on the active
+rail tile. No `@view-transition` at-rule, no opt-in on two pages, no
+same-origin question, no programmatic-navigation exclusion — all of which
+would apply to a multi-page suite and none of which applies here.
 
-1. `cubic-bezier(.32,0,.67,1)` and `260ms` are both off-contract.
-2. The comment concedes the design has already been walked back once — a
-   `scale(28)` bloom became "a quiet 10px boundary dot".
-3. **A 120 ms delay is added to every product switch, on purpose**, to give
-   the curtain time to fade in. Linear's entire performance thesis is that
-   there is nothing to wait for; this product waits on purpose.
-4. **The `preventDefault()` disqualifies the navigation from the platform's
-   own cross-document view transition**, which fires only for user-initiated
-   same-origin navigations and specifically not for programmatic
-   `location.href` assignment.
+**The old suite navigated with `window.location.href` after a deliberate
+120 ms delay. The composed suite deleted that problem wholesale.** What
+remains is not a defect so much as an unfinished sentence.
 
-Measured in the running app (dev server — dev timings are inflated relative
-to production, but the *structure* is production-true):
+### 2.3 The motion vocabulary
 
-```
-VIEW TRANSITION opt-in rules: []        API available: true
-elements with view-transition-name: 0
-SWITCH tasks→notes: url change 226ms | domcontentloaded 228ms | content 608ms
-destination navigation type: "navigate"   ← full document load
-```
+The composed suite is far tighter than the shipping app (which spends 32
+duration literals and 16 curves). Its declared ladder is three steps —
+`--t-fast: 0.08s`, `--t-base: 0.14s`, `--t-slow: 0.22s` — with one default
+curve. That is a good ladder.
 
-The platform is ready. The product opts out of it and hand-rolls a worse
-version, at a cost of 120 ms per switch.
+The problem is not drift in values; it is **drift in names**. `--dur` at 46
+transition uses is the de-facto standard, `--t-base` is the declared one,
+and `--motion-fast` is the vendored one — all three are 140ms. A fourth
+name, `--dur-out: 50ms`, is declared and never used in a transition at all.
 
-### 2.5 Component-layer findings
+This is cheap to fix and expensive to leave: every component added from here
+picks one of four vocabularies, and the choice is arbitrary.
 
-- **477 raw `<button>` elements**, no Button primitive. Sampled class
-  strings show at least four independent primary-button designs
-  (`rounded-full bg-ink`, `rounded-lg bg-ink`, `rounded-md`, indigo pill)
-  and inconsistent disabled treatment (`disabled:opacity-50` vs
-  `disabled:cursor-not-allowed disabled:opacity-50`).
-- **Missing primitives:** Button, IconButton, Input, Select, Popover,
-  Tooltip, Tabs, Card, Badge, Tag, Progress, Skeleton, EmptyState,
-  Calendar/DatePicker, Confirmation. Present: Dialog, Toast, Hint,
+### 2.4 What the redesign did not reach
+
+The component layer. The composed suite is a *design* artifact — it paints
+its own surfaces with locked per-product code. The React application
+underneath still has:
+
+- **477 raw `<button>` elements**, no Button primitive, at least four
+  independent primary-button designs and inconsistent disabled treatment
+- **No** Input, Select, Popover, Tooltip, Tabs, Card, Badge, Tag, Progress,
+  Skeleton, EmptyState or Calendar primitive. Present: Dialog, Toast, Hint,
   ContextActions, AnchoredLayer, plus Radix dropdown-menu and context-menu
-  as dependencies.
-- **`due-calendar.tsx` (241 lines):** `transition-colors` only. Month change
-  is an instant swap of 42 buttons. No `role="grid"`, no roving tabindex, no
-  arrow-key handling, `aria-pressed` on day cells rather than grid
-  semantics. Only 15 components in the whole app handle `ArrowDown`.
-- **Drag and drop is native HTML5** (`draggable` + `dataTransfer`), across 11
-  files with no shared abstraction. `floor-board.tsx` does the honest work —
-  edge-scroll at 768, scroll-snap suspended for the gesture, a genuine
-  no-op guard when a card returns to its origin, undo held across the drag.
-  But native DnD caps the ceiling: the drag image is a browser-rendered
-  bitmap that cannot be styled or animated, and the drop is a synchronous
-  jump-cut with no settle.
-- **Reduced motion:** 17 of 23 stylesheets carry a `prefers-reduced-motion`
-  block. The six without: `CaptureEmailRow`, `timeline-phone-preview`,
-  `artifact-studio`, `share-controls`, `hybrid-workspace`,
-  `ds/theme-overrides`.
-- **16 `outline: none` / `outline-none` declarations** in CSS against 61
-  files mentioning `focus-visible` — worth a targeted sweep, not a crisis.
+- **`due-calendar.tsx`** — `transition-colors` only, month change swaps 42
+  buttons instantly, no `role="grid"`, no roving tabindex, no `onKeyDown`.
+  Only 15 components in the whole app handle `ArrowDown`
+- **Native HTML5 drag-and-drop** across 11 files with no shared abstraction.
+  `floor-board.tsx` does the honest work — edge scroll at 768, snap
+  suspension for the gesture, an origin no-op guard, undo held across the
+  drag — but native DnD caps the ceiling: the drag image is an unstyleable
+  browser bitmap and the drop is a jump-cut with no settle
+- **6 of 23 stylesheets** with no `prefers-reduced-motion` block
+
+### 2.5 Delivery, not design
+
+One observation worth separating from the design review. As rendered in
+demo mode at `a709e22`:
+
+- `/app/tasks` renders the floor (`HybridWorkspace` → `OptionHybrid` →
+  `FloorWorkspace`) — the redesign is live here
+- `/app/notes` and `/app/timeline` still render the previous chrome: full-
+  bleed white under a black header band, no floating sheet
+
+The composed suite is not yet in the repository; the lab at
+`docs/design/labs/tasks-2026-08/` carries the Tasks-only `floor.html`. So
+the sequencing question for the sprint is **not** "unify the chrome" — that
+design work is done — but "land Notes and Timeline on the floor the design
+already specifies." That is the prerequisite for §12 item 1 having anything
+coherent to carry.
 
 ### 2.6 Honest characterisation
 
-Against the brief's own vocabulary, the current product is:
+Against the brief's own vocabulary, the composed suite is:
 
-- **generic** — only in its buttons and inputs, because they have no author
-- **static** — at month change, view change, and every product switch
-- **abrupt** — at card drop and at note→task conversion
-- **inconsistent** — chrome across products; 32 durations; four button designs
-- **unfinished** — calendar keyboard support
-- **over-animated** — nowhere. This product is not over-animated.
-- **under-animated** — at the few moments that genuinely deserve it (§9)
-- **lacking continuity** — comprehensively, and this is the headline
+- **generic** — nowhere. This is a distinctive product.
+- **static** — at exactly one place that matters: the product switch. And at
+  calendar month change, in the layer beneath.
+- **abrupt** — the switch; the card drop.
+- **mechanical** — no.
+- **inconsistent** — in token *names*, not in values or geometry. Plus the
+  Timeline wordmark.
+- **unfinished** — the component layer, and calendar keyboard support.
+- **over-animated** — no. Emphatically no.
+- **under-animated** — at the switch, and at the few rare moments that have
+  earned a response and currently get none.
+- **visually noisy / lacking hierarchy** — no. Both are strengths.
 
-It is *not* visually noisy, and it is *not* lacking hierarchy. Those are
-already good.
+The gap between this and world-class is narrow, and most of it is one
+transition and one rename.
 
 ---
 
@@ -334,34 +313,33 @@ dependency is required for anything in this playbook.**
 
 ### 3.3 The View Transitions API
 
-The decisive research finding of this sprint. For same-origin multi-page
-navigation, both documents opt in with a CSS at-rule:
+The decisive technical finding, and the composed suite lands on the easy
+side of it.
 
-```css
-@view-transition { navigation: auto; }
+**Same-document** (what Signal Studio needs). Both states exist in one
+document; you wrap the DOM mutation and the browser interpolates:
+
+```js
+document.startViewTransition(() => { /* mutate the DOM */ });
 ```
 
-Constraints, all of which Signal Studio either already satisfies or is one
-deletion away from satisfying:
-
-- **Same-origin only.** All three products are on `APP_ORIGIN` — satisfied.
-- **Both pages must opt in**, or the browser falls back to a hard navigation
-  with no transition and no error. One shared stylesheet — satisfied trivially.
-- **User-initiated navigations only.** A clicked link or a Back button
-  qualifies; `window.location.href = "…"` set programmatically does not.
-  **This is the one Signal Studio fails, and it fails it deliberately.**
-- Supported in Chromium and Safari 18.2+; Firefox in progress. The fallback
-  is precisely today's behaviour, so adoption carries no downside risk.
-- The old `<meta>` opt-in shipped in Chrome 111 and was deprecated around
-  Chrome 126 — it now silently does nothing. Use the at-rule.
-
 Shared elements are matched by giving the same `view-transition-name` to an
-element on both pages; the browser interpolates position, size and content
-between them. This is the entire mechanism behind "the interface transforms
-rather than replaces".
+element before and after the change. Because the composed suite mounts all
+three products simultaneously and merely toggles `hidden`, this is the whole
+mechanism — one call, two names.
 
-**Signal Studio takes:** this as the spine of the recommended motion
-language. It is the single highest-leverage change available.
+**Cross-document** (what a multi-page suite would need, and what the *old*
+architecture would have required). Both pages opt in with
+`@view-transition { navigation: auto; }`, and the transition fires only for
+user-initiated same-origin navigations — a programmatic `location.href`
+assignment is specifically excluded, which is exactly what the old
+`suiteJump()` did. Supported in Chromium and Safari 18.2+, Firefox in
+progress; the fallback is a normal hard navigation.
+
+**Signal Studio takes:** the same-document form, as the spine of §5. The
+cross-document notes are recorded only because they explain why the previous
+architecture could not have got there without the redesign, and why the
+redesign's decision to mount all three at once was the right one.
 
 ### 3.4 Linear
 
@@ -375,7 +353,8 @@ loses to a slow input model, so the fastest path to any action is the
 keyboard.
 
 **Signal Studio takes:** two rules. *Motion may never be the reason to wait*
-(which alone deletes the 120 ms in `suiteJump`). And *the command palette is
+(the principle that removed the old `suiteJump` delay, and the reason the
+switch transition must stay at or under `--t-slow`). And *the command palette is
 a motion surface* — it is the fastest path, and its open/close is a
 high-frequency interaction that must be at the `instant` end of the ladder.
 
@@ -608,8 +587,11 @@ anything. There is no negotiation in between.
 **Law 4 — Motion may never be the reason to wait.**
 No animation is permitted on the critical path of a user's action. Nothing
 may delay a navigation, a save, or a state change in order to look better
-first. Optimistic update, then animate the result. This law alone deletes
-`suiteJump`'s 120 ms.
+first. Optimistic update, then animate the result. The composed suite already
+honours this — it deleted the old architecture's deliberate 120 ms switch
+delay outright. The law exists so that item 1's transition is added *without*
+reintroducing one: `startViewTransition` must wrap the mutation, never
+postpone it.
 
 ### What each direction contributes
 
@@ -1030,8 +1012,8 @@ Visual ×1 · Delight ×1 · Perf ×1 · A11y ×1 · Wow ×1.
 
 | # | Item | UX | Vis | Del | Brand | Diff | Perf | Freq | A11y | Consist | Wow | **Score** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| 1 | Unify chrome across 3 products | 9 | 10 | 5 | 10 | 6 | 10 | 10 | 9 | **10** | 7 | **8.8** |
-| 2 | Delete `suiteJump`; cross-doc VT | 10 | 9 | 8 | 9 | **9** | 9 | 10 | 9 | 9 | 9 | **9.1** |
+| 1 | Land Notes + Timeline on the floor | 8 | 10 | 5 | 10 | 6 | 10 | 10 | 9 | **10** | 7 | **8.6** |
+| 2 | `startViewTransition` on the switch | 10 | 9 | 8 | 9 | **10** | 9 | 10 | 9 | 9 | 9 | **9.3** |
 | 3 | `Button` + `IconButton` primitives | 8 | 8 | 3 | 8 | 7 | 10 | 10 | 9 | **10** | 3 | **7.9** |
 | 4 | Motion contract gate (report mode) | 6 | 7 | 2 | 8 | **9** | 10 | — | 10 | **10** | 2 | **7.5** |
 | 5 | Calendar keyboard + grid semantics | 9 | 5 | 3 | 7 | 7 | 10 | 6 | **10** | 7 | 3 | **7.1** |
@@ -1042,7 +1024,7 @@ Visual ×1 · Delight ×1 · Perf ×1 · A11y ×1 · Wow ×1.
 | 10 | `Popover` + `Tooltip` primitives | 7 | 7 | 3 | 8 | 7 | 9 | 9 | **10** | 9 | 3 | **7.4** |
 | 11 | In-product view VT (Board↔List) | 7 | 8 | 6 | 8 | **8** | 9 | 8 | 9 | 8 | 7 | **7.7** |
 | 12 | AI staggered arrival | 7 | 8 | 9 | 9 | **9** | 9 | 6 | 9 | 7 | 8 | **8.0** |
-| 13 | Retire `--motion-moderate`; 3 curves | 4 | 6 | 2 | 7 | 8 | 10 | — | 10 | **10** | 1 | **6.7** |
+| 13 | Collapse 4 motion vocabularies to 1 | 6 | 6 | 2 | 8 | **9** | 10 | — | 10 | **10** | 1 | **7.2** |
 | 14 | Toast anchored to origin | 6 | 7 | 6 | 8 | 7 | 9 | 8 | 9 | 8 | 5 | **7.1** |
 | 15 | Lane-cleared moment | 5 | 8 | 9 | 9 | 7 | 9 | 3 | 9 | 7 | 8 | **7.2** |
 | 16 | `Skeleton` unification | 5 | 6 | 2 | 7 | 8 | 9 | 7 | 9 | 9 | 2 | **6.5** |
@@ -1060,7 +1042,9 @@ animation — items 2, 1, 6, 12, 3. The two most *visually* exciting items
 the case of drag, carry real performance and accessibility risk.
 
 Item 2 scoring highest is the finding of the whole exercise: **the single
-best thing available is a deletion.**
+best thing available is five lines against an architecture that was already
+built to receive them.** The redesign did the expensive part; nobody has yet
+spent the cheap part.
 
 ---
 
@@ -1068,15 +1052,18 @@ best thing available is a deletion.**
 
 A three-week shape. Weeks 2 and 3 are conditional on week 1 landing.
 
-**Week 1 — the foundations that everything else needs**
-Nothing here is animation. Days 1–2: chrome unification (#1) and the switcher
-deletion (#2) — these two together transform the suite. Days 3–4: `Button`,
-`IconButton` (#3). Day 5: the motion gate in report mode (#4), plus the token
-retirements (#13, #17) which are mechanical.
+**Week 1 — finish what the redesign started**
+Day 1: the switch transition (#2 in the matrix, Monday item 1) — five lines,
+and it is the item the whole brief is about. Days 1–3: land Notes and
+Timeline on the floor (#1, Monday item 2), plus Timeline's wordmark. Day 3:
+collapse the four motion vocabularies (#13) — before the component work, not
+after, so primitives are authored against one name. Days 4–5: `Button`,
+`IconButton` (#3), and the motion gate in report mode (#4).
 
-*Exit criteria:* the three products share one chrome; a product switch is a
-single anchor click with a native transition and no `setTimeout`; the button
-count is one; the motion gate reports a baseline.
+*Exit criteria:* the sheet no longer blinks on a product switch; all three
+products render on the floor in the shipping app; each duration and curve has
+exactly one name; the button count is one; the motion gate reports a
+baseline.
 
 **Week 2 — continuity**
 Card→panel shared element (#6). In-product view transitions (#11). Calendar
@@ -1108,68 +1095,90 @@ block and contain almost no animation.
 
 ---
 
-### 1 · Delete `suiteJump`, opt into cross-document view transitions
+### 1 · Wrap the product switch in `startViewTransition`
 
-**Component** `suite-switcher-pills.tsx`, `suite-launcher.tsx`, `globals.css`
-**Current** `onClick` calls `preventDefault()` on a real `<a href>`, paints a
-260ms paper curtain, and sets `window.location.href` after a deliberate 120ms
-`setTimeout`. Zero `@view-transition` rules exist. Every switch is a full
-document load.
-**Desired** The pill is an ordinary link. The browser performs the
-transition. The sheet persists across the navigation; the spine's active tile
-carries to its new position.
-**Reference** View Transitions API (§3.3); Linear's "nothing to wait for".
-**Approach** Delete the `preventDefault`/`suiteJump` branch (keep the
-modifier-key branch — it becomes the only branch). Add to `globals.css`:
+**Component** `app.js` — `go()` / `apply()`; shell CSS
+**Current** `apply()` toggles `hidden` and `inert` on the three product
+hosts. Both products are in the document at the same instant; nothing
+interpolates between them. The switch is a hard cut.
+**Desired** The sheet persists visually across the switch; its contents
+change; the spine's active tile travels to its new position.
+**Reference** Same-document View Transitions (§3.3); Law 1 (§5).
+**Approach** Wrap the existing mutation, keeping the current path as the
+fallback:
 
-```css
-@view-transition { navigation: auto; }
+```js
+function apply() {
+  if (!document.startViewTransition || prefersReducedMotion) return applyNow();
+  document.startViewTransition(applyNow);
+}
 ```
 
-Then name the three persistent objects — the sheet, the spine, and the active
-tile — with `view-transition-name`, and give the default group
-`animation-duration: var(--motion-base)`.
-**Complexity** **S.** Net deletion. The second copy of `suiteJump` in
-`suite-launcher.tsx` goes too.
-**Why first** Highest score in §11, and it is a deletion. It removes 120ms
-from every product switch and simultaneously delivers the transition the
-brief asks for.
+Then `view-transition-name: sheet` on `.sheet`, and a name on the active
+rail tile. Give the default group `animation-duration: var(--t-slow)`.
+**Complexity** **S.** Roughly five lines plus two names. No routing change,
+no navigation, no opt-in at-rule — the composed suite's decision to mount
+all three products at once already did the expensive part.
+**Why first** Highest score in §11, lowest cost in the list, and it is the
+one thing standing between the current suite and the brief's stated goal.
 **Acceptance**
-- A product switch performs no `setTimeout` and no overlay element.
-- The sheet does not blink: it is continuously present across the navigation,
+- The sheet does not blink: it is continuously present across the switch,
   and its corner radius and inset do not change during it.
-- The active tile travels to its new position rather than one tile
+- The active rail tile **travels** to its new position rather than one tile
   extinguishing and another lighting.
-- With `prefers-reduced-motion`, navigation still occurs and is instant.
-- In a browser without support, behaviour is exactly today's — verified, not
-  assumed.
+- The departing product's scroll, focus and state are still intact on
+  return — the transition must not cost what the architecture already
+  guarantees.
+- ≤220ms (`--t-slow`).
+- With `prefers-reduced-motion`, the switch is instant and still correct.
+- In a browser without `startViewTransition`, behaviour is exactly today's —
+  verified, not assumed.
 
 ---
 
-### 2 · Give Notes and Timeline the Tasks chrome
+### 2 · Land Notes and Timeline on the floor
 
 **Component** Notes and Timeline app shells
-**Current** Tasks: floating sheet on ink floor, 64px unlabelled rail,
-wordmark in the sheet head. Notes/Timeline: full-bleed white under a black
-band, ~84px labelled rail, wordmark on the floor.
-**Desired** One floor, one spine, one sheet, in all three. The design lock
-already decides every disputed value.
-**Reference** The founder's own composition artifact; §2.1.
-**Approach** Hoist the floor/spine/sheet CSS out of the Tasks shell into a
-suite-level stylesheet. Adopt the lock's resolutions verbatim: the rail dot
-is ink not indigo; the product word is 10px under the glyph; the wordmark
-sits in the sheet head; the spine's focus ring is white at 2px offset.
-**Complexity** **M.** Mostly CSS; the risk is Notes' and Timeline's
-conflicting `--paper` declarations, which the lock already documents.
-**Why priority** Item 1 has nothing coherent to carry until this lands.
+**Current** The composed suite unifies all three products on one floor, one
+spine, one sheet — the design work is **done**. In the repository at
+`a709e22`, `/app/tasks` renders it (`HybridWorkspace` → `OptionHybrid` →
+`FloorWorkspace`); `/app/notes` and `/app/timeline` still render the
+previous chrome — full-bleed white under a black header band, no floating
+sheet.
+**Desired** The shipping app matches the composed suite.
+**Reference** The composed suite artifact; §2.5.
+**Approach** Port the shell composition — the floor, the spine and the sheet
+geometry rendered once for all three, with each product as a
+`display: contents` child carrying only its own scope. The artifact's own
+notes resolve the known conflicts: `--paper` must not be declared at
+`:root` by any product, and the spine's type tokens belong on `:root` so a
+rail rule cannot silently inherit 16px.
+**Complexity** **M.** Mostly composition; the risk is the two products'
+conflicting `--paper` declarations, which the design lock already documents.
+**Why priority** Item 1 has nothing coherent to carry between until all
+three products are on the same floor in the shipping app.
 **Acceptance**
-- Screenshots of all three products at 1440 are indistinguishable in chrome:
-  same rail width, same inset, same sheet radius, same wordmark position.
-- The primary action in all three is the same component with the same
-  variant. Timeline's indigo "Share" pill and Notes' outline "Save note" both
-  resolve to `Button` variants.
+- `/app/notes` and `/app/timeline` render the floating sheet on the ink
+  floor, with the same rail width, inset, sheet radius and wordmark position
+  as `/app/tasks`.
 - No product declares `--paper` at `:root`.
-- The three-product screenshot strip is regenerated and attached to the PR.
+- Switching between all three preserves scroll, focus and state in the
+  product left behind.
+- A three-product screenshot strip at 1440 is regenerated and attached to
+  the PR, and the three chromes are indistinguishable.
+
+---
+
+### 2b · Give Timeline its wordmark
+
+**Current** Tasks opens `tasks.` and Notes opens `notes.` in the sheet head,
+both with the dot. Timeline opens straight into `The Orchard, events`.
+**Desired** `timeline.` in the same position, same treatment.
+**Complexity** **XS.**
+**Acceptance** All three sheet heads open with the product wordmark in the
+same position, at the same size and tracking. The full stop follows each
+product's own lock (ink in Tasks, indigo in Notes) — the wordmark's
+*position and presence* is what unifies, not its colour.
 
 ---
 
@@ -1246,13 +1255,22 @@ place.
 
 ---
 
-### 7 · Retire `--motion-moderate` and eleven easing curves
+### 7 · Collapse the four motion vocabularies into one
 
-**Approach** §6.4 migration table. Mechanical.
-**Complexity** **S.**
-**Acceptance** `--motion-moderate` appears nowhere in `src/`. Curve count is
-7 (three contract + four `ds-allow` cinematic). Zero visual regressions in the
-existing Playwright evidence run.
+**Current** 140ms answers to `--dur` (46 uses), `--t-base` and
+`--motion-fast`. 220ms answers to `--dur-settle`, `--t-slow` and
+`--motion-base`. One curve answers to `--ease`, `--curve` and `--ease-out`.
+`--t-` means both time (`--t-base: 0.14s`) and type size (`--t-11: 11px`).
+**Desired** One name per value, and a prefix that means one thing.
+**Approach** Keep the three-step ladder as declared; make `--motion-*` the
+single public name (it is the vendored DS one), alias `--dur` to it during
+the burn-down, and rename the timing `--t-*` tokens so the `--t-` prefix
+belongs to type alone.
+**Complexity** **S.** Mechanical, but touches many files — do it before the
+component work in item 3, not after.
+**Acceptance** Each duration and each curve has exactly one canonical name.
+`--t-` resolves only to type sizes. `--dur-out` is either used or deleted.
+Zero visual regressions in the existing Playwright evidence run.
 
 ---
 
@@ -1339,8 +1357,12 @@ snap suspension, the origin no-op guard, and undo-held-across-gesture.
 
 **Desired** The note row travels from the Notes list and becomes the card in
 its destination lane.
-**Approach** Cross-document view transition, sharing a name between the note
-row and the created card. Item 1 is a prerequisite.
+**Approach** Same-document view transition, sharing a name between the note
+row and the created card. Items 1 and 2 are prerequisites. Note that the
+composed suite **already implements the data half** of this — `app.js` calls
+it "the seam": a note peeled in Notes becomes a card on the Tasks board, in
+the lane the seam chose, and undo takes it back out of both. What is missing
+is only the visible carry.
 **Complexity** **M–L.**
 **Acceptance**
 - The note's text is continuously on screen from list to board — never
@@ -1358,9 +1380,11 @@ row and the created card. Item 1 is a prerequisite.
 
 Nine of these fifteen items contain little or no animation. Two are
 deletions. The sprint that makes Signal Studio feel obsessed-over is mostly
-a sprint about **removing disagreement** — between three chromes, four button
-designs, thirty-two durations, and a hand-built curtain standing in front of
-a platform feature.
+a sprint about **finishing agreements the redesign already reached** — one
+floor that two products have yet to stand on, one speed that answers to four
+names, one component layer that four hundred and seventy-seven buttons have
+never had, and one transition that an architecture was built to receive and
+has not yet been given.
 
 The brief's own closing principle is the right one, and this playbook's only
 substantive amendment to it is a matter of sequence:
