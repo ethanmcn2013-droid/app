@@ -29,8 +29,11 @@ const focusRule = () => {
       const was = document.activeElement;
       try { el.focus(); } catch (e) {}
       const took = document.activeElement === el;
+      const seenNow = took && el.checkVisibility
+        ? el.checkVisibility({ checkVisibilityCSS: true, checkOpacity: true })
+        : took;
       if (was && was.focus) { try { was.focus(); } catch (e) {} }
-      if (took) out.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
+      if (took && !seenNow) out.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
     }
   }
   return out;

@@ -1782,3 +1782,35 @@
 [data-app="notes"] .dark .joinSeam:hover { color: var(--on-ink-1); }
 @media (pointer: coarse) { [data-app="notes"] .joinSeam { min-height: 44px; } }
 
+/* ── one owner per verb ────────────────────────────────────────────
+   Dictate and Read a photo were offered TWICE at the same moment on the
+   same screen: as worded buttons on the desk's capture row, and again as
+   glyphs in the dock 630px below. Measured at 768, 1280, 1440 and 1920,
+   both pairs visible simultaneously. Two controls for one act is a reader
+   choosing between two things that do the same thing, and the glyph pair
+   is the weaker of the two because it carries no word.
+
+   The desk pair owns them wherever the desk pair exists. The dock keeps
+   them on a phone, where the desk row does not render and the dock IS the
+   capture surface. */
+@media (min-width: 721px) {
+  [data-app="notes"] .top ~ .dock .dockGlyph[data-act="voice"],
+  [data-app="notes"] .top ~ .dock .dockGlyph[data-act="photo"],
+  [data-app="notes"] .dock .dockGlyph[data-act="voice"],
+  [data-app="notes"] .dock .dockGlyph[data-act="photo"] { display: none; }
+}
+
+/* The dictation pair moves as one. See the note in notes.js: as bare
+   siblings of `.darkFoot` they wrapped independently and split across two
+   rows between 760 and 880. */
+[data-app="notes"] .darkActs {
+  display: flex; align-items: center; gap: 12px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+@media (max-width: 900px) {
+  /* If anything has to wrap at all, the disclosure wraps and the pair
+     stays whole on its own line. */
+  [data-app="notes"] .darkFoot { flex-wrap: wrap; }
+  [data-app="notes"] .darkNote { flex: 1 1 100%; }
+}

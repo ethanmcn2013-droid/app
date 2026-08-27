@@ -111,7 +111,15 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
         try { el.focus(); } catch (e) { /* refused, which is the answer */ }
         const took = document.activeElement === el;
         if (was && was.focus) { try { was.focus(); } catch (e) {} }
-        if (took) out.invisible.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
+        /* VISIBLE WHILE FOCUSED, which is the question that matters. The
+           rule read visibility BEFORE focusing, which condemns the common
+           and correct pattern of a control hidden at rest and revealed by
+           `:focus` — the card's move menu is exactly that. A keyboard user
+           needs to see where focus IS, not where it was before it arrived. */
+        const seenNow = took && el.checkVisibility
+          ? el.checkVisibility({ checkVisibilityCSS: true, checkOpacity: true })
+          : took;
+        if (took && !seenNow) out.invisible.push(el.tagName.toLowerCase() + "." + String(el.className).split(" ")[0]);
       }
     }
     return out;

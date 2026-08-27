@@ -382,7 +382,7 @@ function card(task, force, stop) {
     "</div>" +
     (task.note ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
-      (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
+      (task.fromNote ? '<span class="grow" role="img" aria-label="Came from a note in Notes" title="Came from a note">' + I.note + "</span>" : "") +
       '<button class="cardDots" data-act="menu" tabindex="' + (stop ? "0" : "-1") +
         '" aria-haspopup="menu" aria-expanded="' + (menuFor === task.id ? "true" : "false") +
         '" aria-label="Move this task">' + I.dots + "</button>" +
@@ -801,7 +801,12 @@ function head() {
          the same room. The button carries its state instead of a tally. */
       '<button class="ghost" data-act="planning" aria-expanded="' + (state === "planning" ? "true" : "false") +
         '">' + I.planning + "<span>Planning</span></button>" +
-      '<button class="ghost" aria-label="More"' + notYet("Project settings come with your account.") + ">" +
+      /* Not "More". The spine's live door is already called More, and two
+         controls with the identical accessible name on one screen — one
+         live, one closed, doing unrelated things — is the product asking a
+         screen-reader user to guess which is which. This one is about the
+         project, so it says so. */
+      '<button class="ghost" aria-label="Project settings"' + notYet("Project settings come with your account.") + ">" +
         I.dots + "</button>" +
     "</div></div>"
   );
@@ -950,8 +955,15 @@ function dock() {
          it cannot move a single thing on the board. */
       '<div class="dockField' + (queryText ? " is-live" : "") + '">' + I.search +
         '<input type="search" class="dockInput" data-act="search"' +
-        ' placeholder="Search ' + esc(B.workspace) + '"' +
-        ' aria-label="Search ' + esc(B.workspace) + '"' +
+        /* "Search", not "Search <the venue>". The name needed 163px in a
+           144px box and was cut mid-word at every desk width — and it was
+           redundant besides: the project's name is set in the h1 directly
+           above this field, and the field expands the moment it is
+           focused. The accessible name below keeps the whole phrase. */
+        ' placeholder="Search tasks"' +
+        /* The same short string the placeholder shows. One control, one
+           name — and the project it searches is set in the h1 above it. */
+        ' aria-label="Search tasks"' +
         ' value="' + esc(queryText) + '">' +
         (queryText
           ? '<button type="button" class="dockClear" data-act="search-clear" aria-label="Clear search">' +
@@ -2698,8 +2710,14 @@ function onClick(event) {
     state = "board";
     mount();
     if (window.__SUITE && window.__SUITE.reproject) window.__SUITE.reproject();
-    const name = (P.list.find((p) => p.id === id) || {}).name || "the project";
-    say(name + ". Tasks, Timeline and Planning all moved with it.");
+    /* The name the surface has already resolved, not a lookup that can
+       miss. `P.ALL` is not a member of `P.list`, so the internal fallback
+       literal "the project" fell straight into the live region: the one
+       switch that changes the most was the only one the product could not
+       name aloud, and a studio placeholder arrived in the accessibility
+       tree. `B.workspace` is what the head is painting, so the two cannot
+       disagree by construction. */
+    say(B.workspace + ". Tasks, Timeline and Planning all moved with it.");
     const back = document.querySelector('[data-act="projects"]');
     if (back) back.focus();
     return;

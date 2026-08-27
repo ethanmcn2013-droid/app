@@ -151,7 +151,11 @@ window.__SUITE = (function () {
       ? MORE_DOORS.concat([{ key: "settings", label: "Settings" }])
       : MORE_DOORS;
     var doors = list.map(function (d) {
-      return '<button type="button" class="moreItem" data-door="' + d.key + '" aria-disabled="true" title="' +
+      /* role="menuitem". The container declares role="menu" and its
+         children were plain buttons with no role at all, so the menu
+         reported no items to anything reading the tree — a menu whose
+         contents are invisible to the one reader most dependent on it. */
+      return '<button type="button" role="menuitem" class="moreItem" data-door="' + d.key + '" aria-disabled="true" title="' +
         esc(NOT_YET[d.key]) + '">' + I[d.key] + "<span>" + esc(d.label) + "</span>" +
         '<em>Not here yet</em></button>';
     }).join("");
@@ -506,6 +510,22 @@ window.__SUITE = (function () {
       return;
     }
     go(key);
+  });
+
+  /* Focus leaving the panel closes it. Tabbing past its last door landed
+     on the sheet's own head with the panel still open, still painted and
+     still over the board — a layer nobody was in and nothing would shut.
+     `focusout` fires before the next focus lands, so the check is deferred
+     one turn to see where focus actually WENT. */
+  deck.addEventListener("focusout", function () {
+    if (!moreOpen) return;
+    setTimeout(function () {
+      if (!moreOpen) return;
+      var on = document.activeElement;
+      var inside = on && on.closest &&
+        (on.closest(".morePop") || on.closest('[data-rail="more"]'));
+      if (!inside) { moreOpen = false; paintRail(); }
+    }, 0);
   });
 
   /* The spine is one stop the arrows walk, and this is the ONLY thing

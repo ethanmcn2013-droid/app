@@ -750,11 +750,30 @@
    is genuinely out of the tab order rather than an invisible tab stop. */
 [data-app="tasks"] .cardDots {
   position: relative;
-  margin: -3px 0 -3px auto;
+  /* A 44px TARGET around a 24px mark. It painted 24x24, which is under the
+     touch floor the whole suite holds — and it was only exempt before
+     because `visibility: hidden` made the audit skip it entirely. Changing
+     it to `opacity: 0` so the keyboard could reach it in both directions
+     also made it countable, and it counted as too small: a control that was
+     never really exempt, only invisible to the check.
+
+     Grown by padding and pulled back by an equal negative margin, which is
+     the same repair round 2 made to `.who` — a positive inset alone would
+     move the card's own rhythm. */
+  margin: -13px -10px -13px auto;
+  padding: 10px;
   width: 24px; height: 24px; border-radius: var(--r-chip);
+  box-sizing: content-box;
   display: grid; place-items: center; color: var(--ink-3);
   background: transparent;
-  visibility: hidden;
+  /* opacity, not visibility. `visibility: hidden` takes an element OUT of
+     the tab order, and the card revealed it on focus-within — so walking
+     FORWARD reached the card, revealed the dots, and then found them,
+     while walking BACKWARD skipped them entirely. One control, reachable
+     in one direction. `opacity: 0` keeps it in the order both ways;
+     `pointer-events: none` keeps an invisible thing unclickable; and the
+     focus rule below means a keyboard user can always SEE where they are. */
+  opacity: 0; pointer-events: none;
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 /* A 32px target around a 24px glyph, without the glyph growing. */
@@ -762,7 +781,7 @@
 [data-app="tasks"] .cardDots svg { width: 15px; height: 15px; }
 [data-app="tasks"] .card:hover .cardDots,
 [data-app="tasks"] .card[data-force="hover"] .cardDots,
-[data-app="tasks"] .card:focus-within .cardDots { visibility: visible; }
+[data-app="tasks"] .card:focus-within .cardDots { opacity: 1; pointer-events: auto; }
 [data-app="tasks"] .cardDots:hover { background: var(--wash-2); color: var(--ink-1); }
 
 /* The time fact. Right-aligned on the title's own line, so a tray reads
@@ -1524,6 +1543,23 @@
   flex: 0 1 auto; min-width: 24ch; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* On a phone the strip's sentence does not fit and must not be cut. At 390
+   "Showing 1 overdue task. 12 others are hidden." needs 244px in a 206px
+   box and ended "12 others ar…" — a sentence about what is HIDDEN, itself
+   hidden mid-word. This product's own rule is that no string is truncated
+   at a character count when the box that holds it can measure itself; the
+   box can, so the sentence wraps rather than being cut. Two lines of a
+   true sentence beat one line of half of one. */
+@media (max-width: 720px) {
+  [data-app="tasks"] .carryName {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    min-width: 0;
+    line-height: var(--lh-tight);
+  }
+  [data-app="tasks"] .carry { align-items: flex-start; }
+}
 /* A hint is one phrase and never breaks. Wrapping put "put it back" in white
    type outside the black pill on a phone, at the exact instant the operator
    is holding a card and most needs to trust the board. */
@@ -1701,7 +1737,7 @@
      it can reflow into what is actually left. */
   /* A finger never hovers, so the menu is simply present, and quieter than
      the desktop reveal so it does not compete with the title. */
-  [data-app="tasks"] .cardDots { visibility: visible; color: var(--ink-4); }
+  [data-app="tasks"] .cardDots { opacity: 1; pointer-events: auto; color: var(--ink-4); }
   [data-app="tasks"] .cardDots::before { inset: -10px; }
   [data-app="tasks"] .cardTitle { min-width: 0; }
   [data-app="tasks"] .dockField kbd { display: none; }
@@ -2417,16 +2453,26 @@
    outranks a bare class, so the badge was painting INK on indigo at 3:1
    while this block declared white. The stylesheet said one thing and the
    cascade did another; only the audit's composited reading caught it. */
+/* INLINE, after the word, not stacked on top of it. Absolutely positioned
+   at the button's top-right the badge sat ON the label — measured 5px of
+   horizontal and 9px of vertical overlap at 1280 — so the count and the
+   word it counts were printed through each other. A count belongs beside
+   the thing it counts. */
 [data-app="tasks"] .ghost em.toolDot {
-  position: absolute; top: 3px; right: 2px;
-  min-width: 14px; height: 14px; padding: 0 3px;
+  position: static;
+  margin-left: 6px;
+  min-width: 16px; height: 16px; padding: 0 4px;
   border-radius: var(--r-pill);
   background: var(--indigo); color: var(--white);
   font-family: var(--font-mono); font-style: normal;
   font-size: 10px; line-height: 14px; letter-spacing: 0;
   display: grid; place-items: center;
 }
-[data-app="tasks"] .ghost em.toolDot:empty { min-width: 6px; width: 6px; height: 6px; padding: 0; top: 6px; right: 5px; }
+/* No number to show: a plain dot, still beside the word. */
+[data-app="tasks"] .ghost em.toolDot:empty {
+  min-width: 6px; width: 6px; height: 6px; padding: 0;
+  align-self: center;
+}
 /* Titles only. */
 [data-app="tasks"][data-no-notes] .cardNote { display: none; }
 @media (prefers-reduced-motion: reduce) {
@@ -2435,3 +2481,9 @@
 @media (max-width: 720px) {
   [data-app="tasks"] .toolPop { right: auto; left: 0; width: min(268px, calc(100vw - 40px)); }
 }
+
+/* Focus reveals it, in both directions, whatever revealed it. */
+[data-app="tasks"] .cardDots:focus,
+[data-app="tasks"] .cardDots:focus-visible,
+[data-app="tasks"] .card:focus-within .cardDots,
+[data-app="tasks"] .card:hover .cardDots { opacity: 1; pointer-events: auto; }

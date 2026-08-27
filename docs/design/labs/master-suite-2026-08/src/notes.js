@@ -1799,7 +1799,7 @@
           <div class="peelRow">
             <button class="act" type="button" data-act="open-task">${I.tasks}${esc(N.copy.open)}</button>
             <span class="spacer"></span>
-            <button class="act" data-quiet type="button" data-act="close-peel">Done</button>
+            <button class="act" data-quiet type="button" data-act="close-peel">Close</button>
           </div>
         </div>`;
     }
@@ -2383,9 +2383,17 @@
           </div>
           <div class="darkFoot">
             <p class="darkNote">${esc(N.copy.voiceDisclosure)}</p>
-            <span class="spacer"></span>
-            <button class="darkAct" type="button" data-act="voice-cancel">Cancel<kbd>Esc</kbd></button>
-            <button class="darkAct" data-primary type="button" data-act="voice-stop">${I.stop}Stop and read it back<kbd>${cap("Enter")}</kbd></button>
+            <!-- The pair is ONE object. As three siblings of the foot they
+                 wrapped independently, and between 760 and 880 the two
+                 actions broke onto separate rows 64px apart — Cancel above
+                 "Stop and read it back", which reads as two unrelated
+                 controls rather than a choice. Wrapped, they move together
+                 or not at all, and the spacer is unnecessary once the group
+                 carries its own margin. -->
+            <div class="darkActs">
+              <button class="darkAct" type="button" data-act="voice-cancel">Cancel<kbd>Esc</kbd></button>
+              <button class="darkAct" data-primary type="button" data-act="voice-stop">${I.stop}Stop and read it back<kbd>${cap("Enter")}</kbd></button>
+            </div>
           </div>
         </section>`,
     };

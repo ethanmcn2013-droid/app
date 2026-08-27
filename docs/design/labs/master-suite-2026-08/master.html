@@ -1463,11 +1463,30 @@ body {
    is genuinely out of the tab order rather than an invisible tab stop. */
 [data-app="tasks"] .cardDots {
   position: relative;
-  margin: -3px 0 -3px auto;
+  /* A 44px TARGET around a 24px mark. It painted 24x24, which is under the
+     touch floor the whole suite holds — and it was only exempt before
+     because `visibility: hidden` made the audit skip it entirely. Changing
+     it to `opacity: 0` so the keyboard could reach it in both directions
+     also made it countable, and it counted as too small: a control that was
+     never really exempt, only invisible to the check.
+
+     Grown by padding and pulled back by an equal negative margin, which is
+     the same repair round 2 made to `.who` — a positive inset alone would
+     move the card's own rhythm. */
+  margin: -13px -10px -13px auto;
+  padding: 10px;
   width: 24px; height: 24px; border-radius: var(--r-chip);
+  box-sizing: content-box;
   display: grid; place-items: center; color: var(--ink-3);
   background: transparent;
-  visibility: hidden;
+  /* opacity, not visibility. `visibility: hidden` takes an element OUT of
+     the tab order, and the card revealed it on focus-within — so walking
+     FORWARD reached the card, revealed the dots, and then found them,
+     while walking BACKWARD skipped them entirely. One control, reachable
+     in one direction. `opacity: 0` keeps it in the order both ways;
+     `pointer-events: none` keeps an invisible thing unclickable; and the
+     focus rule below means a keyboard user can always SEE where they are. */
+  opacity: 0; pointer-events: none;
   transition: color var(--dur) var(--curve), background-color var(--dur) var(--curve);
 }
 /* A 32px target around a 24px glyph, without the glyph growing. */
@@ -1475,7 +1494,7 @@ body {
 [data-app="tasks"] .cardDots svg { width: 15px; height: 15px; }
 [data-app="tasks"] .card:hover .cardDots,
 [data-app="tasks"] .card[data-force="hover"] .cardDots,
-[data-app="tasks"] .card:focus-within .cardDots { visibility: visible; }
+[data-app="tasks"] .card:focus-within .cardDots { opacity: 1; pointer-events: auto; }
 [data-app="tasks"] .cardDots:hover { background: var(--wash-2); color: var(--ink-1); }
 
 /* The time fact. Right-aligned on the title's own line, so a tray reads
@@ -2237,6 +2256,23 @@ body {
   flex: 0 1 auto; min-width: 24ch; text-align: left;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* On a phone the strip's sentence does not fit and must not be cut. At 390
+   "Showing 1 overdue task. 12 others are hidden." needs 244px in a 206px
+   box and ended "12 others ar…" — a sentence about what is HIDDEN, itself
+   hidden mid-word. This product's own rule is that no string is truncated
+   at a character count when the box that holds it can measure itself; the
+   box can, so the sentence wraps rather than being cut. Two lines of a
+   true sentence beat one line of half of one. */
+@media (max-width: 720px) {
+  [data-app="tasks"] .carryName {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    min-width: 0;
+    line-height: var(--lh-tight);
+  }
+  [data-app="tasks"] .carry { align-items: flex-start; }
+}
 /* A hint is one phrase and never breaks. Wrapping put "put it back" in white
    type outside the black pill on a phone, at the exact instant the operator
    is holding a card and most needs to trust the board. */
@@ -2414,7 +2450,7 @@ body {
      it can reflow into what is actually left. */
   /* A finger never hovers, so the menu is simply present, and quieter than
      the desktop reveal so it does not compete with the title. */
-  [data-app="tasks"] .cardDots { visibility: visible; color: var(--ink-4); }
+  [data-app="tasks"] .cardDots { opacity: 1; pointer-events: auto; color: var(--ink-4); }
   [data-app="tasks"] .cardDots::before { inset: -10px; }
   [data-app="tasks"] .cardTitle { min-width: 0; }
   [data-app="tasks"] .dockField kbd { display: none; }
@@ -3130,16 +3166,26 @@ body {
    outranks a bare class, so the badge was painting INK on indigo at 3:1
    while this block declared white. The stylesheet said one thing and the
    cascade did another; only the audit's composited reading caught it. */
+/* INLINE, after the word, not stacked on top of it. Absolutely positioned
+   at the button's top-right the badge sat ON the label — measured 5px of
+   horizontal and 9px of vertical overlap at 1280 — so the count and the
+   word it counts were printed through each other. A count belongs beside
+   the thing it counts. */
 [data-app="tasks"] .ghost em.toolDot {
-  position: absolute; top: 3px; right: 2px;
-  min-width: 14px; height: 14px; padding: 0 3px;
+  position: static;
+  margin-left: 6px;
+  min-width: 16px; height: 16px; padding: 0 4px;
   border-radius: var(--r-pill);
   background: var(--indigo); color: var(--white);
   font-family: var(--font-mono); font-style: normal;
   font-size: 10px; line-height: 14px; letter-spacing: 0;
   display: grid; place-items: center;
 }
-[data-app="tasks"] .ghost em.toolDot:empty { min-width: 6px; width: 6px; height: 6px; padding: 0; top: 6px; right: 5px; }
+/* No number to show: a plain dot, still beside the word. */
+[data-app="tasks"] .ghost em.toolDot:empty {
+  min-width: 6px; width: 6px; height: 6px; padding: 0;
+  align-self: center;
+}
 /* Titles only. */
 [data-app="tasks"][data-no-notes] .cardNote { display: none; }
 @media (prefers-reduced-motion: reduce) {
@@ -3148,6 +3194,12 @@ body {
 @media (max-width: 720px) {
   [data-app="tasks"] .toolPop { right: auto; left: 0; width: min(268px, calc(100vw - 40px)); }
 }
+
+/* Focus reveals it, in both directions, whatever revealed it. */
+[data-app="tasks"] .cardDots:focus,
+[data-app="tasks"] .cardDots:focus-visible,
+[data-app="tasks"] .card:focus-within .cardDots,
+[data-app="tasks"] .card:hover .cardDots { opacity: 1; pointer-events: auto; }
 
 /* ══ notes.css ══════════════════════════════════════════ */
 
@@ -4934,6 +4986,39 @@ body {
 [data-app="notes"] .dark .joinSeam { color: var(--on-ink-2); }
 [data-app="notes"] .dark .joinSeam:hover { color: var(--on-ink-1); }
 @media (pointer: coarse) { [data-app="notes"] .joinSeam { min-height: 44px; } }
+
+/* ── one owner per verb ────────────────────────────────────────────
+   Dictate and Read a photo were offered TWICE at the same moment on the
+   same screen: as worded buttons on the desk's capture row, and again as
+   glyphs in the dock 630px below. Measured at 768, 1280, 1440 and 1920,
+   both pairs visible simultaneously. Two controls for one act is a reader
+   choosing between two things that do the same thing, and the glyph pair
+   is the weaker of the two because it carries no word.
+
+   The desk pair owns them wherever the desk pair exists. The dock keeps
+   them on a phone, where the desk row does not render and the dock IS the
+   capture surface. */
+@media (min-width: 721px) {
+  [data-app="notes"] .top ~ .dock .dockGlyph[data-act="voice"],
+  [data-app="notes"] .top ~ .dock .dockGlyph[data-act="photo"],
+  [data-app="notes"] .dock .dockGlyph[data-act="voice"],
+  [data-app="notes"] .dock .dockGlyph[data-act="photo"] { display: none; }
+}
+
+/* The dictation pair moves as one. See the note in notes.js: as bare
+   siblings of `.darkFoot` they wrapped independently and split across two
+   rows between 760 and 880. */
+[data-app="notes"] .darkActs {
+  display: flex; align-items: center; gap: 12px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+@media (max-width: 900px) {
+  /* If anything has to wrap at all, the disclosure wraps and the pair
+     stays whole on its own line. */
+  [data-app="notes"] .darkFoot { flex-wrap: wrap; }
+  [data-app="notes"] .darkNote { flex: 1 1 100%; }
+}
 
 /* ══ timeline.css ══════════════════════════════════════════ */
 
@@ -9306,7 +9391,11 @@ window.__SUITE = (function () {
       ? MORE_DOORS.concat([{ key: "settings", label: "Settings" }])
       : MORE_DOORS;
     var doors = list.map(function (d) {
-      return '<button type="button" class="moreItem" data-door="' + d.key + '" aria-disabled="true" title="' +
+      /* role="menuitem". The container declares role="menu" and its
+         children were plain buttons with no role at all, so the menu
+         reported no items to anything reading the tree — a menu whose
+         contents are invisible to the one reader most dependent on it. */
+      return '<button type="button" role="menuitem" class="moreItem" data-door="' + d.key + '" aria-disabled="true" title="' +
         esc(NOT_YET[d.key]) + '">' + I[d.key] + "<span>" + esc(d.label) + "</span>" +
         '<em>Not here yet</em></button>';
     }).join("");
@@ -9661,6 +9750,22 @@ window.__SUITE = (function () {
       return;
     }
     go(key);
+  });
+
+  /* Focus leaving the panel closes it. Tabbing past its last door landed
+     on the sheet's own head with the panel still open, still painted and
+     still over the board — a layer nobody was in and nothing would shut.
+     `focusout` fires before the next focus lands, so the check is deferred
+     one turn to see where focus actually WENT. */
+  deck.addEventListener("focusout", function () {
+    if (!moreOpen) return;
+    setTimeout(function () {
+      if (!moreOpen) return;
+      var on = document.activeElement;
+      var inside = on && on.closest &&
+        (on.closest(".morePop") || on.closest('[data-rail="more"]'));
+      if (!inside) { moreOpen = false; paintRail(); }
+    }, 0);
   });
 
   /* The spine is one stop the arrows walk, and this is the ONLY thing
@@ -10151,7 +10256,7 @@ function card(task, force, stop) {
     "</div>" +
     (task.note ? '<p class="cardNote">' + esc(task.note) + "</p>" : "") +
     '<div class="cardFoot">' + bits.join("") +
-      (task.fromNote ? '<span class="grow" title="Came from a note">' + I.note + "</span>" : "") +
+      (task.fromNote ? '<span class="grow" role="img" aria-label="Came from a note in Notes" title="Came from a note">' + I.note + "</span>" : "") +
       '<button class="cardDots" data-act="menu" tabindex="' + (stop ? "0" : "-1") +
         '" aria-haspopup="menu" aria-expanded="' + (menuFor === task.id ? "true" : "false") +
         '" aria-label="Move this task">' + I.dots + "</button>" +
@@ -10570,7 +10675,12 @@ function head() {
          the same room. The button carries its state instead of a tally. */
       '<button class="ghost" data-act="planning" aria-expanded="' + (state === "planning" ? "true" : "false") +
         '">' + I.planning + "<span>Planning</span></button>" +
-      '<button class="ghost" aria-label="More"' + notYet("Project settings come with your account.") + ">" +
+      /* Not "More". The spine's live door is already called More, and two
+         controls with the identical accessible name on one screen — one
+         live, one closed, doing unrelated things — is the product asking a
+         screen-reader user to guess which is which. This one is about the
+         project, so it says so. */
+      '<button class="ghost" aria-label="Project settings"' + notYet("Project settings come with your account.") + ">" +
         I.dots + "</button>" +
     "</div></div>"
   );
@@ -10719,8 +10829,15 @@ function dock() {
          it cannot move a single thing on the board. */
       '<div class="dockField' + (queryText ? " is-live" : "") + '">' + I.search +
         '<input type="search" class="dockInput" data-act="search"' +
-        ' placeholder="Search ' + esc(B.workspace) + '"' +
-        ' aria-label="Search ' + esc(B.workspace) + '"' +
+        /* "Search", not "Search <the venue>". The name needed 163px in a
+           144px box and was cut mid-word at every desk width — and it was
+           redundant besides: the project's name is set in the h1 directly
+           above this field, and the field expands the moment it is
+           focused. The accessible name below keeps the whole phrase. */
+        ' placeholder="Search tasks"' +
+        /* The same short string the placeholder shows. One control, one
+           name — and the project it searches is set in the h1 above it. */
+        ' aria-label="Search tasks"' +
         ' value="' + esc(queryText) + '">' +
         (queryText
           ? '<button type="button" class="dockClear" data-act="search-clear" aria-label="Clear search">' +
@@ -12467,8 +12584,14 @@ function onClick(event) {
     state = "board";
     mount();
     if (window.__SUITE && window.__SUITE.reproject) window.__SUITE.reproject();
-    const name = (P.list.find((p) => p.id === id) || {}).name || "the project";
-    say(name + ". Tasks, Timeline and Planning all moved with it.");
+    /* The name the surface has already resolved, not a lookup that can
+       miss. `P.ALL` is not a member of `P.list`, so the internal fallback
+       literal "the project" fell straight into the live region: the one
+       switch that changes the most was the only one the product could not
+       name aloud, and a studio placeholder arrived in the accessibility
+       tree. `B.workspace` is what the head is painting, so the two cannot
+       disagree by construction. */
+    say(B.workspace + ". Tasks, Timeline and Planning all moved with it.");
     const back = document.querySelector('[data-act="projects"]');
     if (back) back.focus();
     return;
@@ -15249,7 +15372,7 @@ window.__SUITE.register("tasks", {
           <div class="peelRow">
             <button class="act" type="button" data-act="open-task">${I.tasks}${esc(N.copy.open)}</button>
             <span class="spacer"></span>
-            <button class="act" data-quiet type="button" data-act="close-peel">Done</button>
+            <button class="act" data-quiet type="button" data-act="close-peel">Close</button>
           </div>
         </div>`;
     }
@@ -15833,9 +15956,17 @@ window.__SUITE.register("tasks", {
           </div>
           <div class="darkFoot">
             <p class="darkNote">${esc(N.copy.voiceDisclosure)}</p>
-            <span class="spacer"></span>
-            <button class="darkAct" type="button" data-act="voice-cancel">Cancel<kbd>Esc</kbd></button>
-            <button class="darkAct" data-primary type="button" data-act="voice-stop">${I.stop}Stop and read it back<kbd>${cap("Enter")}</kbd></button>
+            <!-- The pair is ONE object. As three siblings of the foot they
+                 wrapped independently, and between 760 and 880 the two
+                 actions broke onto separate rows 64px apart — Cancel above
+                 "Stop and read it back", which reads as two unrelated
+                 controls rather than a choice. Wrapped, they move together
+                 or not at all, and the spacer is unnecessary once the group
+                 carries its own margin. -->
+            <div class="darkActs">
+              <button class="darkAct" type="button" data-act="voice-cancel">Cancel<kbd>Esc</kbd></button>
+              <button class="darkAct" data-primary type="button" data-act="voice-stop">${I.stop}Stop and read it back<kbd>${cap("Enter")}</kbd></button>
+            </div>
           </div>
         </section>`,
     };
@@ -18551,7 +18682,11 @@ window.__SUITE.register("tasks", {
          never held anything, and the morning itself, where an
          eleven-week-old timestamp reads as neglect. */
       o.stamp === false ? null : h("span.b-stamp", { text: "Updated " + F.updatedLabel }),
-      h("span", { text: o.link || "Signal Timeline" }),
+      /* The application is called Signal Studio everywhere it speaks —
+         the title, the rail's label in all three products, every honest
+         door. "Signal Timeline" is a product nobody can buy, printed on
+         the one surface a guest sees. */
+      h("span", { text: o.link || "Signal Studio" }),
     ]);
   }
 
@@ -19099,7 +19234,13 @@ window.__SUITE.register("tasks", {
       theDay ? h("p.b-ceiling.b-standing", {
         text: "Everything on this plan is measured from this day.",
       }) : null,
-      h("div.b-editActs", {}, [act("Done", true, { "data-act": "done" })]),
+      /* "Close", not "Done". Done is the name of a lane in this suite and
+         the word for finishing work; on a closer it says the thing is
+         finished when all it does is put the editor away. Recorded closed
+         at round 1 on both its elements and back on both of them —
+         which is what happens when a finding is closed on somebody's word
+         and no rule is written. */
+      h("div.b-editActs", {}, [act("Close", true, { "data-act": "done" })]),
       /* On its own line, after a rule. It used to sit ten pixels to the
          right of the safe action at two and a half times its width. */
       theDay ? null : h("div.b-editDanger", {}, [

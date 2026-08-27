@@ -1170,7 +1170,11 @@
          never held anything, and the morning itself, where an
          eleven-week-old timestamp reads as neglect. */
       o.stamp === false ? null : h("span.b-stamp", { text: "Updated " + F.updatedLabel }),
-      h("span", { text: o.link || "Signal Timeline" }),
+      /* The application is called Signal Studio everywhere it speaks —
+         the title, the rail's label in all three products, every honest
+         door. "Signal Timeline" is a product nobody can buy, printed on
+         the one surface a guest sees. */
+      h("span", { text: o.link || "Signal Studio" }),
     ]);
   }
 
@@ -1718,7 +1722,13 @@
       theDay ? h("p.b-ceiling.b-standing", {
         text: "Everything on this plan is measured from this day.",
       }) : null,
-      h("div.b-editActs", {}, [act("Done", true, { "data-act": "done" })]),
+      /* "Close", not "Done". Done is the name of a lane in this suite and
+         the word for finishing work; on a closer it says the thing is
+         finished when all it does is put the editor away. Recorded closed
+         at round 1 on both its elements and back on both of them —
+         which is what happens when a finding is closed on somebody's word
+         and no rule is written. */
+      h("div.b-editActs", {}, [act("Close", true, { "data-act": "done" })]),
       /* On its own line, after a rule. It used to sit ten pixels to the
          right of the safe action at two and a half times its width. */
       theDay ? null : h("div.b-editDanger", {}, [
