@@ -164,4 +164,159 @@ export async function projects({ browser, url, check, head }) {
       `moved:${round.moved} restored:${round.same}`);
     await page.close();
   }
+
+  /* ── naming, adding, and all of them at once ────────────────────
+     A project's name is written in four places that must never disagree —
+     the switcher, the board's head, Planning's own title and the
+     Timeline's workspace. A rename that reaches three of them is worse
+     than one that reaches none, because the fourth then quietly disagrees
+     with the other three about which project you are looking at. */
+  {
+    const page = await browser.newPage({ viewport: { width: 1600, height: 950 } });
+    await page.goto(url + "?v=paper&state=tasks.board");
+    await page.waitForTimeout(800);
+
+    const openMenu = () => page.evaluate(async () => {
+      const b = document.querySelector('[data-act="projects"]');
+      if (b.getAttribute("aria-expanded") !== "true") b.click();
+      await new Promise((r) => setTimeout(r, 320));
+    });
+
+    /* RENAME */
+    await openMenu();
+    const renamed = await page.evaluate(async () => {
+      document.querySelector('.projEdit[data-project="orchard"]').click();
+      await new Promise((r) => setTimeout(r, 320));
+      const f = document.querySelector(".projField");
+      if (!f) return { noField: true };
+      f.value = "The Orchard, weddings";
+      f.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 800));
+      return {
+        head: (document.querySelector(".projSwitch span") || {}).textContent || "",
+        planning: (window.BOARD.planning || {}).project || "",
+        timelineWs: ((window.__TLFIXTURE || {}).workspace || {}).name || "",
+        listed: window.PROJECTS.list.map((x) => x.name),
+      };
+    });
+    const four = [renamed.head, renamed.planning, renamed.timelineWs, (renamed.listed || [])[0]];
+    check("projects", "a rename reaches all four places the name is written",
+      !renamed.noField && new Set(four).size === 1 && four[0] === "The Orchard, weddings",
+      JSON.stringify(four));
+
+    /* CREATE */
+    await openMenu();
+    const made = await page.evaluate(async () => {
+      document.querySelector('[data-act="project-new"]').click();
+      await new Promise((r) => setTimeout(r, 320));
+      const f = document.querySelector(".projField");
+      if (!f) return { noField: true };
+      f.value = "Kitchen refit";
+      f.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 900));
+      return {
+        head: (document.querySelector(".projSwitch span") || {}).textContent || "",
+        cards: document.querySelectorAll(".board .card").length,
+        listed: window.PROJECTS.list.length,
+        /* And the OTHER projects are untouched by it existing. */
+        orchard: window.PROJECTS.list.some((x) => /Orchard/.test(x.name)),
+      };
+    });
+    check("projects", "a new project is made, opened, and genuinely empty",
+      !made.noField && made.head === "Kitchen refit" && made.cards === 0 &&
+      made.listed === 4 && made.orchard,
+      JSON.stringify(made));
+
+    /* ALL PROJECTS — the one view that is SUPPOSED to hold everything, so
+       the leak rule is inverted here: it must contain every project's work
+       and say which is which. */
+    await openMenu();
+    const all = await page.evaluate(async () => {
+      document.querySelector('[data-project="all"]').click();
+      await new Promise((r) => setTimeout(r, 900));
+      const scope = document.querySelector('[data-app="tasks"]').textContent || "";
+      const tl = document.querySelector('[data-app="timeline"]').textContent || "";
+      const dates = [...document.querySelectorAll('[data-app="timeline"] .b-item')]
+        .map((el) => el.getAttribute("data-date")).filter(Boolean);
+      return {
+        head: (document.querySelector(".projSwitch span") || {}).textContent || "",
+        cards: document.querySelectorAll(".board .card").length,
+        holdsOrchard: /marquee/.test(scope),
+        holdsAcademic: /literature review/.test(scope),
+        holdsSchool: /lesson plans/.test(scope),
+        timelineMerged: /assignment|lesson|tasting|Menu|Semester/.test(tl),
+        /* Three plans on one measure have to be in date order or the
+           Timeline is drawing them on top of each other. */
+        inOrder: dates.every((d, i) => i === 0 || dates[i - 1] <= d),
+      };
+    });
+    check("projects", "All projects holds every project's work at once",
+      all.head === "All projects" && all.cards > 30 &&
+      all.holdsOrchard && all.holdsAcademic && all.holdsSchool,
+      JSON.stringify({ head: all.head, cards: all.cards }));
+    check("projects", "All projects puts three plans on one measure in date order",
+      all.timelineMerged && all.inOrder === true,
+      `merged:${all.timelineMerged} ordered:${all.inOrder}`);
+    await page.close();
+  }
+
+  /* ── the rail, and the brand dot ────────────────────────────────
+     From the founder's own rail-redesign session: the accent lands on the
+     tile, the glyph and the label of the active product TOGETHER, and
+     nothing else in the rail spends indigo. */
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(url + "?v=paper&state=tasks.board");
+    await page.waitForTimeout(750);
+    const rail = await page.evaluate(() => {
+      const a = document.querySelector(".railTile[data-active]");
+      if (!a) return { none: true };
+      const cs = getComputedStyle(a);
+      const label = a.querySelector(".railName");
+      return {
+        tile: cs.backgroundColor,
+        glyph: cs.color,
+        label: label ? getComputedStyle(label).color : "",
+        /* The white pill this replaced. */
+        white: /255, 255, 255/.test(cs.backgroundColor),
+      };
+    });
+    /* The accent is #a5b4fc, not the design file's #818cf8, and the reason
+       is the LABEL: the design's own rule is that tile, glyph and label take
+       the accent together, and a label is text, so it owes 4.5:1 where a
+       glyph owes 3:1. #818cf8 measured 4.19:1 on this tile — fine for the
+       mark, under the floor for the word. Lifting one step keeps the rule
+       whole instead of splitting the accent in two. */
+    const indigo = /165, 180, 252/;
+    check("projects", "the active product takes indigo on tile, glyph and label together",
+      !rail.none && !rail.white && indigo.test(rail.glyph) && indigo.test(rail.label) &&
+      indigo.test(rail.tile),
+      JSON.stringify(rail));
+  await page.close();
+  }
+
+  /* One brand dot, three wordmarks: indigo, and round under every radius
+     preset the suite offers. */
+  for (const [product, state] of [["tasks", "tasks.board"], ["notes", "notes.notebook"], ["timeline", "timeline.owner-flight"]]) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(url + `?v=paper&state=${state}`);
+    await page.waitForTimeout(700);
+    const dot = await page.evaluate((pr) => {
+      const w = document.querySelector(`[data-app="${pr}"] .word`);
+      if (!w) return { none: true };
+      const out = [];
+      for (const r of ["soft", "round", "sharp"]) {
+        document.getElementById("deck").setAttribute("data-radius", r);
+        w.closest("[data-app]").setAttribute("data-radius", r);
+        const cs = getComputedStyle(w, "::after");
+        out.push({ preset: r, radius: cs.borderTopLeftRadius, bg: cs.backgroundColor });
+      }
+      return { out };
+    }, product);
+    const ok = !dot.none && dot.out.every((d) =>
+      /rgb\(79, 70, 229\)/.test(d.bg) && parseFloat(d.radius) >= 4);
+    check("projects", `${product} · the wordmark's dot is indigo and round in every preset`,
+      ok, dot.none ? "no wordmark" : dot.out.map((d) => `${d.preset}:${d.radius}/${d.bg}`).join(" "));
+    await page.close();
+  }
 }

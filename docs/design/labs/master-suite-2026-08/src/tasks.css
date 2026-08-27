@@ -223,9 +223,18 @@
 /* The sheet's own claim is that indigo means the next milestone. Spending it
    on a wordmark full stop and a rail dot made the claim false in two places
    before the operator reached a card. */
+/* ONE BRAND DOT. The three wordmarks carried three different full stops —
+   Tasks' was ink, Timeline's was --fore, and only Notes' was indigo. That
+   was recorded as a deliberate divergence and the founder has overruled it:
+   the dot after the wordmark is the brand, it is indigo, and it is the same
+   object in all three products. `border-radius` is stated as 999px rather
+   than 50% so that no radius preset and no future rule can square it — 50%
+   of a 4.5px box is a circle, but it is a circle by arithmetic, and 999px
+   is a circle by instruction. */
 [data-app="tasks"] .word::after {
-  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
-  background: var(--ink-1); margin-left: 2px;
+  content: ""; width: 4.5px; height: 4.5px;
+  border-radius: 999px;
+  background: var(--indigo); margin-left: 2px;
 }
 [data-app="tasks"] .headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
 /* The name does not shrink. It was the only thing in the row allowed to, so
@@ -2107,6 +2116,51 @@
   margin-top: 2px;
 }
 [data-app="tasks"] .projTick { display: grid; place-items: center; color: var(--indigo); }
+/* ── naming, adding, and all of them at once ───────────────────────
+   A row carries its own rename control, revealed on hover, because the
+   pencil is a second verb on an object whose first verb is "switch to
+   this" — showing both at rest would make every row a choice between two
+   things when almost every press is the same one. */
+[data-app="tasks"] .projRow { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; }
+[data-app="tasks"] .projRow .projItem { grid-column: 1; }
+[data-app="tasks"] .projEdit {
+  grid-column: 2;
+  display: grid; place-items: center;
+  width: 30px; height: 30px; margin-right: 4px;
+  border: 0; background: none; padding: 0;
+  border-radius: var(--r-ctl);
+  color: var(--ink-3); cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--motion-instant) var(--curve), color var(--motion-instant) var(--curve),
+              background-color var(--motion-instant) var(--curve);
+}
+[data-app="tasks"] .projEdit svg { width: 15px; height: 15px; }
+[data-app="tasks"] .projRow:hover .projEdit,
+[data-app="tasks"] .projEdit:focus-visible { opacity: 1; }
+[data-app="tasks"] .projEdit:hover { background: var(--wash); color: var(--ink-1); }
+/* The field IS the row. Same box, same padding, same type — only the ink
+   and the caret say it has become editable. */
+[data-app="tasks"] .projItem[data-editing] { cursor: default; }
+[data-app="tasks"] .projField {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-13);
+  color: var(--ink-1);
+  background: none; border: 0; padding: 0; margin: 0;
+  width: 100%; min-width: 0;
+  -webkit-appearance: none; appearance: none;
+}
+[data-app="tasks"] .projField:focus { outline: none; }
+[data-app="tasks"] .projField::placeholder { color: var(--ink-3); font-weight: 400; }
+[data-app="tasks"] .projItem[data-editing] { box-shadow: inset 0 0 0 1px var(--indigo); background: var(--white); }
+[data-app="tasks"] .projRule { height: 1px; background: var(--line-soft); margin: 5px 8px; }
+/* Neither of these is a project — one is a view of them all, the other
+   makes one — so both sit under the rule and neither takes the tick's
+   weight unless it is actually the thing on screen. */
+[data-app="tasks"] .projNew b, [data-app="tasks"] .projAll b { font-weight: 400; }
+[data-app="tasks"] .projAll[data-on] b { font-weight: 600; }
+[data-app="tasks"] .projNew .projTick { color: var(--ink-3); }
+[data-app="tasks"] .projNew .projTick svg { width: 14px; height: 14px; }
+[data-app="tasks"] .projNew:hover .projTick { color: var(--indigo); }
 [data-app="tasks"] .projTick svg { width: 15px; height: 15px; }
 /* The head has to be able to hold a popover under it. */
 [data-app="tasks"] .head { position: relative; }

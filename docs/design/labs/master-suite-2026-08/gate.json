@@ -4,13 +4,13 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "20614 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "20666 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1440 · the spine",
       "ok": true,
-      "detail": "14454 px, in x 28–1382, y 37–864"
+      "detail": "8339 px, in x 28–1382, y 37–864"
     },
     {
       "section": "fidelity",
@@ -22,25 +22,25 @@
       "section": "fidelity",
       "name": "notes @1440 · the spine",
       "ok": true,
-      "detail": "2569 px, in x 28.5–1392.5, y 36–859.5"
+      "detail": "8355 px, in x 28–1392.5, y 36–859.5"
     },
     {
       "section": "fidelity",
       "name": "timeline @1440 · re-composed",
       "ok": true,
-      "detail": "14.71% of the frame — see §1b"
+      "detail": "14.84% of the frame — see §1b"
     },
     {
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "11051 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "11103 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @1280 · the spine",
       "ok": true,
-      "detail": "14432 px, in x 28–1234.5, y 43.5–864"
+      "detail": "8316 px, in x 28–1234.5, y 43.5–864"
     },
     {
       "section": "fidelity",
@@ -52,25 +52,25 @@
       "section": "fidelity",
       "name": "notes @1280 · the spine",
       "ok": true,
-      "detail": "2569 px, in x 28.5–1232.5, y 36–859.5"
+      "detail": "8355 px, in x 28–1232.5, y 36–859.5"
     },
     {
       "section": "fidelity",
       "name": "timeline @1280 · re-composed",
       "ok": true,
-      "detail": "15.88% of the frame — see §1b"
+      "detail": "16.03% of the frame — see §1b"
     },
     {
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "9449 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "9501 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @768 · the spine",
       "ok": true,
-      "detail": "14432 px, in x 22–716, y 37.5–870"
+      "detail": "8316 px, in x 22–716, y 37.5–870"
     },
     {
       "section": "fidelity",
@@ -82,25 +82,25 @@
       "section": "fidelity",
       "name": "notes @768 · the spine",
       "ok": true,
-      "detail": "2568 px, in x 23–722, y 22–865.5"
+      "detail": "8357 px, in x 22–722, y 22–865.5"
     },
     {
       "section": "fidelity",
       "name": "timeline @768 · re-composed",
       "ok": true,
-      "detail": "19.08% of the frame — see §1b"
+      "detail": "19.32% of the frame — see §1b"
     },
     {
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "1026 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "1078 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @390 · the spine",
       "ok": true,
-      "detail": "13861 px, in x 33.5–380, y 35–826.5"
+      "detail": "7567 px, in x 33.5–380, y 35–826.5"
     },
     {
       "section": "fidelity",
@@ -112,13 +112,13 @@
       "section": "fidelity",
       "name": "notes @390 · the spine",
       "ok": true,
-      "detail": "3091 px, in x 9–380.5, y 34.5–823"
+      "detail": "3229 px, in x 9–380.5, y 34.5–823"
     },
     {
       "section": "fidelity",
       "name": "timeline @390 · re-composed",
       "ok": true,
-      "detail": "20.07% of the frame — see §1b"
+      "detail": "20.60% of the frame — see §1b"
     },
     {
       "section": "fidelity",
@@ -1739,6 +1739,54 @@
       "detail": "moved:true restored:true"
     },
     {
+      "section": "projects",
+      "name": "a rename reaches all four places the name is written",
+      "ok": true,
+      "detail": "[\"The Orchard, weddings\",\"The Orchard, weddings\",\"The Orchard, weddings\",\"The Orchard, weddings\"]"
+    },
+    {
+      "section": "projects",
+      "name": "a new project is made, opened, and genuinely empty",
+      "ok": true,
+      "detail": "{\"head\":\"Kitchen refit\",\"cards\":0,\"listed\":4,\"orchard\":true}"
+    },
+    {
+      "section": "projects",
+      "name": "All projects holds every project's work at once",
+      "ok": true,
+      "detail": "{\"head\":\"All projects\",\"cards\":40}"
+    },
+    {
+      "section": "projects",
+      "name": "All projects puts three plans on one measure in date order",
+      "ok": true,
+      "detail": "merged:true ordered:true"
+    },
+    {
+      "section": "projects",
+      "name": "the active product takes indigo on tile, glyph and label together",
+      "ok": true,
+      "detail": "{\"tile\":\"rgba(165, 180, 252, 0.16)\",\"glyph\":\"rgb(165, 180, 252)\",\"label\":\"rgb(165, 180, 252)\",\"white\":false}"
+    },
+    {
+      "section": "projects",
+      "name": "tasks · the wordmark's dot is indigo and round in every preset",
+      "ok": true,
+      "detail": "soft:999px/rgb(79, 70, 229) round:999px/rgb(79, 70, 229) sharp:999px/rgb(79, 70, 229)"
+    },
+    {
+      "section": "projects",
+      "name": "notes · the wordmark's dot is indigo and round in every preset",
+      "ok": true,
+      "detail": "soft:999px/rgb(79, 70, 229) round:999px/rgb(79, 70, 229) sharp:999px/rgb(79, 70, 229)"
+    },
+    {
+      "section": "projects",
+      "name": "timeline · the wordmark's dot is indigo and round in every preset",
+      "ok": true,
+      "detail": "soft:999px/rgb(79, 70, 229) round:999px/rgb(79, 70, 229) sharp:999px/rgb(79, 70, 229)"
+    },
+    {
       "section": "delight",
       "name": "completion via tick · one burst, and it is visible",
       "ok": true,
@@ -1754,7 +1802,7 @@
       "section": "delight",
       "name": "completion via keyboard · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 12 dots · widest 3.8px · brightest 0.93"
+      "detail": "1 burst · 12 dots · widest 4.2px · brightest 0.96"
     },
     {
       "section": "delight",

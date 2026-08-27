@@ -242,7 +242,7 @@
    suite. Leaving --tr-18 here would have kept the two products rounding
    the same curve differently, which is what the gate found. */
 [data-app="notes"] .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
-[data-app="notes"] .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
+[data-app="notes"] .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 999px; background: var(--indigo); margin-left: 2px; }
 [data-app="notes"] .headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
 /* What the house is facing, at the head of the sheet. The head's top-line
    fact had been a generic count of unread items while the thing that

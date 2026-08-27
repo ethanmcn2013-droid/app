@@ -51,6 +51,9 @@
      nearly half again the size it was drawn at, and still a violation
      because 16 is on no ladder either. Declared at :root, where a product's
      own [data-app] block outranks it and nothing changes inside a sheet. */
+  /* The accent, lifted for a dark ground. The rail is the only place in
+     the suite that needs it. */
+  --indigo-on-ink: #a5b4fc;
   --t-11: 11px;
   --lh-tight: 1.28;
 
@@ -204,8 +207,36 @@ body {
   max-width: 100%;
 }
 .railTile:not([aria-disabled="true"]):hover { color: var(--on-ink-1); background: var(--chrome-active); }
-.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+/* ── the active product ─────────────────────────────────────────
+   INDIGO, not a white pill. From the founder's own rail-redesign session
+   (Turn 2, direction 1a): "Accent lands on the tile, the glyph and the
+   label together — nothing else in the rail spends indigo."
+
+   The white pill it replaces was the loudest object in the chrome: a solid
+   white slab on an ink rail out-contrasted the sheet it was pointing at,
+   so the rail competed with the work. A 16% indigo tile with an indigo
+   glyph and label marks the same position and stays chrome.
+
+   The accent is --indigo-on-ink, not --indigo. #4f46e5 is the accent on
+   PAPER; on this ground it is barely brighter than the rail.
+
+   #a5b4fc rather than the design's #818cf8, and the reason is the LABEL.
+   The design's rule is that the tile, the glyph and the label take the
+   accent together — and a label is text, so it owes 4.5:1 where a glyph
+   owes 3:1. #818cf8 measures 4.19:1 on this tile: fine for the mark,
+   under the floor for the word. Lifting one step keeps the rule intact at
+   6.7:1 rather than splitting the accent in two. #a5b4fc is the design
+   file's own `invGlyph`, so it is a colour that session already chose. */
+.railTile[data-active] {
+  color: var(--indigo-on-ink);
+  background: rgba(165, 180, 252, 0.16);
+}
+.railTile[data-active] .railName { color: var(--indigo-on-ink); }
 /* The capsule points at the sheet it opened. */
+/* The capsule still points at the sheet it opened. It is chrome, not
+   accent — the design's rule is that only the tile, the glyph and the
+   label spend indigo, and a third indigo object here would make the rail
+   the brightest thing on the screen again. */
 .railTile[data-active]::after {
   content: "";
   position: absolute; right: -12px; top: 50%;
@@ -321,7 +352,9 @@ body {
 #deck[data-radius="round"] .rail { border-radius: 24px; }
 #deck[data-radius="round"] .railTile,
 #deck[data-radius="round"] .railAdd { border-radius: 16px; }
-#deck[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
+/* The forward preset pushes the same accent harder rather than swapping
+   it for a different idea. */
+#deck[data-indigo="forward"] .railTile[data-active] { background: rgba(165, 180, 252, 0.26); }
 /* The brand dot is already indigo, so the forward preset has nothing
    left to add to it. */
 

@@ -553,21 +553,93 @@ const RAIL = {
    The list is short and stays short: this is a switcher, not a project
    manager, so it names the projects and nothing else. */
 let projOpen = false;
+let projEdit = null;    /* the project whose name is being edited     */
+let projNew = false;    /* is the new-project field open               */
+
+function commitName(field) {
+  const P = window.PROJECTS;
+  const value = String(field.value || "").trim();
+  const making = field.dataset.act === "new-field";
+  projEdit = null;
+  projNew = false;
+  if (!P || !value) { mount(); return; }
+  if (making) {
+    const id = P.create(value);
+    if (id) {
+      /* Made, and opened. A project you have just named and then have to go
+         and find is a project the product made you name twice. */
+      P.apply(id);
+      WORK = null;
+      picked.clear(); undoHistory.length = 0; undone = null;
+      openNoteId = null; openTaskId = null; menuFor = null; dayFor = null;
+      focusId = null; lateOnly = false; todayOnly = false; clientOnly = null;
+      queryText = ""; drawerTab = "nodate"; state = "board";
+      mount();
+      if (window.__SUITE && window.__SUITE.reproject) window.__SUITE.reproject();
+      say(value + ". New project, nothing in it yet.");
+      return;
+    }
+  } else if (P.rename(field.dataset.project, value)) {
+    WORK = null;
+    mount();
+    if (window.__SUITE && window.__SUITE.reproject) window.__SUITE.reproject();
+    say("Renamed to " + value + ".");
+    return;
+  }
+  mount();
+}
 
 function projectMenu() {
   const P = window.PROJECTS;
   if (!P) return "";
   const here = P.current();
-  return (
-    '<div class="projMenu" role="listbox" aria-label="Projects">' +
-    P.list.map((p) => {
-      const on = p.id === here;
-      return '<button type="button" class="projItem" role="option" data-act="project" data-project="' +
+  const row = (p) => {
+    const on = p.id === here;
+    /* The row being renamed becomes the field. A separate dialog for a
+       one-word edit is a room you have to be let out of again; editing the
+       name where the name already is means the reader never leaves the
+       list they were reading. */
+    if (projEdit === p.id) {
+      return '<div class="projItem" data-editing>' +
+        '<span class="projTick"></span>' +
+        '<input class="projField" data-act="rename-field" data-project="' + p.id + '"' +
+        ' value="' + esc(p.name) + '" aria-label="Rename ' + esc(p.name) + '"' +
+        ' autocomplete="off" spellcheck="false">' +
+        "</div>";
+    }
+    return '<div class="projRow"' + (on ? " data-on" : "") + ">" +
+      '<button type="button" class="projItem" role="option" data-act="project" data-project="' +
         p.id + '" aria-selected="' + (on ? "true" : "false") + '"' + (on ? " data-on" : "") +
         ' tabindex="' + (on ? "0" : "-1") + '">' +
         '<span class="projTick">' + (on ? I.check : "") + "</span>" +
-        "<span><b>" + esc(p.name) + "</b><em>" + esc(p.kind) + "</em></span></button>";
-    }).join("") +
+        "<span><b>" + esc(p.name) + "</b><em>" + esc(p.kind) +
+          (p.count ? " \u00b7 " + p.count + (p.count === 1 ? " task" : " tasks") : " \u00b7 empty") +
+        "</em></span></button>" +
+      '<button type="button" class="projEdit" data-act="rename" data-project="' + p.id + '"' +
+        ' aria-label="Rename ' + esc(p.name) + '">' + I.pencil + "</button>" +
+      "</div>";
+  };
+  const onAll = here === P.ALL;
+  return (
+    '<div class="projMenu" role="listbox" aria-label="Projects">' +
+    '<p class="toolLabel">Projects</p>' +
+    P.list.map(row).join("") +
+    '<div class="projRule"></div>' +
+    /* Every project at once. It sits under the rule with New because
+       neither of them is a project — one is a view of them all and the
+       other makes one. */
+    '<button type="button" class="projItem projAll" role="option" data-act="project"' +
+      ' data-project="' + P.ALL + '" aria-selected="' + (onAll ? "true" : "false") + '"' +
+      (onAll ? " data-on" : "") + ' tabindex="-1">' +
+      '<span class="projTick">' + (onAll ? I.check : "") + "</span>" +
+      "<span><b>All projects</b><em>Everything you are running, on one board</em></span></button>" +
+    (projNew
+      ? '<div class="projItem" data-editing><span class="projTick">' + I.plus + "</span>" +
+        '<input class="projField" data-act="new-field" placeholder="Name this project"' +
+        ' aria-label="Name the new project" autocomplete="off" spellcheck="false"></div>'
+      : '<button type="button" class="projItem projNew" data-act="project-new" tabindex="-1">' +
+        '<span class="projTick">' + I.plus + "</span>" +
+        "<span><b>New project</b></span></button>") +
     "</div>"
   );
 }
@@ -2534,10 +2606,28 @@ function onClick(event) {
     say(projOpen ? "Projects, open." : "Projects, closed.");
     return;
   }
+  if (what === "rename") {
+    projEdit = act.dataset.project;
+    projNew = false;
+    mount();
+    const field = document.querySelector(".projField");
+    if (field) { field.focus(); field.select(); }
+    return;
+  }
+  if (what === "project-new") {
+    projNew = true;
+    projEdit = null;
+    mount();
+    const field = document.querySelector(".projField");
+    if (field) field.focus();
+    return;
+  }
   if (what === "project") {
     const id = act.dataset.project;
     const P = window.PROJECTS;
     projOpen = false;
+    projEdit = null;
+    projNew = false;
     if (!P || id === P.current()) { mount(); return; }
     /* The whole workspace, not the cards. Tasks, Timeline and Planning all
        read the same two objects, so switching them once and repainting
@@ -3364,6 +3454,28 @@ if (host) {
       }
     }
   });
+  /* Naming a project. Enter commits, Escape abandons, and leaving the field
+     commits too — because a name typed and then clicked away from was still
+     typed, and throwing it away would be the product deciding the person
+     did not mean it. */
+  host.addEventListener("keydown", (event) => {
+    const field = event.target.closest && event.target.closest(".projField");
+    if (!field) return;
+    if (event.key === "Enter") { event.preventDefault(); commitName(field); }
+    else if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      projEdit = null; projNew = false;
+      mount();
+      const back = document.querySelector('[data-act="projects"]');
+      if (back) back.focus();
+    }
+  });
+  host.addEventListener("focusout", (event) => {
+    const field = event.target.closest && event.target.closest(".projField");
+    if (field) setTimeout(() => { if (document.contains(field)) commitName(field); }, 0);
+  });
+
   /* Escape leaves the field: first press clears what is in it, second gives
      the board back. A field you cannot get out of by the key everyone tries
      is a trap, however good it looks. */

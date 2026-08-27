@@ -350,3 +350,78 @@ there and must not be.** A later run would inject the console's family rail into
 one page that must never carry a pixel of console chrome. `verify.mjs` §5 asserts no
 `fam:start` and no `data-fam-ground` reached the file, so a mistake fails the gate
 rather than shipping.
+
+## The status colour system, and the palette lock it spent
+
+Added 2026-08-27, on the founder's instruction, after a monochrome version
+was built, reviewed and rejected: "the coloured dots aren't noticeable at
+all". An `--ink-4` dot is 2:1 on white, which is a smudge.
+
+Five lanes, five colours, and every one of them is INFORMATION rather than
+decoration — on at rest, not only while something is dragged over them.
+
+| Lane | Dot | Wash |
+|---|---|---|
+| To do | `--ink-3` | ink 5.5% |
+| In progress | `#4f46e5` | indigo 9.5% |
+| Review | `#eab308` | yellow 17% |
+| Waiting | `#f97316` | orange 11.5% |
+| Done | `#22c55e` | green 13.5% |
+
+Three things about it are load-bearing and were each learned the hard way:
+
+1. **A wash is its own colour, not a diluted dot.** The first version derived
+   every wash by diluting the dot, and a dot must be dark to hold its edge —
+   diluting a dark colour toward white destroys its chroma. Those washes
+   measured chroma 7–13, which is grey with a cast. The founder called them
+   "a bit dirty" and that is exactly what the number says.
+2. **The washes are balanced by luminance, not by a shared alpha.** One alpha
+   across five hues is five different weights: at 11% the indigo sat 16%
+   below white and the grey 9%. Each alpha is solved so every lane lands
+   11–14% below white.
+3. **The dots are FLAT.** An earlier version gave each a deep rim of its own
+   hue so a bright fill would have an edge. At 8px a 1.5px inset ring leaves
+   a 5px core — not an outline, a gradient — and it read as a glow, or as a
+   dot painted in two colours. The dot is one flat colour and it is the
+   lighter of the pair.
+
+The bright fills do not clear 3:1 on white unaided, and do not need to:
+every lane's name is set in type beside its dot, so no information here is
+carried by colour alone.
+
+## The rail's accent
+
+From the founder's own rail-redesign session (Turn 2, direction 1a): the
+accent lands on the tile, the glyph and the label of the active product
+together, and nothing else in the rail spends indigo. It replaced a solid
+white pill, which was the loudest object in the chrome — a white slab on an
+ink rail out-contrasts the sheet it is pointing at, so the rail competed
+with the work.
+
+`--indigo-on-ink` is `#a5b4fc`, not `--indigo`. Two reasons: `#4f46e5` is
+the accent on PAPER and is barely brighter than the rail on ink; and the
+design's own `#818cf8` measures 4.19:1 on the tinted tile, which is fine for
+a glyph and under the floor for the LABEL, because a label is text. Lifting
+one step keeps the design's rule whole rather than splitting the accent in
+two. `#a5b4fc` is that session's own `invGlyph`.
+
+## One brand dot
+
+The three wordmarks carried three different full stops — Tasks' was ink,
+Timeline's was `--fore` (a dot that changed colour with the room), and only
+Notes' was indigo. Overruled by the founder: it is the brand, it is indigo,
+and it is the same object in all three. Its radius is stated as `999px`
+rather than `50%` so that no preset and no later rule can square it.
+
+## Projects
+
+`src/projects.js` holds three demo projects and the API the switcher drives:
+`apply`, `rename`, `create`, and `ALL`. Two rules in it are worth keeping:
+
+- **Arrays are refilled in place, never rebound.** `__TLFIXTURE.milestones`
+  is a reference the fixture's own closure holds, and `live()`, `counts()`
+  and `nextUp()` read the closure rather than the property. Rebinding it
+  changed the Timeline's name and left its moments on the previous project.
+- **All projects is assembled on demand, never cached.** It is a view of the
+  three, so a rename or a new task has to reach it without anything being
+  told to sync.

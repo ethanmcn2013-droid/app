@@ -408,12 +408,15 @@
   display: inline-flex;
   align-items: baseline;
 }
+/* The brand dot, indigo and round, the same object the other two carry.
+   It was --fore, which is ink on paper and white on the ink ground — a
+   wordmark full stop that changed colour with the room. */
 [data-app="timeline"] .tlHead .word::after {
   content: "";
   width: 4.5px;
   height: 4.5px;
-  border-radius: 50%;
-  background: var(--fore);
+  border-radius: 999px;
+  background: var(--indigo);
   margin-left: 2px;
 }
 /* Studio chrome on a page a couple opens from a link is a decision, not a

@@ -326,12 +326,155 @@
     return true;
   }
 
+  /* ── every project at once ────────────────────────────────────
+     Not a fourth project — a VIEW of the three. It is assembled on demand
+     from whatever the projects currently hold, so a task added to the
+     Academic year appears here without anything being told to sync, and a
+     rename lands here too. Assembling it once at load and caching it would
+     be the same class of staleness this file was written to remove.
+
+     Each row keeps its own project's name in its tag, because a board that
+     merges three projects and does not say which is which is a longer list
+     rather than a wider view. */
+  var ALL_ID = "all";
+  function allProjects() {
+    var tasks = [], unscheduled = [], milestones = [], tlMilestones = [];
+    var done = 0, total = 0, overdue = 0, undated = 0;
+    PROJECTS.forEach(function (p) {
+      var b = p.board;
+      b.tasks.forEach(function (t) {
+        var copy = JSON.parse(JSON.stringify(t));
+        copy.tag = p.name;
+        tasks.push(copy);
+      });
+      total += b.progress.total; done += b.progress.done;
+      overdue += b.progress.overdue; undated += b.progress.undated;
+      (b.planning.unscheduled || []).forEach(function (u) { unscheduled.push(u); });
+      (b.planning.milestones || []).forEach(function (m) { milestones.push(m); });
+      p.timeline.milestones.forEach(function (m) {
+        tlMilestones.push(JSON.parse(JSON.stringify(m)));
+      });
+    });
+    /* One measure, so the moments have to be in date order or the Timeline
+       is drawing three plans on top of each other. */
+    tlMilestones.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return {
+      board: {
+        workspace: "All projects",
+        season: PROJECTS.length + " projects",
+        period: "6 Jul \u2013 26 Jun",
+        progress: { done: done, total: total, overdue: overdue, day: 11, of: 356, left: 345, undated: undated },
+        tasks: tasks,
+        planning: {
+          title: "Planning",
+          project: "All projects",
+          line: PROJECTS.length + " projects \u00b7 6 Jul \u2013 26 Jun",
+          summary: total + " tasks \u00b7 " + undated + " with no day",
+          help: "Give each task a day, or drag it onto the Schedule or Calendar view.",
+          unscheduled: unscheduled,
+          milestones: milestones,
+        },
+      },
+      timeline: {
+        project: {
+          slug: "all",
+          name: "All projects",
+          oneLiner: "Everything you are running, on one measure.",
+          primaryDate: PROJECTS[0].timeline.project.primaryDate,
+        },
+        workspace: { name: "All projects", owner: "Orla" },
+        siblings: PROJECTS.map(function (p) {
+          return { slug: p.id, name: p.name, date: null, note: p.kind };
+        }),
+        milestones: tlMilestones,
+      },
+    };
+  }
+
+  function applyAll() {
+    var v = allProjects();
+    currentId = ALL_ID;
+    replace(B, v.board, BOARD_KEYS);
+    replace(F, v.timeline, TL_KEYS);
+    window.WORLD.project = ALL_ID;
+    return true;
+  }
+
+  /* ── naming ───────────────────────────────────────────────────
+     A project's name is written in four places that must never disagree:
+     the switcher, the board's head, Planning's own title, and the
+     Timeline's workspace. They are all set from here. */
+  function renameProject(id, name) {
+    var next = String(name || "").trim();
+    var p = byId[id];
+    if (!p || !next || next === p.name) return false;
+    p.name = next;
+    p.board.workspace = next;
+    p.board.planning.project = next;
+    p.board.planning.line = p.kind + " \u00b7 " + p.board.period;
+    p.timeline.workspace.name = next;
+    p.timeline.project.name = next;
+    /* If it is the one on screen, the surfaces have to hear about it now. */
+    if (currentId === id) applyProject(id);
+    else if (currentId === ALL_ID) applyAll();
+    return true;
+  }
+
+  var made = 0;
+  function createProject(name) {
+    var next = String(name || "").trim();
+    if (!next) return null;
+    made += 1;
+    var id = "p" + (PROJECTS.length + made);
+    /* A new project is EMPTY, and says so. Seeding it with sample tasks
+       would be the product putting words in somebody's mouth on the first
+       screen they ever see of their own work. */
+    var p = {
+      id: id,
+      name: next,
+      kind: "New project",
+      initials: ORCHARD.initials,
+      board: {
+        workspace: next,
+        season: "New project",
+        period: "6 Jul \u2013 10 Oct",
+        progress: { done: 0, total: 0, overdue: 0, day: 1, of: 97, left: 96, undated: 0 },
+        tasks: [],
+        planning: {
+          title: "Planning",
+          project: next,
+          line: "New project \u00b7 6 Jul \u2013 10 Oct",
+          summary: "Nothing planned yet",
+          help: "Give each task a day, or drag it onto the Schedule or Calendar view.",
+          unscheduled: [],
+          milestones: [],
+        },
+      },
+      timeline: {
+        project: { slug: id, name: next, oneLiner: "Nothing on the measure yet.", primaryDate: null },
+        workspace: { name: next, owner: ORCHARD.timeline.workspace.owner },
+        siblings: [],
+        milestones: [],
+      },
+    };
+    PROJECTS.push(p);
+    byId[id] = p;
+    return id;
+  }
+
   window.PROJECTS = {
-    list: PROJECTS.map(function (p) {
-      return { id: p.id, name: p.name, kind: p.kind };
-    }),
+    /* Built on read, not frozen at load — a rename or a new project has to
+       reach the switcher without anything being told to refresh. */
+    get list() {
+      return PROJECTS.map(function (p) {
+        return { id: p.id, name: p.name, kind: p.kind, count: p.board.tasks.length };
+      });
+    },
     current: function () { return currentId; },
-    apply: applyProject,
+    apply: function (id) { return id === ALL_ID ? applyAll() : applyProject(id); },
+    rename: renameProject,
+    create: createProject,
+    ALL: ALL_ID,
     /* For a gate that wants to prove nothing leaked: the exact set of keys
        a switch is responsible for. */
     keys: { board: BOARD_KEYS, timeline: TL_KEYS },

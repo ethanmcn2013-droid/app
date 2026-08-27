@@ -7,9 +7,19 @@ window.ICON = (function () {
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra || ""}</svg>`;
 
   return {
-    notes: s('<rect x="5" y="3" width="12" height="18" rx="2"/><path d="M8.5 8h5M8.5 12h5M8.5 16h3"/><circle cx="19" cy="7" r="1.4" fill="currentColor" stroke="none"/>'),
-    tasks: s('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12.4l2.4 2.4L16 9.6"/>'),
-    timeline: s('<path d="M4 16h4.5a3 3 0 0 0 3-3V11a3 3 0 0 1 3-3H20"/><circle cx="4" cy="16" r="1.6" fill="currentColor" stroke="none"/><circle cx="20" cy="8" r="1.6" fill="currentColor" stroke="none"/>'),
+    /* Rail redesign, Turn 2, direction 1a — the founder's own session.
+       A page with three ruled lines, contained. The mark it replaces carried
+       a filled dot at the top right that read as a notification badge at
+       19px rather than as part of the page. */
+    notes: s('<rect x="5.6" y="3.6" width="12.8" height="16.8" rx="2.2"/><path d="M9 8.6h6M9 12h6M9 15.4h3.6"/>'),
+    /* A contained check. Same container radius as Notes so the two read as
+       one family, and the tick is the only thing that differs — which is the
+       point: they are the same kind of object holding different work. */
+    tasks: s('<rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6"/><path d="M8.6 12.2 11.1 14.7 15.8 9.9"/>'),
+    /* A spine with three rows against it and two nodes on the spine. It
+       reads as a plan at 16px, which the previous stepped path did not —
+       that one lost its shape below 20 and became a squiggle. */
+    timeline: s('<path d="M6.6 4.8v14.4"/><path d="M10.4 7.6h8.4M10.4 12h8.4M10.4 16.4h8.4"/><circle cx="6.6" cy="7.6" r="1.6"/><circle cx="6.6" cy="16.4" r="1.6"/>'),
     more: s('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><circle cx="16.75" cy="16.75" r="2.2" fill="currentColor" stroke="none"/>'),
     home: s('<path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/>'),
     inbox: s('<path d="M4 13h4l1.2 2.2h5.6L16 13h4"/><path d="M4 13 6.2 5.6A1.5 1.5 0 0 1 7.6 4.5h8.8a1.5 1.5 0 0 1 1.4 1.1L20 13v4.5A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"/>'),
@@ -24,6 +34,9 @@ window.ICON = (function () {
        joins doing the softening so it still sits at 1.6 stroke with
        everything else. */
     settings: s('<path d="M10.52 3.12L13.48 3.12L13.59 5.29L15.62 6.13L17.23 4.68L19.32 6.77L17.87 8.38L18.71 10.41L20.88 10.52L20.88 13.48L18.71 13.59L17.87 15.62L19.32 17.23L17.23 19.32L15.62 17.87L13.59 18.71L13.48 20.88L10.52 20.88L10.41 18.71L8.38 17.87L6.77 19.32L4.68 17.23L6.13 15.62L5.29 13.59L3.12 13.48L3.12 10.52L5.29 10.41L6.13 8.38L4.68 6.77L6.77 4.68L8.38 6.13L10.41 5.29Z"/><circle cx="12" cy="12" r="3"/>'),
+    /* Rename. A pencil at 15px is the one mark everybody already reads as
+       "change this word", and the rail's own icon set has no equivalent. */
+    pencil: s('<path d="M4.8 19.2h3.1l9.1-9.1a2.2 2.2 0 0 0-3.1-3.1l-9.1 9.1z"/><path d="M13.4 7.6l3.1 3.1"/>'),
     /* The switcher's chevron. Down, small, and only ever beside a name the
        reader is already looking at. */
     chevron: s('<path d="m7.5 10 4.5 4.5 4.5-4.5"/>'),

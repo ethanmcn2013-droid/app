@@ -204,6 +204,9 @@ button {
      nearly half again the size it was drawn at, and still a violation
      because 16 is on no ladder either. Declared at :root, where a product's
      own [data-app] block outranks it and nothing changes inside a sheet. */
+  /* The accent, lifted for a dark ground. The rail is the only place in
+     the suite that needs it. */
+  --indigo-on-ink: #a5b4fc;
   --t-11: 11px;
   --lh-tight: 1.28;
 
@@ -357,8 +360,36 @@ body {
   max-width: 100%;
 }
 .railTile:not([aria-disabled="true"]):hover { color: var(--on-ink-1); background: var(--chrome-active); }
-.railTile[data-active] { color: var(--ink-1); background: var(--white); }
+/* ── the active product ─────────────────────────────────────────
+   INDIGO, not a white pill. From the founder's own rail-redesign session
+   (Turn 2, direction 1a): "Accent lands on the tile, the glyph and the
+   label together — nothing else in the rail spends indigo."
+
+   The white pill it replaces was the loudest object in the chrome: a solid
+   white slab on an ink rail out-contrasted the sheet it was pointing at,
+   so the rail competed with the work. A 16% indigo tile with an indigo
+   glyph and label marks the same position and stays chrome.
+
+   The accent is --indigo-on-ink, not --indigo. #4f46e5 is the accent on
+   PAPER; on this ground it is barely brighter than the rail.
+
+   #a5b4fc rather than the design's #818cf8, and the reason is the LABEL.
+   The design's rule is that the tile, the glyph and the label take the
+   accent together — and a label is text, so it owes 4.5:1 where a glyph
+   owes 3:1. #818cf8 measures 4.19:1 on this tile: fine for the mark,
+   under the floor for the word. Lifting one step keeps the rule intact at
+   6.7:1 rather than splitting the accent in two. #a5b4fc is the design
+   file's own `invGlyph`, so it is a colour that session already chose. */
+.railTile[data-active] {
+  color: var(--indigo-on-ink);
+  background: rgba(165, 180, 252, 0.16);
+}
+.railTile[data-active] .railName { color: var(--indigo-on-ink); }
 /* The capsule points at the sheet it opened. */
+/* The capsule still points at the sheet it opened. It is chrome, not
+   accent — the design's rule is that only the tile, the glyph and the
+   label spend indigo, and a third indigo object here would make the rail
+   the brightest thing on the screen again. */
 .railTile[data-active]::after {
   content: "";
   position: absolute; right: -12px; top: 50%;
@@ -474,7 +505,9 @@ body {
 #deck[data-radius="round"] .rail { border-radius: 24px; }
 #deck[data-radius="round"] .railTile,
 #deck[data-radius="round"] .railAdd { border-radius: 16px; }
-#deck[data-indigo="forward"] .railTile[data-active] { background: var(--indigo); color: var(--white); }
+/* The forward preset pushes the same accent harder rather than swapping
+   it for a different idea. */
+#deck[data-indigo="forward"] .railTile[data-active] { background: rgba(165, 180, 252, 0.26); }
 /* The brand dot is already indigo, so the forward preset has nothing
    left to add to it. */
 
@@ -879,9 +912,18 @@ body {
 /* The sheet's own claim is that indigo means the next milestone. Spending it
    on a wordmark full stop and a rail dot made the claim false in two places
    before the operator reached a card. */
+/* ONE BRAND DOT. The three wordmarks carried three different full stops —
+   Tasks' was ink, Timeline's was --fore, and only Notes' was indigo. That
+   was recorded as a deliberate divergence and the founder has overruled it:
+   the dot after the wordmark is the brand, it is indigo, and it is the same
+   object in all three products. `border-radius` is stated as 999px rather
+   than 50% so that no radius preset and no future rule can square it — 50%
+   of a 4.5px box is a circle, but it is a circle by arithmetic, and 999px
+   is a circle by instruction. */
 [data-app="tasks"] .word::after {
-  content: ""; width: 4.5px; height: 4.5px; border-radius: 50%;
-  background: var(--ink-1); margin-left: 2px;
+  content: ""; width: 4.5px; height: 4.5px;
+  border-radius: 999px;
+  background: var(--indigo); margin-left: 2px;
 }
 [data-app="tasks"] .headRule { width: 1px; height: 20px; background: var(--line); flex: none; }
 /* The name does not shrink. It was the only thing in the row allowed to, so
@@ -2763,6 +2805,51 @@ body {
   margin-top: 2px;
 }
 [data-app="tasks"] .projTick { display: grid; place-items: center; color: var(--indigo); }
+/* ── naming, adding, and all of them at once ───────────────────────
+   A row carries its own rename control, revealed on hover, because the
+   pencil is a second verb on an object whose first verb is "switch to
+   this" — showing both at rest would make every row a choice between two
+   things when almost every press is the same one. */
+[data-app="tasks"] .projRow { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; }
+[data-app="tasks"] .projRow .projItem { grid-column: 1; }
+[data-app="tasks"] .projEdit {
+  grid-column: 2;
+  display: grid; place-items: center;
+  width: 30px; height: 30px; margin-right: 4px;
+  border: 0; background: none; padding: 0;
+  border-radius: var(--r-ctl);
+  color: var(--ink-3); cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--motion-instant) var(--curve), color var(--motion-instant) var(--curve),
+              background-color var(--motion-instant) var(--curve);
+}
+[data-app="tasks"] .projEdit svg { width: 15px; height: 15px; }
+[data-app="tasks"] .projRow:hover .projEdit,
+[data-app="tasks"] .projEdit:focus-visible { opacity: 1; }
+[data-app="tasks"] .projEdit:hover { background: var(--wash); color: var(--ink-1); }
+/* The field IS the row. Same box, same padding, same type — only the ink
+   and the caret say it has become editable. */
+[data-app="tasks"] .projItem[data-editing] { cursor: default; }
+[data-app="tasks"] .projField {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  line-height: var(--lh-tight); letter-spacing: var(--tr-13);
+  color: var(--ink-1);
+  background: none; border: 0; padding: 0; margin: 0;
+  width: 100%; min-width: 0;
+  -webkit-appearance: none; appearance: none;
+}
+[data-app="tasks"] .projField:focus { outline: none; }
+[data-app="tasks"] .projField::placeholder { color: var(--ink-3); font-weight: 400; }
+[data-app="tasks"] .projItem[data-editing] { box-shadow: inset 0 0 0 1px var(--indigo); background: var(--white); }
+[data-app="tasks"] .projRule { height: 1px; background: var(--line-soft); margin: 5px 8px; }
+/* Neither of these is a project — one is a view of them all, the other
+   makes one — so both sit under the rule and neither takes the tick's
+   weight unless it is actually the thing on screen. */
+[data-app="tasks"] .projNew b, [data-app="tasks"] .projAll b { font-weight: 400; }
+[data-app="tasks"] .projAll[data-on] b { font-weight: 600; }
+[data-app="tasks"] .projNew .projTick { color: var(--ink-3); }
+[data-app="tasks"] .projNew .projTick svg { width: 14px; height: 14px; }
+[data-app="tasks"] .projNew:hover .projTick { color: var(--indigo); }
 [data-app="tasks"] .projTick svg { width: 15px; height: 15px; }
 /* The head has to be able to hold a popover under it. */
 [data-app="tasks"] .head { position: relative; }
@@ -3284,7 +3371,7 @@ body {
    suite. Leaving --tr-18 here would have kept the two products rounding
    the same curve differently, which is what the gate found. */
 [data-app="notes"] .word { display: inline-flex; align-items: baseline; font-size: var(--t-17); font-weight: 600; flex: none; color: var(--ink-1); line-height: var(--lh-tight); }
-[data-app="notes"] .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--indigo); margin-left: 2px; }
+[data-app="notes"] .word::after { content: ""; width: 4.5px; height: 4.5px; border-radius: 999px; background: var(--indigo); margin-left: 2px; }
 [data-app="notes"] .headRule { width: 1px; height: 18px; background: var(--line); flex: none; }
 /* What the house is facing, at the head of the sheet. The head's top-line
    fact had been a generic count of unread items while the thing that
@@ -7366,12 +7453,15 @@ body {
   display: inline-flex;
   align-items: baseline;
 }
+/* The brand dot, indigo and round, the same object the other two carry.
+   It was --fore, which is ink on paper and white on the ink ground — a
+   wordmark full stop that changed colour with the room. */
 [data-app="timeline"] .tlHead .word::after {
   content: "";
   width: 4.5px;
   height: 4.5px;
-  border-radius: 50%;
-  background: var(--fore);
+  border-radius: 999px;
+  background: var(--indigo);
   margin-left: 2px;
 }
 /* Studio chrome on a page a couple opens from a link is a decision, not a
@@ -8781,12 +8871,155 @@ window.NOTES = (function () {
     return true;
   }
 
+  /* ── every project at once ────────────────────────────────────
+     Not a fourth project — a VIEW of the three. It is assembled on demand
+     from whatever the projects currently hold, so a task added to the
+     Academic year appears here without anything being told to sync, and a
+     rename lands here too. Assembling it once at load and caching it would
+     be the same class of staleness this file was written to remove.
+
+     Each row keeps its own project's name in its tag, because a board that
+     merges three projects and does not say which is which is a longer list
+     rather than a wider view. */
+  var ALL_ID = "all";
+  function allProjects() {
+    var tasks = [], unscheduled = [], milestones = [], tlMilestones = [];
+    var done = 0, total = 0, overdue = 0, undated = 0;
+    PROJECTS.forEach(function (p) {
+      var b = p.board;
+      b.tasks.forEach(function (t) {
+        var copy = JSON.parse(JSON.stringify(t));
+        copy.tag = p.name;
+        tasks.push(copy);
+      });
+      total += b.progress.total; done += b.progress.done;
+      overdue += b.progress.overdue; undated += b.progress.undated;
+      (b.planning.unscheduled || []).forEach(function (u) { unscheduled.push(u); });
+      (b.planning.milestones || []).forEach(function (m) { milestones.push(m); });
+      p.timeline.milestones.forEach(function (m) {
+        tlMilestones.push(JSON.parse(JSON.stringify(m)));
+      });
+    });
+    /* One measure, so the moments have to be in date order or the Timeline
+       is drawing three plans on top of each other. */
+    tlMilestones.sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    return {
+      board: {
+        workspace: "All projects",
+        season: PROJECTS.length + " projects",
+        period: "6 Jul \u2013 26 Jun",
+        progress: { done: done, total: total, overdue: overdue, day: 11, of: 356, left: 345, undated: undated },
+        tasks: tasks,
+        planning: {
+          title: "Planning",
+          project: "All projects",
+          line: PROJECTS.length + " projects \u00b7 6 Jul \u2013 26 Jun",
+          summary: total + " tasks \u00b7 " + undated + " with no day",
+          help: "Give each task a day, or drag it onto the Schedule or Calendar view.",
+          unscheduled: unscheduled,
+          milestones: milestones,
+        },
+      },
+      timeline: {
+        project: {
+          slug: "all",
+          name: "All projects",
+          oneLiner: "Everything you are running, on one measure.",
+          primaryDate: PROJECTS[0].timeline.project.primaryDate,
+        },
+        workspace: { name: "All projects", owner: "Orla" },
+        siblings: PROJECTS.map(function (p) {
+          return { slug: p.id, name: p.name, date: null, note: p.kind };
+        }),
+        milestones: tlMilestones,
+      },
+    };
+  }
+
+  function applyAll() {
+    var v = allProjects();
+    currentId = ALL_ID;
+    replace(B, v.board, BOARD_KEYS);
+    replace(F, v.timeline, TL_KEYS);
+    window.WORLD.project = ALL_ID;
+    return true;
+  }
+
+  /* ── naming ───────────────────────────────────────────────────
+     A project's name is written in four places that must never disagree:
+     the switcher, the board's head, Planning's own title, and the
+     Timeline's workspace. They are all set from here. */
+  function renameProject(id, name) {
+    var next = String(name || "").trim();
+    var p = byId[id];
+    if (!p || !next || next === p.name) return false;
+    p.name = next;
+    p.board.workspace = next;
+    p.board.planning.project = next;
+    p.board.planning.line = p.kind + " \u00b7 " + p.board.period;
+    p.timeline.workspace.name = next;
+    p.timeline.project.name = next;
+    /* If it is the one on screen, the surfaces have to hear about it now. */
+    if (currentId === id) applyProject(id);
+    else if (currentId === ALL_ID) applyAll();
+    return true;
+  }
+
+  var made = 0;
+  function createProject(name) {
+    var next = String(name || "").trim();
+    if (!next) return null;
+    made += 1;
+    var id = "p" + (PROJECTS.length + made);
+    /* A new project is EMPTY, and says so. Seeding it with sample tasks
+       would be the product putting words in somebody's mouth on the first
+       screen they ever see of their own work. */
+    var p = {
+      id: id,
+      name: next,
+      kind: "New project",
+      initials: ORCHARD.initials,
+      board: {
+        workspace: next,
+        season: "New project",
+        period: "6 Jul \u2013 10 Oct",
+        progress: { done: 0, total: 0, overdue: 0, day: 1, of: 97, left: 96, undated: 0 },
+        tasks: [],
+        planning: {
+          title: "Planning",
+          project: next,
+          line: "New project \u00b7 6 Jul \u2013 10 Oct",
+          summary: "Nothing planned yet",
+          help: "Give each task a day, or drag it onto the Schedule or Calendar view.",
+          unscheduled: [],
+          milestones: [],
+        },
+      },
+      timeline: {
+        project: { slug: id, name: next, oneLiner: "Nothing on the measure yet.", primaryDate: null },
+        workspace: { name: next, owner: ORCHARD.timeline.workspace.owner },
+        siblings: [],
+        milestones: [],
+      },
+    };
+    PROJECTS.push(p);
+    byId[id] = p;
+    return id;
+  }
+
   window.PROJECTS = {
-    list: PROJECTS.map(function (p) {
-      return { id: p.id, name: p.name, kind: p.kind };
-    }),
+    /* Built on read, not frozen at load — a rename or a new project has to
+       reach the switcher without anything being told to refresh. */
+    get list() {
+      return PROJECTS.map(function (p) {
+        return { id: p.id, name: p.name, kind: p.kind, count: p.board.tasks.length };
+      });
+    },
     current: function () { return currentId; },
-    apply: applyProject,
+    apply: function (id) { return id === ALL_ID ? applyAll() : applyProject(id); },
+    rename: renameProject,
+    create: createProject,
+    ALL: ALL_ID,
     /* For a gate that wants to prove nothing leaked: the exact set of keys
        a switch is responsible for. */
     keys: { board: BOARD_KEYS, timeline: TL_KEYS },
@@ -8805,9 +9038,19 @@ window.ICON = (function () {
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra || ""}</svg>`;
 
   return {
-    notes: s('<rect x="5" y="3" width="12" height="18" rx="2"/><path d="M8.5 8h5M8.5 12h5M8.5 16h3"/><circle cx="19" cy="7" r="1.4" fill="currentColor" stroke="none"/>'),
-    tasks: s('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8.5 12.4l2.4 2.4L16 9.6"/>'),
-    timeline: s('<path d="M4 16h4.5a3 3 0 0 0 3-3V11a3 3 0 0 1 3-3H20"/><circle cx="4" cy="16" r="1.6" fill="currentColor" stroke="none"/><circle cx="20" cy="8" r="1.6" fill="currentColor" stroke="none"/>'),
+    /* Rail redesign, Turn 2, direction 1a — the founder's own session.
+       A page with three ruled lines, contained. The mark it replaces carried
+       a filled dot at the top right that read as a notification badge at
+       19px rather than as part of the page. */
+    notes: s('<rect x="5.6" y="3.6" width="12.8" height="16.8" rx="2.2"/><path d="M9 8.6h6M9 12h6M9 15.4h3.6"/>'),
+    /* A contained check. Same container radius as Notes so the two read as
+       one family, and the tick is the only thing that differs — which is the
+       point: they are the same kind of object holding different work. */
+    tasks: s('<rect x="4.6" y="4.6" width="14.8" height="14.8" rx="2.6"/><path d="M8.6 12.2 11.1 14.7 15.8 9.9"/>'),
+    /* A spine with three rows against it and two nodes on the spine. It
+       reads as a plan at 16px, which the previous stepped path did not —
+       that one lost its shape below 20 and became a squiggle. */
+    timeline: s('<path d="M6.6 4.8v14.4"/><path d="M10.4 7.6h8.4M10.4 12h8.4M10.4 16.4h8.4"/><circle cx="6.6" cy="7.6" r="1.6"/><circle cx="6.6" cy="16.4" r="1.6"/>'),
     more: s('<rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><circle cx="16.75" cy="16.75" r="2.2" fill="currentColor" stroke="none"/>'),
     home: s('<path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 19z"/>'),
     inbox: s('<path d="M4 13h4l1.2 2.2h5.6L16 13h4"/><path d="M4 13 6.2 5.6A1.5 1.5 0 0 1 7.6 4.5h8.8a1.5 1.5 0 0 1 1.4 1.1L20 13v4.5A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5z"/>'),
@@ -8822,6 +9065,9 @@ window.ICON = (function () {
        joins doing the softening so it still sits at 1.6 stroke with
        everything else. */
     settings: s('<path d="M10.52 3.12L13.48 3.12L13.59 5.29L15.62 6.13L17.23 4.68L19.32 6.77L17.87 8.38L18.71 10.41L20.88 10.52L20.88 13.48L18.71 13.59L17.87 15.62L19.32 17.23L17.23 19.32L15.62 17.87L13.59 18.71L13.48 20.88L10.52 20.88L10.41 18.71L8.38 17.87L6.77 19.32L4.68 17.23L6.13 15.62L5.29 13.59L3.12 13.48L3.12 10.52L5.29 10.41L6.13 8.38L4.68 6.77L6.77 4.68L8.38 6.13L10.41 5.29Z"/><circle cx="12" cy="12" r="3"/>'),
+    /* Rename. A pencil at 15px is the one mark everybody already reads as
+       "change this word", and the rail's own icon set has no equivalent. */
+    pencil: s('<path d="M4.8 19.2h3.1l9.1-9.1a2.2 2.2 0 0 0-3.1-3.1l-9.1 9.1z"/><path d="M13.4 7.6l3.1 3.1"/>'),
     /* The switcher's chevron. Down, small, and only ever beside a name the
        reader is already looking at. */
     chevron: s('<path d="m7.5 10 4.5 4.5 4.5-4.5"/>'),
@@ -10028,21 +10274,93 @@ const RAIL = {
    The list is short and stays short: this is a switcher, not a project
    manager, so it names the projects and nothing else. */
 let projOpen = false;
+let projEdit = null;    /* the project whose name is being edited     */
+let projNew = false;    /* is the new-project field open               */
+
+function commitName(field) {
+  const P = window.PROJECTS;
+  const value = String(field.value || "").trim();
+  const making = field.dataset.act === "new-field";
+  projEdit = null;
+  projNew = false;
+  if (!P || !value) { mount(); return; }
+  if (making) {
+    const id = P.create(value);
+    if (id) {
+      /* Made, and opened. A project you have just named and then have to go
+         and find is a project the product made you name twice. */
+      P.apply(id);
+      WORK = null;
+      picked.clear(); undoHistory.length = 0; undone = null;
+      openNoteId = null; openTaskId = null; menuFor = null; dayFor = null;
+      focusId = null; lateOnly = false; todayOnly = false; clientOnly = null;
+      queryText = ""; drawerTab = "nodate"; state = "board";
+      mount();
+      if (window.__SUITE && window.__SUITE.reproject) window.__SUITE.reproject();
+      say(value + ". New project, nothing in it yet.");
+      return;
+    }
+  } else if (P.rename(field.dataset.project, value)) {
+    WORK = null;
+    mount();
+    if (window.__SUITE && window.__SUITE.reproject) window.__SUITE.reproject();
+    say("Renamed to " + value + ".");
+    return;
+  }
+  mount();
+}
 
 function projectMenu() {
   const P = window.PROJECTS;
   if (!P) return "";
   const here = P.current();
-  return (
-    '<div class="projMenu" role="listbox" aria-label="Projects">' +
-    P.list.map((p) => {
-      const on = p.id === here;
-      return '<button type="button" class="projItem" role="option" data-act="project" data-project="' +
+  const row = (p) => {
+    const on = p.id === here;
+    /* The row being renamed becomes the field. A separate dialog for a
+       one-word edit is a room you have to be let out of again; editing the
+       name where the name already is means the reader never leaves the
+       list they were reading. */
+    if (projEdit === p.id) {
+      return '<div class="projItem" data-editing>' +
+        '<span class="projTick"></span>' +
+        '<input class="projField" data-act="rename-field" data-project="' + p.id + '"' +
+        ' value="' + esc(p.name) + '" aria-label="Rename ' + esc(p.name) + '"' +
+        ' autocomplete="off" spellcheck="false">' +
+        "</div>";
+    }
+    return '<div class="projRow"' + (on ? " data-on" : "") + ">" +
+      '<button type="button" class="projItem" role="option" data-act="project" data-project="' +
         p.id + '" aria-selected="' + (on ? "true" : "false") + '"' + (on ? " data-on" : "") +
         ' tabindex="' + (on ? "0" : "-1") + '">' +
         '<span class="projTick">' + (on ? I.check : "") + "</span>" +
-        "<span><b>" + esc(p.name) + "</b><em>" + esc(p.kind) + "</em></span></button>";
-    }).join("") +
+        "<span><b>" + esc(p.name) + "</b><em>" + esc(p.kind) +
+          (p.count ? " \u00b7 " + p.count + (p.count === 1 ? " task" : " tasks") : " \u00b7 empty") +
+        "</em></span></button>" +
+      '<button type="button" class="projEdit" data-act="rename" data-project="' + p.id + '"' +
+        ' aria-label="Rename ' + esc(p.name) + '">' + I.pencil + "</button>" +
+      "</div>";
+  };
+  const onAll = here === P.ALL;
+  return (
+    '<div class="projMenu" role="listbox" aria-label="Projects">' +
+    '<p class="toolLabel">Projects</p>' +
+    P.list.map(row).join("") +
+    '<div class="projRule"></div>' +
+    /* Every project at once. It sits under the rule with New because
+       neither of them is a project — one is a view of them all and the
+       other makes one. */
+    '<button type="button" class="projItem projAll" role="option" data-act="project"' +
+      ' data-project="' + P.ALL + '" aria-selected="' + (onAll ? "true" : "false") + '"' +
+      (onAll ? " data-on" : "") + ' tabindex="-1">' +
+      '<span class="projTick">' + (onAll ? I.check : "") + "</span>" +
+      "<span><b>All projects</b><em>Everything you are running, on one board</em></span></button>" +
+    (projNew
+      ? '<div class="projItem" data-editing><span class="projTick">' + I.plus + "</span>" +
+        '<input class="projField" data-act="new-field" placeholder="Name this project"' +
+        ' aria-label="Name the new project" autocomplete="off" spellcheck="false"></div>'
+      : '<button type="button" class="projItem projNew" data-act="project-new" tabindex="-1">' +
+        '<span class="projTick">' + I.plus + "</span>" +
+        "<span><b>New project</b></span></button>") +
     "</div>"
   );
 }
@@ -12009,10 +12327,28 @@ function onClick(event) {
     say(projOpen ? "Projects, open." : "Projects, closed.");
     return;
   }
+  if (what === "rename") {
+    projEdit = act.dataset.project;
+    projNew = false;
+    mount();
+    const field = document.querySelector(".projField");
+    if (field) { field.focus(); field.select(); }
+    return;
+  }
+  if (what === "project-new") {
+    projNew = true;
+    projEdit = null;
+    mount();
+    const field = document.querySelector(".projField");
+    if (field) field.focus();
+    return;
+  }
   if (what === "project") {
     const id = act.dataset.project;
     const P = window.PROJECTS;
     projOpen = false;
+    projEdit = null;
+    projNew = false;
     if (!P || id === P.current()) { mount(); return; }
     /* The whole workspace, not the cards. Tasks, Timeline and Planning all
        read the same two objects, so switching them once and repainting
@@ -12839,6 +13175,28 @@ if (host) {
       }
     }
   });
+  /* Naming a project. Enter commits, Escape abandons, and leaving the field
+     commits too — because a name typed and then clicked away from was still
+     typed, and throwing it away would be the product deciding the person
+     did not mean it. */
+  host.addEventListener("keydown", (event) => {
+    const field = event.target.closest && event.target.closest(".projField");
+    if (!field) return;
+    if (event.key === "Enter") { event.preventDefault(); commitName(field); }
+    else if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      projEdit = null; projNew = false;
+      mount();
+      const back = document.querySelector('[data-act="projects"]');
+      if (back) back.focus();
+    }
+  });
+  host.addEventListener("focusout", (event) => {
+    const field = event.target.closest && event.target.closest(".projField");
+    if (field) setTimeout(() => { if (document.contains(field)) commitName(field); }, 0);
+  });
+
   /* Escape leaves the field: first press clears what is in it, second gives
      the board back. A field you cannot get out of by the key everyone tries
      is a trap, however good it looks. */

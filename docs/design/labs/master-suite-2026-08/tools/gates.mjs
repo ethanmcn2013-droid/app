@@ -55,6 +55,7 @@ const STATUS_HUES = [
   '  { name: "Status yellow", rgb: [234, 179, 8] },',
   '  { name: "Status orange bright", rgb: [249, 115, 22] },',
   '  { name: "Status green bright", rgb: [34, 197, 94] },',
+  '  { name: "Indigo on ink", rgb: [165, 180, 252] },',
 ].join("\n");
 
 function widenPalette(text, label) {
