@@ -16,15 +16,20 @@ const PAID_TOTAL_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
 const PAID_MAX_FILE_BYTES = 250 * 1024 * 1024;     // 250 MB per file
 
 /**
- * Server-action uploads buffer the whole file in memory (arrayBuffer()).
- * Until a client-direct multipart Vercel Blob token flow ships (tracked
- * in docs/execution/signal-studio/MASTER_PLAN.md §1.4 OOM note), the
- * effective per-file cap is min(maxFileBytes, SERVER_UPLOAD_LIMIT_BYTES).
+ * The transport ceiling on a single upload, whatever the tier allows.
  *
- * Follow-up: implement client-upload token flow to lift the 50 MB ceiling
- * for paid tiers without OOM risk.
+ * WP-0 made this a re-export instead of a second opinion. It used to be an
+ * independent literal that disagreed with `next.config.ts`, with the
+ * client toast, and with the platform; the client-direct Blob flow now
+ * carries the bytes and `MAX_UPLOAD_BYTES` is the only place the number
+ * lives. The "client-upload token flow" the old comment here listed as a
+ * follow-up is the flow that shipped: see `src/lib/upload-limit.ts`.
+ *
+ * The effective per-file cap remains min(maxFileBytes, this), so a free
+ * board is still held to its own 10 MB — a tier promise, not a transport
+ * one, and deliberately a different number.
  */
-export const SERVER_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024; // 50 MB
+export { MAX_UPLOAD_BYTES as SERVER_UPLOAD_LIMIT_BYTES } from "@/lib/upload-limit";
 
 /**
  * Thresholds at which the UI surfaces a calm storage-usage warning.

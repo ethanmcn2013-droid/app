@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { SERVER_ACTION_BODY_LIMIT } from "./src/lib/upload-limit";
 
 /**
  * ── Security headers ───────────────────────────────────────────────
@@ -308,12 +309,18 @@ const nextConfig: NextConfig = {
     // Roadmap's next.config carries the same shape (Phase 6.2).
     optimizePackageImports: ["@clerk/nextjs", "motion"],
     serverActions: {
-      // Photo capture in Notes posts image bytes to a server action. The
-      // framework default is 1 MB, and base64 inflates by about 1.37x, so
-      // anything over roughly 730 KB was rejected by Next before the
-      // product's own 5 MB limit was ever consulted — with a generic error.
-      // 8 MB clears a 5 MB photo with room for the encoding.
-      bodySizeLimit: "8mb",
+      // Photo capture in Notes posts image bytes to a server action, and
+      // base64 inflates them by about 1.37x, so the framework's 1 MB
+      // default rejects anything over roughly 730 KB with a generic error.
+      //
+      // WP-0: this was 8 MB, which is ABOVE Vercel's own 4.5 MB cap on a
+      // function request body — so it never fired, and bodies between the
+      // two got an opaque platform 413 instead. The value now comes from
+      // src/lib/upload-limit.ts, sits under the platform cap on purpose,
+      // and is asserted against it by
+      // src/server/upload-limit-contract.test.ts. Attachment bytes no
+      // longer travel this way at all; they go browser → Vercel Blob.
+      bodySizeLimit: SERVER_ACTION_BODY_LIMIT,
     },
   },
   async headers() {
