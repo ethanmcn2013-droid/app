@@ -1,0 +1,945 @@
+<title>One Folder Per Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ── Signal Design System tokens (vendored values, v2.0.1) ──────── */
+  :root {
+    --paper:      #ffffff;
+    --paper-soft: #fafafa;
+    --paper-deep: #f4f4f5;
+
+    --ink:       #111111;
+    --ink-soft:  #3f3f46;
+    --ink-faint: #71717a;
+    --ink-ghost: #d4d4d8;
+
+    --accent:       #4f46e5;
+    --accent-tint:  #eef2ff;
+    --accent-soft:  rgba(79, 70, 229, 0.12);
+
+    --hairline:      rgba(17, 17, 17, 0.10);
+    --hairline-soft: rgba(17, 17, 17, 0.06);
+
+    --status-done:    #10b981;
+    --status-flight:  #f59e0b;
+    --status-blocked: #ef4444;
+
+    --keep-tint: rgba(16, 185, 129, 0.10);
+    --warn-tint: rgba(245, 158, 11, 0.10);
+    --stop-tint: rgba(239, 68, 68, 0.10);
+
+    --term-bg:  #18181b;
+    --term-ink: #f4f4f5;
+    --term-dim: #a1a1aa;
+
+    --font-sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --text-title:   clamp(1.875rem, 1.4rem + 2.2vw, 3.25rem);
+    --text-section: clamp(1.375rem, 1.1rem + 1.3vw, 2rem);
+    --text-heading: 1.25rem;
+    --text-body-lg: 1.0625rem;
+    --text-body:    0.9375rem;
+    --text-body-sm: 0.8125rem;
+    --text-caption: 0.75rem;
+    --text-label:   0.6875rem;
+
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+    --space-9: 48px; --space-10: 64px; --space-11: 80px;
+
+    --radius-sm: 4px; --radius-md: 6px; --radius-lg: 10px; --radius-pill: 999px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+      --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+      --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16); --accent-soft: rgba(79,70,229,0.22);
+      --hairline: rgba(255,255,255,0.12); --hairline-soft: rgba(255,255,255,0.07);
+      --status-done: #34d399; --status-flight: #fbbf24; --status-blocked: #f87171;
+      --keep-tint: rgba(52,211,153,0.14); --warn-tint: rgba(251,191,36,0.14); --stop-tint: rgba(248,113,113,0.14);
+      --term-bg: #09090b; --term-ink: #f4f4f5; --term-dim: #71717a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0f0f10; --paper-soft: #161618; --paper-deep: #1d1d20;
+    --ink: #f4f4f5; --ink-soft: #d4d4d8; --ink-faint: #a1a1aa; --ink-ghost: #3f3f46;
+    --accent: #6366f1; --accent-tint: rgba(79,70,229,0.16); --accent-soft: rgba(79,70,229,0.22);
+    --hairline: rgba(255,255,255,0.12); --hairline-soft: rgba(255,255,255,0.07);
+    --status-done: #34d399; --status-flight: #fbbf24; --status-blocked: #f87171;
+    --keep-tint: rgba(52,211,153,0.14); --warn-tint: rgba(251,191,36,0.14); --stop-tint: rgba(248,113,113,0.14);
+    --term-bg: #09090b; --term-ink: #f4f4f5; --term-dim: #71717a;
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: var(--font-sans); font-size: var(--text-body-lg);
+    line-height: 1.62; -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 62rem; margin: 0 auto;
+    padding: var(--space-10) var(--space-5) var(--space-11);
+    display: flex; flex-direction: column; gap: var(--space-10);
+  }
+  .measure { max-width: 44rem; }
+  p { margin: 0; }
+  strong { font-weight: 600; color: var(--ink); }
+  em { font-style: italic; }
+  code {
+    font-family: var(--font-mono); font-size: 0.86em;
+    background: var(--paper-deep); border-radius: var(--radius-sm);
+    padding: 1px 5px; color: var(--ink-soft);
+  }
+  a { color: var(--accent); text-underline-offset: 2px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+  .eyebrow {
+    font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+  }
+
+  /* Masthead */
+  .masthead {
+    display: flex; flex-direction: column; gap: var(--space-4);
+    padding-bottom: var(--space-8); border-bottom: 1px solid var(--hairline);
+  }
+  .masthead h1 {
+    margin: 0; font-size: var(--text-title); line-height: 1.06;
+    letter-spacing: -0.035em; font-weight: 600; text-wrap: balance; max-width: 18ch;
+  }
+  .standfirst { color: var(--ink-soft); max-width: 38rem; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin-top: var(--space-2);
+    font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-faint);
+  }
+  .meta b { font-weight: 500; color: var(--ink-soft); }
+
+  /* Sections */
+  .section { display: flex; flex-direction: column; gap: var(--space-6); }
+  .section-head { display: flex; flex-direction: column; gap: var(--space-2); }
+  .section-head h2 {
+    margin: 0; font-size: var(--text-section); font-weight: 600;
+    letter-spacing: -0.022em; line-height: 1.14; text-wrap: balance;
+  }
+  .section-head p { color: var(--ink-faint); font-size: var(--text-body); max-width: 44rem; }
+  h3 { margin: 0; font-size: var(--text-heading); font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; }
+  h4 {
+    margin: 0; font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .stack { display: flex; flex-direction: column; gap: var(--space-4); }
+  .stack-tight { display: flex; flex-direction: column; gap: var(--space-3); }
+  .body { color: var(--ink-soft); font-size: var(--text-body-lg); }
+  .body-sm { color: var(--ink-soft); font-size: var(--text-body); }
+
+  /* Decision block */
+  .decision {
+    display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-5);
+    padding: var(--space-7); background: var(--accent-tint);
+    border: 1px solid var(--accent-soft); border-radius: var(--radius-lg);
+  }
+  @media (min-width: 44rem) { .decision { grid-template-columns: 14rem minmax(0,1fr); gap: var(--space-7); } }
+  .decision .label {
+    font-family: var(--font-mono); font-size: var(--text-label); letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); font-weight: 500;
+  }
+  .decision .call {
+    font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em;
+    line-height: 1.18; color: var(--ink); text-wrap: balance; margin-top: var(--space-3);
+  }
+  .decision-body { display: flex; flex-direction: column; gap: var(--space-4); }
+  .decision-body p { color: var(--ink-soft); }
+
+  /* Panels & notes */
+  .panel {
+    display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6);
+    background: var(--paper-soft); border: 1px solid var(--hairline); border-radius: var(--radius-lg);
+  }
+  .note {
+    display: flex; flex-direction: column; gap: var(--space-2);
+    padding: var(--space-4) var(--space-5); background: var(--warn-tint);
+    border-left: 2px solid var(--status-flight); border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-size: var(--text-body); color: var(--ink-soft);
+  }
+  .note .note-head {
+    font-family: var(--font-mono); font-size: var(--text-label); letter-spacing: 0.08em;
+    text-transform: uppercase; font-weight: 500; color: var(--ink);
+  }
+  .note.keep { background: var(--keep-tint); border-left-color: var(--status-done); }
+  .note.stop { background: var(--stop-tint); border-left-color: var(--status-blocked); }
+
+  /* Chips */
+  .chip {
+    display: inline-flex; align-items: center; font-family: var(--font-mono);
+    font-size: var(--text-label); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px var(--space-2); border-radius: var(--radius-sm); white-space: nowrap;
+  }
+  .chip-keep { background: var(--keep-tint); color: var(--status-done); }
+  .chip-warn { background: var(--warn-tint); color: var(--status-flight); }
+  .chip-stop { background: var(--stop-tint); color: var(--status-blocked); }
+  .chip-flat { background: var(--paper-deep); color: var(--ink-faint); }
+  .chip-accent { background: var(--accent-soft); color: var(--accent); }
+
+  /* Tables */
+  .scroll { overflow-x: auto; border: 1px solid var(--hairline); border-radius: var(--radius-lg); }
+  table { width: 100%; border-collapse: collapse; font-size: var(--text-body-sm); min-width: 38rem; }
+  thead th {
+    text-align: left; font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint);
+    padding: var(--space-3) var(--space-4); background: var(--paper-deep);
+    border-bottom: 1px solid var(--hairline); white-space: nowrap;
+  }
+  tbody td {
+    padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--hairline-soft);
+    color: var(--ink-soft); vertical-align: top; line-height: 1.5;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody td:first-child { color: var(--ink); font-weight: 500; }
+  td.mono { font-family: var(--font-mono); }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* Code */
+  .code { border-radius: var(--radius-md); overflow: hidden; background: var(--term-bg); }
+  .code-label {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+    padding: var(--space-2) var(--space-4); background: rgba(255,255,255,0.05);
+    font-family: var(--font-mono); font-size: var(--text-label); font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--term-dim);
+  }
+  .code pre {
+    margin: 0; padding: var(--space-5); overflow-x: auto; font-family: var(--font-mono);
+    font-size: var(--text-body-sm); line-height: 1.65; color: var(--term-ink);
+  }
+  .code .c { color: var(--term-dim); }
+  .code .k { color: #a5b4fc; }
+  .code .n { color: #fcd34d; }
+  .code .g { color: #6ee7b7; }
+
+  /* Diagram */
+  .diagram { width: 100%; height: auto; display: block; }
+  .diagram .box { fill: var(--paper); stroke: var(--hairline); stroke-width: 1; }
+  .diagram .box-soft { fill: var(--paper-soft); stroke: var(--hairline); stroke-width: 1; }
+  .diagram .box-accent { fill: var(--accent-tint); stroke: var(--accent); stroke-width: 1.4; }
+  .diagram .box-dim { fill: var(--paper-deep); stroke: var(--hairline-soft); stroke-width: 1; }
+  .diagram .bound { stroke: var(--ink-ghost); stroke-width: 1.25; stroke-dasharray: 5 4; fill: none; }
+  .diagram .flow { stroke: var(--accent); stroke-width: 1.4; fill: none; }
+  .diagram .no { stroke: var(--status-blocked); stroke-width: 1.4; fill: none; }
+  .diagram text { font-family: var(--font-sans); fill: var(--ink); }
+  .diagram .t-title { font-size: 12.5px; font-weight: 600; }
+  .diagram .t-body { font-size: 11px; fill: var(--ink-soft); }
+  .diagram .t-mono { font-family: var(--font-mono); font-size: 10px; fill: var(--ink-faint); }
+  .diagram .t-accent { font-family: var(--font-mono); font-size: 9.5px; fill: var(--accent); letter-spacing: 0.06em; font-weight: 500; }
+  .diagram .t-stop { font-family: var(--font-mono); font-size: 9.5px; fill: var(--status-blocked); letter-spacing: 0.06em; font-weight: 500; }
+  .diagram .head-accent { fill: var(--accent); }
+
+  /* Layout helpers */
+  .split { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--space-5); }
+  @media (min-width: 46rem) { .split { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+  .list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-3); }
+  .list li {
+    display: grid; grid-template-columns: auto minmax(0,1fr); gap: var(--space-3);
+    align-items: baseline; font-size: var(--text-body); color: var(--ink-soft);
+  }
+  .list .marker { font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-ghost); }
+  .list.keep .marker { color: var(--status-done); }
+  .list.stop .marker { color: var(--status-blocked); }
+
+  /* Rounds */
+  .rounds { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: var(--space-7); }
+  .round { display: grid; grid-template-columns: 2.25rem minmax(0,1fr); gap: var(--space-5); align-items: start; }
+  .round-num {
+    width: 2.25rem; height: 2.25rem; border-radius: var(--radius-pill);
+    background: var(--accent); color: #fff; display: grid; place-items: center;
+    font-family: var(--font-mono); font-size: var(--text-body); font-weight: 500; font-variant-numeric: tabular-nums;
+  }
+  .round-num.zero { background: var(--status-flight); color: #18181b; }
+  .round-body { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; padding-top: 0.2rem; }
+  .round-meta {
+    display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4);
+    font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-faint);
+  }
+
+  hr.sep { border: none; border-top: 1px solid var(--hairline); margin: 0; }
+  footer {
+    padding-top: var(--space-7); border-top: 1px solid var(--hairline);
+    font-family: var(--font-mono); font-size: var(--text-caption); color: var(--ink-faint);
+    display: flex; flex-direction: column; gap: var(--space-2);
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">CEO report · project files in Google Drive</p>
+    <h1>One folder per board</h1>
+    <p class="standfirst">
+      You asked whether project files can live in your users' own Drive, with
+      invited people seeing only that board's folder. They can. Google's own
+      API description confirms the narrowest scope does everything the design
+      needs — including the sharing. I had this wrong in the first review, and
+      the correction runs in your favour.
+    </p>
+    <div class="meta">
+      <span><b>Verified against</b> Drive API v3, revision 20260823</span>
+      <span><b>Repo</b> ethanmcn2013-droid/app</span>
+      <span><b>Date</b> 2026-08-27</span>
+      <span><b>Code changed</b> none</span>
+    </div>
+  </header>
+
+  <section class="decision">
+    <div>
+      <span class="label">Decision</span>
+      <p class="call">Build it. The scope carries the safety.</p>
+      <p style="margin-top: var(--space-4)"><span class="chip chip-keep">green light</span></p>
+    </div>
+    <div class="decision-body">
+      <p>
+        <strong>The correction.</strong> I told you the collaboration problem was
+        fatal — files landing in one person's Drive, invisible to everyone else.
+        Your constraint is the fix: if Signal Studio shares <em>the board's
+        folder</em> with the board's members, they get access automatically.
+        Request-access becomes the rare fallback you already tolerate, not the
+        default experience.
+      </p>
+      <p>
+        <strong>Why I can now say that with confidence.</strong> The open
+        question was whether an app holding only the narrow
+        <code>drive.file</code> scope may manage sharing. Google's machine-readable
+        API description — pulled directly, three days old — lists exactly two
+        scopes for <code>permissions.create</code>:
+        <code>drive</code> and <code>drive.file</code>. The narrow one is
+        sufficient. Create the folder, share it with named people, revoke them
+        later, upload into it: all of it, on the scope that needs no security
+        assessment.
+      </p>
+      <p>
+        <strong>And it buys more than I credited.</strong> Drive's documented
+        maximum upload is 5 TB with resumable sessions. Your product's real
+        ceiling today is about 8 MB. This isn't a cost play — it's a capability
+        play, and that's a much better reason to build it.
+      </p>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ WHAT THE PLATFORM ACTUALLY ALLOWS ═════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">The evidence</p>
+      <h2>What the narrow scope actually permits</h2>
+      <p>
+        Read from Google's own generated API description rather than from
+        documentation prose or memory. Each row is a method your design needs
+        and the scopes Google lists for it.
+      </p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>What we need to do</th><th class="mono">Method</th><th>Scopes Google lists</th><th style="text-align:right">Narrow scope?</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Create the board's folder</td><td class="mono">files.create</td><td class="mono">drive, drive.appdata, drive.file</td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td><strong>Share it with a member</strong></td><td class="mono">permissions.create</td><td class="mono">drive, <strong>drive.file</strong></td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td><strong>Revoke a member's access</strong></td><td class="mono">permissions.delete</td><td class="mono">drive, <strong>drive.file</strong></td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td>Audit who currently has access</td><td class="mono">permissions.list</td><td class="mono">drive, drive.file, …</td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td>Upload a file into the folder</td><td class="mono">files.create</td><td class="mono">resumable + simple, max <strong>5 TB</strong></td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td>Read name, size, trashed state</td><td class="mono">files.get</td><td class="mono">drive, drive.file, …</td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td>Know how full their Drive is <em>before</em> uploading</td><td class="mono">about.get</td><td class="mono">returns limit, usage, usageInDrive</td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td>Watch for external changes</td><td class="mono">changes.watch</td><td class="mono">drive, drive.appdata, drive.file, …</td><td style="text-align:right"><span class="chip chip-keep">yes</span></td></tr>
+          <tr><td>Enumerate Shared Drives</td><td class="mono">drives.list</td><td class="mono">drive, drive.readonly</td><td style="text-align:right"><span class="chip chip-stop">no</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="split">
+      <div class="note keep">
+        <span class="note-head">What this means commercially</span>
+        <p>
+          <code>drive.file</code> is non-sensitive. No CASA security assessment,
+          no annual audit fee, and the 100-user cap on unverified apps applies
+          to sensitive and restricted scopes — not to this one, once the consent
+          screen is published. Your only obligation is publishing the OAuth
+          consent screen out of Testing.
+        </p>
+      </div>
+      <div class="note keep">
+        <span class="note-head">What the consent screen will say</span>
+        <p>
+          The <code>drive.file</code> grant reads to the user as roughly
+          <em>“See, edit, create and delete only the specific Google Drive files
+          you use with this app.”</em> For a wedding planner or a venue manager,
+          that is a reassuring sentence. The broad scopes read as “see and manage
+          all your files” — which is the sentence that loses signups.
+        </p>
+      </div>
+    </div>
+
+    <div class="note">
+      <span class="note-head">One real constraint, worth knowing now</span>
+      <p>
+        Drive permissions inherit downward and <strong>inherited permissions
+        cannot be reduced on an individual item</strong>. So everything in a
+        board's folder is visible to everyone on that board. That is exactly the
+        model you asked for — but it means there is no such thing as a private
+        file inside a shared board folder. Anything needing tighter control has
+        to stay in Signal Studio's own storage, which is why the fallback path
+        below is not optional.
+      </p>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ THE SAFETY MODEL ══════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Your first question, answered</p>
+      <h2>Three walls between an invited guest and the rest of a Drive</h2>
+      <p>
+        You asked that invited users reach only that board's folder — not other
+        folders, and definitely not the whole Drive. Here is how each of those
+        is prevented, and by whom.
+      </p>
+    </div>
+
+    <div class="scroll" style="padding: var(--space-6); background: var(--paper-soft);">
+      <svg class="diagram" viewBox="0 0 880 452" role="img"
+           aria-label="Diagram of the sharing model. Inside the storage owner's Google Drive, everything except a Signal Studio folder is invisible to Signal Studio. The Signal Studio parent folder is never shared. Below it sit three board folders; only the Ballinacurra board folder carries permissions, granted to three named members. The other two board folders and the rest of the Drive are unreachable to those members.">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" class="head-accent" />
+          </marker>
+        </defs>
+
+        <!-- Drive boundary -->
+        <rect x="14" y="30" width="560" height="404" rx="10" class="bound" />
+        <text x="30" y="22" class="t-mono">ALICE'S GOOGLE DRIVE — she owns all of it</text>
+
+        <!-- invisible region -->
+        <rect x="32" y="50" width="240" height="132" rx="8" class="box-dim" />
+        <text x="48" y="74" class="t-title" style="fill: var(--ink-faint)">Everything else</text>
+        <text x="48" y="93" class="t-body">Photos · tax returns · personal docs</text>
+        <text x="48" y="111" class="t-body">Other companies' files</text>
+        <text x="48" y="140" class="t-stop">INVISIBLE TO SIGNAL STUDIO</text>
+        <text x="48" y="158" class="t-mono">not policy — the scope cannot see it</text>
+        <text x="48" y="174" class="t-mono">WALL 1 · enforced by Google</text>
+
+        <!-- Signal Studio parent -->
+        <rect x="292" y="50" width="266" height="76" rx="8" class="box-soft" />
+        <text x="308" y="74" class="t-title">📁 Signal Studio</text>
+        <text x="308" y="92" class="t-body">Created by the app. Tidy, and nothing more.</text>
+        <text x="308" y="115" class="t-stop">NEVER SHARED WITH ANYONE · WALL 2</text>
+
+        <!-- connector down -->
+        <path d="M 425 126 L 425 146" class="flow" />
+        <path d="M 130 146 L 520 146" class="flow" />
+        <path d="M 130 146 L 130 166" class="flow" marker-end="url(#a1)" />
+        <path d="M 325 146 L 325 166" class="flow" marker-end="url(#a1)" />
+        <path d="M 520 146 L 520 166" class="flow" marker-end="url(#a1)" />
+
+        <!-- three board folders -->
+        <rect x="32" y="200" width="196" height="86" rx="8" class="box" />
+        <text x="48" y="224" class="t-title">📁 The Orchard</text>
+        <text x="48" y="243" class="t-body">Board folder</text>
+        <text x="48" y="266" class="t-mono">shared with: its own members</text>
+
+        <rect x="248" y="200" width="196" height="86" rx="8" class="box-accent" />
+        <text x="264" y="224" class="t-title">📁 Ballinacurra</text>
+        <text x="264" y="243" class="t-body">Board folder — the one in question</text>
+        <text x="264" y="266" class="t-accent">SHARED WITH 3 PEOPLE</text>
+
+        <rect x="464" y="200" width="94" height="86" rx="8" class="box" />
+        <text x="480" y="224" class="t-title">📁 Q4</text>
+        <text x="480" y="243" class="t-body">Board</text>
+        <text x="480" y="266" class="t-mono">its own</text>
+
+        <!-- files inside -->
+        <rect x="248" y="300" width="196" height="76" rx="8" class="box-soft" />
+        <text x="264" y="322" class="t-body">contract-signed.pdf</text>
+        <text x="264" y="340" class="t-body">seating-plan.xlsx</text>
+        <text x="264" y="358" class="t-body">welcome-sign.png</text>
+        <path d="M 346 286 L 346 300" class="flow" />
+        <text x="32" y="404" class="t-mono">Files inherit the folder's sharing automatically — including ones added later.</text>
+        <text x="32" y="422" class="t-mono">Wall 3: only members of THIS board are ever granted, at a role from their Signal role.</text>
+
+        <!-- Members panel -->
+        <rect x="600" y="30" width="266" height="404" rx="10" class="box-soft" />
+        <text x="620" y="56" class="t-title">Who Signal Studio granted</text>
+        <text x="620" y="75" class="t-mono">on the Ballinacurra folder only</text>
+
+        <rect x="618" y="92" width="230" height="54" rx="6" class="box" />
+        <text x="634" y="114" class="t-body">mara@…  ·  writer</text>
+        <text x="634" y="132" class="t-mono">Signal role: member</text>
+
+        <rect x="618" y="156" width="230" height="54" rx="6" class="box" />
+        <text x="634" y="178" class="t-body">finn@…  ·  writer</text>
+        <text x="634" y="196" class="t-mono">Signal role: member</text>
+
+        <rect x="618" y="220" width="230" height="54" rx="6" class="box" />
+        <text x="634" y="242" class="t-body">planner@…  ·  writer</text>
+        <text x="634" y="260" class="t-mono">Signal role: co-owner</text>
+
+        <rect x="618" y="292" width="230" height="60" rx="6" class="box-dim" />
+        <text x="634" y="314" class="t-body" style="fill: var(--ink-faint)">share-link guests</text>
+        <text x="634" y="333" class="t-stop">NEVER GRANTED ANYTHING</text>
+        <text x="634" y="347" class="t-mono">no Google identity exists to grant</text>
+
+        <text x="620" y="378" class="t-mono">Every grant is stored with its</text>
+        <text x="620" y="394" class="t-mono">Drive permission id, so removing</text>
+        <text x="620" y="410" class="t-mono">someone revokes exactly what</text>
+        <text x="620" y="426" class="t-mono">was granted — nothing more.</text>
+      </svg>
+    </div>
+
+    <div class="split">
+      <div class="stack-tight">
+        <h4>Wall 1 · Google, not us</h4>
+        <p class="body-sm">
+          Under <code>drive.file</code> the app can only ever touch what it
+          created. Alice's photos and tax returns are not "files we promise not
+          to look at" — they are files Signal Studio <strong>cannot see, list, or
+          name</strong>. A bug in our code cannot reach them, because the token
+          does not carry the right. This is the strongest form of the guarantee
+          you asked for.
+        </p>
+      </div>
+      <div class="stack-tight">
+        <h4>Wall 2 · never share the parent</h4>
+        <p class="body-sm">
+          The <code>Signal Studio</code> folder exists only to keep the user's
+          Drive tidy. Sharing it would expose every board at once — the single
+          most dangerous mistake available in this design. It must be a hard
+          invariant with a test that fails the build, not a convention.
+        </p>
+      </div>
+      <div class="stack-tight">
+        <h4>Wall 3 · this board's people only</h4>
+        <p class="body-sm">
+          Grants are created per board folder, per member, by email, at a role
+          derived from their Signal role — never <code>type: "anyone"</code>,
+          never <code>type: "domain"</code>. Both of those should be forbidden
+          in code, so no future change can quietly turn a board folder into a
+          public link.
+        </p>
+      </div>
+      <div class="stack-tight">
+        <h4>Who does <em>not</em> get access</h4>
+        <p class="body-sm">
+          Share-link guests. Signal Studio's share links are anonymous bearer
+          tokens with no person behind them — there is no Google identity to
+          grant, and inventing one would be a link-shared folder, which is
+          exactly the loosening you ruled out. Guests keep seeing only what
+          Signal renders.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ HOW IT WORKS ══════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">The design</p>
+      <h2>One connection per board, not one per person</h2>
+      <p>
+        The most important design choice, and the one that makes the experience
+        feel like nothing at all for everyone except the person who sets it up.
+      </p>
+    </div>
+
+    <p class="body measure">
+      A board nominates a <strong>storage owner</strong> — the person who
+      connects their Drive to it, normally the project owner. Every upload to
+      that board, <em>by any member</em>, is written using the storage owner's
+      credential into the storage owner's board folder. The other members never
+      connect anything, never see an OAuth screen, and never think about Google
+      at all. They drag a file onto a task exactly as they do today; it lands in
+      the shared folder; they can open it in Drive because the folder was
+      already shared with them.
+    </p>
+    <p class="body measure">
+      The alternative — every member connecting their own Drive — fails on the
+      platform's own rules: a folder created under Alice's grant is not
+      automatically visible under Bob's, so Bob would have to hunt it down
+      through a picker before his first upload. That is a per-member setup tax
+      for no benefit. One connection per board is both simpler and better.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th style="width: 15rem">Moment</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>Owner connects Drive</td><td>One OAuth screen. Signal creates <code>Signal Studio/&lt;Board name&gt;/</code> in their My Drive and shares it with every current member — silently, with <code>sendNotificationEmail: false</code>, so Google does not email everyone. Signal Studio does the telling instead.</td></tr>
+          <tr><td>Anyone drags a file on</td><td>The browser uploads <strong>straight to Drive</strong> using a resumable session Signal mints server-side. Bytes never pass through Signal's servers.</td></tr>
+          <tr><td>Anyone opens it</td><td>Preview embeds Drive's own viewer; “Open in Drive” goes to the real file. No proxying, no egress, no thumbnail pipeline to build.</td></tr>
+          <tr><td>A member is invited</td><td>A grant is created on that board's folder and its id stored. They can open every file on the board, including ones added before they joined.</td></tr>
+          <tr><td>A member is removed</td><td>The stored grant is deleted. If that call fails, it is queued and repaired — see the risks below, because this is the one that matters.</td></tr>
+          <tr><td>The board is renamed</td><td>The Drive folder is renamed to match. Small touch; it is what makes it feel native rather than bolted on.</td></tr>
+          <tr><td>A file is removed in Signal Studio</td><td>The row goes. <strong>The Drive file stays.</strong> Deleting someone's file from their own Drive is never a side effect of tidying a task.</td></tr>
+          <tr><td>The owner disconnects</td><td>New uploads fall back to Signal Studio's own storage. Existing files stay in Drive and members keep their access — those grants live in Drive, not in our session.</td></tr>
+          <tr><td>Their Drive is full</td><td>Signal reads the quota <em>before</em> the upload and says so plainly, then falls back to its own storage rather than failing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note keep">
+      <span class="note-head">The upload path is the sleeper win</span>
+      <p>
+        Today every attachment is posted to a Signal server action, which caps
+        the real file size at about 8 MB and buffers the whole file in memory.
+        Uploading browser-to-Drive removes both problems at once: no body limit,
+        no memory pressure, no egress, and a documented ceiling of 5 TB. Signal
+        mints the upload session server-side and hands the browser only that
+        session URL — <strong>the access token never leaves our server</strong>.
+      </p>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ DATA MODEL ════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">What we store</p>
+      <h2>Three tables, and one of them is the security control</h2>
+    </div>
+
+    <div class="code">
+      <div class="code-label"><span>drizzle/0028_project_drive.sql</span><span>proposed</span></div>
+<pre><span class="c">-- 1 ─ the person's Google grant. Per user, never per board.</span>
+<span class="k">CREATE TABLE</span> provider_connections (
+  id, user_id, provider,
+  provider_account_id,      <span class="c">-- Google's `sub`: catches "reconnected a DIFFERENT account"</span>
+  refresh_token_cipher,     <span class="c">-- AES-256-GCM. Access tokens are never stored.</span>
+  key_version, scopes, status, connected_at, last_used_at
+);
+
+<span class="c">-- 2 ─ which Drive backs which board, and where its folder is.</span>
+<span class="k">CREATE TABLE</span> workspace_storage (
+  workspace_id <span class="k">PRIMARY KEY</span>,
+  connection_id,            <span class="c">-- the storage owner's grant</span>
+  folder_id,                <span class="c">-- the board's folder. The ONLY place uploads may land.</span>
+  folder_web_view_link,
+  state                     <span class="c">-- active | needs_reauth | folder_missing | quota_full</span>
+);
+
+<span class="c">-- 3 ─ THE SECURITY CONTROL. One row per person we granted, with the
+--     Drive permission id we got back. Without this you cannot revoke
+--     precisely, and you cannot prove who has access.</span>
+<span class="k">CREATE TABLE</span> drive_folder_grants (
+  workspace_id, user_id,
+  permission_id,            <span class="c">-- returned by permissions.create</span>
+  granted_email, role,      <span class="c">-- 'writer' | 'reader'</span>
+  granted_at,
+  revoke_pending            <span class="g">-- set when a delete failed; the repair pass drains it</span>
+);
+
+<span class="c">-- resources gains: storage ('signal'|'drive'), external_id (Drive file id),
+-- connection_id, stored_path. attachments is left alone.</span>
+</pre>
+    </div>
+
+    <p class="body measure">
+      <code>drive_folder_grants</code> is the table that makes the safety claim
+      checkable rather than aspirational. Because we keep the permission id we
+      were given, removing someone deletes <em>exactly</em> the grant we created
+      — not a guess, not a scan. And because we know what we granted, we can
+      show an owner a live list of who has access to their board's folder and
+      reconcile it against Drive's own answer.
+    </p>
+
+    <div class="note keep">
+      <span class="note-head">A screen worth building on day one</span>
+      <p>
+        In board settings: <strong>“Who can open this board's files.”</strong>
+        Names, roles, and a live check against Drive. It turns the whole feature
+        from something the customer has to trust into something they can see —
+        and it is the screen you will want the first time someone asks whether an
+        ex-supplier still has the contract.
+      </p>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ RISKS ═════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">What to worry about</p>
+      <h2>The risks this model actually introduces</h2>
+      <p>Ranked by what would hurt most. The first one is the only one I would lose sleep over.</p>
+    </div>
+
+    <div class="stack">
+      <div class="panel">
+        <div style="display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap">
+          <span class="chip chip-stop">highest</span>
+          <h3>A removed member keeps Drive access</h3>
+        </div>
+        <p class="body-sm">
+          Someone leaves the board, the revoke call fails — expired token, network
+          blip, owner disconnected that morning — and they quietly keep the
+          contract forever. Signal's UI says they are gone. Drive says otherwise.
+          <strong>This is a security failure that looks like success</strong>, and
+          it is the genuine new risk your model creates.
+        </p>
+        <p class="body-sm">
+          <strong>The answer, in three parts:</strong> revoke inline on removal;
+          if it fails, record <code>revoke_pending</code> and retry on a schedule;
+          and show the truth on that access screen — read live from Drive, not
+          from our own table. Never let our record of a revocation stand in for
+          the revocation. There is no background worker in the codebase today, so
+          this needs a small scheduled job added deliberately rather than assumed.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap">
+          <span class="chip chip-warn">high</span>
+          <h3>The board's files live in one person's personal Drive</h3>
+        </div>
+        <p class="body-sm">
+          If the storage owner leaves the company, closes their Google account or
+          simply stops paying for storage, the board's files go with them. This is
+          inherent to the model, not a bug in it — and it is survivable if it is
+          never a surprise.
+        </p>
+        <p class="body-sm">
+          <strong>The answer:</strong> say it on the board, permanently — “This
+          board's files are stored in Alice's Google Drive.” Block the storage
+          owner from leaving without handing over. Build the handover flow before
+          launch, not after the first support ticket. And keep Signal's own
+          storage as a live fallback so losing the Drive never stops work.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap">
+          <span class="chip chip-warn">medium</span>
+          <h3>The email we share to is not their Google account</h3>
+        </div>
+        <p class="body-sm">
+          We hold the address they signed up to Signal with. If that is not a
+          Google account, the share still gets created and they land in
+          request-access — the case you said you are comfortable with, and I agree
+          it is fine. It just should not be silent.
+        </p>
+        <p class="body-sm">
+          <strong>The answer:</strong> let people add a Google address to their
+          profile, and show the grant state per member on the access screen so an
+          owner can see who is actually in versus who is pending. Turn an
+          invisible failure into a visible row.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap">
+          <span class="chip chip-warn">medium</span>
+          <h3>Privacy terms now describe someone else's Drive</h3>
+        </div>
+        <p class="body-sm">
+          Once a supplier's file lands in the owner's personal Drive, the owner
+          holds that data and Signal Studio does not. Under GDPR that is a real
+          change in the story you tell customers, and it affects account deletion:
+          if a member deletes their Signal account, we can remove our rows but we
+          cannot — and must not — delete files that now belong to someone else.
+        </p>
+        <p class="body-sm">
+          <strong>The answer:</strong> a paragraph in the privacy policy and a
+          sentence at the point of connection. This is a founder task with a lead
+          time, not an engineering ticket, which is why it is in this report and
+          not the backlog.
+        </p>
+      </div>
+
+      <div class="panel">
+        <div style="display:flex; gap:var(--space-3); align-items:center; flex-wrap:wrap">
+          <span class="chip chip-flat">manageable</span>
+          <h3>Duplicate files from retried uploads</h3>
+        </div>
+        <p class="body-sm">
+          A retried upload that already succeeded creates a second copy, and Drive
+          is happy to hold ten identical contracts. <strong>The answer:</strong>
+          stamp each upload with a Signal id in <code>appProperties</code> — a
+          field Google keeps private to our app — and look it up before any retry.
+          One decision, made once, and the entire class disappears.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ WHAT IT COSTS ═════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Economics</p>
+      <h2>The money was never the argument — but it does improve</h2>
+    </div>
+
+    <div class="split">
+      <div class="stack-tight">
+        <h4>What leaves Signal Studio</h4>
+        <p class="body-sm">
+          Storage and egress for Drive-backed boards go to roughly zero, because
+          the member's browser talks to Drive directly in both directions — up on
+          upload, down on preview. Not a large number today, but it stops being a
+          number that grows with your customer count. The thumbnail problem
+          disappears too: Drive renders its own previews.
+        </p>
+      </div>
+      <div class="stack-tight">
+        <h4>What stays, and what is new</h4>
+        <p class="body-sm">
+          Metadata rows, the OAuth infrastructure, encrypted token storage, the
+          reconcile job, and support. Drive's API is free within 12,000 calls per
+          minute per user, which you will not approach. The honest new cost is
+          <em>support</em>: some questions will now be answered inside Google's UI,
+          where you cannot see what the customer sees.
+        </p>
+      </div>
+    </div>
+
+    <p class="body measure">
+      The real return is not the hosting bill. It is that a venue can attach a
+      400 MB walkthrough video to a task — something the product cannot do at all
+      today — and that the file lands somewhere the customer already trusts,
+      already backs up, and already knows how to search.
+    </p>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ SCOPE ═════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">Scope</p>
+      <h2>What to build, and what to leave alone</h2>
+    </div>
+
+    <div class="split">
+      <div class="panel">
+        <h4>Version one</h4>
+        <ul class="list keep">
+          <li><span class="marker">✓</span><span>Connect Drive to a board, as its storage owner. One folder created, shared with every current member.</span></li>
+          <li><span class="marker">✓</span><span>Drag-and-drop upload, browser straight to Drive, resumable, no size ceiling.</span></li>
+          <li><span class="marker">✓</span><span>Attachments render natively; preview embeds Drive's viewer; “Open in Drive” works.</span></li>
+          <li><span class="marker">✓</span><span>Membership sync on invite, removal and role change — with the pending-revoke repair path.</span></li>
+          <li><span class="marker">✓</span><span><strong>“Who can open this board's files”</strong>, read live from Drive.</span></li>
+          <li><span class="marker">✓</span><span>Fallback to Signal Studio storage when Drive is absent, full, or disconnected.</span></li>
+          <li><span class="marker">✓</span><span>Storage-owner handover, and a block on them leaving without it.</span></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h4>Deliberately not yet</h4>
+        <ul class="list stop">
+          <li><span class="marker">✕</span><span>Picking existing Drive files. Genuinely useful, entirely additive, and it needs a second Google component — it should not delay this.</span></li>
+          <li><span class="marker">✕</span><span>Shared Drives. The narrow scope cannot enumerate them and they are a paid Workspace feature your market largely lacks.</span></li>
+          <li><span class="marker">✕</span><span>Two-way sync and change watching. Refresh a file's details when someone opens it; that is enough.</span></li>
+          <li><span class="marker">✕</span><span>A folder per task. One per board is the unit people think in — and the unit you asked for.</span></li>
+          <li><span class="marker">✕</span><span>OneDrive, SharePoint, Dropbox. The shape generalises; adding a second provider now doubles the surface for no learning.</span></li>
+          <li><span class="marker">✕</span><span>AI over documents. It needs the file's contents, which brings the bytes back through our servers — a separate decision with its own privacy story.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- ══ PLAN ══════════════════════════════════════════════════════ -->
+  <section class="section">
+    <div class="section-head">
+      <p class="eyebrow">The plan</p>
+      <h2>Four rounds, and the first one is not about Drive</h2>
+    </div>
+
+    <ol class="rounds">
+      <li class="round">
+        <span class="round-num zero">0</span>
+        <div class="round-body">
+          <h3>Fix the floor first</h3>
+          <div class="round-meta"><span>half a day</span><span>ships alone</span><span>no Drive work</span></div>
+          <p class="body-sm">
+            Signal Studio's settings currently tell every customer <em>“File uploads
+            are not yet active on this workspace”</em>, and the storage token that
+            makes uploads work is documented as optional. The fallback path this
+            whole design leans on has to actually work before anything is built on
+            top of it. Also reconcile the 8 MB body limit against the 50 MB the
+            product claims — that mismatch will otherwise be blamed on Drive.
+          </p>
+        </div>
+      </li>
+      <li class="round">
+        <span class="round-num">1</span>
+        <div class="round-body">
+          <h3>Prove the chain end to end</h3>
+          <div class="round-meta"><span>2–3 days</span><span>throwaway branch</span><span>two real Google accounts</span></div>
+          <p class="body-sm">
+            Connect, create the folder, share it with a second Google account,
+            upload from the browser to Drive, and confirm the second account opens
+            the file without asking for anything. Then remove the share and confirm
+            they lose it. That single walkthrough retires almost all the remaining
+            uncertainty. Publish the OAuth consent screen the same day — while it
+            sits in Testing, Google expires the connection every seven days, which
+            will otherwise look like a bug in our code.
+          </p>
+        </div>
+      </li>
+      <li class="round">
+        <span class="round-num">2</span>
+        <div class="round-body">
+          <h3>Build version one</h3>
+          <div class="round-meta"><span>the scope above</span><span>nothing beyond it</span></div>
+          <p class="body-sm">
+            Native storage stays working throughout, so the feature can be switched
+            off at any moment without a customer losing a file.
+          </p>
+        </div>
+      </li>
+      <li class="round">
+        <span class="round-num">3</span>
+        <div class="round-body">
+          <h3>Harden before you market it</h3>
+          <div class="round-meta"><span>reconcile job</span><span>privacy copy</span><span>handover</span></div>
+          <p class="body-sm">
+            The scheduled repair pass for failed revocations, the privacy paragraph,
+            and the storage-owner handover flow. None of these are visible features,
+            and all three are the difference between a demo and something you can
+            sell to a venue that handles other people's contracts.
+          </p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="note">
+      <span class="note-head">What I still cannot confirm from here</span>
+      <p>
+        <code>developers.google.com</code> is blocked by this environment's network
+        policy, so the scope table above was read from Google's machine-generated
+        API description (revision 20260823) rather than the prose documentation,
+        and the surrounding behaviour — consent-screen wording, folder inheritance,
+        the unverified-app cap — from secondary sources. The API description is the
+        stronger evidence and it is unambiguous on the point that mattered. Round 1
+        is what turns all of it from well-supported into observed.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Signal Studio · project files in Google Drive · CEO report · 2026-08-27</p>
+    <p>Supersedes the connected-storage review on its central verdict. That review's map of the current codebase stands unchanged and remains the reference for what exists today.</p>
+    <p>Scope evidence: Google Drive API v3 discovery document, revision 20260823, read directly. No production code was modified.</p>
+  </footer>
+
+</div>
