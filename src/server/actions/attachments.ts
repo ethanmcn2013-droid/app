@@ -12,17 +12,19 @@ import { scopeForTask } from "@/server/actions/project-authz";
 import type { Attachment } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 import { getEffectiveTier } from "@/server/db/entitlements";
-import {
-  getQuota,
-  SERVER_UPLOAD_LIMIT_BYTES,
-  WARN_THRESHOLDS,
-} from "@/lib/storage-config";
+import { getQuota, WARN_THRESHOLDS } from "@/lib/storage-config";
+import { SERVER_ACTION_FILE_LIMIT_BYTES } from "@/lib/upload-limit";
 import { putBytes, deleteBytes } from "@/server/storage";
 import {
   SNIFF_BYTES,
   uploadRejectionMessage,
   validateUpload,
 } from "@/lib/upload-validation";
+import {
+  claimPathname,
+  newAttachmentId,
+  safeFilename,
+} from "@/lib/attachment-claim";
 
 /**
  * File attachment server actions.
@@ -48,34 +50,12 @@ import {
  * See the E08.07 evidence for what a scanner costs and why it is deferred.
  */
 
-function newAttachmentId(): string {
-  const raw =
-    globalThis.crypto?.randomUUID?.() ??
-    Math.random().toString(36).slice(2);
-  return `att-${raw.replace(/-/g, "").slice(0, 8)}`;
-}
-
-/** Strip path separators and anything outside [a-zA-Z0-9._-]. */
-function safeFilename(name: string): string {
-  const base = name.split(/[\\/]/).pop() ?? "";
-  const cleaned = base.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const trimmed = cleaned.replace(/^\.+/, "");
-  return trimmed.length > 0 ? trimmed : "file.bin";
-}
-
 /**
- * Compute the workspace-prefixed blob key (also used as the sub-path
- * under uploadsRoot() for disk). Format:
- *   <workspaceId>/<taskId>/<attachmentId>-<safeFilename>
+ * The blob key and the disk sub-path are the same string, and it is now
+ * composed in one place: `claimPathname` in `@/lib/attachment-claim`. It
+ * used to be composed here AND in the client-direct path, which is exactly
+ * how two upload routes end up filing the same board's files differently.
  */
-function buildStorageKey(
-  workspaceId: string,
-  taskId: string,
-  attachmentId: string,
-  filename: string,
-): string {
-  return `${workspaceId}/${taskId}/${attachmentId}-${filename}`;
-}
 
 // ── Workspace storage usage ───────────────────────────────────────────
 
@@ -176,12 +156,25 @@ export async function uploadAttachmentAction(
   // Resolve tier and quota before touching the DB.
   const tier = await getEffectiveTier(me, ws);
   const quota = getQuota(tier);
-  const effectiveCap = Math.min(quota.maxFileBytes, SERVER_UPLOAD_LIMIT_BYTES);
+  // WP-0. This cap is now the SERVER-ACTION one, not the product's. The
+  // whole file crosses a Vercel Function here and Vercel refuses a request
+  // body over 4.5 MB before the framework sees it, so the old
+  // min(maxFileBytes, 50 MB) promised roughly ten times what this path
+  // could deliver and failed with an opaque platform 413.
+  //
+  // The product's real ceiling lives on the client-direct path, where the
+  // bytes go browser → Vercel Blob and never enter a function. This
+  // remains the fallback for a deployment with no blob store — local disk
+  // in development — and it is now honest about what it can carry.
+  const effectiveCap = Math.min(
+    quota.maxFileBytes,
+    SERVER_ACTION_FILE_LIMIT_BYTES,
+  );
 
   if (file.size > effectiveCap) {
     throw new Error(
       `uploadAttachmentAction: file exceeds ${effectiveCap}-byte cap ` +
-        `(tier ${tier}, effective cap = min(${quota.maxFileBytes}, ${SERVER_UPLOAD_LIMIT_BYTES}))`,
+        `(tier ${tier}, effective cap = min(${quota.maxFileBytes}, ${SERVER_ACTION_FILE_LIMIT_BYTES}))`,
     );
   }
 
@@ -216,7 +209,7 @@ export async function uploadAttachmentAction(
 
   const attachmentId = newAttachmentId();
   const filename = safeFilename(file.name);
-  const storageKey = buildStorageKey(ws, taskId, attachmentId, filename);
+  const storageKey = claimPathname(ws, taskId, attachmentId, filename);
   const createdAt = new Date();
 
   // (c) INSERT the claim row first. stored_path is a placeholder;
