@@ -4,7 +4,7 @@
       "section": "fidelity",
       "name": "tasks @1440 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "19944 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "20536 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -34,7 +34,7 @@
       "section": "fidelity",
       "name": "tasks @1280 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "10304 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "10981 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -64,7 +64,7 @@
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "8949 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "9406 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -94,13 +94,13 @@
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "878 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "1007 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
       "name": "tasks @390 · the spine",
       "ok": true,
-      "detail": "13861 px, in x 33.5–380.5, y 35–826.5"
+      "detail": "13861 px, in x 33.5–380, y 35–826.5"
     },
     {
       "section": "fidelity",
@@ -1742,7 +1742,7 @@
       "section": "delight",
       "name": "completion via tick · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 12 dots · widest 3.8px · brightest 0.93"
+      "detail": "1 burst · 12 dots · widest 4.2px · brightest 0.96"
     },
     {
       "section": "delight",
@@ -1754,7 +1754,7 @@
       "section": "delight",
       "name": "completion via keyboard · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 12 dots · widest 4.2px · brightest 0.96"
+      "detail": "1 burst · 12 dots · widest 3.8px · brightest 0.93"
     },
     {
       "section": "delight",
@@ -1836,15 +1836,75 @@
     },
     {
       "section": "delight",
-      "name": "the drop tint is visible but the sheet still reads white",
+      "name": "drop tint · todo is visible and still reads as paper",
       "ok": true,
-      "detail": "rgba(21, 128, 61, 0.07) — alpha 0.07"
+      "detail": "11.3% below white"
     },
     {
       "section": "delight",
-      "name": "the lane's own dot answers the drop",
+      "name": "drop tint · doing is visible and still reads as paper",
       "ok": true,
-      "detail": "none → matrix(1.3, 0, 0, 1.3, 0, 0)"
+      "detail": "13.8% below white"
+    },
+    {
+      "section": "delight",
+      "name": "drop tint · doing is a colour, not a grey",
+      "ok": true,
+      "detail": "chroma 15 (under 14 reads dirty)"
+    },
+    {
+      "section": "delight",
+      "name": "drop tint · review is visible and still reads as paper",
+      "ok": true,
+      "detail": "11.1% below white"
+    },
+    {
+      "section": "delight",
+      "name": "drop tint · review is a colour, not a grey",
+      "ok": true,
+      "detail": "chroma 38 (under 14 reads dirty)"
+    },
+    {
+      "section": "delight",
+      "name": "drop tint · waiting is visible and still reads as paper",
+      "ok": true,
+      "detail": "11.5% below white"
+    },
+    {
+      "section": "delight",
+      "name": "drop tint · waiting is a colour, not a grey",
+      "ok": true,
+      "detail": "chroma 26 (under 14 reads dirty)"
+    },
+    {
+      "section": "delight",
+      "name": "drop tint · done is visible and still reads as paper",
+      "ok": true,
+      "detail": "11.3% below white"
+    },
+    {
+      "section": "delight",
+      "name": "drop tint · done is a colour, not a grey",
+      "ok": true,
+      "detail": "chroma 22 (under 14 reads dirty)"
+    },
+    {
+      "section": "delight",
+      "name": "no lane's tint shouts louder than another",
+      "ok": true,
+      "detail": "todo 11.3% · doing 13.8% · review 11.1% · waiting 11.5% · done 11.3%"
+    },
+    {
+      "section": "delight",
+      "name": "every status dot has a rim of its own hue",
+      "ok": true,
+      "detail": "todo · doing · review · waiting · done"
+    },
+    {
+      "section": "delight",
+      "name": "all five lanes look different from each other",
+      "ok": true,
+      "detail": "5 distinct fills across 5 lanes"
     },
     {
       "section": "delight",
@@ -1856,7 +1916,7 @@
       "section": "delight",
       "name": "task panel @1280 · wears the lane's own colour",
       "ok": true,
-      "detail": "rgb(79, 70, 229)"
+      "detail": "rgb(67, 56, 202)"
     },
     {
       "section": "delight",
@@ -1880,7 +1940,7 @@
       "section": "delight",
       "name": "task panel @1440 · wears the lane's own colour",
       "ok": true,
-      "detail": "rgb(79, 70, 229)"
+      "detail": "rgb(67, 56, 202)"
     },
     {
       "section": "delight",
@@ -1904,7 +1964,7 @@
       "section": "delight",
       "name": "task panel @1920 · wears the lane's own colour",
       "ok": true,
-      "detail": "rgb(79, 70, 229)"
+      "detail": "rgb(67, 56, 202)"
     },
     {
       "section": "delight",

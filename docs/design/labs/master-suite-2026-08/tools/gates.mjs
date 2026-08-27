@@ -43,9 +43,18 @@ await mkdir(OUT, { recursive: true });
    grading a product that does not exist. The labs themselves are
    untouched and still right about themselves. */
 const STATUS_HUES = [
+  /* Indigo deep is the suite's, not the Tasks lab's. It has been declared in
+     elevate.config.json since the first round — the Notes shell carries it as
+     --indigo-deep — but the TASKS lab's own lock is three colours and knows
+     nothing about it, and this file copies that lock. It surfaced the moment a
+     pip took an indigo-deep rim. */
+  '  { name: "Indigo deep", rgb: [67, 56, 202] },',
   '  { name: "Status amber", rgb: [161, 98, 7] },',
   '  { name: "Status orange", rgb: [194, 65, 12] },',
   '  { name: "Status green", rgb: [21, 128, 61] },',
+  '  { name: "Status yellow", rgb: [234, 179, 8] },',
+  '  { name: "Status orange bright", rgb: [249, 115, 22] },',
+  '  { name: "Status green bright", rgb: [34, 197, 94] },',
 ].join("\n");
 
 function widenPalette(text, label) {

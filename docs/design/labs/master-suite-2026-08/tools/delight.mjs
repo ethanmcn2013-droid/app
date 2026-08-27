@@ -162,30 +162,91 @@ export async function delight({ browser, url, check, head }) {
     await page.close();
   }
 
-  /* ── the drop target ────────────────────────────────────────────
-     A tint the canvas still reads as white through, and a dot that
-     answers. Measured as composited colour, because "1–3%" is a claim
-     about what is painted. */
+  /* ── the drop target ───────────────────────────────────
+     THE FIRST TWO VERSIONS BOTH PASSED A GATE AND BOTH FAILED THE EYE, and
+     each failure teaches this check something it was not measuring.
+
+     v1 asserted `alpha <= 0.06`. That is a test of RESTRAINT and says
+     nothing about whether anything is visible; it passed a 2.8% tint the
+     founder could not see at all.
+
+     v2 raised the alpha and the founder called the result "a bit dirty".
+     Also correct, and measurable: every wash was a dilution of the DOT
+     colour, a dot must be dark to hold its edge on white, and diluting a
+     dark colour toward white destroys its chroma. The washes measured
+     chroma 7-13 — grey with a cast.
+
+     So this measures the composited result on three axes, because a wash
+     can fail on any one of them independently:
+       PRESENCE   it is far enough from white to be seen
+       RESTRAINT  it is near enough to white that the sheet still reads as paper
+       CHROMA     it is actually a colour and not a grey
+     and then BALANCE across the five, because one alpha over five hues is
+     five different weights, and the lane that shouts is the defect even
+     when every lane passes on its own. */
   {
     const page = await open(1440);
-    const drop = await page.evaluate(async () => {
-      const tray = document.querySelector('.board [data-lane="done"]');
-      const pipBefore = getComputedStyle(tray.querySelector(".pip")).transform;
-      tray.setAttribute("data-over", "");
-      await new Promise((r) => setTimeout(r, 220));
-      const cs = getComputedStyle(tray);
-      const pipAfter = getComputedStyle(tray.querySelector(".pip")).transform;
-      const m = (cs.backgroundColor.match(/[\d.]+/g) || []).map(Number);
-      tray.removeAttribute("data-over");
-      return { bg: cs.backgroundColor, alpha: m.length > 3 ? m[3] : 1, pipBefore, pipAfter };
+    const washes = await page.evaluate(async () => {
+      const parse = (s) => (s.match(/[\d.]+/g) || []).map(Number);
+      const lum = ([r, g, b]) => {
+        const f = (v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); };
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+      };
+      const out = [];
+      for (const tray of document.querySelectorAll(".board [data-lane]")) {
+        if (!tray.querySelector(".pip")) continue;
+        tray.setAttribute("data-over", "");
+        await new Promise((r) => setTimeout(r, 180));
+        const c = parse(getComputedStyle(tray).backgroundColor);
+        tray.removeAttribute("data-over");
+        if (c.length < 3) continue;
+        const a = c.length > 3 ? c[3] : 1;
+        /* Composite it over the sheet's white, which is what a person sees. */
+        const on = [c[0], c[1], c[2]].map((v) => v * a + 255 * (1 - a));
+        out.push({
+          lane: tray.dataset.lane,
+          drop: (1 - lum(on)) * 100,
+          chroma: Math.max(...on) - Math.min(...on),
+        });
+      }
+      return out;
     });
-    /* Raised from 0.06 after the founder reviewed the 2.8% version and could
-       not see it at all. 7% of a deep hue still reads as white paper with
-       something happening on it. */
-    check("delight", "the drop tint is visible but the sheet still reads white",
-      drop.alpha > 0 && drop.alpha <= 0.09, `${drop.bg} — alpha ${drop.alpha}`);
-    check("delight", "the lane's own dot answers the drop",
-      drop.pipAfter !== drop.pipBefore, `${drop.pipBefore} → ${drop.pipAfter}`);
+
+    for (const w of washes) {
+      check("delight", `drop tint · ${w.lane} is visible and still reads as paper`,
+        w.drop >= 8 && w.drop <= 18,
+        `${w.drop.toFixed(1)}% below white`);
+      /* To do is neutral BY DESIGN — the absence of a status rather than a
+         status of its own — so it is the one lane exempt from chroma. */
+      if (w.lane !== "todo") {
+        check("delight", `drop tint · ${w.lane} is a colour, not a grey`,
+          w.chroma >= 14, `chroma ${Math.round(w.chroma)} (under 14 reads dirty)`);
+      }
+    }
+    const drops = washes.map((w) => w.drop);
+    check("delight", "no lane's tint shouts louder than another",
+      Math.max(...drops) - Math.min(...drops) <= 4,
+      washes.map((w) => `${w.lane} ${w.drop.toFixed(1)}%`).join(" · "));
+
+    /* And the dot: a bright fill with a deep rim of its own hue, so it
+       reads as its colour AND has an edge against paper. */
+    const dots = await page.evaluate(() => {
+      const out = [];
+      for (const tray of document.querySelectorAll(".board [data-lane]")) {
+        const pip = tray.querySelector(".pip");
+        if (!pip) continue;
+        const cs = getComputedStyle(pip);
+        out.push({ lane: tray.dataset.lane, fill: cs.backgroundColor, rim: cs.boxShadow });
+      }
+      return out;
+    });
+    const rimmed = dots.filter((d) => d.lane !== "todo")
+      .every((d) => /rgba?\(\s*\d+,\s*\d+,\s*\d+(,\s*(0?\.\d+|1))?\s*\)/.test(d.rim) && !/rgba\(0, 0, 0, 0\)/.test(d.rim));
+    check("delight", "every status dot has a rim of its own hue",
+      rimmed, dots.map((d) => d.lane).join(" · "));
+    const fills = new Set(dots.map((d) => d.fill));
+    check("delight", "all five lanes look different from each other",
+      fills.size === dots.length, `${fills.size} distinct fills across ${dots.length} lanes`);
     await page.close();
   }
 

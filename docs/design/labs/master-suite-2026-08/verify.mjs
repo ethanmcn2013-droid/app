@@ -757,7 +757,8 @@ async function contract() {
              STATE and nothing else. This spends the four-colour lock. It
              was raised as a founder's call before it was spent. */
           return is(17, 17, 17) || is(255, 255, 255) || is(79, 70, 229) || is(67, 56, 202) || is(0, 0, 0) ||
-                 is(161, 98, 7) || is(194, 65, 12) || is(21, 128, 61);
+                 is(161, 98, 7) || is(194, 65, 12) || is(21, 128, 61) ||
+                 is(234, 179, 8) || is(249, 115, 22) || is(34, 197, 94);
         };
         for (const el of document.querySelectorAll(".app:not([hidden]) *, .rail, .rail *")) {
           const cs = getComputedStyle(el);

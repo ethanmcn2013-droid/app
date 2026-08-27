@@ -74,6 +74,18 @@
     {
       "name": "Status green",
       "hex": "#15803d"
+    },
+    {
+      "name": "Status yellow",
+      "hex": "#eab308"
+    },
+    {
+      "name": "Status orange bright",
+      "hex": "#f97316"
+    },
+    {
+      "name": "Status green bright",
+      "hex": "#22c55e"
     }
   ],
   "families": [
@@ -155,7 +167,7 @@
     "states": "The suite answers ?state=<product>.<state> as well as its own ?p= and ?state=. The compound form exists so a toolchain that can set one parameter can reach all three products. Folded from the full space: Tasks ships 6 states, Notes 10, Timeline 14 \u2014 thirty in all. The eight here are the ones a defect would be found in; the folds are recorded in brief.md. A DOT and not a colon: a state name is also a filename, and the shot harness names every frame after its state \u2014 a colon collapsed forty frames into three on Windows without erroring.",
     "variants": "paper and ink are Timeline's two ratified grounds. Tasks and Notes have no ground decision and ignore ?v= at these values, which is correct: they are the ink-floor products and the ground decision was only ever Timeline's.",
     "ladders": "sizes and spaces are EMPTY DELIBERATELY, and this is a known gap, not an oversight. The source ladders read the stylesheets, and this artefact carries three products with three separately declared and separately ratified ladders \u2014 Timeline invented its own material system by name in its lock. One config cannot hold three. Each product is held to its OWN ladders by tools/gates.mjs, which repoints the three engagements' own audits at this file; this config covers what is genuinely cross-product: the palette, the families, the weights, contrast, targets, radii, motion and leading, at five viewports across all three surfaces.",
-    "palette": "Indigo deep #4338ca is the indigo ramp one step darker. It is declared in both the Tasks and Notes shells as --indigo-deep and was part of the three-colour lock's own reading of itself from the first round of both engagements. STATUS COLOURS, added 2026-08-27 on the founder's explicit instruction after the monochrome version was reviewed and found unreadable: \u201cthe coloured dots aren\u2019t noticeable at all\u201d. Three hues carry lane STATE and nothing else \u2014 amber #a16207 for Review, orange #c2410c for Waiting, green #15803d for Done \u2014 with To do on ink and In progress on the existing indigo. They are deliberately deep rather than bright: every one clears 4.9:1 on white, which is AA for text and well past the 3:1 the non-text rule asks of an indicator, so the system gains meaning without gaining loudness. This spends the four-colour lock. It was raised as a founder\u2019s call before it was spent, and it was spent because the founder made it.",
+    "palette": "Indigo deep #4338ca is the indigo ramp one step darker. It is declared in both the Tasks and Notes shells as --indigo-deep and was part of the three-colour lock's own reading of itself from the first round of both engagements. STATUS COLOURS, added 2026-08-27 on the founder's explicit instruction after the monochrome version was reviewed and found unreadable: \u201cthe coloured dots aren\u2019t noticeable at all\u201d. Three hues carry lane STATE and nothing else \u2014 amber #a16207 for Review, orange #c2410c for Waiting, green #15803d for Done \u2014 with To do on ink and In progress on the existing indigo. They are deliberately deep rather than bright: every one clears 4.9:1 on white, which is AA for text and well past the 3:1 the non-text rule asks of an indicator, so the system gains meaning without gaining loudness. This spends the four-colour lock. It was raised as a founder\u2019s call before it was spent, and it was spent because the founder made it. REVISED 2026-08-27 after the founder reviewed the tints and called them \u201ca bit dirty\u201d \u2014 which was exactly right and measurable: every wash was derived by diluting the DOT colour, the dot has to be dark to carry contrast, and diluting a dark colour toward white destroys its chroma. The washes measured chroma 7\u201313, which is grey with a faint cast: a beige grey, a muddy pink, a sickly green. A wash is now its own colour, taken from a BRIGHT hue at a higher alpha \u2014 chroma 17\u201336, which reads as a clean tint. Each dot is a bright fill with a deep rim of the same hue, so it reads as its colour and still has a defined edge. That is also how Review can be a real yellow: #eab308 is unmistakably yellow at 1.9:1 and could never be an indicator on its own, but rimmed in #a16207 at 4.9:1 the EDGE carries the definition and the fill carries the meaning.",
     "typeRamp": "The union of the three products' ramps, and it is a UNION rather than a law \u2014 Timeline declares thirteen steps and gates them, Notes declares eight and gates them, Tasks declares none and its own audit has never had a ramp check. 14 is here because the Tasks card title, the most-read string on the board, is set at 14 and is on no ramp declared in that lab; 16 is here because the screen-reader live regions inherit it at a 1x1 box nobody sees. Both are recorded as observations in round 1 rather than smuggled in as law."
   }
 }
