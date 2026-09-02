@@ -286,7 +286,11 @@ export async function removeResourceAction(
     const taskId = resourceRow.taskId;
     const title = resourceRow.title;
 
-    if (resourceRow.kind === "upload") {
+    // A Drive row owns metadata here and bytes in the storage owner's Drive.
+    // Removing it from Signal Studio must never turn into a provider delete or
+    // accidentally interpret its id as an `attachments` id. Drive deletion is
+    // a separate, explicit owner operation and is deliberately absent.
+    if (resourceRow.kind === "upload" && resourceRow.storage !== "drive") {
       // Delete the backing attachments row too.
       // The backing attachment id is resourceId with leading 'res-' stripped.
       const attachmentId = resourceId.startsWith("res-")
