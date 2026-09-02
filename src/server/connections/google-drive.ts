@@ -392,6 +392,8 @@ export async function findGoogleDriveFilesByAppProperty(
     value: string;
     parentId?: string | null;
     mimeType?: string | null;
+    /** Omit the usual `trashed = false` filter when repair must detect it. */
+    includeTrashed?: boolean;
     pageToken?: string | null;
     pageSize?: number;
   }>,
@@ -403,8 +405,8 @@ export async function findGoogleDriveFilesByAppProperty(
   );
   const terms = [
     `appProperties has { key='${key}' and value='${value}' }`,
-    "trashed = false",
   ];
+  if (!input.includeTrashed) terms.push("trashed = false");
   if (input.parentId) {
     terms.push(
       `'${escapeDriveQueryValue(requireText(input.parentId, "parentId"))}' in parents`,
