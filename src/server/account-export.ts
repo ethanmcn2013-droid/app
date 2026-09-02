@@ -10,6 +10,7 @@ import {
   notificationPrefs,
   notifications,
   pendingInvites,
+  projectDriveOperations,
   providerConnections,
   resources,
   shareLinks,
@@ -21,10 +22,14 @@ import {
   workspaces,
 } from "./db/schema";
 import * as schema from "./db/schema";
+import type {
+  ProjectDriveOperationKind,
+  ProjectDriveOperationStatus,
+} from "./db/schema";
 
 export type ExportDb = LibSQLDatabase<typeof schema>;
 
-/** Attachment columns minus the internal on-disk path, bytes are fetched
+/** Attachment columns minus the internal storage locator; bytes are fetched
  *  via the authenticated download route, never inlined into the export. */
 const attachmentMeta = {
   id: attachments.id,
@@ -87,6 +92,64 @@ const resourceMeta = {
   countsAgainstStorage: resources.countsAgainstStorage,
 };
 
+const projectDriveActionLabels: Record<ProjectDriveOperationKind, string> = {
+  folder_provision: "Set up the Project folder",
+  grant_create: "Give someone Project folder access",
+  folder_rename: "Rename the Project folder",
+  project_delete: "Remove the Project Drive setup",
+  storage_handover: "Move the Project to another Drive",
+};
+
+const projectDriveProgressLabels: Record<ProjectDriveOperationStatus, string> = {
+  pending: "Waiting",
+  running: "In progress",
+  retry_wait: "Waiting to retry",
+  manual_attention: "Needs attention",
+  succeeded: "Complete",
+  cancelled: "Cancelled",
+};
+
+/**
+ * A portable, plain-language view of Project Drive's recovery journal.
+ *
+ * Credential and storage-generation ids, dedupe hashes, leases and Drive web
+ * links stay internal. Stable folder/permission receipts remain portable, but
+ * this projection cannot expose an OAuth credential or resumable-upload
+ * session URL if either is added to an adjacent table later.
+ */
+const projectDriveActivityMeta = {
+  id: projectDriveOperations.id,
+  projectId: projectDriveOperations.workspaceId,
+  actionCode: projectDriveOperations.operationKind,
+  progressCode: projectDriveOperations.status,
+  personId: projectDriveOperations.subjectUserId,
+  personEmail: projectDriveOperations.granteeEmail,
+  accessLevel: projectDriveOperations.grantRole,
+  projectVersion: projectDriveOperations.workspaceRevision,
+  driveFolderId: projectDriveOperations.providerFolderId,
+  drivePermissionId: projectDriveOperations.providerPermissionId,
+  attempts: projectDriveOperations.attemptCount,
+  lastTriedAt: projectDriveOperations.lastAttemptAt,
+  retryAfter: projectDriveOperations.nextAttemptAt,
+  issueCode: projectDriveOperations.lastErrorCode,
+  startedAt: projectDriveOperations.createdAt,
+  updatedAt: projectDriveOperations.updatedAt,
+  finishedAt: projectDriveOperations.completedAt,
+};
+
+function describeProjectDriveActivity<
+  Activity extends {
+    actionCode: ProjectDriveOperationKind;
+    progressCode: ProjectDriveOperationStatus;
+  },
+>(row: Activity) {
+  return {
+    ...row,
+    action: projectDriveActionLabels[row.actionCode],
+    progress: projectDriveProgressLabels[row.progressCode],
+  };
+}
+
 /**
  * GDPR Art. 20 (data portability), assemble everything Tasks holds for a
  * user: their profile, every workspace they own and all its content, and
@@ -118,6 +181,38 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     .where(eq(workspaces.ownerUserId, userId));
   const slugs = ownedWorkspaces.map((w) => w.id);
 
+  const myProviderConnections = await database
+    .select(providerConnectionMeta)
+    .from(providerConnections)
+    .where(eq(providerConnections.userId, userId));
+  const accountConnectionIds = myProviderConnections.map(
+    (connection) => connection.id,
+  );
+  const accountStorageGenerations = accountConnectionIds.length
+    ? await database
+        // isolation-ok: every connection id was just derived from this proved
+        // user. The cross-Project read is required to export their Drive
+        // account lineage wherever another Project used it.
+        .select({ id: workspaceStorage.id })
+        .from(workspaceStorage)
+        .where(inArray(workspaceStorage.connectionId, accountConnectionIds))
+    : [];
+  const accountStorageGenerationIds = accountStorageGenerations.map(
+    (generation) => generation.id,
+  );
+  const accountProjectDriveActivityScope = or(
+    eq(projectDriveOperations.subjectUserId, userId),
+    accountConnectionIds.length
+      ? inArray(projectDriveOperations.connectionId, accountConnectionIds)
+      : undefined,
+    accountStorageGenerationIds.length
+      ? inArray(
+          projectDriveOperations.storageGenerationId,
+          accountStorageGenerationIds,
+        )
+      : undefined,
+  );
+
   const [
     ownedTasks,
     ownedComments,
@@ -132,6 +227,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     ownedMeta,
     ownedWorkspaceStorage,
     ownedDriveFolderGrants,
+    ownedProjectDriveActivityRows,
     myMemberships,
     myAuthoredComments,
     myAuthoredActivities,
@@ -140,9 +236,9 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     myUserPreferences,
     myEntitlements,
     myNotesExtractTasks,
-    myProviderConnections,
     myDriveFolderGrants,
     myAddedResources,
+    myProjectDriveActivityRows,
   ] = await Promise.all([
     slugs.length ? database.select().from(tasks).where(inArray(tasks.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(comments).where(inArray(comments.workspaceId, slugs)) : [],
@@ -169,6 +265,12 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
           .from(driveFolderGrants)
           .where(inArray(driveFolderGrants.workspaceId, slugs))
       : [],
+    slugs.length
+      ? database
+          .select(projectDriveActivityMeta)
+          .from(projectDriveOperations)
+          .where(inArray(projectDriveOperations.workspaceId, slugs))
+      : [],
     database.select().from(workspaceMembers).where(eq(workspaceMembers.userId, userId)),
     database.select().from(comments).where(eq(comments.userId, userId)),
     database.select().from(activities).where(eq(activities.userId, userId)),
@@ -188,10 +290,6 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
           : fromThisNotesAccount,
       ),
     database
-      .select(providerConnectionMeta)
-      .from(providerConnections)
-      .where(eq(providerConnections.userId, userId)),
-    database
       .select()
       .from(driveFolderGrants)
       .where(eq(driveFolderGrants.userId, userId)),
@@ -199,6 +297,20 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       .select(resourceMeta)
       .from(resources)
       .where(eq(resources.addedByUserId, userId)),
+    database
+      // isolation-ok: this deliberately composes the proved user's subject,
+      // credential and storage-generation lineages across Projects. Owned
+      // Projects are excluded because they are exported in the section above.
+      .select(projectDriveActivityMeta)
+      .from(projectDriveOperations)
+      .where(
+        slugs.length
+          ? and(
+              accountProjectDriveActivityScope,
+              notInArray(projectDriveOperations.workspaceId, slugs),
+            )
+          : accountProjectDriveActivityScope,
+      ),
   ]);
 
   return {
@@ -221,6 +333,9 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       boardMeta: ownedMeta,
       workspaceStorage: ownedWorkspaceStorage,
       driveFolderGrants: ownedDriveFolderGrants,
+      projectDriveActivity: ownedProjectDriveActivityRows.map((activity) =>
+        describeProjectDriveActivity(activity),
+      ),
     },
     footprintElsewhere: {
       memberships: myMemberships,
@@ -234,6 +349,9 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       providerConnections: myProviderConnections,
       driveFolderGrants: myDriveFolderGrants,
       addedResources: myAddedResources,
+      projectDriveActivity: myProjectDriveActivityRows.map((activity) =>
+        describeProjectDriveActivity(activity),
+      ),
     },
   };
 }

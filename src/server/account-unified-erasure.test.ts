@@ -15,6 +15,8 @@
  *      still erased and the remaining modules are still attempted.
  *   5. Erasure is idempotent: a second call on the same clerkId is a no-op.
  *   6. Erasing an unprovisioned user is a no-op (no throw, no writes).
+ *   7. Tasks consumes only the target's Project Drive operation evidence;
+ *      another Project's repair journal survives the unified orchestration.
  *
  * Run: node --import tsx --test src/server/account-unified-erasure.test.ts
  */
@@ -49,6 +51,14 @@ async function seedTwo(client: Client) {
       VALUES ('u-target'), ('u-bystander');
     INSERT INTO user_preferences (user_id)
       VALUES ('u-target'), ('u-bystander');
+    INSERT INTO project_drive_operations (
+        id, workspace_id, operation_kind, status, dedupe_key,
+        attempt_count, created_at, updated_at)
+      VALUES
+        ('drive-op-target', 'ws-a', 'project_delete', 'pending',
+          '${"a".repeat(64)}', 0, 1756800000, 1756800000),
+        ('drive-op-bystander', 'ws-b', 'project_delete', 'pending',
+          '${"b".repeat(64)}', 0, 1756800000, 1756800000);
   `);
 }
 
@@ -79,11 +89,25 @@ test("unified erasure removes all Tasks rows, leaves bystander intact", async ()
     assert.equal(await count(client, "tasks WHERE workspace_id='ws-a'"), 0);
     assert.equal(await count(client, "notification_prefs WHERE user_id='u-target'"), 0);
     assert.equal(await count(client, "user_preferences WHERE user_id='u-target'"), 0);
+    assert.equal(
+      await count(
+        client,
+        "project_drive_operations WHERE id='drive-op-target'",
+      ),
+      0,
+    );
 
     // Bystander intact.
     assert.equal(await count(client, "users WHERE id='u-bystander'"), 1);
     assert.equal(await count(client, "workspaces WHERE id='ws-b'"), 1);
     assert.equal(await count(client, "notification_prefs WHERE user_id='u-bystander'"), 1);
+    assert.equal(
+      await count(
+        client,
+        "project_drive_operations WHERE id='drive-op-bystander'",
+      ),
+      1,
+    );
   } finally {
     client.close();
   }

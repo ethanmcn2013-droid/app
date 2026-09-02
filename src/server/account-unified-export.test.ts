@@ -16,6 +16,8 @@
  *   4. Tasks attachment storedPath never appears in the unified JSON
  *      (existing export guarantee held through the wrapper).
  *   5. Export of an unprovisioned Tasks user returns null user, no error.
+ *   6. Project Drive's journal survives the unified wrapper only through its
+ *      plain-language, credential-free activity projection.
  *
  * Run: node --import tsx --test src/server/account-unified-export.test.ts
  */
@@ -81,6 +83,11 @@ async function seedTasksUser(client: import("@libsql/client").Client) {
         filename, stored_path, mime_type, size_bytes)
       VALUES ('att-1', 'ws-a', 'task-a1', 'u-target',
         'file.png', '.data/uploads/SECRET.png', 'image/png', 3);
+    INSERT INTO project_drive_operations (
+        id, workspace_id, operation_kind, status, dedupe_key,
+        attempt_count, created_at, updated_at)
+      VALUES ('drive-op-a', 'ws-a', 'project_delete', 'pending',
+        '${"a".repeat(64)}', 0, 1756800000, 1756800000);
   `);
 }
 
@@ -105,6 +112,20 @@ test("unified export includes all four sections with correct shapes", async () =
     assert.ok(result.tasks, "tasks section missing");
     assert.equal(result.tasks.product, "tasks");
     assert.ok(result.tasks.user, "tasks.user missing");
+    assert.deepEqual(
+      result.tasks.ownedWorkspaces?.projectDriveActivity.map((activity) => ({
+        id: activity.id,
+        action: activity.action,
+        progress: activity.progress,
+      })),
+      [
+        {
+          id: "drive-op-a",
+          action: "Remove the Project Drive setup",
+          progress: "Waiting",
+        },
+      ],
+    );
 
     // Module sections from stubs.
     assert.equal((result.notes as { available: boolean }).available, true);

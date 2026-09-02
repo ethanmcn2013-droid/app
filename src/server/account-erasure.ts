@@ -1,5 +1,3 @@
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
@@ -13,6 +11,7 @@ import {
   notificationPrefs,
   notifications,
   pendingInvites,
+  projectDriveOperations,
   providerConnections,
   resources,
   shareLinkVisits,
@@ -25,6 +24,7 @@ import {
   workspaces,
 } from "./db/schema";
 import * as schema from "./db/schema";
+import { deleteBytes } from "./storage";
 
 /**
  * Database handle accepted by {@link eraseAccountData}. Typed against the
@@ -61,11 +61,13 @@ export type AccountErasureOptions = Readonly<{
   revokeDriveFolderGrant?: (
     grant: AccountErasureDriveGrant,
   ) => Promise<void>;
+  /** Test seam; production delegates every disk/blob locator to storage.ts. */
+  deleteStoredBytes?: (storedPath: string) => Promise<void>;
 }>;
 
 /**
  * Hard-delete a user's ENTIRE footprint across every table in Tasks' Turso
- * DB, plus the on-disk attachment binaries they own.
+ * DB, plus the stored attachment bytes they own.
  *
  * GDPR right-to-erasure / App Store 5.1.1(v): when a user deletes their
  * account, nothing of theirs may remain.
@@ -154,6 +156,68 @@ export async function eraseAccountData(
   // pointers, permission receipts, and folder generations before retiring the
   // credentials. The Project itself remains and falls back to Signal storage.
   const connectionIds = connectionRows.map((connection) => connection.id);
+  const accountStorageRows = connectionIds.length
+    ? await database
+        // isolation-ok: connectionIds contains only credential generations
+        // owned by the proved user; erasure must find their use in every
+        // Project before any RESTRICT-backed parent can be removed.
+        .select({ id: workspaceStorage.id })
+        .from(workspaceStorage)
+        .where(inArray(workspaceStorage.connectionId, connectionIds))
+    : [];
+  const accountStorageGenerationIds = accountStorageRows.map(
+    (storage) => storage.id,
+  );
+
+  // Resolve every journal row whose RESTRICT parent this erasure will remove:
+  // an owned Project, the person's credential/storage lineage in another
+  // Project, or a grant operation naming the person. A grant operation can be
+  // the only durable permission receipt after Google succeeded but the local
+  // grant-row commit did not, so collect that receipt before any deletion.
+  const affectedOperationRows = await database
+    .select({
+      id: projectDriveOperations.id,
+      operationKind: projectDriveOperations.operationKind,
+      status: projectDriveOperations.status,
+      attemptCount: projectDriveOperations.attemptCount,
+      workspaceId: projectDriveOperations.workspaceId,
+      storageGenerationId: projectDriveOperations.storageGenerationId,
+      subjectUserId: projectDriveOperations.subjectUserId,
+      providerPermissionId: projectDriveOperations.providerPermissionId,
+      connectionId: workspaceStorage.connectionId,
+      folderId: workspaceStorage.folderId,
+    })
+    .from(projectDriveOperations)
+    // isolation-ok: account erasure intentionally spans every Project reached
+    // from this proved user's ownership, subject, credential, or storage
+    // lineage. The join supplies the exact provider-revocation receipt.
+    .leftJoin(
+      workspaceStorage,
+      and(
+        eq(
+          projectDriveOperations.storageGenerationId,
+          workspaceStorage.id,
+        ),
+        eq(projectDriveOperations.workspaceId, workspaceStorage.workspaceId),
+      ),
+    )
+    .where(
+      or(
+        eq(projectDriveOperations.subjectUserId, userId),
+        ownedWorkspaceIds.length > 0
+          ? inArray(projectDriveOperations.workspaceId, ownedWorkspaceIds)
+          : undefined,
+        connectionIds.length > 0
+          ? inArray(projectDriveOperations.connectionId, connectionIds)
+          : undefined,
+        accountStorageGenerationIds.length > 0
+          ? inArray(
+              projectDriveOperations.storageGenerationId,
+              accountStorageGenerationIds,
+            )
+          : undefined,
+      ),
+    );
 
   // Permission deletion is an external side effect, so it must happen before
   // the local receipt disappears. Cover all receipts this erasure will remove:
@@ -194,52 +258,103 @@ export async function eraseAccountData(
           : undefined,
       ),
     );
-  const grantsToRevoke = grantRows.map((grant) => {
+  const grantsToRevoke = new Map<string, AccountErasureDriveGrant>();
+  const rememberGrant = (grant: AccountErasureDriveGrant) => {
+    const exactProviderKey = [
+      grant.connectionId,
+      grant.folderId,
+      grant.permissionId,
+    ].join("\u0000");
+    grantsToRevoke.set(exactProviderKey, grant);
+  };
+  for (const grant of grantRows) {
     if (!grant.connectionId || !grant.folderId) {
       throw new Error(
         "account erasure blocked: Drive grant receipt has no storage generation",
       );
     }
-    return {
+    rememberGrant({
       ...grant,
       connectionId: grant.connectionId,
       folderId: grant.folderId,
-    };
-  });
-  if (grantsToRevoke.length > 0 && !options.revokeDriveFolderGrant) {
+    });
+  }
+  for (const operation of affectedOperationRows) {
+    if (
+      operation.operationKind === "grant_create" &&
+      !operation.providerPermissionId
+    ) {
+      const neverReachedGoogle =
+        operation.status === "pending" && operation.attemptCount === 0;
+      if (!neverReachedGoogle && operation.status !== "cancelled") {
+        throw new Error(
+          "account erasure blocked: attempted Project Drive grant has no exact permission receipt",
+        );
+      }
+      continue;
+    }
+    if (!operation.providerPermissionId) continue;
+    if (
+      operation.operationKind !== "grant_create" ||
+      !operation.storageGenerationId ||
+      !operation.subjectUserId ||
+      !operation.connectionId ||
+      !operation.folderId
+    ) {
+      throw new Error(
+        "account erasure blocked: Project Drive operation has an incomplete grant receipt",
+      );
+    }
+    rememberGrant({
+      storageGenerationId: operation.storageGenerationId,
+      workspaceId: operation.workspaceId,
+      connectionId: operation.connectionId,
+      folderId: operation.folderId,
+      userId: operation.subjectUserId,
+      permissionId: operation.providerPermissionId,
+    });
+  }
+  if (grantsToRevoke.size > 0 && !options.revokeDriveFolderGrant) {
     throw new Error(
       "account erasure blocked: Drive grant revocation is not configured",
     );
   }
-  for (const grant of grantsToRevoke) {
+  for (const grant of grantsToRevoke.values()) {
     await options.revokeDriveFolderGrant!(grant);
   }
 
-  if (connectionIds.length > 0) {
-    const storageRows = await database
-      // isolation-ok: connectionIds contains only credential generations
-      // owned by the proved user; erasure must find their use in every Project
-      // before the RESTRICT-backed connection rows can be removed.
-      .select({ id: workspaceStorage.id })
-      .from(workspaceStorage)
-      .where(inArray(workspaceStorage.connectionId, connectionIds));
-    const storageGenerationIds = storageRows.map((storage) => storage.id);
-    if (storageGenerationIds.length > 0) {
-      await database
-        .delete(resources)
-        .where(inArray(resources.storageGenerationId, storageGenerationIds));
-      await database
-        .delete(driveFolderGrants)
-        .where(
-          inArray(
-            driveFolderGrants.storageGenerationId,
-            storageGenerationIds,
-          ),
-        );
-      await database
-        .delete(workspaceStorage)
-        .where(inArray(workspaceStorage.id, storageGenerationIds));
-    }
+  // Only now may the journal evidence disappear. If any exact provider
+  // revocation above failed, execution never reaches this delete and every
+  // grant and operation receipt remains available for an idempotent retry.
+  const affectedOperationIds = affectedOperationRows.map(
+    (operation) => operation.id,
+  );
+  if (affectedOperationIds.length > 0) {
+    await database
+      .delete(projectDriveOperations)
+      .where(inArray(projectDriveOperations.id, affectedOperationIds));
+  }
+
+  if (accountStorageGenerationIds.length > 0) {
+    await database
+      .delete(resources)
+      .where(
+        inArray(
+          resources.storageGenerationId,
+          accountStorageGenerationIds,
+        ),
+      );
+    await database
+      .delete(driveFolderGrants)
+      .where(
+        inArray(
+          driveFolderGrants.storageGenerationId,
+          accountStorageGenerationIds,
+        ),
+      );
+    await database
+      .delete(workspaceStorage)
+      .where(inArray(workspaceStorage.id, accountStorageGenerationIds));
   }
   // Grants to the erased person on somebody else's surviving folder carry
   // their email and user id, so those receipts must go too.
@@ -252,10 +367,10 @@ export async function eraseAccountData(
       .where(inArray(providerConnections.id, connectionIds));
   }
 
-  // On-disk attachment binaries to unlink AFTER their rows are gone. We
-  // collect paths up front (while the rows still exist) and unlink last so
-  // a DB failure never leaves dangling files we've lost the pointer to,
-  // and an unlink failure never blocks the DB erasure.
+  // Attachment storage locators to delete AFTER their rows are gone. We
+  // collect them up front (while the rows still exist) and delete last so a DB
+  // failure never removes bytes whose row still exists, while a storage
+  // failure never blocks the database erasure.
   const orphanedFiles = new Set<string>();
 
   for (const { id: wsId } of ownedWorkspaces) {
@@ -389,16 +504,17 @@ export async function eraseAccountData(
   // Leaf last.
   await database.delete(users).where(eq(users.id, userId));
 
-  // Best-effort unlink of the now-orphaned attachment binaries. The rows
-  // are already gone, so failures here only leave dead bytes on disk (no
-  // way to address them in-product), log-worthy, never fatal, never a
-  // reason to fail the erasure. A missing file (already swept, or never
-  // persisted in a serverless runtime) is expected and ignored.
+  // Best-effort removal of the now-orphaned attachment bytes. The centralized
+  // storage seam understands both private Vercel Blob locators and disk paths;
+  // this erasure layer must never resolve or log a stored locator itself. The
+  // rows are already gone, so a deletion failure remains non-fatal.
+  const deleteStoredBytes = options.deleteStoredBytes ?? deleteBytes;
   for (const storedPath of orphanedFiles) {
     try {
-      await unlink(path.resolve(process.cwd(), storedPath));
+      await deleteStoredBytes(storedPath);
     } catch {
-      // ENOENT and friends: nothing left to remove.
+      // Missing bytes, a missing Blob token, and transient provider failures
+      // must not undo the completed database erasure.
     }
   }
 

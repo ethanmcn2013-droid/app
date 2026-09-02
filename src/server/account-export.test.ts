@@ -55,7 +55,30 @@ test("export captures owned content + footprint, scoped to the caller", async ()
         id, workspace_id, connection_id, folder_id, folder_web_view_link, state, is_current
       ) VALUES
         ('storage-a','ws-a','conn-target','folder-a','https://drive.test/folder-a','active',1),
-        ('storage-b','ws-b','conn-bystander','folder-b','https://drive.test/folder-b','active',1);
+        ('storage-b','ws-b','conn-bystander','folder-b','https://drive.test/folder-b','active',1),
+        ('storage-target-in-b','ws-b','conn-target','folder-target-in-b','https://drive.test/folder-target-in-b','active',0);
+      INSERT INTO project_drive_operations (
+        id, workspace_id, operation_kind, status, dedupe_key, connection_id,
+        storage_generation_id, target_storage_generation_id, subject_user_id,
+        grantee_email, grant_role, workspace_revision, provider_folder_id,
+        provider_folder_web_view_link, provider_permission_id, attempt_count,
+        last_attempt_at, created_at, updated_at, completed_at
+      ) VALUES
+        ('op-owned-project','ws-a','project_delete','pending','${"a".repeat(64)}',
+         NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1756800000,1756800000,NULL),
+        ('op-account-connection','ws-b','folder_provision','succeeded','${"b".repeat(64)}',
+         'conn-target',NULL,'storage-reserved-in-b',NULL,NULL,NULL,NULL,
+         'folder-from-operation','https://drive.test/SECRET-OPERATION-URL',NULL,
+         1,1756800001,1756800000,1756800001,1756800001),
+        ('op-account-storage','ws-b','folder_rename','pending','${"c".repeat(64)}',
+         NULL,'storage-target-in-b',NULL,NULL,NULL,NULL,2,NULL,NULL,NULL,
+         0,NULL,1756800000,1756800000,NULL),
+        ('op-account-subject','ws-b','grant_create','succeeded','${"d".repeat(64)}',
+         NULL,'storage-b',NULL,'u-target','target@example.test','writer',NULL,
+         NULL,NULL,'permission-from-operation',1,1756800001,1756800000,1756800001,1756800001),
+        ('op-bystander-only','ws-b','folder_rename','pending','${"e".repeat(64)}',
+         NULL,'storage-b',NULL,NULL,NULL,NULL,3,NULL,NULL,NULL,
+         0,NULL,1756800000,1756800000,NULL);
       INSERT INTO drive_folder_grants (
         storage_generation_id, workspace_id, user_id, permission_id,
         granted_email, role, granted_at, revoke_pending
@@ -95,6 +118,20 @@ test("export captures owned content + footprint, scoped to the caller", async ()
     assert.equal(data.ownedWorkspaces!.workspaceStorage.length, 1);
     assert.equal(data.ownedWorkspaces!.workspaceStorage[0]!.id, "storage-a");
     assert.equal(data.ownedWorkspaces!.driveFolderGrants.length, 2);
+    assert.deepEqual(
+      data.ownedWorkspaces!.projectDriveActivity.map((activity) => ({
+        id: activity.id,
+        action: activity.action,
+        progress: activity.progress,
+      })),
+      [
+        {
+          id: "op-owned-project",
+          action: "Remove the Project Drive setup",
+          progress: "Waiting",
+        },
+      ],
+    );
     assert.equal(data.ownedWorkspaces!.boardMeta.length, 1); // board:ws-a:* only
 
     // Footprint elsewhere: the comment the target authored in ws-b.
@@ -148,6 +185,52 @@ test("export captures owned content + footprint, scoped to the caller", async ()
         .sort(),
       ["res-drive-a", "res-drive-b"],
     );
+    assert.deepEqual(
+      data.footprintElsewhere!.projectDriveActivity
+        .map((activity) => activity.id)
+        .sort(),
+      [
+        "op-account-connection",
+        "op-account-storage",
+        "op-account-subject",
+      ],
+      "account subject, credential, and storage lineages must cross Project scope without leaking unrelated activity",
+    );
+    const connectionActivity =
+      data.footprintElsewhere!.projectDriveActivity.find(
+        (activity) => activity.id === "op-account-connection",
+      );
+    assert.equal(connectionActivity?.action, "Set up the Project folder");
+    assert.equal(connectionActivity?.progress, "Complete");
+    assert.equal(connectionActivity?.driveFolderId, "folder-from-operation");
+    const subjectActivity = data.footprintElsewhere!.projectDriveActivity.find(
+      (activity) => activity.id === "op-account-subject",
+    );
+    assert.equal(subjectActivity?.personEmail, "target@example.test");
+    assert.equal(subjectActivity?.accessLevel, "writer");
+    assert.equal(
+      subjectActivity?.drivePermissionId,
+      "permission-from-operation",
+    );
+    const exportedProjectDriveActivity = JSON.stringify({
+      owned: data.ownedWorkspaces!.projectDriveActivity,
+      elsewhere: data.footprintElsewhere!.projectDriveActivity,
+    });
+    for (const forbidden of [
+      "SECRET-OPERATION-URL",
+      "providerFolderWebViewLink",
+      "connectionId",
+      "storageGenerationId",
+      "targetStorageGenerationId",
+      "dedupeKey",
+      "leaseExpiresAt",
+    ]) {
+      assert.equal(
+        exportedProjectDriveActivity.includes(forbidden),
+        false,
+        `Project Drive activity leaked internal field ${forbidden}`,
+      );
+    }
 
     // The bystander's owned task must NOT be in owned content.
     assert.ok(

@@ -29,7 +29,9 @@ export type SignalExportFn = (clerkId: string) => Promise<
  * Secrets omitted:
  *   - Notes `calendar_connections.refresh_token` (live Google OAuth credential)
  *   - Signal `user_preferences.unsubscribe_token` (opaque action credential)
- *   - Tasks `attachments.storedPath` (internal on-disk path, not user content)
+ *   - Tasks `attachments.storedPath` (private disk/blob locator, not content)
+ *   - Tasks Project Drive credential/storage ids, dedupe hashes, leases and
+ *     provider web links (the export carries plain-language activity instead)
  */
 export async function exportUnifiedAccountDataWith(
   database: ExportDb,

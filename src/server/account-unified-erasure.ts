@@ -115,9 +115,10 @@ export async function deleteUnifiedAccountDataWith(
   const notesGoogleTokens =
     "refreshTokens" in notesResult ? notesResult.refreshTokens : [];
 
-  // Step 2: Tasks collects every encrypted Project Drive generation before
-  // explicitly deleting its RESTRICT-backed rows, and returns the plaintext
-  // only long enough for this orchestrator to revoke it.
+  // Step 2: Tasks collects every encrypted Project Drive generation and exact
+  // grant receipt before provider revocation. Only after those calls succeed
+  // does it consume operation-journal evidence and the RESTRICT-backed rows;
+  // plaintext tokens live only long enough for this orchestrator to revoke.
   const tasksResult = opts.eraseTasks
     ? await opts.eraseTasks(database, clerkId)
     : await eraseTasksData(database, clerkId, {
