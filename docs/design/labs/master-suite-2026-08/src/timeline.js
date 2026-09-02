@@ -1,6 +1,13 @@
 /* Timeline · B · The Approach — render-core.js then render-b.js, as they were
    frozen in the lab. Two patches: rootEl(), and the undo chord. */
 
+/* One question, asked in one place and answered for both halves of this
+   file: is this a phone. The owner's bar folds on it, the across
+   composition is withheld on it, and crossing it re-mounts the owner's
+   surface so the bar is never stale. File scope, because the core and
+   the renderer are two closures. */
+var PHONE_T = matchMedia("(max-width: 720px)");
+
 /* ═══════════════════════════════════════════════════════════════════
    The renderer core. Three directions share one contract:
 
@@ -166,6 +173,9 @@
      again when the box changes. Debounced to a frame so a drag-resize
      does not re-measure a hundred times. */
   var pending = 0;
+  PHONE_T.addEventListener("change", function () {
+    if (C.rootEl().getAttribute("data-state") === "owner-flight") go("owner-flight");
+  });
   window.addEventListener("resize", function () {
     if (pending) cancelAnimationFrame(pending);
     pending = requestAnimationFrame(function () { pending = 0; settle(); });
@@ -342,7 +352,7 @@
      screen and an empty one everywhere else, so the reversibility bar
      offered to undo a change to nothing. */
   function nameOf(record) {
-    return ((record && record.title) || "").trim() || "Untitled moment";
+    return ((record && record.title) || "").trim() || "New moment";
   }
 
   /* The reversibility bar sits in a band of its own, and the band has a
@@ -396,12 +406,12 @@
 
   /* ── the horizon ──────────────────────────────────────────────── */
 
-  /* The empty run before the first thing is stated as a boundary, not a
-     count. "The next 16 days" swallows the day the menu tasting falls
-     on. A boundary cannot go off by one. */
-  function gapSentence(nearestIso) {
-    return "Nothing is planned until " + F.fmt.medium(nearestIso) + ".";
-  }
+  /* THE GAP NOTE SAYS NOTHING WHILE THERE IS A NEXT MOMENT. "Nothing is
+     planned until 1 August" named the day the tasting falls on as a
+     void — a boundary that cannot go off by one, and still reads as one.
+     When a next moment exists the measure says so itself, one row down,
+     in full ink. The note exists for the one case where the measure is
+     silent: a plan with nothing ahead. */
 
   /* The count, in whichever of its three states the clock is in. The
      arrival is the same object the morning is built on, at the same
@@ -463,7 +473,9 @@
          twice. */
       o.medium === "print" ? null : h("div.b-todayRule"),
       o.medium === "print" ? null : h("p.b-todayLabel", { text: "Today is " + F.fmt.medium(clock) }),
-      next ? h("p.b-gapNote", { text: gapSentence(next.date) }) : null,
+      /* Kept in the tree, empty and hidden, so writeGap can speak the day
+         the last moment goes. */
+      h("p.b-gapNote", { text: next ? "" : "Nothing is planned yet.", hidden: next ? "" : null }),
     ]);
   }
 
@@ -576,14 +588,23 @@
      horizontal scrollbar. Eight fits every desk width this fixture can
      be opened at, and below it the track scrolls rather than lying
      about the proportion. */
-  var ACROSS_FLOOR = 8;
+  /* 4, not 8. At 768 the stage is 468px and the plan is 79 days: an
+     8px floor made a 632px track that scrolled, and the wedding day —
+     the one thing the orientation exists to show — was off the stage.
+     Labels are ranked to clear each other, so the marks may sit closer;
+     the floor now only stops a very long plan collapsing to nothing. */
+  var ACROSS_FLOOR = 4;
   var ACROSS_LABEL = 168;  /* px. A two-line title at the body size.  */
   var ACROSS_RANK = 58;    /* px. One label plus its air.             */
   var ACROSS_STEM = 26;    /* px. Rule to the near edge of the figure. */
 
   /* Across is a desk composition. A phone is a column, and a printed
      sheet is a column, and neither is a decision the reader makes. */
-  function acrossAllowed(medium) { return medium === "full" || medium === "sheet"; }
+  /* A phone reads down: at 390 the approach cannot fit across, so the
+     control that offered it was a control that broke the page. */
+  function acrossAllowed(medium) {
+    return (medium === "full" || medium === "sheet") && !PHONE_T.matches;
+  }
 
   function layoutOf(medium) {
     var want = C.rootEl().getAttribute("data-layout");
@@ -798,11 +819,20 @@
       side = side === "above" ? "below" : "above";
       el.setAttribute("data-side", side);
 
-      /* At the two ends the label aligns inward rather than hanging off
-         the track. An axis names its ends from the inside. */
-      var edge = x - half < EDGE ? "start" : (x + half > EDGE + span ? "end" : null);
+      /* LABELS NEVER LEAVE THE STAGE. A label is centred on its mark and
+         then held inside the track's box — at 768 the wedding day's
+         words sat 64px past the sheet's edge and the first moment's 36px
+         before it. The shift is written as a custom property the
+         stylesheet adds to the centring transform, so a clamped label
+         still animates with its mark; the two ends align inward, because
+         an axis names its ends from the inside. When the track genuinely
+         scrolls the far labels are scrolled to, not pulled back. */
+      var wantLeft = x - half;
+      var maxLeft = Math.max(box, span + EDGE * 2) - ACROSS_LABEL;
+      var left = Math.min(Math.max(wantLeft, 0), Math.max(0, maxLeft));
+      var edge = left > wantLeft + 0.5 ? "start" : (left < wantLeft - 0.5 ? "end" : null);
       if (edge) el.setAttribute("data-edge", edge); else el.removeAttribute("data-edge");
-      var left = edge === "start" ? x : (edge === "end" ? x - ACROSS_LABEL : x - half);
+      el.style.setProperty("--label-dx", Math.round(left - wantLeft) + "px");
       var right = left + ACROSS_LABEL;
 
       var lane = lanes[side];
@@ -878,9 +908,8 @@
       if (!(away > 0)) return;
       if (!soonest || away < Number(soonest.getAttribute("data-away"))) soonest = el;
     });
-    var atRest = soonest
-      ? gapSentence(soonest.getAttribute("data-date"))
-      : "Nothing is planned yet.";
+    var atRest = soonest ? "" : "Nothing is planned yet.";
+    note.hidden = !atRest;
     if (field) field.__gapAtRest = atRest;
     if (field && field.__gapSpeak) field.__gapSpeak();
     else note.textContent = atRest;
@@ -1701,7 +1730,7 @@
               titleAtOpen = to;
               remember(root, {
                 id: record.id,
-                say: ["Renamed to " + (to || "Untitled moment") + "."],
+                say: ["Renamed to " + (to || "New moment") + "."],
                 undo: function () {
                   setTitle(item, from);
                   event.target.value = from;
@@ -1926,6 +1955,21 @@
     root.style.setProperty("--b-sheet", Math.max(0, Math.ceil(window.innerHeight - top + 24)) + "px");
   }
 
+  /* The phone's More door: one menu, opened and closed from one place. */
+  function toggleMore(root, open) {
+    var btn = root.querySelector(".b-more");
+    var menu = root.querySelector(".b-menu");
+    if (!btn || !menu) return;
+    menu.hidden = !open;
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) {
+      var first = menu.querySelector("button");
+      if (first) first.focus({ preventScroll: true });
+    } else if (document.activeElement && menu.contains(document.activeElement)) {
+      btn.focus({ preventScroll: true });
+    }
+  }
+
   function openEditor(root, item) {
     /* The badge on an open row still announces aria-expanded="true"
        over a panel it names by id, so refusing the press is a control
@@ -1982,8 +2026,11 @@
       var grab = event.target.closest(".b-grab");
       if (grab) { openEditor(root, grab.closest(".b-item")); return; }
       var action = event.target.closest("[data-act]");
+      var openMenu = root.querySelector(".b-menu:not([hidden])");
+      if (openMenu && !(action && action.closest(".b-moreWrap"))) toggleMore(root, false);
       if (!action) return;
       var name = action.getAttribute("data-act");
+      if (name === "more") { toggleMore(root, root.querySelector(".b-menu").hidden); return; }
       if (name === "done") { closeEditor(root, true); return; }
       if (name === "delete") {
         var item = root.querySelector('.b-item[data-editing="true"]');
@@ -2019,8 +2066,12 @@
       if (name === "add") {
         var host = root.querySelector(".b-measure");
         var clock = host.getAttribute("data-clock") || F.today;
-        var first = ahead(clock)[0];
-        var away = Math.max(1, (first ? daysFrom(clock, first.date) : 8) - 7);
+        /* TOMORROW. It used to land a week before the next moment, which
+           put a blank row somewhere in the middle of a plan with no way
+           of telling which row was new; tomorrow is the nearest day that
+           is not today, the editor opens above the line with the date in
+           it, and the owner moves it from there. */
+        var away = Math.min(1, Math.max(1, daysFrom(clock, F.project.primaryDate.date)));
         var fresh = {
           id: "moment-" + (++minted),
           title: "",
@@ -2076,6 +2127,20 @@
     });
 
     root.addEventListener("keydown", function (event) {
+      var menu = root.querySelector(".b-menu");
+      if (menu && !menu.hidden) {
+        var items = Array.prototype.slice.call(menu.querySelectorAll("button"));
+        var at = items.indexOf(document.activeElement);
+        if (event.key === "Escape") { event.preventDefault(); toggleMore(root, false); return; }
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          items[(at + (event.key === "ArrowDown" ? 1 : items.length - 1) + items.length) % items.length].focus();
+          return;
+        }
+      }
+      if (event.key === "ArrowDown" && event.target.closest && event.target.closest(".b-more")) {
+        event.preventDefault(); toggleMore(root, true); return;
+      }
       if (event.key === "Escape") { closeEditor(root, true); return; }
       var grab = event.target.closest(".b-grab");
       if (grab && (event.key === "Enter" || event.key === " ")) {
@@ -2129,9 +2194,9 @@
            it paints the at-rest sentence rather than returning and
            leaving whatever was there last. */
         if (!stick || getComputedStyle(stick).position !== "sticky") {
-          if (root.__gapAtRest && note.textContent !== root.__gapAtRest) {
-            note.textContent = root.__gapAtRest;
-          }
+          var rest = root.__gapAtRest || "";
+          note.hidden = !rest;
+          if (note.textContent !== rest) note.textContent = rest;
           return;
         }
         var rows = root.querySelectorAll(".b-measure .b-item");
@@ -2146,17 +2211,18 @@
         for (var i = 0; i < rows.length; i++) {
           if (rows[i].getBoundingClientRect().top >= edge) { top = rows[i]; break; }
         }
-        /* Read the sentence live, never from a snapshot. This used to
-           restore the string captured when the surface was wired, so
-           moving the first moment and then scrolling down and back
-           repainted a sentence that was no longer true. Both writers of
-           this node now derive from gapSentence(), so it cannot outlive
-           the fact it describes. */
+        /* Read live, never from a snapshot. At rest the note says
+           nothing unless nothing is planned — the horizon's own sentence
+           already carries the next moment, and a second line restating
+           it was the "gap note" the ledger closed. Scrolled past the
+           first moment, the note names the one that went over the edge,
+           and it is hidden again the moment the column comes back. */
         if (!rows.length) return;
         var said = !top || top === rows[0]
-          ? (root.__gapAtRest || gapSentence(rows[0].getAttribute("data-date")))
+          ? (root.__gapAtRest || "")
           : F.fmt.medium(top.getAttribute("data-date")) + " \u00b7 "
             + F.fmt.dayCount(Number(top.getAttribute("data-away"))) + " away";
+        note.hidden = !said;
         if (note.textContent !== said) note.textContent = said;
       };
       /* place() repaints this node; it needs the scrolled reading back. */
@@ -2322,16 +2388,32 @@
   function ownerSurface(opts) {
     var node = field([
       bar(F.project.name, [
-        act("Add a moment", false, { "data-act": "add" }),
-        act("Preview", false, { "data-act": "preview" }),
-        /* The verb branches on whether anyone is already holding a copy.
-           On a plan whose own line four pixels below reads "Live since
-           15 July", the primary control said "Publish" - offering to do
-           a thing that had already been done, on the screen where the
-           owner is closest to giving the plan away. */
-        act(F.publication.state === "published" ? "Get the link" : "Publish",
-          true, { "data-act": "publish" }),
-      ]),
+        /* ADD IS THE FILLED ACT. On a Tuesday she adds; the filled slab
+           used to be the link to a plan that is already live, so the one
+           thing this screen is for read as the secondary thing. The verb
+           on the link still branches on whether anyone is holding a copy:
+           "Publish" on a plan whose own line reads "Live since 15 July"
+           offered to do a thing already done. */
+        act("Add a moment", true, { "data-act": "add" }),
+      ].concat(PHONE_T.matches
+        /* ON A PHONE the two rarer acts fold into one door, so the 79
+           and the next moment share the first screen. The door is a real
+           menu: it opens on the arrow, walks with them, closes on Escape
+           and on a press outside, and hands focus back. */
+        ? [h("span.b-moreWrap", {}, [
+            h("button.b-act.b-more", {
+              type: "button", "data-act": "more", "aria-haspopup": "menu",
+              "aria-expanded": "false", "aria-label": "More", text: "\u00b7\u00b7\u00b7",
+            }),
+            h("div.b-menu", { role: "menu", "aria-label": "More", hidden: "" }, [
+              act("Preview", false, { "data-act": "preview", role: "menuitem" }),
+              act(F.publication.state === "published" ? "Get the link" : "Publish",
+                false, { "data-act": "publish", role: "menuitem" }),
+            ]),
+          ])]
+        : [act("Preview", false, { "data-act": "preview" }),
+           act(F.publication.state === "published" ? "Get the link" : "Publish",
+             false, { "data-act": "publish" })])),
       h("p.b-live.b-vh", { role: "status", text: "" }),
       /* The owner was never told anyone was holding a copy of the plan
          they keep editing: the surface was byte-identical before and
@@ -2753,7 +2835,10 @@
           ]),
           h("div.b-barActs", {}, [
             act("Copy the link", true, { "data-act": "copy" }),
-            inert("Sending comes next"),
+            /* The strap agrees with the head above it. "Sending comes
+               next" under "Mara & Finn have had this since 15 July" was
+               two stories on one screen. */
+            inert(sentDay() ? "Anyone with the link can read it" : "Sending comes next"),
           ]),
           h("p.b-live", { role: "status", text: "" }),
           h("p.b-note", { text: "You can turn the link off at any time. Anyone holding it then sees that it has ended." }),

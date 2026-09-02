@@ -235,30 +235,15 @@ export async function truth({ browser, url, check, head, lab }) {
     } else {
       const after = await read();
       const nowNearest = await nearestAway();
-      /* The claim is not "it changed" but "it names the nearest thing". */
-      const names = await page.evaluate((txt) => {
-        let best = null;
-        for (const el of document.querySelectorAll(".b-measure:not(.b-back) .b-item")) {
-          const a = Number(el.getAttribute("data-away"));
-          if (a > 0 && (best === null || a < Number(best.getAttribute("data-away")))) best = el;
-        }
-        if (!best) return /nothing is planned yet/i.test(txt);
-        /* Z, not local. Parsed as local midnight and then read back in UTC,
-           an Irish August date lands on the previous day and this assertion
-           fails a sentence that is correct. */
-        const d = new Date(best.getAttribute("data-date") + "T00:00:00Z");
-        const day = d.getUTCDate();
-        const month = d.toLocaleString("en-GB", { month: "long", timeZone: "UTC" });
-        /* The sentence binds the number to its month with a non-breaking
-           space, on purpose — "8" must never sit alone at the end of a line.
-           Compare the words, not the byte that joins them. */
-        const flat = (s) => String(s).replace(/[\s   ]+/g, " ");
-        return { want: day + " " + month, ok: flat(txt).includes(day + " " + month) };
-      }, after);
-      check("truth", `timeline ${layout} · the gap sentence names the nearest moment`,
-        names.ok === true,
-        `nearest ${wasNearest} → ${nowNearest} days · wants “${names.want}” · says “${after.trim()}”` +
-          (after === before ? " (UNCHANGED)" : ""));
+      /* REVISED 2026-09-02. The sentence used to name the nearest moment
+         ("Nothing is planned until 1 August") and the panel found it named
+         the day the tasting falls on as a void. The note is silent while a
+         moment is ahead and says "Nothing is planned yet." only when none
+         is — so the claim after a move is that it stays silent, and that
+         the move really happened. */
+      check("truth", `timeline ${layout} · the gap note stays silent while a moment is ahead`,
+        nowNearest > 0 && after.trim() === "" && before.trim() === "",
+        `nearest ${wasNearest} → ${nowNearest} days · says “${after.trim()}”`);
     }
     await page.close();
   }
@@ -609,9 +594,10 @@ export async function truthFiveB({ browser, url, check, head, lab }) {
      alongside Venue and Bar, and filtering to Venue printed "Showing 4
      tasks for Venue." One heading and one preposition for two kinds. */
   const groups = await page.evaluate(async () => {
-    const open = document.querySelector('[data-app="tasks"] [data-act="tool"][data-value="filter"], [data-app="tasks"] [data-tool="filter"]')
+    /* Filter became a group inside Show; the claim is about the groups. */
+    const open = document.querySelector('[data-app="tasks"] [data-tool="show"], [data-app="tasks"] [data-act="tool"][data-value="filter"], [data-app="tasks"] [data-tool="filter"]')
       || [...document.querySelectorAll('[data-app="tasks"] [data-act="tool"]')]
-        .find((b) => /filter/i.test(b.textContent || ""));
+        .find((b) => /filter|show/i.test(b.textContent || ""));
     if (!open) return null;
     open.click();
     await new Promise((r) => setTimeout(r, 400));
@@ -647,7 +633,7 @@ export async function truthFiveB({ browser, url, check, head, lab }) {
     await p1.waitForTimeout(800);
     said[name] = await p1.evaluate(async (who) => {
       const open = [...document.querySelectorAll('[data-app="tasks"] [data-act="tool"]')]
-        .find((b) => /filter/i.test(b.textContent || ""));
+        .find((b) => /filter|show/i.test(b.textContent || ""));
       if (!open) return "NO FILTER TOOL";
       open.click();
       await new Promise((r) => setTimeout(r, 450));

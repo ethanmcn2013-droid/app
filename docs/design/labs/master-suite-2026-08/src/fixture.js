@@ -619,8 +619,11 @@ window.NOTES = (function () {
       emptyBody: "The capture field is ready above.",
       voiceStart: "Dictate",
       voiceStop: "Stop listening",
+      /* Two sentences on an ink floor, each of them true. The paragraph
+         they replace was four sentences in a legal register about service
+         retention, on the one surface meant to be calm. */
       voiceDisclosure:
-        "Your browser may send microphone audio to its speech service to turn it into text. Signal Studio does not receive or retain that audio. Your browser or speech provider controls its service retention. Typing stays on your device until you save.",
+        "Signal Studio keeps the words, not the audio. Typing stays on this device until you save.",
       heading: "Turn this into a task",
       begin: "Use these words",
       handoffBoundary:

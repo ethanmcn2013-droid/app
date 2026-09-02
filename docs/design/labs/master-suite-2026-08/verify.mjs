@@ -83,6 +83,18 @@ const CHANGED = {
    fails. */
 const REPAIRED = { tasks: { px: 32, why: "the person filter's touch target, 16px → 30px" } };
 
+/* Timeline text boxes the 2 September ledger recomposed on purpose, each
+   held to what the decision says it became. Keyed on class|text as §1b
+   keys every box; `below` scopes a decision to the phone. */
+const RECOMPOSED = [
+  { key: "b-grabWord|", why: "the handle's word for the screen reader only — the title's underline is the visible affordance",
+    expect: (b) => b.w <= 1 && b.h <= 1 },
+  { key: "b-act|Preview", below: 720, why: "folded behind the ··· door on a phone",
+    expect: (b) => b.w === 0 && b.h === 0 },
+  { key: "b-act|Get the link", below: 720, why: "folded behind the ··· door on a phone",
+    expect: (b) => b.w === 0 && b.h === 0 },
+];
+
 const LABS = {
   tasks: ["_wt-design-tasks/docs/design/labs/tasks-2026-08/floor.html", "?v=locked"],
   notes: ["_wt-design-notes/docs/design/labs/notes-2026-08/notebook.html", "?v=locked&nofocus=1"],
@@ -371,10 +383,20 @@ async function timelineArtifact() {
     const byWeight = {};
     const drift = [];
     const wrapped = [];
+    const recomposed = [];
     for (const one of A) {
       const two = B.find((t) => t.key === one.key);
       if (!two) continue;
       byWeight[one.weight] = (byWeight[one.weight] || 0) + 1;
+      /* Declared, and held to its declaration: a box the ledger changed
+         on purpose is asserted to be what the decision says it is, not
+         waved through. */
+      const decided = RECOMPOSED.find((r) => one.key.startsWith(r.key) && (!r.below || width <= r.below));
+      if (decided) {
+        if (decided.expect(two)) recomposed.push(one.key.split("|")[1]);
+        else drift.push(`${one.key} was declared ${decided.why} but measures ${two.w}×${two.h}`);
+        continue;
+      }
       /* Width is the measure of a typeface. A box whose only difference is
          the floor's inset is not the font. */
       const dw = Math.abs(one.w - two.w);
@@ -403,7 +425,8 @@ async function timelineArtifact() {
     }
     const weights = Object.entries(byWeight).map(([w, n]) => `${n}×${w}`).join(" ");
     check("fidelity", `timeline · the variable font @${width}`, drift.length === 0,
-      drift.length ? drift.slice(0, 4).join(" | ") : `${A.length} text boxes identical (${weights})`);
+      drift.length ? drift.slice(0, 4).join(" | ")
+        : `${A.length - recomposed.length} text boxes identical (${weights})${recomposed.length ? ` · ${recomposed.length} recomposed on purpose: ${[...new Set(recomposed)].join(", ")}` : ""}`);
     check("fidelity", `timeline · 600 is exercised @${width}`, Boolean(byWeight["600"]), weights);
     if (wrapped.length) {
       process.stdout.write(`    (the floor's inset costs a line at ${width}: ${wrapped.join(", ")})
@@ -440,8 +463,13 @@ async function timelineArtifact() {
 /* ═══ 2 · console ═══════════════════════════════════════════════════ */
 async function consoleClean() {
   head("2 · console — every surface, every width, load and after interaction");
+  /* Timeline draws two compositions and a desk width opens on the across
+     one, so the column at a desk width was a page this gate never loaded —
+     which is how a ReferenceError in the column's horizon reader passed
+     four gates on 2 September. Both compositions load now. */
+  const surfaces = (width) => ["tasks", "notes", "timeline"].concat(width >= 1024 ? ["timeline&layout=down"] : []);
   for (const width of WIDTHS) {
-    for (const product of ["tasks", "notes", "timeline"]) {
+    for (const product of surfaces(width)) {
       const before = noise.length;
       const page = await openSuite(`?p=${product}`, width);
       /* Something is pressed on every surface, because a page that is only
@@ -666,7 +694,7 @@ async function spine() {
     const out = {};
     const plus = document.querySelector('.rail [data-rail="more"]');
     if (plus) { plus.click(); await new Promise((r) => setTimeout(r, 320)); }
-    for (const key of ["home", "inbox", "help", "settings", "me"]) {
+    for (const key of ["home", "inbox", "help", "me"]) {
       const tile = document.querySelector(`.rail [data-rail="${key}"]`) ||
         document.querySelector(`.morePop [data-door="${key}"]`);
       out[key] = tile && {
@@ -686,6 +714,25 @@ async function spine() {
   for (const [key, d] of Object.entries(doors)) {
     check("spine", `${key} says it is not here yet`, d && d.disabled && d.says && d.reachable, JSON.stringify(d));
   }
+  /* Settings left this list on 2 September: it is a real door now. The
+     claim moved with it — it opens its card, the card is on screen, and
+     Escape closes it — which is stricter than "says it is not here". */
+  const settings = await page.evaluate(async () => {
+    const tile = document.querySelector('.rail [data-rail="settings"]');
+    if (!tile) return null;
+    tile.click();
+    await new Promise((r) => setTimeout(r, 360));
+    const card = document.querySelector(".setLayer .setCard");
+    const box = card && card.getBoundingClientRect();
+    const open = Boolean(box && box.height > 0 && box.bottom <= innerHeight + 1 && box.right <= innerWidth + 1);
+    const tabs = [...document.querySelectorAll(".setTab")].map((t) => t.textContent.trim());
+    (card || document.body).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 360));
+    return { popup: tile.getAttribute("aria-haspopup"), open, tabs, closed: !document.querySelector(".setLayer") };
+  });
+  check("spine", "settings is a real door — it opens its card on screen and Escape closes it",
+    Boolean(settings && settings.popup === "dialog" && settings.open && settings.tabs.length >= 3 && settings.closed),
+    JSON.stringify(settings));
   await page.close();
 
   /* And at 390 the capsule merges with the dock, each product its own way. */

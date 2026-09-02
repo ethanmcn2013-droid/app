@@ -52,7 +52,12 @@ let undone = null;      /* the last reversible act: a completion or a move  */
 let openNoteId = null;  /* the card showing its full note                   */
 let openTaskId = null;  /* the task whose expanded surface is open          */
 let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
-let view = "board";     /* board | list — the two views that are real       */
+/* board | list — the two views that are real. Below 1100 the sheet cannot
+   hold five lanes at a card's floor, and a board that arrives already
+   sliced is the wrong first frame for a phone or a tablet, so the list
+   opens there: every task as a whole sentence, its lane stated in type.
+   The switcher offers the board at every width. */
+let view = matchMedia("(max-width: 1099px)").matches ? "list" : "board";
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
@@ -60,6 +65,12 @@ let flyWas = null;      /* the card as it looked BEFORE it was finished        *
 let flyHome = null;     /* the slot it left, captured before the repaint       */
 let flyCounts = null;   /* the tallies as they read before it was finished     */
 let refocusPart = null; /* which part of the card to land focus on          */
+let heldPlace = null;   /* a row just ticked in the list, kept in its slot    */
+/* Rendered, not hidden: one search field in the document at any width,
+   so the chord, the caret and every gate reach the one that exists. The
+   head repaints when the width crosses 720 (see the listener by mount). */
+const PHONE = matchMedia("(max-width: 720px)");
+let landOn = null;      /* a selector to focus after the next repaint, once   */
 let drawerTab = "nodate";
 let drawerFrom = null;  /* the control Planning was opened from              */
 const picked = new Set();
@@ -602,16 +613,14 @@ function rail() {
 function notYet(what) {
   return ' aria-disabled="true" title="' + esc(what) + '"';
 }
-const SOON = "Board is the only view for now.";
-/* BOTH OF THESE WERE TRUE WHEN THEY WERE WRITTEN AND ARE NOT NOW. Filter,
-   Sort and Display are live control surfaces on this board, and search is a
-   real field at the foot of this sheet that filters as you type. The
-   product's most distinctive quality is that it never lies about what it
-   can do — so a door that outlives the thing it was honest about becomes
-   the only lie on the surface. The head's magnifier is a shortcut to the
-   field, not a closed door. */
-const TOOLS = "Filter, Sort and Display are on this board.";
-const SEARCH = "Search is at the foot of the board.";
+/* THREE SENTENCES USED TO LIVE HERE, and each was true when it was
+   written and outlived by the thing it described: "Board is the only view
+   for now" on two tabs after List shipped, "Search is at the foot of the
+   board" said at 390 where the foot has no field. The rule they broke is
+   the product's own — a door says what is behind it, and the day the
+   thing behind it exists, the door goes. The switcher now draws only the
+   views that exist and the phone has a real field, so there is nothing
+   left here to apologise for. */
 /* Named, not templated: a door says what is behind it, then says it is not
    here yet. "Release" was a software vendor's word in a product whose bar is
    that a venue manager with no project-management background understands it
@@ -754,7 +763,7 @@ function allTags() {
 
 function toolPop(kind) {
   const row = (act, value, label, on, note) =>
-    '<button type="button" class="toolItem" role="menuitemradio" data-act="' + act +
+    '<button type="button" class="toolItem" role="menuitemradio" tabindex="-1" data-act="' + act +
     '" data-value="' + esc(value) + '" aria-checked="' + (on ? "true" : "false") + '"' +
     (on ? " data-on" : "") + '><span class="toolTick">' + (on ? I.check : "") + "</span>" +
     "<span><b>" + esc(label) + "</b>" + (note ? "<em>" + esc(note) + "</em>" : "") + "</span></button>";
@@ -762,46 +771,37 @@ function toolPop(kind) {
   let body = "";
   let title = "";
 
-  if (kind === "filter") {
-    title = "Filter";
+  if (kind === "show") {
+    title = "Show";
+    const tags = allTags().filter((t) => !CLIENTS.has(t));
+    const couples = allTags().filter((t) => CLIENTS.has(t));
     body =
       row("filter-set", "late", "Overdue", lateOnly, "Past its day") +
       row("filter-set", "today", "Due today", todayOnly, "Owed before tonight") +
-      /* TWO GROUPS, because these are two kinds of thing. The list held
-         Venue, Enquiry, Bar and "Mara & Finn" under one heading reading
-         "By tag" — so the couple the whole board is about was filed as a
-         label alongside the bar. A person scanning for the couple looks
-         under the couple, and the sentence the filter prints has to agree:
-         "tagged Venue", but "for Mara & Finn". */
-      (allTags().filter((t) => !CLIENTS.has(t)).length
-        ? '<p class="toolLabel">By tag</p>' +
-          allTags().filter((t) => !CLIENTS.has(t))
-            .map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
+      /* TWO GROUPS, because these are two kinds of thing. The couple the
+         whole board is about is not a label alongside the bar, and the
+         sentence the filter prints has to agree: "tagged Venue", but "for
+         Mara & Finn". */
+      (tags.length
+        ? '<p class="toolLabel">By tag</p>' + tags.map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
         : "") +
-      (allTags().filter((t) => CLIENTS.has(t)).length
-        ? '<p class="toolLabel">By couple</p>' +
-          allTags().filter((t) => CLIENTS.has(t))
-            .map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
+      (couples.length
+        ? '<p class="toolLabel">By couple</p>' + couples.map((tag) => row("filter-tag", tag, tag, clientOnly === tag)).join("")
         : "") +
-      (filterCount()
-        ? '<div class="toolFoot"><button type="button" class="toolClear" data-act="filter-clear">' +
-          "Clear " + filterCount() + (filterCount() === 1 ? " filter" : " filters") + "</button></div>"
-        : "");
-  } else if (kind === "sort") {
-    title = "Sort";
-    body =
-      row("sort-set", "manual", "Manual", sortBy === "manual", "The order you put them in") +
+      '<p class="toolLabel">In this order</p>' +
+      row("sort-set", "manual", "The order you put them in", sortBy === "manual") +
       row("sort-set", "due", "By day", sortBy === "due", "Soonest first") +
       row("sort-set", "priority", "By priority", sortBy === "priority", "High first") +
-      row("sort-set", "title", "A to Z", sortBy === "title");
-  } else if (kind === "display") {
-    title = "Display";
-    body =
-      row("display-density", "comfortable", "Comfortable", density === "comfortable") +
-      row("display-density", "compact", "Compact", density === "compact", "More on screen") +
+      row("sort-set", "title", "A to Z", sortBy === "title") +
       '<p class="toolLabel">On the card</p>' +
       row("display-notes", "on", "Show notes", showNotes) +
-      row("display-notes", "off", "Titles only", !showNotes);
+      row("display-notes", "off", "Titles only", !showNotes) +
+      row("display-density", "comfortable", "Comfortable", density === "comfortable") +
+      row("display-density", "compact", "Compact", density === "compact", "More on screen") +
+      (filterCount()
+        ? '<div class="toolFoot"><button type="button" class="toolClear" tabindex="-1" data-act="filter-clear">' +
+          "Clear " + filterCount() + (filterCount() === 1 ? " filter" : " filters") + "</button></div>"
+        : "");
   } else if (kind === "share") {
     title = "Share";
     /* Honest, and still a real surface. The link is the thing a person came
@@ -826,13 +826,39 @@ function shareUrl() {
   return "signalstudio.ie/s/" + (window.PROJECTS ? window.PROJECTS.current() : "board") + "-7f2a";
 }
 
+/* THE MEASURE. "5 of 13 done" is the sentence; the track is the proof;
+   the percent is the figure a person reads from the next chair. An
+   integer, because 38.46 on a thirteen-task board is a spreadsheet.
+   role=meter, so a reader gets the same fact the eye does. */
+function pace(done, total) {
+  if (!total) return "";
+  const all = done === total;
+  const pct = Math.round((done / total) * 100);
+  return (
+    '<div class="pace" role="meter" aria-valuemin="0" aria-valuemax="' + total +
+      '" aria-valuenow="' + done + '" aria-label="' +
+      (all ? "Everything is done." : done + " of " + total + " done, " + pct + " percent") + '">' +
+      (all
+        ? '<span class="ratio" data-all>Everything is done.</span>'
+        : '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>") +
+      '<span class="paceTrack" aria-hidden="true"><i class="paceFill" style="width:' + pct + '%"></i></span>' +
+      (all ? "" : '<span class="pacePct" aria-hidden="true">' + pct + "%</span>") +
+    "</div>"
+  );
+}
+
+/* The one search field, wherever it is painted: the dock's on a desk, the
+   head's on a phone. Whichever is rendered is the one the chord, the
+   clearing and the re-focus after a repaint reach for. */
+function searchField() {
+  return [...document.querySelectorAll('[data-app="tasks"] .dockInput')].find((f) => f.offsetParent !== null) || null;
+}
+
 function head() {
-  const p = B.progress;
   const rows = allTasks();
   const total = rows.length;
   const done = rows.filter((t) => t.lane === "done").length;
   const overdue = rows.filter((t) => timeOf(t).kind === "overdue").length;
-  const dueToday = rows.filter((t) => timeOf(t).kind === "today").length;
   const undated = rows.filter((t) => timeOf(t).kind === "none").length;
   return (
     '<div class="head">' +
@@ -848,47 +874,35 @@ function head() {
       ' aria-label="' + esc(B.workspace) + ', switch project">' +
       "<span>" + esc(B.workspace) + "</span>" + I.chevron + "</button></h1>" +
     (projOpen ? projectMenu() : "") +
+    /* THE HEAD IS FOUR THINGS: the measure, one chip, the no-day fact and
+       the doors — nothing a card already says. It used to be a dashboard:
+       the date, the ratio, a today chip, an overdue chip, the no-day link
+       and a season sentence, six facts at one size, and on a phone five
+       stacked rows before the first task. Today's date and the season now
+       live in Planning, where the season is the subject; "due today" is a
+       choice in Show; what is late — the one number with weight — is the
+       one chip left, and it still survives at zero while its filter is on. */
     '<div class="headFacts">' +
-      '<span class="today">' + todayLabel() + "</span>" +
-      (total && done === total ? '<span class="ratio" data-all>Everything is done.</span>' :
-       total ? '<span class="ratio"><b>' + done + "</b> of <b>" + total + "</b> done</span>" : "") +
-      /* The control survives at zero while the filter is on, or clearing the
-         last overdue task leaves the operator with an empty board and no way
-         back. */
-      /* The overdue chip already survives at zero while its filter is on; its
-         twin did not, so clearing the last due-today task removed the chip and
-         slid its neighbour into the exact box the pointer was resting on.
-         THE RULE: a chrome control that can be filtered on survives at zero. */
-      (dueToday || todayOnly ? '<button type="button" class="late" data-act="today" data-soft aria-pressed="' +
-        (todayOnly ? "true" : "false") + '" title="' + (todayOnly ? "Show all " + total + " tasks"
-          : "Show only the " + dueToday + " " + (dueToday === 1 ? "task" : "tasks") + " due today") + '">' + dueToday + " today" +
-        (todayOnly ? I.close : "") + "</button>" : "") +
+      pace(done, total) +
       (overdue || lateOnly
         ? '<button type="button" class="late" data-act="late" aria-pressed="' + (lateOnly ? "true" : "false") +
           '" title="' + (lateOnly ? "Show all " + total + " tasks"
             : "Show only the " + overdue + " overdue " + (overdue === 1 ? "task" : "tasks")) + '">' +
           overdue + " overdue" + (lateOnly ? I.close : "") + "</button>"
         : "") +
+      /* A fact and a door in one: the count of tasks with no day is the
+         thing Planning exists to change, so the count opens it. A state
+         with no door is a state nobody can reach. */
       (undated ? '<button type="button" class="undated" data-act="planning" title="Open Planning to see the ' +
         undated + ' tasks with no day">' + undated + " with no day</button>" : "") +
-      /* The season names itself; the day count only appears when there IS
-         one. A project created this morning has no span, and printing the
-         clause anyway read "New project, day null of null" — a fresh lie
-         introduced by the fix for the previous one. */
-      "<span>" + esc(B.season) +
-        (p.day && p.of ? ", day " + p.day + " of " + p.of : "") + "</span>" +
     "</div>" +
     '<div class="headActions">' +
-      '<button class="ghost headSearch" aria-label="Search"' + notYet(SEARCH) + ">" +
-        I.search + "</button>" +
       '<button class="ghost" data-act="tool" data-tool="share"' +
         ' aria-haspopup="menu" aria-expanded="' + (toolOpen === "share" ? "true" : "false") + '"' +
         (toolOpen === "share" ? " data-open" : "") + ">" +
         I.share + "<span>Share</span></button>" +
       /* The count is printed once, in the facts row, where it names what it
-         counts. It used to be printed twice on one 40px band under two names
-         — "5 with no date" and "Planning 5" — both the same control opening
-         the same room. The button carries its state instead of a tally. */
+         counts. The button carries its state instead of a tally. */
       '<button class="ghost" data-act="planning" aria-expanded="' + (state === "planning" ? "true" : "false") +
         '">' + I.planning + "<span>Planning</span></button>" +
       /* Not "More". The spine's live door is already called More, and two
@@ -896,52 +910,59 @@ function head() {
          live, one closed, doing unrelated things — is the product asking a
          screen-reader user to guess which is which. This one is about the
          project, so it says so. */
-      '<button class="ghost" aria-label="Project settings"' + notYet("Project settings come with your account.") + ">" +
+      '<button class="ghost" aria-label="Project settings"' + notYet("Project settings come with your account. Not here yet.") + ">" +
         I.dots + "</button>" +
-    "</div></div>"
+    "</div>" +
+    /* THE SEARCH, ON A PHONE. The dock is not painted below 720, and for
+       five rounds the head carried a magnifier that was a closed door with
+       an apology behind it. It is the dock's own field now, rendered here
+       and shown only where the dock is not, so search exists at every
+       width and the chord always has something to reach. */
+    (PHONE.matches
+      ? '<span class="headSearch' + (queryText ? " is-live" : "") + '">' + I.search +
+        '<input type="search" class="dockInput" data-act="search" placeholder="Search tasks"' +
+        ' aria-label="Search tasks" value="' + esc(queryText) + '">' +
+        (queryText
+          ? '<button type="button" class="dockClear" data-act="search-clear" aria-label="Clear search">' +
+            I.close + "</button>"
+          : "") +
+        "</span>"
+      : "") +
+    "</div>"
   );
 }
 
 function views() {
-  const icons = { Board: I.board, List: I.list, Schedule: I.schedule, Calendar: I.calendar };
+  const icons = { Board: I.board, List: I.list };
+  const live = filterCount();
+  const shaped = sortBy !== "manual" || !showNotes || density !== "comfortable";
   return (
     '<div class="views"><nav class="seg" data-group="views" role="tablist" aria-label="View">' +
-    /* Painted at the same weight as a control that works, these promised a
-       Schedule and a Calendar nobody has built. Drawn as unavailable they
-       stop lying, and they say why when asked rather than doing nothing. */
-    B.views.map((v) => '<button type="button" role="tab" class="segItem"' +
-      /* A tablist whose active tab computes selected=false announces the
-         product's primary view switcher as four unselected tabs. */
-      /* Board and List are real and say so; Schedule and Calendar are not
-         and say that instead. The row used to draw all four at the same
-         weight, which promised two views nobody had built — and then drew
-         all four as closed doors but one, which was true until List
-         shipped. It is the same rule either way: a control that works
-         looks like one, and a control that does not says why. */
-      (LIVE_VIEWS.includes(v)
-        ? (v === VIEW_NAME[view]
-            ? ' data-active aria-current="true" aria-selected="true"'
-            : ' aria-selected="false"') + ' data-act="view" data-view="' + v.toLowerCase() + '"'
-        : ' aria-selected="false"' + notYet(SOON)) +
-      ' tabindex="' + (v === VIEW_NAME[view] ? "0" : "-1") + '">' + icons[v] + "<span>" + v + "</span></button>").join("") +
-    /* Three real controls where three closed doors used to be. Each one
-       carries its own live state on its face — a filter that is on says so
-       without being opened, because "what is currently active" is the one
-       thing a control surface must never make you open it to find out. */
+    /* Two views, both real. The row used to draw Schedule and Calendar
+       beside them as closed doors saying "Board is the only view for now"
+       — a sentence List outlived the day it shipped. A promise that is
+       kept is made where it is kept, not on the switcher. */
+    LIVE_VIEWS.map((v) => '<button type="button" role="tab" class="segItem"' +
+      (v === VIEW_NAME[view]
+        ? ' data-active aria-current="true" aria-selected="true"'
+        : ' aria-selected="false"') +
+      ' data-act="view" data-view="' + v.toLowerCase() + '"' +
+      ' tabindex="' + (v === VIEW_NAME[view] ? "0" : "-1") + '">' +
+      icons[v] + "<span>" + v + "</span></button>").join("") +
+    /* ONE CONTROL SURFACE. Filter, Sort and Display were three words for
+       one question — what am I looking at — and three menus to open to
+       find out. Show answers it in one: what is shown, in what order, on
+       what kind of card. The count on its face is the number of filters
+       on, because that is the one state a person must never have to open
+       a menu to learn; a sort or a card setting that is not the default
+       is a quieter mark. */
     '</nav><div class="viewTools" data-group="tools">' +
-      ["Filter", "Sort", "Display"].map((t, i) => {
-        const key = t.toLowerCase();
-        const live = key === "filter" ? filterCount()
-          : key === "sort" ? (sortBy === "manual" ? 0 : 1)
-          : (showNotes ? 0 : 1);
-        return '<button class="ghost" data-act="tool" data-tool="' + key + '"' +
-          ' tabindex="' + (i ? "-1" : "0") + '"' +
-          ' aria-haspopup="menu" aria-expanded="' + (toolOpen === key ? "true" : "false") + '"' +
-          (toolOpen === key ? " data-open" : "") + (live ? " data-live" : "") + ">" +
-          I[key] + "<span>" + t + "</span>" +
-          (live ? '<em class="toolDot" aria-hidden="true">' + (key === "filter" ? live : "") + "</em>" : "") +
-          "</button>";
-      }).join("") +
+      '<button class="ghost" data-act="tool" data-tool="show" tabindex="0"' +
+        ' aria-haspopup="menu" aria-expanded="' + (toolOpen === "show" ? "true" : "false") + '"' +
+        (toolOpen === "show" ? " data-open" : "") + (live || shaped ? " data-live" : "") + ">" +
+        I.filter + "<span>Show</span>" +
+        (live || shaped ? '<em class="toolDot" aria-hidden="true">' + (live || "") + "</em>" : "") +
+      "</button>" +
       (toolOpen ? toolPop(toolOpen) : "") +
     "</div></div>"
   );
@@ -955,7 +976,27 @@ function views() {
    project, and a list that disagreed with the board about which 13 would
    make one of the two a liar. */
 function listRows() {
-  return laneIds().flatMap((id) => tasksFor(id));
+  const flat = laneIds().flatMap((id) => tasksFor(id));
+  /* A ROW THAT WAS JUST TICKED STAYS WHERE THE HAND IS. The board flies a
+     finished card to Done; a list has nowhere to fly to, and a row that
+     leaps thirty rows down the moment it is ticked takes the eye and the
+     keyboard with it. It stays in its slot, struck through and saying
+     Done, for as long as the undo strip is live; when the strip retires
+     the row takes its place in Done, and the FLIP in mount() lets it be
+     seen going. */
+  const hold = heldPlace && undone && undone.kind === "done" && undone.id === heldPlace.id ? heldPlace : null;
+  if (!hold) { heldPlace = null; return flat; }
+  const at = flat.findIndex((t) => t.id === hold.id);
+  if (at < 0) return flat;
+  const [row] = flat.splice(at, 1);
+  let to = 0;
+  for (const id of laneIds()) {
+    const rows = tasksFor(id);
+    if (id === hold.lane) { to += Math.min(hold.index, rows.length); break; }
+    to += rows.length;
+  }
+  flat.splice(Math.min(to, flat.length), 0, row);
+  return flat;
 }
 
 /* One row. It carries what the board carries and one thing the board did
@@ -1006,23 +1047,30 @@ function listRow(task, stop) {
 function listView() {
   const rows = listRows();
   if (!rows.includes(taskById(focusId))) focusId = (rows[0] || {}).id || null;
-  if (!rows.length) {
-    return (
-      '<div class="board listBoard" data-blank>' +
-      '<div class="emptyBoard"><p><b>Nothing matches.</b>' + esc(filterSentence()) +
-      '</p><button type="button" data-act="clear">Show all work</button></div></div>'
-    );
+  /* TWO DIFFERENT NOTHINGS. A project with no tasks gets the board's own
+     first move — the same block, so the phone and the desk agree about
+     what an empty project says. A filter that hides everything names the
+     filter and offers the way back, and never claims the opposite: the
+     list used to print "Nothing matches." over "Showing all work." with
+     no filter on, two sentences that cannot both be true. */
+  if (!rows.length && !draftLane) {
+    return allTasks().length
+      ? '<div class="board listBoard" data-blank data-filtered>' + emptyMatch() + "</div>"
+      : '<div class="board listBoard" data-blank></div>' + emptyProject();
   }
+  const held = listRows();
   return (
     '<div class="board listBoard"' + (filtering() ? " data-filtered" : "") +
       ' role="application"' +
       ' aria-label="Task list, arrow keys to move between tasks, Enter to open one">' +
       '<div class="lrows">' +
-        rows.map((t) => listRow(t, t.id === focusId)).join("") +
+        /* Lane by lane, so the composer lands at the foot of the lane it
+           belongs to, the same place it takes on the board. */
+        laneIds().map((id) =>
+          held.filter((t) => (heldPlace && heldPlace.id === t.id ? heldPlace.lane : t.lane) === id)
+            .map((t) => listRow(t, t.id === focusId)).join("") +
+          (draftLane === id ? '<div class="lrowDraft">' + draft() + "</div>" : "")).join("") +
       "</div>" +
-      (filtering()
-        ? '<p class="listSaid">' + esc(filterSentence()) + "</p>"
-        : "") +
     "</div>"
   );
 }
@@ -1094,32 +1142,39 @@ function board() {
         "</section>"
       );
     }).join("") + "</div>" +
-    /* Emptiness is the state this board spends most of its life in, and for
-       ten rounds it had no design — four identical Add rows over a white
-       void. One centred sentence and one action, inside the sheet. */
-    /* The block leaves the moment it is obeyed. It used to go on asserting
-       "Nothing on the board yet." in full ink while a live composer with a
-       caret in it sat two columns away — the one instruction the rebuild
-       leads with, made false by following it. */
-    (!allTasks().length && !draftLane
-      ? '<div class="emptyBoard"><p><b>Nothing on the board yet.</b>' +
-        "Put the first thing you have to do somewhere you will see it again." +
-        '</p><button type="button" data-act="add" data-lane="' + B.columns[0].id + '">' +
-        I.plus + "Add the first task</button>" +
-        /* The one line on this screen that says wedding venue rather than
-           software team. A blank board teaches nothing about what belongs
-           on it; an example does. */
-        '<p class="emptyEg">Something like: Confirm marquee sides with the hire company.</p>' +
-        "</div>"
-      : filtering() && !laneIds().flatMap((id) => tasksFor(id)).length
-      /* The block used to say "Every task on the board is hidden by the
-         filter you have on" without ever naming the filter. It names it now,
-         in the same sentence the strip used to carry, so nothing was lost
-         when the strip stood down. */
-      ? '<div class="emptyBoard"><p><b>Nothing matches.</b>' +
-        esc(filterSentence()) +
-        '</p><button type="button" data-act="clear">Show all work</button></div>'
+    /* Emptiness is the state this board spends most of its life in, and
+       for ten rounds it had no design. One sentence and one first move,
+       inside the sheet — the same block the list shows, so the phone and
+       the desk agree about what an empty project says. It leaves the
+       moment it is obeyed: a live composer two columns away is the
+       instruction being followed. */
+    (!allTasks().length && !draftLane ? emptyProject()
+      : filtering() && !laneIds().flatMap((id) => tasksFor(id)).length ? emptyMatch()
       : "")
+  );
+}
+
+/* The two empty states, each with one true sentence and one first move,
+   shared by both views so they can never disagree. */
+function emptyProject() {
+  return (
+    '<div class="emptyBoard"><p><b>Nothing on the board yet.</b>' +
+    "Put the first thing you have to do somewhere you will see it again." +
+    '</p><button type="button" data-act="add" data-lane="' + B.columns[0].id + '">' +
+    I.plus + "Add the first task</button>" +
+    /* The one line on this screen that says wedding venue rather than
+       software team. A blank board teaches nothing about what belongs on
+       it; an example does. */
+    '<p class="emptyEg">Something like: Confirm marquee sides with the hire company.</p>' +
+    "</div>"
+  );
+}
+function emptyMatch() {
+  /* Names the filter in the same sentence the strip carries, and offers
+     the way back — a button that, for five rounds, was wired to nothing. */
+  return (
+    '<div class="emptyBoard"><p><b>Nothing matches.</b>' + esc(filterSentence()) +
+    '</p><button type="button" data-act="clear">Show all work</button></div>'
   );
 }
 
@@ -1532,6 +1587,11 @@ function drawer() {
          accessible name it lends the dialog says so too. */
       '<h2 id="drawerTitle">' + (drawerTab === "milestones" ? "Milestones" : "Tasks with no day") + "</h2>" +
       '<p class="drawerLine">' + esc(p.line) + "</p>" +
+      /* Today's date moved here from the board's head: the season is the
+         subject of this panel and already names itself on the line above,
+         and today is the point on it that everything below is measured
+         from. One fact, once — the day count is on the axis. */
+      '<p class="drawerWhen">Today is ' + todayLabel() + "</p>" +
       '<div class="axis"><i></i><b></b></div>' +
       /* From B.period, not typed. These were the literal strings "6 Jul" and
          "10 Oct" — correct for the venue's wedding season and wrong for
@@ -1946,8 +2006,8 @@ function completed(task, cleared) {
   /* The tick that was pressed, or the card if the completion came from
      somewhere without one. Read BEFORE the repaint, because the repaint
      replaces the node. */
-  const from = document.querySelector('.card[data-id="' + task.id + '"] .tick') ||
-    document.querySelector('.card[data-id="' + task.id + '"]');
+  const from = document.querySelector('.card[data-id="' + task.id + '"] .tick, .lrow[data-id="' + task.id + '"] .tick') ||
+    document.querySelector('.card[data-id="' + task.id + '"], .lrow[data-id="' + task.id + '"]');
   /* A LANE CLEARED BECAUSE THE WORK IN IT IS FINISHED. `task.prevLane` is
      set by the caller one line before this, so the lane the card came from
      is still known here — and asking whether anything is left in it is the
@@ -2299,11 +2359,30 @@ function releaseUndo() {
   undoTimer = setTimeout(() => { undone = null; mount(); }, 6000);
 }
 
+/* Whether Done can be brought on screen for this card without losing the
+   column it is leaving — the flight's own test, asked before the state
+   changes. On a phone, or any board narrow enough that Done is off the
+   sheet, the answer is no: the card sets down where it is and the board
+   must not move, so the keyboard must not be sent after it either. */
+function doneReachable(target, node) {
+  const board = target && target.querySelector(".board:not(.listBoard)");
+  const done = board && board.querySelector('.tray[data-lane="done"]');
+  if (!board || !done || !node) return true;
+  if (board.scrollWidth <= board.clientWidth + 1) return true;
+  const box = board.getBoundingClientRect();
+  const d = done.getBoundingClientRect();
+  const was = node.getBoundingClientRect();
+  const needed = d.right - (box.right - 8);
+  if (needed <= 0) return true;
+  return was.left - needed + was.width > box.left + 24;
+}
+
 function toggleDone(id) {
   const task = taskById(id);
   if (!task) return;
   const target = window.__SUITE.host("tasks");
   const node = target && target.querySelector('.card[data-id="' + id + '"]');
+  const row = target && target.querySelector('.lrow[data-id="' + id + '"]');
   flyFrom = node ? node.getBoundingClientRect() : null;
   flyId = id;
   /* The clone is taken here, BEFORE the state changes. Taken after, it carried
@@ -2328,8 +2407,12 @@ function toggleDone(id) {
     return tray ? { lane: tray.dataset.lane, index: kin.indexOf(node), height: flyFrom ? flyFrom.height : 0 } : null;
   })();
   flyCounts = readTallies(target);
+  /* Where the hand stays when the card cannot be followed. */
+  let stayOn = null;
+  const onTick = Boolean(document.activeElement && document.activeElement.classList.contains("tick"));
 
   if (task.lane === "done") {
+    heldPlace = null;
     /* Back to where it actually came from, never to the first column. */
     const known = Boolean(task.prevLane);
     const back = task.prevLane || B.columns[0].id;
@@ -2351,6 +2434,19 @@ function toggleDone(id) {
       : task.title + " is no longer done. It is " + inLane(back) + ".");
   } else {
     const wasLate = timeOf(task).kind === "overdue";
+    /* THE LIST: the row keeps its slot for the undo window (see listRows).
+       THE NARROW BOARD: the card sets down where it is, so the keyboard
+       goes to the card now standing in the slot it leaves — or to the
+       lane's own Add row when the lane is empty — never across the sheet
+       to a column that is off screen. Where Done is on screen the ring
+       follows the card, which is the flight the desk was designed around. */
+    const kin = tasksFor(task.lane);
+    const at = kin.findIndex((t) => t.id === id);
+    if (row) heldPlace = { id: id, lane: task.lane, index: at };
+    else if (node && !doneReachable(target, node)) {
+      const next = kin[at + 1] || kin[at - 1] || null;
+      stayOn = next ? { id: next.id } : { sel: '.tray[data-lane="' + task.lane + '"] .trayAdd' };
+    }
     task.prevLane = task.lane;
     task.lane = "done";
     task.completedAt = TODAY;
@@ -2361,14 +2457,15 @@ function toggleDone(id) {
     completed(task, wasLate && !allTasks().some((t) => timeOf(t).kind === "overdue"));
   }
   /* A checkbox must not move focus off itself on toggle. */
-  refocusPart = document.activeElement && document.activeElement.classList.contains("tick") ? "tick" : null;
+  refocusPart = onTick ? "tick" : null;
   /* Clearing the last overdue task while filtered used to leave an empty
      board behind a control that had just disappeared. */
   if (lateOnly && !allTasks().some((t) => timeOf(t).kind === "overdue")) {
     lateOnly = false;
     say(task.title + " done. Nothing is overdue, so the filter is off.");
   }
-  focusId = id;
+  focusId = stayOn && stayOn.id ? stayOn.id : id;
+  landOn = stayOn && stayOn.sel ? stayOn.sel : null;
   refocus = true;
   mount();
 }
@@ -2449,7 +2546,8 @@ function walk(dx, dy) {
     const rows = listRows();
     const at = rows.findIndex((t) => t.id === focusId);
     if (at < 0) { focusId = (rows[0] || {}).id || null; return; }
-    const next = rows[at + (dy || dx)];
+    if (!dy) return;
+    const next = rows[at + dy];
     if (next) focusId = next.id;
     return;
   }
@@ -2536,7 +2634,7 @@ function leaveDraft() {
   }
   if (back) back.focus({ preventScroll: true });
   else {
-    const stop = target.querySelector('.card[tabindex="0"]');
+    const stop = target.querySelector('.card[tabindex="0"], .lrow[tabindex="0"], .emptyBoard [data-act="add"]');
     if (stop) stop.focus({ preventScroll: true });
   }
 }
@@ -2551,7 +2649,8 @@ function discardDraft() {
   const lane = draftLane;
   const card = document.querySelector('[data-app="tasks"] .card[data-draft]');
   const backTo = () => document.querySelector(
-    '[data-app="tasks"] .tray[data-lane="' + lane + '"] .trayAdd');
+    '[data-app="tasks"] .tray[data-lane="' + lane + '"] .trayAdd') ||
+    document.querySelector('[data-app="tasks"] .emptyBoard [data-act="add"], [data-app="tasks"] .dockPrimary');
   window.__SUITE.morph(card, () => {
     draftLane = null;
     draftText = "";
@@ -2605,7 +2704,7 @@ function onKey(event) {
 
   /* A menu is one tab stop and the arrows walk it, which is what role="menu"
      promises and what this one was not doing. */
-  const menu = event.target.closest && event.target.closest(".cardMenu");
+  const menu = event.target.closest && event.target.closest(".cardMenu, .toolPop");
   if (menu && (key === "ArrowDown" || key === "ArrowUp" || key === "Home" || key === "End")) {
     event.preventDefault();
     const items = [...menu.querySelectorAll("button")];
@@ -2615,6 +2714,15 @@ function onKey(event) {
       : (at + (key === "ArrowDown" ? 1 : items.length - 1)) % items.length;
     items.forEach((n, i) => n.setAttribute("tabindex", i === next ? "0" : "-1"));
     items[next].focus();
+    return;
+  }
+
+  /* A closed menu button opens on the arrow that would walk it, which is
+     what aria-haspopup="menu" promises. */
+  const toolBtn = event.target.closest && event.target.closest('[data-act="tool"][aria-haspopup="menu"]');
+  if (toolBtn && !toolOpen && (key === "ArrowDown" || key === "ArrowUp")) {
+    event.preventDefault();
+    toolBtn.click();
     return;
   }
 
@@ -2638,13 +2746,15 @@ function onKey(event) {
        Guarded on being RENDERED, not on existing: the dock is not painted
        in every state, and a shortcut that focuses nothing is worse than one
        that says why. */
-    const field = document.querySelector('[data-app="tasks"] .dockInput');
-    if (field && field.offsetParent !== null) {
+    const field = searchField();
+    if (field) {
       field.focus();
       field.select();
       say("Search tasks.");
     } else {
-      say("Search is at the foot of the board.");
+      /* Only a state with no head and no dock — loading, the specimen
+         sheet — has nothing to reach, and then this is simply true. */
+      say("Search is not on this screen.");
     }
     return;
   }
@@ -2838,9 +2948,12 @@ function onClick(event) {
   }
   const off = event.target.closest && event.target.closest('[aria-disabled="true"]');
   if (off) {
-    /* Hover is not available to a thumb, so the reason is spoken and shown. */
+    /* Hover is not available to a thumb, so the reason is spoken AND
+       shown: the suite paints the answer beside the control, in the
+       same grammar every closed door uses. */
     event.preventDefault();
-    say(off.getAttribute("title") || "Not here yet.");
+    if (window.__SUITE.answer) window.__SUITE.answer(off, off.getAttribute("title") || "Not here yet.");
+    else say(off.getAttribute("title") || "Not here yet.");
     return;
   }
   const act = event.target.closest && event.target.closest("[data-act]");
@@ -2913,6 +3026,15 @@ function onClick(event) {
     mount();
     return;
   }
+  if (what === "clear") {
+    /* The way back from a board that shows nothing. For five rounds this
+       was a button wired to no branch — the one control on an empty
+       screen, and it did nothing. */
+    lateOnly = false; todayOnly = false; clientOnly = null; queryText = "";
+    say("Showing all work.");
+    mount();
+    return;
+  }
   if (what === "undo") { undoLast(); return; }
   if (what === "planning") {
     endCarry();
@@ -2969,8 +3091,10 @@ function onClick(event) {
   if (what === "add") {
     draftLane = act.dataset.lane;
     draftText = "";
-    draftFrom = act.dataset.act === "add" && act.classList.contains("dockPrimary")
-      ? ".dockPrimary" : '.tray[data-lane="' + act.dataset.lane + '"] .trayAdd';
+    draftFrom = act.classList.contains("dockPrimary") ? ".dockPrimary"
+      : act.classList.contains("railAdd") ? ".railAdd"
+      : view === "list" ? '.lrow[tabindex="0"], .emptyBoard [data-act="add"]'
+      : '.tray[data-lane="' + act.dataset.lane + '"] .trayAdd';
     openNoteId = null;
     say("New task " + inLane(draftLane) + ". Type it, then press Enter.");
     /* THE BUTTON BECOMES THE CARD. "Add here" is a ghost button the width
@@ -3037,6 +3161,12 @@ function onClick(event) {
       () => {
         toolOpen = closing ? null : kind;
         mount();
+        /* A menu that opens puts the keyboard in it, on its first choice;
+           the word that opened it is one Escape away. Share is a panel
+           with a link in it rather than a menu, and keeps the button. */
+        const pop = kind === "share" ? null : document.querySelector('[data-app="tasks"] .toolPop');
+        const first = !closing && pop && pop.querySelector("button");
+        if (first) { first.focus(); return; }
         const back = document.querySelector('[data-tool="' + kind + '"][data-act="tool"]');
         if (back) back.focus();
       },
@@ -3121,7 +3251,7 @@ function onClick(event) {
   if (what === "search-clear") {
     queryText = "";
     mount();
-    const field = document.querySelector(".dockInput");
+    const field = searchField();
     if (field) field.focus();
     say("Search cleared.");
     return;
@@ -3709,7 +3839,13 @@ function measureEdges(target) {
        actual job. */
     const views = target.querySelector(".views");
     const tools = target.querySelector(".viewTools");
-    if (views && tools) {
+    /* Not on a phone. The fold exists for the tablet band where the
+       switcher and the tools close on each other; at 390 the switcher is
+       drawn to fill the row up to Show, so the gap it reads is the design
+       and not a collision — and folding "gone" there deleted the one
+       control that says what is on the list. */
+    if (views && matchMedia("(max-width: 720px)").matches) views.removeAttribute("data-fold");
+    else if (views && tools) {
       const edge = () => sheet.getBoundingClientRect().right - 8;
       const seg = target.querySelector(".seg, .viewSeg, .views > :first-child");
       /* SEPARATION, not overflow. The row folded only once it ran past the
@@ -3802,7 +3938,7 @@ function retrim(target) {
    than jump. Keyed by id because the repaint destroys the DOM. */
 function snapshot(target) {
   const map = new Map();
-  target.querySelectorAll(".card[data-id]").forEach((n) => {
+  target.querySelectorAll(ROW_SEL).forEach((n) => {
     map.set(n.dataset.id, n.getBoundingClientRect());
   });
   return map;
@@ -3810,7 +3946,7 @@ function snapshot(target) {
 
 function settleRest(target, before, ms) {
   if (!before || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  target.querySelectorAll(".card[data-id]").forEach((node) => {
+  target.querySelectorAll(ROW_SEL).forEach((node) => {
     const was = before.get(node.dataset.id);
     if (!was) return;
     const now = node.getBoundingClientRect();
@@ -3832,15 +3968,22 @@ function keepPlace(target) {
     const body = tray.querySelector(".trayBody");
     if (body) scrolls[tray.dataset.lane] = body.scrollTop;
   });
-  const board = target.querySelector(".board");
+  const board = target.querySelector(".board:not(.listBoard)");
+  /* The list is one scroller, and a repaint used to reset it to the top on
+     every tick: the operator's place, gone, on the most frequent act. */
+  const list = target.querySelector(".board.listBoard");
   const active = document.activeElement;
-  const card = active && active.closest && active.closest(".card[data-id]");
+  const card = active && active.closest && active.closest(ROW_SEL);
   const chrome = !card && active && active.closest && active.closest("[data-act]");
   return {
     scrolls: scrolls,
     left: board ? board.scrollLeft : 0,
+    top: list ? list.scrollTop : 0,
     id: card ? card.dataset.id : null,
     act: chrome ? chrome.dataset.act : null,
+    /* The value too, so pressing "Due today" in a menu of six radios lands
+       back on "Due today" and not on the first control that shares its act. */
+    value: chrome && chrome.dataset.value !== undefined ? chrome.dataset.value : null,
     hadFocus: !!(active && active !== document.body && target.contains(active)),
     part: active && active.classList.contains("tick") ? "tick"
       : active && active.classList.contains("cardDots") ? "cardDots" : "card",
@@ -3853,7 +3996,7 @@ function restorePlace(target, kept) {
     const top = kept.scrolls[tray.dataset.lane];
     if (body && top) body.scrollTop = top;
   });
-  const board = target.querySelector(".board");
+  const board = target.querySelector(".board:not(.listBoard)");
   if (board && kept.left) {
     /* Mandatory snap re-runs against the fresh layout and drags the board
        back to the first column, which is why every tick on a phone threw the
@@ -3865,6 +4008,8 @@ function restorePlace(target, kept) {
     board.scrollLeft = kept.left;
     requestAnimationFrame(() => { board.style.scrollSnapType = snap; });
   }
+  const list = target.querySelector(".board.listBoard");
+  if (list && kept.top) list.scrollTop = kept.top;
   /* An open composer owns focus: whatever else the repaint was for, the
      operator is mid-sentence and that is the worse place to lose. */
   const field = target.querySelector(".card[data-draft] .cardTitle");
@@ -3878,26 +4023,40 @@ function restorePlace(target, kept) {
     sel.addRange(range);
     return;
   }
+  /* A landing named by the act that caused the repaint, used once. */
+  if (landOn) {
+    const named = target.querySelector(landOn);
+    landOn = null;
+    if (named) { named.focus({ preventScroll: true }); return; }
+  }
 
   /* Nothing may drop the operator on <body>, eight stops from the board. */
   const fallback = () => {
-    const stop = target.querySelector('.card[tabindex="0"]') || target.querySelector(".dockPrimary");
+    const stop = target.querySelector('.card[tabindex="0"], .lrow[tabindex="0"]') ||
+      target.querySelector('.emptyBoard button, .dockPrimary');
     if (stop) stop.focus({ preventScroll: true });
   };
   const wanted = refocus ? focusId : kept.id;
   if (!wanted) {
     if (!kept.act) return;
-    const back = target.querySelector('[data-act="' + kept.act + '"]');
+    const back = (kept.value !== null && target.querySelector('[data-act="' + kept.act + '"][data-value="' + CSS.escape(kept.value) + '"]')) ||
+      target.querySelector('[data-act="' + kept.act + '"]');
     if (back) back.focus({ preventScroll: true });
     else if (kept.hadFocus) fallback();
     return;
   }
-  const node = target.querySelector('.card[data-id="' + wanted + '"]');
+  const node = target.querySelector('.card[data-id="' + wanted + '"], .lrow[data-id="' + wanted + '"]');
   if (!node) { if (kept.hadFocus) fallback(); return; }
   const part = refocusPart || (refocus ? "card" : kept.part);
   const aim = part === "card" ? node : node.querySelector("." + part) || node;
   if (!kept.id && !refocus) return;
   aim.focus({ preventScroll: true });
+  /* A row in the list is revealed by the list's own scroller, and by
+     nothing else: the board's sideways follow does not apply to it. */
+  if (node.classList.contains("lrow")) {
+    node.scrollIntoView({ block: "nearest" });
+    return;
+  }
   /* The board follows the ring sideways. Not while a flight is pending —
      mount() reveals after the card lands, so the transport keeps its own
      choice about whether to move the board. */
@@ -3989,7 +4148,7 @@ function mount() {
      Timeline both write theirs onto their own root; the board was the one
      surface whose state a gate could only infer from the pixels. */
   root.setAttribute("data-state", lateOnly ? "filtered" : state);
-  const before = flyId ? snapshot(target) : null;
+  const before = flyId || view === "list" ? snapshot(target) : null;
   const kept = keepPlace(target);
   target.innerHTML = renderApp();
   restorePlace(target, kept);
@@ -3998,8 +4157,16 @@ function mount() {
   const travelled = flyCompleted(target);
   if (travelled) {
     settleRest(target, before, travelled);
-    /* The card has landed. Wherever it went, the ring is now findable. */
+    /* The card has landed. Wherever it went, the ring is now findable — and
+       where the beat stayed under the hand, the ring stayed with it, so this
+       moves nothing. */
     setTimeout(() => reveal(target, document.activeElement), travelled + 60);
+  } else if (before && view === "list") {
+    /* The list has no flight, so every row that moved on this repaint —
+       a filter lifting, a sort, a finished row taking its place in Done
+       when the strip retires — slides the distance it moved, at the
+       settle tier, instead of jumping. */
+    settleRest(target, before, 220);
   }
   refocus = false;
   refocusPart = null;
@@ -4031,6 +4198,9 @@ window.__SUITE.region();
    never leave a handler behind or bind one twice. */
 const host = window.__SUITE.host("tasks");
 if (host) {
+  /* The head's search is painted only where the dock is not; crossing
+     720 in either direction repaints so exactly one field exists. */
+  PHONE.addEventListener("change", () => mount());
   host.addEventListener("focusin", (e) => { if (e.target.closest(".carry")) holdUndo(); });
   host.addEventListener("focusout", (e) => { if (e.target.closest(".carry")) releaseUndo(); });
   host.addEventListener("mouseenter", (e) => { if (e.target.closest && e.target.closest(".carry")) holdUndo(); }, true);
@@ -4046,7 +4216,7 @@ if (host) {
          back exactly where it was. */
       const at = search.selectionStart;
       mount();
-      const back = document.querySelector(".dockInput");
+      const back = searchField();
       if (back) {
         back.focus();
         try { back.setSelectionRange(at, at); } catch (err) { /* not all types allow it */ }

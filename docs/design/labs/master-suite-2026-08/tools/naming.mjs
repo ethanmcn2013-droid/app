@@ -57,7 +57,7 @@ export async function naming({ browser, url, check, head }) {
       const b = document.querySelector('[data-act="projects"]');
       if (b.getAttribute("aria-expanded") !== "true") b.click();
       await new Promise((r) => setTimeout(r, 320));
-      document.querySelector('[data-project="academic"]').click();
+      document.querySelector('[data-project="dinners"]').click();
       await new Promise((r) => setTimeout(r, 900));
       const notes = document.querySelector('[data-app="notes"]');
       const head = (notes.querySelector(".head") || notes).textContent || "";
@@ -73,7 +73,7 @@ export async function naming({ browser, url, check, head }) {
       };
     });
     check("naming", "Notes does not name a project the rest of the suite has left",
-      /Academic/.test(heads.tasks) && heads.notesNames === false,
+      /Winter dinner series/.test(heads.tasks) && heads.notesNames === false,
       `tasks:"${heads.tasks}" notesHeadNamesOrchard:${heads.notesNames}`);
     await page.close();
   }

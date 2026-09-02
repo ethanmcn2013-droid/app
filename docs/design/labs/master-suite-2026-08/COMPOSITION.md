@@ -425,3 +425,156 @@ rather than `50%` so that no preset and no later rule can square it.
 - **All projects is assembled on demand, never cached.** It is a view of the
   three, so a rename or a new task has to reach it without anything being
   told to sync.
+
+## The 2 September ledger, closed
+
+The critical review of 2 September 2026 (remote-redesign,
+`work/2026-09-02-critical-review/`) reviewed this master beside the Grok
+exploration against the same bar: 33 standing findings, a seven-seat blind
+panel with a refuter per claim (32 confirmed, 2 refuted). Every confirmed
+item is closed in `src/` below, by decision, item by item — nothing from the
+exploration entered this file by copying. Each fix carries its own assertion
+in `interaction-check.mjs` (45 → 128) and the gates it broke on the way were
+repointed, never loosened. The two refuted claims were not re-raised.
+
+**Tasks.**
+- **The list is the default below 1100.** A board that arrives already
+  sliced is the wrong first frame for a phone or a tablet; the switcher still
+  offers the board at every width. (Grok T01, approved.)
+- **The lane floor yields: `minmax(196px, 372px)`, the 1200 override gone,
+  an empty lane a rail.** At 258 the board was 1290px of content at every
+  width; five lanes now fit unbroken from 1180 up, Planning no longer hides
+  Done, and an empty lane on a populated board is a 132–172px rail with its
+  sentence and its Add row. Below 1100 the board keeps the specimen floor as
+  a scroller. (Grok T44 for the rail, approved.)
+- **A tick never moves the floor.** On a board too narrow to show Done, the
+  card sets down where the hand is and the keyboard goes to the card now in
+  that slot — never across the sheet. In the list a ticked row stays under
+  the hand, struck through and saying Done, for the undo window; the list
+  keeps its scroll and its focus through every repaint, and undo puts the
+  keyboard back on the row. The list settles by FLIP.
+- **The head is four things**: the measure (sentence, track, figure — Grok
+  T02–T05, T34–T35, approved), one chip (overdue), the no-day fact as the
+  door into Planning (kept against Grok, which deleted the door), and the
+  doors. Today's date moved to Planning; "due today" is a choice in Show.
+- **Show.** Filter, Sort and Display were three words for one question. One
+  menu with real menu semantics: opens on the arrow, focuses its first
+  choice, walks with the arrows, Escape returns to the word, a bottom sheet
+  on a phone. Schedule and Calendar left the switcher: a sentence that was
+  true when written and outlived by List.
+- **Search exists at every width.** The dock's field is painted in the
+  stacked head below 720 (Grok T36–T42, approved), Ctrl K reaches whichever
+  is rendered, and the apology went with the door.
+- **"Show all work" works** — it was a button wired to no branch. An empty
+  project on the phone gets the board's own first move; the filter sentence
+  is said once, by the strip.
+- **Type.** List titles at 600 (the card's weight; 500 was a third weight),
+  wrapping on whole words at every width; a card's note reads in full on a
+  desk (five lines' ceiling); "High" never truncates.
+
+**Notes.**
+- **The stack is a measure again: `--stack` 1440 → 1120**, centred. At
+  1440 the index set a person's words two hundred characters to the line at
+  1920; this overturns the round-1 widening, with the panel's argument
+  recorded in `src/notes.css`.
+- **No count in the head.** The filled pill and the CTRL ↓ keycap are gone
+  (Grok N01, N15, N16, approved); the way into review is a quiet text control
+  in the index head, where the count lives. Grok's version had no door.
+- **Review fits the phone**: the first move takes its own line and the three
+  quiet acts the next. `notes.review` is a gated state now.
+- **The seam renders at 390**: the fixture opens the phone sheet with the
+  peel out, the same sheet a row tap opens.
+- **Dictation says the true thing in two sentences.**
+
+**Timeline.**
+- **No gap sentence while a moment is ahead**; "Nothing is planned yet."
+  only when none is. (Grok L21, approved.)
+- **Add a moment is the filled act**; Preview and the link are outline. A new
+  moment lands tomorrow with its editor above the line and reads "New
+  moment". (Grok L22–L26, approved; the hidden edit controls rejected.)
+- **The moment is the control.** The same button with the same full name
+  lies over the words; the affordance at rest is a hairline under the title.
+  No seven "Edit" words, no invisible tab stop.
+- **Across never leaves the stage**: labels are clamped inside the track
+  (`--label-dx`), the floor is 4px a day so 79 days fit a 768 stage, and a
+  phone reads down only.
+- **On a phone** Preview and the link fold behind one door so the 79 and the
+  next moment share the first screen.
+- **The publish page tells one story**: the strap says "Anyone with the link
+  can read it" under a head that says they have had it.
+
+**Suite.**
+- **Every door answers on screen.** A small card anchored to the pressed
+  control, in the More menu's grammar — what it is, "Not here yet" — closed
+  by Escape or the next press. The rail avatar, the two dock avatars, Tasks'
+  project settings and Notes' closed verbs all use it.
+- **Settings is a real card** (Grok S02–S07, approved, sentence-cased): You,
+  Email, Plan; a modal with a focus trap; live behind More on a phone.
+- **Three projects from one world.** The marketing degree and the school year
+  are a dinner series and a trade fair; the project gate's markers moved
+  with them.
+
+**The gates, on this machine.** Two `verify.mjs` switch checks were calibrated
+to the founder's PC: the mid-transition frame is now pinned on the
+transition's own clock, and the wrap cost is judged against the capture the
+API cannot avoid, measured in the same run. `gate.mjs` assembles the five
+viewports from the one-viewport audit the branches carry, and skips the two
+source ladders the config declares empty. `reach.mjs`, `delight.mjs`,
+`truth.mjs`, `material.mjs`, `flow.mjs`, `naming.mjs` and `projects.mjs`
+were repointed at the surface as it now is.
+
+### What the freeze gates caught, and what was decided
+
+The four gates were run on the closed ledger before anything was committed.
+Nine checks went red. Each is recorded here with its decision, because a
+gate that is repointed without a sentence is a gate that was loosened.
+
+- **The column at a desk width threw.** `?layout=down` at 1440 left seven
+  moments on one line: the horizon's scroll-aware reader still derived its
+  at-rest sentence from `gapSentence()`, which the ledger had removed.
+  Fixed in the reader — at rest the note is empty and hidden unless nothing
+  is planned; scrolled past the first moment it names the one that went
+  over the edge. The console gate now loads both compositions at desk
+  widths, and `interaction-check.mjs` asserts the column places every
+  moment on its own line with no page error. Four gates had passed a
+  ReferenceError because none of them loaded that page.
+- **The caret on the crossing.** The truth gate's "puts the caret back in
+  the field it became" failed on the closed ledger AND on the untouched
+  baseline when driven now: crossing 720 with the keyboard in the capture
+  field, Chromium blurs the field in the same style pass that hides the
+  desk plane, before any resize event reaches the product, so the repaint
+  read the body as the active element and restored nothing. The gate had
+  passed at 12:44 on the other ordering. Notes now keeps a caret the layout
+  took — a blur with no destination, in a document that still has focus,
+  on a field still in the tree but no longer drawn — for one paint, and
+  drops it the moment the keyboard lands anywhere real.
+- **The seam's way into review.** Removing the head count removed the seam
+  state's only `data-act="review"`: the crossed ledger's head suppressed
+  the door under `noDays`. The door now sits in every index head that is
+  not already the hand.
+- **Two coarse targets.** The review door measured 43 and the phone
+  sheet's filing control 34 under a finger; both take 44 at pointer:coarse.
+- **The handle's word at 0px.** The screen-reader word inherited the
+  grab's `font-size: 0`. It is clipped, not shrunk: 11px on the ramp,
+  still invisible.
+- **Repointed, not loosened.** §1b's font check declares the three boxes
+  the ledger recomposed (the handle's word; Preview and Get the link folded
+  behind ··· on a phone) and asserts what each became rather than waving
+  it through. The settings door left "says it is not here yet" for a
+  stricter claim: it opens its card on screen and Escape closes it. The
+  delight search check counts list rows where the board is a list. The
+  ring's undo check accepts the phone sheet as the phone's desk.
+- **Three more, behind the crashes.** Sections 17 and 18 had never run on
+  the closed ledger because the delight crashes stopped the file before
+  them. The whole-flow drive still looked for the academic fixture the
+  second project used to be ("literature review", "MK3021"); it now looks
+  for the Winter dinner series' own markers (a six-course menu, the
+  Burgundies, The first dinner). The naming check that Notes names no
+  project the rest of the suite has left still keyed on "Academic"; it
+  keys on "Winter dinner series". And the flow's last door check asked
+  Settings to be honest by saying "not here yet"; it is honest now by
+  opening the card it names and closing on Escape, which is the stricter
+  claim. The delight controls check waits for the panel's state rather
+  than a 240ms clock: the word becomes the panel through a view
+  transition, and on a loaded machine the clock read the panel as absent
+  while it was still arriving.

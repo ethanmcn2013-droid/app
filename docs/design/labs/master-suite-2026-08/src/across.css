@@ -234,7 +234,9 @@
   width: 168px;
   max-width: none;
   margin: 0;
-  transform: translateX(-50%);
+  /* Centred on the mark, then shifted by whatever placeAcross needed to
+     keep the label on the stage. Zero for every label that fits. */
+  transform: translateX(calc(-50% + var(--label-dx, 0px)));
   text-align: center;
 }
 [data-app="timeline"] .b-measure[data-across="true"] .b-away {
@@ -253,15 +255,9 @@
 /* At the two ends the label aligns inward rather than hanging off the
    track. An axis names its ends from the inside. */
 [data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="start"] .b-copy,
-[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="start"] .b-away {
-  transform: none;
-  text-align: left;
-}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="start"] .b-away { text-align: left; }
 [data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="end"] .b-copy,
-[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="end"] .b-away {
-  transform: translateX(-100%);
-  text-align: right;
-}
+[data-app="timeline"] .b-measure[data-across="true"] .b-item[data-edge="end"] .b-away { text-align: right; }
 /* --step and --away-h are MEASURED by placeAcross from the labels that
    actually rendered, because how tall a rank is depends on what is in
    it: an owner's row carries an Edit control a guest's does not, and a

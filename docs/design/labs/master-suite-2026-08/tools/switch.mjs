@@ -177,11 +177,31 @@ export async function switchFrame({ browser, url, check, head, lab }) {
 
     const rest = await edgeEnergy(page, PNG, clip);
 
-    /* Start the switch and catch the frame 35% through the 4s group. */
+    /* Start the switch and catch the frame 35% through the 4s group.
+       CAUGHT ON THE TRANSITION'S OWN CLOCK, NOT ON A TIMER. The first
+       version slept 1400ms and screenshotted, which on the machine it was
+       written on landed inside the window it meant to look at. On a
+       slower machine the screenshot itself takes long enough that the
+       frame it returns is a different frame: the same file, unchanged,
+       read 30% of the resting ink where it had read under 25% — and a
+       verdict that depends on the CPU is not a gate. The view transition's
+       animations are real Animation objects, so the frame is pinned:
+       every animation the switch started is paused at 1400ms, the frame
+       is read, and they are then run to their end. */
     await page.evaluate(() => { window.__SUITE.go("notes"); });
-    await page.waitForTimeout(1400);                    /* 35% of 4000ms */
+    await page.waitForTimeout(120);
+    const pinned = await page.evaluate(() => {
+      const anims = document.getAnimations().filter((a) => a.effect && a.effect.pseudoElement);
+      anims.forEach((a) => { try { a.pause(); a.currentTime = 1400; } catch (e) { /* not seekable */ } });
+      return anims.length;
+    });
+    check("switch", "the mid frame is pinned on the transition's own clock", pinned > 0,
+      pinned + " animations paused at 1400ms");
     const mid = await edgeEnergy(page, PNG, clip);
-    await page.waitForTimeout(3200);
+    await page.evaluate(() => {
+      document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) { /* already done */ } });
+    });
+    await page.waitForTimeout(700);
     const after = await edgeEnergy(page, PNG, clip);
 
     const shots = path.join(lab, "shots");
@@ -263,6 +283,28 @@ export async function switchFrame({ browser, url, check, head, lab }) {
     });
 
     const withVT = await timeSwitches();
+    /* THE CAPTURE THE API CANNOT AVOID, measured on this machine rather
+       than assumed. `startViewTransition` snapshots the old state before
+       it runs its callback, and that snapshot is a screen's worth of
+       pixels: 25ms on the machine this rule was written on, 95ms in a
+       software-rendered container. What the rule forbids is a DESIGNED
+       wait on top of that capture — the old architecture's 120ms — so an
+       empty transition is timed to its callback and the wrap is judged
+       against it, not against a number pulled from one machine. */
+    const capture = await page.evaluate(async () => {
+      if (typeof document.startViewTransition !== "function") return 0;
+      const marks = [];
+      for (let i = 0; i < 3; i += 1) {
+        const t0 = performance.now();
+        const ms = await new Promise((done) => {
+          const vt = document.startViewTransition(() => done(performance.now() - t0));
+          if (vt && vt.finished) vt.finished.catch(() => {});
+        });
+        marks.push(ms);
+        await new Promise((x) => setTimeout(x, 450));
+      }
+      return Math.round(marks.reduce((n, x) => n + x, 0) / marks.length);
+    });
     await page.evaluate(() => { document.startViewTransition = undefined; });
     const without = await timeSwitches();
     const mean = (a) => a.reduce((n, x) => n + x, 0) / a.length;
@@ -279,9 +321,9 @@ export async function switchFrame({ browser, url, check, head, lab }) {
        fallback fails anything that waits on the animation itself — which
        is 220ms — while allowing the capture the API cannot avoid. */
     check("switch", "the mutation is wrapped, not postponed",
-      cost < 60,
+      cost < capture + 50,
       `${vt}ms with the transition against ${base}ms without — the wrap costs ${cost}ms, ` +
-      `and the animation it starts runs 220ms after it`);
+      `the capture alone ${capture}ms on this machine, and the animation it starts runs 220ms after it`);
   }
 
   /* ── 5 · reduced motion gets no transition at all ────────────────── */

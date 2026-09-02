@@ -310,6 +310,23 @@
 /* The one number that changes in place while the operator watches it. Left
    proportional, the whole band jittered on every tick. */
 [data-app="tasks"] .headFacts b { font-weight: 600; color: var(--ink-1); font-variant-numeric: tabular-nums; }
+/* THE MEASURE. The sentence, the track, the figure — one object. The track
+   is 72px of hairline so a third-full reads from the next chair, not a 12px
+   pip; the figure is the quiet mono tier, the same ink the counts use. */
+[data-app="tasks"] .pace { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+[data-app="tasks"] .paceTrack {
+  display: block; width: 72px; height: 2px; flex: none;
+  border-radius: var(--r-pill); background: var(--line-strong); overflow: hidden;
+}
+[data-app="tasks"] .paceFill {
+  display: block; height: 2px; border-radius: var(--r-pill); background: var(--ink);
+  transition: width var(--dur-settle) var(--curve);
+}
+[data-app="tasks"] .pacePct {
+  font-family: var(--font-mono); font-size: var(--t-11); line-height: 14px; font-weight: 400;
+  color: var(--ink-2); font-variant-numeric: tabular-nums; min-width: 3ch;
+}
+@media (prefers-reduced-motion: reduce) { [data-app="tasks"] .paceFill { transition: none; } }
 /* The band had six facts at one size, one weight and one colour, so the eye
    had nowhere to land first and the row read as a ticker. Three ranks now,
    and no new size or weight to get them: today's date and the season are
@@ -460,6 +477,10 @@
   align-items: start;
   column-gap: 14px;
 }
+/* The composer lands at the foot of its lane's rows, the same card it is
+   on the board, at the board's own ceiling. */
+[data-app="tasks"] .lrowDraft { grid-column: 1 / -1; padding: 6px 0 8px; }
+[data-app="tasks"] .lrowDraft .card { max-width: 372px; }
 [data-app="tasks"] .lrow {
   display: grid;
   grid-template-columns: subgrid;
@@ -491,25 +512,35 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 [data-app="tasks"] .lrowSay { min-width: 0; }
+/* WHOLE WORDS, TWO WEIGHTS. The row used to set its title at 500 — a third
+   weight on a product that carries two — and cut it at the character on a
+   phone: "Confirm marquee sides wit…", every row, at 390 and 768. The
+   title is the same object as the card's title and takes its weight; both
+   lines wrap on whole words and the row grows, because a list of the
+   person's own sentences that deletes the ends of them is a list that
+   answers a different question. */
 [data-app="tasks"] .lrowTitle {
   margin: 0;
-  font-size: 14px; font-weight: 500; color: var(--ink-1);
+  font-size: 14px; font-weight: 600; color: var(--ink-1);
   letter-spacing: var(--tr-14);
   line-height: var(--lh-tight);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  white-space: normal; overflow-wrap: normal; text-wrap: pretty;
 }
 [data-app="tasks"] .lrowNote {
   margin: 3px 0 0;
   font-size: 13px; font-weight: 400; color: var(--ink-2);
-  letter-spacing: var(--tr-13);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  letter-spacing: var(--tr-13); line-height: 1.45;
+  white-space: normal; overflow-wrap: normal; text-wrap: pretty;
 }
 [data-app="tasks"] .lrowMeta {
   display: inline-flex; align-items: center; gap: 10px;
   white-space: nowrap;
+  /* The card's foot tier: the row's tags read at the size they read on a
+     card, or "High" stands a size above the couple beside it. */
+  font-size: 12px; letter-spacing: var(--tr-12); color: var(--ink-3);
 }
 [data-app="tasks"] .lrowWho {
-  font-size: 12px; font-weight: 500; color: var(--ink-2);
+  font-size: 12px; font-weight: 400; color: var(--ink-2);
   letter-spacing: var(--tr-12);
   border-bottom: 1px solid var(--line-strong);
 }
@@ -588,7 +619,22 @@
      longest title takes two lines, at 372 it takes one, and past that a
      card stops reading as a card. So the ceiling goes to 372 and the
      sheet's cap follows it. Below 1440 nothing moves. */
-  display: grid; grid-template-columns: repeat(5, minmax(258px, 372px));
+  display: grid;
+  /* THE FLOOR YIELDS. At 258 the five lanes were 1290px of content, which
+     is true of no sheet under 1440: at 1280 the Done lane showed half of
+     itself and its titles read "Open da…" inside the fade, at 1100 two
+     lanes were gone, and with Planning open at 1440 Done was off the sheet
+     entirely. A card holds its type down to 196 — the title takes a second
+     line, nothing clips — so that is the floor, and five lanes fit unbroken
+     from 1180 up. Below 1100 the list is the default view and the board
+     keeps its specimen floor as a scroller. An empty lane on a populated
+     board is a rail rather than a fifth of the sheet: its sentence and its
+     Add row still fit, and the four lanes with work in them take the room. */
+  --lane: minmax(196px, 372px);
+  --rail: minmax(132px, 172px);
+  grid-template-columns:
+    var(--col-todo, var(--lane)) var(--col-doing, var(--lane)) var(--col-review, var(--lane))
+    var(--col-waiting, var(--lane)) var(--col-done, var(--lane));
   /* `safe` is load-bearing: a centred grid that overflows puts its leading
      content out of reach of the scroller, which is exactly what the board
      becomes below 1100. It centres when it fits and starts when it does not. */
@@ -610,6 +656,15 @@
   scroll-snap-type: x proximity; scroll-padding-left: 16px;
   border-top: 1px solid var(--line-soft);
 }
+/* One rule per lane, because a grid track cannot ask the tray in it whether
+   it is empty. Scoped to a populated, unfiltered board: under a filter an
+   empty lane already collapses its body, and a blank board has nothing to
+   yield room to. */
+[data-app="tasks"] .board:not([data-filtered]):not([data-blank]):has(> .tray[data-lane="todo"][data-empty]) { --col-todo: var(--rail); }
+[data-app="tasks"] .board:not([data-filtered]):not([data-blank]):has(> .tray[data-lane="doing"][data-empty]) { --col-doing: var(--rail); }
+[data-app="tasks"] .board:not([data-filtered]):not([data-blank]):has(> .tray[data-lane="review"][data-empty]) { --col-review: var(--rail); }
+[data-app="tasks"] .board:not([data-filtered]):not([data-blank]):has(> .tray[data-lane="waiting"][data-empty]) { --col-waiting: var(--rail); }
+[data-app="tasks"] .board:not([data-filtered]):not([data-blank]):has(> .tray[data-lane="done"][data-empty]) { --col-done: var(--rail); }
 [data-app="tasks"] .tray { scroll-snap-align: start; }
 /* A `start` target alone gives the 1201-1439 band nowhere to resolve to: the
    fifth column can be reached but never sit flush. With an `end` target on the
@@ -882,6 +937,16 @@
   display: block; max-height: calc(1.45em * 2); overflow: hidden;
   transition: color var(--dur) var(--curve);
 }
+/* On a desk the card carries its note. Ten of thirteen bodies ended in an
+   ellipsis at 1440 with the lane 285px wide and room below — a board of
+   stubs where the dialog held the sentence. Four lines is every note in
+   the fixture at 1440 and five at 1280's narrower lane — a ceiling a real
+   note rarely meets; the dialog is the only place a body is ever clamped
+   harder than that. */
+@media (min-width: 1280px) {
+  [data-app="tasks"] .cardNote { max-height: calc(1.45em * 5); }
+  [data-app="tasks"][data-density="compact"] .cardNote { max-height: calc(1.38em * 2); }
+}
 [data-app="tasks"] .card[aria-expanded]:hover .cardNote { color: var(--ink-1); }
 /* Opened in place. The clipped half of a note is the half that carries the
    deadline, and the only route to it used to be a hover tooltip: no keyboard,
@@ -937,7 +1002,10 @@
 [data-app="tasks"] .cardFoot > .who:hover { text-decoration: underline; text-underline-offset: 3px; }
 [data-app="tasks"] .cardFoot > .who[aria-pressed="true"] { text-decoration: underline; text-underline-offset: 3px; }
 [data-app="tasks"] .cardFoot > .tag { flex: 0 3 auto; }
-[data-app="tasks"] .cardFoot > .hi { flex: 0 1 auto; color: var(--ink-2); }
+/* "High" is four letters and it was the token the row cut first — "Hi…" on
+   two cards at 1440 with 60px going spare. The word never yields; the tag
+   beside it does. */
+[data-app="tasks"] .cardFoot > .hi { flex: none; color: var(--ink-2); }
 [data-app="tasks"] .cardFoot .cm { display: inline-flex; align-items: center; gap: 4px; }
 [data-app="tasks"] .cardFoot .cm svg { width: 12px; height: 12px; }
 [data-app="tasks"] .cardFoot .grow { margin-left: auto; display: inline-flex; flex: none; }
@@ -1562,17 +1630,10 @@
   margin-right: calc(388px + var(--inset));
   transition: margin-right var(--dur) var(--curve);
 }
-/* A card has one floor, in every state. Squeezing five trays into the
-   narrowed board gave the card a 105px measure, which is half what the
-   specimen sheet designs it at. What does not fit scrolls, snaps and fades
-   at the edge instead. */
-[data-app="tasks"]:has(.drawer) .board {
-  grid-template-columns: none;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(258px, 1fr);
-  scroll-snap-type: x proximity;
-  scroll-padding-left: 16px;
-}
+/* The board keeps its own floor with the drawer open: the lanes yield to
+   196 and the empty lane to its rail, so at 1440 Done is on the sheet
+   beside the panel rather than 130px past its edge. What still does not
+   fit scrolls, snaps and fades at the edge, as the board does everywhere. */
 [data-app="tasks"]:has(.drawer) .tray { scroll-snap-align: start; }
 /* Both of the rules that used to sit here — dropping the season fact when the
    drawer opened, and letting the name shrink to nothing with it — are gone.
@@ -1595,6 +1656,10 @@
 [data-app="tasks"] .drawerKicker {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+}
+[data-app="tasks"] .drawerWhen {
+  margin: 6px 0 0; font-size: 13px; line-height: 17px;
+  letter-spacing: var(--tr-13); color: var(--ink-3);
 }
 /* 16, not 19: the mono PLANNING kicker above it already says this is a panel,
    and at 19 the drawer was setting the venue name larger than the board's own
@@ -2221,16 +2286,14 @@
   color: var(--ink-3); max-width: 40ch; margin-top: -2px;
 }
 
+@media (max-width: 1099px) {
+  /* Below 1100 the list is the default view and the board is a scroller
+     by design; a lane keeps the specimen floor there rather than yielding
+     to a width it was never going to fit. The snap that stops a column
+     being sliced at the sheet's edge is on .board unconditionally. */
+  [data-app="tasks"] .board { grid-template-columns: repeat(5, minmax(258px, 1fr)); }
+}
 @media (max-width: 1200px) {
-  /* The board becomes a horizontal scroller at 1439, not at 1200: five 258px
-     columns total 1290px of content, which fits in exactly one viewport. What
-     changes here is only the column sizing. The snap that stops a column
-     being sliced at the sheet's straight edge, mid-word, is on .board
-     unconditionally — leaving it here left a 239px band with none. */
-  [data-app="tasks"] .board {
-    grid-template-columns: none; grid-auto-flow: column;
-    grid-auto-columns: minmax(258px, 1fr);
-  }
   [data-app="tasks"] .drawer { width: 364px; }
   [data-app="tasks"]:has(.drawer) .sheet { margin-right: calc(364px + var(--inset)); }
 }
@@ -2276,12 +2339,34 @@
      before the phone is reached, so it is already in the grid shape. What is
      left here is only what is genuinely phone: a tighter leading edge and a
      name set one step larger, because a 390 measure can carry it. */
-  [data-app="tasks"] .sheet[data-head="stack"] .head { padding: 14px 16px 0; }
+  [data-app="tasks"] .sheet[data-head="stack"] .head {
+    padding: 14px 16px 0;
+    grid-template-areas: "word actions" "name name" "facts facts" "search search";
+  }
   /* The leading follows the size, because the rule is round(1.3 × size)
      and the size changes here. Declaring 26 for both moved the phone head
      by a pixel and took 1.8% of the frame with it. */
   [data-app="tasks"] .sheet[data-head="stack"] .headName { font-size: 19px; line-height: 25px; }
-  [data-app="tasks"] .headSearch { display: inline-flex; }
+  /* THE FIELD. 46px of paper pill across the stacked head, the same input
+     the dock carries on a desk: it filters as you type, clears with one
+     press, and takes the chord. The ring is the indigo inset the dock's
+     field paints, and 16px type so the phone does not zoom the sheet. */
+  [data-app="tasks"] .headSearch {
+    grid-area: search;
+    display: flex; align-items: center; gap: 9px;
+    width: 100%; height: 46px; padding: 0 13px;
+    border-radius: var(--r-pill);
+    background: var(--white); color: var(--ink-1);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+    transition: box-shadow var(--dur) var(--curve);
+  }
+  [data-app="tasks"] .headSearch > svg { width: 16px; height: 16px; color: var(--ink-2); flex: none; }
+  [data-app="tasks"] .headSearch .dockInput { flex: 1 1 auto; min-width: 0; height: 100%; font-size: 16px; letter-spacing: var(--tr-15, -0.012em); }
+  [data-app="tasks"] .headSearch:focus-within,
+  [data-app="tasks"] .headSearch.is-live { box-shadow: inset 0 0 0 1.5px var(--indigo); }
+  [data-app="tasks"] .headSearch:focus-within > svg,
+  [data-app="tasks"] .headSearch.is-live > svg { color: var(--indigo); }
+  [data-app="tasks"] .headSearch .dockClear { flex: none; }
   /* Only the way out survives, because there is no keyboard here to teach. */
   /* The shortcut hint goes; the depth ("1 more") stays, because it is the
      only signal a second undo is waiting. A keycap on a touch device spent
@@ -2291,12 +2376,25 @@
   [data-app="tasks"] .carry em:empty { display: none; }
   /* The switcher loses its icons rather than its fourth view. Cutting
      "Calendar" mid-word at the sheet edge read as a broken layout. */
-  [data-app="tasks"] .views { padding: 14px 16px 12px; }
-  [data-app="tasks"] .seg { width: 100%; }
+  /* The measure keeps its sentence and its track on a phone and drops the
+     figure: the track already says 38%, and the row is the width the
+     three facts have to share. */
+  [data-app="tasks"] .pacePct { display: none; }
+  [data-app="tasks"] .paceTrack { width: 48px; }
+  [data-app="tasks"] .headFacts { column-gap: 10px; }
+  [data-app="tasks"] .views { padding: 14px 16px 12px; gap: 10px; }
+  [data-app="tasks"] .seg { flex: 1 1 auto; min-width: 0; }
   [data-app="tasks"] .segItem { flex: 1 1 0; justify-content: center; padding: 0 8px; }
   [data-app="tasks"] .segItem svg { display: none; }
-  [data-app="tasks"] .viewTools { display: none; }
-  [data-app="tasks"] .board { padding: 0 12px 14px; grid-auto-columns: 86%; scroll-snap-type: x mandatory; scroll-padding-left: 12px; }
+  /* Show stays on the phone. It is the one control that says what is on
+     the list, and the only door to the order and the card's settings here;
+     a phone that hid it had a filter chip and nothing else. */
+  [data-app="tasks"] .viewTools { flex: none; }
+  [data-app="tasks"] .board {
+    padding: 0 12px 14px;
+    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 86%;
+    scroll-snap-type: x mandatory; scroll-padding-left: 12px;
+  }
   /* No dock on a phone, so no clearance to reserve. */
   [data-app="tasks"] .tray { scroll-snap-align: start; padding-bottom: 8px; }
   [data-app="tasks"] .trayBody { padding-bottom: 4px; }
@@ -2337,8 +2435,10 @@
 [data-app="tasks"] .when { line-height: 14px; }         /* 11px */
 [data-app="tasks"] .late,
 [data-app="tasks"] .who,
+[data-app="tasks"] .lrowWho,
 [data-app="tasks"] .hi,
 [data-app="tasks"] .cm { line-height: 16px; }           /* 12px */
+[data-app="tasks"] .lrowLane { line-height: 14px; }     /* 11px · the list's lane, now a phone's default */
 [data-app="tasks"] .today,
 [data-app="tasks"] .ratio,
 [data-app="tasks"] .ratio b,
@@ -2809,7 +2909,17 @@
   [data-app="tasks"] .toolPop { animation: none; }
 }
 @media (max-width: 720px) {
-  [data-app="tasks"] .toolPop { right: auto; left: 0; width: min(268px, calc(100vw - 40px)); }
+  /* ON A PHONE, SHOW IS A SHEET. Fourteen choices hung from a word at the
+     right edge of a 390 sheet ran off the right and under the dock; a
+     bottom sheet, pinned above the dock with its own scroller, is the
+     phone's grammar for a menu this long — the same shape a moment's
+     editor takes on the timeline. */
+  [data-app="tasks"] .toolPop {
+    position: fixed; top: auto; left: 12px; right: 12px;
+    bottom: calc(60px + var(--inset) * 2 + 12px + env(safe-area-inset-bottom));
+    width: auto; max-height: min(62dvh, 560px); overflow: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 /* Focus reveals it, in both directions, whatever revealed it. */

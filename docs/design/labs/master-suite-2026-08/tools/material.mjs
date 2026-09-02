@@ -60,7 +60,7 @@ export async function material({ browser, url, check, head }) {
     journeys.push(await count("and the dialog folds back into the card",
       () => page.keyboard.press("Escape")));
     journeys.push(await count("a tool word becomes its panel",
-      () => page.click('[data-app="tasks"] [data-act="tool"][data-tool="filter"]')));
+      () => page.click('[data-app="tasks"] [data-act="tool"][data-tool="show"]')));
     journeys.push(await count("the project name becomes the project menu",
       () => page.click('[data-app="tasks"] [data-act="projects"]')));
 
@@ -296,4 +296,103 @@ export async function material({ browser, url, check, head }) {
       quiet.landed === "timeline", quiet.landed);
     await page.close();
   }
+
+  /* ── 6 · the list is the board, read down ─────────────────────────
+     STATE.md's first open item: the List view and the switcher's travel
+     shipped green on a gate that never looked at either. Each claim
+     below is the one the code makes about itself, read off the render:
+     the list renders the board's rows in the board's order under the
+     same filters, states the lane in type, walks one axis, keeps every
+     drag path on `.card`, and the switcher's accent travels as liquid. */
+  head("21 · the list, and the switcher's travel");
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+    await page.goto(url + "?v=paper&state=tasks.board");
+    await page.waitForTimeout(900);
+    const boardRows = () => page.evaluate(() =>
+      [...document.querySelectorAll('[data-app="tasks"] .board:not(.listBoard) .tray[data-lane]')]
+        .flatMap((t) => [...t.querySelectorAll(".card[data-id]")]
+          .map((c) => ({ id: c.dataset.id, lane: t.querySelector(".trayName").textContent.trim() }))));
+    const listRows = () => page.evaluate(() =>
+      [...document.querySelectorAll('[data-app="tasks"] .board.listBoard .lrow[data-id]')]
+        .map((r) => ({ id: r.dataset.id, lane: (r.querySelector(".lrowLane") || {}).textContent || "" }))
+        .map((r) => ({ id: r.id, lane: r.lane.trim() })));
+    const same = (a, b) => JSON.stringify(a.map((r) => r.id)) === JSON.stringify(b.map((r) => r.id));
+
+    const onBoard = await boardRows();
+    check("material", "the board has rows to compare", onBoard.length > 0, onBoard.length + " cards");
+
+    /* The travel, slowed the way the rail's is, so a frame can be caught. */
+    await page.addStyleTag({ content: `
+      [data-app="tasks"] .segGoo .gooHead { transition-duration: 1120ms !important; }
+      [data-app="tasks"] .segGoo .gooTail { transition-duration: 1760ms !important; }
+    ` });
+    await page.click('[data-app="tasks"] .segItem[data-view="list"]');
+    await page.waitForTimeout(450);
+    const air = await page.evaluate(() => {
+      const layer = document.querySelector('[data-app="tasks"] .segGoo');
+      if (!layer) return null;
+      const [h, t] = [...layer.children].map((e) => e.getBoundingClientRect());
+      return { gap: Math.round(Math.abs(h.left - t.left)), filter: getComputedStyle(layer).filter,
+        gooing: document.querySelector('[data-app="tasks"] .seg').hasAttribute("data-gooing") };
+    });
+    check("material", "the switcher's accent travels across, as liquid",
+      !!air && air.gap > 12 && /goo/.test(air.filter) && air.gooing, air ? JSON.stringify(air) : "no layer");
+    await page.waitForTimeout(2300);
+    const landed = await page.evaluate(() => ({
+      active: (document.querySelector('[data-app="tasks"] .segItem[data-active]') || {}).dataset ? document.querySelector('[data-app="tasks"] .segItem[data-active]').dataset.view : null,
+      layer: !!document.querySelector('[data-app="tasks"] .segGoo'),
+      list: !!document.querySelector('[data-app="tasks"] .board.listBoard'),
+    }));
+    check("material", "and lands on List with nothing left in the air",
+      landed.active === "list" && !landed.layer && landed.list, JSON.stringify(landed));
+
+    const inList = await listRows();
+    check("material", "the list renders the board's rows in the board's order",
+      inList.length > 0 && same(inList, onBoard), `${inList.length} rows against ${onBoard.length} cards`);
+    const wrongLane = inList.filter((r, i) => !onBoard[i] || r.lane.toLowerCase() !== onBoard[i].lane.toLowerCase());
+    check("material", "and each row states its lane in type, by the column's own name",
+      inList.length > 0 && wrongLane.length === 0, wrongLane.slice(0, 3).map((r) => r.id + ":" + r.lane).join(", "));
+
+    /* The same filter, both views. */
+    await page.click('[data-app="tasks"] .head [data-act="late"]');
+    await page.waitForTimeout(450);
+    const listLate = await listRows();
+    await page.click('[data-app="tasks"] .segItem[data-view="board"]');
+    await page.waitForTimeout(800);
+    const boardLate = await boardRows();
+    check("material", "the same filter shows the same rows in both views",
+      listLate.length > 0 && listLate.length < onBoard.length && same(listLate, boardLate),
+      `${listLate.length} in the list, ${boardLate.length} on the board`);
+    await page.click('[data-app="tasks"] .head [data-act="late"]');
+    await page.waitForTimeout(450);
+
+    /* One axis. */
+    await page.click('[data-app="tasks"] .segItem[data-view="list"]');
+    await page.waitForTimeout(800);
+    await page.evaluate(() => { const s = document.querySelector('[data-app="tasks"] .lrow[tabindex="0"]'); if (s) s.focus(); });
+    const rowOf = () => page.evaluate(() => { const r = document.activeElement.closest && document.activeElement.closest(".lrow"); return r ? r.dataset.id : null; });
+    const start = await rowOf();
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(150);
+    const right = await rowOf();
+    await page.keyboard.press("ArrowDown");
+    await page.waitForTimeout(150);
+    const down = await rowOf();
+    const order = (await listRows()).map((r) => r.id);
+    const next = (id) => order[order.indexOf(id) + 1] || null;
+    check("material", "the list walks one axis: sideways never jumps a lane",
+      !!start && (right === start || right === next(start)), `${start} → ${right}`);
+    check("material", "and down is the next row",
+      !!down && down === next(right), `${right} → ${down}`);
+
+    /* The drag paths stay on .card. */
+    const drag = await page.evaluate(() => ({
+      rows: document.querySelectorAll('[data-app="tasks"] .lrow[draggable="true"]').length,
+      strays: [...document.querySelectorAll('[data-app="tasks"] [draggable="true"]')].filter((n) => !n.classList.contains("card")).length,
+    }));
+    check("material", "no list row is draggable — the drag paths stay on .card", drag.rows === 0 && drag.strays === 0, JSON.stringify(drag));
+    await page.close();
+  }
+
 }
