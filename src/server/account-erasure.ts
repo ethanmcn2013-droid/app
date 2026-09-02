@@ -31,7 +31,7 @@ import {
   GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS,
   googleDriveAccountErasureFenceKey,
   isGoogleDriveOperationClaimableStatus,
-} from "./connections/google-drive-operation-lifecycle";
+} from "./connections/project-drive-operation-lifecycle";
 import { deleteBytes } from "./storage";
 
 /**
@@ -198,7 +198,7 @@ export async function eraseAccountData(
   // one transaction before snapshotting any provider receipt. Untouched work
   // is safe to cancel. Anything attempted or carrying a provider receipt is
   // held for review in an unclaimable state. The executor contract lives in
-  // google-drive-operation-lifecycle.ts and requires the account fence plus
+  // project-drive-operation-lifecycle.ts and requires the account fence plus
   // status predicate to be checked in its own atomic prepare/claim CAS.
   const [, , , affectedOperationRows] = await database.batch([
     database
