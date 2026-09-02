@@ -169,14 +169,23 @@ export async function eraseAccountData(
         // isolation-ok: connectionIds contains only credential generations
         // owned by the proved user; erasure must find their use in every
         // Project before any RESTRICT-backed parent can be removed.
-        .select({ id: workspaceStorage.id })
+        .select({
+          id: workspaceStorage.id,
+          workspaceId: workspaceStorage.workspaceId,
+        })
         .from(workspaceStorage)
         .where(inArray(workspaceStorage.connectionId, connectionIds))
     : [];
   const accountStorageGenerationIds = accountStorageRows.map(
     (storage) => storage.id,
   );
+  const accountStorageWorkspaceIds = [
+    ...new Set(accountStorageRows.map((storage) => storage.workspaceId)),
+  ];
 
+  // A project-level operation can have no connection/storage/subject columns
+  // even though this account backs that Project's Drive. Include every such
+  // workspace so the durable account fence covers every operation kind.
   const affectedOperationScope = or(
     eq(projectDriveOperations.subjectUserId, userId),
     ownedWorkspaceIds.length > 0
@@ -190,6 +199,9 @@ export async function eraseAccountData(
           projectDriveOperations.storageGenerationId,
           accountStorageGenerationIds,
         )
+      : undefined,
+    accountStorageWorkspaceIds.length > 0
+      ? inArray(projectDriveOperations.workspaceId, accountStorageWorkspaceIds)
       : undefined,
   )!;
   const accountErasureFenceKey = googleDriveAccountErasureFenceKey(userId);
@@ -262,6 +274,7 @@ export async function eraseAccountData(
         operationKind: projectDriveOperations.operationKind,
         status: projectDriveOperations.status,
         attemptCount: projectDriveOperations.attemptCount,
+        lastAttemptAt: projectDriveOperations.lastAttemptAt,
         workspaceId: projectDriveOperations.workspaceId,
         storageGenerationId: projectDriveOperations.storageGenerationId,
         subjectUserId: projectDriveOperations.subjectUserId,
@@ -372,8 +385,10 @@ export async function eraseAccountData(
       !operation.providerPermissionId
     ) {
       const neverReachedGoogle =
-        operation.status === "pending" && operation.attemptCount === 0;
-      if (!neverReachedGoogle && operation.status !== "cancelled") {
+        (operation.status === "pending" || operation.status === "cancelled") &&
+        operation.attemptCount === 0 &&
+        operation.lastAttemptAt === null;
+      if (!neverReachedGoogle) {
         throw new Error(
           "account erasure blocked: attempted Project Drive grant has no exact permission receipt",
         );

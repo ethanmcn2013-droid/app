@@ -42,14 +42,14 @@ export const GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE = "active:v1";
 /**
  * Durable account-erasure fence stored in the existing `meta` table.
  *
- * Executor contract: operation prepare and claim transactions must resolve
- * every related account (workspace owner, subject user, direct connection
- * owner, and storage-generation connection owner), then assert that none of
- * these keys exists inside the SAME transaction as their INSERT/UPDATE CAS.
- * A manual-attention operation must never be requeued while a related fence
- * exists. If a claim commits first, erasure's post-fence re-read observes the
- * running operation and fails closed; if erasure commits first, the executor
- * must decline new or requeued work.
+ * Executor contract: use the account-fenced operation orchestrator for
+ * prepare, claim, and manual requeue. It resolves the workspace owner,
+ * subject, direct connection owner, and every workspace storage-generation
+ * owner from database truth, then asserts that none of these keys exists
+ * inside the SAME transaction as the journal INSERT/UPDATE CAS. Handover
+ * therefore covers both its source storage and target connection. If a claim
+ * commits first, erasure's post-fence re-read observes it and fails closed; if
+ * erasure commits first, the executor declines new or requeued work.
  */
 export function googleDriveAccountErasureFenceKey(userId: string): string {
   if (!userId) {

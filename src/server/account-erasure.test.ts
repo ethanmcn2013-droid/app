@@ -19,8 +19,10 @@
  *
  *   2. NO COLLATERAL DELETION. A second "bystander" user, who owns their
  *      own workspace, is a member of the target's workspace, and posted on
- *      the target's tasks, keeps every one of their own rows. Global,
- *      non-tenant tables (comp_codes, processed_webhooks, …) are untouched.
+ *      the target's tasks, keeps their account and product data. Drive
+ *      journal rows in a workspace backed by the erased account are consumed
+ *      deliberately because every operation kind shares that durable fence.
+ *      Global, non-tenant tables are untouched.
  *
  * Plus: local and private-Blob attachment locators use the central storage
  * seam, a real disk probe is asserted gone, erasure is idempotent, and erasing
@@ -120,7 +122,13 @@ async function seed(client: Client, probePath: string) {
        NULL,0,NULL,1756800000,1756800000,NULL),
       ('op-cancelled-subject','ws-b','grant_create','cancelled','${"9".repeat(64)}',
        NULL,'storage-bystander-in-b',NULL,'u-target','target@example.test','reader',NULL,
-       NULL,1,1756800001,1756800000,1756800001,1756800001),
+       NULL,0,NULL,1756800000,1756800001,1756800001),
+      -- A project-delete row carries no connection, storage, or subject. The
+      -- target-owned storage generation still makes every operation in ws-b
+      -- part of the account-erasure fence.
+      ('op-target-storage-project-delete','ws-b','project_delete','pending','${"0".repeat(64)}',
+       NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+       0,NULL,1756800000,1756800000,NULL),
       ('op-bystander-only','ws-b','folder_rename','pending','${"5".repeat(64)}',
        NULL,'storage-bystander-in-b',NULL,NULL,NULL,NULL,3,NULL,
        0,NULL,1756800000,1756800000,NULL);
@@ -274,7 +282,7 @@ test("erasure removes every target row across every table, leaves the bystander 
       );
     }
 
-    // ── Invariant 2: bystander + globals fully intact ───────────────────
+    // ── Invariant 2: bystander account/product data + globals intact ───
     const survivors: Array<[string, number]> = [
       ["users", 1], // only u-bystander
       ["workspaces", 1], // only ws-b
@@ -294,7 +302,7 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["provider_connections", 1], // conn-bystander
       ["workspace_storage", 1], // unrelated bystander generation in ws-b
       ["drive_folder_grants", 0],
-      ["project_drive_operations", 1], // unrelated bystander repair evidence
+      ["project_drive_operations", 0], // every ws-b operation shared the erased user's storage fence
       ["meta", 2], // board:ws-b:name + activeDomain
       ["comp_codes", 1],
       ["processed_webhooks", 1],
@@ -317,9 +325,10 @@ test("erasure removes every target row across every table, leaves the bystander 
     assert.equal(
       await count(
         client,
-        "project_drive_operations WHERE id='op-bystander-only'",
+        "project_drive_operations WHERE id='op-target-storage-project-delete'",
       ),
-      1,
+      0,
+      "project-delete evidence must be found through the storage-backed workspace lineage",
     );
 
     // Shared task survives, but the erased Notes account's exact wording,
@@ -509,7 +518,7 @@ test("erasing an unknown user is a no-op (no throw, no writes)", async () => {
   }
 });
 
-test("erasure retains every attempted Drive grant until its exact permission is known", async () => {
+test("erasure retains every attempted Drive grant, including cancelled work, until its exact permission is known", async () => {
   const { client, db } = await freshDb();
   try {
     await client.executeMultiple(`
@@ -538,19 +547,24 @@ test("erasure retains every attempted Drive grant until its exact permission is 
         id, workspace_id, operation_kind, status, dedupe_key,
         storage_generation_id, subject_user_id, grantee_email, grant_role,
         attempt_count, last_attempt_at, next_attempt_at, last_error_code,
-        created_at, updated_at
+        created_at, updated_at, completed_at
       ) VALUES
         ('operation-ambiguous','ws-owner','grant_create','manual_attention',
          '${"7".repeat(64)}','storage-owner','u-target','target@example.test',
          'writer',1,1756800001,NULL,'ambiguous_provider_result',1756800000,
-         1756800001),
+         1756800001,NULL),
         ('operation-attempted-pending','ws-owner','grant_create','pending',
          '${"8".repeat(64)}','storage-owner','u-target','target@example.test',
-         'reader',1,1756800001,NULL,'network_error',1756800000,1756800001),
+         'reader',1,1756800001,NULL,'network_error',1756800000,1756800001,
+         NULL),
         ('operation-retry-wait','ws-owner','grant_create','retry_wait',
          '${"9".repeat(64)}','storage-owner','u-target','target@example.test',
          'reader',1,1756800001,2756800001,'network_error',1756800000,
-         1756800001);
+         1756800001,NULL),
+        ('operation-attempted-cancelled','ws-owner','grant_create','cancelled',
+         '${"0".repeat(64)}','storage-owner','u-target','target@example.test',
+         'reader',1,1756800001,NULL,'network_error',1756800000,
+         1756800001,1756800001);
     `);
 
     let revokeCalls = 0;
@@ -575,6 +589,14 @@ test("erasure retains every attempted Drive grant until its exact permission is 
       ),
       3,
       "ambiguous repair evidence must survive until the exact permission is recovered",
+    );
+    assert.equal(
+      await count(
+        client,
+        "project_drive_operations WHERE id='operation-attempted-cancelled' AND status='cancelled' AND attempt_count=1 AND provider_permission_id IS NULL",
+      ),
+      1,
+      "attempted cancelled work is still ambiguous and must retain its evidence",
     );
     assert.equal(
       await count(
