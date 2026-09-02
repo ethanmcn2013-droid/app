@@ -1,5 +1,10 @@
 import { sql } from "drizzle-orm";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
+import * as schema from "@/server/db/schema";
+import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+
+type ProvisioningDb = LibSQLDatabase<typeof schema>;
 
 /**
  * Idempotent fallback user provisioning. Normally the Clerk `user.created`
@@ -26,7 +31,24 @@ export async function ensureUserProvisioned(
   firstName?: string | null,
   lastName?: string | null,
 ): Promise<void> {
-  if (!clerkUserId || !clerkUserId.startsWith("user_")) return;
+  await ensureUserProvisionedWith(
+    db,
+    clerkUserId,
+    email,
+    firstName,
+    lastName,
+  );
+}
+
+/** Injectable form used to prove deletion/provisioning race safety. */
+export async function ensureUserProvisionedWith(
+  database: ProvisioningDb,
+  clerkUserId: string,
+  email?: string | null,
+  firstName?: string | null,
+  lastName?: string | null,
+): Promise<boolean> {
+  if (!clerkUserId || !clerkUserId.startsWith("user_")) return false;
 
   const tail = clerkUserId.replace(/^user_/, "").slice(0, 12).toLowerCase();
   const shortTail = tail.slice(0, 8);
@@ -47,7 +69,12 @@ export async function ensureUserProvisioned(
     : null;
   const initials = initialsFromName ?? (handle.slice(0, 2).toUpperCase() || "??");
 
-  await db.transaction(async (tx) => {
+  return database.transaction(async (tx) => {
+    // This read and every provisioning write share one immediate transaction.
+    // If deletion commits first, no row is recreated. If provisioning commits
+    // first, deletion observes and erases that row after installing its fence.
+    if (await hasAccountDeletionStartedWith(tx, clerkUserId)) return false;
+
     await tx.run(sql`
       INSERT OR IGNORE INTO users (id, clerk_id, handle, color, initials)
       VALUES (${clerkUserId}, ${clerkUserId}, ${handle}, ${color}, ${initials})
@@ -108,7 +135,8 @@ export async function ensureUserProvisioned(
       INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
       VALUES (${workspaceId}, ${clerkUserId}, 'owner')
     `);
-  });
+    return true;
+  }, { behavior: "immediate" });
 }
 
 // Matches the webhook handler's PALETTE + hash for visual stability.

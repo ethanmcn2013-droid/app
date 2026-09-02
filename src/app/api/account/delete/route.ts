@@ -1,6 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { deleteAccountForUser } from "@/server/account";
+import { beginAccountDeletion } from "@/server/account-deletion-lifecycle";
 
 /**
  * POST /api/account/delete
@@ -11,8 +12,9 @@ import { deleteAccountForUser } from "@/server/account";
  * Flow:
  *   1. Verify the request is authed (the user can only delete their
  *      own account; no admin path here).
- *   2. Purge the user's footprint from Turso (Tasks' product DB).
- *   3. Call Clerk admin to delete the user. Clerk severs the session
+ *   2. Install a durable, hashed identity-level deletion tombstone.
+ *   3. Purge the user's footprint from every Signal Studio product.
+ *   4. Call Clerk admin to delete the user. Clerk severs the session
  *      automatically; the client will receive a 200 and then redirect
  *      to the homepage.
  *
@@ -32,6 +34,9 @@ export async function POST() {
   }
 
   try {
+    // Must precede every eraser. A stale authenticated request and a delayed
+    // Clerk webhook can no longer reprovision this identity after this point.
+    await beginAccountDeletion(userId);
     await deleteAccountForUser(userId);
 
     const client = await clerkClient();

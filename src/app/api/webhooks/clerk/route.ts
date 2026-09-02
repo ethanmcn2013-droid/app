@@ -5,6 +5,11 @@ import { eq, sql } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
+import { deleteAccountForUser } from "@/server/account";
+import {
+  beginAccountDeletion,
+  hasAccountDeletionStartedWith,
+} from "@/server/account-deletion-lifecycle";
 import { grantEntitlement } from "@/server/actions/billing";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
@@ -183,7 +188,12 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
 
   // All three writes inside one BEGIN…COMMIT so a crash mid-flight
   // can't leave a user without a workspace.
-  await db.transaction(async (tx) => {
+  const provisioned = await db.transaction(async (tx) => {
+    // `user.created` can be delayed or retried after an in-app erasure starts.
+    // The suppression read and provisioning writes must share this immediate
+    // transaction so creation and deletion have one deterministic winner.
+    if (await hasAccountDeletionStartedWith(tx, userId)) return false;
+
     await tx.run(sql`
       INSERT INTO users (id, clerk_id, email, handle, name, color, initials)
       VALUES (${userId}, ${u.id}, ${email}, ${handle}, ${name}, ${color}, ${initials})
@@ -223,7 +233,10 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
       INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
       VALUES (${workspaceId}, ${userId}, 'owner')
     `);
-  });
+    return true;
+  }, { behavior: "immediate" });
+
+  if (!provisioned) return;
 
   // .edu Pro grant. Runs OUTSIDE the transaction, the workspace
   // exists by this point, and a failure here shouldn't roll back
@@ -264,13 +277,19 @@ function isEduEmail(email: string): boolean {
 async function handleUserUpdated(u: ClerkUser): Promise<void> {
   const email = u.email_addresses?.[0]?.email_address ?? null;
   const name = deriveName(u);
-  await db
-    .update(users)
-    .set({ email, name })
-    .where(eq(users.clerkId, u.id));
+  await db.transaction(async (tx) => {
+    if (await hasAccountDeletionStartedWith(tx, u.id)) return;
+    await tx
+      .update(users)
+      .set({ email, name })
+      .where(eq(users.clerkId, u.id));
+  }, { behavior: "immediate" });
 }
 
 async function handleUserDeleted(u: ClerkUser): Promise<void> {
-  // Cascading FKs delete the user's workspaces (owner) and memberships.
-  await db.delete(users).where(eq(users.clerkId, u.id));
+  // Clerk Dashboard/admin deletions must execute the same complete erasure as
+  // the in-app route. The tombstone makes webhook retries idempotent and blocks
+  // a delayed create/update delivery from resurrecting product data.
+  await beginAccountDeletion(u.id);
+  await deleteAccountForUser(u.id);
 }
