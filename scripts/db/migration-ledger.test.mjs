@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 29);
+  assert.equal(context.entries.length, 30);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -63,6 +63,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0026_workspace_money",
     "0027_share_link_token_hash",
     "0028_project_drive",
+    "0029_project_drive_operations",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -128,13 +129,14 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0026_workspace_money",
     "0027_share_link_token_hash",
     "0028_project_drive",
+    "0029_project_drive_operations",
   ]);
-  assert.equal(first.proofs.length, 121);
+  assert.equal(first.proofs.length, 149);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 40],
-    ["table", 26],
+    ["index", 47],
+    ["table", 27],
     ["trigger", 4],
   ]);
 
@@ -264,6 +266,415 @@ test("Project Drive preserves credential, folder, and grant generations", async 
   await assert.rejects(() => client.execute("DELETE FROM provider_connections WHERE id = 'conn-a1'"), /FOREIGN KEY constraint failed/);
   await assert.rejects(() => client.execute("DELETE FROM workspace_storage WHERE id = 'gen-a1'"), /FOREIGN KEY constraint failed/);
   await assert.rejects(() => client.execute("DELETE FROM workspace_storage WHERE id = 'gen-a3'"), /FOREIGN KEY constraint failed/);
+}));
+
+test("Project Drive operation journal is typed, recoverable, and lifecycle-safe with foreign keys on", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+  assert.equal(
+    Number((await client.execute("SELECT foreign_keys AS value FROM pragma_foreign_keys")).rows[0].value),
+    1,
+    "this test must exercise real SQLite FK enforcement",
+  );
+
+  await client.execute(`INSERT INTO users (id, color, initials) VALUES
+    ('journal-owner', '#000', 'JO'),
+    ('journal-member', '#111', 'JM'),
+    ('journal-delete-member', '#333', 'DM'),
+    ('handover-owner', '#222', 'HO')`);
+  await client.execute(`INSERT INTO workspaces (id, slug, name) VALUES
+    ('journal-ws-a', 'journal-ws-a', 'Journal A'),
+    ('journal-ws-b', 'journal-ws-b', 'Journal B'),
+    ('journal-ws-delete', 'journal-ws-delete', 'Delete me')`);
+  await client.execute(`INSERT INTO provider_connections (
+    id, user_id, provider, provider_account_id, root_folder_id,
+    refresh_token_cipher, key_version, scopes, status, is_current, connected_at
+  ) VALUES
+    ('journal-conn-a', 'journal-owner', 'google_drive', 'provider-a',
+      'root-a', 'cipher-a', 1, '["drive.file"]', 'active', 1, 1),
+    ('journal-conn-b', 'handover-owner', 'google_drive', 'provider-b',
+      'root-b', 'cipher-b', 1, '["drive.file"]', 'active', 1, 1)`);
+  await client.execute(`INSERT INTO workspace_storage (
+    id, workspace_id, connection_id, folder_id, folder_web_view_link,
+    state, is_current
+  ) VALUES
+    ('journal-gen-a', 'journal-ws-a', 'journal-conn-a',
+      'folder-a', 'https://drive.example/folder-a', 'active', 1),
+    ('journal-gen-delete', 'journal-ws-delete', 'journal-conn-a',
+      'folder-delete', 'https://drive.example/folder-delete', 'active', 1)`);
+
+  const insertOperation = (input) => client.execute({
+    sql: `INSERT INTO project_drive_operations (
+      id, workspace_id, operation_kind, status, dedupe_key, connection_id,
+      storage_generation_id, target_storage_generation_id, subject_user_id,
+      grantee_email, grant_role, workspace_revision, provider_folder_id,
+      provider_folder_web_view_link, provider_permission_id, attempt_count,
+      last_attempt_at, next_attempt_at, lease_expires_at, last_error_code,
+      created_at, updated_at, completed_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      input.id,
+      input.workspaceId ?? "journal-ws-a",
+      input.operationKind,
+      input.status ?? "pending",
+      input.dedupeKey,
+      input.connectionId ?? null,
+      input.storageGenerationId ?? null,
+      input.targetStorageGenerationId ?? null,
+      input.subjectUserId ?? null,
+      input.granteeEmail ?? null,
+      input.grantRole ?? null,
+      input.workspaceRevision ?? null,
+      input.providerFolderId ?? null,
+      input.providerFolderWebViewLink ?? null,
+      input.providerPermissionId ?? null,
+      input.attemptCount ?? 0,
+      input.lastAttemptAt ?? null,
+      input.nextAttemptAt ?? null,
+      input.leaseExpiresAt ?? null,
+      input.lastErrorCode ?? null,
+      input.createdAt ?? 10,
+      input.updatedAt ?? 10,
+      input.completedAt ?? null,
+    ],
+  });
+
+  await insertOperation({
+    id: "op-provision",
+    operationKind: "folder_provision",
+    dedupeKey: "a".repeat(64),
+    connectionId: "journal-conn-a",
+    targetStorageGenerationId: "journal-gen-reserved",
+  });
+  await insertOperation({
+    id: "op-grant",
+    operationKind: "grant_create",
+    dedupeKey: "b".repeat(64),
+    storageGenerationId: "journal-gen-a",
+    subjectUserId: "journal-member",
+    granteeEmail: "member@example.com",
+    grantRole: "writer",
+  });
+  await insertOperation({
+    id: "op-rename",
+    operationKind: "folder_rename",
+    dedupeKey: "c".repeat(64),
+    storageGenerationId: "journal-gen-a",
+    workspaceRevision: 2,
+  });
+  await insertOperation({
+    id: "op-delete",
+    workspaceId: "journal-ws-delete",
+    operationKind: "project_delete",
+    dedupeKey: "d".repeat(64),
+  });
+  await insertOperation({
+    id: "op-handover",
+    operationKind: "storage_handover",
+    dedupeKey: "e".repeat(64),
+    connectionId: "journal-conn-b",
+    storageGenerationId: "journal-gen-a",
+    targetStorageGenerationId: "journal-gen-b",
+  });
+  await client.execute(`INSERT INTO drive_folder_grants (
+    storage_generation_id, workspace_id, user_id, permission_id,
+    granted_email, role, granted_at, revoke_pending
+  ) VALUES
+    ('journal-gen-a', 'journal-ws-a', 'journal-member',
+      'permission-to-revoke', 'member@example.com', 'writer', 10, 1),
+    ('journal-gen-delete', 'journal-ws-delete', 'journal-delete-member',
+      'permission-delete', 'delete@example.com', 'reader', 10, 1)`);
+
+  assert.equal(
+    Number((await client.execute("SELECT COUNT(*) AS value FROM workspace_storage WHERE id = 'journal-gen-reserved'")).rows[0].value),
+    0,
+    "folder intent must be durable before its storage generation can exist",
+  );
+  assert.equal(
+    Number((await client.execute(`SELECT COUNT(*) AS value
+      FROM pragma_foreign_key_list('project_drive_operations')
+      WHERE "from" = 'target_storage_generation_id'`)).rows[0].value),
+    0,
+    "the reserved target generation must not have a premature FK",
+  );
+
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-bad-key",
+      operationKind: "project_delete",
+      dedupeKey: "not-a-hash",
+    }),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-revoke-duplicate-queue",
+      operationKind: "grant_revoke",
+      dedupeKey: "3".repeat(64),
+    }),
+    /CHECK constraint failed/,
+    "grant revocation must stay in drive_folder_grants.revoke_pending",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-duplicate-key",
+      workspaceId: "journal-ws-b",
+      operationKind: "project_delete",
+      dedupeKey: "d".repeat(64),
+    }),
+    /UNIQUE constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-duplicate-generation",
+      operationKind: "folder_provision",
+      dedupeKey: "f".repeat(64),
+      connectionId: "journal-conn-a",
+      targetStorageGenerationId: "journal-gen-reserved",
+    }),
+    /UNIQUE constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-cross-workspace",
+      workspaceId: "journal-ws-b",
+      operationKind: "folder_rename",
+      dedupeKey: "0".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      workspaceRevision: 1,
+    }),
+    /FOREIGN KEY constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-wrong-shape",
+      operationKind: "grant_create",
+      dedupeKey: "1".repeat(64),
+      connectionId: "journal-conn-a",
+      storageGenerationId: "journal-gen-a",
+      subjectUserId: "journal-member",
+      granteeEmail: "member@example.com",
+      grantRole: "writer",
+    }),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-running-without-attempt",
+      operationKind: "project_delete",
+      dedupeKey: "2".repeat(64),
+      status: "running",
+      leaseExpiresAt: 20,
+    }),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-fractional-attempt",
+      operationKind: "project_delete",
+      dedupeKey: "4".repeat(64),
+      attemptCount: 1.5,
+      lastAttemptAt: 10,
+    }),
+    /CHECK constraint failed/,
+    "attempt fencing values must be integers",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-text-revision",
+      operationKind: "folder_rename",
+      dedupeKey: "5".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      workspaceRevision: "not-an-integer",
+    }),
+    /CHECK constraint failed/,
+    "workspace revisions must retain integer affinity",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-invalid-email",
+      operationKind: "grant_create",
+      dedupeKey: "6".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      subjectUserId: "journal-member",
+      granteeEmail: "member@",
+      grantRole: "writer",
+    }),
+    /CHECK constraint failed/,
+    "the database and key normalizer must reject the same incomplete email",
+  );
+  await assert.rejects(
+    () => insertOperation({
+      id: "op-invalid-role",
+      operationKind: "grant_create",
+      dedupeKey: "7".repeat(64),
+      storageGenerationId: "journal-gen-a",
+      subjectUserId: "journal-member",
+      granteeEmail: "member@example.com",
+      grantRole: "owner",
+    }),
+    /CHECK constraint failed/,
+    "only the exact writer/reader request may be journaled",
+  );
+
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'running', attempt_count = 1, last_attempt_at = 20,
+    lease_expires_at = 30, updated_at = 20
+    WHERE id = 'op-provision'`);
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'retry_wait', lease_expires_at = NULL, next_attempt_at = 40,
+    last_error_code = 'network_error', updated_at = 30
+    WHERE id = 'op-provision'`);
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'manual_attention', next_attempt_at = NULL,
+    last_error_code = 'ambiguous_provider_result', updated_at = 40
+    WHERE id = 'op-provision'`);
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'succeeded', provider_folder_id = 'folder-reserved',
+    provider_folder_web_view_link = 'https://drive.example/folder-reserved',
+    last_error_code = NULL, completed_at = 50, updated_at = 50
+    WHERE id = 'op-provision'`);
+  await assert.rejects(
+    () => client.execute(`UPDATE project_drive_operations SET
+      status = 'cancelled' WHERE id = 'op-provision'`),
+    /CHECK constraint failed/,
+    "a provider receipt must be repaired, not hidden by cancellation",
+  );
+
+  await assert.rejects(
+    () => client.execute(`UPDATE project_drive_operations SET
+      status = 'manual_attention', attempt_count = 1, last_attempt_at = 20,
+      last_error_code = '401 bearer secret response', updated_at = 20
+      WHERE id = 'op-rename'`),
+    /CHECK constraint failed/,
+    "raw provider errors are not valid journal codes",
+  );
+  await assert.rejects(
+    () => client.execute(`UPDATE project_drive_operations SET
+      status = 'succeeded', attempt_count = 1, last_attempt_at = 20,
+      completed_at = 20, updated_at = 20 WHERE id = 'op-grant'`),
+    /CHECK constraint failed/,
+    "a successful grant requires its exact permission receipt",
+  );
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'succeeded', attempt_count = 1, last_attempt_at = 20,
+    provider_permission_id = 'permission-receipt', completed_at = 20,
+    updated_at = 20 WHERE id = 'op-grant'`);
+
+  const recoveredGrant = (await client.execute(`SELECT
+    storage_generation_id, subject_user_id, grantee_email, grant_role,
+    provider_permission_id
+    FROM project_drive_operations WHERE id = 'op-grant'`)).rows[0];
+  assert.deepEqual(
+    [
+      recoveredGrant.storage_generation_id,
+      recoveredGrant.subject_user_id,
+      recoveredGrant.grantee_email,
+      recoveredGrant.grant_role,
+      recoveredGrant.provider_permission_id,
+    ],
+    [
+      "journal-gen-a",
+      "journal-member",
+      "member@example.com",
+      "writer",
+      "permission-receipt",
+    ],
+    "provider success plus a DB crash retains the complete grant request and receipt",
+  );
+
+  const revokeReceipt = (await client.execute(`SELECT permission_id, revoke_pending
+    FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-a'
+      AND user_id = 'journal-member'`)).rows[0];
+  assert.equal(revokeReceipt.permission_id, "permission-to-revoke");
+  assert.equal(Number(revokeReceipt.revoke_pending), 1);
+
+  await assert.rejects(
+    () => client.execute("DELETE FROM workspaces WHERE id = 'journal-ws-delete'"),
+    /FOREIGN KEY constraint failed/,
+    "project deletion must retain its durable operation until final cleanup",
+  );
+  await assert.rejects(
+    () => client.execute("DELETE FROM users WHERE id = 'journal-member'"),
+    /FOREIGN KEY constraint failed/,
+    "account cleanup must resolve a member grant operation first",
+  );
+  await assert.rejects(
+    () => client.execute("DELETE FROM provider_connections WHERE id = 'journal-conn-b'"),
+    /FOREIGN KEY constraint failed/,
+    "handover must retain its target credential generation until resolved",
+  );
+  await assert.rejects(
+    () => client.execute("DELETE FROM workspace_storage WHERE id = 'journal-gen-a'"),
+    /FOREIGN KEY constraint failed/,
+    "rename, grant and handover repair must retain the source generation",
+  );
+
+  const projectDeleteGrant = (await client.execute(`SELECT permission_id,
+    revoke_pending FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-delete'
+      AND user_id = 'journal-delete-member'`)).rows[0];
+  assert.equal(projectDeleteGrant.permission_id, "permission-delete");
+  assert.equal(Number(projectDeleteGrant.revoke_pending), 1);
+  await client.execute(`DELETE FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-delete'
+      AND user_id = 'journal-delete-member' AND revoke_pending = 1`);
+  await client.execute("DELETE FROM workspace_storage WHERE id = 'journal-gen-delete'");
+  await client.execute(`UPDATE project_drive_operations SET
+    status = 'succeeded', attempt_count = 1, last_attempt_at = 20,
+    completed_at = 20, updated_at = 20 WHERE id = 'op-delete'`);
+  await client.batch([
+    "DELETE FROM project_drive_operations WHERE id = 'op-delete' AND status = 'succeeded'",
+    "DELETE FROM workspaces WHERE id = 'journal-ws-delete'",
+  ], "write");
+  assert.equal(
+    Number((await client.execute(`SELECT COUNT(*) AS value
+      FROM project_drive_operations
+      WHERE id = 'op-delete'`)).rows[0].value),
+    0,
+    "a completed project-delete marker is consumed, not left as a false tombstone",
+  );
+  await client.execute("DELETE FROM users WHERE id = 'journal-delete-member'");
+  await client.execute("DELETE FROM project_drive_operations WHERE id = 'op-grant'");
+  await assert.rejects(
+    () => client.execute("DELETE FROM users WHERE id = 'journal-member'"),
+    /FOREIGN KEY constraint failed/,
+    "the sole revoke queue retains the exact grant until provider repair succeeds",
+  );
+  await client.execute(`DELETE FROM drive_folder_grants
+    WHERE storage_generation_id = 'journal-gen-a'
+      AND user_id = 'journal-member' AND revoke_pending = 1`);
+  await client.execute("DELETE FROM users WHERE id = 'journal-member'");
+  await client.execute("DELETE FROM project_drive_operations WHERE id = 'op-handover'");
+  await client.execute("DELETE FROM provider_connections WHERE id = 'journal-conn-b'");
+  await client.execute("DELETE FROM project_drive_operations WHERE id = 'op-rename'");
+  await client.execute("DELETE FROM workspace_storage WHERE id = 'journal-gen-a'");
+}));
+
+test("Project Drive operation journal detects same-name partial-index drift", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+
+  await client.execute("DROP INDEX idx_project_drive_operations_target_generation");
+  await client.execute(`CREATE UNIQUE INDEX idx_project_drive_operations_target_generation
+    ON project_drive_operations (target_storage_generation_id) WHERE 0`);
+  await assert.rejects(
+    () => migrationStatus({ client }),
+    /proof project-drive-operations-target-index-guard expected 1 but received 0/,
+  );
+
+  await client.execute("DROP INDEX idx_project_drive_operations_target_generation");
+  await client.execute(`CREATE UNIQUE INDEX idx_project_drive_operations_target_generation
+    ON project_drive_operations (target_storage_generation_id)
+    WHERE target_storage_generation_id IS NOT NULL`);
+  await client.execute("DROP INDEX idx_project_drive_operations_ready");
+  await client.execute(`CREATE INDEX idx_project_drive_operations_ready
+    ON project_drive_operations (
+      status, next_attempt_at, lease_expires_at, created_at
+    ) WHERE status = 'pending'`);
+  await assert.rejects(
+    () => migrationStatus({ client }),
+    /proof project-drive-operations-ready-index-guard expected 1 but received 0/,
+  );
 }));
 
 test("a non-empty database without an exact ledger refuses migration execution", async () => withClient(async (client) => {

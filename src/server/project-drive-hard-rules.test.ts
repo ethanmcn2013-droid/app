@@ -4,6 +4,11 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
 
+// This file is the package-level server-only Project Drive test entry point.
+// Keep the operation-key contract on the normal `pnpm test` path as well as
+// available for focused execution.
+import "./connections/project-drive-operation-key.test";
+
 /**
  * Project Drive — the ten hard rules, enforced from the first commit.
  *

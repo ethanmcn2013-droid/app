@@ -24,10 +24,17 @@ migration in order; they do not replay 0000-0013.
 
 ## Current forward migration
 
-`0028_project_drive.sql` adds the Project Drive custody model: immutable
-provider-connection and board-folder generations, exact folder-permission
-receipts, and the resource fields that bind a Drive file to its storage
-generation. Existing resources remain `storage='signal'`.
+`0029_project_drive_operations.sql` adds the durable Project Drive operation
+journal on top of 0028's immutable custody model. It records provider intent,
+stable folder or permission receipts, bounded recovery states and retry timing
+without storing access tokens, raw provider errors or resumable-session URLs.
+The reserved target generation intentionally exists before its eventual
+`workspace_storage` row so a committed Drive folder can always be recovered.
+Failed permission deletion does not create a second queue here:
+`drive_folder_grants.revoke_pending`, paired with its exact `permission_id`, is
+the sole revoke-repair ledger. A `project_delete` operation is removed only in
+the final transaction that deletes its workspace, after those provider/grant
+repairs succeed; the workspace FK uses `RESTRICT` to make that order explicit.
 
 The checked-in review receipt is deliberately **not authorized for
 production**. Local and CI application prove the migration now. Production
@@ -67,7 +74,7 @@ migration is a strict no-op.
 1. Change `src/server/db/schema.ts`.
 2. Do not run ordinary `drizzle-kit generate` until the snapshot chain is
    deliberately repaired: the latest checked-in snapshot is 0015 while the
-   receipt-backed hand-reviewed chain continues through 0028. Blind generation
+   receipt-backed hand-reviewed chain continues through 0029. Blind generation
    from that stale base can repeat already-applied schema. Follow the latest
    hand-reviewed forward migration and journal shape, or repair snapshot
    continuity as its own reviewed package first.

@@ -346,6 +346,45 @@
         "integrity",
         "foreign-keys"
       ]
+    },
+    {
+      "ordinal": 29,
+      "id": "0029_project_drive_operations",
+      "file": "drizzle/0029_project_drive_operations.sql",
+      "when": 1788386340000,
+      "sha256": "332c40bf70ad206f247cb12793b3a49ecf7d20f47b3a16b93cacb519ee13b79a",
+      "policy": "forward",
+      "receipt": "drizzle/receipts/project-drive-operations-2026-09-02.json",
+      "receiptSha256": "67800552bacc10aa0ca298475def25fc94638c4e65a0d7122caa3a65d3f2074f",
+      "continuousProofIds": [
+        "project-drive-operations-columns",
+        "project-drive-operations-primary-key",
+        "project-drive-operations-core-types",
+        "project-drive-operations-defaults",
+        "project-drive-operations-receipt-columns",
+        "project-drive-operations-no-credential-columns",
+        "project-drive-operations-foreign-key-count",
+        "project-drive-operations-workspace-foreign-key",
+        "project-drive-operations-connection-foreign-key",
+        "project-drive-operations-storage-foreign-key",
+        "project-drive-operations-subject-user-foreign-key",
+        "project-drive-operations-target-generation-unlinked",
+        "project-drive-operations-dedupe-index-columns",
+        "project-drive-operations-dedupe-index-unique",
+        "project-drive-operations-target-index-columns",
+        "project-drive-operations-target-index-guard",
+        "project-drive-operations-workspace-index-columns",
+        "project-drive-operations-ready-index-columns",
+        "project-drive-operations-ready-index-guard",
+        "project-drive-operations-connection-index",
+        "project-drive-operations-storage-index",
+        "project-drive-operations-subject-index",
+        "project-drive-operations-core-checks",
+        "project-drive-operations-lifecycle-checks",
+        "project-drive-operations-payload-checks",
+        "integrity",
+        "foreign-keys"
+      ]
     }
   ]
 }

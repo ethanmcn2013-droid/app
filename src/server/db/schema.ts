@@ -1078,6 +1078,320 @@ export const driveFolderGrants = sqliteTable(
   ],
 );
 
+export type ProjectDriveOperationKind =
+  | "folder_provision"
+  | "grant_create"
+  | "folder_rename"
+  | "project_delete"
+  | "storage_handover";
+
+export type ProjectDriveOperationStatus =
+  | "pending"
+  | "running"
+  | "retry_wait"
+  | "manual_attention"
+  | "succeeded"
+  | "cancelled";
+
+export type ProjectDriveOperationErrorCode =
+  | "ambiguous_provider_result"
+  | "cannot_invite_non_google_user"
+  | "connection_not_current"
+  | "folder_missing"
+  | "grant_not_found"
+  | "network_error"
+  | "permission_denied"
+  | "provider_conflict"
+  | "provider_unavailable"
+  | "quota_full"
+  | "rate_limited"
+  | "reauth_required"
+  | "repair_incomplete"
+  | "workspace_changed";
+
+/**
+ * Durable intent and recovery receipts for split database/Drive operations.
+ * The row exists before a provider call; it stores only stable provider ids
+ * and normalized error codes afterwards. Tokens, provider response bodies and
+ * resumable-upload session URLs must never be written here.
+ *
+ * `targetStorageGenerationId` deliberately has no FK. It reserves the next
+ * immutable generation before Drive returns a folder id, when the required
+ * `workspaceStorage` row cannot exist yet. `storageGenerationId` names an
+ * already-created generation and is workspace-coupled by a composite FK.
+ *
+ * Grant revoke repair is not duplicated here: `driveFolderGrants` already
+ * owns the exact permission id and `revokePending` is its single queue. A
+ * project-delete operation is likewise intent, not a lasting tombstone. Once
+ * all provider/grant work succeeds, delete that row in the same final database
+ * transaction that deletes the workspace; its RESTRICT FK forces that order.
+ */
+export const projectDriveOperations = sqliteTable(
+  "project_drive_operations",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    operationKind: text("operation_kind")
+      .$type<ProjectDriveOperationKind>()
+      .notNull(),
+    status: text("status")
+      .$type<ProjectDriveOperationStatus>()
+      .notNull()
+      .default("pending"),
+    /** SHA-256 of a versioned, operation-specific canonical tuple. */
+    dedupeKey: text("dedupe_key").notNull(),
+    /** Target credential for folder provision or handover. */
+    connectionId: text("connection_id"),
+    /** Existing generation for a grant, rename, or handover source. */
+    storageGenerationId: text("storage_generation_id"),
+    /** Reserved generation created before its workspaceStorage row. */
+    targetStorageGenerationId: text("target_storage_generation_id"),
+    subjectUserId: text("subject_user_id"),
+    granteeEmail: text("grantee_email"),
+    grantRole: text("grant_role").$type<"writer" | "reader">(),
+    workspaceRevision: integer("workspace_revision"),
+    /** Stable folder receipt; never an access capability. */
+    providerFolderId: text("provider_folder_id"),
+    providerFolderWebViewLink: text("provider_folder_web_view_link"),
+    /** Exact permission receipt required for grant recovery/revocation. */
+    providerPermissionId: text("provider_permission_id"),
+    /** Also serves as the fencing token for a claimed attempt. */
+    attemptCount: integer("attempt_count").notNull().default(0),
+    lastAttemptAt: integer("last_attempt_at", { mode: "timestamp" }),
+    nextAttemptAt: integer("next_attempt_at", { mode: "timestamp" }),
+    leaseExpiresAt: integer("lease_expires_at", { mode: "timestamp" }),
+    lastErrorCode: text("last_error_code").$type<ProjectDriveOperationErrorCode>(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    completedAt: integer("completed_at", { mode: "timestamp" }),
+  },
+  (t) => [
+    uniqueIndex("idx_project_drive_operations_dedupe").on(t.dedupeKey),
+    uniqueIndex("idx_project_drive_operations_target_generation")
+      .on(t.targetStorageGenerationId)
+      .where(sql`${t.targetStorageGenerationId} IS NOT NULL`),
+    index("idx_project_drive_operations_workspace_status").on(
+      t.workspaceId,
+      t.status,
+      t.operationKind,
+    ),
+    index("idx_project_drive_operations_ready")
+      .on(t.status, t.nextAttemptAt, t.leaseExpiresAt, t.createdAt)
+      .where(sql`${t.status} IN ('pending','running','retry_wait')`),
+    index("idx_project_drive_operations_connection")
+      .on(t.connectionId)
+      .where(sql`${t.connectionId} IS NOT NULL`),
+    index("idx_project_drive_operations_storage")
+      .on(t.storageGenerationId, t.workspaceId)
+      .where(sql`${t.storageGenerationId} IS NOT NULL`),
+    index("idx_project_drive_operations_subject_user")
+      .on(t.subjectUserId)
+      .where(sql`${t.subjectUserId} IS NOT NULL`),
+    foreignKey({
+      name: "project_drive_operations_workspace_fk",
+      columns: [t.workspaceId],
+      foreignColumns: [workspaces.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "project_drive_operations_connection_fk",
+      columns: [t.connectionId],
+      foreignColumns: [providerConnections.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "project_drive_operations_storage_fk",
+      columns: [t.storageGenerationId, t.workspaceId],
+      foreignColumns: [workspaceStorage.id, workspaceStorage.workspaceId],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "project_drive_operations_subject_user_fk",
+      columns: [t.subjectUserId],
+      foreignColumns: [users.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "project_drive_operations_kind_check",
+      sql`${t.operationKind} IN ('folder_provision','grant_create','folder_rename','project_delete','storage_handover')`,
+    ),
+    check(
+      "project_drive_operations_status_check",
+      sql`${t.status} IN ('pending','running','retry_wait','manual_attention','succeeded','cancelled')`,
+    ),
+    check(
+      "project_drive_operations_dedupe_key_check",
+      sql`length(${t.dedupeKey}) = 64 AND ${t.dedupeKey} = lower(${t.dedupeKey}) AND ${t.dedupeKey} NOT GLOB '*[^0-9a-f]*'`,
+    ),
+    check(
+      "project_drive_operations_error_code_check",
+      sql`${t.lastErrorCode} IS NULL OR ${t.lastErrorCode} IN ('ambiguous_provider_result','cannot_invite_non_google_user','connection_not_current','folder_missing','grant_not_found','network_error','permission_denied','provider_conflict','provider_unavailable','quota_full','rate_limited','reauth_required','repair_incomplete','workspace_changed')`,
+    ),
+    check(
+      "project_drive_operations_attempt_check",
+      sql`typeof(${t.attemptCount}) = 'integer'
+        AND ${t.attemptCount} >= 0
+        AND ((${t.attemptCount} = 0 AND ${t.lastAttemptAt} IS NULL)
+          OR (${t.attemptCount} > 0 AND ${t.lastAttemptAt} IS NOT NULL))
+        AND (${t.lastAttemptAt} IS NULL OR ${t.lastAttemptAt} >= ${t.createdAt})
+        AND (${t.nextAttemptAt} IS NULL OR ${t.nextAttemptAt} >= ${t.lastAttemptAt})
+        AND (${t.leaseExpiresAt} IS NULL OR ${t.leaseExpiresAt} >= ${t.lastAttemptAt})`,
+    ),
+    check(
+      "project_drive_operations_integer_type_check",
+      sql`typeof(${t.createdAt}) = 'integer' AND ${t.createdAt} >= 0
+        AND typeof(${t.updatedAt}) = 'integer' AND ${t.updatedAt} >= 0
+        AND (${t.lastAttemptAt} IS NULL OR
+          (typeof(${t.lastAttemptAt}) = 'integer' AND ${t.lastAttemptAt} >= 0))
+        AND (${t.nextAttemptAt} IS NULL OR
+          (typeof(${t.nextAttemptAt}) = 'integer' AND ${t.nextAttemptAt} >= 0))
+        AND (${t.leaseExpiresAt} IS NULL OR
+          (typeof(${t.leaseExpiresAt}) = 'integer' AND ${t.leaseExpiresAt} >= 0))
+        AND (${t.completedAt} IS NULL OR
+          (typeof(${t.completedAt}) = 'integer' AND ${t.completedAt} >= 0))`,
+    ),
+    check(
+      "project_drive_operations_status_time_check",
+      sql`(${t.status} = 'pending'
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} = 'running'
+          AND ${t.attemptCount} > 0
+          AND ${t.leaseExpiresAt} IS NOT NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} = 'retry_wait'
+          AND ${t.attemptCount} > 0
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NOT NULL
+          AND ${t.lastErrorCode} IS NOT NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} = 'manual_attention'
+          AND ${t.attemptCount} > 0
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.lastErrorCode} IS NOT NULL
+          AND ${t.completedAt} IS NULL)
+        OR (${t.status} IN ('succeeded','cancelled')
+          AND (${t.status} = 'cancelled' OR ${t.attemptCount} > 0)
+          AND ${t.leaseExpiresAt} IS NULL
+          AND ${t.nextAttemptAt} IS NULL
+          AND ${t.completedAt} IS NOT NULL)`,
+    ),
+    check(
+      "project_drive_operations_timestamp_check",
+      sql`${t.updatedAt} >= ${t.createdAt}
+        AND (${t.completedAt} IS NULL OR ${t.completedAt} >= ${t.createdAt})`,
+    ),
+    check(
+      "project_drive_operations_folder_receipt_check",
+      sql`(${t.providerFolderId} IS NULL AND ${t.providerFolderWebViewLink} IS NULL)
+        OR (${t.providerFolderId} IS NOT NULL
+          AND length(trim(${t.providerFolderId})) > 0
+          AND ${t.providerFolderWebViewLink} IS NOT NULL
+          AND length(trim(${t.providerFolderWebViewLink})) > 0)`,
+    ),
+    check(
+      "project_drive_operations_email_check",
+      sql`${t.granteeEmail} IS NULL OR (
+        length(${t.granteeEmail}) BETWEEN 3 AND 320
+        AND ${t.granteeEmail} = lower(trim(${t.granteeEmail}))
+        AND instr(${t.granteeEmail}, '@') > 1
+        AND substr(${t.granteeEmail}, -1) <> '@')`,
+    ),
+    check(
+      "project_drive_operations_grant_role_check",
+      sql`${t.grantRole} IS NULL OR ${t.grantRole} IN ('writer','reader')`,
+    ),
+    check(
+      "project_drive_operations_revision_check",
+      sql`${t.workspaceRevision} IS NULL OR (
+        typeof(${t.workspaceRevision}) = 'integer'
+        AND ${t.workspaceRevision} >= 1)`,
+    ),
+    check(
+      "project_drive_operations_kind_shape_check",
+      sql`(${t.operationKind} = 'folder_provision'
+          AND ${t.connectionId} IS NOT NULL
+          AND ${t.storageGenerationId} IS NULL
+          AND ${t.targetStorageGenerationId} IS NOT NULL
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerPermissionId} IS NULL)
+        OR (${t.operationKind} = 'grant_create'
+          AND ${t.connectionId} IS NULL
+          AND ${t.storageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} IS NULL
+          AND ${t.subjectUserId} IS NOT NULL
+          AND ${t.granteeEmail} IS NOT NULL
+          AND ${t.grantRole} IS NOT NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerFolderId} IS NULL
+          AND ${t.providerFolderWebViewLink} IS NULL)
+        OR (${t.operationKind} = 'folder_rename'
+          AND ${t.connectionId} IS NULL
+          AND ${t.storageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} IS NULL
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NOT NULL
+          AND ${t.providerFolderId} IS NULL
+          AND ${t.providerFolderWebViewLink} IS NULL
+          AND ${t.providerPermissionId} IS NULL)
+        OR (${t.operationKind} = 'project_delete'
+          AND ${t.connectionId} IS NULL
+          AND ${t.storageGenerationId} IS NULL
+          AND ${t.targetStorageGenerationId} IS NULL
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerFolderId} IS NULL
+          AND ${t.providerFolderWebViewLink} IS NULL
+          AND ${t.providerPermissionId} IS NULL)
+        OR (${t.operationKind} = 'storage_handover'
+          AND ${t.connectionId} IS NOT NULL
+          AND ${t.storageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} IS NOT NULL
+          AND ${t.targetStorageGenerationId} <> ${t.storageGenerationId}
+          AND ${t.subjectUserId} IS NULL
+          AND ${t.granteeEmail} IS NULL
+          AND ${t.grantRole} IS NULL
+          AND ${t.workspaceRevision} IS NULL
+          AND ${t.providerPermissionId} IS NULL)`,
+    ),
+    check(
+      "project_drive_operations_terminal_receipt_check",
+      sql`${t.status} <> 'succeeded'
+        OR (${t.operationKind} IN ('folder_provision','storage_handover')
+          AND ${t.providerFolderId} IS NOT NULL)
+        OR (${t.operationKind} = 'grant_create'
+          AND ${t.providerPermissionId} IS NOT NULL
+          AND length(trim(${t.providerPermissionId})) > 0)
+        OR ${t.operationKind} IN ('folder_rename','project_delete')`,
+    ),
+    check(
+      "project_drive_operations_cancelled_receipt_check",
+      sql`${t.status} <> 'cancelled' OR (
+        ${t.providerFolderId} IS NULL
+        AND ${t.providerFolderWebViewLink} IS NULL
+        AND ${t.providerPermissionId} IS NULL)`,
+    ),
+  ],
+);
+
 /**
  * Unified resource model. Absorbs file attachments (kind='upload') and
  * external links (kind='link') into one read layer.
