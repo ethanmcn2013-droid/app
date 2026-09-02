@@ -349,7 +349,9 @@ function assertGrantTarget(input: {
 
 **Acceptance:** a second Google account added as a member can open the board's
 files with no request-access step; removed, they lose access; the parent folder
-was never shared.
+was never shared. If a current member cannot receive a Google grant, membership
+still succeeds, the access gap is visible, and new uploads use Signal-native
+storage until coverage is complete.
 
 ---
 

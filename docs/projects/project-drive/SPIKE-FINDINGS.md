@@ -127,11 +127,13 @@ whoever the board owner invited by email — there is no requirement that it
 be a Google address. When it is not, the Drive grant will fail with this
 error while the person remains a perfectly valid member of the board.
 
-WP-5 must handle it: the member stays in the project, their files fall
-back to Signal-native storage, and the access screen says plainly that
-this person cannot be given the Drive folder because their email is not a
-Google account. Silently swallowing this would produce a member who
-appears to have access and does not.
+WP-5 must handle it: the member stays in the project, the access screen says
+plainly that this person cannot be given the Drive folder, and new uploads use
+Signal-native storage while any current member lacks a Drive grant. Existing
+Drive files cannot be made reachable through Signal after the fact; the owner
+must use a Google-account address for that member or accept the visible access
+gap. Silently swallowing this would produce a member who appears to have access
+and does not.
 
 Worth noting the error is specific and well-named, so it can be matched on
 `reason === "cannotInviteNonGoogleUser"` rather than string-matching prose.

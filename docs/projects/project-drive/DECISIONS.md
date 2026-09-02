@@ -283,3 +283,21 @@ outcome; probe and resume the same session. A replacement session is allowed
 only after the old one returns a definitive 404 and an app-property search
 finds no landed file. Neither uncertainty nor inconvenience is evidence that
 it is safe to mint twice.
+
+## D14 · Incomplete member coverage pauses new Drive uploads
+
+**Decided 2026-09-02 from the live `cannotInviteNonGoogleUser` result.**
+
+Signal Studio membership does not require a Google account, while a Drive
+folder grant does. A member whose project email is not attached to Google must
+remain a valid member; rolling back their invitation would make storage choose
+who may collaborate. But continuing to put new files in Drive would knowingly
+create files that one current member cannot open.
+
+Therefore the current member set and current-generation grant receipts are an
+upload precondition. If any non-owner member lacks a verified grant, new files
+take the Signal-native path and the access screen names the gap. Existing Drive
+files stay where they are and may remain unavailable to that member until the
+project uses a Google-account address for them. The product must state this
+plainly; neither a missing receipt nor a provider refusal may be presented as
+full coverage.
