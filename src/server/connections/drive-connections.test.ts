@@ -11,7 +11,11 @@ import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
-import { assertProjectId } from "@/lib/projects/project-ref";
+import {
+  assertProjectId,
+  type ProjectCapabilities,
+  type ProjectRole,
+} from "@/lib/projects/project-ref";
 import {
   open,
   providerTokenAadContext,
@@ -31,7 +35,11 @@ import {
 } from "./drive-connections";
 import { GOOGLE_DRIVE_FILE_SCOPE } from "./google-drive-scopes";
 import { parseGoogleOAuthStateCookie } from "./google-oauth-state";
-import type { AuthorizedProjectDriveContext } from "./project-drive-authz";
+import {
+  assertProjectDriveCapability,
+  ProjectDriveAuthorizationError,
+  type AuthorizedProjectDriveContext,
+} from "./project-drive-authz";
 
 const STATE_SECRET = "state-secret-material-with-at-least-32-bytes";
 const OAUTH_CLIENT = Object.freeze({
@@ -73,13 +81,45 @@ async function freshConnectionDb() {
   };
 }
 
+const MANAGER_CAPABILITIES: ProjectCapabilities = Object.freeze({
+  open: true,
+  viewPrivateTimeline: true,
+  createOrEditTasks: true,
+  manageProject: true,
+  moveIntoPlanningPeriod: true,
+  curatePrimaryTimeline: true,
+  publishTimeline: true,
+  revokeTimeline: true,
+  deleteOrTransferOwnership: true,
+});
+
+const TASK_EDITOR_CAPABILITIES: ProjectCapabilities = Object.freeze({
+  open: true,
+  viewPrivateTimeline: true,
+  createOrEditTasks: true,
+  manageProject: false,
+  moveIntoPlanningPeriod: false,
+  curatePrimaryTimeline: false,
+  publishTimeline: false,
+  revokeTimeline: false,
+  deleteOrTransferOwnership: false,
+});
+
 function authorization(
   actorUserId: string,
   projectId: string,
+  options: Readonly<{
+    role?: ProjectRole;
+    capabilities?: ProjectCapabilities;
+    archived?: boolean;
+  }> = {},
 ): AuthorizedProjectDriveContext {
   return {
     actorUserId,
     projectId: assertProjectId(projectId),
+    role: options.role ?? "primary-owner",
+    capabilities: options.capabilities ?? MANAGER_CAPABILITIES,
+    archived: options.archived ?? false,
   } as unknown as AuthorizedProjectDriveContext;
 }
 
@@ -178,6 +218,91 @@ function dependencies(
     keyRing: RING,
   };
 }
+
+describe("Project Drive connection · capability boundary", () => {
+  it("keeps task editing available without admitting it to management", async () => {
+    const taskEditor = authorization("u-member", "ws-a", {
+      role: "member",
+      capabilities: TASK_EDITOR_CAPABILITIES,
+    });
+
+    assert.doesNotThrow(() =>
+      assertProjectDriveCapability(taskEditor, "createOrEditTasks"),
+    );
+    assert.throws(
+      () => assertProjectDriveCapability(taskEditor, "manageProject"),
+      ProjectDriveAuthorizationError,
+    );
+
+    let dependencyTouched = false;
+    const trappedDatabase = new Proxy(
+      {},
+      {
+        get() {
+          dependencyTouched = true;
+          throw new Error("authorization must run before a dependency");
+        },
+      },
+    ) as GoogleDriveConnectionServiceDependencies["database"];
+    const service = createGoogleDriveConnectionService({
+      database: trappedDatabase,
+      fetchImpl: async () => {
+        dependencyTouched = true;
+        throw new Error("authorization must run before a dependency");
+      },
+      now: () => {
+        dependencyTouched = true;
+        throw new Error("authorization must run before a dependency");
+      },
+      randomConnectionId: () => {
+        dependencyTouched = true;
+        throw new Error("authorization must run before a dependency");
+      },
+      oauthClient: OAUTH_CLIENT,
+      stateSecret: STATE_SECRET,
+      keyRing: RING,
+    });
+
+    await assert.rejects(
+      service.begin(taskEditor, {
+        clerkUserId: "clerk-member",
+        sessionId: "session-member",
+      }),
+      ProjectDriveAuthorizationError,
+    );
+    assert.equal(dependencyTouched, false);
+  });
+
+  it("refuses incomplete and merely truthy capability claims", () => {
+    const missingCapabilities = {
+      actorUserId: "u-member",
+      projectId: assertProjectId("ws-a"),
+      role: "member",
+      capabilities: undefined,
+      archived: false,
+    } as unknown as AuthorizedProjectDriveContext;
+    assert.throws(
+      () =>
+        assertProjectDriveCapability(
+          missingCapabilities,
+          "createOrEditTasks",
+        ),
+      ProjectDriveAuthorizationError,
+    );
+
+    const truthyManage = authorization("u-member", "ws-a", {
+      role: "member",
+      capabilities: {
+        ...TASK_EDITOR_CAPABILITIES,
+        manageProject: 1 as unknown as boolean,
+      },
+    });
+    assert.throws(
+      () => assertProjectDriveCapability(truthyManage, "manageProject"),
+      ProjectDriveAuthorizationError,
+    );
+  });
+});
 
 describe("Project Drive connection · OAuth start", () => {
   it("binds the exact Project/session and derives connect versus reconnect", async () => {

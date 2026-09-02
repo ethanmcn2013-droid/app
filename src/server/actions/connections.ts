@@ -25,7 +25,10 @@ export async function beginGoogleDriveConnectionAction(
   projectId: string,
 ): Promise<Readonly<{ url: string }>> {
   if (isDemoMode()) return { url: "/app/settings?drive=review" };
-  const authorization = await authorizeProjectDrive(projectId);
+  const authorization = await authorizeProjectDrive(
+    projectId,
+    "manageProject",
+  );
   return {
     url: `/api/connections/google/start?projectId=${encodeURIComponent(authorization.projectId)}`,
   };
@@ -36,7 +39,10 @@ export async function getGoogleDriveConnectionSummaryAction(
   projectId: string,
 ): Promise<GoogleDriveConnectionSummary> {
   if (isDemoMode()) return EMPTY_SUMMARY;
-  const authorization = await authorizeProjectDrive(projectId);
+  const authorization = await authorizeProjectDrive(
+    projectId,
+    "manageProject",
+  );
   return getGoogleDriveConnectionSummary(authorization);
 }
 
@@ -54,7 +60,10 @@ export async function disconnectGoogleDriveConnectionAction(
       revocationConfirmed: true,
     };
   }
-  const authorization = await authorizeProjectDrive(projectId);
+  const authorization = await authorizeProjectDrive(
+    projectId,
+    "manageProject",
+  );
   const result = await disconnectGoogleDriveConnection(authorization);
   revalidatePath("/app/settings");
   return result;
