@@ -1,4 +1,8 @@
-import type { ErasureDb } from "@/server/account-erasure";
+import type {
+  AccountErasureOptions,
+  AccountErasureReceipt,
+  ErasureDb,
+} from "@/server/account-erasure";
 import { eraseAccountData as eraseTasksData } from "@/server/account-erasure";
 
 // Types for the per-module erase functions so tests can supply stubs.
@@ -13,27 +17,31 @@ export type SignalEraseFn = (clerkId: string) => Promise<
   { ok: true } | { ok: false; error: string }
 >;
 export type RevokeTokensFn = (tokens: string[]) => Promise<void>;
+export type TasksEraseFn = (
+  database: ErasureDb,
+  clerkId: string,
+) => Promise<AccountErasureReceipt>;
 
 /**
  * Revoke a set of Google OAuth refresh tokens at Google's revocation endpoint.
  *
  * Best-effort: a revocation failure is logged but never fatal. The rows are
- * already gone from Notes' DB so a failed revocation only leaves a stale
- * credential at Google — bad but not a reason to abort the account deletion.
+ * already gone from every Signal database, so a failed revocation only leaves
+ * a stale credential at Google — bad but not a reason to restore personal data.
  */
 export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void> {
+  // `google-drive` is a server-only transport. Lazy loading preserves the
+  // injectable orchestrator's plain-Node test seam without weakening runtime
+  // boundaries in production.
+  const { revokeGoogleToken } = await import(
+    "@/server/connections/google-drive"
+  );
   await Promise.allSettled(
     tokens.map(async (token) => {
       try {
-        const res = await fetch(
-          `https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`,
-          { method: "POST" },
-        );
-        if (!res.ok) {
-          console.warn(
-            `[gdpr] Google token revocation returned ${res.status}`,
-          );
-        }
+        // The provider helper places the credential in a form body, never a
+        // URL that a proxy, log, or error reporter is likely to retain.
+        await revokeGoogleToken(token);
       } catch (err) {
         console.warn("[gdpr] Google token revocation failed:", err);
       }
@@ -52,8 +60,9 @@ export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void>
  *   1. Erase Notes (returns Google tokens collected before deletion),
  *      Timeline, and Signal in parallel. Each module failure is logged
  *      but does not abort the others.
- *   2. Erase Tasks (host DB).
- *   3. Revoke the Google tokens collected in step 1 (best-effort).
+ *   2. Erase Tasks after collecting its encrypted Project Drive generations.
+ *   3. Revoke the deduplicated Google tokens collected in steps 1-2
+ *      (best-effort, and only after the rows that held them are gone).
  *
  * The caller (POST /api/account/delete route → deleteAccountForUser →
  * deleteUnifiedAccountData) then calls Clerk admin delete LAST.
@@ -68,6 +77,10 @@ export async function deleteUnifiedAccountDataWith(
     eraseTimeline: TimelineEraseFn;
     eraseSignal: SignalEraseFn;
     revokeTokens: RevokeTokensFn;
+    /** WP5 must provide the exact, idempotent Drive permission revoker. */
+    revokeDriveFolderGrant?: AccountErasureOptions["revokeDriveFolderGrant"];
+    /** Test seam; production always uses the real Tasks erasure. */
+    eraseTasks?: TasksEraseFn;
   },
 ): Promise<void> {
   // Step 1: erase Notes (collecting tokens), Timeline, Signal in parallel.
@@ -99,11 +112,23 @@ export async function deleteUnifiedAccountDataWith(
   }
 
   // Collect refresh tokens from the Notes result (empty on failure).
-  const googleTokens =
+  const notesGoogleTokens =
     "refreshTokens" in notesResult ? notesResult.refreshTokens : [];
 
-  // Step 2: erase Tasks (host DB).
-  await eraseTasksData(database, clerkId);
+  // Step 2: Tasks collects every encrypted Project Drive generation before
+  // explicitly deleting its RESTRICT-backed rows, and returns the plaintext
+  // only long enough for this orchestrator to revoke it.
+  const tasksResult = opts.eraseTasks
+    ? await opts.eraseTasks(database, clerkId)
+    : await eraseTasksData(database, clerkId, {
+        revokeDriveFolderGrant: opts.revokeDriveFolderGrant,
+      });
+  const googleTokens = [
+    ...new Set([
+      ...notesGoogleTokens,
+      ...tasksResult.googleRefreshTokens,
+    ]),
+  ];
 
   // Step 3: revoke Google tokens (best-effort, never throws).
   if (googleTokens.length > 0) {

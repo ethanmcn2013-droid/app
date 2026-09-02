@@ -4,16 +4,20 @@ import {
   activities,
   attachments,
   comments,
+  driveFolderGrants,
   entitlements,
   meta,
   notificationPrefs,
   notifications,
   pendingInvites,
+  providerConnections,
+  resources,
   shareLinks,
   tasks,
   userPreferences,
   users,
   workspaceMembers,
+  workspaceStorage,
   workspaces,
 } from "./db/schema";
 import * as schema from "./db/schema";
@@ -43,6 +47,44 @@ const notesExtractReceiptMeta = {
   sourceNoteExtractBody: tasks.sourceNoteExtractBody,
   sourceNoteExtractSha256: tasks.sourceNoteExtractSha256,
   createdAt: tasks.createdAt,
+};
+
+/** A live refresh credential and its encryption metadata are never portable. */
+const providerConnectionMeta = {
+  id: providerConnections.id,
+  userId: providerConnections.userId,
+  provider: providerConnections.provider,
+  providerAccountId: providerConnections.providerAccountId,
+  providerAccountEmail: providerConnections.providerAccountEmail,
+  rootFolderId: providerConnections.rootFolderId,
+  scopes: providerConnections.scopes,
+  status: providerConnections.status,
+  isCurrent: providerConnections.isCurrent,
+  connectedAt: providerConnections.connectedAt,
+  lastUsedAt: providerConnections.lastUsedAt,
+  lastErrorAt: providerConnections.lastErrorAt,
+};
+
+/** Provider/disk `storedPath` is an internal locator, never export content. */
+const resourceMeta = {
+  id: resources.id,
+  workspaceId: resources.workspaceId,
+  taskId: resources.taskId,
+  kind: resources.kind,
+  provider: resources.provider,
+  externalId: resources.externalId,
+  storage: resources.storage,
+  storageGenerationId: resources.storageGenerationId,
+  title: resources.title,
+  url: resources.url,
+  mimeType: resources.mimeType,
+  sizeBytes: resources.sizeBytes,
+  thumbnail: resources.thumbnail,
+  addedByUserId: resources.addedByUserId,
+  addedAt: resources.addedAt,
+  refreshedAt: resources.refreshedAt,
+  accessState: resources.accessState,
+  countsAgainstStorage: resources.countsAgainstStorage,
 };
 
 /**
@@ -81,12 +123,15 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     ownedComments,
     ownedActivities,
     ownedAttachments,
+    ownedResources,
     ownedNotifications,
     ownedEntitlements,
     ownedShareLinks,
     ownedInvites,
     ownedMembers,
     ownedMeta,
+    ownedWorkspaceStorage,
+    ownedDriveFolderGrants,
     myMemberships,
     myAuthoredComments,
     myAuthoredActivities,
@@ -95,11 +140,15 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     myUserPreferences,
     myEntitlements,
     myNotesExtractTasks,
+    myProviderConnections,
+    myDriveFolderGrants,
+    myAddedResources,
   ] = await Promise.all([
     slugs.length ? database.select().from(tasks).where(inArray(tasks.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(comments).where(inArray(comments.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(activities).where(inArray(activities.workspaceId, slugs)) : [],
     slugs.length ? database.select(attachmentMeta).from(attachments).where(inArray(attachments.workspaceId, slugs)) : [],
+    slugs.length ? database.select(resourceMeta).from(resources).where(inArray(resources.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(notifications).where(inArray(notifications.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(entitlements).where(inArray(entitlements.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(shareLinks).where(inArray(shareLinks.workspaceId, slugs)) : [],
@@ -107,6 +156,18 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     slugs.length ? database.select().from(workspaceMembers).where(inArray(workspaceMembers.workspaceId, slugs)) : [],
     slugs.length
       ? database.select().from(meta).where(or(...slugs.map((s) => like(meta.key, `board:${s}:%`))))
+      : [],
+    slugs.length
+      ? database
+          .select()
+          .from(workspaceStorage)
+          .where(inArray(workspaceStorage.workspaceId, slugs))
+      : [],
+    slugs.length
+      ? database
+          .select()
+          .from(driveFolderGrants)
+          .where(inArray(driveFolderGrants.workspaceId, slugs))
       : [],
     database.select().from(workspaceMembers).where(eq(workspaceMembers.userId, userId)),
     database.select().from(comments).where(eq(comments.userId, userId)),
@@ -126,6 +187,18 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
             )
           : fromThisNotesAccount,
       ),
+    database
+      .select(providerConnectionMeta)
+      .from(providerConnections)
+      .where(eq(providerConnections.userId, userId)),
+    database
+      .select()
+      .from(driveFolderGrants)
+      .where(eq(driveFolderGrants.userId, userId)),
+    database
+      .select(resourceMeta)
+      .from(resources)
+      .where(eq(resources.addedByUserId, userId)),
   ]);
 
   return {
@@ -139,12 +212,15 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       comments: ownedComments,
       activities: ownedActivities,
       attachments: ownedAttachments,
+      resources: ownedResources,
       notifications: ownedNotifications,
       entitlements: ownedEntitlements,
       shareLinks: ownedShareLinks,
       pendingInvites: ownedInvites,
       members: ownedMembers,
       boardMeta: ownedMeta,
+      workspaceStorage: ownedWorkspaceStorage,
+      driveFolderGrants: ownedDriveFolderGrants,
     },
     footprintElsewhere: {
       memberships: myMemberships,
@@ -155,6 +231,9 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       userPreferences: myUserPreferences[0] ?? null,
       entitlements: myEntitlements,
       notesExtractTasks: myNotesExtractTasks,
+      providerConnections: myProviderConnections,
+      driveFolderGrants: myDriveFolderGrants,
+      addedResources: myAddedResources,
     },
   };
 }

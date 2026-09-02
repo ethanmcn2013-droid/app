@@ -9,8 +9,8 @@
  * Invariants verified:
  *   1. Tasks rows are fully erased after a successful run (zero residual rows).
  *   2. Bystander rows in the Tasks DB are untouched.
- *   3. Google tokens returned by Notes erasure are forwarded to the revocation
- *      function (not silently dropped).
+ *   3. Google tokens returned by Notes and Tasks erasure are deduplicated and
+ *      forwarded to the revocation function (not silently dropped).
  *   4. A per-module failure is logged but does not abort the rest: Tasks is
  *      still erased and the remaining modules are still attempted.
  *   5. Erasure is idempotent: a second call on the same clerkId is a no-op.
@@ -89,7 +89,7 @@ test("unified erasure removes all Tasks rows, leaves bystander intact", async ()
   }
 });
 
-test("Google tokens from Notes erasure are forwarded to the revocation function", async () => {
+test("Google tokens from Notes and Tasks are deduplicated for revocation", async () => {
   const { client, db } = await freshMemoryDb();
   const revokedTokens: string[] = [];
   try {
@@ -100,6 +100,9 @@ test("Google tokens from Notes erasure are forwarded to the revocation function"
       }),
       eraseTimeline: async (_id: string) => ({ ok: true as const }),
       eraseSignal: async (_id: string) => ({ ok: true as const }),
+      eraseTasks: async () => ({
+        googleRefreshTokens: ["tok-google-1", "tok-drive-1"],
+      }),
       revokeTokens: async (tokens: string[]) => {
         revokedTokens.push(...tokens);
       },
@@ -107,14 +110,11 @@ test("Google tokens from Notes erasure are forwarded to the revocation function"
 
     await deleteUnifiedAccountDataWith(db, "clerk_target", opts);
 
-    assert.ok(
-      revokedTokens.includes("tok-google-1"),
-      "first Google token was not forwarded to revocation",
-    );
-    assert.ok(
-      revokedTokens.includes("tok-google-2"),
-      "second Google token was not forwarded to revocation",
-    );
+    assert.deepEqual(revokedTokens, [
+      "tok-google-1",
+      "tok-google-2",
+      "tok-drive-1",
+    ]);
   } finally {
     client.close();
   }

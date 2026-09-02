@@ -70,6 +70,32 @@ async function seed(client: Client, probePath: string) {
       ('ws-b','u-target','member'),
       ('ws-a','u-bystander','member');
 
+    INSERT INTO provider_connections (
+      id, user_id, provider, provider_account_id, provider_account_email,
+      root_folder_id, refresh_token_cipher, key_version, scopes, status,
+      is_current, connected_at
+    ) VALUES
+      ('conn-target','u-target','google_drive','perm-target','target@example.test',
+       'root-target','cipher-target',1,'["https://www.googleapis.com/auth/drive.file"]','active',1,1756800000),
+      ('conn-bystander','u-bystander','google_drive','perm-bystander','bystander@example.test',
+       'root-bystander','cipher-bystander',1,'["https://www.googleapis.com/auth/drive.file"]','active',1,1756800001);
+
+    -- The target stores ws-b; the bystander stores ws-a. Erasure must remove
+    -- both dependency directions without deleting ws-b or conn-bystander.
+    INSERT INTO workspace_storage (
+      id, workspace_id, connection_id, folder_id, folder_web_view_link, state, is_current
+    ) VALUES
+      ('storage-target-in-b','ws-b','conn-target','folder-target-in-b','https://drive.test/target-in-b','active',1),
+      ('storage-bystander-in-a','ws-a','conn-bystander','folder-bystander-in-a','https://drive.test/bystander-in-a','active',1);
+    INSERT INTO drive_folder_grants (
+      storage_generation_id, workspace_id, user_id, permission_id,
+      granted_email, role, granted_at, revoke_pending
+    ) VALUES
+      ('storage-target-in-b','ws-b','u-target','grant-target','target@example.test','writer',1756800000,0),
+      ('storage-target-in-b','ws-b','u-bystander','grant-bystander-b','bystander@example.test','writer',1756800000,0),
+      ('storage-bystander-in-a','ws-a','u-target','grant-target-a','target@example.test','writer',1756800000,0),
+      ('storage-bystander-in-a','ws-a','u-bystander','grant-bystander-a','bystander@example.test','writer',1756800000,0);
+
     INSERT INTO tasks (
       id, workspace_id, title, lane, priority,
       source_note_id, source_note_extract_body, source_note_extract_sha256
@@ -98,6 +124,20 @@ async function seed(client: Client, probePath: string) {
       ('res-att-a1','ws-a','task-a1','upload','file','probe.bin',1753056000,'legacy',1),
       ('res-link-a1','ws-a','task-a1','link','url','https://example.com',1753056000,'ok',0),
       ('res-b1','ws-b','task-b1','link','figma','https://figma.com/x',1753056000,'ok',0);
+    INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage,
+      storage_generation_id, stored_path, title, added_by_user_id,
+      added_at, access_state, counts_against_storage
+    ) VALUES
+      ('res-drive-target-in-b','ws-b','task-b1','upload','drive','drive',
+       'storage-target-in-b','drive-file-target','Target-owned Drive file','u-bystander',
+       1756800000,'ok',0),
+      ('res-drive-bystander-in-a','ws-a','task-a1','upload','drive','drive',
+       'storage-bystander-in-a','drive-file-bystander','Owned-workspace Drive file','u-target',
+       1756800000,'ok',0),
+      ('res-signal-target-in-b','ws-b','task-b1','link','url','signal',
+       NULL,NULL,'Target-added surviving-project link','u-target',
+       1756800000,'ok',0);
 
     INSERT INTO notifications (id, workspace_id, user_id, kind, task_id, payload) VALUES
       ('n-a1','ws-a','u-target','mention','task-a1','{}'),
@@ -151,7 +191,26 @@ test("erasure removes every target row across every table, leaves the bystander 
   try {
     await seed(client, probePath);
 
-    await eraseAccountData(db, "clerk_target");
+    const revokedGrantIds: string[] = [];
+    const receipt = await eraseAccountData(db, "clerk_target", {
+      openProviderToken: ({ connectionId, refreshTokenCipher }) => {
+        assert.equal(connectionId, "conn-target");
+        assert.equal(refreshTokenCipher, "cipher-target");
+        return "refresh-target";
+      },
+      revokeDriveFolderGrant: async (grant) => {
+        assert.ok(grant.folderId.startsWith("folder-"));
+        assert.ok(grant.connectionId.startsWith("conn-"));
+        revokedGrantIds.push(grant.permissionId);
+      },
+    });
+    assert.deepEqual(receipt.googleRefreshTokens, ["refresh-target"]);
+    assert.deepEqual(revokedGrantIds.sort(), [
+      "grant-bystander-a",
+      "grant-bystander-b",
+      "grant-target",
+      "grant-target-a",
+    ]);
 
     // ── Invariant 1: ZERO residual rows for the target or ws-a ──────────
     const residual: Array<[string, string]> = [
@@ -170,6 +229,10 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["share_link_visits", "share_link_visits WHERE token='tok-a'"],
       ["pending_invites", "pending_invites WHERE workspace_id='ws-a' OR invited_by_user_id='u-target' OR accepted_by_user_id='u-target'"],
       ["workspace_members", "workspace_members WHERE user_id='u-target' OR workspace_id='ws-a'"],
+      ["provider_connections", "provider_connections WHERE user_id='u-target'"],
+      ["workspace_storage", "workspace_storage WHERE workspace_id='ws-a' OR connection_id='conn-target'"],
+      ["drive_folder_grants", "drive_folder_grants WHERE user_id='u-target' OR workspace_id='ws-a' OR storage_generation_id='storage-target-in-b'"],
+      ["resources", "resources WHERE added_by_user_id='u-target'"],
       ["meta", "meta WHERE key LIKE 'board:ws-a:%'"],
     ];
     for (const [table, where] of residual) {
@@ -197,6 +260,9 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["share_link_visits", 1], // slv-b
       ["pending_invites", 1], // pi-b
       ["workspace_members", 1], // (ws-b,u-bystander)
+      ["provider_connections", 1], // conn-bystander
+      ["workspace_storage", 0], // both dependency directions were retired
+      ["drive_folder_grants", 0],
       ["meta", 2], // board:ws-b:name + activeDomain
       ["comp_codes", 1],
       ["processed_webhooks", 1],
@@ -211,6 +277,10 @@ test("erasure removes every target row across every table, leaves the bystander 
     // Spot-check identity, not just counts.
     assert.equal(await count(client, "users WHERE id='u-bystander'"), 1);
     assert.equal(await count(client, "comments WHERE id='c-b2'"), 1);
+    assert.equal(
+      await count(client, "provider_connections WHERE id='conn-bystander'"),
+      1,
+    );
     assert.equal(await count(client, "meta WHERE key='activeDomain'"), 1);
 
     // Shared task survives, but the erased Notes account's exact wording,
@@ -257,6 +327,58 @@ test("erasing an unknown user is a no-op (no throw, no writes)", async () => {
     );
     await eraseAccountData(db, "clerk_does_not_exist");
     assert.equal(await count(client, "users"), 1);
+  } finally {
+    client.close();
+  }
+});
+
+test("erasure retains exact Drive grant receipts until WP5 revocation succeeds", async () => {
+  const { client, db } = await freshDb();
+  try {
+    await client.executeMultiple(`
+      INSERT INTO users (id, clerk_id, color, initials) VALUES
+        ('u-target','clerk_target','#111','TT'),
+        ('u-owner','clerk_owner','#222','OO');
+      INSERT INTO workspaces (id, slug, name, owner_user_id) VALUES
+        ('ws-owner','ws-owner','Owner Project','u-owner');
+      INSERT INTO provider_connections (
+        id, user_id, provider, provider_account_id, root_folder_id,
+        refresh_token_cipher, key_version, scopes, status, is_current,
+        connected_at
+      ) VALUES (
+        'conn-owner','u-owner','google_drive','perm-owner','root-owner',
+        'cipher-owner',1,'["https://www.googleapis.com/auth/drive.file"]',
+        'active',1,1756800000
+      );
+      INSERT INTO workspace_storage (
+        id, workspace_id, connection_id, folder_id, folder_web_view_link,
+        state, is_current
+      ) VALUES (
+        'storage-owner','ws-owner','conn-owner','folder-owner',
+        'https://drive.test/folder-owner','active',1
+      );
+      INSERT INTO drive_folder_grants (
+        storage_generation_id, workspace_id, user_id, permission_id,
+        granted_email, role, granted_at, revoke_pending
+      ) VALUES (
+        'storage-owner','ws-owner','u-target','permission-target',
+        'target@example.test','writer',1756800000,0
+      );
+    `);
+
+    await assert.rejects(
+      eraseAccountData(db, "clerk_target"),
+      /Drive grant revocation is not configured/,
+    );
+    assert.equal(await count(client, "users WHERE id='u-target'"), 1);
+    assert.equal(
+      await count(
+        client,
+        "drive_folder_grants WHERE permission_id='permission-target'",
+      ),
+      1,
+      "the only exact provider-revocation receipt must survive",
+    );
   } finally {
     client.close();
   }
