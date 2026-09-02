@@ -27,19 +27,15 @@ import {
   projectDriveOperationDedupeKey,
   type ProjectDriveOperationKeyInput,
 } from "./project-drive-operation-key";
+import {
+  GOOGLE_DRIVE_OPERATION_CLAIMABLE_STATUSES,
+} from "./project-drive-operation-lifecycle";
 
 const DEFAULT_LEASE_MS = 60_000;
 const MIN_LEASE_MS = 1_000;
 const MAX_LEASE_MS = 15 * 60_000;
 const MIN_RETRY_MS = 1_000;
 const MAX_RETRY_MS = 24 * 60 * 60_000;
-
-/** Kept as one seam for the account-erasure lifecycle contract to import. */
-const JOURNAL_CLAIMABLE_STATUSES = [
-  "pending",
-  "retry_wait",
-  "running",
-] as const satisfies readonly ProjectDriveOperationStatus[];
 
 const ERROR_CODES = new Set<ProjectDriveOperationErrorCode>([
   "ambiguous_provider_result",
@@ -924,7 +920,7 @@ export function createProjectDriveOperationJournal(
             eq(projectDriveOperations.id, operationId),
             lte(projectDriveOperations.createdAt, now),
             inArray(projectDriveOperations.status, [
-              ...JOURNAL_CLAIMABLE_STATUSES,
+              ...GOOGLE_DRIVE_OPERATION_CLAIMABLE_STATUSES,
             ]),
             isNull(projectDriveOperations.providerFolderId),
             isNull(projectDriveOperations.providerFolderWebViewLink),
