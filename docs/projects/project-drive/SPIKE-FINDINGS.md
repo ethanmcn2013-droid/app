@@ -3,16 +3,16 @@
 Observed behaviour, not documentation. Produced by
 `scripts/spike/drive-chain.mjs` against real Google accounts.
 
-**Run:** 2026-08-27 · **Scope requested:** `https://www.googleapis.com/auth/drive.file`
+**Runs:** 2026-08-27 and 2026-09-02 · **Scope requested:** `https://www.googleapis.com/auth/drive.file`
 **Owner:** `ethanmcn2013@gmail.com` (the Signal Studio account for now;
 moves to a business account before launch)
-**Member:** `e10mcn2015@gmail.com`
+**Member:** `ethan@signalstudio.ie`
 
-**Status: eleven of the twelve checks pass.** The outstanding one is not a
-doubt about the design — it is that the member account could not complete
-Google's own identity challenge today, so the three checks that require a
-*second person's credentials* have not been run. Everything that could be
-observed with the owner's credentials has been.
+**Status: complete.** The owner-side harness passed every check. The member
+lifecycle was then proved in the same path the product will use: signed into
+Google Drive as the member, open the board folder and file through their Drive
+links, confirm the parent stays private, revoke the exact permission, and
+confirm both child links become inaccessible.
 
 ---
 
@@ -24,14 +24,13 @@ observed with the owner's credentials has been.
 | 2 | Create `Signal Studio/` and a board folder inside it | **pass** |
 | 3 | `permissions.create` on the board folder, no notification email | **pass** |
 | 4 | Resumable session minted server-side, bytes PUT separately | **pass** |
-| 5 | The member opens the file with no request-access step | pending |
-| 6 | `permissions.delete` → the member loses access | pending |
-| 7 | The `Signal Studio` parent is not visible to the member | pending |
+| 5 | The member opens the file with no request-access step | **pass** |
+| 6 | `permissions.delete` → the member loses access | **pass** |
+| 7 | The `Signal Studio` parent is not visible to the member | **pass** |
 
-Pending means *not yet observed*, not *in doubt*. Phase B runs all three
-unattended: `node --env-file=.env.spike scripts/spike/drive-chain.mjs b
-their@email`. The owner does not re-consent — his refresh token is stored
-and was proved to still mint an access token unattended.
+The member never needs a Signal Studio OAuth grant in the product. Server-side
+Drive operations use the nominated storage owner's encrypted credential; a
+member opens Google's `webViewLink` under their own Google session.
 
 ---
 
@@ -99,7 +98,7 @@ have not written yet.
 for a real Google account:
 
 ```
-PASS  {"id":"…","type":"user","emailAddress":"e10mcn2015@gmail.com","role":"writer"}
+PASS  {"id":"…","type":"user","emailAddress":"ethan@signalstudio.ie","role":"writer"}
 ```
 
 D2 rested on Google's machine-generated discovery document listing
@@ -109,6 +108,9 @@ API. The sharing design stands.
 `permissions.list` also reads back correctly — two entries on the board
 folder (`user/writer` the member, `user/owner` the owner), which is what
 WP-7's access screen will render.
+
+The completed member run used `ethan@signalstudio.ie`; Google accepted the
+same named-user writer grant without sending an email.
 
 ## Finding 4 · Inviting a non-Google address is refused, by name
 
@@ -160,6 +162,28 @@ all. Treat a missing limit as *do not block*, never as zero.
   folder.
 - `appProperties.signalResourceId` is queryable afterwards, and a repeat
   query returns the same single file. D8's duplicate-removal claim holds.
+
+## Finding 7b · Member access is a Drive-link proof, not a member-token proof
+
+Immediately after the owner granted the member, a `files.get` made with the
+member's own new `drive.file` token returned 404. That is narrower than ordinary
+Drive access: the file was created by the app under the owner's grant and had
+not been selected by the app under the member's grant.
+
+The customer path passed. Signed into Drive as `ethan@signalstudio.ie`, the
+member opened the shared board folder and its uploaded file without a
+request-access step. In the same signed-in session, opening the unshared
+`Signal Studio` parent produced Google's **You need access** screen. After the
+owner deleted the exact stored permission, both the folder and inherited file
+produced **You need access** as well.
+
+This sharpens, rather than changes, the implementation:
+
+- members do not connect Drive and Signal Studio never calls Drive with a
+  member credential;
+- server operations use the storage owner's credential;
+- member file access uses the provider's `webViewLink` in a new browser tab;
+- a member-token `files.get` is not a valid acceptance test for this product.
 
 ## Finding 8 · The consent wording, verbatim
 
@@ -224,8 +248,8 @@ refresh token revoked at Google** (`POST /revoke`, HTTP 200) rather than
 left valid on the argument that the object was unreachable. GitHub's
 scanner had already read it; that is enough to call it exposed.
 
-**The cost is one extra consent tomorrow** — phase A must be re-run to mint
-a fresh owner token before phase B, so the sequence is:
+**The cost was one extra consent** — phase A was re-run on 2026-09-02 to mint
+a fresh owner token before phase B, using the sequence:
 
 ```
 node --env-file=.env.spike scripts/spike/drive-chain.mjs a
@@ -239,24 +263,18 @@ because the file feels temporary and the branch feels private.
 
 ---
 
-## Still to observe
+## Documentation checks completed on 2026-09-02
 
-Three checks need the member's own credentials, and the member account
-could not complete Google's identity challenge on the day of this run:
+- V1 opens `webViewLink` in a new tab; it does not embed Drive. No Drive
+  `frame-src` host is needed. Browser-to-Drive resumable PUTs require the exact
+  `connect-src https://www.googleapis.com` origin.
+- Google documents resumable session URIs as valid for one week. An empty
+  status `PUT` and an incomplete upload return `308 Resume Incomplete` plus a
+  `Range` header; `404` means the session expired and other `4xx` responses
+  require a fresh session. See [Google's resumable-upload guide](https://developers.google.com/workspace/drive/api/guides/manage-uploads).
+- `changes.watch` is available under `drive.file`, but only for app-visible
+  files and with webhook/channel renewal work. V1 refreshes metadata when a
+  file is opened instead; watching is deliberately deferred.
 
-- **5** · the member opens the file with no request-access step
-- **6** · `permissions.delete` → access lost, on the folder and by
-  inheritance on the file
-- **7** · **the `Signal Studio` parent folder is unreachable by the
-  member** — the claim the entire feature makes
-
-The board folder, the file and the member's grant are all still in place in
-the owner's Drive. The owner's stored token was revoked (Finding 11), so
-phase A must be re-run first to mint a fresh one — two consents tomorrow
-rather than one.
-
-Against live documentation, still open:
-
-- Picker/preview CSP hosts, if the Drive viewer is embedded (WP-6/WP-9).
-- Whether `changes.watch` under `drive.file` is worth anything later.
-- Resumable session lifetime, and behaviour on resume after a gap.
+The disposable board permission was revoked and its `Signal Studio` spike
+folder was moved to the owner's Drive trash, never purged.

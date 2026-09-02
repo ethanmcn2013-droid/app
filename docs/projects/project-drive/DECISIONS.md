@@ -264,3 +264,22 @@ disconnect and handover must explicitly revoke and clean in the right order;
 the database may not silently cascade or null the exact ids the repair path
 needs. This is an integrity backstop, not a substitute for the hand-wired
 libSQL lifecycle.
+
+## D13 · An ambiguous upload failure keeps its claim and session
+
+**Corrected 2026-09-02 after the live spike and WP-6 failure analysis.**
+
+The original WP-6 prose copied the Signal-native rule that any failure deletes
+the pending claim. That is unsafe after a resumable Drive session has reached
+the browser. A connection loss or provider 5xx can happen after Google accepted
+some or all bytes; deleting the claim also deletes the stable
+`signalResourceId`, so a retry can create a duplicate while the first upload
+finishes out of sight.
+
+Before delegation, a failed mint may delete its claim. After delegation, the
+session URL is a credential: store it encrypted, bound to the workspace,
+storage generation and resource id; retain the pending claim on every ambiguous
+outcome; probe and resume the same session. A replacement session is allowed
+only after the old one returns a definitive 404 and an app-property search
+finds no landed file. Neither uncertainty nor inconvenience is evidence that
+it is safe to mint twice.

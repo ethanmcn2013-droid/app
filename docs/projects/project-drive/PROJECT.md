@@ -378,8 +378,12 @@ was never shared.
      the claim row's id, **and** `parents` contains this board's folder.
      A client-supplied id is not evidence of anything.
    - Update the row to `accessState='ok'` with real size, mime, `webViewLink`.
-4. Failure at any point deletes the claim row, exactly as
-   `uploadAttachmentAction` already does.
+4. A failure **before** the session reaches the browser deletes the claim.
+   Once the session has been delegated, an ambiguous timeout, 429 or 5xx keeps
+   the pending claim and its encrypted session capability. Retry probes and
+   reuses that session. Remint only after a definitive session 404 **and** an
+   app-property search proves no file landed; otherwise deleting the claim
+   would discard the idempotency key and permit a duplicate.
 
 **Also:** `next.config.ts` CSP — `connect-src` needs
 `https://www.googleapis.com`; `frame-src` needs `https://drive.google.com` if

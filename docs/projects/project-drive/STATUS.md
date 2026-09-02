@@ -5,10 +5,12 @@ the end of every work package, before opening a PR. A `done` mark is a claim
 that the package's acceptance criteria in `PROJECT.md` were met and the gates
 listed there passed — not that the code was written.
 
-**Last updated:** 2026-09-02 · WP-1 has 11/12 spike checks, with the
-second-account lifecycle still unobserved. WP-2 is complete on the feature
-branch. WP-3 is staged and verified locally; production migration remains an
-explicit founder gate.
+**Last updated:** 2026-09-02 · WP-1 is complete against the owner and
+`ethan@signalstudio.ie`, including real Drive-link access and exact revocation.
+WP-2 is complete on the feature branch. WP-3 is staged and verified locally;
+production migration remains an explicit founder gate. WP-4's provider and
+OAuth-state foundations are merged and its route/lifecycle integration is in
+progress.
 
 ---
 
@@ -17,10 +19,10 @@ explicit founder gate.
 | WP | Package | Status | Notes |
 |---|---|---|---|
 | 0 | Fix the floor | **done** | Q1 answered: the token IS provisioned. A fifth, binding number was found (Vercel's 4.5 MB body cap) and uploads moved browser → Blob so 50 MB is real. Ten §2 rules ratcheted |
-| 1 | Spike the Drive chain | **partial — 11/12** | Owner-side flow passed. The second account is known, but open-without-request, revoke, and parent-folder isolation still need live observation after phase A remints the revoked owner token. Do not advance the package to done until that lifecycle passes |
+| 1 | Spike the Drive chain | **done** | Owner flow passed. Signed in as `ethan@signalstudio.ie`, the member opened the shared board folder and file, could not open the parent, then lost both child links after exact permission revocation. Member-token API 404 is documented separately from the real Drive-link path |
 | 2 | Secrets substrate | **done on feature branch** | AES-256-GCM envelope, versioned key custody, log/Sentry redaction and token-custody contracts are in commit `ddbf7380` |
 | 3 | Schema (migration 0028) | **staged locally** | Generation-aware SQL, Drizzle mirror, ledger, 42-proof review receipt and journal are green. Fresh local apply, no-op rerun and current status passed. Not applied to production; do not mark done before WP-1 acceptance and the founder's Q5 authorization |
-| 4 | The connection | not started | |
+| 4 | The connection | **in progress** | Exact-scope transport, signed 10-minute state, credential redaction and authorization ratchets are merged; routes, immutable rotation, actions and GDPR lifecycle are being integrated |
 | 5 | Folder and sharing | not started | The security-critical package |
 | 6 | Upload | not started | |
 | 7 | Surfaces | not started | `experience/registry.json` entries required |
@@ -37,8 +39,8 @@ that depends on it.
 |---|---|---|---|
 | ~~Q1~~ | ~~Is `BLOB_READ_WRITE_TOKEN` provisioned in production?~~ **Answered 2026-08-27: yes.** Present on the `app` project for Production, Preview and Development, created 24 days before. Uploads were live the whole time; the settings copy was simply false | — | closed |
 | ~~Q2~~ | ~~Exact consent-screen wording shown for `drive.file`~~ **Answered 2026-08-27:** Google says Signal Studio can see, edit, create and delete only the specific Drive files used with the app. See `SPIKE-FINDINGS.md` Finding 8 | — | closed |
-| ~~Q7~~ | ~~The second Google account to test sharing with — an email address, not a secret~~ **Answered 2026-08-27:** the member address is recorded in `SPIKE-FINDINGS.md`; its live credential checks remain WP-1 acceptance work | — | closed |
-| Q3 | CSP hosts needed for the Drive preview embed and the resumable PUT | WP-1, WP-6 | spike |
+| ~~Q7~~ | ~~The second Google account to test sharing with — an email address, not a secret~~ **Answered and verified 2026-09-02:** `ethan@signalstudio.ie`; the complete live lifecycle is recorded in `SPIKE-FINDINGS.md` | — | closed |
+| ~~Q3~~ | ~~CSP hosts needed for the Drive preview embed and the resumable PUT~~ **Answered 2026-09-02:** V1 opens `webViewLink` in a new tab, so no Drive frame host. Resumable PUT needs exact `connect-src https://www.googleapis.com` | — | closed |
 | ~~Q4~~ | ~~Which single file-size number becomes the truth in WP-0~~ **Answered 2026-08-27 by the founder: 50 MB, made real by client-direct upload.** See D11 | — | closed |
 | Q5 | Does the founder authorize migration 0028 against production, and when | WP-3 | founder |
 | Q6 | Privacy-policy wording for files residing in a member's personal Drive | WP-8 | founder |
@@ -70,6 +72,7 @@ status.
 | 2026-08-27 | All three secrets are in Vercel, all three environments | `vercel env ls` | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` (encrypted), `PROVIDER_TOKEN_KEY` (encrypted, generated locally and never written to disk) |
 | 2026-08-27 | `lint`, `typecheck`, `test`, `build`, `perf:budgets` | all five, on the WP-0 branch | All green, exit 0. The one Turbopack NFT warning was reproduced on a build WITHOUT the change and is pre-existing |
 | 2026-08-27 | WP-1 live Drive spike | `scripts/spike/drive-chain.mjs` against the owner and intended member accounts | 11/12 harness checks passed. The owner-side folder, named-user grant, resumable upload, idempotency stamp, exact `drive.file` request and unattended refresh were observed. The member open/revoke/parent-isolation lifecycle remains pending; the exposed scratch token was revoked and must be reminted before phase B |
+| 2026-09-02 | WP-1 second-account lifecycle | Live Google Drive browser session as `ethan@signalstudio.ie`, with owner API grant/revoke and links opened before and after revocation | Complete. Board folder and uploaded file opened without a request-access step; the `Signal Studio` parent showed **You need access**; deleting the exact permission made both child links show **You need access**. The disposable root was moved to owner trash afterwards |
 | 2026-09-02 | WP-2 secrets substrate | `src/server/crypto/secret-box.test.ts`, `src/server/provider-token-custody.test.ts`, plus full branch gates | AES-256-GCM round-trip, tamper/wrong-key/version handling and database/log/Sentry plaintext barriers are green on commit `ddbf7380` |
 | 2026-09-02 | Migration 0028 contract | `pnpm db:contract` | 60/60 passed: ledger/receipt/journal parity, fresh apply/no-op, proof rollback, tamper/drift refusal, immutable A → B → A connection and folder generations, historical grants, storage coupling and `RESTRICT` deletion behavior |
 | 2026-09-02 | Migration 0028 local rehearsal | disposable local SQLite database: `pnpm db:migrate` twice, then `pnpm db:status` | First run applied through `0028_project_drive`; second run returned `no-op`; status returned `current` with 29 registered SQL files. No remote or production database was contacted |
