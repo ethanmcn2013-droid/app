@@ -14,6 +14,7 @@ import {
   exportForUser as exportSignalForUser,
   eraseForUser as eraseSignalForUser,
 } from "@/modules/signal/server/signal-gdpr";
+import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
 
 /**
  * GDPR Art. 20 data portability — unified Signal Studio export.
@@ -47,13 +48,11 @@ export async function exportAccountForUser(clerkId: string) {
  * Idempotent: re-running after a partial failure is safe.
  */
 export async function deleteAccountForUser(clerkId: string): Promise<void> {
-  // WP4 does not create member grants. Before WP5 enables them, wire its
-  // exact idempotent Drive permission revoker here; erasure deliberately
-  // fails closed if a grant exists and no revoker can preserve the receipt.
   await deleteUnifiedAccountDataWith(db, clerkId, {
     eraseNotes: eraseNotesForUser,
     eraseTimeline: eraseTimelineForUser,
     eraseSignal: eraseSignalForUser,
+    revokeDriveFolderGrant: revokeExactDriveFolderGrant,
     revokeTokens: defaultRevokeGoogleTokens,
   });
 }

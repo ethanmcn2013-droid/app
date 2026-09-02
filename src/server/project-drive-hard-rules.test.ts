@@ -740,6 +740,34 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
         );
       }
       for (const fn of functions) {
+        if (
+          canonicalPath(path) === DRIVE_GRANTS_FILE &&
+          fn.name === "deleteExactDriveUserPermission"
+        ) {
+          // Account erasure and repair have no interactive caller to mint a
+          // Project capability for. Their one narrow exception receives an
+          // access session that was resolved from an exact durable storage
+          // receipt. Keep the exception named and structural so another
+          // unauthorised helper cannot blend into it.
+          assert.match(
+            fn.source.slice(0, 1_200),
+            /session\s*:\s*ProjectDriveStorageSession\b/,
+            `${path}: ${fn.name} must receive a database-resolved storage session`,
+          );
+          continue;
+        }
+        if (
+          canonicalPath(path) ===
+            "src/server/connections/project-drive-access.ts" &&
+          fn.name === "withProjectDriveReceiptSession"
+        ) {
+          assert.match(
+            fn.source.slice(0, 1_200),
+            /receipt\s*:\s*ProjectDriveStorageReceipt\b/,
+            `${path}: ${fn.name} must receive an exact durable storage receipt`,
+          );
+          continue;
+        }
         assert.match(
           fn.source.slice(0, 1_200),
           new RegExp(`\\b${AUTHORIZED_DRIVE_CONTEXT}\\b`),

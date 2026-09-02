@@ -622,6 +622,50 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
   return Object.freeze({ create, revoke, listLive });
 }
 
+/**
+ * Delete one exact named-user permission behind the same root/folder guard as
+ * every interactive grant mutation. Internal erasure and repair callers pass
+ * only a stored session and permission receipt; the session resolver proves
+ * those receipts against database truth before this transport boundary.
+ */
+export async function deleteExactDriveUserPermission(
+  session: ProjectDriveStorageSession,
+  input: Readonly<{ permissionId: string; role: DriveGrantRole }>,
+  fetchImpl: GoogleFetch,
+): Promise<Readonly<{ alreadyAbsent: boolean }>> {
+  const target = {
+    fileId: session.storage.folderId,
+    workspaceFolderId: session.storage.folderId,
+    type: "user",
+    role: input.role,
+  } as const;
+  assertGrantTarget({
+    ...target,
+    rootFolderId: session.storageRootFolderId,
+  });
+  if (session.credential.rootFolderId !== session.storageRootFolderId) {
+    assertGrantTarget({
+      ...target,
+      rootFolderId: session.credential.rootFolderId,
+    });
+  }
+  const response = await permissionFetch(
+    session.accessToken,
+    permissionUrl(session.storage.folderId, input.permissionId),
+    { method: "DELETE" },
+    fetchImpl,
+  );
+  if (!response.ok && response.status !== 404) {
+    const body = await responseJson(response);
+    throw new DriveGrantError("provider-error", {
+      status: response.status,
+      retryable: retryableStatus(response.status),
+      reason: providerReason(body),
+    });
+  }
+  return Object.freeze({ alreadyAbsent: response.status === 404 });
+}
+
 function defaultGrantService() {
   return createDriveGrantService({
     database: db,

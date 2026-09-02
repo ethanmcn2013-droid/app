@@ -34,6 +34,18 @@ export type ProjectDriveStorageSelector =
   | Readonly<{ kind: "current" }>
   | Readonly<{ kind: "generation"; storageGenerationId: string }>;
 
+/**
+ * A durable, server-derived storage receipt used by repair and erasure work.
+ * This is deliberately separate from a user authorization context: callers
+ * must obtain every field from stored rows, never from a browser payload.
+ */
+export type ProjectDriveStorageReceipt = Readonly<{
+  workspaceId: string;
+  storageGenerationId: string;
+  connectionId: string;
+  folderId: string;
+}>;
+
 export type ProjectDriveStorageSession = Readonly<{
   accessToken: string;
   credential: Readonly<{
@@ -266,17 +278,32 @@ export function createProjectDriveAccessService(
     selector: ProjectDriveStorageSelector,
     operation: (session: ProjectDriveStorageSession) => Promise<T>,
   ): Promise<T> {
+    return withResolvedStorageSession(
+      authorization.projectId,
+      selector,
+      null,
+      operation,
+    );
+  }
+
+  async function withResolvedStorageSession<T>(
+    workspaceId: string,
+    selector: ProjectDriveStorageSelector,
+    expectedReceipt: ProjectDriveStorageReceipt | null,
+    operation: (session: ProjectDriveStorageSession) => Promise<T>,
+  ): Promise<T> {
+    const canonicalWorkspaceId = canonicalId(workspaceId, "workspaceId");
     const storageRows = await deps.database
       .select()
       .from(workspaceStorage)
       .where(
         selector.kind === "current"
           ? and(
-              eq(workspaceStorage.workspaceId, authorization.projectId),
+              eq(workspaceStorage.workspaceId, canonicalWorkspaceId),
               eq(workspaceStorage.isCurrent, true),
             )
           : and(
-              eq(workspaceStorage.workspaceId, authorization.projectId),
+              eq(workspaceStorage.workspaceId, canonicalWorkspaceId),
               eq(
                 workspaceStorage.id,
                 canonicalId(
@@ -294,6 +321,14 @@ export function createProjectDriveAccessService(
       throw new ProjectDriveAccessError("storage-ambiguous");
     }
     const storage = storageRows[0];
+    if (
+      expectedReceipt &&
+      (storage.id !== expectedReceipt.storageGenerationId ||
+        storage.connectionId !== expectedReceipt.connectionId ||
+        storage.folderId !== expectedReceipt.folderId)
+    ) {
+      throw new ProjectDriveAccessError("storage-not-found");
+    }
     const [bound] = await deps.database
       .select()
       .from(providerConnections)
@@ -311,6 +346,35 @@ export function createProjectDriveAccessService(
           storage: Object.freeze({ ...storage }),
         }),
       ),
+    );
+  }
+
+  /**
+   * Resolve an exact persisted receipt for internal repair/erasure work.
+   * The four-way equality check happens before token refresh or provider I/O,
+   * so a stale or cross-Project receipt cannot steer a privileged request.
+   */
+  async function withReceiptStorageSession<T>(
+    receipt: ProjectDriveStorageReceipt,
+    operation: (session: ProjectDriveStorageSession) => Promise<T>,
+  ): Promise<T> {
+    const canonicalReceipt = Object.freeze({
+      workspaceId: canonicalId(receipt.workspaceId, "workspaceId"),
+      storageGenerationId: canonicalId(
+        receipt.storageGenerationId,
+        "storageGenerationId",
+      ),
+      connectionId: canonicalId(receipt.connectionId, "connectionId"),
+      folderId: canonicalId(receipt.folderId, "folderId"),
+    });
+    return withResolvedStorageSession(
+      canonicalReceipt.workspaceId,
+      {
+        kind: "generation",
+        storageGenerationId: canonicalReceipt.storageGenerationId,
+      },
+      canonicalReceipt,
+      operation,
     );
   }
 
@@ -341,7 +405,11 @@ export function createProjectDriveAccessService(
     );
   }
 
-  return Object.freeze({ withStorageSession, withProvisioningSession });
+  return Object.freeze({
+    withStorageSession,
+    withReceiptStorageSession,
+    withProvisioningSession,
+  });
 }
 
 export type ProjectDriveAccessService = ReturnType<
@@ -379,4 +447,11 @@ export async function withAuthorizedProjectDriveProvisioningSession<T>(
     authorization,
     operation,
   );
+}
+
+export async function withProjectDriveReceiptSession<T>(
+  receipt: ProjectDriveStorageReceipt,
+  operation: (session: ProjectDriveStorageSession) => Promise<T>,
+): Promise<T> {
+  return defaultAccessService().withReceiptStorageSession(receipt, operation);
 }
