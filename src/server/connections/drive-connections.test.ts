@@ -26,6 +26,7 @@ import * as schema from "@/server/db/schema";
 import {
   createGoogleDriveConnectionService,
   googleDriveOAuthClientFromEnv,
+  googleDriveReturnOriginFromEnv,
   type GoogleDriveConnectionServiceDependencies,
 } from "./drive-connections";
 import { GOOGLE_DRIVE_FILE_SCOPE } from "./google-drive-scopes";
@@ -272,6 +273,25 @@ describe("Project Drive connection · OAuth start", () => {
             "http://preview.example.test/api/connections/google/callback",
         }),
       /GOOGLE_OAUTH_REDIRECT_URI/,
+    );
+    const previewEnv = {
+      GOOGLE_OAUTH_REDIRECT_URI:
+        "https://preview.example.test/api/connections/google/callback",
+    };
+    assert.equal(
+      googleDriveReturnOriginFromEnv(
+        "https://preview.example.test",
+        previewEnv,
+      ),
+      "https://preview.example.test",
+    );
+    assert.equal(
+      googleDriveReturnOriginFromEnv(
+        "https://attacker.example.test",
+        previewEnv,
+      ),
+      "https://preview.example.test",
+      "an alternate Host-derived origin must not become a redirect target",
     );
   });
 });

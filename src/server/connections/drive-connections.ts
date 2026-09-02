@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import { APP_ORIGIN } from "@/lib/product-urls";
 import {
   keyRingFromEnv,
   open,
@@ -129,15 +130,10 @@ function requiredConfigValue(
   return value;
 }
 
-/** Read the dedicated Drive OAuth client without exposing either value. */
-export function googleDriveOAuthClientFromEnv(
+/** Validate the one exact callback URL registered for this deployment. */
+function googleDriveOAuthRedirectUriFromEnv(
   env: Readonly<Record<string, string | undefined>> = process.env,
-): GoogleOAuthClient {
-  const clientId = requiredConfigValue(env, "GOOGLE_OAUTH_CLIENT_ID");
-  const clientSecret = requiredConfigValue(
-    env,
-    "GOOGLE_OAUTH_CLIENT_SECRET",
-  );
+): string {
   const configuredRedirectUri = requiredConfigValue(
     env,
     "GOOGLE_OAUTH_REDIRECT_URI",
@@ -166,10 +162,49 @@ export function googleDriveOAuthClientFromEnv(
       "GOOGLE_OAUTH_REDIRECT_URI",
     );
   }
+  return redirectUrl.toString();
+}
+
+/**
+ * Choose a redirect origin without trusting the incoming Host header.
+ *
+ * Preview deployments remain on preview because their exact callback URI is
+ * deployment-specific. An alternate request origin is ignored. If Drive is
+ * not configured, only Signal's compiled canonical origin is used.
+ */
+export function googleDriveReturnOriginFromEnv(
+  requestOrigin: string,
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): string {
+  try {
+    const configuredOrigin = new URL(
+      googleDriveOAuthRedirectUriFromEnv(env),
+    ).origin;
+    try {
+      const candidate = new URL(requestOrigin);
+      if (candidate.origin === configuredOrigin) return configuredOrigin;
+    } catch {
+      // Ignore an unparseable Host-derived candidate.
+    }
+    return configuredOrigin;
+  } catch {
+    return APP_ORIGIN;
+  }
+}
+
+/** Read the dedicated Drive OAuth client without exposing either value. */
+export function googleDriveOAuthClientFromEnv(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): GoogleOAuthClient {
+  const clientId = requiredConfigValue(env, "GOOGLE_OAUTH_CLIENT_ID");
+  const clientSecret = requiredConfigValue(
+    env,
+    "GOOGLE_OAUTH_CLIENT_SECRET",
+  );
   return Object.freeze({
     clientId,
     clientSecret,
-    redirectUri: redirectUrl.toString(),
+    redirectUri: googleDriveOAuthRedirectUriFromEnv(env),
   });
 }
 

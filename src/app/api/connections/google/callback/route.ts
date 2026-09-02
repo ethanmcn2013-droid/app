@@ -7,6 +7,7 @@ import {
   completeGoogleDriveConnection,
   GOOGLE_OAUTH_STATE_COOKIE,
   GOOGLE_OAUTH_STATE_COOKIE_PATH,
+  googleDriveReturnOriginFromEnv,
 } from "@/server/connections/drive-connections";
 import {
   googleOAuthStateSecretFromEnv,
@@ -22,7 +23,10 @@ function callbackRedirect(
   request: NextRequest,
   status: string,
 ): NextResponse {
-  const url = new URL("/app/settings", request.nextUrl.origin);
+  const url = new URL(
+    "/app/settings",
+    googleDriveReturnOriginFromEnv(request.nextUrl.origin),
+  );
   url.searchParams.set("drive", status);
   const response = NextResponse.redirect(url, 303);
   response.cookies.set({

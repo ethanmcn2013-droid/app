@@ -7,6 +7,7 @@ import {
   beginGoogleDriveConnection,
   GOOGLE_OAUTH_STATE_COOKIE,
   GOOGLE_OAUTH_STATE_COOKIE_PATH,
+  googleDriveReturnOriginFromEnv,
 } from "@/server/connections/drive-connections";
 import { authorizeProjectDrive } from "@/server/connections/project-drive-authz";
 
@@ -14,7 +15,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function settingsRedirect(request: NextRequest, status: string): NextResponse {
-  const url = new URL("/app/settings", request.nextUrl.origin);
+  const url = new URL(
+    "/app/settings",
+    googleDriveReturnOriginFromEnv(request.nextUrl.origin),
+  );
   url.searchParams.set("drive", status);
   const response = NextResponse.redirect(url, 303);
   response.headers.set("Cache-Control", "private, no-store, max-age=0");
@@ -28,7 +32,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const { userId, sessionId } = await auth();
   if (!userId || !sessionId) {
-    const signIn = new URL("/sign-in", request.nextUrl.origin);
+    const signIn = new URL(
+      "/sign-in",
+      googleDriveReturnOriginFromEnv(request.nextUrl.origin),
+    );
     signIn.searchParams.set(
       "redirect_url",
       "/api/connections/google/start",
