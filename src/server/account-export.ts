@@ -92,15 +92,15 @@ const resourceMeta = {
   countsAgainstStorage: resources.countsAgainstStorage,
 };
 
-const projectDriveActionLabels: Record<ProjectDriveOperationKind, string> = {
-  folder_provision: "Set up the Project folder",
-  grant_create: "Give someone Project folder access",
-  folder_rename: "Rename the Project folder",
-  project_delete: "Remove the Project Drive setup",
-  storage_handover: "Move the Project to another Drive",
+const googleDriveActionLabels: Record<ProjectDriveOperationKind, string> = {
+  folder_provision: "Set up the Google Drive folder",
+  grant_create: "Give someone Google Drive folder access",
+  folder_rename: "Rename the Google Drive folder",
+  project_delete: "Remove the Google Drive setup",
+  storage_handover: "Move storage to another Google Drive",
 };
 
-const projectDriveProgressLabels: Record<ProjectDriveOperationStatus, string> = {
+const googleDriveProgressLabels: Record<ProjectDriveOperationStatus, string> = {
   pending: "Waiting",
   running: "In progress",
   retry_wait: "Waiting to retry",
@@ -110,14 +110,14 @@ const projectDriveProgressLabels: Record<ProjectDriveOperationStatus, string> = 
 };
 
 /**
- * A portable, plain-language view of Project Drive's recovery journal.
+ * A portable, plain-language view of Google Drive activity.
  *
  * Credential and storage-generation ids, dedupe hashes, leases and Drive web
  * links stay internal. Stable folder/permission receipts remain portable, but
  * this projection cannot expose an OAuth credential or resumable-upload
  * session URL if either is added to an adjacent table later.
  */
-const projectDriveActivityMeta = {
+const googleDriveActivityMeta = {
   id: projectDriveOperations.id,
   projectId: projectDriveOperations.workspaceId,
   actionCode: projectDriveOperations.operationKind,
@@ -137,7 +137,7 @@ const projectDriveActivityMeta = {
   finishedAt: projectDriveOperations.completedAt,
 };
 
-function describeProjectDriveActivity<
+function describeGoogleDriveActivity<
   Activity extends {
     actionCode: ProjectDriveOperationKind;
     progressCode: ProjectDriveOperationStatus;
@@ -145,8 +145,8 @@ function describeProjectDriveActivity<
 >(row: Activity) {
   return {
     ...row,
-    action: projectDriveActionLabels[row.actionCode],
-    progress: projectDriveProgressLabels[row.progressCode],
+    action: googleDriveActionLabels[row.actionCode],
+    progress: googleDriveProgressLabels[row.progressCode],
   };
 }
 
@@ -227,7 +227,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     ownedMeta,
     ownedWorkspaceStorage,
     ownedDriveFolderGrants,
-    ownedProjectDriveActivityRows,
+    ownedGoogleDriveActivityRows,
     myMemberships,
     myAuthoredComments,
     myAuthoredActivities,
@@ -238,7 +238,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
     myNotesExtractTasks,
     myDriveFolderGrants,
     myAddedResources,
-    myProjectDriveActivityRows,
+    myGoogleDriveActivityRows,
   ] = await Promise.all([
     slugs.length ? database.select().from(tasks).where(inArray(tasks.workspaceId, slugs)) : [],
     slugs.length ? database.select().from(comments).where(inArray(comments.workspaceId, slugs)) : [],
@@ -267,7 +267,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       : [],
     slugs.length
       ? database
-          .select(projectDriveActivityMeta)
+          .select(googleDriveActivityMeta)
           .from(projectDriveOperations)
           .where(inArray(projectDriveOperations.workspaceId, slugs))
       : [],
@@ -301,7 +301,7 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       // isolation-ok: this deliberately composes the proved user's subject,
       // credential and storage-generation lineages across Projects. Owned
       // Projects are excluded because they are exported in the section above.
-      .select(projectDriveActivityMeta)
+      .select(googleDriveActivityMeta)
       .from(projectDriveOperations)
       .where(
         slugs.length
@@ -333,8 +333,8 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       boardMeta: ownedMeta,
       workspaceStorage: ownedWorkspaceStorage,
       driveFolderGrants: ownedDriveFolderGrants,
-      projectDriveActivity: ownedProjectDriveActivityRows.map((activity) =>
-        describeProjectDriveActivity(activity),
+      googleDriveActivity: ownedGoogleDriveActivityRows.map((activity) =>
+        describeGoogleDriveActivity(activity),
       ),
     },
     footprintElsewhere: {
@@ -349,8 +349,8 @@ export async function exportAccountData(database: ExportDb, clerkId: string) {
       providerConnections: myProviderConnections,
       driveFolderGrants: myDriveFolderGrants,
       addedResources: myAddedResources,
-      projectDriveActivity: myProjectDriveActivityRows.map((activity) =>
-        describeProjectDriveActivity(activity),
+      googleDriveActivity: myGoogleDriveActivityRows.map((activity) =>
+        describeGoogleDriveActivity(activity),
       ),
     },
   };

@@ -15,7 +15,7 @@
  *      still erased and the remaining modules are still attempted.
  *   5. Erasure is idempotent: a second call on the same clerkId is a no-op.
  *   6. Erasing an unprovisioned user is a no-op (no throw, no writes).
- *   7. Tasks consumes only the target's Project Drive operation evidence;
+ *   7. Tasks consumes only the target's Google Drive operation evidence;
  *      another Project's repair journal survives the unified orchestration.
  *
  * Run: node --import tsx --test src/server/account-unified-erasure.test.ts
@@ -139,6 +139,57 @@ test("Google tokens from Notes and Tasks are deduplicated for revocation", async
       "tok-google-2",
       "tok-drive-1",
     ]);
+  } finally {
+    client.close();
+  }
+});
+
+test("real Tasks failure still revokes tokens already returned by Notes", async () => {
+  const { client, db } = await freshMemoryDb();
+  const revokedTokens: string[] = [];
+  try {
+    await seedTwo(client);
+    // Reproduce the claim-wins side of the executor/erasure race. The real
+    // Tasks eraser must retain this running journal row and fail closed.
+    await client.execute(`
+      UPDATE project_drive_operations
+      SET status='running', attempt_count=1, last_attempt_at=1756800001,
+          lease_expires_at=2756800001, updated_at=1756800001
+      WHERE id='drive-op-target'
+    `);
+
+    await assert.rejects(
+      deleteUnifiedAccountDataWith(db, "clerk_target", {
+        eraseNotes: async () => ({
+          ok: true as const,
+          refreshTokens: ["notes-token-already-detached"],
+        }),
+        eraseTimeline: async () => ({ ok: true as const }),
+        eraseSignal: async () => ({ ok: true as const }),
+        revokeTokens: async (tokens) => {
+          revokedTokens.push(...tokens);
+        },
+      }),
+      /Google Drive work is still running/,
+    );
+
+    assert.deepEqual(revokedTokens, ["notes-token-already-detached"]);
+    assert.equal(await count(client, "users WHERE id='u-target'"), 1);
+    assert.equal(
+      await count(
+        client,
+        "project_drive_operations WHERE id='drive-op-target' AND status='running'",
+      ),
+      1,
+    );
+    assert.equal(
+      await count(
+        client,
+        "meta WHERE key='google-drive:account-erasure:user:u-target'",
+      ),
+      1,
+      "the durable fence must survive a fail-closed Tasks erasure",
+    );
   } finally {
     client.close();
   }

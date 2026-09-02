@@ -60,7 +60,7 @@ export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void>
  *   1. Erase Notes (returns Google tokens collected before deletion),
  *      Timeline, and Signal in parallel. Each module failure is logged
  *      but does not abort the others.
- *   2. Erase Tasks after collecting its encrypted Project Drive generations.
+ *   2. Erase Tasks after collecting its encrypted Google Drive generations.
  *   3. Revoke the deduplicated Google tokens collected in steps 1-2
  *      (best-effort, and only after the rows that held them are gone).
  *
@@ -115,15 +115,34 @@ export async function deleteUnifiedAccountDataWith(
   const notesGoogleTokens =
     "refreshTokens" in notesResult ? notesResult.refreshTokens : [];
 
-  // Step 2: Tasks collects every encrypted Project Drive generation and exact
+  // Step 2: Tasks collects every encrypted Google Drive generation and exact
   // grant receipt before provider revocation. Only after those calls succeed
   // does it consume operation-journal evidence and the RESTRICT-backed rows;
   // plaintext tokens live only long enough for this orchestrator to revoke.
-  const tasksResult = opts.eraseTasks
-    ? await opts.eraseTasks(database, clerkId)
-    : await eraseTasksData(database, clerkId, {
-        revokeDriveFolderGrant: opts.revokeDriveFolderGrant,
-      });
+  let tasksResult: AccountErasureReceipt;
+  try {
+    tasksResult = opts.eraseTasks
+      ? await opts.eraseTasks(database, clerkId)
+      : await eraseTasksData(database, clerkId, {
+          revokeDriveFolderGrant: opts.revokeDriveFolderGrant,
+        });
+  } catch (tasksError) {
+    // Notes may already have deleted the rows that held these credentials.
+    // Do not lose the only in-memory copies just because Tasks failed closed.
+    // Revocation remains best-effort; the original Tasks error is authoritative.
+    const notesTokens = [...new Set(notesGoogleTokens)];
+    if (notesTokens.length > 0) {
+      try {
+        await opts.revokeTokens(notesTokens);
+      } catch (revokeError) {
+        console.warn(
+          "[gdpr] Google token revocation after Tasks erasure failure failed:",
+          revokeError,
+        );
+      }
+    }
+    throw tasksError;
+  }
   const googleTokens = [
     ...new Set([
       ...notesGoogleTokens,

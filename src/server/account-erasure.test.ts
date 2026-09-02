@@ -509,7 +509,7 @@ test("erasing an unknown user is a no-op (no throw, no writes)", async () => {
   }
 });
 
-test("erasure retains an attempted Drive grant until its exact permission is known", async () => {
+test("erasure retains every attempted Drive grant until its exact permission is known", async () => {
   const { client, db } = await freshDb();
   try {
     await client.executeMultiple(`
@@ -537,13 +537,20 @@ test("erasure retains an attempted Drive grant until its exact permission is kno
       INSERT INTO project_drive_operations (
         id, workspace_id, operation_kind, status, dedupe_key,
         storage_generation_id, subject_user_id, grantee_email, grant_role,
-        attempt_count, last_attempt_at, last_error_code, created_at, updated_at
-      ) VALUES (
-        'operation-ambiguous','ws-owner','grant_create','manual_attention',
-        '${"7".repeat(64)}','storage-owner','u-target','target@example.test',
-        'writer',1,1756800001,'ambiguous_provider_result',1756800000,
-        1756800001
-      );
+        attempt_count, last_attempt_at, next_attempt_at, last_error_code,
+        created_at, updated_at
+      ) VALUES
+        ('operation-ambiguous','ws-owner','grant_create','manual_attention',
+         '${"7".repeat(64)}','storage-owner','u-target','target@example.test',
+         'writer',1,1756800001,NULL,'ambiguous_provider_result',1756800000,
+         1756800001),
+        ('operation-attempted-pending','ws-owner','grant_create','pending',
+         '${"8".repeat(64)}','storage-owner','u-target','target@example.test',
+         'reader',1,1756800001,NULL,'network_error',1756800000,1756800001),
+        ('operation-retry-wait','ws-owner','grant_create','retry_wait',
+         '${"9".repeat(64)}','storage-owner','u-target','target@example.test',
+         'reader',1,1756800001,2756800001,'network_error',1756800000,
+         1756800001);
     `);
 
     let revokeCalls = 0;
@@ -564,10 +571,18 @@ test("erasure retains an attempted Drive grant until its exact permission is kno
     assert.equal(
       await count(
         client,
-        "project_drive_operations WHERE id='operation-ambiguous'",
+        "project_drive_operations WHERE id IN ('operation-ambiguous','operation-attempted-pending','operation-retry-wait') AND status='manual_attention'",
+      ),
+      3,
+      "ambiguous repair evidence must survive until the exact permission is recovered",
+    );
+    assert.equal(
+      await count(
+        client,
+        "meta WHERE key='google-drive:account-erasure:user:u-target'",
       ),
       1,
-      "ambiguous repair evidence must survive until the exact permission is recovered",
+      "a failed erasure must keep its durable executor fence",
     );
     assert.equal(
       await count(client, "workspace_storage WHERE id='storage-owner'"),
@@ -576,6 +591,106 @@ test("erasure retains an attempted Drive grant until its exact permission is kno
     assert.equal(
       await count(client, "provider_connections WHERE id='conn-owner'"),
       1,
+    );
+  } finally {
+    client.close();
+  }
+});
+
+test("the account fence wins a retry-wait claim race before evidence deletion", async () => {
+  const { client, db } = await freshDb();
+  try {
+    await client.execute("PRAGMA foreign_keys = ON");
+    await client.executeMultiple(`
+      INSERT INTO users (id, clerk_id, color, initials) VALUES
+        ('u-target','clerk_target','#111','TT'),
+        ('u-bystander','clerk_bystander','#222','BB');
+      INSERT INTO workspaces (id, slug, name, owner_user_id) VALUES
+        ('ws-target','ws-target','Target Project','u-target');
+      INSERT INTO provider_connections (
+        id, user_id, provider, provider_account_id, root_folder_id,
+        refresh_token_cipher, key_version, scopes, status, is_current,
+        connected_at
+      ) VALUES (
+        'conn-target','u-target','google_drive','perm-target','root-target',
+        'cipher-target',1,'["https://www.googleapis.com/auth/drive.file"]',
+        'active',1,1756800000
+      );
+      INSERT INTO workspace_storage (
+        id, workspace_id, connection_id, folder_id, folder_web_view_link,
+        state, is_current
+      ) VALUES (
+        'storage-target','ws-target','conn-target','folder-target',
+        'https://drive.test/folder-target','active',1
+      );
+      INSERT INTO drive_folder_grants (
+        storage_generation_id, workspace_id, user_id, permission_id,
+        granted_email, role, granted_at, revoke_pending
+      ) VALUES (
+        'storage-target','ws-target','u-bystander','permission-bystander',
+        'bystander@example.test','reader',1756800000,0
+      );
+      INSERT INTO project_drive_operations (
+        id, workspace_id, operation_kind, status, dedupe_key,
+        storage_generation_id, workspace_revision, attempt_count,
+        last_attempt_at, next_attempt_at, last_error_code, created_at,
+        updated_at
+      ) VALUES (
+        'operation-retry','ws-target','folder_rename','retry_wait',
+        '${"c".repeat(64)}','storage-target',2,1,1756800001,2756800001,
+        'network_error',1756800000,1756800001
+      );
+    `);
+
+    let claimRowsAffected = -1;
+    await eraseAccountData(db, "clerk_target", {
+      openProviderToken: () => "refresh-target",
+      revokeDriveFolderGrant: async () => {
+        const fenced = await client.execute(
+          "SELECT status, next_attempt_at FROM project_drive_operations WHERE id='operation-retry'",
+        );
+        assert.equal(fenced.rows[0]!.status, "manual_attention");
+        assert.equal(fenced.rows[0]!.next_attempt_at, null);
+        assert.equal(
+          await count(
+            client,
+            "meta WHERE key='google-drive:account-erasure:user:u-target'",
+          ),
+          1,
+        );
+
+        // The worker's real contract is an atomic SQL status CAS plus the
+        // account-fence check. It must lose once the erasure transaction wins.
+        const claim = await client.execute(`
+          UPDATE project_drive_operations
+          SET status='running', attempt_count=attempt_count+1,
+              last_attempt_at=unixepoch(), lease_expires_at=unixepoch()+60,
+              next_attempt_at=NULL, updated_at=unixepoch()
+          WHERE id='operation-retry'
+            AND status IN ('pending','retry_wait','running')
+            AND NOT EXISTS (
+              SELECT 1 FROM meta
+              WHERE key='google-drive:account-erasure:user:u-target'
+            )
+        `);
+        claimRowsAffected = claim.rowsAffected;
+      },
+    });
+
+    assert.equal(claimRowsAffected, 0);
+    assert.equal(await count(client, "project_drive_operations"), 0);
+    assert.equal(await count(client, "users WHERE id='u-target'"), 0);
+    assert.equal(
+      await count(
+        client,
+        "meta WHERE key='google-drive:account-erasure:user:u-target'",
+      ),
+      0,
+      "successful account deletion must retire its fence atomically",
+    );
+    assert.equal(
+      (await client.execute("PRAGMA foreign_key_check")).rows.length,
+      0,
     );
   } finally {
     client.close();

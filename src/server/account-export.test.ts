@@ -119,7 +119,7 @@ test("export captures owned content + footprint, scoped to the caller", async ()
     assert.equal(data.ownedWorkspaces!.workspaceStorage[0]!.id, "storage-a");
     assert.equal(data.ownedWorkspaces!.driveFolderGrants.length, 2);
     assert.deepEqual(
-      data.ownedWorkspaces!.projectDriveActivity.map((activity) => ({
+      data.ownedWorkspaces!.googleDriveActivity.map((activity) => ({
         id: activity.id,
         action: activity.action,
         progress: activity.progress,
@@ -127,7 +127,7 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       [
         {
           id: "op-owned-project",
-          action: "Remove the Project Drive setup",
+          action: "Remove the Google Drive setup",
           progress: "Waiting",
         },
       ],
@@ -186,7 +186,7 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       ["res-drive-a", "res-drive-b"],
     );
     assert.deepEqual(
-      data.footprintElsewhere!.projectDriveActivity
+      data.footprintElsewhere!.googleDriveActivity
         .map((activity) => activity.id)
         .sort(),
       [
@@ -197,13 +197,13 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       "account subject, credential, and storage lineages must cross Project scope without leaking unrelated activity",
     );
     const connectionActivity =
-      data.footprintElsewhere!.projectDriveActivity.find(
+      data.footprintElsewhere!.googleDriveActivity.find(
         (activity) => activity.id === "op-account-connection",
       );
-    assert.equal(connectionActivity?.action, "Set up the Project folder");
+    assert.equal(connectionActivity?.action, "Set up the Google Drive folder");
     assert.equal(connectionActivity?.progress, "Complete");
     assert.equal(connectionActivity?.driveFolderId, "folder-from-operation");
-    const subjectActivity = data.footprintElsewhere!.projectDriveActivity.find(
+    const subjectActivity = data.footprintElsewhere!.googleDriveActivity.find(
       (activity) => activity.id === "op-account-subject",
     );
     assert.equal(subjectActivity?.personEmail, "target@example.test");
@@ -212,9 +212,9 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       subjectActivity?.drivePermissionId,
       "permission-from-operation",
     );
-    const exportedProjectDriveActivity = JSON.stringify({
-      owned: data.ownedWorkspaces!.projectDriveActivity,
-      elsewhere: data.footprintElsewhere!.projectDriveActivity,
+    const exportedGoogleDriveActivity = JSON.stringify({
+      owned: data.ownedWorkspaces!.googleDriveActivity,
+      elsewhere: data.footprintElsewhere!.googleDriveActivity,
     });
     for (const forbidden of [
       "SECRET-OPERATION-URL",
@@ -226,9 +226,9 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       "leaseExpiresAt",
     ]) {
       assert.equal(
-        exportedProjectDriveActivity.includes(forbidden),
+        exportedGoogleDriveActivity.includes(forbidden),
         false,
-        `Project Drive activity leaked internal field ${forbidden}`,
+        `Google Drive activity leaked internal field ${forbidden}`,
       );
     }
 
@@ -244,6 +244,9 @@ test("export captures owned content + footprint, scoped to the caller", async ()
       "attachment storedPath leaked into the export",
     );
     const serialized = JSON.stringify(data);
+    assert.equal(serialized.includes("projectDriveActivity"), false);
+    assert.equal(serialized.includes("Project Drive"), false);
+    assert.equal(serialized.includes("googleDriveActivity"), true);
     assert.equal(serialized.includes("SECRET-DRIVE-PATH"), false);
     assert.equal(serialized.includes("SECRET-TARGET-CIPHER"), false);
     assert.equal(serialized.includes("SECRET-BYSTANDER-CIPHER"), false);

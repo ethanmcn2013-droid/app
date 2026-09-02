@@ -1,4 +1,4 @@
-import { and, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
@@ -24,6 +24,14 @@ import {
   workspaces,
 } from "./db/schema";
 import * as schema from "./db/schema";
+import {
+  GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
+  GOOGLE_DRIVE_OPERATION_ERASURE_CANCELLED_STATUS,
+  GOOGLE_DRIVE_OPERATION_ERASURE_ERROR_CODE,
+  GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS,
+  googleDriveAccountErasureFenceKey,
+  isGoogleDriveOperationClaimableStatus,
+} from "./connections/google-drive-operation-lifecycle";
 import { deleteBytes } from "./storage";
 
 /**
@@ -169,55 +177,134 @@ export async function eraseAccountData(
     (storage) => storage.id,
   );
 
-  // Resolve every journal row whose RESTRICT parent this erasure will remove:
-  // an owned Project, the person's credential/storage lineage in another
-  // Project, or a grant operation naming the person. A grant operation can be
-  // the only durable permission receipt after Google succeeded but the local
-  // grant-row commit did not, so collect that receipt before any deletion.
-  const affectedOperationRows = await database
-    .select({
-      id: projectDriveOperations.id,
-      operationKind: projectDriveOperations.operationKind,
-      status: projectDriveOperations.status,
-      attemptCount: projectDriveOperations.attemptCount,
-      workspaceId: projectDriveOperations.workspaceId,
-      storageGenerationId: projectDriveOperations.storageGenerationId,
-      subjectUserId: projectDriveOperations.subjectUserId,
-      providerPermissionId: projectDriveOperations.providerPermissionId,
-      connectionId: workspaceStorage.connectionId,
-      folderId: workspaceStorage.folderId,
-    })
-    .from(projectDriveOperations)
-    // isolation-ok: account erasure intentionally spans every Project reached
-    // from this proved user's ownership, subject, credential, or storage
-    // lineage. The join supplies the exact provider-revocation receipt.
-    .leftJoin(
-      workspaceStorage,
-      and(
-        eq(
+  const affectedOperationScope = or(
+    eq(projectDriveOperations.subjectUserId, userId),
+    ownedWorkspaceIds.length > 0
+      ? inArray(projectDriveOperations.workspaceId, ownedWorkspaceIds)
+      : undefined,
+    connectionIds.length > 0
+      ? inArray(projectDriveOperations.connectionId, connectionIds)
+      : undefined,
+    accountStorageGenerationIds.length > 0
+      ? inArray(
           projectDriveOperations.storageGenerationId,
-          workspaceStorage.id,
+          accountStorageGenerationIds,
+        )
+      : undefined,
+  )!;
+  const accountErasureFenceKey = googleDriveAccountErasureFenceKey(userId);
+
+  // Establish a durable account fence and freeze every affected operation in
+  // one transaction before snapshotting any provider receipt. Untouched work
+  // is safe to cancel. Anything attempted or carrying a provider receipt is
+  // held for review in an unclaimable state. The executor contract lives in
+  // google-drive-operation-lifecycle.ts and requires the account fence plus
+  // status predicate to be checked in its own atomic prepare/claim CAS.
+  const [, , , affectedOperationRows] = await database.batch([
+    database
+      .insert(meta)
+      .values({
+        key: accountErasureFenceKey,
+        value: GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
+      })
+      .onConflictDoUpdate({
+        target: meta.key,
+        set: {
+          value: GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
+          updatedAt: sql`(unixepoch())`,
+        },
+      }),
+    database
+      .update(projectDriveOperations)
+      .set({
+        status: GOOGLE_DRIVE_OPERATION_ERASURE_CANCELLED_STATUS,
+        completedAt: sql`max(${projectDriveOperations.createdAt}, unixepoch())`,
+        updatedAt: sql`max(${projectDriveOperations.updatedAt}, ${projectDriveOperations.createdAt}, unixepoch())`,
+      })
+      .where(
+        and(
+          affectedOperationScope,
+          eq(projectDriveOperations.status, "pending"),
+          eq(projectDriveOperations.attemptCount, 0),
+          isNull(projectDriveOperations.providerFolderId),
+          isNull(projectDriveOperations.providerFolderWebViewLink),
+          isNull(projectDriveOperations.providerPermissionId),
         ),
-        eq(projectDriveOperations.workspaceId, workspaceStorage.workspaceId),
       ),
-    )
-    .where(
-      or(
-        eq(projectDriveOperations.subjectUserId, userId),
-        ownedWorkspaceIds.length > 0
-          ? inArray(projectDriveOperations.workspaceId, ownedWorkspaceIds)
-          : undefined,
-        connectionIds.length > 0
-          ? inArray(projectDriveOperations.connectionId, connectionIds)
-          : undefined,
-        accountStorageGenerationIds.length > 0
-          ? inArray(
-              projectDriveOperations.storageGenerationId,
-              accountStorageGenerationIds,
-            )
-          : undefined,
+    database
+      .update(projectDriveOperations)
+      .set({
+        status: GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS,
+        attemptCount: sql`max(${projectDriveOperations.attemptCount}, 1)`,
+        lastAttemptAt: sql`coalesce(${projectDriveOperations.lastAttemptAt}, max(${projectDriveOperations.createdAt}, unixepoch()))`,
+        nextAttemptAt: null,
+        leaseExpiresAt: null,
+        lastErrorCode: sql`coalesce(${projectDriveOperations.lastErrorCode}, ${GOOGLE_DRIVE_OPERATION_ERASURE_ERROR_CODE})`,
+        completedAt: null,
+        updatedAt: sql`max(${projectDriveOperations.updatedAt}, ${projectDriveOperations.createdAt}, unixepoch())`,
+      })
+      .where(
+        and(
+          affectedOperationScope,
+          inArray(projectDriveOperations.status, [
+            "pending",
+            "retry_wait",
+            GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS,
+          ]),
+        ),
       ),
+    // libSQL batches are one transaction. Re-read only after both fence writes;
+    // this is the authoritative provider-receipt snapshot for later revocation
+    // and evidence deletion.
+    database
+      .select({
+        id: projectDriveOperations.id,
+        operationKind: projectDriveOperations.operationKind,
+        status: projectDriveOperations.status,
+        attemptCount: projectDriveOperations.attemptCount,
+        workspaceId: projectDriveOperations.workspaceId,
+        storageGenerationId: projectDriveOperations.storageGenerationId,
+        subjectUserId: projectDriveOperations.subjectUserId,
+        providerPermissionId: projectDriveOperations.providerPermissionId,
+        connectionId: workspaceStorage.connectionId,
+        folderId: workspaceStorage.folderId,
+      })
+      .from(projectDriveOperations)
+      // isolation-ok: account erasure intentionally spans every Project
+      // reached from this proved user's ownership, subject, credential, or
+      // storage lineage. The join supplies exact provider receipts.
+      .leftJoin(
+        workspaceStorage,
+        and(
+          eq(
+            projectDriveOperations.storageGenerationId,
+            workspaceStorage.id,
+          ),
+          eq(
+            projectDriveOperations.workspaceId,
+            workspaceStorage.workspaceId,
+          ),
+        ),
+      )
+      .where(affectedOperationScope),
+  ]);
+
+  const runningOperation = affectedOperationRows.find(
+    (operation) => operation.status === "running",
+  );
+  if (runningOperation) {
+    throw new Error(
+      "account erasure blocked: Google Drive work is still running; journal evidence retained",
     );
+  }
+  const unfencedOperation = affectedOperationRows.find((operation) =>
+    isGoogleDriveOperationClaimableStatus(operation.status),
+  );
+  if (unfencedOperation) {
+    throw new Error(
+      "account erasure blocked: Google Drive operation could not be fenced",
+    );
+  }
 
   // Permission deletion is an external side effect, so it must happen before
   // the local receipt disappears. Cover all receipts this erasure will remove:
@@ -497,12 +584,16 @@ export async function eraseAccountData(
       sql`substr(coalesce(${tasks.sourceNoteId}, ''), 1, ${notesSourcePrefix.length}) = ${notesSourcePrefix}`,
     );
 
-  await database
-    .delete(workspaceMembers)
-    .where(eq(workspaceMembers.userId, userId));
-
-  // Leaf last.
-  await database.delete(users).where(eq(users.id, userId));
+  // Leaf last. Remove the durable executor fence in the same transaction as
+  // the user. A failed leaf delete therefore leaves the fence active; a
+  // successful delete cannot strand it.
+  await database.batch([
+    database
+      .delete(workspaceMembers)
+      .where(eq(workspaceMembers.userId, userId)),
+    database.delete(meta).where(eq(meta.key, accountErasureFenceKey)),
+    database.delete(users).where(eq(users.id, userId)),
+  ]);
 
   // Best-effort removal of the now-orphaned attachment bytes. The centralized
   // storage seam understands both private Vercel Blob locators and disk paths;

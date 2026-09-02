@@ -16,7 +16,7 @@
  *   4. Tasks attachment storedPath never appears in the unified JSON
  *      (existing export guarantee held through the wrapper).
  *   5. Export of an unprovisioned Tasks user returns null user, no error.
- *   6. Project Drive's journal survives the unified wrapper only through its
+ *   6. Google Drive's journal survives the unified wrapper only through its
  *      plain-language, credential-free activity projection.
  *
  * Run: node --import tsx --test src/server/account-unified-export.test.ts
@@ -113,7 +113,7 @@ test("unified export includes all four sections with correct shapes", async () =
     assert.equal(result.tasks.product, "tasks");
     assert.ok(result.tasks.user, "tasks.user missing");
     assert.deepEqual(
-      result.tasks.ownedWorkspaces?.projectDriveActivity.map((activity) => ({
+      result.tasks.ownedWorkspaces?.googleDriveActivity.map((activity) => ({
         id: activity.id,
         action: activity.action,
         progress: activity.progress,
@@ -121,7 +121,7 @@ test("unified export includes all four sections with correct shapes", async () =
       [
         {
           id: "drive-op-a",
-          action: "Remove the Project Drive setup",
+          action: "Remove the Google Drive setup",
           progress: "Waiting",
         },
       ],
@@ -151,6 +151,9 @@ test("tasks storedPath never appears in the unified export JSON", async () => {
       !json.includes("SECRET"),
       "attachment storedPath leaked into the unified export",
     );
+    assert.equal(json.includes("projectDriveActivity"), false);
+    assert.equal(json.includes("Project Drive"), false);
+    assert.equal(json.includes("googleDriveActivity"), true);
   } finally {
     client.close();
   }
