@@ -18,6 +18,36 @@ test("bearer routes and OAuth query values are redacted", () => {
     redactSensitiveUrl("https://tasks.test/redeem/GIFT-SECRET"),
     "https://tasks.test/redeem/[redacted]",
   );
+  assert.equal(
+    redactSensitiveUrl(
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=opaque-session",
+    ),
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=[redacted]",
+  );
+});
+
+test("Drive resumable capabilities are removed from fields, text, and breadcrumbs", () => {
+  const uploadId = "opaque-upload-capability-123";
+  const sessionUrl =
+    `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=${uploadId}`;
+  const event = {
+    message: `retry failed at ${sessionUrl}`,
+    extra: {
+      sessionUrl,
+      nested: [{ uploadUrl: sessionUrl }, { safeStatus: 308 }],
+    },
+    breadcrumbs: [{ data: { url: sessionUrl } }],
+  } as unknown as ErrorEvent;
+
+  const scrubbed = scrubEvent(event, {} as EventHint)!;
+  const serialized = JSON.stringify(scrubbed);
+  assert.equal(serialized.includes(uploadId), false);
+  assert.equal(serialized.includes(sessionUrl), false);
+  assert.equal(scrubbed.breadcrumbs?.length, 0);
+  assert.equal(
+    (scrubbed.extra?.nested as Array<Record<string, unknown>>)[1].safeStatus,
+    308,
+  );
 });
 
 test("Sentry scrub removes token/code keys and bearer values across payload surfaces", () => {

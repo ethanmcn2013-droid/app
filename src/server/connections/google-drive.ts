@@ -5,6 +5,13 @@ import {
   assertExactGoogleDriveScopeSet,
   parseGoogleDriveScopes,
 } from "./google-drive-scopes";
+import {
+  isTrustedGoogleDriveUploadSessionUrl as isTrustedGoogleUploadSessionUrl,
+  nextGoogleDriveUploadOffset,
+} from "@/lib/drive-upload-session";
+export {
+  isTrustedGoogleDriveUploadSessionUrl as isTrustedGoogleUploadSessionUrl,
+} from "@/lib/drive-upload-session";
 export {
   providerTokenAadContext as providerConnectionTokenContext,
 } from "../crypto/secret-box";
@@ -42,7 +49,8 @@ export type GoogleDriveOperation =
   | "file-get"
   | "file-list"
   | "file-rename"
-  | "resumable-session-create";
+  | "resumable-session-create"
+  | "resumable-session-status";
 
 export type GoogleDriveProviderErrorCode =
   | "network-error"
@@ -147,6 +155,11 @@ export type GoogleDriveFilePage = Readonly<{
   files: readonly GoogleDriveFile[];
   nextPageToken: string | null;
 }>;
+
+export type GoogleDriveResumableStatus =
+  | Readonly<{ kind: "incomplete"; nextOffset: number }>
+  | Readonly<{ kind: "complete"; file: GoogleDriveFile }>
+  | Readonly<{ kind: "expired" }>;
 
 /**
  * Build the server-side authorization-code URL.
@@ -516,21 +529,66 @@ export async function createGoogleDriveResumableUploadSession(
   return Object.freeze({ sessionUrl });
 }
 
-/** Refuse a provider response that tries to hand the browser another origin. */
-export function isTrustedGoogleUploadSessionUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return (
-      url.origin === GOOGLE_DRIVE_API_ORIGIN &&
-      url.username === "" &&
-      url.password === "" &&
-      url.pathname === "/upload/drive/v3/files" &&
-      url.searchParams.get("uploadType") === "resumable" &&
-      Boolean(url.searchParams.get("upload_id"))
-    );
-  } catch {
-    return false;
+/**
+ * Ask Google what a delegated resumable session has durably accepted.
+ *
+ * The session URI is already a bearer capability, so this request deliberately
+ * carries no OAuth Authorization header. Only a provider 404 is evidence that
+ * the capability expired; network errors, throttling and 5xx remain ambiguous
+ * and must not cause a replacement upload to be minted.
+ */
+export async function queryGoogleDriveResumableUploadSession(
+  sessionUrl: string,
+  totalBytes: number,
+  fetchImpl: GoogleFetch = fetch,
+): Promise<GoogleDriveResumableStatus> {
+  if (!isTrustedGoogleUploadSessionUrl(sessionUrl)) {
+    throw new TypeError("google-drive: untrusted resumable session URL");
   }
+  if (!Number.isSafeInteger(totalBytes) || totalBytes < 0) {
+    throw new TypeError("google-drive: totalBytes must be a non-negative integer");
+  }
+
+  const response = await googleFetch(
+    "resumable-session-status",
+    sessionUrl,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Length": "0",
+        "Content-Range": `bytes */${totalBytes}`,
+      },
+    },
+    fetchImpl,
+  );
+
+  if (response.status === 308) {
+    const nextOffset = nextGoogleDriveUploadOffset(
+      response.headers.get("range"),
+      totalBytes,
+    );
+    if (nextOffset === null) {
+      throw malformedResponse("resumable-session-status", response.status);
+    }
+    return Object.freeze({ kind: "incomplete", nextOffset });
+  }
+
+  if (response.status === 404) return Object.freeze({ kind: "expired" });
+
+  if (response.status === 200 || response.status === 201) {
+    const body = await responseRecord(response, "resumable-session-status");
+    return Object.freeze({
+      kind: "complete",
+      file: parseDriveFile(body, "resumable-session-status"),
+    });
+  }
+
+  const body = await responseBody(response, "resumable-session-status");
+  throw providerResponseError(
+    "resumable-session-status",
+    response.status,
+    body,
+  );
 }
 
 function driveUrl(pathname: string): URL {

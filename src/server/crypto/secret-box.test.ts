@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { describe, it } from "node:test";
 import {
   SecretBoxError,
+  driveUploadSessionAadContext,
   isSealed,
   keyRingFromEnv,
   open,
@@ -188,6 +189,43 @@ describe("secret-box: the context binds the ciphertext to its row", () => {
       assert.throws(
         () => providerTokenAadContext(invalid),
         /canonical connection id/,
+      );
+    }
+  });
+
+  it("binds a Drive upload session to Project, generation, and resource", () => {
+    const r = ring();
+    const context = driveUploadSessionAadContext(
+      "ws-123",
+      "storage-456",
+      "res-789",
+    );
+    const sessionUrl =
+      "https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=opaque";
+    const sealed = seal(sessionUrl, context, r);
+
+    assert.equal(open(sealed, context, r), sessionUrl);
+    for (const swapped of [
+      driveUploadSessionAadContext("ws-other", "storage-456", "res-789"),
+      driveUploadSessionAadContext("ws-123", "storage-other", "res-789"),
+      driveUploadSessionAadContext("ws-123", "storage-456", "res-other"),
+    ]) {
+      assert.throws(
+        () => open(sealed, swapped, r),
+        (error: SecretBoxError) => error.reason === "cannot-open",
+      );
+    }
+  });
+
+  it("uses an unambiguous upload-session context and rejects malformed ids", () => {
+    assert.notEqual(
+      driveUploadSessionAadContext("ab", "c", "d"),
+      driveUploadSessionAadContext("a", "bc", "d"),
+    );
+    for (const invalid of ["", " leading", "trailing ", "line\nbreak", "x".repeat(513)]) {
+      assert.throws(
+        () => driveUploadSessionAadContext("ws-1", "storage-1", invalid),
+        /canonical identifier/,
       );
     }
   });

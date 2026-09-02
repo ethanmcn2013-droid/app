@@ -57,6 +57,27 @@ const KEY_BYTES = 32; // AES-256
 const NONCE_BYTES = 12; // 96 bits, the GCM standard
 const TAG_BYTES = 16;
 const PROVIDER_CONNECTION_CONTEXT_PREFIX = "provider_connection";
+const DRIVE_UPLOAD_SESSION_CONTEXT_PREFIX = "drive_upload_session";
+
+function canonicalContextPart(
+  value: string,
+  label: string,
+  subject = "identifier",
+): string {
+  if (
+    value.length === 0 ||
+    value.length > 512 ||
+    value !== value.trim() ||
+    /[\u0000-\u001f\u007f]/.test(value)
+  ) {
+    throw new TypeError(`${label} requires a canonical ${subject}`);
+  }
+  return value;
+}
+
+function lengthPrefixed(value: string): string {
+  return `${Buffer.byteLength(value, "utf8")}:${value}`;
+}
 
 /**
  * The one AAD namespace for a provider connection's refresh token.
@@ -67,15 +88,37 @@ const PROVIDER_CONNECTION_CONTEXT_PREFIX = "provider_connection";
  * as a different kind of secret if another encrypted column is added later.
  */
 export function providerTokenAadContext(connectionId: string): string {
-  if (
-    connectionId.length === 0 ||
-    connectionId.length > 512 ||
-    connectionId !== connectionId.trim() ||
-    /[\u0000-\u001f\u007f]/.test(connectionId)
-  ) {
-    throw new TypeError("provider token context requires a canonical connection id");
-  }
-  return `${PROVIDER_CONNECTION_CONTEXT_PREFIX}:${connectionId}`;
+  const id = canonicalContextPart(
+    connectionId,
+    "provider token context",
+    "connection id",
+  );
+  return `${PROVIDER_CONNECTION_CONTEXT_PREFIX}:${id}`;
+}
+
+/**
+ * Bind a resumable-upload capability to the exact pending resource row.
+ *
+ * A Drive session URL is a week-lived bearer credential. Length-prefixing all
+ * three row identities avoids delimiter ambiguity and means a ciphertext moved
+ * to another Project, folder generation or resource cannot be opened there.
+ */
+export function driveUploadSessionAadContext(
+  workspaceId: string,
+  storageGenerationId: string,
+  resourceId: string,
+): string {
+  const parts = [
+    canonicalContextPart(workspaceId, "Drive upload workspace context"),
+    canonicalContextPart(
+      storageGenerationId,
+      "Drive upload storage-generation context",
+    ),
+    canonicalContextPart(resourceId, "Drive upload resource context"),
+  ];
+  return `${DRIVE_UPLOAD_SESSION_CONTEXT_PREFIX}:${parts
+    .map(lengthPrefixed)
+    .join(":")}`;
 }
 
 export type SecretBoxReason =

@@ -15,6 +15,7 @@ import {
   getGoogleDriveFile,
   isTrustedGoogleUploadSessionUrl,
   providerConnectionTokenContext,
+  queryGoogleDriveResumableUploadSession,
   refreshGoogleDriveAccessToken,
   renameGoogleDriveFile,
   revokeGoogleToken,
@@ -560,6 +561,112 @@ describe("Google Drive resumable upload foundation", () => {
         assert.equal(String(error).includes(ACCESS_TOKEN), false);
         return true;
       },
+    );
+  });
+
+  it("queries an incomplete session without sending an OAuth token", async () => {
+    const fake = queuedFetch(
+      new Response(null, { status: 308, headers: { Range: "bytes=0-524287" } }),
+    );
+
+    assert.deepEqual(
+      await queryGoogleDriveResumableUploadSession(
+        SESSION_URL,
+        1_048_576,
+        fake.fetchImpl,
+      ),
+      { kind: "incomplete", nextOffset: 524_288 },
+    );
+    const call = onlyCall(fake.calls);
+    const headers = requestHeaders(call);
+    assert.equal(call.url, SESSION_URL);
+    assert.equal(call.init?.method, "PUT");
+    assert.equal(headers.get("Content-Range"), "bytes */1048576");
+    assert.equal(headers.get("Content-Length"), "0");
+    assert.equal(headers.has("Authorization"), false);
+  });
+
+  it("treats an absent 308 Range as zero accepted bytes", async () => {
+    const fake = queuedFetch(new Response(null, { status: 308 }));
+    assert.deepEqual(
+      await queryGoogleDriveResumableUploadSession(
+        SESSION_URL,
+        1_048_576,
+        fake.fetchImpl,
+      ),
+      { kind: "incomplete", nextOffset: 0 },
+    );
+  });
+
+  it("returns completed metadata for a 200 or 201 status probe", async () => {
+    for (const status of [200, 201]) {
+      const fake = queuedFetch(jsonResponse(DRIVE_FILE_RESPONSE, status));
+      const result = await queryGoogleDriveResumableUploadSession(
+        SESSION_URL,
+        1_048_576,
+        fake.fetchImpl,
+      );
+      assert.equal(result.kind, "complete");
+      if (result.kind === "complete") assert.equal(result.file.id, "file-123");
+    }
+  });
+
+  it("distinguishes expiry from every ambiguous provider failure", async () => {
+    const expired = queuedFetch(jsonResponse({ error: "notFound" }, 404));
+    assert.deepEqual(
+      await queryGoogleDriveResumableUploadSession(
+        SESSION_URL,
+        1_048_576,
+        expired.fetchImpl,
+      ),
+      { kind: "expired" },
+    );
+
+    for (const status of [408, 429, 500, 503]) {
+      const fake = queuedFetch(
+        jsonResponse({ error: { errors: [{ reason: "backendError" }] } }, status),
+      );
+      await assert.rejects(
+        queryGoogleDriveResumableUploadSession(
+          SESSION_URL,
+          1_048_576,
+          fake.fetchImpl,
+        ),
+        (error: unknown) => {
+          assert.ok(error instanceof GoogleDriveProviderError);
+          assert.equal(error.operation, "resumable-session-status");
+          assert.equal(error.retryable, true);
+          return true;
+        },
+      );
+    }
+  });
+
+  it("refuses malformed acknowledgement ranges and untrusted URLs", async () => {
+    for (const range of ["bytes=10-20", "bytes=0-nope", "bytes=0-1048576"]) {
+      const fake = queuedFetch(
+        new Response(null, { status: 308, headers: { Range: range } }),
+      );
+      await assert.rejects(
+        queryGoogleDriveResumableUploadSession(
+          SESSION_URL,
+          1_048_576,
+          fake.fetchImpl,
+        ),
+        (error: unknown) => {
+          assert.ok(error instanceof GoogleDriveProviderError);
+          assert.equal(error.code, "malformed-response");
+          return true;
+        },
+      );
+    }
+
+    await assert.rejects(
+      queryGoogleDriveResumableUploadSession(
+        "https://evil.example/upload/drive/v3/files?uploadType=resumable&upload_id=x",
+        1,
+      ),
+      /untrusted resumable session URL/,
     );
   });
 });

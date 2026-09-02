@@ -64,7 +64,11 @@ export function isSensitiveFieldName(value: string): boolean {
     normalized === "oauth_state" ||
     normalized === "api_key" ||
     normalized === "private_key" ||
-    normalized === "signing_key"
+    normalized === "signing_key" ||
+    normalized === "session_url" ||
+    normalized === "upload_url" ||
+    normalized === "resumable_uri" ||
+    normalized === "resumable_url"
   );
 }
 
@@ -85,6 +89,7 @@ export function isSensitiveFieldName(value: string): boolean {
  * it belongs.
  */
 const CREDENTIAL_SHAPES: ReadonlyArray<RegExp> = [
+  /https:\/\/www\.googleapis\.com\/upload\/drive\/v3\/files\?[^\s"'<>]+/gi,
   /\b1\/\/[A-Za-z0-9_-]{10,}/g,
   /\bya29\.[A-Za-z0-9._-]{10,}/g,
   /\bGOCSPX-[A-Za-z0-9_-]{10,}/g,
@@ -108,7 +113,7 @@ export function redactSensitiveUrl(value: string): string {
     "/$1/[redacted]",
   );
   return withoutBearerPaths.replace(
-    /([?&#](?:code|token|access_token|refresh_token|id_token|state|client_secret|authorization|password|credential|signature)=)[^&#\s]*/gi,
+    /([?&#](?:code|token|access_token|refresh_token|id_token|state|client_secret|authorization|password|credential|signature|upload_id)=)[^&#\s]*/gi,
     "$1[redacted]",
   );
 }
@@ -233,6 +238,7 @@ function isSensitiveBreadcrumbUrl(url: string): boolean {
     normalized.includes("clerk.") ||
     normalized.includes("stripe.com") ||
     normalized.includes("svix.com") ||
+    normalized.includes("www.googleapis.com/upload/drive/") ||
     normalized.includes("/api/webhooks/") ||
     normalized.includes("/api/auth/")
   );

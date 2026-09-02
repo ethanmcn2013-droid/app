@@ -91,4 +91,21 @@ describe("operational log credential boundary", () => {
     assert.match(line, /^\[google-drive\]/);
     assert.match(line, /\[redacted\]/);
   });
+
+  it("never writes a Drive resumable capability", () => {
+    const uploadId = "opaque-upload-capability-123";
+    const sessionUrl =
+      `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=${uploadId}`;
+    const line = captureWarn(() =>
+      opLog("warn", "drive-upload", `resume failed at ${sessionUrl}`, {
+        sessionUrl,
+        statusCode: 503,
+      }),
+    );
+
+    assert.equal(line.includes(uploadId), false);
+    assert.equal(line.includes(sessionUrl), false);
+    assert.match(line, /sessionUrl=\[redacted\]/);
+    assert.match(line, /statusCode=503/);
+  });
 });
