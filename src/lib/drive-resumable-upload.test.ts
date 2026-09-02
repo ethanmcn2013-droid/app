@@ -216,4 +216,22 @@ describe("Drive browser resumable upload", () => {
       { kind: "paused", reason: "no-progress", nextOffset: 0 },
     );
   });
+
+  it("probes for a file id if the final data PUT only acknowledges bytes", async () => {
+    const total = 1024;
+    const fake = queuedFetch(
+      response(308, `bytes=0-${total - 1}`),
+      completed("file-from-final-probe"),
+    );
+
+    assert.deepEqual(
+      await uploadToGoogleDriveResumableSession({
+        sessionUrl: SESSION_URL,
+        file: new Blob([new Uint8Array(total)]),
+        fetchImpl: fake.fetchImpl,
+      }),
+      { kind: "complete", fileId: "file-from-final-probe" },
+    );
+    assert.equal(headers(fake.calls[1]).get("Content-Range"), `bytes */${total}`);
+  });
 });

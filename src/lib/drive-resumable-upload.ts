@@ -291,5 +291,32 @@ export async function uploadToGoogleDriveResumableSession({
     onProgress?.(offset, file.size);
   }
 
-  return { kind: "paused", reason: "no-progress", nextOffset: offset };
+  // Google normally answers the final data PUT with 200/201. If it instead
+  // acknowledges every byte with 308, ask the same session for its terminal
+  // result rather than inventing a file id or minting a replacement.
+  try {
+    const status = await probeSession(sessionUrl, file.size, signal, fetchImpl);
+    if (status.kind === "complete" || status.kind === "expired") return status;
+    if (status.kind === "ambiguous") {
+      return { kind: "paused", reason: "ambiguous", nextOffset: null };
+    }
+    if (status.kind === "rejected") {
+      return {
+        kind: "paused",
+        reason: "rejected",
+        nextOffset: offset,
+        status: status.status,
+      };
+    }
+    return {
+      kind: "paused",
+      reason: "no-progress",
+      nextOffset: status.nextOffset,
+    };
+  } catch (error) {
+    if (isAbort(error, signal)) {
+      return { kind: "paused", reason: "aborted", nextOffset: offset };
+    }
+    throw error;
+  }
 }
