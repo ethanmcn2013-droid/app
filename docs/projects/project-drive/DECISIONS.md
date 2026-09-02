@@ -252,9 +252,12 @@ moved to another board.
 
 The database also enforces the storage pair: a Drive resource must name its
 immutable storage generation, while a Signal-native resource must not name
-one. Provider scope payloads must be valid JSON; the exact one-scope allowlist
-remains a WP-4 application contract because SQLite cannot safely encode the
-whole OAuth policy as a generic JSON-shape constraint.
+one. SQLite cannot add a composite foreign key to the existing `resources`
+table without rebuilding it, so matching insert/update guards enforce that the
+generation belongs to the resource's workspace. Provider scope payloads must
+be valid JSON; the exact one-scope allowlist remains a WP-4 application
+contract because SQLite cannot safely encode the whole OAuth policy as a
+generic JSON-shape constraint.
 
 All custody foreign keys use `RESTRICT`. Account erasure, project deletion,
 disconnect and handover must explicitly revoke and clean in the right order;

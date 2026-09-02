@@ -113,3 +113,25 @@ ALTER TABLE `resources` ADD COLUMN `stored_path` text;
 CREATE INDEX `idx_resources_workspace_storage_generation`
 	ON `resources` (`workspace_id`,`storage_generation_id`)
 	WHERE `storage_generation_id` IS NOT NULL;
+--> statement-breakpoint
+CREATE TRIGGER `resources_storage_workspace_guard_insert`
+BEFORE INSERT ON `resources`
+WHEN NEW.`storage_generation_id` IS NOT NULL
+BEGIN
+	SELECT CASE WHEN NOT EXISTS (
+		SELECT 1 FROM `workspace_storage` storage
+		WHERE storage.`id` = NEW.`storage_generation_id`
+			AND storage.`workspace_id` = NEW.`workspace_id`
+	) THEN RAISE(ABORT, 'storage generation must belong to the resource workspace') END;
+END;
+--> statement-breakpoint
+CREATE TRIGGER `resources_storage_workspace_guard_update`
+BEFORE UPDATE OF `storage_generation_id`, `workspace_id` ON `resources`
+WHEN NEW.`storage_generation_id` IS NOT NULL
+BEGIN
+	SELECT CASE WHEN NOT EXISTS (
+		SELECT 1 FROM `workspace_storage` storage
+		WHERE storage.`id` = NEW.`storage_generation_id`
+			AND storage.`workspace_id` = NEW.`workspace_id`
+	) THEN RAISE(ABORT, 'storage generation must belong to the resource workspace') END;
+END;

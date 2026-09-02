@@ -256,7 +256,9 @@ Plus, additively on `resources`:
 exists, `storage_generation_id`, `stored_path`. The generation points to
 `workspace_storage.id`; its connection is derived rather than duplicated. A
 database check couples the pair: Drive requires a generation, Signal-native
-requires none.
+requires none. Insert/update guards also require that the selected generation
+belongs to the resource's workspace; this is the additive equivalent of the
+composite foreign key SQLite cannot attach to an existing table.
 
 `provider_connections.id` and `workspace_storage.id` are immutable generation
 ids. This is necessary for owner A → B → A, reconnecting a different Drive

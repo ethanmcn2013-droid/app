@@ -19,7 +19,7 @@ explicit founder gate.
 | 0 | Fix the floor | **done** | Q1 answered: the token IS provisioned. A fifth, binding number was found (Vercel's 4.5 MB body cap) and uploads moved browser → Blob so 50 MB is real. Ten §2 rules ratcheted |
 | 1 | Spike the Drive chain | **partial — 11/12** | Owner-side flow passed. The second account is known, but open-without-request, revoke, and parent-folder isolation still need live observation after phase A remints the revoked owner token. Do not advance the package to done until that lifecycle passes |
 | 2 | Secrets substrate | **done on feature branch** | AES-256-GCM envelope, versioned key custody, log/Sentry redaction and token-custody contracts are in commit `ddbf7380` |
-| 3 | Schema (migration 0028) | **staged locally** | Generation-aware SQL, Drizzle mirror, ledger, 39-proof review receipt and journal are green. Fresh local apply, no-op rerun and current status passed. Not applied to production; do not mark done before WP-1 acceptance and the founder's Q5 authorization |
+| 3 | Schema (migration 0028) | **staged locally** | Generation-aware SQL, Drizzle mirror, ledger, 42-proof review receipt and journal are green. Fresh local apply, no-op rerun and current status passed. Not applied to production; do not mark done before WP-1 acceptance and the founder's Q5 authorization |
 | 4 | The connection | not started | |
 | 5 | Folder and sharing | not started | The security-critical package |
 | 6 | Upload | not started | |

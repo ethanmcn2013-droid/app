@@ -129,13 +129,13 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0027_share_link_token_hash",
     "0028_project_drive",
   ]);
-  assert.equal(first.proofs.length, 118);
+  assert.equal(first.proofs.length, 121);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
     ["index", 40],
     ["table", 26],
-    ["trigger", 2],
+    ["trigger", 4],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
@@ -211,6 +211,14 @@ test("Project Drive preserves credential, folder, and grant generations", async 
     title, added_at, access_state, counts_against_storage
   ) VALUES ('resource-drive', 'ws-a', 'task-a', 'upload', 'drive', 'drive',
     'gen-a3', 'Drive file', 1, 'pending', 0)`);
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-wrong-workspace', 'ws-b', 'task-a', 'upload', 'drive',
+      'drive', 'gen-a3', 'Wrong workspace', 1, 'pending', 0)`),
+    /storage generation must belong to the resource workspace/,
+  );
   await assert.rejects(
     () => client.execute(`INSERT INTO resources (
       id, workspace_id, task_id, kind, provider, storage,

@@ -7,10 +7,10 @@
   "migrations": [
     {
       "id": "0028_project_drive",
-      "sha256": "c43afd8e8034cb5e281e1c7c3409bcb73e4e6f1df17871f328a0eac11b2e50d0",
+      "sha256": "a24f9715df59e2b132f2839d912479304adb4b560ed7052aef1c0d3254c90d8b",
       "reviewedAt": "2026-09-02T21:00:00.000Z",
-      "risk": "low-medium at apply time. The migration creates three empty tables and eight named indexes, then adds three columns to resources. Existing resources receive storage='signal'; no existing value is deleted or rewritten. A cross-field check prevents a Drive resource without a storage generation and prevents a Signal-native resource from claiming one. Dedicated immutable ids prevent owner A to B to A, a different Drive reconnect, or a replacement missing folder from overwriting prior credential, folder or permission evidence. Every custody foreign key restricts deletion, forcing lifecycle code to revoke and clean explicitly before removing a user, workspace, connection, generation or grant. The residual risk begins only after runtime use: these rows contain encrypted credential custody, Drive folder identity and exact revocation ids, so deleting them casually would make cleanup less reliable even though no Drive bytes are stored here.",
-      "rollbackPlan": "Before any live connection exists: drop idx_resources_workspace_storage_generation, drop the resources stored_path, storage_generation_id and storage columns, then drop idx_drive_folder_grants_workspace_generation and drive_folder_grants; drop the four workspace_storage indexes and workspace_storage; drop the two provider_connections indexes and provider_connections. After any connection or grant exists, do not use a schema-only rollback: first disable Drive writes, revoke every recorded permission and provider token, preserve the resource-to-generation audit relation, then roll forward or execute a separately reviewed data migration. A table drop after use would destroy the exact permission ids needed to remove access at Google.",
+      "risk": "low-medium at apply time. The migration creates three empty tables and eight named indexes, adds three columns to resources, then installs two resource/workspace tenant guards. Existing resources receive storage='signal'; no existing value is deleted or rewritten, and the guards are dormant for their null generation ids. A cross-field check prevents a Drive resource without a storage generation and prevents a Signal-native resource from claiming one; the guards prevent a resource from selecting another workspace's generation. Dedicated immutable ids prevent owner A to B to A, a different Drive reconnect, or a replacement missing folder from overwriting prior credential, folder or permission evidence. Every custody foreign key restricts deletion, forcing lifecycle code to revoke and clean explicitly before removing a user, workspace, connection, generation or grant. The residual risk begins only after runtime use: these rows contain encrypted credential custody, Drive folder identity and exact revocation ids, so deleting them casually would make cleanup less reliable even though no Drive bytes are stored here.",
+      "rollbackPlan": "Before any live connection exists: drop resources_storage_workspace_guard_insert and resources_storage_workspace_guard_update, drop idx_resources_workspace_storage_generation, drop the resources stored_path, storage_generation_id and storage columns, then drop idx_drive_folder_grants_workspace_generation and drive_folder_grants; drop the four workspace_storage indexes and workspace_storage; drop the two provider_connections indexes and provider_connections. After any connection or grant exists, do not use a schema-only rollback: first disable Drive writes, revoke every recorded permission and provider token, preserve the resource-to-generation audit relation, then roll forward or execute a separately reviewed data migration. A table drop after use would destroy the exact permission ids needed to remove access at Google.",
       "postconditions": [
         "resources has storage, storage_generation_id and stored_path; every pre-existing row remains storage='signal'",
         "provider_connections is immutable by id, identifies Drive accounts by Drive User.permissionId, and permits at most one current credential generation per user and provider",
@@ -18,6 +18,7 @@
         "drive_folder_grants keys each permission receipt to its exact storage generation and member",
         "owner A to B to A and same-owner replacement folders can retain distinct historical generations",
         "resource generation lookups are indexed and reference workspace_storage",
+        "resource insert and update guards reject a storage generation from another workspace",
         "custody foreign keys restrict deletion rather than silently cascading or nulling repair evidence",
         "resource storage/generation coupling and all JSON, state, role, boolean and key-version constraints exist",
         "integrity check passes",
@@ -62,6 +63,21 @@
         {
           "id": "resources-generation-index-partial",
           "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('resources') WHERE name = 'idx_resources_workspace_storage_generation' AND partial = 1",
+          "expected": 1
+        },
+        {
+          "id": "resources-workspace-guard-triggers",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'trigger' AND name IN ('resources_storage_workspace_guard_insert','resources_storage_workspace_guard_update')",
+          "expected": 2
+        },
+        {
+          "id": "resources-workspace-guard-insert-definition",
+          "sql": "SELECT COUNT(*) AS value FROM (SELECT lower(replace(replace(replace(COALESCE(sql, ''), char(9), ' '), char(10), ' '), '`', '')) AS definition FROM sqlite_schema WHERE type = 'trigger' AND tbl_name = 'resources' AND name = 'resources_storage_workspace_guard_insert') WHERE definition LIKE '%before%insert%on%resources%' AND definition LIKE '%when%new.storage_generation_id%is%not%null%' AND definition LIKE '%not%exists%' AND definition LIKE '%storage.id%=%new.storage_generation_id%' AND definition LIKE '%storage.workspace_id%=%new.workspace_id%' AND definition LIKE '%raise%abort%storage generation must belong to the resource workspace%'",
+          "expected": 1
+        },
+        {
+          "id": "resources-workspace-guard-update-definition",
+          "sql": "SELECT COUNT(*) AS value FROM (SELECT lower(replace(replace(replace(COALESCE(sql, ''), char(9), ' '), char(10), ' '), '`', '')) AS definition FROM sqlite_schema WHERE type = 'trigger' AND tbl_name = 'resources' AND name = 'resources_storage_workspace_guard_update') WHERE definition LIKE '%before%update%of%storage_generation_id%workspace_id%on%resources%' AND definition LIKE '%when%new.storage_generation_id%is%not%null%' AND definition LIKE '%not%exists%' AND definition LIKE '%storage.id%=%new.storage_generation_id%' AND definition LIKE '%storage.workspace_id%=%new.workspace_id%' AND definition LIKE '%raise%abort%storage generation must belong to the resource workspace%'",
           "expected": 1
         },
         {
