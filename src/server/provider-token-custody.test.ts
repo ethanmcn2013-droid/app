@@ -3,7 +3,13 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { randomBytes } from "node:crypto";
-import { seal, open, isSealed, type KeyRing } from "@/server/crypto/secret-box";
+import {
+  seal,
+  open,
+  isSealed,
+  providerTokenAadContext,
+  type KeyRing,
+} from "@/server/crypto/secret-box";
 import { redactCredentialShapes, redactSensitiveUrl } from "@/lib/sentry-scrub";
 
 /**
@@ -145,7 +151,7 @@ describe("custody · a leaked credential is caught on the way out", () => {
   });
 
   it("redacts one of our own sealed envelopes", () => {
-    const envelope = seal("whatever", "provider_connection:c1", ring());
+    const envelope = seal("whatever", providerTokenAadContext("c1"), ring());
     const scrubbed = redactCredentialShapes(`row failed to open: ${envelope}`);
     assert.ok(!scrubbed.includes(envelope));
   });
@@ -176,18 +182,18 @@ describe("custody · a ciphertext is useless in the wrong row", () => {
   it("cannot be lifted from one connection to another", () => {
     const r = ring();
     const token = "1//0gREAL-LOOKING-TOKEN-VALUE";
-    const sealed = seal(token, "provider_connection:conn-A", r);
+    const sealed = seal(token, providerTokenAadContext("conn-A"), r);
 
-    assert.equal(open(sealed, "provider_connection:conn-A", r), token);
+    assert.equal(open(sealed, providerTokenAadContext("conn-A"), r), token);
     assert.throws(
-      () => open(sealed, "provider_connection:conn-B", r),
+      () => open(sealed, providerTokenAadContext("conn-B"), r),
       /cannot-open/,
       "row-swapping must fail — encryption alone would not stop it",
     );
   });
 
   it("what goes to the database is recognisably sealed", () => {
-    const sealed = seal("1//0gTOKEN", "provider_connection:c", ring());
+    const sealed = seal("1//0gTOKEN", providerTokenAadContext("c"), ring());
     assert.ok(isSealed(sealed));
     assert.ok(!sealed.includes("1//0g"), "no plaintext prefix survives");
   });

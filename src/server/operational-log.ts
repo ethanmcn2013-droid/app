@@ -1,4 +1,7 @@
-import { redactSensitiveUrl } from "@/lib/sentry-scrub";
+import {
+  isSensitiveFieldName,
+  redactSensitiveText,
+} from "@/lib/sentry-scrub";
 
 /**
  * The operational log, and what it is not (E08.08).
@@ -64,8 +67,9 @@ export function redactEmail(value: string): string {
 
 /**
  * The single sanctioned transform for anything variable that goes into an
- * operational log. Strips bearer tokens out of paths and query strings (via
- * the same rule Sentry uses) and reduces email addresses to their domain.
+ * operational log. Strips provider credential shapes, authorization values,
+ * bearer paths, and sensitive query strings (via the same rule Sentry uses),
+ * then reduces email addresses to their domain.
  *
  * It does NOT attempt to detect free-text planning content. There is no
  * reliable way to do that, which is why the rule is "never pass content",
@@ -73,7 +77,7 @@ export function redactEmail(value: string): string {
  * hope the filter catches it".
  */
 export function redactForLog(value: string): string {
-  return redactEmail(redactSensitiveUrl(value));
+  return redactEmail(redactSensitiveText(value));
 }
 
 /**
@@ -102,9 +106,15 @@ export function opLog(
 ): void {
   const rendered = Object.entries(fields)
     .filter(([, value]) => value !== undefined)
-    .map(([key, value]) => `${key}=${redactForLog(String(value))}`)
+    .map(([key, value]) =>
+      `${redactForLog(key)}=${
+        isSensitiveFieldName(key)
+          ? "[redacted]"
+          : redactForLog(String(value))
+      }`,
+    )
     .join(" ");
-  const line = `[${scope}] ${redactForLog(message)}${rendered ? ` ${rendered}` : ""}`;
+  const line = `[${redactForLog(scope)}] ${redactForLog(message)}${rendered ? ` ${rendered}` : ""}`;
   if (level === "error") console.error(line);
   else console.warn(line);
 }

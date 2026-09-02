@@ -40,9 +40,9 @@ import {
  * **Every seal is bound to a context string.** The context becomes GCM's
  * additional authenticated data: it is not encrypted, but the ciphertext
  * will not open without it. Seal a connection's token under
- * `provider_connection:<id>` and that ciphertext cannot be lifted into
- * another row and opened there. Encryption alone does not stop a
- * row-swapping attack; binding does.
+ * `providerTokenAadContext(id)` and that ciphertext cannot be lifted into
+ * another row and opened there. Encryption alone does not stop a row-swapping
+ * attack; binding does.
  *
  * **The plaintext is never returned on a failure path.** Every refusal
  * throws `SecretBoxError` with a reason and no payload, so a caller
@@ -56,6 +56,26 @@ const ALGORITHM = "aes-256-gcm";
 const KEY_BYTES = 32; // AES-256
 const NONCE_BYTES = 12; // 96 bits, the GCM standard
 const TAG_BYTES = 16;
+const PROVIDER_CONNECTION_CONTEXT_PREFIX = "provider_connection";
+
+/**
+ * The one AAD namespace for a provider connection's refresh token.
+ *
+ * Keep this independent of the database layer so WP-4 cannot accidentally
+ * invent a second string at a seal/open call site. The connection id is the
+ * row identity; the fixed prefix prevents the same ciphertext being opened
+ * as a different kind of secret if another encrypted column is added later.
+ */
+export function providerTokenAadContext(connectionId: string): string {
+  if (
+    connectionId.length === 0 ||
+    connectionId !== connectionId.trim() ||
+    connectionId.includes("\0")
+  ) {
+    throw new TypeError("provider token context requires a canonical connection id");
+  }
+  return `${PROVIDER_CONNECTION_CONTEXT_PREFIX}:${connectionId}`;
+}
 
 export type SecretBoxReason =
   /** The environment is not configured to seal or open anything. */
@@ -177,10 +197,10 @@ export function keyRingFromEnv(
  *
  *   sb1.<version>.<nonce>.<tag>.<ciphertext>     (base64url, no padding)
  *
- * `context` should name the row this belongs to — for example
- * `provider_connection:<id>`. It is stored nowhere; the caller must supply
- * the same value to `open()`, which is the point: the ciphertext is
- * useless in any other row.
+ * `context` should name the row this belongs to. Provider-token callers must
+ * use `providerTokenAadContext(connectionId)`. It is stored nowhere; the
+ * caller must supply the same value to `open()`, which is the point: the
+ * ciphertext is useless in any other row.
  */
 export function seal(
   plaintext: string,

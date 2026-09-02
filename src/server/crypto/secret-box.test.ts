@@ -6,6 +6,7 @@ import {
   isSealed,
   keyRingFromEnv,
   open,
+  providerTokenAadContext,
   seal,
   secretEquals,
   versionOf,
@@ -29,7 +30,7 @@ function ring(version = 1, extra?: Record<number, Buffer>): KeyRing {
   return { currentVersion: version, keys };
 }
 
-const CONTEXT = "provider_connection:conn-123";
+const CONTEXT = providerTokenAadContext("conn-123");
 const TOKEN = "1//0gFAKE-refresh-token-shaped-value_abcdefghijklmnop";
 
 describe("secret-box: the round trip", () => {
@@ -155,10 +156,10 @@ describe("secret-box: the wrong key", () => {
 describe("secret-box: the context binds the ciphertext to its row", () => {
   it("refuses the right ciphertext under the wrong context", () => {
     const r = ring();
-    const sealed = seal(TOKEN, "provider_connection:conn-A", r);
+    const sealed = seal(TOKEN, providerTokenAadContext("conn-A"), r);
     // The row-swap: lift A's ciphertext into B's row and try to read it.
     assert.throws(
-      () => open(sealed, "provider_connection:conn-B", r),
+      () => open(sealed, providerTokenAadContext("conn-B"), r),
       (e: SecretBoxError) => e.reason === "cannot-open",
     );
   });
@@ -171,11 +172,24 @@ describe("secret-box: the context binds the ciphertext to its row", () => {
 
   it("is not fooled by a context that is a prefix of the real one", () => {
     const r = ring();
-    const sealed = seal(TOKEN, "provider_connection:conn-1", r);
+    const sealed = seal(TOKEN, providerTokenAadContext("conn-1"), r);
     assert.throws(
-      () => open(sealed, "provider_connection:conn-12", r),
+      () => open(sealed, providerTokenAadContext("conn-12"), r),
       (e: SecretBoxError) => e.reason === "cannot-open",
     );
+  });
+
+  it("uses one canonical provider-token AAD namespace", () => {
+    assert.equal(
+      providerTokenAadContext("conn-123"),
+      "provider_connection:conn-123",
+    );
+    for (const invalid of ["", " conn-123", "conn-123 ", "conn\0-123"]) {
+      assert.throws(
+        () => providerTokenAadContext(invalid),
+        /canonical connection id/,
+      );
+    }
   });
 });
 
