@@ -42,7 +42,9 @@ describe("request-local Project Drive access", () => {
 
     let seenAccessToken = "";
     const observed = await service.withStorageSession(
-      coreAuthorization("member-a", "ws-a"),
+      // The access seam is capability-neutral: future upload/finalize calls
+      // use a task-level proof, while folder/grant managers refine theirs.
+      coreAuthorization("member-a", "ws-a", false),
       { kind: "generation", storageGenerationId: "gen-old" },
       async (session) => {
         seenAccessToken = session.accessToken;

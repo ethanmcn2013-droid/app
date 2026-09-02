@@ -9,6 +9,7 @@ import {
   DriveGrantError,
 } from "./drive-grants";
 import { createProjectDriveAccessService } from "./project-drive-access";
+import { ProjectDriveAuthorizationError } from "./project-drive-authz";
 import {
   accessDependencies,
   coreAuthorization,
@@ -65,6 +66,24 @@ async function seedGrant(
 }
 
 describe("Project Drive folder grants", () => {
+  it("refuses a task-only proof before database or provider work", async () => {
+    let providerCalls = 0;
+    const fixture = await seededGrantFixture(async () => {
+      providerCalls += 1;
+      throw new Error("provider must not be reached");
+    });
+    await assert.rejects(
+      () =>
+        fixture.service.create(coreAuthorization("member-a", "ws-a", false), {
+          memberUserId: "member-b",
+          role: "reader",
+          sendNotificationEmail: false,
+        }),
+      ProjectDriveAuthorizationError,
+    );
+    assert.equal(providerCalls, 0);
+  });
+
   it("refuses root, foreign-folder, public/domain/group, and unsupported-role targets", () => {
     const base = {
       fileId: "folder-current",

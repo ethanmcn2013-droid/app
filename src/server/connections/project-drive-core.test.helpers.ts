@@ -32,10 +32,24 @@ export const CORE_TEST_OAUTH = Object.freeze({
 export function coreAuthorization(
   actorUserId: string,
   projectId: string,
+  manageProject = true,
 ): AuthorizedProjectDriveContext {
   return {
     actorUserId,
     projectId: assertProjectId(projectId),
+    role: manageProject ? "owner" : "member",
+    capabilities: {
+      open: true,
+      viewPrivateTimeline: true,
+      createOrEditTasks: true,
+      manageProject,
+      moveIntoPlanningPeriod: manageProject,
+      curatePrimaryTimeline: manageProject,
+      publishTimeline: manageProject,
+      revokeTimeline: manageProject,
+      deleteOrTransferOwnership: manageProject,
+    },
+    archived: false,
   } as unknown as AuthorizedProjectDriveContext;
 }
 

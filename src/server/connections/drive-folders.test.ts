@@ -9,6 +9,7 @@ import {
   DriveFolderError,
 } from "./drive-folders";
 import { createProjectDriveAccessService } from "./project-drive-access";
+import { ProjectDriveAuthorizationError } from "./project-drive-authz";
 import {
   accessDependencies,
   coreAuthorization,
@@ -50,6 +51,33 @@ function folder(input: {
 }
 
 describe("Project Drive board folders", () => {
+  it("refuses a task-only proof before database or provider work", async () => {
+    const fixture = await freshProjectDriveCoreDb();
+    cleanups.push(fixture.cleanup);
+    let providerCalls = 0;
+    const fetchImpl: typeof fetch = async () => {
+      providerCalls += 1;
+      throw new Error("provider must not be reached");
+    };
+    const access = createProjectDriveAccessService(
+      accessDependencies(fixture.db, fetchImpl),
+    );
+    const service = createDriveFolderService({
+      database: fixture.db,
+      access,
+      fetchImpl,
+    });
+    await assert.rejects(
+      () =>
+        service.provision(coreAuthorization("member-a", "ws-a", false), {
+          storageGenerationId: "gen-target",
+          folderName: "Project A",
+        }),
+      ProjectDriveAuthorizationError,
+    );
+    assert.equal(providerCalls, 0);
+  });
+
   it("creates one marked folder beneath the private root and persists its immutable generation", async () => {
     const fixture = await freshProjectDriveCoreDb();
     cleanups.push(fixture.cleanup);

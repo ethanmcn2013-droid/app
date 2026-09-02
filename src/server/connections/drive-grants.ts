@@ -15,7 +15,10 @@ import {
   type ProjectDriveAccessService,
   type ProjectDriveStorageSession,
 } from "./project-drive-access";
-import type { AuthorizedProjectDriveContext } from "./project-drive-authz";
+import {
+  assertProjectDriveCapability,
+  type AuthorizedProjectDriveContext,
+} from "./project-drive-authz";
 
 const GOOGLE_DRIVE_API_ORIGIN = "https://www.googleapis.com";
 
@@ -304,6 +307,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
       sendNotificationEmail: boolean;
     }>,
   ): Promise<CreatedDriveGrant> {
+    assertProjectDriveCapability(authorization, "manageProject");
     if (typeof input.sendNotificationEmail !== "boolean") {
       throw new TypeError("sendNotificationEmail must be explicit");
     }
@@ -431,6 +435,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
     authorization: AuthorizedProjectDriveContext,
     input: Readonly<{ storageGenerationId: string; memberUserId: string }>,
   ): Promise<RevokedDriveGrant> {
+    assertProjectDriveCapability(authorization, "manageProject");
     const [grant] = await deps.database
       .select()
       .from(driveFolderGrants)
@@ -520,6 +525,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
   async function listLive(
     authorization: AuthorizedProjectDriveContext,
   ): Promise<readonly LiveDrivePermission[]> {
+    assertProjectDriveCapability(authorization, "manageProject");
     return deps.access.withStorageSession(
       authorization,
       { kind: "current" },

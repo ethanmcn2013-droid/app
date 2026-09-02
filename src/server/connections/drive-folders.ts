@@ -21,7 +21,10 @@ import {
   type ProjectDriveProvisioningSession,
   type ProjectDriveStorageSession,
 } from "./project-drive-access";
-import type { AuthorizedProjectDriveContext } from "./project-drive-authz";
+import {
+  assertProjectDriveCapability,
+  type AuthorizedProjectDriveContext,
+} from "./project-drive-authz";
 
 const GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 export const DRIVE_FOLDER_WORKSPACE_MARKER = "signalWorkspaceId" as const;
@@ -152,6 +155,7 @@ export function createDriveFolderService(deps: DriveFolderServiceDependencies) {
   async function verifyCurrent(
     authorization: AuthorizedProjectDriveContext,
   ): Promise<WorkspaceDriveFolder> {
+    assertProjectDriveCapability(authorization, "manageProject");
     return deps.access.withStorageSession(
       authorization,
       { kind: "current" },
@@ -197,6 +201,7 @@ export function createDriveFolderService(deps: DriveFolderServiceDependencies) {
     authorization: AuthorizedProjectDriveContext,
     input: Readonly<{ storageGenerationId: string; folderName: string }>,
   ): Promise<WorkspaceDriveFolder> {
+    assertProjectDriveCapability(authorization, "manageProject");
     const storageGenerationId = canonicalText(input.storageGenerationId);
     const folderName = canonicalText(input.folderName);
     const current = await deps.database
@@ -320,6 +325,7 @@ export function createDriveFolderService(deps: DriveFolderServiceDependencies) {
     authorization: AuthorizedProjectDriveContext,
     folderName: string,
   ): Promise<WorkspaceDriveFolder> {
+    assertProjectDriveCapability(authorization, "manageProject");
     const name = canonicalText(folderName);
     return deps.access.withStorageSession(
       authorization,
