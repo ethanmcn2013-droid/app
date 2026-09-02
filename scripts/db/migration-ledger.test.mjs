@@ -46,7 +46,7 @@ async function withClient(operation) {
 
 test("authoritative ledger registers every SQL file with receipt and journal parity", () => {
   const context = loadAndValidateLedger();
-  assert.equal(context.entries.length, 28);
+  assert.equal(context.entries.length, 29);
   assert.equal(context.baseline.id, "0014_current_schema_baseline");
   assert.deepEqual(context.forward.map((entry) => entry.id), [
     "0015_notes_extract_exact_identity",
@@ -62,6 +62,7 @@ test("authoritative ledger registers every SQL file with receipt and journal par
     "0025_tasks_completed_at",
     "0026_workspace_money",
     "0027_share_link_token_hash",
+    "0028_project_drive",
   ]);
   assert.equal(context.entries.filter((entry) => entry.policy === "legacy-adopt-only").length, 14);
 });
@@ -126,19 +127,135 @@ test("fresh databases apply the canonical baseline plus forwards and rerun as a 
     "0025_tasks_completed_at",
     "0026_workspace_money",
     "0027_share_link_token_hash",
+    "0028_project_drive",
   ]);
-  assert.equal(first.proofs.length, 79);
+  assert.equal(first.proofs.length, 118);
 
   const objectCounts = await client.execute("SELECT type, COUNT(*) AS value FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' AND name NOT IN ('signal_schema_migrations', '__drizzle_migrations') GROUP BY type ORDER BY type");
   assert.deepEqual(objectCounts.rows.map((row) => [row.type, Number(row.value)]), [
-    ["index", 32],
-    ["table", 23],
+    ["index", 40],
+    ["table", 26],
     ["trigger", 2],
   ]);
 
   const second = await runMigrations({ client, releaseSha: "test-release" });
   assert.deepEqual(second, { status: "no-op", applied: [] });
   assert.equal((await migrationStatus({ client })).state, "current");
+}));
+
+test("Project Drive preserves credential, folder, and grant generations", async () => withClient(async (client) => {
+  await runMigrations({ client, releaseSha: "test-release" });
+  await client.execute("INSERT INTO users (id, color, initials) VALUES ('owner', '#000', 'OW'), ('member', '#111', 'ME')");
+  await client.execute("INSERT INTO workspaces (id, slug, name) VALUES ('ws-a', 'ws-a', 'A'), ('ws-b', 'ws-b', 'B')");
+
+  const connection = (id, permissionId, current = 1) => ({
+    sql: `INSERT INTO provider_connections (
+      id, user_id, provider, provider_account_id, root_folder_id,
+      refresh_token_cipher, key_version, scopes, status, is_current, connected_at
+    ) VALUES (?, 'owner', 'google_drive', ?, ?, ?, 1, '["drive.file"]', 'active', ?, 1)`,
+    args: [id, permissionId, `root-${id}`, `cipher-${id}`, current],
+  });
+  await client.execute(connection("conn-a1", "permission-a"));
+  await assert.rejects(
+    () => client.execute(`INSERT INTO provider_connections (
+      id, user_id, provider, provider_account_id, root_folder_id,
+      refresh_token_cipher, key_version, scopes, status, is_current, connected_at
+    ) VALUES ('conn-invalid-scopes', 'owner', 'google_drive', 'permission-invalid',
+      'root-invalid', 'cipher-invalid', 1, 'not-json', 'active', 0, 1)`),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => client.execute(connection("conn-b1", "permission-b")),
+    /UNIQUE constraint failed/,
+  );
+  await client.execute("UPDATE provider_connections SET is_current = 0 WHERE id = 'conn-a1'");
+  await client.execute(connection("conn-b1", "permission-b"));
+  await client.execute("UPDATE provider_connections SET is_current = 0 WHERE id = 'conn-b1'");
+  await client.execute(connection("conn-a2", "permission-a"));
+
+  const generation = (id, connectionId, folderId, current = 1) => ({
+    sql: `INSERT INTO workspace_storage (
+      id, workspace_id, connection_id, folder_id, folder_web_view_link, state, is_current
+    ) VALUES (?, 'ws-a', ?, ?, ?, 'active', ?)`,
+    args: [id, connectionId, folderId, `https://drive.example/${folderId}`, current],
+  });
+  await client.execute(generation("gen-a1", "conn-a1", "folder-a1"));
+  await assert.rejects(
+    () => client.execute(generation("gen-b1", "conn-b1", "folder-b1")),
+    /UNIQUE constraint failed/,
+  );
+  await client.execute("UPDATE workspace_storage SET is_current = 0 WHERE id = 'gen-a1'");
+  await client.execute(generation("gen-b1", "conn-b1", "folder-b1"));
+  await client.execute("UPDATE workspace_storage SET is_current = 0 WHERE id = 'gen-b1'");
+  await client.execute(generation("gen-a2", "conn-a2", "folder-a2"));
+  await client.execute("UPDATE workspace_storage SET is_current = 0 WHERE id = 'gen-a2'");
+  await client.execute(generation("gen-a3", "conn-a2", "replacement-folder"));
+
+  await client.execute(`INSERT INTO drive_folder_grants (
+    storage_generation_id, workspace_id, user_id, permission_id,
+    granted_email, role, granted_at
+  ) VALUES ('gen-a1', 'ws-a', 'member', 'grant-a1', 'member@example.com', 'writer', 1)`);
+  await client.execute(`INSERT INTO drive_folder_grants (
+    storage_generation_id, workspace_id, user_id, permission_id,
+    granted_email, role, granted_at
+  ) VALUES ('gen-b1', 'ws-a', 'member', 'grant-b1', 'member@example.com', 'writer', 2)`);
+  await assert.rejects(
+    () => client.execute(`INSERT INTO drive_folder_grants (
+      storage_generation_id, workspace_id, user_id, permission_id,
+      granted_email, role, granted_at
+    ) VALUES ('gen-a3', 'ws-b', 'member', 'wrong-workspace', 'member@example.com', 'writer', 3)`),
+  );
+
+  await client.execute(`INSERT INTO resources (
+    id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+    title, added_at, access_state, counts_against_storage
+  ) VALUES ('resource-drive', 'ws-a', 'task-a', 'upload', 'drive', 'drive',
+    'gen-a3', 'Drive file', 1, 'pending', 0)`);
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-drive-no-generation', 'ws-a', 'task-a', 'upload',
+      'drive', 'drive', 'Missing generation', 1, 'pending', 0)`),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-signal-with-generation', 'ws-a', 'task-a', 'upload',
+      'file', 'signal', 'gen-a3', 'Wrong generation', 1, 'pending', 0)`),
+    /CHECK constraint failed/,
+  );
+  await assert.rejects(
+    () => client.execute(`INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage, storage_generation_id,
+      title, added_at, access_state, counts_against_storage
+    ) VALUES ('resource-missing', 'ws-a', 'task-a', 'upload', 'drive', 'drive',
+      'missing-generation', 'Missing', 1, 'pending', 0)`),
+  );
+
+  const generations = await client.execute(
+    "SELECT id, connection_id, folder_id, is_current FROM workspace_storage WHERE workspace_id = 'ws-a' ORDER BY id",
+  );
+  assert.deepEqual(
+    generations.rows.map((row) => [row.id, row.connection_id, row.folder_id, Number(row.is_current)]),
+    [
+      ["gen-a1", "conn-a1", "folder-a1", 0],
+      ["gen-a2", "conn-a2", "folder-a2", 0],
+      ["gen-a3", "conn-a2", "replacement-folder", 1],
+      ["gen-b1", "conn-b1", "folder-b1", 0],
+    ],
+  );
+  assert.equal(
+    Number((await client.execute("SELECT COUNT(*) AS value FROM drive_folder_grants WHERE user_id = 'member'")).rows[0].value),
+    2,
+  );
+  await assert.rejects(() => client.execute("DELETE FROM users WHERE id = 'owner'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM workspaces WHERE id = 'ws-a'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM provider_connections WHERE id = 'conn-a1'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM workspace_storage WHERE id = 'gen-a1'"), /FOREIGN KEY constraint failed/);
+  await assert.rejects(() => client.execute("DELETE FROM workspace_storage WHERE id = 'gen-a3'"), /FOREIGN KEY constraint failed/);
 }));
 
 test("a non-empty database without an exact ledger refuses migration execution", async () => withClient(async (client) => {

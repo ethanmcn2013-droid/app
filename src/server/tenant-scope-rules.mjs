@@ -169,6 +169,11 @@ export const TENANT_SURFACES = [
       "workspaceEvents",
       "workspaceSponsorships",
       "suiteOutbox",
+      // Project Drive custody. Provider connections are person-scoped; the
+      // other two carry workspace_id and must never be read without scope.
+      "providerConnections",
+      "workspaceStorage",
+      "driveFolderGrants",
       // Not workspace-keyed, but user-keyed and tenant-bearing: a
       // planning period groups a person's workspaces.
       "planningPeriods",

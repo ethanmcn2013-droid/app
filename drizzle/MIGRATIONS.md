@@ -2,7 +2,7 @@
 
 `drizzle/migration-ledger.json` is the migration authority. It binds every SQL
 file to an order, canonical LF SHA-256, execution policy, Drizzle journal entry,
-content-addressed review receipt and snapshot, rollback plan, and
+content-addressed review receipt, optional schema snapshot, rollback plan, and
 machine-verifiable postconditions.
 
 The database keeps an exact row per supported runtime migration in
@@ -24,20 +24,16 @@ migration in order; they do not replay 0000-0013.
 
 ## Current forward migration
 
-`0015_notes_extract_exact_identity.sql` adds two nullable Tasks provenance
-columns for exact Signal Notes retry verification. Existing rows remain null
-and are deliberately treated as legacy/unverifiable by the v2 receiver. Do not
-deploy `/api/notes-extract/v2` before the target database reports 0015 as
-applied. The existing `/api/notes-extract` v1 receiver remains available as the
-zero-downtime and rollback seam; v1 is never accepted by the v2 route.
+`0028_project_drive.sql` adds the Project Drive custody model: immutable
+provider-connection and board-folder generations, exact folder-permission
+receipts, and the resource fields that bind a Drive file to its storage
+generation. Existing resources remain `storage='signal'`.
 
-Production execution requires a new `tasks-migration-execution/1` receipt that
-covers 0015's exact ledger hash, a verified backup, and an isolated-copy dry
-run. Apply it with the receipt-backed runner, confirm `pnpm db:status` reports
-`current`, deploy Tasks with both the retained v1 route and strict v2 route,
-then deploy the matching Hybrid Notes sender pointed only at v2. For rollback,
-disable or roll back the Hybrid Notes sender first, confirm sends use v1, and
-only then remove or roll back the Tasks v2 receiver.
+The checked-in review receipt is deliberately **not authorized for
+production**. Local and CI application prove the migration now. Production
+requires a fresh `tasks-migration-execution/1` receipt covering the exact
+ledger, backup, target identity and isolated-copy dry run, plus the founder's
+explicit production authorization.
 
 Do not run `drizzle-kit migrate` directly. Its pinned LibSQL runner checks only
 the latest timestamp and does not validate historical hashes. Use the Tasks
@@ -69,8 +65,12 @@ migration is a strict no-op.
 ## Creating the next migration
 
 1. Change `src/server/db/schema.ts`.
-2. Run `pnpm drizzle-kit generate --name <clear_name>`. The checked-in
-   `0014_snapshot.json` is the current generation base.
+2. Do not run ordinary `drizzle-kit generate` until the snapshot chain is
+   deliberately repaired: the latest checked-in snapshot is 0015 while the
+   receipt-backed hand-reviewed chain continues through 0028. Blind generation
+   from that stale base can repeat already-applied schema. Follow the latest
+   hand-reviewed forward migration and journal shape, or repair snapshot
+   continuity as its own reviewed package first.
 3. Review the SQL and assign it the `forward` policy in
    `drizzle/migration-ledger.json` with its canonical LF SHA-256.
 4. Add a `tasks-migration-receipt/1` review receipt containing the exact hash,

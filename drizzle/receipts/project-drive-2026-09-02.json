@@ -1,0 +1,225 @@
+{
+  "schemaVersion": "tasks-migration-receipt/1",
+  "id": "project-drive-2026-09-02",
+  "authorizedBy": "NOT YET AUTHORIZED FOR PRODUCTION. The founder authorized implementation of Project Drive on 2026-09-02, but production data remains an explicit founder gate. This review receipt authorizes local and CI application only; no tasks-migration-execution/1 receipt exists for 0028.",
+  "reviewedBy": "Codex, Project Drive WP-3 implementation review, 2026-09-02",
+  "authorizationSource": "Project Drive PROJECT.md WP-3 and the 2026-09-02 implementation instruction. Scope is additive schema only: immutable provider-connection and workspace-storage generations, exact Drive grant receipts, three resource columns, and no remote database execution.",
+  "migrations": [
+    {
+      "id": "0028_project_drive",
+      "sha256": "c43afd8e8034cb5e281e1c7c3409bcb73e4e6f1df17871f328a0eac11b2e50d0",
+      "reviewedAt": "2026-09-02T21:00:00.000Z",
+      "risk": "low-medium at apply time. The migration creates three empty tables and eight named indexes, then adds three columns to resources. Existing resources receive storage='signal'; no existing value is deleted or rewritten. A cross-field check prevents a Drive resource without a storage generation and prevents a Signal-native resource from claiming one. Dedicated immutable ids prevent owner A to B to A, a different Drive reconnect, or a replacement missing folder from overwriting prior credential, folder or permission evidence. Every custody foreign key restricts deletion, forcing lifecycle code to revoke and clean explicitly before removing a user, workspace, connection, generation or grant. The residual risk begins only after runtime use: these rows contain encrypted credential custody, Drive folder identity and exact revocation ids, so deleting them casually would make cleanup less reliable even though no Drive bytes are stored here.",
+      "rollbackPlan": "Before any live connection exists: drop idx_resources_workspace_storage_generation, drop the resources stored_path, storage_generation_id and storage columns, then drop idx_drive_folder_grants_workspace_generation and drive_folder_grants; drop the four workspace_storage indexes and workspace_storage; drop the two provider_connections indexes and provider_connections. After any connection or grant exists, do not use a schema-only rollback: first disable Drive writes, revoke every recorded permission and provider token, preserve the resource-to-generation audit relation, then roll forward or execute a separately reviewed data migration. A table drop after use would destroy the exact permission ids needed to remove access at Google.",
+      "postconditions": [
+        "resources has storage, storage_generation_id and stored_path; every pre-existing row remains storage='signal'",
+        "provider_connections is immutable by id, identifies Drive accounts by Drive User.permissionId, and permits at most one current credential generation per user and provider",
+        "workspace_storage is immutable by id and permits at most one current folder generation per workspace",
+        "drive_folder_grants keys each permission receipt to its exact storage generation and member",
+        "owner A to B to A and same-owner replacement folders can retain distinct historical generations",
+        "resource generation lookups are indexed and reference workspace_storage",
+        "custody foreign keys restrict deletion rather than silently cascading or nulling repair evidence",
+        "resource storage/generation coupling and all JSON, state, role, boolean and key-version constraints exist",
+        "integrity check passes",
+        "foreign keys remain clean"
+      ],
+      "proofs": [
+        {
+          "id": "resources-storage-column",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('resources') WHERE name = 'storage' AND lower(type) = 'text' AND \"notnull\" = 1 AND dflt_value = '''signal'''",
+          "expected": 1
+        },
+        {
+          "id": "resources-generation-column",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('resources') WHERE name = 'storage_generation_id' AND lower(type) = 'text' AND \"notnull\" = 0",
+          "expected": 1
+        },
+        {
+          "id": "resources-stored-path-column",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('resources') WHERE name = 'stored_path' AND lower(type) = 'text' AND \"notnull\" = 0",
+          "expected": 1
+        },
+        {
+          "id": "existing-resources-defaulted-to-signal",
+          "sql": "SELECT COUNT(*) AS value FROM resources WHERE storage <> 'signal' OR storage IS NULL",
+          "expected": 0
+        },
+        {
+          "id": "resources-storage-check",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'resources' AND instr(sql, 'resources_storage_check') > 0 AND instr(sql, 'resources_storage_generation_check') > 0",
+          "expected": 1
+        },
+        {
+          "id": "resources-generation-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('resources') WHERE \"table\" = 'workspace_storage' AND \"from\" = 'storage_generation_id' AND \"to\" = 'id' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "resources-generation-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_resources_workspace_storage_generation') ORDER BY seqno)",
+          "expected": "workspace_id,storage_generation_id"
+        },
+        {
+          "id": "resources-generation-index-partial",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('resources') WHERE name = 'idx_resources_workspace_storage_generation' AND partial = 1",
+          "expected": 1
+        },
+        {
+          "id": "provider-connections-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('provider_connections') WHERE name IN ('id','user_id','provider','provider_account_id','provider_account_email','root_folder_id','refresh_token_cipher','key_version','scopes','status','is_current','connected_at','last_used_at','last_error_at')",
+          "expected": 14
+        },
+        {
+          "id": "provider-account-id-required",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('provider_connections') WHERE name = 'provider_account_id' AND \"notnull\" = 1",
+          "expected": 1
+        },
+        {
+          "id": "provider-key-version-default",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('provider_connections') WHERE name = 'key_version' AND \"notnull\" = 1 AND dflt_value = '1'",
+          "expected": 1
+        },
+        {
+          "id": "provider-status-default",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('provider_connections') WHERE name = 'status' AND \"notnull\" = 1 AND dflt_value = '''active'''",
+          "expected": 1
+        },
+        {
+          "id": "provider-current-default",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('provider_connections') WHERE name = 'is_current' AND \"notnull\" = 1 AND dflt_value = '1'",
+          "expected": 1
+        },
+        {
+          "id": "provider-history-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_provider_connections_user_provider') ORDER BY seqno)",
+          "expected": "user_id,provider"
+        },
+        {
+          "id": "provider-history-index-not-unique",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('provider_connections') WHERE name = 'idx_provider_connections_user_provider' AND \"unique\" = 0",
+          "expected": 1
+        },
+        {
+          "id": "provider-current-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_provider_connections_current') ORDER BY seqno)",
+          "expected": "user_id,provider"
+        },
+        {
+          "id": "provider-current-index-guard",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('provider_connections') WHERE name = 'idx_provider_connections_current' AND \"unique\" = 1 AND partial = 1",
+          "expected": 1
+        },
+        {
+          "id": "provider-user-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('provider_connections') WHERE \"table\" = 'users' AND \"from\" = 'user_id' AND \"to\" = 'id' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "provider-connection-checks",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'provider_connections' AND instr(sql, 'provider_connections_key_version_check') > 0 AND instr(sql, 'provider_connections_scopes_json_check') > 0 AND instr(sql, 'provider_connections_status_check') > 0 AND instr(sql, 'provider_connections_is_current_check') > 0",
+          "expected": 1
+        },
+        {
+          "id": "workspace-storage-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspace_storage') WHERE name IN ('id','workspace_id','connection_id','folder_id','folder_web_view_link','state','is_current')",
+          "expected": 7
+        },
+        {
+          "id": "workspace-storage-primary-key",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_table_info('workspace_storage') WHERE pk > 0 ORDER BY pk)",
+          "expected": "id"
+        },
+        {
+          "id": "workspace-storage-current-default",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('workspace_storage') WHERE name = 'is_current' AND \"notnull\" = 1 AND dflt_value = '1'",
+          "expected": 1
+        },
+        {
+          "id": "workspace-storage-current-index-columns",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_workspace_storage_current') ORDER BY seqno)",
+          "expected": "workspace_id"
+        },
+        {
+          "id": "workspace-storage-current-index-guard",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('workspace_storage') WHERE name = 'idx_workspace_storage_current' AND \"unique\" = 1 AND partial = 1",
+          "expected": 1
+        },
+        {
+          "id": "workspace-storage-generation-workspace-index",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_workspace_storage_generation_workspace') ORDER BY seqno)",
+          "expected": "id,workspace_id"
+        },
+        {
+          "id": "workspace-storage-generation-workspace-unique",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_index_list('workspace_storage') WHERE name = 'idx_workspace_storage_generation_workspace' AND \"unique\" = 1",
+          "expected": 1
+        },
+        {
+          "id": "workspace-storage-workspace-index",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_workspace_storage_workspace_id') ORDER BY seqno)",
+          "expected": "workspace_id"
+        },
+        {
+          "id": "workspace-storage-connection-index",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_workspace_storage_connection_id') ORDER BY seqno)",
+          "expected": "connection_id"
+        },
+        {
+          "id": "workspace-storage-foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('workspace_storage') WHERE on_delete = 'RESTRICT' AND ((\"table\" = 'workspaces' AND \"from\" = 'workspace_id' AND \"to\" = 'id') OR (\"table\" = 'provider_connections' AND \"from\" = 'connection_id' AND \"to\" = 'id'))",
+          "expected": 2
+        },
+        {
+          "id": "workspace-storage-checks",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'workspace_storage' AND instr(sql, 'workspace_storage_state_check') > 0 AND instr(sql, 'workspace_storage_is_current_check') > 0",
+          "expected": 1
+        },
+        {
+          "id": "drive-folder-grants-columns",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('drive_folder_grants') WHERE name IN ('storage_generation_id','workspace_id','user_id','permission_id','granted_email','role','granted_at','revoke_pending')",
+          "expected": 8
+        },
+        {
+          "id": "drive-folder-grants-primary-key",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_table_info('drive_folder_grants') WHERE pk > 0 ORDER BY pk)",
+          "expected": "storage_generation_id,user_id"
+        },
+        {
+          "id": "drive-folder-grants-workspace-index",
+          "sql": "SELECT group_concat(name, ',') AS value FROM (SELECT name FROM pragma_index_info('idx_drive_folder_grants_workspace_generation') ORDER BY seqno)",
+          "expected": "workspace_id,storage_generation_id"
+        },
+        {
+          "id": "drive-folder-grants-storage-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('drive_folder_grants') WHERE \"table\" = 'workspace_storage' AND on_delete = 'RESTRICT' AND ((\"from\" = 'storage_generation_id' AND \"to\" = 'id') OR (\"from\" = 'workspace_id' AND \"to\" = 'workspace_id'))",
+          "expected": 2
+        },
+        {
+          "id": "drive-folder-grants-user-foreign-key",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_list('drive_folder_grants') WHERE \"table\" = 'users' AND \"from\" = 'user_id' AND \"to\" = 'id' AND on_delete = 'RESTRICT'",
+          "expected": 1
+        },
+        {
+          "id": "drive-folder-grants-checks",
+          "sql": "SELECT COUNT(*) AS value FROM sqlite_schema WHERE type = 'table' AND name = 'drive_folder_grants' AND instr(sql, 'drive_folder_grants_role_check') > 0 AND instr(sql, 'drive_folder_grants_revoke_pending_check') > 0",
+          "expected": 1
+        },
+        {
+          "id": "drive-folder-grants-revoke-default",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_table_info('drive_folder_grants') WHERE name = 'revoke_pending' AND \"notnull\" = 1 AND dflt_value = '0'",
+          "expected": 1
+        },
+        {
+          "id": "integrity",
+          "sql": "SELECT integrity_check AS value FROM pragma_integrity_check",
+          "expected": "ok"
+        },
+        {
+          "id": "foreign-keys",
+          "sql": "SELECT COUNT(*) AS value FROM pragma_foreign_key_check",
+          "expected": 0
+        }
+      ]
+    }
+  ]
+}

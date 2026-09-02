@@ -62,9 +62,10 @@ proved by a contract test, in the register this repo already uses
 3. **Only `type: "user"`.** Never `anyone`, never `domain`, never `group` in
    v1. A future change must not be able to quietly turn a board folder into a
    public link.
-4. **A grant is only ever created on `workspace_storage.folder_id` for the
-   workspace being granted.** The folder id comes from the workspace row, never
-   from client input or a function argument the caller chose.
+4. **A grant is only ever created on the current
+   `workspace_storage.folder_id` for the workspace being granted.** The
+   generation and folder id come from the workspace row, never from client
+   input or a function argument the caller chose.
 5. **Share-link guests are never granted anything in Drive.** They are
    anonymous bearer tokens with no person behind them.
 6. **Signal Studio never deletes a user's Drive file as a side effect.**
@@ -215,40 +216,55 @@ brief proposed):
 -- the person's Google grant. Per user, never per board.
 CREATE TABLE provider_connections (
   id, user_id, provider,
-  provider_account_id,      -- Google `sub`: detects "reconnected a DIFFERENT account"
+  provider_account_id,      -- Drive User.permissionId; no OpenID scope needed
   provider_account_email,   -- display only, never a join key
   root_folder_id,           -- the "Signal Studio" folder. NEVER shared.
   refresh_token_cipher, key_version, scopes,
   status,                   -- active | needs_reauth | revoked
+  is_current,               -- one current credential generation per user/provider
   connected_at, last_used_at, last_error_at
 );
-CREATE UNIQUE INDEX idx_provider_connections_user_provider
-  ON provider_connections (user_id, provider);
+CREATE UNIQUE INDEX idx_provider_connections_current
+  ON provider_connections (user_id, provider) WHERE is_current = 1;
 
--- which Drive backs which board.
+-- one immutable folder generation; history survives handover/replacement.
 CREATE TABLE workspace_storage (
-  workspace_id PRIMARY KEY,
+  id PRIMARY KEY,           -- storage_generation_id
+  workspace_id,
   connection_id,            -- the storage owner's grant
   folder_id,                -- the ONLY place this board's uploads may land
   folder_web_view_link,
-  state                     -- active | needs_reauth | folder_missing | quota_full
+  state,                    -- active | needs_reauth | folder_missing | quota_full
+  is_current
 );
+CREATE UNIQUE INDEX idx_workspace_storage_current
+  ON workspace_storage (workspace_id) WHERE is_current = 1;
 
--- THE SECURITY CONTROL. One row per person we granted.
+-- THE SECURITY CONTROL. One row per generation/person we granted.
 CREATE TABLE drive_folder_grants (
-  workspace_id, user_id,
+  storage_generation_id, workspace_id, user_id,
   permission_id,            -- returned by permissions.create
   granted_email, role,      -- 'writer' | 'reader'
   granted_at,
-  revoke_pending            -- set when a delete failed; WP-8 drains it
+  revoke_pending,           -- set when a delete failed; WP-8 drains it
+  PRIMARY KEY (storage_generation_id, user_id)
 );
-CREATE UNIQUE INDEX idx_drive_folder_grants_ws_user
-  ON drive_folder_grants (workspace_id, user_id);
 ```
 
 Plus, additively on `resources`:
 `storage` (`'signal' | 'drive'`, default `'signal'`), `external_id` already
-exists, `connection_id`, `stored_path`.
+exists, `storage_generation_id`, `stored_path`. The generation points to
+`workspace_storage.id`; its connection is derived rather than duplicated. A
+database check couples the pair: Drive requires a generation, Signal-native
+requires none.
+
+`provider_connections.id` and `workspace_storage.id` are immutable generation
+ids. This is necessary for owner A → B → A, reconnecting a different Drive
+account, and creating a replacement folder under the same credential. Partial
+unique indexes enforce one current credential per user/provider and one current
+storage generation per workspace while preserving the old rows. All custody
+foreign keys use `RESTRICT`: lifecycle code must revoke and clean explicitly
+before deleting the evidence needed for repair.
 
 **Do not** make `resources.task_id` nullable in this project. It needs
 SQLite's twelve-step table rebuild and only buys project-level libraries, which
@@ -285,7 +301,8 @@ database reports current after `pnpm db:migrate`; a second run is a no-op.
 - A forged or replayed `state` is rejected.
 - A connection is only ever readable by its own user.
 - Reconnecting a *different* Google account is detected via
-  `provider_account_id` and does not silently adopt old folders.
+  `provider_account_id` (Drive `about.user.permissionId`, not OpenID `sub`) and
+  does not silently adopt old folders or widen the `drive.file` scope set.
 
 **Acceptance:** connect, disconnect, reconnect all work; the token in the
 database is ciphertext; erasure revokes at Google.
@@ -340,13 +357,14 @@ was never shared.
 **Flow:**
 1. `createDriveUploadSessionAction(taskId, { name, mimeType, size })`
    - `scopeForTask(taskId, me)` first — ADR 0001 §9 object operation.
-   - Resolve `workspace_storage` for `scope.ws`. No storage → caller falls back
-     to the Signal-native path unchanged.
+   - Resolve the current `workspace_storage` generation for `scope.ws`. No
+     current storage → caller falls back to the Signal-native path unchanged.
    - Pre-check `about.get` `storageQuota`; refuse politely if it will not fit.
    - **Idempotency:** query
      `files.list q="appProperties has {key='signalResourceId' and value='…'} and trashed=false"`
      before minting anything. A hit means an earlier attempt landed — adopt it.
-   - Insert the claim row (`storage='drive'`, `accessState='pending'`), then
+   - Insert the claim row (`storage='drive'`, `storageGenerationId` set to the
+     current generation, `accessState='pending'`), then
      mint the resumable session with metadata
      `{ name, parents: [folderId], appProperties: { signalResourceId } }`.
    - Return `{ resourceId, sessionUrl }` — **the access token never leaves the

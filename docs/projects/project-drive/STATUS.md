@@ -5,7 +5,10 @@ the end of every work package, before opening a PR. A `done` mark is a claim
 that the package's acceptance criteria in `PROJECT.md` were met and the gates
 listed there passed — not that the code was written.
 
-**Last updated:** 2026-08-27 · WP-0 done and merged. Google is configured; WP-1 needs one email address and two consent clicks.
+**Last updated:** 2026-09-02 · WP-1 has 11/12 spike checks, with the
+second-account lifecycle still unobserved. WP-2 is complete on the feature
+branch. WP-3 is staged and verified locally; production migration remains an
+explicit founder gate.
 
 ---
 
@@ -14,9 +17,9 @@ listed there passed — not that the code was written.
 | WP | Package | Status | Notes |
 |---|---|---|---|
 | 0 | Fix the floor | **done** | Q1 answered: the token IS provisioned. A fifth, binding number was found (Vercel's 4.5 MB body cap) and uploads moved browser → Blob so 50 MB is real. Ten §2 rules ratcheted |
-| 1 | Spike the Drive chain | **ready to run** | Harness written (`scripts/spike/drive-chain.mjs`, branch `spike/drive-chain`). Google is configured and credentials are in Vercel. Needs the second account's address, and a human to press Allow twice |
-| 2 | Secrets substrate | not started | No cryptography exists in this repo yet |
-| 3 | Schema (migration 0028) | not started | Ledger entry + review receipt + journal, not just SQL |
+| 1 | Spike the Drive chain | **partial — 11/12** | Owner-side flow passed. The second account is known, but open-without-request, revoke, and parent-folder isolation still need live observation after phase A remints the revoked owner token. Do not advance the package to done until that lifecycle passes |
+| 2 | Secrets substrate | **done on feature branch** | AES-256-GCM envelope, versioned key custody, log/Sentry redaction and token-custody contracts are in commit `ddbf7380` |
+| 3 | Schema (migration 0028) | **staged locally** | Generation-aware SQL, Drizzle mirror, ledger, 39-proof review receipt and journal are green. Fresh local apply, no-op rerun and current status passed. Not applied to production; do not mark done before WP-1 acceptance and the founder's Q5 authorization |
 | 4 | The connection | not started | |
 | 5 | Folder and sharing | not started | The security-critical package |
 | 6 | Upload | not started | |
@@ -33,8 +36,8 @@ that depends on it.
 | # | Question | Blocks | Owner |
 |---|---|---|---|
 | ~~Q1~~ | ~~Is `BLOB_READ_WRITE_TOKEN` provisioned in production?~~ **Answered 2026-08-27: yes.** Present on the `app` project for Production, Preview and Development, created 24 days before. Uploads were live the whole time; the settings copy was simply false | — | closed |
-| Q2 | Exact consent-screen wording shown for `drive.file` | WP-1 | spike |
-| Q7 | The second Google account to test sharing with — an email address, not a secret | WP-1 | founder |
+| ~~Q2~~ | ~~Exact consent-screen wording shown for `drive.file`~~ **Answered 2026-08-27:** Google says Signal Studio can see, edit, create and delete only the specific Drive files used with the app. See `SPIKE-FINDINGS.md` Finding 8 | — | closed |
+| ~~Q7~~ | ~~The second Google account to test sharing with — an email address, not a secret~~ **Answered 2026-08-27:** the member address is recorded in `SPIKE-FINDINGS.md`; its live credential checks remain WP-1 acceptance work | — | closed |
 | Q3 | CSP hosts needed for the Drive preview embed and the resumable PUT | WP-1, WP-6 | spike |
 | ~~Q4~~ | ~~Which single file-size number becomes the truth in WP-0~~ **Answered 2026-08-27 by the founder: 50 MB, made real by client-direct upload.** See D11 | — | closed |
 | Q5 | Does the founder authorize migration 0028 against production, and when | WP-3 | founder |
@@ -66,6 +69,11 @@ status.
 | 2026-08-27 | The consent screen's scope list was EMPTY before this change | Read before editing | Clerk's `openid`/`email`/`profile` are basic scopes Google does not register here. The feared "clearing the list breaks sign-in" case did not exist — worth recording, because the guide had been written to avoid a hazard that was not there |
 | 2026-08-27 | All three secrets are in Vercel, all three environments | `vercel env ls` | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` (encrypted), `PROVIDER_TOKEN_KEY` (encrypted, generated locally and never written to disk) |
 | 2026-08-27 | `lint`, `typecheck`, `test`, `build`, `perf:budgets` | all five, on the WP-0 branch | All green, exit 0. The one Turbopack NFT warning was reproduced on a build WITHOUT the change and is pre-existing |
+| 2026-08-27 | WP-1 live Drive spike | `scripts/spike/drive-chain.mjs` against the owner and intended member accounts | 11/12 harness checks passed. The owner-side folder, named-user grant, resumable upload, idempotency stamp, exact `drive.file` request and unattended refresh were observed. The member open/revoke/parent-isolation lifecycle remains pending; the exposed scratch token was revoked and must be reminted before phase B |
+| 2026-09-02 | WP-2 secrets substrate | `src/server/crypto/secret-box.test.ts`, `src/server/provider-token-custody.test.ts`, plus full branch gates | AES-256-GCM round-trip, tamper/wrong-key/version handling and database/log/Sentry plaintext barriers are green on commit `ddbf7380` |
+| 2026-09-02 | Migration 0028 contract | `pnpm db:contract` | 60/60 passed: ledger/receipt/journal parity, fresh apply/no-op, proof rollback, tamper/drift refusal, immutable A → B → A connection and folder generations, historical grants, storage coupling and `RESTRICT` deletion behavior |
+| 2026-09-02 | Migration 0028 local rehearsal | disposable local SQLite database: `pnpm db:migrate` twice, then `pnpm db:status` | First run applied through `0028_project_drive`; second run returned `no-op`; status returned `current` with 29 registered SQL files. No remote or production database was contacted |
+| 2026-09-02 | WP-3 branch gates | `pnpm typecheck`; `pnpm lint`; `pnpm test`; `node --test src/server/tenant-scope-rules.test.mjs` | Typecheck and the full test chain passed; lint passed with 68 pre-existing warnings and zero errors; tenant governance passed 21/21 for the three new tables |
 
 ---
 

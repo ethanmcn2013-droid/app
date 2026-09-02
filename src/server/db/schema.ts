@@ -5,6 +5,7 @@ import {
   integer,
   real,
   primaryKey,
+  foreignKey,
   index,
   uniqueIndex,
   check,
@@ -900,6 +901,184 @@ const _checkAttachment: _SchemaCoversAttachment = true;
 void _checkAttachment;
 
 /**
+ * A person's durable grant to an external storage provider. Project Drive
+ * asks only for Drive's `drive.file` scope, so `providerAccountId` stores the
+ * stable `about.user.permissionId` returned by Drive itself. It deliberately
+ * does not depend on an OpenID `sub`, which would widen the OAuth scope set.
+ *
+ * Refresh tokens are AES-256-GCM envelopes bound to this row's id. Access
+ * tokens are request-local and must never reach this table.
+ */
+export const providerConnections = sqliteTable(
+  "provider_connections",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull(),
+    provider: text("provider").$type<"google_drive">().notNull(),
+    /** Drive User.permissionId. Email is display-only and never identity. */
+    providerAccountId: text("provider_account_id").notNull(),
+    providerAccountEmail: text("provider_account_email"),
+    /** The unshared `Signal Studio` folder created under this grant. */
+    rootFolderId: text("root_folder_id").notNull(),
+    refreshTokenCipher: text("refresh_token_cipher").notNull(),
+    keyVersion: integer("key_version").notNull().default(1),
+    scopes: text("scopes", { mode: "json" }).$type<string[]>().notNull(),
+    status: text("status")
+      .$type<"active" | "needs_reauth" | "revoked">()
+      .notNull()
+      .default("active"),
+    /** One current credential generation per person/provider; history stays. */
+    isCurrent: integer("is_current", { mode: "boolean" })
+      .notNull()
+      .default(true),
+    connectedAt: integer("connected_at", { mode: "timestamp" }).notNull(),
+    lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
+    lastErrorAt: integer("last_error_at", { mode: "timestamp" }),
+  },
+  (t) => [
+    index("idx_provider_connections_user_provider").on(
+      t.userId,
+      t.provider,
+    ),
+    uniqueIndex("idx_provider_connections_current")
+      .on(t.userId, t.provider)
+      .where(sql`${t.isCurrent} = 1`),
+    foreignKey({
+      name: "provider_connections_user_fk",
+      columns: [t.userId],
+      foreignColumns: [users.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "provider_connections_key_version_check",
+      sql`${t.keyVersion} >= 1`,
+    ),
+    check(
+      "provider_connections_scopes_json_check",
+      sql`json_valid(${t.scopes})`,
+    ),
+    check(
+      "provider_connections_status_check",
+      sql`${t.status} IN ('active','needs_reauth','revoked')`,
+    ),
+    check(
+      "provider_connections_is_current_check",
+      sql`${t.isCurrent} IN (0,1)`,
+    ),
+  ],
+);
+
+/**
+ * One immutable folder generation for a workspace. Its own id — not the
+ * credential id — is the generation identity, because the same owner can
+ * receive a replacement folder and can leave then return. A handover inserts
+ * a new row and retires the old one; it never rewrites historical identity.
+ */
+export const workspaceStorage = sqliteTable(
+  "workspace_storage",
+  {
+    id: text("id").primaryKey(),
+    workspaceId: text("workspace_id").notNull(),
+    connectionId: text("connection_id").notNull(),
+    /** The one board folder this generation may write into. */
+    folderId: text("folder_id").notNull(),
+    folderWebViewLink: text("folder_web_view_link").notNull(),
+    state: text("state")
+      .$type<"active" | "needs_reauth" | "folder_missing" | "quota_full">()
+      .notNull()
+      .default("active"),
+    isCurrent: integer("is_current", { mode: "boolean" })
+      .notNull()
+      .default(true),
+  },
+  (t) => [
+    uniqueIndex("idx_workspace_storage_current")
+      .on(t.workspaceId)
+      .where(sql`${t.isCurrent} = 1`),
+    // Parent key for the grant table's workspace/generation consistency FK.
+    uniqueIndex("idx_workspace_storage_generation_workspace").on(
+      t.id,
+      t.workspaceId,
+    ),
+    index("idx_workspace_storage_workspace_id").on(t.workspaceId),
+    index("idx_workspace_storage_connection_id").on(t.connectionId),
+    foreignKey({
+      name: "workspace_storage_workspace_fk",
+      columns: [t.workspaceId],
+      foreignColumns: [workspaces.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "workspace_storage_connection_fk",
+      columns: [t.connectionId],
+      foreignColumns: [providerConnections.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "workspace_storage_state_check",
+      sql`${t.state} IN ('active','needs_reauth','folder_missing','quota_full')`,
+    ),
+    check(
+      "workspace_storage_is_current_check",
+      sql`${t.isCurrent} IN (0,1)`,
+    ),
+  ],
+);
+
+/**
+ * The exact Drive permission Signal created for one member on one folder
+ * generation. The generation id stays distinct even for owner A → B → A or a
+ * replacement folder under the same connection.
+ */
+export const driveFolderGrants = sqliteTable(
+  "drive_folder_grants",
+  {
+    storageGenerationId: text("storage_generation_id").notNull(),
+    workspaceId: text("workspace_id").notNull(),
+    userId: text("user_id").notNull(),
+    permissionId: text("permission_id").notNull(),
+    grantedEmail: text("granted_email").notNull(),
+    role: text("role").$type<"writer" | "reader">().notNull(),
+    grantedAt: integer("granted_at", { mode: "timestamp" }).notNull(),
+    revokePending: integer("revoke_pending", { mode: "boolean" })
+      .notNull()
+      .default(false),
+  },
+  (t) => [
+    primaryKey({ columns: [t.storageGenerationId, t.userId] }),
+    index("idx_drive_folder_grants_workspace_generation").on(
+      t.workspaceId,
+      t.storageGenerationId,
+    ),
+    foreignKey({
+      name: "drive_folder_grants_storage_fk",
+      columns: [t.storageGenerationId, t.workspaceId],
+      foreignColumns: [workspaceStorage.id, workspaceStorage.workspaceId],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    foreignKey({
+      name: "drive_folder_grants_user_fk",
+      columns: [t.userId],
+      foreignColumns: [users.id],
+    })
+      .onUpdate("cascade")
+      .onDelete("restrict"),
+    check(
+      "drive_folder_grants_role_check",
+      sql`${t.role} IN ('writer','reader')`,
+    ),
+    check(
+      "drive_folder_grants_revoke_pending_check",
+      sql`${t.revokePending} IN (0,1)`,
+    ),
+  ],
+);
+
+/**
  * Unified resource model. Absorbs file attachments (kind='upload') and
  * external links (kind='link') into one read layer.
  *
@@ -923,6 +1102,18 @@ export const resources = sqliteTable("resources", {
   provider: text("provider").notNull(),
   /** Optional provider-native identifier (e.g. Figma file key). */
   externalId: text("external_id"),
+  /** Which byte store owns this resource. Existing rows remain Signal-native. */
+  storage: text("storage")
+    .$type<"signal" | "drive">()
+    .notNull()
+    .default("signal"),
+  /** Selects the immutable folder generation; the connection is derived. */
+  storageGenerationId: text("storage_generation_id").references(
+    () => workspaceStorage.id,
+    { onDelete: "restrict", onUpdate: "cascade" },
+  ),
+  /** Provider/disk location when a resource needs one; never client-trusted. */
+  storedPath: text("stored_path"),
   title: text("title").notNull(),
   url: text("url"),
   mimeType: text("mime_type"),
@@ -942,9 +1133,21 @@ export const resources = sqliteTable("resources", {
 }, (t) => [
   index("idx_resources_task_id").on(t.taskId),
   index("idx_resources_workspace_id").on(t.workspaceId),
+  index("idx_resources_workspace_storage_generation")
+    .on(t.workspaceId, t.storageGenerationId)
+    .where(sql`${t.storageGenerationId} IS NOT NULL`),
   check(
     "resources_kind_check",
     sql`${t.kind} IN ('upload','link')`,
+  ),
+  check(
+    "resources_storage_check",
+    sql`${t.storage} IN ('signal','drive')`,
+  ),
+  check(
+    "resources_storage_generation_check",
+    sql`(${t.storage} = 'signal' AND ${t.storageGenerationId} IS NULL)
+      OR (${t.storage} = 'drive' AND ${t.storageGenerationId} IS NOT NULL)`,
   ),
 ]);
 

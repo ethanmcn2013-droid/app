@@ -46,25 +46,33 @@ The original brief proposed `Attachment`, `File`, `ExternalFile`,
 `StorageProvider`, `ProviderConnection`, `ProjectFile`, `TaskAttachment`.
 
 The system needs `provider_connections`, `workspace_storage` and
-`drive_folder_grants`, plus four additive columns on the existing `resources`
-table — which already carries `kind`, `provider`, `external_id`, `access_state`
-and `counts_against_storage` from migration `0017`, and was designed for
-exactly this.
+`drive_folder_grants`, plus three additive columns on the existing `resources`
+table: `storage`, `storage_generation_id` and `stored_path`. The table already
+carries `kind`, `provider`, `external_id`, `access_state` and
+`counts_against_storage` from migration `0017`, and was designed for exactly
+this.
 
 `attachments` is left alone. Retiring it is a separate change and must not be
 coupled to this one.
 
 `drive_folder_grants` is not bookkeeping — it is the security control. Because
-we store the `permission_id` Google returned, removing a member revokes exactly
-what we granted rather than guessing, and we can reconcile our belief against
-Drive's own answer.
+we store the `permission_id` Google returned against the immutable storage
+generation that received it, removing a member revokes exactly what we granted
+rather than guessing, and a handover cannot overwrite the old folder's repair
+evidence.
 
-## D4 · One connection per board, not one per person
+## D4 · One current storage owner per board; one Drive grant per person
 
 A board nominates a **storage owner** — a member with `manageProject` who
 connects their Drive. Every upload to that board, by any member, is written
 with the storage owner's credential into the storage owner's folder. Other
 members never see an OAuth screen.
+
+The current row is not the history. Both provider credentials and board-folder
+storage use immutable generated ids plus an `is_current` flag guarded by a
+partial unique index. This handles owner A → B → A, reconnecting a different
+Drive account, and replacing a deleted folder under the same connection
+without rewriting the identity attached to old files or grants.
 
 The alternative — each member connecting their own Drive — fails on the
 platform's rules: a folder created under one user's `drive.file` grant is not
@@ -222,3 +230,34 @@ pattern is already established and already tested.
 - `next.config.ts` `connect-src` now admits `vercel.com` and
   `*.blob.vercel-storage.com`. The browser originates two requests it never
   used to; without this an enforced policy would break every attachment.
+
+## D12 · Drive identity and custody are generation-aware
+
+**Corrected 2026-09-02 during WP-3 implementation.**
+
+`provider_account_id` stores Drive's `about.user.permissionId`, not an OpenID
+`sub`. `about.get(fields=user(permissionId,emailAddress))` is available under
+the already-ratified `drive.file` scope; an OpenID `sub` would require widening
+the OAuth request with identity scopes. D2 wins: scope is not widened for a
+field Drive already exposes safely.
+
+A connection id identifies one immutable credential generation. A storage id
+identifies one immutable board-folder generation. They cannot be the same
+identity: owner A → B → A and a replacement folder under owner A both reuse a
+connection relationship while requiring a new folder generation. Resources
+therefore store `storage_generation_id`; the connection is derived through
+`workspace_storage`. Grants key on `(storage_generation_id, user_id)` and carry
+the workspace in a composite foreign key so a permission receipt cannot be
+moved to another board.
+
+The database also enforces the storage pair: a Drive resource must name its
+immutable storage generation, while a Signal-native resource must not name
+one. Provider scope payloads must be valid JSON; the exact one-scope allowlist
+remains a WP-4 application contract because SQLite cannot safely encode the
+whole OAuth policy as a generic JSON-shape constraint.
+
+All custody foreign keys use `RESTRICT`. Account erasure, project deletion,
+disconnect and handover must explicitly revoke and clean in the right order;
+the database may not silently cascade or null the exact ids the repair path
+needs. This is an integrity backstop, not a substitute for the hand-wired
+libSQL lifecycle.
