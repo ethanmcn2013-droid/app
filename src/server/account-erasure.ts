@@ -43,7 +43,10 @@ import { deleteBytes } from "./storage";
 export type ErasureDb = LibSQLDatabase<typeof schema>;
 
 export type AccountErasureReceipt = Readonly<{
-  /** Plaintext exists only in memory until the unified orchestrator revokes it. */
+  /**
+   * Tokens from erasers that still require post-erasure best-effort handling.
+   * Project Drive revokes before deletion and therefore always returns none.
+   */
   googleRefreshTokens: readonly string[];
 }>;
 
@@ -69,6 +72,12 @@ export type AccountErasureOptions = Readonly<{
   revokeDriveFolderGrant?: (
     grant: AccountErasureDriveGrant,
   ) => Promise<void>;
+  /**
+   * Revoke one Project Drive credential while its encrypted row is retained.
+   * The implementation must be idempotent: an expired or already-revoked
+   * token counts as success. Any ambiguous or transient failure must reject.
+   */
+  revokeProjectDriveRefreshToken?: (refreshToken: string) => Promise<void>;
   /** Test seam; production delegates every disk/blob locator to storage.ts. */
   deleteStoredBytes?: (storedPath: string) => Promise<void>;
 }>;
@@ -99,10 +108,11 @@ export type AccountErasureOptions = Readonly<{
  * task in an owned workspace. Filtering by `workspace_id` alone would
  * leave those behind; we therefore also delete by the owned tasks' ids.
  *
- * Idempotent: every delete is a no-op once the rows are gone, so a retry
- * after a partial failure is safe. Returns without writing when no `users`
- * row exists for `clerkId` (nothing provisioned yet), the caller's Clerk
- * delete still honours the request.
+ * Idempotent: every delete is a no-op once the rows are gone, and provider
+ * revokers must accept already-absent grants and credentials, so a retry after
+ * a partial failure is safe. Returns without writing when no `users` row
+ * exists for `clerkId` (nothing provisioned yet), the caller's Clerk delete
+ * still honours the request.
  */
 export async function eraseAccountData(
   database: ErasureDb,
@@ -410,9 +420,27 @@ export async function eraseAccountData(
     await options.revokeDriveFolderGrant!(grant);
   }
 
+  // Revoke every credential generation only after its folder permissions no
+  // longer need access, but before consuming any journal, storage, or cipher
+  // row. A timeout or transient provider failure therefore leaves encrypted
+  // retry custody intact. A later local failure is also safe: the next attempt
+  // sends the same token and the provider's already-revoked result is success.
+  if (
+    googleRefreshTokens.length > 0 &&
+    !options.revokeProjectDriveRefreshToken
+  ) {
+    throw new Error(
+      "account erasure blocked: Project Drive credential revocation is not configured",
+    );
+  }
+  for (const refreshToken of googleRefreshTokens) {
+    await options.revokeProjectDriveRefreshToken!(refreshToken);
+  }
+
   // Only now may the journal evidence disappear. If any exact provider
   // revocation above failed, execution never reaches this delete and every
-  // grant and operation receipt remains available for an idempotent retry.
+  // grant, operation receipt, and encrypted credential remains available for
+  // an idempotent retry.
   const affectedOperationIds = affectedOperationRows.map(
     (operation) => operation.id,
   );
@@ -609,5 +637,7 @@ export async function eraseAccountData(
     }
   }
 
-  return { googleRefreshTokens };
+  // Project Drive plaintext never leaves this eraser. Every credential was
+  // confirmed revoked before its ciphertext row was deleted above.
+  return { googleRefreshTokens: [] };
 }

@@ -299,6 +299,29 @@ describe("Google Drive OAuth transport", () => {
     assert.equal(call.init?.method, "POST");
     assert.equal(formBody(call).get("token"), REFRESH_TOKEN);
   });
+
+  it("treats Google's already-expired or already-revoked response as idempotent success", async () => {
+    const fake = queuedFetch(jsonResponse({ error: "invalid_token" }, 400));
+
+    await revokeGoogleToken(REFRESH_TOKEN, fake.fetchImpl);
+
+    const call = onlyCall(fake.calls);
+    assert.equal(formBody(call).get("token"), REFRESH_TOKEN);
+  });
+
+  it("rejects transient revocation failures", async () => {
+    const fake = queuedFetch(
+      jsonResponse({ error: "temporarily_unavailable" }, 503),
+    );
+
+    await assert.rejects(
+      revokeGoogleToken(REFRESH_TOKEN, fake.fetchImpl),
+      (error: unknown) =>
+        error instanceof GoogleDriveProviderError &&
+        error.operation === "token-revocation" &&
+        error.retryable,
+    );
+  });
 });
 
 describe("Google Drive identity and file primitives", () => {

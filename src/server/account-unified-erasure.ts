@@ -60,8 +60,9 @@ export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void>
  *   1. Erase Notes (returns Google tokens collected before deletion),
  *      Timeline, and Signal in parallel. Each module failure is logged
  *      but does not abort the others.
- *   2. Erase Tasks after collecting its encrypted Google Drive generations.
- *   3. Revoke the deduplicated Google tokens collected in steps 1-2
+ *   2. Erase Tasks, strictly revoking each Project Drive credential before
+ *      its encrypted row is deleted.
+ *   3. Revoke deduplicated tokens returned by legacy/module erasers
  *      (best-effort, and only after the rows that held them are gone).
  *
  * The caller (POST /api/account/delete route → deleteAccountForUser →
@@ -79,6 +80,8 @@ export async function deleteUnifiedAccountDataWith(
     revokeTokens: RevokeTokensFn;
     /** WP5 must provide the exact, idempotent Drive permission revoker. */
     revokeDriveFolderGrant?: AccountErasureOptions["revokeDriveFolderGrant"];
+    /** Strict, idempotent Project Drive credential revoker. */
+    revokeProjectDriveRefreshToken?: AccountErasureOptions["revokeProjectDriveRefreshToken"];
     /** Test seam; production always uses the real Tasks erasure. */
     eraseTasks?: TasksEraseFn;
   },
@@ -118,13 +121,15 @@ export async function deleteUnifiedAccountDataWith(
   // Step 2: Tasks collects every encrypted Google Drive generation and exact
   // grant receipt before provider revocation. Only after those calls succeed
   // does it consume operation-journal evidence and the RESTRICT-backed rows;
-  // plaintext tokens live only long enough for this orchestrator to revoke.
+  // Project Drive plaintext never leaves that fail-closed erasure scope.
   let tasksResult: AccountErasureReceipt;
   try {
     tasksResult = opts.eraseTasks
       ? await opts.eraseTasks(database, clerkId)
       : await eraseTasksData(database, clerkId, {
           revokeDriveFolderGrant: opts.revokeDriveFolderGrant,
+          revokeProjectDriveRefreshToken:
+            opts.revokeProjectDriveRefreshToken,
         });
   } catch (tasksError) {
     // Notes may already have deleted the rows that held these credentials.

@@ -289,6 +289,16 @@ export async function revokeGoogleToken(
   );
   if (!response.ok) {
     const body = await responseBody(response, "token-revocation");
+    // Google documents `invalid_token` as meaning the token is expired or was
+    // already revoked. Both satisfy the erasure postcondition, so retries must
+    // treat that bounded response code as idempotent success. Other 4xx, all
+    // 5xx, and network failures remain errors because revocation is ambiguous.
+    if (
+      response.status === 400 &&
+      recordOf(body)?.error === "invalid_token"
+    ) {
+      return;
+    }
     throw providerResponseError("token-revocation", response.status, body);
   }
 }

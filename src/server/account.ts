@@ -15,6 +15,7 @@ import {
   eraseForUser as eraseSignalForUser,
 } from "@/modules/signal/server/signal-gdpr";
 import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
+import { revokeGoogleToken } from "@/server/connections/google-drive";
 
 /**
  * GDPR Art. 20 data portability — unified Signal Studio export.
@@ -54,5 +55,6 @@ export async function deleteAccountForUser(clerkId: string): Promise<void> {
     eraseSignal: eraseSignalForUser,
     revokeDriveFolderGrant: revokeExactDriveFolderGrant,
     revokeTokens: defaultRevokeGoogleTokens,
+    revokeProjectDriveRefreshToken: revokeGoogleToken,
   });
 }

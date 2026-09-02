@@ -221,6 +221,7 @@ test("erasure removes every target row across every table, leaves the bystander 
     await seed(client, probePath);
 
     const revokedGrantIds: string[] = [];
+    const revokedRefreshTokens: string[] = [];
     const receipt = await eraseAccountData(db, "clerk_target", {
       openProviderToken: ({ connectionId, refreshTokenCipher }) => {
         assert.equal(connectionId, "conn-target");
@@ -232,8 +233,16 @@ test("erasure removes every target row across every table, leaves the bystander 
         assert.ok(grant.connectionId.startsWith("conn-"));
         revokedGrantIds.push(grant.permissionId);
       },
+      revokeProjectDriveRefreshToken: async (refreshToken) => {
+        const retained = await client.execute(
+          "SELECT refresh_token_cipher FROM provider_connections WHERE id='conn-target'",
+        );
+        assert.equal(retained.rows[0]!.refresh_token_cipher, "cipher-target");
+        revokedRefreshTokens.push(refreshToken);
+      },
     });
-    assert.deepEqual(receipt.googleRefreshTokens, ["refresh-target"]);
+    assert.deepEqual(receipt.googleRefreshTokens, []);
+    assert.deepEqual(revokedRefreshTokens, ["refresh-target"]);
     assert.deepEqual(revokedGrantIds.sort(), [
       "grant-bystander-a",
       "grant-bystander-b",
@@ -408,6 +417,7 @@ test("erasure consumes Drive journal evidence before every RESTRICT parent", asy
       revokeDriveFolderGrant: async (grant) => {
         revoked.push(grant.permissionId);
       },
+      revokeProjectDriveRefreshToken: async () => {},
     });
 
     assert.deepEqual(revoked, ["permission-bystander"]);
@@ -504,6 +514,98 @@ test("erasing an unknown user is a no-op (no throw, no writes)", async () => {
     );
     await eraseAccountData(db, "clerk_does_not_exist");
     assert.equal(await count(client, "users"), 1);
+  } finally {
+    client.close();
+  }
+});
+
+test("Project Drive token revocation fails closed with encrypted retry custody", async () => {
+  const { client, db } = await freshDb();
+  try {
+    await client.executeMultiple(`
+      INSERT INTO users (id, clerk_id, color, initials) VALUES
+        ('u-target','clerk_target','#111','TT');
+      INSERT INTO provider_connections (
+        id, user_id, provider, provider_account_id, root_folder_id,
+        refresh_token_cipher, key_version, scopes, status, is_current,
+        connected_at
+      ) VALUES (
+        'conn-target','u-target','google_drive','perm-target','root-target',
+        'cipher-target',1,'["https://www.googleapis.com/auth/drive.file"]',
+        'active',1,1756800000
+      );
+    `);
+
+    const openProviderToken = () => "refresh-target";
+    await assert.rejects(
+      eraseAccountData(db, "clerk_target", { openProviderToken }),
+      /Project Drive credential revocation is not configured/,
+    );
+    assert.equal(
+      await count(
+        client,
+        "provider_connections WHERE id='conn-target' AND refresh_token_cipher='cipher-target'",
+      ),
+      1,
+      "missing revocation wiring must preserve the encrypted credential",
+    );
+
+    let revokeAttempts = 0;
+    await assert.rejects(
+      eraseAccountData(db, "clerk_target", {
+        openProviderToken,
+        revokeProjectDriveRefreshToken: async (refreshToken) => {
+          revokeAttempts += 1;
+          assert.equal(refreshToken, "refresh-target");
+          throw new Error("provider timeout");
+        },
+      }),
+      /provider timeout/,
+    );
+    assert.equal(revokeAttempts, 1);
+    assert.equal(await count(client, "users WHERE id='u-target'"), 1);
+    assert.equal(
+      await count(
+        client,
+        "provider_connections WHERE id='conn-target' AND refresh_token_cipher='cipher-target'",
+      ),
+      1,
+      "ambiguous provider failure must retain ciphertext for a retry",
+    );
+    assert.equal(
+      await count(
+        client,
+        "meta WHERE key='google-drive:account-erasure:user:u-target'",
+      ),
+      1,
+      "the executor fence must remain active while revocation is retriable",
+    );
+
+    await eraseAccountData(db, "clerk_target", {
+      openProviderToken,
+      revokeProjectDriveRefreshToken: async (refreshToken) => {
+        revokeAttempts += 1;
+        assert.equal(refreshToken, "refresh-target");
+        assert.equal(
+          await count(client, "provider_connections WHERE id='conn-target'"),
+          1,
+          "ciphertext custody must exist until idempotent revocation succeeds",
+        );
+        // A resolved call also represents Google's `invalid_token` response:
+        // expired/already-revoked is the desired provider postcondition.
+      },
+    });
+
+    assert.equal(revokeAttempts, 2);
+    assert.equal(await count(client, "provider_connections"), 0);
+    assert.equal(await count(client, "users"), 0);
+    assert.equal(
+      await count(
+        client,
+        "meta WHERE key='google-drive:account-erasure:user:u-target'",
+      ),
+      0,
+    );
   } finally {
     client.close();
   }
@@ -675,6 +777,7 @@ test("the account fence wins a retry-wait claim race before evidence deletion", 
         `);
         claimRowsAffected = claim.rowsAffected;
       },
+      revokeProjectDriveRefreshToken: async () => {},
     });
 
     assert.equal(claimRowsAffected, 0);
