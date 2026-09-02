@@ -6,7 +6,9 @@ import {
   GOOGLE_OAUTH_STATE_MAX_TTL_SECONDS,
   GoogleOAuthStateError,
   createGoogleOAuthState,
+  encodeGoogleOAuthStateCookie,
   googleOAuthStateSecretFromEnv,
+  parseGoogleOAuthStateCookie,
   verifyGoogleOAuthState,
   type CreatedGoogleOAuthState,
   type GoogleOAuthStateBinding,
@@ -280,6 +282,42 @@ describe("Google OAuth state · callback binding", () => {
         (error: GoogleOAuthStateError) =>
           error.reason === "binding-mismatch",
       );
+    }
+  });
+
+  it("round-trips one canonical callback cookie and refuses altered shapes", () => {
+    const created = createGoogleOAuthState(binding(), SECRET, { now: NOW });
+    const cookie = encodeGoogleOAuthStateCookie({
+      nonce: created.nonce,
+      projectId: assertProjectId("ws-project-789"),
+      intent: "connect-google-drive",
+    });
+    assert.deepEqual(parseGoogleOAuthStateCookie(cookie), {
+      nonce: created.nonce,
+      projectId: "ws-project-789",
+      intent: "connect-google-drive",
+    });
+
+    const decoded = JSON.parse(
+      Buffer.from(cookie, "base64url").toString("utf8"),
+    ) as Record<string, unknown>;
+    for (const invalid of [
+      undefined,
+      "",
+      "not+base64url",
+      Buffer.from(JSON.stringify({ ...decoded, extra: true }), "utf8").toString(
+        "base64url",
+      ),
+      Buffer.from(
+        JSON.stringify({ ...decoded, nonce: randomBytes(8).toString("base64url") }),
+        "utf8",
+      ).toString("base64url"),
+      Buffer.from(
+        JSON.stringify({ ...decoded, intent: "delete-google-drive" }),
+        "utf8",
+      ).toString("base64url"),
+    ]) {
+      assert.equal(parseGoogleOAuthStateCookie(invalid), null);
     }
   });
 });

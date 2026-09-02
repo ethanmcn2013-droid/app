@@ -58,6 +58,17 @@ export type CreatedGoogleOAuthState = Readonly<{
   expiresAt: number;
 }>;
 
+/**
+ * The non-secret values retained in the callback-only, httpOnly cookie.
+ * The signed state remains the authority; this cookie supplies the independent
+ * double-submit nonce and the expected Project/intent needed to verify it.
+ */
+export type GoogleOAuthStateCookie = Readonly<{
+  nonce: string;
+  projectId: ProjectId;
+  intent: GoogleOAuthStateIntent;
+}>;
+
 export type GoogleOAuthStateReason =
   | "missing-secret"
   | "weak-secret"
@@ -84,6 +95,7 @@ const MIN_SECRET_BYTES = 32;
 const NONCE_BYTES = 32;
 const MAX_STATE_CHARS = 4_096;
 const MAX_ENCODED_PAYLOAD_CHARS = 2_048;
+const MAX_COOKIE_CHARS = 1_024;
 const MAX_BINDING_CHARS = 256;
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 const BINDING_VALUE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
@@ -230,6 +242,71 @@ function isClaimsShape(value: unknown): value is GoogleOAuthStateClaims {
     claims.expiresAt - claims.issuedAt <=
       GOOGLE_OAUTH_STATE_MAX_TTL_SECONDS
   );
+}
+
+function canonicalCookieJson(value: GoogleOAuthStateCookie): string {
+  return JSON.stringify({
+    version: 1,
+    nonce: value.nonce,
+    projectId: value.projectId,
+    intent: value.intent,
+  });
+}
+
+/** Encode the callback binding without exposing it to browser JavaScript. */
+export function encodeGoogleOAuthStateCookie(
+  value: GoogleOAuthStateCookie,
+): string {
+  if (
+    !isNonce(value.nonce) ||
+    !isProjectId(value.projectId) ||
+    !isIntent(value.intent)
+  ) {
+    throw new GoogleOAuthStateError("invalid-binding");
+  }
+  return Buffer.from(canonicalCookieJson(value), "utf8").toString("base64url");
+}
+
+/**
+ * Decode a canonical callback binding. Invalid or browser-altered cookies are
+ * an ordinary OAuth refusal, so this returns `null` and never echoes input.
+ */
+export function parseGoogleOAuthStateCookie(
+  encoded: string | null | undefined,
+): GoogleOAuthStateCookie | null {
+  if (typeof encoded !== "string") return null;
+  const bytes = decodeCanonicalBase64url(encoded, MAX_COOKIE_CHARS);
+  if (!bytes) return null;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(bytes.toString("utf8"));
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+  const candidate = parsed as {
+    version?: unknown;
+    nonce?: unknown;
+    projectId?: unknown;
+    intent?: unknown;
+  };
+  if (
+    candidate.version !== 1 ||
+    !isNonce(candidate.nonce) ||
+    !isProjectId(candidate.projectId) ||
+    !isIntent(candidate.intent)
+  ) {
+    return null;
+  }
+  const result: GoogleOAuthStateCookie = {
+    nonce: candidate.nonce,
+    projectId: candidate.projectId,
+    intent: candidate.intent,
+  };
+  return encodeGoogleOAuthStateCookie(result) === encoded ? result : null;
 }
 
 function decodeClaims(encoded: string): GoogleOAuthStateClaims {
