@@ -194,6 +194,27 @@ export type ProjectDriveOperationRearmInput =
       previousReceipt: Readonly<Record<string, never>>;
     }>;
 
+/**
+ * A provider-truth result produced by a recovery worker after an account
+ * erasure fence has stopped all new Drive mutations for the related accounts.
+ *
+ * This API only records a result; it never calls the provider. Callers must
+ * use a read-only, operation-specific reconciliation path. In particular,
+ * `provider_mutation_absent` means the original attempt is known to be
+ * quiescent and an authoritative provider read proved that it made no change.
+ * A timeout, missing response, or inconclusive lookup is always
+ * `provider_outcome_unknown`.
+ */
+export type ProjectDriveOperationErasureRecoveryInput =
+  | (ProjectDriveOperationCompleteInput &
+      Readonly<{ providerTruth: "provider_mutation_confirmed" }>)
+  | Readonly<{
+      workspaceId: string;
+      operationId: string;
+      attemptFence: number;
+      providerTruth: "provider_mutation_absent" | "provider_outcome_unknown";
+    }>;
+
 export type ProjectDriveOperationJournalDependencies = Readonly<{
   database: ProjectDriveOperationJournalDatabase;
   randomOperationId?: () => string;
@@ -794,6 +815,64 @@ function canonicalRearm(
   }
 }
 
+type CanonicalErasureRecovery =
+  | Readonly<{
+      providerTruth: "provider_mutation_confirmed";
+      completion: CanonicalCompletion;
+    }>
+  | Readonly<{
+      providerTruth: "provider_mutation_absent" | "provider_outcome_unknown";
+      fence: ProjectDriveOperationFenceInput;
+    }>;
+
+export function canonicalProjectDriveOperationErasureRecoveryInput(
+  input: ProjectDriveOperationErasureRecoveryInput,
+): CanonicalErasureRecovery {
+  if (!isRecord(input)) {
+    throw new ProjectDriveOperationInputError("invalid-shape");
+  }
+  switch (input.providerTruth) {
+    case "provider_mutation_confirmed": {
+      assertExactKeys(input, [
+        "workspaceId",
+        "operationId",
+        "attemptFence",
+        "operationKind",
+        "receipt",
+        "providerTruth",
+      ]);
+      return {
+        providerTruth: "provider_mutation_confirmed",
+        completion: canonicalCompletion({
+          workspaceId: input.workspaceId,
+          operationId: input.operationId,
+          attemptFence: input.attemptFence,
+          operationKind: input.operationKind,
+          receipt: input.receipt,
+        } as ProjectDriveOperationCompleteInput),
+      };
+    }
+    case "provider_mutation_absent":
+    case "provider_outcome_unknown":
+      assertExactKeys(input, [
+        "workspaceId",
+        "operationId",
+        "attemptFence",
+        "providerTruth",
+      ]);
+      return {
+        providerTruth: input.providerTruth,
+        fence: canonicalProjectDriveOperationFenceInput({
+          workspaceId: input.workspaceId,
+          operationId: input.operationId,
+          attemptFence: input.attemptFence,
+        }),
+      };
+    default:
+      throw new ProjectDriveOperationInputError("invalid-shape");
+  }
+}
+
 /**
  * Durable, provider-agnostic control plane for Project Drive operations.
  *
@@ -960,6 +1039,79 @@ export function createProjectDriveOperationJournal(
       });
     },
 
+    /**
+     * Fence an expired provider attempt for read-only erasure recovery.
+     *
+     * The attempt count deliberately does not change: a late worker cannot
+     * use the normal completion path once the status becomes
+     * `manual_attention`, but it can hand its exact result to
+     * `recordErasureRecovery` under the original attempt fence. This method
+     * performs no provider I/O and never makes the row claimable again.
+     */
+    async quarantineExpiredForErasure(
+      input: ProjectDriveOperationLocator,
+    ): Promise<
+      | Readonly<{
+          outcome: "quarantined";
+          replayed: boolean;
+          operation: ProjectDriveOperationView;
+        }>
+      | ProjectDriveOperationConflict
+    > {
+      const { workspaceId, operationId } =
+        canonicalProjectDriveOperationLocator(input);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
+      const [quarantined] = await deps.database
+        .update(projectDriveOperations)
+        .set({
+          status: "manual_attention",
+          nextAttemptAt: null,
+          leaseExpiresAt: null,
+          lastErrorCode: "ambiguous_provider_result",
+          updatedAt: now,
+        })
+        .where(
+          byWorkspace(
+            projectDriveOperations.workspaceId,
+            workspaceId,
+            eq(projectDriveOperations.id, operationId),
+            eq(projectDriveOperations.status, "running"),
+            lte(projectDriveOperations.lastAttemptAt, now),
+            lte(projectDriveOperations.leaseExpiresAt, now),
+            isNull(projectDriveOperations.providerFolderId),
+            isNull(projectDriveOperations.providerFolderWebViewLink),
+            isNull(projectDriveOperations.providerPermissionId),
+          ),
+        )
+        .returning();
+      if (quarantined) {
+        return Object.freeze({
+          outcome: "quarantined",
+          replayed: false,
+          operation: viewFromRow(quarantined),
+        });
+      }
+
+      const existing = await readById(workspaceId, operationId);
+      if (
+        !existing ||
+        existing.status !== "manual_attention" ||
+        existing.attemptCount < 1 ||
+        existing.lastAttemptAt === null ||
+        existing.leaseExpiresAt !== null ||
+        existing.providerFolderId !== null ||
+        existing.providerFolderWebViewLink !== null ||
+        existing.providerPermissionId !== null
+      ) {
+        return NEUTRAL_CONFLICT;
+      }
+      return Object.freeze({
+        outcome: "quarantined",
+        replayed: true,
+        operation: viewFromRow(existing),
+      });
+    },
+
     async complete(input: ProjectDriveOperationCompleteInput): Promise<
       | Readonly<{
           outcome: "completed";
@@ -1118,6 +1270,189 @@ export function createProjectDriveOperationJournal(
       return Object.freeze({
         outcome: "manual_attention",
         operation: viewFromRow(marked),
+      });
+    },
+
+    /**
+     * Persist provider truth for an erasure-quarantined attempt.
+     *
+     * This is intentionally not a retry API. It accepts only an exact stable
+     * receipt, a definitive no-mutation result, or an unknown result. Unknown
+     * truth remains non-terminal and keeps all evidence. The account-fenced
+     * orchestrator is the production entry point and proves that a related
+     * erasure fence is active in the same transaction as this CAS.
+     */
+    async recordErasureRecovery(
+      input: ProjectDriveOperationErasureRecoveryInput,
+    ): Promise<
+      | Readonly<{
+          outcome: "reconciled";
+          replayed: boolean;
+          providerTruth:
+            | "provider_mutation_confirmed"
+            | "provider_mutation_absent";
+          operation: ProjectDriveOperationView;
+        }>
+      | Readonly<{
+          outcome: "unresolved";
+          providerTruth: "provider_outcome_unknown";
+          operation: ProjectDriveOperationView;
+        }>
+      | ProjectDriveOperationConflict
+    > {
+      const canonical = canonicalProjectDriveOperationErasureRecoveryInput(input);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
+
+      if (canonical.providerTruth === "provider_mutation_confirmed") {
+        const completion = canonical.completion;
+        const [reconciled] = await deps.database
+          .update(projectDriveOperations)
+          .set({
+            status: "succeeded",
+            providerFolderId: completion.providerFolderId,
+            providerFolderWebViewLink: completion.providerFolderWebViewLink,
+            providerPermissionId: completion.providerPermissionId,
+            nextAttemptAt: null,
+            leaseExpiresAt: null,
+            lastErrorCode: null,
+            updatedAt: now,
+            completedAt: now,
+          })
+          .where(
+            byWorkspace(
+              projectDriveOperations.workspaceId,
+              completion.workspaceId,
+              eq(projectDriveOperations.id, completion.operationId),
+              eq(
+                projectDriveOperations.operationKind,
+                completion.operationKind,
+              ),
+              eq(projectDriveOperations.status, "manual_attention"),
+              eq(
+                projectDriveOperations.attemptCount,
+                completion.attemptFence,
+              ),
+              lte(projectDriveOperations.lastAttemptAt, now),
+              lte(projectDriveOperations.updatedAt, now),
+              isNull(projectDriveOperations.providerFolderId),
+              isNull(projectDriveOperations.providerFolderWebViewLink),
+              isNull(projectDriveOperations.providerPermissionId),
+            ),
+          )
+          .returning();
+        if (reconciled) {
+          return Object.freeze({
+            outcome: "reconciled",
+            replayed: false,
+            providerTruth: "provider_mutation_confirmed",
+            operation: viewFromRow(reconciled),
+          });
+        }
+
+        const existing = await readById(
+          completion.workspaceId,
+          completion.operationId,
+        );
+        if (!existing || !rowHasCompletion(existing, completion)) {
+          return NEUTRAL_CONFLICT;
+        }
+        return Object.freeze({
+          outcome: "reconciled",
+          replayed: true,
+          providerTruth: "provider_mutation_confirmed",
+          operation: viewFromRow(existing),
+        });
+      }
+
+      const { workspaceId, operationId, attemptFence } = canonical.fence;
+      if (canonical.providerTruth === "provider_mutation_absent") {
+        const [reconciled] = await deps.database
+          .update(projectDriveOperations)
+          .set({
+            status: "cancelled",
+            nextAttemptAt: null,
+            leaseExpiresAt: null,
+            // A terminal attempted cancellation with no error is the durable
+            // marker that an authoritative recovery proved no provider write.
+            lastErrorCode: null,
+            updatedAt: now,
+            completedAt: now,
+          })
+          .where(
+            byWorkspace(
+              projectDriveOperations.workspaceId,
+              workspaceId,
+              eq(projectDriveOperations.id, operationId),
+              eq(projectDriveOperations.status, "manual_attention"),
+              eq(projectDriveOperations.attemptCount, attemptFence),
+              lte(projectDriveOperations.lastAttemptAt, now),
+              lte(projectDriveOperations.updatedAt, now),
+              isNull(projectDriveOperations.providerFolderId),
+              isNull(projectDriveOperations.providerFolderWebViewLink),
+              isNull(projectDriveOperations.providerPermissionId),
+            ),
+          )
+          .returning();
+        if (reconciled) {
+          return Object.freeze({
+            outcome: "reconciled",
+            replayed: false,
+            providerTruth: "provider_mutation_absent",
+            operation: viewFromRow(reconciled),
+          });
+        }
+
+        const existing = await readById(workspaceId, operationId);
+        if (
+          !existing ||
+          existing.status !== "cancelled" ||
+          existing.attemptCount !== attemptFence ||
+          existing.lastAttemptAt === null ||
+          existing.lastErrorCode !== null ||
+          existing.completedAt === null ||
+          existing.providerFolderId !== null ||
+          existing.providerFolderWebViewLink !== null ||
+          existing.providerPermissionId !== null
+        ) {
+          return NEUTRAL_CONFLICT;
+        }
+        return Object.freeze({
+          outcome: "reconciled",
+          replayed: true,
+          providerTruth: "provider_mutation_absent",
+          operation: viewFromRow(existing),
+        });
+      }
+
+      const [unresolved] = await deps.database
+        .update(projectDriveOperations)
+        .set({
+          status: "manual_attention",
+          nextAttemptAt: null,
+          leaseExpiresAt: null,
+          lastErrorCode: "ambiguous_provider_result",
+          updatedAt: now,
+        })
+        .where(
+          byWorkspace(
+            projectDriveOperations.workspaceId,
+            workspaceId,
+            eq(projectDriveOperations.id, operationId),
+            eq(projectDriveOperations.status, "manual_attention"),
+            eq(projectDriveOperations.attemptCount, attemptFence),
+            lte(projectDriveOperations.lastAttemptAt, now),
+            lte(projectDriveOperations.updatedAt, now),
+            isNull(projectDriveOperations.providerFolderId),
+            isNull(projectDriveOperations.providerFolderWebViewLink),
+            isNull(projectDriveOperations.providerPermissionId),
+          ),
+        )
+        .returning();
+      if (!unresolved) return NEUTRAL_CONFLICT;
+      return Object.freeze({
+        outcome: "unresolved",
+        providerTruth: "provider_outcome_unknown",
+        operation: viewFromRow(unresolved),
       });
     },
 

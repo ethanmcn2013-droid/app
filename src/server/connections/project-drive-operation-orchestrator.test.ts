@@ -19,6 +19,7 @@ import {
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import {
+  createProjectDriveOperationJournal,
   ProjectDriveOperationInputError,
   type ProjectDriveOperationPrepareInput,
 } from "./project-drive-operation-journal";
@@ -712,6 +713,273 @@ describe("Project Drive operation orchestration · complete account lineage", ()
         }),
         CONFLICT,
       );
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe("Project Drive operation orchestration · erasure recovery", () => {
+  const EXPIRED_ATTEMPT = new Date("2025-09-01T12:00:00.000Z");
+  const EXPIRED_LEASE = new Date("2025-09-01T12:01:00.000Z");
+
+  it("quarantines an expired lease only while a related erasure fence is active", async () => {
+    const { database, cleanup } = await freshOrchestratorDb();
+    try {
+      const service = orchestrator(database, []);
+      await database.insert(projectDriveOperations).values({
+        id: "expired-rename",
+        workspaceId: "ws-a",
+        operationKind: "folder_rename",
+        status: "running",
+        dedupeKey: "c".repeat(64),
+        storageGenerationId: "storage-a",
+        workspaceRevision: 9,
+        attemptCount: 1,
+        lastAttemptAt: new Date(START - 60_000),
+        leaseExpiresAt: new Date(START),
+        createdAt: new Date(START - 60_000),
+        updatedAt: new Date(START - 60_000),
+      });
+
+      assert.deepEqual(
+        await service.quarantineExpiredForErasure({
+          workspaceId: "ws-a",
+          operationId: "expired-rename",
+        }),
+        CONFLICT,
+      );
+      assert.equal(await operationStatus(database, "expired-rename"), "running");
+
+      await putFence(database, "u-a");
+      const quarantined = await service.quarantineExpiredForErasure({
+        workspaceId: "ws-a",
+        operationId: "expired-rename",
+      });
+      assert.equal(quarantined.outcome, "quarantined");
+      if (quarantined.outcome !== "quarantined") {
+        throw new Error("unreachable");
+      }
+      assert.equal(quarantined.replayed, false);
+      assert.equal(quarantined.operation.status, "manual_attention");
+      assert.equal(quarantined.operation.attemptCount, 1);
+
+      const replay = await service.quarantineExpiredForErasure({
+        workspaceId: "ws-a",
+        operationId: "expired-rename",
+      });
+      assert.equal(replay.outcome, "quarantined");
+      if (replay.outcome === "quarantined") assert.equal(replay.replayed, true);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("keeps unknown provider truth fenced, then accepts definitive absence without a blind retry", async () => {
+    const { database, cleanup } = await freshOrchestratorDb();
+    try {
+      await database.insert(projectDriveOperations).values({
+        id: "expired-delete",
+        workspaceId: "ws-a",
+        operationKind: "project_delete",
+        status: "running",
+        dedupeKey: "a".repeat(64),
+        attemptCount: 1,
+        lastAttemptAt: EXPIRED_ATTEMPT,
+        leaseExpiresAt: EXPIRED_LEASE,
+        createdAt: EXPIRED_ATTEMPT,
+        updatedAt: EXPIRED_ATTEMPT,
+      });
+
+      await assert.rejects(
+        eraseAccountData(database, "clerk-a", {
+          openProviderToken: ({ refreshTokenCipher }) => refreshTokenCipher,
+        }),
+        /provider truth requires recovery/,
+      );
+      const service = orchestrator(database, []);
+      const [quarantined] = await database
+        .select()
+        .from(projectDriveOperations)
+        .where(eq(projectDriveOperations.id, "expired-delete"));
+      assert.equal(quarantined?.status, "manual_attention");
+      assert.equal(quarantined?.attemptCount, 1);
+      assert.equal(quarantined?.leaseExpiresAt, null);
+      assert.equal(quarantined?.lastErrorCode, "ambiguous_provider_result");
+
+      const unknown = await service.recordErasureRecovery({
+        workspaceId: "ws-a",
+        operationId: "expired-delete",
+        attemptFence: 1,
+        providerTruth: "provider_outcome_unknown",
+      });
+      assert.equal(unknown.outcome, "unresolved");
+      await assert.rejects(
+        service.recordErasureRecovery({
+          workspaceId: "ws-a",
+          operationId: "expired-delete",
+          attemptFence: 1,
+          providerTruth: "provider_outcome_unknown",
+          rawProviderError: "secret provider response",
+        } as never),
+        (error: unknown) =>
+          error instanceof ProjectDriveOperationInputError &&
+          error.code === "invalid-shape" &&
+          !error.message.includes("secret provider response"),
+      );
+      assert.deepEqual(
+        await service.claim({
+          workspaceId: "ws-a",
+          operationId: "expired-delete",
+        }),
+        CONFLICT,
+        "recovery must never turn an ambiguous operation back into provider work",
+      );
+      assert.deepEqual(
+        await service.requeueManualAttention({
+          workspaceId: "ws-a",
+          operationId: "expired-delete",
+          attemptFence: 1,
+        }),
+        CONFLICT,
+      );
+      await assert.rejects(
+        eraseAccountData(database, "clerk-a", {
+          openProviderToken: ({ refreshTokenCipher }) => refreshTokenCipher,
+        }),
+        /provider truth requires recovery/,
+      );
+
+      assert.deepEqual(
+        await service.recordErasureRecovery({
+          workspaceId: "ws-a",
+          operationId: "expired-delete",
+          attemptFence: 2,
+          providerTruth: "provider_mutation_absent",
+        }),
+        CONFLICT,
+        "a stale or invented attempt fence cannot resolve evidence",
+      );
+      const absent = await service.recordErasureRecovery({
+        workspaceId: "ws-a",
+        operationId: "expired-delete",
+        attemptFence: 1,
+        providerTruth: "provider_mutation_absent",
+      });
+      assert.equal(absent.outcome, "reconciled");
+      if (absent.outcome !== "reconciled") throw new Error("unreachable");
+      assert.equal(absent.providerTruth, "provider_mutation_absent");
+      assert.equal(absent.operation.status, "cancelled");
+      assert.equal(absent.operation.lastErrorCode, null);
+      const replay = await service.recordErasureRecovery({
+        workspaceId: "ws-a",
+        operationId: "expired-delete",
+        attemptFence: 1,
+        providerTruth: "provider_mutation_absent",
+      });
+      assert.equal(replay.outcome, "reconciled");
+      if (replay.outcome === "reconciled") assert.equal(replay.replayed, true);
+
+      await eraseAccountData(database, "clerk-a", {
+        openProviderToken: ({ refreshTokenCipher }) => refreshTokenCipher,
+        revokeProjectDriveRefreshToken: async () => {},
+      });
+      assert.equal(await operationStatus(database, "expired-delete"), null);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("fences late completion but lets the same attempt materialize its exact permission receipt", async () => {
+    const { database, cleanup } = await freshOrchestratorDb();
+    try {
+      await database.insert(projectDriveOperations).values({
+        id: "expired-grant",
+        workspaceId: "ws-a",
+        operationKind: "grant_create",
+        status: "running",
+        dedupeKey: "b".repeat(64),
+        storageGenerationId: "storage-a",
+        subjectUserId: "u-member",
+        granteeEmail: "member@example.test",
+        grantRole: "writer",
+        attemptCount: 1,
+        lastAttemptAt: EXPIRED_ATTEMPT,
+        leaseExpiresAt: EXPIRED_LEASE,
+        createdAt: EXPIRED_ATTEMPT,
+        updatedAt: EXPIRED_ATTEMPT,
+      });
+
+      await assert.rejects(
+        eraseAccountData(database, "clerk-member"),
+        /attempted Project Drive grant has no exact permission receipt/,
+      );
+      const rawJournal = createProjectDriveOperationJournal({
+        database,
+        databaseNowSeconds: () => sql<Date>`${Math.floor(START / 1_000)}`,
+      });
+      assert.deepEqual(
+        await rawJournal.complete({
+          workspaceId: "ws-a",
+          operationId: "expired-grant",
+          attemptFence: 1,
+          operationKind: "grant_create",
+          receipt: { providerPermissionId: "permission-late" },
+        }),
+        CONFLICT,
+        "the ordinary completion path must lose after erasure quarantines it",
+      );
+
+      const service = orchestrator(database, []);
+      const recovered = await service.recordErasureRecovery({
+        workspaceId: "ws-a",
+        operationId: "expired-grant",
+        attemptFence: 1,
+        operationKind: "grant_create",
+        receipt: { providerPermissionId: "permission-late" },
+        providerTruth: "provider_mutation_confirmed",
+      });
+      assert.equal(recovered.outcome, "reconciled");
+      if (recovered.outcome !== "reconciled") throw new Error("unreachable");
+      assert.equal(recovered.operation.status, "succeeded");
+      assert.deepEqual(recovered.operation.receipt, {
+        providerPermissionId: "permission-late",
+      });
+
+      const lateWorkerReplay = await service.recordErasureRecovery({
+        workspaceId: "ws-a",
+        operationId: "expired-grant",
+        attemptFence: 1,
+        operationKind: "grant_create",
+        receipt: { providerPermissionId: "permission-late" },
+        providerTruth: "provider_mutation_confirmed",
+      });
+      assert.equal(lateWorkerReplay.outcome, "reconciled");
+      if (lateWorkerReplay.outcome === "reconciled") {
+        assert.equal(lateWorkerReplay.replayed, true);
+      }
+      assert.deepEqual(
+        await service.recordErasureRecovery({
+          workspaceId: "ws-a",
+          operationId: "expired-grant",
+          attemptFence: 1,
+          operationKind: "grant_create",
+          receipt: { providerPermissionId: "permission-guessed" },
+          providerTruth: "provider_mutation_confirmed",
+        }),
+        CONFLICT,
+      );
+
+      const revoked: string[] = [];
+      await eraseAccountData(database, "clerk-member", {
+        revokeDriveFolderGrant: async (grant) => {
+          assert.equal(grant.connectionId, "connection-a");
+          assert.equal(grant.folderId, "folder-a");
+          revoked.push(grant.permissionId);
+        },
+      });
+      assert.deepEqual(revoked, ["permission-late"]);
+      assert.equal(await operationStatus(database, "expired-grant"), null);
     } finally {
       cleanup();
     }

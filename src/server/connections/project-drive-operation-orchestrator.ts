@@ -14,11 +14,13 @@ import {
 import * as schema from "@/server/db/schema";
 import { byWorkspace } from "@/server/db/tenant";
 import {
+  canonicalProjectDriveOperationErasureRecoveryInput,
   canonicalProjectDriveOperationFenceInput,
   canonicalProjectDriveOperationLocator,
   canonicalProjectDriveOperationPrepareInput,
   createProjectDriveOperationJournal,
   type ProjectDriveOperationConflict,
+  type ProjectDriveOperationErasureRecoveryInput,
   type ProjectDriveOperationFenceInput,
   type ProjectDriveOperationJournalDependencies,
   type ProjectDriveOperationLocator,
@@ -301,6 +303,78 @@ export function createAccountFencedProjectDriveOperationJournal(
             return NEUTRAL_CONFLICT;
           }
           return journalFor(transaction).claim(canonical);
+        },
+        { behavior: "immediate" },
+      );
+    },
+
+    /**
+     * Move an expired attempt into a non-claimable recovery state while a
+     * related account-erasure fence is active. This is the inverse of the
+     * ordinary claim gate: without an active fence it returns the same neutral
+     * conflict result and reveals no operation details.
+     */
+    async quarantineExpiredForErasure(input: ProjectDriveOperationLocator) {
+      const canonical = canonicalProjectDriveOperationLocator(input);
+      return database.transaction(
+        async (transaction) => {
+          const operation = await readStoredOperation(transaction, canonical);
+          const relations = operation
+            ? relationsFromStoredOperation(operation)
+            : null;
+          const accountIds = relations
+            ? await resolveRelatedAccountIds(transaction, relations)
+            : null;
+          if (
+            !accountIds ||
+            !(await hasRelatedAccountFence(transaction, accountIds))
+          ) {
+            return NEUTRAL_CONFLICT;
+          }
+          return journalFor(transaction).quarantineExpiredForErasure(
+            canonical,
+          );
+        },
+        { behavior: "immediate" },
+      );
+    },
+
+    /**
+     * Record a read-only recovery result while the account fence remains
+     * active. This can materialize an exact receipt or a definitive
+     * no-mutation result, but it cannot claim work or initiate provider I/O.
+     */
+    async recordErasureRecovery(
+      input: ProjectDriveOperationErasureRecoveryInput,
+    ) {
+      const canonical =
+        canonicalProjectDriveOperationErasureRecoveryInput(input);
+      const locator =
+        canonical.providerTruth === "provider_mutation_confirmed"
+          ? {
+              workspaceId: canonical.completion.workspaceId,
+              operationId: canonical.completion.operationId,
+            }
+          : {
+              workspaceId: canonical.fence.workspaceId,
+              operationId: canonical.fence.operationId,
+            };
+      return database.transaction(
+        async (transaction) => {
+          const operation = await readStoredOperation(transaction, locator);
+          const relations = operation
+            ? relationsFromStoredOperation(operation)
+            : null;
+          const accountIds = relations
+            ? await resolveRelatedAccountIds(transaction, relations)
+            : null;
+          if (
+            !accountIds ||
+            !(await hasRelatedAccountFence(transaction, accountIds))
+          ) {
+            return NEUTRAL_CONFLICT;
+          }
+          return journalFor(transaction).recordErasureRecovery(input);
         },
         { behavior: "immediate" },
       );

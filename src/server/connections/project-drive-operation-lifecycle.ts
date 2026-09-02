@@ -24,8 +24,11 @@ export function isGoogleDriveOperationClaimableStatus(
 
 /**
  * Account erasure uses `manual_attention` as the durable fence for work that
- * may already have reached Google, and `cancelled` only for untouched
- * pending/attempt-zero work with no provider receipt.
+ * may already have reached Google. It uses `cancelled` for untouched
+ * pending/attempt-zero work, or for an attempted operation only after the
+ * recovery-only journal API records a definitive no-provider-mutation result.
+ * Such a reconciled cancellation has a null error code; attempted cancelled
+ * rows carrying an error remain ambiguous and block evidence deletion.
  */
 export const GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS =
   "manual_attention" as const;
@@ -50,6 +53,11 @@ export const GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE = "active:v1";
  * therefore covers both its source storage and target connection. If a claim
  * commits first, erasure's post-fence re-read observes it and fails closed; if
  * erasure commits first, the executor declines new or requeued work.
+ *
+ * An expired claim is never reclaimed while this fence exists. Recovery may
+ * only quarantine it and record the result of a read-only, provider-specific
+ * reconciliation. Unknown truth stays in manual attention; an exact receipt
+ * or definitive absence is required before erasure proceeds.
  */
 export function googleDriveAccountErasureFenceKey(userId: string): string {
   if (!userId) {

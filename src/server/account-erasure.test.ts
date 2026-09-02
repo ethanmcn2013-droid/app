@@ -721,7 +721,7 @@ test("erasure retains every attempted Drive grant, including cancelled work, unt
   }
 });
 
-test("the account fence wins a retry-wait claim race before evidence deletion", async () => {
+test("the account fence wins a retry-wait claim race and retains evidence for recovery", async () => {
   const { client, db } = await freshDb();
   try {
     await client.execute("PRAGMA foreign_keys = ON");
@@ -766,52 +766,51 @@ test("the account fence wins a retry-wait claim race before evidence deletion", 
       );
     `);
 
-    let claimRowsAffected = -1;
-    await eraseAccountData(db, "clerk_target", {
-      openProviderToken: () => "refresh-target",
-      revokeDriveFolderGrant: async () => {
-        const fenced = await client.execute(
-          "SELECT status, next_attempt_at FROM project_drive_operations WHERE id='operation-retry'",
-        );
-        assert.equal(fenced.rows[0]!.status, "manual_attention");
-        assert.equal(fenced.rows[0]!.next_attempt_at, null);
-        assert.equal(
-          await count(
-            client,
-            "meta WHERE key='google-drive:account-erasure:user:u-target'",
-          ),
-          1,
-        );
-
-        // The worker's real contract is an atomic SQL status CAS plus the
-        // account-fence check. It must lose once the erasure transaction wins.
-        const claim = await client.execute(`
-          UPDATE project_drive_operations
-          SET status='running', attempt_count=attempt_count+1,
-              last_attempt_at=unixepoch(), lease_expires_at=unixepoch()+60,
-              next_attempt_at=NULL, updated_at=unixepoch()
-          WHERE id='operation-retry'
-            AND status IN ('pending','retry_wait','running')
-            AND NOT EXISTS (
-              SELECT 1 FROM meta
-              WHERE key='google-drive:account-erasure:user:u-target'
-            )
-        `);
-        claimRowsAffected = claim.rowsAffected;
-      },
-      revokeProjectDriveRefreshToken: async () => {},
-    });
-
-    assert.equal(claimRowsAffected, 0);
-    assert.equal(await count(client, "project_drive_operations"), 0);
-    assert.equal(await count(client, "users WHERE id='u-target'"), 0);
+    await assert.rejects(
+      eraseAccountData(db, "clerk_target", {
+        openProviderToken: () => "refresh-target",
+      }),
+      /provider truth requires recovery/,
+    );
+    const fenced = await client.execute(
+      "SELECT status, next_attempt_at FROM project_drive_operations WHERE id='operation-retry'",
+    );
+    assert.equal(fenced.rows[0]!.status, "manual_attention");
+    assert.equal(fenced.rows[0]!.next_attempt_at, null);
     assert.equal(
       await count(
         client,
         "meta WHERE key='google-drive:account-erasure:user:u-target'",
       ),
-      0,
-      "successful account deletion must retire its fence atomically",
+      1,
+    );
+
+    // The worker's real contract is an atomic SQL status CAS plus the
+    // account-fence check. It must lose once the erasure transaction wins.
+    const claim = await client.execute(`
+      UPDATE project_drive_operations
+      SET status='running', attempt_count=attempt_count+1,
+          last_attempt_at=unixepoch(), lease_expires_at=unixepoch()+60,
+          next_attempt_at=NULL, updated_at=unixepoch()
+      WHERE id='operation-retry'
+        AND status IN ('pending','retry_wait','running')
+        AND NOT EXISTS (
+          SELECT 1 FROM meta
+          WHERE key='google-drive:account-erasure:user:u-target'
+        )
+    `);
+    const claimRowsAffected = claim.rowsAffected;
+
+    assert.equal(claimRowsAffected, 0);
+    assert.equal(await count(client, "project_drive_operations"), 1);
+    assert.equal(await count(client, "users WHERE id='u-target'"), 1);
+    assert.equal(
+      await count(
+        client,
+        "meta WHERE key='google-drive:account-erasure:user:u-target'",
+      ),
+      1,
+      "incomplete recovery must retain the fence and journal evidence",
     );
     assert.equal(
       (await client.execute("PRAGMA foreign_key_check")).rows.length,

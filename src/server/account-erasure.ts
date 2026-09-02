@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, like, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, lte, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import {
@@ -219,9 +219,13 @@ export async function eraseAccountData(
   // Establish a durable account fence and freeze every affected operation in
   // one transaction before snapshotting any provider receipt. Untouched work
   // is safe to cancel. Anything attempted or carrying a provider receipt is
-  // held for review in an unclaimable state. The executor contract lives in
-  // project-drive-operation-lifecycle.ts and requires the account fence plus
-  // status predicate to be checked in its own atomic prepare/claim CAS.
+  // held for review in an unclaimable state. An expired running attempt is
+  // quarantined here too: leaving it `running` would wedge deletion forever
+  // because the account fence correctly prevents a normal lease reclaim.
+  // Recovery may now record provider truth, but it cannot claim or retry work.
+  // The executor contract lives in project-drive-operation-lifecycle.ts and
+  // requires the account fence plus status predicate to be checked in its own
+  // atomic prepare/claim CAS.
   const [, , , affectedOperationRows] = await database.batch([
     database
       .insert(meta)
@@ -261,18 +265,28 @@ export async function eraseAccountData(
         lastAttemptAt: sql`coalesce(${projectDriveOperations.lastAttemptAt}, max(${projectDriveOperations.createdAt}, unixepoch()))`,
         nextAttemptAt: null,
         leaseExpiresAt: null,
-        lastErrorCode: sql`coalesce(${projectDriveOperations.lastErrorCode}, ${GOOGLE_DRIVE_OPERATION_ERASURE_ERROR_CODE})`,
+        lastErrorCode: sql`CASE
+          WHEN ${projectDriveOperations.status} = 'running'
+            THEN 'ambiguous_provider_result'
+          ELSE coalesce(${projectDriveOperations.lastErrorCode}, ${GOOGLE_DRIVE_OPERATION_ERASURE_ERROR_CODE})
+        END`,
         completedAt: null,
         updatedAt: sql`max(${projectDriveOperations.updatedAt}, ${projectDriveOperations.createdAt}, unixepoch())`,
       })
       .where(
         and(
           affectedOperationScope,
-          inArray(projectDriveOperations.status, [
-            "pending",
-            "retry_wait",
-            GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS,
-          ]),
+          or(
+            inArray(projectDriveOperations.status, [
+              "pending",
+              "retry_wait",
+              GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS,
+            ]),
+            and(
+              eq(projectDriveOperations.status, "running"),
+              lte(projectDriveOperations.leaseExpiresAt, sql`unixepoch()`),
+            ),
+          ),
         ),
       ),
     // libSQL batches are one transaction. Re-read only after both fence writes;
@@ -285,6 +299,7 @@ export async function eraseAccountData(
         status: projectDriveOperations.status,
         attemptCount: projectDriveOperations.attemptCount,
         lastAttemptAt: projectDriveOperations.lastAttemptAt,
+        lastErrorCode: projectDriveOperations.lastErrorCode,
         workspaceId: projectDriveOperations.workspaceId,
         storageGenerationId: projectDriveOperations.storageGenerationId,
         subjectUserId: projectDriveOperations.subjectUserId,
@@ -398,7 +413,12 @@ export async function eraseAccountData(
         (operation.status === "pending" || operation.status === "cancelled") &&
         operation.attemptCount === 0 &&
         operation.lastAttemptAt === null;
-      if (!neverReachedGoogle) {
+      const confirmedNoProviderMutation =
+        operation.status === "cancelled" &&
+        operation.attemptCount > 0 &&
+        operation.lastAttemptAt !== null &&
+        operation.lastErrorCode === null;
+      if (!neverReachedGoogle && !confirmedNoProviderMutation) {
         throw new Error(
           "account erasure blocked: attempted Project Drive grant has no exact permission receipt",
         );
@@ -425,6 +445,19 @@ export async function eraseAccountData(
       userId: operation.subjectUserId,
       permissionId: operation.providerPermissionId,
     });
+  }
+  const unresolvedOperation = affectedOperationRows.find(
+    (operation) =>
+      operation.status === GOOGLE_DRIVE_OPERATION_ERASURE_REVIEW_STATUS ||
+      (operation.status === "cancelled" &&
+        operation.attemptCount > 0 &&
+        (operation.lastAttemptAt === null ||
+          operation.lastErrorCode !== null)),
+  );
+  if (unresolvedOperation) {
+    throw new Error(
+      "account erasure blocked: Project Drive provider truth requires recovery; journal evidence retained",
+    );
   }
   if (grantsToRevoke.size > 0 && !options.revokeDriveFolderGrant) {
     throw new Error(
