@@ -40,6 +40,11 @@ const turnstile = "https://challenges.cloudflare.com";
 const blobUpload =
   "https://vercel.com https://*.blob.vercel-storage.com";
 
+// Project Drive delegates attachment bytes straight from the signed-in
+// browser to a server-minted Google resumable session. This exact API origin
+// is sufficient; Drive pages are opened in a new tab and are never framed.
+const googleDriveApi = "https://www.googleapis.com";
+
 const googleTag = "https://www.googletagmanager.com";
 const googleAnalytics =
   "https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com";
@@ -67,7 +72,7 @@ function buildCsp({
     `style-src 'self' 'unsafe-inline'`,
     `img-src 'self' data: blob: https:`,
     `font-src 'self' data:`,
-    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com ${blobUpload}${tagConnect}`,
+    `connect-src 'self' https://va.vercel-scripts.com ${clerkHosts} https://accounts.clerk.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://eu.i.posthog.com https://us.i.posthog.com ${blobUpload} ${googleDriveApi}${tagConnect}`,
     `frame-src 'self' ${turnstile} https://*.clerk.accounts.dev https://js.stripe.com https://hooks.stripe.com`,
     `worker-src 'self' blob:`,
     `frame-ancestors ${frameAncestors}`,
