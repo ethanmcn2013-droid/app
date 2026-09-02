@@ -413,7 +413,8 @@ storage until coverage is complete.
 `https://www.googleapis.com`; `frame-src` needs `https://drive.google.com` if
 you embed the preview.
 
-**Acceptance:** a 400 MB file attaches successfully; killing the browser
+**Acceptance:** a file at the founder-approved 50 MB product limit attaches
+successfully; killing the browser
 mid-upload and retrying produces **one** Drive file, not two; a full Drive
 falls back to Signal-native storage with a plain sentence.
 
