@@ -54,21 +54,8 @@ export function isSensitiveFieldName(value: string): boolean {
     return true;
   }
 
-  return (
-    normalized === "code" ||
-    normalized === "oauth_code" ||
-    normalized === "auth_code" ||
-    normalized === "authorization_code" ||
-    normalized === "code_verifier" ||
-    normalized === "state" ||
-    normalized === "oauth_state" ||
-    normalized === "api_key" ||
-    normalized === "private_key" ||
-    normalized === "signing_key" ||
-    normalized === "session_url" ||
-    normalized === "upload_url" ||
-    normalized === "resumable_uri" ||
-    normalized === "resumable_url"
+  return /^(?:code|(?:oauth|auth|authorization)_code|code_verifier|(?:oauth_)?state|api_key|private_key|signing_key|(?:session|upload|resumable)_(?:url|uri))$/.test(
+    normalized,
   );
 }
 
