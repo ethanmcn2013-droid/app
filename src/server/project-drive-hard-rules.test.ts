@@ -85,8 +85,10 @@ async function importIfPresent(
 
 const SOURCES = allSources();
 const DRIVE_SCOPES_FILE = "src/server/connections/google-drive-scopes.ts";
+const DRIVE_FOLDERS_FILE = "src/server/connections/drive-folders.ts";
 const DRIVE_GRANTS_FILE = "src/server/connections/drive-grants.ts";
 const DRIVE_TRANSPORT_FILE = "src/server/connections/google-drive.ts";
+const DRIVE_CONNECTIONS_FILE = "src/server/connections/drive-connections.ts";
 const DRIVE_AUTHORIZATION_FILE =
   "src/server/connections/project-drive-authz.ts";
 const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
@@ -150,6 +152,18 @@ function exportedAsyncFunctionBlocks(
       matches[index + 1]?.index ?? code.length,
     ),
   }));
+}
+
+function asyncFunctionBlock(code: string, name: string): string | null {
+  const matches = [
+    ...code.matchAll(/\basync\s+function\s+([A-Za-z0-9_]+)/g),
+  ];
+  const index = matches.findIndex((match) => match[1] === name);
+  if (index === -1) return null;
+  return code.slice(
+    matches[index].index,
+    matches[index + 1]?.index ?? code.length,
+  );
 }
 
 function isDrivePublicEntryPoint(path: string, code: string): boolean {
@@ -580,6 +594,21 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
       new RegExp(`\\[${brand}\\]`),
       "the private brand must be part of AuthorizedProjectDriveContext",
     );
+    const contextShape = code.match(
+      /export\s+type\s+AuthorizedProjectDriveContext\s*=\s*Readonly<\{([\s\S]*?)\}>/,
+    )?.[1];
+    assert.ok(contextShape, "the branded context needs an auditable shape");
+    for (const field of [
+      "role: ProjectRole",
+      "capabilities: ProjectCapabilities",
+      "archived: boolean",
+    ]) {
+      assert.match(
+        contextShape,
+        new RegExp(field.replace(" ", "\\s*")),
+        `AuthorizedProjectDriveContext must carry fresh ${field.split(":")[0]} truth`,
+      );
+    }
 
     const authorizer = exportedAsyncFunctionBlocks(code).find(
       (fn) => fn.name === "authorizeProjectDrive",
@@ -594,6 +623,38 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
       authorizer.source,
       /["']use cache["']|\b(?:unstable_cache|cache)\s*\(/,
       "Project authorization must be evaluated fresh, never cached",
+    );
+    assert.match(
+      authorizer.source,
+      /requiredCapability\s*:\s*ProjectCapabilityKey\s*=\s*["']manageProject["']/,
+      "management stays the default while a stored-object path may request a narrower capability",
+    );
+    assert.match(
+      authorizer.source,
+      /capability\s*:\s*requiredCapability/,
+      "the requested capability must be part of the fresh Project proof",
+    );
+    for (const field of ["role", "capabilities", "archived"]) {
+      assert.match(
+        authorizer.source,
+        new RegExp(`${field}\\s*:\\s*grant\\.${field}`),
+        `the minted context must preserve grant.${field}`,
+      );
+    }
+    assert.match(
+      code,
+      /export\s+function\s+assertProjectDriveCapability\s*\(/,
+      "lower-level Drive services need one capability-refinement helper",
+    );
+    assert.match(
+      code,
+      /capabilities\?\.\[capability\]\s*!==\s*true/,
+      "capability refinement must require exact true and fail closed",
+    );
+    assert.match(
+      code,
+      /throw\s+new\s+ProjectDriveAuthorizationError\(\)/,
+      "capability refusal must use the same neutral authorization error",
     );
     const demoAt =
       authorizer.source.match(
@@ -621,6 +682,46 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
       [],
       "only authorizeProjectDrive may construct the branded proof",
     );
+  });
+
+  it("pins Drive management operations to manageProject at both boundaries", () => {
+    const managementOperations = new Map<string, readonly string[]>([
+      [DRIVE_CONNECTIONS_FILE, ["begin", "complete", "summary", "disconnect"]],
+      [DRIVE_FOLDERS_FILE, ["provision", "verifyCurrent", "renameCurrent"]],
+      [DRIVE_GRANTS_FILE, ["create", "revoke", "listLive"]],
+    ]);
+    for (const [path, names] of managementOperations) {
+      if (!existsSync(path)) continue;
+      const serviceCode = codeOf(path);
+      for (const name of names) {
+        const operation = asyncFunctionBlock(serviceCode, name);
+        assert.ok(operation, `${path}: ${name} must exist`);
+        assert.match(
+          operation.slice(0, 600),
+          /assertProjectDriveCapability\s*\(\s*authorization\s*,\s*["']manageProject["']\s*\)/,
+          `${path}: ${name} must refuse a task-only context before doing work`,
+        );
+      }
+    }
+
+    for (const path of [
+      "src/server/actions/connections.ts",
+      "src/app/api/connections/google/start/route.ts",
+      "src/app/api/connections/google/callback/route.ts",
+    ]) {
+      const entryCode = codeOf(path);
+      const calls = [...entryCode.matchAll(/authorizeProjectDrive\s*\(/g)];
+      const explicitManagementCalls = [
+        ...entryCode.matchAll(
+          /authorizeProjectDrive\s*\([\s\S]*?,\s*["']manageProject["']\s*,?\s*\)/g,
+        ),
+      ];
+      assert.equal(
+        explicitManagementCalls.length,
+        calls.length,
+        `${path}: every connection entry must explicitly request manageProject`,
+      );
+    }
   });
 
   it("requires the branded context on every higher-level Drive helper", () => {

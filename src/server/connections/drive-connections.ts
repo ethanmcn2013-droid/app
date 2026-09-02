@@ -36,7 +36,10 @@ import {
   googleOAuthStateSecretFromEnv,
   type GoogleOAuthStateIntent,
 } from "./google-oauth-state";
-import type { AuthorizedProjectDriveContext } from "./project-drive-authz";
+import {
+  assertProjectDriveCapability,
+  type AuthorizedProjectDriveContext,
+} from "./project-drive-authz";
 
 const GOOGLE_DRIVE_PROVIDER = "google_drive" as const;
 const GOOGLE_DRIVE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
@@ -323,6 +326,7 @@ export function createGoogleDriveConnectionService(
     authorization: AuthorizedProjectDriveContext,
     input: Readonly<{ clerkUserId: string; sessionId: string }>,
   ): Promise<BegunGoogleDriveConnection> {
+    assertProjectDriveCapability(authorization, "manageProject");
     const existing = await currentConnection(authorization.actorUserId);
     const intent: GoogleOAuthStateIntent = existing
       ? "reconnect-google-drive"
@@ -364,6 +368,7 @@ export function createGoogleDriveConnectionService(
     authorization: AuthorizedProjectDriveContext,
     input: Readonly<{ code: string; intent: GoogleOAuthStateIntent }>,
   ): Promise<CompletedGoogleDriveConnection> {
+    assertProjectDriveCapability(authorization, "manageProject");
     const oauthClient = requireOAuthClient(deps);
     const ring = requireKeyRing(deps);
     const before = await currentConnection(authorization.actorUserId);
@@ -533,6 +538,7 @@ export function createGoogleDriveConnectionService(
   async function summary(
     authorization: AuthorizedProjectDriveContext,
   ): Promise<GoogleDriveConnectionSummary> {
+    assertProjectDriveCapability(authorization, "manageProject");
     const current = await currentConnection(authorization.actorUserId);
     if (!current) {
       return Object.freeze({
@@ -578,6 +584,7 @@ export function createGoogleDriveConnectionService(
   async function disconnect(
     authorization: AuthorizedProjectDriveContext,
   ): Promise<DisconnectedGoogleDriveConnection> {
+    assertProjectDriveCapability(authorization, "manageProject");
     const now = deps.now();
     const retired = await deps.database.transaction(async (tx) => {
       const [current] = await tx

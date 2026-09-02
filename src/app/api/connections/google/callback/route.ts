@@ -74,7 +74,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       },
       googleOAuthStateSecretFromEnv(),
     );
-    const authorization = await authorizeProjectDrive(binding.projectId);
+    const authorization = await authorizeProjectDrive(
+      binding.projectId,
+      "manageProject",
+    );
 
     const providerErrors = request.nextUrl.searchParams.getAll("error");
     if (providerErrors.length > 0) {

@@ -46,7 +46,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const projectIds = request.nextUrl.searchParams.getAll("projectId");
   const projectId = projectIds.length === 1 ? projectIds[0] : null;
   try {
-    const authorization = await authorizeProjectDrive(projectId);
+    const authorization = await authorizeProjectDrive(
+      projectId,
+      "manageProject",
+    );
     const begun = await beginGoogleDriveConnection(authorization, {
       clerkUserId: userId,
       sessionId,
