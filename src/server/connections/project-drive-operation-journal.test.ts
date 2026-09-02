@@ -10,9 +10,13 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
 import { createClient, type Client } from "@libsql/client";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
-import { projectDriveOperations } from "@/server/db/schema";
+import {
+  driveFolderGrants,
+  projectDriveOperations,
+  workspaceMembers,
+} from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import {
   createProjectDriveOperationJournal,
@@ -64,7 +68,8 @@ async function seedJournalFixture(client: Client): Promise<void> {
     INSERT INTO users (id, clerk_id, email, color, initials) VALUES
       ('u-a', 'clerk-a', 'owner-a@example.test', '#111111', 'AA'),
       ('u-b', 'clerk-b', 'owner-b@example.test', '#222222', 'BB'),
-      ('u-member', 'clerk-member', 'member@example.test', '#333333', 'MM');
+      ('u-member', 'clerk-member', 'member@example.test', '#333333', 'MM'),
+      ('u-invitee', 'clerk-invitee', 'invitee@example.test', '#444444', 'II');
 
     INSERT INTO workspaces (id, slug, name, owner_user_id) VALUES
       ('ws-a', 'ws-a', 'Project A', 'u-a'),
@@ -105,11 +110,12 @@ async function seedJournalFixture(client: Client): Promise<void> {
 }
 
 function clock(initial = START) {
-  let milliseconds = initial;
+  let seconds = Math.floor(initial / 1_000);
   return {
-    now: () => new Date(milliseconds),
+    nowSql: () => sql<Date>`${seconds}`,
     advance: (durationMs: number) => {
-      milliseconds += durationMs;
+      assert.equal(durationMs % 1_000, 0);
+      seconds += durationMs / 1_000;
     },
   };
 }
@@ -124,9 +130,9 @@ function journal(
     time,
     service: createProjectDriveOperationJournal({
       database,
-      now: time.now,
       randomOperationId: () => ids.shift() ?? "unexpected-operation-id",
       leaseDurationMs,
+      databaseNowSeconds: time.nowSql,
     }),
   };
 }
@@ -293,7 +299,7 @@ describe("Project Drive operation journal · canonical preparation", () => {
 });
 
 describe("Project Drive operation journal · claims and fencing", () => {
-  it("has one atomic claim winner and fences a worker after lease recovery", async () => {
+  it("uses the database clock for one claim winner and lease recovery", async () => {
     const { database, cleanup } = await freshJournalDb();
     try {
       const { service, time } = journal(database, ["op-rename"]);
@@ -382,6 +388,18 @@ describe("Project Drive operation journal · claims and fencing", () => {
     } finally {
       cleanup();
     }
+  });
+
+  it("pins production lease decisions to SQLite time, not process time", () => {
+    const source = readFileSync(
+      join(
+        process.cwd(),
+        "src/server/connections/project-drive-operation-journal.ts",
+      ),
+      "utf8",
+    );
+    assert.match(source, /sql<Date>`unixepoch\(\)`/);
+    assert.doesNotMatch(source, /Date\.now\(|new Date\(/);
   });
 
   it("claims a retry only when due and records only an allowlisted error", async () => {
@@ -491,12 +509,394 @@ describe("Project Drive operation journal · claims and fencing", () => {
         CONFLICT,
       );
 
+      assert.deepEqual(
+        await service.requeueManualAttention({
+          workspaceId: "ws-a",
+          operationId: operation.operationId,
+          attemptFence: 1,
+        }),
+        CONFLICT,
+      );
+      const requeued = await service.requeueManualAttention({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+        attemptFence: retry.claim.attemptFence,
+      });
+      assert.equal(requeued.outcome, "requeued");
+      if (requeued.outcome !== "requeued") throw new Error("unreachable");
+      assert.equal(requeued.operation.status, "pending");
+      assert.equal(
+        requeued.operation.lastErrorCode,
+        "cannot_invite_non_google_user",
+      );
+      const resumed = await service.claim({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+      });
+      assert.equal(resumed.outcome, "claimed");
+      if (resumed.outcome !== "claimed") throw new Error("unreachable");
+      assert.equal(resumed.claim.attemptFence, 3);
+
       const [row] = await database
         .select()
         .from(projectDriveOperations)
         .where(eq(projectDriveOperations.id, operation.operationId));
-      assert.equal(row?.lastErrorCode, "cannot_invite_non_google_user");
+      assert.equal(row?.lastErrorCode, null);
       assert.equal(JSON.stringify(row).includes("Bearer secret-provider-body"), false);
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe("Project Drive operation journal · transaction composition", () => {
+  it("prepares membership and its grant intent in one atomic transaction", async () => {
+    const { database, cleanup } = await freshJournalDb();
+    try {
+      const time = clock();
+      await assert.rejects(
+        database.transaction(async (transaction) => {
+          await transaction.insert(workspaceMembers).values({
+            workspaceId: "ws-a",
+            userId: "u-invitee",
+            role: "member",
+          });
+          const transactionalJournal = createProjectDriveOperationJournal({
+            database: transaction,
+            randomOperationId: () => "op-transaction-rollback",
+            leaseDurationMs: 10_000,
+            databaseNowSeconds: time.nowSql,
+          });
+          const intent = await transactionalJournal.prepare({
+            operationKind: "grant_create",
+            workspaceId: "ws-a",
+            storageGenerationId: "storage-a",
+            subjectUserId: "u-invitee",
+            granteeEmail: "invitee@example.test",
+            grantRole: "writer",
+          });
+          assert.equal(intent.outcome, "prepared");
+          throw new Error("rollback membership and intent");
+        }),
+        /rollback membership and intent/,
+      );
+      assert.equal(
+        (
+          await database
+            .select()
+            .from(workspaceMembers)
+            .where(eq(workspaceMembers.userId, "u-invitee"))
+        ).length,
+        0,
+      );
+      assert.equal(
+        (
+          await database
+            .select()
+            .from(projectDriveOperations)
+            .where(eq(projectDriveOperations.id, "op-transaction-rollback"))
+        ).length,
+        0,
+      );
+
+      await database.transaction(async (transaction) => {
+        await transaction.insert(workspaceMembers).values({
+          workspaceId: "ws-a",
+          userId: "u-invitee",
+          role: "member",
+        });
+        const transactionalJournal = createProjectDriveOperationJournal({
+          database: transaction,
+          randomOperationId: () => "op-transaction-commit",
+          leaseDurationMs: 10_000,
+          databaseNowSeconds: time.nowSql,
+        });
+        const intent = await transactionalJournal.prepare({
+          operationKind: "grant_create",
+          workspaceId: "ws-a",
+          storageGenerationId: "storage-a",
+          subjectUserId: "u-invitee",
+          granteeEmail: "invitee@example.test",
+          grantRole: "writer",
+        });
+        assert.equal(intent.outcome, "prepared");
+      });
+      assert.equal(
+        (
+          await database
+            .select()
+            .from(workspaceMembers)
+            .where(eq(workspaceMembers.userId, "u-invitee"))
+        ).length,
+        1,
+      );
+      assert.equal(
+        (
+          await database
+            .select()
+            .from(projectDriveOperations)
+            .where(eq(projectDriveOperations.id, "op-transaction-commit"))
+        ).length,
+        1,
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("materializes the provider receipt and domain grant atomically", async () => {
+    const { database, cleanup } = await freshJournalDb();
+    try {
+      const time = clock();
+      const { service } = journal(database, ["op-atomic-receipt"], time);
+      const operation = await prepare(service, {
+        operationKind: "grant_create",
+        workspaceId: "ws-a",
+        storageGenerationId: "storage-a",
+        subjectUserId: "u-member",
+        granteeEmail: "member@example.test",
+        grantRole: "writer",
+      });
+      const claimed = await service.claim({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+      });
+      assert.equal(claimed.outcome, "claimed");
+      if (claimed.outcome !== "claimed") throw new Error("unreachable");
+
+      const completeInside = async (
+        transaction: Parameters<
+          Parameters<typeof database.transaction>[0]
+        >[0],
+      ) => {
+        const transactionalJournal = createProjectDriveOperationJournal({
+          database: transaction,
+          randomOperationId: () => "unused-operation-id",
+          leaseDurationMs: 10_000,
+          databaseNowSeconds: time.nowSql,
+        });
+        const completed = await transactionalJournal.complete({
+          workspaceId: "ws-a",
+          operationId: operation.operationId,
+          attemptFence: claimed.claim.attemptFence,
+          operationKind: "grant_create",
+          receipt: { providerPermissionId: "permission-atomic" },
+        });
+        assert.equal(completed.outcome, "completed");
+        await transaction.insert(driveFolderGrants).values({
+          storageGenerationId: "storage-a",
+          workspaceId: "ws-a",
+          userId: "u-member",
+          permissionId: "permission-atomic",
+          grantedEmail: "member@example.test",
+          role: "writer",
+          grantedAt: new Date(START),
+          revokePending: false,
+        });
+      };
+
+      await assert.rejects(
+        database.transaction(async (transaction) => {
+          await completeInside(transaction);
+          throw new Error("rollback receipt and grant");
+        }),
+        /rollback receipt and grant/,
+      );
+      const [afterRollback] = await database
+        .select()
+        .from(projectDriveOperations)
+        .where(eq(projectDriveOperations.id, operation.operationId));
+      assert.equal(afterRollback?.status, "running");
+      assert.equal(afterRollback?.providerPermissionId, null);
+      assert.equal((await database.select().from(driveFolderGrants)).length, 0);
+
+      await database.transaction(completeInside);
+      const [afterCommit] = await database
+        .select()
+        .from(projectDriveOperations)
+        .where(eq(projectDriveOperations.id, operation.operationId));
+      assert.equal(afterCommit?.status, "succeeded");
+      assert.equal(afterCommit?.providerPermissionId, "permission-atomic");
+      assert.equal((await database.select().from(driveFolderGrants)).length, 1);
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe("Project Drive operation journal · lifecycle cycles", () => {
+  it("rearms a revoked grant without replaying its old terminal receipt", async () => {
+    const { database, cleanup } = await freshJournalDb();
+    try {
+      const time = clock();
+      const { service } = journal(database, ["op-grant-cycle"], time);
+      const input = {
+        operationKind: "grant_create",
+        workspaceId: "ws-a",
+        storageGenerationId: "storage-a",
+        subjectUserId: "u-member",
+        granteeEmail: "member@example.test",
+        grantRole: "writer",
+      } as const;
+      const operation = await prepare(service, input);
+      const firstClaim = await service.claim({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+      });
+      assert.equal(firstClaim.outcome, "claimed");
+      if (firstClaim.outcome !== "claimed") throw new Error("unreachable");
+      await service.complete({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+        attemptFence: firstClaim.claim.attemptFence,
+        operationKind: "grant_create",
+        receipt: { providerPermissionId: "permission-old" },
+      });
+      await database.insert(driveFolderGrants).values({
+        storageGenerationId: "storage-a",
+        workspaceId: "ws-a",
+        userId: "u-member",
+        permissionId: "permission-old",
+        grantedEmail: "member@example.test",
+        role: "writer",
+        grantedAt: new Date(START),
+        revokePending: false,
+      });
+
+      const terminalReplay = await service.prepare(input);
+      assert.equal(terminalReplay.outcome, "existing");
+      if (terminalReplay.outcome !== "existing") throw new Error("unreachable");
+      assert.equal(terminalReplay.operation.status, "succeeded");
+
+      assert.deepEqual(
+        await service.rearmLifecycleOperation({
+          workspaceId: "ws-a",
+          operationId: operation.operationId,
+          operationKind: "grant_create",
+          previousAttemptFence: firstClaim.claim.attemptFence,
+          previousReceipt: { providerPermissionId: "permission-wrong" },
+        }),
+        CONFLICT,
+      );
+
+      await database.transaction(async (transaction) => {
+        await transaction
+          .delete(driveFolderGrants)
+          .where(
+            eq(driveFolderGrants.permissionId, "permission-old"),
+          );
+        const transactionalJournal = createProjectDriveOperationJournal({
+          database: transaction,
+          randomOperationId: () => "unused-cycle-id",
+          leaseDurationMs: 10_000,
+          databaseNowSeconds: time.nowSql,
+        });
+        const rearmed = await transactionalJournal.rearmLifecycleOperation({
+          workspaceId: "ws-a",
+          operationId: operation.operationId,
+          operationKind: "grant_create",
+          previousAttemptFence: firstClaim.claim.attemptFence,
+          previousReceipt: { providerPermissionId: "permission-old" },
+        });
+        assert.equal(rearmed.outcome, "rearmed");
+      });
+
+      const nextIntent = await service.prepare(input);
+      assert.equal(nextIntent.outcome, "existing");
+      if (nextIntent.outcome !== "existing") throw new Error("unreachable");
+      assert.equal(nextIntent.operation.status, "pending");
+      assert.equal(nextIntent.operation.receipt, null);
+      assert.equal(nextIntent.operation.operationId, "unused-cycle-id");
+      const nextClaim = await service.claim({
+        workspaceId: "ws-a",
+        operationId: nextIntent.operation.operationId,
+      });
+      assert.equal(nextClaim.outcome, "claimed");
+      if (nextClaim.outcome !== "claimed") throw new Error("unreachable");
+      assert.equal(nextClaim.claim.attemptFence, 1);
+      assert.deepEqual(
+        await service.complete({
+          workspaceId: "ws-a",
+          operationId: operation.operationId,
+          attemptFence: firstClaim.claim.attemptFence,
+          operationKind: "grant_create",
+          receipt: { providerPermissionId: "permission-old" },
+        }),
+        CONFLICT,
+        "a prior lifecycle fence must not become valid again",
+      );
+      const nextDone = await service.complete({
+        workspaceId: "ws-a",
+        operationId: nextIntent.operation.operationId,
+        attemptFence: nextClaim.claim.attemptFence,
+        operationKind: "grant_create",
+        receipt: { providerPermissionId: "permission-new" },
+      });
+      assert.equal(nextDone.outcome, "completed");
+      if (nextDone.outcome === "completed") {
+        assert.deepEqual(nextDone.operation.receipt, {
+          providerPermissionId: "permission-new",
+        });
+      }
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("restarts a cancelled project deletion as a fresh pending intent", async () => {
+    const { database, cleanup } = await freshJournalDb();
+    try {
+      const { service } = journal(database, [
+        "op-delete-cycle",
+        "op-delete-cycle-next",
+      ]);
+      const input = {
+        operationKind: "project_delete",
+        workspaceId: "ws-a",
+      } as const;
+      const operation = await prepare(service, input);
+      await service.cancelUnstarted({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+      });
+      const oldCycle = await service.prepare(input);
+      assert.equal(oldCycle.outcome, "existing");
+      if (oldCycle.outcome !== "existing") throw new Error("unreachable");
+      assert.equal(oldCycle.operation.status, "cancelled");
+
+      const rearmed = await service.rearmLifecycleOperation({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+        operationKind: "project_delete",
+        previousAttemptFence: 0,
+        previousReceipt: {},
+      });
+      assert.equal(rearmed.outcome, "rearmed");
+      if (rearmed.outcome !== "rearmed") throw new Error("unreachable");
+      assert.equal(rearmed.operation.status, "pending");
+      assert.equal(rearmed.operation.completedAt, null);
+      assert.equal(rearmed.operation.operationId, "op-delete-cycle-next");
+      assert.deepEqual(
+        await service.rearmLifecycleOperation({
+          workspaceId: "ws-a",
+          operationId: operation.operationId,
+          operationKind: "project_delete",
+          previousAttemptFence: 0,
+          previousReceipt: {},
+        }),
+        CONFLICT,
+        "the old lifecycle intent id must stay permanently stale",
+      );
+      const freshCycle = await service.prepare(input);
+      assert.equal(freshCycle.outcome, "existing");
+      if (freshCycle.outcome !== "existing") throw new Error("unreachable");
+      assert.equal(freshCycle.operation.status, "pending");
+      assert.equal(freshCycle.operation.operationId, "op-delete-cycle-next");
+      const claim = await service.claim({
+        workspaceId: "ws-a",
+        operationId: freshCycle.operation.operationId,
+      });
+      assert.equal(claim.outcome, "claimed");
     } finally {
       cleanup();
     }
