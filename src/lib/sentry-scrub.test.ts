@@ -136,7 +136,11 @@ test("Sentry scrub recursively handles arrays, deep provider errors, and cycles"
     },
     tags: { provider: "google", diagnostic: clientSecret },
     fingerprint: ["project-drive", refresh],
-    extra: { providerError, cyclic },
+    extra: {
+      providerError,
+      cyclic,
+      opaqueProviderContainer: new Map([["payload", refresh]]),
+    },
     contexts: { provider: { attempts: [{ payload: deep }] } },
     breadcrumbs: [
       {
@@ -175,6 +179,7 @@ test("Sentry scrub recursively handles arrays, deep provider errors, and cycles"
   assert.equal(scrubbed.breadcrumbs?.length, 1);
   assert.match(serialized, /\[circular\]/);
   assert.match(serialized, /\[truncated\]/);
+  assert.match(serialized, /\[unsupported\]/);
   assert.equal(
     (
       scrubbed.extra?.providerError as {

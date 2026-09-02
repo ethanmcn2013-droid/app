@@ -11,18 +11,10 @@ import type { ErrorEvent, EventHint } from "@sentry/nextjs";
  * Pairs with `sendDefaultPii: false` on the init, together they keep
  * IP, cookies, and Clerk session tokens out of Sentry payloads.
  */
-const REDACTED_HEADERS = new Set([
-  "cookie",
-  "set-cookie",
-  "authorization",
-  "x-forwarded-for",
-  "x-real-ip",
-  "stripe-signature",
-]);
-
 const MAX_SCRUB_DEPTH = 12;
 const CIRCULAR_VALUE = "[circular]";
 const TRUNCATED_VALUE = "[truncated]";
+const UNSUPPORTED_VALUE = "[unsupported]";
 
 /**
  * Whether a field name identifies credential material rather than useful
@@ -35,26 +27,15 @@ export function isSensitiveFieldName(value: string): boolean {
     .replace(/[^a-z0-9]+/gi, "_")
     .replace(/^_+|_+$/g, "")
     .toLowerCase();
-  const parts = normalized.split("_").filter(Boolean);
-
   if (
-    parts.some((part) =>
-      [
-        "authorization",
-        "cookie",
-        "credential",
-        "password",
-        "passphrase",
-        "secret",
-        "token",
-        "tokens",
-      ].includes(part),
+    /(?:^|_)(?:authorization|cookie|credential|password|passphrase|secret|tokens?)(?:_|$)/.test(
+      normalized,
     )
   ) {
     return true;
   }
 
-  return /^(?:code|(?:oauth|auth|authorization)_code|code_verifier|(?:oauth_)?state|api_key|private_key|signing_key|(?:session|upload|resumable)_(?:url|uri))$/.test(
+  return /^(?:code|(?:oauth|auth(?:orization)?)_code|code_verifier|(?:oauth_)?state|api_key|private_key|signing_key|(?:session|upload|resumable)_(?:url|uri)|x_(?:forwarded_for|real_ip|clerk_.+)|stripe_signature|svix_.+)$/.test(
     normalized,
   );
 }
@@ -75,19 +56,12 @@ export function isSensitiveFieldName(value: string): boolean {
  * but it is still a per-customer credential blob, and Sentry is not where
  * it belongs.
  */
-const CREDENTIAL_SHAPES: ReadonlyArray<RegExp> = [
-  /https:\/\/www\.googleapis\.com\/upload\/drive\/v3\/files\?[^\s"'<>]+/gi,
-  /\b1\/\/[A-Za-z0-9_-]{10,}/g,
-  /\bya29\.[A-Za-z0-9._-]{10,}/g,
-  /\bGOCSPX-[A-Za-z0-9_-]{10,}/g,
-  /\bsb1\.\d+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,
-];
+const CREDENTIAL_SHAPE =
+  /https:\/\/www\.googleapis\.com\/upload\/drive\/v3\/files\?[^\s"'<>]+|\b(?:1\/\/[\w-]{10,}|ya29\.[\w.-]{10,}|GOCSPX-[\w-]{10,}|sb1\.\d+(?:\.[\w-]+){3})/gi;
 
 /** Replace anything shaped like a provider credential, wherever it sits. */
 export function redactCredentialShapes(value: string): string {
-  let out = value;
-  for (const shape of CREDENTIAL_SHAPES) out = out.replace(shape, "[redacted]");
-  return out;
+  return value.replace(CREDENTIAL_SHAPE, "[redacted]");
 }
 
 export function redactSensitiveUrl(value: string): string {
@@ -100,13 +74,13 @@ export function redactSensitiveUrl(value: string): string {
     "/$1/[redacted]",
   );
   return withoutBearerPaths.replace(
-    /([?&#](?:code|token|access_token|refresh_token|id_token|state|client_secret|authorization|password|credential|signature|upload_id)=)[^&#\s]*/gi,
+    /([?&#](?:code|token|(?:access|refresh|id)_token|state|client_secret|authorization|password|credential|signature|upload_id)=)[^&#\s]*/gi,
     "$1[redacted]",
   );
 }
 
 const SENSITIVE_TEXT_PAIR =
-  /((?:["']?)\b(?:access[_-]?token|refresh[_-]?token|id[_-]?token|token|oauth[_-]?code|auth(?:orization)?[_-]?code|code|client[_-]?secret|secret|authorization|password|credential)\b(?:["']?)\s*[:=]\s*)("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|(?:Bearer|Basic)\s+[^\s,;}\]]+|[^\s,;&}\]]+)/gi;
+  /(["']?\b(?:(?:(?:access|refresh|id)[_-]?)?token|(?:(?:oauth|auth(?:orization)?)[_-]?)?code|(?:client[_-]?)?secret|authorization|password|credential)\b["']?\s*[:=]\s*)("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|(?:Bearer|Basic)\s+[^\s,;}\]]+|[^\s,;&}\]]+)/gi;
 
 /** The one string transform used at every telemetry/logging boundary. */
 export function redactSensitiveText(value: string): string {
@@ -115,17 +89,13 @@ export function redactSensitiveText(value: string): string {
   const withoutCredentials = redactSensitiveUrl(
     redactCredentialShapes(value),
   ).replace(
-    /\b(Bearer|Basic)\s+[A-Za-z0-9._~+/=-]{8,}/gi,
+    /\b(Bearer|Basic)\s+[\w.~+/=-]{8,}/gi,
     "$1 [redacted]",
   );
   return withoutCredentials.replace(
     SENSITIVE_TEXT_PAIR,
     (_match, prefix: string, rawValue: string) => {
-      const quote = rawValue.startsWith('"')
-        ? '"'
-        : rawValue.startsWith("'")
-          ? "'"
-          : "";
+      const quote = /^["']/.exec(rawValue)?.[0] ?? "";
       return `${prefix}${quote}[redacted]${quote}`;
     },
   );
@@ -155,47 +125,24 @@ function scrubUnknown(
   if (seen.has(value)) return CIRCULAR_VALUE;
   seen.add(value);
 
-  if (value instanceof Date) return value.toISOString();
-  if (value instanceof URL) return redactSensitiveText(value.toString());
-  if (value instanceof ArrayBuffer || ArrayBuffer.isView(value)) return "[binary]";
-
   if (Array.isArray(value)) {
     return value.map((item) => scrubUnknown(item, depth + 1, seen));
   }
 
-  if (value instanceof Map) {
-    const result: Record<string, unknown> = {};
-    for (const [rawKey, item] of value.entries()) {
-      const key = String(rawKey);
-      if (isSensitiveFieldName(key) || redactSensitiveText(key) !== key) continue;
-      result[key] = scrubUnknown(item, depth + 1, seen);
-    }
-    return result;
-  }
-
-  if (value instanceof Set) {
-    return Array.from(value, (item) => scrubUnknown(item, depth + 1, seen));
-  }
-
-  if (typeof Headers !== "undefined" && value instanceof Headers) {
-    const result: Record<string, unknown> = {};
-    value.forEach((item, rawKey) => {
-      const key = rawKey.toLowerCase();
-      if (
-        REDACTED_HEADERS.has(key) ||
-        key.startsWith("x-clerk-") ||
-        key.startsWith("svix-") ||
-        isSensitiveFieldName(key)
-      ) {
-        return;
-      }
-      result[rawKey] = redactSensitiveText(item);
-    });
-    return result;
+  // Sentry events are JSON records. Fail closed on browser/provider class
+  // instances rather than guessing how to serialize a credential-bearing
+  // URL, Headers, Map, typed array, or future SDK object.
+  const prototype = Object.getPrototypeOf(value);
+  if (
+    !(value instanceof Error) &&
+    prototype !== Object.prototype &&
+    prototype !== null
+  ) {
+    return UNSUPPORTED_VALUE;
   }
 
   const result: Record<string, unknown> = {};
-  const keys = new Set(Object.keys(value));
+  const keys = new Set(Object.keys(value as object));
   if (value instanceof Error) {
     for (const key of ["name", "message", "stack", "cause"]) {
       if (key in value) keys.add(key);
@@ -220,14 +167,8 @@ function scrubUnknown(
 }
 
 function isSensitiveBreadcrumbUrl(url: string): boolean {
-  const normalized = url.toLowerCase();
-  return (
-    normalized.includes("clerk.") ||
-    normalized.includes("stripe.com") ||
-    normalized.includes("svix.com") ||
-    normalized.includes("www.googleapis.com/upload/drive/") ||
-    normalized.includes("/api/webhooks/") ||
-    normalized.includes("/api/auth/")
+  return /clerk\.|stripe\.com|svix\.com|www\.googleapis\.com\/upload\/drive\/|\/api\/(?:webhooks|auth)\//i.test(
+    url,
   );
 }
 
@@ -252,7 +193,7 @@ export function scrubEvent(
       const filtered: Record<string, string> = {};
       for (const [k, v] of Object.entries(request.headers)) {
         const key = k.toLowerCase();
-        if (REDACTED_HEADERS.has(key) || key.startsWith("x-clerk-") || key.startsWith("svix-")) {
+        if (isSensitiveFieldName(key)) {
           continue;
         }
         if (typeof v === "string") filtered[k] = redactSensitiveText(v);
@@ -268,8 +209,7 @@ export function scrubEvent(
         const url =
           typeof breadcrumb.data?.url === "string" ? breadcrumb.data.url : "";
         return !isSensitiveBreadcrumbUrl(url);
-      })
-      .map((breadcrumb) => ({ ...breadcrumb }));
+      });
   }
 
   // One bounded recursive pass covers every present and future Sentry field,
