@@ -3,7 +3,6 @@ import "server-only";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { isDemoMode } from "@/lib/access-mode";
-import { APP_ORIGIN } from "@/lib/product-urls";
 import {
   beginGoogleDriveConnection,
   GOOGLE_OAUTH_STATE_COOKIE,
@@ -14,8 +13,8 @@ import { authorizeProjectDrive } from "@/server/connections/project-drive-authz"
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function settingsRedirect(status: string): NextResponse {
-  const url = new URL("/app/settings", APP_ORIGIN);
+function settingsRedirect(request: NextRequest, status: string): NextResponse {
+  const url = new URL("/app/settings", request.nextUrl.origin);
   url.searchParams.set("drive", status);
   const response = NextResponse.redirect(url, 303);
   response.headers.set("Cache-Control", "private, no-store, max-age=0");
@@ -25,11 +24,11 @@ function settingsRedirect(status: string): NextResponse {
 
 /** Start one session-bound, Project-authorized Google Drive consent. */
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (isDemoMode()) return settingsRedirect("review");
+  if (isDemoMode()) return settingsRedirect(request, "review");
 
   const { userId, sessionId } = await auth();
   if (!userId || !sessionId) {
-    const signIn = new URL("/sign-in", APP_ORIGIN);
+    const signIn = new URL("/sign-in", request.nextUrl.origin);
     signIn.searchParams.set(
       "redirect_url",
       "/api/connections/google/start",
@@ -60,6 +59,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     response.headers.set("Referrer-Policy", "no-referrer");
     return response;
   } catch {
-    return settingsRedirect("unavailable");
+    return settingsRedirect(request, "unavailable");
   }
 }

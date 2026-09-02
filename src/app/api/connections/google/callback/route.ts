@@ -3,7 +3,6 @@ import "server-only";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { isDemoMode } from "@/lib/access-mode";
-import { APP_ORIGIN } from "@/lib/product-urls";
 import {
   completeGoogleDriveConnection,
   GOOGLE_OAUTH_STATE_COOKIE,
@@ -19,8 +18,11 @@ import { authorizeProjectDrive } from "@/server/connections/project-drive-authz"
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function callbackRedirect(status: string): NextResponse {
-  const url = new URL("/app/settings", APP_ORIGIN);
+function callbackRedirect(
+  request: NextRequest,
+  status: string,
+): NextResponse {
+  const url = new URL("/app/settings", request.nextUrl.origin);
   url.searchParams.set("drive", status);
   const response = NextResponse.redirect(url, 303);
   response.cookies.set({
@@ -40,17 +42,21 @@ function callbackRedirect(status: string): NextResponse {
 
 /** Finish a state-bound consent without trusting a callback query as identity. */
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (isDemoMode()) return callbackRedirect("review");
+  if (isDemoMode()) return callbackRedirect(request, "review");
 
   const { userId, sessionId } = await auth();
-  if (!userId || !sessionId) return callbackRedirect("unavailable");
+  if (!userId || !sessionId) {
+    return callbackRedirect(request, "unavailable");
+  }
 
   const binding = parseGoogleOAuthStateCookie(
     request.cookies.get(GOOGLE_OAUTH_STATE_COOKIE)?.value,
   );
   const states = request.nextUrl.searchParams.getAll("state");
   const state = states.length === 1 ? states[0] : null;
-  if (!binding || !state) return callbackRedirect("invalid-state");
+  if (!binding || !state) {
+    return callbackRedirect(request, "invalid-state");
+  }
 
   try {
     verifyGoogleOAuthState(
@@ -69,6 +75,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const providerErrors = request.nextUrl.searchParams.getAll("error");
     if (providerErrors.length > 0) {
       return callbackRedirect(
+        request,
         providerErrors.length === 1 && providerErrors[0] === "access_denied"
           ? "cancelled"
           : "failed",
@@ -76,7 +83,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
     const codes = request.nextUrl.searchParams.getAll("code");
     if (codes.length !== 1 || !codes[0]) {
-      return callbackRedirect("invalid-code");
+      return callbackRedirect(request, "invalid-code");
     }
 
     const completed = await completeGoogleDriveConnection(authorization, {
@@ -84,9 +91,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       intent: binding.intent,
     });
     return callbackRedirect(
+      request,
       completed.accountChanged ? "account-changed" : "connected",
     );
   } catch {
-    return callbackRedirect("failed");
+    return callbackRedirect(request, "failed");
   }
 }

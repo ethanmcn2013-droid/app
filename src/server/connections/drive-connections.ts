@@ -3,7 +3,6 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
-import { APP_ORIGIN } from "@/lib/product-urls";
 import {
   keyRingFromEnv,
   open,
@@ -120,7 +119,10 @@ export type GoogleDriveConnectionServiceDependencies = Readonly<{
 
 function requiredConfigValue(
   env: Readonly<Record<string, string | undefined>>,
-  name: "GOOGLE_OAUTH_CLIENT_ID" | "GOOGLE_OAUTH_CLIENT_SECRET",
+  name:
+    | "GOOGLE_OAUTH_CLIENT_ID"
+    | "GOOGLE_OAUTH_CLIENT_SECRET"
+    | "GOOGLE_OAUTH_REDIRECT_URI",
 ): string {
   const value = env[name]?.trim();
   if (!value) throw new GoogleDriveConnectionError("missing-config", name);
@@ -130,21 +132,44 @@ function requiredConfigValue(
 /** Read the dedicated Drive OAuth client without exposing either value. */
 export function googleDriveOAuthClientFromEnv(
   env: Readonly<Record<string, string | undefined>> = process.env,
-  appOrigin = APP_ORIGIN,
 ): GoogleOAuthClient {
-  let redirectUri: string;
+  const clientId = requiredConfigValue(env, "GOOGLE_OAUTH_CLIENT_ID");
+  const clientSecret = requiredConfigValue(
+    env,
+    "GOOGLE_OAUTH_CLIENT_SECRET",
+  );
+  const configuredRedirectUri = requiredConfigValue(
+    env,
+    "GOOGLE_OAUTH_REDIRECT_URI",
+  );
+  let redirectUrl: URL;
   try {
-    redirectUri = new URL(GOOGLE_CALLBACK_PATH, `${appOrigin}/`).toString();
+    redirectUrl = new URL(configuredRedirectUri);
   } catch {
     throw new GoogleDriveConnectionError(
       "missing-config",
-      "NEXT_PUBLIC_APP_URL",
+      "GOOGLE_OAUTH_REDIRECT_URI",
+    );
+  }
+  const isLocalHttp =
+    redirectUrl.protocol === "http:" && redirectUrl.hostname === "localhost";
+  if (
+    (redirectUrl.protocol !== "https:" && !isLocalHttp) ||
+    redirectUrl.username !== "" ||
+    redirectUrl.password !== "" ||
+    redirectUrl.pathname !== GOOGLE_CALLBACK_PATH ||
+    redirectUrl.search !== "" ||
+    redirectUrl.hash !== ""
+  ) {
+    throw new GoogleDriveConnectionError(
+      "missing-config",
+      "GOOGLE_OAUTH_REDIRECT_URI",
     );
   }
   return Object.freeze({
-    clientId: requiredConfigValue(env, "GOOGLE_OAUTH_CLIENT_ID"),
-    clientSecret: requiredConfigValue(env, "GOOGLE_OAUTH_CLIENT_SECRET"),
-    redirectUri,
+    clientId,
+    clientSecret,
+    redirectUri: redirectUrl.toString(),
   });
 }
 
@@ -311,13 +336,22 @@ export function createGoogleDriveConnectionService(
       throw new GoogleDriveConnectionError("stale-authorization");
     }
 
-    const oldRefreshToken = before
-      ? open(
+    // A missing retired key must not strand the user on a stale connection.
+    // We can still rotate locally and establish the new grant; only the
+    // best-effort revocation receipt for a different old account is lost.
+    let oldRefreshToken: string | null = null;
+    let oldRefreshTokenUnavailable = false;
+    if (before) {
+      try {
+        oldRefreshToken = open(
           before.refreshTokenCipher,
           providerTokenAadContext(before.id),
           ring,
-        )
-      : null;
+        );
+      } catch {
+        oldRefreshTokenUnavailable = true;
+      }
+    }
     const grant = await exchangeGoogleAuthorizationCode(
       { ...oauthClient, code: input.code },
       deps.fetchImpl,
@@ -363,7 +397,13 @@ export function createGoogleDriveConnectionService(
         if (before) {
           await tx
             .update(providerConnections)
-            .set({ isCurrent: false, status: "revoked" })
+            .set({
+              isCurrent: false,
+              status: "revoked",
+              ...(oldRefreshTokenUnavailable
+                ? { lastErrorAt: connectedAt }
+                : {}),
+            })
             .where(
               and(
                 eq(providerConnections.id, before.id),
@@ -417,13 +457,21 @@ export function createGoogleDriveConnectionService(
         }
       });
     } catch (error) {
-      await revokeGoogleToken(grant.refreshToken, deps.fetchImpl).catch(() => {});
+      // Revocation is grant-level. On a same-account reconnect it could also
+      // invalidate the still-current credential whose DB transaction rolled
+      // back, so let the unreachable new token die in memory instead.
+      if (!before || accountChanged) {
+        await revokeGoogleToken(grant.refreshToken, deps.fetchImpl).catch(
+          () => {},
+        );
+      }
       throw error;
     }
 
-    let retiredCredentialRevoked = before === null;
+    let retiredCredentialRevoked = false;
     if (
       before &&
+      accountChanged &&
       oldRefreshToken &&
       !secretEquals(oldRefreshToken, grant.refreshToken)
     ) {
@@ -436,8 +484,6 @@ export function createGoogleDriveConnectionService(
           .set({ lastErrorAt: deps.now() })
           .where(eq(providerConnections.id, before.id));
       }
-    } else if (before) {
-      retiredCredentialRevoked = true;
     }
 
     return Object.freeze({

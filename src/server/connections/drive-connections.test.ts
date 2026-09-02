@@ -237,26 +237,100 @@ describe("Project Drive connection · OAuth start", () => {
     }
   });
 
-  it("derives the registered callback from the canonical app origin", () => {
+  it("requires the exact registered callback URI for this deployment", () => {
     const config = googleDriveOAuthClientFromEnv(
       {
         GOOGLE_OAUTH_CLIENT_ID: "id",
         GOOGLE_OAUTH_CLIENT_SECRET: "secret",
+        GOOGLE_OAUTH_REDIRECT_URI:
+          "https://preview.example.test/api/connections/google/callback",
       },
-      "https://app.signalstudio.ie",
     );
     assert.equal(
       config.redirectUri,
-      "https://app.signalstudio.ie/api/connections/google/callback",
+      "https://preview.example.test/api/connections/google/callback",
     );
     assert.throws(
-      () => googleDriveOAuthClientFromEnv({}, "https://app.signalstudio.ie"),
+      () => googleDriveOAuthClientFromEnv({}),
       /GOOGLE_OAUTH_CLIENT_ID/,
+    );
+    assert.throws(
+      () =>
+        googleDriveOAuthClientFromEnv({
+          GOOGLE_OAUTH_CLIENT_ID: "id",
+          GOOGLE_OAUTH_CLIENT_SECRET: "secret",
+          GOOGLE_OAUTH_REDIRECT_URI: "https://preview.example.test/wrong",
+        }),
+      /GOOGLE_OAUTH_REDIRECT_URI/,
+    );
+    assert.throws(
+      () =>
+        googleDriveOAuthClientFromEnv({
+          GOOGLE_OAUTH_CLIENT_ID: "id",
+          GOOGLE_OAUTH_CLIENT_SECRET: "secret",
+          GOOGLE_OAUTH_REDIRECT_URI:
+            "http://preview.example.test/api/connections/google/callback",
+        }),
+      /GOOGLE_OAUTH_REDIRECT_URI/,
     );
   });
 });
 
 describe("Project Drive connection · immutable rotation", () => {
+  it("retires a same-account generation without revoking the shared Google grant", async () => {
+    const { client, db, cleanup } = await freshConnectionDb();
+    try {
+      await seedIdentity(client, "a");
+      const queue = new FetchQueue();
+      const service = createGoogleDriveConnectionService(
+        dependencies(db, queue, ["a1", "a2"]),
+      );
+      const context = authorization("u-a", "ws-a");
+
+      queue.push(
+        tokenResponse("refresh-a1"),
+        aboutResponse("permission-a", "a@example.test"),
+        listResponse([]),
+        createRootResponse("root-a"),
+      );
+      await service.complete(context, {
+        code: "code-a1",
+        intent: "connect-google-drive",
+      });
+
+      queue.push(
+        tokenResponse("refresh-a2"),
+        aboutResponse("permission-a", "a@example.test"),
+        listResponse(["root-a"]),
+      );
+      const rotated = await service.complete(context, {
+        code: "code-a2",
+        intent: "reconnect-google-drive",
+      });
+
+      assert.equal(rotated.accountChanged, false);
+      assert.equal(rotated.retiredCredentialRevoked, false);
+      assert.equal(
+        queue.calls.filter((call) =>
+          call.url.includes("oauth2.googleapis.com/revoke"),
+        ).length,
+        0,
+      );
+      const rows = await db.select().from(providerConnections);
+      assert.equal(rows.length, 2);
+      assert.equal(
+        rows.find((row) => row.id === "connection-a1")?.isCurrent,
+        false,
+      );
+      assert.equal(
+        rows.find((row) => row.id === "connection-a2")?.status,
+        "active",
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
   it("preserves A → B → A generations, reuses only the matching account root", async () => {
     const { client, db, cleanup } = await freshConnectionDb();
     try {
