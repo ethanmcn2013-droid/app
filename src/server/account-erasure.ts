@@ -170,6 +170,9 @@ export async function eraseAccountData(
       permissionId: driveFolderGrants.permissionId,
     })
     .from(driveFolderGrants)
+    // isolation-ok: account erasure deliberately finds every exact provider
+    // grant that will lose its receipt, starting from this proved user, their
+    // credential lineage, or a Project they own. It must cross Project scope.
     .leftJoin(
       workspaceStorage,
       and(
@@ -214,6 +217,9 @@ export async function eraseAccountData(
 
   if (connectionIds.length > 0) {
     const storageRows = await database
+      // isolation-ok: connectionIds contains only credential generations
+      // owned by the proved user; erasure must find their use in every Project
+      // before the RESTRICT-backed connection rows can be removed.
       .select({ id: workspaceStorage.id })
       .from(workspaceStorage)
       .where(inArray(workspaceStorage.connectionId, connectionIds));
