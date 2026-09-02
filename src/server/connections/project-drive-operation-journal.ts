@@ -354,7 +354,7 @@ function stableWebViewLink(value: unknown): string {
   return normalized;
 }
 
-function canonicalPrepareInput(
+export function canonicalProjectDriveOperationPrepareInput(
   input: ProjectDriveOperationPrepareInput,
 ): ProjectDriveOperationPrepareInput {
   if (!isRecord(input)) {
@@ -723,7 +723,22 @@ function canonicalFailure(
   };
 }
 
-function canonicalFence(
+export type ProjectDriveOperationLocator = Readonly<{
+  workspaceId: string;
+  operationId: string;
+}>;
+
+export function canonicalProjectDriveOperationLocator(
+  input: ProjectDriveOperationLocator,
+): ProjectDriveOperationLocator {
+  assertExactKeys(input, ["workspaceId", "operationId"]);
+  return {
+    workspaceId: requiredIdentifier(input.workspaceId),
+    operationId: requiredIdentifier(input.operationId),
+  };
+}
+
+export function canonicalProjectDriveOperationFenceInput(
   input: ProjectDriveOperationFenceInput,
 ): ProjectDriveOperationFenceInput {
   assertExactKeys(input, ["workspaceId", "operationId", "attemptFence"]);
@@ -838,7 +853,7 @@ export function createProjectDriveOperationJournal(
         }>
       | ProjectDriveOperationConflict
     > {
-      const canonical = canonicalPrepareInput(input);
+      const canonical = canonicalProjectDriveOperationPrepareInput(input);
       const dedupeKey = projectDriveOperationDedupeKey(canonical);
       const prior = await readByDedupe(canonical.workspaceId, dedupeKey);
       if (prior) {
@@ -892,14 +907,13 @@ export function createProjectDriveOperationJournal(
     },
 
     async claim(
-      input: Readonly<{ workspaceId: string; operationId: string }>,
+      input: ProjectDriveOperationLocator,
     ): Promise<
       | Readonly<{ outcome: "claimed"; claim: ProjectDriveOperationClaim }>
       | ProjectDriveOperationConflict
     > {
-      assertExactKeys(input, ["workspaceId", "operationId"]);
-      const workspaceId = requiredIdentifier(input.workspaceId);
-      const operationId = requiredIdentifier(input.operationId);
+      const { workspaceId, operationId } =
+        canonicalProjectDriveOperationLocator(input);
       const now = databaseNowSeconds(deps.databaseNowSeconds);
       const leaseExpiresAt = sql<Date>`(${now}) + ${leaseDurationMs / 1_000}`;
       const [claimed] = await deps.database
@@ -1121,7 +1135,7 @@ export function createProjectDriveOperationJournal(
         }>
       | ProjectDriveOperationConflict
     > {
-      const fence = canonicalFence(input);
+      const fence = canonicalProjectDriveOperationFenceInput(input);
       const now = databaseNowSeconds(deps.databaseNowSeconds);
       const [requeued] = await deps.database
         .update(projectDriveOperations)
@@ -1244,7 +1258,7 @@ export function createProjectDriveOperationJournal(
     },
 
     async cancelUnstarted(
-      input: Readonly<{ workspaceId: string; operationId: string }>,
+      input: ProjectDriveOperationLocator,
     ): Promise<
       | Readonly<{
           outcome: "cancelled";
@@ -1253,9 +1267,8 @@ export function createProjectDriveOperationJournal(
         }>
       | ProjectDriveOperationConflict
     > {
-      assertExactKeys(input, ["workspaceId", "operationId"]);
-      const workspaceId = requiredIdentifier(input.workspaceId);
-      const operationId = requiredIdentifier(input.operationId);
+      const { workspaceId, operationId } =
+        canonicalProjectDriveOperationLocator(input);
       const now = databaseNowSeconds(deps.databaseNowSeconds);
       const [cancelled] = await deps.database
         .update(projectDriveOperations)
