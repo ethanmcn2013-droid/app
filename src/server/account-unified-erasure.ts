@@ -4,6 +4,7 @@ import type {
   ErasureDb,
 } from "@/server/account-erasure";
 import { eraseAccountData as eraseTasksData } from "@/server/account-erasure";
+import { opLog } from "@/server/operational-log";
 
 // Types for the per-module erase functions so tests can supply stubs.
 export type NotesEraseFn = (clerkId: string) => Promise<
@@ -22,12 +23,36 @@ export type TasksEraseFn = (
   clerkId: string,
 ) => Promise<AccountErasureReceipt>;
 
+export type UnifiedErasureModule =
+  | "Notes"
+  | "Timeline"
+  | "Signal"
+  | "Tasks";
+
+/**
+ * Safe, caller-visible proof that at least one product did not confirm
+ * erasure. The underlying module/provider errors are deliberately omitted:
+ * their messages may contain credentials or provider response bodies.
+ */
+export class UnifiedAccountErasureError extends AggregateError {
+  readonly failedModules: readonly UnifiedErasureModule[];
+
+  constructor(failedModules: readonly UnifiedErasureModule[]) {
+    const uniqueModules = [...new Set(failedModules)];
+    super(
+      uniqueModules.map((module) => new Error(`${module} erasure failed`)),
+      `Unified account erasure incomplete: ${uniqueModules.join(", ")}`,
+    );
+    this.name = "UnifiedAccountErasureError";
+    this.failedModules = uniqueModules;
+  }
+}
+
 /**
  * Revoke a set of Google OAuth refresh tokens at Google's revocation endpoint.
  *
- * Best-effort: a revocation failure is logged but never fatal. The rows are
- * already gone from every Signal database, so a failed revocation only leaves
- * a stale credential at Google — bad but not a reason to restore personal data.
+ * Best-effort: a revocation failure is logged but never fatal. Provider errors
+ * are not logged because their response bodies can contain credentials.
  */
 export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void> {
   // `google-drive` is a server-only transport. Lazy loading preserves the
@@ -42,8 +67,8 @@ export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void>
         // The provider helper places the credential in a form body, never a
         // URL that a proxy, log, or error reporter is likely to retain.
         await revokeGoogleToken(token);
-      } catch (err) {
-        console.warn("[gdpr] Google token revocation failed:", err);
+      } catch {
+        opLog("warn", "gdpr", "Google token revocation failed");
       }
     }),
   );
@@ -58,12 +83,14 @@ export async function defaultRevokeGoogleTokens(tokens: string[]): Promise<void>
  *
  * Execution order:
  *   1. Erase Notes (returns Google tokens collected before deletion),
- *      Timeline, and Signal in parallel. Each module failure is logged
- *      but does not abort the others.
+ *      Timeline, and Signal in parallel. Each module is attempted even when
+ *      another one fails.
  *   2. Erase Tasks, strictly revoking each Project Drive credential before
  *      its encrypted row is deleted.
  *   3. Revoke deduplicated tokens returned by legacy/module erasers
  *      (best-effort, and only after the rows that held them are gone).
+ *   4. Reject with every module that failed, so Clerk deletion cannot run
+ *      until all four product erasers have confirmed success.
  *
  * The caller (POST /api/account/delete route → deleteAccountForUser →
  * deleteUnifiedAccountData) then calls Clerk admin delete LAST.
@@ -86,78 +113,73 @@ export async function deleteUnifiedAccountDataWith(
     eraseTasks?: TasksEraseFn;
   },
 ): Promise<void> {
+  const failedModules: UnifiedErasureModule[] = [];
+
   // Step 1: erase Notes (collecting tokens), Timeline, Signal in parallel.
-  const [notesResult, timelineResult, signalResult] = await Promise.all([
-    opts.eraseNotes(clerkId).catch((err: unknown) => ({
-      ok: false as const,
-      error: err instanceof Error ? err.message : String(err),
-      refreshTokens: [] as string[],
-    })),
-    opts.eraseTimeline(clerkId).catch((err: unknown) => ({
-      ok: false as const,
-      error: err instanceof Error ? err.message : String(err),
-    })),
-    opts.eraseSignal(clerkId).catch((err: unknown) => ({
-      ok: false as const,
-      error: err instanceof Error ? err.message : String(err),
-    })),
-  ]);
+  // allSettled ensures a thrown transport error cannot skip another eraser.
+  const [notesAttempt, timelineAttempt, signalAttempt] =
+    await Promise.allSettled([
+      Promise.resolve().then(() => opts.eraseNotes(clerkId)),
+      Promise.resolve().then(() => opts.eraseTimeline(clerkId)),
+      Promise.resolve().then(() => opts.eraseSignal(clerkId)),
+    ]);
 
-  // Log per-module failures; erasure continues regardless.
-  if (!notesResult.ok) {
-    console.error("[gdpr] Notes erasure failed:", notesResult.error);
-  }
-  if (!timelineResult.ok) {
-    console.error("[gdpr] Timeline erasure failed:", timelineResult.error);
-  }
-  if (!signalResult.ok) {
-    console.error("[gdpr] Signal erasure failed:", signalResult.error);
+  let notesGoogleTokens: string[] = [];
+  if (notesAttempt.status === "fulfilled") {
+    notesGoogleTokens = notesAttempt.value.refreshTokens;
+    if (!notesAttempt.value.ok) failedModules.push("Notes");
+  } else {
+    failedModules.push("Notes");
   }
 
-  // Collect refresh tokens from the Notes result (empty on failure).
-  const notesGoogleTokens =
-    "refreshTokens" in notesResult ? notesResult.refreshTokens : [];
+  if (
+    timelineAttempt.status === "rejected" ||
+    !timelineAttempt.value.ok
+  ) {
+    failedModules.push("Timeline");
+  }
+  if (signalAttempt.status === "rejected" || !signalAttempt.value.ok) {
+    failedModules.push("Signal");
+  }
 
   // Step 2: Tasks collects every encrypted Google Drive generation and exact
   // grant receipt before provider revocation. Only after those calls succeed
   // does it consume operation-journal evidence and the RESTRICT-backed rows;
   // Project Drive plaintext never leaves that fail-closed erasure scope.
-  let tasksResult: AccountErasureReceipt;
+  let tasksGoogleTokens: readonly string[] = [];
   try {
-    tasksResult = opts.eraseTasks
+    const tasksResult = opts.eraseTasks
       ? await opts.eraseTasks(database, clerkId)
       : await eraseTasksData(database, clerkId, {
           revokeDriveFolderGrant: opts.revokeDriveFolderGrant,
           revokeProjectDriveRefreshToken:
             opts.revokeProjectDriveRefreshToken,
         });
-  } catch (tasksError) {
-    // Notes may already have deleted the rows that held these credentials.
-    // Do not lose the only in-memory copies just because Tasks failed closed.
-    // Revocation remains best-effort; the original Tasks error is authoritative.
-    const notesTokens = [...new Set(notesGoogleTokens)];
-    if (notesTokens.length > 0) {
-      try {
-        await opts.revokeTokens(notesTokens);
-      } catch (revokeError) {
-        console.warn(
-          "[gdpr] Google token revocation after Tasks erasure failure failed:",
-          revokeError,
-        );
-      }
-    }
-    throw tasksError;
+    tasksGoogleTokens = tasksResult.googleRefreshTokens;
+  } catch {
+    failedModules.push("Tasks");
   }
   const googleTokens = [
-    ...new Set([
-      ...notesGoogleTokens,
-      ...tasksResult.googleRefreshTokens,
-    ]),
+    ...new Set([...notesGoogleTokens, ...tasksGoogleTokens]),
   ];
 
-  // Step 3: revoke Google tokens (best-effort, never throws).
+  // Step 3: revoke Google tokens even when another module failed. Notes may
+  // already have detached the only stored copies, so this custody must survive
+  // every later failure. The seam is guarded as well as the production helper.
   if (googleTokens.length > 0) {
-    await opts.revokeTokens(googleTokens);
+    try {
+      await opts.revokeTokens(googleTokens);
+    } catch {
+      opLog("warn", "gdpr", "Google token revocation failed");
+    }
+  }
+
+  // Step 4: only a complete confirmation lets the caller proceed to Clerk.
+  if (failedModules.length > 0) {
+    opLog("error", "gdpr", "account erasure incomplete", {
+      modules: failedModules.join(","),
+    });
+    throw new UnifiedAccountErasureError(failedModules);
   }
 }
 

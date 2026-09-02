@@ -110,9 +110,9 @@ export async function exportForUser(clerkId: string): Promise<{
  * so the orchestrator can revoke them at Google AFTER the DB rows are gone.
  *
  * Returns `{ ok: true, refreshTokens }` on success.
- * Returns `{ ok: false, error }` if the DB call throws, so the orchestrator
- * can log the failure and continue erasing the other modules rather than
- * aborting the whole account deletion.
+ * Returns `{ ok: false, error, refreshTokens }` if a DB call throws, so the
+ * orchestrator can retain token custody, attempt every other product eraser,
+ * and then fail closed before identity deletion.
  *
  * Idempotent: a retry after partial failure is safe (all deletes are no-ops
  * once the rows are gone).

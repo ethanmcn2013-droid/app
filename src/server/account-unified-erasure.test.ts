@@ -11,8 +11,9 @@
  *   2. Bystander rows in the Tasks DB are untouched.
  *   3. Google tokens returned by Notes and Tasks erasure are deduplicated and
  *      forwarded to the revocation function (not silently dropped).
- *   4. A per-module failure is logged but does not abort the rest: Tasks is
- *      still erased and the remaining modules are still attempted.
+ *   4. A per-module failure does not abort the rest: Tasks is still erased,
+ *      every module is attempted, and the unified erasure rejects before
+ *      Clerk deletion can run.
  *   5. Erasure is idempotent: a second call on the same clerkId is a no-op.
  *   6. Erasing an unprovisioned user is a no-op (no throw, no writes).
  *   7. Tasks consumes only the target's Google Drive operation evidence;
@@ -24,7 +25,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Client } from "@libsql/client";
-import { deleteUnifiedAccountDataWith } from "./account-unified-erasure";
+import {
+  deleteUnifiedAccountDataWith,
+  UnifiedAccountErasureError,
+} from "./account-unified-erasure";
 import { freshMemoryDb } from "./db/memory-test-db";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -170,7 +174,11 @@ test("real Tasks failure still revokes tokens already returned by Notes", async 
           revokedTokens.push(...tokens);
         },
       }),
-      /Google Drive work is still running/,
+      (error: unknown) => {
+        assert.ok(error instanceof UnifiedAccountErasureError);
+        assert.deepEqual(error.failedModules, ["Tasks"]);
+        return true;
+      },
     );
 
     assert.deepEqual(revokedTokens, ["notes-token-already-detached"]);
@@ -195,56 +203,96 @@ test("real Tasks failure still revokes tokens already returned by Notes", async 
   }
 });
 
-test("a module erasure failure is logged but does not abort Tasks erasure", async () => {
+test("multiple module failures still attempt Tasks, then reject with every failure", async () => {
   const { client, db } = await freshMemoryDb();
+  const attempted: string[] = [];
   try {
     await seedTwo(client);
 
     const opts = {
-      eraseNotes: async (_id: string) => ({
-        ok: false as const,
-        error: "NOTES_DATABASE_URL not set",
-        refreshTokens: [] as string[],
-      }),
-      eraseTimeline: async (_id: string) => ({
-        ok: false as const,
-        error: "TIMELINE_AUTH_TOKEN required",
-      }),
-      eraseSignal: async (_id: string) => ({ ok: true as const }),
+      eraseNotes: async (_id: string) => {
+        attempted.push("Notes");
+        return {
+          ok: false as const,
+          error: "NOTES_DATABASE_URL not set",
+          refreshTokens: [] as string[],
+        };
+      },
+      eraseTimeline: async (_id: string) => {
+        attempted.push("Timeline");
+        return {
+          ok: false as const,
+          error: "TIMELINE_AUTH_TOKEN required",
+        };
+      },
+      eraseSignal: async (_id: string) => {
+        attempted.push("Signal");
+        return { ok: true as const };
+      },
       revokeTokens: async (_tokens: string[]) => {},
     };
 
-    // Must not throw even though Notes and Timeline both failed.
-    await deleteUnifiedAccountDataWith(db, "clerk_target", opts);
+    await assert.rejects(
+      deleteUnifiedAccountDataWith(db, "clerk_target", opts),
+      (error: unknown) => {
+        assert.ok(error instanceof UnifiedAccountErasureError);
+        assert.deepEqual(error.failedModules, ["Notes", "Timeline"]);
+        assert.equal(
+          error.message,
+          "Unified account erasure incomplete: Notes, Timeline",
+        );
+        return true;
+      },
+    );
 
-    // Tasks erasure still ran.
-    assert.equal(await count(client, "users WHERE id='u-target'"), 0);
-    // Bystander untouched.
+    assert.deepEqual(attempted.sort(), ["Notes", "Signal", "Timeline"]);
+    assert.equal(
+      await count(client, "users WHERE id='u-target'"),
+      0,
+      "the real Tasks eraser must still run after module failures",
+    );
     assert.equal(await count(client, "users WHERE id='u-bystander'"), 1);
   } finally {
     client.close();
   }
 });
 
-test("a module erasure that throws is caught and does not abort Tasks erasure", async () => {
+test("a thrown module failure still attempts the remaining modules and Tasks", async () => {
   const { client, db } = await freshMemoryDb();
+  const attempted: string[] = [];
   try {
     await seedTwo(client);
 
     const opts = {
-      eraseNotes: async (_id: string) => {
-        throw new Error("network timeout");
+      eraseNotes: (_id: string) => {
+        attempted.push("Notes");
+        throw new Error("network timeout with provider body");
       },
-      eraseTimeline: async (_id: string) => ({ ok: true as const }),
-      eraseSignal: async (_id: string) => ({ ok: true as const }),
+      eraseTimeline: async (_id: string) => {
+        attempted.push("Timeline");
+        return { ok: true as const };
+      },
+      eraseSignal: async (_id: string) => {
+        attempted.push("Signal");
+        return { ok: true as const };
+      },
+      eraseTasks: async () => {
+        attempted.push("Tasks");
+        return { googleRefreshTokens: [] };
+      },
       revokeTokens: async (_tokens: string[]) => {},
     };
 
-    // Must not throw.
-    await deleteUnifiedAccountDataWith(db, "clerk_target", opts);
-
-    // Tasks erasure still ran.
-    assert.equal(await count(client, "users WHERE id='u-target'"), 0);
+    await assert.rejects(
+      deleteUnifiedAccountDataWith(db, "clerk_target", opts),
+      (error: unknown) => {
+        assert.ok(error instanceof UnifiedAccountErasureError);
+        assert.deepEqual(error.failedModules, ["Notes"]);
+        assert.doesNotMatch(error.message, /network timeout|provider body/);
+        return true;
+      },
+    );
+    assert.deepEqual(attempted.sort(), ["Notes", "Signal", "Tasks", "Timeline"]);
   } finally {
     client.close();
   }
@@ -279,7 +327,7 @@ test("erasing an unprovisioned Tasks user is a no-op (no throw, no writes)", asy
   }
 });
 
-test("no tokens are revoked when Notes erasure fails", async () => {
+test("tokens returned by a failed Notes erasure are revoked before rejection", async () => {
   const { client, db } = await freshMemoryDb();
   const revokedTokens: string[] = [];
   try {
@@ -287,7 +335,7 @@ test("no tokens are revoked when Notes erasure fails", async () => {
       eraseNotes: async (_id: string) => ({
         ok: false as const,
         error: "db error",
-        refreshTokens: ["should-not-be-revoked"],
+        refreshTokens: ["detached-notes-token"],
       }),
       eraseTimeline: async (_id: string) => ({ ok: true as const }),
       eraseSignal: async (_id: string) => ({ ok: true as const }),
@@ -296,7 +344,14 @@ test("no tokens are revoked when Notes erasure fails", async () => {
       },
     };
 
-    await deleteUnifiedAccountDataWith(db, "clerk_target", opts);
+    await assert.rejects(
+      deleteUnifiedAccountDataWith(db, "clerk_target", opts),
+      (error: unknown) => {
+        assert.ok(error instanceof UnifiedAccountErasureError);
+        assert.deepEqual(error.failedModules, ["Notes"]);
+        return true;
+      },
+    );
 
     // When erasure fails, the tokens in the failure result are still
     // forwarded (they were collected before the delete attempt and returned
@@ -305,9 +360,114 @@ test("no tokens are revoked when Notes erasure fails", async () => {
     // first, so even a partial DB failure may return collected tokens.
     // The orchestrator forwards whatever refreshTokens is present.
     assert.ok(
-      revokedTokens.includes("should-not-be-revoked"),
+      revokedTokens.includes("detached-notes-token"),
       "tokens collected before a failed erasure should still be revoked",
     );
+  } finally {
+    client.close();
+  }
+});
+
+test("partial success deduplicates detached Notes and Tasks tokens before failing closed", async () => {
+  const { client, db } = await freshMemoryDb();
+  const revokedBatches: string[][] = [];
+  try {
+    const opts = {
+      eraseNotes: async (_id: string) => ({
+        ok: true as const,
+        refreshTokens: ["shared-token", "notes-token", "shared-token"],
+      }),
+      eraseTimeline: async (_id: string) => ({
+        ok: false as const,
+        error: "timeline unavailable",
+      }),
+      eraseSignal: async (_id: string) => {
+        throw new Error("signal unavailable");
+      },
+      eraseTasks: async () => ({
+        googleRefreshTokens: ["shared-token", "tasks-token"],
+      }),
+      revokeTokens: async (tokens: string[]) => {
+        revokedBatches.push(tokens);
+      },
+    };
+
+    await assert.rejects(
+      deleteUnifiedAccountDataWith(db, "clerk_target", opts),
+      (error: unknown) => {
+        assert.ok(error instanceof UnifiedAccountErasureError);
+        assert.deepEqual(error.failedModules, ["Timeline", "Signal"]);
+        return true;
+      },
+    );
+
+    assert.deepEqual(revokedBatches, [
+      ["shared-token", "notes-token", "tasks-token"],
+    ]);
+  } finally {
+    client.close();
+  }
+});
+
+test("module and Tasks failures aggregate after every eraser and token revocation attempt", async () => {
+  const { client, db } = await freshMemoryDb();
+  const attempted: string[] = [];
+  const revokedTokens: string[] = [];
+  try {
+    await assert.rejects(
+      deleteUnifiedAccountDataWith(db, "clerk_target", {
+        eraseNotes: async () => {
+          attempted.push("Notes");
+          return {
+            ok: false as const,
+            error: "notes failed with a secret provider body",
+            refreshTokens: ["detached-notes-token", "detached-notes-token"],
+          };
+        },
+        eraseTimeline: async () => {
+          attempted.push("Timeline");
+          throw new Error("timeline provider body");
+        },
+        eraseSignal: async () => {
+          attempted.push("Signal");
+          return { ok: false as const, error: "signal provider body" };
+        },
+        eraseTasks: async () => {
+          attempted.push("Tasks");
+          throw new Error("Tasks erasure failed");
+        },
+        revokeTokens: async (tokens) => {
+          revokedTokens.push(...tokens);
+        },
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof UnifiedAccountErasureError);
+        assert.deepEqual(error.failedModules, [
+          "Notes",
+          "Timeline",
+          "Signal",
+          "Tasks",
+        ]);
+        assert.deepEqual(
+          error.errors.map((failure: Error) => failure.message),
+          [
+            "Notes erasure failed",
+            "Timeline erasure failed",
+            "Signal erasure failed",
+            "Tasks erasure failed",
+          ],
+        );
+        assert.doesNotMatch(error.message, /secret|provider body/);
+        assert.doesNotMatch(
+          error.errors.map((failure: Error) => failure.message).join(" "),
+          /secret|provider body|detached-notes-token/,
+        );
+        return true;
+      },
+    );
+
+    assert.deepEqual(attempted.sort(), ["Notes", "Signal", "Tasks", "Timeline"]);
+    assert.deepEqual(revokedTokens, ["detached-notes-token"]);
   } finally {
     client.close();
   }
