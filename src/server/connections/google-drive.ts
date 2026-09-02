@@ -5,6 +5,9 @@ import {
   assertExactGoogleDriveScopeSet,
   parseGoogleDriveScopes,
 } from "./google-drive-scopes";
+export {
+  providerTokenAadContext as providerConnectionTokenContext,
+} from "../crypto/secret-box";
 
 const GOOGLE_AUTHORIZATION_ENDPOINT =
   "https://accounts.google.com/o/oauth2/v2/auth";
@@ -144,19 +147,6 @@ export type GoogleDriveFilePage = Readonly<{
   files: readonly GoogleDriveFile[];
   nextPageToken: string | null;
 }>;
-
-/** The one AAD spelling used to seal a provider connection's refresh token. */
-export function providerConnectionTokenContext(connectionId: string): string {
-  const id = requireText(connectionId, "connectionId");
-  if (
-    id.length > 512 ||
-    id.trim() !== id ||
-    /[\u0000-\u001f\u007f]/.test(id)
-  ) {
-    throw new TypeError("google-drive: connectionId has an invalid shape");
-  }
-  return `provider_connection:${id}`;
-}
 
 /**
  * Build the server-side authorization-code URL.

@@ -69,8 +69,9 @@ const PROVIDER_CONNECTION_CONTEXT_PREFIX = "provider_connection";
 export function providerTokenAadContext(connectionId: string): string {
   if (
     connectionId.length === 0 ||
+    connectionId.length > 512 ||
     connectionId !== connectionId.trim() ||
-    connectionId.includes("\0")
+    /[\u0000-\u001f\u007f]/.test(connectionId)
   ) {
     throw new TypeError("provider token context requires a canonical connection id");
   }
