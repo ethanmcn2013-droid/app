@@ -5,12 +5,15 @@ the end of every work package, before opening a PR. A `done` mark is a claim
 that the package's acceptance criteria in `PROJECT.md` were met and the gates
 listed there passed — not that the code was written.
 
-**Last updated:** 2026-09-02 · WP-1 is complete against the owner and
+**Last updated:** 2026-09-03 · WP-1 is complete against the owner and
 `ethan@signalstudio.ie`, including real Drive-link access and exact revocation.
-WP-2 is complete on the feature branch. WP-3, migration 0029's durable
-operation journal, and the WP-4 connection lifecycle are staged and verified
-locally. Production migration remains an explicit founder gate. WP-4 still
-needs live connection acceptance, and WP-5 must wire exact grant revocation.
+WP-2 is complete on the feature branch. WP-3 and migration 0029 remain staged
+behind the production founder gate. WP-4's connection lifecycle is staged and
+verified locally; exact grant and credential revocation are now wired into
+fail-closed account erasure. WP-5's durable journal is account-fenced and its
+folder/grant primitives are green; the production executor and membership
+lifecycle are still in progress. WP-6 is in isolated implementation and is not
+accepted until its delegated-session erasure boundary is merged and green.
 
 ---
 
@@ -22,9 +25,9 @@ needs live connection acceptance, and WP-5 must wire exact grant revocation.
 | 1 | Spike the Drive chain | **done** | Owner flow passed. Signed in as `ethan@signalstudio.ie`, the member opened the shared board folder and file, could not open the parent, then lost both child links after exact permission revocation. Member-token API 404 is documented separately from the real Drive-link path |
 | 2 | Secrets substrate | **done on feature branch** | AES-256-GCM envelope, versioned key custody, log/Sentry redaction and token-custody contracts are in commit `ddbf7380` |
 | 3 | Schema (migration 0028) | **staged locally** | Generation-aware SQL, Drizzle mirror, ledger, 42-proof review receipt and journal are green. Fresh local apply, no-op rerun and current status passed. Not applied to production; do not mark done before WP-1 acceptance and the founder's Q5 authorization |
-| 4 | The connection | **staged on feature branch** | Authorized start/callback, exact deployment redirect, immutable connect/reconnect, private root, disconnect, own-user summary, and GDPR/export integration are implemented. Targeted and full branch gates are green. Not `done`: no live connection acceptance was run, and WP-5 must wire exact grant revocation before it creates grants |
-| 5 | Folder and sharing | **in progress** | Durable operation journal is staged and fully contract-tested; folder, grant, token-resolution, and lifecycle services are being implemented |
-| 6 | Upload | not started | |
+| 4 | The connection | **staged on feature branch** | Authorized start/callback, exact deployment redirect, immutable connect/reconnect, private root, disconnect, own-user summary, and GDPR/export integration are implemented. Exact permission and refresh-token revocation now retain encrypted custody until confirmed. Not `done`: no live in-product connection acceptance has run |
+| 5 | Folder and sharing | **in progress** | Folder/grant primitives, exact erasure revocation, durable operation journal and same-transaction account-fenced prepare/claim/requeue are green. Production operation executors, membership hooks and handover remain |
+| 6 | Upload | **in progress, isolated branch** | Direct resumable upload service and actions are under final verification. Not accepted or merged; delegated-session erasure/project-delete fencing remains a merge gate |
 | 7 | Surfaces | not started | `experience/registry.json` entries required |
 | 8 | Resilience and launch | not started | Revoke repair pass needs a new cron |
 
@@ -78,6 +81,8 @@ status.
 | 2026-09-02 | Migration 0028 local rehearsal | disposable local SQLite database: `pnpm db:migrate` twice, then `pnpm db:status` | First run applied through `0028_project_drive`; second run returned `no-op`; status returned `current` with 29 registered SQL files. No remote or production database was contacted |
 | 2026-09-02 | WP-3 branch gates | `pnpm typecheck`; `pnpm lint`; `pnpm test`; `node --test src/server/tenant-scope-rules.test.mjs` | Typecheck and the full test chain passed; lint passed with 68 pre-existing warnings and zero errors; tenant governance passed 21/21 for the three new tables |
 | 2026-09-02 | WP-4 connection implementation | Focused OAuth-state, connection lifecycle, Project Drive hard-rule, account erasure/export and unified GDPR tests on `feat/project-drive-wp4` | Same-account rotation makes zero revoke calls; A → B → A preserves immutable roots/history; alternate Host origins return to the configured deployment; own-user isolation, disconnect fallback, ciphertext custody, exact-scope and fail-closed grant-receipt erasure contracts passed locally. No live Google mutation or production migration was performed |
+| 2026-09-03 | WP-5 erasure and account-fenced journal checkpoint | Commits `3aa82cf8`, `81613320`, `7715301f`; exact grant revocation, strict refresh-token custody, erasure/journal race and account-lineage suites | Exact Drive permission deletion is receipt-bound and idempotent on 404; refresh-token ciphertext survives every ambiguous revocation failure; prepare, claim and manual requeue lose neutrally to a same-transaction account fence. Focused account + Drive suite passed 76/76 at this checkpoint, plus typecheck, touched lint and hard rules |
+| 2026-09-03 | Unified erasure and identity-resurrection checkpoint | Commits `48139627`, `b46b7556`, `338d4595`; file-backed lifecycle tests, unified erasure tests and production-order source contract | Notes, Timeline, Signal and Tasks are all attempted; any failed product blocks Clerk deletion with a sanitized aggregate. A hashed durable tombstone prevents stale Clerk requests/webhooks from reprovisioning an erased account in either race ordering. Combined focused run passed 81/81 (18 account + 63 lifecycle/Drive), then full typecheck passed |
 
 ---
 
