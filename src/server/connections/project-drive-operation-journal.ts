@@ -5,10 +5,12 @@ import {
   and,
   eq,
   gt,
+  inArray,
   isNull,
   lte,
   or,
   sql,
+  type SQL,
 } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
@@ -32,6 +34,13 @@ const MAX_LEASE_MS = 15 * 60_000;
 const MIN_RETRY_MS = 1_000;
 const MAX_RETRY_MS = 24 * 60 * 60_000;
 
+/** Kept as one seam for the account-erasure lifecycle contract to import. */
+const JOURNAL_CLAIMABLE_STATUSES = [
+  "pending",
+  "retry_wait",
+  "running",
+] as const satisfies readonly ProjectDriveOperationStatus[];
+
 const ERROR_CODES = new Set<ProjectDriveOperationErrorCode>([
   "ambiguous_provider_result",
   "cannot_invite_non_google_user",
@@ -50,6 +59,10 @@ const ERROR_CODES = new Set<ProjectDriveOperationErrorCode>([
 ]);
 
 type OperationDb = LibSQLDatabase<typeof schema>;
+export type ProjectDriveOperationJournalDatabase = Pick<
+  OperationDb,
+  "insert" | "select" | "update"
+>;
 type OperationRow = typeof projectDriveOperations.$inferSelect;
 type OperationInsert = typeof projectDriveOperations.$inferInsert;
 
@@ -159,15 +172,38 @@ export type ProjectDriveOperationFailureInput = Readonly<{
   errorCode: ProjectDriveOperationErrorCode;
 }>;
 
+export type ProjectDriveOperationFenceInput = Readonly<{
+  workspaceId: string;
+  operationId: string;
+  attemptFence: number;
+}>;
+
 export type ProjectDriveOperationRetryInput =
   ProjectDriveOperationFailureInput &
     Readonly<{ retryAfterMs: number }>;
 
+export type ProjectDriveOperationRearmInput =
+  | Readonly<{
+      workspaceId: string;
+      operationId: string;
+      operationKind: "grant_create";
+      previousAttemptFence: number;
+      previousReceipt: ProjectDrivePermissionReceipt;
+    }>
+  | Readonly<{
+      workspaceId: string;
+      operationId: string;
+      operationKind: "project_delete";
+      previousAttemptFence: 0;
+      previousReceipt: Readonly<Record<string, never>>;
+    }>;
+
 export type ProjectDriveOperationJournalDependencies = Readonly<{
-  database: OperationDb;
-  now: () => Date;
-  randomOperationId: () => string;
+  database: ProjectDriveOperationJournalDatabase;
+  randomOperationId?: () => string;
   leaseDurationMs?: number;
+  /** Test seam only; production defaults to SQLite/libSQL `unixepoch()`. */
+  databaseNowSeconds?: () => SQL<Date>;
 }>;
 
 export type ProjectDriveOperationConflict = Readonly<{
@@ -267,22 +303,10 @@ function boundedDuration(
   return value as number;
 }
 
-function normalizedNow(now: () => Date): Date {
-  const candidate = now();
-  const milliseconds =
-    candidate instanceof Date ? candidate.getTime() : Number.NaN;
-  if (!Number.isFinite(milliseconds) || milliseconds < 0) {
-    throw new ProjectDriveOperationInputError("invalid-timing");
-  }
-  return new Date(Math.floor(milliseconds / 1_000) * 1_000);
-}
-
-function later(now: Date, durationMs: number): Date {
-  const milliseconds = now.getTime() + durationMs;
-  if (!Number.isSafeInteger(milliseconds) || milliseconds > 8.64e15) {
-    throw new ProjectDriveOperationInputError("invalid-timing");
-  }
-  return new Date(milliseconds);
+function databaseNowSeconds(
+  source?: () => SQL<Date>,
+): SQL<Date> {
+  return source?.() ?? sql<Date>`unixepoch()`;
 }
 
 function normalizedErrorCode(value: unknown): ProjectDriveOperationErrorCode {
@@ -703,6 +727,62 @@ function canonicalFailure(
   };
 }
 
+function canonicalFence(
+  input: ProjectDriveOperationFenceInput,
+): ProjectDriveOperationFenceInput {
+  assertExactKeys(input, ["workspaceId", "operationId", "attemptFence"]);
+  return {
+    workspaceId: requiredIdentifier(input.workspaceId),
+    operationId: requiredIdentifier(input.operationId),
+    attemptFence: requiredPositiveInteger(input.attemptFence),
+  };
+}
+
+function canonicalRearm(
+  input: ProjectDriveOperationRearmInput,
+): ProjectDriveOperationRearmInput {
+  assertExactKeys(input, [
+    "workspaceId",
+    "operationId",
+    "operationKind",
+    "previousAttemptFence",
+    "previousReceipt",
+  ]);
+  const base = {
+    workspaceId: requiredIdentifier(input.workspaceId),
+    operationId: requiredIdentifier(input.operationId),
+  };
+  switch (input.operationKind) {
+    case "grant_create":
+      assertExactKeys(input.previousReceipt, ["providerPermissionId"]);
+      return {
+        ...base,
+        operationKind: "grant_create",
+        previousAttemptFence: requiredPositiveInteger(
+          input.previousAttemptFence,
+        ),
+        previousReceipt: {
+          providerPermissionId: stableProviderId(
+            input.previousReceipt.providerPermissionId,
+          ),
+        },
+      };
+    case "project_delete":
+      assertExactKeys(input.previousReceipt, []);
+      if (input.previousAttemptFence !== 0) {
+        throw new ProjectDriveOperationInputError("invalid-shape");
+      }
+      return {
+        ...base,
+        operationKind: "project_delete",
+        previousAttemptFence: 0,
+        previousReceipt: {},
+      };
+    default:
+      throw new ProjectDriveOperationInputError("invalid-shape");
+  }
+}
+
 /**
  * Durable, provider-agnostic control plane for Project Drive operations.
  *
@@ -710,7 +790,9 @@ function canonicalFailure(
  * credentials, access tokens, or resumable-session URLs. Callers pass only a
  * canonical operation identity before provider work and the minimal stable
  * receipt afterwards. Every state-changing worker call is fenced by the
- * monotonically increasing attempt count.
+ * monotonically increasing attempt count. Lease, due-time, and transition
+ * comparisons use SQLite/libSQL `unixepoch()` inside the same statement as
+ * the CAS, so a skewed application-host clock can never reclaim work early.
  */
 export function createProjectDriveOperationJournal(
   deps: ProjectDriveOperationJournalDependencies,
@@ -720,6 +802,7 @@ export function createProjectDriveOperationJournal(
     MIN_LEASE_MS,
     MAX_LEASE_MS,
   );
+  const randomOperationId = deps.randomOperationId ?? randomUUID;
 
   async function readByDedupe(workspaceId: string, dedupeKey: string) {
     const [row] = await deps.database
@@ -771,8 +854,7 @@ export function createProjectDriveOperationJournal(
           operation: viewFromRow(prior),
         });
       }
-      const now = normalizedNow(deps.now);
-      const operationId = requiredIdentifier(deps.randomOperationId());
+      const operationId = requiredIdentifier(randomOperationId());
       const identity = identityColumns(canonical);
       const values: OperationInsert = {
         id: operationId,
@@ -789,8 +871,6 @@ export function createProjectDriveOperationJournal(
         nextAttemptAt: null,
         leaseExpiresAt: null,
         lastErrorCode: null,
-        createdAt: now,
-        updatedAt: now,
         completedAt: null,
       };
       const inserted = await deps.database
@@ -824,8 +904,8 @@ export function createProjectDriveOperationJournal(
       assertExactKeys(input, ["workspaceId", "operationId"]);
       const workspaceId = requiredIdentifier(input.workspaceId);
       const operationId = requiredIdentifier(input.operationId);
-      const now = normalizedNow(deps.now);
-      const leaseExpiresAt = later(now, leaseDurationMs);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
+      const leaseExpiresAt = sql<Date>`(${now}) + ${leaseDurationMs / 1_000}`;
       const [claimed] = await deps.database
         .update(projectDriveOperations)
         .set({
@@ -843,6 +923,9 @@ export function createProjectDriveOperationJournal(
             workspaceId,
             eq(projectDriveOperations.id, operationId),
             lte(projectDriveOperations.createdAt, now),
+            inArray(projectDriveOperations.status, [
+              ...JOURNAL_CLAIMABLE_STATUSES,
+            ]),
             isNull(projectDriveOperations.providerFolderId),
             isNull(projectDriveOperations.providerFolderWebViewLink),
             isNull(projectDriveOperations.providerPermissionId),
@@ -876,7 +959,7 @@ export function createProjectDriveOperationJournal(
       | ProjectDriveOperationConflict
     > {
       const canonical = canonicalCompletion(input);
-      const now = normalizedNow(deps.now);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
       const [completed] = await deps.database
         .update(projectDriveOperations)
         .set({
@@ -953,8 +1036,8 @@ export function createProjectDriveOperationJournal(
         MIN_RETRY_MS,
         MAX_RETRY_MS,
       );
-      const now = normalizedNow(deps.now);
-      const nextAttemptAt = later(now, retryAfterMs);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
+      const nextAttemptAt = sql<Date>`(${now}) + ${retryAfterMs / 1_000}`;
       const [scheduled] = await deps.database
         .update(projectDriveOperations)
         .set({
@@ -996,7 +1079,7 @@ export function createProjectDriveOperationJournal(
       | ProjectDriveOperationConflict
     > {
       const failure = canonicalFailure(input);
-      const now = normalizedNow(deps.now);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
       const [marked] = await deps.database
         .update(projectDriveOperations)
         .set({
@@ -1028,6 +1111,142 @@ export function createProjectDriveOperationJournal(
       });
     },
 
+    /**
+     * Explicitly returns an operator-reviewed row to the claim queue.
+     * `manual_attention` is a durable fence, not a terminal sink: only this
+     * exact attempt can requeue it, and the next claim receives a new fence.
+     */
+    async requeueManualAttention(
+      input: ProjectDriveOperationFenceInput,
+    ): Promise<
+      | Readonly<{
+          outcome: "requeued";
+          operation: ProjectDriveOperationView;
+        }>
+      | ProjectDriveOperationConflict
+    > {
+      const fence = canonicalFence(input);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
+      const [requeued] = await deps.database
+        .update(projectDriveOperations)
+        .set({
+          status: "pending",
+          nextAttemptAt: null,
+          leaseExpiresAt: null,
+          updatedAt: now,
+        })
+        .where(
+          byWorkspace(
+            projectDriveOperations.workspaceId,
+            fence.workspaceId,
+            eq(projectDriveOperations.id, fence.operationId),
+            eq(projectDriveOperations.status, "manual_attention"),
+            eq(projectDriveOperations.attemptCount, fence.attemptFence),
+            lte(projectDriveOperations.lastAttemptAt, now),
+            lte(projectDriveOperations.updatedAt, now),
+            isNull(projectDriveOperations.providerFolderId),
+            isNull(projectDriveOperations.providerFolderWebViewLink),
+            isNull(projectDriveOperations.providerPermissionId),
+          ),
+        )
+        .returning();
+      if (!requeued) return NEUTRAL_CONFLICT;
+      return Object.freeze({
+        outcome: "requeued",
+        operation: viewFromRow(requeued),
+      });
+    },
+
+    /**
+     * Starts a new lifecycle cycle without weakening the unique dedupe key.
+     *
+     * Migration 0029 has no lifecycle-cycle column. The safe no-migration
+     * alternative is an explicit terminal-state CAS which rotates the row's
+     * primary operation id. The unchanged dedupe key still finds the logical
+     * operation, while the new id is an unambiguous lifecycle intent and makes
+     * every worker from the prior cycle stale. A
+     * caller may rearm a successful grant only after it has proved the exact
+     * permission was revoked and removed the domain receipt, in the same
+     * database transaction. A cancelled, never-started project deletion can
+     * likewise be restarted. Other kinds cannot be rearmed because their
+     * generation/revision identity must change instead.
+     */
+    async rearmLifecycleOperation(
+      input: ProjectDriveOperationRearmInput,
+    ): Promise<
+      | Readonly<{
+          outcome: "rearmed";
+          operation: ProjectDriveOperationView;
+        }>
+      | ProjectDriveOperationConflict
+    > {
+      const canonical = canonicalRearm(input);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
+      const nextOperationId = requiredIdentifier(randomOperationId());
+      if (nextOperationId === canonical.operationId) {
+        throw new ProjectDriveOperationInputError("invalid-identifier");
+      }
+      const terminalPredicate =
+        canonical.operationKind === "grant_create"
+          ? and(
+              eq(projectDriveOperations.operationKind, "grant_create"),
+              eq(projectDriveOperations.status, "succeeded"),
+              eq(
+                projectDriveOperations.attemptCount,
+                canonical.previousAttemptFence,
+              ),
+              eq(
+                projectDriveOperations.providerPermissionId,
+                canonical.previousReceipt.providerPermissionId,
+              ),
+              isNull(projectDriveOperations.providerFolderId),
+              isNull(projectDriveOperations.providerFolderWebViewLink),
+            )
+          : and(
+              eq(projectDriveOperations.operationKind, "project_delete"),
+              eq(projectDriveOperations.status, "cancelled"),
+              eq(projectDriveOperations.attemptCount, 0),
+              isNull(projectDriveOperations.lastAttemptAt),
+              isNull(projectDriveOperations.providerFolderId),
+              isNull(projectDriveOperations.providerFolderWebViewLink),
+              isNull(projectDriveOperations.providerPermissionId),
+            );
+      const [rearmed] = await deps.database
+        .update(projectDriveOperations)
+        .set({
+          id: nextOperationId,
+          status: "pending",
+          attemptCount: 0,
+          lastAttemptAt: null,
+          nextAttemptAt: null,
+          leaseExpiresAt: null,
+          lastErrorCode: null,
+          providerFolderId: null,
+          providerFolderWebViewLink: null,
+          providerPermissionId: null,
+          createdAt: now,
+          updatedAt: now,
+          completedAt: null,
+        })
+        .where(
+          byWorkspace(
+            projectDriveOperations.workspaceId,
+            canonical.workspaceId,
+            eq(projectDriveOperations.id, canonical.operationId),
+            terminalPredicate,
+            lte(projectDriveOperations.updatedAt, now),
+          ),
+        )
+        .returning();
+      if (rearmed) {
+        return Object.freeze({
+          outcome: "rearmed",
+          operation: viewFromRow(rearmed),
+        });
+      }
+      return NEUTRAL_CONFLICT;
+    },
+
     async cancelUnstarted(
       input: Readonly<{ workspaceId: string; operationId: string }>,
     ): Promise<
@@ -1041,7 +1260,7 @@ export function createProjectDriveOperationJournal(
       assertExactKeys(input, ["workspaceId", "operationId"]);
       const workspaceId = requiredIdentifier(input.workspaceId);
       const operationId = requiredIdentifier(input.operationId);
-      const now = normalizedNow(deps.now);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
       const [cancelled] = await deps.database
         .update(projectDriveOperations)
         .set({
@@ -1095,6 +1314,4 @@ export function createProjectDriveOperationJournal(
 
 export const projectDriveOperationJournal = createProjectDriveOperationJournal({
   database: db,
-  now: () => new Date(),
-  randomOperationId: randomUUID,
 });
