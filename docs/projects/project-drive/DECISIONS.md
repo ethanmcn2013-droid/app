@@ -301,3 +301,44 @@ files stay where they are and may remain unavailable to that member until the
 project uses a Google-account address for them. The product must state this
 plainly; neither a missing receipt nor a provider refusal may be presented as
 full coverage.
+## D15 · Consent rotation does not rewrite storage history
+
+**Decided 2026-09-02 during WP-4 implementation.**
+
+Every successful OAuth consent inserts a new immutable
+`provider_connections` row. The previous generation is retired locally; it is
+never updated in place. Connection generation and folder generation remain
+separate identities:
+
+- a same-account reconnect is recognized only by Drive
+  `about.user.permissionId`, may reuse that account's app-marked
+  `Signal Studio` root, and does not revoke the previous refresh token because
+  Google's revocation is grant-level and can invalidate the newly issued
+  token too;
+- a different account gets a different root and cannot adopt the previous
+  account's folder, even when the display email happens to match;
+- A → B → A creates three credential generations. Returning to A may find A's
+  app-marked root through A's `drive.file` grant, but does not rewrite either
+  earlier row;
+- a `workspace_storage.connection_id` remains immutable provenance. A later
+  access helper must resolve the newest current credential in the same
+  `(user_id, provider, provider_account_id)` lineage. It must not repoint old
+  storage generations or resources to make a reconnect look simpler.
+
+WP-4 creates only the private, unshared root. A Project-authorized connection
+action proves who may begin consent, but it does not enable Drive for that
+Project. Board folders, `workspace_storage` generations and named-user grants
+begin in WP-5.
+
+The callback is configured by one exact `GOOGLE_OAUTH_REDIRECT_URI` per
+deployment. Its validated origin is also the return-redirect allowlist; an
+incoming Host is not authority. Preview therefore returns to Preview without
+making a canonical production URL part of OAuth identity.
+
+External permission receipts have stricter erasure ordering than refresh
+tokens. Google must confirm deletion of the exact `(folder_id, permission_id)`
+before `drive_folder_grants` is deleted; without an idempotent WP-5 revoker,
+account erasure fails closed and retains the receipt. Migration 0029's
+operation journal is now staged on this branch; export and erasure must include
+that table in the same explicit evidence-preserving order rather than relying
+on cascade before WP-5 can be called complete.

@@ -298,6 +298,28 @@ database reports current after `pnpm db:migrate`; a second run is a no-op.
   (collect tokens → delete rows → revoke at Google, the order
   `notes-gdpr.ts` already establishes), `account-export.ts` (**tokens omitted**).
 
+**Connection and Project boundary.** The consent belongs to the person, while
+the route is authorized from one explicit Project. Every successful consent
+inserts a new immutable connection generation. A same-account reconnect
+(Drive `permissionId` unchanged) may reuse only that account's app-marked root
+and must not revoke the old token — Google revocation is grant-level and can
+invalidate the new generation too. A different account gets its own root and
+cannot adopt the former account's folders. Disconnect affects every Project
+using that person's account lineage and moves those Projects to the
+Signal-native fallback.
+
+WP-4 creates the private `Signal Studio` root only. It does **not** insert
+`workspace_storage`, create a board folder, or grant a member; those are WP-5
+operations. `GOOGLE_OAUTH_REDIRECT_URI` is the exact deployment callback and
+the only allowed return origin, so branch Preview never jumps to production
+and an alternate incoming Host cannot become an open redirect.
+
+**GDPR boundary.** Refresh credentials are collected, local generations are
+deleted explicitly in `RESTRICT` order, and tokens are revoked afterwards.
+An exact folder grant is different: its Google permission must be revoked
+*before* its `permission_id` receipt is deleted. Until WP-5 wires that
+idempotent executor, erasure fails closed and retains the receipt.
+
 **Contract tests:**
 - Requested scope set is exactly `["…/auth/drive.file"]`.
 - A forged or replayed `state` is rejected.

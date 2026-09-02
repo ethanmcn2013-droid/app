@@ -55,9 +55,53 @@ NOTES_TO_TASKS_SECRET=<random>
 PARTNER_STATS_SECRET=<shared with studio>
 
 # Public URLs
+NEXT_PUBLIC_APP_URL=https://app.signalstudio.ie
 NEXT_PUBLIC_SITE_URL=https://app.signalstudio.ie
 NEXT_PUBLIC_STUDIO_URL=https://signalstudio.ie
+
+# Project Drive (optional capability; all are required before enabling it)
+GOOGLE_OAUTH_CLIENT_ID=...
+GOOGLE_OAUTH_CLIENT_SECRET=...
+GOOGLE_OAUTH_REDIRECT_URI=https://app.signalstudio.ie/api/connections/google/callback
+OAUTH_STATE_SECRET=<independent random value, at least 32 bytes>
+PROVIDER_TOKEN_KEY=<base64-encoded 32-byte key>
+PROVIDER_TOKEN_KEY_VERSION=1
 ```
+
+### Google Drive connection contract
+
+Register this production callback **exactly** on the dedicated Google OAuth
+client, then set the identical value in Production:
+
+```
+https://app.signalstudio.ie/api/connections/google/callback
+```
+
+Preview must use its own stable HTTPS Preview origin in
+`GOOGLE_OAUTH_REDIRECT_URI`, and that exact callback must also be registered on
+the client. The server refuses a different path, query, fragment, credentials,
+plain HTTP outside `localhost`, or a callback synthesized from another public
+URL variable. Successful and failed callbacks return to the origin encoded by
+this validated variable; an incoming `Host` header cannot steer the redirect.
+For local development, `http://localhost:<port>/api/connections/google/callback`
+is allowed and must likewise match the Google client registration.
+
+The client requests exactly
+`https://www.googleapis.com/auth/drive.file` — never add identity, full-Drive,
+readonly, or incremental scopes. `GOOGLE_OAUTH_CLIENT_SECRET`,
+`OAUTH_STATE_SECRET`, and `PROVIDER_TOKEN_KEY` are sensitive server values and
+must not use the `NEXT_PUBLIC_` prefix. Generate the state secret separately
+from the token-encryption key so compromise or rotation of one cannot silently
+become compromise of both:
+
+```bash
+node -p "require('crypto').randomBytes(32).toString('base64url')" # OAUTH_STATE_SECRET
+node -p "require('crypto').randomBytes(32).toString('base64')"    # PROVIDER_TOKEN_KEY
+```
+
+The callback creates or reuses only an app-marked, unshared `Signal Studio`
+folder. Board folders and member permissions are WP-5 lifecycle work; do not
+create permissions on the root as an operator workaround.
 
 **`PROVIDER_TOKEN_KEY` encrypts stored provider refresh tokens.** Project
 Drive holds a long-lived Google credential per connected account, and this

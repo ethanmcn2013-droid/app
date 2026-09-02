@@ -7,10 +7,10 @@ listed there passed — not that the code was written.
 
 **Last updated:** 2026-09-02 · WP-1 is complete against the owner and
 `ethan@signalstudio.ie`, including real Drive-link access and exact revocation.
-WP-2 is complete on the feature branch. WP-3 is staged and verified locally;
-production migration remains an explicit founder gate. WP-4's provider and
-OAuth-state foundations are merged and its route/lifecycle integration is in
-progress.
+WP-2 is complete on the feature branch. WP-3, migration 0029's durable
+operation journal, and the WP-4 connection lifecycle are staged and verified
+locally. Production migration remains an explicit founder gate. WP-4 still
+needs live connection acceptance, and WP-5 must wire exact grant revocation.
 
 ---
 
@@ -22,8 +22,8 @@ progress.
 | 1 | Spike the Drive chain | **done** | Owner flow passed. Signed in as `ethan@signalstudio.ie`, the member opened the shared board folder and file, could not open the parent, then lost both child links after exact permission revocation. Member-token API 404 is documented separately from the real Drive-link path |
 | 2 | Secrets substrate | **done on feature branch** | AES-256-GCM envelope, versioned key custody, log/Sentry redaction and token-custody contracts are in commit `ddbf7380` |
 | 3 | Schema (migration 0028) | **staged locally** | Generation-aware SQL, Drizzle mirror, ledger, 42-proof review receipt and journal are green. Fresh local apply, no-op rerun and current status passed. Not applied to production; do not mark done before WP-1 acceptance and the founder's Q5 authorization |
-| 4 | The connection | **in progress** | Exact-scope transport, signed 10-minute state, credential redaction and authorization ratchets are merged; routes, immutable rotation, actions and GDPR lifecycle are being integrated |
-| 5 | Folder and sharing | not started | The security-critical package |
+| 4 | The connection | **staged on feature branch** | Authorized start/callback, exact deployment redirect, immutable connect/reconnect, private root, disconnect, own-user summary, and GDPR/export integration are implemented. Targeted and full branch gates are green. Not `done`: no live connection acceptance was run, and WP-5 must wire exact grant revocation before it creates grants |
+| 5 | Folder and sharing | **in progress** | Durable operation journal is staged and fully contract-tested; folder, grant, token-resolution, and lifecycle services are being implemented |
 | 6 | Upload | not started | |
 | 7 | Surfaces | not started | `experience/registry.json` entries required |
 | 8 | Resilience and launch | not started | Revoke repair pass needs a new cron |
@@ -77,6 +77,7 @@ status.
 | 2026-09-02 | Migration 0028 contract | `pnpm db:contract` | 60/60 passed: ledger/receipt/journal parity, fresh apply/no-op, proof rollback, tamper/drift refusal, immutable A → B → A connection and folder generations, historical grants, storage coupling and `RESTRICT` deletion behavior |
 | 2026-09-02 | Migration 0028 local rehearsal | disposable local SQLite database: `pnpm db:migrate` twice, then `pnpm db:status` | First run applied through `0028_project_drive`; second run returned `no-op`; status returned `current` with 29 registered SQL files. No remote or production database was contacted |
 | 2026-09-02 | WP-3 branch gates | `pnpm typecheck`; `pnpm lint`; `pnpm test`; `node --test src/server/tenant-scope-rules.test.mjs` | Typecheck and the full test chain passed; lint passed with 68 pre-existing warnings and zero errors; tenant governance passed 21/21 for the three new tables |
+| 2026-09-02 | WP-4 connection implementation | Focused OAuth-state, connection lifecycle, Project Drive hard-rule, account erasure/export and unified GDPR tests on `feat/project-drive-wp4` | Same-account rotation makes zero revoke calls; A → B → A preserves immutable roots/history; alternate Host origins return to the configured deployment; own-user isolation, disconnect fallback, ciphertext custody, exact-scope and fail-closed grant-receipt erasure contracts passed locally. No live Google mutation or production migration was performed |
 
 ---
 
@@ -108,3 +109,7 @@ Do not do these inside this project. Record them so they are not lost.
 - `uploadAttachmentAction` remains as the fallback for a deployment with no
   blob store, and is now honestly capped at 3 MB. If local-disk deployments
   stop mattering, the whole path can retire.
+- Migration 0029's operation journal is staged. Unified export and erasure must
+  add explicit operation-row ordering before any Project, connection, or
+  storage generation can be deleted; the journal is repair evidence and must
+  not disappear by cascade.

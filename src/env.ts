@@ -51,7 +51,23 @@ const RECOMMENDED_IN_PRODUCTION: ReadonlyArray<readonly [string, string]> = [
   // nothing reads it until a Drive connection exists — but it must be
   // present and unchanged before the first one is made, because rotating
   // it later forces every connected customer to reconnect.
-  ["PROVIDER_TOKEN_KEY", "encrypts stored provider refresh tokens (Project Drive)"],
+  [
+    "PROVIDER_TOKEN_KEY",
+    "encrypts stored provider refresh tokens (Project Drive)",
+  ],
+  // WP-4. Drive remains an optional capability, but a half-configured OAuth
+  // client cannot start or finish consent. The redirect URI is deliberately
+  // deployment-specific so Preview returns to Preview rather than production.
+  ["GOOGLE_OAUTH_CLIENT_ID", "Google Drive OAuth client id"],
+  ["GOOGLE_OAUTH_CLIENT_SECRET", "Google Drive OAuth client secret"],
+  [
+    "GOOGLE_OAUTH_REDIRECT_URI",
+    "exact Google Drive OAuth callback for this deployment",
+  ],
+  [
+    "OAUTH_STATE_SECRET",
+    "signs session- and Project-bound Google OAuth state",
+  ],
 ];
 
 let validated = false;
