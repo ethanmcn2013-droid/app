@@ -81,13 +81,181 @@ async function importIfPresent(
 const SOURCES = allSources();
 const DRIVE_SCOPES_FILE = "src/server/connections/google-drive-scopes.ts";
 const DRIVE_GRANTS_FILE = "src/server/connections/drive-grants.ts";
+const DRIVE_TRANSPORT_FILE = "src/server/connections/google-drive.ts";
+const DRIVE_AUTHORIZATION_FILE =
+  "src/server/connections/project-drive-authz.ts";
 const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const AUTHORIZED_DRIVE_CONTEXT = "AuthorizedProjectDriveContext";
 
 /** Files that are allowed to talk to Drive at all, per PROJECT.md §4. */
 const DRIVE_SURFACE = /^src[\\/](server[\\/]connections|app[\\/]api[\\/]connections)[\\/]/;
 
 function driveSurfaceFiles(): string[] {
   return SOURCES.filter((p) => DRIVE_SURFACE.test(p) && !/\.test\./.test(p));
+}
+
+function canonicalPath(path: string): string {
+  return path.replace(/\\/g, "/");
+}
+
+function productionSources(): string[] {
+  return SOURCES.filter((path) => !/\.test\./.test(path));
+}
+
+/** The raw Drive REST grammar, independent of SDK spelling. */
+function containsRawDriveRest(code: string): boolean {
+  return /\/(?:upload\/)?drive\/v3(?:\/|["'`])/.test(code);
+}
+
+/**
+ * Detect both an SDK permission call and the REST spelling.
+ *
+ * The old ratchet only recognised `permissions.create`, so a bare
+ * `/files/{id}/permissions` fetch silently escaped the single-guard rule.
+ */
+function containsPermissionApi(code: string): boolean {
+  return (
+    /permissions\s*\.\s*(?:create|delete|update|list|get)\s*\(/.test(code) ||
+    /\/permissions(?:\/|\?|["'`])/.test(code)
+  );
+}
+
+function importsDriveTransport(code: string): boolean {
+  return /from\s+["'](?:[^"']*\/connections\/|\.\/)?google-drive["']/.test(
+    code,
+  );
+}
+
+function importsProjectDriveAuthorization(code: string): boolean {
+  return /["'](?:[^"']*\/connections\/|\.\/)?project-drive-authz["']/.test(
+    code,
+  );
+}
+
+function exportedAsyncFunctionBlocks(
+  code: string,
+): Array<{ name: string; source: string }> {
+  const matches = [
+    ...code.matchAll(/\bexport\s+async\s+function\s+([A-Za-z0-9_]+)/g),
+  ];
+  return matches.map((match, index) => ({
+    name: match[1],
+    source: code.slice(
+      match.index,
+      matches[index + 1]?.index ?? code.length,
+    ),
+  }));
+}
+
+function isDrivePublicEntryPoint(path: string, code: string): boolean {
+  const canonical = canonicalPath(path);
+  const isRoute =
+    /^src\/app\/api\/.+\/route\.(?:ts|tsx|mts|mjs)$/.test(canonical) &&
+    !canonical.startsWith("src/app/api/cron/");
+  const isServerAction = /^["']use server["'];?/m.test(code);
+  if (!isRoute && !isServerAction) return false;
+
+  return (
+    /(?:google-drive|project-drive|drive-(?:folder|grant|upload|resource|connection))/i.test(
+      canonical,
+    ) ||
+    /["'][^"']*\/connections\/(?:google-drive|drive-[^"']+|project-drive-authz)["']/.test(
+      code,
+    ) ||
+    /\b(?:GoogleDrive|ProjectDrive|AuthorizedProjectDriveContext|authorizeProjectDrive)\b/.test(
+      code,
+    ) ||
+    containsRawDriveRest(code)
+  );
+}
+
+function drivePublicEntryPoints(): string[] {
+  return productionSources().filter((path) =>
+    isDrivePublicEntryPoint(path, codeOf(path)),
+  );
+}
+
+function driveEntryPointViolations(path: string, code: string): string[] {
+  const violations: string[] = [];
+  if (importsDriveTransport(code) || containsRawDriveRest(code)) {
+    violations.push(
+      `${path}: a public entry point imports or embeds the raw Drive transport`,
+    );
+  }
+  if (/\bexport\s+const\s+\w+\s*=\s*async\b/.test(code)) {
+    violations.push(
+      `${path}: use named exported async functions so each entry point is audited`,
+    );
+  }
+
+  const functions = exportedAsyncFunctionBlocks(code);
+  if (functions.length === 0) {
+    violations.push(`${path}: no auditable exported async entry point`);
+    return violations;
+  }
+
+  for (const fn of functions) {
+    const demo = fn.source.match(
+      /if\s*\(\s*isDemoMode\(\)\s*\)\s*(?:return\b|\{[\s\S]{0,200}?return\b)/,
+    );
+    const demoAt = demo?.index ?? -1;
+    const authorization = fn.source.match(
+      /await\s+authorizeProjectDrive\s*\(/,
+    );
+    const authorizationAt = authorization?.index ?? -1;
+    const bodyAt = fn.source.indexOf("request.json(");
+
+    if (demoAt === -1) {
+      violations.push(`${path}: ${fn.name} has no early demo return`);
+    } else if (demoAt > 400) {
+      violations.push(`${path}: ${fn.name} delays its demo return`);
+    }
+    if (authorizationAt === -1) {
+      violations.push(
+        `${path}: ${fn.name} does not mint fresh Project authorization`,
+      );
+    }
+    if (demoAt !== -1 && authorizationAt !== -1 && demoAt > authorizationAt) {
+      violations.push(
+        `${path}: ${fn.name} authorizes before refusing demo mode`,
+      );
+    }
+    if (demoAt !== -1 && bodyAt !== -1 && demoAt > bodyAt) {
+      violations.push(
+        `${path}: ${fn.name} reads the request before refusing demo mode`,
+      );
+    }
+    if (
+      demoAt !== -1 &&
+      fn.source.slice(0, demoAt).includes(AUTHORIZED_DRIVE_CONTEXT)
+    ) {
+      violations.push(
+        `${path}: ${fn.name} accepts an authorization capability from its caller`,
+      );
+    }
+  }
+  return violations;
+}
+
+function higherLevelDriveHelpers(): string[] {
+  return productionSources().filter((path) => {
+    const canonical = canonicalPath(path);
+    if (!canonical.startsWith("src/server/connections/")) return false;
+    if (
+      canonical === DRIVE_TRANSPORT_FILE ||
+      canonical === DRIVE_SCOPES_FILE ||
+      canonical === DRIVE_AUTHORIZATION_FILE
+    ) {
+      return false;
+    }
+    const code = codeOf(path);
+    return (
+      importsDriveTransport(code) ||
+      importsProjectDriveAuthorization(code) ||
+      /\/(?:drive|google-drive)-[^/]+\.(?:ts|tsx|mts|mjs)$/.test(canonical) ||
+      containsRawDriveRest(code)
+    );
+  });
 }
 
 // ── §2.1 · the only scope ever requested is drive.file ─────────────────
@@ -136,17 +304,18 @@ describe("§2.1 · the OAuth scope is drive.file, and nothing else", () => {
 // ── §2.2 / §2.4 · a grant only ever targets this board's own folder ────
 
 describe("§2.2 §2.4 · the root folder is never a grant target", () => {
-  it("permission creation lives in one file, and calls the guard", () => {
-    const callers = SOURCES.filter(
-      (p) => !/\.test\./.test(p) && /permissions\.create|permissions\/create/.test(codeOf(p)),
-    );
+  it("every SDK or raw REST permission call lives behind one guard", () => {
+    const callers = productionSources()
+      .filter((path) => containsPermissionApi(codeOf(path)))
+      .map(canonicalPath)
+      .sort();
     if (callers.length === 0) return; // WP-5 has not landed.
 
     assert.deepEqual(
       callers,
       [DRIVE_GRANTS_FILE],
-      "every Drive permission must be created in drive-grants.ts, so there " +
-        "is exactly one place the guard can be bypassed",
+      "SDK calls and raw /permissions fetches belong only in " +
+        "drive-grants.ts, so there is one grant-target guard",
     );
     const code = codeOf(DRIVE_GRANTS_FILE);
     assert.match(
@@ -159,6 +328,34 @@ describe("§2.2 §2.4 · the root folder is never a grant target", () => {
       /rootFolderId/,
       "the guard must be given the root folder id to refuse it",
     );
+
+    for (const fn of exportedAsyncFunctionBlocks(code)) {
+      const mutation =
+        /permissions\s*\.\s*(?:create|delete|update)\s*\(/.test(fn.source) ||
+        (containsPermissionApi(fn.source) &&
+          /method\s*:\s*["'](?:POST|PATCH|DELETE)["']/.test(fn.source));
+      if (!mutation) continue;
+      const guardAt = fn.source.indexOf("assertGrantTarget(");
+      const providerAt = fn.source.search(
+        /(?:permissions\s*\.\s*(?:create|delete|update)|\b\w*fetch\w*|requestGoogleDrive|callGoogleDrive)\s*\(/i,
+      );
+      assert.ok(
+        guardAt !== -1 && providerAt !== -1 && guardAt < providerAt,
+        `${DRIVE_GRANTS_FILE}: ${fn.name} must call assertGrantTarget ` +
+          "before its permission mutation",
+      );
+    }
+  });
+
+  it("the permission discovery ratchet sees SDK and raw REST spellings", () => {
+    assert.equal(containsPermissionApi("drive.permissions.create(input)"), true);
+    assert.equal(
+      containsPermissionApi(
+        "new URL(`/drive/v3/files/${fileId}/permissions/${permissionId}`)",
+      ),
+      true,
+    );
+    assert.equal(containsPermissionApi("createGoogleDriveFolder(input)"), false);
   });
 
   it("the guard refuses the root folder and a foreign folder", async () => {
@@ -312,20 +509,185 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
     );
   });
 
-  it("every Drive surface file proves a Project before it acts", () => {
-    for (const path of driveSurfaceFiles()) {
-      const code = codeOf(path);
-      // Files that touch Google at all must show a proof in the same file.
-      if (!/googleapis\.com|driveFetch|drive\.files|permissions\./.test(code)) {
-        continue;
-      }
-      assert.match(
-        code,
-        /scopeFor|authorizeStoredProject|authorizeObjectProject|requireCapability/,
-        `${path} calls Drive; it must prove the caller's Project first ` +
-          "(ADR 0001 §9)",
+  it("keeps raw REST in the explicitly authorization-agnostic transport", () => {
+    const rawRestFiles = productionSources()
+      .filter((path) => containsRawDriveRest(codeOf(path)))
+      .map(canonicalPath)
+      .sort();
+    const allowed = [DRIVE_TRANSPORT_FILE];
+    if (
+      existsSync(DRIVE_GRANTS_FILE) &&
+      containsRawDriveRest(codeOf(DRIVE_GRANTS_FILE))
+    ) {
+      // Permission REST is deliberately co-located with assertGrantTarget;
+      // §2.2 independently proves every such spelling stays in this file.
+      allowed.push(DRIVE_GRANTS_FILE);
+    }
+    assert.deepEqual(
+      rawRestFiles,
+      allowed.sort(),
+      "raw Drive REST belongs only in google-drive.ts, except guarded " +
+        "permission REST in drive-grants.ts",
+    );
+
+    const transport = codeOf(DRIVE_TRANSPORT_FILE);
+    assert.doesNotMatch(
+      transport,
+      /scopeFor|authorizeStoredProject|authorizeObjectProject|requireCapability|authorizeProjectDrive|AuthorizedProjectDriveContext|isDemoMode/,
+      "the raw transport must not fake caller authorization with a same-file import",
+    );
+  });
+
+  it("mints one unforgeable Drive context from fresh Project authorization", () => {
+    const consumers = [
+      ...higherLevelDriveHelpers(),
+      ...drivePublicEntryPoints(),
+    ];
+    if (consumers.length > 0) {
+      assert.ok(
+        existsSync(DRIVE_AUTHORIZATION_FILE),
+        `${DRIVE_AUTHORIZATION_FILE} must exist before a higher Drive ` +
+          "helper or public entry point",
       );
     }
+    if (!existsSync(DRIVE_AUTHORIZATION_FILE)) return;
+
+    const code = codeOf(DRIVE_AUTHORIZATION_FILE);
+    assert.match(code, /import\s+["']server-only["']/);
+    assert.match(
+      code,
+      /export\s+(?:type|interface)\s+AuthorizedProjectDriveContext\b/,
+      "the authorization proof needs one named context type",
+    );
+    const brand = code.match(
+      /(?:declare\s+)?const\s+([A-Za-z0-9_]+)\s*:\s*unique symbol/,
+    )?.[1];
+    assert.ok(brand, "AuthorizedProjectDriveContext needs a unique-symbol brand");
+    assert.doesNotMatch(
+      code,
+      new RegExp(
+        `export\\s+(?:declare\\s+)?const\\s+${brand}\\s*:\\s*unique symbol`,
+      ),
+      "the brand must stay private so another module cannot mint a proof",
+    );
+    assert.match(
+      code,
+      new RegExp(`\\[${brand}\\]`),
+      "the private brand must be part of AuthorizedProjectDriveContext",
+    );
+
+    const authorizer = exportedAsyncFunctionBlocks(code).find(
+      (fn) => fn.name === "authorizeProjectDrive",
+    );
+    assert.ok(authorizer, "authorizeProjectDrive must be the sole minter");
+    assert.match(
+      authorizer.source.slice(0, 1_200),
+      new RegExp(`\\b${AUTHORIZED_DRIVE_CONTEXT}\\b`),
+      "authorizeProjectDrive must return the branded context",
+    );
+    assert.doesNotMatch(
+      authorizer.source,
+      /["']use cache["']|\b(?:unstable_cache|cache)\s*\(/,
+      "Project authorization must be evaluated fresh, never cached",
+    );
+    const demoAt =
+      authorizer.source.match(
+        /if\s*\(\s*isDemoMode\(\)\s*\)\s*(?:return\b|\{[\s\S]{0,200}?return\b)/,
+      )?.index ?? -1;
+    const proofAt = authorizer.source.search(
+      /await\s+(?:scopeFor\w*|authorizeStoredProject|authorizeObjectProject|requireCapability)\s*\(/,
+    );
+    assert.ok(
+      demoAt !== -1 && proofAt > demoAt,
+      "authorizeProjectDrive must refuse demo, then freshly prove the " +
+        "object's Project before minting its context",
+    );
+
+    const illegalMinters = productionSources()
+      .filter((path) => canonicalPath(path) !== DRIVE_AUTHORIZATION_FILE)
+      .filter((path) =>
+        new RegExp(
+          `(?:as|satisfies)\\s+(?:unknown\\s+as\\s+)?${AUTHORIZED_DRIVE_CONTEXT}\\b`,
+        ).test(codeOf(path)),
+      )
+      .map(canonicalPath);
+    assert.deepEqual(
+      illegalMinters,
+      [],
+      "only authorizeProjectDrive may construct the branded proof",
+    );
+  });
+
+  it("requires the branded context on every higher-level Drive helper", () => {
+    for (const path of higherLevelDriveHelpers()) {
+      const code = codeOf(path);
+      assert.equal(
+        importsProjectDriveAuthorization(code),
+        true,
+        `${path} must import its Project authorization context`,
+      );
+      const functions = exportedAsyncFunctionBlocks(code);
+      if (containsRawDriveRest(code) || containsPermissionApi(code)) {
+        assert.ok(
+          functions.length > 0,
+          `${path} contains provider calls but exposes no auditable helper`,
+        );
+      }
+      for (const fn of functions) {
+        assert.match(
+          fn.source.slice(0, 1_200),
+          new RegExp(`\\b${AUTHORIZED_DRIVE_CONTEXT}\\b`),
+          `${path}: ${fn.name} must receive AuthorizedProjectDriveContext`,
+        );
+      }
+    }
+  });
+
+  it("freshly authorizes every public Drive action and route", () => {
+    const violations = drivePublicEntryPoints().flatMap((path) =>
+      driveEntryPointViolations(canonicalPath(path), codeOf(path)),
+    );
+    assert.deepEqual(
+      violations,
+      [],
+      "a public Drive entry point must refuse demo first, mint fresh " +
+        "Project authorization, and call only branded higher-level helpers",
+    );
+  });
+
+  it("the entry-point ratchet catches late demo, missing auth, and forgery", () => {
+    const unsafe = driveEntryPointViolations(
+      "src/server/actions/drive.ts",
+      `"use server";
+       export async function connectDrive(request: Request) {
+         const body = await request.json();
+         return createWorkspaceDriveFolder(body);
+       }`,
+    );
+    assert.ok(unsafe.some((item) => item.includes("early demo")));
+    assert.ok(unsafe.some((item) => item.includes("fresh Project")));
+
+    const forged = driveEntryPointViolations(
+      "src/server/actions/drive.ts",
+      `"use server";
+       export async function connectDrive(auth: AuthorizedProjectDriveContext) {
+         if (isDemoMode()) return;
+         const fresh = await authorizeProjectDrive("workspace-1");
+         return createWorkspaceDriveFolder(fresh);
+       }`,
+    );
+    assert.ok(forged.some((item) => item.includes("from its caller")));
+
+    const safe = driveEntryPointViolations(
+      "src/server/actions/drive.ts",
+      `"use server";
+       export async function connectDrive(workspaceId: string) {
+         if (isDemoMode()) return;
+         const authorization = await authorizeProjectDrive(workspaceId);
+         return createWorkspaceDriveFolder(authorization);
+       }`,
+    );
+    assert.deepEqual(safe, []);
   });
 });
 
@@ -377,21 +739,21 @@ describe("§2.10 · demo mode stops at the door", () => {
     }
   });
 
-  it("every server action in the Drive surface does the same", () => {
-    for (const path of driveSurfaceFiles()) {
-      const raw = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
-      if (!/^["']use server["']/m.test(raw)) continue;
-      for (const m of codeOf(path).matchAll(
-        /export async function (\w+)/g,
-      )) {
-        const at = codeOf(path).indexOf(m[0]);
-        assert.match(
-          codeOf(path).slice(at, at + 400),
-          /isDemoMode\(\)/,
-          `${path}: ${m[1]} must early-return under demo mode`,
-        );
-      }
-    }
+  it("every public Drive action and route refuses demo before input or auth", () => {
+    const violations = drivePublicEntryPoints()
+      .flatMap((path) =>
+        driveEntryPointViolations(canonicalPath(path), codeOf(path)),
+      )
+      .filter(
+        (violation) =>
+          violation.includes("demo") || violation.includes("reads the request"),
+      );
+    assert.deepEqual(
+      violations,
+      [],
+      "demo must stop at each public Drive entry point, before request " +
+        "parsing or authorization",
+    );
   });
 
   it("the token route refuses demo before it reads anything", () => {
