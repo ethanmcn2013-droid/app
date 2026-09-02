@@ -470,6 +470,9 @@ export function createGoogleDriveConnectionService(
     });
     const storageRows = lineageIds.length
       ? await deps.database
+          // isolation-ok: connectionLineageIds is already restricted to this
+          // actor's Google account; this read deliberately counts every
+          // current Project using that personal connection.
           .select({ workspaceId: workspaceStorage.workspaceId })
           .from(workspaceStorage)
           .where(
@@ -538,6 +541,9 @@ export function createGoogleDriveConnectionService(
       const lineageIds = lineage.map((row) => row.id);
       const affected = lineageIds.length
         ? await tx
+            // isolation-ok: lineage is restricted to the authorized actor's
+            // Google account above; disconnect must mark every current
+            // Project using that personal connection as needing attention.
             .select({ workspaceId: workspaceStorage.workspaceId })
             .from(workspaceStorage)
             .where(
