@@ -1,6 +1,14 @@
 {
   "seat": "evidence",
-  "score": 8.5,
-  "findings": [],
+  "score": 8.6,
+  "findings": [
+    {
+      "id": "card-open-note-state-is-unreachable",
+      "element": ".card[aria-expanded] / .card[data-open] — src/tasks.js:52 declares `let openNoteId = null; /* the card showing its full note */`, read at src/tasks.js:428 (draggable), :430 (aria-expanded), :434 (data-open) and :2828 (Escape → \"Note closed.\"); consumed by src/tasks.css:954, :956, :957, :1179, :1976",
+      "problem": "openNoteId is never assigned anything but null. Every one of the fourteen assignments in tasks.js (542, 554, 661, 2829, 2899, 3098, 3319, 3476, 3632, 4185, 4367) sets it to null; nothing sets it to a task id. Measured consequences: every card with a note ships a permanent `aria-expanded=\"false\"`, `draggable` is permanently \"true\", `data-open` is never emitted, so five CSS rules can never match — including tasks.css:954 `.card[data-open] .cardNote { max-height: none }`, the rule that was supposed to release the five-line note clamp, and tasks.css:1179's open ring. The Escape branch at 2828-2832 (`say(\"Note closed.\")`) is unreachable, so that sentence is in the build and can never be spoken. Driving it confirms the mechanism moved: a real mouse-down/up on `.cardTitle` opens `.taskPanel`, moves focus into it and announces \"Task open.\" — the in-place disclosure the comment on line 52 describes does not exist. Separately, CDP Accessibility.getPartialAXTree on the card returns role=article with focusable/describedby/keyshortcuts/roledescription and NO `expanded` property at all: `aria-expanded` is not supported on role=article, so even a correct value would never reach a screen reader.",
+      "fix": "Delete the dead state rather than resurrect it. In src/tasks.js: remove `openNoteId` (line 52) and every assignment; make line 428 `draggable=\"true\"` unconditional; delete the `aria-expanded` term on line 430 entirely (role=article does not support it — the panel is a separate object and announces itself through the live region already); delete the `data-open` term on line 434 and the Escape branch at 2828-2832. In src/tasks.css delete lines 954, 956-957, 1179 and 1976. If the five-line note clamp still needs a way out, hang it off the panel that actually opens (`.taskPanel`), not off a card attribute nothing sets.",
+      "cost": 0.3
+    }
+  ],
   "biggestWin": "PROVISIONAL — review in progress."
 }

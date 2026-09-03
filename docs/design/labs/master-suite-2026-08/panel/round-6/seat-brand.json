@@ -3,9 +3,16 @@
   "score": 8.6,
   "findings": [
     {
+      "id": "three-undo-promises-one-app",
+      "element": ".undo strip (src/notes.js:1712) vs .carryStrip/undo pill (src/tasks.js:1330-1340, timer src/tasks.js:2348) vs .b-undo bar (src/timeline.js:1270-1300)",
+      "problem": "Same gesture class, same Ctrl Z, three different promises. Notes says 'Sent to Tasks. Undo Ctrl Z for 30 seconds' and TICKS the number down each second (UNDO_SECONDS = 30, src/notes.js:260). Tasks says '<Title> done' with no stop, no window, and retires the strip after 6000ms (src/tasks.js:2348) while its announcement only says 'Press Ctrl Z to undo.' Timeline says '<Title> moved 7 days earlier.' in a 1096x64 WHITE inline bar and never expires at all. Three grammars (bare adjective / verb-only / full sentence) and three truths about how long the way back lasts.",
+      "fix": "One window and one sentence shape. Hoist UNDO_SECONDS to one shared constant, set Tasks 6000 to the same value, and give all three the shape '<what happened>. Undo [Ctrl Z]' -- 'Confirm marquee sides with the hire company is done.', 'Sent to Tasks: Switch on before guests arrive, not when.', 'Menu tasting at The Orchard moved 7 days earlier.' Drop the ticking 'for N seconds' (it is the only moving number in the suite and it exists in one product only); if a window is worth stating, state it once in the same words everywhere.",
+      "cost": 0.4
+    },
+    {
       "id": "seam-receipt-said-four-ways",
-      "element": ".peelLabel \"Tasks has it\" (src/notes.js peel receipt) + .deskFact b \"In Tasks as\" + .idxHead \"Already in Tasks / 4 so far, and every note stayed here\" + .undo \"Sent to Tasks.\" — all simultaneously visible at 1440x960 after one [data-act=\"send\"]",
-      "problem": "PROVISIONAL: after one send, the task wording prints 3x and the reassurance 4x on one screen.",
+      "element": ".peelLabel 'Tasks has it' (272,415) + .deskFact b 'In Tasks as' (815,276) + index head 'Already in Tasks / 4 so far, and every note stayed here' (231,631) + .undo 'Sent to Tasks.' (603,818) -- all in one 1440x960 viewport after one [data-act=send]",
+      "problem": "PROVISIONAL",
       "fix": "PROVISIONAL",
       "cost": 0.2
     }

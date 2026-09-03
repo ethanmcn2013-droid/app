@@ -1,6 +1,14 @@
 {
   "seat": "ui",
-  "score": 8.5,
-  "findings": [],
+  "score": 8.6,
+  "findings": [
+    {
+      "id": "yielded-lane-breaks-the-head-baseline",
+      "element": "section.tray[data-lane=\"waiting\"] > .trayHead > .trayNote, sized by [data-app=\"tasks\"] .board:has(> .tray[data-lane=\"waiting\"][data-empty]) { --col-waiting: var(--rail) } at _gate-suite.html:1789 (--rail: minmax(132px,172px), :1797)",
+      "problem": "The empty lane yielding its width is a decision; the prose staying full-width inside it is not. Measured at 1920x1000: To do / In progress / Review / Done are each 372px and their .trayNote sits on one 17px line, so .trayHead is 50px and all four first cards start at y=197. Waiting is pinned to 172px, so 'Held by a reply, a delivery, or a decision.' wraps to two lines (34px), its .trayHead is 67px, and its only content starts at y=227 - 30px below the four cards beside it. Identical at 1680, 1440 and 1280 (172px constant). In the 1100-1199 band, where the 258px lane floor at :3412 has not engaged yet, it compounds: at 1100 Waiting is 139px with a THREE-line note (headH 83, first item y=344), Review wraps to two (headH 67, y=314) and the other three stay at 50/298 - three different head heights and three different first-row baselines in one five-lane row, spanning 46px. The row of five lane heads is the strongest horizontal line on the board and it is the one line that does not hold.",
+      "fix": "Stop the collapsed lane carrying body prose in its head. Add `[data-app=\"tasks\"] .board:not([data-filtered]):not([data-blank]) > .tray[data-empty] .trayNote { display: none; }` beside the five --col rules at _gate-suite.html:1786-1790, and move the sentence into the empty body so nothing is lost: render .trayEmpty as \"Nothing held up. This lane holds anything waiting on a reply, a delivery or a decision.\" (wrapping freely, it is the lane's only content). All five .trayHead boxes then measure 50px and all five first rows start on one baseline at every width. Separately, extend the 258px lane floor up to the stacking threshold - change `@media (max-width: 1099px)` at :3412 to `@media (max-width: 1199px)` - so the 1100-1199 band gets the same designed scroller as the band below it instead of 203px lanes whose second head also wraps.",
+      "cost": 3
+    }
+  ],
   "biggestWin": "provisional - review in progress"
 }
