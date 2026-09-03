@@ -1084,3 +1084,52 @@ describe("§2.10 · demo mode stops at the door", () => {
     assert.ok(demoAt < bodyAt, "the demo check must come first");
   });
 });
+
+// ── Deletion lifecycle · a durable intent fences later writers ─────────
+
+describe("Project deletion lifecycle · the intent is a durable tombstone", () => {
+  it("every production Project Drive mutation boundary uses the central fence", () => {
+    const fencedMutationBoundaries = [
+      "src/server/actions/onboarding.ts",
+      "src/server/actions/seed.ts",
+      "src/server/actions/settings.ts",
+      "src/server/projects/service.ts",
+      "src/server/connections/drive-connections.ts",
+      "src/server/connections/drive-folders.ts",
+      "src/server/connections/drive-uploads.ts",
+      "src/server/connections/project-drive-access.ts",
+      "src/server/connections/project-drive-grant-repair.ts",
+      "src/server/connections/project-drive-member-removal.ts",
+      "src/server/connections/project-drive-member-role.ts",
+      "src/server/connections/project-drive-membership-lifecycle.ts",
+      "src/server/connections/project-drive-operation-orchestrator.ts",
+    ];
+
+    for (const path of fencedMutationBoundaries) {
+      const code = codeOf(path);
+      assert.match(
+        code,
+        /project-deletion-fence/,
+        `${path} must import the one durable Project deletion fence`,
+      );
+      assert.match(
+        code,
+        /assertProjectNotDeleting\(/,
+        `${path} must invoke the Project deletion fence at its writer boundary`,
+      );
+    }
+  });
+
+  it("re-proves delete authority in the intent transaction and exposes no provider-file deletion", () => {
+    const lifecycle = codeOf(
+      "src/server/connections/project-drive-project-deletion.ts",
+    );
+    const preparation = asyncFunctionBlock(lifecycle, "prepareDeletion");
+    assert.ok(preparation, "prepareDeletion must remain an auditable function");
+    assert.match(preparation, /proveProjectCapability\(/);
+    assert.match(preparation, /deleteOrTransferOwnership/);
+    assert.match(preparation, /behavior\s*:\s*["']immediate["']/);
+    assert.doesNotMatch(lifecycle, /deleteGoogleDriveFile\(/);
+    assert.doesNotMatch(lifecycle, /trashGoogleDriveFile\(/);
+  });
+});

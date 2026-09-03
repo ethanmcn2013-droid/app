@@ -11,6 +11,10 @@ import {
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import {
+  assertProjectNotDeleting,
+  ProjectDeletionInProgressError,
+} from "@/server/projects/project-deletion-fence";
+import {
   revokeExactDriveFolderGrant,
   type ExactDriveGrantReceipt,
 } from "./project-drive-erasure-grants";
@@ -101,6 +105,14 @@ async function prepareCandidate(
 > {
   return database.transaction(
     async (transaction) => {
+      try {
+        await assertProjectNotDeleting(transaction, candidate.workspaceId);
+      } catch (error) {
+        if (error instanceof ProjectDeletionInProgressError) {
+          return Object.freeze({ outcome: "skipped" as const });
+        }
+        throw error;
+      }
       const [grant] = await transaction
         .select()
         .from(driveFolderGrants)
@@ -184,6 +196,12 @@ async function finishCandidate(
 ): Promise<boolean> {
   return database.transaction(
     async (transaction) => {
+      try {
+        await assertProjectNotDeleting(transaction, snapshot.workspaceId);
+      } catch (error) {
+        if (error instanceof ProjectDeletionInProgressError) return false;
+        throw error;
+      }
       if (
         await accountErasureIsActive(transaction, [
           snapshot.userId,

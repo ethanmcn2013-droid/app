@@ -31,6 +31,7 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
   createGoogleDriveResumableUploadSession,
   findGoogleDriveFilesByAppProperty,
@@ -351,6 +352,40 @@ function exactFileReceipt(
 }
 
 export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
+  async function markStorageQuotaFull(
+    authorization: AuthorizedProjectDriveContext,
+    session: ProjectDriveStorageSession,
+    pendingResourceId?: string,
+  ): Promise<void> {
+    await deps.database.transaction(
+      async (tx) => {
+        await assertProjectNotDeleting(tx, authorization.projectId);
+        await tx
+          .update(workspaceStorage)
+          .set({ state: "quota_full" })
+          .where(
+            and(
+              eq(workspaceStorage.id, session.storage.id),
+              eq(workspaceStorage.workspaceId, authorization.projectId),
+              eq(workspaceStorage.isCurrent, true),
+            ),
+          );
+        if (pendingResourceId) {
+          await tx
+            .delete(resources)
+            .where(
+              and(
+                eq(resources.id, pendingResourceId),
+                eq(resources.workspaceId, authorization.projectId),
+                eq(resources.accessState, "pending"),
+              ),
+            );
+        }
+      },
+      { behavior: "immediate" },
+    );
+  }
+
   async function assertUnfencedUploadLineages(
     database: Pick<UploadDb, "select">,
     authorization: AuthorizedProjectDriveContext,
@@ -606,6 +641,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
     input: NormalizedRequest,
   ): Promise<ClaimLease> {
     return deps.database.transaction(async (tx) => {
+      await assertProjectNotDeleting(tx, authorization.projectId);
       const now = databaseNowSeconds(deps.databaseNowSeconds);
       const inserted = await tx
         .insert(resources)
@@ -725,7 +761,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
         ownsMint: true,
         leaseStamp: claimed[0].refreshedAt,
       });
-    });
+    }, { behavior: "immediate" });
   }
 
   async function releaseUndelegatedClaim(
@@ -1074,25 +1110,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
       deps.fetchImpl,
     );
     if (!hasQuotaFor(about.storageQuota, input.sizeBytes)) {
-      await deps.database
-        .update(workspaceStorage)
-        .set({ state: "quota_full" })
-        .where(
-          and(
-            eq(workspaceStorage.id, session.storage.id),
-            eq(workspaceStorage.workspaceId, authorization.projectId),
-            eq(workspaceStorage.isCurrent, true),
-          ),
-        );
-      await deps.database
-        .delete(resources)
-        .where(
-          and(
-            eq(resources.id, activeRow.id),
-            eq(resources.workspaceId, authorization.projectId),
-            eq(resources.accessState, "pending"),
-          ),
-        );
+      await markStorageQuotaFull(authorization, session, activeRow.id);
       return Object.freeze({
         kind: "signal-native" as const,
         reason: "quota-full" as const,
@@ -1222,16 +1240,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
             });
           }
           if (!hasQuotaFor(about.storageQuota, input.sizeBytes)) {
-            await deps.database
-              .update(workspaceStorage)
-              .set({ state: "quota_full" })
-              .where(
-                and(
-                  eq(workspaceStorage.id, session.storage.id),
-                  eq(workspaceStorage.workspaceId, authorization.projectId),
-                  eq(workspaceStorage.isCurrent, true),
-                ),
-              );
+            await markStorageQuotaFull(authorization, session);
             return Object.freeze({
               kind: "signal-native" as const,
               reason: "quota-full" as const,

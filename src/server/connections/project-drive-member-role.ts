@@ -8,6 +8,7 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 
 type MemberRoleDb = LibSQLDatabase<typeof schema>;
 
@@ -61,6 +62,7 @@ export async function setProjectDriveMemberRole(
 
   return database.transaction(
     async (transaction) => {
+      await assertProjectNotDeleting(transaction, workspaceId);
       if (input.role === "member") {
         const currentStorageOwnedByTarget = await transaction
           .select({ id: workspaceStorage.id })

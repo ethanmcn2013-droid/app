@@ -11,6 +11,7 @@ import {
 } from "@/server/db/schema";
 import { getTasks } from "@/server/db/queries";
 import { emitTasksChanged } from "@/server/events";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import {
   authorizeProjectCandidate,
@@ -113,10 +114,16 @@ async function resolveSeedProject(
 export async function clearAllTasksAction(projectId?: string): Promise<Task[]> {
   const ws = await resolveSeedProject(projectId, "manageProject");
   await db.delete(tasks).where(eq(tasks.workspaceId, ws));
-  await db
-    .update(workspaces)
-    .set({ activeDomain: null })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ activeDomain: null })
+        .where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "seed" });
   return getTasks(ws);
@@ -134,10 +141,18 @@ export async function markFirstRunCompleteAction(
   const ws = await resolveSeedProject(projectId, "createOrEditTasks");
   // Sentinel "marketing", a chosen-but-empty domain. Welcome page
   // stops intercepting; the next render shows an empty board.
-  await db
-    .update(workspaces)
-    .set({ activeDomain: "marketing" })
-    .where(and(eq(workspaces.id, ws), sql`${workspaces.activeDomain} IS NULL`));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ activeDomain: "marketing" })
+        .where(
+          and(eq(workspaces.id, ws), sql`${workspaces.activeDomain} IS NULL`),
+        );
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
 }
 
@@ -199,10 +214,16 @@ export async function seedDomainAction(
 
   // Persist the chosen domain on the workspace row so the live
   // header reflects it. Doubles as the "first-run complete" marker.
-  await db
-    .update(workspaces)
-    .set({ activeDomain: domain })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ activeDomain: domain })
+        .where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
 
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "seed" });

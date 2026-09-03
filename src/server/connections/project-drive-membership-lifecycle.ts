@@ -11,6 +11,7 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
   createProjectDriveOperationJournal,
   type ProjectDriveOperationView,
@@ -95,6 +96,8 @@ export async function prepareCurrentMemberDriveGrantIntent(
   const workspaceId = canonicalId(input.workspaceId, "workspaceId");
   const memberUserId = canonicalId(input.memberUserId, "memberUserId");
   const verifiedEmail = normalizeProjectDriveGranteeEmail(input.verifiedEmail);
+
+  await assertProjectNotDeleting(transaction, workspaceId);
 
   const memberships = await transaction
     .select({

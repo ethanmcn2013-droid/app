@@ -13,6 +13,7 @@ import {
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import { byWorkspace } from "@/server/db/tenant";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
   canonicalProjectDriveOperationErasureRecoveryInput,
   canonicalProjectDriveOperationFenceInput,
@@ -269,6 +270,9 @@ export async function prepareAccountFencedProjectDriveOperationInTransaction(
   );
   if (!accountIds || (await hasRelatedAccountFence(transaction, accountIds))) {
     return NEUTRAL_CONFLICT;
+  }
+  if (canonical.operationKind !== "project_delete") {
+    await assertProjectNotDeleting(transaction, canonical.workspaceId);
   }
   return createProjectDriveOperationJournal({
     ...journalRuntimeDependencies,

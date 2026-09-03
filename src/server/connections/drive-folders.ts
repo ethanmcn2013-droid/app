@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { workspaces, workspaceStorage } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import { byWorkspace } from "@/server/db/tenant";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
   createGoogleDriveFolder,
   findGoogleDriveFilesByAppProperty,
@@ -420,18 +421,24 @@ export function createDriveFolderService(deps: DriveFolderServiceDependencies) {
           );
         } catch (error) {
           if (isGoogleDriveProviderError(error) && error.status === 404) {
-            await deps.database
-              .update(workspaceStorage)
-              .set({ state: "folder_missing" })
-              .where(
-                and(
-                  eq(workspaceStorage.id, session.storage.id),
-                  eq(
-                    workspaceStorage.workspaceId,
-                    authorization.projectId,
-                  ),
-                ),
-              );
+            await deps.database.transaction(
+              async (tx) => {
+                await assertProjectNotDeleting(tx, authorization.projectId);
+                await tx
+                  .update(workspaceStorage)
+                  .set({ state: "folder_missing" })
+                  .where(
+                    and(
+                      eq(workspaceStorage.id, session.storage.id),
+                      eq(
+                        workspaceStorage.workspaceId,
+                        authorization.projectId,
+                      ),
+                    ),
+                  );
+              },
+              { behavior: "immediate" },
+            );
             throw new DriveFolderError("folder-missing");
           }
           throw error;
@@ -505,6 +512,7 @@ export function createDriveFolderService(deps: DriveFolderServiceDependencies) {
 
         try {
           const persisted = await deps.database.transaction(async (tx) => {
+            await assertProjectNotDeleting(tx, authorization.projectId);
             const [sameGeneration] = await tx
               .select()
               .from(workspaceStorage)
@@ -554,7 +562,7 @@ export function createDriveFolderService(deps: DriveFolderServiceDependencies) {
               isCurrent: true,
             });
             return null;
-          });
+          }, { behavior: "immediate" });
           void persisted;
         } catch (error) {
           if (error instanceof DriveFolderError) throw error;

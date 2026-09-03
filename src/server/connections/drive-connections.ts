@@ -19,6 +19,7 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
   buildGoogleDriveAuthorizationUrl,
   createGoogleDriveFolder,
@@ -434,6 +435,42 @@ export function createGoogleDriveConnectionService(
           throw new GoogleDriveConnectionError("stale-authorization");
         }
 
+        if (before && accountChanged) {
+          const fencedLineage = await tx
+            .select({ id: providerConnections.id })
+            .from(providerConnections)
+            .where(
+              and(
+                eq(providerConnections.userId, authorization.actorUserId),
+                eq(providerConnections.provider, GOOGLE_DRIVE_PROVIDER),
+                eq(
+                  providerConnections.providerAccountId,
+                  before.providerAccountId,
+                ),
+              ),
+            );
+          const fencedLineageIds = fencedLineage.map((row) => row.id);
+          const affected = fencedLineageIds.length
+            ? await tx
+                // isolation-ok: the ids are the authorized actor's exact old
+                // Google-account lineage; account rotation must fence every
+                // current Project whose storage uses that personal account.
+                .select({ workspaceId: workspaceStorage.workspaceId })
+                .from(workspaceStorage)
+                .where(
+                  and(
+                    inArray(workspaceStorage.connectionId, fencedLineageIds),
+                    eq(workspaceStorage.isCurrent, true),
+                  ),
+                )
+            : [];
+          for (const workspaceId of uniqueStrings(
+            affected.map((row) => row.workspaceId),
+          )) {
+            await assertProjectNotDeleting(tx, workspaceId);
+          }
+        }
+
         if (before) {
           await tx
             .update(providerConnections)
@@ -495,7 +532,7 @@ export function createGoogleDriveConnectionService(
               );
           }
         }
-      });
+      }, { behavior: "immediate" });
     } catch (error) {
       // Revocation is grant-level. On a same-account reconnect it could also
       // invalidate the still-current credential whose DB transaction rolled
@@ -641,6 +678,11 @@ export function createGoogleDriveConnectionService(
               ),
             )
         : [];
+      for (const workspaceId of uniqueStrings(
+        affected.map((row) => row.workspaceId),
+      )) {
+        await assertProjectNotDeleting(tx, workspaceId);
+      }
       if (lineageIds.length > 0) {
         await tx
           .update(workspaceStorage)
@@ -673,7 +715,7 @@ export function createGoogleDriveConnectionService(
           affected.map((row) => row.workspaceId),
         ).length,
       };
-    });
+    }, { behavior: "immediate" });
 
     if (!retired) {
       return Object.freeze({

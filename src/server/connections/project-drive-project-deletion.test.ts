@@ -19,10 +19,12 @@ import {
 import type { ExactDriveGrantReceipt } from "./project-drive-erasure-grants";
 import { createProjectDriveOperationJournal } from "./project-drive-operation-journal";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
+import { setProjectDriveMemberRole } from "./project-drive-member-role";
 import {
   createProjectDriveProjectDeletionService,
   ProjectDriveProjectDeletionError,
 } from "./project-drive-project-deletion";
+import { ProjectDeletionInProgressError } from "@/server/projects/project-deletion-fence";
 
 async function seededFixture(withStorage = true) {
   const fixture = await freshProjectDriveCoreDb();
@@ -211,9 +213,14 @@ describe("Project Drive-aware Project deletion", () => {
       await seedProjectChildren(fixture);
 
       const revoked: ExactDriveGrantReceipt[] = [];
+      const deletedStoredPaths: string[] = [];
       const service = createProjectDriveProjectDeletionService({
         database: fixture.db,
         randomOperationId: () => "delete-operation",
+        deleteStoredBytes: async (storedPath) => {
+          deletedStoredPaths.push(storedPath);
+          assert.equal(await count(fixture, "workspaces"), 0);
+        },
         revokeExactGrant: async (receipt) => {
           revoked.push(receipt);
           // A writer call from this callback proves provider I/O is not nested
@@ -225,7 +232,10 @@ describe("Project Drive-aware Project deletion", () => {
         },
       });
 
-      const result = await service.delete({ workspaceId: "ws-a" });
+      const result = await service.delete({
+        workspaceId: "ws-a",
+        actorUserId: "owner",
+      });
       assert.deepEqual(result, {
         workspaceId: "ws-a",
         slug: "ws-a",
@@ -242,6 +252,8 @@ describe("Project Drive-aware Project deletion", () => {
           permissionId: "permission-a",
         },
       ]);
+      assert.deepEqual(deletedStoredPaths, ["uploads/local.txt"]);
+      assert.ok(!deletedStoredPaths.includes("drive-file-id"));
 
       for (const table of [
         "activities",
@@ -309,6 +321,98 @@ describe("Project Drive-aware Project deletion", () => {
     }
   });
 
+  it("best-effort native byte cleanup cannot roll back a committed Project deletion", async () => {
+    const fixture = await seededFixture();
+    try {
+      await seedProjectChildren(fixture);
+      const attempted: string[] = [];
+      const result = await createProjectDriveProjectDeletionService({
+        database: fixture.db,
+        randomOperationId: () => "delete-byte-failure",
+        revokeExactGrant: async () => {},
+        deleteStoredBytes: async (storedPath) => {
+          attempted.push(storedPath);
+          throw new Error("blob unavailable");
+        },
+      }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
+
+      assert.equal(result.workspaceId, "ws-a");
+      assert.deepEqual(attempted, ["uploads/local.txt"]);
+      assert.equal(await count(fixture, "workspaces"), 0);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  it("re-proves primary-owner authority inside the deletion intent transaction", async () => {
+    const fixture = await seededFixture();
+    try {
+      await fixture.db
+        .delete(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, "ws-a"),
+            eq(workspaceMembers.userId, "owner"),
+          ),
+        );
+      let providerCalls = 0;
+      await assert.rejects(
+        createProjectDriveProjectDeletionService({
+          database: fixture.db,
+          revokeExactGrant: async () => {
+            providerCalls += 1;
+          },
+        }).delete({ workspaceId: "ws-a", actorUserId: "owner" }),
+        deletionError("workspace-not-found"),
+      );
+
+      assert.equal(providerCalls, 0);
+      assert.equal(await count(fixture, "workspaces"), 1);
+      assert.equal(
+        (
+          await fixture.db
+            .select()
+            .from(projectDriveOperations)
+            .where(eq(projectDriveOperations.operationKind, "project_delete"))
+        ).length,
+        0,
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  it("uses the delete intent as a tombstone so a concurrent member writer loses before mutation", async () => {
+    const fixture = await seededFixture();
+    try {
+      await insertGrant(fixture);
+      let blocked = false;
+      const result = await createProjectDriveProjectDeletionService({
+        database: fixture.db,
+        randomOperationId: () => "delete-member-race",
+        revokeExactGrant: async () => {
+          await assert.rejects(
+            setProjectDriveMemberRole(fixture.db, {
+              workspaceId: "ws-a",
+              memberUserId: "member-a",
+              role: "owner",
+            }),
+            (error: unknown) => {
+              blocked = error instanceof ProjectDeletionInProgressError;
+              return blocked;
+            },
+          );
+        },
+      }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
+
+      assert.equal(blocked, true);
+      assert.equal(result.workspaceId, "ws-a");
+      assert.equal(await count(fixture, "workspaces"), 0);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
   it("retains the Project, exact receipt, storage and retryable delete intent after provider failure", async () => {
     const fixture = await seededFixture();
     try {
@@ -321,7 +425,7 @@ describe("Project Drive-aware Project deletion", () => {
         },
       });
       await assert.rejects(
-        service.delete({ workspaceId: "ws-a" }),
+        service.delete({ workspaceId: "ws-a", actorUserId: "owner" }),
         /provider unavailable/,
       );
 
@@ -345,6 +449,36 @@ describe("Project Drive-aware Project deletion", () => {
     }
   });
 
+  it("does not start deletion while an earlier revoke-pending lifecycle owns a receipt", async () => {
+    const fixture = await seededFixture();
+    try {
+      await insertGrant(fixture, { revokePending: true });
+      let providerCalls = 0;
+      await assert.rejects(
+        createProjectDriveProjectDeletionService({
+          database: fixture.db,
+          revokeExactGrant: async () => {
+            providerCalls += 1;
+          },
+        }).delete({ workspaceId: "ws-a", actorUserId: "owner" }),
+        deletionError("drive-work-in-progress"),
+      );
+      assert.equal(providerCalls, 0);
+      assert.equal(await count(fixture, "workspaces"), 1);
+      assert.equal(
+        (
+          await fixture.db
+            .select()
+            .from(projectDriveOperations)
+            .where(eq(projectDriveOperations.operationKind, "project_delete"))
+        ).length,
+        0,
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
   it("replays the same exact permission safely after a transient provider failure", async () => {
     const fixture = await seededFixture();
     try {
@@ -361,11 +495,14 @@ describe("Project Drive-aware Project deletion", () => {
         },
       });
       await assert.rejects(
-        service.delete({ workspaceId: "ws-a" }),
+        service.delete({ workspaceId: "ws-a", actorUserId: "owner" }),
         /temporary outage/,
       );
       await new Promise((resolve) => setTimeout(resolve, 1_100));
-      const result = await service.delete({ workspaceId: "ws-a" });
+      const result = await service.delete({
+        workspaceId: "ws-a",
+        actorUserId: "owner",
+      });
       assert.equal(result.revokedGrantCount, 1);
       assert.equal(revoked.length, 2);
       assert.deepEqual(revoked[1], revoked[0]);
@@ -408,7 +545,7 @@ describe("Project Drive-aware Project deletion", () => {
         },
       });
       await assert.rejects(
-        service.delete({ workspaceId: "ws-a" }),
+        service.delete({ workspaceId: "ws-a", actorUserId: "owner" }),
         deletionError("upload-in-progress"),
       );
       assert.equal(providerCalls, 0);
@@ -460,7 +597,7 @@ describe("Project Drive-aware Project deletion", () => {
         },
       });
       await assert.rejects(
-        service.delete({ workspaceId: "ws-a" }),
+        service.delete({ workspaceId: "ws-a", actorUserId: "owner" }),
         deletionError("upload-in-progress"),
       );
       assert.equal(await count(fixture, "workspaces"), 1);
@@ -482,7 +619,10 @@ describe("Project Drive-aware Project deletion", () => {
           providerCalls += 1;
         },
       });
-      const result = await service.delete({ workspaceId: "ws-a" });
+      const result = await service.delete({
+        workspaceId: "ws-a",
+        actorUserId: "owner",
+      });
       assert.equal(result.revokedGrantCount, 0);
       assert.equal(providerCalls, 0);
       assert.equal(await count(fixture, "workspaces"), 0);
@@ -514,7 +654,7 @@ describe("Project Drive-aware Project deletion", () => {
         revokeExactGrant: async (receipt) => {
           revoked.push(receipt);
         },
-      }).delete({ workspaceId: "ws-a" });
+      }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
       assert.equal(revoked.length, 1);
       assert.equal(revoked[0]?.permissionId, "permission-journal-only");
       assert.equal(revoked[0]?.folderId, "folder-current");
@@ -546,7 +686,7 @@ describe("Project Drive-aware Project deletion", () => {
         database: fixture.db,
         randomOperationId: () => "delete-rearmed-new",
         revokeExactGrant: async () => undefined,
-      }).delete({ workspaceId: "ws-a" });
+      }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
       assert.equal(result.workspaceId, "ws-a");
       assert.equal(await count(fixture, "workspaces"), 0);
     } finally {
@@ -562,7 +702,7 @@ describe("Project Drive-aware Project deletion", () => {
         database: safeFixture.db,
         randomOperationId: () => "delete-after-safe-cancel",
         revokeExactGrant: async () => undefined,
-      }).delete({ workspaceId: "ws-a" });
+      }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
       assert.equal(await count(safeFixture, "workspaces"), 0);
     } finally {
       safeFixture.cleanup();
@@ -591,7 +731,7 @@ describe("Project Drive-aware Project deletion", () => {
           revokeExactGrant: async () => {
             providerCalls += 1;
           },
-        }).delete({ workspaceId: "ws-a" }),
+        }).delete({ workspaceId: "ws-a", actorUserId: "owner" }),
         deletionError("drive-work-in-progress"),
       );
       assert.equal(providerCalls, 0);
@@ -646,13 +786,13 @@ describe("Project Drive-aware Project deletion", () => {
         });
 
         await assert.rejects(
-          service.delete({ workspaceId: "ws-a" }),
+          service.delete({ workspaceId: "ws-a", actorUserId: "owner" }),
           deletionError("receipt-conflict"),
         );
         assert.equal(await count(fixture, "workspaces"), 1);
         assert.equal(await count(fixture, "workspace_storage"), 2);
         assert.equal(await count(fixture, "workspace_members"), 3);
-        assert.ok(await count(fixture, "drive_folder_grants") >= 1);
+        assert.ok((await count(fixture, "drive_folder_grants")) >= 1);
         assert.equal(
           (
             await fixture.db
@@ -684,7 +824,7 @@ describe("Project Drive-aware Project deletion", () => {
         },
       });
       await assert.rejects(
-        service.delete({ workspaceId: "ws-a" }),
+        service.delete({ workspaceId: "ws-a", actorUserId: "owner" }),
         deletionError("account-erasure-in-progress"),
       );
       assert.equal(providerCalls, 0);
@@ -706,7 +846,7 @@ describe("Project Drive-aware Project deletion", () => {
               value: "active:v1",
             });
           },
-        }).delete({ workspaceId: "ws-a" }),
+        }).delete({ workspaceId: "ws-a", actorUserId: "owner" }),
         deletionError("account-erasure-in-progress"),
       );
       assert.equal(await count(raceFixture, "workspaces"), 1);
@@ -727,7 +867,7 @@ describe("Project Drive-aware Project deletion", () => {
         revokeExactGrant: async (receipt) => {
           calls.push(...(Object.keys(receipt) as Array<keyof typeof receipt>));
         },
-      }).delete({ workspaceId: "ws-a" });
+      }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
       assert.ok(calls.includes("permissionId"));
       assert.equal(calls.includes("folderId"), true);
       assert.equal(

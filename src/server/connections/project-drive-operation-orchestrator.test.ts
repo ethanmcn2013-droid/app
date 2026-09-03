@@ -18,6 +18,7 @@ import {
   projectDriveOperations,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { ProjectDeletionInProgressError } from "@/server/projects/project-deletion-fence";
 import {
   createProjectDriveOperationJournal,
   ProjectDriveOperationInputError,
@@ -244,6 +245,29 @@ async function operationStatus(database: TestDb, operationId: string) {
 }
 
 describe("Project Drive operation orchestration · prepare versus erasure", () => {
+  it("refuses new provider intent after project deletion owns the workspace", async () => {
+    const { database, cleanup } = await freshOrchestratorDb();
+    try {
+      await seedRunningBlocker(database);
+      const service = orchestrator(database, ["must-not-be-inserted"]);
+
+      await assert.rejects(
+        service.prepare({
+          operationKind: "grant_create",
+          workspaceId: "ws-a",
+          storageGenerationId: "storage-a",
+          subjectUserId: "u-member",
+          granteeEmail: "member@example.test",
+          grantRole: "writer",
+        }),
+        (error) => error instanceof ProjectDeletionInProgressError,
+      );
+      assert.equal(await operationStatus(database, "must-not-be-inserted"), null);
+    } finally {
+      cleanup();
+    }
+  });
+
   it("lets preparation win first, then lets erasure durably cancel untouched work", async () => {
     const { database, cleanup } = await freshOrchestratorDb();
     try {

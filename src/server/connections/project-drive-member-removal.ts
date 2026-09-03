@@ -11,6 +11,7 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import type { ExactDriveGrantReceipt } from "./project-drive-erasure-grants";
 import { createProjectDriveOperationJournal } from "./project-drive-operation-journal";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
@@ -388,6 +389,7 @@ async function prepareRemoval(
 ): Promise<RemovalSnapshot> {
   return database.transaction(
     async (transaction) => {
+      await assertProjectNotDeleting(transaction, workspaceId);
       const preflight = await assertRemovalPreconditions(
         transaction,
         workspaceId,
@@ -464,6 +466,7 @@ async function finishRemoval(
   if (snapshot.alreadyAbsent) return false;
   return database.transaction(
     async (transaction) => {
+      await assertProjectNotDeleting(transaction, workspaceId);
       const preflight = await assertRemovalPreconditions(
         transaction,
         workspaceId,

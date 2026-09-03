@@ -7,6 +7,8 @@ import {
   type SQL,
 } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import { assertProjectId, type ProjectId } from "@/lib/projects/project-ref";
+import { proveProjectCapability } from "@/server/actions/project-authz";
 import {
   driveFolderGrants,
   meta,
@@ -18,6 +20,7 @@ import {
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import { deleteProjectRowsInTransaction } from "@/server/projects/project-deletion-rows";
+import { deleteBytes } from "@/server/storage";
 import type { ExactDriveGrantReceipt } from "./project-drive-erasure-grants";
 import { createProjectDriveOperationJournal } from "./project-drive-operation-journal";
 import { projectDriveOperationDedupeKey } from "./project-drive-operation-key";
@@ -42,6 +45,7 @@ export type ProjectDriveProjectDeletionDependencies = Readonly<{
   revokeExactGrant: (receipt: ExactDriveGrantReceipt) => Promise<void>;
   randomOperationId?: () => string;
   leaseDurationMs?: number;
+  deleteStoredBytes?: (storedPath: string) => Promise<void>;
   /** Test seam only. Production always uses the journal's DB clock. */
   databaseNowSeconds?: () => SQL<Date>;
 }>;
@@ -68,7 +72,7 @@ export class ProjectDriveProjectDeletionError extends Error {
       "drive-work-in-progress":
         "This board’s Drive access is still being updated. Try again when it finishes.",
       "receipt-conflict":
-        "This board changed while it was being deleted. Nothing was removed. Try again.",
+        "This board changed while deletion was finishing. Its Google Drive access may already have changed; try deleting it again.",
       "upload-in-progress":
         "Finish or recover this board’s Drive upload before deleting it.",
       "workspace-not-found": "Workspace not found.",
@@ -590,16 +594,47 @@ async function prepareAndClaimDeleteIntent(
 
 async function prepareDeletion(
   deps: ProjectDriveProjectDeletionDependencies,
-  workspaceId: string,
+  workspaceId: ProjectId,
+  actorUserId: string,
 ): Promise<PreparedDeletion> {
   return deps.database.transaction(
     async (transaction) => {
+      const authorization = await proveProjectCapability(
+        actorUserId,
+        workspaceId,
+        "deleteOrTransferOwnership",
+        "defer",
+        transaction,
+      );
+      if (!authorization.ok) {
+        throw new ProjectDriveProjectDeletionError("workspace-not-found");
+      }
+
       let state = await readProjectState(transaction, workspaceId);
       await assertNoPendingDelegatedUploads(transaction, workspaceId);
       await assertNoAccountErasureFences(
         transaction,
         relatedAccountUserIds(state),
       );
+
+      const resumingDeletion = state.operations.some(
+        (operation) =>
+          operation.operationKind === "project_delete" &&
+          (operation.status === "pending" ||
+            operation.status === "running" ||
+            operation.status === "retry_wait" ||
+            operation.status === "manual_attention"),
+      );
+      if (
+        !resumingDeletion &&
+        state.grants.some((grant) => grant.revokePending)
+      ) {
+        // A member-removal or revoke-repair flow already owns at least one
+        // exact permission receipt. Let it finish before deletion establishes
+        // its own tombstone; otherwise both provider loops could run and the
+        // deletion snapshot would be invalidated after irreversible I/O.
+        throw new ProjectDriveProjectDeletionError("drive-work-in-progress");
+      }
 
       await cancelUntouchedNonDeleteOperations(transaction, state, deps);
       state = await readProjectState(transaction, workspaceId);
@@ -685,7 +720,12 @@ async function scheduleRetry(
 async function finishDeletion(
   deps: ProjectDriveProjectDeletionDependencies,
   prepared: PreparedDeletion,
-): Promise<ProjectDriveProjectDeletionResult> {
+): Promise<
+  Readonly<{
+    result: ProjectDriveProjectDeletionResult;
+    signalAttachmentStoredPaths: readonly string[];
+  }>
+> {
   return deps.database.transaction(
     async (transaction) => {
       const state = await readProjectState(transaction, prepared.workspaceId);
@@ -717,7 +757,11 @@ async function finishDeletion(
         throw new ProjectDriveProjectDeletionError("receipt-conflict");
       }
 
-      await deleteProjectRowsInTransaction(transaction, prepared.workspaceId);
+      const signalAttachmentStoredPaths =
+        await deleteProjectRowsInTransaction(
+          transaction,
+          prepared.workspaceId,
+        );
       const deleted = await transaction
         .delete(workspaces)
         .where(eq(workspaces.id, prepared.workspaceId))
@@ -727,12 +771,15 @@ async function finishDeletion(
       }
 
       return Object.freeze({
-        workspaceId: prepared.workspaceId,
-        slug: prepared.workspace.slug,
-        wasPublished: prepared.workspace.publishedAt !== null,
-        revokedGrantCount: new Set(
-          prepared.receipts.map(providerReceiptKey),
-        ).size,
+        result: Object.freeze({
+          workspaceId: prepared.workspaceId,
+          slug: prepared.workspace.slug,
+          wasPublished: prepared.workspace.publishedAt !== null,
+          revokedGrantCount: new Set(
+            prepared.receipts.map(providerReceiptKey),
+          ).size,
+        }),
+        signalAttachmentStoredPaths,
       });
     },
     { behavior: "immediate" },
@@ -742,19 +789,25 @@ async function finishDeletion(
 /**
  * Delete one Project without ever deleting provider-owned files or folders.
  *
- * Authorization intentionally lives at the existing `deleteProject` boundary.
- * This service begins only after that proof. It first commits a durable,
- * DB-clock-fenced delete intent and exact permission snapshot, performs only
- * idempotent named-user permission DELETEs outside any database writer
- * transaction, then atomically re-proves the snapshot and removes local rows.
+ * The caller's authorization context is only an outer routing guard. This
+ * service re-proves `deleteOrTransferOwnership` from database truth inside the
+ * same immediate transaction that commits the durable, DB-clock-fenced delete
+ * intent and exact permission snapshot. It then performs only idempotent
+ * named-user permission DELETEs outside any database writer transaction before
+ * atomically re-proving the snapshot and removing local rows.
  */
 export function createProjectDriveProjectDeletionService(
   deps: ProjectDriveProjectDeletionDependencies,
 ) {
   return Object.freeze({
-    async delete(input: Readonly<{ workspaceId: string }>) {
-      const workspaceId = canonicalId(input.workspaceId, "workspaceId");
-      const prepared = await prepareDeletion(deps, workspaceId);
+    async delete(
+      input: Readonly<{ workspaceId: string; actorUserId: string }>,
+    ) {
+      const workspaceId = assertProjectId(
+        canonicalId(input.workspaceId, "workspaceId"),
+      );
+      const actorUserId = canonicalId(input.actorUserId, "actorUserId");
+      const prepared = await prepareDeletion(deps, workspaceId, actorUserId);
       const providerReceipts = new Map<string, ExactDriveGrantReceipt>();
       for (const receipt of prepared.receipts) {
         providerReceipts.set(providerReceiptKey(receipt), receipt);
@@ -772,7 +825,20 @@ export function createProjectDriveProjectDeletionService(
       }
 
       try {
-        return await finishDeletion(deps, prepared);
+        const finished = await finishDeletion(deps, prepared);
+        const deleteStoredBytes = deps.deleteStoredBytes ?? deleteBytes;
+        for (const storedPath of finished.signalAttachmentStoredPaths) {
+          try {
+            // Signal-owned bytes are removed only after their rows and the
+            // Project have committed. Drive resource identifiers never enter
+            // this list and no provider file/folder mutation is exposed here.
+            await deleteStoredBytes(storedPath);
+          } catch {
+            // Match account-erasure semantics: an unavailable byte store must
+            // not undo the completed database deletion.
+          }
+        }
+        return finished.result;
       } catch (error) {
         if (
           error instanceof ProjectDriveProjectDeletionError &&

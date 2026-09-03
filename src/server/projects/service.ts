@@ -108,6 +108,7 @@ import { planDuplicatedTasks } from "@/lib/planning/duplication";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { executeProjectDriveFolderOperation } from "@/server/connections/project-drive-folder-operation-executor";
 import { prepareAccountFencedProjectDriveOperationInTransaction } from "@/server/connections/project-drive-operation-orchestrator";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -309,6 +310,7 @@ export async function renameProject(input: {
   }
   const result = await db.transaction(
     async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
       const updated = await transaction
         .update(workspaces)
         .set({
@@ -385,15 +387,21 @@ export async function reorderProject(input: {
     "manageProject",
     refusal,
   );
-  const updated = await db
-    .update(workspaces)
-    .set({
-      position: safePosition(input.position),
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id });
+  const updated = await db.transaction(
+    async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
+      return transaction
+        .update(workspaces)
+        .set({
+          position: safePosition(input.position),
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id });
+    },
+    { behavior: "immediate" },
+  );
   if (!updated[0]) throw new Error(RECEIPT_MISSING);
   revalidatePath("/app", "layout");
   return { id: grant.projectId };
@@ -422,15 +430,21 @@ export async function setProjectArchived(input: {
     "manageProject",
     refusal,
   );
-  const updated = await db
-    .update(workspaces)
-    .set({
-      archivedAt: input.archived ? new Date() : null,
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id, contextType: workspaces.contextType });
+  const updated = await db.transaction(
+    async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
+      return transaction
+        .update(workspaces)
+        .set({
+          archivedAt: input.archived ? new Date() : null,
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id, contextType: workspaces.contextType });
+    },
+    { behavior: "immediate" },
+  );
   if (!updated[0]) throw new Error(RECEIPT_MISSING);
   revalidatePath("/app", "layout");
   return { id: grant.projectId, contextType: updated[0].contextType };
@@ -467,24 +481,31 @@ export async function moveProjectToPeriod(input: {
     requirePlanningPeriodOwner(input.actorUserId, input.targetPlanningPeriodId),
   ]);
   if (target.archivedAt) throw new Error("Restore the target period first.");
-  const [current] = await db
-    .select({ contextType: workspaces.contextType })
-    .from(workspaces)
-    .where(eq(workspaces.id, grant.projectId));
-  if (!current) throw new Error(RECEIPT_MISSING);
-  if (!isCompatibleWorkspaceContext(target.contextType, current.contextType)) {
-    throw new Error("This workspace type does not match the target period.");
-  }
-  const updated = await db
-    .update(workspaces)
-    .set({
-      planningPeriodId: target.id,
-      position: safePosition(input.position),
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id });
+  const { current, updated } = await db.transaction(
+    async (transaction) => {
+      await assertProjectNotDeleting(transaction, grant.projectId);
+      const [current] = await transaction
+        .select({ contextType: workspaces.contextType })
+        .from(workspaces)
+        .where(eq(workspaces.id, grant.projectId));
+      if (!current) throw new Error(RECEIPT_MISSING);
+      if (!isCompatibleWorkspaceContext(target.contextType, current.contextType)) {
+        throw new Error("This workspace type does not match the target period.");
+      }
+      const updated = await transaction
+        .update(workspaces)
+        .set({
+          planningPeriodId: target.id,
+          position: safePosition(input.position),
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id });
+      return Object.freeze({ current, updated });
+    },
+    { behavior: "immediate" },
+  );
   if (!updated[0]) throw new Error(RECEIPT_MISSING);
   revalidatePath("/app", "layout");
   return {
@@ -616,6 +637,7 @@ export async function duplicateProjectIntoPeriodTx(
     choices: ProjectDuplicationChoices;
   },
 ): Promise<{ id: string; slug: string; sourceContextType: string }> {
+  await assertProjectNotDeleting(tx, input.source.id);
   const id = `ws-${randomUUID()}`;
   const slug = `${slugifyProjectName(input.name)}-${randomUUID().slice(0, 8)}`;
   const now = new Date();
@@ -747,9 +769,10 @@ export async function deleteProject(input: {
     "deleteOrTransferOwnership",
     refusal,
   );
-  // Authorization remains at this established boundary. The lifecycle below
-  // starts only after the primary-owner capability is proved, then preserves
-  // exact Drive receipts across its provider/database split.
+  // Keep the established boundary proof for an early neutral refusal. The
+  // lifecycle below re-proves the same primary-owner capability inside the
+  // immediate transaction that commits its durable deletion intent, then
+  // preserves exact Drive receipts across the provider/database split.
   const [projectDeletion, driveErasureGrants] = await Promise.all([
     import("@/server/connections/project-drive-project-deletion"),
     import("@/server/connections/project-drive-erasure-grants"),
@@ -757,7 +780,10 @@ export async function deleteProject(input: {
   const removed = await projectDeletion.createProjectDriveProjectDeletionService({
     database: db,
     revokeExactGrant: driveErasureGrants.revokeExactDriveFolderGrant,
-  }).delete({ workspaceId: grant.projectId });
+  }).delete({
+    workspaceId: grant.projectId,
+    actorUserId: input.actorUserId,
+  });
   // Drop the public page immediately rather than at the end of the ISR
   // window (E06.12).
   revalidatePath(`/p/${removed.slug}`);

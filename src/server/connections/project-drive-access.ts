@@ -14,6 +14,7 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import {
   googleDriveOAuthClientFromEnv,
 } from "./drive-connections";
@@ -142,44 +143,57 @@ function invalidGrant(error: unknown): boolean {
 export function createProjectDriveAccessService(
   deps: ProjectDriveAccessServiceDependencies,
 ) {
-  async function lineageIds(input: {
-    ownerUserId: string;
-    providerAccountId: string;
-  }): Promise<string[]> {
-    const rows = await deps.database
-      .select({ id: providerConnections.id })
-      .from(providerConnections)
-      .where(
-        and(
-          eq(providerConnections.userId, input.ownerUserId),
-          eq(providerConnections.provider, GOOGLE_DRIVE_PROVIDER),
-          eq(providerConnections.providerAccountId, input.providerAccountId),
-        ),
-      );
-    return rows.map((row) => row.id);
-  }
-
   async function markNeedsReauth(input: {
     connectionId: string;
     ownerUserId: string;
     providerAccountId: string;
   }): Promise<void> {
-    const ids = await lineageIds(input);
-    await deps.database.transaction(async (tx) => {
-      await tx
-        .update(providerConnections)
-        .set({ status: "needs_reauth", lastErrorAt: deps.now() })
-        .where(eq(providerConnections.id, input.connectionId));
-      if (ids.length > 0) {
-        // isolation-ok: ids are derived from one storage owner's exact
-        // provider-account lineage. An invalid grant affects every folder
-        // generation whose credential came from that lineage.
+    await deps.database.transaction(
+      async (tx) => {
+        const lineage = await tx
+          .select({ id: providerConnections.id })
+          .from(providerConnections)
+          .where(
+            and(
+              eq(providerConnections.userId, input.ownerUserId),
+              eq(providerConnections.provider, GOOGLE_DRIVE_PROVIDER),
+              eq(
+                providerConnections.providerAccountId,
+                input.providerAccountId,
+              ),
+            ),
+          );
+        const ids = lineage.map((row) => row.id);
+        const affected = ids.length
+          ? await tx
+              // isolation-ok: ids are one storage owner's exact provider-
+              // account lineage; invalid_grant must fence every Project
+              // generation whose credential came from that lineage.
+              .select({ workspaceId: workspaceStorage.workspaceId })
+              .from(workspaceStorage)
+              .where(inArray(workspaceStorage.connectionId, ids))
+          : [];
+        for (const workspaceId of new Set(
+          affected.map((row) => row.workspaceId),
+        )) {
+          await assertProjectNotDeleting(tx, workspaceId);
+        }
         await tx
-          .update(workspaceStorage)
-          .set({ state: "needs_reauth" })
-          .where(inArray(workspaceStorage.connectionId, ids));
-      }
-    });
+          .update(providerConnections)
+          .set({ status: "needs_reauth", lastErrorAt: deps.now() })
+          .where(eq(providerConnections.id, input.connectionId));
+        if (ids.length > 0) {
+          // isolation-ok: ids are derived from one storage owner's exact
+          // provider-account lineage. An invalid grant affects every folder
+          // generation whose credential came from that lineage.
+          await tx
+            .update(workspaceStorage)
+            .set({ state: "needs_reauth" })
+            .where(inArray(workspaceStorage.connectionId, ids));
+        }
+      },
+      { behavior: "immediate" },
+    );
   }
 
   async function refreshCredential<T>(

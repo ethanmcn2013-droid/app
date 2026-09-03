@@ -41,7 +41,7 @@ type ProjectRowsExecutor = Pick<
 export async function deleteProjectRowsInTransaction(
   transaction: ProjectRowsExecutor,
   workspaceId: string,
-): Promise<void> {
+): Promise<readonly string[]> {
   const taskRows = await transaction
     .select({ id: tasks.id })
     .from(tasks)
@@ -55,6 +55,23 @@ export async function deleteProjectRowsInTransaction(
       taskIds.length > 0 ? inArray(taskColumn, taskIds) : undefined,
       eq(workspaceColumn, workspaceId),
     )!;
+
+  // `attachments` is the legacy Signal-owned byte table. Drive uploads live
+  // in `resources` and are provider-owned, so their `storedPath` values must
+  // never enter this cleanup list. Carry the native locators out of the writer
+  // transaction before their rows disappear; the caller deletes bytes only
+  // after the database commit succeeds.
+  const attachmentRows = await transaction
+    .select({ storedPath: attachments.storedPath })
+    .from(attachments)
+    .where(byTaskOrWorkspace(attachments.taskId, attachments.workspaceId));
+  const signalAttachmentStoredPaths = Object.freeze([
+    ...new Set(
+      attachmentRows
+        .map((row) => row.storedPath)
+        .filter((storedPath): storedPath is string => storedPath.length > 0),
+    ),
+  ]);
 
   const links = await transaction
     .select({ token: shareLinks.token })
@@ -117,4 +134,6 @@ export async function deleteProjectRowsInTransaction(
   await transaction
     .delete(workspaceMembers)
     .where(eq(workspaceMembers.workspaceId, workspaceId));
+
+  return signalAttachmentStoredPaths;
 }

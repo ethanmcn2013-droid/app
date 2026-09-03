@@ -35,6 +35,7 @@ import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
 import { executeProjectDriveGrantOperation } from "@/server/connections/project-drive-grant-operation-executor";
 import { prepareCurrentMemberDriveGrantIntent } from "@/server/connections/project-drive-membership-lifecycle";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
 import { createProjectDriveMemberRemovalService } from "@/server/connections/project-drive-member-removal";
 import { setProjectDriveMemberRole } from "@/server/connections/project-drive-member-role";
@@ -268,10 +269,16 @@ export async function setProjectDescriptionAction(
       `Keep the description under ${PROJECT_DESCRIPTION_MAX} characters.`,
     );
   }
-  await db
-    .update(workspaces)
-    .set({ description: trimmed.length > 0 ? trimmed : null })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ description: trimmed.length > 0 ? trimmed : null })
+        .where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -296,10 +303,13 @@ export async function setProjectCurrencyAction(
   if (currency !== null && !isProjectCurrency(currency)) {
     throw new Error("Choose one of the supported currencies.");
   }
-  await db
-    .update(workspaces)
-    .set({ currency })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx.update(workspaces).set({ currency }).where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -324,10 +334,16 @@ export async function setProjectBudgetAction(
       throw new Error("Budget must be a whole amount in range.");
     }
   }
-  await db
-    .update(workspaces)
-    .set({ budgetCents: budgetCents === 0 ? null : budgetCents })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ budgetCents: budgetCents === 0 ? null : budgetCents })
+        .where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -415,14 +431,21 @@ export async function publishWorkspaceAction(projectId?: string): Promise<{
     "publishTimeline",
     "Only the owner can publish this workspace.",
   );
-  await db
-    .update(workspaces)
-    .set({ publishedAt: new Date() })
-    .where(eq(workspaces.id, ws));
-  const [row] = await db
-    .select({ slug: workspaces.slug })
-    .from(workspaces)
-    .where(eq(workspaces.id, ws));
+  const row = await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({ publishedAt: new Date() })
+        .where(eq(workspaces.id, ws));
+      const [row] = await tx
+        .select({ slug: workspaces.slug })
+        .from(workspaces)
+        .where(eq(workspaces.id, ws));
+      return row ?? null;
+    },
+    { behavior: "immediate" },
+  );
   if (!row) throw new Error("Workspace vanished mid-publish.");
   revalidatePath(`/p/${row.slug}`);
   revalidatePath("/app", "layout");
@@ -443,14 +466,21 @@ export async function unpublishWorkspaceAction(projectId?: string): Promise<{
     "revokeTimeline",
     "Only the owner can unpublish this workspace.",
   );
-  const [row] = await db
-    .select({ slug: workspaces.slug })
-    .from(workspaces)
-    .where(eq(workspaces.id, ws));
-  await db
-    .update(workspaces)
-    .set({ publishedAt: null })
-    .where(eq(workspaces.id, ws));
+  const row = await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      const [row] = await tx
+        .select({ slug: workspaces.slug })
+        .from(workspaces)
+        .where(eq(workspaces.id, ws));
+      await tx
+        .update(workspaces)
+        .set({ publishedAt: null })
+        .where(eq(workspaces.id, ws));
+      return row ?? null;
+    },
+    { behavior: "immediate" },
+  );
   if (row) revalidatePath(`/p/${row.slug}`);
   revalidatePath("/app", "layout");
   return { ok: true };
@@ -580,14 +610,20 @@ export async function inviteMemberByEmailAction(
   } else {
     token = mintInviteToken();
     expiresAt = new Date(now + INVITE_EXPIRY_DAYS * 24 * 60 * 60 * 1000);
-    await db.insert(pendingInvites).values({
-      token,
-      workspaceId: ws,
-      email: trimmed,
-      invitedByUserId: me,
-      role,
-      expiresAt,
-    });
+    await db.transaction(
+      async (tx) => {
+        await assertProjectNotDeleting(tx, ws);
+        await tx.insert(pendingInvites).values({
+          token,
+          workspaceId: ws,
+          email: trimmed,
+          invitedByUserId: me,
+          role,
+          expiresAt,
+        });
+      },
+      { behavior: "immediate" },
+    );
   }
 
   // Send. Dev path (no Resend key) logs and returns ok.
@@ -612,21 +648,29 @@ export async function inviteMemberByEmailAction(
     throw new Error(result.error ?? "Couldn’t send the invite email.");
   }
 
-  // Update last_sent_at on the pending_invites row (covers both new and resend).
-  await db
-    .update(pendingInvites)
-    .set({ lastSentAt: now })
-    .where(eq(pendingInvites.token, token));
+  // Update delivery evidence atomically unless deletion already owns the
+  // Project. The email may have crossed the provider boundary just before a
+  // concurrent delete; in that case the invite cannot be made live again.
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(pendingInvites)
+        .set({ lastSentAt: now })
+        .where(eq(pendingInvites.token, token));
 
-  // Record workspace event. No email address in payload (audit trail only).
-  await db.insert(workspaceEvents).values({
-    id: mintEventId(),
-    workspaceId: ws,
-    userId: me,
-    kind: "inviteSent",
-    payload: JSON.stringify({ role }),
-    createdAt: Math.floor(now / 1000),
-  });
+      // Record workspace event. No email address in payload (audit trail only).
+      await tx.insert(workspaceEvents).values({
+        id: mintEventId(),
+        workspaceId: ws,
+        userId: me,
+        kind: "inviteSent",
+        payload: JSON.stringify({ role }),
+        createdAt: Math.floor(now / 1000),
+      });
+    },
+    { behavior: "immediate" },
+  );
 
   return { ok: true, email: trimmed, sent: true };
 }
@@ -744,6 +788,7 @@ export async function acceptInviteAction(token: string): Promise<{
   const acceptedAt = new Date();
   const driveGrantIntent = await db.transaction(
     async (tx) => {
+      await assertProjectNotDeleting(tx, invite.workspaceId);
       // Clerk's verified primary address is the authority used for both the
       // membership and its named-user Drive grant. Keep the local mirror in
       // the same transaction so the executor's fresh email recheck cannot see
@@ -921,11 +966,22 @@ export async function revokePendingInviteAction(
     "manageProject",
     "Only the workspace owner can revoke invites.",
   );
-  const result = await db
-    .update(pendingInvites)
-    .set({ expiresAt: new Date() })
-    .where(and(eq(pendingInvites.token, token), eq(pendingInvites.workspaceId, ws)))
-    .returning({ token: pendingInvites.token });
+  const result = await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      return tx
+        .update(pendingInvites)
+        .set({ expiresAt: new Date() })
+        .where(
+          and(
+            eq(pendingInvites.token, token),
+            eq(pendingInvites.workspaceId, ws),
+          ),
+        )
+        .returning({ token: pendingInvites.token });
+    },
+    { behavior: "immediate" },
+  );
   if (result.length === 0) {
     throw new Error("That invite was already accepted or has been revoked.");
   }

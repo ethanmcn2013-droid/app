@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { and, eq } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
-import { driveFolderGrants, meta } from "@/server/db/schema";
+import {
+  driveFolderGrants,
+  meta,
+  projectDriveOperations,
+} from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import {
   freshProjectDriveCoreDb,
@@ -82,6 +86,44 @@ function trackedTransactions(
 }
 
 describe("Project Drive grant repair", () => {
+  it("leaves deletion-owned revoke receipts for the deletion lifecycle", async () => {
+    const setup = await fixture();
+    await setup.db.insert(projectDriveOperations).values({
+      id: "project-delete-running",
+      workspaceId: "ws-a",
+      operationKind: "project_delete",
+      status: "running",
+      dedupeKey: "d".repeat(64),
+      attemptCount: 1,
+      lastAttemptAt: new Date("2026-09-01T12:00:00.000Z"),
+      leaseExpiresAt: new Date("2026-09-01T12:05:00.000Z"),
+      createdAt: new Date("2026-09-01T12:00:00.000Z"),
+      updatedAt: new Date("2026-09-01T12:00:00.000Z"),
+    });
+    let calls = 0;
+    const service = createProjectDriveGrantRepairService({
+      database: setup.db,
+      revokeExactGrant: async () => {
+        calls += 1;
+      },
+    });
+
+    assert.deepEqual(await service.repairPending(), {
+      scanned: 1,
+      attempted: 0,
+      repaired: 0,
+      skipped: 1,
+      failed: 0,
+    });
+    assert.equal(calls, 0);
+    const [receipt] = await setup.db
+      .select()
+      .from(driveFolderGrants)
+      .where(eq(driveFolderGrants.userId, "member-a"));
+    assert.equal(receipt.permissionId, "permission-a");
+    assert.equal(receipt.revokePending, true);
+  });
+
   it("revokes the exact pending receipt outside writer transactions, then removes it", async () => {
     const setup = await fixture();
     let writerDepth = 0;

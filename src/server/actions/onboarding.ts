@@ -11,6 +11,7 @@ import {
 } from "@/server/actions/project-authz";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
 import { emitTasksChanged } from "@/server/events";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 import { TEMPLATES } from "@/lib/templates";
 import {
   getSegment,
@@ -91,31 +92,43 @@ export async function completeOnboardingAction(
       await seedDomainAction(segment.domainId, ws);
     }
 
-    await db
-      .update(workspaces)
-      .set({
-        primaryUseCase: input.primaryUseCase,
-        secondaryContext: input.secondaryContext ?? null,
-        templateId: templateId ?? null,
-        activeDomain: segment.domainId,
-        onboardingCompletedAt: now,
-      })
-      .where(eq(workspaces.id, ws));
+    await db.transaction(
+      async (tx) => {
+        await assertProjectNotDeleting(tx, ws);
+        await tx
+          .update(workspaces)
+          .set({
+            primaryUseCase: input.primaryUseCase,
+            secondaryContext: input.secondaryContext ?? null,
+            templateId: templateId ?? null,
+            activeDomain: segment.domainId,
+            onboardingCompletedAt: now,
+          })
+          .where(eq(workspaces.id, ws));
+      },
+      { behavior: "immediate" },
+    );
   } else {
-    await db
-      .update(workspaces)
-      .set({
-        activeDomain: segment.domainId,
-        primaryUseCase: input.primaryUseCase,
-        secondaryContext: input.secondaryContext ?? null,
-        onboardingCompletedAt: now,
-      })
-      .where(
-        and(
-          eq(workspaces.id, ws),
-          sql`${workspaces.activeDomain} IS NULL`,
-        ),
-      );
+    await db.transaction(
+      async (tx) => {
+        await assertProjectNotDeleting(tx, ws);
+        await tx
+          .update(workspaces)
+          .set({
+            activeDomain: segment.domainId,
+            primaryUseCase: input.primaryUseCase,
+            secondaryContext: input.secondaryContext ?? null,
+            onboardingCompletedAt: now,
+          })
+          .where(
+            and(
+              eq(workspaces.id, ws),
+              sql`${workspaces.activeDomain} IS NULL`,
+            ),
+          );
+      },
+      { behavior: "immediate" },
+    );
   }
 
   revalidatePath("/app", "layout");
@@ -139,16 +152,22 @@ export async function skipOnboardingAction(): Promise<void> {
   ]);
   const now = new Date();
 
-  await db
-    .update(workspaces)
-    .set({
-      activeDomain: "marketing",
-      primaryUseCase: "other",
-      onboardingCompletedAt: now,
-    })
-    .where(
-      and(eq(workspaces.id, ws), sql`${workspaces.activeDomain} IS NULL`),
-    );
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({
+          activeDomain: "marketing",
+          primaryUseCase: "other",
+          onboardingCompletedAt: now,
+        })
+        .where(
+          and(eq(workspaces.id, ws), sql`${workspaces.activeDomain} IS NULL`),
+        );
+    },
+    { behavior: "immediate" },
+  );
 
   await trackOnboardingEventServer(userId, "onboarding_skipped", {
     workspace_id: ws,
@@ -196,15 +215,21 @@ export async function updateSegmentAction(
     return;
   }
 
-  await db
-    .update(workspaces)
-    .set({
-      primaryUseCase: input.primaryUseCase,
-      secondaryContext: input.secondaryContext ?? null,
-      activeDomain: segment.domainId,
-      onboardingCompletedAt: now,
-    })
-    .where(eq(workspaces.id, ws));
+  await db.transaction(
+    async (tx) => {
+      await assertProjectNotDeleting(tx, ws);
+      await tx
+        .update(workspaces)
+        .set({
+          primaryUseCase: input.primaryUseCase,
+          secondaryContext: input.secondaryContext ?? null,
+          activeDomain: segment.domainId,
+          onboardingCompletedAt: now,
+        })
+        .where(eq(workspaces.id, ws));
+    },
+    { behavior: "immediate" },
+  );
 
   await trackOnboardingEventServer(userId, "onboarding_segment_selected", {
     primary_use_case: input.primaryUseCase,
