@@ -15,6 +15,13 @@
       "problem": "PROVISIONAL: after Send to Tasks at 1440x960, with no scrolling, the same 40-character task title 'Switch on before guests arrive, not when' is printed three times \u2014 .deskFactLink 13px/400 at (815,294) under the eyebrow IN TASKS AS, .peelSent 17px/600 at (272,445) under the eyebrow TASKS HAS IT, and a <b> 15px/400 at (264,667) in the ALREADY IN TASKS row \u2014 and two separate controls carry data-act=\"open-task\" to the same destination 233px apart (.deskFactLink at y=294, .act at y=527). Two eyebrows name one fact two ways.",
       "fix": "PROVISIONAL",
       "cost": 2
+    },
+    {
+      "id": "notes-h1-says-all-your-notes-while-filtered",
+      "element": "h1.headName in [data-app=\"notes\"] .head \u2014 rendered at src/notes.js (head template, sibling of button.headNext[data-act=\"scope\"]); styled src/notes.css (.headName)",
+      "problem": "PROVISIONAL: pressing .headNext cuts the index from 14 rows to 3 and correctly re-reads the index head to '1 to decide / 3 notes', but h1.headName keeps saying 'All your notes' (15px/400, 72% ink, x=549 at 1920). 384px to its right a filled release pill reads 'All 14 notes' (data-act=\"unscope\", x=933). The scope button's aria-label does update ('Showing only these notes. Press to see the whole notebook.') so the truth exists in the accessibility tree and not in the visible words. Reproduces at 1280/1440/1920; the phone head does not render the h1 and is unaffected.",
+      "fix": "PROVISIONAL",
+      "cost": 1
     }
   ],
   "biggestWin": "PROVISIONAL - review in progress."
