@@ -1,0 +1,53 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>project-drive-connections · master</title>
+<style>
+/* ═════════════════════════════════════════════════════════════════
+   project-drive-connections · the working master.
+   Palette lock: Ink #111111 · Indigo #4f46e5 · White #ffffff.
+   Every colour below must be one of those at some alpha — audit.mjs
+   enforces it. Every decision carries its argument in a comment
+   beside it; a rule nobody can argue for is a rule to delete.
+   ═════════════════════════════════════════════════════════════════ */
+:root {
+  --ink: #111111;
+  --accent: #4f46e5;
+  --paper: #ffffff;
+  --ink-2: rgba(17, 17, 17, 0.72);
+  --line: rgba(17, 17, 17, 0.08);
+  --wash: rgba(17, 17, 17, 0.04);
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: "Geist", system-ui, sans-serif;
+  font-weight: 400; font-size: 15px;
+  line-height: 1.55; /* leading is a decision; 'normal' fails the audit */
+  -webkit-font-smoothing: antialiased;
+}
+main { padding: 48px; max-width: 720px; margin: 0 auto; }
+h1 { font-size: 24px; font-weight: 600; line-height: 1.15; margin: 0 0 12px; }
+p { margin: 0 0 12px; color: var(--ink-2); line-height: 1.55; }
+[data-state] main > section { display: none; }
+[data-state="resting"] main > section[data-for="resting"],
+[data-state="dense"] main > section[data-for="dense"],
+[data-state="empty"] main > section[data-for="empty"],
+[data-state="loading"] main > section[data-for="loading"] { display: block; }
+</style>
+<body data-state="resting" data-v="a">
+<main>
+  <section data-for="resting"><h1>project-drive-connections · resting</h1><p>Replace with the real resting state, rendered from the real fixture.</p></section>
+  <section data-for="dense"><h1>project-drive-connections · dense</h1><p>Replace with the real dense state, rendered from the real fixture.</p></section>
+  <section data-for="empty"><h1>project-drive-connections · empty</h1><p>Replace with the real empty state, rendered from the real fixture.</p></section>
+  <section data-for="loading"><h1>project-drive-connections · loading</h1><p>Replace with the real loading state, rendered from the real fixture.</p></section>
+</main>
+<script>
+/* The toolchain contract: the master answers ?state= and ?v=. */
+const q = new URLSearchParams(location.search);
+const state = q.get("state"); const v = q.get("v");
+if (state) document.body.dataset.state = state;
+if (v) document.body.dataset.v = v;
+</script>
+</body>
