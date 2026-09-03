@@ -1,0 +1,4 @@
+# Failed Phase-1 interaction probes; the canonical Resources reference is the
+# immutable 2026-08 task-detail set named in REFERENCE.md.
+reference/task-resources--*.png
+reference-detail/

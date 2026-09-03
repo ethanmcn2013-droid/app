@@ -1,0 +1,27 @@
+{
+  "capturedAt": "2026-09-03T01:06:41.110Z",
+  "base": "http://localhost:3530",
+  "accessMode": "review",
+  "frames": [
+    {
+      "surface": "settings-storage",
+      "viewport": "390x844",
+      "file": "settings-storage--390x844.png"
+    },
+    {
+      "surface": "settings-storage",
+      "viewport": "768x1024",
+      "file": "settings-storage--768x1024.png"
+    },
+    {
+      "surface": "settings-storage",
+      "viewport": "1280x900",
+      "file": "settings-storage--1280x900.png"
+    },
+    {
+      "surface": "settings-storage",
+      "viewport": "1440x960",
+      "file": "settings-storage--1440x960.png"
+    }
+  ]
+}
