@@ -12,6 +12,7 @@ import {
   driveFolderGrants,
   meta,
   resources,
+  workspaceMembers,
   workspaceStorage,
 } from "@/server/db/schema";
 import {
@@ -497,6 +498,50 @@ describe("Project Drive upload foundation", () => {
         0,
       );
     }
+  });
+
+  it("cannot delegate after the actor leaves or the storage owner loses owner status", async () => {
+    const removedActor = await seededUploadFixture();
+    await removedActor.db
+      .delete(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, "ws-a"),
+          eq(workspaceMembers.userId, "member-a"),
+        ),
+      );
+    await assert.rejects(
+      () =>
+        removedActor.service.start(
+          coreAuthorization("member-a", "ws-a", false),
+          DEFAULT_REQUEST,
+        ),
+      (error: unknown) =>
+        error instanceof DriveUploadError && error.code === "request-conflict",
+    );
+    assert.equal(removedActor.harness.sessionCreateCalls, 0);
+    assert.equal((await removedActor.db.select().from(resources)).length, 0);
+
+    const demotedOwner = await seededUploadFixture();
+    await demotedOwner.db
+      .update(workspaceMembers)
+      .set({ role: "member" })
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, "ws-a"),
+          eq(workspaceMembers.userId, "owner"),
+        ),
+      );
+    const demotedResult = await demotedOwner.service.start(
+      coreAuthorization("member-a", "ws-a", false),
+      { ...DEFAULT_REQUEST, resourceId: RESOURCE_B },
+    );
+    assert.deepEqual(demotedResult, {
+      kind: "signal-native",
+      reason: "member-access-incomplete",
+    });
+    assert.equal(demotedOwner.harness.sessionCreateCalls, 0);
+    assert.equal((await demotedOwner.db.select().from(resources)).length, 0);
   });
 
   it("uses Signal-native storage unless the selected generation is current and active", async () => {

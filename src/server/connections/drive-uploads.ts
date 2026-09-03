@@ -394,6 +394,24 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
         storageRows[0].ownerUserId,
       ]),
     ];
+    const liveMemberships = await database
+      .select({
+        userId: workspaceMembers.userId,
+        role: workspaceMembers.role,
+      })
+      .from(workspaceMembers)
+      .where(
+        and(
+          eq(workspaceMembers.workspaceId, authorization.projectId),
+          inArray(workspaceMembers.userId, lineageUserIds),
+        ),
+      );
+    const actorMembership = liveMemberships.find(
+      (membership) => membership.userId === authorization.actorUserId,
+    );
+    const storageOwnerMembership = liveMemberships.find(
+      (membership) => membership.userId === storageRows[0].ownerUserId,
+    );
     const liveUsers = await database
       .select({ id: users.id })
       .from(users)
@@ -407,9 +425,17 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
           lineageUserIds.map(googleDriveAccountErasureFenceKey),
         ),
       );
-    if (liveUsers.length !== lineageUserIds.length || activeFences.length > 0) {
+    if (
+      !actorMembership ||
+      !storageOwnerMembership ||
+      storageOwnerMembership.role !== "owner" ||
+      liveUsers.length !== lineageUserIds.length ||
+      activeFences.length > 0
+    ) {
       // Neutral conflict: never reveal whether the actor or storage owner is
-      // being erased. Callers run this inside the claim/persist CAS.
+      // being erased or has just left. Callers run this inside the
+      // claim/persist CAS, so membership removal and upload delegation have a
+      // deterministic writer-order winner.
       throw new DriveUploadError("request-conflict");
     }
     return Object.freeze({
