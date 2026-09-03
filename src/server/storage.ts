@@ -1,5 +1,5 @@
 import { mkdir, stat, unlink, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 
 /**
  * Storage seam for attachment bytes.
@@ -84,29 +84,186 @@ export async function putBytes(
   );
 }
 
+type NodeError = Error & { code?: string };
+
+async function deleteBlobLocator(locator: string): Promise<void> {
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    throw new Error("Blob storage credentials are unavailable");
+  }
+  const blob = await import("@vercel/blob");
+  try {
+    await blob.del(locator);
+  } catch (error) {
+    if (error instanceof blob.BlobNotFoundError) return;
+    throw error;
+  }
+}
+
+function exactRelativeStorageKey(storageKey: string): string {
+  if (
+    !storageKey ||
+    storageKey.includes("\\") ||
+    isAbsolute(storageKey) ||
+    storageKey.startsWith("/") ||
+    storageKey
+      .split("/")
+      .some((segment) => !segment || segment === "." || segment === "..")
+  ) {
+    throw new TypeError("storageKey must be an exact relative object key");
+  }
+  return storageKey;
+}
+
+function exactPathInsideUploadsRoot(candidate: string): string {
+  const root = resolve(uploadsRoot());
+  const target = resolve(candidate);
+  const fromRoot = relative(root, target);
+  if (
+    !fromRoot ||
+    fromRoot === ".." ||
+    fromRoot.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`) ||
+    isAbsolute(fromRoot)
+  ) {
+    throw new TypeError("stored path must resolve inside the uploads root");
+  }
+  return target;
+}
+
+async function unlinkConfirmed(absPath: string): Promise<void> {
+  try {
+    await unlink(absPath);
+  } catch (error) {
+    if ((error as NodeError)?.code === "ENOENT") return;
+    throw error;
+  }
+}
+
+export type StoredPathDeleteTarget =
+  | Readonly<{ kind: "blob"; locator: string }>
+  | Readonly<{ kind: "disk"; absPath: string }>;
+
+/** Resolve a finalized attachment locator without treating it as an object key. */
+export function resolveStoredPathDeleteTarget(
+  storedPath: string,
+): StoredPathDeleteTarget {
+  if (!storedPath || /[\u0000-\u001f\u007f]/.test(storedPath)) {
+    throw new TypeError("storedPath must be an exact non-empty locator");
+  }
+  if (storedPath.startsWith("https://") || storedPath.startsWith("http://")) {
+    return Object.freeze({ kind: "blob", locator: storedPath });
+  }
+  if (
+    !isAbsolute(storedPath) &&
+    storedPath
+      .split(/[\\/]/)
+      .some((segment) => segment === "." || segment === "..")
+  ) {
+    throw new TypeError("relative stored path contains traversal segments");
+  }
+
+  // Current disk rows are absolute. Older rows used `.data/uploads/...`
+  // relative to the app root. Both are accepted only when the exact resolved
+  // target remains beneath uploadsRoot(); a relative object key belongs to the
+  // disk-key seam below and must never be silently double-prefixed here.
+  const candidate = isAbsolute(storedPath)
+    ? storedPath
+    : resolve(process.cwd(), storedPath);
+  return Object.freeze({
+    kind: "disk",
+    absPath: exactPathInsideUploadsRoot(candidate),
+  });
+}
+
 /**
- * Delete bytes from whichever backend owns them.
- * Best-effort: errors are swallowed so the row can always be removed.
- * Handles both blob URLs and disk paths by inspecting the stored_path prefix.
+ * Delete exactly one stored locator and report genuine storage failure.
+ *
+ * A missing object is success: a worker may crash after deleting bytes but
+ * before retiring its durable receipt, so replay must converge. Every other
+ * error is allowed to escape so that receipt remains retryable. This function
+ * never derives a directory, prefix or sibling target from the stored value.
+ */
+export async function deleteBytesConfirmed(storedPath: string): Promise<void> {
+  const target = resolveStoredPathDeleteTarget(storedPath);
+  if (target.kind === "blob") {
+    await deleteBlobLocator(target.locator);
+    return;
+  }
+  await unlinkConfirmed(target.absPath);
+}
+
+/** Delete an exact Vercel Blob pathname; backend choice is not inferred. */
+export async function deleteBlobPathnameConfirmed(
+  pathname: string,
+): Promise<void> {
+  await deleteBlobLocator(exactRelativeStorageKey(pathname));
+}
+
+/** Delete an exact local-disk object key; backend choice is not inferred. */
+export async function deleteDiskStorageKeyConfirmed(
+  storageKey: string,
+): Promise<void> {
+  await unlinkConfirmed(resolveDiskStorageKeyDeleteTarget(storageKey).absPath);
+}
+
+/**
+ * Delete the exact backend object addressed by a server-issued storage key.
+ * Blob accepts that key directly; local development maps the same key under
+ * `uploadsRoot()`. Traversal, absolute paths and separator ambiguity are
+ * refused before either backend is touched.
+ */
+export async function deleteStorageKeyConfirmed(
+  storageKey: string,
+): Promise<void> {
+  const target = resolveStorageKeyDeleteTarget(storageKey);
+  if (target.kind === "blob") {
+    await deleteBlobLocator(target.locator);
+    return;
+  }
+  await unlinkConfirmed(target.absPath);
+}
+
+export type StorageKeyDeleteTarget =
+  | Readonly<{ kind: "blob"; locator: string }>
+  | Readonly<{ kind: "disk"; absPath: string }>;
+
+/** Pure target resolution kept public so exact-key safety is testable. */
+export function resolveStorageKeyDeleteTarget(
+  storageKey: string,
+): StorageKeyDeleteTarget {
+  const exactKey = exactRelativeStorageKey(storageKey);
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    return Object.freeze({ kind: "blob", locator: exactKey });
+  }
+  if (process.env.VERCEL === "1") {
+    throw new Error("Blob storage credentials are unavailable");
+  }
+
+  return resolveDiskStorageKeyDeleteTarget(exactKey);
+}
+
+/** Pure disk-key resolution, deliberately independent of current env vars. */
+export function resolveDiskStorageKeyDeleteTarget(
+  storageKey: string,
+): Readonly<{ kind: "disk"; absPath: string }> {
+  const exactKey = exactRelativeStorageKey(storageKey);
+  const root = resolve(uploadsRoot());
+  const target = resolve(root, ...exactKey.split("/"));
+  const fromRoot = relative(root, target);
+  if (!fromRoot || fromRoot.startsWith("..") || isAbsolute(fromRoot)) {
+    throw new TypeError("storageKey escaped the uploads root");
+  }
+  return Object.freeze({ kind: "disk", absPath: target });
+}
+
+/**
+ * Compatibility wrapper for single-row removal flows that intentionally do
+ * not block their database mutation on byte-store availability. Project
+ * deletion uses `deleteBytesConfirmed` behind a durable cleanup receipt.
  */
 export async function deleteBytes(storedPath: string): Promise<void> {
   if (!storedPath) return;
-
-  try {
-    if (storedPath.startsWith("https://") || storedPath.startsWith("http://")) {
-      // Blob URL — delegate to @vercel/blob del (no-op if BLOB_READ_WRITE_TOKEN absent).
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
-        const { del } = await import("@vercel/blob");
-        await del(storedPath);
-      }
-      return;
-    }
-
-    // Disk path.
-    await unlink(storedPath);
-  } catch {
-    // Best-effort: a missing file or missing token is not an error.
-  }
+  await deleteBytesConfirmed(storedPath).catch(() => undefined);
 }
 
 /**

@@ -9,9 +9,12 @@ import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser } from "@/server/auth";
 import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
-import { deleteBytes } from "@/server/storage";
 import { SNIFF_BYTES } from "@/lib/upload-validation";
-import { releaseUploadClaim } from "@/server/attachments/client-upload";
+import { finalizeNativeUploadClaimInTransaction } from "@/server/attachments/native-upload-custody";
+import {
+  cleanupAbandonedNativeUploadClaim,
+  cleanupRejectedNativeUpload,
+} from "@/server/attachments/native-upload-cleanup";
 import {
   isWorldReadable,
   pathnameMatchesClaim,
@@ -26,9 +29,8 @@ import {
  * evidence. This action re-proves the caller on the attachment's own
  * Project, then proves the blob is the object we issued a token for, is
  * not world-readable, is the size the store says it is, and carries bytes
- * that match its declared type. Any failure removes both the blob and the
- * claim row, so a rejected upload leaves nothing behind — the same
- * guarantee `uploadAttachmentAction` gives.
+ * that match its declared type. Rejected bytes enter durable cleanup custody,
+ * while the claim marker remains through the presigned writer's drain margin.
  */
 
 export type FinalizeUploadResult =
@@ -68,40 +70,73 @@ export async function finalizeUpload(
   // for; the URL only replaces it once everything below passes.
   const expectedPathname = row.storedPath;
   if (!pathnameMatchesClaim(blobUrl, expectedPathname)) {
-    await releaseUploadClaim(attachmentId, row.workspaceId);
+    // The supplied URL is not trusted cleanup authority. The exact expected
+    // pathname remains fenced through the server-issued PUT's drain margin,
+    // then its expiry path takes cleanup custody before releasing the row.
     return { ok: false, reason: "pathname-mismatch" };
   }
 
   if (await isWorldReadable(blobUrl)) {
-    await deleteBytes(blobUrl);
-    await releaseUploadClaim(attachmentId, row.workspaceId);
+    await cleanupRejectedNativeUpload({
+      workspaceId: row.workspaceId,
+      attachmentId,
+      pathname: expectedPathname,
+      storedPath: blobUrl,
+    });
     return { ok: false, reason: "world-readable" };
   }
 
   const verdict = await inspectBlob(blobUrl, row.mimeType, row.sizeBytes);
   if (!verdict.ok) {
-    await deleteBytes(blobUrl);
-    await releaseUploadClaim(attachmentId, row.workspaceId);
+    await cleanupRejectedNativeUpload({
+      workspaceId: row.workspaceId,
+      attachmentId,
+      pathname: expectedPathname,
+      storedPath: blobUrl,
+    });
     return { ok: false, reason: verdict.reason };
   }
 
-  await db
-    .update(attachments)
-    .set({
-      storedPath: blobUrl,
-      // The type STORED is the one the bytes earned, never the label the
-      // browser sent — the download route serves this value as
-      // Content-Type, so an unvalidated label would let the uploader
-      // choose how a browser treats their file.
-      mimeType: verdict.mimeType,
-      sizeBytes: verdict.sizeBytes,
-    })
-    .where(
-      and(
-        eq(attachments.id, attachmentId),
-        eq(attachments.workspaceId, row.workspaceId),
-      ),
+  let finalization: Awaited<
+    ReturnType<typeof finalizeNativeUploadClaimInTransaction>
+  >;
+  try {
+    finalization = await db.transaction(
+      (transaction) =>
+        finalizeNativeUploadClaimInTransaction(transaction, {
+          workspaceId: row.workspaceId!,
+          attachmentId,
+          pathname: expectedPathname,
+          uploaderUserId: me,
+          finalStoredPath: blobUrl,
+          // The type STORED is the one the bytes earned, never the label the
+          // browser sent; the download route serves this value directly.
+          mimeType: verdict.mimeType,
+          sizeBytes: verdict.sizeBytes,
+        }),
+      { behavior: "immediate" },
     );
+  } catch {
+    await cleanupRejectedNativeUpload({
+      workspaceId: row.workspaceId,
+      attachmentId,
+      pathname: expectedPathname,
+      storedPath: blobUrl,
+    });
+    return { ok: false, reason: "not-found" };
+  }
+  if (finalization === "lost") {
+    await cleanupRejectedNativeUpload({
+      workspaceId: row.workspaceId,
+      attachmentId,
+      pathname: expectedPathname,
+      storedPath: blobUrl,
+    });
+    return { ok: false, reason: "not-found" };
+  }
+  if (finalization === "already-completed") {
+    return { ok: true, attachmentId };
+  }
 
   await recordActivity(
     row.taskId,
@@ -134,7 +169,9 @@ export async function finalizeUpload(
  * So the client sweeps. This runs when an upload fails and before a fresh
  * one starts, and removes only the caller's OWN unfinished claims on this
  * task that are old enough to be certainly dead. `STALE_CLAIM_MS` is the
- * margin that keeps a slow upload in flight from deleting its own row.
+ * prefilter for obviously stale candidates. The marker's database-clock
+ * custody deadline is the final authority that keeps an admitted PUT from
+ * deleting its own row.
  *
  * A finalized attachment is never touched: its `stored_path` is a URL, a
  * claim's is still the pathname. Removing a real attachment is
@@ -168,8 +205,13 @@ export async function abandonStaleUploads(taskId: string): Promise<number> {
     if (row.createdAt instanceof Date && row.createdAt.getTime() > cutoff) {
       continue;
     }
-    await releaseUploadClaim(row.id, ws);
-    removed += 1;
+    const released = await cleanupAbandonedNativeUploadClaim({
+      workspaceId: ws,
+      attachmentId: row.id,
+      storageKey: row.storedPath,
+      onlyAfterCustodyDeadline: true,
+    });
+    if (released) removed += 1;
   }
 
   if (removed > 0) {

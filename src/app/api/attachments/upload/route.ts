@@ -9,7 +9,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** How long a browser has to start and finish one upload. */
+/** How long a browser has to start one upload with the signed authority. */
 const UPLOAD_WINDOW_MS = 30 * 60 * 1000;
 
 /**
@@ -62,6 +62,10 @@ export async function POST(request: Request): Promise<Response> {
   if (!asked) return refuse(400, "Malformed request");
 
   const me = await getCurrentUser();
+  // Choose the write authority's exact expiry before reserving the claim. The
+  // same millisecond is persisted with the marker and signed into the provider
+  // token, so deletion can distinguish live authority from abandoned work.
+  const validUntil = Date.now() + UPLOAD_WINDOW_MS;
 
   const claim = await authorizeUploadClaim({
     taskId: asked.taskId,
@@ -69,10 +73,9 @@ export async function POST(request: Request): Promise<Response> {
     filename: asked.filename,
     declaredSize: asked.size,
     declaredContentType: asked.contentType,
+    authorityExpiresAt: validUntil,
   });
   if (!claim.ok) return refuseClaim(claim.reason);
-
-  const validUntil = Date.now() + UPLOAD_WINDOW_MS;
 
   let presignedUrl: string;
   try {

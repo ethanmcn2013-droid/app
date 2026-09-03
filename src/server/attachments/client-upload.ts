@@ -14,6 +14,11 @@ import {
   newAttachmentId,
   safeFilename,
 } from "@/lib/attachment-claim";
+import {
+  NativeUploadClaimStartError,
+  recordNativeUploadClaimInTransaction,
+  releaseNativeUploadClaimInTransaction,
+} from "./native-upload-custody";
 
 /**
  * The server half of the client-direct upload, kept out of the route file
@@ -36,7 +41,9 @@ import {
  *      bytes it claims to. A URL handed back by a browser is a claim, not
  *      evidence.
  *
- * Every refusal deletes the claim row, so a failed upload leaves nothing.
+ * A refusal before signing releases the claim atomically. Once a presigned
+ * writer exists, its marker survives until expiry and any trusted rejected
+ * bytes move into durable cleanup custody.
  */
 
 export type UploadClaim = {
@@ -75,6 +82,7 @@ export async function authorizeUploadClaim(input: {
   filename: string;
   declaredSize: number;
   declaredContentType: string;
+  authorityExpiresAt: number;
 }): Promise<ClaimResult> {
   const { taskId, actorUserId } = input;
 
@@ -124,25 +132,61 @@ export async function authorizeUploadClaim(input: {
   const filename = safeFilename(input.filename);
   const pathname = claimPathname(ws, taskId, attachmentId, filename);
 
-  // The claim. Inserted before a single byte is authorized so the usage
-  // SUM below already counts this upload — the same atomicity
-  // `uploadAttachmentAction` relies on. `stored_path` holds the pathname
-  // until the blob URL replaces it at finalize.
-  await db.insert(attachments).values({
-    id: attachmentId,
-    workspaceId: ws,
-    taskId,
-    uploaderUserId: actorUserId,
-    filename,
-    storedPath: pathname,
-    mimeType: declared,
-    sizeBytes: input.declaredSize,
-    createdAt: new Date(),
-  });
+  // Insert the quota row and its exact write-authority marker together behind
+  // the Project deletion tombstone. The presign route chose the expiry before
+  // entering here and will use this same value in the provider token.
+  try {
+    await db.transaction(
+      async (transaction) => {
+        const [freshParent] = await transaction
+          .select({ workspaceId: tasks.workspaceId })
+          .from(tasks)
+          .where(and(eq(tasks.id, taskId), eq(tasks.workspaceId, ws)))
+          .limit(1);
+        if (!freshParent) {
+          throw new Error("native upload parent changed");
+        }
+        const inserted = await transaction
+          .insert(attachments)
+          .values({
+            id: attachmentId,
+            workspaceId: ws,
+            taskId,
+            uploaderUserId: actorUserId,
+            filename,
+            storedPath: pathname,
+            mimeType: declared,
+            sizeBytes: input.declaredSize,
+            createdAt: new Date(),
+          })
+          .returning({ id: attachments.id });
+        if (inserted.length !== 1) {
+          throw new Error("native upload claim was not persisted");
+        }
+        await recordNativeUploadClaimInTransaction(transaction, {
+          workspaceId: ws,
+          attachmentId,
+          pathname,
+          authorityExpiresAt: input.authorityExpiresAt,
+          cleanupTargetKind: "blob-pathname",
+        });
+      },
+      { behavior: "immediate" },
+    );
+  } catch (error) {
+    if (error instanceof NativeUploadClaimStartError) {
+      return {
+        ok: false,
+        reason: "not-authorized",
+        detail: "task not found",
+      };
+    }
+    throw error;
+  }
 
   const usageAfterClaim = await getWorkspaceStorageUsage(ws);
   if (usageAfterClaim > quota.totalBytes) {
-    await db.delete(attachments).where(eq(attachments.id, attachmentId));
+    await releaseUploadClaim(attachmentId, ws);
     return {
       ok: false,
       reason: "over-quota",
@@ -171,12 +215,12 @@ export async function releaseUploadClaim(
   attachmentId: string,
   workspaceId: string,
 ): Promise<void> {
-  await db
-    .delete(attachments)
-    .where(
-      and(
-        eq(attachments.id, attachmentId),
-        eq(attachments.workspaceId, workspaceId),
-      ),
-    );
+  await db.transaction(
+    (transaction) =>
+      releaseNativeUploadClaimInTransaction(transaction, {
+        attachmentId,
+        workspaceId,
+      }),
+    { behavior: "immediate" },
+  );
 }

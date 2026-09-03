@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { and, eq } from "drizzle-orm";
+import { and, eq, like } from "drizzle-orm";
 import {
+  attachments,
   driveFolderGrants,
   meta,
   projectDriveOperations,
@@ -25,6 +26,8 @@ import {
   ProjectDriveProjectDeletionError,
 } from "./project-drive-project-deletion";
 import { ProjectDeletionInProgressError } from "@/server/projects/project-deletion-fence";
+import { NATIVE_BYTE_CLEANUP_META_PREFIX } from "@/server/attachments/native-byte-cleanup";
+import { recordNativeUploadClaimInTransaction } from "@/server/attachments/native-upload-custody";
 
 async function seededFixture(withStorage = true) {
   const fixture = await freshProjectDriveCoreDb();
@@ -156,7 +159,7 @@ async function seedProjectChildren(
       mime_type, size_bytes
     ) VALUES (
       'attachment-delete', 'ws-a', 'task-delete', 'owner', 'local.txt',
-      'uploads/local.txt', 'text/plain', 5
+      '.data/uploads/local.txt', 'text/plain', 5
     );
     INSERT INTO resources (
       id, workspace_id, task_id, kind, provider, storage,
@@ -220,6 +223,13 @@ describe("Project Drive-aware Project deletion", () => {
         deleteStoredBytes: async (storedPath) => {
           deletedStoredPaths.push(storedPath);
           assert.equal(await count(fixture, "workspaces"), 0);
+          const receipts = await fixture.db
+            .select({ value: meta.value })
+            .from(meta)
+            .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`));
+          assert.equal(receipts.length, 1);
+          assert.match(receipts[0].value, /uploads\/local\.txt/);
+          assert.doesNotMatch(receipts[0].value, /drive-file-id/);
         },
         revokeExactGrant: async (receipt) => {
           revoked.push(receipt);
@@ -252,8 +262,18 @@ describe("Project Drive-aware Project deletion", () => {
           permissionId: "permission-a",
         },
       ]);
-      assert.deepEqual(deletedStoredPaths, ["uploads/local.txt"]);
+      assert.deepEqual(deletedStoredPaths, [".data/uploads/local.txt"]);
       assert.ok(!deletedStoredPaths.includes("drive-file-id"));
+      assert.equal(
+        (
+          await fixture.db
+            .select({ key: meta.key })
+            .from(meta)
+            .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`))
+        ).length,
+        0,
+        "confirmed cleanup retires its durable receipt",
+      );
 
       for (const table of [
         "activities",
@@ -337,8 +357,114 @@ describe("Project Drive-aware Project deletion", () => {
       }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
 
       assert.equal(result.workspaceId, "ws-a");
-      assert.deepEqual(attempted, ["uploads/local.txt"]);
+      assert.deepEqual(attempted, [".data/uploads/local.txt"]);
       assert.equal(await count(fixture, "workspaces"), 0);
+      const retained = await fixture.db
+        .select({ key: meta.key, value: meta.value })
+        .from(meta)
+        .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`));
+      assert.equal(retained.length, 1);
+      assert.match(retained[0].value, /uploads\/local\.txt/);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  it("rolls the cleanup receipt back with Project rows when the final delete fails", async () => {
+    const fixture = await seededFixture();
+    try {
+      await seedProjectChildren(fixture);
+      await fixture.client.execute(`
+        CREATE TRIGGER refuse_ws_a_delete
+        BEFORE DELETE ON workspaces
+        WHEN OLD.id = 'ws-a'
+        BEGIN
+          SELECT RAISE(ABORT, 'simulated final delete failure');
+        END
+      `);
+      let byteCalls = 0;
+      await assert.rejects(
+        () =>
+          createProjectDriveProjectDeletionService({
+            database: fixture.db,
+            randomOperationId: () => "delete-rollback",
+            revokeExactGrant: async () => {},
+            deleteStoredBytes: async () => {
+              byteCalls += 1;
+            },
+          }).delete({ workspaceId: "ws-a", actorUserId: "owner" }),
+      );
+      assert.equal(byteCalls, 0);
+      assert.equal(await count(fixture, "workspaces"), 1);
+      assert.equal(await count(fixture, "attachments"), 1);
+      assert.equal(
+        (
+          await fixture.db
+            .select({ key: meta.key })
+            .from(meta)
+            .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`))
+        ).length,
+        0,
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  it("does not establish deletion while a Signal-native writer is live", async () => {
+    const fixture = await seededFixture(false);
+    try {
+      await fixture.client.execute(`
+        INSERT INTO tasks (
+          id, workspace_id, title, lane, priority, assignees, created_at, updated_at
+        ) VALUES ('task-native-live', 'ws-a', 'Files', 'todo', 'medium', '[]', 10, 10)
+      `);
+      const pathname = "ws-a/task-native-live/att-native-live-file.pdf";
+      await fixture.db.transaction(
+        async (transaction) => {
+          await transaction.insert(attachments).values({
+            id: "att-native-live",
+            workspaceId: "ws-a",
+            taskId: "task-native-live",
+            uploaderUserId: "member-a",
+            filename: "file.pdf",
+            storedPath: pathname,
+            mimeType: "application/pdf",
+            sizeBytes: 12,
+          });
+          await recordNativeUploadClaimInTransaction(transaction, {
+            workspaceId: "ws-a",
+            attachmentId: "att-native-live",
+            pathname,
+            authorityExpiresAt: Date.now() + 30 * 60_000,
+            cleanupTargetKind: "blob-pathname",
+          });
+        },
+        { behavior: "immediate" },
+      );
+      let providerCalls = 0;
+      await assert.rejects(
+        () =>
+          createProjectDriveProjectDeletionService({
+            database: fixture.db,
+            revokeExactGrant: async () => {
+              providerCalls += 1;
+            },
+          }).delete({ workspaceId: "ws-a", actorUserId: "owner" }),
+        deletionError("upload-in-progress"),
+      );
+      assert.equal(providerCalls, 0);
+      assert.equal(await count(fixture, "workspaces"), 1);
+      assert.equal(await count(fixture, "attachments"), 1);
+      assert.equal(
+        (
+          await fixture.db
+            .select({ id: projectDriveOperations.id })
+            .from(projectDriveOperations)
+            .where(eq(projectDriveOperations.operationKind, "project_delete"))
+        ).length,
+        0,
+      );
     } finally {
       fixture.cleanup();
     }

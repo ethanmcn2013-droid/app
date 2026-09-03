@@ -582,11 +582,16 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
   it("WP-0's own upload path proves before it reserves or writes", () => {
     const claim = codeOf("src/server/attachments/client-upload.ts");
     const scopeAt = claim.indexOf("scopeForTask(");
-    const insertAt = claim.indexOf("db.insert(attachments)");
+    const insertAt = claim.indexOf(".insert(attachments)");
     assert.ok(scopeAt > -1 && insertAt > -1);
     assert.ok(
       scopeAt < insertAt,
       "ADR 0001 §9: the object's own Project decides, before the write",
+    );
+    assert.match(
+      claim,
+      /recordNativeUploadClaimInTransaction\(transaction/,
+      "the row and durable write-authority marker must share one transaction",
     );
   });
 

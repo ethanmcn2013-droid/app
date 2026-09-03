@@ -7,6 +7,7 @@ import type {
 } from "@/server/connections/project-drive-folder-repair";
 import type { ProjectDriveGrantCreateRepairResult } from "@/server/connections/project-drive-grant-create-repair";
 import type { ProjectDriveGrantRepairResult } from "@/server/connections/project-drive-grant-repair";
+import type { NativeByteCleanupResult } from "@/server/attachments/native-byte-cleanup";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,12 +17,14 @@ type RepairSelection = Readonly<{
   revocations: boolean;
   grantCreates: boolean;
   folderOperations: boolean;
+  nativeBytes: boolean;
 }>;
 
 type RepairResult = Readonly<{
   revocations: ProjectDriveGrantRepairResult;
   grantCreates: ProjectDriveGrantCreateRepairResult;
   folderOperations: ProjectDriveFolderRepairResult;
+  nativeBytes: NativeByteCleanupResult;
 }>;
 
 type RepairRunner = (selection: RepairSelection) => Promise<RepairResult>;
@@ -55,6 +58,15 @@ const EMPTY_FOLDER_OPERATIONS: ProjectDriveFolderRepairResult = Object.freeze({
   failed: 0,
 });
 
+const EMPTY_NATIVE_BYTES: NativeByteCleanupResult = Object.freeze({
+  scanned: 0,
+  attempted: 0,
+  cleaned: 0,
+  retryScheduled: 0,
+  skipped: 0,
+  failed: 0,
+});
+
 function folderOperationCounts(
   result: ProjectDriveFolderRepairResult,
 ): ProjectDriveFolderRepairResult {
@@ -64,6 +76,19 @@ function folderOperationCounts(
     completed: result.completed,
     retryScheduled: result.retryScheduled,
     manualAttention: result.manualAttention,
+    skipped: result.skipped,
+    failed: result.failed,
+  });
+}
+
+function nativeByteCounts(
+  result: NativeByteCleanupResult,
+): NativeByteCleanupResult {
+  return Object.freeze({
+    scanned: result.scanned,
+    attempted: result.attempted,
+    cleaned: result.cleaned,
+    retryScheduled: result.retryScheduled,
     skipped: result.skipped,
     failed: result.failed,
   });
@@ -94,6 +119,7 @@ async function defaultRepairRunner(
   let revocations = EMPTY_REVOCATIONS;
   let grantCreates = EMPTY_GRANT_CREATES;
   let folderOperations = EMPTY_FOLDER_OPERATIONS;
+  let nativeBytes = EMPTY_NATIVE_BYTES;
   if (selection.revocations) {
     const { repairPendingProjectDriveGrants } = await import(
       "@/server/connections/project-drive-grant-repair"
@@ -114,7 +140,18 @@ async function defaultRepairRunner(
     );
     folderOperations = await repairReadyProjectDriveFolderOperations();
   }
-  return Object.freeze({ revocations, grantCreates, folderOperations });
+  if (selection.nativeBytes) {
+    const { repairPendingNativeAttachmentBytes } = await import(
+      "@/server/attachments/native-byte-cleanup"
+    );
+    nativeBytes = await repairPendingNativeAttachmentBytes();
+  }
+  return Object.freeze({
+    revocations,
+    grantCreates,
+    folderOperations,
+    nativeBytes,
+  });
 }
 
 export function createProjectDriveGrantRepairRoute(
@@ -134,11 +171,14 @@ export function createProjectDriveGrantRepairRoute(
         process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED === "true",
       folderOperations:
         process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED === "true",
+      nativeBytes:
+        process.env.SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED === "true",
     });
     if (
       !selection.revocations &&
       !selection.grantCreates &&
-      !selection.folderOperations
+      !selection.folderOperations &&
+      !selection.nativeBytes
     ) {
       return NextResponse.json({ ok: true, skipped: "flag-off" });
     }
@@ -148,12 +188,14 @@ export function createProjectDriveGrantRepairRoute(
       ok:
         result.revocations.failed === 0 &&
         result.grantCreates.failed === 0 &&
-        result.folderOperations.failed === 0,
+        result.folderOperations.failed === 0 &&
+        result.nativeBytes.failed === 0,
       // Preserve the original revoke-repair counters for existing operators.
       // Each newer drain stays namespaced and likewise exposes counts only.
       ...result.revocations,
       grantCreates: result.grantCreates,
       folderOperations: folderOperationCounts(result.folderOperations),
+      nativeBytes: nativeByteCounts(result.nativeBytes),
     });
   };
 }

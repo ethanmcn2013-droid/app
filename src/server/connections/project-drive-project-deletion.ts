@@ -20,7 +20,12 @@ import {
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
 import { deleteProjectRowsInTransaction } from "@/server/projects/project-deletion-rows";
-import { deleteBytes } from "@/server/storage";
+import { createNativeByteCleanupService } from "@/server/attachments/native-byte-cleanup";
+import {
+  assertNoPendingNativeUploads,
+  NativeUploadInProgressError,
+} from "@/server/attachments/native-upload-custody";
+import { deleteBytesConfirmed } from "@/server/storage";
 import type { ExactDriveGrantReceipt } from "./project-drive-erasure-grants";
 import { createProjectDriveOperationJournal } from "./project-drive-operation-journal";
 import { projectDriveOperationDedupeKey } from "./project-drive-operation-key";
@@ -428,6 +433,20 @@ async function assertNoPendingDelegatedUploads(
   }
 }
 
+async function assertNoPendingSignalNativeUploads(
+  transaction: ProjectDeletionTransaction,
+  workspaceId: string,
+): Promise<void> {
+  try {
+    await assertNoPendingNativeUploads(transaction, workspaceId);
+  } catch (error) {
+    if (error instanceof NativeUploadInProgressError) {
+      throw new ProjectDriveProjectDeletionError("upload-in-progress");
+    }
+    throw error;
+  }
+}
+
 function collectExactGrantReceipts(
   state: ProjectState,
 ): readonly ExactDriveGrantReceipt[] {
@@ -612,6 +631,7 @@ async function prepareDeletion(
 
       let state = await readProjectState(transaction, workspaceId);
       await assertNoPendingDelegatedUploads(transaction, workspaceId);
+      await assertNoPendingSignalNativeUploads(transaction, workspaceId);
       await assertNoAccountErasureFences(
         transaction,
         relatedAccountUserIds(state),
@@ -666,6 +686,7 @@ async function prepareDeletion(
       }
 
       await assertNoPendingDelegatedUploads(transaction, workspaceId);
+      await assertNoPendingSignalNativeUploads(transaction, workspaceId);
       const accountUserIds = relatedAccountUserIds(state);
       await assertNoAccountErasureFences(transaction, accountUserIds);
       const receipts = collectExactGrantReceipts(state);
@@ -723,13 +744,17 @@ async function finishDeletion(
 ): Promise<
   Readonly<{
     result: ProjectDriveProjectDeletionResult;
-    signalAttachmentStoredPaths: readonly string[];
+    nativeByteCleanupReceiptKeys: readonly string[];
   }>
 > {
   return deps.database.transaction(
     async (transaction) => {
       const state = await readProjectState(transaction, prepared.workspaceId);
       await assertNoPendingDelegatedUploads(
+        transaction,
+        prepared.workspaceId,
+      );
+      await assertNoPendingSignalNativeUploads(
         transaction,
         prepared.workspaceId,
       );
@@ -757,7 +782,7 @@ async function finishDeletion(
         throw new ProjectDriveProjectDeletionError("receipt-conflict");
       }
 
-      const signalAttachmentStoredPaths =
+      const nativeByteCleanupReceiptKeys =
         await deleteProjectRowsInTransaction(
           transaction,
           prepared.workspaceId,
@@ -779,7 +804,7 @@ async function finishDeletion(
             prepared.receipts.map(providerReceiptKey),
           ).size,
         }),
-        signalAttachmentStoredPaths,
+        nativeByteCleanupReceiptKeys,
       });
     },
     { behavior: "immediate" },
@@ -826,18 +851,29 @@ export function createProjectDriveProjectDeletionService(
 
       try {
         const finished = await finishDeletion(deps, prepared);
-        const deleteStoredBytes = deps.deleteStoredBytes ?? deleteBytes;
-        for (const storedPath of finished.signalAttachmentStoredPaths) {
-          try {
-            // Signal-owned bytes are removed only after their rows and the
-            // Project have committed. Drive resource identifiers never enter
-            // this list and no provider file/folder mutation is exposed here.
-            await deleteStoredBytes(storedPath);
-          } catch {
-            // Match account-erasure semantics: an unavailable byte store must
-            // not undo the completed database deletion.
-          }
-        }
+        // The transaction above persisted one exact, Project-independent
+        // receipt per Signal-owned locator before attachment rows disappeared.
+        // Drain a bounded first batch after commit; any failure or process
+        // death leaves the leased receipt for the scheduled repair worker.
+        await createNativeByteCleanupService({
+          database: deps.database,
+          deleteTarget: (target) => {
+            if (target.kind !== "stored-path") {
+              throw new Error("Project deletion cleanup target conflicted");
+            }
+            return (deps.deleteStoredBytes ?? deleteBytesConfirmed)(
+              target.locator,
+            );
+          },
+        })
+          .repairReady({
+            keys: finished.nativeByteCleanupReceiptKeys,
+            limit: Math.min(
+              50,
+              Math.max(1, finished.nativeByteCleanupReceiptKeys.length),
+            ),
+          })
+          .catch(() => undefined);
         return finished.result;
       } catch (error) {
         if (

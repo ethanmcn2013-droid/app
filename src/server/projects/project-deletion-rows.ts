@@ -24,10 +24,12 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { stageNativeByteCleanupReceipts } from "@/server/attachments/native-byte-cleanup";
+import { clearNativeUploadClaimsForProjectInTransaction } from "@/server/attachments/native-upload-custody";
 
 type ProjectRowsExecutor = Pick<
   LibSQLDatabase<typeof schema>,
-  "delete" | "select"
+  "delete" | "insert" | "select"
 >;
 
 /**
@@ -72,6 +74,12 @@ export async function deleteProjectRowsInTransaction(
         .filter((storedPath): storedPath is string => storedPath.length > 0),
     ),
   ]);
+  const nativeByteCleanupReceiptKeys =
+    await stageNativeByteCleanupReceipts(
+      transaction,
+      workspaceId,
+      signalAttachmentStoredPaths,
+    );
 
   const links = await transaction
     .select({ token: shareLinks.token })
@@ -92,6 +100,14 @@ export async function deleteProjectRowsInTransaction(
   await transaction
     .delete(comments)
     .where(byTaskOrWorkspace(comments.taskId, comments.workspaceId));
+  // Normally deletion is refused while a claim marker exists. Clearing the
+  // exact Project namespace here is defensive lifecycle hygiene and, because
+  // the durable byte receipts above already committed to this transaction,
+  // can never discard the only remaining cleanup authority.
+  await clearNativeUploadClaimsForProjectInTransaction(
+    transaction,
+    workspaceId,
+  );
   await transaction
     .delete(attachments)
     .where(byTaskOrWorkspace(attachments.taskId, attachments.workspaceId));
@@ -135,5 +151,5 @@ export async function deleteProjectRowsInTransaction(
     .delete(workspaceMembers)
     .where(eq(workspaceMembers.workspaceId, workspaceId));
 
-  return signalAttachmentStoredPaths;
+  return nativeByteCleanupReceiptKeys;
 }

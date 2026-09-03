@@ -181,6 +181,7 @@ describe("the path proves itself before it does anything", () => {
   const route = read("src/app/api/attachments/upload/route.ts");
   const finalize = read("src/server/actions/attachment-uploads.ts");
   const claim = read("src/server/attachments/client-upload.ts");
+  const custody = read("src/server/attachments/native-upload-custody.ts");
 
   it("the signing route refuses demo before it reads a body", () => {
     // Hard rule §2.10. Ordering is the assertion: an early return that
@@ -231,7 +232,7 @@ describe("the path proves itself before it does anything", () => {
     // ADR 0001 §9, object operation. The workspace id is not a filter
     // here: it is spliced into the pathname the token is locked to.
     const scopeAt = claim.indexOf("scopeForTask(");
-    const insertAt = claim.indexOf("db.insert(attachments)");
+    const insertAt = claim.indexOf(".insert(attachments)");
     const quotaAt = claim.indexOf("getEffectiveTier(");
     assert.ok(scopeAt > -1 && insertAt > -1 && quotaAt > -1);
     assert.ok(scopeAt < quotaAt, "authorize before reading the tier");
@@ -239,26 +240,33 @@ describe("the path proves itself before it does anything", () => {
   });
 
   it("finalize re-authorizes rather than trusting the call", () => {
-    const scopeAt = finalize.indexOf("scopeForTask(");
-    const updateAt = finalize.indexOf("db\n    .update(attachments)");
+    const bodyAt = finalize.indexOf("export async function finalizeUpload");
+    const scopeAt = finalize.indexOf("scopeForTask(", bodyAt);
+    const updateAt = finalize.indexOf(
+      "finalizeNativeUploadClaimInTransaction(",
+      scopeAt,
+    );
     assert.ok(scopeAt > -1, "finalize must prove the caller");
-    assert.ok(updateAt > -1, "finalize must update the row");
+    assert.ok(updateAt > -1, "finalize must use the fenced row CAS");
     assert.ok(scopeAt < updateAt, "the proof must precede the write");
     assert.match(
       finalize,
       /row\.uploaderUserId !== me/,
       "only the claim's own author may close it",
     );
+    assert.match(custody, /\.update\(attachments\)/);
+    assert.match(custody, /assertProjectNotDeleting\(transaction, workspaceId\)/);
   });
 
   it("finalize checks all three properties before the row becomes real", () => {
+    const bodyAt = finalize.indexOf("export async function finalizeUpload");
     const order = [
       "pathnameMatchesClaim(",
       "isWorldReadable(",
       "inspectBlob(",
-      "db\n    .update(attachments)",
+      "finalizeNativeUploadClaimInTransaction(",
     ].map((needle) => {
-      const at = finalize.indexOf(needle);
+      const at = finalize.indexOf(needle, bodyAt);
       assert.ok(at > -1, `finalize must call ${needle.trim()}`);
       return at;
     });
@@ -270,20 +278,20 @@ describe("the path proves itself before it does anything", () => {
     }
   });
 
-  it("a refused upload leaves neither bytes nor a row", () => {
-    // Each refusal branch must release the claim; a rejected upload that
-    // keeps its row would quietly hold quota for a file nobody can see.
+  it("a refused upload retains live authority and gives trusted bytes cleanup custody", () => {
     const branches = finalize.split("return { ok: false");
-    // The first slice is everything before any refusal; skip it, and skip
-    // the demo and not-found branches, which never reserved anything.
     const releasing = branches.filter((b) =>
       /pathname-mismatch|world-readable|verdict\.reason/.test(b.slice(0, 60)),
     );
     assert.ok(releasing.length >= 3, "expected three verifying refusals");
-    assert.equal(
-      (finalize.match(/releaseUploadClaim\(/g) ?? []).length >= 4,
-      true,
-      "every verifying refusal must release the claim",
+    assert.doesNotMatch(
+      finalize,
+      /releaseUploadClaim\(/,
+      "a live presigned writer must keep its deletion fence",
+    );
+    assert.ok(
+      (finalize.match(/cleanupRejectedNativeUpload\(/g) ?? []).length >= 4,
+      "every trusted rejected Blob must enter durable cleanup custody",
     );
   });
 
