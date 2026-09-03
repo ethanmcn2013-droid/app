@@ -18,11 +18,13 @@ _scaffold/
 gates/
 
 # Seat scratch — agents write probes here while driving the file.
-# Both separators: round 3's seats wrote _zz-*.mjs against a rule that only
-# named _zz_*.mjs, and eighty scratch files went into a commit.
+# The PREFIX is the contract, not the extension, and both separators count:
+# round 3 lost eighty scratch files to a rule that named only _zz_*.mjs,
+# and round 6 left a .txt behind because the rule named only .mjs and .png.
+# A seat writes whatever it needs to write.
 _m.mjs
-_zz_*.mjs
-_zz-*.mjs
+_zz-*
+_zz_*
 _drive*.mjs
 _verify.out
 _gate.out
@@ -30,5 +32,3 @@ _shots.out
 _round1.json
 _seat-*.mjs
 panel/m*/
-_zz-*.png
-_zz_*.png
