@@ -7,6 +7,8 @@ const originalRevokeFlag =
   process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
 const originalGrantCreateFlag =
   process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+const originalFolderFlag =
+  process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED;
 
 afterEach(() => {
   if (originalSecret === undefined) delete process.env.CRON_SECRET;
@@ -22,6 +24,12 @@ afterEach(() => {
   } else {
     process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED =
       originalGrantCreateFlag;
+  }
+  if (originalFolderFlag === undefined) {
+    delete process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED;
+  } else {
+    process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED =
+      originalFolderFlag;
   }
 });
 
@@ -39,6 +47,15 @@ function emptyResult() {
       attempted: 0,
       completed: 0,
       repairPending: 0,
+      retryScheduled: 0,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    folderOperations: {
+      scanned: 0,
+      attempted: 0,
+      completed: 0,
       retryScheduled: 0,
       manualAttention: 0,
       skipped: 0,
@@ -84,7 +101,7 @@ test("fails closed when CRON_SECRET is missing", async () => {
   assert.equal((await route(request("Bearer anything"))).status, 401);
 });
 
-test("the two literal enable flags independently gate repair", async () => {
+test("the three literal enable flags independently gate repair", async () => {
   process.env.CRON_SECRET = "secret";
   let calls = 0;
   const selections: unknown[] = [];
@@ -95,12 +112,13 @@ test("the two literal enable flags independently gate repair", async () => {
   });
 
   for (const flag of [undefined, "1", "TRUE", "yes"]) {
-    if (flag === undefined) {
-      delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
-    } else {
-      process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = flag;
-    }
+    delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
     delete process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+    if (flag === undefined) {
+      delete process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED;
+    } else {
+      process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED = flag;
+    }
     const response = await route(request("Bearer secret"));
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { ok: true, skipped: "flag-off" });
@@ -112,9 +130,13 @@ test("the two literal enable flags independently gate repair", async () => {
   delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
   process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED = "true";
   await route(request("Bearer secret"));
+  delete process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+  process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED = "true";
+  await route(request("Bearer secret"));
   assert.deepEqual(selections, [
-    { revocations: true, grantCreates: false },
-    { revocations: false, grantCreates: true },
+    { revocations: true, grantCreates: false, folderOperations: false },
+    { revocations: false, grantCreates: true, folderOperations: false },
+    { revocations: false, grantCreates: false, folderOperations: true },
   ]);
 });
 
@@ -122,6 +144,7 @@ test("returns a count-only repair receipt without provider detail", async () => 
   process.env.CRON_SECRET = "secret";
   process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = "true";
   process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED = "true";
+  process.env.SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED = "true";
   const route = createProjectDriveGrantRepairRoute(async () => ({
     revocations: {
       scanned: 4,
@@ -140,6 +163,21 @@ test("returns a count-only repair receipt without provider detail", async () => 
       skipped: 0,
       failed: 0,
     },
+    folderOperations: Object.assign(
+      {
+        scanned: 6,
+        attempted: 5,
+        completed: 3,
+        retryScheduled: 1,
+        manualAttention: 1,
+        skipped: 0,
+        failed: 0,
+      },
+      {
+        operationId: "must-not-leak",
+        providerFolderId: "must-not-leak",
+      },
+    ),
   }));
 
   const response = await route(request("Bearer secret"));
@@ -158,6 +196,15 @@ test("returns a count-only repair receipt without provider detail", async () => 
       repairPending: 1,
       retryScheduled: 1,
       manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    folderOperations: {
+      scanned: 6,
+      attempted: 5,
+      completed: 3,
+      retryScheduled: 1,
+      manualAttention: 1,
       skipped: 0,
       failed: 0,
     },
