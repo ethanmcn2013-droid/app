@@ -64,6 +64,42 @@ describe("Project Drive folder lifecycle wiring", () => {
     );
   });
 
+  it("keeps storage-owner handover explicit, authorized, and non-destructive", () => {
+    const actions = source("actions/connections.ts");
+    const handover = exportedAction(
+      actions,
+      "handoverGoogleDriveForProjectAction",
+    );
+    assert.match(handover, /if\s*\(isDemoMode\(\)\)\s*return/);
+    assert.match(
+      handover,
+      /authorizeProjectDrive\s*\(\s*projectId\s*,\s*["']manageProject["']/,
+    );
+    assert.ok(
+      handover.indexOf("authorization.archived") <
+        handover.indexOf("handoverProjectGoogleDriveStorage"),
+      "archived Projects must stop before handover work",
+    );
+    assert.doesNotMatch(
+      handover,
+      /\b(?:delete|move|trash|remove)\w*\s*\(/i,
+    );
+
+    const lifecycle = source(
+      "connections/project-drive-storage-handover.ts",
+    );
+    const publicShape = lifecycle.slice(
+      lifecycle.indexOf("export type ProjectDriveStorageHandoverState"),
+      lifecycle.indexOf(
+        "export const DEMO_PROJECT_DRIVE_STORAGE_HANDOVER_STATE",
+      ),
+    );
+    assert.doesNotMatch(
+      publicShape,
+      /operationId|connectionId|storageGenerationId|refreshToken|accessToken/,
+    );
+  });
+
   it("commits rename revision and exact-generation intent before provider execution", () => {
     const projects = source("projects/service.ts");
     const rename = projects.slice(

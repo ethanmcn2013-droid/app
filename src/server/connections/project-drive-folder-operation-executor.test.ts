@@ -32,6 +32,7 @@ import {
   jsonResponse,
   seedProjectDriveCore,
   seedStorageGenerations,
+  tokenCipher,
   tokenRefreshResponse,
 } from "./project-drive-core.test.helpers";
 
@@ -169,6 +170,50 @@ async function prepareRename(
   });
   if (prepared.outcome === "conflict") {
     assert.fail("folder rename preparation unexpectedly conflicted");
+  }
+  assert.equal(prepared.operation.operationId, operationId);
+  return prepared.operation.operationId;
+}
+
+async function seedHandoverTarget(fixture: ExecutorFixture) {
+  await seedStorageGenerations(fixture.client);
+  await fixture.db
+    .update(workspaceMembers)
+    .set({ role: "owner" })
+    .where(eq(workspaceMembers.userId, "member-a"));
+  await fixture.db.insert(providerConnections).values({
+    id: "conn-member-a",
+    userId: "member-a",
+    provider: "google_drive",
+    providerAccountId: "account-member-a",
+    providerAccountEmail: "member.a@example.com",
+    rootFolderId: "root-member-a",
+    refreshTokenCipher: tokenCipher(
+      "conn-member-a",
+      "refresh-member-a",
+    ),
+    keyVersion: 1,
+    scopes: ["https://www.googleapis.com/auth/drive.file"],
+    status: "active",
+    isCurrent: true,
+    connectedAt: new Date("2026-09-03T10:00:00.000Z"),
+  });
+}
+
+async function prepareHandover(
+  fixture: ExecutorFixture,
+  operationId = "operation-one",
+  targetStorageGenerationId = "gen-handover",
+) {
+  const prepared = await fixture.executor.prepare({
+    workspaceId: "ws-a",
+    operationKind: "storage_handover",
+    connectionId: "conn-member-a",
+    storageGenerationId: "gen-current",
+    targetStorageGenerationId,
+  });
+  if (prepared.outcome === "conflict") {
+    assert.fail("storage handover preparation unexpectedly conflicted");
   }
   assert.equal(prepared.operation.operationId, operationId);
   return prepared.operation.operationId;
@@ -638,6 +683,149 @@ describe("durable Project Drive folder operation executor", () => {
       ).length,
       0,
       "domain write must roll back with the rejected journal completion",
+    );
+  });
+
+  it("hands storage to an exact owner connection without moving or deleting historical files", async () => {
+    const calls: Array<{ url: string; method: string }> = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = String(input);
+      const method = init?.method ?? "GET";
+      calls.push({ url, method });
+      if (url.includes("oauth2.googleapis.com/token")) {
+        assert.match(String(init?.body), /refresh_token=refresh-member-a/);
+        return tokenRefreshResponse();
+      }
+      if (method === "GET") return jsonResponse({ files: [] });
+      if (method === "POST") {
+        return jsonResponse(
+          folder({
+            id: "folder-handover",
+            generationId: "gen-handover",
+            parentId: "root-member-a",
+          }),
+        );
+      }
+      throw new Error(`unexpected provider method ${method}`);
+    };
+    const fixture = await executorFixture({ fetchImpl });
+    await seedHandoverTarget(fixture);
+    const operationId = await prepareHandover(fixture);
+
+    const result = await fixture.executor.execute({
+      workspaceId: "ws-a",
+      operationId,
+      operationKind: "storage_handover",
+    });
+    assert.equal(result.outcome, "completed");
+
+    const generations = await fixture.db
+      .select()
+      .from(workspaceStorage)
+      .where(eq(workspaceStorage.workspaceId, "ws-a"));
+    assert.equal(
+      generations.find((generation) => generation.id === "gen-current")
+        ?.isCurrent,
+      false,
+    );
+    const current = generations.filter((generation) => generation.isCurrent);
+    assert.equal(current.length, 1);
+    assert.equal(current[0].id, "gen-handover");
+    assert.equal(current[0].connectionId, "conn-member-a");
+    assert.equal(current[0].folderId, "folder-handover");
+
+    const operations = await fixture.db
+      .select()
+      .from(projectDriveOperations)
+      .where(eq(projectDriveOperations.workspaceId, "ws-a"));
+    const handover = operations.find(
+      (operation) => operation.id === operationId,
+    );
+    assert.equal(handover?.status, "succeeded");
+    assert.equal(handover?.providerFolderId, "folder-handover");
+    assert.deepEqual(
+      operations
+        .filter(
+          (operation) =>
+            operation.operationKind === "grant_create" &&
+            operation.storageGenerationId === "gen-handover",
+        )
+        .map((operation) => operation.subjectUserId)
+        .sort(),
+      ["member-b", "owner"],
+      "every current member except the new storage owner receives a durable writer intent",
+    );
+    assert.equal(
+      calls.some(({ method }) => method === "DELETE" || method === "PATCH"),
+      false,
+      "handover must preserve the old folder and its files",
+    );
+  });
+
+  it("keeps the source generation current when target ownership changes during provider work", async () => {
+    const fixtureRef: { current: ExecutorFixture | null } = { current: null };
+    const fetchImpl: typeof fetch = async (input, init) => {
+      if (String(input).includes("oauth2.googleapis.com/token")) {
+        return tokenRefreshResponse();
+      }
+      if ((init?.method ?? "GET") === "GET") {
+        return jsonResponse({ files: [] });
+      }
+      if (init?.method === "POST") {
+        return jsonResponse(
+          folder({
+            id: "folder-raced-handover",
+            generationId: "gen-handover",
+            parentId: "root-member-a",
+          }),
+        );
+      }
+      throw new Error("unexpected request");
+    };
+    const fixture = await executorFixture({
+      fetchImpl,
+      afterProviderSuccess: async () => {
+        const current = fixtureRef.current;
+        assert.ok(current);
+        await current.db
+          .update(workspaceMembers)
+          .set({ role: "member" })
+          .where(eq(workspaceMembers.userId, "member-a"));
+      },
+    });
+    fixtureRef.current = fixture;
+    await seedHandoverTarget(fixture);
+    const operationId = await prepareHandover(fixture);
+
+    const result = await fixture.executor.execute({
+      workspaceId: "ws-a",
+      operationId,
+      operationKind: "storage_handover",
+    });
+    assert.equal(result.outcome, "manual_attention");
+    assert.equal(result.operation.lastErrorCode, "workspace_changed");
+
+    const generations = await fixture.db
+      .select()
+      .from(workspaceStorage)
+      .where(eq(workspaceStorage.workspaceId, "ws-a"));
+    assert.equal(
+      generations.find((generation) => generation.id === "gen-current")
+        ?.isCurrent,
+      true,
+    );
+    assert.equal(
+      generations.some((generation) => generation.id === "gen-handover"),
+      false,
+    );
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(projectDriveOperations)
+          .where(eq(projectDriveOperations.operationKind, "grant_create"))
+      ).length,
+      0,
     );
   });
 

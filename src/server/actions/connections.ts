@@ -15,6 +15,12 @@ import {
   enableProjectGoogleDriveStorage,
   type ProjectDriveFolderSetupState,
 } from "@/server/connections/project-drive-folder-management";
+import {
+  ARCHIVED_PROJECT_DRIVE_STORAGE_HANDOVER_STATE,
+  DEMO_PROJECT_DRIVE_STORAGE_HANDOVER_STATE,
+  handoverProjectGoogleDriveStorage,
+  type ProjectDriveStorageHandoverState,
+} from "@/server/connections/project-drive-storage-handover";
 
 const EMPTY_SUMMARY: GoogleDriveConnectionSummary = Object.freeze({
   connected: false,
@@ -69,6 +75,30 @@ export async function enableGoogleDriveForProjectAction(
     return ARCHIVED_PROJECT_DRIVE_FOLDER_SETUP_STATE;
   }
   const result = await enableProjectGoogleDriveStorage(authorization);
+  revalidatePath("/app/settings");
+  return result;
+}
+
+/**
+ * Select a different Project owner for all future Drive uploads. Historical
+ * folder generations stay with their original owners and are never moved or
+ * deleted as a side effect of handover.
+ */
+export async function handoverGoogleDriveForProjectAction(
+  projectId: string,
+  targetOwnerUserId: string,
+): Promise<ProjectDriveStorageHandoverState> {
+  if (isDemoMode()) return DEMO_PROJECT_DRIVE_STORAGE_HANDOVER_STATE;
+  const authorization = await authorizeProjectDrive(
+    projectId,
+    "manageProject",
+  );
+  if (authorization.archived) {
+    return ARCHIVED_PROJECT_DRIVE_STORAGE_HANDOVER_STATE;
+  }
+  const result = await handoverProjectGoogleDriveStorage(authorization, {
+    targetOwnerUserId,
+  });
   revalidatePath("/app/settings");
   return result;
 }

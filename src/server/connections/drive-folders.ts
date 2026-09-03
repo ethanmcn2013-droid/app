@@ -96,6 +96,15 @@ export type ProjectDriveFolderProvisionClaim = Extract<
   Readonly<{ operationKind: "folder_provision" }>
 >;
 
+export type ProjectDriveStorageHandoverClaim = Extract<
+  ProjectDriveOperationClaim,
+  Readonly<{ operationKind: "storage_handover" }>
+>;
+
+export type ProjectDriveFolderCreationClaim =
+  | ProjectDriveFolderProvisionClaim
+  | ProjectDriveStorageHandoverClaim;
+
 export type ProjectDriveFolderRenameClaim = Extract<
   ProjectDriveOperationClaim,
   Readonly<{ operationKind: "folder_rename" }>
@@ -254,7 +263,7 @@ function verifyStoredFolder(
 
 export function createDriveFolderService(deps: DriveFolderServiceDependencies) {
   async function provisionClaimed(
-    claim: ProjectDriveFolderProvisionClaim,
+    claim: ProjectDriveFolderCreationClaim,
     folderName: string,
   ): Promise<WorkspaceDriveFolder> {
     const name = canonicalText(folderName);

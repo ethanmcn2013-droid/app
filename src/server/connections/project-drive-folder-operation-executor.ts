@@ -1,11 +1,12 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import {
   projectDriveOperations,
   providerConnections,
+  workspaceMembers,
   workspaces,
   workspaceStorage,
   type ProjectDriveOperationErrorCode,
@@ -17,7 +18,7 @@ import {
   type DriveFolderProviderError,
   DriveFolderError,
   isDriveFolderProviderError,
-  type ProjectDriveFolderProvisionClaim,
+  type ProjectDriveFolderCreationClaim,
   type ProjectDriveFolderRenameClaim,
   type ProjectDriveFolderRenameResult,
   type WorkspaceDriveFolder,
@@ -43,6 +44,8 @@ import {
   prepareExistingMemberDriveGrantIntents,
   ProjectDriveMembershipLifecycleError,
 } from "./project-drive-membership-lifecycle";
+import { listPendingDelegatedDriveUploadReceiptsForWorkspace } from "./project-drive-upload-receipts";
+import { assertExactGoogleDriveScopeSet } from "./google-drive-scopes";
 
 type ExecutorDb = LibSQLDatabase<typeof schema>;
 type Journal = ReturnType<typeof createProjectDriveOperationJournal>;
@@ -51,7 +54,8 @@ type FolderService = ReturnType<typeof createDriveFolderService>;
 
 export type ProjectDriveFolderOperationKind =
   | "folder_provision"
-  | "folder_rename";
+  | "folder_rename"
+  | "storage_handover";
 
 export type ProjectDriveFolderOperationPrepareInput = Extract<
   ProjectDriveOperationPrepareInput,
@@ -71,7 +75,7 @@ export type ProjectDriveFolderOperationExecutionResult =
 
 type ProviderSuccess =
   | Readonly<{
-      claim: ProjectDriveFolderProvisionClaim;
+      claim: ProjectDriveFolderCreationClaim;
       result: WorkspaceDriveFolder;
     }>
   | Readonly<{
@@ -288,7 +292,7 @@ export function createProjectDriveFolderOperationExecutor(
   }
 
   async function provisionFolderName(
-    claim: ProjectDriveFolderProvisionClaim,
+    claim: ProjectDriveFolderCreationClaim,
   ): Promise<string> {
     const workspaceRows = await deps.database
       .select({ name: workspaces.name })
@@ -309,18 +313,21 @@ export function createProjectDriveFolderOperationExecutor(
         ),
       )
       .limit(2);
-    if (
-      currentRows.length > 1 ||
-      (currentRows.length === 1 &&
-        currentRows[0].id !== claim.targetStorageGenerationId)
-    ) {
+    const currentStorageIsValid =
+      claim.operationKind === "folder_provision"
+        ? currentRows.length === 0 ||
+          (currentRows.length === 1 &&
+            currentRows[0].id === claim.targetStorageGenerationId)
+        : currentRows.length === 1 &&
+          currentRows[0].id === claim.storageGenerationId;
+    if (currentRows.length > 1 || !currentStorageIsValid) {
       throw new DriveFolderError("storage-conflict");
     }
     return workspaceRows[0].name;
   }
 
   async function persistProvision(
-    claim: ProjectDriveFolderProvisionClaim,
+    claim: ProjectDriveFolderCreationClaim,
     result: WorkspaceDriveFolder,
   ) {
     try {
@@ -337,6 +344,8 @@ export function createProjectDriveFolderOperationExecutor(
           const [connection] = await transaction
             .select({
               id: providerConnections.id,
+              ownerUserId: providerConnections.userId,
+              scopes: providerConnections.scopes,
               status: providerConnections.status,
               isCurrent: providerConnections.isCurrent,
             })
@@ -349,6 +358,11 @@ export function createProjectDriveFolderOperationExecutor(
             !connection.isCurrent ||
             result.connectionId !== claim.connectionId
           ) {
+            throw new DriveFolderError("storage-conflict");
+          }
+          try {
+            assertExactGoogleDriveScopeSet(connection.scopes);
+          } catch {
             throw new DriveFolderError("storage-conflict");
           }
 
@@ -364,7 +378,10 @@ export function createProjectDriveFolderOperationExecutor(
             )
             .limit(2);
           const currentRows = await transaction
-            .select({ id: workspaceStorage.id })
+            .select({
+              id: workspaceStorage.id,
+              connectionId: workspaceStorage.connectionId,
+            })
             .from(workspaceStorage)
             .where(
               byWorkspace(
@@ -378,18 +395,122 @@ export function createProjectDriveFolderOperationExecutor(
             throw new DriveFolderError("storage-conflict");
           }
           const existing = generations[0] ?? null;
-          if (existing) {
-            if (
-              !existing.isCurrent ||
-              existing.connectionId !== claim.connectionId ||
-              existing.folderId !== result.folderId ||
-              existing.folderWebViewLink !== result.folderWebViewLink
-            ) {
+          if (claim.operationKind === "folder_provision") {
+            if (existing) {
+              if (
+                !existing.isCurrent ||
+                existing.connectionId !== claim.connectionId ||
+                existing.folderId !== result.folderId ||
+                existing.folderWebViewLink !== result.folderWebViewLink
+              ) {
+                throw new DriveFolderError("storage-conflict");
+              }
+            } else if (currentRows.length > 0) {
               throw new DriveFolderError("storage-conflict");
             }
           } else {
-            if (currentRows.length > 0) {
+            if (
+              existing ||
+              currentRows.length !== 1 ||
+              currentRows[0].id !== claim.storageGenerationId
+            ) {
               throw new DriveFolderError("storage-conflict");
+            }
+            const [sourceConnection] = await transaction
+              .select({ ownerUserId: providerConnections.userId })
+              .from(providerConnections)
+              .where(
+                eq(
+                  providerConnections.id,
+                  currentRows[0].connectionId,
+                ),
+              )
+              .limit(1);
+            if (
+              !sourceConnection ||
+              sourceConnection.ownerUserId === connection.ownerUserId
+            ) {
+              throw new DriveFolderError("storage-conflict");
+            }
+            const ownerMemberships = await transaction
+              .select({
+                userId: workspaceMembers.userId,
+                role: workspaceMembers.role,
+              })
+              .from(workspaceMembers)
+              .where(
+                and(
+                  eq(workspaceMembers.workspaceId, claim.workspaceId),
+                  inArray(workspaceMembers.userId, [
+                    sourceConnection.ownerUserId,
+                    connection.ownerUserId,
+                  ]),
+                ),
+              );
+            if (
+              ownerMemberships.length !== 2 ||
+              ownerMemberships.some((member) => member.role !== "owner")
+            ) {
+              throw new DriveFolderError("storage-conflict");
+            }
+            const pendingUploads =
+              await listPendingDelegatedDriveUploadReceiptsForWorkspace(
+                transaction,
+                claim.workspaceId,
+              );
+            if (pendingUploads.length > 0) {
+              throw new DriveFolderError("storage-conflict");
+            }
+          }
+
+          // Re-prove the exact operation relationships after provider success.
+          // The account-fence check and final generation switch share this
+          // writer transaction, so source/target erasure cannot split them.
+          const operationInput =
+            claim.operationKind === "folder_provision"
+              ? {
+                  operationKind: "folder_provision" as const,
+                  workspaceId: claim.workspaceId,
+                  connectionId: claim.connectionId,
+                  targetStorageGenerationId:
+                    claim.targetStorageGenerationId,
+                }
+              : {
+                  operationKind: "storage_handover" as const,
+                  workspaceId: claim.workspaceId,
+                  connectionId: claim.connectionId,
+                  storageGenerationId: claim.storageGenerationId,
+                  targetStorageGenerationId:
+                    claim.targetStorageGenerationId,
+                };
+          const reproved =
+            await prepareAccountFencedProjectDriveOperationInTransaction(
+              transaction,
+              operationInput,
+            );
+          if (
+            reproved.outcome === "conflict" ||
+            reproved.operation.operationId !== claim.operationId
+          ) {
+            throw new ProjectDriveFolderOperationClaimConflict();
+          }
+
+          if (!existing) {
+            if (claim.operationKind === "storage_handover") {
+              const retired = await transaction
+                .update(workspaceStorage)
+                .set({ isCurrent: false })
+                .where(
+                  and(
+                    eq(workspaceStorage.id, claim.storageGenerationId),
+                    eq(workspaceStorage.workspaceId, claim.workspaceId),
+                    eq(workspaceStorage.isCurrent, true),
+                  ),
+                )
+                .returning({ id: workspaceStorage.id });
+              if (retired.length !== 1) {
+                throw new DriveFolderError("storage-conflict");
+              }
             }
             await transaction.insert(workspaceStorage).values({
               id: claim.targetStorageGenerationId,
@@ -400,28 +521,6 @@ export function createProjectDriveFolderOperationExecutor(
               state: "active",
               isCurrent: true,
             });
-          }
-
-          // Re-prove the exact operation relationships after provider success
-          // and after the new generation is visible in this transaction. An
-          // account-erasure fence that won during the provider request blocks
-          // both storage materialization and every member grant intent.
-          const reproved =
-            await prepareAccountFencedProjectDriveOperationInTransaction(
-              transaction,
-              {
-                operationKind: "folder_provision",
-                workspaceId: claim.workspaceId,
-                connectionId: claim.connectionId,
-                targetStorageGenerationId:
-                  claim.targetStorageGenerationId,
-              },
-            );
-          if (
-            reproved.outcome === "conflict" ||
-            reproved.operation.operationId !== claim.operationId
-          ) {
-            throw new ProjectDriveFolderOperationClaimConflict();
           }
 
           // A populated Project must never materialize a Drive generation
@@ -452,7 +551,7 @@ export function createProjectDriveFolderOperationExecutor(
               workspaceId: claim.workspaceId,
               operationId: claim.operationId,
               attemptFence: claim.attemptFence,
-              operationKind: "folder_provision",
+              operationKind: claim.operationKind,
               receipt: {
                 providerFolderId: result.folderId,
                 providerFolderWebViewLink: result.folderWebViewLink,
@@ -581,7 +680,8 @@ export function createProjectDriveFolderOperationExecutor(
   ): Promise<ProjectDriveFolderOperationExecutionResult> {
     if (
       input.operationKind !== "folder_provision" &&
-      input.operationKind !== "folder_rename"
+      input.operationKind !== "folder_rename" &&
+      input.operationKind !== "storage_handover"
     ) {
       return CONFLICT;
     }
@@ -597,7 +697,10 @@ export function createProjectDriveFolderOperationExecutor(
     const claim = claimed.claim;
     if (claim.operationKind !== input.operationKind) return CONFLICT;
 
-    if (claim.operationKind === "folder_provision") {
+    if (
+      claim.operationKind === "folder_provision" ||
+      claim.operationKind === "storage_handover"
+    ) {
       let result: WorkspaceDriveFolder;
       try {
         const folderName = await provisionFolderName(claim);
