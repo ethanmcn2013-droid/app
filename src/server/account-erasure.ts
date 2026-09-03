@@ -36,7 +36,18 @@ import {
   listPendingDelegatedDriveUploadReceiptsForAccount,
   type PendingDelegatedDriveUploadReceipt,
 } from "./connections/project-drive-upload-receipts-core";
-import { deleteBytes } from "./storage";
+import {
+  createNativeByteCleanupService,
+  deleteNativeByteCleanupTargetConfirmed,
+  stageNativeByteCleanupReceipts,
+} from "./attachments/native-byte-cleanup";
+import {
+  assertNoPendingNativeUploads,
+  nativeUploadClaimPrefix,
+  NativeUploadInProgressError,
+  prepareNativeUploadClaimForDeletionInTransaction,
+} from "./attachments/native-upload-custody";
+import { deleteProjectRowsInTransaction } from "./projects/project-deletion-rows";
 
 /**
  * Database handle accepted by {@link eraseAccountData}. Typed against the
@@ -95,6 +106,15 @@ export type AccountErasureOptions = Readonly<{
   /** Test seam; production delegates every disk/blob locator to storage.ts. */
   deleteStoredBytes?: (storedPath: string) => Promise<void>;
 }>;
+
+function rethrowNativeUploadErasureBlock(error: unknown): never {
+  if (error instanceof NativeUploadInProgressError) {
+    throw new Error(
+      "account erasure blocked: Signal-native attachment upload is still in progress; exact custody retained",
+    );
+  }
+  throw error;
+}
 
 /**
  * Hard-delete a user's ENTIRE footprint across every table in Tasks' Turso
@@ -457,6 +477,102 @@ export async function eraseAccountData(
     );
   }
 
+  // The account fence makes this native-upload scope stable: it blocks every
+  // writer in an owned Project through the owner lineage, and every surviving
+  // Project writer attributable to this uploader through the actor lineage.
+  // Avoid an interactive transaction when the scope is empty because libSQL's
+  // isolated `:memory:` test adapter cannot retain a database after one; real
+  // custody work always runs under an immediate writer transaction.
+  const accountAttachmentScope = or(
+    eq(attachments.uploaderUserId, userId),
+    ownedWorkspaceIds.length > 0
+      ? inArray(attachments.workspaceId, ownedWorkspaceIds)
+      : undefined,
+    ownedWorkspaceIds.length > 0
+      ? inArray(tasks.workspaceId, ownedWorkspaceIds)
+      : undefined,
+  )!;
+  const [nativeAttachmentCandidate] = await database
+    .select({ id: attachments.id })
+    .from(attachments)
+    .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+    .where(accountAttachmentScope)
+    .limit(1);
+  const ownedClaimMarkerScope =
+    ownedWorkspaceIds.length > 0
+      ? or(
+          ...ownedWorkspaceIds.map((workspaceId) =>
+            like(meta.key, `${nativeUploadClaimPrefix(workspaceId)}%`),
+          ),
+        )
+      : undefined;
+  const ownedClaimMarker = ownedClaimMarkerScope
+    ? (
+        await database
+          .select({ key: meta.key })
+          .from(meta)
+          .where(ownedClaimMarkerScope)
+          .limit(1)
+      )[0]
+    : undefined;
+  const nativeByteCleanupReceiptKeys = new Set<string>();
+  if (nativeAttachmentCandidate || ownedClaimMarker) {
+    try {
+      const preflightReceiptKeys = await database.transaction(
+        async (transaction) => {
+          const keys: string[] = [];
+          for (const workspaceId of ownedWorkspaceIds) {
+            keys.push(
+              ...(await assertNoPendingNativeUploads(
+                transaction,
+                workspaceId,
+              )),
+            );
+          }
+
+          const uploaderAttachments = await transaction
+            .select({
+              id: attachments.id,
+              attachmentWorkspaceId: attachments.workspaceId,
+              taskWorkspaceId: tasks.workspaceId,
+            })
+            .from(attachments)
+            .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+            .where(eq(attachments.uploaderUserId, userId));
+          const ownedWorkspaceIdSet = new Set(ownedWorkspaceIds);
+          for (const attachment of uploaderAttachments) {
+            if (
+              attachment.attachmentWorkspaceId &&
+              attachment.taskWorkspaceId &&
+              attachment.attachmentWorkspaceId !== attachment.taskWorkspaceId
+            ) {
+              throw new Error("native upload attachment parent conflicted");
+            }
+            const workspaceId =
+              attachment.attachmentWorkspaceId ??
+              attachment.taskWorkspaceId;
+            if (!workspaceId || ownedWorkspaceIdSet.has(workspaceId)) {
+              continue;
+            }
+            keys.push(
+              ...(await prepareNativeUploadClaimForDeletionInTransaction(
+                transaction,
+                { workspaceId, attachmentId: attachment.id },
+              )),
+            );
+          }
+          return keys;
+        },
+        { behavior: "immediate" },
+      );
+      for (const key of preflightReceiptKeys) {
+        nativeByteCleanupReceiptKeys.add(key);
+      }
+    } catch (error) {
+      rethrowNativeUploadErasureBlock(error);
+    }
+  }
+
   // Permission deletion is an external side effect, so it must happen before
   // the local receipt disappears. Cover all receipts this erasure will remove:
   // grants on the person's credential-backed folders, grants to the person on
@@ -681,12 +797,6 @@ export async function eraseAccountData(
   // final batch. They keep the account fence discoverable by a concurrent
   // project-deletion retry right up to the atomic lifecycle handoff.
 
-  // Attachment storage locators to delete AFTER their rows are gone. We
-  // collect them up front (while the rows still exist) and delete last so a DB
-  // failure never removes bytes whose row still exists, while a storage
-  // failure never blocks the database erasure.
-  const orphanedFiles = new Set<string>();
-
   for (const { id: wsId } of ownedWorkspaces) {
     const wsTasks = await database
       .select({ id: tasks.id })
@@ -700,12 +810,40 @@ export async function eraseAccountData(
     const byTaskOrWs = (taskCol: SQLiteColumn, wsCol: SQLiteColumn) =>
       or(taskIds.length ? inArray(taskCol, taskIds) : undefined, eq(wsCol, wsId));
 
-    // Collect attachment file paths for this workspace before deleting.
-    const wsAttachments = await database
-      .select({ storedPath: attachments.storedPath })
+    const [workspaceAttachment] = await database
+      .select({ id: attachments.id })
       .from(attachments)
-      .where(byTaskOrWs(attachments.taskId, attachments.workspaceId));
-    for (const a of wsAttachments) orphanedFiles.add(a.storedPath);
+      .where(byTaskOrWs(attachments.taskId, attachments.workspaceId))
+      .limit(1);
+    if (workspaceAttachment) {
+      try {
+        const receiptKeys = await database.transaction(
+          async (transaction) => {
+            const expiredClaimKeys = await assertNoPendingNativeUploads(
+              transaction,
+              wsId,
+            );
+            const finalizedAttachmentKeys =
+              await deleteProjectRowsInTransaction(transaction, wsId);
+            const deletedWorkspace = await transaction
+              .delete(workspaces)
+              .where(eq(workspaces.id, wsId))
+              .returning({ id: workspaces.id });
+            if (deletedWorkspace.length !== 1) {
+              throw new Error("account erasure Project deletion conflicted");
+            }
+            return [...expiredClaimKeys, ...finalizedAttachmentKeys];
+          },
+          { behavior: "immediate" },
+        );
+        for (const key of receiptKeys) {
+          nativeByteCleanupReceiptKeys.add(key);
+        }
+        continue;
+      } catch (error) {
+        rethrowNativeUploadErasureBlock(error);
+      }
+    }
 
     // share_link_visits → share_links: delete the leaves first, explicitly.
     const wsLinks = await database
@@ -765,17 +903,89 @@ export async function eraseAccountData(
   // they're a member of but don't own: comments/activities they authored,
   // attachments they uploaded, notifications addressed to them, their prefs,
   // entitlements, invites they minted or accepted, and their memberships.
-  const userAttachments = await database
-    .select({ storedPath: attachments.storedPath })
+  const [userAttachmentCandidate] = await database
+    .select({ id: attachments.id })
     .from(attachments)
-    .where(eq(attachments.uploaderUserId, userId));
-  for (const a of userAttachments) orphanedFiles.add(a.storedPath);
+    .where(eq(attachments.uploaderUserId, userId))
+    .limit(1);
+  if (userAttachmentCandidate) {
+    try {
+      const receiptKeys = await database.transaction(
+        async (transaction) => {
+          const attachmentScope = () =>
+            transaction
+              .select({
+                id: attachments.id,
+                storedPath: attachments.storedPath,
+                attachmentWorkspaceId: attachments.workspaceId,
+                taskWorkspaceId: tasks.workspaceId,
+              })
+              .from(attachments)
+              .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+              .where(eq(attachments.uploaderUserId, userId));
+          const keys: string[] = [];
+          const candidates = await attachmentScope();
+          for (const attachment of candidates) {
+            if (
+              attachment.attachmentWorkspaceId &&
+              attachment.taskWorkspaceId &&
+              attachment.attachmentWorkspaceId !== attachment.taskWorkspaceId
+            ) {
+              throw new Error("native upload attachment parent conflicted");
+            }
+            const workspaceId =
+              attachment.attachmentWorkspaceId ??
+              attachment.taskWorkspaceId;
+            if (!workspaceId) continue;
+            keys.push(
+              ...(await prepareNativeUploadClaimForDeletionInTransaction(
+                transaction,
+                { workspaceId, attachmentId: attachment.id },
+              )),
+            );
+          }
+
+          const finalizedAttachments = await attachmentScope();
+          const storedPathsByWorkspace = new Map<string, string[]>();
+          for (const attachment of finalizedAttachments) {
+            const workspaceId =
+              attachment.attachmentWorkspaceId ??
+              attachment.taskWorkspaceId ??
+              `account-erasure:${userId}`;
+            const storedPaths = storedPathsByWorkspace.get(workspaceId) ?? [];
+            storedPaths.push(attachment.storedPath);
+            storedPathsByWorkspace.set(workspaceId, storedPaths);
+          }
+          for (const [workspaceId, storedPaths] of storedPathsByWorkspace) {
+            keys.push(
+              ...(await stageNativeByteCleanupReceipts(
+                transaction,
+                workspaceId,
+                storedPaths,
+              )),
+            );
+          }
+          const deletedAttachments = await transaction
+            .delete(attachments)
+            .where(eq(attachments.uploaderUserId, userId))
+            .returning({ id: attachments.id });
+          if (deletedAttachments.length !== finalizedAttachments.length) {
+            throw new Error("account erasure attachment deletion conflicted");
+          }
+          return keys;
+        },
+        { behavior: "immediate" },
+      );
+      for (const key of receiptKeys) {
+        nativeByteCleanupReceiptKeys.add(key);
+      }
+    } catch (error) {
+      rethrowNativeUploadErasureBlock(error);
+    }
+  }
 
   await database.delete(activities).where(eq(activities.userId, userId));
   await database.delete(comments).where(eq(comments.userId, userId));
-  await database
-    .delete(attachments)
-    .where(eq(attachments.uploaderUserId, userId));
   await database
     .delete(resources)
     .where(eq(resources.addedByUserId, userId));
@@ -877,18 +1087,23 @@ export async function eraseAccountData(
     database.delete(users).where(eq(users.id, userId)),
   ]);
 
-  // Best-effort removal of the now-orphaned attachment bytes. The centralized
-  // storage seam understands both private Vercel Blob locators and disk paths;
-  // this erasure layer must never resolve or log a stored locator itself. The
-  // rows are already gone, so a deletion failure remains non-fatal.
-  const deleteStoredBytes = options.deleteStoredBytes ?? deleteBytes;
-  for (const storedPath of orphanedFiles) {
-    try {
-      await deleteStoredBytes(storedPath);
-    } catch {
-      // Missing bytes, a missing Blob token, and transient provider failures
-      // must not undo the completed database erasure.
-    }
+  // Every exact Signal-native locator entered durable custody in the same
+  // transaction that removed its attachment row (or its expired claim). Drain
+  // one bounded batch only after commit. Storage failure or process death
+  // leaves the opaque receipt for the shared scheduled repair worker.
+  if (nativeByteCleanupReceiptKeys.size > 0) {
+    const receiptKeys = [...nativeByteCleanupReceiptKeys];
+    await createNativeByteCleanupService({
+      database,
+      deleteTarget: options.deleteStoredBytes
+        ? (target) => options.deleteStoredBytes!(target.locator)
+        : deleteNativeByteCleanupTargetConfirmed,
+    })
+      .repairReady({
+        keys: receiptKeys,
+        limit: Math.min(50, receiptKeys.length),
+      })
+      .catch(() => undefined);
   }
 
   // Project Drive plaintext never leaves this eraser. Every credential was

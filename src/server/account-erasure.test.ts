@@ -43,7 +43,10 @@ import type { Client } from "@libsql/client";
 import { eq } from "drizzle-orm";
 import { eraseAccountData } from "./account-erasure";
 import { exportAccountData } from "./account-export";
-import { freshMemoryDb as freshDb } from "./db/memory-test-db";
+import {
+  freshFileDb,
+  freshMemoryDb as freshDb,
+} from "./db/memory-test-db";
 import { resources } from "./db/schema";
 
 async function count(client: Client, where: string): Promise<number> {
@@ -220,7 +223,7 @@ async function seed(client: Client, probePath: string) {
 }
 
 test("erasure removes every target row across every table, leaves the bystander intact", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
 
   // A real local attachment the central storage seam must remove. The path is
   // relative to cwd (the repo root at test time) to match legacy rows.
@@ -384,7 +387,7 @@ test("erasure removes every target row across every table, leaves the bystander 
     assert.equal(await count(client, "comments"), 1);
   } finally {
     rmSync(probeDir, { recursive: true, force: true });
-    client.close();
+    cleanup();
   }
 });
 
@@ -464,7 +467,7 @@ test("erasure consumes Drive journal evidence before every RESTRICT parent", asy
 });
 
 test("a private Blob locator reaches only the storage deletion seam", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   const blobLocator =
     "https://private-blob.example/SECRET-ACCOUNT-ERASURE-LOCATOR";
   try {
@@ -523,7 +526,7 @@ test("a private Blob locator reaches only the storage deletion seam", async () =
     assert.equal(await count(client, "attachments"), 0);
     assert.equal(await count(client, "users"), 0);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 

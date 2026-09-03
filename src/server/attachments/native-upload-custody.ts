@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
-import { and, eq, inArray, like, sql } from "drizzle-orm";
+import { and, eq, inArray, like, or, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
   attachments,
@@ -462,9 +462,10 @@ export async function rejectNativeUploadClaimInTransaction(
 export async function assertNoPendingNativeUploads(
   transaction: NativeUploadWriter,
   workspaceIdInput: string,
-): Promise<void> {
+): Promise<readonly string[]> {
   const workspaceId = canonicalId(workspaceIdInput, "workspaceId");
   const prefix = nativeUploadClaimPrefix(workspaceId);
+  const cleanupReceiptKeys: string[] = [];
   const claims = await transaction
     .select({ key: meta.key, value: meta.value })
     .from(meta)
@@ -492,12 +493,20 @@ export async function assertNoPendingNativeUploads(
       // The exact writer authority and its in-flight drain margin have
       // expired. Preserve its exact pathname in cleanup custody before
       // removing the quota claim and marker. No storage call occurs here.
-      await stageNativeByteCleanupTargets(
-        transaction,
-        claim.workspaceId,
-        [claim.cleanupTarget],
+      cleanupReceiptKeys.push(
+        ...(await stageNativeByteCleanupTargets(
+          transaction,
+          claim.workspaceId,
+          [claim.cleanupTarget],
+        )),
       );
-      await releaseNativeUploadClaimInTransaction(transaction, claim);
+      const released = await releaseNativeUploadClaimInTransaction(
+        transaction,
+        claim,
+      );
+      if (!released) {
+        throw new Error("native upload claim conflicted");
+      }
     }
   }
 
@@ -513,7 +522,13 @@ export async function assertNoPendingNativeUploads(
       storedPath: attachments.storedPath,
     })
     .from(attachments)
-    .where(eq(attachments.workspaceId, workspaceId));
+    .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+    .where(
+      or(
+        eq(attachments.workspaceId, workspaceId),
+        eq(tasks.workspaceId, workspaceId),
+      ),
+    );
   if (
     possibleLegacyClaims.some(
       (row) =>
@@ -524,6 +539,92 @@ export async function assertNoPendingNativeUploads(
     hasLiveAuthority = true;
   }
   if (hasLiveAuthority) throw new NativeUploadInProgressError();
+  return Object.freeze(cleanupReceiptKeys);
+}
+
+/**
+ * Inspect one exact attachment before account erasure removes it. A current
+ * writer keeps the row and marker intact; a markerless placeholder is treated
+ * as legacy live authority because its expiry cannot be proved. Once the
+ * recorded drain deadline has passed, the exact backend locator is staged and
+ * the placeholder plus marker are retired in this same writer transaction.
+ */
+export async function prepareNativeUploadClaimForDeletionInTransaction(
+  transaction: NativeUploadWriter,
+  input: Readonly<{ workspaceId: string; attachmentId: string }>,
+): Promise<readonly string[]> {
+  const workspaceId = canonicalId(input.workspaceId, "workspaceId");
+  const attachmentId = canonicalId(input.attachmentId, "attachmentId");
+  const key = nativeUploadClaimKey(workspaceId, attachmentId);
+  const [attachment] = await transaction
+    .select({
+      taskId: attachments.taskId,
+      filename: attachments.filename,
+      storedPath: attachments.storedPath,
+      attachmentWorkspaceId: attachments.workspaceId,
+      taskWorkspaceId: tasks.workspaceId,
+    })
+    .from(attachments)
+    .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+    .where(eq(attachments.id, attachmentId))
+    .limit(1);
+  if (!attachment) return Object.freeze([]);
+  if (
+    attachment.attachmentWorkspaceId !== workspaceId &&
+    attachment.taskWorkspaceId !== workspaceId
+  ) {
+    throw new Error("native upload claim conflicted");
+  }
+
+  const [marker] = await transaction
+    .select({ value: meta.value })
+    .from(meta)
+    .where(eq(meta.key, key))
+    .limit(1);
+  if (!marker) {
+    const expectedPathname = claimPathname(
+      workspaceId,
+      attachment.taskId,
+      attachmentId,
+      attachment.filename,
+    );
+    if (attachment.storedPath === expectedPathname) {
+      throw new NativeUploadInProgressError();
+    }
+    return Object.freeze([]);
+  }
+
+  const claim = parseClaim(marker.value);
+  if (
+    claim.workspaceId !== workspaceId ||
+    claim.attachmentId !== attachmentId ||
+    claim.pathname !== attachment.storedPath
+  ) {
+    throw new Error("native upload claim conflicted");
+  }
+  const clock = await transaction.get<{ now: number }>(
+    sql`SELECT unixepoch() AS now`,
+  );
+  if (!clock || !Number.isFinite(Number(clock.now))) {
+    throw new Error("database clock unavailable");
+  }
+  if (claim.custodyExpiresAt > Number(clock.now) * 1_000) {
+    throw new NativeUploadInProgressError();
+  }
+
+  const receiptKeys = await stageNativeByteCleanupTargets(
+    transaction,
+    workspaceId,
+    [claim.cleanupTarget],
+  );
+  const released = await releaseNativeUploadClaimInTransaction(
+    transaction,
+    claim,
+  );
+  if (!released) {
+    throw new Error("native upload claim conflicted");
+  }
+  return receiptKeys;
 }
 
 /**

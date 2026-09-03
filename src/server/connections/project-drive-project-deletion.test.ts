@@ -372,7 +372,7 @@ describe("Project Drive-aware Project deletion", () => {
         const erasureOptions = {
           openProviderToken: ({ connectionId }: { connectionId: string }) =>
             `refresh:${connectionId}`,
-          revokeProjectDriveRefreshToken: async (_refreshToken: string) => {
+          revokeProjectDriveRefreshToken: async () => {
             providerRevocations += 1;
           },
         };
