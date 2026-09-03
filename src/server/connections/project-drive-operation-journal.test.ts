@@ -901,6 +901,54 @@ describe("Project Drive operation journal · lifecycle cycles", () => {
       cleanup();
     }
   });
+
+  it("restarts only a grant cancelled before its first provider attempt", async () => {
+    const { database, cleanup } = await freshJournalDb();
+    try {
+      const { service } = journal(database, [
+        "op-grant-cancelled",
+        "op-grant-restarted",
+      ]);
+      const operation = await prepare(service, {
+        operationKind: "grant_create",
+        workspaceId: "ws-a",
+        storageGenerationId: "storage-a",
+        subjectUserId: "u-member",
+        granteeEmail: "member@example.test",
+        grantRole: "writer",
+      });
+      await service.cancelUnstarted({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+      });
+
+      const restarted = await service.restartCancelledUnstartedGrant({
+        workspaceId: "ws-a",
+        operationId: operation.operationId,
+      });
+      assert.equal(restarted.outcome, "restarted");
+      if (restarted.outcome !== "restarted") throw new Error("unreachable");
+      assert.equal(restarted.operation.operationId, "op-grant-restarted");
+      assert.equal(restarted.operation.status, "pending");
+      assert.equal(restarted.operation.attemptCount, 0);
+      assert.equal(restarted.operation.receipt, null);
+      assert.deepEqual(
+        await service.restartCancelledUnstartedGrant({
+          workspaceId: "ws-a",
+          operationId: operation.operationId,
+        }),
+        CONFLICT,
+        "the cancelled lifecycle id stays stale after rotation",
+      );
+      const claim = await service.claim({
+        workspaceId: "ws-a",
+        operationId: restarted.operation.operationId,
+      });
+      assert.equal(claim.outcome, "claimed");
+    } finally {
+      cleanup();
+    }
+  });
 });
 
 describe("Project Drive operation journal · terminal receipts", () => {

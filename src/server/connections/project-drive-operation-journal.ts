@@ -1592,6 +1592,71 @@ export function createProjectDriveOperationJournal(
       return NEUTRAL_CONFLICT;
     },
 
+    /**
+     * Restart a grant lifecycle that membership removal cancelled before its
+     * first provider attempt. Rotating the operation id makes the prior
+     * lifecycle permanently stale while preserving the unique logical dedupe
+     * key. No attempted or receipt-bearing cancellation is eligible.
+     */
+    async restartCancelledUnstartedGrant(
+      input: ProjectDriveOperationLocator,
+    ): Promise<
+      | Readonly<{
+          outcome: "restarted";
+          operation: ProjectDriveOperationView;
+        }>
+      | ProjectDriveOperationConflict
+    > {
+      const { workspaceId, operationId } =
+        canonicalProjectDriveOperationLocator(input);
+      const now = databaseNowSeconds(deps.databaseNowSeconds);
+      const nextOperationId = requiredIdentifier(randomOperationId());
+      if (nextOperationId === operationId) {
+        throw new ProjectDriveOperationInputError("invalid-identifier");
+      }
+      const [restarted] = await deps.database
+        .update(projectDriveOperations)
+        .set({
+          id: nextOperationId,
+          status: "pending",
+          attemptCount: 0,
+          lastAttemptAt: null,
+          nextAttemptAt: null,
+          leaseExpiresAt: null,
+          lastErrorCode: null,
+          providerFolderId: null,
+          providerFolderWebViewLink: null,
+          providerPermissionId: null,
+          createdAt: now,
+          updatedAt: now,
+          completedAt: null,
+        })
+        .where(
+          byWorkspace(
+            projectDriveOperations.workspaceId,
+            workspaceId,
+            eq(projectDriveOperations.id, operationId),
+            eq(projectDriveOperations.operationKind, "grant_create"),
+            eq(projectDriveOperations.status, "cancelled"),
+            eq(projectDriveOperations.attemptCount, 0),
+            isNull(projectDriveOperations.lastAttemptAt),
+            isNull(projectDriveOperations.nextAttemptAt),
+            isNull(projectDriveOperations.leaseExpiresAt),
+            isNull(projectDriveOperations.lastErrorCode),
+            isNull(projectDriveOperations.providerFolderId),
+            isNull(projectDriveOperations.providerFolderWebViewLink),
+            isNull(projectDriveOperations.providerPermissionId),
+            lte(projectDriveOperations.updatedAt, now),
+          ),
+        )
+        .returning();
+      if (!restarted) return NEUTRAL_CONFLICT;
+      return Object.freeze({
+        outcome: "restarted",
+        operation: viewFromRow(restarted),
+      });
+    },
+
     async cancelUnstarted(
       input: ProjectDriveOperationLocator,
     ): Promise<

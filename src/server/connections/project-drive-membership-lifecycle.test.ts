@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import {
+  driveFolderGrants,
   meta,
   projectDriveOperations,
   users,
@@ -17,6 +18,7 @@ import {
   ProjectDriveMembershipLifecycleError,
 } from "./project-drive-membership-lifecycle";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
+import { createProjectDriveOperationJournal } from "./project-drive-operation-journal";
 
 async function seededInvitee() {
   const fixture = await freshProjectDriveCoreDb();
@@ -158,6 +160,266 @@ describe("Project Drive membership lifecycle", () => {
       assert.equal(first.kind === "grant-intent" && first.created, true);
       assert.equal(second.kind === "grant-intent" && second.created, false);
       assert.equal((await db.select().from(projectDriveOperations)).length, 1);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("restarts an untouched grant intent when a removed member is added again", async () => {
+    const { db, cleanup } = await seededInvitee();
+    try {
+      await db.insert(workspaceMembers).values({
+        workspaceId: "ws-a",
+        userId: "invitee",
+        role: "member",
+      });
+      const first = await db.transaction(
+        (tx) =>
+          prepareCurrentMemberDriveGrantIntent(
+            tx,
+            {
+              workspaceId: "ws-a",
+              memberUserId: "invitee",
+              verifiedEmail: "invitee@example.com",
+            },
+            { randomOperationId: () => "op-first-cycle" },
+          ),
+        { behavior: "immediate" },
+      );
+      assert.equal(first.kind, "grant-intent");
+      if (first.kind !== "grant-intent") throw new Error("unreachable");
+      const journal = createProjectDriveOperationJournal({ database: db });
+      await journal.cancelUnstarted({
+        workspaceId: "ws-a",
+        operationId: first.operation.operationId,
+      });
+      await db
+        .delete(workspaceMembers)
+        .where(eq(workspaceMembers.userId, "invitee"));
+
+      const second = await db.transaction(
+        async (tx) => {
+          await tx.insert(workspaceMembers).values({
+            workspaceId: "ws-a",
+            userId: "invitee",
+            role: "member",
+          });
+          return prepareCurrentMemberDriveGrantIntent(
+            tx,
+            {
+              workspaceId: "ws-a",
+              memberUserId: "invitee",
+              verifiedEmail: "invitee@example.com",
+            },
+            { randomOperationId: () => "op-second-cycle" },
+          );
+        },
+        { behavior: "immediate" },
+      );
+      assert.equal(second.kind, "grant-intent");
+      if (second.kind !== "grant-intent") throw new Error("unreachable");
+      assert.equal(second.created, true);
+      assert.equal(second.operation.operationId, "op-second-cycle");
+      assert.equal(second.operation.status, "pending");
+      assert.equal(
+        (
+          await db
+            .select()
+            .from(projectDriveOperations)
+            .where(eq(projectDriveOperations.id, "op-first-cycle"))
+        ).length,
+        0,
+      );
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("rearms a succeeded grant only after its exact local receipt was removed", async () => {
+    const { db, cleanup } = await seededInvitee();
+    try {
+      await db.insert(workspaceMembers).values({
+        workspaceId: "ws-a",
+        userId: "invitee",
+        role: "member",
+      });
+      const first = await db.transaction(
+        (tx) =>
+          prepareCurrentMemberDriveGrantIntent(
+            tx,
+            {
+              workspaceId: "ws-a",
+              memberUserId: "invitee",
+              verifiedEmail: "invitee@example.com",
+            },
+            { randomOperationId: () => "op-succeeded-cycle" },
+          ),
+        { behavior: "immediate" },
+      );
+      assert.equal(first.kind, "grant-intent");
+      if (first.kind !== "grant-intent") throw new Error("unreachable");
+      const journal = createProjectDriveOperationJournal({ database: db });
+      const claim = await journal.claim({
+        workspaceId: "ws-a",
+        operationId: first.operation.operationId,
+      });
+      assert.equal(claim.outcome, "claimed");
+      if (claim.outcome !== "claimed") throw new Error("unreachable");
+      await db.transaction(async (tx) => {
+        const transactionalJournal = createProjectDriveOperationJournal({
+          database: tx,
+        });
+        await transactionalJournal.complete({
+          workspaceId: "ws-a",
+          operationId: first.operation.operationId,
+          attemptFence: claim.claim.attemptFence,
+          operationKind: "grant_create",
+          receipt: { providerPermissionId: "permission-invitee" },
+        });
+        await tx.insert(driveFolderGrants).values({
+          storageGenerationId: "gen-current",
+          workspaceId: "ws-a",
+          userId: "invitee",
+          permissionId: "permission-invitee",
+          grantedEmail: "invitee@example.com",
+          role: "writer",
+          grantedAt: new Date(),
+          revokePending: false,
+        });
+      });
+
+      const activeReplay = await db.transaction(
+        (tx) =>
+          prepareCurrentMemberDriveGrantIntent(tx, {
+            workspaceId: "ws-a",
+            memberUserId: "invitee",
+            verifiedEmail: "invitee@example.com",
+          }),
+        { behavior: "immediate" },
+      );
+      assert.equal(
+        activeReplay.kind === "grant-intent" && activeReplay.created,
+        false,
+      );
+
+      await db.transaction(async (tx) => {
+        await tx
+          .delete(driveFolderGrants)
+          .where(eq(driveFolderGrants.userId, "invitee"));
+        await tx
+          .delete(workspaceMembers)
+          .where(eq(workspaceMembers.userId, "invitee"));
+      });
+      const nextCycle = await db.transaction(
+        async (tx) => {
+          await tx.insert(workspaceMembers).values({
+            workspaceId: "ws-a",
+            userId: "invitee",
+            role: "member",
+          });
+          return prepareCurrentMemberDriveGrantIntent(
+            tx,
+            {
+              workspaceId: "ws-a",
+              memberUserId: "invitee",
+              verifiedEmail: "invitee@example.com",
+            },
+            { randomOperationId: () => "op-rearmed-cycle" },
+          );
+        },
+        { behavior: "immediate" },
+      );
+      assert.equal(nextCycle.kind, "grant-intent");
+      if (nextCycle.kind !== "grant-intent") throw new Error("unreachable");
+      assert.equal(nextCycle.created, true);
+      assert.equal(nextCycle.operation.operationId, "op-rearmed-cycle");
+      assert.equal(nextCycle.operation.status, "pending");
+      assert.equal(nextCycle.operation.receipt, null);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("rolls back re-entry while an old exact grant still awaits revocation", async () => {
+    const { db, cleanup } = await seededInvitee();
+    try {
+      await db.insert(workspaceMembers).values({
+        workspaceId: "ws-a",
+        userId: "invitee",
+        role: "member",
+      });
+      const intent = await db.transaction(
+        (tx) =>
+          prepareCurrentMemberDriveGrantIntent(
+            tx,
+            {
+              workspaceId: "ws-a",
+              memberUserId: "invitee",
+              verifiedEmail: "invitee@example.com",
+            },
+            { randomOperationId: () => "op-revoke-pending" },
+          ),
+        { behavior: "immediate" },
+      );
+      assert.equal(intent.kind, "grant-intent");
+      if (intent.kind !== "grant-intent") throw new Error("unreachable");
+      const journal = createProjectDriveOperationJournal({ database: db });
+      const claim = await journal.claim({
+        workspaceId: "ws-a",
+        operationId: intent.operation.operationId,
+      });
+      assert.equal(claim.outcome, "claimed");
+      if (claim.outcome !== "claimed") throw new Error("unreachable");
+      await journal.complete({
+        workspaceId: "ws-a",
+        operationId: intent.operation.operationId,
+        attemptFence: claim.claim.attemptFence,
+        operationKind: "grant_create",
+        receipt: { providerPermissionId: "permission-revoke-pending" },
+      });
+      await db.insert(driveFolderGrants).values({
+        storageGenerationId: "gen-current",
+        workspaceId: "ws-a",
+        userId: "invitee",
+        permissionId: "permission-revoke-pending",
+        grantedEmail: "invitee@example.com",
+        role: "writer",
+        grantedAt: new Date(),
+        revokePending: true,
+      });
+      await db
+        .delete(workspaceMembers)
+        .where(eq(workspaceMembers.userId, "invitee"));
+
+      await assert.rejects(
+        db.transaction(
+          async (tx) => {
+            await tx.insert(workspaceMembers).values({
+              workspaceId: "ws-a",
+              userId: "invitee",
+              role: "member",
+            });
+            await prepareCurrentMemberDriveGrantIntent(tx, {
+              workspaceId: "ws-a",
+              memberUserId: "invitee",
+              verifiedEmail: "invitee@example.com",
+            });
+          },
+          { behavior: "immediate" },
+        ),
+        (error: unknown) =>
+          error instanceof ProjectDriveMembershipLifecycleError &&
+          error.code === "operation-conflict",
+      );
+      assert.equal(
+        (
+          await db
+            .select()
+            .from(workspaceMembers)
+            .where(eq(workspaceMembers.userId, "invitee"))
+        ).length,
+        0,
+      );
     } finally {
       cleanup();
     }

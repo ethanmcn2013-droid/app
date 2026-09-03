@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq, inArray, type SQL } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
+  driveFolderGrants,
   meta,
   providerConnections,
   users,
@@ -176,6 +177,92 @@ export async function prepareCurrentMemberDriveGrantIntent(
   });
   if (prepared.outcome === "conflict") {
     throw new ProjectDriveMembershipLifecycleError("operation-conflict");
+  }
+  if (prepared.outcome === "existing") {
+    const existing = prepared.operation;
+    if (existing.status === "succeeded") {
+      if (
+        existing.attemptCount < 1 ||
+        !existing.receipt ||
+        !("providerPermissionId" in existing.receipt)
+      ) {
+        throw new ProjectDriveMembershipLifecycleError("operation-conflict");
+      }
+      const grants = await transaction
+        .select({
+          permissionId: driveFolderGrants.permissionId,
+          grantedEmail: driveFolderGrants.grantedEmail,
+          role: driveFolderGrants.role,
+          revokePending: driveFolderGrants.revokePending,
+        })
+        .from(driveFolderGrants)
+        .where(
+          and(
+            eq(
+              driveFolderGrants.storageGenerationId,
+              storage.storageGenerationId,
+            ),
+            eq(driveFolderGrants.workspaceId, workspaceId),
+            eq(driveFolderGrants.userId, memberUserId),
+          ),
+        )
+        .limit(2);
+      if (grants.length > 0) {
+        const [grant] = grants;
+        if (
+          grants.length !== 1 ||
+          grant.permissionId !== existing.receipt.providerPermissionId ||
+          grant.grantedEmail !== verifiedEmail ||
+          grant.role !== "writer" ||
+          grant.revokePending
+        ) {
+          throw new ProjectDriveMembershipLifecycleError(
+            "operation-conflict",
+          );
+        }
+        return Object.freeze({
+          kind: "grant-intent",
+          created: false,
+          operation: existing,
+        });
+      }
+      const rearmed = await journal.rearmLifecycleOperation({
+        workspaceId,
+        operationId: existing.operationId,
+        operationKind: "grant_create",
+        previousAttemptFence: existing.attemptCount,
+        previousReceipt: existing.receipt,
+      });
+      if (rearmed.outcome === "conflict") {
+        throw new ProjectDriveMembershipLifecycleError("operation-conflict");
+      }
+      return Object.freeze({
+        kind: "grant-intent",
+        created: true,
+        operation: rearmed.operation,
+      });
+    }
+    if (existing.status === "cancelled") {
+      if (
+        existing.attemptCount !== 0 ||
+        existing.lastErrorCode !== null ||
+        existing.receipt !== null
+      ) {
+        throw new ProjectDriveMembershipLifecycleError("operation-conflict");
+      }
+      const restarted = await journal.restartCancelledUnstartedGrant({
+        workspaceId,
+        operationId: existing.operationId,
+      });
+      if (restarted.outcome === "conflict") {
+        throw new ProjectDriveMembershipLifecycleError("operation-conflict");
+      }
+      return Object.freeze({
+        kind: "grant-intent",
+        created: true,
+        operation: restarted.operation,
+      });
+    }
   }
   return Object.freeze({
     kind: "grant-intent",

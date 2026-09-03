@@ -34,6 +34,9 @@ import { seedDomainAction } from "@/server/actions/seed";
 import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
 import { prepareCurrentMemberDriveGrantIntent } from "@/server/connections/project-drive-membership-lifecycle";
+import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
+import { createProjectDriveMemberRemovalService } from "@/server/connections/project-drive-member-removal";
+import { setProjectDriveMemberRole } from "@/server/connections/project-drive-member-role";
 
 /**
  * Settings-page mutations — WP3-C, the last file of the mutation-safety wave.
@@ -344,34 +347,15 @@ export async function removeMemberAction(
     "manageProject",
     "Only the owner can remove members.",
   );
-  // Refuse to remove the only owner. Counted on the role column.
-  //
-  // This count gates a delete, which is the D-018 shape — but it can no longer
-  // be empty for an authorization reason. `manageProject` is only granted to a
-  // caller whose own membership row reads `owner`, so a proved caller
-  // guarantees at least one row here. An empty result now means what it says.
-  const owners = await db
-    .select({ userId: workspaceMembers.userId })
-    .from(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, ws),
-        eq(workspaceMembers.role, "owner"),
-      ),
-    );
-  const targetIsOnlyOwner =
-    owners.length === 1 && owners[0]?.userId === userId;
-  if (targetIsOnlyOwner) {
-    throw new Error("A workspace must keep at least one owner.");
-  }
-  await db
-    .delete(workspaceMembers)
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, ws),
-        eq(workspaceMembers.userId, userId),
-      ),
-    );
+  // A Drive-backed member is a two-system removal. The service first freezes
+  // new grant work and persists exact revoke-pending receipts, revokes only
+  // those exact provider permissions outside a DB writer transaction, then
+  // rechecks the whole membership/grant snapshot before deleting anything.
+  // Provider failure or a concurrent grant leaves the membership in place.
+  await createProjectDriveMemberRemovalService({
+    database: db,
+    revokeExactGrant: revokeExactDriveFolderGrant,
+  }).remove({ workspaceId: ws, memberUserId: userId });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
@@ -392,30 +376,11 @@ export async function setMemberRoleAction(
     "manageProject",
     "Only the owner can change member roles.",
   );
-  if (role === "member") {
-    // Demoting an owner, refuse if it would empty the owner list.
-    const owners = await db
-      .select({ userId: workspaceMembers.userId })
-      .from(workspaceMembers)
-      .where(
-        and(
-          eq(workspaceMembers.workspaceId, ws),
-          eq(workspaceMembers.role, "owner"),
-        ),
-      );
-    if (owners.length === 1 && owners[0]?.userId === userId) {
-      throw new Error("Demote a different owner first, one must remain.");
-    }
-  }
-  await db
-    .update(workspaceMembers)
-    .set({ role })
-    .where(
-      and(
-        eq(workspaceMembers.workspaceId, ws),
-        eq(workspaceMembers.userId, userId),
-      ),
-    );
+  await setProjectDriveMemberRole(db, {
+    workspaceId: ws,
+    memberUserId: userId,
+    role,
+  });
   revalidatePath("/app", "layout");
   return { ok: true };
 }
