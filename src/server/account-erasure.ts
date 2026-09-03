@@ -32,6 +32,10 @@ import {
   googleDriveAccountErasureFenceKey,
   isGoogleDriveOperationClaimableStatus,
 } from "./connections/project-drive-operation-lifecycle";
+import {
+  listPendingDelegatedDriveUploadReceiptsForAccount,
+  type PendingDelegatedDriveUploadReceipt,
+} from "./connections/project-drive-upload-receipts-core";
 import { deleteBytes } from "./storage";
 
 /**
@@ -78,6 +82,14 @@ export type AccountErasureOptions = Readonly<{
    * token counts as success. Any ambiguous or transient failure must reject.
    */
   revokeProjectDriveRefreshToken?: (refreshToken: string) => Promise<void>;
+  /**
+   * Reconcile one already-delegated resumable upload from its exact durable
+   * receipt. This recovery seam must never mint or delete provider bytes.
+   */
+  recoverPendingDelegatedDriveUpload?: (
+    accountUserId: string,
+    receipt: PendingDelegatedDriveUploadReceipt,
+  ) => Promise<Readonly<{ outcome: "resolved" | "blocked" }>>;
   /** Test seam; production delegates every disk/blob locator to storage.ts. */
   deleteStoredBytes?: (storedPath: string) => Promise<void>;
 }>;
@@ -459,6 +471,51 @@ export async function eraseAccountData(
       "account erasure blocked: Project Drive provider truth requires recovery; journal evidence retained",
     );
   }
+
+  // A resumable-session URL is a week-lived bearer capability and the only
+  // evidence that Google may already hold bytes. Once the durable account
+  // fence is installed, reconcile every receipt where this account is either
+  // the upload actor or the immutable storage owner. Never infer absence from
+  // age, delete the row first, or trust a callback's claim without re-reading
+  // the authoritative DB scope.
+  const delegatedUploadReceipts =
+    await listPendingDelegatedDriveUploadReceiptsForAccount(database, userId);
+  if (
+    delegatedUploadReceipts.length > 0 &&
+    !options.recoverPendingDelegatedDriveUpload
+  ) {
+    throw new Error(
+      "account erasure blocked: delegated Drive upload recovery is not configured",
+    );
+  }
+  for (const receipt of delegatedUploadReceipts) {
+    let result: Readonly<{ outcome: "resolved" | "blocked" }>;
+    try {
+      result = await options.recoverPendingDelegatedDriveUpload!(
+        userId,
+        receipt,
+      );
+    } catch {
+      throw new Error(
+        "account erasure blocked: delegated Drive upload provider truth is unresolved; evidence retained",
+      );
+    }
+    if (result.outcome !== "resolved") {
+      throw new Error(
+        "account erasure blocked: delegated Drive upload provider truth is unresolved; evidence retained",
+      );
+    }
+  }
+  if (
+    (
+      await listPendingDelegatedDriveUploadReceiptsForAccount(database, userId)
+    ).length > 0
+  ) {
+    throw new Error(
+      "account erasure blocked: delegated Drive upload receipt remains; evidence retained",
+    );
+  }
+
   if (grantsToRevoke.size > 0 && !options.revokeDriveFolderGrant) {
     throw new Error(
       "account erasure blocked: Drive grant revocation is not configured",

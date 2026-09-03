@@ -40,9 +40,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import type { Client } from "@libsql/client";
+import { eq } from "drizzle-orm";
 import { eraseAccountData } from "./account-erasure";
 import { exportAccountData } from "./account-export";
 import { freshMemoryDb as freshDb } from "./db/memory-test-db";
+import { resources } from "./db/schema";
 
 async function count(client: Client, where: string): Promise<number> {
   const rs = await client.execute(`SELECT COUNT(*) AS c FROM ${where}`);
@@ -938,6 +940,177 @@ test("erasure retains exact Drive grant receipts until WP5 revocation succeeds",
         "project_drive_operations WHERE id='operation-target'",
       ),
       0,
+    );
+  } finally {
+    client.close();
+  }
+});
+
+async function seedPendingDelegatedErasureReceipt(
+  client: Client,
+  accountScope: "actor" | "storage-owner",
+) {
+  const actorUserId = accountScope === "actor" ? "u-target" : "u-actor";
+  const storageOwnerUserId =
+    accountScope === "storage-owner" ? "u-target" : "u-storage-owner";
+  await client.executeMultiple(`
+    INSERT INTO users (id, clerk_id, color, initials) VALUES
+      ('u-target','clerk_target','#111','TT'),
+      ('u-actor','clerk_actor','#222','AA'),
+      ('u-storage-owner','clerk_storage_owner','#333','SO'),
+      ('u-project-owner','clerk_project_owner','#444','PO');
+    INSERT INTO workspaces (id, slug, name, owner_user_id) VALUES
+      ('ws-shared','ws-shared','Shared','u-project-owner');
+    INSERT INTO workspace_members (workspace_id, user_id, role) VALUES
+      ('ws-shared','u-project-owner','owner'),
+      ('ws-shared','${actorUserId}','member'),
+      ('ws-shared','${storageOwnerUserId}','member');
+    INSERT INTO provider_connections (
+      id, user_id, provider, provider_account_id, root_folder_id,
+      refresh_token_cipher, key_version, scopes, status, is_current,
+      connected_at
+    ) VALUES (
+      'conn-storage','${storageOwnerUserId}','google_drive','perm-storage',
+      'root-storage','cipher-storage',1,
+      '["https://www.googleapis.com/auth/drive.file"]','active',1,100
+    );
+    INSERT INTO workspace_storage (
+      id, workspace_id, connection_id, folder_id, folder_web_view_link,
+      state, is_current
+    ) VALUES (
+      'storage-shared','ws-shared','conn-storage','folder-shared',
+      'https://drive.test/folder-shared','active',1
+    );
+    INSERT INTO tasks (
+      id, workspace_id, title, lane, priority, assignees, created_at, updated_at
+    ) VALUES (
+      'task-shared','ws-shared','Shared task','todo','medium','[]',100,100
+    );
+    INSERT INTO resources (
+      id, workspace_id, task_id, kind, provider, storage,
+      storage_generation_id, stored_path, title, mime_type, size_bytes,
+      added_by_user_id, added_at, refreshed_at, access_state,
+      counts_against_storage
+    ) VALUES (
+      'a0000000-0000-4000-8000-000000000001','ws-shared','task-shared',
+      'upload','drive','drive','storage-shared','sealed-session-evidence',
+      'brief.pdf','application/pdf',1024,'${actorUserId}',100,110,
+      'pending',0
+    );
+  `);
+}
+
+test("account erasure fences delegated receipts for both actor and immutable storage-owner lineages", async () => {
+  for (const accountScope of ["actor", "storage-owner"] as const) {
+    const { client, db } = await freshDb();
+    try {
+      await seedPendingDelegatedErasureReceipt(client, accountScope);
+      const seen: Array<{ accountUserId: string; receipt: unknown }> = [];
+      await assert.rejects(
+        eraseAccountData(db, "clerk_target", {
+          openProviderToken: () => "refresh-storage",
+          recoverPendingDelegatedDriveUpload: async (
+            accountUserId,
+            receipt,
+          ) => {
+            seen.push({ accountUserId, receipt });
+            return { outcome: "blocked" };
+          },
+        }),
+        /delegated Drive upload provider truth is unresolved/,
+      );
+      assert.equal(seen.length, 1);
+      assert.equal(seen[0]?.accountUserId, "u-target");
+      assert.equal(
+        (seen[0]?.receipt as { resourceId: string }).resourceId,
+        "a0000000-0000-4000-8000-000000000001",
+      );
+      assert.equal(
+        await count(
+          client,
+          "resources WHERE stored_path='sealed-session-evidence' AND access_state='pending'",
+        ),
+        1,
+      );
+      assert.equal(await count(client, "users WHERE id='u-target'"), 1);
+      assert.equal(
+        await count(
+          client,
+          "meta WHERE key='google-drive:account-erasure:user:u-target'",
+        ),
+        1,
+      );
+    } finally {
+      client.close();
+    }
+  }
+});
+
+test("account erasure re-reads recovery truth and ignores finalized, undelegated, and unrelated receipts", async () => {
+  const { client, db } = await freshDb();
+  try {
+    await seedPendingDelegatedErasureReceipt(client, "actor");
+    await client.executeMultiple(`
+      INSERT INTO resources (
+        id, workspace_id, task_id, kind, provider, storage,
+        storage_generation_id, stored_path, external_id, title, url,
+        mime_type, size_bytes, added_by_user_id, added_at, refreshed_at,
+        access_state, counts_against_storage
+      ) VALUES
+        ('b0000000-0000-4000-8000-000000000002','ws-shared','task-shared',
+         'upload','drive','drive','storage-shared',NULL,'drive-final',
+         'final.pdf','https://drive.google.com/file/d/drive-final/view',
+         'application/pdf',1024,'u-target',100,110,'ok',0),
+        ('c0000000-0000-4000-8000-000000000003','ws-shared','task-shared',
+         'upload','drive','drive','storage-shared',NULL,NULL,'minting.pdf',NULL,
+         'application/pdf',1024,'u-target',100,110,'pending',0),
+        ('d0000000-0000-4000-8000-000000000004','ws-shared','task-shared',
+         'upload','drive','drive','storage-shared','unrelated-session',NULL,
+         'other.pdf',NULL,'application/pdf',1024,'u-actor',100,110,'pending',0);
+    `);
+
+    let calls = 0;
+    await assert.rejects(
+      eraseAccountData(db, "clerk_target", {
+        recoverPendingDelegatedDriveUpload: async () => {
+          calls += 1;
+          // Claiming success without changing the exact row cannot make
+          // erasure consume the evidence.
+          return { outcome: "resolved" };
+        },
+      }),
+      /delegated Drive upload receipt remains/,
+    );
+    assert.equal(calls, 1);
+    assert.equal(
+      await count(
+        client,
+        "resources WHERE id='a0000000-0000-4000-8000-000000000001'",
+      ),
+      1,
+    );
+
+    const recoveredIds: string[] = [];
+    await eraseAccountData(db, "clerk_target", {
+      recoverPendingDelegatedDriveUpload: async (_accountUserId, receipt) => {
+        recoveredIds.push(receipt.resourceId);
+        await db
+          .delete(resources)
+          .where(eq(resources.id, receipt.resourceId));
+        return { outcome: "resolved" };
+      },
+    });
+    assert.deepEqual(recoveredIds, [
+      "a0000000-0000-4000-8000-000000000001",
+    ]);
+    assert.equal(await count(client, "users WHERE id='u-target'"), 0);
+    assert.equal(
+      await count(
+        client,
+        "resources WHERE id='d0000000-0000-4000-8000-000000000004' AND stored_path='unrelated-session'",
+      ),
+      1,
+      "a receipt outside both erased account lineages must survive untouched",
     );
   } finally {
     client.close();

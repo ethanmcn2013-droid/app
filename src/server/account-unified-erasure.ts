@@ -109,6 +109,8 @@ export async function deleteUnifiedAccountDataWith(
     revokeDriveFolderGrant?: AccountErasureOptions["revokeDriveFolderGrant"];
     /** Strict, idempotent Project Drive credential revoker. */
     revokeProjectDriveRefreshToken?: AccountErasureOptions["revokeProjectDriveRefreshToken"];
+    /** Recovery-only resolver for pre-fence delegated upload receipts. */
+    recoverPendingDelegatedDriveUpload?: AccountErasureOptions["recoverPendingDelegatedDriveUpload"];
     /** Test seam; production always uses the real Tasks erasure. */
     eraseTasks?: TasksEraseFn;
   },
@@ -154,6 +156,8 @@ export async function deleteUnifiedAccountDataWith(
           revokeDriveFolderGrant: opts.revokeDriveFolderGrant,
           revokeProjectDriveRefreshToken:
             opts.revokeProjectDriveRefreshToken,
+          recoverPendingDelegatedDriveUpload:
+            opts.recoverPendingDelegatedDriveUpload,
         });
     tasksGoogleTokens = tasksResult.googleRefreshTokens;
   } catch {

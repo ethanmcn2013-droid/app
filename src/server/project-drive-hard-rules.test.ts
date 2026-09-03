@@ -91,6 +91,8 @@ const DRIVE_FOLDER_EXECUTOR_FILE =
 const DRIVE_GRANTS_FILE = "src/server/connections/drive-grants.ts";
 const DRIVE_TRANSPORT_FILE = "src/server/connections/google-drive.ts";
 const DRIVE_CONNECTIONS_FILE = "src/server/connections/drive-connections.ts";
+const DRIVE_UPLOAD_ERASURE_RECOVERY_FILE =
+  "src/server/connections/project-drive-upload-erasure-recovery.ts";
 const DRIVE_AUTHORIZATION_FILE =
   "src/server/connections/project-drive-authz.ts";
 const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
@@ -773,6 +775,32 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
   it("requires the branded context on every higher-level Drive helper", () => {
     for (const path of higherLevelDriveHelpers()) {
       const code = codeOf(path);
+      if (canonicalPath(path) === DRIVE_UPLOAD_ERASURE_RECOVERY_FILE) {
+        // Account erasure has no interactive caller from which to mint a
+        // Project capability. This single recovery-only exception is fenced
+        // by the erased account and receives the exact durable upload/storage
+        // receipt. It may reconcile provider truth but cannot start a new
+        // upload or delete Drive bytes.
+        assert.equal(importsProjectDriveAuthorization(code), false);
+        assert.match(code, /withReceiptStorageSession/);
+        assert.doesNotMatch(
+          code,
+          /createGoogleDriveResumableUploadSession|deleteGoogleDriveFile/,
+        );
+        for (const fn of exportedAsyncFunctionBlocks(code)) {
+          assert.match(
+            fn.source.slice(0, 1_200),
+            /accountUserId\s*:\s*string/,
+            `${path}: ${fn.name} must receive the exact erased account`,
+          );
+          assert.match(
+            fn.source.slice(0, 1_200),
+            /receipt\s*:\s*PendingDelegatedDriveUploadReceipt\b/,
+            `${path}: ${fn.name} must receive an exact durable upload receipt`,
+          );
+        }
+        continue;
+      }
       assert.equal(
         importsProjectDriveAuthorization(code),
         true,

@@ -15,6 +15,7 @@ import {
   eraseForUser as eraseSignalForUser,
 } from "@/modules/signal/server/signal-gdpr";
 import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
+import { recoverPendingDelegatedDriveUploadForErasure } from "@/server/connections/project-drive-upload-erasure-recovery";
 import { revokeGoogleToken } from "@/server/connections/google-drive";
 
 /**
@@ -54,6 +55,8 @@ export async function deleteAccountForUser(clerkId: string): Promise<void> {
     eraseTimeline: eraseTimelineForUser,
     eraseSignal: eraseSignalForUser,
     revokeDriveFolderGrant: revokeExactDriveFolderGrant,
+    recoverPendingDelegatedDriveUpload:
+      recoverPendingDelegatedDriveUploadForErasure,
     revokeTokens: defaultRevokeGoogleTokens,
     revokeProjectDriveRefreshToken: revokeGoogleToken,
   });

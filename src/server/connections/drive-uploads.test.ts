@@ -363,9 +363,18 @@ describe("Project Drive upload foundation", () => {
     assert.equal(unrelatedAccount.length, 0);
     assert.equal(unrelatedWorkspace.length, 0);
     assert.equal(byActor[0].resourceId, RESOURCE_A);
+    assert.equal(byActor[0].taskId, "task-a");
     assert.equal(byActor[0].storageGenerationId, "gen-current");
+    assert.equal(byActor[0].connectionId, "conn-old");
+    assert.equal(byActor[0].folderId, "folder-current");
     assert.equal(byActor[0].actorUserId, "member-a");
     assert.equal(byActor[0].storageOwnerUserId, "owner");
+    assert.equal(byActor[0].title, DEFAULT_REQUEST.name);
+    assert.equal(byActor[0].mimeType, DEFAULT_REQUEST.mimeType);
+    assert.equal(byActor[0].sizeBytes, DEFAULT_REQUEST.sizeBytes);
+    assert.equal(byActor[0].externalId, null);
+    assert.equal(byActor[0].url, null);
+    assert.equal(byActor[0].countsAgainstStorage, 0);
     assert.equal(typeof byActor[0].refreshedAt, "number");
     assert.equal(isSealed(byActor[0].sessionCipher), true);
 
