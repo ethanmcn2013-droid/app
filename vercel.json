@@ -11,7 +11,7 @@
     },
     {
       "path": "/api/cron/project-drive-grant-repair",
-      "schedule": "*/10 * * * *"
+      "schedule": "15 3 * * *"
     }
   ]
 }
