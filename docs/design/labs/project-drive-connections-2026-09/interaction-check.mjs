@@ -20,6 +20,7 @@ import { pathToFileURL } from "node:url";
 const LAB = path.resolve(".");
 const config = JSON.parse(await readFile(path.join(LAB, "elevate.config.json"), "utf8"));
 const MASTER = pathToFileURL(path.join(LAB, config.master ?? "master.html")).href;
+const variants = config.variants ?? [config.defaultVariant ?? "a"];
 
 const results = [];
 let failures = 0;
@@ -57,21 +58,23 @@ async function open({ state, variant, viewport } = {}) {
 /* ══ universal floor ═══════════════════════════════════════════════ */
 
 /* Every state loads clean and never scrolls sideways, at every width. */
-for (const state of config.states) {
-  for (const vp of config.viewports) {
-    const page = await open({ state, viewport: { width: vp.width, height: vp.height } });
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
-    ok(`no sideways scroll · ${state} @ ${vp.name}`, overflow <= 1, `${overflow}px`);
-    await page.close();
+for (const variant of variants) {
+  for (const state of config.states) {
+    for (const vp of config.viewports) {
+      const page = await open({ state, variant, viewport: { width: vp.width, height: vp.height } });
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      ok(`no sideways scroll · ${variant}/${state} @ ${vp.name}`, overflow <= 1, `${overflow}px`);
+      await page.close();
+    }
   }
 }
 ok("zero console errors across all states", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));
 
 /* Focus and names: everything interactive is reachable, visible, and named. */
-{
-  const page = await open({ state: config.states[0] });
+for (const variant of variants) {
+  const page = await open({ state: config.states[0], variant });
   const audit = await page.evaluate(() => {
     const out = { unnamed: [], invisible: [], noFocusStyle: 0, stops: 0 };
     const interactive = Array.from(
@@ -90,8 +93,8 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
     }
     return out;
   });
-  ok("every visible interactive element has an accessible name", audit.unnamed.length === 0, audit.unnamed.slice(0, 4).join(", "));
-  ok("nothing invisible can take focus", audit.invisible.length === 0, audit.invisible.slice(0, 4).join(", "));
+  ok(`every visible interactive element has an accessible name · ${variant}`, audit.unnamed.length === 0, audit.unnamed.slice(0, 4).join(", "));
+  ok(`nothing invisible can take focus · ${variant}`, audit.invisible.length === 0, audit.invisible.slice(0, 4).join(", "));
 
   /* A visible focus treatment exists: focus the first interactive element
      and require that SOMETHING painted changes (outline, shadow or ring). */
@@ -104,14 +107,14 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
     const after = getComputedStyle(el);
     return after.outlineWidth + after.boxShadow !== prior || parseFloat(after.outlineWidth) > 0;
   });
-  ok("focus paints a visible treatment", focusVisible);
+  ok(`focus paints a visible treatment · ${variant}`, focusVisible);
   await page.close();
 }
 
 /* Word-safe text: no text node may end hard against its box mid-word with
    no ellipsis — that is silent content deletion. */
-{
-  const page = await open({ state: config.states[0] });
+for (const variant of variants) {
+  const page = await open({ state: config.states[0], variant });
   const clipped = await page.evaluate(() => {
     const bad = [];
     for (const el of document.querySelectorAll("*")) {
@@ -125,23 +128,53 @@ ok("zero console errors across all states", pageErrors.length === 0, pageErrors.
     }
     return bad.slice(0, 6);
   });
-  ok("no silent text clipping (hidden overflow without ellipsis)", clipped.length === 0, clipped.join(", "));
+  ok(`no silent text clipping (hidden overflow without ellipsis) · ${variant}`, clipped.length === 0, clipped.join(", "));
   await page.close();
 }
 
-/* ══ engagement assertions ═════════════════════════════════════════
-   Grow this section every round. Pattern:
+/* ══ engagement assertions · product truth shared by all directions ══ */
+for (const variant of variants) {
+  for (const state of config.states) {
+    const page = await open({ state, variant });
+    const visibleText = await page.locator("body").innerText();
+    ok(`internal codename never reaches UI · ${variant}/${state}`, !visibleText.includes("Project Drive"));
+    ok(`surface noun is present · ${variant}/${state}`, ["resources", "uploading", "unavailable"].includes(state) ? visibleText.toLowerCase().includes("resources") : visibleText.includes("Connections"));
+    await page.close();
+  }
 
-   {
-     const page = await open({ state: "resting" });
-     await page.locator(".thing .primary-action").click();
-     await page.waitForTimeout(250);
-     ok("the primary action does what it says", await page.evaluate(...));
-     ok("focus survives the repaint", await page.evaluate(
-       () => !!document.activeElement.closest(".thing")));
-     await page.close();
-   }
-   ═══════════════════════════════════════════════════════════════════ */
+  {
+    const page = await open({ state: "connected", variant });
+    ok(`storage owner remains permanently visible · ${variant}`, await page.getByText("Orla Byrne", { exact: true }).count() > 0);
+    ok(`live access question uses decided language · ${variant}`, await page.getByText("Who can open this board’s files", { exact: true }).count() === 1);
+    ok(`all five people appear · ${variant}`, (await page.locator(".person-row, .b-table tbody tr, .c-person").count()) === 5);
+    await page.close();
+  }
+  {
+    const page = await open({ state: "not-connected", variant });
+    ok(`not-connected has one clear Drive action · ${variant}`, await page.getByRole("button", { name: "Connect Google Drive" }).count() === 1);
+    ok(`not-connected preserves existing-file truth · ${variant}`, (await page.locator("body").innerText()).includes("existing files") || (await page.locator("body").innerText()).includes("Existing files"));
+    await page.close();
+  }
+  {
+    const page = await open({ state: "handover", variant });
+    const copy = await page.locator("body").innerText();
+    ok(`handover names both owners · ${variant}`, copy.includes("Orla") && copy.includes("Maeve"));
+    ok(`handover says existing files stay · ${variant}`, copy.includes("Existing files stay"));
+    ok(`handover says attaching pauses · ${variant}`, copy.includes("Attaching pause"));
+    await page.close();
+  }
+  for (const resourceState of ["resources", "uploading", "unavailable"]) {
+    const page = await open({ state: resourceState, variant });
+    ok(`one Attach control · ${variant}/${resourceState}`, await page.getByRole("button", { name: /Attach/ }).count() === 1);
+    ok(`single intake survives · ${variant}/${resourceState}`, await page.getByText("Drop files here, or paste a link…", { exact: true }).count() === 1);
+    await page.close();
+  }
+  {
+    const page = await open({ state: "unavailable", variant });
+    ok(`fallback names Signal Studio without claiming a move · ${variant}`, (await page.locator("body").innerText()).includes("This file will use Signal Studio"));
+    await page.close();
+  }
+}
 
 await browser.close();
 process.stdout.write(`\n${results.length} assertions, ${failures} failing\n`);
