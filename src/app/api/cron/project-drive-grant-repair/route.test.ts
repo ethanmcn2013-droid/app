@@ -3,17 +3,49 @@ import { afterEach, test } from "node:test";
 import { createProjectDriveGrantRepairRoute } from "./route";
 
 const originalSecret = process.env.CRON_SECRET;
-const originalFlag = process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
+const originalRevokeFlag =
+  process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
+const originalGrantCreateFlag =
+  process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
 
 afterEach(() => {
   if (originalSecret === undefined) delete process.env.CRON_SECRET;
   else process.env.CRON_SECRET = originalSecret;
-  if (originalFlag === undefined) {
+  if (originalRevokeFlag === undefined) {
     delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
   } else {
-    process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = originalFlag;
+    process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED =
+      originalRevokeFlag;
+  }
+  if (originalGrantCreateFlag === undefined) {
+    delete process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
+  } else {
+    process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED =
+      originalGrantCreateFlag;
   }
 });
+
+function emptyResult() {
+  return {
+    revocations: {
+      scanned: 0,
+      attempted: 0,
+      repaired: 0,
+      skipped: 0,
+      failed: 0,
+    },
+    grantCreates: {
+      scanned: 0,
+      attempted: 0,
+      completed: 0,
+      repairPending: 0,
+      retryScheduled: 0,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
+  };
+}
 
 function request(authorization?: string): Request {
   return new Request(
@@ -28,7 +60,7 @@ test("requires the configured cron bearer before any repair work", async () => {
   let calls = 0;
   const route = createProjectDriveGrantRepairRoute(async () => {
     calls += 1;
-    return { scanned: 0, attempted: 0, repaired: 0, skipped: 0, failed: 0 };
+    return emptyResult();
   });
 
   for (const input of [request(), request("Bearer wrong")]) {
@@ -52,12 +84,14 @@ test("fails closed when CRON_SECRET is missing", async () => {
   assert.equal((await route(request("Bearer anything"))).status, 401);
 });
 
-test("the literal enable flag gates repair after authentication", async () => {
+test("the two literal enable flags independently gate repair", async () => {
   process.env.CRON_SECRET = "secret";
   let calls = 0;
-  const route = createProjectDriveGrantRepairRoute(async () => {
+  const selections: unknown[] = [];
+  const route = createProjectDriveGrantRepairRoute(async (selection) => {
     calls += 1;
-    return { scanned: 0, attempted: 0, repaired: 0, skipped: 0, failed: 0 };
+    selections.push(selection);
+    return emptyResult();
   });
 
   for (const flag of [undefined, "1", "TRUE", "yes"]) {
@@ -66,22 +100,46 @@ test("the literal enable flag gates repair after authentication", async () => {
     } else {
       process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = flag;
     }
+    delete process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED;
     const response = await route(request("Bearer secret"));
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { ok: true, skipped: "flag-off" });
   }
   assert.equal(calls, 0);
+
+  process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = "true";
+  await route(request("Bearer secret"));
+  delete process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED;
+  process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED = "true";
+  await route(request("Bearer secret"));
+  assert.deepEqual(selections, [
+    { revocations: true, grantCreates: false },
+    { revocations: false, grantCreates: true },
+  ]);
 });
 
 test("returns a count-only repair receipt without provider detail", async () => {
   process.env.CRON_SECRET = "secret";
   process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED = "true";
+  process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED = "true";
   const route = createProjectDriveGrantRepairRoute(async () => ({
-    scanned: 4,
-    attempted: 3,
-    repaired: 2,
-    skipped: 1,
-    failed: 1,
+    revocations: {
+      scanned: 4,
+      attempted: 3,
+      repaired: 2,
+      skipped: 1,
+      failed: 1,
+    },
+    grantCreates: {
+      scanned: 5,
+      attempted: 4,
+      completed: 2,
+      repairPending: 1,
+      retryScheduled: 1,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
   }));
 
   const response = await route(request("Bearer secret"));
@@ -93,5 +151,15 @@ test("returns a count-only repair receipt without provider detail", async () => 
     repaired: 2,
     skipped: 1,
     failed: 1,
+    grantCreates: {
+      scanned: 5,
+      attempted: 4,
+      completed: 2,
+      repairPending: 1,
+      retryScheduled: 1,
+      manualAttention: 0,
+      skipped: 0,
+      failed: 0,
+    },
   });
 });

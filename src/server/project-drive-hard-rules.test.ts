@@ -739,8 +739,8 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
     assert.ok(rename, "the durable rename worker must remain auditable");
     assert.match(
       provision.slice(0, 500),
-      /claim\s*:\s*ProjectDriveFolderProvisionClaim\b/,
-      "durable provision must receive a claimed journal identity",
+      /claim\s*:\s*ProjectDriveFolderCreationClaim\b/,
+      "durable folder creation must receive an exact provision or handover claim",
     );
     assert.match(
       rename.slice(0, 500),

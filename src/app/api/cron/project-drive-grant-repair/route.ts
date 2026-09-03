@@ -2,13 +2,43 @@ import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import type { ProjectDriveGrantCreateRepairResult } from "@/server/connections/project-drive-grant-create-repair";
 import type { ProjectDriveGrantRepairResult } from "@/server/connections/project-drive-grant-repair";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-type RepairRunner = () => Promise<ProjectDriveGrantRepairResult>;
+type RepairSelection = Readonly<{
+  revocations: boolean;
+  grantCreates: boolean;
+}>;
+
+type RepairResult = Readonly<{
+  revocations: ProjectDriveGrantRepairResult;
+  grantCreates: ProjectDriveGrantCreateRepairResult;
+}>;
+
+type RepairRunner = (selection: RepairSelection) => Promise<RepairResult>;
+
+const EMPTY_REVOCATIONS: ProjectDriveGrantRepairResult = Object.freeze({
+  scanned: 0,
+  attempted: 0,
+  repaired: 0,
+  skipped: 0,
+  failed: 0,
+});
+
+const EMPTY_GRANT_CREATES: ProjectDriveGrantCreateRepairResult = Object.freeze({
+  scanned: 0,
+  attempted: 0,
+  completed: 0,
+  repairPending: 0,
+  retryScheduled: 0,
+  manualAttention: 0,
+  skipped: 0,
+  failed: 0,
+});
 
 function bearerMatches(provided: string, expected: string): boolean {
   const encoder = new TextEncoder();
@@ -29,11 +59,26 @@ function authorized(request: Request): boolean {
   return bearerMatches(provided, expected);
 }
 
-async function defaultRepairRunner(): Promise<ProjectDriveGrantRepairResult> {
-  const { repairPendingProjectDriveGrants } = await import(
-    "@/server/connections/project-drive-grant-repair"
-  );
-  return repairPendingProjectDriveGrants();
+async function defaultRepairRunner(
+  selection: RepairSelection,
+): Promise<RepairResult> {
+  let revocations = EMPTY_REVOCATIONS;
+  let grantCreates = EMPTY_GRANT_CREATES;
+  if (selection.revocations) {
+    const { repairPendingProjectDriveGrants } = await import(
+      "@/server/connections/project-drive-grant-repair"
+    );
+    revocations = await repairPendingProjectDriveGrants();
+  }
+  if (selection.grantCreates) {
+    const { repairReadyProjectDriveGrantCreates } = await import(
+      "@/server/connections/project-drive-grant-create-repair"
+    );
+    // Keep both sides of permission maintenance sequential. A revocation and
+    // a create must not race one another merely because they share a cron.
+    grantCreates = await repairReadyProjectDriveGrantCreates();
+  }
+  return Object.freeze({ revocations, grantCreates });
 }
 
 export function createProjectDriveGrantRepairRoute(
@@ -46,12 +91,26 @@ export function createProjectDriveGrantRepairRoute(
         { status: 401 },
       );
     }
-    if (process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED !== "true") {
+    const selection = Object.freeze({
+      revocations:
+        process.env.SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED === "true",
+      grantCreates:
+        process.env.SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED === "true",
+    });
+    if (!selection.revocations && !selection.grantCreates) {
       return NextResponse.json({ ok: true, skipped: "flag-off" });
     }
 
-    const result = await repair();
-    return NextResponse.json({ ok: result.failed === 0, ...result });
+    const result = await repair(selection);
+    return NextResponse.json({
+      ok:
+        result.revocations.failed === 0 &&
+        result.grantCreates.failed === 0,
+      // Preserve the original revoke-repair counters for existing operators.
+      // The new drain stays namespaced and likewise exposes counts only.
+      ...result.revocations,
+      grantCreates: result.grantCreates,
+    });
   };
 }
 
