@@ -64,7 +64,7 @@
       "section": "fidelity",
       "name": "tasks @768 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "116082 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "116531 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -94,7 +94,7 @@
       "section": "fidelity",
       "name": "tasks @390 · the sheet, changed on purpose",
       "ok": true,
-      "detail": "66570 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
+      "detail": "66710 px differ · the workspace name is now the project switcher — a chevron and a real hit target on the same h1, in the same place, at the same size"
     },
     {
       "section": "fidelity",
@@ -2029,7 +2029,7 @@
       "section": "delight",
       "name": "completion via tick · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 12 dots · widest 3.9px · brightest 0.94"
+      "detail": "1 burst · 12 dots · widest 3.3px · brightest 0.91"
     },
     {
       "section": "delight",
@@ -2041,7 +2041,7 @@
       "section": "delight",
       "name": "completion via keyboard · one burst, and it is visible",
       "ok": true,
-      "detail": "1 burst · 12 dots · widest 3.9px · brightest 0.94"
+      "detail": "1 burst · 12 dots · widest 3.3px · brightest 0.91"
     },
     {
       "section": "delight",
@@ -2605,13 +2605,13 @@
       "section": "switch",
       "name": "every switch lands, both paths",
       "ok": true,
-      "detail": "with 102/100/117ms · without 30/9/30ms"
+      "detail": "with 137/100/133ms · without 27/8/32ms"
     },
     {
       "section": "switch",
       "name": "the mutation is wrapped, not postponed",
       "ok": true,
-      "detail": "106ms with the transition against 23ms without — the wrap costs 83ms, the capture alone 69ms on this machine, and the animation it starts runs 220ms after it"
+      "detail": "123ms with the transition against 22ms without — the wrap costs 101ms, the capture alone 81ms on this machine, and the animation it starts runs 220ms after it"
     },
     {
       "section": "switch",
@@ -2839,7 +2839,7 @@
       "section": "material",
       "name": "the switcher's accent travels across, as liquid",
       "ok": true,
-      "detail": "{\"gap\":80,\"filter\":\"url(\\\"#goo\\\")\",\"gooing\":true}"
+      "detail": "{\"gap\":79,\"filter\":\"url(\\\"#goo\\\")\",\"gooing\":true}"
     },
     {
       "section": "material",

@@ -311,6 +311,15 @@ body {
      leading to have an opinion about, and leaving it `normal` put three
      screen-reader strings on the gate's list every round. */
   line-height: 1;
+  /* And the SIZE and the WEIGHT, for the same reason and by the same
+     argument. An sr-only heading is a heading: give it an h1 and the
+     browser hands it 32px at 700 — two steps off the ramp and a weight
+     this suite does not own — on a box 1px square that nobody can see.
+     Inherited, because an invisible element has no visual rank to
+     express; its LEVEL is what carries the rank, and that is in the
+     tag. Seven of these went on the gate's list the moment Notes'
+     covering layers got the roots they were missing. */
+  font-size: inherit; font-weight: inherit;
 }
 
 /* ── the floor ───────────────────────────────────────────────── */
