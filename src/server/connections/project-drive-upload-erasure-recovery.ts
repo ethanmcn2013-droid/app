@@ -231,6 +231,8 @@ async function exactReceiptStillExists(
     return false;
   }
   const rows = await database
+    // isolation-ok: exactResourcePredicate binds the durable receipt's
+    // workspace id as well as every other identity-bearing resource field.
     .select({ id: resources.id })
     .from(resources)
     .where(exactResourcePredicate(receipt))
