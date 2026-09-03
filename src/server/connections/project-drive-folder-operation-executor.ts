@@ -37,7 +37,12 @@ import {
 } from "./project-drive-operation-journal";
 import {
   accountFencedProjectDriveOperationJournal,
+  prepareAccountFencedProjectDriveOperationInTransaction,
 } from "./project-drive-operation-orchestrator";
+import {
+  prepareExistingMemberDriveGrantIntents,
+  ProjectDriveMembershipLifecycleError,
+} from "./project-drive-membership-lifecycle";
 
 type ExecutorDb = LibSQLDatabase<typeof schema>;
 type Journal = ReturnType<typeof createProjectDriveOperationJournal>;
@@ -321,6 +326,14 @@ export function createProjectDriveFolderOperationExecutor(
     try {
       return await deps.database.transaction(
         async (transaction) => {
+          const [workspace] = await transaction
+            .select({ archivedAt: workspaces.archivedAt })
+            .from(workspaces)
+            .where(byWorkspace(workspaces.id, claim.workspaceId))
+            .limit(1);
+          if (!workspace || workspace.archivedAt !== null) {
+            throw new DriveFolderError("storage-conflict");
+          }
           const [connection] = await transaction
             .select({
               id: providerConnections.id,
@@ -387,6 +400,50 @@ export function createProjectDriveFolderOperationExecutor(
               state: "active",
               isCurrent: true,
             });
+          }
+
+          // Re-prove the exact operation relationships after provider success
+          // and after the new generation is visible in this transaction. An
+          // account-erasure fence that won during the provider request blocks
+          // both storage materialization and every member grant intent.
+          const reproved =
+            await prepareAccountFencedProjectDriveOperationInTransaction(
+              transaction,
+              {
+                operationKind: "folder_provision",
+                workspaceId: claim.workspaceId,
+                connectionId: claim.connectionId,
+                targetStorageGenerationId:
+                  claim.targetStorageGenerationId,
+              },
+            );
+          if (
+            reproved.outcome === "conflict" ||
+            reproved.operation.operationId !== claim.operationId
+          ) {
+            throw new ProjectDriveFolderOperationClaimConflict();
+          }
+
+          // A populated Project must never materialize a Drive generation
+          // without also durably recording how each current member will gain
+          // access. Missing/invalid emails are intentionally counted by the
+          // helper as D14 coverage gaps; they do not delete the membership or
+          // roll back the folder. No provider I/O occurs in this transaction.
+          try {
+            await prepareExistingMemberDriveGrantIntents(transaction, {
+              workspaceId: claim.workspaceId,
+              storageGenerationId: claim.targetStorageGenerationId,
+            });
+          } catch (error) {
+            if (error instanceof ProjectDriveMembershipLifecycleError) {
+              if (error.code === "operation-conflict") {
+                throw new ProjectDriveFolderOperationClaimConflict();
+              }
+              if (error.code === "storage-invalid") {
+                throw new DriveFolderError("storage-conflict");
+              }
+            }
+            throw error;
           }
 
           const completion = await deps

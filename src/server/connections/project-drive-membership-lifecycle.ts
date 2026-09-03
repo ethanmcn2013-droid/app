@@ -17,6 +17,7 @@ import {
 } from "./project-drive-operation-journal";
 import { normalizeProjectDriveGranteeEmail } from "./project-drive-operation-key";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
+import { prepareAccountFencedProjectDriveOperationInTransaction } from "./project-drive-operation-orchestrator";
 
 type MembershipDb = LibSQLDatabase<typeof schema>;
 export type ProjectDriveMembershipTransaction = Parameters<
@@ -35,6 +36,16 @@ export type ProjectDriveMembershipIntentResult =
       created: boolean;
       operation: ProjectDriveOperationView;
     }>;
+
+export type ExistingMemberDriveGrantIntentResult = Readonly<{
+  /** Every member except the storage owner. */
+  memberCount: number;
+  /** Valid current emails with an exact durable writer intent. */
+  grantIntentCount: number;
+  createdIntentCount: number;
+  /** Members whose current user row has no usable email. */
+  coverageGapCount: number;
+}>;
 
 export class ProjectDriveMembershipLifecycleError extends Error {
   readonly code:
@@ -268,5 +279,115 @@ export async function prepareCurrentMemberDriveGrantIntent(
     kind: "grant-intent",
     created: prepared.outcome === "prepared",
     operation: prepared.operation,
+  });
+}
+
+/**
+ * Bind a newly materialized folder generation to every member already on the
+ * Project. The folder row must have been inserted in the caller's immediate
+ * transaction before this helper runs.
+ *
+ * A valid current `users.email` receives one exact writer intent through the
+ * same account-fenced prepare seam as every other provider operation. Missing
+ * or malformed emails remain memberships and are counted as an explicit
+ * coverage gap; D14 makes that gap select Signal-native storage for new
+ * uploads until it is repaired. No provider request occurs in this helper.
+ */
+export async function prepareExistingMemberDriveGrantIntents(
+  transaction: ProjectDriveMembershipTransaction,
+  input: Readonly<{
+    workspaceId: string;
+    storageGenerationId: string;
+  }>,
+  dependencies: ProjectDriveMembershipIntentDependencies = {},
+): Promise<ExistingMemberDriveGrantIntentResult> {
+  const workspaceId = canonicalId(input.workspaceId, "workspaceId");
+  const storageGenerationId = canonicalId(
+    input.storageGenerationId,
+    "storageGenerationId",
+  );
+  const storageRows = await transaction
+    .select({
+      storageGenerationId: workspaceStorage.id,
+      storageOwnerUserId: providerConnections.userId,
+      storageOwnerRole: workspaceMembers.role,
+      provider: providerConnections.provider,
+    })
+    .from(workspaceStorage)
+    .innerJoin(
+      providerConnections,
+      eq(providerConnections.id, workspaceStorage.connectionId),
+    )
+    .leftJoin(
+      workspaceMembers,
+      and(
+        eq(workspaceMembers.workspaceId, workspaceStorage.workspaceId),
+        eq(workspaceMembers.userId, providerConnections.userId),
+      ),
+    )
+    .where(
+      and(
+        eq(workspaceStorage.workspaceId, workspaceId),
+        eq(workspaceStorage.id, storageGenerationId),
+        eq(workspaceStorage.isCurrent, true),
+      ),
+    )
+    .limit(2);
+  if (
+    storageRows.length !== 1 ||
+    storageRows[0].provider !== "google_drive" ||
+    storageRows[0].storageOwnerRole !== "owner"
+  ) {
+    throw new ProjectDriveMembershipLifecycleError("storage-invalid");
+  }
+
+  const storageOwnerUserId = storageRows[0].storageOwnerUserId;
+  const memberRows = await transaction
+    .select({ userId: workspaceMembers.userId, email: users.email })
+    .from(workspaceMembers)
+    .leftJoin(users, eq(users.id, workspaceMembers.userId))
+    .where(eq(workspaceMembers.workspaceId, workspaceId));
+  if (!memberRows.some((member) => member.userId === storageOwnerUserId)) {
+    throw new ProjectDriveMembershipLifecycleError("storage-invalid");
+  }
+
+  let grantIntentCount = 0;
+  let createdIntentCount = 0;
+  let coverageGapCount = 0;
+  for (const member of memberRows) {
+    if (member.userId === storageOwnerUserId) continue;
+    let granteeEmail: string;
+    try {
+      if (!member.email) throw new TypeError("missing member email");
+      granteeEmail = normalizeProjectDriveGranteeEmail(member.email);
+    } catch {
+      coverageGapCount += 1;
+      continue;
+    }
+    const prepared =
+      await prepareAccountFencedProjectDriveOperationInTransaction(
+        transaction,
+        {
+          operationKind: "grant_create",
+          workspaceId,
+          storageGenerationId,
+          subjectUserId: member.userId,
+          granteeEmail,
+          grantRole: "writer",
+        },
+        dependencies,
+      );
+    if (prepared.outcome === "conflict") {
+      throw new ProjectDriveMembershipLifecycleError("operation-conflict");
+    }
+    grantIntentCount += 1;
+    if (prepared.outcome === "prepared") createdIntentCount += 1;
+  }
+
+  return Object.freeze({
+    memberCount: memberRows.length - 1,
+    grantIntentCount,
+    createdIntentCount,
+    coverageGapCount,
   });
 }

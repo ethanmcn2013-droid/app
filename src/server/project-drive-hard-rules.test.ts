@@ -88,6 +88,8 @@ const DRIVE_SCOPES_FILE = "src/server/connections/google-drive-scopes.ts";
 const DRIVE_FOLDERS_FILE = "src/server/connections/drive-folders.ts";
 const DRIVE_FOLDER_EXECUTOR_FILE =
   "src/server/connections/project-drive-folder-operation-executor.ts";
+const DRIVE_FOLDER_MANAGEMENT_FILE =
+  "src/server/connections/project-drive-folder-management.ts";
 const DRIVE_GRANTS_FILE = "src/server/connections/drive-grants.ts";
 const DRIVE_TRANSPORT_FILE = "src/server/connections/google-drive.ts";
 const DRIVE_CONNECTIONS_FILE = "src/server/connections/drive-connections.ts";
@@ -692,6 +694,7 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
     const managementOperations = new Map<string, readonly string[]>([
       [DRIVE_CONNECTIONS_FILE, ["begin", "complete", "summary", "disconnect"]],
       [DRIVE_FOLDERS_FILE, ["provision", "verifyCurrent", "renameCurrent"]],
+      [DRIVE_FOLDER_MANAGEMENT_FILE, ["enable"]],
       [DRIVE_GRANTS_FILE, ["create", "revoke", "listLive"]],
     ]);
     for (const [path, names] of managementOperations) {

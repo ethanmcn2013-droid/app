@@ -90,6 +90,7 @@ import {
   tasks,
   workspaceMembers,
   workspaces,
+  workspaceStorage,
 } from "@/server/db/schema";
 import { emitTasksChanged } from "@/server/events";
 import {
@@ -107,6 +108,8 @@ import {
 import { cleanPlainText, normalizeWorkspaceContext } from "@/lib/planning/input";
 import { planDuplicatedTasks } from "@/lib/planning/duplication";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
+import { executeProjectDriveFolderOperation } from "@/server/connections/project-drive-folder-operation-executor";
+import { prepareAccountFencedProjectDriveOperationInTransaction } from "@/server/connections/project-drive-operation-orchestrator";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -306,16 +309,63 @@ export async function renameProject(input: {
   if (!trimmed) {
     throw new Error("Workspace name can’t be empty.");
   }
-  const updated = await db
-    .update(workspaces)
-    .set({
-      name: trimmed,
-      revision: sql`${workspaces.revision} + 1`,
-      updatedAt: new Date(),
-    })
-    .where(eq(workspaces.id, grant.projectId))
-    .returning({ id: workspaces.id });
-  if (!updated[0]) throw new Error(RECEIPT_MISSING);
+  const result = await db.transaction(
+    async (transaction) => {
+      const updated = await transaction
+        .update(workspaces)
+        .set({
+          name: trimmed,
+          revision: sql`${workspaces.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(workspaces.id, grant.projectId))
+        .returning({ id: workspaces.id, revision: workspaces.revision });
+      if (!updated[0]) throw new Error(RECEIPT_MISSING);
+
+      const currentStorage = await transaction
+        .select({ id: workspaceStorage.id })
+        .from(workspaceStorage)
+        .where(
+          and(
+            eq(workspaceStorage.workspaceId, grant.projectId),
+            eq(workspaceStorage.isCurrent, true),
+          ),
+        )
+        .limit(2);
+      if (currentStorage.length > 1) throw new Error(RECEIPT_MISSING);
+      if (currentStorage.length === 0) {
+        return Object.freeze({ id: updated[0].id, renameOperation: null });
+      }
+
+      const prepared =
+        await prepareAccountFencedProjectDriveOperationInTransaction(
+          transaction,
+          {
+            operationKind: "folder_rename",
+            workspaceId: grant.projectId,
+            storageGenerationId: currentStorage[0].id,
+            workspaceRevision: updated[0].revision,
+          },
+        );
+      if (prepared.outcome === "conflict") throw new Error(refusal);
+      return Object.freeze({
+        id: updated[0].id,
+        renameOperation: Object.freeze({
+          workspaceId: grant.projectId,
+          operationId: prepared.operation.operationId,
+          operationKind: "folder_rename" as const,
+        }),
+      });
+    },
+    { behavior: "immediate" },
+  );
+
+  // Drive is an external side effect, so it starts only after the Project
+  // name/revision and exact-generation intent have committed together. The
+  // executor records retry/manual state without undoing the local rename.
+  if (result.renameOperation) {
+    await executeProjectDriveFolderOperation(result.renameOperation);
+  }
   revalidatePath("/app", "layout");
   return { id: grant.projectId };
 }

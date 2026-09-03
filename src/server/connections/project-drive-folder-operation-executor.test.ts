@@ -5,6 +5,8 @@ import {
   meta,
   projectDriveOperations,
   providerConnections,
+  users,
+  workspaceMembers,
   workspaces,
   workspaceStorage,
 } from "@/server/db/schema";
@@ -225,6 +227,179 @@ describe("durable Project Drive folder operation executor", () => {
     assert.equal(storage.folderId, "folder-created");
     assert.equal(operation.status, "succeeded");
     assert.equal(operation.providerFolderId, "folder-created");
+    const grantIntents = await fixture.db
+      .select({
+        subjectUserId: projectDriveOperations.subjectUserId,
+        granteeEmail: projectDriveOperations.granteeEmail,
+        grantRole: projectDriveOperations.grantRole,
+        status: projectDriveOperations.status,
+      })
+      .from(projectDriveOperations)
+      .where(eq(projectDriveOperations.operationKind, "grant_create"));
+    assert.deepEqual(
+      grantIntents
+        .map((intent) => ({
+          ...intent,
+          subjectUserId: intent.subjectUserId,
+        }))
+        .sort((left, right) =>
+          String(left.subjectUserId).localeCompare(String(right.subjectUserId)),
+        ),
+      [
+        {
+          subjectUserId: "member-a",
+          granteeEmail: "member.a@example.com",
+          grantRole: "writer",
+          status: "pending",
+        },
+        {
+          subjectUserId: "member-b",
+          granteeEmail: "member.b@example.com",
+          grantRole: "writer",
+          status: "pending",
+        },
+      ],
+      "folder materialization and the existing-member intents share one commit",
+    );
+  });
+
+  it("keeps members with missing emails as explicit grant gaps", async () => {
+    const fetchImpl: typeof fetch = async (input, init) => {
+      if (String(input).includes("oauth2.googleapis.com/token")) {
+        return tokenRefreshResponse();
+      }
+      if (init?.method === "GET") return jsonResponse({ files: [] });
+      if (init?.method === "POST") return jsonResponse(folder({}));
+      throw new Error("unexpected request");
+    };
+    const fixture = await executorFixture({ fetchImpl });
+    await fixture.db
+      .update(users)
+      .set({ email: null })
+      .where(eq(users.id, "member-a"));
+    await fixture.db
+      .update(users)
+      .set({ email: "invalid@" })
+      .where(eq(users.id, "member-b"));
+    const operationId = await prepareProvision(fixture);
+
+    const result = await fixture.executor.execute({
+      workspaceId: "ws-a",
+      operationId,
+      operationKind: "folder_provision",
+    });
+    assert.equal(result.outcome, "completed");
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(projectDriveOperations)
+          .where(eq(projectDriveOperations.operationKind, "grant_create"))
+      ).length,
+      0,
+    );
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(workspaceMembers)
+          .where(eq(workspaceMembers.workspaceId, "ws-a"))
+      ).length,
+      3,
+      "storage setup must never roll back otherwise-valid membership",
+    );
+  });
+
+  it("rolls back storage and every grant intent when a member fence wins during provider work", async () => {
+    const fixtureRef: { current: ExecutorFixture | null } = { current: null };
+    const fetchImpl: typeof fetch = async (input, init) => {
+      if (String(input).includes("oauth2.googleapis.com/token")) {
+        return tokenRefreshResponse();
+      }
+      if (init?.method === "GET") return jsonResponse({ files: [] });
+      if (init?.method === "POST") return jsonResponse(folder({}));
+      throw new Error("unexpected request");
+    };
+    const fixture = await executorFixture({
+      fetchImpl,
+      afterProviderSuccess: async () => {
+        const current = fixtureRef.current;
+        assert.ok(current);
+        await current.db.insert(meta).values({
+          key: googleDriveAccountErasureFenceKey("member-a"),
+          value: GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
+        });
+      },
+    });
+    fixtureRef.current = fixture;
+    const operationId = await prepareProvision(fixture);
+
+    const result = await fixture.executor.execute({
+      workspaceId: "ws-a",
+      operationId,
+      operationKind: "folder_provision",
+    });
+    assert.deepEqual(result, { outcome: "conflict" });
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(workspaceStorage)
+          .where(eq(workspaceStorage.id, "gen-target"))
+      ).length,
+      0,
+    );
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(projectDriveOperations)
+          .where(eq(projectDriveOperations.operationKind, "grant_create"))
+      ).length,
+      0,
+    );
+  });
+
+  it("does not materialize storage when the Project is archived during provider work", async () => {
+    const fixtureRef: { current: ExecutorFixture | null } = { current: null };
+    const fetchImpl: typeof fetch = async (input, init) => {
+      if (String(input).includes("oauth2.googleapis.com/token")) {
+        return tokenRefreshResponse();
+      }
+      if (init?.method === "GET") return jsonResponse({ files: [] });
+      if (init?.method === "POST") return jsonResponse(folder({}));
+      throw new Error("unexpected request");
+    };
+    const fixture = await executorFixture({
+      fetchImpl,
+      afterProviderSuccess: async () => {
+        const current = fixtureRef.current;
+        assert.ok(current);
+        await current.db
+          .update(workspaces)
+          .set({ archivedAt: new Date(current.now() * 1_000) })
+          .where(eq(workspaces.id, "ws-a"));
+      },
+    });
+    fixtureRef.current = fixture;
+    const operationId = await prepareProvision(fixture);
+
+    const result = await fixture.executor.execute({
+      workspaceId: "ws-a",
+      operationId,
+      operationKind: "folder_provision",
+    });
+    assert.equal(result.outcome, "manual_attention");
+    assert.equal(result.operation.lastErrorCode, "workspace_changed");
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(workspaceStorage)
+          .where(eq(workspaceStorage.id, "gen-target"))
+      ).length,
+      0,
+    );
   });
 
   it("refuses preparation and claim when the related account erasure fence wins", async () => {

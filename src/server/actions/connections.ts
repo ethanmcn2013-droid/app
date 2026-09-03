@@ -9,6 +9,12 @@ import {
   type GoogleDriveConnectionSummary,
 } from "@/server/connections/drive-connections";
 import { authorizeProjectDrive } from "@/server/connections/project-drive-authz";
+import {
+  ARCHIVED_PROJECT_DRIVE_FOLDER_SETUP_STATE,
+  DEMO_PROJECT_DRIVE_FOLDER_SETUP_STATE,
+  enableProjectGoogleDriveStorage,
+  type ProjectDriveFolderSetupState,
+} from "@/server/connections/project-drive-folder-management";
 
 const EMPTY_SUMMARY: GoogleDriveConnectionSummary = Object.freeze({
   connected: false,
@@ -44,6 +50,27 @@ export async function getGoogleDriveConnectionSummaryAction(
     "manageProject",
   );
   return getGoogleDriveConnectionSummary(authorization);
+}
+
+/**
+ * Explicitly enable Google Drive for one Project. OAuth consent by itself
+ * creates only the caller's private connection/root and never selects board
+ * storage (D15).
+ */
+export async function enableGoogleDriveForProjectAction(
+  projectId: string,
+): Promise<ProjectDriveFolderSetupState> {
+  if (isDemoMode()) return DEMO_PROJECT_DRIVE_FOLDER_SETUP_STATE;
+  const authorization = await authorizeProjectDrive(
+    projectId,
+    "manageProject",
+  );
+  if (authorization.archived) {
+    return ARCHIVED_PROJECT_DRIVE_FOLDER_SETUP_STATE;
+  }
+  const result = await enableProjectGoogleDriveStorage(authorization);
+  revalidatePath("/app/settings");
+  return result;
 }
 
 /**

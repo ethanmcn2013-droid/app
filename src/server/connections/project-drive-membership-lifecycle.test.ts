@@ -14,6 +14,7 @@ import {
   seedStorageGenerations,
 } from "./project-drive-core.test.helpers";
 import {
+  prepareExistingMemberDriveGrantIntents,
   prepareCurrentMemberDriveGrantIntent,
   ProjectDriveMembershipLifecycleError,
 } from "./project-drive-membership-lifecycle";
@@ -35,6 +36,66 @@ async function seededInvitee() {
 }
 
 describe("Project Drive membership lifecycle", () => {
+  it("prepares existing-member intents and reports missing current emails without removing members", async () => {
+    const { db, cleanup } = await seededInvitee();
+    try {
+      await db
+        .update(users)
+        .set({ email: null })
+        .where(eq(users.id, "member-b"));
+      const first = await db.transaction(
+        (tx) =>
+          prepareExistingMemberDriveGrantIntents(
+            tx,
+            {
+              workspaceId: "ws-a",
+              storageGenerationId: "gen-current",
+            },
+            { randomOperationId: () => "op-existing-member" },
+          ),
+        { behavior: "immediate" },
+      );
+      assert.deepEqual(first, {
+        memberCount: 2,
+        grantIntentCount: 1,
+        createdIntentCount: 1,
+        coverageGapCount: 1,
+      });
+      const second = await db.transaction(
+        (tx) =>
+          prepareExistingMemberDriveGrantIntents(tx, {
+            workspaceId: "ws-a",
+            storageGenerationId: "gen-current",
+          }),
+        { behavior: "immediate" },
+      );
+      assert.deepEqual(second, {
+        memberCount: 2,
+        grantIntentCount: 1,
+        createdIntentCount: 0,
+        coverageGapCount: 1,
+      });
+      assert.equal(
+        (
+          await db
+            .select()
+            .from(workspaceMembers)
+            .where(eq(workspaceMembers.workspaceId, "ws-a"))
+        ).length,
+        3,
+      );
+      const [operation] = await db
+        .select()
+        .from(projectDriveOperations)
+        .where(eq(projectDriveOperations.id, "op-existing-member"));
+      assert.equal(operation.subjectUserId, "member-a");
+      assert.equal(operation.granteeEmail, "member.a@example.com");
+      assert.equal(operation.grantRole, "writer");
+    } finally {
+      cleanup();
+    }
+  });
+
   it("commits a membership and its exact current-generation grant intent atomically", async () => {
     const { db, cleanup } = await seededInvitee();
     try {

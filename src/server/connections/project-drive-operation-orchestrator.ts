@@ -33,6 +33,9 @@ type JournalRuntimeDependencies = Omit<
   ProjectDriveOperationJournalDependencies,
   "database"
 >;
+export type ProjectDriveOperationOrchestrationTransaction = Parameters<
+  Parameters<OrchestrationDb["transaction"]>[0]
+>[0];
 
 export type ProjectDriveOperationOrchestratorDependencies =
   JournalRuntimeDependencies &
@@ -138,7 +141,7 @@ function relationsFromStoredOperation(
  * neutral conflict result.
  */
 async function resolveRelatedAccountIds(
-  transaction: Parameters<Parameters<OrchestrationDb["transaction"]>[0]>[0],
+  transaction: ProjectDriveOperationOrchestrationTransaction,
   relations: OperationRelations,
 ): Promise<readonly string[] | null> {
   const [workspace] = await transaction
@@ -213,7 +216,7 @@ async function resolveRelatedAccountIds(
 }
 
 async function hasRelatedAccountFence(
-  transaction: Parameters<Parameters<OrchestrationDb["transaction"]>[0]>[0],
+  transaction: ProjectDriveOperationOrchestrationTransaction,
   accountIds: readonly string[],
 ): Promise<boolean> {
   const fenceKeys = accountIds.map(googleDriveAccountErasureFenceKey);
@@ -228,7 +231,7 @@ async function hasRelatedAccountFence(
 }
 
 async function readStoredOperation(
-  transaction: Parameters<Parameters<OrchestrationDb["transaction"]>[0]>[0],
+  transaction: ProjectDriveOperationOrchestrationTransaction,
   input: ProjectDriveOperationLocator,
 ) {
   const [operation] = await transaction
@@ -246,6 +249,34 @@ async function readStoredOperation(
 }
 
 /**
+ * Prepare a durable operation inside a caller-owned immediate transaction.
+ *
+ * Lifecycle writes use this seam when the domain mutation and its provider
+ * intent must have one commit point (for example a Project rename). Account
+ * relationship resolution, erasure-fence detection, and journal insertion
+ * are therefore identical to the standalone orchestrator path without
+ * opening a nested transaction. Provider I/O is never performed here.
+ */
+export async function prepareAccountFencedProjectDriveOperationInTransaction(
+  transaction: ProjectDriveOperationOrchestrationTransaction,
+  input: ProjectDriveOperationPrepareInput,
+  journalRuntimeDependencies: JournalRuntimeDependencies = {},
+) {
+  const canonical = canonicalProjectDriveOperationPrepareInput(input);
+  const accountIds = await resolveRelatedAccountIds(
+    transaction,
+    relationsFromPrepare(canonical),
+  );
+  if (!accountIds || (await hasRelatedAccountFence(transaction, accountIds))) {
+    return NEUTRAL_CONFLICT;
+  }
+  return createProjectDriveOperationJournal({
+    ...journalRuntimeDependencies,
+    database: transaction,
+  }).prepare(canonical);
+}
+
+/**
  * Account-fenced entry points for every operation transition that can create
  * or restore claimable work. Relationship resolution, fence detection and
  * the journal mutation share one libSQL/Drizzle transaction, so erasure and
@@ -257,7 +288,7 @@ export function createAccountFencedProjectDriveOperationJournal(
   const { database, ...journalRuntimeDependencies } = deps;
 
   const journalFor = (
-    transaction: Parameters<Parameters<OrchestrationDb["transaction"]>[0]>[0],
+    transaction: ProjectDriveOperationOrchestrationTransaction,
   ) =>
     createProjectDriveOperationJournal({
       ...journalRuntimeDependencies,
@@ -266,21 +297,13 @@ export function createAccountFencedProjectDriveOperationJournal(
 
   return Object.freeze({
     async prepare(input: ProjectDriveOperationPrepareInput) {
-      const canonical = canonicalProjectDriveOperationPrepareInput(input);
       return database.transaction(
-        async (transaction) => {
-          const accountIds = await resolveRelatedAccountIds(
+        (transaction) =>
+          prepareAccountFencedProjectDriveOperationInTransaction(
             transaction,
-            relationsFromPrepare(canonical),
-          );
-          if (
-            !accountIds ||
-            (await hasRelatedAccountFence(transaction, accountIds))
-          ) {
-            return NEUTRAL_CONFLICT;
-          }
-          return journalFor(transaction).prepare(canonical);
-        },
+            input,
+            journalRuntimeDependencies,
+          ),
         { behavior: "immediate" },
       );
     },

@@ -1,0 +1,101 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { describe, it } from "node:test";
+
+function source(path) {
+  return readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
+}
+
+function exportedAction(code, name) {
+  const marker = `export async function ${name}`;
+  const start = code.indexOf(marker);
+  assert.notEqual(start, -1, `${name} must remain an explicit action`);
+  const next = code.indexOf("export async function ", start + marker.length);
+  return code.slice(start, next === -1 ? code.length : next);
+}
+
+describe("Project Drive folder lifecycle wiring", () => {
+  it("keeps OAuth consent separate from the explicit board-storage action", () => {
+    const actions = source("actions/connections.ts");
+    const begin = exportedAction(actions, "beginGoogleDriveConnectionAction");
+    const enable = exportedAction(
+      actions,
+      "enableGoogleDriveForProjectAction",
+    );
+    assert.doesNotMatch(begin, /enableProjectGoogleDriveStorage/);
+    assert.match(enable, /if\s*\(isDemoMode\(\)\)\s*return/);
+    assert.match(
+      enable,
+      /authorizeProjectDrive\s*\(\s*projectId\s*,\s*["']manageProject["']/,
+    );
+    assert.ok(
+      enable.indexOf("isDemoMode()") < enable.indexOf("authorizeProjectDrive"),
+      "demo mode must stop before identity or database access",
+    );
+    assert.ok(
+      enable.indexOf("authorization.archived") <
+        enable.indexOf("enableProjectGoogleDriveStorage"),
+      "archived Projects must stop before storage work",
+    );
+  });
+
+  it("returns a minimized action DTO rather than operation or credential rows", () => {
+    const management = source(
+      "connections/project-drive-folder-management.ts",
+    );
+    const shape = management.slice(
+      management.indexOf("export type ProjectDriveFolderSetupState"),
+      management.indexOf(
+        "export const DEMO_PROJECT_DRIVE_FOLDER_SETUP_STATE",
+      ),
+    );
+    for (const safeField of [
+      "status",
+      "coverage",
+      "pendingMemberCount",
+      "memberGapCount",
+      "folderUrl",
+    ]) {
+      assert.match(shape, new RegExp(`\\b${safeField}\\b`));
+    }
+    assert.doesNotMatch(
+      shape,
+      /operationId|connectionId|storageGenerationId|refreshToken|accessToken/,
+    );
+  });
+
+  it("commits rename revision and exact-generation intent before provider execution", () => {
+    const projects = source("projects/service.ts");
+    const rename = projects.slice(
+      projects.indexOf("export async function renameProject"),
+      projects.indexOf("export async function reorderProject"),
+    );
+    const transactionAt = rename.indexOf("db.transaction");
+    const prepareAt = rename.indexOf(
+      "prepareAccountFencedProjectDriveOperationInTransaction",
+    );
+    const executeAt = rename.indexOf("executeProjectDriveFolderOperation");
+    assert.ok(transactionAt > -1 && prepareAt > transactionAt);
+    assert.ok(executeAt > prepareAt);
+    assert.match(rename, /workspaceRevision:\s*updated\[0\]\.revision/);
+    assert.match(rename, /storageGenerationId:\s*currentStorage\[0\]\.id/);
+    assert.match(rename, /\{ behavior: ["']immediate["'] \}/);
+  });
+
+  it("materializes storage and existing-member intents in one writer transaction", () => {
+    const executor = source(
+      "connections/project-drive-folder-operation-executor.ts",
+    );
+    const persist = executor.slice(
+      executor.indexOf("async function persistProvision"),
+      executor.indexOf("async function persistRename"),
+    );
+    assert.match(persist, /transaction\.insert\(workspaceStorage\)/);
+    assert.match(persist, /prepareExistingMemberDriveGrantIntents\s*\(/);
+    assert.match(persist, /journalForTransaction\(transaction\)/);
+    assert.doesNotMatch(
+      persist,
+      /deps\.folders\.|createGoogleDriveFolder|renameGoogleDriveFile/,
+    );
+  });
+});
