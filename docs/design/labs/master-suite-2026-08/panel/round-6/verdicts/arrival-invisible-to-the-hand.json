@@ -1,0 +1,6 @@
+{
+  "id": "arrival-invisible-to-the-hand",
+  "real": true,
+  "reason": "Driven at 1440x960: clicking the seam's 'In Tasks as' link focuses the new card but :focus-visible is false, so outline stays 0px none, box-shadow stays the resting rgba(17,17,17,.08) stack, animationName none for 1.5s; the identical flow by Enter paints 2px solid rgb(79,70,229) plus a 4px rgba(79,70,229,.16) halo. No toast, no data-settling (that attribute is never written anywhere in tasks.js, so cardSettle is dead CSS too), and the card lands fourth in To Do among 14 with no arrival marker — the suite's one payoff moment is silent for the pointer.",
+  "sharpenedFix": "The mechanism is right but the timing violates the declared motion ladder in elevate.config.json (durations [0, .05, .08, .14, .22, .4]; easings only cubic-bezier(0.23,1,0.32,1) and cubic-bezier(0.77,0,0.175,1)) — .7s/120ms/cubic-bezier(.2,.7,.3,1) would turn the currently-green motion category red. Use 400ms with cubic-bezier(0.23,1,0.32,1) and no delay, and prefer reviving the already-authored .card[data-settling] hook (tasks.css:1252-1260, plus its existing prefers-reduced-motion guard at :1264-1268) over inventing a second 'landed' class, so the arrival and the drop-settle are one idea."
+}
