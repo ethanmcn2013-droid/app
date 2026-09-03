@@ -817,6 +817,7 @@ describe("durable Project Drive folder operation executor", () => {
       workspaceId: "ws-a",
       operationId,
       operationKind: "storage_handover",
+      actorUserId: "owner",
     });
     assert.equal(result.outcome, "completed");
 
@@ -902,6 +903,79 @@ describe("durable Project Drive folder operation executor", () => {
       workspaceId: "ws-a",
       operationId,
       operationKind: "storage_handover",
+      actorUserId: "owner",
+    });
+    assert.equal(result.outcome, "manual_attention");
+    assert.equal(result.operation.lastErrorCode, "workspace_changed");
+
+    const generations = await fixture.db
+      .select()
+      .from(workspaceStorage)
+      .where(eq(workspaceStorage.workspaceId, "ws-a"));
+    assert.equal(
+      generations.find((generation) => generation.id === "gen-current")
+        ?.isCurrent,
+      true,
+    );
+    assert.equal(
+      generations.some((generation) => generation.id === "gen-handover"),
+      false,
+    );
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(projectDriveOperations)
+          .where(eq(projectDriveOperations.operationKind, "grant_create"))
+      ).length,
+      0,
+    );
+  });
+
+  it("keeps the source generation current when a third-owner actor loses management authority during provider work", async () => {
+    const fixtureRef: { current: ExecutorFixture | null } = { current: null };
+    const fetchImpl: typeof fetch = async (input, init) => {
+      if (String(input).includes("oauth2.googleapis.com/token")) {
+        return tokenRefreshResponse();
+      }
+      if ((init?.method ?? "GET") === "GET") {
+        return jsonResponse({ files: [] });
+      }
+      if (init?.method === "POST") {
+        return jsonResponse(
+          folder({
+            id: "folder-raced-actor",
+            generationId: "gen-handover",
+            parentId: "root-member-a",
+          }),
+        );
+      }
+      throw new Error("unexpected request");
+    };
+    const fixture = await executorFixture({
+      fetchImpl,
+      afterProviderSuccess: async () => {
+        const current = fixtureRef.current;
+        assert.ok(current);
+        await current.db
+          .update(workspaceMembers)
+          .set({ role: "member" })
+          .where(eq(workspaceMembers.userId, "member-b"));
+      },
+    });
+    fixtureRef.current = fixture;
+    await seedHandoverTarget(fixture);
+    await fixture.db
+      .update(workspaceMembers)
+      .set({ role: "owner" })
+      .where(eq(workspaceMembers.userId, "member-b"));
+    const operationId = await prepareHandover(fixture);
+
+    const result = await fixture.executor.execute({
+      workspaceId: "ws-a",
+      operationId,
+      operationKind: "storage_handover",
+      actorUserId: "member-b",
     });
     assert.equal(result.outcome, "manual_attention");
     assert.equal(result.operation.lastErrorCode, "workspace_changed");

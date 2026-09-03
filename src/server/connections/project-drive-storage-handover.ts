@@ -23,6 +23,7 @@ import {
   type ProjectDriveFolderOperationExecutionResult,
   type ProjectDriveFolderOperationLocator,
 } from "./project-drive-folder-operation-executor";
+import { readCurrentProjectDriveFolderSetupState } from "./project-drive-folder-management";
 import type { ProjectDriveOperationJournalDependencies } from "./project-drive-operation-journal";
 import { prepareAccountFencedProjectDriveOperationInTransaction } from "./project-drive-operation-orchestrator";
 import { listPendingDelegatedDriveUploadReceiptsForWorkspace } from "./project-drive-upload-receipts";
@@ -336,6 +337,7 @@ export function createProjectDriveStorageHandoverService(
               workspaceId: authorization.projectId,
               operationId: existing.id,
               operationKind: "storage_handover",
+              actorUserId: authorization.actorUserId,
             },
             sourceOwnerUserId: storage.sourceOwnerUserId,
             sourceFolderUrl: storage.folderUrl,
@@ -371,6 +373,7 @@ export function createProjectDriveStorageHandoverService(
             workspaceId: authorization.projectId,
             operationId: prepared.operation.operationId,
             operationKind: "storage_handover",
+            actorUserId: authorization.actorUserId,
           },
           sourceOwnerUserId: storage.sourceOwnerUserId,
           sourceFolderUrl: storage.folderUrl,
@@ -381,6 +384,7 @@ export function createProjectDriveStorageHandoverService(
   }
 
   async function currentStorageState(
+    database: Pick<HandoverDb, "select">,
     workspaceId: string,
   ): Promise<
     Readonly<{
@@ -388,7 +392,7 @@ export function createProjectDriveStorageHandoverService(
       folderUrl: string;
     }> | null
   > {
-    const rows = await deps.database
+    const rows = await database
       .select({
         storageOwnerUserId: providerConnections.userId,
         folderUrl: workspaceStorage.folderWebViewLink,
@@ -467,9 +471,41 @@ export function createProjectDriveStorageHandoverService(
     }
 
     const execution = await deps.execute(decision.locator);
-    const current = await currentStorageState(authorization.projectId);
+    const snapshot = await deps.database.transaction(
+      async (transaction) => {
+        const current = await currentStorageState(
+          transaction,
+          authorization.projectId,
+        );
+        const readiness =
+          current?.storageOwnerUserId === targetOwnerUserId
+            ? await readCurrentProjectDriveFolderSetupState(
+                transaction,
+                authorization,
+              )
+            : null;
+        return Object.freeze({ current, readiness });
+      },
+      { behavior: "deferred" },
+    );
+    const { current, readiness } = snapshot;
     if (current?.storageOwnerUserId === targetOwnerUserId) {
-      return state("active", targetOwnerUserId, current.folderUrl);
+      if (readiness?.status === "active") {
+        return state("active", targetOwnerUserId, current.folderUrl);
+      }
+      if (readiness?.status === "setting_up") {
+        return state("setting_up", targetOwnerUserId, current.folderUrl);
+      }
+      if (
+        readiness?.status === "fallback" ||
+        readiness?.status === "needs_attention"
+      ) {
+        return state("needs_attention", targetOwnerUserId, current.folderUrl);
+      }
+      if (readiness?.status === "archived") {
+        return state("archived", null, null);
+      }
+      return state("unavailable", targetOwnerUserId, current.folderUrl);
     }
     if (execution.outcome === "manual_attention") {
       return state(

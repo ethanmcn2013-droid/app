@@ -172,6 +172,14 @@ function asyncFunctionBlock(code: string, name: string): string | null {
   );
 }
 
+function exportedTypeAliasBlock(code: string, name: string): string | null {
+  const start = new RegExp(`\\bexport\\s+type\\s+${name}\\s*=`).exec(code);
+  if (start?.index === undefined) return null;
+  const end = code.indexOf(";", start.index);
+  if (end === -1) return null;
+  return code.slice(start.index, end + 1);
+}
+
 function isDrivePublicEntryPoint(path: string, code: string): boolean {
   const canonical = canonicalPath(path);
   const isRoute =
@@ -742,6 +750,51 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
       /claim\s*:\s*ProjectDriveFolderCreationClaim\b/,
       "durable folder creation must receive an exact provision or handover claim",
     );
+    const creationClaim = exportedTypeAliasBlock(
+      folders,
+      "ProjectDriveFolderCreationClaim",
+    );
+    assert.ok(
+      creationClaim,
+      "the folder-creation claim union must remain auditable",
+    );
+    const creationClaimMembers = [
+      ...new Set(
+        [
+          ...creationClaim.matchAll(/\b(ProjectDrive[A-Za-z0-9]+Claim)\b/g),
+        ]
+          .map((match) => match[1])
+          .filter((name) => name !== "ProjectDriveFolderCreationClaim"),
+      ),
+    ];
+    assert.deepEqual(
+      creationClaimMembers,
+      [
+        "ProjectDriveFolderProvisionClaim",
+        "ProjectDriveStorageHandoverClaim",
+      ],
+      "only claimed provision and handover operations may create a folder",
+    );
+    const creationKinds = new Map([
+      ["ProjectDriveFolderProvisionClaim", "folder_provision"],
+      ["ProjectDriveStorageHandoverClaim", "storage_handover"],
+    ]);
+    for (const member of creationClaimMembers) {
+      const definition = exportedTypeAliasBlock(folders, member);
+      assert.ok(definition, `${member} must remain an auditable type alias`);
+      assert.match(
+        definition,
+        /Extract\s*<\s*ProjectDriveOperationClaim\s*,/,
+        `${member} must derive from the account-fenced journal claim union`,
+      );
+      assert.match(
+        definition,
+        new RegExp(
+          `operationKind\\s*:\\s*["']${creationKinds.get(member)}["']`,
+        ),
+        `${member} must select only its exact folder-creation operation kind`,
+      );
+    }
     assert.match(
       rename.slice(0, 500),
       /claim\s*:\s*ProjectDriveFolderRenameClaim\b/,

@@ -65,11 +65,19 @@ export type ProjectDriveFolderOperationPrepareInput = Extract<
   Readonly<{ operationKind: ProjectDriveFolderOperationKind }>
 >;
 
-export type ProjectDriveFolderOperationLocator = Readonly<{
-  workspaceId: string;
-  operationId: string;
-  operationKind: ProjectDriveFolderOperationKind;
-}>;
+export type ProjectDriveFolderOperationLocator =
+  | Readonly<{
+      workspaceId: string;
+      operationId: string;
+      operationKind: "folder_provision" | "folder_rename";
+    }>
+  | Readonly<{
+      workspaceId: string;
+      operationId: string;
+      operationKind: "storage_handover";
+      /** Freshly authorized manager whose role is rechecked after provider I/O. */
+      actorUserId: string;
+    }>;
 
 export type ProjectDriveFolderOperationExecutionResult =
   | Awaited<ReturnType<Journal["complete"]>>
@@ -333,6 +341,7 @@ export function createProjectDriveFolderOperationExecutor(
   async function persistProvision(
     claim: ProjectDriveFolderCreationClaim,
     result: WorkspaceDriveFolder,
+    actorUserId: string | null,
   ) {
     try {
       return await deps.database.transaction(
@@ -413,6 +422,22 @@ export function createProjectDriveFolderOperationExecutor(
               throw new DriveFolderError("storage-conflict");
             }
           } else {
+            if (!actorUserId) {
+              throw new DriveFolderError("storage-conflict");
+            }
+            const [actorMembership] = await transaction
+              .select({ role: workspaceMembers.role })
+              .from(workspaceMembers)
+              .where(
+                and(
+                  eq(workspaceMembers.workspaceId, claim.workspaceId),
+                  eq(workspaceMembers.userId, actorUserId),
+                ),
+              )
+              .limit(1);
+            if (actorMembership?.role !== "owner") {
+              throw new DriveFolderError("storage-conflict");
+            }
             if (
               existing ||
               currentRows.length !== 1 ||
@@ -742,7 +767,13 @@ export function createProjectDriveFolderOperationExecutor(
       await deps.afterProviderSuccess?.({ claim, result });
       let persisted: Awaited<ReturnType<typeof persistProvision>>;
       try {
-        persisted = await persistProvision(claim, result);
+        persisted = await persistProvision(
+          claim,
+          result,
+          input.operationKind === "storage_handover"
+            ? input.actorUserId
+            : null,
+        );
       } catch (error) {
         return recordFailure(claim, error);
       }

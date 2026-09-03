@@ -143,7 +143,7 @@ describe("Project Drive folder lifecycle wiring", () => {
       executor.indexOf('if (claim.operationKind === "folder_provision")'),
       executor.indexOf("let result: ProjectDriveFolderRenameResult"),
     );
-    const persistAt = provision.indexOf("await persistProvision(claim, result)");
+    const persistAt = provision.search(/await persistProvision\s*\(/);
     const dispatchAt = provision.indexOf("await deps.executeGrant(grantOperation)");
     assert.ok(persistAt > -1 && dispatchAt > persistAt);
     assert.match(provision, /for \(const grantOperation of persisted\.grantOperations\)/);

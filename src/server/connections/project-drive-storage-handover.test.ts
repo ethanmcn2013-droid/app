@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import {
+  driveFolderGrants,
   meta,
   projectDriveOperations,
   providerConnections,
   resources,
+  users,
   workspaceMembers,
+  workspaceStorage,
 } from "@/server/db/schema";
 import {
   coreAuthorization,
@@ -17,6 +20,7 @@ import {
 } from "./project-drive-core.test.helpers";
 import { ProjectDriveAuthorizationError } from "./project-drive-authz";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
+import { prepareExistingMemberDriveGrantIntents } from "./project-drive-membership-lifecycle";
 import { createProjectDriveStorageHandoverService } from "./project-drive-storage-handover";
 
 const TARGET_GENERATION_ID = "11111111-1111-4111-8111-111111111111";
@@ -49,6 +53,98 @@ async function handoverFixture(input?: { withTargetConnection?: boolean }) {
     });
   }
   return core;
+}
+
+type HandoverFixture = Awaited<ReturnType<typeof handoverFixture>>;
+
+async function materializeTargetStorage(
+  fixture: HandoverFixture,
+  input: Readonly<{
+    missingEmailUserId?: string;
+    grantStatus?: "pending" | "retry_wait" | "manual_attention";
+    withReceipts?: boolean;
+  }> = {},
+) {
+  if (input.missingEmailUserId) {
+    await fixture.db
+      .update(users)
+      .set({ email: null })
+      .where(eq(users.id, input.missingEmailUserId));
+  }
+  await fixture.db.transaction(
+    async (transaction) => {
+      await transaction
+        .update(workspaceStorage)
+        .set({ isCurrent: false })
+        .where(eq(workspaceStorage.id, "gen-current"));
+      await transaction.insert(workspaceStorage).values({
+        id: TARGET_GENERATION_ID,
+        workspaceId: "ws-a",
+        connectionId: "conn-member-a",
+        folderId: "folder-handover",
+        folderWebViewLink: "https://drive.example/folder-handover",
+        state: "active",
+        isCurrent: true,
+      });
+      const operationIds = ["grant-owner", "grant-member-b"];
+      await prepareExistingMemberDriveGrantIntents(
+        transaction,
+        {
+          workspaceId: "ws-a",
+          storageGenerationId: TARGET_GENERATION_ID,
+        },
+        {
+          randomOperationId: () =>
+            operationIds.shift() ?? "unexpected-grant-operation",
+        },
+      );
+    },
+    { behavior: "immediate" },
+  );
+
+  if (input.grantStatus && input.grantStatus !== "pending") {
+    const nextAttempt =
+      input.grantStatus === "retry_wait" ? ", next_attempt_at = created_at" : "";
+    await fixture.client.execute(`
+      UPDATE project_drive_operations
+      SET status = '${input.grantStatus}',
+          attempt_count = 1,
+          last_attempt_at = created_at,
+          updated_at = created_at,
+          last_error_code = '${
+            input.grantStatus === "retry_wait"
+              ? "network_error"
+              : "cannot_invite_non_google_user"
+          }'
+          ${nextAttempt}
+      WHERE id = 'grant-owner'
+    `);
+  }
+
+  if (input.withReceipts) {
+    await fixture.db.insert(driveFolderGrants).values([
+      {
+        storageGenerationId: TARGET_GENERATION_ID,
+        workspaceId: "ws-a",
+        userId: "owner",
+        permissionId: "permission-owner",
+        grantedEmail: "owner@example.com",
+        role: "writer",
+        grantedAt: new Date("2026-09-03T10:00:00.000Z"),
+        revokePending: false,
+      },
+      {
+        storageGenerationId: TARGET_GENERATION_ID,
+        workspaceId: "ws-a",
+        userId: "member-b",
+        permissionId: "permission-member-b",
+        grantedEmail: "member.b@example.com",
+        role: "writer",
+        grantedAt: new Date("2026-09-03T10:00:00.000Z"),
+        revokePending: false,
+      },
+    ]);
+  }
 }
 
 describe("Project Drive storage handover management", () => {
@@ -276,6 +372,72 @@ describe("Project Drive storage handover management", () => {
       );
     } finally {
       fixture.cleanup();
+    }
+  });
+
+  it("reports the shared folder-readiness truth after handover dispatch", async (t) => {
+    const scenarios = [
+      {
+        name: "pending writer grants stay setting up",
+        materialize: {},
+        expectedStatus: "setting_up",
+      },
+      {
+        name: "a manual writer-grant result needs attention",
+        materialize: { grantStatus: "manual_attention" as const },
+        expectedStatus: "needs_attention",
+      },
+      {
+        name: "a member without an email needs attention",
+        materialize: { missingEmailUserId: "member-b" },
+        expectedStatus: "needs_attention",
+      },
+      {
+        name: "a transient writer-grant failure stays setting up",
+        materialize: { grantStatus: "retry_wait" as const },
+        expectedStatus: "setting_up",
+      },
+      {
+        name: "complete exact writer receipts become active",
+        materialize: { withReceipts: true },
+        expectedStatus: "active",
+      },
+    ] as const;
+
+    for (const scenario of scenarios) {
+      await t.test(scenario.name, async () => {
+        const fixture = await handoverFixture();
+        try {
+          const service = createProjectDriveStorageHandoverService({
+            database: fixture.db,
+            randomStorageGenerationId: () => TARGET_GENERATION_ID,
+            journalRuntimeDependencies: {
+              randomOperationId: () => "operation-readiness",
+            },
+            execute: async (locator) => {
+              assert.equal(locator.operationKind, "storage_handover");
+              if (locator.operationKind === "storage_handover") {
+                assert.equal(locator.actorUserId, "owner");
+              }
+              await materializeTargetStorage(fixture, scenario.materialize);
+              return { outcome: "conflict" };
+            },
+          });
+          const result = await service.handover(
+            coreAuthorization("owner", "ws-a", true),
+            { targetOwnerUserId: "member-a" },
+          );
+
+          assert.equal(result.status, scenario.expectedStatus);
+          assert.equal(result.storageOwnerUserId, "member-a");
+          assert.equal(
+            result.folderUrl,
+            "https://drive.example/folder-handover",
+          );
+        } finally {
+          fixture.cleanup();
+        }
+      });
     }
   });
 
