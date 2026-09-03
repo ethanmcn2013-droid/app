@@ -3,11 +3,11 @@
   "score": 8.6,
   "findings": [
     {
-      "id": "one-field-two-names",
-      "element": ".deskFact b \"What it is about\" (src/notes.js:1878) vs .topFact b \"Filing under\" (src/fixture.js:615), vs .groupBtn[data-act=\"group-about\"] \"What it is about\" (src/notes.js:2106)",
-      "problem": "PROVISIONAL",
+      "id": "seam-receipt-said-four-ways",
+      "element": ".peelLabel \"Tasks has it\" (src/notes.js peel receipt) + .deskFact b \"In Tasks as\" + .idxHead \"Already in Tasks / 4 so far, and every note stayed here\" + .undo \"Sent to Tasks.\" — all simultaneously visible at 1440x960 after one [data-act=\"send\"]",
+      "problem": "PROVISIONAL: after one send, the task wording prints 3x and the reassurance 4x on one screen.",
       "fix": "PROVISIONAL",
-      "cost": 0.1
+      "cost": 0.2
     }
   ],
   "biggestWin": "PROVISIONAL — review in progress."

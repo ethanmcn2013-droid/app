@@ -1,6 +1,14 @@
 {
   "seat": "type",
-  "score": 8.5,
-  "findings": [],
+  "score": 8.4,
+  "findings": [
+    {
+      "id": "micro-label-tier-is-three-products-not-one",
+      "element": "h2.trayName / span.tag (src/tasks.css:773-778, 1101-1106) · h2.b-measureHead / p.b-todayLabel / h2.b-behindLabel / h1.b-who (src/timeline.css:67-68, 506-513, 536-544) · b \"Filing under\" / span \"Your notes\" / span.peelLabel / span.darkTag (src/notes.css:108, 397, 647, 967, 1370, 1430)",
+      "problem": "The uppercase micro-label — the object that says 'this names a region', and the most repeated typographic unit in the suite — renders at five specs, split cleanly along the old product borders. Measured at 1920 across eight states: Tasks is Geist Mono 11px/400, +0.10em, leading 14px; Timeline is Geist Mono 11px/400, +0.16em, leading 15.4px (plus 12px/400 +0.20em on h1.b-who); Notes is Geist 11px/600, +0.075em, leading 15.95px, and 12px/600 +0.075em on .darkTag. So walking the spine from TO DO to DAYS AWAY changes the label's letterfit by 60% (1.1px vs 1.76px of tracking at the same 11px), and walking to FILING UNDER changes its family and its weight as well. Three separate declarations exist for one role: --tr-cap: 0.075em (notes.css:108), a hard 0.1em literal (tasks.css:777 and :1104), --track-label: 0.16em (timeline.css:67). The audit gate already reports this and does not pass it: 'Geist Mono|11|label → 1.1px vs 1.76px  h2.trayName \"To do\" | span \"one of three\"'. The suite's own claim is one application; the label tier is the place a reader can see the seam.",
+      "fix": "Declare the tier once, at :root in src/shell.css beside --t-11, as three roles at one size rather than three products at one role: --label-face: var(--font-mono); --label-size: 11px; --label-weight: 400; --label-lead: 15.4px; --track-label: 0.14em (region label: trayName, b-measureHead, b-behindLabel, Filing under, Your notes, peelLabel, specName); --track-label-tight: 0.10em (inline datum label: span.tag, darkTag); --track-label-wide: 0.20em (ceremonial top line: h1.b-who only). Then point all three products at them: replace the 0.1em literals at tasks.css:777 and :1104 with var(--track-label) and var(--track-label-tight); set notes.css:108 --tr-cap: var(--track-label) and change the six uppercase Notes rules (397, 647, 1236, 1370, 1430, and 967 to --track-label-tight) from font-weight 600 to var(--label-weight) with font-family var(--label-face); alias timeline.css:67 --track-label to the shell token and keep --track-labelWide pointing at --track-label-wide. Leave the .railAvatar / .dockAvatar initials on Geist 600 — a monogram is not a label — and give them their own --track-monogram: 0.075em so they stop borrowing --tr-cap.",
+      "cost": 4
+    }
+  ],
   "biggestWin": "provisional - review in progress"
 }
