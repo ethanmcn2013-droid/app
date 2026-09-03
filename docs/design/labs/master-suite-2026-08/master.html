@@ -11485,7 +11485,15 @@ let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
    sliced is the wrong first frame for a phone or a tablet, so the list
    opens there: every task as a whole sentence, its lane stated in type.
    The switcher offers the board at every width. */
-let view = matchMedia("(max-width: 1099px)").matches ? "list" : "board";
+const LIST_ONLY = matchMedia("(max-width: 1099px)");
+let view = LIST_ONLY.matches ? "list" : "board";
+/* What the person chose with the switcher, if they chose. Below 1100 the
+   board cannot hold five lanes at a card's floor, so the width wins there
+   and the choice is remembered rather than overwritten: widening puts them
+   back on the view they picked. Derived once at parse until 3 September,
+   which meant a window narrowed from 1440 kept a five-lane board in a
+   372px viewport — 1520px of board behind a phone's edge. */
+let viewAsked = null;
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
@@ -14565,6 +14573,7 @@ function onClick(event) {
     const fromBox = fromTab ? fromTab.getBoundingClientRect() : null;
     const toBox = toTab ? toTab.getBoundingClientRect() : null;
     view = next;
+    viewAsked = next;
     /* A view change is not a filter change, so nothing about what is shown
        moves — but the thing the keyboard is standing on has to still be
        on screen, and the two views order their rows the same way. */
@@ -15629,6 +15638,12 @@ if (host) {
   /* The head's search is painted only where the dock is not; crossing
      720 in either direction repaints so exactly one field exists. */
   PHONE.addEventListener("change", () => mount());
+  /* And the crossing that decides which VIEW is possible, not just where
+     the search field lives. 1099 is the board's own floor. */
+  LIST_ONLY.addEventListener("change", () => {
+    view = LIST_ONLY.matches ? "list" : (viewAsked || "board");
+    mount();
+  });
   host.addEventListener("focusin", (e) => { if (e.target.closest(".carry")) holdUndo(); });
   host.addEventListener("focusout", (e) => { if (e.target.closest(".carry")) releaseUndo(); });
   host.addEventListener("mouseenter", (e) => { if (e.target.closest && e.target.closest(".carry")) holdUndo(); }, true);
@@ -20179,9 +20194,6 @@ var PHONE_T = matchMedia("(max-width: 720px)");
      again when the box changes. Debounced to a frame so a drag-resize
      does not re-measure a hundred times. */
   var pending = 0;
-  PHONE_T.addEventListener("change", function () {
-    if (C.rootEl().getAttribute("data-state") === "owner-flight") go("owner-flight");
-  });
   window.addEventListener("resize", function () {
     if (pending) cancelAnimationFrame(pending);
     pending = requestAnimationFrame(function () { pending = 0; settle(); });
@@ -23112,6 +23124,37 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     phone: "phone", desk: "full", day: "phone", print: "sheet",
     unfurl: "card", ended: "phone", loading: "phone", "loading-slow": "phone",
   };
+
+  /* THE CROSSING, in the scope that owns the renderer.
+     This listener was written in the settle IIFE above, where neither `C`
+     nor `go` is declared — they belong to this one — so it threw
+     `C is not defined` on every crossing of 720 in all three products,
+     and the timeline kept the desk's across composition on a phone. Four
+     green gates never caught it because every loop in them opens a FRESH
+     page per width: nothing had ever narrowed one page across the query,
+     so the handler never ran at all. The behaviour gate now makes the
+     journey in both directions.
+
+     `across` is IMPOSSIBLE below 720 — the measure cannot hold the
+     distance and drawing it anyway compresses the proportion into a lie —
+     so the attribute follows the width down. It does not follow the width
+     back up on its own: what the reader asked for is remembered and
+     restored, because an orientation that flips itself under a hand
+     mid-read overrules a choice already made. */
+  var askedLayout = null;
+  PHONE_T.addEventListener("change", function () {
+    var root = C.rootEl();
+    if (!root) return;
+    if (PHONE_T.matches) {
+      if (askedLayout === null) askedLayout = root.getAttribute("data-layout");
+      root.setAttribute("data-layout", "down");
+    } else if (askedLayout !== null) {
+      root.setAttribute("data-layout", askedLayout);
+      askedLayout = null;
+    }
+    var state = root.getAttribute("data-state");
+    if (state) go(state);
+  });
 
   window.__TLD.b = {
     name: "B · The Approach",

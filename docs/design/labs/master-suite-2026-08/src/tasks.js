@@ -57,7 +57,15 @@ let moreOpen = false;   /* the dialog's own accordion, closed at rest       */
    sliced is the wrong first frame for a phone or a tablet, so the list
    opens there: every task as a whole sentence, its lane stated in type.
    The switcher offers the board at every width. */
-let view = matchMedia("(max-width: 1099px)").matches ? "list" : "board";
+const LIST_ONLY = matchMedia("(max-width: 1099px)");
+let view = LIST_ONLY.matches ? "list" : "board";
+/* What the person chose with the switcher, if they chose. Below 1100 the
+   board cannot hold five lanes at a card's floor, so the width wins there
+   and the choice is remembered rather than overwritten: widening puts them
+   back on the view they picked. Derived once at parse until 3 September,
+   which meant a window narrowed from 1440 kept a five-lane board in a
+   372px viewport — 1520px of board behind a phone's edge. */
+let viewAsked = null;
 let flyId = null;       /* the card that should travel on the next repaint  */
 let pressedControl = null; /* the control a pointer press began on, if any   */
 let pressAt = null;     /* where a press on a card body began, for the 8px test */
@@ -3137,6 +3145,7 @@ function onClick(event) {
     const fromBox = fromTab ? fromTab.getBoundingClientRect() : null;
     const toBox = toTab ? toTab.getBoundingClientRect() : null;
     view = next;
+    viewAsked = next;
     /* A view change is not a filter change, so nothing about what is shown
        moves — but the thing the keyboard is standing on has to still be
        on screen, and the two views order their rows the same way. */
@@ -4201,6 +4210,12 @@ if (host) {
   /* The head's search is painted only where the dock is not; crossing
      720 in either direction repaints so exactly one field exists. */
   PHONE.addEventListener("change", () => mount());
+  /* And the crossing that decides which VIEW is possible, not just where
+     the search field lives. 1099 is the board's own floor. */
+  LIST_ONLY.addEventListener("change", () => {
+    view = LIST_ONLY.matches ? "list" : (viewAsked || "board");
+    mount();
+  });
   host.addEventListener("focusin", (e) => { if (e.target.closest(".carry")) holdUndo(); });
   host.addEventListener("focusout", (e) => { if (e.target.closest(".carry")) releaseUndo(); });
   host.addEventListener("mouseenter", (e) => { if (e.target.closest && e.target.closest(".carry")) holdUndo(); }, true);

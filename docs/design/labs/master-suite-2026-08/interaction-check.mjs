@@ -846,6 +846,69 @@ for (const [label, vp, touch] of [["desk", DESK, false], ["phone", PHONE, true]]
   await page.close();
 }
 
+/* ── the crossing itself, not the two widths either side of it ──────
+      THE TENTH TIME ABSENCE READ AS A PASS. Every loop in this file, and
+      every section of verify.mjs, opens a FRESH page at each viewport.
+      Nothing had ever narrowed one page across 720, so three media-query
+      listeners the 2 September ledger added were never once executed —
+      and one of them referenced a binding from a different IIFE and threw
+      `C is not defined` on every crossing, in all three products, inside
+      a build four green gates had just frozen.
+
+      A handler that only runs on a TRANSITION needs a test that makes the
+      transition. Fresh-at-390 and fresh-at-1440 both pass while the
+      journey between them is broken. */
+for (const [product, state] of [["tasks", "tasks.board"], ["notes", "notes.notebook"], ["timeline", "timeline.owner-flight"]]) {
+  const before = pageErrors.length;
+  const page = await open({ state, viewport: DESK });
+  await page.waitForTimeout(500);
+  await page.setViewportSize(PHONE);
+  await page.waitForTimeout(700);
+  const narrow = await page.evaluate(() => {
+    const host = document.querySelector(".app:not([hidden])");
+    const doc = document.documentElement;
+    return {
+      layout: host && host.getAttribute("data-layout"),
+      /* Timeline's two orientation controls belong to the desk. */
+      toggles: [...document.querySelectorAll("[data-layout-to]")]
+        .filter((el) => el.checkVisibility && el.checkVisibility()).length,
+      /* Tasks below 1100 is a list, so a visible five-lane board is the
+         board that never re-derived. */
+      lanes: [...document.querySelectorAll(".board .tray[data-lane]")]
+        .filter((el) => el.checkVisibility && el.checkVisibility()).length,
+      rows: document.querySelectorAll(".lrow").length,
+      sideways: doc.scrollWidth - doc.clientWidth,
+    };
+  });
+  /* And back, because a crossing has two directions and only one of them
+     was ever going to be tried by hand. */
+  await page.setViewportSize(DESK);
+  await page.waitForTimeout(700);
+  const wide = await page.evaluate(() => ({
+    lanes: [...document.querySelectorAll(".board .tray[data-lane]")]
+      .filter((el) => el.checkVisibility && el.checkVisibility()).length,
+    rows: document.querySelectorAll(".lrow").length,
+    sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }));
+  const noise = pageErrors.slice(before);
+  ok(`${product} · crossing 720 both ways throws nothing`,
+    noise.length === 0, noise.join(" | "));
+  ok(`${product} · and neither side of the crossing scrolls sideways`,
+    narrow.sideways <= 0 && wide.sideways <= 0,
+    `narrow ${narrow.sideways}px · wide ${wide.sideways}px`);
+  if (product === "timeline") {
+    ok("timeline · narrowing to a phone drops the desk composition",
+      narrow.layout === "down" && narrow.toggles === 0,
+      `layout=${narrow.layout} visible toggles=${narrow.toggles}`);
+  }
+  if (product === "tasks") {
+    ok("tasks · narrowing to a phone becomes the list, and widening returns the board",
+      narrow.lanes === 0 && narrow.rows > 0 && wide.lanes >= 5,
+      `narrow lanes=${narrow.lanes} rows=${narrow.rows} · wide lanes=${wide.lanes}`);
+  }
+  await page.close();
+}
+
 await browser.close();
 process.stdout.write(`\n${results.length} assertions, ${failures} failing\n`);
 process.exit(failures ? 1 : 0);

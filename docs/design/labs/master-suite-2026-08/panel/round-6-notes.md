@@ -36,3 +36,34 @@ Deliberate decisions you may argue with, but must not report as oversights:
   deleting an honest door is how a product starts lying about what it is.
 - Timeline's wordmark sits lower and to the right of the other two (flagged in
   round 5, not changed — argue for or against, with the measurement).
+
+## A correction the Typography seat earned, recorded 2026-09-03
+
+The seat prompts told every seat "two automated gates guard this master and
+both pass". That is true but incomplete, and the Typography seat caught it.
+
+`gate.mjs` exits 0, and every audit category it GATES is at zero across five
+viewports. But two categories are **declared exclusions**, reported rather
+than gated, with their reasons written down in `tools/exclusions.mjs`:
+
+- **contrast** — the check's composited-backdrop model disagrees with what
+  the browser paints on this artefact (three states leave a surface in the
+  DOM behind an opaque object; a column of alpha washes reads as one layer).
+  Every flagged element is proved separately: legible where it is painted,
+  or genuinely behind something opaque AND inert. 30 remain OPEN and named.
+- **tracking** — the check groups by family, size and role across the whole
+  document, and this document holds three products, two of them hidden at
+  any moment but still in the DOM. Underneath that, the three products
+  carry three separately ratified tracking curves. The residue is
+  **"seeded to round 1"** — handed TO the panel, explicitly not proven.
+
+So a finding that restates the tracking residue is NOT "restating a
+gate-proven fact": the exclusion exists precisely because the machine
+cannot judge it and a seat must. The Typography seat's micro-label and
+keycap findings are in that territory and are the panel's to rule on. Its
+own framing — "the audit gate does not pass" — is the part that is wrong:
+the gate passes, with two categories excluded and proved by other means.
+
+The BAR for round 7 should say "both gates pass, with two declared
+exclusions proved separately — contrast and tracking; the tracking residue
+is yours to judge" rather than a bare "both pass".

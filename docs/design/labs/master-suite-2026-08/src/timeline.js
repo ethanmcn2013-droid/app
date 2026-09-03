@@ -173,9 +173,6 @@ var PHONE_T = matchMedia("(max-width: 720px)");
      again when the box changes. Debounced to a frame so a drag-resize
      does not re-measure a hundred times. */
   var pending = 0;
-  PHONE_T.addEventListener("change", function () {
-    if (C.rootEl().getAttribute("data-state") === "owner-flight") go("owner-flight");
-  });
   window.addEventListener("resize", function () {
     if (pending) cancelAnimationFrame(pending);
     pending = requestAnimationFrame(function () { pending = 0; settle(); });
@@ -3106,6 +3103,37 @@ var PHONE_T = matchMedia("(max-width: 720px)");
     phone: "phone", desk: "full", day: "phone", print: "sheet",
     unfurl: "card", ended: "phone", loading: "phone", "loading-slow": "phone",
   };
+
+  /* THE CROSSING, in the scope that owns the renderer.
+     This listener was written in the settle IIFE above, where neither `C`
+     nor `go` is declared — they belong to this one — so it threw
+     `C is not defined` on every crossing of 720 in all three products,
+     and the timeline kept the desk's across composition on a phone. Four
+     green gates never caught it because every loop in them opens a FRESH
+     page per width: nothing had ever narrowed one page across the query,
+     so the handler never ran at all. The behaviour gate now makes the
+     journey in both directions.
+
+     `across` is IMPOSSIBLE below 720 — the measure cannot hold the
+     distance and drawing it anyway compresses the proportion into a lie —
+     so the attribute follows the width down. It does not follow the width
+     back up on its own: what the reader asked for is remembered and
+     restored, because an orientation that flips itself under a hand
+     mid-read overrules a choice already made. */
+  var askedLayout = null;
+  PHONE_T.addEventListener("change", function () {
+    var root = C.rootEl();
+    if (!root) return;
+    if (PHONE_T.matches) {
+      if (askedLayout === null) askedLayout = root.getAttribute("data-layout");
+      root.setAttribute("data-layout", "down");
+    } else if (askedLayout !== null) {
+      root.setAttribute("data-layout", askedLayout);
+      askedLayout = null;
+    }
+    var state = root.getAttribute("data-state");
+    if (state) go(state);
+  });
 
   window.__TLD.b = {
     name: "B · The Approach",
