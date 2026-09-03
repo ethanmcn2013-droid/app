@@ -7,8 +7,12 @@ import {
   createDriveGrantService,
   createFolderPermissionMutationQueue,
   DriveGrantError,
+  recoverOrCreateExactDriveUserPermission,
 } from "./drive-grants";
-import { createProjectDriveAccessService } from "./project-drive-access";
+import {
+  createProjectDriveAccessService,
+  type ProjectDriveStorageSession,
+} from "./project-drive-access";
 import { ProjectDriveAuthorizationError } from "./project-drive-authz";
 import {
   accessDependencies,
@@ -232,6 +236,87 @@ describe("Project Drive folder grants", () => {
     await Promise.all([first, second]);
     assert.equal(postCalls, 2);
     assert.equal(maximumActivePosts, 1);
+  });
+
+  it("shares the default same-folder queue across independent dispatcher calls", async () => {
+    const session = {
+      accessToken: "request-access",
+      credential: {
+        id: "conn-new",
+        ownerUserId: "owner",
+        providerAccountId: "account-owner",
+        providerAccountEmail: "owner@example.com",
+        rootFolderId: "root-new",
+      },
+      storageRootFolderId: "root-new",
+      storage: {
+        id: "gen-current",
+        workspaceId: "ws-a",
+        connectionId: "conn-new",
+        folderId: "folder-current",
+        folderWebViewLink: "https://drive.example/folder-current",
+        state: "active",
+        isCurrent: true,
+      },
+    } satisfies ProjectDriveStorageSession;
+    const permissions: Array<Record<string, unknown>> = [];
+    let listCalls = 0;
+    let postCalls = 0;
+    let releaseFirst!: () => void;
+    let firstPostStarted!: () => void;
+    const firstPostStartedPromise = new Promise<void>((resolve) => {
+      firstPostStarted = resolve;
+    });
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const fetchImpl: typeof fetch = async (_input, init) => {
+      if (init?.method === "GET") {
+        listCalls += 1;
+        return jsonResponse({ permissions });
+      }
+      assert.equal(init?.method, "POST");
+      postCalls += 1;
+      if (postCalls === 1) {
+        firstPostStarted();
+        await firstGate;
+      }
+      const body = JSON.parse(String(init?.body)) as {
+        emailAddress: string;
+        role: string;
+        type: string;
+      };
+      const permission = {
+        id: `permission-${postCalls}`,
+        type: body.type,
+        role: body.role,
+        emailAddress: body.emailAddress,
+      };
+      permissions.push(permission);
+      return jsonResponse(permission);
+    };
+    const dispatch = (granteeEmail: string) =>
+      recoverOrCreateExactDriveUserPermission(
+        session,
+        {
+          granteeEmail,
+          role: "writer",
+          sendNotificationEmail: false,
+          beforeCreate: async () => {},
+        },
+        fetchImpl,
+      );
+
+    const first = dispatch("member.a@example.com");
+    await firstPostStartedPromise;
+    const second = dispatch("member.b@example.com");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    assert.equal(listCalls, 1, "the second dispatcher must wait before discovery");
+    assert.equal(postCalls, 1);
+    releaseFirst();
+    await Promise.all([first, second]);
+    assert.equal(listCalls, 2);
+    assert.equal(postCalls, 2);
   });
 
   it("deduplicates concurrent creates for the same member inside the folder queue", async () => {

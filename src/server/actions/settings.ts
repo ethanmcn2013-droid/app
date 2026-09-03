@@ -33,6 +33,7 @@ import { inviteEmailHtml, sendEmail } from "@/server/email";
 import { seedDomainAction } from "@/server/actions/seed";
 import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
+import { executeProjectDriveGrantOperation } from "@/server/connections/project-drive-grant-operation-executor";
 import { prepareCurrentMemberDriveGrantIntent } from "@/server/connections/project-drive-membership-lifecycle";
 import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
 import { createProjectDriveMemberRemovalService } from "@/server/connections/project-drive-member-removal";
@@ -741,7 +742,7 @@ export async function acceptInviteAction(token: string): Promise<{
     invite.role === "owner" ? "owner" : "member";
 
   const acceptedAt = new Date();
-  await db.transaction(
+  const driveGrantIntent = await db.transaction(
     async (tx) => {
       // Clerk's verified primary address is the authority used for both the
       // membership and its named-user Drive grant. Keep the local mirror in
@@ -764,7 +765,7 @@ export async function acceptInviteAction(token: string): Promise<{
       // Provider work happens only after this transaction commits; a Google
       // refusal therefore keeps membership valid and puts uploads on the
       // Signal-native fallback rather than rolling the person back out.
-      await prepareCurrentMemberDriveGrantIntent(tx, {
+      const preparedDriveGrant = await prepareCurrentMemberDriveGrantIntent(tx, {
         workspaceId: invite.workspaceId,
         memberUserId: me,
         verifiedEmail: clerkEmail,
@@ -800,9 +801,26 @@ export async function acceptInviteAction(token: string): Promise<{
         payload: JSON.stringify({ userId: me, role: grantedRole }),
         createdAt: Math.floor(acceptedAt.getTime() / 1000),
       });
+      return preparedDriveGrant;
     },
     { behavior: "immediate" },
   );
+
+  // The membership, invite burn, audit event, and exact Drive intent are now
+  // committed. A Google refusal becomes visible manual attention and leaves
+  // the valid membership intact; incomplete coverage keeps uploads on Signal.
+  if (driveGrantIntent.kind === "grant-intent") {
+    try {
+      await executeProjectDriveGrantOperation({
+        workspaceId: driveGrantIntent.operation.workspaceId,
+        operationId: driveGrantIntent.operation.operationId,
+      });
+    } catch {
+      // The exact intent is durable and incomplete coverage already forces
+      // Signal-native uploads. Never report invite failure after its token,
+      // membership, and audit event have committed.
+    }
+  }
 
   // Flip the active-workspace cookie so /app/tasks lands the user
   // in the freshly-joined workspace.

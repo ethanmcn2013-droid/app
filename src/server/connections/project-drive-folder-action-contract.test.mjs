@@ -131,7 +131,78 @@ describe("Project Drive folder lifecycle wiring", () => {
     assert.match(persist, /journalForTransaction\(transaction\)/);
     assert.doesNotMatch(
       persist,
-      /deps\.folders\.|createGoogleDriveFolder|renameGoogleDriveFile/,
+      /deps\.folders\.|deps\.executeGrant|createGoogleDriveFolder|renameGoogleDriveFile/,
+    );
+  });
+
+  it("dispatches exact existing-member grants only after folder persistence returns", () => {
+    const executor = source(
+      "connections/project-drive-folder-operation-executor.ts",
+    );
+    const provision = executor.slice(
+      executor.indexOf('if (claim.operationKind === "folder_provision")'),
+      executor.indexOf("let result: ProjectDriveFolderRenameResult"),
+    );
+    const persistAt = provision.indexOf("await persistProvision(claim, result)");
+    const dispatchAt = provision.indexOf("await deps.executeGrant(grantOperation)");
+    assert.ok(persistAt > -1 && dispatchAt > persistAt);
+    assert.match(provision, /for \(const grantOperation of persisted\.grantOperations\)/);
+    assert.doesNotMatch(
+      provision,
+      /Promise\.all|Promise\.allSettled/,
+      "same-folder permission mutations must be dispatched sequentially",
+    );
+    assert.match(
+      provision.slice(dispatchAt),
+      /catch\s*\{/,
+      "one post-commit runtime failure must not strand later member intents",
+    );
+  });
+
+  it("uses one process-wide same-folder permission queue across dispatchers", () => {
+    const executor = source(
+      "connections/project-drive-grant-operation-executor.ts",
+    );
+    const factory = executor.slice(
+      executor.indexOf("export function projectDriveGrantOperationExecutorFromEnv"),
+      executor.indexOf("export async function executeProjectDriveGrantOperation"),
+    );
+    assert.doesNotMatch(factory, /createFolderPermissionMutationQueue/);
+    assert.match(
+      factory,
+      /recoverOrCreateExactDriveUserPermission\(\s*session,\s*input,\s*fetch,?\s*\)/,
+    );
+    const transport = source("connections/drive-grants.ts");
+    assert.match(
+      transport,
+      /const processPermissionMutations = createFolderPermissionMutationQueue\(\)/,
+    );
+  });
+
+  it("dispatches the accepted member's exact grant only after membership commits", () => {
+    const settings = source("actions/settings.ts");
+    const accept = exportedAction(settings, "acceptInviteAction");
+    const transactionAt = accept.indexOf("const driveGrantIntent = await db.transaction");
+    const prepareAt = accept.indexOf("prepareCurrentMemberDriveGrantIntent");
+    const commitBoundaryAt = accept.indexOf('{ behavior: "immediate" }');
+    const dispatchAt = accept.indexOf("executeProjectDriveGrantOperation");
+    const cookieAt = accept.indexOf("const c = await cookies()");
+    assert.ok(transactionAt > -1 && prepareAt > transactionAt);
+    assert.ok(commitBoundaryAt > prepareAt && dispatchAt > commitBoundaryAt);
+    assert.ok(cookieAt > dispatchAt);
+    assert.match(
+      accept,
+      /workspaceId:\s*driveGrantIntent\.operation\.workspaceId/,
+    );
+    assert.match(
+      accept,
+      /operationId:\s*driveGrantIntent\.operation\.operationId/,
+    );
+    assert.match(accept, /if \(driveGrantIntent\.kind === ["']grant-intent["']\)/);
+    assert.match(
+      accept.slice(dispatchAt, cookieAt),
+      /catch\s*\{/,
+      "a post-commit runtime failure must not report that invite acceptance failed",
     );
   });
 });

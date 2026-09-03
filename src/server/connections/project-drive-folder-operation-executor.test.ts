@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, describe, it } from "node:test";
 import { eq, sql } from "drizzle-orm";
 import {
+  driveFolderGrants,
   meta,
   projectDriveOperations,
   providerConnections,
@@ -74,6 +75,7 @@ async function executorFixture(input: {
   fetchImpl: typeof fetch;
   operationIds?: string[];
   afterProviderSuccess?: ProjectDriveFolderOperationExecutorDependencies["afterProviderSuccess"];
+  executeGrant?: ProjectDriveFolderOperationExecutorDependencies["executeGrant"];
 }) {
   const fixture = sharedCore ?? (await freshProjectDriveCoreDb());
   sharedCore = fixture;
@@ -122,6 +124,7 @@ async function executorFixture(input: {
         databaseNowSeconds,
       }),
     folders,
+    executeGrant: input.executeGrant ?? (async () => ({ outcome: "conflict" })),
     retryBaseMs: 1_000,
     maxAutomaticAttempts: 3,
     ...(input.afterProviderSuccess
@@ -132,6 +135,7 @@ async function executorFixture(input: {
     ...fixture,
     executor,
     operations,
+    journal,
     advance(seconds: number) {
       databaseNow += seconds;
     },
@@ -305,6 +309,103 @@ describe("durable Project Drive folder operation executor", () => {
         },
       ],
       "folder materialization and the existing-member intents share one commit",
+    );
+  });
+
+  it("dispatches every exact member grant only after the folder transaction commits", async () => {
+    const holder: { current: ExecutorFixture | null } = { current: null };
+    const dispatched: Array<{ workspaceId: string; operationId: string }> = [];
+    let dispatchInFlight = false;
+    const fixture = await executorFixture({
+      fetchImpl: async (input, init) => {
+        if (String(input).includes("oauth2.googleapis.com/token")) {
+          return tokenRefreshResponse();
+        }
+        if (init?.method === "GET") return jsonResponse({ files: [] });
+        if (init?.method === "POST") return jsonResponse(folder({}));
+        throw new Error("unexpected request");
+      },
+      executeGrant: async (locator) => {
+        assert.equal(
+          dispatchInFlight,
+          false,
+          "same-folder grant dispatch must remain sequential",
+        );
+        dispatchInFlight = true;
+        try {
+          const current = holder.current;
+          assert.ok(current);
+          const [storage] = await current.db
+            .select({ id: workspaceStorage.id })
+            .from(workspaceStorage)
+            .where(eq(workspaceStorage.id, "gen-target"));
+          assert.equal(
+            storage.id,
+            "gen-target",
+            "provider dispatch must see the committed storage generation",
+          );
+          dispatched.push(locator);
+          if (dispatched.length === 1) {
+            throw new Error("simulated post-commit dispatcher failure");
+          }
+
+          // Claiming needs its own immediate writer transaction. It would not
+          // complete if dispatch were still inside persistProvision's writer.
+          const claimed = await current.operations.claim(locator);
+          assert.equal(claimed.outcome, "claimed");
+          if (claimed.outcome !== "claimed") assert.fail("grant claim failed");
+          const manual = await current.journal.markManualAttention({
+            workspaceId: locator.workspaceId,
+            operationId: locator.operationId,
+            attemptFence: claimed.claim.attemptFence,
+            errorCode: "cannot_invite_non_google_user",
+          });
+          assert.equal(manual.outcome, "manual_attention");
+          await Promise.resolve();
+          return manual;
+        } finally {
+          dispatchInFlight = false;
+        }
+      },
+    });
+    holder.current = fixture;
+    const operationId = await prepareProvision(fixture);
+
+    const result = await fixture.executor.execute({
+      workspaceId: "ws-a",
+      operationId,
+      operationKind: "folder_provision",
+    });
+
+    assert.equal(result.outcome, "completed");
+    const exactOperations = await fixture.db
+      .select({
+        workspaceId: projectDriveOperations.workspaceId,
+        operationId: projectDriveOperations.id,
+        status: projectDriveOperations.status,
+      })
+      .from(projectDriveOperations)
+      .where(eq(projectDriveOperations.operationKind, "grant_create"));
+    assert.deepEqual(
+      dispatched.map((operation) => operation.operationId).sort(),
+      exactOperations.map((operation) => operation.operationId).sort(),
+    );
+    assert.ok(exactOperations.every((operation) => operation.workspaceId === "ws-a"));
+    assert.deepEqual(
+      exactOperations.map((operation) => operation.status).sort(),
+      ["manual_attention", "pending"],
+      "a dispatcher crash keeps its exact intent durable and does not strand later people",
+    );
+    assert.equal((await fixture.db.select().from(driveFolderGrants)).length, 0);
+    assert.equal(
+      (
+        await fixture.db
+          .select()
+          .from(workspaceMembers)
+          .where(eq(workspaceMembers.workspaceId, "ws-a"))
+      ).length,
+      3,
+      "a provider refusal must not roll back any valid member",
     );
   });
 

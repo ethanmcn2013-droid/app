@@ -28,6 +28,10 @@ import {
   projectDriveAccessServiceFromEnv,
 } from "./project-drive-access";
 import {
+  executeProjectDriveGrantOperation,
+  type ProjectDriveGrantOperationLocator,
+} from "./project-drive-grant-operation-executor";
+import {
   canonicalProjectDriveOperationLocator,
   createProjectDriveOperationJournal,
   projectDriveOperationJournal,
@@ -91,6 +95,7 @@ export type ProjectDriveFolderOperationExecutorDependencies = Readonly<{
     database: ProjectDriveOperationJournalDatabase,
   ) => Pick<Journal, "complete">;
   folders: Pick<FolderService, "provisionClaimed" | "renameClaimed">;
+  executeGrant: (input: ProjectDriveGrantOperationLocator) => Promise<unknown>;
   retryBaseMs?: number;
   maxAutomaticAttempts?: number;
   /** Test-only crash seam. Production leaves this undefined. */
@@ -545,6 +550,21 @@ export function createProjectDriveFolderOperationExecutor(
             throw error;
           }
 
+          const grantOperations = await transaction
+            .select({ operationId: projectDriveOperations.id })
+            .from(projectDriveOperations)
+            .where(
+              byWorkspace(
+                projectDriveOperations.workspaceId,
+                claim.workspaceId,
+                eq(projectDriveOperations.operationKind, "grant_create"),
+                eq(
+                  projectDriveOperations.storageGenerationId,
+                  claim.targetStorageGenerationId,
+                ),
+              ),
+            );
+
           const completion = await deps
             .journalForTransaction(transaction)
             .complete({
@@ -560,7 +580,17 @@ export function createProjectDriveFolderOperationExecutor(
           if (completion.outcome === "conflict") {
             throw new ProjectDriveFolderOperationClaimConflict();
           }
-          return completion;
+          return Object.freeze({
+            completion,
+            grantOperations: Object.freeze(
+              grantOperations.map((operation) =>
+                Object.freeze({
+                  workspaceId: claim.workspaceId,
+                  operationId: operation.operationId,
+                }),
+              ),
+            ),
+          });
         },
         { behavior: "immediate" },
       );
@@ -711,11 +741,27 @@ export function createProjectDriveFolderOperationExecutor(
       // Throwing here models a process death: do not write a guessed failure.
       // The expired lease will be reclaimed and the exact marker adopted.
       await deps.afterProviderSuccess?.({ claim, result });
+      let persisted: Awaited<ReturnType<typeof persistProvision>>;
       try {
-        return await persistProvision(claim, result);
+        persisted = await persistProvision(claim, result);
       } catch (error) {
         return recordFailure(claim, error);
       }
+      // The storage row, folder receipt, and exact grant intents are committed
+      // before any named-user provider work begins. Run sequentially because
+      // Google forbids concurrent permission mutations on one folder. A
+      // manual/retry result remains visible as fallback coverage and never
+      // rolls back either storage or membership.
+      for (const grantOperation of persisted.grantOperations) {
+        try {
+          await deps.executeGrant(grantOperation);
+        } catch {
+          // The exact durable intent is already committed. Keep dispatching
+          // the remaining people; a process/runtime failure must not turn a
+          // successful folder setup into a false rollback or strand the rest.
+        }
+      }
+      return persisted.completion;
     }
 
     let result: ProjectDriveFolderRenameResult;
@@ -750,6 +796,7 @@ export function projectDriveFolderOperationExecutorFromEnv() {
     journalForTransaction: (database) =>
       createProjectDriveOperationJournal({ database }),
     folders,
+    executeGrant: executeProjectDriveGrantOperation,
   });
 }
 

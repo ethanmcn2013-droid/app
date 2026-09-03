@@ -26,7 +26,6 @@ import {
 import * as schema from "@/server/db/schema";
 import { byWorkspace } from "@/server/db/tenant";
 import {
-  createFolderPermissionMutationQueue,
   DriveGrantError,
   recoverOrCreateExactDriveUserPermission,
   type RecoveredDriveGrant,
@@ -873,7 +872,6 @@ export function createProjectDriveGrantOperationExecutor(
 
 /** Build the production executor lazily so key material is read only at use. */
 export function projectDriveGrantOperationExecutorFromEnv() {
-  const mutationQueue = createFolderPermissionMutationQueue();
   return createProjectDriveGrantOperationExecutor({
     database: db,
     operations: accountFencedProjectDriveOperationJournal,
@@ -886,7 +884,6 @@ export function projectDriveGrantOperationExecutorFromEnv() {
         session,
         input,
         fetch,
-        mutationQueue,
       ),
   });
 }
