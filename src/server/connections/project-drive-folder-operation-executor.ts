@@ -34,7 +34,6 @@ import {
 import {
   canonicalProjectDriveOperationLocator,
   createProjectDriveOperationJournal,
-  projectDriveOperationJournal,
   type ProjectDriveOperationClaim,
   type ProjectDriveOperationConflict,
   type ProjectDriveOperationJournalDatabase,
@@ -792,7 +791,7 @@ export function projectDriveFolderOperationExecutorFromEnv() {
   return createProjectDriveFolderOperationExecutor({
     database: db,
     operations: accountFencedProjectDriveOperationJournal,
-    journal: projectDriveOperationJournal,
+    journal: createProjectDriveOperationJournal({ database: db }),
     journalForTransaction: (database) =>
       createProjectDriveOperationJournal({ database }),
     folders,

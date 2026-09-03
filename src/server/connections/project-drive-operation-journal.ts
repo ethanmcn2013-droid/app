@@ -13,7 +13,6 @@ import {
   type SQL,
 } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
-import { db } from "@/server/db";
 import {
   projectDriveOperations,
   type ProjectDriveOperationErrorCode,
@@ -1720,7 +1719,3 @@ export function createProjectDriveOperationJournal(
     },
   });
 }
-
-export const projectDriveOperationJournal = createProjectDriveOperationJournal({
-  database: db,
-});

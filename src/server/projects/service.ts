@@ -80,13 +80,11 @@ import "server-only";
  */
 
 import { randomUUID } from "node:crypto";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/server/db";
 import { nextTaskSeq } from "@/server/db/task-seq";
 import {
-  shareLinkVisits,
-  shareLinks,
   tasks,
   workspaceMembers,
   workspaces,
@@ -749,33 +747,17 @@ export async function deleteProject(input: {
     "deleteOrTransferOwnership",
     refusal,
   );
-  const removed = await db.transaction(async (tx) => {
-    const [published] = await tx
-      .select({ slug: workspaces.slug, publishedAt: workspaces.publishedAt })
-      .from(workspaces)
-      .where(eq(workspaces.id, grant.projectId));
-    if (!published) throw new Error(RECEIPT_MISSING);
-    const linkRows = await tx
-      .select({ token: shareLinks.token })
-      .from(shareLinks)
-      .where(eq(shareLinks.workspaceId, grant.projectId));
-    const tokens = linkRows.map((row) => row.token);
-    if (tokens.length > 0) {
-      await tx
-        .delete(shareLinkVisits)
-        .where(inArray(shareLinkVisits.token, tokens));
-    }
-    await tx
-      .delete(shareLinks)
-      .where(eq(shareLinks.workspaceId, grant.projectId));
-    await tx.delete(tasks).where(eq(tasks.workspaceId, grant.projectId));
-    const gone = await tx
-      .delete(workspaces)
-      .where(eq(workspaces.id, grant.projectId))
-      .returning({ id: workspaces.id });
-    if (!gone[0]) throw new Error(RECEIPT_MISSING);
-    return published;
-  });
+  // Authorization remains at this established boundary. The lifecycle below
+  // starts only after the primary-owner capability is proved, then preserves
+  // exact Drive receipts across its provider/database split.
+  const [projectDeletion, driveErasureGrants] = await Promise.all([
+    import("@/server/connections/project-drive-project-deletion"),
+    import("@/server/connections/project-drive-erasure-grants"),
+  ]);
+  const removed = await projectDeletion.createProjectDriveProjectDeletionService({
+    database: db,
+    revokeExactGrant: driveErasureGrants.revokeExactDriveFolderGrant,
+  }).delete({ workspaceId: grant.projectId });
   // Drop the public page immediately rather than at the end of the ISR
   // window (E06.12).
   revalidatePath(`/p/${removed.slug}`);
@@ -784,6 +766,6 @@ export async function deleteProject(input: {
   return {
     id: grant.projectId,
     slug: removed.slug,
-    wasPublished: removed.publishedAt !== null,
+    wasPublished: removed.wasPublished,
   };
 }
