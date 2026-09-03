@@ -2605,13 +2605,13 @@
       "section": "switch",
       "name": "every switch lands, both paths",
       "ok": true,
-      "detail": "with 137/100/133ms · without 27/8/32ms"
+      "detail": "with 119/100/150ms · without 30/12/32ms"
     },
     {
       "section": "switch",
       "name": "the mutation is wrapped, not postponed",
       "ok": true,
-      "detail": "123ms with the transition against 22ms without — the wrap costs 101ms, the capture alone 81ms on this machine, and the animation it starts runs 220ms after it"
+      "detail": "123ms with the transition against 25ms without — the wrap costs 98ms, the capture alone 67ms on this machine, and the animation it starts runs 220ms after it"
     },
     {
       "section": "switch",
@@ -2839,7 +2839,7 @@
       "section": "material",
       "name": "the switcher's accent travels across, as liquid",
       "ok": true,
-      "detail": "{\"gap\":79,\"filter\":\"url(\\\"#goo\\\")\",\"gooing\":true}"
+      "detail": "{\"gap\":80,\"filter\":\"url(\\\"#goo\\\")\",\"gooing\":true}"
     },
     {
       "section": "material",
