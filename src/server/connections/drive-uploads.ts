@@ -22,7 +22,6 @@ import {
 } from "@/server/crypto/secret-box";
 import { db } from "@/server/db";
 import {
-  driveFolderGrants,
   meta,
   providerConnections,
   resources,
@@ -52,6 +51,7 @@ import {
   assertProjectDriveCapability,
   type AuthorizedProjectDriveContext,
 } from "./project-drive-authz";
+import { readProjectDriveMemberCoverage } from "./project-drive-member-coverage";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
 
 export const DRIVE_RESOURCE_MARKER = "signalResourceId" as const;
@@ -477,27 +477,15 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
     authorization: AuthorizedProjectDriveContext,
     storage: CurrentStorage,
   ): Promise<boolean> {
-    const members = await database
-      .select({ userId: workspaceMembers.userId, role: workspaceMembers.role })
-      .from(workspaceMembers)
-      .where(eq(workspaceMembers.workspaceId, authorization.projectId));
-    const grants = await database
-      .select({ userId: driveFolderGrants.userId })
-      .from(driveFolderGrants)
-      .where(
-        and(
-          eq(driveFolderGrants.workspaceId, authorization.projectId),
-          eq(driveFolderGrants.storageGenerationId, storage.id),
-          eq(driveFolderGrants.revokePending, false),
-        ),
-      );
-    const owner = members.find((member) => member.userId === storage.ownerUserId);
-    if (!owner || owner.role !== "owner") return false;
-    const granted = new Set(grants.map((grant) => grant.userId));
-    return members.every(
-      (member) =>
-        member.userId === storage.ownerUserId || granted.has(member.userId),
-    );
+    const coverage = await readProjectDriveMemberCoverage(database, {
+      workspaceId: authorization.projectId,
+      storageGenerationId: storage.id,
+      storageOwnerUserId: storage.ownerUserId,
+    });
+    if (coverage.missingUserIdentityCount > 0) {
+      throw new DriveUploadError("request-conflict");
+    }
+    return coverage.storageOwnerIsOwner && coverage.coverage === "complete";
   }
 
   async function loadClaim(resourceId: string): Promise<DriveResource | null> {

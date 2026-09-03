@@ -12,6 +12,7 @@ import {
   driveFolderGrants,
   meta,
   resources,
+  users,
   workspaceMembers,
   workspaceStorage,
 } from "@/server/db/schema";
@@ -26,6 +27,7 @@ import {
   GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
   googleDriveAccountErasureFenceKey,
 } from "./project-drive-operation-lifecycle";
+import { createProjectDriveOperationJournal } from "./project-drive-operation-journal";
 import {
   listPendingDelegatedDriveUploadReceiptsForAccount,
   listPendingDelegatedDriveUploadReceiptsForWorkspace,
@@ -201,6 +203,8 @@ async function seededUploadFixture(
     }),
   };
 }
+
+type SeededUploadFixture = Awaited<ReturnType<typeof seededUploadFixture>>;
 
 describe("Project Drive upload foundation", () => {
   it("requires task-edit capability before database or provider work", async () => {
@@ -413,6 +417,104 @@ describe("Project Drive upload foundation", () => {
     assert.equal((await fixture.db.select().from(resources)).length, 0);
   });
 
+  it("requires exact current-email writer receipts before enabling Drive uploads", async (t) => {
+    const incompleteScenarios: readonly Readonly<{
+      name: string;
+      arrange: (fixture: SeededUploadFixture) => Promise<void>;
+    }>[] = [
+      {
+        name: "a receipt for the member's old email",
+        arrange: async (fixture) => {
+          await fixture.db
+            .update(users)
+            .set({ email: "member.b.changed@example.com" })
+            .where(eq(users.id, "member-b"));
+        },
+      },
+      {
+        name: "a reader receipt",
+        arrange: async (fixture) => {
+          await fixture.db
+            .update(driveFolderGrants)
+            .set({ role: "reader" })
+            .where(
+              and(
+                eq(driveFolderGrants.storageGenerationId, "gen-current"),
+                eq(driveFolderGrants.userId, "member-b"),
+              ),
+            );
+        },
+      },
+      {
+        name: "a writer receipt awaiting revocation",
+        arrange: async (fixture) => {
+          await fixture.db
+            .update(driveFolderGrants)
+            .set({ revokePending: true })
+            .where(
+              and(
+                eq(driveFolderGrants.storageGenerationId, "gen-current"),
+                eq(driveFolderGrants.userId, "member-b"),
+              ),
+            );
+        },
+      },
+      {
+        name: "an exact writer create still pending",
+        arrange: async (fixture) => {
+          await fixture.db
+            .delete(driveFolderGrants)
+            .where(
+              and(
+                eq(driveFolderGrants.storageGenerationId, "gen-current"),
+                eq(driveFolderGrants.userId, "member-b"),
+              ),
+            );
+          const prepared = await createProjectDriveOperationJournal({
+            database: fixture.db,
+            randomOperationId: () => "pending-member-b-writer",
+          }).prepare({
+            operationKind: "grant_create",
+            workspaceId: "ws-a",
+            storageGenerationId: "gen-current",
+            subjectUserId: "member-b",
+            granteeEmail: "member.b@example.com",
+            grantRole: "writer",
+          });
+          assert.notEqual(prepared.outcome, "conflict");
+        },
+      },
+    ];
+
+    for (const scenario of incompleteScenarios) {
+      await t.test(scenario.name, async () => {
+        const fixture = await seededUploadFixture();
+        await scenario.arrange(fixture);
+        const result = await fixture.service.start(
+          coreAuthorization("member-a", "ws-a", false),
+          DEFAULT_REQUEST,
+        );
+
+        assert.deepEqual(result, {
+          kind: "signal-native",
+          reason: "member-access-incomplete",
+        });
+        assert.equal(fixture.harness.calls.length, 0);
+        assert.equal((await fixture.db.select().from(resources)).length, 0);
+      });
+    }
+
+    await t.test("complete current-email writer receipts", async () => {
+      const fixture = await seededUploadFixture();
+      const result = await fixture.service.start(
+        coreAuthorization("member-a", "ws-a", false),
+        DEFAULT_REQUEST,
+      );
+      assert.equal(result.kind, "drive-session");
+      assert.equal(fixture.harness.sessionCreateCalls, 1);
+    });
+  });
+
   it("blocks a new claim when either the actor or storage-owner lineage is fenced", async () => {
     for (const fencedUserId of ["member-a", "owner"]) {
       const fixture = await seededUploadFixture();
@@ -484,13 +586,24 @@ describe("Project Drive upload foundation", () => {
     assert.equal((await fixture.db.select().from(resources)).length, 0);
   });
 
-  it("returns the same neutral conflict when either DB lineage is missing", async () => {
+  it("returns a neutral conflict when a membership's user lineage is missing", async () => {
     for (const missingUserId of ["member-a", "owner"]) {
       const fixture = await seededUploadFixture();
       await fixture.client.execute({
         sql: "DELETE FROM users WHERE id = ?",
         args: [missingUserId],
       });
+      const danglingMembership = await fixture.db
+        .select({ userId: workspaceMembers.userId })
+        .from(workspaceMembers)
+        .where(
+          and(
+            eq(workspaceMembers.workspaceId, "ws-a"),
+            eq(workspaceMembers.userId, missingUserId),
+          ),
+        )
+        .limit(1);
+      assert.equal(danglingMembership[0]?.userId, missingUserId);
       await assert.rejects(
         () =>
           fixture.service.start(

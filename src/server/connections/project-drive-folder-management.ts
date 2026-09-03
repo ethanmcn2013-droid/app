@@ -5,10 +5,8 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import {
-  driveFolderGrants,
   projectDriveOperations,
   providerConnections,
-  users,
   workspaceMembers,
   workspaces,
   workspaceStorage,
@@ -27,7 +25,7 @@ import {
 import {
   type ProjectDriveOperationJournalDependencies,
 } from "./project-drive-operation-journal";
-import { normalizeProjectDriveGranteeEmail } from "./project-drive-operation-key";
+import { readProjectDriveMemberCoverage } from "./project-drive-member-coverage";
 import { prepareAccountFencedProjectDriveOperationInTransaction } from "./project-drive-operation-orchestrator";
 
 type ManagementDb = LibSQLDatabase<typeof schema>;
@@ -137,19 +135,6 @@ function isCanonicalUuid(value: string): boolean {
   );
 }
 
-function normalizedEmailOrNull(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    return normalizeProjectDriveGranteeEmail(value);
-  } catch {
-    return null;
-  }
-}
-
-function isPendingGrantStatus(status: string): boolean {
-  return status === "pending" || status === "running" || status === "retry_wait";
-}
-
 /**
  * Read the current generation and derive the same access-readiness truth for
  * setup, retry, and storage handover. A folder receipt alone is not an active
@@ -193,103 +178,31 @@ export async function readCurrentProjectDriveFolderSetupState(
   if (storageRows.length !== 1) return UNAVAILABLE_STATE;
   const storage = storageRows[0];
 
-  const members = await database
-    .select({
-      userId: workspaceMembers.userId,
-      role: workspaceMembers.role,
-      email: users.email,
-    })
+  const [actorMembership] = await database
+    .select({ role: workspaceMembers.role })
     .from(workspaceMembers)
-    .leftJoin(users, eq(users.id, workspaceMembers.userId))
-    .where(eq(workspaceMembers.workspaceId, authorization.projectId));
-  const storageOwnerMembership = members.find(
-    (member) => member.userId === storage.storageOwnerUserId,
-  );
-  const actorMembership = members.find(
-    (member) => member.userId === authorization.actorUserId,
-  );
-  if (!actorMembership || actorMembership.role !== "owner") {
+    .where(
+      and(
+        eq(workspaceMembers.workspaceId, authorization.projectId),
+        eq(workspaceMembers.userId, authorization.actorUserId),
+      ),
+    )
+    .limit(1);
+  if (actorMembership?.role !== "owner") {
     return UNAVAILABLE_STATE;
   }
-  if (!storageOwnerMembership || storageOwnerMembership.role !== "owner") {
+  const memberCoverage = await readProjectDriveMemberCoverage(database, {
+    workspaceId: authorization.projectId,
+    storageGenerationId: storage.storageGenerationId,
+    storageOwnerUserId: storage.storageOwnerUserId,
+  });
+  if (!memberCoverage.storageOwnerIsOwner) {
     return Object.freeze({
       ...NEEDS_ATTENTION_STATE,
       folderUrl: storage.folderUrl,
     });
   }
-  const grants = await database
-    .select({
-      userId: driveFolderGrants.userId,
-      grantedEmail: driveFolderGrants.grantedEmail,
-      role: driveFolderGrants.role,
-      revokePending: driveFolderGrants.revokePending,
-    })
-    .from(driveFolderGrants)
-    .where(
-      and(
-        eq(driveFolderGrants.workspaceId, authorization.projectId),
-        eq(
-          driveFolderGrants.storageGenerationId,
-          storage.storageGenerationId,
-        ),
-      ),
-    );
-  const operations = await database
-    .select({
-      subjectUserId: projectDriveOperations.subjectUserId,
-      granteeEmail: projectDriveOperations.granteeEmail,
-      grantRole: projectDriveOperations.grantRole,
-      status: projectDriveOperations.status,
-    })
-    .from(projectDriveOperations)
-    .where(
-      byWorkspace(
-        projectDriveOperations.workspaceId,
-        authorization.projectId,
-        eq(projectDriveOperations.operationKind, "grant_create"),
-        eq(
-          projectDriveOperations.storageGenerationId,
-          storage.storageGenerationId,
-        ),
-      ),
-    );
-
-  let pendingMemberCount = 0;
-  let memberGapCount = 0;
-  for (const member of members) {
-    if (member.userId === storage.storageOwnerUserId) continue;
-    const email = normalizedEmailOrNull(member.email);
-    if (!email) {
-      memberGapCount += 1;
-      continue;
-    }
-    const grant = grants.find(
-      (candidate) =>
-        candidate.userId === member.userId &&
-        candidate.grantedEmail === email &&
-        candidate.role === "writer" &&
-        !candidate.revokePending,
-    );
-    if (grant) continue;
-    const intent = operations.find(
-      (candidate) =>
-        candidate.subjectUserId === member.userId &&
-        candidate.granteeEmail === email &&
-        candidate.grantRole === "writer",
-    );
-    if (intent && isPendingGrantStatus(intent.status)) {
-      pendingMemberCount += 1;
-    } else {
-      memberGapCount += 1;
-    }
-  }
-
-  const coverage =
-    memberGapCount > 0
-      ? "incomplete"
-      : pendingMemberCount > 0
-        ? "pending"
-        : "complete";
+  const { coverage, pendingMemberCount, memberGapCount } = memberCoverage;
   const status =
     storage.state !== "active"
       ? "needs_attention"
