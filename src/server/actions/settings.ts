@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { isProjectCurrency } from "@/lib/money";
 import { cookies } from "next/headers";
@@ -33,6 +33,7 @@ import { inviteEmailHtml, sendEmail } from "@/server/email";
 import { seedDomainAction } from "@/server/actions/seed";
 import type { DomainId } from "@/lib/domains";
 import type { ActivityPayload } from "@/lib/data";
+import { prepareCurrentMemberDriveGrantIntent } from "@/server/connections/project-drive-membership-lifecycle";
 
 /**
  * Settings-page mutations — WP3-C, the last file of the mutation-safety wave.
@@ -774,29 +775,69 @@ export async function acceptInviteAction(token: string): Promise<{
   const grantedRole: "member" | "owner" =
     invite.role === "owner" ? "owner" : "member";
 
-  // INSERT or IGNORE: already-a-member is a no-op success. Write the
-  // invite's role, not a hardcoded 'member' (D-018).
-  await db.run(sql`
-    INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
-    VALUES (${invite.workspaceId}, ${me}, ${grantedRole})
-  `);
+  const acceptedAt = new Date();
+  await db.transaction(
+    async (tx) => {
+      // Clerk's verified primary address is the authority used for both the
+      // membership and its named-user Drive grant. Keep the local mirror in
+      // the same transaction so the executor's fresh email recheck cannot see
+      // an accepted member paired with a stale address.
+      await tx
+        .update(users)
+        .set({ email: clerkEmail.toLowerCase() })
+        .where(eq(users.id, me));
 
-  // Mark the invite accepted (audit trail). Burns the token so it
-  // cannot be reused (INSERT OR IGNORE above makes double-accept safe).
-  await db
-    .update(pendingInvites)
-    .set({ acceptedAt: new Date(), acceptedByUserId: me })
-    .where(eq(pendingInvites.token, token));
+      // INSERT or IGNORE: already-a-member is a no-op success. Write the
+      // invite's role, not a hardcoded 'member' (D-018).
+      await tx.run(sql`
+        INSERT OR IGNORE INTO workspace_members (workspace_id, user_id, role)
+        VALUES (${invite.workspaceId}, ${me}, ${grantedRole})
+      `);
 
-  // Record workspace audit event (D-019). No email address in payload.
-  await db.insert(workspaceEvents).values({
-    id: mintEventId(),
-    workspaceId: invite.workspaceId,
-    userId: me,
-    kind: "inviteAccepted",
-    payload: JSON.stringify({ userId: me, role: grantedRole }),
-    createdAt: Math.floor(Date.now() / 1000),
-  });
+      // A configured board must never commit a membership without the exact
+      // generation/email/role grant intent that will make its coverage true.
+      // Provider work happens only after this transaction commits; a Google
+      // refusal therefore keeps membership valid and puts uploads on the
+      // Signal-native fallback rather than rolling the person back out.
+      await prepareCurrentMemberDriveGrantIntent(tx, {
+        workspaceId: invite.workspaceId,
+        memberUserId: me,
+        verifiedEmail: clerkEmail,
+      });
+
+      // Burn exactly the still-live invite validated above. This closes the
+      // double-accept/expiry race while keeping membership, grant intent,
+      // audit event and token consumption atomic.
+      const accepted = await tx
+        .update(pendingInvites)
+        .set({ acceptedAt: acceptedAt, acceptedByUserId: me })
+        .where(
+          and(
+            eq(pendingInvites.token, token),
+            eq(pendingInvites.workspaceId, invite.workspaceId),
+            eq(pendingInvites.email, invite.email),
+            eq(pendingInvites.role, invite.role),
+            isNull(pendingInvites.acceptedAt),
+            gt(pendingInvites.expiresAt, acceptedAt),
+          ),
+        )
+        .returning({ token: pendingInvites.token });
+      if (!accepted[0]) {
+        throw new Error("This invite is no longer available.");
+      }
+
+      // Record workspace audit event (D-019). No email address in payload.
+      await tx.insert(workspaceEvents).values({
+        id: mintEventId(),
+        workspaceId: invite.workspaceId,
+        userId: me,
+        kind: "inviteAccepted",
+        payload: JSON.stringify({ userId: me, role: grantedRole }),
+        createdAt: Math.floor(acceptedAt.getTime() / 1000),
+      });
+    },
+    { behavior: "immediate" },
+  );
 
   // Flip the active-workspace cookie so /app/tasks lands the user
   // in the freshly-joined workspace.
