@@ -26,6 +26,7 @@ import {
 import { createProjectDriveOperationJournal } from "./project-drive-operation-journal";
 import { googleDriveAccountErasureFenceKey } from "./project-drive-operation-lifecycle";
 import { createAccountFencedProjectDriveOperationJournal } from "./project-drive-operation-orchestrator";
+import { createProjectDrivePermissionMutationLease } from "./project-drive-permission-mutation-lease";
 
 const START = Date.parse("2030-01-01T12:00:00.000Z");
 const cleanups: Array<() => void> = [];
@@ -81,6 +82,11 @@ async function seededExecutor(
     ),
   );
   const mutationQueue = createFolderPermissionMutationQueue();
+  const mutationLease = createProjectDrivePermissionMutationLease({
+    database: fixture.db,
+    leaseDurationMs: 10_000,
+    databaseNowSeconds: time.nowSql,
+  });
   const journalFactory = options.journalForTransaction;
   const executor = createProjectDriveGrantOperationExecutor({
     database: fixture.db,
@@ -101,6 +107,7 @@ async function seededExecutor(
         input,
         fetchImpl,
         mutationQueue,
+        mutationLease,
       ),
     databaseNowSeconds: time.nowSql,
     retryBaseMs: 1_000,
@@ -795,6 +802,11 @@ describe("Project Drive grant operation executor · stale provider success", () 
             });
           },
           createFolderPermissionMutationQueue(),
+          createProjectDrivePermissionMutationLease({
+            database: fixture.db,
+            leaseDurationMs: 10_000,
+            databaseNowSeconds: fixture.time.nowSql,
+          }),
         ),
       databaseNowSeconds: fixture.time.nowSql,
     });

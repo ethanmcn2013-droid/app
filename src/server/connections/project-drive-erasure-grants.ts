@@ -1,11 +1,25 @@
 import "server-only";
 
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
+import { db } from "@/server/db";
+import * as schema from "@/server/db/schema";
 import {
   withProjectDriveReceiptSession,
   type ProjectDriveAccessService,
   type ProjectDriveStorageReceipt,
 } from "./project-drive-access";
-import { deleteExactDriveUserPermission } from "./drive-grants";
+import {
+  deleteExactDriveUserPermission,
+  processPermissionMutations,
+  type FolderPermissionMutationQueue,
+} from "./drive-grants";
+import {
+  createProjectDrivePermissionMutationLease,
+  projectDrivePermissionMutationLease,
+  type ProjectDrivePermissionMutationLeaseRunner,
+} from "./project-drive-permission-mutation-lease";
+
+type GrantRevocationDb = LibSQLDatabase<typeof schema>;
 
 export type ExactDriveGrantReceipt = ProjectDriveStorageReceipt &
   Readonly<{
@@ -14,8 +28,11 @@ export type ExactDriveGrantReceipt = ProjectDriveStorageReceipt &
   }>;
 
 export type DriveGrantRevocationDependencies = Readonly<{
+  database: GrantRevocationDb;
   access: Pick<ProjectDriveAccessService, "withReceiptStorageSession">;
   fetchImpl: typeof fetch;
+  mutationQueue?: FolderPermissionMutationQueue;
+  mutationLease?: ProjectDrivePermissionMutationLeaseRunner;
 }>;
 
 function canonicalProviderId(value: string, label: string): string {
@@ -44,6 +61,10 @@ function canonicalProviderId(value: string, label: string): string {
 export function createDriveGrantRevocationService(
   deps: DriveGrantRevocationDependencies,
 ) {
+  const mutationQueue = deps.mutationQueue ?? processPermissionMutations;
+  const mutationLease =
+    deps.mutationLease ??
+    createProjectDrivePermissionMutationLease({ database: deps.database });
   return Object.freeze({
     async revoke(
       receipt: ExactDriveGrantReceipt,
@@ -61,6 +82,8 @@ export function createDriveGrantRevocationService(
             session,
             { permissionId, role: "writer" },
             deps.fetchImpl,
+            mutationQueue,
+            mutationLease,
           );
         },
       );
@@ -72,7 +95,9 @@ export async function revokeExactDriveFolderGrant(
   receipt: ExactDriveGrantReceipt,
 ): Promise<void> {
   await createDriveGrantRevocationService({
+    database: db,
     access: { withReceiptStorageSession: withProjectDriveReceiptSession },
     fetchImpl: fetch,
+    mutationLease: projectDrivePermissionMutationLease,
   }).revoke(receipt);
 }

@@ -19,8 +19,16 @@ import {
   assertProjectDriveCapability,
   type AuthorizedProjectDriveContext,
 } from "./project-drive-authz";
+import {
+  createProjectDrivePermissionMutationLease,
+  ProjectDrivePermissionMutationLeaseError,
+  projectDrivePermissionMutationLease,
+  type ProjectDrivePermissionMutationLeaseGuard,
+  type ProjectDrivePermissionMutationLeaseRunner,
+} from "./project-drive-permission-mutation-lease";
 
 const GOOGLE_DRIVE_API_ORIGIN = "https://www.googleapis.com";
+export const PROJECT_DRIVE_PERMISSION_REQUEST_TIMEOUT_MS = 30_000;
 
 type GrantDb = LibSQLDatabase<typeof schema>;
 
@@ -107,7 +115,7 @@ export class DriveGrantError extends Error {
   }
 }
 
-type FolderPermissionMutationQueue = Readonly<{
+export type FolderPermissionMutationQueue = Readonly<{
   run<T>(folderId: string, operation: () => Promise<T>): Promise<T>;
 }>;
 
@@ -134,7 +142,7 @@ export function createFolderPermissionMutationQueue(): FolderPermissionMutationQ
   });
 }
 
-const processPermissionMutations = createFolderPermissionMutationQueue();
+export const processPermissionMutations = createFolderPermissionMutationQueue();
 
 export type DriveGrantServiceDependencies = Readonly<{
   database: GrantDb;
@@ -142,6 +150,7 @@ export type DriveGrantServiceDependencies = Readonly<{
   fetchImpl: GoogleFetch;
   now: () => Date;
   mutationQueue?: FolderPermissionMutationQueue;
+  mutationLease?: ProjectDrivePermissionMutationLeaseRunner;
 }>;
 
 export type CreatedDriveGrant = Readonly<{
@@ -244,6 +253,9 @@ async function permissionFetch(
       headers,
       cache: "no-store",
       redirect: "error",
+      signal:
+        init.signal ??
+        AbortSignal.timeout(PROJECT_DRIVE_PERMISSION_REQUEST_TIMEOUT_MS),
     });
   } catch {
     throw new DriveGrantError("provider-error", {
@@ -251,6 +263,39 @@ async function permissionFetch(
       operation,
     });
   }
+}
+
+/**
+ * The process queue prevents avoidable contention within one runtime. The
+ * database lease is the authority across runtimes and expires after a crash.
+ * Lease details and tokens never escape this boundary.
+ */
+async function runSerializedPermissionMutation<T>(
+  session: ProjectDriveStorageSession,
+  operation: DriveGrantProviderOperation,
+  mutationQueue: FolderPermissionMutationQueue,
+  mutationLease: ProjectDrivePermissionMutationLeaseRunner,
+  work: (guard: ProjectDrivePermissionMutationLeaseGuard) => Promise<T>,
+): Promise<T> {
+  return mutationQueue.run(session.storage.folderId, async () => {
+    try {
+      return await mutationLease.run(
+        {
+          workspaceId: session.storage.workspaceId,
+          storageGenerationId: session.storage.id,
+        },
+        work,
+      );
+    } catch (error) {
+      if (error instanceof ProjectDrivePermissionMutationLeaseError) {
+        throw new DriveGrantError("provider-error", {
+          retryable: true,
+          operation,
+        });
+      }
+      throw error;
+    }
+  });
 }
 
 function permissionUrl(folderId: string, permissionId?: string): URL {
@@ -460,6 +505,8 @@ export async function recoverOrCreateExactDriveUserPermission(
   }>,
   fetchImpl: GoogleFetch,
   mutationQueue: FolderPermissionMutationQueue = processPermissionMutations,
+  mutationLease: ProjectDrivePermissionMutationLeaseRunner =
+    projectDrivePermissionMutationLease,
 ): Promise<RecoveredDriveGrant> {
   const grantedEmail = normalizeEmail(input.granteeEmail);
   const expectedPermissionId = canonicalPermissionId(
@@ -486,7 +533,12 @@ export async function recoverOrCreateExactDriveUserPermission(
     });
   }
 
-  return mutationQueue.run(session.storage.folderId, async () => {
+  return runSerializedPermissionMutation(
+    session,
+    "permission-create",
+    mutationQueue,
+    mutationLease,
+    async (lease) => {
     assertGrantTarget({ ...target, rootFolderId: session.storageRootFolderId });
     if (session.credential.rootFolderId !== session.storageRootFolderId) {
       assertGrantTarget({
@@ -533,6 +585,9 @@ export async function recoverOrCreateExactDriveUserPermission(
     }
 
     await input.beforeCreate();
+    // Discovery and the caller's database fences can take time. A lease that
+    // expired or was replaced must fail before the provider mutation.
+    await lease.renew();
     // Keep the guard in this exported mutation function immediately before
     // the POST as a source-enforced backstop against future refactors.
     assertGrantTarget({ ...target, rootFolderId: session.storageRootFolderId });
@@ -588,11 +643,15 @@ export async function recoverOrCreateExactDriveUserPermission(
       }
       throw error;
     }
-  });
+    },
+  );
 }
 
 export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
   const mutationQueue = deps.mutationQueue ?? processPermissionMutations;
+  const mutationLease =
+    deps.mutationLease ??
+    createProjectDrivePermissionMutationLease({ database: deps.database });
 
   async function create(
     authorization: AuthorizedProjectDriveContext,
@@ -632,7 +691,12 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
         }
         assertSessionGrantTarget(session, input.role);
 
-        return mutationQueue.run(session.storage.folderId, async () => {
+        return runSerializedPermissionMutation(
+          session,
+          "permission-create",
+          mutationQueue,
+          mutationLease,
+          async (lease) => {
           // Re-assert inside the serialized provider critical section so no
           // future refactor can separate validation from the mutation.
           assertSessionGrantTarget(session, input.role);
@@ -671,6 +735,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
               outcome: "existing" as const,
             });
           }
+          await lease.renew();
           const url = permissionUrl(session.storage.folderId);
           url.searchParams.set(
             "sendNotificationEmail",
@@ -723,7 +788,8 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
             role: input.role,
             outcome: "created" as const,
           });
-        });
+          },
+        );
       },
     );
   }
@@ -759,8 +825,14 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
           storageGenerationId: grant.storageGenerationId,
         },
         async (session) =>
-          mutationQueue.run(session.storage.folderId, async () => {
+          runSerializedPermissionMutation(
+            session,
+            "permission-delete",
+            mutationQueue,
+            mutationLease,
+            async (lease) => {
             assertSessionGrantTarget(session, grant.role);
+            await lease.renew();
             const response = await permissionFetch(
               session.accessToken,
               permissionUrl(session.storage.folderId, grant.permissionId),
@@ -797,7 +869,8 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
               revoked: true,
               alreadyAbsent: response.status === 404,
             });
-          }),
+            },
+          ),
       );
     } catch (error) {
       // The exact receipt remains durable until provider deletion and the
@@ -933,6 +1006,9 @@ export async function deleteExactDriveUserPermission(
   session: ProjectDriveStorageSession,
   input: Readonly<{ permissionId: string; role: DriveGrantRole }>,
   fetchImpl: GoogleFetch,
+  mutationQueue: FolderPermissionMutationQueue = processPermissionMutations,
+  mutationLease: ProjectDrivePermissionMutationLeaseRunner =
+    projectDrivePermissionMutationLease,
 ): Promise<Readonly<{ alreadyAbsent: boolean }>> {
   const target = {
     fileId: session.storage.folderId,
@@ -950,23 +1026,32 @@ export async function deleteExactDriveUserPermission(
       rootFolderId: session.credential.rootFolderId,
     });
   }
-  const response = await permissionFetch(
-    session.accessToken,
-    permissionUrl(session.storage.folderId, input.permissionId),
-    { method: "DELETE" },
-    fetchImpl,
+  return runSerializedPermissionMutation(
+    session,
     "permission-delete",
+    mutationQueue,
+    mutationLease,
+    async (lease) => {
+      await lease.renew();
+      const response = await permissionFetch(
+        session.accessToken,
+        permissionUrl(session.storage.folderId, input.permissionId),
+        { method: "DELETE" },
+        fetchImpl,
+        "permission-delete",
+      );
+      if (!response.ok && response.status !== 404) {
+        const body = await responseJson(response);
+        throw new DriveGrantError("provider-error", {
+          status: response.status,
+          retryable: retryableStatus(response.status),
+          reason: providerReason(body),
+          operation: "permission-delete",
+        });
+      }
+      return Object.freeze({ alreadyAbsent: response.status === 404 });
+    },
   );
-  if (!response.ok && response.status !== 404) {
-    const body = await responseJson(response);
-    throw new DriveGrantError("provider-error", {
-      status: response.status,
-      retryable: retryableStatus(response.status),
-      reason: providerReason(body),
-      operation: "permission-delete",
-    });
-  }
-  return Object.freeze({ alreadyAbsent: response.status === 404 });
 }
 
 function defaultGrantService() {

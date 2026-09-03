@@ -391,6 +391,54 @@ describe("§2.2 §2.4 · the root folder is never a grant target", () => {
     assert.equal(containsPermissionApi("createGoogleDriveFolder(input)"), false);
   });
 
+  it("every permission mutation is generation-leased and bounded", () => {
+    if (!existsSync(DRIVE_GRANTS_FILE)) return;
+    const code = codeOf(DRIVE_GRANTS_FILE);
+    const serialized = asyncFunctionBlock(
+      code,
+      "runSerializedPermissionMutation",
+    );
+    assert.ok(serialized, "the shared permission serializer must exist");
+    assert.match(
+      serialized,
+      /mutationLease\.run\([\s\S]*workspaceId\s*:\s*session\.storage\.workspaceId[\s\S]*storageGenerationId\s*:\s*session\.storage\.id/,
+      "the cross-instance lease must use the exact workspace and immutable generation",
+    );
+    assert.doesNotMatch(
+      serialized,
+      /\.transaction\s*\(/,
+      "provider work must not run inside a database writer transaction",
+    );
+    assert.match(
+      code,
+      /AbortSignal\.timeout\(PROJECT_DRIVE_PERMISSION_REQUEST_TIMEOUT_MS\)/,
+      "permission requests must be bounded below the lease lifetime",
+    );
+
+    const mutationCount = [
+      ...code.matchAll(/method\s*:\s*["'](?:POST|DELETE)["']/g),
+    ].length;
+    const renewCount = [...code.matchAll(/await\s+lease\.renew\(\)/g)].length;
+    assert.equal(mutationCount, 4, "the four audited mutation paths changed");
+    assert.equal(
+      renewCount,
+      mutationCount,
+      "every provider POST/DELETE needs a final lease ownership check",
+    );
+
+    for (const name of [
+      "recoverOrCreateExactDriveUserPermission",
+      "deleteExactDriveUserPermission",
+    ]) {
+      const fn = exportedAsyncFunctionBlocks(code).find(
+        (candidate) => candidate.name === name,
+      );
+      assert.ok(fn, `${name} must remain an exported auditable boundary`);
+      assert.match(fn.source, /runSerializedPermissionMutation\(/);
+      assert.match(fn.source, /await\s+lease\.renew\(\)/);
+    }
+  });
+
   it("the guard refuses the root folder and a foreign folder", async () => {
     const mod = (await importIfPresent(DRIVE_GRANTS_FILE)) as {
       assertGrantTarget?: (i: Record<string, string>) => void;

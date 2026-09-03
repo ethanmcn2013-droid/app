@@ -6,7 +6,9 @@ import {
   assertGrantTarget,
   createDriveGrantService,
   createFolderPermissionMutationQueue,
+  deleteExactDriveUserPermission,
   DriveGrantError,
+  PROJECT_DRIVE_PERMISSION_REQUEST_TIMEOUT_MS,
   recoverOrCreateExactDriveUserPermission,
 } from "./drive-grants";
 import {
@@ -14,6 +16,12 @@ import {
   type ProjectDriveStorageSession,
 } from "./project-drive-access";
 import { ProjectDriveAuthorizationError } from "./project-drive-authz";
+import {
+  createProjectDrivePermissionMutationLease,
+  ProjectDrivePermissionMutationLeaseError,
+  PROJECT_DRIVE_PERMISSION_MUTATION_LEASE_DURATION_MS,
+  type ProjectDrivePermissionMutationLeaseRunner,
+} from "./project-drive-permission-mutation-lease";
 import {
   accessDependencies,
   coreAuthorization,
@@ -109,6 +117,70 @@ describe("Project Drive folder grants", () => {
     }
   });
 
+  it("maps busy, lost, and unavailable lease failures to sanitized retryable outcomes", async () => {
+    const session = {
+      accessToken: "request-access",
+      credential: {
+        id: "conn-old",
+        ownerUserId: "owner",
+        providerAccountId: "account-owner",
+        providerAccountEmail: "owner@example.com",
+        rootFolderId: "root-old",
+      },
+      storageRootFolderId: "root-old",
+      storage: {
+        id: "gen-current",
+        workspaceId: "ws-a",
+        connectionId: "conn-old",
+        folderId: "folder-current",
+        folderWebViewLink: "https://drive.example/folder-current",
+        state: "active",
+        isCurrent: true,
+      },
+    } satisfies ProjectDriveStorageSession;
+
+    for (const code of ["busy", "lost", "unavailable"] as const) {
+      let providerCalls = 0;
+      const mutationLease: ProjectDrivePermissionMutationLeaseRunner = {
+        async run(_target, operation) {
+          const failure = new ProjectDrivePermissionMutationLeaseError(code);
+          failure.message = `secret-lease-token-${code}`;
+          if (code !== "lost") throw failure;
+          return operation({
+            async renew() {
+              throw failure;
+            },
+          });
+        },
+      };
+
+      await assert.rejects(
+        () =>
+          deleteExactDriveUserPermission(
+            session,
+            { permissionId: "permission-a", role: "writer" },
+            async () => {
+              providerCalls += 1;
+              return new Response(null, { status: 204 });
+            },
+            createFolderPermissionMutationQueue(),
+            mutationLease,
+          ),
+        (error: unknown) => {
+          assert.ok(error instanceof DriveGrantError);
+          assert.equal(error.code, "provider-error");
+          assert.equal(error.operation, "permission-delete");
+          assert.equal(error.retryable, true);
+          assert.equal(error.status, null);
+          assert.equal(error.reason, null);
+          assert.doesNotMatch(error.message, /secret|lease|token/i);
+          return true;
+        },
+      );
+      assert.equal(providerCalls, 0);
+    }
+  });
+
   it("creates only on the current generation, with a named-user body and explicit notification flag", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     const fetchImpl: typeof fetch = async (input, init) => {
@@ -148,6 +220,12 @@ describe("Project Drive folder grants", () => {
       role: "writer",
       emailAddress: "member.a@example.com",
     });
+    assert.ok(calls[0].init?.signal instanceof AbortSignal);
+    assert.ok(
+      PROJECT_DRIVE_PERMISSION_REQUEST_TIMEOUT_MS <
+        PROJECT_DRIVE_PERMISSION_MUTATION_LEASE_DURATION_MS,
+      "a renewed lease must outlive one bounded provider mutation",
+    );
     const [stored] = await fixture.db
       .select()
       .from(driveFolderGrants)
@@ -239,6 +317,11 @@ describe("Project Drive folder grants", () => {
   });
 
   it("shares the default same-folder queue across independent dispatcher calls", async () => {
+    const leaseFixture = await freshProjectDriveCoreDb();
+    cleanups.push(leaseFixture.cleanup);
+    const mutationLease = createProjectDrivePermissionMutationLease({
+      database: leaseFixture.db,
+    });
     const session = {
       accessToken: "request-access",
       credential: {
@@ -305,6 +388,8 @@ describe("Project Drive folder grants", () => {
           beforeCreate: async () => {},
         },
         fetchImpl,
+        undefined,
+        mutationLease,
       );
 
     const first = dispatch("member.a@example.com");
