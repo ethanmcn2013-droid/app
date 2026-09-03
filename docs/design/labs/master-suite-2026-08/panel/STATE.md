@@ -22,6 +22,7 @@ round 7 needs a fresh freeze before it starts.
 | Workbench | https://claude.ai/code/artifact/2c152f3f-3369-4d22-8cb5-fcab6cc8860a — the same build, for reading on a phone |
 | Log | https://claude.ai/code/artifact/42a27dec-1879-4341-9f96-86921f978124 |
 | Console | https://claude.ai/code/artifact/a1300890-6c2c-4d36-9ce3-4a9e6420b6d7 |
+| Session record | https://claude.ai/code/artifact/07b1379c-aed3-49a7-94af-afcbe5d9ab2f — the 15-minute founder read: what stands, what it costs |
 
 ## The first job on any resumed session
 
