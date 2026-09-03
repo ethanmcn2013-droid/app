@@ -6,13 +6,21 @@ import { db } from "@/server/db";
 import { readWorkspaceColumnConfig } from "@/server/db/board-config-read";
 import { isDoneColumnKey, isTaskDone } from "@/lib/board-columns";
 import { nextTaskSeq } from "@/server/db/task-seq";
-import { activities, attachments, comments, resources, tasks } from "@/server/db/schema";
+import {
+  activities,
+  attachments,
+  comments,
+  notifications,
+  resources,
+  tasks,
+} from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import {
   authorizeProjectCandidate,
+  authorizeStoredProject,
   readableProjectOrNull,
   scopeForTask,
 } from "@/server/actions/project-authz";
@@ -35,6 +43,7 @@ import {
 import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
 import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
@@ -750,6 +759,16 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
   // attachment snapshot and task deletion.
   const deletion = await db.transaction(
     async (transaction) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "createOrEditTasks",
+        actorUserId: me,
+        executor: transaction,
+      });
+      if (!grant.ok) {
+        return { deleted: false, cleanupReceiptKeys: [] as string[] };
+      }
+      await assertProjectNotDeleting(transaction, ws);
       const [parent] = await transaction
         .select({ id: tasks.id })
         .from(tasks)
@@ -780,6 +799,9 @@ export async function removeTaskAction(id: string): Promise<Task[]> {
       await transaction
         .delete(comments)
         .where(inArray(comments.taskId, taskIds));
+      await transaction
+        .delete(notifications)
+        .where(inArray(notifications.taskId, taskIds));
       await transaction
         .delete(resources)
         .where(inArray(resources.taskId, taskIds));

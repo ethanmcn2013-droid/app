@@ -524,6 +524,66 @@ test("provider-time bystander deletion cannot orphan a finalized target attachme
   }
 });
 
+test("a detached pre-tenant attachment keeps exact cleanup custody without blocking erasure", async () => {
+  const fixture = await accountNativeFixture();
+  const storedPath = ".data/uploads/detached-pre-tenant.pdf";
+  try {
+    await fixture.db.insert(attachments).values({
+      id: "attachment-detached-pre-tenant",
+      workspaceId: null,
+      taskId: "missing-pre-tenant-task",
+      uploaderUserId: "target",
+      filename: "detached-pre-tenant.pdf",
+      storedPath,
+      mimeType: "application/pdf",
+      sizeBytes: 12,
+    });
+
+    let storageCalls = 0;
+    await eraseAccountData(fixture.db, "clerk-target", {
+      deleteStoredBytes: async (locator) => {
+        storageCalls += 1;
+        assert.equal(locator, storedPath);
+        throw new Error("storage unavailable");
+      },
+    });
+
+    assert.equal(storageCalls, 1);
+    assert.equal(
+      (
+        await fixture.db
+          .select({ id: attachments.id })
+          .from(attachments)
+          .where(eq(attachments.id, "attachment-detached-pre-tenant"))
+      ).length,
+      0,
+    );
+    assert.equal(
+      (
+        await fixture.db
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, "target"))
+      ).length,
+      0,
+    );
+    const [receipt] = await fixture.db
+      .select({ value: meta.value })
+      .from(meta)
+      .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`));
+    assert.ok(receipt);
+    assert.deepEqual(JSON.parse(receipt.value), {
+      version: 1,
+      owner: "signal-native-attachment",
+      workspaceId: "account-erasure:target",
+      target: { kind: "stored-path", locator: storedPath },
+      claimToken: null,
+    });
+  } finally {
+    fixture.cleanup();
+  }
+});
+
 test("storage failure retains the exact account receipt through crash-safe replay", async () => {
   const fixture = await accountNativeFixture();
   const storedPath = ".data/uploads/account-surviving-finalized.pdf";

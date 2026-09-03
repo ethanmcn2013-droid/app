@@ -272,6 +272,8 @@ export async function authorizeStoredProject(input: {
   capability: ProjectCapabilityKey;
   actorUserId?: string;
   archivePolicy?: ArchivePolicy;
+  /** Re-prove inside the writer transaction that will perform the mutation. */
+  executor?: AuthzQueryExecutor;
 }): Promise<ProjectAuthorization> {
   const actorUserId = input.actorUserId ?? (await getCurrentUser());
   if (!isProjectId(input.storedProjectId)) {
@@ -282,6 +284,7 @@ export async function authorizeStoredProject(input: {
     input.storedProjectId,
     input.capability,
     input.archivePolicy,
+    input.executor,
   );
 }
 

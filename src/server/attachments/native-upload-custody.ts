@@ -6,6 +6,7 @@ import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import {
   attachments,
   meta,
+  resources,
   tasks,
   users,
   workspaceMembers,
@@ -32,6 +33,15 @@ type NativeUploadWriter = Pick<
 >;
 
 const CLAIM_VERSION = 1 as const;
+const SQLITE_BIND_BATCH_SIZE = 400;
+
+function batchesOf<T>(values: readonly T[]): readonly (readonly T[])[] {
+  const batches: T[][] = [];
+  for (let index = 0; index < values.length; index += SQLITE_BIND_BATCH_SIZE) {
+    batches.push(values.slice(index, index + SQLITE_BIND_BATCH_SIZE));
+  }
+  return batches;
+}
 /**
  * Keep deletion fenced after a signed writer stops admitting new requests.
  * A PUT admitted immediately before expiry may still be in flight, and the
@@ -459,14 +469,67 @@ export async function rejectNativeUploadClaimInTransaction(
   return changed.length === 1;
 }
 
+async function assertNoRetainedNativeLocatorAliases(
+  transaction: NativeUploadWriter,
+  input: Readonly<{
+    deletingAttachmentIds: readonly string[];
+    storedPaths: readonly string[];
+  }>,
+): Promise<void> {
+  const deletingAttachmentIds = new Set(input.deletingAttachmentIds);
+  const storedPaths = [...new Set(input.storedPaths)];
+  for (const storedPathBatch of batchesOf(storedPaths)) {
+    // isolation-ok: this exact-locator scan is deliberately cross-Project.
+    // A byte target cannot enter cleanup while any retained attachment row
+    // still names it, regardless of which tenant owns that other reference.
+    const aliases = await transaction
+      .select({ id: attachments.id })
+      .from(attachments)
+      .where(inArray(attachments.storedPath, storedPathBatch));
+    if (aliases.some((row) => !deletingAttachmentIds.has(row.id))) {
+      throw new Error("native attachment locator alias conflicted");
+    }
+  }
+}
+
 /** A nonterminal marker blocks Project deletion until bytes have a home. */
 export async function assertNoPendingNativeUploads(
   transaction: NativeUploadWriter,
   workspaceIdInput: string,
+  options: Readonly<{
+    additionalAttachmentIdsScheduledForDeletion?: readonly string[];
+  }> = {},
 ): Promise<readonly string[]> {
   const workspaceId = canonicalId(workspaceIdInput, "workspaceId");
   const prefix = nativeUploadClaimPrefix(workspaceId);
   const cleanupReceiptKeys: string[] = [];
+  // Read every row that this Project deletion will consume before retiring
+  // any expired claim. Besides finding markerless legacy writers, this is the
+  // exact delete set used to ensure no retained row aliases a cleanup target.
+  const projectAttachmentRows = await transaction
+    .select({
+      id: attachments.id,
+      taskId: attachments.taskId,
+      filename: attachments.filename,
+      storedPath: attachments.storedPath,
+    })
+    .from(attachments)
+    .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+    .where(
+      or(
+        eq(attachments.workspaceId, workspaceId),
+        eq(tasks.workspaceId, workspaceId),
+      ),
+    );
+  await assertNoRetainedNativeLocatorAliases(transaction, {
+    deletingAttachmentIds: [
+      ...projectAttachmentRows.map((row) => row.id),
+      ...(options.additionalAttachmentIdsScheduledForDeletion ?? []).map(
+        (attachmentId) => canonicalId(attachmentId, "attachmentId"),
+      ),
+    ],
+    storedPaths: projectAttachmentRows.map((row) => row.storedPath),
+  });
   const claims = await transaction
     .select({ key: meta.key, value: meta.value })
     .from(meta)
@@ -515,6 +578,9 @@ export async function assertNoPendingNativeUploads(
   // exact placeholder is still recognizable from server-owned row fields, but
   // its authority expiry is unknowable, so deletion must block rather than
   // guess that a possibly-live signed upload is dead.
+  // Re-read after retiring expired claims: those rows were deliberately
+  // removed with their markers and must not be mistaken for markerless legacy
+  // writers using the snapshot taken before reconciliation.
   const possibleLegacyClaims = await transaction
     .select({
       id: attachments.id,
@@ -633,6 +699,228 @@ export type NativeAttachmentRowDeletionResult = Readonly<{
   cleanupReceiptKeys: readonly string[];
 }>;
 
+export type NativeAttachmentProjectDeletionScope = Readonly<{
+  workspaceId: string;
+  attachmentIds: readonly string[];
+}>;
+
+type NativeAttachmentDeletionRow = Readonly<{
+  id: string;
+  storedPath: string;
+  attachmentWorkspaceId: string | null;
+  taskWorkspaceId: string | null;
+}>;
+
+async function selectNativeAttachmentRowsByIds(
+  transaction: NativeUploadWriter,
+  attachmentIds: readonly string[],
+): Promise<NativeAttachmentDeletionRow[]> {
+  const rows: NativeAttachmentDeletionRow[] = [];
+  for (const attachmentIdBatch of batchesOf(attachmentIds)) {
+    rows.push(
+      ...(await transaction
+        .select({
+          id: attachments.id,
+          storedPath: attachments.storedPath,
+          attachmentWorkspaceId: attachments.workspaceId,
+          taskWorkspaceId: tasks.workspaceId,
+        })
+        .from(attachments)
+        .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+        .where(inArray(attachments.id, attachmentIdBatch))),
+    );
+  }
+  return rows;
+}
+
+/**
+ * Multi-Project form used by account erasure. Every supplied row is deleted
+ * by this call, so locator-alias validation can safely treat the union as one
+ * exact delete set. `detached` preserves pre-tenant legacy rows by placing
+ * their exact locators under an explicit synthetic receipt scope; a surviving
+ * upload marker still fails closed.
+ */
+export async function deleteNativeAttachmentRowsAcrossProjectsInTransaction(
+  transaction: NativeUploadWriter,
+  input: Readonly<{
+    projectScopes: readonly NativeAttachmentProjectDeletionScope[];
+    detached?: Readonly<{
+      receiptWorkspaceId: string;
+      attachmentIds: readonly string[];
+    }>;
+  }>,
+): Promise<NativeAttachmentRowDeletionResult> {
+  const expectedByAttachmentId = new Map<
+    string,
+    Readonly<{ workspaceId: string | null; receiptWorkspaceId: string }>
+  >();
+  const register = (
+    attachmentIdInput: string,
+    expected: Readonly<{
+      workspaceId: string | null;
+      receiptWorkspaceId: string;
+    }>,
+  ) => {
+    const attachmentId = canonicalId(attachmentIdInput, "attachmentId");
+    const current = expectedByAttachmentId.get(attachmentId);
+    if (
+      current &&
+      (current.workspaceId !== expected.workspaceId ||
+        current.receiptWorkspaceId !== expected.receiptWorkspaceId)
+    ) {
+      throw new Error("native attachment deletion scope conflicted");
+    }
+    expectedByAttachmentId.set(attachmentId, expected);
+  };
+  for (const scope of input.projectScopes) {
+    const workspaceId = canonicalId(scope.workspaceId, "workspaceId");
+    for (const attachmentId of scope.attachmentIds) {
+      register(attachmentId, { workspaceId, receiptWorkspaceId: workspaceId });
+    }
+  }
+  if (input.detached) {
+    const receiptWorkspaceId = canonicalId(
+      input.detached.receiptWorkspaceId,
+      "receiptWorkspaceId",
+    );
+    for (const attachmentId of input.detached.attachmentIds) {
+      register(attachmentId, { workspaceId: null, receiptWorkspaceId });
+    }
+  }
+  const attachmentIds = [...expectedByAttachmentId.keys()];
+  if (attachmentIds.length === 0) {
+    return Object.freeze({
+      deletedAttachmentIds: Object.freeze([]),
+      cleanupReceiptKeys: Object.freeze([]),
+    });
+  }
+
+  const assertExactScopes = (rows: readonly NativeAttachmentDeletionRow[]) => {
+    for (const row of rows) {
+      const expected = expectedByAttachmentId.get(row.id);
+      if (!expected) {
+        throw new Error("native attachment deletion scope conflicted");
+      }
+      if (
+        row.attachmentWorkspaceId &&
+        row.taskWorkspaceId &&
+        row.attachmentWorkspaceId !== row.taskWorkspaceId
+      ) {
+        throw new Error("native attachment parent conflicted");
+      }
+      const effectiveWorkspaceId =
+        row.attachmentWorkspaceId ?? row.taskWorkspaceId;
+      if (effectiveWorkspaceId !== expected.workspaceId) {
+        throw new Error("native attachment Project conflicted");
+      }
+    }
+  };
+
+  const candidates = await selectNativeAttachmentRowsByIds(
+    transaction,
+    attachmentIds,
+  );
+  assertExactScopes(candidates);
+  await assertNoRetainedNativeLocatorAliases(transaction, {
+    deletingAttachmentIds: candidates.map((row) => row.id),
+    storedPaths: candidates.map((row) => row.storedPath),
+  });
+
+  const detachedIds = new Set(
+    candidates
+      .filter(
+        (row) => expectedByAttachmentId.get(row.id)?.workspaceId === null,
+      )
+      .map((row) => row.id),
+  );
+  if (detachedIds.size > 0) {
+    const possibleMarkers = await transaction
+      .select({ key: meta.key, value: meta.value })
+      .from(meta)
+      .where(like(meta.key, `${NATIVE_UPLOAD_CLAIM_META_PREFIX}%`));
+    for (const marker of possibleMarkers) {
+      if (
+        ![...detachedIds].some((attachmentId) =>
+          marker.key.endsWith(`:${attachmentId}`),
+        )
+      ) {
+        continue;
+      }
+      const claim = parseClaim(marker.value);
+      if (
+        detachedIds.has(claim.attachmentId) &&
+        nativeUploadClaimKey(claim.workspaceId, claim.attachmentId) ===
+          marker.key
+      ) {
+        throw new NativeUploadInProgressError();
+      }
+      throw new Error("native upload claim conflicted");
+    }
+  }
+
+  const cleanupReceiptKeys: string[] = [];
+  for (const attachment of candidates) {
+    const expected = expectedByAttachmentId.get(attachment.id)!;
+    if (expected.workspaceId === null) continue;
+    cleanupReceiptKeys.push(
+      ...(await prepareNativeUploadClaimForDeletionInTransaction(
+        transaction,
+        {
+          workspaceId: expected.workspaceId,
+          attachmentId: attachment.id,
+        },
+      )),
+    );
+  }
+
+  // Expired unfinished claims were retired above. Everything still present is
+  // a finalized row whose exact storedPath must enter custody before deletion.
+  const finalizedRows = await selectNativeAttachmentRowsByIds(
+    transaction,
+    candidates.map((row) => row.id),
+  );
+  assertExactScopes(finalizedRows);
+  const finalizedByReceiptWorkspace = new Map<string, string[]>();
+  for (const row of finalizedRows) {
+    const receiptWorkspaceId = expectedByAttachmentId.get(
+      row.id,
+    )!.receiptWorkspaceId;
+    const storedPaths =
+      finalizedByReceiptWorkspace.get(receiptWorkspaceId) ?? [];
+    storedPaths.push(row.storedPath);
+    finalizedByReceiptWorkspace.set(receiptWorkspaceId, storedPaths);
+  }
+  for (const [receiptWorkspaceId, storedPaths] of
+    finalizedByReceiptWorkspace) {
+    cleanupReceiptKeys.push(
+      ...(await stageNativeByteCleanupReceipts(
+        transaction,
+        receiptWorkspaceId,
+        storedPaths,
+      )),
+    );
+  }
+  let deletedCount = 0;
+  for (const finalizedIdBatch of batchesOf(
+    finalizedRows.map((row) => row.id),
+  )) {
+    deletedCount += (
+      await transaction
+        .delete(attachments)
+        .where(inArray(attachments.id, finalizedIdBatch))
+        .returning({ id: attachments.id })
+    ).length;
+  }
+  if (deletedCount !== finalizedRows.length) {
+    throw new Error("native attachment deletion conflicted");
+  }
+
+  return Object.freeze({
+    deletedAttachmentIds: Object.freeze(candidates.map((row) => row.id)),
+    cleanupReceiptKeys: Object.freeze(cleanupReceiptKeys),
+  });
+}
+
 /**
  * Transfer an exact set of Signal-native attachment rows into durable byte
  * cleanup custody and remove those rows in the caller's writer transaction.
@@ -648,88 +936,36 @@ export async function deleteNativeAttachmentRowsInTransaction(
   }>,
 ): Promise<NativeAttachmentRowDeletionResult> {
   const workspaceId = canonicalId(input.workspaceId, "workspaceId");
-  const attachmentIds = [
-    ...new Set(
-      input.attachmentIds.map((attachmentId) =>
-        canonicalId(attachmentId, "attachmentId"),
-      ),
-    ),
-  ];
-  if (attachmentIds.length === 0) {
-    return Object.freeze({
-      deletedAttachmentIds: Object.freeze([]),
-      cleanupReceiptKeys: Object.freeze([]),
-    });
-  }
-
-  const selectRows = () =>
-    transaction
-      .select({
-        id: attachments.id,
-        storedPath: attachments.storedPath,
-        attachmentWorkspaceId: attachments.workspaceId,
-        taskWorkspaceId: tasks.workspaceId,
-      })
-      .from(attachments)
-      .leftJoin(tasks, eq(tasks.id, attachments.taskId))
-      .where(inArray(attachments.id, attachmentIds));
-  const assertExactWorkspace = (
-    rows: Awaited<ReturnType<typeof selectRows>>,
-  ) => {
-    for (const row of rows) {
-      if (
-        row.attachmentWorkspaceId &&
-        row.taskWorkspaceId &&
-        row.attachmentWorkspaceId !== row.taskWorkspaceId
-      ) {
-        throw new Error("native attachment parent conflicted");
-      }
-      if (
-        (row.attachmentWorkspaceId ?? row.taskWorkspaceId) !== workspaceId
-      ) {
-        throw new Error("native attachment Project conflicted");
-      }
-    }
-  };
-
-  const candidates = await selectRows();
-  assertExactWorkspace(candidates);
-  const cleanupReceiptKeys: string[] = [];
-  for (const attachment of candidates) {
-    cleanupReceiptKeys.push(
-      ...(await prepareNativeUploadClaimForDeletionInTransaction(
-        transaction,
-        { workspaceId, attachmentId: attachment.id },
-      )),
-    );
-  }
-
-  // Expired unfinished claims were retired above. Everything still present is
-  // a finalized row whose exact storedPath must enter custody before deletion.
-  const finalizedRows = await selectRows();
-  assertExactWorkspace(finalizedRows);
-  cleanupReceiptKeys.push(
-    ...(await stageNativeByteCleanupReceipts(
-      transaction,
-      workspaceId,
-      finalizedRows.map((row) => row.storedPath),
-    )),
-  );
-  const finalizedIds = finalizedRows.map((row) => row.id);
-  if (finalizedIds.length > 0) {
-    const deleted = await transaction
-      .delete(attachments)
-      .where(inArray(attachments.id, finalizedIds))
-      .returning({ id: attachments.id });
-    if (deleted.length !== finalizedIds.length) {
-      throw new Error("native attachment deletion conflicted");
-    }
-  }
-
-  return Object.freeze({
-    deletedAttachmentIds: Object.freeze(candidates.map((row) => row.id)),
-    cleanupReceiptKeys: Object.freeze(cleanupReceiptKeys),
+  return deleteNativeAttachmentRowsAcrossProjectsInTransaction(transaction, {
+    projectScopes: [{ workspaceId, attachmentIds: input.attachmentIds }],
   });
+}
+
+/** Delete one exact attachment and only its valid Signal-upload mirror. */
+export async function deleteNativeAttachmentAndMirrorInTransaction(
+  transaction: NativeUploadWriter,
+  input: Readonly<{ workspaceId: string; attachmentId: string }>,
+): Promise<NativeAttachmentRowDeletionResult> {
+  const workspaceId = canonicalId(input.workspaceId, "workspaceId");
+  const attachmentId = canonicalId(input.attachmentId, "attachmentId");
+  const deletion = await deleteNativeAttachmentRowsInTransaction(transaction, {
+    workspaceId,
+    attachmentIds: [attachmentId],
+  });
+  if (!deletion.deletedAttachmentIds.includes(attachmentId)) {
+    return deletion;
+  }
+  await transaction
+    .delete(resources)
+    .where(
+      and(
+        eq(resources.id, `res-${attachmentId}`),
+        eq(resources.workspaceId, workspaceId),
+        eq(resources.kind, "upload"),
+        eq(resources.storage, "signal"),
+      ),
+    );
+  return deletion;
 }
 
 /**

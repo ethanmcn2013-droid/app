@@ -42,7 +42,7 @@ import {
 } from "./attachments/native-byte-cleanup";
 import {
   assertNoPendingNativeUploads,
-  deleteNativeAttachmentRowsInTransaction,
+  deleteNativeAttachmentRowsAcrossProjectsInTransaction,
   NativeUploadInProgressError,
 } from "./attachments/native-upload-custody";
 
@@ -336,18 +336,6 @@ export async function eraseAccountData(
         const cleanupReceiptKeys = await transaction.transaction(
           async (custodyTransaction) => {
             const keys: string[] = [];
-            // Owned Projects include every uploader plus orphan claim markers.
-            // A surviving Project includes only this proved uploader; another
-            // member's claim and finalized bytes remain outside the scope.
-            for (const workspaceId of ownedWorkspaceIds) {
-              keys.push(
-                ...(await assertNoPendingNativeUploads(
-                  custodyTransaction,
-                  workspaceId,
-                )),
-              );
-            }
-
             const attachmentRows = await custodyTransaction
               // isolation-ok: the account fence is already held in this same
               // writer transaction. This query spans only the proved uploader
@@ -363,6 +351,7 @@ export async function eraseAccountData(
               .where(accountAttachmentScope);
             const ownedWorkspaceIdSet = new Set(ownedWorkspaceIds);
             const attachmentIdsByWorkspace = new Map<string, string[]>();
+            const detachedAttachmentIds: string[] = [];
             for (const attachment of attachmentRows) {
               if (
                 attachment.attachmentWorkspaceId &&
@@ -374,7 +363,15 @@ export async function eraseAccountData(
               const workspaceId =
                 attachment.attachmentWorkspaceId ?? attachment.taskWorkspaceId;
               if (!workspaceId) {
-                throw new Error("native upload attachment has no Project");
+                if (attachment.uploaderUserId !== userId) {
+                  throw new Error("native upload attachment scope conflicted");
+                }
+                // Pre-tenant rows can outlive their task while still carrying
+                // the only exact locator. Preserve the prior monotonic erasure
+                // behavior by giving that locator an explicit synthetic
+                // receipt scope instead of blocking account completion.
+                detachedAttachmentIds.push(attachment.id);
+                continue;
               }
               if (
                 !ownedWorkspaceIdSet.has(workspaceId) &&
@@ -387,15 +384,44 @@ export async function eraseAccountData(
               attachmentIds.push(attachment.id);
               attachmentIdsByWorkspace.set(workspaceId, attachmentIds);
             }
-            for (const [workspaceId, attachmentIds] of
-              attachmentIdsByWorkspace) {
-              const deleted =
-                await deleteNativeAttachmentRowsInTransaction(
+            const allAttachmentIds = attachmentRows.map(
+              (attachment) => attachment.id,
+            );
+            // Owned Projects include every uploader plus orphan claim markers.
+            // A surviving Project includes only this proved uploader; another
+            // member's claim and finalized bytes remain outside the scope.
+            for (const workspaceId of ownedWorkspaceIds) {
+              keys.push(
+                ...(await assertNoPendingNativeUploads(
                   custodyTransaction,
-                  { workspaceId, attachmentIds },
-                );
-              keys.push(...deleted.cleanupReceiptKeys);
+                  workspaceId,
+                  {
+                    additionalAttachmentIdsScheduledForDeletion:
+                      allAttachmentIds,
+                  },
+                )),
+              );
             }
+            const deleted =
+              await deleteNativeAttachmentRowsAcrossProjectsInTransaction(
+                custodyTransaction,
+                {
+                  projectScopes: [...attachmentIdsByWorkspace].map(
+                    ([workspaceId, attachmentIds]) => ({
+                      workspaceId,
+                      attachmentIds,
+                    }),
+                  ),
+                  detached:
+                    detachedAttachmentIds.length > 0
+                      ? {
+                          receiptWorkspaceId: `account-erasure:${userId}`,
+                          attachmentIds: detachedAttachmentIds,
+                        }
+                      : undefined,
+                },
+              );
+            keys.push(...deleted.cleanupReceiptKeys);
             return Object.freeze(keys);
           },
         );

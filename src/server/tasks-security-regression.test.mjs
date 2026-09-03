@@ -70,6 +70,14 @@ const resourceActions = readFileSync(
   join(serverDir, "actions", "resources.ts"),
   "utf8",
 );
+const seedActions = readFileSync(
+  join(serverDir, "actions", "seed.ts"),
+  "utf8",
+);
+const projectTaskGraph = readFileSync(
+  join(serverDir, "projects", "project-task-graph.ts"),
+  "utf8",
+);
 const nudgeActions = readFileSync(
   join(serverDir, "actions", "nudge.ts"),
   "utf8",
@@ -145,6 +153,63 @@ function assertDemoGuardBefore(source, name, boundary) {
     `${name} must exit demo/review mode before ${boundary}`,
   );
 }
+
+test("destructive task graphs re-prove authority and deletion fences inside their writer transaction", () => {
+  for (const [source, name] of [
+    [attachmentActions, "deleteAttachmentAction"],
+    [resourceActions, "removeResourceAction"],
+    [actions, "removeTaskAction"],
+  ]) {
+    const body = exportedActionBody(source, name);
+    const transaction = body.indexOf("db.transaction");
+    const reproof = body.indexOf("authorizeStoredProject", transaction);
+    const fence = body.indexOf("assertProjectNotDeleting", transaction);
+    assert.ok(transaction >= 0, `${name} must use a writer transaction`);
+    assert.ok(
+      reproof > transaction,
+      `${name} must re-prove authority inside its writer transaction`,
+    );
+    assert.ok(
+      fence > reproof,
+      `${name} must check the deletion fence after transactional reproof`,
+    );
+  }
+
+  const graphFence = projectTaskGraph.indexOf("assertProjectNotDeleting");
+  const graphDelete = projectTaskGraph.indexOf(".delete(", graphFence);
+  assert.ok(
+    graphFence >= 0 && graphDelete > graphFence,
+    "the shared graph replacement must fence Project deletion before mutation",
+  );
+  for (const name of ["clearAllTasksAction", "seedDomainAction"]) {
+    const body = exportedActionBody(seedActions, name);
+    const transaction = body.indexOf("db.transaction");
+    const reproof = body.indexOf("authorizeStoredProject", transaction);
+    const graphReplacement = body.indexOf(
+      "replaceWorkspaceTaskGraphInTransaction",
+      reproof,
+    );
+    assert.ok(transaction >= 0, `${name} must use a writer transaction`);
+    assert.ok(
+      reproof > transaction,
+      `${name} must re-prove authority inside its writer transaction`,
+    );
+    assert.ok(
+      graphReplacement > reproof,
+      `${name} must enter the fenced graph replacement after transactional reproof`,
+    );
+  }
+
+  const attachmentDelete = exportedActionBody(
+    attachmentActions,
+    "deleteAttachmentAction",
+  );
+  assert.match(
+    attachmentDelete,
+    /deleteNativeAttachmentAndMirrorInTransaction\(transaction/,
+    "direct attachment deletion must atomically remove its exact Signal-upload mirror",
+  );
+});
 
 test("recordActivity requires and enforces the caller workspace", () => {
   assert.match(activity, /opts:\s*\{\s*workspaceId:\s*string/);

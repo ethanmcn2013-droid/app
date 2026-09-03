@@ -12,23 +12,26 @@ import {
 import { getTasks } from "@/server/db/queries";
 import { emitTasksChanged } from "@/server/events";
 import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import { replaceWorkspaceTaskGraphInTransaction } from "@/server/projects/project-task-graph";
+import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
+import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
 import {
   authorizeProjectCandidate,
+  authorizeStoredProject,
   type ProjectCapabilityKey,
 } from "@/server/actions/project-authz";
 import {
   SEED_COMMENT_BODIES,
-  SEED_TASKS,
   USERS,
   type Task,
   type UserId,
 } from "@/lib/data";
 import {
   DOMAINS,
-  applyDomainOverlay,
   type DomainId,
 } from "@/lib/domains";
+import { materializeWorkspaceDomainSeed } from "./seed-materialization";
 
 const DOMAIN_IDS = new Set<DomainId>([
   "marketing",
@@ -88,7 +91,7 @@ function pick<T>(arr: T[], seed: number): T {
 async function resolveSeedProject(
   projectId: string | undefined,
   capability: ProjectCapabilityKey,
-): Promise<string> {
+): Promise<Readonly<{ projectId: string; actorUserId: string }>> {
   const [me, ambient] = await Promise.all([
     getCurrentUser(),
     getActiveWorkspaceOrNull(),
@@ -105,24 +108,41 @@ async function resolveSeedProject(
     // (ADR 0001 §4).
     throw new Error("That project isn’t available.");
   }
-  return grant.projectId;
+  return Object.freeze({ projectId: grant.projectId, actorUserId: me });
 }
 
-/** Truncate the workspace's tasks (cascades to comments + activities
- *  via FK). Resets `workspaces.activeDomain` to null but leaves the
- *  workspace row itself + members + entitlements intact. */
+/** Delete the workspace task graph with durable attachment-byte custody.
+ *  Resets `workspaces.activeDomain` to null but leaves the workspace row
+ *  itself + members + entitlements intact. */
 export async function clearAllTasksAction(projectId?: string): Promise<Task[]> {
-  const ws = await resolveSeedProject(projectId, "manageProject");
-  await db.delete(tasks).where(eq(tasks.workspaceId, ws));
-  await db.transaction(
-    async (tx) => {
-      await assertProjectNotDeleting(tx, ws);
-      await tx
-        .update(workspaces)
-        .set({ activeDomain: null })
-        .where(eq(workspaces.id, ws));
+  const { projectId: ws, actorUserId } = await resolveSeedProject(
+    projectId,
+    "manageProject",
+  );
+  const reset = await db.transaction(
+    async (transaction) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "manageProject",
+        actorUserId,
+        executor: transaction,
+      });
+      if (!grant.ok) throw new Error("That project isn’t available.");
+      return replaceWorkspaceTaskGraphInTransaction(transaction, {
+        workspaceId: ws,
+        replace: async (replacementTransaction) => {
+          await replacementTransaction
+            .update(workspaces)
+            .set({ activeDomain: null })
+            .where(eq(workspaces.id, ws));
+        },
+      });
     },
     { behavior: "immediate" },
+  );
+  await repairExactNativeByteCleanupReceipts(
+    { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+    reset.cleanupReceiptKeys,
   );
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "seed" });
@@ -138,11 +158,21 @@ export async function markFirstRunCompleteAction(
 ): Promise<void> {
   // Writes a sentinel and destroys nothing, so ordinary edit rights are the
   // honest requirement here — not the owner gate the two destructive paths get.
-  const ws = await resolveSeedProject(projectId, "createOrEditTasks");
+  const { projectId: ws, actorUserId } = await resolveSeedProject(
+    projectId,
+    "createOrEditTasks",
+  );
   // Sentinel "marketing", a chosen-but-empty domain. Welcome page
   // stops intercepting; the next render shows an empty board.
   await db.transaction(
     async (tx) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "createOrEditTasks",
+        actorUserId,
+        executor: tx,
+      });
+      if (!grant.ok) throw new Error("That project isn’t available.");
       await assertProjectNotDeleting(tx, ws);
       await tx
         .update(workspaces)
@@ -167,62 +197,83 @@ export async function seedDomainAction(
     throw new Error(`Unknown domain: ${domain}`);
   }
   const pack = DOMAINS[domain];
-  const ws = await resolveSeedProject(projectId, "manageProject");
-
-  // Wipe this workspace's data only.
-  await db.delete(tasks).where(eq(tasks.workspaceId, ws));
-
-  // Ensure all canonical seed users exist (idempotent, used both
-  // for legacy ws-legacy and for new workspaces seeded with demo data).
-  await db.run(sql`
-    INSERT OR IGNORE INTO users (id, name, color, initials)
-    VALUES
-      ('chloe',  'Chloe',  'var(--user-chloe)',  'CL'),
-      ('david',  'David',  'var(--user-david)',  'DV'),
-      ('alex',   'Alex',   'var(--user-alex)',   'AX'),
-      ('ada',    'Ada',    '#f59e0b',            'AD'),
-      ('marcus', 'Marcus', '#10b981',            'MR')
-  `);
-
-  const overlaid = applyDomainOverlay(SEED_TASKS, domain);
-  for (const t of overlaid) {
-    await db.insert(tasks).values({ ...t, workspaceId: ws, seq: nextTaskSeq(ws) });
-  }
-
-  // Seed comments using domain-flavored bodies (3 per task).
+  const { projectId: ws, actorUserId } = await resolveSeedProject(
+    projectId,
+    "manageProject",
+  );
+  const materializedSeed = materializeWorkspaceDomainSeed(ws, domain);
+  const replacementTasks = materializedSeed.map((entry) => entry.task);
   const userIds: UserId[] = Object.keys(USERS) as UserId[];
   const bodies =
     pack.commentBodies.length > 0 ? pack.commentBodies : SEED_COMMENT_BODIES;
   const now = Math.floor(Date.now() / 1000);
-  for (const t of overlaid) {
-    const baseHash = strHash(t.id);
-    for (let offset = 0; offset < 3; offset++) {
-      const seed = baseHash + offset * 31;
-      const userId = pick(userIds, seed);
-      const body = pick(bodies, seed * 7 + offset);
-      const createdAt = new Date((now - (3 - offset) * 3600) * 1000);
-      await db.insert(comments).values({
-        id: `c-${t.id}-${offset}`,
-        workspaceId: ws,
-        taskId: t.id,
-        userId,
-        body,
-        createdAt,
+  const reset = await db.transaction(
+    async (transaction) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "manageProject",
+        actorUserId,
+        executor: transaction,
       });
-    }
-  }
+      if (!grant.ok) throw new Error("That project isn’t available.");
+      return replaceWorkspaceTaskGraphInTransaction(transaction, {
+        workspaceId: ws,
+        replace: async (replacementTransaction) => {
+          // Identities, replacement tasks/comments and active-domain state
+          // share the reset commit. Any failure restores the old graph and
+          // every native attachment claim/row in full.
+          await replacementTransaction.run(sql`
+            INSERT OR IGNORE INTO users (id, name, color, initials)
+            VALUES
+              ('chloe',  'Chloe',  'var(--user-chloe)',  'CL'),
+              ('david',  'David',  'var(--user-david)',  'DV'),
+              ('alex',   'Alex',   'var(--user-alex)',   'AX'),
+              ('ada',    'Ada',    '#f59e0b',            'AD'),
+              ('marcus', 'Marcus', '#10b981',             'MR')
+          `);
+          for (const task of replacementTasks) {
+            await replacementTransaction.insert(tasks).values({
+              ...task,
+              workspaceId: ws,
+              seq: nextTaskSeq(ws),
+            });
+          }
 
-  // Persist the chosen domain on the workspace row so the live
-  // header reflects it. Doubles as the "first-run complete" marker.
-  await db.transaction(
-    async (tx) => {
-      await assertProjectNotDeleting(tx, ws);
-      await tx
-        .update(workspaces)
-        .set({ activeDomain: domain })
-        .where(eq(workspaces.id, ws));
+          for (let index = 0; index < replacementTasks.length; index += 1) {
+            const canonicalTaskId =
+              materializedSeed[index]!.canonicalTaskId;
+            const task = replacementTasks[index]!;
+            const baseHash = strHash(canonicalTaskId);
+            for (let offset = 0; offset < 3; offset++) {
+              const seed = baseHash + offset * 31;
+              const userId = pick(userIds, seed);
+              const body = pick(bodies, seed * 7 + offset);
+              const createdAt = new Date(
+                (now - (3 - offset) * 3600) * 1000,
+              );
+              await replacementTransaction.insert(comments).values({
+                id: `c-${task.id}-${offset}`,
+                workspaceId: ws,
+                taskId: task.id,
+                userId,
+                body,
+                createdAt,
+              });
+            }
+          }
+
+          await replacementTransaction
+            .update(workspaces)
+            .set({ activeDomain: domain })
+            .where(eq(workspaces.id, ws));
+        },
+      });
     },
     { behavior: "immediate" },
+  );
+  await repairExactNativeByteCleanupReceipts(
+    { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+    reset.cleanupReceiptKeys,
   );
 
   revalidatePath("/app", "layout");

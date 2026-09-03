@@ -7,11 +7,15 @@ import { attachments, resources, tasks } from "@/server/db/schema";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser } from "@/server/auth";
-import { scopeForTask } from "@/server/actions/project-authz";
+import {
+  authorizeStoredProject,
+  scopeForTask,
+} from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
 import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
 import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 
 // ── Provider detection ────────────────────────────────────────────────
 
@@ -289,6 +293,16 @@ export async function removeResourceAction(
     const title = resourceRow.title;
     const deletion = await db.transaction(
       async (transaction) => {
+        const grant = await authorizeStoredProject({
+          storedProjectId: ws,
+          capability: "createOrEditTasks",
+          actorUserId: me,
+          executor: transaction,
+        });
+        if (!grant.ok) {
+          return { deleted: false, cleanupReceiptKeys: [] as string[] };
+        }
+        await assertProjectNotDeleting(transaction, ws);
         const [current] = await transaction
           .select({
             id: resources.id,
@@ -367,11 +381,22 @@ export async function removeResourceAction(
     if (!attRow) return; // Opacity: don't reveal cross-tenant existence.
 
     const deletion = await db.transaction(
-      (transaction) =>
-        deleteNativeAttachmentRowsInTransaction(transaction, {
+      async (transaction) => {
+        const grant = await authorizeStoredProject({
+          storedProjectId: ws,
+          capability: "createOrEditTasks",
+          actorUserId: me,
+          executor: transaction,
+        });
+        if (!grant.ok) {
+          return { deletedAttachmentIds: [], cleanupReceiptKeys: [] };
+        }
+        await assertProjectNotDeleting(transaction, ws);
+        return deleteNativeAttachmentRowsInTransaction(transaction, {
           workspaceId: ws,
           attachmentIds: [attachmentId],
-        }),
+        });
+      },
       { behavior: "immediate" },
     );
     if (!deletion.deletedAttachmentIds.includes(attachmentId)) return;

@@ -2,10 +2,16 @@ import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
 import { and, eq, like } from "drizzle-orm";
 import { claimPathname } from "@/lib/attachment-claim";
-import { attachments, meta, workspaceMembers } from "@/server/db/schema";
+import {
+  attachments,
+  meta,
+  resources,
+  workspaceMembers,
+} from "@/server/db/schema";
 import {
   freshProjectDriveCoreDb,
   seedProjectDriveCore,
+  seedStorageGenerations,
 } from "@/server/connections/project-drive-core.test.helpers";
 import {
   createNativeByteCleanupService,
@@ -14,6 +20,7 @@ import {
 import { retainRejectedNativeUploadCleanupCustody } from "./native-upload-cleanup";
 import {
   assertNoPendingNativeUploads,
+  deleteNativeAttachmentAndMirrorInTransaction,
   deleteNativeAttachmentRowsInTransaction,
   finalizeNativeUploadClaimInTransaction,
   NATIVE_UPLOAD_IN_FLIGHT_DRAIN_MS,
@@ -37,6 +44,7 @@ async function fixture() {
   const core = await freshProjectDriveCoreDb();
   cleanups.push(core.cleanup);
   await seedProjectDriveCore(core.client);
+  await seedStorageGenerations(core.client);
   await core.client.execute(`
     INSERT INTO tasks (
       id, workspace_id, title, lane, priority, assignees, created_at, updated_at
@@ -88,6 +96,169 @@ async function insertClaim(
 }
 
 describe("Signal-native upload custody", () => {
+  for (const mirror of ["signal", "drive", "link"] as const) {
+    it(`deletes only an exact ${mirror} attachment mirror`, async () => {
+      const setup = await fixture();
+      const attachmentId = `att-mirror-${mirror}`;
+      const resourceId = `res-${attachmentId}`;
+      await setup.db.insert(attachments).values({
+        id: attachmentId,
+        workspaceId: "ws-a",
+        taskId: "task-a",
+        uploaderUserId: "owner",
+        filename: `${mirror}.pdf`,
+        storedPath: `.data/uploads/${mirror}.pdf`,
+        mimeType: "application/pdf",
+        sizeBytes: 12,
+      });
+      await setup.db.insert(resources).values({
+        id: resourceId,
+        workspaceId: "ws-a",
+        taskId: "task-a",
+        kind: mirror === "link" ? "link" : "upload",
+        provider: mirror === "link" ? "url" : "file",
+        storage: mirror === "drive" ? "drive" : "signal",
+        storageGenerationId: mirror === "drive" ? "gen-current" : null,
+        storedPath:
+          mirror === "drive"
+            ? "provider-file-id"
+            : mirror === "link"
+              ? null
+              : `.data/uploads/${mirror}.pdf`,
+        title: `${mirror} resource`,
+        url: mirror === "link" ? "https://example.test" : null,
+        addedByUserId: "owner",
+        addedAt: 10,
+        accessState: "ok",
+        countsAgainstStorage: mirror === "signal" ? 1 : 0,
+      });
+
+      const deletion = await setup.db.transaction(
+        (transaction) =>
+          deleteNativeAttachmentAndMirrorInTransaction(transaction, {
+            workspaceId: "ws-a",
+            attachmentId,
+          }),
+        { behavior: "immediate" },
+      );
+      assert.deepEqual(deletion.deletedAttachmentIds, [attachmentId]);
+      assert.equal(
+        (
+          await setup.db
+            .select({ id: resources.id })
+            .from(resources)
+            .where(eq(resources.id, resourceId))
+        ).length,
+        mirror === "signal" ? 0 : 1,
+      );
+    });
+  }
+
+  it("refuses to clean a finalized locator retained by another row", async () => {
+    const setup = await fixture();
+    const storedPath = ".data/uploads/aliased-finalized.pdf";
+    await setup.client.executeMultiple(`
+      INSERT INTO tasks (
+        id, workspace_id, title, lane, priority, assignees, created_at, updated_at
+      ) VALUES ('task-b', 'ws-b', 'Other files', 'todo', 'medium', '[]', 10, 10);
+      INSERT INTO attachments (
+        id, workspace_id, task_id, uploader_user_id, filename, stored_path,
+        mime_type, size_bytes
+      ) VALUES
+        ('att-alias-target', 'ws-a', 'task-a', 'owner', 'target.pdf',
+         '${storedPath}', 'application/pdf', 12),
+        ('att-alias-retained', 'ws-b', 'task-b', 'outsider', 'retained.pdf',
+         '${storedPath}', 'application/pdf', 12);
+    `);
+    await assert.rejects(
+      () =>
+        setup.db.transaction(
+          (transaction) =>
+            deleteNativeAttachmentRowsInTransaction(transaction, {
+              workspaceId: "ws-a",
+              attachmentIds: ["att-alias-target"],
+            }),
+          { behavior: "immediate" },
+        ),
+      /locator alias conflicted/,
+    );
+    assert.equal(
+      (
+        await setup.db
+          .select({ id: attachments.id })
+          .from(attachments)
+          .where(like(attachments.id, "att-alias-%"))
+      ).length,
+      2,
+    );
+    assert.equal(
+      (
+        await setup.db
+          .select({ key: meta.key })
+          .from(meta)
+          .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`))
+      ).length,
+      0,
+    );
+  });
+
+  it("retains an expired writer when another row aliases its exact target", async () => {
+    const setup = await fixture();
+    const claim = await insertClaim(setup, {
+      attachmentId: "att-expired-alias",
+      authorityExpiresAt:
+        Date.now() - NATIVE_UPLOAD_IN_FLIGHT_DRAIN_MS - 60_000,
+      cleanupTargetKind: "disk-key",
+    });
+    await setup.client.executeMultiple(`
+      INSERT INTO tasks (
+        id, workspace_id, title, lane, priority, assignees, created_at, updated_at
+      ) VALUES ('task-b', 'ws-b', 'Other files', 'todo', 'medium', '[]', 10, 10);
+      INSERT INTO attachments (
+        id, workspace_id, task_id, uploader_user_id, filename, stored_path,
+        mime_type, size_bytes
+      ) VALUES (
+        'att-expired-alias-retained', 'ws-b', 'task-b', 'outsider',
+        'retained.pdf', '${claim.pathname}', 'application/pdf', 12
+      );
+    `);
+    await assert.rejects(
+      () =>
+        setup.db.transaction(
+          (transaction) =>
+            deleteNativeAttachmentRowsInTransaction(transaction, {
+              workspaceId: "ws-a",
+              attachmentIds: [claim.attachmentId],
+            }),
+          { behavior: "immediate" },
+        ),
+      /locator alias conflicted/,
+    );
+    assert.equal(
+      (
+        await setup.db
+          .select({ key: meta.key })
+          .from(meta)
+          .where(
+            eq(
+              meta.key,
+              nativeUploadClaimKey("ws-a", claim.attachmentId),
+            ),
+          )
+      ).length,
+      1,
+    );
+    assert.equal(
+      (
+        await setup.db
+          .select({ key: meta.key })
+          .from(meta)
+          .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`))
+      ).length,
+      0,
+    );
+  });
+
   it("atomically gives a finalized ordinary deletion exact replay custody", async () => {
     const setup = await fixture();
     const storedPath = ".data/uploads/ordinary-delete-finalized.pdf";

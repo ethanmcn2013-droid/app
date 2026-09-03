@@ -24,12 +24,11 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
-import { stageNativeByteCleanupReceipts } from "@/server/attachments/native-byte-cleanup";
-import { clearNativeUploadClaimsForProjectInTransaction } from "@/server/attachments/native-upload-custody";
+import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
 
 type ProjectRowsExecutor = Pick<
   LibSQLDatabase<typeof schema>,
-  "delete" | "insert" | "select"
+  "delete" | "get" | "insert" | "select" | "update"
 >;
 
 /**
@@ -58,28 +57,18 @@ export async function deleteProjectRowsInTransaction(
       eq(workspaceColumn, workspaceId),
     )!;
 
-  // `attachments` is the legacy Signal-owned byte table. Drive uploads live
-  // in `resources` and are provider-owned, so their `storedPath` values must
-  // never enter this cleanup list. Carry the native locators out of the writer
-  // transaction before their rows disappear; the caller deletes bytes only
-  // after the database commit succeeds.
+  // `attachments` is the Signal-owned byte table. Drive uploads live in
+  // `resources` and remain provider-owned. Move the exact native rows through
+  // shared custody so retained locator aliases fail closed before deletion.
   const attachmentRows = await transaction
-    .select({ storedPath: attachments.storedPath })
+    .select({ id: attachments.id })
     .from(attachments)
     .where(byTaskOrWorkspace(attachments.taskId, attachments.workspaceId));
-  const signalAttachmentStoredPaths = Object.freeze([
-    ...new Set(
-      attachmentRows
-        .map((row) => row.storedPath)
-        .filter((storedPath): storedPath is string => storedPath.length > 0),
-    ),
-  ]);
-  const nativeByteCleanupReceiptKeys =
-    await stageNativeByteCleanupReceipts(
-      transaction,
+  const { cleanupReceiptKeys: nativeByteCleanupReceiptKeys } =
+    await deleteNativeAttachmentRowsInTransaction(transaction, {
       workspaceId,
-      signalAttachmentStoredPaths,
-    );
+      attachmentIds: attachmentRows.map((row) => row.id),
+    });
 
   const links = await transaction
     .select({ token: shareLinks.token })
@@ -100,17 +89,6 @@ export async function deleteProjectRowsInTransaction(
   await transaction
     .delete(comments)
     .where(byTaskOrWorkspace(comments.taskId, comments.workspaceId));
-  // Normally deletion is refused while a claim marker exists. Clearing the
-  // exact Project namespace here is defensive lifecycle hygiene and, because
-  // the durable byte receipts above already committed to this transaction,
-  // can never discard the only remaining cleanup authority.
-  await clearNativeUploadClaimsForProjectInTransaction(
-    transaction,
-    workspaceId,
-  );
-  await transaction
-    .delete(attachments)
-    .where(byTaskOrWorkspace(attachments.taskId, attachments.workspaceId));
   await transaction
     .delete(notifications)
     .where(byTaskOrWorkspace(notifications.taskId, notifications.workspaceId));

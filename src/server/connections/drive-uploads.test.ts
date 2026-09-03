@@ -1337,7 +1337,11 @@ describe("Project Drive upload foundation", () => {
       "src/server/actions/resources.ts",
       "utf8",
     );
-    assert.match(genericAction, /resourceRow\.storage\s*!==\s*"drive"/);
+    assert.match(
+      genericAction,
+      /current\.storage\s*!==\s*"drive"/,
+      "the transaction-local resource snapshot must exclude Drive bytes",
+    );
     assert.doesNotMatch(
       readFileSync("src/server/connections/drive-uploads.ts", "utf8"),
       /files\.delete|emptyTrash/,

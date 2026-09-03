@@ -8,7 +8,10 @@ import { getAttachmentsForTask } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
 import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser } from "@/server/auth";
-import { scopeForTask } from "@/server/actions/project-authz";
+import {
+  authorizeStoredProject,
+  scopeForTask,
+} from "@/server/actions/project-authz";
 import type { Attachment } from "@/lib/data";
 import { isDemoMode } from "@/lib/access-mode";
 import { getEffectiveTier } from "@/server/db/entitlements";
@@ -29,7 +32,7 @@ import {
   safeFilename,
 } from "@/lib/attachment-claim";
 import {
-  deleteNativeAttachmentRowsInTransaction,
+  deleteNativeAttachmentAndMirrorInTransaction,
   finalizeNativeUploadClaimInTransaction,
   recordNativeUploadClaimInTransaction,
   releaseNativeUploadClaimInTransaction,
@@ -40,6 +43,7 @@ import {
   takeNativeUploadCleanupCustody,
 } from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
+import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
 
 const SERVER_ACTION_UPLOAD_AUTHORITY_MS = 30 * 60_000;
 
@@ -421,11 +425,22 @@ export async function deleteAttachmentAction(
   if (row.workspaceId !== ws) return;
 
   const deletion = await db.transaction(
-    (transaction) =>
-      deleteNativeAttachmentRowsInTransaction(transaction, {
+    async (transaction) => {
+      const grant = await authorizeStoredProject({
+        storedProjectId: ws,
+        capability: "createOrEditTasks",
+        actorUserId: me,
+        executor: transaction,
+      });
+      if (!grant.ok) {
+        return { deletedAttachmentIds: [], cleanupReceiptKeys: [] };
+      }
+      await assertProjectNotDeleting(transaction, ws);
+      return deleteNativeAttachmentAndMirrorInTransaction(transaction, {
         workspaceId: ws,
-        attachmentIds: [attachmentId],
-      }),
+        attachmentId,
+      });
+    },
     { behavior: "immediate" },
   );
   if (!deletion.deletedAttachmentIds.includes(attachmentId)) return;
