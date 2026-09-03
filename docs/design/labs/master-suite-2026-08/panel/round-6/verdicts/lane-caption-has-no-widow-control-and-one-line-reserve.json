@@ -1,0 +1,5 @@
+{
+  "id": "lane-caption-has-no-widow-control-and-one-line-reserve",
+  "real": false,
+  "reason": "The CSS facts hold (computed text-wrap: wrap, min-height 16.8px) but the consequences are overstated and the fix, applied in-page and re-measured, fails its own claim: all five .trayName heads sit at y=145 exactly at 1920 and the four populated lanes' first cards all sit at 196.8 — only the deliberately collapsed empty WAITING lane's empty-state line is lower (226.6), and after `min-height: calc(1.4em*2)` the four card lanes drop to 213.6 while WAITING stays at 226.6, so the rag the finding leads with survives the fix while every board from 1100 up pays 16.8px of permanent head height. The band is also mis-stated: at 1140 and 1160 every caption except the collapsed lane is one line, so the two-card-baseline case lives in roughly 1100-1129, and at 1100 WAITING still takes three lines against a two-line reserve. `balance` is not free either — it trades 'or a decision.' for a line ending on the article 'a' split from 'delivery' ('Held by a reply, a / delivery, or a decision.'), while `pretty` changes the 1920 break not at all."
+}
