@@ -142,13 +142,17 @@ async function seedRunningBlocker(
   database: TestDb,
   id = "running-erasure-blocker",
   dedupeCharacter = "f",
+  operationKind: "folder_rename" | "project_delete" = "folder_rename",
 ) {
   await database.insert(projectDriveOperations).values({
     id,
     workspaceId: "ws-a",
-    operationKind: "project_delete",
+    operationKind,
     status: "running",
     dedupeKey: dedupeCharacter.repeat(64),
+    storageGenerationId:
+      operationKind === "folder_rename" ? "storage-a" : null,
+    workspaceRevision: operationKind === "folder_rename" ? 1 : null,
     attemptCount: 1,
     lastAttemptAt: new Date(START),
     leaseExpiresAt: new Date(START + 60_000),
@@ -248,7 +252,12 @@ describe("Project Drive operation orchestration · prepare versus erasure", () =
   it("refuses new provider intent after project deletion owns the workspace", async () => {
     const { database, cleanup } = await freshOrchestratorDb();
     try {
-      await seedRunningBlocker(database);
+      await seedRunningBlocker(
+        database,
+        "running-project-delete",
+        "f",
+        "project_delete",
+      );
       const service = orchestrator(database, ["must-not-be-inserted"]);
 
       await assert.rejects(
@@ -803,11 +812,13 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
     const { database, cleanup } = await freshOrchestratorDb();
     try {
       await database.insert(projectDriveOperations).values({
-        id: "expired-delete",
+        id: "expired-rename",
         workspaceId: "ws-a",
-        operationKind: "project_delete",
+        operationKind: "folder_rename",
         status: "running",
         dedupeKey: "a".repeat(64),
+        storageGenerationId: "storage-a",
+        workspaceRevision: 1,
         attemptCount: 1,
         lastAttemptAt: EXPIRED_ATTEMPT,
         leaseExpiresAt: EXPIRED_LEASE,
@@ -825,7 +836,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
       const [quarantined] = await database
         .select()
         .from(projectDriveOperations)
-        .where(eq(projectDriveOperations.id, "expired-delete"));
+        .where(eq(projectDriveOperations.id, "expired-rename"));
       assert.equal(quarantined?.status, "manual_attention");
       assert.equal(quarantined?.attemptCount, 1);
       assert.equal(quarantined?.leaseExpiresAt, null);
@@ -833,7 +844,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
 
       const unknown = await service.recordErasureRecovery({
         workspaceId: "ws-a",
-        operationId: "expired-delete",
+        operationId: "expired-rename",
         attemptFence: 1,
         providerTruth: "provider_outcome_unknown",
       });
@@ -841,7 +852,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
       await assert.rejects(
         service.recordErasureRecovery({
           workspaceId: "ws-a",
-          operationId: "expired-delete",
+          operationId: "expired-rename",
           attemptFence: 1,
           providerTruth: "provider_outcome_unknown",
           rawProviderError: "secret provider response",
@@ -854,7 +865,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
       assert.deepEqual(
         await service.claim({
           workspaceId: "ws-a",
-          operationId: "expired-delete",
+          operationId: "expired-rename",
         }),
         CONFLICT,
         "recovery must never turn an ambiguous operation back into provider work",
@@ -862,7 +873,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
       assert.deepEqual(
         await service.requeueManualAttention({
           workspaceId: "ws-a",
-          operationId: "expired-delete",
+          operationId: "expired-rename",
           attemptFence: 1,
         }),
         CONFLICT,
@@ -877,7 +888,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
       assert.deepEqual(
         await service.recordErasureRecovery({
           workspaceId: "ws-a",
-          operationId: "expired-delete",
+          operationId: "expired-rename",
           attemptFence: 2,
           providerTruth: "provider_mutation_absent",
         }),
@@ -886,7 +897,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
       );
       const absent = await service.recordErasureRecovery({
         workspaceId: "ws-a",
-        operationId: "expired-delete",
+        operationId: "expired-rename",
         attemptFence: 1,
         providerTruth: "provider_mutation_absent",
       });
@@ -897,7 +908,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
       assert.equal(absent.operation.lastErrorCode, null);
       const replay = await service.recordErasureRecovery({
         workspaceId: "ws-a",
-        operationId: "expired-delete",
+        operationId: "expired-rename",
         attemptFence: 1,
         providerTruth: "provider_mutation_absent",
       });
@@ -908,7 +919,7 @@ describe("Project Drive operation orchestration · erasure recovery", () => {
         openProviderToken: ({ refreshTokenCipher }) => refreshTokenCipher,
         revokeProjectDriveRefreshToken: async () => {},
       });
-      assert.equal(await operationStatus(database, "expired-delete"), null);
+      assert.equal(await operationStatus(database, "expired-rename"), null);
     } finally {
       cleanup();
     }

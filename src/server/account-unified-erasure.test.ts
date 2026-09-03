@@ -57,12 +57,12 @@ async function seedTwo(client: Client) {
       VALUES ('u-target'), ('u-bystander');
     INSERT INTO project_drive_operations (
         id, workspace_id, operation_kind, status, dedupe_key,
-        attempt_count, created_at, updated_at)
+        attempt_count, created_at, updated_at, completed_at)
       VALUES
-        ('drive-op-target', 'ws-a', 'project_delete', 'pending',
-          '${"a".repeat(64)}', 0, 1756800000, 1756800000),
+        ('drive-op-target', 'ws-a', 'project_delete', 'cancelled',
+          '${"a".repeat(64)}', 0, 1756800000, 1756800001, 1756800001),
         ('drive-op-bystander', 'ws-b', 'project_delete', 'pending',
-          '${"b".repeat(64)}', 0, 1756800000, 1756800000);
+          '${"b".repeat(64)}', 0, 1756800000, 1756800000, NULL);
   `);
 }
 
@@ -148,17 +148,18 @@ test("Google tokens from Notes and Tasks are deduplicated for revocation", async
   }
 });
 
-test("real Tasks failure still revokes tokens already returned by Notes", async () => {
+test("a running project deletion defers Tasks erasure without trapping either fence", async () => {
   const { client, db } = await freshMemoryDb();
   const revokedTokens: string[] = [];
   try {
     await seedTwo(client);
-    // Reproduce the claim-wins side of the executor/erasure race. The real
-    // Tasks eraser must retain this running journal row and fail closed.
+    // Reproduce the project-delete-wins side of the lifecycle race. The real
+    // Tasks eraser must retain this running tombstone and yield before fencing.
     await client.execute(`
       UPDATE project_drive_operations
       SET status='running', attempt_count=1, last_attempt_at=1756800001,
-          lease_expires_at=2756800001, updated_at=1756800001
+          lease_expires_at=2756800001, updated_at=1756800001,
+          completed_at=NULL
       WHERE id='drive-op-target'
     `);
 
@@ -195,8 +196,8 @@ test("real Tasks failure still revokes tokens already returned by Notes", async 
         client,
         "meta WHERE key='google-drive:account-erasure:user:u-target'",
       ),
-      1,
-      "the durable fence must survive a fail-closed Tasks erasure",
+      0,
+      "account erasure must yield before installing a fence behind the winning deletion",
     );
   } finally {
     client.close();

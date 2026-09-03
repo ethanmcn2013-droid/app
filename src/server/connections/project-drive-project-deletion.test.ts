@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { and, eq, like } from "drizzle-orm";
+import { eraseAccountData } from "@/server/account-erasure";
 import {
   attachments,
   driveFolderGrants,
@@ -204,7 +205,393 @@ async function seedProjectChildren(
   `);
 }
 
+type DeletePrecedenceLineage = "owned" | "member" | "storage";
+type DeletePrecedenceStatus =
+  | "pending"
+  | "live_running"
+  | "expired_running"
+  | "retry_wait"
+  | "manual_attention";
+
+async function deletionPrecedenceFixture(
+  lineage: DeletePrecedenceLineage,
+  status: DeletePrecedenceStatus,
+) {
+  const fixture = await seededFixture(false);
+  let targetUserId: string;
+  let targetClerkId: string;
+  let actorUserId = "owner";
+
+  switch (lineage) {
+    case "owned":
+      targetUserId = "owner";
+      targetClerkId = "clerk-owner";
+      actorUserId = targetUserId;
+      break;
+    case "member":
+      targetUserId = "member-a";
+      targetClerkId = "clerk-member-a";
+      break;
+    case "storage":
+      targetUserId = "storage-custodian";
+      targetClerkId = "clerk-storage-custodian";
+      await fixture.client.executeMultiple(`
+        INSERT INTO users (id, clerk_id, email, color, initials) VALUES (
+          'storage-custodian', 'clerk-storage-custodian',
+          'storage@example.com', '#555', 'SC'
+        );
+        INSERT INTO provider_connections (
+          id, user_id, provider, provider_account_id, provider_account_email,
+          root_folder_id, refresh_token_cipher, key_version, scopes, status,
+          is_current, connected_at
+        ) VALUES (
+          'conn-storage-custodian', 'storage-custodian', 'google_drive',
+          'account-storage-custodian', 'storage@example.com',
+          'root-storage-custodian', 'cipher-storage-custodian', 1,
+          '["https://www.googleapis.com/auth/drive.file"]', 'active', 1, 20
+        );
+        INSERT INTO workspace_storage (
+          id, workspace_id, connection_id, folder_id, folder_web_view_link,
+          state, is_current
+        ) VALUES (
+          'gen-storage-custodian', 'ws-a', 'conn-storage-custodian',
+          'folder-storage-custodian',
+          'https://drive.example/folder-storage-custodian', 'active', 1
+        );
+      `);
+      break;
+  }
+
+  const journal = createProjectDriveOperationJournal({
+    database: fixture.db,
+    randomOperationId: () => `delete-precedence-${lineage}-${status}`,
+  });
+  const prepared = await journal.prepare({
+    operationKind: "project_delete",
+    workspaceId: "ws-a",
+  });
+  assert.notEqual(prepared.outcome, "conflict");
+  if (prepared.outcome === "conflict") {
+    throw new Error("could not prepare deletion-precedence fixture");
+  }
+
+  if (status === "live_running" || status === "expired_running") {
+    await fixture.client.execute({
+      sql: `UPDATE project_drive_operations
+            SET status = 'running', attempt_count = 1,
+                last_attempt_at = created_at,
+                lease_expires_at = CASE WHEN ? = 1
+                  THEN 32503680000 ELSE created_at END,
+                updated_at = max(updated_at, created_at)
+            WHERE id = ?`,
+      args: [
+        status === "live_running" ? 1 : 0,
+        prepared.operation.operationId,
+      ],
+    });
+  } else if (status === "retry_wait") {
+    await fixture.client.execute({
+      sql: `UPDATE project_drive_operations
+            SET status = 'retry_wait', attempt_count = 1,
+                last_attempt_at = created_at,
+                next_attempt_at = 32503680000,
+                last_error_code = 'provider_unavailable',
+                updated_at = max(updated_at, created_at)
+            WHERE id = ?`,
+      args: [prepared.operation.operationId],
+    });
+  } else if (status === "manual_attention") {
+    await fixture.client.execute({
+      sql: `UPDATE project_drive_operations
+            SET status = 'manual_attention', attempt_count = 1,
+                last_attempt_at = created_at,
+                last_error_code = 'ambiguous_provider_result',
+                updated_at = max(updated_at, created_at)
+            WHERE id = ?`,
+      args: [prepared.operation.operationId],
+    });
+  }
+
+  await fixture.client.execute({
+    sql: `INSERT INTO project_drive_operations (
+            id, workspace_id, operation_kind, status, dedupe_key,
+            connection_id, target_storage_generation_id, attempt_count,
+            created_at, updated_at
+          ) VALUES (?, 'ws-a', 'folder_provision', 'pending', ?,
+                    'conn-new', ?, 0, 1, 1)`,
+    args: [
+      `bystander-operation-${lineage}-${status}`,
+      "f".repeat(64),
+      `bystander-generation-${lineage}-${status}`,
+    ],
+  });
+
+  return Object.freeze({
+    ...fixture,
+    actorUserId,
+    bystanderOperationId: `bystander-operation-${lineage}-${status}`,
+    operationId: prepared.operation.operationId,
+    targetClerkId,
+    targetUserId,
+  });
+}
+
 describe("Project Drive-aware Project deletion", () => {
+  for (const lineage of ["owned", "member", "storage"] as const) {
+    it(`yields atomically to a live Project deletion reached through ${lineage} lineage`, async () => {
+      const fixture = await deletionPrecedenceFixture(
+        lineage,
+        "live_running",
+      );
+      try {
+        let providerRevocations = 0;
+        const erasureOptions = {
+          openProviderToken: ({ connectionId }: { connectionId: string }) =>
+            `refresh:${connectionId}`,
+          revokeProjectDriveRefreshToken: async (_refreshToken: string) => {
+            providerRevocations += 1;
+          },
+        };
+        const before = await fixture.client.execute({
+          sql: `SELECT status, attempt_count, last_attempt_at, next_attempt_at,
+                       lease_expires_at, last_error_code, completed_at
+                FROM project_drive_operations WHERE id = ?`,
+          args: [fixture.operationId],
+        });
+
+        await assert.rejects(
+          eraseAccountData(
+            fixture.db,
+            fixture.targetClerkId,
+            erasureOptions,
+          ),
+          /account erasure deferred: live Project deletion is already in progress/,
+        );
+
+        const after = await fixture.client.execute({
+          sql: `SELECT status, attempt_count, last_attempt_at, next_attempt_at,
+                       lease_expires_at, last_error_code, completed_at
+                FROM project_drive_operations WHERE id = ?`,
+          args: [fixture.operationId],
+        });
+        assert.deepEqual(after.rows[0], before.rows[0]);
+        assert.equal(providerRevocations, 0);
+        assert.equal(
+          Number(
+            (
+              await fixture.client.execute({
+                sql: "SELECT COUNT(*) AS n FROM meta WHERE key = ?",
+                args: [
+                  googleDriveAccountErasureFenceKey(fixture.targetUserId),
+                ],
+              })
+            ).rows[0]?.n ?? 0,
+          ),
+          0,
+          "erasure must not install its fence behind a live deletion lease",
+        );
+
+        // Let the winning deletion finish, then prove account erasure can retry
+        // without either lifecycle leaving a permanent fence.
+        await fixture.client.execute({
+          sql: `UPDATE project_drive_operations
+                SET lease_expires_at = last_attempt_at
+                WHERE id = ?`,
+          args: [fixture.operationId],
+        });
+        await createProjectDriveProjectDeletionService({
+          database: fixture.db,
+          revokeExactGrant: async () => {},
+        }).delete({
+          workspaceId: "ws-a",
+          actorUserId: fixture.actorUserId,
+        });
+        await eraseAccountData(
+          fixture.db,
+          fixture.targetClerkId,
+          erasureOptions,
+        );
+        assert.equal(
+          Number(
+            (
+              await fixture.client.execute({
+                sql: "SELECT COUNT(*) AS n FROM users WHERE id = ?",
+                args: [fixture.targetUserId],
+              })
+            ).rows[0]?.n ?? 0,
+          ),
+          0,
+        );
+      } finally {
+        fixture.cleanup();
+      }
+    });
+  }
+
+  for (const status of [
+    "pending",
+    "expired_running",
+    "retry_wait",
+    "manual_attention",
+  ] as const) {
+    it(`subsumes an owned ${status} deletion when account erasure owns the Project`, async () => {
+      const fixture = await deletionPrecedenceFixture("owned", status);
+      try {
+        const revokedTokens: string[] = [];
+        await eraseAccountData(fixture.db, fixture.targetClerkId, {
+          openProviderToken: ({ connectionId }) => `refresh:${connectionId}`,
+          revokeProjectDriveRefreshToken: async (token) => {
+            revokedTokens.push(token);
+          },
+        });
+
+        assert.equal(await count(fixture, "workspaces"), 0);
+        assert.equal(
+          Number(
+            (
+              await fixture.client.execute({
+                sql: "SELECT COUNT(*) AS n FROM project_drive_operations WHERE id = ?",
+                args: [fixture.operationId],
+              })
+            ).rows[0]?.n ?? 0,
+          ),
+          0,
+        );
+        assert.deepEqual(revokedTokens.sort(), [
+          "refresh:conn-new",
+          "refresh:conn-old",
+        ]);
+        assert.equal(
+          Number(
+            (
+              await fixture.client.execute({
+                sql: "SELECT COUNT(*) AS n FROM meta WHERE key = ?",
+                args: [
+                  googleDriveAccountErasureFenceKey(fixture.targetUserId),
+                ],
+              })
+            ).rows[0]?.n ?? 0,
+          ),
+          0,
+        );
+      } finally {
+        fixture.cleanup();
+      }
+    });
+  }
+
+  for (const lineage of ["member", "storage"] as const) {
+    for (const status of [
+      "pending",
+      "expired_running",
+      "retry_wait",
+      "manual_attention",
+    ] as const) {
+      it(`preserves and hands off a ${status} deletion after non-owner ${lineage} erasure`, async () => {
+        const fixture = await deletionPrecedenceFixture(lineage, status);
+        try {
+          const revokedTokens: string[] = [];
+          await eraseAccountData(fixture.db, fixture.targetClerkId, {
+            openProviderToken: ({ connectionId }) => `refresh:${connectionId}`,
+            revokeProjectDriveRefreshToken: async (token) => {
+              revokedTokens.push(token);
+            },
+          });
+
+          assert.equal(await count(fixture, "workspaces"), 1);
+          assert.equal(
+            Number(
+              (
+                await fixture.client.execute({
+                  sql: "SELECT COUNT(*) AS n FROM users WHERE id = ?",
+                  args: [fixture.targetUserId],
+                })
+              ).rows[0]?.n ?? 0,
+            ),
+            0,
+          );
+          assert.equal(
+            Number(
+              (
+                await fixture.client.execute({
+                  sql: "SELECT COUNT(*) AS n FROM meta WHERE key = ?",
+                  args: [
+                    googleDriveAccountErasureFenceKey(fixture.targetUserId),
+                  ],
+                })
+              ).rows[0]?.n ?? 0,
+            ),
+            0,
+            "the completed erasure must not strand its account fence",
+          );
+
+          const tombstone = await fixture.client.execute({
+            sql: `SELECT status, attempt_count, next_attempt_at,
+                         lease_expires_at, last_error_code
+                  FROM project_drive_operations WHERE id = ?`,
+            args: [fixture.operationId],
+          });
+          assert.equal(tombstone.rows.length, 1);
+          if (status === "pending") {
+            assert.equal(tombstone.rows[0]?.status, "pending");
+            assert.equal(tombstone.rows[0]?.attempt_count, 0);
+            assert.equal(tombstone.rows[0]?.last_error_code, null);
+          } else {
+            assert.equal(tombstone.rows[0]?.status, "retry_wait");
+            assert.equal(tombstone.rows[0]?.lease_expires_at, null);
+            assert.ok(Number(tombstone.rows[0]?.next_attempt_at ?? 0) > 1);
+            if (
+              status === "expired_running" ||
+              status === "manual_attention"
+            ) {
+              assert.equal(
+                tombstone.rows[0]?.last_error_code,
+                "workspace_changed",
+              );
+            } else {
+              assert.equal(
+                tombstone.rows[0]?.last_error_code,
+                "provider_unavailable",
+              );
+              assert.ok(
+                Number(tombstone.rows[0]?.next_attempt_at ?? 0) <
+                  32_503_680_000,
+                "an existing retry may be accelerated during handoff",
+              );
+            }
+          }
+          assert.equal(
+            Number(
+              (
+                await fixture.client.execute({
+                  sql: "SELECT COUNT(*) AS n FROM project_drive_operations WHERE id = ? AND status = 'pending'",
+                  args: [fixture.bystanderOperationId],
+                })
+              ).rows[0]?.n ?? 0,
+            ),
+            1,
+            "unrelated bystander work in the surviving Project must remain untouched",
+          );
+          assert.deepEqual(
+            revokedTokens,
+            lineage === "storage"
+              ? ["refresh:conn-storage-custodian"]
+              : [],
+          );
+
+          const deletion = await createProjectDriveProjectDeletionService({
+            database: fixture.db,
+            revokeExactGrant: async () => {},
+          }).delete({ workspaceId: "ws-a", actorUserId: "owner" });
+          assert.equal(deletion.workspaceId, "ws-a");
+          assert.equal(await count(fixture, "workspaces"), 0);
+        } finally {
+          fixture.cleanup();
+        }
+      });
+    }
+  }
+
   it("revokes exact named-user permissions outside the writer transaction, then removes every Project child row", async () => {
     const fixture = await seededFixture();
     try {

@@ -20,9 +20,9 @@
  *   2. NO COLLATERAL DELETION. A second "bystander" user, who owns their
  *      own workspace, is a member of the target's workspace, and posted on
  *      the target's tasks, keeps their account and product data. Drive
- *      journal rows in a workspace backed by the erased account are consumed
- *      deliberately because every operation kind shares that durable fence.
- *      Global, non-tenant tables are untouched.
+ *      journal rows directly tied to the erased account are consumed, while
+ *      unrelated work and a Project-deletion tombstone in the surviving
+ *      workspace remain. Global, non-tenant tables are untouched.
  *
  * Plus: local and private-Blob attachment locators use the central storage
  * seam, a real disk probe is asserted gone, erasure is idempotent, and erasing
@@ -108,8 +108,10 @@ async function seed(client: Client, probePath: string) {
       grantee_email, grant_role, workspace_revision, provider_permission_id,
       attempt_count, last_attempt_at, created_at, updated_at, completed_at
     ) VALUES
-      ('op-owned-project','ws-a','project_delete','pending','${"1".repeat(64)}',
-       NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1756800000,1756800000,NULL),
+      -- Terminal delete receipts are safe for account erasure to consume. A
+      -- non-terminal delete is covered by the lifecycle-precedence tests.
+      ('op-owned-project','ws-a','project_delete','cancelled','${"1".repeat(64)}',
+       NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,NULL,1756800000,1756800001,1756800001),
       ('op-target-connection','ws-b','folder_provision','pending','${"2".repeat(64)}',
        'conn-target',NULL,'storage-target-reserved',NULL,NULL,NULL,NULL,NULL,
        0,NULL,1756800000,1756800000,NULL),
@@ -125,12 +127,12 @@ async function seed(client: Client, probePath: string) {
       ('op-cancelled-subject','ws-b','grant_create','cancelled','${"9".repeat(64)}',
        NULL,'storage-bystander-in-b',NULL,'u-target','target@example.test','reader',NULL,
        NULL,0,NULL,1756800000,1756800001,1756800001),
-      -- A project-delete row carries no connection, storage, or subject. The
-      -- target-owned storage generation still makes every operation in ws-b
-      -- part of the account-erasure fence.
-      ('op-target-storage-project-delete','ws-b','project_delete','pending','${"0".repeat(64)}',
+      -- A project-delete row carries no connection, storage, or subject. A
+      -- target-owned generation must not make this tombstone or unrelated
+      -- work elsewhere in the surviving workspace account-owned cleanup.
+      ('op-target-storage-project-delete','ws-b','project_delete','cancelled','${"0".repeat(64)}',
        NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-       0,NULL,1756800000,1756800000,NULL),
+       0,NULL,1756800000,1756800001,1756800001),
       ('op-bystander-only','ws-b','folder_rename','pending','${"5".repeat(64)}',
        NULL,'storage-bystander-in-b',NULL,NULL,NULL,NULL,3,NULL,
        0,NULL,1756800000,1756800000,NULL);
@@ -313,7 +315,7 @@ test("erasure removes every target row across every table, leaves the bystander 
       ["provider_connections", 1], // conn-bystander
       ["workspace_storage", 1], // unrelated bystander generation in ws-b
       ["drive_folder_grants", 0],
-      ["project_drive_operations", 0], // every ws-b operation shared the erased user's storage fence
+      ["project_drive_operations", 2], // surviving delete tombstone + unrelated bystander operation
       ["meta", 2], // board:ws-b:name + activeDomain
       ["comp_codes", 1],
       ["processed_webhooks", 1],
@@ -338,8 +340,16 @@ test("erasure removes every target row across every table, leaves the bystander 
         client,
         "project_drive_operations WHERE id='op-target-storage-project-delete'",
       ),
-      0,
-      "project-delete evidence must be found through the storage-backed workspace lineage",
+      1,
+      "a surviving Project keeps its deletion evidence after storage-account erasure",
+    );
+    assert.equal(
+      await count(
+        client,
+        "project_drive_operations WHERE id='op-bystander-only'",
+      ),
+      1,
+      "unrelated operation evidence in a surviving Project must not be erased",
     );
 
     // Shared task survives, but the erased Notes account's exact wording,
@@ -414,12 +424,12 @@ test("erasure consumes Drive journal evidence before every RESTRICT parent", asy
       INSERT INTO project_drive_operations (
         id, workspace_id, operation_kind, status, dedupe_key,
         storage_generation_id, workspace_revision, attempt_count, created_at,
-        updated_at
+        updated_at, completed_at
       ) VALUES
         ('operation-storage','ws-target','folder_rename','pending',
-          '${"a".repeat(64)}','storage-target',2,0,1756800000,1756800000),
-        ('operation-project','ws-target','project_delete','pending',
-          '${"b".repeat(64)}',NULL,NULL,0,1756800000,1756800000);
+          '${"a".repeat(64)}','storage-target',2,0,1756800000,1756800000,NULL),
+        ('operation-project','ws-target','project_delete','cancelled',
+          '${"b".repeat(64)}',NULL,NULL,0,1756800000,1756800001,1756800001);
     `);
 
     const revoked: string[] = [];
