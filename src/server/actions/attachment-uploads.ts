@@ -16,6 +16,7 @@ import {
   cleanupRejectedNativeUpload,
 } from "@/server/attachments/native-upload-cleanup";
 import {
+  isApprovedVercelBlobUrl,
   isWorldReadable,
   pathnameMatchesClaim,
   verifyBlobContents,
@@ -65,6 +66,17 @@ export async function finalizeUpload(
   // uploading to the same task hold two different claims, and neither
   // should be able to complete the other's.
   if (row.uploaderUserId !== me) return { ok: false, reason: "not-found" };
+
+  // An exact replay can arrive after the first finalizer committed but before
+  // the browser observed its response. It has already passed fresh Project
+  // authorization and uploader ownership above; return the persisted result
+  // without probing the store or recording a second activity.
+  if (
+    row.storedPath === blobUrl &&
+    isApprovedVercelBlobUrl(row.storedPath)
+  ) {
+    return { ok: true, attachmentId };
+  }
 
   // The claim's stored_path still holds the pathname the token was minted
   // for; the URL only replaces it once everything below passes.

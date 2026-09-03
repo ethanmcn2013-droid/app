@@ -7,6 +7,8 @@ import {
   newAttachmentId,
 } from "@/lib/attachment-claim";
 import {
+  isApprovedVercelBlobUrl,
+  isWorldReadable,
   pathnameMatchesClaim,
   verifyBlobContents,
 } from "@/server/attachments/verify-upload";
@@ -119,6 +121,56 @@ describe("the pathname is ours, not the browser's", () => {
       pathnameMatchesClaim("javascript:alert(1)", claim),
       false,
     );
+  });
+
+  it("refuses non-Vercel hosts, credentials, and custom ports", () => {
+    const claim = "ws-1/task-9/att-abcd1234-deck.pdf";
+    const malicious = [
+      `https://example.com/${claim}`,
+      `https://abc.blob.vercel-storage.com.evil.test/${claim}`,
+      `https://abc.blob.vercel-storage.com@169.254.169.254/${claim}`,
+      `https://user:secret@abc.blob.vercel-storage.com/${claim}`,
+      `https://abc.blob.vercel-storage.com:8443/${claim}`,
+      `https://blob.vercel-storage.com/${claim}`,
+    ];
+    for (const url of malicious) {
+      assert.equal(pathnameMatchesClaim(url, claim), false, url);
+      assert.equal(isApprovedVercelBlobUrl(url), false, url);
+    }
+  });
+
+  it("never probes an unapproved host or follows a redirect", async () => {
+    const originalFetch = globalThis.fetch;
+    let calls = 0;
+    let redirect: RequestRedirect | undefined;
+    try {
+      globalThis.fetch = (async (_input, init) => {
+        calls += 1;
+        redirect = init?.redirect;
+        return new Response(null, {
+          status: 302,
+          headers: { location: "http://169.254.169.254/latest/meta-data" },
+        });
+      }) as typeof fetch;
+
+      assert.equal(
+        await isWorldReadable("http://169.254.169.254/latest/meta-data"),
+        true,
+      );
+      assert.equal(calls, 0, "an unapproved host must never reach fetch");
+
+      assert.equal(
+        await isWorldReadable(
+          "https://abc123.blob.vercel-storage.com/ws-1/file.pdf",
+        ),
+        true,
+        "a redirect is a refusal, not proof that the original Blob is private",
+      );
+      assert.equal(calls, 1);
+      assert.equal(redirect, "manual");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 
@@ -256,6 +308,21 @@ describe("the path proves itself before it does anything", () => {
     );
     assert.match(custody, /\.update\(attachments\)/);
     assert.match(custody, /assertProjectNotDeleting\(transaction, workspaceId\)/);
+  });
+
+  it("an exact finalized replay succeeds after authorization without duplicate activity", () => {
+    const bodyAt = finalize.indexOf("export async function finalizeUpload");
+    const scopeAt = finalize.indexOf("scopeForTask(", bodyAt);
+    const uploaderAt = finalize.indexOf("row.uploaderUserId !== me", scopeAt);
+    const replayAt = finalize.indexOf("row.storedPath === blobUrl", uploaderAt);
+    const pathnameAt = finalize.indexOf("pathnameMatchesClaim(", replayAt);
+    const activityAt = finalize.indexOf("recordActivity(", replayAt);
+    assert.ok(scopeAt < uploaderAt && uploaderAt < replayAt);
+    assert.ok(replayAt < pathnameAt && replayAt < activityAt);
+    assert.match(
+      finalize.slice(replayAt, pathnameAt),
+      /return \{ ok: true, attachmentId \}/,
+    );
   });
 
   it("finalize checks all three properties before the row becomes real", () => {

@@ -33,6 +33,32 @@ export type BlobRefusal =
   /** The blob is not there at all. */
   | "missing";
 
+const VERCEL_BLOB_HOST_SUFFIX = ".blob.vercel-storage.com";
+
+function approvedVercelBlobUrl(blobUrl: string): URL | null {
+  let parsed: URL;
+  try {
+    parsed = new URL(blobUrl);
+  } catch {
+    return null;
+  }
+  if (
+    parsed.protocol !== "https:" ||
+    parsed.username.length > 0 ||
+    parsed.password.length > 0 ||
+    parsed.port.length > 0 ||
+    parsed.hostname.length <= VERCEL_BLOB_HOST_SUFFIX.length ||
+    !parsed.hostname.endsWith(VERCEL_BLOB_HOST_SUFFIX)
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
+export function isApprovedVercelBlobUrl(blobUrl: string): boolean {
+  return approvedVercelBlobUrl(blobUrl) !== null;
+}
+
 /**
  * Does the URL the browser returned actually point at the pathname we
  * issued a token for?
@@ -48,13 +74,8 @@ export function pathnameMatchesClaim(
   blobUrl: string,
   expectedPathname: string,
 ): boolean {
-  let parsed: URL;
-  try {
-    parsed = new URL(blobUrl);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== "https:") return false;
+  const parsed = approvedVercelBlobUrl(blobUrl);
+  if (!parsed) return false;
   // decodeURIComponent so an escaped separator cannot smuggle a prefix.
   let actual: string;
   try {
@@ -80,13 +101,19 @@ export function pathnameMatchesClaim(
  * inferred from a flag.
  */
 export async function isWorldReadable(blobUrl: string): Promise<boolean> {
+  const approvedUrl = approvedVercelBlobUrl(blobUrl);
+  // A caller-controlled or malformed destination is a refusal, never a probe.
+  // This keeps the verification request off internal and third-party hosts.
+  if (!approvedUrl) return true;
   try {
-    const res = await fetch(blobUrl, {
+    const res = await fetch(approvedUrl, {
       method: "HEAD",
-      redirect: "follow",
+      // A redirect is not proof about the approved Blob URL and must never be
+      // followed into a caller-selected network destination.
+      redirect: "manual",
       cache: "no-store",
     });
-    return res.ok;
+    return res.ok || (res.status >= 300 && res.status < 400);
   } catch {
     // A network failure is not evidence that it is private. It is also not
     // evidence that it is public, and refusing an upload because our own
