@@ -1,6 +1,14 @@
 {
   "seat": "ux",
-  "score": 8.5,
-  "findings": [],
+  "score": 8.6,
+  "findings": [
+    {
+      "id": "dense-lane-fold-reads-as-end-of-list",
+      "element": ".tray[data-lane=\"todo\"] .trayBody at tasks.dense — src/tasks.css:812-827 (.tray::after fold hairline) and src/tasks.js:3761 measureEdges()",
+      "problem": "PROVISIONAL. At 1920x1000, tasks.dense hides 10 of 32 tasks inside three internally-scrolling lanes with no worded cue. To Do renders 5 of 10 (scroller 195-775, card 5 ends at exactly 775), then '+ Add here' at 779. The only cues that five more exist are a 1px rule at rgba(17,17,17,0.08) — the same --line token as card borders — 4px above the Add row, and '10' at 11px/400/62% ink 630px away in the lane head.",
+      "fix": "PROVISIONAL",
+      "cost": 3
+    }
+  ],
   "biggestWin": "PROVISIONAL - review in progress."
 }

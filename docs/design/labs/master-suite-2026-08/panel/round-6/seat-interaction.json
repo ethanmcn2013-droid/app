@@ -1,6 +1,14 @@
 {
   "seat": "interaction",
-  "score": 9.0,
-  "findings": [],
+  "score": 9.1,
+  "findings": [
+    {
+      "id": "keyboard-drop-has-no-undo",
+      "element": ".card[data-id] Space-to-drop branch of onKey() — _gate-suite.html:14304-14324 (compare the pointer drop at _gate-suite.html:15114 and the move menu at _gate-suite.html:14887, which both call arm({kind:\"move\"}))",
+      "problem": "Driven at 1440: focus a card, Space (\"Picked up Confirm marquee sides with the hire company.\"), ArrowRight ArrowRight, Space. The board says \"...dropped in the review column.\" Ctrl+Z then answers \"Nothing left to undo.\" and the card stays in Review. The identical move by mouse drag answers \"...is back in the to do column.\" and the same move through the card's Move menu is undoable too. Only the keyboard-carry drop fails to arm, because the Space branch of onKey mutates the lane and never calls arm(). Escape covers the card only while it is still in hand; once Space commits, the keyboard route is the one route to the board's most frequent structural act with no way back. The card advertises aria-roledescription=\"Movable task\" and aria-keyshortcuts=\"Space ArrowUp ArrowDown ArrowLeft ArrowRight\", so this is the promise the surface makes to the operator who cannot drag. (A keyboard drop into Done IS undoable, since completed() arms — which makes the gap invisible to anyone who only tests the completion.)",
+      "fix": "In the Space-to-drop branch of onKey, in the else-arm that currently only says \"dropped\", capture the pre-move values and arm the same receipt the pointer drop uses. Before the mutation read `const heldWas = task.heldSince, doneWas = task.completedAt;` then in the non-Done branch replace the bare `say(...)` with `arm({ kind: \"move\", id, title: task.title, lane: carriedFrom.lane, index: carriedFrom.index, toLane: lane, wasHeldSince: heldWas, wasCompletedAt: doneWas }); say(task.title + \" dropped \" + inLane(lane) + \". Press \" + keycap(\"Z\") + \" to undo.\");` — runUndo's default branch already restores lane, index, heldSince and completedAt, so no new undo kind is needed. Add an assertion to interaction-check.mjs: carry a card two lanes by keyboard, drop with Space, press Ctrl+Z, require the card back in its original lane and the sentence to say so.",
+      "cost": 0.3
+    }
+  ],
   "biggestWin": "PROVISIONAL - review in progress."
 }

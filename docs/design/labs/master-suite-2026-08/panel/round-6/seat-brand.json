@@ -1,6 +1,14 @@
 {
   "seat": "brand",
-  "score": 8.5,
-  "findings": [],
+  "score": 8.6,
+  "findings": [
+    {
+      "id": "one-field-two-names",
+      "element": ".deskFact b \"What it is about\" (src/notes.js:1878) vs .topFact b \"Filing under\" (src/fixture.js:615), vs .groupBtn[data-act=\"group-about\"] \"What it is about\" (src/notes.js:2106)",
+      "problem": "PROVISIONAL",
+      "fix": "PROVISIONAL",
+      "cost": 0.1
+    }
+  ],
   "biggestWin": "PROVISIONAL — review in progress."
 }

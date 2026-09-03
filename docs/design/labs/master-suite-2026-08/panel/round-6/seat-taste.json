@@ -1,6 +1,21 @@
 {
   "seat": "taste",
-  "score": 8.0,
-  "findings": [],
+  "score": 8.6,
+  "findings": [
+    {
+      "id": "seam-payoff-card-stutters",
+      "element": "[data-app=\"tasks\"] .card[data-id=\"seam_n14_1\"] .cardNote — produced at src/app.js:707 (cross()), rendered at src/tasks.js:450",
+      "problem": "The card the seam creates says the same sentence twice. Driving notes.seam at 1440 and pressing Send to Tasks then Open in Tasks lands a To Do card whose .cardTitle is \"Switch on before guests arrive, not when\" and whose .cardNote is \"Switch on before guests arrive, not when.\" — identical but for the trailing full stop. The guard at src/app.js:707 is written to prevent exactly this (its own comment: \"carries nothing at all when the title already IS them — a note that repeats its own title is noise\") but it compares raw strings, and the peel keeps the sentence-final period while the task wording drops it, so the guard never fires. Every other card on the board pairs a title with a note that adds information; the one card the whole suite argument exists to produce is the one that stutters.",
+      "fix": "In src/app.js cross(), normalise both sides before comparing. Add above the api.add call: `var same = function (s) { return String(s || \"\").trim().replace(/[.,;:!?\\u2026]+$/, \"\").replace(/\\s+/g, \" \").toLowerCase(); };` and change the note field to `note: entry.crossedWords && same(entry.crossedWords) !== same(entry.task) ? entry.crossedWords : \"\",`. The card then carries title, tag and the from-a-note mark only, which is what the comment already promises.",
+      "cost": 0.2
+    },
+    {
+      "id": "arrival-invisible-to-the-hand",
+      "element": "api.reveal(id) at src/tasks.js:547 and reveal(target, el) at src/tasks.js:4123, driven from openTask() at src/app.js:735",
+      "problem": "The seam's payoff has no moment for a pointer user. Clicking Open in Tasks swaps to the board with no transition (sampled every 70ms from 60ms to 2700ms: animationName none, transform none, opacity 1, box-shadow exactly the resting card shadow rgba(17,17,17,.08) 0 0 0 1px …, outline 0px none) and appends the new card fourth in To Do with nothing at all to distinguish it from the other thirteen. api.reveal only clears filters, sets focusId and calls mount(); the horizontal reveal() only corrects scrollLeft. Driving the same flow entirely by keyboard DOES paint a 2px solid #4f46e5 outline plus a 4px rgba(79,70,229,.16) halo, because the ring is :focus-visible — so the one instant the whole suite is built to sell exists for the keyboard and is silent for the hand that will actually do it.",
+      "fix": "In api.reveal (src/tasks.js:547), after mount(), mark the card and let it announce itself in the palette already in use: `var el = window.__SUITE.host(\"tasks\").querySelector('.card[data-id=\"' + id + '\"]'); if (el) { el.classList.add(\"landed\"); setTimeout(function () { el.classList.remove(\"landed\"); }, 900); }`. In src/tasks.css add `@keyframes landed { from { box-shadow: 0 0 0 4px rgba(79,70,229,.16), 0 0 0 1px rgba(79,70,229,.55); } to { box-shadow: 0 0 0 4px rgba(79,70,229,0), 0 0 0 1px rgba(17,17,17,.08); } }` and `.card.landed { animation: landed .7s cubic-bezier(.2,.7,.3,1) 120ms both; }`, wrapped in the file's existing prefers-reduced-motion guard so the reduced-motion path holds the first frame for 700ms instead of animating.",
+      "cost": 0.3
+    }
+  ],
   "biggestWin": "PROVISIONAL — review in progress."
 }
