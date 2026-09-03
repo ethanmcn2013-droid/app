@@ -205,7 +205,7 @@ async function seedProjectChildren(
   `);
 }
 
-type DeletePrecedenceLineage = "owned" | "member" | "storage";
+type DeletePrecedenceLineage = "owned" | "member" | "storage" | "grant";
 type DeletePrecedenceStatus =
   | "pending"
   | "live_running"
@@ -257,6 +257,30 @@ async function deletionPrecedenceFixture(
           'gen-storage-custodian', 'ws-a', 'conn-storage-custodian',
           'folder-storage-custodian',
           'https://drive.example/folder-storage-custodian', 'active', 1
+        );
+      `);
+      break;
+    case "grant":
+      targetUserId = "grant-recipient";
+      targetClerkId = "clerk-grant-recipient";
+      await fixture.client.executeMultiple(`
+        INSERT INTO users (id, clerk_id, email, color, initials) VALUES (
+          'grant-recipient', 'clerk-grant-recipient',
+          'grant@example.com', '#666', 'GR'
+        );
+        INSERT INTO workspace_storage (
+          id, workspace_id, connection_id, folder_id, folder_web_view_link,
+          state, is_current
+        ) VALUES (
+          'gen-grant-lineage', 'ws-a', 'conn-old', 'folder-grant-lineage',
+          'https://drive.example/folder-grant-lineage', 'active', 1
+        );
+        INSERT INTO drive_folder_grants (
+          storage_generation_id, workspace_id, user_id, permission_id,
+          granted_email, role, granted_at, revoke_pending
+        ) VALUES (
+          'gen-grant-lineage', 'ws-a', 'grant-recipient',
+          'permission-grant-lineage', 'grant@example.com', 'reader', 20, 0
         );
       `);
       break;
@@ -337,7 +361,7 @@ async function deletionPrecedenceFixture(
 }
 
 describe("Project Drive-aware Project deletion", () => {
-  for (const lineage of ["owned", "member", "storage"] as const) {
+  for (const lineage of ["owned", "member", "storage", "grant"] as const) {
     it(`yields atomically to a live Project deletion reached through ${lineage} lineage`, async () => {
       const fixture = await deletionPrecedenceFixture(
         lineage,
@@ -428,6 +452,68 @@ describe("Project Drive-aware Project deletion", () => {
     });
   }
 
+  it("keeps a failed fence acquisition authoritative when the winning lease expires at the boundary", async () => {
+    const fixture = await deletionPrecedenceFixture(
+      "member",
+      "live_running",
+    );
+    try {
+      let boundaryCrossed = 0;
+      await assert.rejects(
+        eraseAccountData(fixture.db, fixture.targetClerkId, {
+          afterProjectDeletionFenceAttempt: async () => {
+            boundaryCrossed += 1;
+            await fixture.client.execute({
+              sql: `UPDATE project_drive_operations
+                    SET lease_expires_at = last_attempt_at
+                    WHERE id = ?`,
+              args: [fixture.operationId],
+            });
+          },
+        }),
+        /account erasure deferred: live Project deletion is already in progress/,
+      );
+      assert.equal(boundaryCrossed, 1);
+      assert.equal(
+        Number(
+          (
+            await fixture.client.execute({
+              sql: "SELECT COUNT(*) AS n FROM meta WHERE key = ?",
+              args: [
+                googleDriveAccountErasureFenceKey(fixture.targetUserId),
+              ],
+            })
+          ).rows[0]?.n ?? 0,
+        ),
+        0,
+      );
+      assert.equal(
+        Number(
+          (
+            await fixture.client.execute({
+              sql: "SELECT COUNT(*) AS n FROM project_drive_operations WHERE id = ? AND status = 'pending'",
+              args: [fixture.bystanderOperationId],
+            })
+          ).rows[0]?.n ?? 0,
+        ),
+        1,
+        "later batch statements must not mutate without the acquired fence",
+      );
+
+      await eraseAccountData(fixture.db, fixture.targetClerkId);
+      const tombstone = await fixture.client.execute({
+        sql: `SELECT status, lease_expires_at, last_error_code
+              FROM project_drive_operations WHERE id = ?`,
+        args: [fixture.operationId],
+      });
+      assert.equal(tombstone.rows[0]?.status, "retry_wait");
+      assert.equal(tombstone.rows[0]?.lease_expires_at, null);
+      assert.equal(tombstone.rows[0]?.last_error_code, "workspace_changed");
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
   for (const status of [
     "pending",
     "expired_running",
@@ -480,7 +566,7 @@ describe("Project Drive-aware Project deletion", () => {
     });
   }
 
-  for (const lineage of ["member", "storage"] as const) {
+  for (const lineage of ["member", "storage", "grant"] as const) {
     for (const status of [
       "pending",
       "expired_running",
@@ -491,8 +577,12 @@ describe("Project Drive-aware Project deletion", () => {
         const fixture = await deletionPrecedenceFixture(lineage, status);
         try {
           const revokedTokens: string[] = [];
+          const revokedGrants: ExactDriveGrantReceipt[] = [];
           await eraseAccountData(fixture.db, fixture.targetClerkId, {
             openProviderToken: ({ connectionId }) => `refresh:${connectionId}`,
+            revokeDriveFolderGrant: async (grant) => {
+              revokedGrants.push(grant);
+            },
             revokeProjectDriveRefreshToken: async (token) => {
               revokedTokens.push(token);
             },
@@ -576,6 +666,21 @@ describe("Project Drive-aware Project deletion", () => {
             revokedTokens,
             lineage === "storage"
               ? ["refresh:conn-storage-custodian"]
+              : [],
+          );
+          assert.deepEqual(
+            revokedGrants,
+            lineage === "grant"
+              ? [
+                  {
+                    workspaceId: "ws-a",
+                    storageGenerationId: "gen-grant-lineage",
+                    connectionId: "conn-old",
+                    folderId: "folder-grant-lineage",
+                    userId: "grant-recipient",
+                    permissionId: "permission-grant-lineage",
+                  },
+                ]
               : [],
           );
 

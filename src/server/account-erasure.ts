@@ -90,6 +90,8 @@ export type AccountErasureOptions = Readonly<{
     accountUserId: string,
     receipt: PendingDelegatedDriveUploadReceipt,
   ) => Promise<Readonly<{ outcome: "resolved" | "blocked" }>>;
+  /** Test-only race seam, after the atomic fence attempt and before its result is consumed. */
+  afterProjectDeletionFenceAttempt?: () => Promise<void>;
   /** Test seam; production delegates every disk/blob locator to storage.ts. */
   deleteStoredBytes?: (storedPath: string) => Promise<void>;
 }>;
@@ -272,29 +274,55 @@ export async function eraseAccountData(
   const accountErasureFenceKey = googleDriveAccountErasureFenceKey(userId);
 
   // Account erasure and project deletion are mutually exclusive durable
-  // lifecycle boundaries. The libSQL batch is one writer transaction. If a
-  // still-live project-delete lease commits first, every write below is
-  // suppressed and erasure yields. Pending/retryable work is instead preserved
-  // for the final handoff below. If the batch commits first, deletion sees the
-  // account fence and yields. This avoids interactive transactions because
-  // libSQL's `:memory:` adapter reconnects after them, while retaining the same
-  // production atomicity.
-  const [, , , liveProjectDeletions, affectedOperationRows, survivingDeletes] =
+  // lifecycle boundaries. This conditional INSERT is the single arbitration
+  // statement: SQLite evaluates the lease boundary once, under its writer
+  // lock. Its RETURNING row is authoritative even if the lease expires before
+  // JavaScript resumes. If deletion committed a live lease first, erasure
+  // yields without installing a second fence. If this write commits first,
+  // every deletion path observes the account fence and yields.
+  const acquiredFences = await database
+    .insert(meta)
+    .select(
+      sql`SELECT ${accountErasureFenceKey}, ${GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE}, unixepoch()
+          WHERE ${noLiveProjectDeletion}`,
+    )
+    .onConflictDoUpdate({
+      target: meta.key,
+      set: {
+        value: GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
+        updatedAt: sql`(unixepoch())`,
+      },
+      setWhere: noLiveProjectDeletion,
+    })
+    .returning({ key: meta.key });
+  await options.afterProjectDeletionFenceAttempt?.();
+  if (!acquiredFences[0]) {
+    throw new Error(
+      "account erasure deferred: live Project deletion is already in progress",
+    );
+  }
+
+  const accountFenceHeld = sql`EXISTS (
+    SELECT 1 FROM ${meta}
+    WHERE ${meta.key} = ${accountErasureFenceKey}
+      AND ${meta.value} = ${GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE}
+  )`;
+  // Once the durable fence exists, every ordinary prepare/claim/finalize path
+  // loses atomically. Freeze the account-owned operation scope and snapshot
+  // exact provider receipts in one follow-up batch. Each statement is gated
+  // by the exact fence, never by a second wall-clock lease evaluation.
+  const [fenceProof, , , affectedOperationRows, survivingDeletes] =
     await database.batch([
       database
-        .insert(meta)
-        .select(
-          sql`SELECT ${accountErasureFenceKey}, ${GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE}, unixepoch()
-              WHERE ${noLiveProjectDeletion}`,
+        .select({ key: meta.key })
+        .from(meta)
+        .where(
+          and(
+            eq(meta.key, accountErasureFenceKey),
+            eq(meta.value, GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE),
+          ),
         )
-        .onConflictDoUpdate({
-          target: meta.key,
-          set: {
-            value: GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
-            updatedAt: sql`(unixepoch())`,
-          },
-          setWhere: noLiveProjectDeletion,
-        }),
+        .limit(1),
       database
         .update(projectDriveOperations)
         .set({
@@ -304,7 +332,7 @@ export async function eraseAccountData(
         })
         .where(
           and(
-            noLiveProjectDeletion,
+            accountFenceHeld,
             affectedOperationScope,
             ne(projectDriveOperations.operationKind, "project_delete"),
             eq(projectDriveOperations.status, "pending"),
@@ -332,7 +360,7 @@ export async function eraseAccountData(
         })
         .where(
           and(
-            noLiveProjectDeletion,
+            accountFenceHeld,
             affectedOperationScope,
             ne(projectDriveOperations.operationKind, "project_delete"),
             or(
@@ -348,13 +376,6 @@ export async function eraseAccountData(
             ),
           ),
         ),
-      database
-        .select({ id: projectDriveOperations.id })
-        .from(projectDriveOperations)
-        // isolation-ok: the account lifecycle must inspect every Project
-        // reached through its exact owner/member/grant/credential lineage.
-        .where(liveProjectDeletionScope)
-        .limit(1),
       // Re-read only after both fence writes; this is the authoritative
       // provider-receipt snapshot for later revocation and evidence deletion.
       database
@@ -389,7 +410,7 @@ export async function eraseAccountData(
             ),
           ),
         )
-        .where(affectedOperationScope),
+        .where(and(accountFenceHeld, affectedOperationScope)),
       database
         .select({
           id: projectDriveOperations.id,
@@ -400,6 +421,7 @@ export async function eraseAccountData(
         // handed back after this account's exact relationship is removed.
         .where(
           and(
+            accountFenceHeld,
             nonterminalProjectDeletionScope,
             sql`NOT EXISTS (
               SELECT 1 FROM ${workspaces}
@@ -409,9 +431,9 @@ export async function eraseAccountData(
           ),
         ),
     ]);
-  if (liveProjectDeletions[0]) {
+  if (!fenceProof[0]) {
     throw new Error(
-      "account erasure deferred: live Project deletion is already in progress",
+      "account erasure blocked: lifecycle fence was lost before provider snapshot",
     );
   }
 
