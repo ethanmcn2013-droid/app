@@ -43,10 +43,7 @@ import type { Client } from "@libsql/client";
 import { eq } from "drizzle-orm";
 import { eraseAccountData } from "./account-erasure";
 import { exportAccountData } from "./account-export";
-import {
-  freshFileDb,
-  freshMemoryDb as freshDb,
-} from "./db/memory-test-db";
+import { freshFileDb } from "./db/memory-test-db";
 import { resources } from "./db/schema";
 
 async function count(client: Client, where: string): Promise<number> {
@@ -392,7 +389,7 @@ test("erasure removes every target row across every table, leaves the bystander 
 });
 
 test("erasure consumes Drive journal evidence before every RESTRICT parent", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await client.execute("PRAGMA foreign_keys = ON");
     await client.executeMultiple(`
@@ -462,7 +459,7 @@ test("erasure consumes Drive journal evidence before every RESTRICT parent", asy
       "erasure left a broken RESTRICT relationship",
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
@@ -531,7 +528,7 @@ test("a private Blob locator reaches only the storage deletion seam", async () =
 });
 
 test("erasing an unknown user is a no-op (no throw, no writes)", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await client.execute(
       "INSERT INTO users (id, clerk_id, color, initials) VALUES ('u-x','clerk_x','#1','XX')",
@@ -539,12 +536,12 @@ test("erasing an unknown user is a no-op (no throw, no writes)", async () => {
     await eraseAccountData(db, "clerk_does_not_exist");
     assert.equal(await count(client, "users"), 1);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("Project Drive token revocation fails closed with encrypted retry custody", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await client.executeMultiple(`
       INSERT INTO users (id, clerk_id, color, initials) VALUES
@@ -631,12 +628,12 @@ test("Project Drive token revocation fails closed with encrypted retry custody",
       0,
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("erasure retains every attempted Drive grant, including cancelled work, until its exact permission is known", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await client.executeMultiple(`
       INSERT INTO users (id, clerk_id, color, initials) VALUES
@@ -732,12 +729,12 @@ test("erasure retains every attempted Drive grant, including cancelled work, unt
       1,
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("the account fence wins a retry-wait claim race and retains evidence for recovery", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await client.execute("PRAGMA foreign_keys = ON");
     await client.executeMultiple(`
@@ -832,12 +829,12 @@ test("the account fence wins a retry-wait claim race and retains evidence for re
       0,
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("erasure retains exact Drive grant receipts until WP5 revocation succeeds", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await client.executeMultiple(`
       INSERT INTO users (id, clerk_id, color, initials) VALUES
@@ -955,7 +952,7 @@ test("erasure retains exact Drive grant receipts until WP5 revocation succeeds",
       0,
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
@@ -1015,7 +1012,7 @@ async function seedPendingDelegatedErasureReceipt(
 
 test("account erasure fences delegated receipts for both actor and immutable storage-owner lineages", async () => {
   for (const accountScope of ["actor", "storage-owner"] as const) {
-    const { client, db } = await freshDb();
+    const { client, db, cleanup } = await freshFileDb();
     try {
       await seedPendingDelegatedErasureReceipt(client, accountScope);
       const seen: Array<{ accountUserId: string; receipt: unknown }> = [];
@@ -1054,13 +1051,13 @@ test("account erasure fences delegated receipts for both actor and immutable sto
         1,
       );
     } finally {
-      client.close();
+      cleanup();
     }
   }
 });
 
 test("account erasure re-reads recovery truth and ignores finalized, undelegated, and unrelated receipts", async () => {
-  const { client, db } = await freshDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await seedPendingDelegatedErasureReceipt(client, "actor");
     await client.executeMultiple(`
@@ -1126,6 +1123,6 @@ test("account erasure re-reads recovery truth and ignores finalized, undelegated
       "a receipt outside both erased account lineages must survive untouched",
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });

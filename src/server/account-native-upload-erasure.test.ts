@@ -397,7 +397,7 @@ test("expired target claims transfer exact custody while an unrelated live bysta
   }
 });
 
-test("owned-Project rollback also rolls back its finalized-byte cleanup receipt", async () => {
+test("a later owned-Project failure retains its already-committed finalized-byte custody", async () => {
   const fixture = await accountNativeFixture();
   try {
     await insertFinalizedAttachment(fixture, {
@@ -429,7 +429,8 @@ test("owned-Project rollback also rolls back its finalized-byte cleanup receipt"
           .from(attachments)
           .where(eq(attachments.id, "attachment-owned-finalized"))
       ).length,
-      1,
+      0,
+      "the exact row and its receipt commit before later provider/Project work",
     );
     assert.equal(
       (
@@ -442,8 +443,82 @@ test("owned-Project rollback also rolls back its finalized-byte cleanup receipt"
     );
     assert.equal(
       await countMeta(fixture, NATIVE_BYTE_CLEANUP_META_PREFIX),
-      0,
+      1,
     );
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("provider-time bystander deletion cannot orphan a finalized target attachment", async () => {
+  const fixture = await accountNativeFixture();
+  const storedPath = ".data/uploads/account-provider-race.pdf";
+  try {
+    await insertFinalizedAttachment(fixture, {
+      ...scopeInput("surviving"),
+      attachmentId: "attachment-provider-race",
+      storedPath,
+    });
+    await fixture.client.executeMultiple(`
+      INSERT INTO provider_connections (
+        id, user_id, provider, provider_account_id,
+        provider_account_email, root_folder_id, refresh_token_cipher,
+        key_version, scopes, status, is_current, connected_at
+      ) VALUES (
+        'connection-provider-race', 'target', 'google_drive',
+        'permission-provider-race', 'target@example.test',
+        'root-provider-race', 'cipher-provider-race', 1,
+        '["https://www.googleapis.com/auth/drive.file"]',
+        'active', 1, 1756800000
+      );
+    `);
+
+    let providerCallbackReached = 0;
+    let bystanderRowsDeleted = -1;
+    let failedByteDeletes = 0;
+    await eraseAccountData(fixture.db, "clerk-target", {
+      openProviderToken: ({ refreshTokenCipher }) => {
+        assert.equal(refreshTokenCipher, "cipher-provider-race");
+        return "refresh-provider-race";
+      },
+      revokeProjectDriveRefreshToken: async (refreshToken) => {
+        providerCallbackReached += 1;
+        assert.equal(refreshToken, "refresh-provider-race");
+        const deleted = await fixture.db
+          .delete(attachments)
+          .where(eq(attachments.id, "attachment-provider-race"))
+          .returning({ id: attachments.id });
+        bystanderRowsDeleted = deleted.length;
+      },
+      deleteStoredBytes: async (locator) => {
+        failedByteDeletes += 1;
+        assert.equal(locator, storedPath);
+        throw new Error("cleanup storage unavailable");
+      },
+    });
+
+    assert.equal(providerCallbackReached, 1);
+    assert.equal(
+      bystanderRowsDeleted,
+      0,
+      "account custody must own the row before provider I/O begins",
+    );
+    assert.equal(failedByteDeletes, 1);
+    const receipts = await fixture.db
+      .select({ key: meta.key, value: meta.value })
+      .from(meta)
+      .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`));
+    assert.equal(receipts.length, 1);
+    const receipt = JSON.parse(receipts[0]!.value) as {
+      workspaceId: string;
+      target: { kind: string; locator: string };
+    };
+    assert.equal(receipt.workspaceId, "ws-surviving");
+    assert.deepEqual(receipt.target, {
+      kind: "stored-path",
+      locator: storedPath,
+    });
+    assert.ok(!receipts[0]!.key.includes(storedPath));
   } finally {
     fixture.cleanup();
   }

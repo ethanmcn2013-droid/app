@@ -7,10 +7,14 @@ import {
   freshProjectDriveCoreDb,
   seedProjectDriveCore,
 } from "@/server/connections/project-drive-core.test.helpers";
-import { NATIVE_BYTE_CLEANUP_META_PREFIX } from "./native-byte-cleanup";
+import {
+  createNativeByteCleanupService,
+  NATIVE_BYTE_CLEANUP_META_PREFIX,
+} from "./native-byte-cleanup";
 import { retainRejectedNativeUploadCleanupCustody } from "./native-upload-cleanup";
 import {
   assertNoPendingNativeUploads,
+  deleteNativeAttachmentRowsInTransaction,
   finalizeNativeUploadClaimInTransaction,
   NATIVE_UPLOAD_IN_FLIGHT_DRAIN_MS,
   nativeUploadClaimKey,
@@ -84,6 +88,99 @@ async function insertClaim(
 }
 
 describe("Signal-native upload custody", () => {
+  it("atomically gives a finalized ordinary deletion exact replay custody", async () => {
+    const setup = await fixture();
+    const storedPath = ".data/uploads/ordinary-delete-finalized.pdf";
+    await setup.db.insert(attachments).values({
+      id: "att-ordinary-finalized",
+      workspaceId: "ws-a",
+      taskId: "task-a",
+      uploaderUserId: "owner",
+      filename: "ordinary-delete-finalized.pdf",
+      storedPath,
+      mimeType: "application/pdf",
+      sizeBytes: 12,
+    });
+
+    const deletion = await setup.db.transaction(
+      (transaction) =>
+        deleteNativeAttachmentRowsInTransaction(transaction, {
+          workspaceId: "ws-a",
+          attachmentIds: ["att-ordinary-finalized"],
+        }),
+      { behavior: "immediate" },
+    );
+    assert.deepEqual(deletion.deletedAttachmentIds, [
+      "att-ordinary-finalized",
+    ]);
+    assert.equal(deletion.cleanupReceiptKeys.length, 1);
+    assert.equal(
+      (
+        await setup.db
+          .select({ id: attachments.id })
+          .from(attachments)
+          .where(eq(attachments.id, "att-ordinary-finalized"))
+      ).length,
+      0,
+    );
+
+    const failed = await createNativeByteCleanupService({
+      database: setup.db,
+      deleteTarget: async (target) => {
+        assert.deepEqual(target, { kind: "stored-path", locator: storedPath });
+        throw new Error("storage unavailable");
+      },
+    }).repairReady({ keys: deletion.cleanupReceiptKeys });
+    assert.equal(failed.failed, 1);
+    assert.equal(
+      (
+        await setup.db
+          .select({ key: meta.key })
+          .from(meta)
+          .where(like(meta.key, `${NATIVE_BYTE_CLEANUP_META_PREFIX}%`))
+      ).length,
+      1,
+      "storage failure must retain the exact replay receipt",
+    );
+  });
+
+  it("refuses an ordinary row deletion while exact writer authority is live", async () => {
+    const setup = await fixture();
+    const claim = await insertClaim(setup, {
+      attachmentId: "att-ordinary-live",
+    });
+    await assert.rejects(
+      () =>
+        setup.db.transaction(
+          (transaction) =>
+            deleteNativeAttachmentRowsInTransaction(transaction, {
+              workspaceId: "ws-a",
+              attachmentIds: [claim.attachmentId],
+            }),
+          { behavior: "immediate" },
+        ),
+      (error: unknown) => error instanceof NativeUploadInProgressError,
+    );
+    assert.equal(
+      (
+        await setup.db
+          .select({ id: attachments.id })
+          .from(attachments)
+          .where(eq(attachments.id, claim.attachmentId))
+      ).length,
+      1,
+    );
+    assert.equal(
+      (
+        await setup.db
+          .select({ key: meta.key })
+          .from(meta)
+          .where(eq(meta.key, nativeUploadClaimKey("ws-a", claim.attachmentId)))
+      ).length,
+      1,
+    );
+  });
+
   it("blocks deletion while exact write authority is live", async () => {
     const setup = await fixture();
     const claim = await insertClaim(setup);

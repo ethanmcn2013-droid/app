@@ -24,7 +24,7 @@ export type NativeUploadCleanupDependencies = Readonly<{
   deleteTarget: (target: NativeByteCleanupTarget) => Promise<void>;
 }>;
 
-async function drainExactReceipts(
+export async function repairExactNativeByteCleanupReceipts(
   dependencies: NativeUploadCleanupDependencies,
   keys: readonly string[],
 ): Promise<void> {
@@ -69,7 +69,7 @@ export async function takeNativeUploadCleanupCustody(
     { behavior: "immediate" },
   );
 
-  await drainExactReceipts(dependencies, keys);
+  await repairExactNativeByteCleanupReceipts(dependencies, keys);
 }
 
 export async function retainRejectedNativeUploadCleanupCustody(
@@ -97,7 +97,7 @@ export async function retainRejectedNativeUploadCleanupCustody(
   // The marker deliberately remains until the presigned PUT expires. Deleting
   // today's rejected object is not proof that the still-live writer cannot
   // recreate it after Project deletion.
-  await drainExactReceipts(dependencies, keys);
+  await repairExactNativeByteCleanupReceipts(dependencies, keys);
 }
 
 export async function cleanupRejectedNativeUpload(input: Readonly<{
@@ -147,6 +147,6 @@ export async function cleanupAbandonedNativeUploadClaim(input: Readonly<{
     },
     { behavior: "immediate" },
   );
-  await drainExactReceipts(dependencies, keys);
+  await repairExactNativeByteCleanupReceipts(dependencies, keys);
   return keys.length > 0;
 }

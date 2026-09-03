@@ -2,8 +2,8 @@
  * Unified erasure integration test · Signal Studio GDPR right-to-erasure.
  *
  * Tests `deleteUnifiedAccountDataWith` — the injectable form of the
- * orchestrator — using a real in-memory Tasks libSQL DB and lightweight
- * in-process stubs for the module erase functions and token revocation.
+ * orchestrator — using a real transaction-capable temporary Tasks libSQL DB
+ * and lightweight in-process stubs for module erasers and token revocation.
  * No Turso credentials or network access required.
  *
  * Invariants verified:
@@ -29,7 +29,7 @@ import {
   deleteUnifiedAccountDataWith,
   UnifiedAccountErasureError,
 } from "./account-unified-erasure";
-import { freshMemoryDb } from "./db/memory-test-db";
+import { freshFileDb } from "./db/memory-test-db";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,7 +82,7 @@ function okOpts(revokedTokens: string[] = []) {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 test("unified erasure removes all Tasks rows, leaves bystander intact", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await seedTwo(client);
     await deleteUnifiedAccountDataWith(db, "clerk_target", okOpts());
@@ -113,12 +113,12 @@ test("unified erasure removes all Tasks rows, leaves bystander intact", async ()
       1,
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("Google tokens from Notes and Tasks are deduplicated for revocation", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { db, cleanup } = await freshFileDb();
   const revokedTokens: string[] = [];
   try {
     const opts = {
@@ -144,12 +144,12 @@ test("Google tokens from Notes and Tasks are deduplicated for revocation", async
       "tok-drive-1",
     ]);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("a running project deletion defers Tasks erasure without trapping either fence", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { client, db, cleanup } = await freshFileDb();
   const revokedTokens: string[] = [];
   try {
     await seedTwo(client);
@@ -200,12 +200,12 @@ test("a running project deletion defers Tasks erasure without trapping either fe
       "account erasure must yield before installing a fence behind the winning deletion",
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("multiple module failures still attempt Tasks, then reject with every failure", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { client, db, cleanup } = await freshFileDb();
   const attempted: string[] = [];
   try {
     await seedTwo(client);
@@ -254,12 +254,12 @@ test("multiple module failures still attempt Tasks, then reject with every failu
     );
     assert.equal(await count(client, "users WHERE id='u-bystander'"), 1);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("a thrown module failure still attempts the remaining modules and Tasks", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { client, db, cleanup } = await freshFileDb();
   const attempted: string[] = [];
   try {
     await seedTwo(client);
@@ -295,12 +295,12 @@ test("a thrown module failure still attempts the remaining modules and Tasks", a
     );
     assert.deepEqual(attempted.sort(), ["Notes", "Signal", "Tasks", "Timeline"]);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("unified erasure is idempotent on re-run", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await seedTwo(client);
     await deleteUnifiedAccountDataWith(db, "clerk_target", okOpts());
@@ -309,12 +309,12 @@ test("unified erasure is idempotent on re-run", async () => {
     // Bystander still intact after two runs.
     assert.equal(await count(client, "users WHERE id='u-bystander'"), 1);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("erasing an unprovisioned Tasks user is a no-op (no throw, no writes)", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { client, db, cleanup } = await freshFileDb();
   try {
     await client.execute(
       "INSERT INTO users (id, clerk_id, color, initials) VALUES ('u-x', 'clerk_x', '#1', 'XX')",
@@ -324,12 +324,12 @@ test("erasing an unprovisioned Tasks user is a no-op (no throw, no writes)", asy
     // The real user is untouched.
     assert.equal(await count(client, "users"), 1);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("tokens returned by a failed Notes erasure are revoked before rejection", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { db, cleanup } = await freshFileDb();
   const revokedTokens: string[] = [];
   try {
     const opts = {
@@ -365,12 +365,12 @@ test("tokens returned by a failed Notes erasure are revoked before rejection", a
       "tokens collected before a failed erasure should still be revoked",
     );
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("partial success deduplicates detached Notes and Tasks tokens before failing closed", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { db, cleanup } = await freshFileDb();
   const revokedBatches: string[][] = [];
   try {
     const opts = {
@@ -406,12 +406,12 @@ test("partial success deduplicates detached Notes and Tasks tokens before failin
       ["shared-token", "notes-token", "tasks-token"],
     ]);
   } finally {
-    client.close();
+    cleanup();
   }
 });
 
 test("module and Tasks failures aggregate after every eraser and token revocation attempt", async () => {
-  const { client, db } = await freshMemoryDb();
+  const { db, cleanup } = await freshFileDb();
   const attempted: string[] = [];
   const revokedTokens: string[] = [];
   try {
@@ -470,6 +470,6 @@ test("module and Tasks failures aggregate after every eraser and token revocatio
     assert.deepEqual(attempted.sort(), ["Notes", "Signal", "Tasks", "Timeline"]);
     assert.deepEqual(revokedTokens, ["detached-notes-token"]);
   } finally {
-    client.close();
+    cleanup();
   }
 });

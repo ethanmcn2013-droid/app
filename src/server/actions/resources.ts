@@ -9,7 +9,9 @@ import { emitTasksChanged } from "@/server/events";
 import { getCurrentUser } from "@/server/auth";
 import { scopeForTask } from "@/server/actions/project-authz";
 import { isDemoMode } from "@/lib/access-mode";
-import { deleteBytes } from "@/server/storage";
+import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
+import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
+import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
 
 // ── Provider detection ────────────────────────────────────────────────
 
@@ -225,10 +227,10 @@ export async function addLinkResourceAction(
  *
  * Cases:
  *  1. id found in resources table as kind='upload': delete the resources
- *     row AND the backing attachments row + best-effort file unlink.
+ *     row AND transfer the backing attachment into durable byte cleanup.
  *  2. id found in resources table as kind='link': delete the resources row.
  *  3. id starts with 'res-' and NOT in resources (unmirrored attachment):
- *     delete the attachments row + best-effort file unlink.
+ *     transfer and delete the exact attachment through the same custody path.
  *
  * No runtime FK cascade — hand-rolled explicitly (mirrors removeTaskAction
  * and account-erasure.ts patterns).
@@ -285,37 +287,60 @@ export async function removeResourceAction(
   if (resourceRow) {
     const taskId = resourceRow.taskId;
     const title = resourceRow.title;
-
-    // A Drive row owns metadata here and bytes in the storage owner's Drive.
-    // Removing it from Signal Studio must never turn into a provider delete or
-    // accidentally interpret its id as an `attachments` id. Drive deletion is
-    // a separate, explicit owner operation and is deliberately absent.
-    if (resourceRow.kind === "upload" && resourceRow.storage !== "drive") {
-      // Delete the backing attachments row too.
-      // The backing attachment id is resourceId with leading 'res-' stripped.
-      const attachmentId = resourceId.startsWith("res-")
-        ? resourceId.slice(4)
-        : null;
-
-      if (attachmentId) {
-        const [attRow] = await db
-          .select({ storedPath: attachments.storedPath })
-          .from(attachments)
+    const deletion = await db.transaction(
+      async (transaction) => {
+        const [current] = await transaction
+          .select({
+            id: resources.id,
+            kind: resources.kind,
+            storage: resources.storage,
+          })
+          .from(resources)
           .where(
-            and(eq(attachments.id, attachmentId), eq(attachments.workspaceId, ws)),
-          );
-
-        await db
-          .delete(attachments)
-          .where(eq(attachments.id, attachmentId));
-
-        if (attRow?.storedPath) {
-          await deleteBytes(attRow.storedPath);
+            and(eq(resources.id, resourceId), eq(resources.workspaceId, ws)),
+          )
+          .limit(1);
+        if (!current) {
+          return { deleted: false, cleanupReceiptKeys: [] as string[] };
         }
-      }
-    }
 
-    await db.delete(resources).where(eq(resources.id, resourceId));
+        // A Drive row owns metadata here and bytes in the storage owner's
+        // Drive. Removing it from Signal Studio must never become provider
+        // deletion or interpret its id as native-byte authority.
+        let cleanupReceiptKeys: readonly string[] = [];
+        const attachmentId = resourceId.startsWith("res-")
+          ? resourceId.slice(4)
+          : null;
+        if (
+          current.kind === "upload" &&
+          current.storage !== "drive" &&
+          attachmentId
+        ) {
+          cleanupReceiptKeys = (
+            await deleteNativeAttachmentRowsInTransaction(transaction, {
+              workspaceId: ws,
+              attachmentIds: [attachmentId],
+            })
+          ).cleanupReceiptKeys;
+        }
+        const deleted = await transaction
+          .delete(resources)
+          .where(
+            and(eq(resources.id, resourceId), eq(resources.workspaceId, ws)),
+          )
+          .returning({ id: resources.id });
+        if (deleted.length !== 1) {
+          throw new Error("resource deletion conflicted");
+        }
+        return { deleted: true, cleanupReceiptKeys };
+      },
+      { behavior: "immediate" },
+    );
+    if (!deletion.deleted) return;
+    await repairExactNativeByteCleanupReceipts(
+      { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+      deletion.cleanupReceiptKeys,
+    );
 
     await recordActivity(
       taskId,
@@ -341,11 +366,19 @@ export async function removeResourceAction(
 
     if (!attRow) return; // Opacity: don't reveal cross-tenant existence.
 
-    await db
-      .delete(attachments)
-      .where(eq(attachments.id, attachmentId));
-
-    await deleteBytes(attRow.storedPath);
+    const deletion = await db.transaction(
+      (transaction) =>
+        deleteNativeAttachmentRowsInTransaction(transaction, {
+          workspaceId: ws,
+          attachmentIds: [attachmentId],
+        }),
+      { behavior: "immediate" },
+    );
+    if (!deletion.deletedAttachmentIds.includes(attachmentId)) return;
+    await repairExactNativeByteCleanupReceipts(
+      { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+      deletion.cleanupReceiptKeys,
+    );
 
     await recordActivity(
       attRow.taskId,

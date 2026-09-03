@@ -39,15 +39,12 @@ import {
 import {
   createNativeByteCleanupService,
   deleteNativeByteCleanupTargetConfirmed,
-  stageNativeByteCleanupReceipts,
 } from "./attachments/native-byte-cleanup";
 import {
   assertNoPendingNativeUploads,
-  nativeUploadClaimPrefix,
+  deleteNativeAttachmentRowsInTransaction,
   NativeUploadInProgressError,
-  prepareNativeUploadClaimForDeletionInTransaction,
 } from "./attachments/native-upload-custody";
-import { deleteProjectRowsInTransaction } from "./projects/project-deletion-rows";
 
 /**
  * Database handle accepted by {@link eraseAccountData}. Typed against the
@@ -299,28 +296,139 @@ export async function eraseAccountData(
   // lock. Its RETURNING row is authoritative even if the lease expires before
   // JavaScript resumes. If deletion committed a live lease first, erasure
   // yields without installing a second fence. If this write commits first,
-  // every deletion path observes the account fence and yields.
-  const acquiredFences = await database
-    .insert(meta)
-    .select(
-      sql`SELECT ${accountErasureFenceKey}, ${GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE}, unixepoch()
-          WHERE ${noLiveProjectDeletion}`,
-    )
-    .onConflictDoUpdate({
-      target: meta.key,
-      set: {
-        value: GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
-        updatedAt: sql`(unixepoch())`,
-      },
-      setWhere: noLiveProjectDeletion,
-    })
-    .returning({ key: meta.key });
+  // every competing Project deletion observes the account fence and yields;
+  // exact native-byte custody commits before the writer lock is released.
+  const accountAttachmentScope = or(
+    eq(attachments.uploaderUserId, userId),
+    ownedWorkspaceIds.length > 0
+      ? inArray(attachments.workspaceId, ownedWorkspaceIds)
+      : undefined,
+    ownedWorkspaceIds.length > 0
+      ? inArray(tasks.workspaceId, ownedWorkspaceIds)
+      : undefined,
+  )!;
+  const nativeCustodyArbitration = await database.transaction(
+    async (transaction) => {
+      const acquiredFences = await transaction
+        .insert(meta)
+        .select(
+          sql`SELECT ${accountErasureFenceKey}, ${GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE}, unixepoch()
+              WHERE ${noLiveProjectDeletion}`,
+        )
+        .onConflictDoUpdate({
+          target: meta.key,
+          set: {
+            value: GOOGLE_DRIVE_ACCOUNT_ERASURE_FENCE_VALUE,
+            updatedAt: sql`(unixepoch())`,
+          },
+          setWhere: noLiveProjectDeletion,
+        })
+        .returning({ key: meta.key });
+      if (!acquiredFences[0]) {
+        return {
+          acquired: false as const,
+          cleanupReceiptKeys: [] as readonly string[],
+          nativeBlock: null,
+        };
+      }
+
+      try {
+        const cleanupReceiptKeys = await transaction.transaction(
+          async (custodyTransaction) => {
+            const keys: string[] = [];
+            // Owned Projects include every uploader plus orphan claim markers.
+            // A surviving Project includes only this proved uploader; another
+            // member's claim and finalized bytes remain outside the scope.
+            for (const workspaceId of ownedWorkspaceIds) {
+              keys.push(
+                ...(await assertNoPendingNativeUploads(
+                  custodyTransaction,
+                  workspaceId,
+                )),
+              );
+            }
+
+            const attachmentRows = await custodyTransaction
+              // isolation-ok: the account fence is already held in this same
+              // writer transaction. This query spans only the proved uploader
+              // and every Project owned by the proved account.
+              .select({
+                id: attachments.id,
+                uploaderUserId: attachments.uploaderUserId,
+                attachmentWorkspaceId: attachments.workspaceId,
+                taskWorkspaceId: tasks.workspaceId,
+              })
+              .from(attachments)
+              .leftJoin(tasks, eq(tasks.id, attachments.taskId))
+              .where(accountAttachmentScope);
+            const ownedWorkspaceIdSet = new Set(ownedWorkspaceIds);
+            const attachmentIdsByWorkspace = new Map<string, string[]>();
+            for (const attachment of attachmentRows) {
+              if (
+                attachment.attachmentWorkspaceId &&
+                attachment.taskWorkspaceId &&
+                attachment.attachmentWorkspaceId !== attachment.taskWorkspaceId
+              ) {
+                throw new Error("native upload attachment parent conflicted");
+              }
+              const workspaceId =
+                attachment.attachmentWorkspaceId ?? attachment.taskWorkspaceId;
+              if (!workspaceId) {
+                throw new Error("native upload attachment has no Project");
+              }
+              if (
+                !ownedWorkspaceIdSet.has(workspaceId) &&
+                attachment.uploaderUserId !== userId
+              ) {
+                throw new Error("native upload attachment scope conflicted");
+              }
+              const attachmentIds =
+                attachmentIdsByWorkspace.get(workspaceId) ?? [];
+              attachmentIds.push(attachment.id);
+              attachmentIdsByWorkspace.set(workspaceId, attachmentIds);
+            }
+            for (const [workspaceId, attachmentIds] of
+              attachmentIdsByWorkspace) {
+              const deleted =
+                await deleteNativeAttachmentRowsInTransaction(
+                  custodyTransaction,
+                  { workspaceId, attachmentIds },
+                );
+              keys.push(...deleted.cleanupReceiptKeys);
+            }
+            return Object.freeze(keys);
+          },
+        );
+        return {
+          acquired: true as const,
+          cleanupReceiptKeys,
+          nativeBlock: null,
+        };
+      } catch (error) {
+        // The nested savepoint rolls back every partial custody transfer while
+        // the outer transaction commits the account fence. A retry therefore
+        // retains both the exact claim evidence and lifecycle ownership.
+        return {
+          acquired: true as const,
+          cleanupReceiptKeys: [] as readonly string[],
+          nativeBlock: error,
+        };
+      }
+    },
+    { behavior: "immediate" },
+  );
   await options.afterProjectDeletionFenceAttempt?.();
-  if (!acquiredFences[0]) {
+  if (!nativeCustodyArbitration.acquired) {
     throw new Error(
       "account erasure deferred: live Project deletion is already in progress",
     );
   }
+  if (nativeCustodyArbitration.nativeBlock) {
+    rethrowNativeUploadErasureBlock(nativeCustodyArbitration.nativeBlock);
+  }
+  const nativeByteCleanupReceiptKeys = new Set(
+    nativeCustodyArbitration.cleanupReceiptKeys,
+  );
 
   const accountFenceHeld = sql`EXISTS (
     SELECT 1 FROM ${meta}
@@ -475,102 +583,6 @@ export async function eraseAccountData(
     throw new Error(
       "account erasure blocked: Google Drive operation could not be fenced",
     );
-  }
-
-  // The account fence makes this native-upload scope stable: it blocks every
-  // writer in an owned Project through the owner lineage, and every surviving
-  // Project writer attributable to this uploader through the actor lineage.
-  // Avoid an interactive transaction when the scope is empty because libSQL's
-  // isolated `:memory:` test adapter cannot retain a database after one; real
-  // custody work always runs under an immediate writer transaction.
-  const accountAttachmentScope = or(
-    eq(attachments.uploaderUserId, userId),
-    ownedWorkspaceIds.length > 0
-      ? inArray(attachments.workspaceId, ownedWorkspaceIds)
-      : undefined,
-    ownedWorkspaceIds.length > 0
-      ? inArray(tasks.workspaceId, ownedWorkspaceIds)
-      : undefined,
-  )!;
-  const [nativeAttachmentCandidate] = await database
-    .select({ id: attachments.id })
-    .from(attachments)
-    .leftJoin(tasks, eq(tasks.id, attachments.taskId))
-    .where(accountAttachmentScope)
-    .limit(1);
-  const ownedClaimMarkerScope =
-    ownedWorkspaceIds.length > 0
-      ? or(
-          ...ownedWorkspaceIds.map((workspaceId) =>
-            like(meta.key, `${nativeUploadClaimPrefix(workspaceId)}%`),
-          ),
-        )
-      : undefined;
-  const ownedClaimMarker = ownedClaimMarkerScope
-    ? (
-        await database
-          .select({ key: meta.key })
-          .from(meta)
-          .where(ownedClaimMarkerScope)
-          .limit(1)
-      )[0]
-    : undefined;
-  const nativeByteCleanupReceiptKeys = new Set<string>();
-  if (nativeAttachmentCandidate || ownedClaimMarker) {
-    try {
-      const preflightReceiptKeys = await database.transaction(
-        async (transaction) => {
-          const keys: string[] = [];
-          for (const workspaceId of ownedWorkspaceIds) {
-            keys.push(
-              ...(await assertNoPendingNativeUploads(
-                transaction,
-                workspaceId,
-              )),
-            );
-          }
-
-          const uploaderAttachments = await transaction
-            .select({
-              id: attachments.id,
-              attachmentWorkspaceId: attachments.workspaceId,
-              taskWorkspaceId: tasks.workspaceId,
-            })
-            .from(attachments)
-            .leftJoin(tasks, eq(tasks.id, attachments.taskId))
-            .where(eq(attachments.uploaderUserId, userId));
-          const ownedWorkspaceIdSet = new Set(ownedWorkspaceIds);
-          for (const attachment of uploaderAttachments) {
-            if (
-              attachment.attachmentWorkspaceId &&
-              attachment.taskWorkspaceId &&
-              attachment.attachmentWorkspaceId !== attachment.taskWorkspaceId
-            ) {
-              throw new Error("native upload attachment parent conflicted");
-            }
-            const workspaceId =
-              attachment.attachmentWorkspaceId ??
-              attachment.taskWorkspaceId;
-            if (!workspaceId || ownedWorkspaceIdSet.has(workspaceId)) {
-              continue;
-            }
-            keys.push(
-              ...(await prepareNativeUploadClaimForDeletionInTransaction(
-                transaction,
-                { workspaceId, attachmentId: attachment.id },
-              )),
-            );
-          }
-          return keys;
-        },
-        { behavior: "immediate" },
-      );
-      for (const key of preflightReceiptKeys) {
-        nativeByteCleanupReceiptKeys.add(key);
-      }
-    } catch (error) {
-      rethrowNativeUploadErasureBlock(error);
-    }
   }
 
   // Permission deletion is an external side effect, so it must happen before
@@ -810,41 +822,6 @@ export async function eraseAccountData(
     const byTaskOrWs = (taskCol: SQLiteColumn, wsCol: SQLiteColumn) =>
       or(taskIds.length ? inArray(taskCol, taskIds) : undefined, eq(wsCol, wsId));
 
-    const [workspaceAttachment] = await database
-      .select({ id: attachments.id })
-      .from(attachments)
-      .where(byTaskOrWs(attachments.taskId, attachments.workspaceId))
-      .limit(1);
-    if (workspaceAttachment) {
-      try {
-        const receiptKeys = await database.transaction(
-          async (transaction) => {
-            const expiredClaimKeys = await assertNoPendingNativeUploads(
-              transaction,
-              wsId,
-            );
-            const finalizedAttachmentKeys =
-              await deleteProjectRowsInTransaction(transaction, wsId);
-            const deletedWorkspace = await transaction
-              .delete(workspaces)
-              .where(eq(workspaces.id, wsId))
-              .returning({ id: workspaces.id });
-            if (deletedWorkspace.length !== 1) {
-              throw new Error("account erasure Project deletion conflicted");
-            }
-            return [...expiredClaimKeys, ...finalizedAttachmentKeys];
-          },
-          { behavior: "immediate" },
-        );
-        for (const key of receiptKeys) {
-          nativeByteCleanupReceiptKeys.add(key);
-        }
-        continue;
-      } catch (error) {
-        rethrowNativeUploadErasureBlock(error);
-      }
-    }
-
     // share_link_visits → share_links: delete the leaves first, explicitly.
     const wsLinks = await database
       .select({ token: shareLinks.token })
@@ -867,9 +844,6 @@ export async function eraseAccountData(
     await database
       .delete(comments)
       .where(byTaskOrWs(comments.taskId, comments.workspaceId));
-    await database
-      .delete(attachments)
-      .where(byTaskOrWs(attachments.taskId, attachments.workspaceId));
     await database
       .delete(resources)
       .where(eq(resources.workspaceId, wsId));
@@ -903,87 +877,6 @@ export async function eraseAccountData(
   // they're a member of but don't own: comments/activities they authored,
   // attachments they uploaded, notifications addressed to them, their prefs,
   // entitlements, invites they minted or accepted, and their memberships.
-  const [userAttachmentCandidate] = await database
-    .select({ id: attachments.id })
-    .from(attachments)
-    .where(eq(attachments.uploaderUserId, userId))
-    .limit(1);
-  if (userAttachmentCandidate) {
-    try {
-      const receiptKeys = await database.transaction(
-        async (transaction) => {
-          const attachmentScope = () =>
-            transaction
-              .select({
-                id: attachments.id,
-                storedPath: attachments.storedPath,
-                attachmentWorkspaceId: attachments.workspaceId,
-                taskWorkspaceId: tasks.workspaceId,
-              })
-              .from(attachments)
-              .leftJoin(tasks, eq(tasks.id, attachments.taskId))
-              .where(eq(attachments.uploaderUserId, userId));
-          const keys: string[] = [];
-          const candidates = await attachmentScope();
-          for (const attachment of candidates) {
-            if (
-              attachment.attachmentWorkspaceId &&
-              attachment.taskWorkspaceId &&
-              attachment.attachmentWorkspaceId !== attachment.taskWorkspaceId
-            ) {
-              throw new Error("native upload attachment parent conflicted");
-            }
-            const workspaceId =
-              attachment.attachmentWorkspaceId ??
-              attachment.taskWorkspaceId;
-            if (!workspaceId) continue;
-            keys.push(
-              ...(await prepareNativeUploadClaimForDeletionInTransaction(
-                transaction,
-                { workspaceId, attachmentId: attachment.id },
-              )),
-            );
-          }
-
-          const finalizedAttachments = await attachmentScope();
-          const storedPathsByWorkspace = new Map<string, string[]>();
-          for (const attachment of finalizedAttachments) {
-            const workspaceId =
-              attachment.attachmentWorkspaceId ??
-              attachment.taskWorkspaceId ??
-              `account-erasure:${userId}`;
-            const storedPaths = storedPathsByWorkspace.get(workspaceId) ?? [];
-            storedPaths.push(attachment.storedPath);
-            storedPathsByWorkspace.set(workspaceId, storedPaths);
-          }
-          for (const [workspaceId, storedPaths] of storedPathsByWorkspace) {
-            keys.push(
-              ...(await stageNativeByteCleanupReceipts(
-                transaction,
-                workspaceId,
-                storedPaths,
-              )),
-            );
-          }
-          const deletedAttachments = await transaction
-            .delete(attachments)
-            .where(eq(attachments.uploaderUserId, userId))
-            .returning({ id: attachments.id });
-          if (deletedAttachments.length !== finalizedAttachments.length) {
-            throw new Error("account erasure attachment deletion conflicted");
-          }
-          return keys;
-        },
-        { behavior: "immediate" },
-      );
-      for (const key of receiptKeys) {
-        nativeByteCleanupReceiptKeys.add(key);
-      }
-    } catch (error) {
-      rethrowNativeUploadErasureBlock(error);
-    }
-  }
-
   await database.delete(activities).where(eq(activities.userId, userId));
   await database.delete(comments).where(eq(comments.userId, userId));
   await database

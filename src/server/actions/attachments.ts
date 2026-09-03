@@ -17,7 +17,6 @@ import { SERVER_ACTION_FILE_LIMIT_BYTES } from "@/lib/upload-limit";
 import {
   chooseBackend,
   putBytes,
-  deleteBytes,
 } from "@/server/storage";
 import {
   SNIFF_BYTES,
@@ -30,12 +29,16 @@ import {
   safeFilename,
 } from "@/lib/attachment-claim";
 import {
+  deleteNativeAttachmentRowsInTransaction,
   finalizeNativeUploadClaimInTransaction,
   recordNativeUploadClaimInTransaction,
   releaseNativeUploadClaimInTransaction,
 } from "@/server/attachments/native-upload-custody";
-import { takeNativeUploadCleanupCustody } from "@/server/attachments/native-upload-cleanup";
-import { cleanupAbandonedNativeUploadClaim } from "@/server/attachments/native-upload-cleanup";
+import {
+  cleanupAbandonedNativeUploadClaim,
+  repairExactNativeByteCleanupReceipts,
+  takeNativeUploadCleanupCustody,
+} from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/native-byte-cleanup";
 
 const SERVER_ACTION_UPLOAD_AUTHORITY_MS = 30 * 60_000;
@@ -386,10 +389,10 @@ export async function uploadAttachmentAction(
 }
 
 /**
- * Delete a single attachment row + best-effort remove bytes.
+ * Delete a single attachment row after its exact bytes enter durable cleanup.
  * Works regardless of quota state; quota never gates deletes.
- * Routes the unlink through the storage seam (handles both blob URLs
- * and disk paths).
+ * Cleanup is replayable across storage failure and process death, and the
+ * storage seam handles both private Blob locators and disk paths.
  */
 export async function deleteAttachmentAction(
   attachmentId: string,
@@ -417,13 +420,19 @@ export async function deleteAttachmentAction(
   // through its task, or the two rows disagree and nothing is deleted.
   if (row.workspaceId !== ws) return;
 
-  await db
-    .delete(attachments)
-    .where(
-      and(eq(attachments.id, attachmentId), eq(attachments.workspaceId, ws)),
-    );
-
-  await deleteBytes(row.storedPath);
+  const deletion = await db.transaction(
+    (transaction) =>
+      deleteNativeAttachmentRowsInTransaction(transaction, {
+        workspaceId: ws,
+        attachmentIds: [attachmentId],
+      }),
+    { behavior: "immediate" },
+  );
+  if (!deletion.deletedAttachmentIds.includes(attachmentId)) return;
+  await repairExactNativeByteCleanupReceipts(
+    { database: db, deleteTarget: deleteNativeByteCleanupTargetConfirmed },
+    deletion.cleanupReceiptKeys,
+  );
 
   await recordActivity(
     row.taskId,
