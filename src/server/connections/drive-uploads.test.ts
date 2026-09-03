@@ -206,6 +206,20 @@ async function seededUploadFixture(
 
 type SeededUploadFixture = Awaited<ReturnType<typeof seededUploadFixture>>;
 
+async function prepareDeletionTombstone(
+  fixture: SeededUploadFixture,
+  operationId: string,
+): Promise<void> {
+  const prepared = await createProjectDriveOperationJournal({
+    database: fixture.db,
+    randomOperationId: () => operationId,
+  }).prepare({
+    operationKind: "project_delete",
+    workspaceId: "ws-a",
+  });
+  assert.equal(prepared.outcome, "prepared");
+}
+
 describe("Project Drive upload foundation", () => {
   it("requires task-edit capability before database or provider work", async () => {
     let providerCalls = 0;
@@ -584,6 +598,94 @@ describe("Project Drive upload foundation", () => {
     );
     assert.equal(fixture.harness.sessionCreateCalls, 1);
     assert.equal((await fixture.db.select().from(resources)).length, 0);
+  });
+
+  it("fails closed when Project deletion starts after the claim and before marker adoption", async () => {
+    const fixture = await seededUploadFixture();
+    fixture.harness.listFiles = [driveFile("file-landed", RESOURCE_A)];
+    fixture.harness.beforeNextList = async () => {
+      await prepareDeletionTombstone(fixture, "delete-before-marker-adoption");
+    };
+
+    await assert.rejects(
+      () =>
+        fixture.service.start(
+          coreAuthorization("member-a", "ws-a", false),
+          DEFAULT_REQUEST,
+        ),
+      (error: unknown) =>
+        error instanceof DriveUploadError && error.code === "request-conflict",
+    );
+    assert.equal(fixture.harness.sessionCreateCalls, 0);
+    const [row] = await fixture.db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, RESOURCE_A));
+    assert.equal(row.accessState, "pending");
+    assert.equal(row.externalId, null);
+    assert.equal(row.storedPath, null);
+  });
+
+  it("fails closed and releases the claim when deletion starts before session mint", async () => {
+    const fixture = await seededUploadFixture();
+    fixture.harness.beforeNextList = async () => {
+      await prepareDeletionTombstone(fixture, "delete-before-session-mint");
+    };
+
+    await assert.rejects(
+      () =>
+        fixture.service.start(
+          coreAuthorization("member-a", "ws-a", false),
+          DEFAULT_REQUEST,
+        ),
+      (error: unknown) =>
+        error instanceof DriveUploadError && error.code === "request-conflict",
+    );
+    assert.equal(fixture.harness.sessionCreateCalls, 0);
+    assert.equal((await fixture.db.select().from(resources)).length, 0);
+  });
+
+  it("withholds an unpersisted provider session when deletion wins after mint", async () => {
+    const fixture = await seededUploadFixture();
+    fixture.harness.beforeNextSessionCreate = async () => {
+      await prepareDeletionTombstone(fixture, "delete-after-session-mint");
+    };
+
+    await assert.rejects(
+      () =>
+        fixture.service.start(
+          coreAuthorization("member-a", "ws-a", false),
+          DEFAULT_REQUEST,
+        ),
+      (error: unknown) =>
+        error instanceof DriveUploadError && error.code === "request-conflict",
+    );
+    assert.equal(fixture.harness.sessionCreateCalls, 1);
+    assert.equal((await fixture.db.select().from(resources)).length, 0);
+  });
+
+  it("does not refresh or return a delegated session after deletion starts", async () => {
+    const fixture = await seededUploadFixture();
+    const authorization = coreAuthorization("member-a", "ws-a", false);
+    const first = await fixture.service.start(authorization, DEFAULT_REQUEST);
+    assert.equal(first.kind, "drive-session");
+    const [before] = await fixture.db
+      .select({ storedPath: resources.storedPath })
+      .from(resources)
+      .where(eq(resources.id, RESOURCE_A));
+    await prepareDeletionTombstone(fixture, "delete-before-delegated-refresh");
+
+    await assert.rejects(
+      () => fixture.service.start(authorization, DEFAULT_REQUEST),
+      (error: unknown) =>
+        error instanceof DriveUploadError && error.code === "request-conflict",
+    );
+    assert.equal(fixture.harness.sessionCreateCalls, 1);
+    const [after] = await fixture.db
+      .select({ storedPath: resources.storedPath })
+      .from(resources)
+      .where(eq(resources.id, RESOURCE_A));
+    assert.equal(after.storedPath, before.storedPath);
   });
 
   it("returns a neutral conflict when a membership's user lineage is missing", async () => {
@@ -1032,6 +1134,37 @@ describe("Project Drive upload foundation", () => {
       assert.equal(row.url, null);
       assert.ok(row.storedPath && isSealed(row.storedPath));
     }
+  });
+
+  it("does not finalize a provider file after Project deletion starts", async () => {
+    const fixture = await seededUploadFixture();
+    const authorization = coreAuthorization("member-a", "ws-a", false);
+    await fixture.service.start(authorization, DEFAULT_REQUEST);
+    fixture.harness.fileById.set(
+      "file-final",
+      driveFile("file-final", RESOURCE_A),
+    );
+    fixture.harness.beforeNextFileGet = async () => {
+      await prepareDeletionTombstone(fixture, "delete-before-file-finalize");
+    };
+
+    await assert.rejects(
+      () =>
+        fixture.service.finalize(authorization, {
+          resourceId: RESOURCE_A,
+          driveFileId: "file-final",
+        }),
+      (error: unknown) =>
+        error instanceof DriveUploadError && error.code === "request-conflict",
+    );
+    const [row] = await fixture.db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, RESOURCE_A));
+    assert.equal(row.accessState, "pending");
+    assert.equal(row.externalId, null);
+    assert.equal(row.url, null);
+    assert.ok(row.storedPath && isSealed(row.storedPath));
   });
 
   it("does not attach a stale provider result after request mutation or removal", async () => {

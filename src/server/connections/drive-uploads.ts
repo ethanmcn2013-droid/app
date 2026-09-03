@@ -31,7 +31,10 @@ import {
   workspaceStorage,
 } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
-import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import {
+  assertProjectNotDeleting,
+  ProjectDeletionInProgressError,
+} from "@/server/projects/project-deletion-fence";
 import {
   createGoogleDriveResumableUploadSession,
   findGoogleDriveFilesByAppProperty,
@@ -143,6 +146,22 @@ export class DriveUploadError extends Error {
     super(messages[code]);
     this.name = "DriveUploadError";
     this.code = code;
+  }
+}
+
+async function assertUploadProjectNotDeleting(
+  executor: Parameters<typeof assertProjectNotDeleting>[0],
+  workspaceId: string,
+): Promise<void> {
+  try {
+    await assertProjectNotDeleting(executor, workspaceId);
+  } catch (error) {
+    // Upload callers must never interpret a deletion fence as a transient
+    // provider failure and fall back to a second storage authority.
+    if (error instanceof ProjectDeletionInProgressError) {
+      throw new DriveUploadError("request-conflict");
+    }
+    throw error;
   }
 }
 
@@ -359,7 +378,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
   ): Promise<void> {
     await deps.database.transaction(
       async (tx) => {
-        await assertProjectNotDeleting(tx, authorization.projectId);
+        await assertUploadProjectNotDeleting(tx, authorization.projectId);
         await tx
           .update(workspaceStorage)
           .set({ state: "quota_full" })
@@ -623,8 +642,10 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
       if (!persisted) throw new DriveUploadError("request-conflict");
 
       // The exact pending-row update acquires the writer slot before checking
-      // both account lineages. A concurrent removal/request change wins the
-      // CAS; a concurrent erasure orders wholly before or after this receipt.
+      // the deletion tombstone and both account lineages. A concurrent
+      // removal/request change wins the CAS; deletion or erasure orders wholly
+      // before or after this receipt.
+      await assertUploadProjectNotDeleting(tx, authorization.projectId);
       await assertUnfencedUploadLineages(
         tx,
         authorization,
@@ -641,7 +662,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
     input: NormalizedRequest,
   ): Promise<ClaimLease> {
     return deps.database.transaction(async (tx) => {
-      await assertProjectNotDeleting(tx, authorization.projectId);
+      await assertUploadProjectNotDeleting(tx, authorization.projectId);
       const now = databaseNowSeconds(deps.databaseNowSeconds);
       const inserted = await tx
         .insert(resources)
@@ -811,6 +832,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
       if (!refreshed?.storedPath) {
         throw new DriveUploadError("request-conflict");
       }
+      await assertUploadProjectNotDeleting(tx, authorization.projectId);
       await assertUnfencedUploadLineages(
         tx,
         authorization,
@@ -872,8 +894,10 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
       assertRequestMatches(claimed, authorization, input);
 
       // This short transaction orders the claim against account erasure and
-      // current-storage/grant changes. Provider I/O deliberately starts only
-      // after the SQLite/libSQL writer transaction has committed.
+      // current-storage/grant changes, plus Project deletion. Provider I/O
+      // deliberately starts only after the SQLite/libSQL writer transaction
+      // has committed.
+      await assertUploadProjectNotDeleting(tx, authorization.projectId);
       const claimStorage = await assertUnfencedUploadLineages(
         tx,
         authorization,
@@ -959,9 +983,10 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
           .returning();
         if (!stored?.storedPath) return null;
 
-        // If erasure or handover won after the mint claim, roll back the
-        // ciphertext write. The capability is never returned to a browser;
+        // If deletion, erasure or handover won after the mint claim, roll back
+        // the ciphertext write. The capability is never returned to a browser;
         // the unpersisted, empty provider session is left to expire.
+        await assertUploadProjectNotDeleting(tx, authorization.projectId);
         const persistStorage = await assertUnfencedUploadLineages(
           tx,
           authorization,
