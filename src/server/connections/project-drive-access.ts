@@ -84,6 +84,7 @@ export type ProjectDriveAccessErrorCode =
   | "storage-ambiguous"
   | "connection-not-found"
   | "connection-ambiguous"
+  | "connection-not-current"
   | "needs-reauth"
   | "unexpected-scope-set";
 
@@ -96,6 +97,7 @@ export class ProjectDriveAccessError extends Error {
       "storage-ambiguous": "This project’s Drive folder needs attention.",
       "connection-not-found": "The storage owner must reconnect Google Drive.",
       "connection-ambiguous": "The storage owner’s Drive connection needs attention.",
+      "connection-not-current": "That Drive connection is no longer current.",
       "needs-reauth": "The storage owner must reconnect Google Drive.",
       "unexpected-scope-set": "The Drive connection has an unexpected permission set.",
     };
@@ -405,10 +407,46 @@ export function createProjectDriveAccessService(
     );
   }
 
+  /**
+   * Resolve the exact credential generation pinned in a durable operation.
+   * Unlike the interactive provisioning path, this never substitutes a newer
+   * connection from the same account lineage: changing the credential makes
+   * the operation stale and requires a new intent.
+   */
+  async function withConnectionSession<T>(
+    connectionId: string,
+    operation: (session: ProjectDriveProvisioningSession) => Promise<T>,
+  ): Promise<T> {
+    const canonicalConnectionId = canonicalId(connectionId, "connectionId");
+    const connections = await deps.database
+      .select()
+      .from(providerConnections)
+      .where(
+        and(
+          eq(providerConnections.id, canonicalConnectionId),
+          eq(providerConnections.provider, GOOGLE_DRIVE_PROVIDER),
+        ),
+      )
+      .limit(2);
+    if (connections.length === 0) {
+      throw new ProjectDriveAccessError("connection-not-found");
+    }
+    if (connections.length !== 1) {
+      throw new ProjectDriveAccessError("connection-ambiguous");
+    }
+    if (!connections[0].isCurrent) {
+      throw new ProjectDriveAccessError("connection-not-current");
+    }
+    return refreshCredential(connections[0], ({ accessToken, credential }) =>
+      operation(Object.freeze({ accessToken, credential })),
+    );
+  }
+
   return Object.freeze({
     withStorageSession,
     withReceiptStorageSession,
     withProvisioningSession,
+    withConnectionSession,
   });
 }
 
@@ -416,7 +454,7 @@ export type ProjectDriveAccessService = ReturnType<
   typeof createProjectDriveAccessService
 >;
 
-function defaultAccessService() {
+export function projectDriveAccessServiceFromEnv() {
   const oauthClient = googleDriveOAuthClientFromEnv();
   return createProjectDriveAccessService({
     database: db,
@@ -432,7 +470,7 @@ export async function withAuthorizedProjectDriveSession<T>(
   selector: ProjectDriveStorageSelector,
   operation: (session: ProjectDriveStorageSession) => Promise<T>,
 ): Promise<T> {
-  return defaultAccessService().withStorageSession(
+  return projectDriveAccessServiceFromEnv().withStorageSession(
     authorization,
     selector,
     operation,
@@ -443,7 +481,7 @@ export async function withAuthorizedProjectDriveProvisioningSession<T>(
   authorization: AuthorizedProjectDriveContext,
   operation: (session: ProjectDriveProvisioningSession) => Promise<T>,
 ): Promise<T> {
-  return defaultAccessService().withProvisioningSession(
+  return projectDriveAccessServiceFromEnv().withProvisioningSession(
     authorization,
     operation,
   );
@@ -453,5 +491,8 @@ export async function withProjectDriveReceiptSession<T>(
   receipt: ProjectDriveStorageReceipt,
   operation: (session: ProjectDriveStorageSession) => Promise<T>,
 ): Promise<T> {
-  return defaultAccessService().withReceiptStorageSession(receipt, operation);
+  return projectDriveAccessServiceFromEnv().withReceiptStorageSession(
+    receipt,
+    operation,
+  );
 }

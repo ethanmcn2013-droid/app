@@ -86,6 +86,8 @@ async function importIfPresent(
 const SOURCES = allSources();
 const DRIVE_SCOPES_FILE = "src/server/connections/google-drive-scopes.ts";
 const DRIVE_FOLDERS_FILE = "src/server/connections/drive-folders.ts";
+const DRIVE_FOLDER_EXECUTOR_FILE =
+  "src/server/connections/project-drive-folder-operation-executor.ts";
 const DRIVE_GRANTS_FILE = "src/server/connections/drive-grants.ts";
 const DRIVE_TRANSPORT_FILE = "src/server/connections/google-drive.ts";
 const DRIVE_CONNECTIONS_FILE = "src/server/connections/drive-connections.ts";
@@ -720,6 +722,50 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
         explicitManagementCalls.length,
         calls.length,
         `${path}: every connection entry must explicitly request manageProject`,
+      );
+    }
+  });
+
+  it("keeps durable folder provider work behind account-fenced journal claims", () => {
+    const folders = codeOf(DRIVE_FOLDERS_FILE);
+    const provision = asyncFunctionBlock(folders, "provisionClaimed");
+    const rename = asyncFunctionBlock(folders, "renameClaimed");
+    assert.ok(provision, "the durable provision worker must remain auditable");
+    assert.ok(rename, "the durable rename worker must remain auditable");
+    assert.match(
+      provision.slice(0, 500),
+      /claim\s*:\s*ProjectDriveFolderProvisionClaim\b/,
+      "durable provision must receive a claimed journal identity",
+    );
+    assert.match(
+      rename.slice(0, 500),
+      /claim\s*:\s*ProjectDriveFolderRenameClaim\b/,
+      "durable rename must receive a claimed journal identity",
+    );
+
+    const executor = codeOf(DRIVE_FOLDER_EXECUTOR_FILE);
+    assert.match(
+      executor,
+      /operations\s*:\s*accountFencedProjectDriveOperationJournal/,
+      "the production executor must use the account-fenced orchestrator",
+    );
+    assert.match(
+      executor,
+      /deps\.operations\.prepare\s*\(/,
+      "durable preparation must go through the fenced dependency",
+    );
+    assert.match(
+      executor,
+      /deps\.operations\.claim\s*\(/,
+      "durable claims must go through the fenced dependency",
+    );
+    for (const name of ["persistProvision", "persistRename"]) {
+      const persistence = asyncFunctionBlock(executor, name);
+      assert.ok(persistence, `${name} must remain auditable`);
+      assert.doesNotMatch(
+        persistence,
+        /deps\.folders\.|createGoogleDriveFolder|renameGoogleDriveFile|getGoogleDriveFile/,
+        `${name} must not perform provider I/O in its writer transaction`,
       );
     }
   });
