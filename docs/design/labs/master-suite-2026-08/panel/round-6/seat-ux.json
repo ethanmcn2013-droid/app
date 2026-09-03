@@ -4,10 +4,17 @@
   "findings": [
     {
       "id": "lead-tick-off-its-own-date-in-across",
-      "element": "[data-app=\"timeline\"] .b-measure[data-across=\"true\"] .b-item[data-lead=\"true\"] .b-tick — src/across.css:169 overrides only the base .b-tick to left:0; the lead override at src/timeline.css:710 (left:-24px) and the [data-medium=\"sheet\"|\"full\"] override at src/timeline.css:1829 (left:-28px) still win",
+      "element": "[data-app=\"timeline\"] .b-measure[data-across=\"true\"] .b-item[data-lead=\"true\"] .b-tick \u2014 src/across.css:169 overrides only the base .b-tick to left:0; the lead override at src/timeline.css:710 (left:-24px) and the [data-medium=\"sheet\"|\"full\"] override at src/timeline.css:1829 (left:-28px) still win",
       "problem": "In every across configuration the nearest moment's mark sits 28px to the LEFT of its own date. Measured on timeline.owner-flight: the day-16 item box is at x=524.5 and its tick centre is at 496.5 (computed left:-28px); every other tick's centre equals its item x to 0.1px. Reproduces identically at 1920/1440/1280/1024 and at 768 with &layout=across, on both paper and ink. At 1920 the scale is 20.28px/day, so the accent mark reads 1.4 days early; at 768-across the scale is 5.92px/day, so it reads 4.7 days early. It is also 24px clear of the foot of its own leader stem (.b-item::after starts at left:0), so the one filled indigo dot on the measure does not touch the line that claims it, and on a surface whose whole thesis is that position is the quantity, the single accented object is the only one that lies.",
       "fix": "Add to src/across.css immediately after the .b-tick block at line 169-173: `[data-app=\"timeline\"] .b-measure[data-across=\"true\"] .b-item[data-lead=\"true\"] .b-tick { left: 0; top: var(--rule-y); }`. Six compound units beats both the 4-unit rule at timeline.css:710 and the 5-unit [data-medium] rule at timeline.css:1829, so no !important and no edit to the down measure is needed. Then assert it in interaction-check.mjs: for every .b-item in an across measure, |tick centre - item left| <= 1px.",
       "cost": 1
+    },
+    {
+      "id": "seam-landing-reported-four-ways",
+      "element": "[data-app=\"notes\"] .deskFactLink (data-act=\"open-task\") and .peelSent + .act[data-act=\"open-task\"] \u2014 notes.seam after [data-act=\"send\"]; src/notes.js (peel receipt) / src/notes.css (.deskFactLink, .peelSent)",
+      "problem": "PROVISIONAL: after Send to Tasks at 1440x960, with no scrolling, the same 40-character task title 'Switch on before guests arrive, not when' is printed three times \u2014 .deskFactLink 13px/400 at (815,294) under the eyebrow IN TASKS AS, .peelSent 17px/600 at (272,445) under the eyebrow TASKS HAS IT, and a <b> 15px/400 at (264,667) in the ALREADY IN TASKS row \u2014 and two separate controls carry data-act=\"open-task\" to the same destination 233px apart (.deskFactLink at y=294, .act at y=527). Two eyebrows name one fact two ways.",
+      "fix": "PROVISIONAL",
+      "cost": 2
     }
   ],
   "biggestWin": "PROVISIONAL - review in progress."
