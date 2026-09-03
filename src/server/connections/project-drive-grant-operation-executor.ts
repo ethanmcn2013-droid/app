@@ -39,7 +39,6 @@ import {
 } from "./project-drive-access";
 import {
   createProjectDriveOperationJournal,
-  projectDriveOperationJournal,
   type ProjectDriveOperationClaim,
   type ProjectDriveOperationConflict,
   type ProjectDriveOperationJournalDatabase,
@@ -875,7 +874,7 @@ export function projectDriveGrantOperationExecutorFromEnv() {
   return createProjectDriveGrantOperationExecutor({
     database: db,
     operations: accountFencedProjectDriveOperationJournal,
-    journal: projectDriveOperationJournal,
+    journal: createProjectDriveOperationJournal({ database: db }),
     journalForTransaction: (database) =>
       createProjectDriveOperationJournal({ database }),
     access: { withReceiptStorageSession: withProjectDriveReceiptSession },
