@@ -1600,7 +1600,14 @@ body {
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
-  align-items: center;
+  /* START, not centre. A person's words get the first line, and the tick
+     that ticks them belongs beside that line — centred, it floated to the
+     middle of a two-line note, so a column of thirteen ticks wobbled
+     between 13px and 46px from its row's top and landed level with the
+     NOTE rather than the title. The `.lrow .tick { margin: 0 }` reset
+     below is what makes start-alignment land within a pixel; restoring
+     the tick's own margin-top pushes it back out. */
+  align-items: start;
   min-height: 44px;
   padding: 7px 10px 7px 4px;
   border-radius: var(--r-card, 8px);
@@ -5639,7 +5646,16 @@ body {
   [data-app="notes"] .state .act { flex: 0 0 auto; margin-left: 30px; }
   [data-app="notes"] { --inset: 9px; --gutter: 16px; }
   [data-app="notes"] .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
-  [data-app="notes"] .headName { display: none; }
+  /* SR-ONLY, NOT GONE. `display: none` pruned the sheet's h1 from the
+     accessibility tree, leaving five orphan h3s at 390 — and in two
+     states no heading at all. The name is not drawn on a phone by
+     decision; it still has to be the document's root. `min-width` is
+     reset because the base rule sets 5ch, which fights `width: 1px`. */
+  [data-app="notes"] .headName {
+    position: absolute; width: 1px; height: 1px; min-width: 0;
+    margin: -1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
   /* One row, four objects, no wrapping and a sheet that clips: the couple,
      the date and the notebook's count were laid out past the sheet's right
      edge and simply did not print. The head takes two rows on a phone —
@@ -5943,6 +5959,22 @@ body {
      stays whole on its own line. */
   [data-app="notes"] .darkFoot { flex-wrap: wrap; }
   [data-app="notes"] .darkNote { flex: 1 1 100%; }
+}
+
+/* THE REFLOW WIDTH, on a pointer that is not a finger.
+   `.darkActs` held its three pills on one `flex: 0 0 auto` row, which
+   needs 472px. The only relief was the keycap hide inside
+   `@media (pointer: coarse)` — so a FINGER got it and a narrowed desktop
+   window did not, and 1.4.10's own test width overflowed the document by
+   145px at 320 and really scrolled. Width, not pointer, is what decides
+   whether three pills fit, so the rule is a width query.
+
+   The coarse keycap hide STAYS: with the wrap in place the keycap still
+   fits unclipped inside the pill at 320, so the Ctrl+Enter hint survives
+   for exactly the keyboard user who narrowed the window to find it. */
+@media (max-width: 720px) {
+  [data-app="notes"] .darkActs { flex: 1 1 100%; flex-wrap: wrap; margin-left: 0; min-width: 0; }
+  [data-app="notes"] .darkAct { flex: 1 1 100%; min-width: 0; justify-content: center; padding: 0 12px; }
 }
 
 /* ══ timeline.css ══════════════════════════════════════════ */
@@ -17508,7 +17540,7 @@ window.__SUITE.register("tasks", {
         ${chip ? `<span class="headRule" aria-hidden="true"></span>${chip}` : ""}
         <div class="headActions">
           <button class="headAct" type="button" data-act="privacy" aria-label="${attr(N.copy.privacy)}. ${attr(N.copy.privacyLong)}.">${I.lock}<span>${esc(N.copy.privacy)}</span></button>
-          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="Notes options are on another screen. Not here yet.">${I.dots}</button>
+          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="More for this note. Not here yet.">${I.dots}</button>
         </div>
       </header>`;
   }
@@ -17550,7 +17582,7 @@ window.__SUITE.register("tasks", {
                  <div class="dockRow" data-verbs>
                    <button class="dockGlyph" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}</button>
                    <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
+                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}</button>
                    ${commit}
                  </div>
                  <div class="dockRow" data-suite>
@@ -17573,7 +17605,7 @@ window.__SUITE.register("tasks", {
                  }
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
+                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}</button>
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockAvatar" type="button" data-act="account" aria-disabled="true" title="Your account, in Signal Studio. Not here yet." aria-label="${attr(N.operator.role)}. Not here yet.">${N.operator.initials}</button>`
           }
@@ -17675,7 +17707,7 @@ window.__SUITE.register("tasks", {
           <span class="deskFact"><b>${esc(N.copy.otherWaysLabel)}</b>
             <span class="deskVerbs">
               <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
-              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
+              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
             </span>
           </span>
         </div>
@@ -18003,7 +18035,7 @@ window.__SUITE.register("tasks", {
         /* Its own sticky context, so a rule is pushed out by the next one
            rather than every rule in the pile stacking at the top. */
         rows.push(
-          `<li class="idxSection"><h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote dateStamp">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>` +
+          `<li class="idxSection"><h2 class="idxDay"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote dateStamp">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h2>` +
             `<ul class="idxGroupRows">${g.rows.map((note) => idxRow(note, o)).join("")}</ul></li>`,
         );
       }
@@ -18050,6 +18082,7 @@ window.__SUITE.register("tasks", {
     const bodyHtml = bodyHtmlOf(note, marked && note.body.includes(marked) ? marked : null);
     return `
       <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(note.title)}">
+        <h1 class="sr">${esc(note.title)}</h1>
         <div class="phoneSheetTop">
           <button class="act" data-quiet type="button" data-act="close">${I.chevron}Back to your notes</button>
           <span class="spacer"></span>
@@ -18219,6 +18252,7 @@ window.__SUITE.register("tasks", {
         dock: true,
         over: `
           <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(`Deciding: ` + note.title)}">
+            <h1 class="sr">Deciding: ${esc(note.title)}</h1>
             <div class="phoneSheetTop">
               <button class="act" data-quiet type="button" data-act="notebook">${I.chevron}Back to your notes</button>
               <span class="spacer"></span>
@@ -18311,6 +18345,7 @@ window.__SUITE.register("tasks", {
       ...base,
       over: `
         <section class="dark" aria-label="Dictating">
+          <h1 class="sr">Dictating</h1>
           <div class="darkTop">
             <span class="darkTag"><span class="rec" aria-hidden="true"></span>Listening</span>
             <span class="darkTime tab">0:00</span>
@@ -18347,6 +18382,7 @@ window.__SUITE.register("tasks", {
         ...base,
         over: `
           <section class="dark" aria-label="What came back">
+            <h1 class="sr">What came back</h1>
             <div class="darkBody">
               <p class="saidHead">What came back, in ${pieces.length === 1 ? "one note" : `${pieces.length} notes`}.</p>
               <p class="saidHint">Edit ${editEither(pieces.length)} before you keep ${keepWhich(pieces.length)}.</p>
@@ -19118,7 +19154,7 @@ window.__SUITE.register("tasks", {
       }
       if (where === "more") {
         /* Still not a surface in the suite: the rest of Signal Studio. */
-        say("The rest of Signal Studio is on another screen.");
+        say("The rest of Signal Studio. Not here yet.");
         return;
       }
       /* The doors are real. */
@@ -19339,12 +19375,24 @@ window.__SUITE.register("tasks", {
        where they go rather than sharing one sentence between seven. */
     const ELSEWHERE = {
       timeline: "Timeline is another surface in this suite. This lab is the Notes one.",
-      more: "The rest of Signal Studio is on another screen.",
-      privacy: `${N.copy.privacyLong} Your privacy settings are on another screen.`,
-      options: "Notes options are on another screen.",
-      photo: "Reading a photo happens on another screen. Nothing here changes.",
-      retry: "Sending again happens on another screen. Your note is still here.",
-      destroy: "Deleting for good happens on another screen. Nothing here is deleted.",
+      /* ONE GRAMMAR FOR A CLOSED DOOR, ratified in src/app.js:96-105:
+         name the thing, then "Not here yet.", then at most one sentence
+         of reassurance. "happens on another screen. Not here yet." was
+         two claims that cannot both be true, and it invented a
+         destination this product does not have.
+
+         `photo` and `options` are gone from this table rather than
+         rewritten: :3220 intercepts any aria-disabled control whose title
+         matches /Not here yet/ and announces the TITLE, so both entries
+         were unreachable. Their titles carry the words now.
+
+         `more` is reached only by the note-level button, whose own
+         accessible name is "More actions for this note" — so it says
+         what that button is, not what the suite door is. */
+      more: "More for this note. Not here yet.",
+      privacy: `${N.copy.privacyLong}. Your privacy settings. Not here yet.`,
+      retry: "Sending again. Not here yet. Your note is still here.",
+      destroy: "Deleting for good. Not here yet. Nothing here is deleted.",
     };
     if (ELSEWHERE[a]) {
       say(ELSEWHERE[a]);

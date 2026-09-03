@@ -485,7 +485,14 @@
   display: grid;
   grid-template-columns: subgrid;
   grid-column: 1 / -1;
-  align-items: center;
+  /* START, not centre. A person's words get the first line, and the tick
+     that ticks them belongs beside that line — centred, it floated to the
+     middle of a two-line note, so a column of thirteen ticks wobbled
+     between 13px and 46px from its row's top and landed level with the
+     NOTE rather than the title. The `.lrow .tick { margin: 0 }` reset
+     below is what makes start-alignment land within a pixel; restoring
+     the tick's own margin-top pushes it back out. */
+  align-items: start;
   min-height: 44px;
   padding: 7px 10px 7px 4px;
   border-radius: var(--r-card, 8px);

@@ -1630,7 +1630,7 @@
         ${chip ? `<span class="headRule" aria-hidden="true"></span>${chip}` : ""}
         <div class="headActions">
           <button class="headAct" type="button" data-act="privacy" aria-label="${attr(N.copy.privacy)}. ${attr(N.copy.privacyLong)}.">${I.lock}<span>${esc(N.copy.privacy)}</span></button>
-          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="Notes options are on another screen. Not here yet.">${I.dots}</button>
+          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="More for this note. Not here yet.">${I.dots}</button>
         </div>
       </header>`;
   }
@@ -1672,7 +1672,7 @@
                  <div class="dockRow" data-verbs>
                    <button class="dockGlyph" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}</button>
                    <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
+                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}</button>
                    ${commit}
                  </div>
                  <div class="dockRow" data-suite>
@@ -1695,7 +1695,7 @@
                  }
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
+                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}</button>
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockAvatar" type="button" data-act="account" aria-disabled="true" title="Your account, in Signal Studio. Not here yet." aria-label="${attr(N.operator.role)}. Not here yet.">${N.operator.initials}</button>`
           }
@@ -1797,7 +1797,7 @@
           <span class="deskFact"><b>${esc(N.copy.otherWaysLabel)}</b>
             <span class="deskVerbs">
               <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
-              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
+              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
             </span>
           </span>
         </div>
@@ -2125,7 +2125,7 @@
         /* Its own sticky context, so a rule is pushed out by the next one
            rather than every rule in the pile stacking at the top. */
         rows.push(
-          `<li class="idxSection"><h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote dateStamp">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>` +
+          `<li class="idxSection"><h2 class="idxDay"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote dateStamp">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h2>` +
             `<ul class="idxGroupRows">${g.rows.map((note) => idxRow(note, o)).join("")}</ul></li>`,
         );
       }
@@ -2172,6 +2172,7 @@
     const bodyHtml = bodyHtmlOf(note, marked && note.body.includes(marked) ? marked : null);
     return `
       <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(note.title)}">
+        <h1 class="sr">${esc(note.title)}</h1>
         <div class="phoneSheetTop">
           <button class="act" data-quiet type="button" data-act="close">${I.chevron}Back to your notes</button>
           <span class="spacer"></span>
@@ -2341,6 +2342,7 @@
         dock: true,
         over: `
           <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(`Deciding: ` + note.title)}">
+            <h1 class="sr">Deciding: ${esc(note.title)}</h1>
             <div class="phoneSheetTop">
               <button class="act" data-quiet type="button" data-act="notebook">${I.chevron}Back to your notes</button>
               <span class="spacer"></span>
@@ -2433,6 +2435,7 @@
       ...base,
       over: `
         <section class="dark" aria-label="Dictating">
+          <h1 class="sr">Dictating</h1>
           <div class="darkTop">
             <span class="darkTag"><span class="rec" aria-hidden="true"></span>Listening</span>
             <span class="darkTime tab">0:00</span>
@@ -2469,6 +2472,7 @@
         ...base,
         over: `
           <section class="dark" aria-label="What came back">
+            <h1 class="sr">What came back</h1>
             <div class="darkBody">
               <p class="saidHead">What came back, in ${pieces.length === 1 ? "one note" : `${pieces.length} notes`}.</p>
               <p class="saidHint">Edit ${editEither(pieces.length)} before you keep ${keepWhich(pieces.length)}.</p>
@@ -3240,7 +3244,7 @@
       }
       if (where === "more") {
         /* Still not a surface in the suite: the rest of Signal Studio. */
-        say("The rest of Signal Studio is on another screen.");
+        say("The rest of Signal Studio. Not here yet.");
         return;
       }
       /* The doors are real. */
@@ -3461,12 +3465,24 @@
        where they go rather than sharing one sentence between seven. */
     const ELSEWHERE = {
       timeline: "Timeline is another surface in this suite. This lab is the Notes one.",
-      more: "The rest of Signal Studio is on another screen.",
-      privacy: `${N.copy.privacyLong} Your privacy settings are on another screen.`,
-      options: "Notes options are on another screen.",
-      photo: "Reading a photo happens on another screen. Nothing here changes.",
-      retry: "Sending again happens on another screen. Your note is still here.",
-      destroy: "Deleting for good happens on another screen. Nothing here is deleted.",
+      /* ONE GRAMMAR FOR A CLOSED DOOR, ratified in src/app.js:96-105:
+         name the thing, then "Not here yet.", then at most one sentence
+         of reassurance. "happens on another screen. Not here yet." was
+         two claims that cannot both be true, and it invented a
+         destination this product does not have.
+
+         `photo` and `options` are gone from this table rather than
+         rewritten: :3220 intercepts any aria-disabled control whose title
+         matches /Not here yet/ and announces the TITLE, so both entries
+         were unreachable. Their titles carry the words now.
+
+         `more` is reached only by the note-level button, whose own
+         accessible name is "More actions for this note" — so it says
+         what that button is, not what the suite door is. */
+      more: "More for this note. Not here yet.",
+      privacy: `${N.copy.privacyLong}. Your privacy settings. Not here yet.`,
+      retry: "Sending again. Not here yet. Your note is still here.",
+      destroy: "Deleting for good. Not here yet. Nothing here is deleted.",
     };
     if (ELSEWHERE[a]) {
       say(ELSEWHERE[a]);

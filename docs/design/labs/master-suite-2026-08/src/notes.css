@@ -1592,7 +1592,16 @@
   [data-app="notes"] .state .act { flex: 0 0 auto; margin-left: 30px; }
   [data-app="notes"] { --inset: 9px; --gutter: 16px; }
   [data-app="notes"] .sheet { height: calc(100dvh - 60px - var(--inset) * 3 - env(safe-area-inset-bottom)); border-radius: 16px; }
-  [data-app="notes"] .headName { display: none; }
+  /* SR-ONLY, NOT GONE. `display: none` pruned the sheet's h1 from the
+     accessibility tree, leaving five orphan h3s at 390 — and in two
+     states no heading at all. The name is not drawn on a phone by
+     decision; it still has to be the document's root. `min-width` is
+     reset because the base rule sets 5ch, which fights `width: 1px`. */
+  [data-app="notes"] .headName {
+    position: absolute; width: 1px; height: 1px; min-width: 0;
+    margin: -1px; padding: 0; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
   /* One row, four objects, no wrapping and a sheet that clips: the couple,
      the date and the notebook's count were laid out past the sheet's right
      edge and simply did not print. The head takes two rows on a phone —
@@ -1896,4 +1905,20 @@
      stays whole on its own line. */
   [data-app="notes"] .darkFoot { flex-wrap: wrap; }
   [data-app="notes"] .darkNote { flex: 1 1 100%; }
+}
+
+/* THE REFLOW WIDTH, on a pointer that is not a finger.
+   `.darkActs` held its three pills on one `flex: 0 0 auto` row, which
+   needs 472px. The only relief was the keycap hide inside
+   `@media (pointer: coarse)` — so a FINGER got it and a narrowed desktop
+   window did not, and 1.4.10's own test width overflowed the document by
+   145px at 320 and really scrolled. Width, not pointer, is what decides
+   whether three pills fit, so the rule is a width query.
+
+   The coarse keycap hide STAYS: with the wrap in place the keycap still
+   fits unclipped inside the pill at 320, so the Ctrl+Enter hint survives
+   for exactly the keyboard user who narrowed the window to find it. */
+@media (max-width: 720px) {
+  [data-app="notes"] .darkActs { flex: 1 1 100%; flex-wrap: wrap; margin-left: 0; min-width: 0; }
+  [data-app="notes"] .darkAct { flex: 1 1 100%; min-width: 0; justify-content: center; padding: 0 12px; }
 }

@@ -909,6 +909,124 @@ for (const [product, state] of [["tasks", "tasks.board"], ["notes", "notes.noteb
   await page.close();
 }
 
+/* ── reflow on a FINE pointer, which no loop in this file had ────────
+      THE ELEVENTH TIME ABSENCE READ AS A PASS. `open()` derives isTouch
+      from `vp.isMobile`, and every entry in config.viewports below 480
+      sets it — so every "no sideways scroll" assertion in this file has
+      only ever run on a COARSE pointer. The one relief for the dictation
+      floor's action row lives inside `@media (pointer: coarse)`, so a
+      narrowed DESKTOP window — which is exactly the WCAG 1.4.10 reflow
+      test — never got it and overflowed by 145px at 320.
+
+      320 is included deliberately: 1.4.10 asks for 320 CSS pixels of
+      reflow without two-dimensional scrolling, and it is the width the
+      guideline names. */
+for (const width of [320, 390, 430]) {
+  for (const state of config.states) {
+    const page = await open({ state, viewport: { width, height: 844 }, touch: false });
+    const over = await page.evaluate(() => {
+      const doc = document.documentElement;
+      return { x: doc.scrollWidth - doc.clientWidth, scrolled: (window.scrollTo(9999, 0), Math.round(window.scrollX)) };
+    });
+    ok(`${state} @${width} fine pointer · reflows without scrolling sideways`,
+      over.x <= 0 && over.scrolled === 0,
+      `${over.x}px of overflow, scrollX reached ${over.scrolled}`);
+    await page.close();
+  }
+}
+
+/* ── the outline a screen reader walks ───────────────────────────────
+      Ink density is presentational; the heading LEVELS are the document.
+      Nothing in this file had ever read them, and Notes was shipping five
+      orphan h3s at a desk and, at 390, a sheet whose h1 was pruned by
+      `display: none` — one state with no headings in the tree at all. */
+for (const width of [1440, 390]) {
+  for (const state of config.states) {
+    const page = await open({ state, viewport: { width, height: width > 720 ? 960 : 844 }, touch: width <= 480 });
+    const outline = await page.evaluate(() => {
+      const host = document.querySelector(".app:not([hidden])");
+      if (!host) return null;
+      const seen = [];
+      for (const el of host.querySelectorAll("h1,h2,h3,h4,h5,h6,[role=heading]")) {
+        /* Only what a reader actually reaches. */
+        if (el.closest("[hidden], [aria-hidden=true], [inert]")) continue;
+        if (el.checkVisibility && !el.checkVisibility()) {
+          /* An sr-only heading is IN the tree; a display:none one is not. */
+          const cs = getComputedStyle(el);
+          if (cs.display === "none" || cs.visibility === "hidden") continue;
+        }
+        const lvl = el.getAttribute("aria-level");
+        seen.push(Number(lvl || el.tagName.slice(1)));
+      }
+      return seen;
+    });
+    const levels = outline || [];
+    const skips = levels.filter((n, i) => i > 0 && n - levels[i - 1] > 1);
+    ok(`${state} @${width} · the outline starts at h1 and skips no level`,
+      levels.length > 0 && levels[0] === 1 && skips.length === 0,
+      levels.length ? `levels ${levels.join(",")}` : "no headings in the tree");
+    await page.close();
+  }
+}
+
+/* ── a person's words get the first line ─────────────────────────────
+      The recorded lesson, inverted: `align-items: center` floated the
+      tick, the person and the priority down to the middle of a two-line
+      note, so a column of thirteen ticks wobbled between 13px and 46px
+      from its row's top and landed level with line TWO of the note rather
+      than the title it ticks. Nothing measured cross-axis alignment
+      inside a row. */
+for (const width of [1050, 768, 390]) {
+  const page = await open({ state: "tasks.board", viewport: { width, height: 900 }, touch: width <= 480 });
+  const rows = await page.evaluate(() => {
+    const out = [];
+    for (const row of document.querySelectorAll(".lrow")) {
+      const tick = row.querySelector(".tick");
+      const title = row.querySelector(".lrowTitle");
+      if (!tick || !title) continue;
+      const t = tick.getBoundingClientRect();
+      /* The FIRST LINE's box, not the whole wrapped title's. */
+      const range = document.createRange();
+      range.selectNodeContents(title);
+      const first = range.getClientRects()[0];
+      if (!first) continue;
+      out.push(Math.abs((t.top + t.height / 2) - (first.top + first.height / 2)));
+    }
+    return out;
+  });
+  const worst = rows.length ? Math.max(...rows) : -1;
+  ok(`tasks list @${width} · the tick sits on its title's first line`,
+    rows.length > 0 && worst <= 2,
+    rows.length ? `worst ${worst.toFixed(1)}px off across ${rows.length} rows` : "no list rows");
+  await page.close();
+}
+
+/* ── a closed door says the same thing every closed door says ────────
+      Eleven strings said the work "happens on another screen", against
+      the ratified noun-phrase grammar — and one of them fused two
+      sentences with no full stop, so the live region read "Yours until
+      you send something on Your privacy settings are on another screen."
+      A door that invents a destination is a door that lies about what
+      the product is. */
+{
+  const page = await open({ state: "notes.notebook" });
+  const doors = await page.evaluate(() => {
+    const out = [];
+    for (const el of document.querySelectorAll('[aria-disabled="true"][title]')) {
+      out.push(el.getAttribute("title"));
+    }
+    return out;
+  });
+  const strays = doors.filter((t) => /another screen/i.test(t));
+  const unended = doors.filter((t) => !/Not here yet\./.test(t));
+  ok("notes · no closed door invents another screen",
+    strays.length === 0, strays.join(" | "));
+  ok("notes · every closed door says it is not here yet",
+    doors.length > 0 && unended.length === 0,
+    doors.length ? unended.join(" | ") : "no closed doors found");
+  await page.close();
+}
+
 await browser.close();
 process.stdout.write(`\n${results.length} assertions, ${failures} failing\n`);
 process.exit(failures ? 1 : 0);
