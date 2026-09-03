@@ -59,14 +59,21 @@ export type DriveGrantErrorCode =
   | "member-email-unavailable"
   | "storage-owner"
   | "grant-conflict"
+  | "grant-not-found"
   | "provider-error"
   | "malformed-response";
+
+export type DriveGrantProviderOperation =
+  | "permission-list"
+  | "permission-create"
+  | "permission-delete";
 
 export class DriveGrantError extends Error {
   readonly code: DriveGrantErrorCode;
   readonly status: number | null;
   readonly retryable: boolean;
   readonly reason: string | null;
+  readonly operation: DriveGrantProviderOperation | null;
 
   constructor(
     code: DriveGrantErrorCode,
@@ -74,6 +81,7 @@ export class DriveGrantError extends Error {
       status?: number | null;
       retryable?: boolean;
       reason?: string | null;
+      operation?: DriveGrantProviderOperation | null;
     }> = {},
   ) {
     const messages: Record<DriveGrantErrorCode, string> = {
@@ -85,6 +93,7 @@ export class DriveGrantError extends Error {
       "member-email-unavailable": "That member does not have a usable email address.",
       "storage-owner": "The storage owner already owns this Drive folder.",
       "grant-conflict": "An existing Drive grant needs attention first.",
+      "grant-not-found": "The recorded Drive grant is no longer present.",
       "provider-error": "Google Drive could not update access.",
       "malformed-response": "Google Drive returned an invalid access receipt.",
     };
@@ -94,6 +103,7 @@ export class DriveGrantError extends Error {
     this.status = details.status ?? null;
     this.retryable = details.retryable ?? false;
     this.reason = safeReason(details.reason);
+    this.operation = details.operation ?? null;
   }
 }
 
@@ -220,6 +230,7 @@ async function permissionFetch(
   url: URL,
   init: RequestInit,
   fetchImpl: GoogleFetch,
+  operation: DriveGrantProviderOperation,
 ): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -235,7 +246,10 @@ async function permissionFetch(
       redirect: "error",
     });
   } catch {
-    throw new DriveGrantError("provider-error", { retryable: true });
+    throw new DriveGrantError("provider-error", {
+      retryable: true,
+      operation,
+    });
   }
 }
 
@@ -286,6 +300,10 @@ function requiredPermissionReceipt(
     !record ||
     typeof record.id !== "string" ||
     record.id.length === 0 ||
+    record.id.length > 1_024 ||
+    record.id !== record.id.trim() ||
+    /[\u0000-\u001f\u007f]/.test(record.id) ||
+    record.id.includes("://") ||
     record.type !== "user" ||
     record.role !== expected.role ||
     typeof record.emailAddress !== "string" ||
@@ -294,6 +312,283 @@ function requiredPermissionReceipt(
     throw new DriveGrantError("malformed-response");
   }
   return { id: record.id };
+}
+
+type ExactPermissionCandidate = Readonly<{
+  id: string;
+  type: string;
+  role: string;
+  email: string | null;
+  deleted: boolean;
+}>;
+
+export type RecoveredDriveGrant = Readonly<{
+  permissionId: string;
+  outcome: "adopted" | "created";
+}>;
+
+const MAX_PERMISSION_PAGES = 10;
+
+function canonicalPermissionId(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  if (
+    typeof value !== "string" ||
+    value.length === 0 ||
+    value !== value.trim() ||
+    /[\u0000-\u001f\u007f]/.test(value)
+  ) {
+    throw new DriveGrantError("grant-conflict");
+  }
+  return value;
+}
+
+async function listExactPermissionCandidates(
+  session: ProjectDriveStorageSession,
+  grantedEmail: string,
+  fetchImpl: GoogleFetch,
+): Promise<readonly ExactPermissionCandidate[]> {
+  const matches: ExactPermissionCandidate[] = [];
+  let pageToken: string | null = null;
+  for (let page = 0; page < MAX_PERMISSION_PAGES; page += 1) {
+    const url = permissionUrl(session.storage.folderId);
+    url.searchParams.set(
+      "fields",
+      "nextPageToken,permissions(id,type,role,emailAddress,deleted)",
+    );
+    url.searchParams.set("pageSize", "100");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+    const response = await permissionFetch(
+      session.accessToken,
+      url,
+      { method: "GET" },
+      fetchImpl,
+      "permission-list",
+    );
+    const body = await responseJson(response);
+    if (!response.ok) {
+      throw new DriveGrantError("provider-error", {
+        status: response.status,
+        retryable: retryableStatus(response.status),
+        reason: providerReason(body),
+        operation: "permission-list",
+      });
+    }
+    const record = recordOf(body);
+    if (!record || !Array.isArray(record.permissions)) {
+      throw new DriveGrantError("malformed-response", {
+        operation: "permission-list",
+      });
+    }
+    for (const value of record.permissions) {
+      const permission = recordOf(value);
+      if (
+        !permission ||
+        typeof permission.id !== "string" ||
+        permission.id.length === 0 ||
+        permission.id.length > 1_024 ||
+        permission.id !== permission.id.trim() ||
+        /[\u0000-\u001f\u007f]/.test(permission.id) ||
+        permission.id.includes("://") ||
+        typeof permission.type !== "string" ||
+        typeof permission.role !== "string"
+      ) {
+        throw new DriveGrantError("malformed-response", {
+          operation: "permission-list",
+        });
+      }
+      const email =
+        typeof permission.emailAddress === "string"
+          ? permission.emailAddress.trim().toLowerCase()
+          : null;
+      if (permission.deleted === true) continue;
+      if (permission.type === "user" && !email) {
+        // A live named-user permission without a correlatable address makes
+        // duplicate prevention impossible. Fail closed instead of POSTing a
+        // second permission whose identity we cannot compare.
+        throw new DriveGrantError("malformed-response", {
+          operation: "permission-list",
+        });
+      }
+      if (email !== grantedEmail) continue;
+      matches.push(
+        Object.freeze({
+          id: permission.id,
+          type: permission.type,
+          role: permission.role,
+          email,
+          deleted: false,
+        }),
+      );
+    }
+    if (
+      record.nextPageToken !== undefined &&
+      typeof record.nextPageToken !== "string"
+    ) {
+      throw new DriveGrantError("malformed-response", {
+        operation: "permission-list",
+      });
+    }
+    pageToken =
+      typeof record.nextPageToken === "string" && record.nextPageToken.length > 0
+        ? record.nextPageToken
+        : null;
+    if (!pageToken) return Object.freeze(matches);
+  }
+  throw new DriveGrantError("malformed-response", {
+    operation: "permission-list",
+  });
+}
+
+/**
+ * Recover or create the exact named-user permission for a claimed journal
+ * operation. Every attempt lists first, so a worker crash after Google's POST
+ * can adopt the prior success instead of blindly creating a duplicate.
+ *
+ * `beforeCreate` is deliberately mandatory and runs after discovery, directly
+ * before the only provider mutation. The executor uses it to re-acquire the
+ * database writer slot and recheck the pinned membership, email, generation,
+ * and account fences without holding a transaction across provider I/O.
+ */
+export async function recoverOrCreateExactDriveUserPermission(
+  session: ProjectDriveStorageSession,
+  input: Readonly<{
+    granteeEmail: string;
+    role: DriveGrantRole;
+    sendNotificationEmail: boolean;
+    expectedPermissionId?: string | null;
+    beforeCreate: () => Promise<void>;
+  }>,
+  fetchImpl: GoogleFetch,
+  mutationQueue: FolderPermissionMutationQueue = processPermissionMutations,
+): Promise<RecoveredDriveGrant> {
+  const grantedEmail = normalizeEmail(input.granteeEmail);
+  const expectedPermissionId = canonicalPermissionId(
+    input.expectedPermissionId,
+  );
+  if (typeof input.sendNotificationEmail !== "boolean") {
+    throw new TypeError("sendNotificationEmail must be explicit");
+  }
+  if (typeof input.beforeCreate !== "function") {
+    throw new TypeError("beforeCreate must be provided");
+  }
+
+  const target = {
+    fileId: session.storage.folderId,
+    workspaceFolderId: session.storage.folderId,
+    type: "user",
+    role: input.role,
+  } as const;
+  assertGrantTarget({ ...target, rootFolderId: session.storageRootFolderId });
+  if (session.credential.rootFolderId !== session.storageRootFolderId) {
+    assertGrantTarget({
+      ...target,
+      rootFolderId: session.credential.rootFolderId,
+    });
+  }
+
+  return mutationQueue.run(session.storage.folderId, async () => {
+    assertGrantTarget({ ...target, rootFolderId: session.storageRootFolderId });
+    if (session.credential.rootFolderId !== session.storageRootFolderId) {
+      assertGrantTarget({
+        ...target,
+        rootFolderId: session.credential.rootFolderId,
+      });
+    }
+
+    const candidates = await listExactPermissionCandidates(
+      session,
+      grantedEmail,
+      fetchImpl,
+    );
+    const exact = candidates.filter(
+      (candidate) =>
+        candidate.type === "user" && candidate.role === input.role,
+    );
+
+    if (expectedPermissionId) {
+      if (
+        candidates.length === 1 &&
+        exact.length === 1 &&
+        exact[0].id === expectedPermissionId
+      ) {
+        return Object.freeze({
+          permissionId: expectedPermissionId,
+          outcome: "adopted" as const,
+        });
+      }
+      if (candidates.length === 0) {
+        throw new DriveGrantError("grant-not-found");
+      }
+      throw new DriveGrantError("grant-conflict");
+    }
+
+    if (candidates.length === 1 && exact.length === 1) {
+      return Object.freeze({
+        permissionId: exact[0].id,
+        outcome: "adopted" as const,
+      });
+    }
+    if (candidates.length > 0) {
+      throw new DriveGrantError("grant-conflict");
+    }
+
+    await input.beforeCreate();
+    // Keep the guard in this exported mutation function immediately before
+    // the POST as a source-enforced backstop against future refactors.
+    assertGrantTarget({ ...target, rootFolderId: session.storageRootFolderId });
+    if (session.credential.rootFolderId !== session.storageRootFolderId) {
+      assertGrantTarget({
+        ...target,
+        rootFolderId: session.credential.rootFolderId,
+      });
+    }
+    const url = permissionUrl(session.storage.folderId);
+    url.searchParams.set(
+      "sendNotificationEmail",
+      String(input.sendNotificationEmail),
+    );
+    url.searchParams.set("fields", "id,type,role,emailAddress");
+    const response = await permissionFetch(
+      session.accessToken,
+      url,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          type: "user",
+          role: input.role,
+          emailAddress: grantedEmail,
+        }),
+      },
+      fetchImpl,
+      "permission-create",
+    );
+    const body = await responseJson(response);
+    if (!response.ok) {
+      throw new DriveGrantError("provider-error", {
+        status: response.status,
+        retryable: retryableStatus(response.status),
+        reason: providerReason(body),
+        operation: "permission-create",
+      });
+    }
+    try {
+      const receipt = requiredPermissionReceipt(body, {
+        role: input.role,
+        email: grantedEmail,
+      });
+      return Object.freeze({
+        permissionId: receipt.id,
+        outcome: "created" as const,
+      });
+    } catch (error) {
+      if (error instanceof DriveGrantError) {
+        throw new DriveGrantError(error.code, {
+          operation: "permission-create",
+        });
+      }
+      throw error;
+    }
+  });
 }
 
 export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
@@ -394,6 +689,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
               }),
             },
             deps.fetchImpl,
+            "permission-create",
           );
           const body = await responseJson(response);
           if (!response.ok) {
@@ -401,6 +697,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
               status: response.status,
               retryable: retryableStatus(response.status),
               reason: providerReason(body),
+              operation: "permission-create",
             });
           }
           const receipt = requiredPermissionReceipt(body, {
@@ -469,6 +766,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
               permissionUrl(session.storage.folderId, grant.permissionId),
               { method: "DELETE" },
               deps.fetchImpl,
+              "permission-delete",
             );
             if (!response.ok && response.status !== 404) {
               const body = await responseJson(response);
@@ -476,6 +774,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
                 status: response.status,
                 retryable: retryableStatus(response.status),
                 reason: providerReason(body),
+                operation: "permission-delete",
               });
             }
             await deps.database
@@ -560,6 +859,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
             url,
             { method: "GET" },
             deps.fetchImpl,
+            "permission-list",
           );
           const body = await responseJson(response);
           if (!response.ok) {
@@ -567,6 +867,7 @@ export function createDriveGrantService(deps: DriveGrantServiceDependencies) {
               status: response.status,
               retryable: retryableStatus(response.status),
               reason: providerReason(body),
+              operation: "permission-list",
             });
           }
           const record = recordOf(body);
@@ -654,6 +955,7 @@ export async function deleteExactDriveUserPermission(
     permissionUrl(session.storage.folderId, input.permissionId),
     { method: "DELETE" },
     fetchImpl,
+    "permission-delete",
   );
   if (!response.ok && response.status !== 404) {
     const body = await responseJson(response);
@@ -661,6 +963,7 @@ export async function deleteExactDriveUserPermission(
       status: response.status,
       retryable: retryableStatus(response.status),
       reason: providerReason(body),
+      operation: "permission-delete",
     });
   }
   return Object.freeze({ alreadyAbsent: response.status === 404 });

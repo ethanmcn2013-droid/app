@@ -816,18 +816,26 @@ describe("§2.8 · the caller is proved before any provider is called", () => {
       for (const fn of functions) {
         if (
           canonicalPath(path) === DRIVE_GRANTS_FILE &&
-          fn.name === "deleteExactDriveUserPermission"
+          (fn.name === "deleteExactDriveUserPermission" ||
+            fn.name === "recoverOrCreateExactDriveUserPermission")
         ) {
-          // Account erasure and repair have no interactive caller to mint a
-          // Project capability for. Their one narrow exception receives an
-          // access session that was resolved from an exact durable storage
-          // receipt. Keep the exception named and structural so another
+          // Account erasure and durable operation repair have no interactive
+          // caller to mint a Project capability for. Their narrow transports
+          // receive an access session resolved from an exact durable storage
+          // receipt. Keep each exception named and structural so another
           // unauthorised helper cannot blend into it.
           assert.match(
             fn.source.slice(0, 1_200),
             /session\s*:\s*ProjectDriveStorageSession\b/,
             `${path}: ${fn.name} must receive a database-resolved storage session`,
           );
+          if (fn.name === "recoverOrCreateExactDriveUserPermission") {
+            assert.match(
+              fn.source.slice(0, 1_200),
+              /beforeCreate\s*:\s*\(\)\s*=>\s*Promise<void>/,
+              `${path}: ${fn.name} must require a final pre-mutation fence check`,
+            );
+          }
           continue;
         }
         if (
