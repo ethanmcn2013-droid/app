@@ -54,12 +54,12 @@ export async function applyTemplateToWorkspace(
   const actorUserId = dependencies.actorUserId ?? await getCurrentUser();
   const database = dependencies.database ?? db;
   await withTemplateWriteRetry(() => database.transaction(
-    transaction => applyInTransaction(transaction, templateId, workspaceId, actorUserId, { ...options, requestId }),
+    transaction => applyTemplateInTransaction(transaction, templateId, workspaceId, actorUserId, { ...options, requestId }),
     { behavior: "immediate" },
   ));
 }
 
-async function applyInTransaction(
+export async function applyTemplateInTransaction(
   transaction: TemplateTransaction,
   templateId: string,
   workspaceId: string,
@@ -151,7 +151,7 @@ export async function remixTemplateIntoWorkspace(
       }).returning();
       await transaction.insert(workspaceMembers).values({ workspaceId, userId: actorUserId, role: "owner" });
     }
-    await applyInTransaction(transaction, templateId, workspaceId, actorUserId, { requestId, anchorDate: null });
+    await applyTemplateInTransaction(transaction, templateId, workspaceId, actorUserId, { requestId, anchorDate: null });
     return { workspaceId, slug: workspace.slug };
   }, { behavior: "immediate" }));
 }

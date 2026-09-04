@@ -120,7 +120,7 @@ export function compRedemptionExpiresAtMs(input: {
  * 548-day floor.
  */
 export async function weddingDateMsForWorkspace(
-  database: CoupleAccessDb,
+  database: Pick<CoupleAccessDb, "select">,
   workspaceId: string,
 ): Promise<number | null> {
   if (!workspaceId) return null;

@@ -3,6 +3,8 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import type { RedeemResult } from "@/server/actions/comp";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { parseProjectId } from "@/lib/projects/project-ref";
 import { formatRedeemExpiryDate } from "./redeem-expiry-date";
 
 const FAILURE_COPY: Record<
@@ -18,16 +20,16 @@ const FAILURE_COPY: Record<
     body: "This was a limited batch and someone got there first. Drop us a line and we'll see if we can mint a fresh one.",
   },
   expired: {
-    headline: "This code has expired.",
-    body: "Some gift codes have a window. The window on this one closed. Reach out and we'll figure out a fresh one.",
+    headline: "This access is no longer available.",
+    body: "The code or the access it granted has ended. Contact Signal Studio support if you expected it to remain active.",
   },
   "already-redeemed": {
-    headline: "You've already redeemed this one.",
-    body: "Your access is still active, head into the workspace.",
+    headline: "We couldn't confirm this redemption.",
+    body: "Contact Signal Studio support before trying another code.",
   },
   "still-provisioning": {
-    headline: "We're still setting up your account.",
-    body: "This usually takes a second or two. Refresh the page and we'll try again.",
+    headline: "We couldn't apply this code to a project.",
+    body: "Check that you're signed into the right account and can edit the intended project, then try again.",
   },
   "rate-limited": {
     headline: "Too many tries in a short window.",
@@ -61,9 +63,11 @@ export function RedeemResultCard({
     // board with the sponsor banner. The template + workspace flag
     // are already applied server-side in redeemCompCodeAction.
     // Non-venue success falls back to /welcome (picker flow).
-    const href = result.sponsorSlug
+    const destination = result.sponsorSlug
       ? `/app/tasks?welcome=venue&v=${encodeURIComponent(result.sponsorSlug)}`
       : "/welcome";
+    const projectId = parseProjectId(result.projectId);
+    const href = projectId ? withActiveProject(destination, projectId) : destination;
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}

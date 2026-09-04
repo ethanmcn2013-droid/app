@@ -1,29 +1,19 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
-import { compCodes, entitlements } from "@/server/db/schema";
+import { compCodes } from "@/server/db/schema";
 import { getActiveWorkspaceOrNull, getCurrentUser } from "@/server/auth";
-import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import { callerIsAdmin } from "@/server/admin";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
-import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
 import type { EntitlementTier } from "@/lib/data";
-import { TEMPLATES } from "@/lib/templates";
-import { applyTemplateToWorkspace } from "@/server/db/apply-template";
-import { lookupSponsorByCode } from "@/server/db/venue-welcome";
-import {
-  compRedemptionExpiresAtMs,
-  weddingDateMsForWorkspace,
-} from "@/server/db/couple-access-term";
+import { claimCompEntitlement } from "@/server/db/comp-redemption";
 import { coupleVisibleCompNotes } from "@/lib/comp-notes";
 import { isDemoMode } from "@/lib/access-mode";
 import { allow } from "@/lib/ratelimit";
 import { generateCompCode } from "@/lib/comp-code";
 import { headers } from "next/headers";
 
-const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
 
 /**
  * E08.06. Comp codes are bearer credentials for a paid tier, so they are
@@ -48,13 +38,6 @@ const VENUE_TEMPLATE_ID = "wedding-planning-workspace";
  * directly and fail if the two drift.
  */
 const newCode = generateCompCode;
-
-function newEntitlementId(): string {
-  const raw =
-    globalThis.crypto?.randomUUID?.() ??
-    Math.random().toString(36).slice(2);
-  return `e-${raw.replace(/-/g, "").slice(0, 10)}`;
-}
 
 type MintCompCodeInput = {
   prefix?: string;
@@ -141,6 +124,8 @@ export type RedeemResult =
        *  Result card uses it to deep-link straight to
        *  /app/tasks?welcome=venue&v=<slug>, skipping /welcome. */
       sponsorSlug?: string;
+      /** Stored destination of this grant, independent of the active cookie. */
+      projectId?: string;
     }
   | {
       ok: false;
@@ -160,17 +145,12 @@ export type RedeemResult =
  * after success, browser back button), we return the existing
  * entitlement rather than treating the second hit as a failure.
  *
- * Order of checks is load-bearing:
- *   1. Code exists.
- *   2. Code not expired.
- *   3. THIS user already redeemed it → return ok with cached entitlement.
- *      (Must come before the exhausted check or refresh-after-success
- *      shows "all redemptions used up" to the very user who used it.)
- *   4. Code is not exhausted (someone else used the last one).
- *   5. The user actually has a real workspace to bind the entitlement
- *      to. If the Clerk webhook hasn't provisioned them yet, fall back
- *      to direct provisioning so we never write entitlements against
- *      the legacy fallback workspace.
+ * Identity and attempt limits precede every code lookup. New claims commit
+ * capacity, project-bound access and any venue starter in one transaction.
+ * Replays reauthorize the original stored project, preserve the original term,
+ * and reject revoked or expired grants. Code expiry prevents new claims; it
+ * does not invalidate an already granted term. Provisioning occurs first so
+ * no grant targets a legacy fallback workspace.
  */
 export async function redeemCompCodeAction(
   rawCode: string,
@@ -197,11 +177,14 @@ export async function redeemCompCodeAction(
   }
   try {
     return await redeemCompCodeImpl(code);
-  } catch (err) {
-    Sentry.captureException(err, {
+  } catch {
+    // Database errors can contain the bearer code and sponsor fields in SQL
+    // parameters. Never attach the original error or its cause to telemetry.
+    const safeError = new Error("Access could not be applied. Please try the same code again.");
+    Sentry.captureException(safeError, {
       tags: { action: "redeem-comp-code" },
     });
-    throw err;
+    throw safeError;
   }
 }
 
@@ -248,154 +231,19 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
     return { ok: false, reason: "rate-limited" };
   }
 
-  const [row] = await db
-    .select()
-    .from(compCodes)
-    .where(eq(compCodes.code, code));
-  if (!row) return { ok: false, reason: "not-found" };
-
-  if (row.expiresAt && row.expiresAt.getTime() < Date.now()) {
-    return { ok: false, reason: "expired" };
-  }
-
-  // Idempotency: did this user already redeem this code? Comes BEFORE
-  // the exhausted check, see header doc for why.
-  const [existing] = await db
-    .select()
-    .from(entitlements)
-    .where(
-      sql`${entitlements.userId} = ${userId} AND ${entitlements.notes} = ${"comp:" + code}`,
-    );
-  if (existing) {
-    // Re-hit (refresh, browser back). Template was already applied on
-    // the first redemption, do NOT re-apply. Surface sponsorSlug so
-    // the card can still deep-link to the welcomed board.
-    const sponsor = await lookupSponsorByCode(code);
-    return {
-      ok: true,
-      tier: existing.tier,
-      expiresAt: existing.expiresAt
-        ? existing.expiresAt.toISOString()
-        : "",
-      // `existing.notes` is the entitlement's own bookkeeping, `comp:<CODE>`.
-      notes: coupleVisibleCompNotes(existing.notes),
-      sponsorSlug: sponsor?.sponsorSlug,
-    };
-  }
-
-  if (row.redeemed >= row.quantity) {
-    return { ok: false, reason: "exhausted" };
-  }
-
-  // Webhook-race / missing-webhook guard. Provision the user record
-  // ourselves if the Clerk webhook hasn't (or won't) hydrate it. This
-  // is idempotent, the webhook can still fire afterwards and update
-  // the row with email / name we don't have here.
+  // Provisioning remains outside the entitlement transaction. A failed grant
+  // cannot consume a code or leave partially seeded starter work behind.
   await ensureUserProvisioned(userId);
-  // This action already refused LEGACY_WORKSPACE_ID by name, in production
-  // only, because writing a redeemed entitlement to ws-legacy is an orphan.
-  // The fail-closed accessor makes that structural rather than a named
-  // special case: there is no such value to receive, in any environment. The
-  // explicit check stays below for the same reason it was written — it says
-  // out loud what "still provisioning" means — and the membership proof is
-  // what now stands behind it.
-  const ambient = await getActiveWorkspaceOrNull();
-  const grant = await authorizeProjectCandidate({
-    candidateProjectId: ambient,
-    capability: "createOrEditTasks",
-    actorUserId: userId,
+  const claim = await claimCompEntitlement(db, {
+    code, actorUserId: userId, candidateProjectId: await getActiveWorkspaceOrNull(),
   });
-  if (!grant.ok) return { ok: false, reason: "still-provisioning" };
-  const ws = grant.projectId;
-  if (ws === LEGACY_WORKSPACE_ID && process.env.NODE_ENV === "production") {
-    return { ok: false, reason: "still-provisioning" };
-  }
-
-  // R-015 · D-022. This used to be a flat
-  // `Date.now() + row.durationDays * 24 * 60 * 60 * 1000` for every code,
-  // Venue Edition included, while the ratified rule
-  // `max(redemption + 548 days, wedding date + 90 days)` lived only in the
-  // studio repository, which does not run this path. A couple booking a
-  // long-lead wedding lost the product before the wedding it was bought for.
-  //
-  // The decision now lives in one place, `@/server/db/couple-access-term`,
-  // over the rule ported into `@/lib/venue-access-term`. Non-Venue-Edition
-  // codes keep the flat duration unchanged.
-  //
-  // The wedding date is read from the couple's active workspace when it is
-  // already known. When it is not, the term falls back to the 548-day floor,
-  // which is never shorter than what shipped, and
-  // `extendCoupleAccessForWeddingDate` moves it later the moment a date is
-  // recorded.
-  const venueSponsor = row.tier === "wedding" ? await lookupSponsorByCode(code) : null;
-  const expiresAt = new Date(
-    compRedemptionExpiresAtMs({
-      venueEdition: venueSponsor != null,
-      durationDays: row.durationDays,
-      redeemedAtMs: Date.now(),
-      weddingDateMs: venueSponsor
-        ? await weddingDateMsForWorkspace(db, ws)
-        : null,
-    }),
-  );
-
-  // Atomic claim BEFORE issuing. The earlier `row.redeemed >= row.quantity`
-  // check is a fast UX path only, two users redeeming the last slot of a
-  // near-exhausted code can both pass it and both get a paid tier. The
-  // conditional decrement is the real guard: only one concurrent caller
-  // can move `redeemed` past the cap. If we don't win the slot, bail
-  // before inserting any entitlement. (Worst case if a later step throws
-  // after the claim is a harmless single slot-leak, admin can re-mint —
-  // which is strictly safer than over-issuing paid tiers.)
-  const claim = await db.run(sql`
-    UPDATE comp_codes SET redeemed = redeemed + 1
-    WHERE code = ${code} AND redeemed < quantity
-  `);
-  if (claim.rowsAffected === 0) {
-    return { ok: false, reason: "exhausted" };
-  }
-
-  await db.insert(entitlements).values({
-    id: newEntitlementId(),
-    workspaceId: ws,
-    userId,
-    tier: row.tier,
-    source: "comp",
-    startedAt: new Date(),
-    expiresAt,
-    notes: `comp:${code}`,
-  });
-
-  // Venue Editions short-circuit: if this is a wedding comp with
-  // sponsor JSON, apply the wedding template and flag the workspace
-  // inline. Lets the result card deep-link straight to the board
-  // with the sponsor banner, no /welcome hop.
-  //
-  // Uses `applyTemplateToWorkspace` (pure DB) instead of the public
-  // action, the action calls `revalidatePath`, which is illegal
-  // during the Server Component render this action runs inside.
-  // That was the cycle-8.5 fresh-user 500.
-  let sponsorSlug: string | undefined;
-  if (venueSponsor && TEMPLATES.some((t) => t.id === VENUE_TEMPLATE_ID)) {
-    await applyTemplateToWorkspace(VENUE_TEMPLATE_ID, ws);
-    await db.run(sql`
-      UPDATE workspaces
-      SET template_id = ${VENUE_TEMPLATE_ID},
-          active_domain = 'wedding'
-      WHERE id = ${ws}
-    `);
-    sponsorSlug = venueSponsor.sponsorSlug;
-  }
-
+  if (!claim.ok) return claim;
   return {
-    ok: true,
-    tier: row.tier,
-    expiresAt: expiresAt.toISOString(),
-    // On a Venue Edition code this column holds the sponsor JSON, not a
-    // message. Rendering it put a line of metadata on the couple's first
-    // screen. Prose passes, machine strings are dropped.
-    notes: coupleVisibleCompNotes(row.notes),
-    sponsorSlug,
+    ok: true, tier: claim.entitlement.tier,
+    expiresAt: claim.entitlement.expiresAt?.toISOString() ?? "",
+    notes: coupleVisibleCompNotes(claim.codeNotes),
+    sponsorSlug: claim.sponsorSlug,
+    projectId: claim.entitlement.workspaceId ?? undefined,
   };
 }
 
