@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useToast } from "@/components/primitives/toast";
 import { Dialog } from "@/components/primitives/dialog";
 import {
@@ -31,13 +31,16 @@ function isDomainId(s: string | null | undefined): s is DomainId {
   return !!s && DOMAIN_IDS.has(s as DomainId);
 }
 
-function fmtDate(iso: string | null): string {
+const subscribeNever = () => () => {};
+
+function fmtDate(iso: string | null, serverSnapshot = false): string {
   if (!iso) return "—";
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString(serverSnapshot ? "en-IE" : undefined, {
     year: "numeric",
     month: "short",
     day: "numeric",
+    ...(serverSnapshot ? { timeZone: "UTC" } : {}),
   });
 }
 
@@ -48,6 +51,13 @@ export function WorkspaceSection({
   workspace: SettingsWorkspace | null;
   myRole: "owner" | "member" | "none";
 }) {
+  // Both server rendering and the first hydration pass use the same locale
+  // and timezone. Afterwards the client snapshot honours the viewer's locale.
+  const createdDate = useSyncExternalStore(
+    subscribeNever,
+    () => fmtDate(workspace?.createdAt ?? null),
+    () => fmtDate(workspace?.createdAt ?? null, true),
+  );
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
   // Track which pack is actively reseeding so the card itself shows
@@ -402,7 +412,7 @@ export function WorkspaceSection({
           <dl className="mt-3 grid gap-2 sm:grid-cols-3">
             <Meta label="Workspace ID" value={workspace.id} mono />
             <Meta label="URL slug" value={workspace.slug} mono />
-            <Meta label="Created" value={fmtDate(workspace.createdAt)} />
+            <Meta label="Created" value={createdDate} />
           </dl>
         </div>
       </div>

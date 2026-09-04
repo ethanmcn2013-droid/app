@@ -18,7 +18,7 @@ import { requireAppAccessTasks } from "@/server/app-access";
 import { ActiveProjectProvider } from "@/components/app/active-project-provider";
 import { isActiveProjectV3Enabled } from "@/lib/projects/flags";
 import { readActiveProjectCookies } from "@/server/projects/active-project-cookie";
-import { PAPER_LIGHT, PAPER_DARK } from "@/app/layout";
+import { PAPER_LIGHT, PAPER_DARK } from "@/lib/document-paper";
 import type { Viewport } from "next";
 
 export const dynamic = "force-dynamic";

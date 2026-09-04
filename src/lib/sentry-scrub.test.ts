@@ -1,11 +1,83 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import { ModuleKind, ScriptTarget, transpileModule } from "typescript";
 import type { ErrorEvent, EventHint } from "@sentry/nextjs";
+import { isAnalyticsExcludedPath } from "./public-analytics-boundary";
 import {
   redactSensitiveText,
   redactSensitiveUrl,
   scrubEvent,
 } from "./sentry-scrub";
+
+type BeforeSend = (event: ErrorEvent, hint: EventHint) => Promise<ErrorEvent | null>;
+
+// Execute the real entry with an isolated environment and a fake SDK. The
+// CommonJS transform turns import() into a deferred require, so no telemetry
+// dependency is imported and no provider call can escape these tests.
+const clientEntry = transpileModule(
+  readFileSync(new URL("../instrumentation-client.ts", import.meta.url), "utf8"),
+  { compilerOptions: { module: ModuleKind.CommonJS, target: ScriptTarget.ES2020 } },
+).outputText;
+
+function runClientEntry({ dsn, pathname = "/app/settings", failImport = false }: {
+  dsn?: string;
+  pathname?: string;
+  failImport?: boolean;
+}) {
+  const loaded: string[] = [];
+  const initialized: Array<Record<string, unknown>> = [];
+  const location = { pathname };
+  const context = {
+    window: { location },
+    process: { env: { NEXT_PUBLIC_SENTRY_DSN: dsn, NEXT_PUBLIC_SENTRY_ENVIRONMENT: "test" } },
+    require: (name: string) => {
+      if (name === "@/lib/public-analytics-boundary") return { isAnalyticsExcludedPath };
+      if (name === "@sentry/nextjs") return { init: (options: Record<string, unknown>) => initialized.push(options) };
+      loaded.push(name);
+      if (failImport) throw new Error("Synthetic unavailable chunk");
+      if (name === "@/lib/sentry-scrub") return { scrubEvent };
+      throw new Error(`Unexpected client entry import: ${name}`);
+    },
+  };
+  runInNewContext(clientEntry, { ...context, exports: {} });
+  return { loaded, initialized, location };
+}
+
+test("client reporting stays disabled with no DSN or on any protected public surface", () => {
+  const disabled = runClientEntry({});
+  const excluded = ["/p", "/p/example", "/s/token", "/share/token", "/embed/example"]
+    .map((pathname) => runClientEntry({ dsn: "synthetic", pathname }));
+  for (const result of [disabled, ...excluded]) {
+    assert.deepEqual(result.loaded, []);
+    assert.deepEqual(result.initialized, []);
+  }
+});
+
+test("client error capture starts immediately but loads the scrubber only before sending", async () => {
+  const result = runClientEntry({ dsn: "synthetic" });
+  assert.deepEqual(result.loaded, [], "the scrubber must not be a synchronous root import");
+  assert.equal(result.initialized.length, 1);
+  const options = result.initialized[0];
+  assert.equal(options.dsn, "synthetic");
+  assert.equal(options.environment, "test");
+  assert.equal(options.tracesSampleRate, 0.1);
+  assert.equal(options.sendDefaultPii, false);
+  const beforeSend = options.beforeSend as BeforeSend;
+  const event = { message: "token=synthetic-secret", extra: { safe: "keep" } } as ErrorEvent;
+  const pending = beforeSend(event, {} as EventHint);
+  assert.deepEqual(result.loaded, [], "sending must await the deferred scrubber");
+  assert.deepEqual(await pending, scrubEvent(event, {} as EventHint));
+  assert.deepEqual(result.loaded, ["@/lib/sentry-scrub"]);
+  assert.equal(JSON.stringify(await pending).includes("synthetic-secret"), false);
+});
+
+test("an unavailable scrubber drops the event without an unhandled rejection or unsafe send", async () => {
+  const result = runClientEntry({ dsn: "synthetic", failImport: true });
+  const beforeSend = result.initialized[0].beforeSend as BeforeSend;
+  assert.equal(await beforeSend({ message: "token=must-not-send" } as ErrorEvent, {} as EventHint), null);
+});
 
 test("bearer routes and OAuth query values are redacted", () => {
   assert.equal(
