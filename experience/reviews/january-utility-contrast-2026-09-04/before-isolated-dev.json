@@ -1,0 +1,181 @@
+[
+  {
+    "title": "Tasks view labels retain readable contrast on Board and List",
+    "project": "mobile-dark",
+    "status": "failed",
+    "errors": [
+      {
+        "location": {
+          "file": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-utility-navigation\\experience\\feature-tests\\utility-navigation.spec.ts",
+          "column": 86,
+          "line": 68
+        },
+        "message": "Error: List: rgba(17, 17, 17, 0.72) against 15.079999999999998,15.079999999999998,16.04,1\n\n\u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: >= \u001b[32m4.5\u001b[39m\nReceived:    \u001b[31m1.0099682896693662\u001b[39m\n\n  66 |     expect(view.rect.x).toBeGreaterThanOrEqual(0);\n  67 |     expect(view.rect.right).toBeLessThanOrEqual(measurement.width);\n> 68 |     expect(view.contrast, `${view.label}: ${view.color} against ${view.background}`).toBeGreaterThanOrEqual(4.5);\n     |                                                                                      ^\n  69 |   }\n  70 | }\n  71 |\n    at captureViews (C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-utility-navigation\\experience\\feature-tests\\utility-navigation.spec.ts:68:86)\n    at C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-utility-navigation\\experience\\feature-tests\\utility-navigation.spec.ts:77:3"
+      }
+    ],
+    "observations": {
+      "board-contrast": {
+        "theme": "dark",
+        "width": 390,
+        "documentWidth": 390,
+        "measurements": [
+          {
+            "label": "Board",
+            "href": "/app/tasks",
+            "active": true,
+            "color": "rgb(244, 244, 245)",
+            "foreground": [
+              244,
+              244,
+              245,
+              1
+            ],
+            "background": [
+              15,
+              15,
+              16,
+              1
+            ],
+            "contrast": 17.42998066135509,
+            "fontSize": "13px",
+            "rect": {
+              "x": 37,
+              "y": 145.515625,
+              "width": 77.5,
+              "height": 32,
+              "top": 145.515625,
+              "right": 114.5,
+              "bottom": 177.515625,
+              "left": 37
+            }
+          },
+          {
+            "label": "List",
+            "href": "/app/tasks/list",
+            "active": false,
+            "color": "rgba(17, 17, 17, 0.72)",
+            "foreground": [
+              16.4624,
+              16.4624,
+              16.7312,
+              1
+            ],
+            "background": [
+              15.079999999999998,
+              15.079999999999998,
+              16.04,
+              1
+            ],
+            "contrast": 1.0099682896693662,
+            "fontSize": "13px",
+            "rect": {
+              "x": 116.5,
+              "y": 145.515625,
+              "width": 77.5,
+              "height": 32,
+              "top": 145.515625,
+              "right": 194,
+              "bottom": 177.515625,
+              "left": 116.5
+            }
+          },
+          {
+            "label": "Schedule",
+            "href": "/app/tasks/timeline",
+            "active": false,
+            "color": "rgba(17, 17, 17, 0.72)",
+            "foreground": [
+              16.4624,
+              16.4624,
+              16.7312,
+              1
+            ],
+            "background": [
+              15.079999999999998,
+              15.079999999999998,
+              16.04,
+              1
+            ],
+            "contrast": 1.0099682896693662,
+            "fontSize": "13px",
+            "rect": {
+              "x": 196,
+              "y": 145.515625,
+              "width": 77.5,
+              "height": 32,
+              "top": 145.515625,
+              "right": 273.5,
+              "bottom": 177.515625,
+              "left": 196
+            }
+          },
+          {
+            "label": "Calendar",
+            "href": "/app/tasks/calendar",
+            "active": false,
+            "color": "rgba(17, 17, 17, 0.72)",
+            "foreground": [
+              16.4624,
+              16.4624,
+              16.7312,
+              1
+            ],
+            "background": [
+              15.079999999999998,
+              15.079999999999998,
+              16.04,
+              1
+            ],
+            "contrast": 1.0099682896693662,
+            "fontSize": "13px",
+            "rect": {
+              "x": 275.5,
+              "y": 145.515625,
+              "width": 77.5,
+              "height": 32,
+              "top": 145.515625,
+              "right": 353,
+              "bottom": 177.515625,
+              "left": 275.5
+            }
+          }
+        ]
+      }
+    }
+  },
+  {
+    "title": "isolated Board to List navigation reports all console and request faults",
+    "project": "mobile-dark",
+    "status": "failed",
+    "errors": [
+      {
+        "location": {
+          "file": "C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-utility-navigation\\experience\\feature-tests\\utility-navigation.spec.ts",
+          "column": 27,
+          "line": 114
+        },
+        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  -  1\u001b[39m\n\u001b[31m+ Received  + 13\u001b[39m\n\n\u001b[32m- Array []\u001b[39m\n\u001b[31m+ Array [\u001b[39m\n\u001b[31m+   Object {\u001b[39m\n\u001b[31m+     \"location\": Object {\u001b[39m\n\u001b[31m+       \"column\": 31,\u001b[39m\n\u001b[31m+       \"columnNumber\": 31,\u001b[39m\n\u001b[31m+       \"line\": 1914,\u001b[39m\n\u001b[31m+       \"lineNumber\": 1914,\u001b[39m\n\u001b[31m+       \"url\": \"http://127.0.0.1:3131/_next/static/chunks/0ab1_next_dist_1dysobv._.js\",\u001b[39m\n\u001b[31m+     },\u001b[39m\n\u001b[31m+     \"text\": \"Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).\",\u001b[39m\n\u001b[31m+     \"type\": \"error\",\u001b[39m\n\u001b[31m+   },\u001b[39m\n\u001b[31m+ ]\u001b[39m\n\n  112 |     expect(delayedListResponses).toBeGreaterThan(0);\n  113 |     expect(await page.locator('[id^=\"stndz-\"]').count()).toBe(0);\n> 114 |     expect(consoleFaults).toEqual([]);\n      |                           ^\n  115 |     expect(requestFailures).toEqual([]);\n  116 |   } finally {\n  117 |     await info.attach(\"console-and-requests\", {\n    at C:\\Users\\ethan\\signal-studio-workspace\\worktrees\\app\\fix-january-utility-navigation\\experience\\feature-tests\\utility-navigation.spec.ts:114:27"
+      }
+    ],
+    "observations": {
+      "console-and-requests": {
+        "consoleFaults": [
+          {
+            "type": "error",
+            "text": "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).",
+            "location": {
+              "url": "http://127.0.0.1:3131/_next/static/chunks/0ab1_next_dist_1dysobv._.js",
+              "line": 1914,
+              "column": 31,
+              "lineNumber": 1914,
+              "columnNumber": 31
+            }
+          }
+        ],
+        "requestFailures": [],
+        "delayedListResponses": 1,
+        "url": "http://127.0.0.1:3131/app/tasks/list"
+      }
+    }
+  }
+]
