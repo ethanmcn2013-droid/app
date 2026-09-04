@@ -17,13 +17,22 @@ test("reloaded claims block new intake regardless of file metadata; refresh erro
   assert.equal(driveReloadState([{ ...pending[0], accessState: "ok" }], false, []), null);
 });
 
-test("reload explanation offers only saved-state refresh, never reselect/resume/remove/native controls", () => {
-  const html = renderToStaticMarkup(<DriveReloadNotice state="pending" onRefresh={() => { throw Error("render cannot fetch"); }} />);
-  assert.match(html, /contact support to check the upload before trying again/);
+test("uploader reload check offers completion inspection, never reselect/resume/remove/native controls", () => {
+  const html = renderToStaticMarkup(<DriveReloadNotice state="pending" canCheckGoogle onRefresh={() => { throw Error("render cannot fetch"); }} />);
+  assert.match(html, /a closed tab cannot resume sending this file/);
+  assert.match(html, /Checks Google Drive for finished files you uploaded/);
   assert.match(html, /does not restart the upload/);
   assert.equal((html.match(/<button/g) || []).length, 1);
   assert.match(html, />Check for updates<\/button>/);
   assert.doesNotMatch(html, /<input|<a |sessionUrl|Use Signal Studio|Remove|Resume upload/);
+});
+
+test("a non-uploader sees only saved-state refresh; a pending check disables repeated clicks", () => {
+  const other = renderToStaticMarkup(<DriveReloadNotice state="pending" onRefresh={() => {}} />);
+  assert.match(other, /Only the person who uploaded a file can check it in Google Drive/);
+  assert.doesNotMatch(other, /Checks Google Drive for finished files/);
+  const busy = renderToStaticMarkup(<DriveReloadNotice state="pending" canCheckGoogle recovery="checking" onRefresh={() => {}} />);
+  assert.match(busy, /<button disabled=""/); assert.match(busy, /Checking the existing upload/);
 });
 
 test("handover blocked/error/empty states expose no executable target or misleading success", () => {

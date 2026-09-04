@@ -3753,10 +3753,15 @@
       "screenshotCoverage": "partial",
       "accessibilityCoverage": "partial",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "2bca87211d9ef154"
+      "materialityHash": "1db50c9a5126230a",
+      "materialityReview": {
+        "materialityHash": "1db50c9a5126230a",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-drive-completion-recovery-intake-20260904.json"
+      }
     },
     {
       "id": "tasks.resources.drive-upload-status",
@@ -3873,8 +3878,8 @@
       "trigger": "Resources has an earlier pending Drive claim after reload with the UI flag enabled.",
       "parentJourney": "signed-in-work",
       "archetype": "feedback-interruption-and-exception",
-      "primaryJob": "Keep an uncertain upload intact and explain the missing safe file-reselection contract.",
-      "primaryAction": "Refresh saved status without sending another file.",
+      "primaryJob": "Check whether an earlier upload finished while keeping its existing entry intact.",
+      "primaryAction": "Check for completed files without sending another file.",
       "roles": [
         "owner",
         "member"
@@ -3914,11 +3919,11 @@
       "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "dfeb78dab6cff98f",
+      "materialityHash": "7f4300daa34c292b",
       "materialityReview": {
-        "materialityHash": "dfeb78dab6cff98f",
+        "materialityHash": "7f4300daa34c292b",
         "reviewedAt": "2026-09-04",
-        "evidence": "experience/reviews/january-drive-reload-copy-20260904.json"
+        "evidence": "experience/reviews/january-drive-completion-recovery-notice-20260904.json"
       }
     }
   ]

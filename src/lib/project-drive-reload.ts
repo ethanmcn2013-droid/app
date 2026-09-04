@@ -14,5 +14,5 @@ export function driveReloadState(
 export const driveReloadCopy: Record<Exclude<DriveReloadState, null>, string> = {
   loading: "Checking earlier uploads…",
   unavailable: "Earlier uploads could not be checked. Try again before adding another file.",
-  pending: "An earlier Drive upload still needs attention. Finish it in the original tab if it is open. If that tab has closed, contact support to check the upload before trying again. Keep the existing entry to avoid creating a second copy.",
+  pending: "An earlier Drive upload is unconfirmed. Check for updates before attaching another copy. If it is still incomplete, finish in the original tab if it is open. Keep the existing entry; a closed tab cannot resume sending this file.",
 };

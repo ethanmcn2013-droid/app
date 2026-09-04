@@ -22,6 +22,10 @@ test("review and flag-off status return before the DB/provider/auth graph is imp
       if (choices.kind !== '${mode === "review" ? "review" : "disabled"}') throw Error(JSON.stringify(choices));
       const change = await changeProjectDriveOwnerAction('foreign-project', 'forged-owner');
       if (change !== '${mode === "review" ? "demo" : "disabled"}') throw Error(change);
+      const recovery = await import('./src/server/actions/drive-upload-recovery.ts');
+      const { recoverDriveUploadAction } = recovery.default ?? recovery;
+      const checked = await recoverDriveUploadAction('foreign-task', 'foreign-resource');
+      if (checked !== '${mode === "review" ? "review" : "disabled"}') throw Error(checked);
     `], { cwd: process.cwd(), encoding: "utf8", env: { ...process.env, NEXT_PUBLIC_SIGNAL_ACCESS_MODE: mode, NEXT_PUBLIC_SIGNAL_DEPLOYMENT_ENV: "preview", NEXT_PUBLIC_PROJECT_DRIVE_UI: mode === "review" ? "true" : "false" } });
     assert.equal(result.status, 0, result.stderr);
   }
