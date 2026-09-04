@@ -38,7 +38,17 @@ export async function readback(reader: Reader, manifest: IssuanceManifest, now: 
   const codes: IssuanceReadback["codes"] = [];
   for (const expected of manifest.codes) {
     const row = await readCode(reader, manifest, expected);
+    const grants = await reader.select({ id: entitlements.id }).from(entitlements)
+      .where(and(eq(entitlements.source, "comp"), eq(entitlements.notes, "comp:" + row.code)));
+    if (grants.length !== row.redeemed) return fail("conflict");
     const [withdrawal] = await reader.select().from(meta).where(eq(meta.key, withdrawalReceiptKey(manifest.issuanceId, expected.licenseCodeId)));
+    if (withdrawal) {
+      try {
+        const receipt = JSON.parse(withdrawal.value);
+        if (Object.keys(receipt).length !== 3 || receipt.version !== 1 || receipt.manifestHash !== manifestHash(manifest) ||
+            !Number.isSafeInteger(receipt.withdrawnAt) || receipt.withdrawnAt < manifest.issuedAt || receipt.withdrawnAt > now) return fail("conflict");
+      } catch { return fail("conflict"); }
+    }
     if (withdrawal && (row.redeemed !== 0 || row.expiresAt?.getTime() !== 0)) return fail("conflict");
     // Unexpected external mutations cannot turn into a ready packet.
     if (!withdrawal && row.expiresAt !== null) return fail("conflict");
