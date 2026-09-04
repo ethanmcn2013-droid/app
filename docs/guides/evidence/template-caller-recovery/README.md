@@ -65,8 +65,8 @@ scripts. From the App checkout with its existing installed dependencies:
 
 ```powershell
 $callerFixture = Join-Path $env:TEMP 'signal-template-caller-fixture'
-node docs/guides/evidence/template-caller-recovery/build-fixture.cjs (Get-Location).Path $callerFixture
-node docs/guides/evidence/template-caller-recovery/serve-fixture.cjs $callerFixture (Get-Location).Path 3146
+node docs/guides/evidence/template-caller-recovery/build-fixture.mjs (Get-Location).Path $callerFixture
+node docs/guides/evidence/template-caller-recovery/serve-fixture.mjs $callerFixture (Get-Location).Path 3146
 ```
 
 Open `http://127.0.0.1:3146/?existing` for the captured confirmation,
@@ -91,3 +91,7 @@ explicit URL/cookie disagreement cases pass the local route tests; fresh P2
 verification remains independent. Settings whole-tab recovery and general
 legacy domain-reset repair remain outside this slice; see the exact recovery
 packet in [the caller guide](../../template-application.md).
+
+## Portable runner correction
+
+The original CommonJS runners are retained byte-for-byte as build-fixture.cjs.txt and serve-fixture.cjs.txt; manifest.json records their original names and hashes. The executable .mjs equivalents use standard ESM imports to satisfy the repository lint policy. No caller component, mock boundary, fixture content or original capture is changed by this runner correction.

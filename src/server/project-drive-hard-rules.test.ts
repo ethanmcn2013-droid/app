@@ -1104,7 +1104,7 @@ describe("§2.10 · demo mode stops at the door", () => {
 describe("Project deletion lifecycle · the intent is a durable tombstone", () => {
   it("every production Project Drive mutation boundary uses the central fence", () => {
     const fencedMutationBoundaries = [
-      "src/server/actions/onboarding.ts",
+      "src/server/onboarding-completion.ts",
       "src/server/actions/seed.ts",
       "src/server/actions/settings.ts",
       "src/server/projects/service.ts",
@@ -1132,6 +1132,19 @@ describe("Project deletion lifecycle · the intent is a durable tombstone", () =
         `${path} must invoke the Project deletion fence at its writer boundary`,
       );
     }
+  });
+
+  it("onboarding actions reach the fenced completion service without direct database writes", () => {
+    const actions = codeOf("src/server/actions/onboarding.ts");
+    assert.match(actions, /from\s+["']@\/server\/onboarding-completion["']/);
+    assert.doesNotMatch(actions, /from\s+["']@\/server\/db(?:\/[\w/-]+)?["']/);
+    assert.doesNotMatch(actions, /\.(?:insert|update|delete|transaction|execute|run)\s*\(/);
+    for (const name of ["completeOnboardingAction", "confirmExistingSetupAction", "updateSegmentAction"]) {
+      const body = asyncFunctionBlock(actions, name);
+      assert.ok(body, `${name} remains an auditable action`);
+      assert.match(body, /await\s+persistOnboardingSubmission\(/);
+    }
+    assert.match(asyncFunctionBlock(actions, "skipOnboardingAction") ?? "", /await\s+completeOnboardingAction\(/);
   });
 
   it("re-proves delete authority in the intent transaction and exposes no provider-file deletion", () => {
