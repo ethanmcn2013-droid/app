@@ -8,6 +8,7 @@ import { MotionProvider } from "@/components/motion-provider";
 import { isDemoMode } from "@/lib/access-mode";
 import { BARE_CHROME_HEADER } from "@/lib/bare-artifact-path";
 import { APP_ORIGIN } from "@/lib/product-urls";
+import { PAPER_LIGHT, PAPER_DARK } from "@/lib/document-paper";
 import "./globals.css";
 
 // latin-ext included deliberately: on a shared wedding timeline the couple's
@@ -22,19 +23,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin", "latin-ext"],
 });
-
-/**
- * The document's own paper, as two literals.
- *
- * They exist because two consumers cannot read a CSS variable: the
- * pre-stylesheet paint guard below, which has to be correct in the window
- * before globals.css resolves var(--paper), and the theme-color meta, which
- * the browser reads to tint its own chrome. Declared once here so the guard
- * and the browser chrome cannot drift apart. The dark value mirrors --paper
- * in the [data-theme="dark"] block of tokens.css.
- */
-export const PAPER_LIGHT = "#ffffff";
-export const PAPER_DARK = "#0f0f10";
 
 export const viewport: Viewport = {
   width: "device-width",
