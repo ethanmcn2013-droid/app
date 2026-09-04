@@ -58,6 +58,8 @@ export async function claimCompEntitlement(database: Database, input: {
     const slug = (prior?.tier ?? code.tier) === "wedding" ? sponsorSlug(code.notes) : undefined;
     const requestId = `comp-template-${createHash("sha256").update(JSON.stringify([input.actorUserId, input.code, grant.projectId])).digest("hex")}`;
     if (prior) return { ok: true, entitlement: prior, codeNotes: code.notes, sponsorSlug: slug, templateRequestId: requestId };
+    // Venue fulfilment also writes shared Project setup, beyond task editing.
+    if (slug && !grant.capabilities.manageProject) return { ok: false, reason: "still-provisioning" };
     if (code.redeemed >= code.quantity) return { ok: false, reason: "exhausted" };
     const expiresAt = new Date(compRedemptionExpiresAtMs({
       redeemedAtMs: now.getTime(), durationDays: code.durationDays, venueEdition: Boolean(slug),

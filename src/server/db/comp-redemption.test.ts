@@ -93,8 +93,16 @@ test("concurrent duplicate submissions on independent connections converge to on
   assert.deepEqual(await counts(f),{grants:1,tasks:18,activities:18,receipts:1,redeemed:1});
  }finally{client.close();f.cleanup();}
 });
-test("another member cannot redeem the exhausted final slot",async()=>{
- const f=await fixture();try{assert.equal((await claim(f.db,f.input)).ok,true);assert.deepEqual(await claim(f.db,{...f.input,actorUserId:"member"}),{ok:false,reason:"exhausted"});assert.equal((await counts(f)).grants,1);}finally{f.cleanup();}
+test("an authorized unclaimed owner cannot redeem exhausted capacity",async()=>{
+ const f=await fixture();try{await f.db.update(compCodes).set({redeemed:1});assert.deepEqual(await claim(f.db,f.input),{ok:false,reason:"exhausted"});assert.equal((await counts(f)).grants,0);}finally{f.cleanup();}
+});
+
+test("a task editor cannot consume a venue code or replace shared Project setup",async()=>{
+ const f=await fixture();try{
+  assert.deepEqual(await claim(f.db,{...f.input,actorUserId:"member"}),{ok:false,reason:"still-provisioning"});
+  assert.deepEqual(await counts(f),{grants:0,tasks:0,activities:0,receipts:0,redeemed:0});
+  assert.equal((await f.db.select().from(workspaces).where(eq(workspaces.id,"a")))[0].templateId,null);
+ }finally{f.cleanup();}
 });
 
 for (const phase of ["account", "project"] as const) {
