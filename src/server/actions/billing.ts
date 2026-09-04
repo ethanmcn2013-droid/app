@@ -11,6 +11,7 @@ import {
 } from "@/server/stripe";
 import { isDemoMode } from "@/lib/access-mode";
 import { checkoutModeFor, isPaidTier } from "@/server/checkout-policy";
+import { billingCustomerForUser } from "@/server/stripe-access";
 
 const FALLBACK_BASE = "http://localhost:3001";
 
@@ -80,7 +81,9 @@ export async function createCheckoutSessionAction(
   // in the webhook. Keeps the type contract honest.
   const metadataWorkspaceId = scopedWorkspaceId ?? "*";
 
+  const customer = await billingCustomerForUser(me);
   const session = await stripe.checkout.sessions.create({
+    ...(customer ? { customer } : checkoutModeFor(tier) === "payment" ? { customer_creation: "always" as const } : {}),
     mode: checkoutModeFor(tier),
     integration_identifier: "signal-january-qvhtmrcs",
     line_items: [{ price: priceId, quantity: 1 }],

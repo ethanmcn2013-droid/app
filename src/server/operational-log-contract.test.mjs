@@ -105,7 +105,7 @@ const ALLOWED = Object.freeze({
   "src/app/api/checkout/route.ts": 1,
   "src/app/api/cron/digest/route.ts": 1,
   "src/app/api/cron/weekly-digest/route.ts": 1,
-  "src/app/api/webhooks/clerk/route.ts": 3,
+  "src/app/api/webhooks/clerk/route.ts": 2,
   "src/app/api/webhooks/stripe/route.ts": 2,
   "src/lib/ops/ping-studio.ts": 1,
   "src/lib/analytics/posthog.ts": 3,

@@ -338,9 +338,10 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   ]) {
     assertDemoGuardBefore(templateActions, "remixTemplateAction", boundary);
   }
-  for (const boundary of ["mintCompCodeInternal", "sendEmail"]) {
-    assertDemoGuardBefore(compActions, "requestStudentCodeAction", boundary);
-  }
+  const studentRequest = compActions.slice(compActions.indexOf("export async function requestStudentCodeAction"));
+  assert.match(studentRequest, /reason: "unavailable"/);
+  assert.doesNotMatch(studentRequest, /mintCompCodeInternal|sendEmail|db\.|ok: true/);
+
   for (const boundary of ["redeemCompCodeImpl", "Sentry.captureException"]) {
     assertDemoGuardBefore(compActions, "redeemCompCodeAction", boundary);
   }

@@ -9,7 +9,6 @@ import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import { callerIsAdmin } from "@/server/admin";
 import { ensureUserProvisioned } from "@/server/db/ensure-user";
 import { LEGACY_WORKSPACE_ID } from "@/server/db/seed";
-import { sendEmail, studentCodeEmailHtml } from "@/server/email";
 import type { EntitlementTier } from "@/lib/data";
 import { TEMPLATES } from "@/lib/templates";
 import { applyTemplateToWorkspace } from "@/server/db/apply-template";
@@ -400,56 +399,15 @@ async function redeemCompCodeImpl(code: string): Promise<RedeemResult> {
   };
 }
 
-export type StudentVerifyResult =
-  | { ok: true; code: string; tier: EntitlementTier; durationDays: number }
-  | { ok: false; reason: "invalid-email" };
+export type StudentVerifyResult = { ok: false; reason: "invalid-email" | "unavailable" };
 
-/**
- * Student-rate verification. Students get the full Workspace tier at
- * the student price (€9.99 a year). Ireland and most of the world
- * outside the US don't issue .edu addresses, so verification is on the
- * honour system: any working student email is accepted (operator
- * decision 2026-06-22). We send the access code to that address.
+/** Student Edition stays unavailable until paid eligibility enforcement exists.
+ * A syntactically valid address or domain suffix cannot mint a paid entitlement.
+ * Historical issued codes and grants are preserved; this action issues nothing.
  */
-export async function requestStudentCodeAction(
-  email: string,
-): Promise<StudentVerifyResult> {
-  const trimmed = email.trim().toLowerCase();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(trimmed)) {
+export async function requestStudentCodeAction(email: string): Promise<StudentVerifyResult> {
+  if (typeof email !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
     return { ok: false, reason: "invalid-email" };
   }
-  if (isDemoMode()) {
-    return {
-      ok: true,
-      code: "STUDENT-REVIEW",
-      tier: "workspace",
-      durationDays: 365,
-    };
-  }
-  const domain = trimmed.split("@")[1];
-
-  // Mint a single-use, 1-year student-rate code tagged with the email
-  // domain. Calls the internal helper directly so this trusted flow
-  // doesn't need to live behind the admin allowlist.
-  const { code } = await mintCompCodeInternal({
-    prefix: "STUDENT",
-    tier: "workspace",
-    durationDays: 365,
-    quantity: 1,
-    notes: `student:${domain}`,
-    expiresInDays: 30, // user has 30 days to actually click through
-  });
-
-  // Email the code to the student address. In dev (no Resend key) the
-  // helper logs to console; the response still surfaces the code so
-  // the marketing form can fall back gracefully.
-  const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
-  await sendEmail({
-    to: trimmed,
-    subject: "Your Tasks Workspace student code",
-    html: studentCodeEmailHtml(code, `${baseUrl}/redeem/${code}`),
-  });
-
-  return { ok: true, code, tier: "workspace", durationDays: 365 };
+  return { ok: false, reason: "unavailable" };
 }
