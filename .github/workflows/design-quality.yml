@@ -28,7 +28,7 @@ on:
       - ".github/workflows/design-quality.yml"
       - ".github/pull_request_template.md"
   push:
-    branches: [main]
+    branches: [main, release/january-2027]
     paths:
       - "docs/**"
       - "src/app/**"
