@@ -155,6 +155,7 @@ export type RedeemResult =
 export async function redeemCompCodeAction(
   rawCode: string,
 ): Promise<RedeemResult> {
+  if (typeof rawCode !== "string") return { ok: false, reason: "not-found" };
   const code = rawCode.trim().toUpperCase();
   if (!code) return { ok: false, reason: "not-found" };
   if (isDemoMode()) {
