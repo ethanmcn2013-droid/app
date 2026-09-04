@@ -1,3 +1,2 @@
 drizzle/*.sql text eol=lf
 drizzle-timeline/*.sql text eol=lf
-docs/projects/project-drive/ui-evidence/upload-recovery/*.png filter=lfs diff=lfs merge=lfs -text
