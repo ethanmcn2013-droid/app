@@ -1,0 +1,15 @@
+✔ overload opens the same authorized briefing scope, never a synthetic task (78.5319ms)
+✔ crowded-week opens the same authorized briefing scope, never a synthetic task (23.0551ms)
+✔ an aggregate across projects labels and carries the whole planning scope (14.5041ms)
+✔ ordinary tasks retain their object route and safe path encoding (14.932ms)
+✔ aggregate destination passes its scope to the actual briefing route and rechecks a removed project (32.3085ms)
+✔ rendered Home distinguishes reading an aggregate and opening a task (47.5392ms)
+✔ no-workspace remains a new-user result without invented signals (11.4828ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1714.9624

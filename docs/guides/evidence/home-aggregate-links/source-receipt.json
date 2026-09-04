@@ -1,0 +1,46 @@
+{
+  "createdAt": "2026-09-04T23:09:16.201Z",
+  "boundaries": [
+    "next/link",
+    "./home-analytics",
+    "@/modules/signal/home",
+    "server-only"
+  ],
+  "inputs": {
+    "src/app/app/home/home-data.ts": "2300fa0c4c0f2d67fcc3f440eef56df88fde26687b89f610a61a402191522bc1",
+    "src/components/app/home/home-view.tsx": "08b7d55c5a656cf645d9140efaba270b413ea49323a96666ef519076da15f3fb",
+    "src/modules/signal/lib/briefing/build.ts": "c1271a680182f150daf95c01a9e8aab4e87d034cc5bef8ac0a7807a28d88dfd0",
+    "src/app/globals.css": "f2c0851ac12b8af207f9802ded9d9901a202cfb2af3ef554b43fe50a0bb927e6"
+  },
+  "data": {
+    "kind": "ok",
+    "dateLabel": "FRIDAY 4 SEPTEMBER",
+    "greeting": "Good afternoon.",
+    "scopeLabel": "Our wedding",
+    "signalRows": [
+      {
+        "id": "fixture-task-0",
+        "destination": "task",
+        "title": "Confirm the ceremony reading",
+        "why": "Still open one day after it was due.",
+        "source": "Tasks · Our wedding",
+        "due": "overdue",
+        "trigger": "due-soon",
+        "href": "/app/task/fixture-task-0"
+      },
+      {
+        "id": "synthetic:overload",
+        "destination": "briefing",
+        "title": "Six items open at once",
+        "why": "Enough at once that some of it will sit.",
+        "source": "Tasks · Our wedding",
+        "due": "today",
+        "trigger": "overload",
+        "href": "/app/home/briefing?contextVersion=2&workspaceId=project-b"
+      }
+    ],
+    "allClear": null,
+    "comingUp": [],
+    "needsReview": []
+  }
+}

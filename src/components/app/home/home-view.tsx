@@ -118,13 +118,14 @@ function TodaysSignal({
                   <span className="mt-1.5 block text-[11.5px] text-ink-quiet">
                     {row.source}
                     {row.due ? <> · {row.due}</> : null}
+                    {row.destination === "briefing" ? <span className="sr-only"> · Read full briefing</span> : null}
                   </span>
                 </span>
                 <span
                   aria-hidden
                   className="flex-shrink-0 text-[13px] text-ink-quiet transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
                 >
-                  Open →
+                  {row.destination === "briefing" ? "Read →" : "Open →"}
                 </span>
               </HomeItemLink>
             </li>
