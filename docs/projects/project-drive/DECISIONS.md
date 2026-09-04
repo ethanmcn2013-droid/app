@@ -1,5 +1,31 @@
 # Decisions — Project Drive
 
+## D18 · Delegated implementation thesis lock (2026-09-04)
+
+The principal integrator locks **A · Custodian** for the January implementation,
+using the user's delegated design authority. This supersedes D17's provisional
+wording; it is a delegated selection, not a personal founder pick or a quality
+council approval. The blank lock template in the earlier exploration remains
+historical and is not the active decision record.
+
+The named storage owner, visible quota responsibility, separately checked Google
+access and explicit handover/recovery consequences are the governing composition.
+The principal inspected the retained connected/attention mobile and desktop
+renders, owner confirmation and completed-upload recovery states. Component and
+boundary evidence is in UI-SLICE.md, UI-FOLLOW-UP.md and UPLOAD-RECOVERY.md; the
+combined ca95830e browser checkpoint is in ../../execution/january-2027/COMBINED-BROWSER.md.
+The generic browser matrix is regression context, not a live Drive lifecycle.
+
+The strongest objection is the length and complexity of the mobile ownership and
+recovery explanation. Suite finish must improve hierarchy and progressive detail
+without hiding custody, pending revocation or incomplete uploads. The decision
+keeps the existing attachment interaction and avoids another design exploration.
+
+No score, baseline, accessibility completion, human comprehension, provider result
+or production activation is approved by this lock. Those acceptance rows remain
+open. Reopen the thesis only for a demonstrated trust/comprehension failure or an
+implementation constraint that the current composition cannot resolve.
+
 ## D17 · Delegated Custodian implementation slice (2026-09-04)
 
 The user approved the full January programme and delegated design decisions.
