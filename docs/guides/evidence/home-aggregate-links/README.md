@@ -17,3 +17,11 @@ Reproduce from the App checkout, using its pinned dependencies:
     pnpm exec tsx --import ./src/test/register-server-only.mjs --test src/app/app/home/home-data.test.tsx
 
 Open http://127.0.0.1:4403 with the existing browser preview workflow. The server binds loopback, serves only the generated fixture/public assets, and uses no credentials or database.
+
+## Follow-up: preserve explicit read scope at both receiving pages
+
+The deeper destination review found a separate existing substitution: the real briefing orchestrator used the saved scope when an explicit scope was unavailable. Home also ignored an incoming workspaceId, and its footer could return to the saved briefing. These paths now share a pure hint parser. Home and Full Briefing honor an explicit authorised workspace or enabled planning period without changing the Active Project cookie. Unsupported, malformed or unavailable explicit scopes reach the existing neutral not-found boundary. A bare visit retains the saved reading scope and normal first-use behavior. Canonical links carrying both workspace and parent period retain the narrower workspace scope.
+
+Thirteen checks pass: the previous projection/component cases plus actual Home/Briefing route and real orchestrator cases for saved A versus explicit B, removed/missing project, both period flag states, disabled/missing period, malformed arrays, and bare-entry recovery. The orchestrator tests use its real scope authorization and data-loading control flow, substituting only analytics preferences, membership catalog, task reads and read-state stores. They prove no task read occurs after an unavailable explicit scope; no live membership/database request is claimed. A demo regression also passes. Typecheck, focused ESLint and module boundaries pass.
+
+The final retained screenshots/source receipt were rebuilt and recaptured after the footer/projection change. Desktop keyboard activation of “Open full briefing” and mobile activation of the aggregate row both retain project-b; mobile has no page overflow and the console error/warning collection is empty. Prior captures remain in commit08550fa1. The inherited generic not-found screen was not visually accepted in this slice. Full authenticated suite, four-breakpoint Home coverage and human comprehension remain open.

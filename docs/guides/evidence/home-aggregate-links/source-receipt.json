@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-09-04T23:09:16.201Z",
+  "createdAt": "2026-09-04T23:30:28.515Z",
   "boundaries": [
     "next/link",
     "./home-analytics",
@@ -7,8 +7,8 @@
     "server-only"
   ],
   "inputs": {
-    "src/app/app/home/home-data.ts": "2300fa0c4c0f2d67fcc3f440eef56df88fde26687b89f610a61a402191522bc1",
-    "src/components/app/home/home-view.tsx": "08b7d55c5a656cf645d9140efaba270b413ea49323a96666ef519076da15f3fb",
+    "src/app/app/home/home-data.ts": "1e5aa0b8df5192c67cc64ba89dd65188c3c2b3647109a6f68d66fd7dbdcb752f",
+    "src/components/app/home/home-view.tsx": "4c8e1bce5963d53b9c67d8de569dafa53da38619df7527b44ac2f6cb3af5fd36",
     "src/modules/signal/lib/briefing/build.ts": "c1271a680182f150daf95c01a9e8aab4e87d034cc5bef8ac0a7807a28d88dfd0",
     "src/app/globals.css": "f2c0851ac12b8af207f9802ded9d9901a202cfb2af3ef554b43fe50a0bb927e6"
   },
@@ -17,6 +17,7 @@
     "dateLabel": "FRIDAY 4 SEPTEMBER",
     "greeting": "Good afternoon.",
     "scopeLabel": "Our wedding",
+    "briefingHref": "/app/home/briefing?contextVersion=2&workspaceId=project-b",
     "signalRows": [
       {
         "id": "fixture-task-0",

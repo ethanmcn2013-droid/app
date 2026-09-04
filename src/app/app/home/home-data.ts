@@ -13,6 +13,7 @@ import {
   localWeekday,
   type BriefItem,
   type TaskSignal,
+  type SignalScope,
 } from "@/modules/signal/home";
 
 /**
@@ -65,6 +66,7 @@ export type HomeData =
       dateLabel: string;
       greeting: string;
       scopeLabel: string;
+      briefingHref: string;
       signalRows: HomeSignalRow[];
       /** Set only when nothing is asking for the reader. */
       allClear: {
@@ -102,11 +104,13 @@ function dueFromDays(daysOut: number, dueAt: number, timezone: string): string {
 
 export async function loadHomeData(opts: {
   clerkId: string;
+  scope?: SignalScope;
 }): Promise<HomeData> {
   const result = await buildBriefingForUser({
     clerkId: opts.clerkId,
     cadence: "daily",
     recordReadState: false,
+    ...(opts.scope ? { scope: opts.scope } : {}),
   });
   if (result.kind === "no-workspace") return { kind: "new-user" };
 
@@ -221,6 +225,7 @@ export async function loadHomeData(opts: {
     dateLabel,
     greeting: greetingFor(briefing.greetingHour),
     scopeLabel: authorizedScope.label,
+    briefingHref: aggregateHref,
     signalRows,
     allClear,
     comingUp,

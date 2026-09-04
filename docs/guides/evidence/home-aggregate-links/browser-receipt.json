@@ -1,14 +1,15 @@
 {
+  "capturedAt": "2026-09-04T23:31:23.735Z",
   "desktop": {
     "width": 1440,
     "height": 1000,
-    "activation": "keyboard Enter",
+    "activation": "full briefing link, keyboard Enter",
     "destination": "http://127.0.0.1:4403/app/home/briefing?contextVersion=2&workspaceId=project-b"
   },
   "mobile": {
     "width": 390,
     "height": 844,
-    "activation": "pointer click",
+    "activation": "aggregate row, pointer click",
     "destination": "http://127.0.0.1:4403/app/home/briefing?contextVersion=2&workspaceId=project-b",
     "geometry": {
       "body": 390,
@@ -16,10 +17,11 @@
     }
   },
   "console": [],
+  "dom": "- complementary: Isolated Home render · real engine, projection and component · synthetic authorised project; analytics and framework links replaced.\n- main:\n  - paragraph: FRIDAY 4 SEPTEMBER\n  - heading \"Good afternoon.\" [level=1]\n  - paragraph: Our wedding\n  - region \"Today’s Signal\":\n    - heading \"Today’s Signal\" [level=2]: Today’s Signal\n    - list:\n      - link \"Confirm the ceremony reading Still open one day after it was due. Tasks · Our wedding · overdue\":\n        - /url: /app/task/fixture-task-0\n        - generic: Confirm the ceremony reading\n        - generic: Still open one day after it was due.\n        - generic: Tasks · Our wedding · overdue\n        - generic: Open →\n      - link \"Six items open at once Enough at once that some of it will sit. Tasks · Our wedding · today · Read full briefing\":\n        - /url: /app/home/briefing?contextVersion=2&workspaceId=project-b\n        - generic: Six items open at once\n        - generic: Enough at once that some of it will sit.\n        - text: Tasks · Our wedding · today\n        - generic: · Read full briefing\n        - generic: Read →\n    - link \"Open full briefing\":\n      - /url: /app/home/briefing?contextVersion=2&workspaceId=project-b\n      - generic: Open full briefing\n      - generic: →",
   "limitations": [
-    "Synthetic authorised scope and fixture data",
-    "Analytics and framework link boundary replaced",
-    "Destination receipt only; authenticated route separately tested",
-    "No full suite shell or provider validation"
+    "Real engine/projection/view/CSS, synthetic authorised data",
+    "Framework links replaced and analytics disabled in fixture",
+    "Navigation receipt only; real Home/Briefing route and orchestrator tested separately with explicit identity/database boundaries",
+    "No full suite shell, live session, provider or inherited not-found surface visual acceptance"
   ]
 }
