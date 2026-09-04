@@ -250,7 +250,7 @@ export default async function InviteAcceptPage({
                         <button
                           type="button"
                           disabled
-                          className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-[14px] font-medium text-white opacity-55"
+                          className="inline-flex min-h-[44px] items-center rounded-full bg-ink px-5 text-[14px] font-medium text-white opacity-55"
                         >
                           Accept invite
                         </button>
@@ -272,7 +272,7 @@ export default async function InviteAcceptPage({
                         : " Verify the invited email address before accepting."}
                     </p>
                     <SignOutButton redirectUrl={inviteAuthUrl("sign-in", `/invite/${token}`)}>
-                      <button type="button" className="mt-3 min-h-11 font-medium underline">
+                      <button type="button" className="mt-3 min-h-[44px] font-medium underline">
                         Sign out and use the invited account
                       </button>
                     </SignOutButton>
