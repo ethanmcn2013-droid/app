@@ -1,0 +1,36 @@
+{
+  "capturedAt": "2026-09-04T22:17:47.756Z",
+  "browser": "Chrome",
+  "calls": [
+    {
+      "kind": "open",
+      "primaryUseCase": "wedding",
+      "requestId": "3b6dbc13-d305-47f3-8597-0b82c0408a9c",
+      "secondaryContext": null,
+      "seedMode": "blank",
+      "workspaceId": "project-caller-review"
+    },
+    {
+      "kind": "open",
+      "primaryUseCase": "wedding",
+      "requestId": "3b6dbc13-d305-47f3-8597-0b82c0408a9c",
+      "secondaryContext": null,
+      "seedMode": "blank",
+      "workspaceId": "project-caller-review"
+    }
+  ],
+  "navigation": "Navigation: /app/home?workspaceId=project-caller-review",
+  "starterSets": "Starter sets: 0",
+  "url": "http://127.0.0.1:3146/?existing",
+  "viewport": {
+    "height": 897,
+    "width": 1920
+  },
+  "logs": [],
+  "assertions": [
+    "Same complete payload and request across failed acknowledgement and retry",
+    "No new synthetic starter set",
+    "No navigation after failure; explicit Project destination only after successful acknowledgement"
+  ],
+  "captureNote": "The full-page failure capture timed out once; the current viewport capture succeeded."
+}
