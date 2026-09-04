@@ -109,3 +109,12 @@ It is not part of development startup, CI, preview, production, or recovery.
 
 The committed adoption receipt stores only content hashes and non-secret proof
 results. Database credentials and backup bytes stay outside the repository.
+
+
+## 4 September 2026 — resource backfill proof lifecycle
+
+A populated January restore rehearsal reproduced a false migration-drift failure after a valid upload: the July 0017 receipt compares all upload resources with legacy attachments. That equality proves the one-time backfill, but new Resources/Drive uploads deliberately have no legacy attachment row.
+
+The ledger now uses its existing continuousProofIds mechanism for 0017: table/index presence, integrity and foreign keys remain continuous. The original immutable SQL and signed-off receipt remain unchanged; every original proof, including the count equality, still runs when 0017 executes. No migration or production row is rewritten. This is a delegated correction to proof timing, not acceptance of an incomplete backfill.
+
+Regression evidence: a real post-migration resource previously made migrationStatus fail; it now remains current and migration reruns are no-ops. Dropping the resource index still fails status. A deliberately failing backfill proof still aborts migration execution. The exact restored ledger, resource ownership guards and migration/source hashes remain enforced.

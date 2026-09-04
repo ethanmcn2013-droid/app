@@ -1,0 +1,58 @@
+# Drive UI security review
+
+**Result: no validated new security finding in the bounded Drive UI changes reviewed.** This is a source and local-test result, not live-provider acceptance or approval of the full App backend.
+
+Reviewed on 2026-09-04. Repository remained read-only throughout; review artifacts and temporary test databases were written only under this task's `work/` and `outputs/`. No provider calls, production actions, commits, pushes, merges or scan-platform records were made by this review.
+
+## Exact scope
+
+- Repository: `C:/Users/ethan/signal-studio-workspace/worktrees/app/feat-january-core-integration`.
+- Reviewed immutable commit: **`50f16575d298cd2e2b7eb30f845da385e48e46bb`**.
+- Backend base: **`7d4040cbd59f4611ca69a60967b34bd58181d4c5`**.
+- Drive UI commits: `5cb93f683af596310da3388b1fd7bf5556124a6e`, `cd0df47ede30e336030c42ff93a6b5f759c0ad09`, and the Drive settings exception in `50f16575`.
+- Covered: new status and handover actions/services/DTOs; Connections, handover and synthetic review components; browser upload machine and task intake; Resources provenance and pending-reload notices; associated tests and script wiring. Existing backend code was followed only to establish the contracts those paths invoke. Unrelated Billing, entitlement, navigation, invite and other integration changes were excluded.
+- Applied `security-diff-scan`, applicable root/App instructions and Project Drive contracts. Read-only skill preflight reported ready, with a delegated-worker availability warning; this was a sequential review, without an independent second reviewer. No configuration changes were made.
+
+The four initially dirty Drive files were inspected separately. At the closing check the worktree was clean at `dd1b1ee5ee9fcf1f7dd06068b3031badbd2acb06`; their changes had landed in `450dda44`. Comparing them with `50f16575` showed text and matching assertion changes only: `drive-reload-notice.tsx`, `drive-handover-view.tsx`, `project-drive-follow-up.test.tsx`, and `project-drive-reload.ts`. No handler, authority, state-transition or transport change was present in that delta. The test receipts below remain for immutable `50f16575`, not the subsequently integrated candidate.
+
+## Threat model and controls checked
+
+Untrusted inputs are the caller's Project/task/resource/target-owner IDs, stale browser roles and lists, selected file metadata, and provider responses. Assets are cross-Project records and roster information, Google credentials and delegated upload capabilities, file custody, and the durable handover/upload records. Relevant actors are an outsider, a member without management authority, a removed/demoted owner, and a browser retrying after an uncertain result. Browser state is not an authorization boundary; server membership, stored object scope, provider proof and durable operation state are.
+
+All source references below are repository-relative and refer to **`50f16575`**.
+
+| Boundary | Evidence and conclusion |
+| --- | --- |
+| Explicit Project scope and stale roles | `src/server/actions/project-drive-status.ts:7` and `src/server/actions/project-drive-handover-ui.ts:7` authorize the supplied Project with `manageProject` before service access and again before returning. Generic unavailable responses discard results when the second proof fails. The underlying proof uses authenticated identity and stored membership (`src/server/connections/project-drive-authz.ts`; `src/server/actions/project-authz.ts:270`). UI `canManage` is only a display hint. The additional runtime tests exercise both denied entry and role loss at the return boundary. |
+| Filtered live access | `src/server/connections/project-drive-ui-status.ts:16` derives a person's displayed Google role only from non-deleted, named-user permissions with a matching normalized roster email. Unknown/group/domain permissions contribute a count, not identities or an inferred member grant. Provider failure or a changed roster/storage snapshot yields unavailable access, rather than saved grants presented as live proof (`:69`). The checked timestamp describes that read, not future permission guarantees. The provider reader targets the current Project folder and rejects incomplete pagination (`src/server/connections/drive-grants.ts:897`). |
+| Secret custody and DTOs | The status DTO is explicitly projected (`project-drive-ui-status.ts:78`); it omits root folder IDs, connection IDs, permission IDs, OAuth tokens and upload-session capabilities. The caller's own affected-Project count is intentionally account-wide, not a list of foreign Projects. Handover choices contain scoped user ID/name pairs. Resources projection omits the encrypted upload session (`src/server/actions/resources.ts:93`). The upload path deliberately gives the browser a scoped resumable capability, not an OAuth token; it stays in the mounted attempt rather than storage, rendered copy or a reload DTO. |
+| Owner choices and continuation | `src/server/connections/project-drive-handover-ui.ts:17` checks current actor/source ownership, archive state, exact current storage, pending uploads and eligible target owners with one active current connection using the exact allowed scope. `:63` rebuilds that allowlist on submit. A continuation uses only the recorded target and generation; replaced credentials, ambiguous operations and manual-attention states do not offer a new executable target. Existing backend decision checks and journal reuse were traced at `project-drive-storage-handover.ts:134` and `:315`; commit-time owner/storage checks occur in `project-drive-folder-operation-executor.ts:425`. The post-action authorization check is not a rollback of already performed provider work. |
+| Upload object and file proof | New intake calls existing server actions. They derive the Project from the stored task and authorize task editing; finalization also binds the original uploader (`src/server/actions/drive-resource-uploads.ts`). Backend matching pins the resource, task, actor, metadata and original storage generation (`src/server/connections/drive-uploads.ts:272`). Completion requires the server-observed resource marker, exact parent, MIME and byte count (`:332`), not the browser's asserted file ID alone. This was a contract trace, not a fresh exhaustive backend audit. |
+| Wrong fallback and repeated calls | `src/lib/project-drive-upload-machine.ts:39` serializes a mounted attempt. Native fallback requires a definitive pre-delegation server result and an explicit click. Once Drive delegation or an ambiguous response occurs, the machine pauses instead of falling through to native storage. Retries reuse the same resource ID and File; completion waits for server finalization. Disposing the attempt aborts browser activity without pretending to undo provider effects. The transport validates the Google session URL and omits credentials, redirects and referrer (`src/lib/drive-resumable-upload.ts`). Existing native transport internals were not recertified. |
+| Reload and task switching | `src/components/app/detail-panel/resources-section.tsx:178` keys the resource view by task. Loading, failed reads and an unmounted pending Drive claim block enabled-Drive file intake, including drop and the shared Attach input (`:197`, `:219`, `:419`). `src/lib/project-drive-reload.ts:4` does not infer file identity from name/size. The notice only reloads saved Resources; it neither remints a session nor uploads, removes, resumes or falls back. Pending rows expose neither download nor removal. Complete Drive rows do not use the native download route (`resources-section.tsx:593`). |
+| Demo, flag-off and settings exception | New status/handover actions return before importing auth/DB/provider dependencies in review or flag-off mode; this is runtime-tested. Synthetic Connections/upload controls have only local fixture state, and live intake exits early in demo. `src/components/app/settings/settings-app.tsx:146` lifts read-only inertness only for the enabled Drive storage tab in demo; Connections then selects its synthetic implementation. Other read-only sections retain inertness. The public UI flag is a rollout switch, not a global revocation mechanism for existing authorized backend actions. |
+
+## Verification receipts
+
+An archive of the pinned commit was extracted under `work/drive-security/snapshot`; installed dependencies were reused through a junction under that scratch directory. Tests used disposable local data and injected provider dependencies, with provider/database credential environment variables removed for the test process.
+
+| Command, run from the snapshot | Result | Receipt |
+| --- | --- | --- |
+| `node scripts/test-project-drive-ui.mjs` | **38 passed, 0 failed, 0 skipped** | `drive-ui-security-review-evidence/immutable-ui-tests.txt` |
+| `node --import tsx --test ../action-boundaries.test.mjs` | **12 passed, 0 failed, 0 skipped** | `drive-ui-security-review-evidence/action-boundaries.tap` |
+
+The existing suite includes disposable SQLite tests for foreign/stale authority, filtered live permissions, roster races, invalid owner connections, pending receipts, forged targets, same-operation continuation, replaced target credentials and a target losing ownership before backend execution. It also tests upload uncertainty, same-claim retry, explicit fallback, repeated invocation, cancellation, reload blocking and review/flag-off import isolation.
+
+The additional review-only harness invokes the three actual action exports with controlled service/auth dependencies. For each action it proves denied entry never calls the service, loss of authority before return discards the result, private service error details are not returned, and the authorized result requires both checks. Those mocks do not independently prove the database authorization implementation or undo a mutation already executed before the second check. Harness source and stubs accompany the receipts. No test failures remain in these two runs. No full build, lint, full application suite or live browser session was run for this bounded review.
+
+## Remaining acceptance matrix
+
+| Scenario | What remains unclaimed |
+| --- | --- |
+| Real Google permissions/OAuth | Actual grant/revoke behavior, refresh/reconnect failures, real pagination and propagation timing. Local fixtures and source checks establish the UI boundary, not provider success. |
+| Real ownership handover | Two-account completion, interruption, concurrent role/connection changes, historical file custody and recovery after provider success but before local persistence. Local journal/allowlist tests do not replace this acceptance. |
+| Browser upload failures | Large-file interruption, tab termination, live expiration, membership revocation after capability issuance and real concurrent-tab races. A previously issued provider capability is not proven instantly revoked by a later App role change. |
+| Closed-tab pending upload | **Recovery remains incomplete.** The implemented notice discovers and protects the existing claim. It cannot safely resume a newly selected file without durable content identity or an approved non-minting recovery contract. |
+| Integrated browser/settings modes | Authenticated owner/member/removed-user routes and read-only/demo/flag-off transitions on the final integrated candidate were not browser-tested here. Synthetic previews are not evidence of live authorization or provider readiness. |
+
+No change is requested on the strength of a validated new security defect from this review. The remaining matrix is acceptance work and stated scope limitation, not evidence that those scenarios pass.

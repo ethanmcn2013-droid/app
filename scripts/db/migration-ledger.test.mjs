@@ -940,3 +940,28 @@ test("adoption receipt for another database fails before writing metadata", asyn
     fs.rmSync(receiptDir, { recursive: true, force: true });
   }
 }));
+
+
+test("normal post-migration resources do not invalidate the historical backfill receipt", async () => withClient(async (client) => {
+  const first = await runMigrations({ client, releaseSha: "resource-lifecycle-test" });
+  assert.ok(first.proofs.some((proof) => proof.id === "backfill-upload-count-matches-attachments"));
+  await client.executeMultiple(`
+    INSERT INTO users (id, color, initials) VALUES ('resource-owner', '#111', 'RO');
+    INSERT INTO workspaces (id,slug,name,owner_user_id) VALUES ('resource-ws','resource-ws','Synthetic recovery','resource-owner');
+    INSERT INTO tasks (id,workspace_id,seq,title,lane,priority) VALUES ('resource-task','resource-ws',1,'Synthetic file','todo','normal');
+    INSERT INTO resources (id,workspace_id,task_id,kind,provider,storage,title,added_at)
+      VALUES ('resource-new','resource-ws','resource-task','upload','file','signal','Synthetic file',1788552000);
+  `);
+  assert.equal((await migrationStatus({ client })).state, "current");
+  assert.equal((await runMigrations({ client, releaseSha: "resource-lifecycle-retry" })).status, "no-op");
+  await client.execute("DROP INDEX idx_resources_task_id");
+  await assert.rejects(() => migrationStatus({ client }), /resources-task-id-index-exists/);
+}));
+
+test("the resource backfill count remains required when its migration executes", async () => withClient(async (client) => {
+  const context = loadAndValidateLedger();
+  const entry = context.forward.find((candidate) => candidate.id === "0017_resources");
+  const proof = entry.receipt.record.proofs.find((candidate) => candidate.id === "backfill-upload-count-matches-attachments");
+  proof.sql = "SELECT 0 AS value";
+  await assert.rejects(() => runMigrations({ client, context, releaseSha: "broken-backfill-test" }), /backfill-upload-count-matches-attachments/);
+}));
