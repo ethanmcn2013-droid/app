@@ -11,6 +11,25 @@ import {
 export type VenueIssuanceDb = LibSQLDatabase<typeof schema>;
 type Reader = Pick<VenueIssuanceDb, "select">;
 const fail = (code: ConstructorParameters<typeof VenueIssuanceError>[0]): never => { throw new VenueIssuanceError(code); };
+export const erasedConsumptionKey = (issuanceId: string, codeId: string) =>
+  "venue-consumed-erased:v1:" + issuanceId + ":" + codeId;
+export function erasedConsumptionReceipt(manifest: IssuanceManifest, code: IssuanceManifest["codes"][number]) {
+  return { version: 1, manifestHash: manifestHash(manifest), codeFingerprint: code.codeFingerprint, reason: "grant_erasure" };
+}
+/** Capacity history only: contains no recipient, project, grant or bearer.
+ * It can never stand in for the active grant required by claim provenance. */
+export async function readErasedConsumption(reader: Reader, manifest: IssuanceManifest, code: IssuanceManifest["codes"][number]): Promise<boolean> {
+  const [row] = await reader.select().from(meta).where(eq(meta.key, erasedConsumptionKey(manifest.issuanceId, code.licenseCodeId)));
+  if (!row) return false;
+  try {
+    const receipt = JSON.parse(row.value);
+    const expected = erasedConsumptionReceipt(manifest, code);
+    if (Object.keys(receipt).length !== 4 || receipt.version !== expected.version ||
+        receipt.manifestHash !== expected.manifestHash || receipt.codeFingerprint !== expected.codeFingerprint ||
+        receipt.reason !== expected.reason) return fail("conflict");
+    return true;
+  } catch { return fail("conflict"); }
+}
 export function canonicalVenueCodeNotes(manifest: IssuanceManifest, code: IssuanceManifest["codes"][number]): string {
   return JSON.stringify({ sponsor_slug: manifest.sponsorSlug, sponsor_name: manifest.sponsorName,
     source_type: "venue_edition", studio_tier: "wedding", studio_duration_days: 548,
@@ -40,7 +59,8 @@ export async function readback(reader: Reader, manifest: IssuanceManifest, now: 
     const row = await readCode(reader, manifest, expected);
     const grants = await reader.select({ id: entitlements.id }).from(entitlements)
       .where(and(eq(entitlements.source, "comp"), eq(entitlements.notes, "comp:" + row.code)));
-    if (grants.length !== row.redeemed) return fail("conflict");
+    const erased = await readErasedConsumption(reader, manifest, expected);
+    if (erased ? row.redeemed !== 1 || grants.length !== 0 : grants.length !== row.redeemed) return fail("conflict");
     const [withdrawal] = await reader.select().from(meta).where(eq(meta.key, withdrawalReceiptKey(manifest.issuanceId, expected.licenseCodeId)));
     if (withdrawal) {
       try {
@@ -52,6 +72,8 @@ export async function readback(reader: Reader, manifest: IssuanceManifest, now: 
     if (withdrawal && (row.redeemed !== 0 || row.expiresAt?.getTime() !== 0)) return fail("conflict");
     // Unexpected external mutations cannot turn into a ready packet.
     if (!withdrawal && row.expiresAt !== null) return fail("conflict");
+    // "claimed" is consumed capacity, including a subsequently erased claim.
+    // Only readCanonicalVenueClaim can establish a current grant's provenance.
     codes.push({ ...expected, state: withdrawal ? "withdrawn" : row.redeemed === 1 ? "claimed" : "available" });
   }
   return { version: 1, issuanceId: manifest.issuanceId, manifestHash: manifestHash(manifest), checkedAt: now, codes };
@@ -80,6 +102,7 @@ export async function readCanonicalVenueClaim(reader: Reader, input: { entitleme
     if (!expected || grant.startedAt.getTime() + 999 < manifest.issuedAt) return null;
     const canonical = await readCode(reader, manifest, expected);
     if (canonical.code !== code || canonical.redeemed !== 1 || canonical.expiresAt !== null) return null;
+    if (await readErasedConsumption(reader, manifest, expected)) return null;
     const grants = await reader.select({ id: entitlements.id }).from(entitlements)
       .where(and(eq(entitlements.source, "comp"), eq(entitlements.notes, grant.notes)));
     if (grants.length !== 1 || grants[0].id !== grant.id) return null;
