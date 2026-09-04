@@ -50,6 +50,8 @@ import type {
 } from "@/modules/notes/server/actions/notes";
 import { PRICING_URL, taskFocusPath } from "@/lib/product-urls";
 import { useUnsavedWork } from "@/components/app/unsaved-work-context";
+import { parseProjectId } from "@/lib/projects/project-ref";
+import { notebookRecoveryKey } from "@/modules/notes/lib/notes-recovery";
 import {
   CONTEXT_TERMINOLOGY,
   PLANNING_PERIOD_CONTEXTS,
@@ -405,6 +407,7 @@ export interface NotesWorkspaceProps {
   initialArchivedNotes: NoteRead[];
   initialPendingApprovedTaskSends: PendingApprovedTasksSendRead[];
   initialWorkspaceId: string | null;
+  captureAllowed?: boolean;
   captureEmailState: CaptureState | null;
   tasksWorkspaces: TasksWorkspaceDestination[];
   activeDomain?: string | null;
@@ -418,6 +421,10 @@ export interface NotesWorkspaceProps {
 }
 
 export function NotesWorkspace(props: NotesWorkspaceProps) {
+  return <NotesWorkspaceFrame key={notebookRecoveryKey(props.recoveryScope, props.initialWorkspaceId)} {...props} />;
+}
+
+function NotesWorkspaceFrame(props: NotesWorkspaceProps) {
   const copy = notesCopyForDomain(props.activeDomain);
   const saveChord = useSaveChord();
   const narrow = useNarrow();
@@ -444,6 +451,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
     initialArchivedNotes: props.initialArchivedNotes,
     initialPendingApprovedTaskSends: props.initialPendingApprovedTaskSends,
     initialWorkspaceId: props.initialWorkspaceId,
+    captureAllowed: props.captureAllowed,
     recoveryScope: props.recoveryScope,
     demoMode: props.demoMode,
     copy,
@@ -481,12 +489,12 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   // ── URL state ───────────────────────────────────────────────────────
 
   const writeUrl = useCallback((nextView: NotesView, noteId: string | null, replace = false) => {
-    const href = notesHref(nextView, noteId);
+    const href = notesHref(nextView, noteId, parseProjectId(props.initialWorkspaceId));
     if (typeof window === "undefined") return;
     if (window.location.pathname + window.location.search === href) return;
     if (replace) window.history.replaceState(null, "", href);
     else window.history.pushState(null, "", href);
-  }, []);
+  }, [props.initialWorkspaceId]);
 
   useEffect(() => {
     const onPop = () => {
@@ -801,9 +809,9 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
     }
   }, [captureDirty, draftDirty, editDirty, unsavedWork]);
 
-  // Leaving Notes withdraws its claims. The words those claims guarded are
-  // already saved or already gone; a claim no mounted surface can resolve
-  // would hold every future switch with no way out.
+  // Leaving Notes withdraws its claims. Recovery stays bound to this actor
+  // and note; a claim no mounted surface can resolve would hold every future
+  // switch with no way out.
   useEffect(() => {
     if (!unsavedWork) return;
     return () => {
@@ -918,7 +926,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
   const reviewDone = Math.min(reviewedThisSession, totalToReview);
 
   return (
-    <div className={styles.root} data-notes-workspace="" data-view={view}>
+    <div className={styles.root} data-notes-workspace="" data-view={view} data-recovery-scope={props.recoveryScope} data-recovery-project={props.initialWorkspaceId ?? ""}>
       <h1 className={styles.srOnly}>
         {view === "notebook" ? "Notes notebook" : view === "review" ? "Review notes" : "Notes sent to Tasks"}
       </h1>
@@ -930,7 +938,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
               <a
                 key={candidate}
                 className={styles.viewTab}
-                href={notesHref(candidate, null)}
+                href={notesHref(candidate, null, parseProjectId(props.initialWorkspaceId))}
                 aria-current={view === candidate ? "page" : undefined}
                 onClick={(event) => {
                   if (event.metaKey || event.ctrlKey || event.shiftKey) return;
@@ -1077,6 +1085,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
             data-detail-open={Boolean(selectedNote) || undefined}
           >
             <Composer
+              earlierDeviceCopy={notebook.earlierDeviceCopy}
               copy={copy}
               draft={notebook.draft}
               setDraft={notebook.setDraft}
@@ -1085,7 +1094,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
               captureStatus={notebook.captureStatus}
               captureError={notebook.captureError}
               clearCaptureError={() => notebook.setCaptureError(null)}
-              readOnly={notebook.readOnly}
+              readOnly={notebook.readOnly || props.captureAllowed === false}
               saveChord={saveChord}
               photoAvailable={props.photoAvailable}
               speechSeparates={props.speechSeparates}
@@ -1177,7 +1186,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                         query={deferredQuery}
                         selected={note.id === effectiveSelectedId}
                         state={notebook.mutationStates[note.id]}
-                        canSendToTasks={workspaces.length > 0}
+                        canSendToTasks={props.captureAllowed !== false && workspaces.length > 0}
                         arriving={motion.isArriving(note.id)}
                         departing={motion.isDeparting(note.id)}
                         promoted={motion.isPromoted(note.id)}
@@ -1222,7 +1231,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
                       notebook.deleteNote(selectedNote);
                       selectNote(null);
                     }}
-                    canSendToTasks={workspaces.length > 0}
+                    canSendToTasks={props.captureAllowed !== false && workspaces.length > 0}
                     settle={paneSwaps > 0}
                   />
                 ) : (
@@ -1255,7 +1264,7 @@ export function NotesWorkspace(props: NotesWorkspaceProps) {
             onSkip={skipReview}
             canSkip={reviewQueue.length > 1}
             onOpenNotebook={() => goToView("notebook")}
-            canSendToTasks={workspaces.length > 0}
+            canSendToTasks={props.captureAllowed !== false && workspaces.length > 0}
             settle={reviewedThisSession > 0 || reviewIndex > 0}
           />
         ) : null}
@@ -1356,6 +1365,8 @@ function NoteDetail({
 
   const statusText = notebook.detailError
     ? notebook.detailError
+    : dirty && !notebook.recoveryAvailable
+      ? "Only in this tab. Save before leaving."
     : notebook.detailStatus === "saving"
       ? "Saving…"
       : notebook.detailStatus === "saved"
@@ -1513,7 +1524,7 @@ function NoteDetail({
             className={styles.detailField}
             value={notebook.detailBody}
             readOnly={notebook.readOnly}
-            onChange={(event) => notebook.setDetailBody(event.target.value)}
+            onChange={(event) => notebook.editDetail(note, event.target.value)}
             onBlur={() => {
               if (dirty && !notebook.conflict) void notebook.saveDetail(note);
             }}

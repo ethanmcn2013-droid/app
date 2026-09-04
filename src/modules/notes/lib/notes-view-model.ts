@@ -10,6 +10,9 @@
  * rules the tests check.
  */
 
+import { withActiveProject } from "@/lib/projects/project-url";
+import type { ProjectId } from "@/lib/projects/project-ref";
+
 /** The four capture routes, plus the calendar scaffold that predates them. */
 export type NoteSource = "typed" | "voice" | "photo" | "email" | "calendar";
 
@@ -351,12 +354,13 @@ export function viewFromParam(value: string | null | undefined): NotesView {
   return value === "review" || value === "sent" ? value : "notebook";
 }
 
-export function notesHref(view: NotesView, noteId: string | null): string {
+export function notesHref(view: NotesView, noteId: string | null, workspaceId?: ProjectId | null): string {
   const params = new URLSearchParams();
   if (view !== "notebook") params.set("view", view);
   if (noteId) params.set("note", noteId);
   const query = params.toString();
-  return query ? `/app/notes?${query}` : "/app/notes";
+  const href = query ? `/app/notes?${query}` : "/app/notes";
+  return workspaceId ? withActiveProject(href, workspaceId) : href;
 }
 
 /**

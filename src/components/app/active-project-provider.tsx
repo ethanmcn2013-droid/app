@@ -108,6 +108,7 @@ export type ActiveProjectContextValue = Readonly<{
   dismissRefusal: () => void;
   /** Publish a server-verified snapshot. The reducer decides whether it commits. */
   publishSnapshot: (snapshot: RouteSnapshot) => void;
+  publishUnavailableSnapshot: (key: string, epoch: number) => void;
   /**
    * Synchronous selection guard. `started` means the guarded transition is
    * running and will redirect on success; a refusal means nothing started —
@@ -213,6 +214,10 @@ export function ActiveProjectProvider({
     dispatch({ type: "snapshot", snapshot });
   }, []);
 
+  const publishUnavailableSnapshot = useCallback((key: string, epoch: number) => {
+    dispatch({ type: "snapshot-unavailable", routeKey: key, epoch });
+  }, []);
+
   const selectProject = useCallback(
     (
       project: Pick<ProjectSummary, "id" | "name">,
@@ -292,6 +297,7 @@ export function ActiveProjectProvider({
       refusal: state.refusal,
       dismissRefusal,
       publishSnapshot,
+      publishUnavailableSnapshot,
       selectProject,
     }),
     [
@@ -303,6 +309,7 @@ export function ActiveProjectProvider({
       chrome,
       dismissRefusal,
       publishSnapshot,
+      publishUnavailableSnapshot,
       selectProject,
     ],
   );

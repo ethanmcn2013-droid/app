@@ -176,6 +176,7 @@ export function Composer({
   demoMode,
   fieldRef,
   onFocusChange,
+  earlierDeviceCopy,
 }: {
   copy: NotesCopy;
   draft: string;
@@ -195,6 +196,7 @@ export function Composer({
   demoMode: boolean;
   fieldRef: React.RefObject<HTMLTextAreaElement | null>;
   onFocusChange?: (focused: boolean) => void;
+  earlierDeviceCopy?: string;
 }) {
   const [mode, setMode] = useState<ComposerMode>("type");
   const [stage, setStage] = useState<Stage>({ kind: "idle" });
@@ -496,6 +498,13 @@ export function Composer({
 
   return (
     <div className={styles.composerBand}>
+      {earlierDeviceCopy ? (
+        <details className={styles.panel}>
+          <summary>Earlier device copy</summary>
+          <p className={styles.panelBody}>This private copy has no project. Copy any words you want to keep before choosing where to save them.</p>
+          <textarea aria-label="Earlier private device copy" className={styles.detailField} readOnly value={earlierDeviceCopy} />
+        </details>
+      ) : null}
       <div
         className={styles.composer}
         data-focused={focused || undefined}
