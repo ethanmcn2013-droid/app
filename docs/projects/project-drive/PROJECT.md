@@ -453,6 +453,12 @@ falls back to Signal-native storage with a plain sentence.
 ---
 
 ### WP-7 · Surfaces
+**2026-09-04 implementation update:** user-delegated selection of A · Custodian
+allows the internal default-off UI slice to proceed. It is not a founder pick,
+design lock or acceptance. `UI-SLICE.md` records reuse, evidence, verification
+and remaining status/handover/recovery gaps. The historical gate wording below
+describes the prior exploration checkpoint, superseded for this delegated slice.
+
 **Goal.** Attaching a file stays ordinary while storage ownership and live
 access truth become easy to understand.
 

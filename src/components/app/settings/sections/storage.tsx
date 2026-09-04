@@ -17,9 +17,11 @@ function formatBytes(bytes: number): string {
 export function StorageSection({
   tier,
   usageBytes,
+  driveEnabled = false,
 }: {
   tier: EntitlementTier;
   usageBytes: number;
+  driveEnabled?: boolean;
 }) {
   const quota = getQuota(tier);
   const ratio = usageBytes / quota.totalBytes;
@@ -47,8 +49,8 @@ export function StorageSection({
     <div>
       <SectionHeader
         eyebrow="Storage"
-        title="Project storage"
-        description="Attachments and uploaded files count against your workspace quota. The quota resets if you upgrade."
+        title={driveEnabled ? "Signal Studio storage" : "Project storage"}
+        description={driveEnabled ? "Files stored in Signal Studio count against this board’s allowance. Google Drive files use the storage owner’s Google space." : "Files stored in Signal Studio count against this board’s allowance."}
       />
 
       <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
@@ -91,8 +93,7 @@ export function StorageSection({
       </div>
 
       <p className="mt-4 text-[11.5px] leading-[1.55] text-ink-faint">
-        Files are attached from a task, in its Resources section. Everything
-        you attach is counted here.
+        Files are attached from a task, in its Resources section. Files stored in Signal Studio are counted here.
       </p>
     </div>
   );

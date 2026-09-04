@@ -12,6 +12,9 @@ import { NotificationsSection } from "./sections/notifications";
 import { SecuritySection } from "./sections/security";
 import { AppearanceSection } from "./sections/appearance";
 import { StorageSection } from "./sections/storage";
+import { ConnectionsSection } from "./sections/connections";
+import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
+import { isDemoMode } from "@/lib/access-mode";
 import { PrivacySection } from "./sections/privacy";
 import { DangerSection } from "./sections/danger";
 import type { SecurityData } from "@/server/actions/security";
@@ -138,7 +141,9 @@ export function SettingsApp({
    */
   readOnly?: boolean;
 }) {
-  const [tab, setTab] = useState<Tab>("workspace");
+  const driveEnabled = projectDriveUiEnabled();
+  const [tab, setTab] = useState<Tab>(driveEnabled && isDemoMode() ? "storage" : "workspace");
+  const tabs = TABS.map((item) => item.id === "storage" && driveEnabled ? { ...item, label: "Connections" } : item);
 
   return (
     <div className="thin-scroll flex-1 overflow-auto">
@@ -152,7 +157,7 @@ export function SettingsApp({
             Settings
           </div>
           <ul className="mt-3 space-y-px">
-            {TABS.map((t) => {
+            {tabs.map((t) => {
               const isActive = tab === t.id;
               const isDanger = t.id === "danger";
               return (
@@ -200,7 +205,7 @@ export function SettingsApp({
           {/* Mobile-friendly horizontal tab strip; lg:hidden so the
               rail above is the only nav on wider screens. */}
           <div className="mb-6 flex items-center gap-1 overflow-x-auto rounded-full border border-line-soft bg-bg-sunken/70 p-0.5 lg:hidden">
-            {TABS.map((t) => {
+            {tabs.map((t) => {
               const isActive = tab === t.id;
               return (
                 <button
@@ -224,7 +229,7 @@ export function SettingsApp({
             })}
           </div>
 
-          <div inert={readOnly || undefined} aria-disabled={readOnly || undefined}>
+          <div inert={(readOnly && !(tab === "storage" && driveEnabled)) || undefined} aria-disabled={(readOnly && !(tab === "storage" && driveEnabled)) || undefined}>
           {tab === "workspace" ? (
             <WorkspaceSection workspace={workspace} myRole={myRole} />
           ) : null}
@@ -252,7 +257,10 @@ export function SettingsApp({
             <SecuritySection data={securityData} />
           ) : null}
           {tab === "storage" ? (
-            <StorageSection tier={tier} usageBytes={storageUsageBytes} />
+            <div className="space-y-6">
+              {driveEnabled ? <ConnectionsSection projectId={workspace?.id ?? null} canManage={myRole === "owner"} /> : null}
+              <StorageSection tier={tier} usageBytes={storageUsageBytes} driveEnabled={driveEnabled} />
+            </div>
           ) : null}
           {tab === "billing" ? (
             <BillingSection tier={tier} />
