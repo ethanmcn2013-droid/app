@@ -13,6 +13,8 @@ import {
   notifications,
   resources,
   tasks,
+  users,
+  workspaces,
 } from "@/server/db/schema";
 import { getSubtasks, getTasks } from "@/server/db/queries";
 import { recordActivity } from "@/server/db/activity";
@@ -44,6 +46,8 @@ import { deleteNativeByteCleanupTargetConfirmed } from "@/server/attachments/nat
 import { repairExactNativeByteCleanupReceipts } from "@/server/attachments/native-upload-cleanup";
 import { deleteNativeAttachmentRowsInTransaction } from "@/server/attachments/native-upload-custody";
 import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fence";
+import { hasAccountDeletionStartedWith } from "@/server/account-deletion-lifecycle";
+import { captureTaskCreated } from "@/server/sponsored-use/capture";
 
 /**
  * Pure read pass-through used by the realtime sync hook to refetch
@@ -610,57 +614,71 @@ export async function addTaskAction(input: {
   const lane = input.lane ?? "todo";
   // Creating straight into a done column is a completion (T·122).
   const createdDone = isDoneColumnKey(lane, await readWorkspaceColumnConfig(ws));
-  if (input.parentTaskId) {
-    // A subtask inherits its parent's tenant. Require a top-level parent in
-    // the active workspace; this rejects both foreign-parent injection and
-    // unsupported deeper nesting before any child row is inserted.
-    const [parent] = await db
-      .select({ id: tasks.id })
-      .from(tasks)
-      .where(
-        and(
-          eq(tasks.id, input.parentTaskId),
-          eq(tasks.workspaceId, ws),
-          isNull(tasks.parentTaskId),
-        ),
-      );
-    if (!parent) {
-      throw new Error(
-        "addTaskAction: parent task is not in the active workspace",
-      );
+  const created = await db.transaction(async (tx) => {
+    const current = await authorizeStoredProject({
+      storedProjectId: ws, actorUserId: me, capability: "createOrEditTasks",
+      archivePolicy: "enforce", executor: tx,
+    });
+    if (!current.ok) return false;
+    await assertProjectNotDeleting(tx, ws);
+    const [actor] = await tx.select({ clerkId: users.clerkId }).from(users).where(eq(users.id, me)).limit(1);
+    if (!actor || await hasAccountDeletionStartedWith(tx, actor.clerkId ?? me)) return false;
+    const [owner] = await tx.select({ id: users.id, clerkId: users.clerkId }).from(workspaces)
+      .innerJoin(users, eq(users.id, workspaces.ownerUserId)).where(eq(workspaces.id, ws)).limit(1);
+    if (owner && await hasAccountDeletionStartedWith(tx, owner.clerkId ?? owner.id)) return false;
+    if (input.parentTaskId) {
+      // A subtask inherits its parent's tenant. Require a top-level parent in
+      // the active workspace; this rejects both foreign-parent injection and
+      // unsupported deeper nesting before any child row is inserted.
+      const [parent] = await tx
+        .select({ id: tasks.id })
+        .from(tasks)
+        .where(
+          and(
+            eq(tasks.id, input.parentTaskId),
+            eq(tasks.workspaceId, ws),
+            isNull(tasks.parentTaskId),
+          ),
+        );
+      if (!parent) {
+        throw new Error(
+          "addTaskAction: parent task is not in the active workspace",
+        );
+      }
     }
-  }
-  const position = await nextPositionForLane(lane, ws);
-  await db.insert(tasks).values({
-    id,
-    workspaceId: ws,
-    seq: nextTaskSeq(ws),
-    title: input.title,
-    description: input.description,
-    lane,
-    completedAt: createdDone ? new Date() : null,
-    priority: input.priority ?? "p2",
-    assignees: input.assignees ?? [],
-    estimate: input.estimate,
-    due: input.due,
-    position,
-    dueAt: input.dueAt,
-    tags: input.tags,
-    recurrence: input.recurrence,
-    externalContactName: input.externalContactName ?? null,
-    externalContactEmail: input.externalContactEmail ?? null,
-    cents: sanitizeCents(input.cents ?? null),
-    parentTaskId: input.parentTaskId ?? null,
-    ...bump(),
-  });
-  await recordActivity(id, {
-    kind: "taskAdd",
-    lane: input.lane ?? "todo",
-  }, { workspaceId: ws });
-  await recordSponsoredUse(
-    { product: "tasks", kind: "task_created", objectKey: id, subjectId: me, workspaceId: ws },
-    true,
-  );
+    const [last] = await tx.select({ position: sql<number>`coalesce(max(${tasks.position}), 0)` })
+      .from(tasks).where(and(eq(tasks.workspaceId, ws), eq(tasks.lane, lane)));
+    const position = Number(last?.position ?? 0) + 1;
+    await tx.insert(tasks).values({
+      id,
+      workspaceId: ws,
+      seq: nextTaskSeq(ws),
+      title: input.title,
+      description: input.description,
+      lane,
+      completedAt: createdDone ? new Date() : null,
+      priority: input.priority ?? "p2",
+      assignees: input.assignees ?? [],
+      estimate: input.estimate,
+      due: input.due,
+      position,
+      dueAt: input.dueAt,
+      tags: input.tags,
+      recurrence: input.recurrence,
+      externalContactName: input.externalContactName ?? null,
+      externalContactEmail: input.externalContactEmail ?? null,
+      cents: sanitizeCents(input.cents ?? null),
+      parentTaskId: input.parentTaskId ?? null,
+      ...bump(),
+    });
+    await tx.insert(activities).values({
+      id: `a-${globalThis.crypto.randomUUID()}`, workspaceId: ws, taskId: id, userId: me,
+      kind: "taskAdd", payload: { kind: "taskAdd", lane }, createdAt: new Date(),
+    });
+    await captureTaskCreated(tx, { actorUserId: me, projectId: ws });
+    return true;
+  }, { behavior: "immediate" });
+  if (!created) return neutralTaskList(ambient);
   revalidatePath("/app", "layout");
   emitTasksChanged({ kind: "tasks" });
   return getTasks(ws);

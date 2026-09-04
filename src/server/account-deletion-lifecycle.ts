@@ -6,10 +6,11 @@ import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { db } from "@/server/db";
 import { meta } from "@/server/db/schema";
 import * as schema from "@/server/db/schema";
+import { queueUsageErasure } from "@/server/sponsored-use/erasure";
 
 type AccountDeletionDb = LibSQLDatabase<typeof schema>;
 type AccountDeletionReader = Pick<AccountDeletionDb, "select">;
-type AccountDeletionWriter = Pick<AccountDeletionDb, "insert">;
+type AccountDeletionWriter = Pick<AccountDeletionDb, "select" | "insert" | "update" | "delete">;
 
 const ACCOUNT_DELETION_TOMBSTONE_PREFIX =
   "account-deletion:tombstone:sha256:v1:";
@@ -69,6 +70,9 @@ export async function beginAccountDeletionWith(
         updatedAt: sql`(unixepoch())`,
       },
     });
+  // Fence first: concurrent task transactions cannot add new usage after this
+  // point. Failure retains the fence and prevents the caller starting erasure.
+  await queueUsageErasure(database, clerkId);
 }
 
 /** Production entry point used by both in-app and Clerk-driven deletion. */
