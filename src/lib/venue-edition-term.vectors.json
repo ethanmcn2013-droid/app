@@ -1,0 +1,106 @@
+{
+  "$comment": "Golden vectors for the Venue Edition couple access term (R-015, D-010, D-022). DUPLICATED VERBATIM in app/src/lib/venue-edition-term.vectors.json. Each repo runs its own implementation against this file, and scripts/check-venue-term-parity.mjs fails when the two copies diverge. Change one, change both.",
+  "version": "venue-edition-term.v1",
+  "constants": {
+    "coupleAccessMonths": 18,
+    "coupleAccessDays": 548,
+    "weddingGraceDays": 90
+  },
+  "normalise": [
+    { "input": "2028-09-16", "expectedIso": "2028-09-16" },
+    { "input": "2027-01-01", "expectedIso": "2027-01-01" },
+    { "input": "2028-02-29", "expectedIso": "2028-02-29" },
+    { "input": "2028-02-31", "expectedIso": null },
+    { "input": "2028-13-01", "expectedIso": null },
+    { "input": "2028-9-16", "expectedIso": null },
+    { "input": "16/09/2028", "expectedIso": null },
+    { "input": "", "expectedIso": null },
+    { "input": "next summer", "expectedIso": null }
+  ],
+  "expiry": [
+    {
+      "name": "R-015: long-lead booking survives past the wedding",
+      "redeemedAt": "2027-03-01T10:00:00.000Z",
+      "weddingDate": "2028-09-16",
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2028-12-15T00:00:00.000Z"
+    },
+    {
+      "name": "short-lead booking keeps the 548-day floor",
+      "redeemedAt": "2027-03-01T10:00:00.000Z",
+      "weddingDate": "2027-06-05",
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2028-08-30T10:00:00.000Z"
+    },
+    {
+      "name": "no wedding date falls back to the floor",
+      "redeemedAt": "2027-03-01T10:00:00.000Z",
+      "weddingDate": null,
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2028-08-30T10:00:00.000Z"
+    },
+    {
+      "name": "no upper cap: a three-year lead gets three years",
+      "redeemedAt": "2027-01-04T09:00:00.000Z",
+      "weddingDate": "2030-05-18",
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2030-08-16T00:00:00.000Z"
+    },
+    {
+      "name": "a longer minted duration raises the floor",
+      "redeemedAt": "2027-03-01T10:00:00.000Z",
+      "weddingDate": null,
+      "mintedDurationDays": 1200,
+      "expectedExpiry": "2030-06-13T10:00:00.000Z"
+    },
+    {
+      "name": "an unparseable date never shortens the term",
+      "redeemedAt": "2027-03-01T10:00:00.000Z",
+      "weddingDate": "16/09/2028",
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2028-08-30T10:00:00.000Z"
+    }
+  ],
+  "extend": [
+    {
+      "name": "postponement extends",
+      "currentExpiry": "2028-08-18T00:00:00.000Z",
+      "redeemedAt": "2027-03-01T10:00:00.000Z",
+      "weddingDate": "2029-05-19",
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2029-08-17T00:00:00.000Z"
+    },
+    {
+      "name": "bringing the date forward never shortens",
+      "currentExpiry": "2030-08-16T00:00:00.000Z",
+      "redeemedAt": "2027-01-04T09:00:00.000Z",
+      "weddingDate": "2028-05-18",
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2030-08-16T00:00:00.000Z"
+    },
+    {
+      "name": "clearing the date never shortens",
+      "currentExpiry": "2030-08-16T00:00:00.000Z",
+      "redeemedAt": "2027-01-04T09:00:00.000Z",
+      "weddingDate": null,
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2030-08-16T00:00:00.000Z"
+    },
+    {
+      "name": "a row with no expiry is never given one",
+      "currentExpiry": null,
+      "redeemedAt": "2027-01-04T09:00:00.000Z",
+      "weddingDate": "2030-05-18",
+      "mintedDurationDays": 548,
+      "expectedExpiry": null
+    },
+    {
+      "name": "recompute is idempotent",
+      "currentExpiry": "2028-12-15T00:00:00.000Z",
+      "redeemedAt": "2027-03-01T10:00:00.000Z",
+      "weddingDate": "2028-09-16",
+      "mintedDurationDays": 548,
+      "expectedExpiry": "2028-12-15T00:00:00.000Z"
+    }
+  ]
+}

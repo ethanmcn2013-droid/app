@@ -59,6 +59,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ethanmcn2013-droid/studio
+          ref: ${{ (github.base_ref == 'release/january-2027' || github.ref_name == 'release/january-2027') && 'release/january-2027' || 'main' }}
           path: studio-parity
 
       - name: Test (includes calendar, Signal, Timeline, and suite truth gates)
