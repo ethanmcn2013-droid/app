@@ -5,13 +5,13 @@ import { authorizeProjectCandidate } from "@/server/actions/project-authz";
 import {
   MissingStripePriceError,
   priceIdFor,
-  stripe,
+  stripe as configuredStripe,
   type BillingInterval,
   type PaidTier,
 } from "@/server/stripe";
 import { isDemoMode } from "@/lib/access-mode";
 import { checkoutModeFor, isPaidTier } from "@/server/checkout-policy";
-import { billingCustomerForUser } from "@/server/stripe-access";
+import { billingCustomerForUser, withBillingAccount } from "@/server/stripe-access";
 
 const FALLBACK_BASE = "http://localhost:3001";
 
@@ -36,6 +36,7 @@ export async function createCheckoutSessionAction(
   tier: PaidTier,
   interval: BillingInterval = "monthly",
 ): Promise<{ url: string }> {
+  const stripe = configuredStripe;
   if (!isPaidTier(tier) || (interval !== "monthly" && interval !== "annual")) {
     throw new Error("That checkout option isn’t available.");
   }
@@ -81,26 +82,28 @@ export async function createCheckoutSessionAction(
   // in the webhook. Keeps the type contract honest.
   const metadataWorkspaceId = scopedWorkspaceId ?? "*";
 
-  const customer = await billingCustomerForUser(me);
-  const session = await stripe.checkout.sessions.create({
-    ...(customer ? { customer } : checkoutModeFor(tier) === "payment" ? { customer_creation: "always" as const } : {}),
-    mode: checkoutModeFor(tier),
-    integration_identifier: "signal-january-qvhtmrcs",
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${siteUrl()}/app/tasks?upgrade=ok&session={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${siteUrl()}/pricing?upgrade=cancel`,
-    client_reference_id: `${me}::${metadataWorkspaceId}`,
-    metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
-    subscription_data:
-      checkoutModeFor(tier) === "payment"
-        ? undefined
-        : {
-            metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
-          },
-  });
+  return withBillingAccount(me, async () => {
+    const customer = await billingCustomerForUser(me);
+    const session = await stripe.checkout.sessions.create({
+      ...(customer ? { customer } : checkoutModeFor(tier) === "payment" ? { customer_creation: "always" as const } : {}),
+      mode: checkoutModeFor(tier),
+      integration_identifier: "signal-january-qvhtmrcs",
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${siteUrl()}/app/tasks?upgrade=ok&session={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl()}/pricing?upgrade=cancel`,
+      client_reference_id: `${me}::${metadataWorkspaceId}`,
+      metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
+      subscription_data:
+        checkoutModeFor(tier) === "payment"
+          ? undefined
+          : {
+              metadata: { userId: me, workspaceId: metadataWorkspaceId, tier },
+            },
+    });
 
-  if (!session.url) {
-    throw new Error("Stripe returned a session without a URL");
-  }
-  return { url: session.url };
+    if (!session.url) {
+      throw new Error("Stripe returned a session without a URL");
+    }
+    return { url: session.url };
+  });
 }
