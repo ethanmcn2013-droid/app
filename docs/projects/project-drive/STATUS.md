@@ -10,6 +10,10 @@ A built local demo at 50f16575 plus scoped copy changes subsequently committed i
 
 Independent scoped security review of immutable 50f16575 found no validated new Drive UI finding: 38 existing UI tests and 12 additional action-boundary tests passed. Existing backend code was traced only as needed; this is not a fresh exhaustive backend audit or live-provider acceptance.
 
+Latest subsequent complete Linux checkpoint: ac9321a2144619d2e5c0cc9c439576e168aae51d, runs 33919434669 (experience), 33919434671 (Verify) and 33919434672 (CI), all passed. Bounded production dependency remediation has zero candidate audit findings; shared runtime measured 246.1 KB against the unchanged 247 KB ceiling. Later 3caf6356 recovery was integrated at f5bc6f25: 81 scoped UI/recovery checks and 39 independent action/service/security checks pass. Recovery can adopt a provider-verified completed upload after reopening the tab; it cannot resume bytes lost with an incomplete closed-tab upload. No new mint, provider file deletion or caller-supplied provider authority is introduced. See UPLOAD-RECOVERY.md and ../../execution/january-2027/DRIVE-RECOVERY-SECURITY-REVIEW.md.
+
+The populated isolated App backup/restore rehearsal at 3d8a36e1 passed all 29 current App tables/51 synthetic rows, content/DDL/ledger/integrity/FK checks, cross-project rejection and separately supplied fixture-key decryption. It does not prove live snapshot consistency, real provider recovery or complete other-product schemas. The 64-case migration contract preserves original SQL/checksums and initial backfill proofs. Receiving gates remain necessary for subsequent commits.
+
 ## Current work packages
 
 | WP | Package | State and next acceptance |
@@ -20,7 +24,7 @@ Independent scoped security review of immutable 50f16575 found no validated new 
 | 3 | Schema | 0028/0029 rehearsed against disposable local DBs, including no-op rerun/integrity/FKs. Production remains unapplied and gated. |
 | 4 | Connection | Backend plus default-off Connections UI implemented. Actual OAuth/reauth/disconnect lifecycle and final UI acceptance open. |
 | 5 | Folder and sharing | Backend, live-permission DTO, exact-email display, owner choices and same-journal handover continuation implemented. Real two-account grant/revoke/handover and failure recovery open. |
-| 6 | Upload | Resources wired to same-claim resumable browser bytes and verified finalize. Mounted retry and definitive pre-delegation native fallback tested. Closed-tab pending discovery blocks new intake; safe ordinary probe/adoption and reselected-byte recovery remain incomplete. Live 50 MB/interruption/quota tests open. |
+| 6 | Upload | Resources wired to same-claim resumable browser bytes and verified finalize. Mounted retry and definitive pre-delegation native fallback tested. Closed-tab pending discovery blocks new intake; safe non-minting probe/adoption of completed files is implemented in 3caf6356. Reselected-byte recovery for incomplete closed-tab uploads remains incomplete. Live 50 MB/interruption/quota tests open. |
 | 7 | Surfaces | 5cb93f68 and cd0df47e implemented A Custodian under delegated authority. 450dda44 clarifies copy. No specific founder selection or seven-seat lock is claimed. Full responsive/accessibility/state quality acceptance open. |
 | 8 | Resilience/release | Backend candidate passes Linux checkpoint; metadata/native custody, deletion and repair stages are tested. Four workers are independently default off. Final combined checks, feature-disable recovery, operator/provider rehearsal and release evidence remain open. |
 
