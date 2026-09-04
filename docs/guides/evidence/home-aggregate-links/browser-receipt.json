@@ -1,0 +1,25 @@
+{
+  "desktop": {
+    "width": 1440,
+    "height": 1000,
+    "activation": "keyboard Enter",
+    "destination": "http://127.0.0.1:4403/app/home/briefing?contextVersion=2&workspaceId=project-b"
+  },
+  "mobile": {
+    "width": 390,
+    "height": 844,
+    "activation": "pointer click",
+    "destination": "http://127.0.0.1:4403/app/home/briefing?contextVersion=2&workspaceId=project-b",
+    "geometry": {
+      "body": 390,
+      "viewport": 390
+    }
+  },
+  "console": [],
+  "limitations": [
+    "Synthetic authorised scope and fixture data",
+    "Analytics and framework link boundary replaced",
+    "Destination receipt only; authenticated route separately tested",
+    "No full suite shell or provider validation"
+  ]
+}

@@ -4,6 +4,11 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-05 · January candidate · Home opens the right briefing
+
+An observation about several tasks now opens the full briefing for the same project or planning period. Individual tasks still open their own detail. The aggregate action says “Read”, and the source names the scope it describes.
+
+Internal candidate. Seven focused checks and scoped desktop/mobile rendering pass; full suite and authenticated browser acceptance remain open. Evidence: `docs/guides/evidence/home-aggregate-links/README.md`.
 ## 2026-09-04 · January candidate · billing follows payment evidence
 
 Event checkout uses a one-time payment and a twelve-month access term. Missing
@@ -7168,3 +7173,4 @@ was unfulfilled.
 **Backlog** — see `docs/cycles/backlog.md` for deferred items
 (TaskCard/MorphCard reunification, dead-code purge, useMemo on
 transitions, stable ref callback).
+
