@@ -1,5 +1,5 @@
 import "server-only";
-import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
+import { getPersonalFeatureTier, type EntitlementReadDependencies } from "@/server/db/entitlements";
 import { tierAtLeast } from "@/lib/entitlements-shared/tiers";
 import type { EntitlementTier } from "@/lib/entitlements-shared/schema";
 
@@ -8,9 +8,10 @@ import type { EntitlementTier } from "@/lib/entitlements-shared/schema";
  *
  * Notes ships no Pro-worthy gate at v1, the deliberate
  * three-second-capture promise applies equally to every user. This
- * module is a deliberate forward-compat anchor: when a Pro feature
- * lands (email-to-capture in N-1, FTS5 in N-2, >500-note caps later)
- * the gate calls go here and inherit canonical tier semantics.
+ * Personal Pro gates go through the canonical App reader so a local purchase
+ * revocation takes effect even while its shared mirror is pending. Preserve
+ * the existing personal benefit of a valid Pro grant without using it as
+ * authority for any other project's storage, membership or content.
  *
  * Call sites: capture-by-email allocation + slug rotation
  * (server/actions/capture-email.ts) and inbound delivery
@@ -20,9 +21,9 @@ import type { EntitlementTier } from "@/lib/entitlements-shared/schema";
  */
 export async function getNotesTier(
   userClerkId: string,
+  dependencies?: EntitlementReadDependencies,
 ): Promise<EntitlementTier> {
-  const resolved = await resolveEntitlement(userClerkId);
-  return resolved.tier;
+  return getPersonalFeatureTier(userClerkId, dependencies);
 }
 
 /**
@@ -30,7 +31,7 @@ export async function getNotesTier(
  * call this, not resolveEntitlement directly, so the gate axis
  * stays unified across surfaces.
  */
-export async function notesProEnabled(userClerkId: string): Promise<boolean> {
-  const tier = await getNotesTier(userClerkId);
+export async function notesProEnabled(userClerkId: string, dependencies?: EntitlementReadDependencies): Promise<boolean> {
+  const tier = await getNotesTier(userClerkId, dependencies);
   return tierAtLeast(tier, "workspace");
 }

@@ -25,7 +25,7 @@ import { isValidSlug, slugify } from "@/modules/timeline/lib/reserved-slugs";
 import { planMilestoneReconciliation } from "@/modules/timeline/lib/milestone-reconciliation";
 import { checkRateLimit, getClientIp, type RateLimitResult } from "@/modules/timeline/lib/rate-limit";
 import { getSyncedTemplateRoadmap } from "@/modules/timeline/lib/templates.generated";
-import { resolveEntitlement } from "@/lib/entitlements-shared/reads";
+import { getPersonalFeatureTier } from "@/server/db/entitlements";
 import { tierAtLeast } from "@/lib/entitlements-shared/tiers";
 import { isDemoMode } from "@/lib/access-mode";
 import { demoEffectiveNodes } from "@/modules/timeline/lib/roadmap/demo-data";
@@ -141,10 +141,10 @@ export async function createWorkspaceAction(
     return { error: "That slug is already taken. Try another." };
   }
 
-  // Workspace-count cap. Read the canonical tier from
-  // signal-entitlements; only Workspace+ bypasses. Event and Wedding
-  // are one-workspace-by-design (matches /pricing).
-  const { tier } = await resolveEntitlement(userId);
+  // January Pro retains an unlimited workspace count. This personal allowance
+  // checks local revocations too; it does not grant another project's features.
+  // Event and Wedding retain the existing one-workspace creation cap.
+  const tier = await getPersonalFeatureTier(userId);
   if (!tierAtLeast(tier, "workspace")) {
     const owned = await getWorkspacesForUser(userId);
     if (owned.length >= FREE_WORKSPACE_CAP) {
