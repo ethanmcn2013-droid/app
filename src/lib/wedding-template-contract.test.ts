@@ -1,11 +1,23 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { type TestContext } from "node:test";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { getTemplate } from "./templates";
+import { SYNCED_TEMPLATES } from "./templates.generated";
 import { resolveTemplateDueAt, templateMilestoneCount } from "./template-anchor";
 import {
   WEDDING_TIMELINE_POINTS,
   missingWeddingTimelinePoints,
 } from "./wedding-template-timeline";
+import {
+  findStudioCheckout,
+  loadCanonicalTemplates,
+  renderTemplateArtifacts,
+  syncTemplateArtifacts,
+  type StudioTemplate,
+} from "../../scripts/sync-templates";
 
 /**
  * Contract and audit pins for the template every sponsored couple receives.
@@ -219,4 +231,126 @@ test("audit pin (E05.03): the template opens with 18 tasks, two already done", (
       "Ceremony room layout agreed with venue",
     ],
   );
+});
+
+// Synthetic roadmap data exercises generation without requiring a Studio clone
+// in App CI. Canonical parity is separately checked by sync:templates --check.
+function generationFixture(): StudioTemplate[] {
+  return structuredClone(SYNCED_TEMPLATES).map((template) => ({
+    ...template,
+    roadmap: {
+      projects: [{ slug: "plan", name: "Plan", oneLiner: "Test plan" }],
+      items: [{ projectSlug: "plan", title: "Test point", description: "Fixture", status: "next", anchorOffsetDays: 0 }],
+    },
+  }));
+}
+
+function scratch(t: TestContext): string {
+  const parent = resolve(tmpdir());
+  const root = mkdtempSync(join(parent, "signal-template-test-"));
+  t.after(() => {
+    if (dirname(root) === parent) rmSync(root, { recursive: true, force: true });
+  });
+  return root;
+}
+
+test("template generation is deterministic and preserves optional milestone fields without mutating source", () => {
+  const templates = generationFixture();
+  templates[0].tasks[0].milestone = true;
+  templates[0].tasks[0].dueOffsetDays = 0;
+  const before = structuredClone(templates);
+  const first = renderTemplateArtifacts(templates);
+  assert.deepEqual(renderTemplateArtifacts(templates), first);
+  assert.deepEqual(templates, before);
+  assert.match(first["src/lib/templates.generated.ts"], /"milestone": true/);
+  assert.match(first["src/lib/templates.generated.ts"], /"dueOffsetDays": 0/);
+  assert.match(first["src/modules/timeline/lib/templates.generated.ts"], /"anchorOffsetDays": 0/);
+  assert.ok(Object.values(first).every((body) => !body.includes("\r")));
+});
+
+test("generation writes both slices once; reruns and checks preserve bytes and modification times", (t) => {
+  const root = scratch(t);
+  const templates = generationFixture();
+  const changed = syncTemplateArtifacts(root, templates);
+  assert.deepEqual(changed, ["src/lib/templates.generated.ts", "src/modules/timeline/lib/templates.generated.ts"]);
+  const before = changed.map((path) => ({ bytes: readFileSync(join(root, path)), mtime: statSync(join(root, path)).mtimeMs }));
+  assert.deepEqual(syncTemplateArtifacts(root, templates), []);
+  assert.deepEqual(syncTemplateArtifacts(root, templates, true), []);
+  assert.deepEqual(changed.map((path) => ({ bytes: readFileSync(join(root, path)), mtime: statSync(join(root, path)).mtimeMs })), before);
+  // A Windows checkout is equivalent, without a rewrite solely for CRLF.
+  for (const path of changed) writeFileSync(join(root, path), readFileSync(join(root, path), "utf8").replace(/\n/g, "\r\n"));
+  assert.deepEqual(syncTemplateArtifacts(root, templates), []);
+});
+
+test("check detects drift in either slice and never repairs or creates outputs", (t) => {
+  const templates = generationFixture();
+  for (const stale of Object.keys(renderTemplateArtifacts(templates))) {
+    const root = scratch(t);
+    syncTemplateArtifacts(root, templates);
+    writeFileSync(join(root, stale), "stale\n");
+    const paths = Object.keys(renderTemplateArtifacts(templates));
+    const before = paths.map((path) => readFileSync(join(root, path)));
+    assert.throws(() => syncTemplateArtifacts(root, templates, true), (error: Error) => error.message.includes(stale));
+    assert.deepEqual(paths.map((path) => readFileSync(join(root, path))), before);
+  }
+  const empty = scratch(t);
+  assert.throws(() => syncTemplateArtifacts(empty, templates, true), /stale/);
+  assert.equal(existsSync(join(empty, "src")), false);
+});
+
+test("ambiguous or disconnected canonical records fail before any output changes", (t) => {
+  const root = scratch(t);
+  const templates = generationFixture();
+  const paths = syncTemplateArtifacts(root, templates);
+  const before = paths.map((path) => readFileSync(join(root, path)));
+  const duplicate = structuredClone(templates);
+  duplicate.push(structuredClone(duplicate[0]));
+  assert.throws(() => syncTemplateArtifacts(root, duplicate), /Duplicate or missing template id/);
+  const orphan = structuredClone(templates);
+  orphan[0].roadmap.items[0].projectSlug = "absent";
+  assert.throws(() => syncTemplateArtifacts(root, orphan), /unknown project absent/);
+  const duplicateProject = structuredClone(templates);
+  duplicateProject[0].roadmap.projects.push(duplicateProject[0].roadmap.projects[0]);
+  assert.throws(() => syncTemplateArtifacts(root, duplicateProject), /duplicate or missing project slug/);
+  const fractional = structuredClone(templates);
+  fractional[0].roadmap.items[0].anchorOffsetDays = 0.5;
+  assert.throws(() => syncTemplateArtifacts(root, fractional), /invalid anchor offset/);
+  assert.throws(() => syncTemplateArtifacts(root, []), /nonempty array/);
+  assert.deepEqual(paths.map((path) => readFileSync(join(root, path))), before);
+});
+
+test("source loading reads the exact Git revision even after Studio removes or edits the directory", async (t) => {
+  const root = scratch(t);
+  const git = (...args: string[]) => execFileSync("git", ["-C", root, ...args], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  git("init", "--quiet");
+  git("remote", "add", "origin", "https://github.com/ethanmcn2013-droid/studio.git");
+  const source = join(root, "src/lib/templates/index.ts");
+  mkdirSync(dirname(source), { recursive: true });
+  const templates = generationFixture();
+  writeFileSync(source, `export const WORKSPACE_TEMPLATES = ${JSON.stringify(templates)};\n`);
+  git("add", "src/lib/templates/index.ts");
+  git("-c", "user.name=Template test", "-c", "user.email=template@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=disabled-test-hooks", "commit", "--quiet", "-m", "Synthetic canonical template fixture");
+  const sourceRef = git("rev-parse", "HEAD");
+  writeFileSync(source, "throw new Error('Do not import working-tree drift');\n");
+  assert.deepEqual(await loadCanonicalTemplates(root, sourceRef), templates);
+  git("rm", "-f", "src/lib/templates/index.ts");
+  git("-c", "user.name=Template test", "-c", "user.email=template@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=disabled-test-hooks", "commit", "--quiet", "-m", "Remove synthetic source");
+  assert.deepEqual(await loadCanonicalTemplates(root, sourceRef), templates);
+  await assert.rejects(loadCanonicalTemplates(root, git("rev-parse", "HEAD")), /Canonical templates missing/);
+  await assert.rejects(loadCanonicalTemplates(root, "HEAD"), /exact Git commit/);
+  git("remote", "set-url", "origin", "https://github.com/example/unrelated.git");
+  await assert.rejects(loadCanonicalTemplates(root, sourceRef), /Signal Studio repository/);
+});
+
+test("source discovery uses the owning App clone even for deeply nested task worktrees", (t) => {
+  const root = scratch(t);
+  const app = join(root, "app");
+  mkdirSync(app);
+  const git = (...args: string[]) => execFileSync("git", ["-C", app, ...args], { stdio: "pipe" });
+  git("init", "--quiet");
+  git("-c", "user.name=Template test", "-c", "user.email=template@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=disabled-test-hooks", "commit", "--quiet", "--allow-empty", "-m", "Synthetic App fixture");
+  const taskPath = join(root, "worktrees/app/template-test");
+  git("-c", "core.hooksPath=disabled-test-hooks", "worktree", "add", "--detach", taskPath, "HEAD");
+  assert.equal(findStudioCheckout(app), join(root, "studio"));
+  assert.equal(findStudioCheckout(taskPath), join(root, "studio"));
 });
