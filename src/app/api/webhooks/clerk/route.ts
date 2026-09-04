@@ -10,23 +10,11 @@ import {
   beginAccountDeletion,
   hasAccountDeletionStartedWith,
 } from "@/server/account-deletion-lifecycle";
-import { grantEntitlement } from "@/server/billing-entitlements";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 
-/**
- * .edu Pro grant, when the user's primary email ends in `.edu`,
- * we auto-grant Pro for one academic semester (~120 days). The
- * entitlement is user-level (workspaceId = NULL) so the Phase 4
- * layered-resolution path picks it up across every workspace the
- * student creates without per-workspace bookkeeping.
- *
- * Why 120 days: long enough to cover a single semester (~16 weeks)
- * plus a buffer for the post-semester wrap-up. Shorter than a year
- * so the student renews intentionally, and bumps into the manifesto
- * pricing rather than the silent auto-charge.
- */
-const EDU_PRO_DAYS = 120;
+// Student Edition requires the canonical paid offer and verified eligibility.
+// A domain suffix is not evidence; historical grants retain their original terms.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -238,10 +226,6 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
 
   if (!provisioned) return;
 
-  // .edu Pro grant. Runs OUTSIDE the transaction, the workspace
-  // exists by this point, and a failure here shouldn't roll back
-  // the user creation. Worst case: the entitlement is missed, the
-  // student lands on Free, and they redeem manually later.
   const emailDomain = email?.split("@")[1]?.toLowerCase() ?? null;
   await trackOnboardingEventServer(userId, "signup_completed", {
     email_domain: emailDomain ?? undefined,
@@ -249,22 +233,6 @@ async function handleUserCreated(u: ClerkUser): Promise<void> {
     primary_use_case: emailDomain && isEduEmail(email!) ? "student" : undefined,
   });
 
-  if (email && isEduEmail(email)) {
-    try {
-      await grantEntitlement({
-        userId,
-        workspaceId: null,
-        tier: "workspace",
-        source: "edu",
-        durationDays: EDU_PRO_DAYS,
-        notes: `edu:${email.toLowerCase()}`,
-      });
-    } catch (err) {
-      // Log + continue. The user is already created; the entitlement
-      // is recoverable via /redeem with a manual support touch.
-      console.warn("[clerk webhook] .edu grant failed", err);
-    }
-  }
 }
 
 /** True when the email's TLD-equivalent suffix is `.edu`. Strips

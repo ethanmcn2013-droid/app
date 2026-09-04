@@ -336,7 +336,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           Got a code?
         </div>
         <p className="mt-1 max-w-[520px] text-[12.5px] leading-[1.55] text-ink-soft">
-          Student .edu codes, comped seats, the occasional gift. Drop it in.
+          Redeem an access code you received from Signal Studio or your venue.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
           <input

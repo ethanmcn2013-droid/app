@@ -34,11 +34,16 @@ test("billing actions cannot grant or expire paid access directly", () => {
   assert.doesNotMatch(internal, /["']use server["']/);
 });
 
-test("settlement, delayed success and the Event term gate webhook fulfilment", () => {
+test("webhook dispatch and billing identity stay behind verified boundaries", () => {
   const webhook = readFileSync(new URL("../app/api/webhooks/stripe/route.ts", import.meta.url), "utf8");
-  assert.match(webhook, /case "checkout.session.async_payment_succeeded"/);
-  assert.ok(webhook.indexOf('s.payment_status !== "paid"') < webhook.indexOf("await grantEntitlement"));
-  assert.match(webhook, /eventAccessExpiresAt\(new Date\(event.created \* 1000\)\)/);
-  assert.match(webhook, /from "@\/server\/billing-entitlements"/);
+  const lifecycle = readFileSync(new URL("./stripe-lifecycle.ts", import.meta.url), "utf8");
+  const portal = readFileSync(new URL("./actions/plan.ts", import.meta.url), "utf8");
+  const clerk = readFileSync(new URL("../app/api/webhooks/clerk/route.ts", import.meta.url), "utf8");
   assert.ok(webhook.indexOf("isDemoMode()") < webhook.indexOf("stripe.webhooks.constructEvent"));
+  assert.ok(webhook.indexOf("stripe.webhooks.constructEvent") < webhook.indexOf("await handleStripeLifecycle"));
+  assert.match(lifecycle, /case "invoice.paid"/);
+  assert.match(lifecycle, /case "charge.refunded"/);
+  assert.match(portal, /billingCustomerForUser\(userId\)/);
+  assert.doesNotMatch(portal, /customers\.list|emailAddress/);
+  assert.doesNotMatch(clerk, /grantEntitlement|EDU_PRO_DAYS/);
 });

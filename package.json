@@ -69,7 +69,7 @@
     "signal:db:generate": "drizzle-kit generate --config drizzle.signal.config.ts",
     "test:invite-arrival": "node --import tsx --test src/server/invite-arrival.test.ts src/lib/auth/invite-intent.test.ts",
     "test:project-drive-ui": "node scripts/test-project-drive-ui.mjs",
-    "test:billing": "node --import tsx --import ./src/test/register-server-only.mjs --test src/server/checkout-policy.test.ts src/server/billing-entitlements.test.ts"
+    "test:billing": "node --import tsx --import ./src/test/register-server-only.mjs --test src/server/checkout-policy.test.ts src/server/billing-entitlements.test.ts src/server/stripe-lifecycle.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.75",
