@@ -106,6 +106,9 @@ jobs:
       - name: Capture critical rendered evidence
         run: pnpm experience:test
 
+      - name: Verify settings hydration across locales
+        run: pnpm test:settings-hydration
+
       - name: Verify Timeline project switching
         run: pnpm experience:test:timeline-switcher
 

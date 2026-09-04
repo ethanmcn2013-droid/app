@@ -65,7 +65,7 @@ test("client error capture starts immediately but loads the scrubber only before
   assert.equal(options.tracesSampleRate, 0.1);
   assert.equal(options.sendDefaultPii, false);
   const beforeSend = options.beforeSend as BeforeSend;
-  const event = { message: "token=synthetic-secret", extra: { safe: "keep" } } as ErrorEvent;
+  const event: ErrorEvent = { type: undefined, message: "token=synthetic-secret", extra: { safe: "keep" } };
   const pending = beforeSend(event, {} as EventHint);
   assert.deepEqual(result.loaded, [], "sending must await the deferred scrubber");
   assert.deepEqual(await pending, scrubEvent(event, {} as EventHint));
@@ -76,7 +76,7 @@ test("client error capture starts immediately but loads the scrubber only before
 test("an unavailable scrubber drops the event without an unhandled rejection or unsafe send", async () => {
   const result = runClientEntry({ dsn: "synthetic", failImport: true });
   const beforeSend = result.initialized[0].beforeSend as BeforeSend;
-  assert.equal(await beforeSend({ message: "token=must-not-send" } as ErrorEvent, {} as EventHint), null);
+  assert.equal(await beforeSend({ type: undefined, message: "token=must-not-send" }, {} as EventHint), null);
 });
 
 test("bearer routes and OAuth query values are redacted", () => {
