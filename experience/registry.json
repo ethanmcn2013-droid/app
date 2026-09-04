@@ -683,7 +683,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "304646b7eb51fa55"
+      "materialityHash": "be59ad3c4caf2218"
     },
     {
       "id": "tasks.page.p-by-slug",
@@ -1348,7 +1348,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "bcef1d2f0a1926e6"
+      "materialityHash": "09fd1082f9dc2621"
     },
     {
       "id": "tasks.page.sign-up-by-sign-up",
@@ -1393,7 +1393,7 @@
       "lastReviewedAt": "2026-07-26",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "ec6806da27043be0"
+      "materialityHash": "3d52f37b549d99ea"
     },
     {
       "id": "tasks.page.waitlist",

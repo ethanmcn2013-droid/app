@@ -1,0 +1,44 @@
+January invitation review — 2026-09-04
+Base ae6d14b94ce748808adb882ed1a524fb7ebc2ecd
+Product source commit 8f5d676b
+
+PASS pnpm install --frozen-lockfile; pinned dependencies, no lockfile changes.
+PASS pnpm test:invite-arrival: 25 tests, zero failures.
+PASS node scripts/check-tap-target-scale.mjs: zero outstanding entries.
+PASS node scripts/experience/review-materiality.mjs --self-test.
+PASS node scripts/experience/critical-fixtures.mjs --self-test.
+PASS official critical-fixture --write via the scoped source-mirror adapter.
+PASS node scripts/experience/critical-fixtures.mjs after final registry refresh.
+PASS node scripts/experience/validate.mjs: 81 experiences valid.
+PASS focused ESLint: invitation page and tap-target-scale script.
+PASS final pnpm typecheck, exit 0 (session 7900), after generated-file repair
+  and moving disposable review source mirrors outside TypeScript discovery.
+
+Final product source changes: both min-h-11 classes become min-h-[44px];
+the obsolete outstanding ledger entry is removed, without raising its budget.
+Final registry changes: only materialityHash for these IDs:
+  tasks.page.invite-by-token              be59ad3c4caf2218
+  tasks.page.sign-in-by-sign-in           09fd1082f9dc2621
+  tasks.page.sign-up-by-sign-up           3d52f37b549d99ea
+Other entries, dates, coverage, audit fields and baseline references unchanged.
+The official mapped-fixture tool pins registry dates to its manifest; actual
+review date is in registry-refresh.json and README.md.
+
+RENDERED: 12 desktop/mobile state captures plus 4 focus captures.
+Observed 44px disabled Accept and wrong-account switch controls at both sizes.
+Keyboard/focus observations saved for all six states at desktop and mobile.
+Accepted invitation Enter navigation retained the invitation return URL.
+Wrong-account actual main was rendered with synthetic import boundaries and
+the demo shell; no real Clerk event was executed. See README.md for limits.
+
+NOT A CLEAN-RUNTIME PASS: Chrome injected stndz ad-block CSS, producing an
+explained React hydration warning and a development issue badge. Details and
+console output retained. No full overlay blocked the reviewed pages.
+OPEN: existing mobile header overlap, small text recovery links, real Clerk,
+human comprehension, tablet/wide, full accessibility, baseline and council.
+NOT RUN: full build/performance build, full browser suite, screenshot updates,
+provider rehearsal. Confucius retained the heavy-build lane.
+
+No backend, billing, Drive, shared layout, fixture manifest or dependency edits.
+No credentials, production database/provider action, sending or deployment.
+No push or merge. Studio worktree left untouched. Preview servers stopped.

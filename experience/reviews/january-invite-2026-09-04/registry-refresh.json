@@ -1,0 +1,38 @@
+{
+  "reviewedAt": "2026-09-04",
+  "reviewer": "Commercial/review agent under accepted January delegated design authority",
+  "officialTool": "scripts/experience/critical-fixtures.mjs",
+  "officialToolSha256": "54c42d036f3e103ebcbba0db291814bb96e282ea92d6b3a4c154fb728db682d3",
+  "method": "Unchanged official --write in a disposable mirror; apply only the three authorized outputs. The real fixture manifest and all other registry entries are unchanged. Registry dates remain pinned to the official fixture manifest; this receipt records the actual review date.",
+  "output": "experience:critical-fixtures: clean - 37/37 critical experiences mapped, 28 rendered, 9 source-contract, 33 deterministic cases x 4 breakpoints",
+  "changedIds": [
+    "tasks.page.invite-by-token",
+    "tasks.page.sign-in-by-sign-in",
+    "tasks.page.sign-up-by-sign-up"
+  ],
+  "entries": [
+    {
+      "id": "tasks.page.invite-by-token",
+      "source": "tasks/src/app/invite/[token]/page.tsx",
+      "materialityHash": "be59ad3c4caf2218",
+      "lastReviewedAt": "2026-07-26"
+    },
+    {
+      "id": "tasks.page.sign-in-by-sign-in",
+      "source": "tasks/src/app/sign-in/[[...sign-in]]/page.tsx",
+      "materialityHash": "09fd1082f9dc2621",
+      "lastReviewedAt": "2026-07-26"
+    },
+    {
+      "id": "tasks.page.sign-up-by-sign-up",
+      "source": "tasks/src/app/sign-up/[[...sign-up]]/page.tsx",
+      "materialityHash": "3d52f37b549d99ea",
+      "lastReviewedAt": "2026-07-26"
+    }
+  ],
+  "evidence": "experience/reviews/january-invite-2026-09-04/README.md",
+  "realClerk": "unverified",
+  "humanComprehension": "unverified",
+  "approvedBaseline": false,
+  "councilPass": false
+}
