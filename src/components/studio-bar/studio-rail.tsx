@@ -8,7 +8,7 @@
  *   home     → the Signal Studio umbrella
  *   products → each product's canonical module route within this app,
  *              carrying allowlisted workspace context as navigation hints
- *   more     → the umbrella (all products)
+ *   about    → the public Signal Studio site (external utility)
  *   inbox    → /app/inbox (the daily digest surface)
  *   help     → a compact menu retaining support, workspace/team, and
  *              account-settings access
@@ -180,18 +180,20 @@ export function StudioRail() {
       {/* The only rail tile that leaves the app for the public site — new
           tab, explicit rel, and an accessible name that says so. */}
       <a
-        aria-label="More Signal Studio products (opens in a new tab)"
+        aria-label="About Signal Studio (opens in a new tab)"
         className={styles.railProduct}
-        data-product="more"
-        data-tip="More products · Signal Studio ↗"
+        data-utility="about"
+        data-tip="About Signal Studio ↗"
         href={STUDIO_URL}
         rel="noopener noreferrer"
         target="_blank"
       >
         <span aria-hidden="true" className={styles.railTile}>
-          <RailIcon name="more" size={20} />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 5h5v5M19 5l-9 9M10 5H5v14h14v-5" />
+          </svg>
         </span>
-        <span className={styles.railLabel}>More</span>
+        <span className={styles.railLabel}>About</span>
       </a>
       <span className={styles.railSpacer} />
       <Link aria-label="Inbox" className={styles.railUtility} data-tip="Inbox · daily digest" href="/app/inbox">
