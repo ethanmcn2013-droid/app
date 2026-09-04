@@ -759,7 +759,10 @@ test("acceptInviteAction validates before writing membership row", () => {
 
   assert.ok(emailCheck < memberInsert, "email validation must precede membership write");
   assert.ok(capCheck < memberInsert, "cap check must precede membership write");
-  assert.ok(memberInsert < tokenBurn, "membership write must precede token burn");
+  assert.ok(body.indexOf("db.transaction(") < tokenBurn, "claim and membership must commit atomically");
+  assert.ok(tokenBurn < memberInsert, "claim a still-live invite before granting membership");
+  assert.match(body, /isNull\(pendingInvites\.acceptedAt\)/);
+  assert.match(body, /gt\(pendingInvites\.expiresAt, new Date\(\)\)/);
 });
 
 test("acceptInviteAction writes invite role not hardcoded member", () => {

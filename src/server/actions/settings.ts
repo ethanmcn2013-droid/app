@@ -39,6 +39,10 @@ import { assertProjectNotDeleting } from "@/server/projects/project-deletion-fen
 import { revokeExactDriveFolderGrant } from "@/server/connections/project-drive-erasure-grants";
 import { createProjectDriveMemberRemovalService } from "@/server/connections/project-drive-member-removal";
 import { setProjectDriveMemberRole } from "@/server/connections/project-drive-member-role";
+import { MY_WORK_APP_PATH } from "@/lib/product-urls";
+import { parseProjectId, type ProjectId } from "@/lib/projects/project-ref";
+import { withActiveProject } from "@/lib/projects/project-url";
+import { writeActiveProjectCookie } from "@/server/projects/active-project-cookie";
 
 /**
  * Settings-page mutations — WP3-C, the last file of the mutation-safety wave.
@@ -703,17 +707,19 @@ function mintEventId(): string {
  *  Phase 2 hardening changes:
  *  - G8: validates email against the Clerk VERIFIED primary email
  *    (via clerkCurrentUser()) rather than the lagging users.email mirror.
- *  - Ordering: ALL validation runs BEFORE any membership write or token burn.
+ *  - A live token claim, membership and audit event commit together; failed
+ *    validation or persistence rolls back all three.
  *  - Writes the invite's role (not hardcoded 'member') into workspace_members.
  *  - Records workspace_events {kind:'inviteAccepted', payload:{userId, role}}.
  *
- *  Returns the workspace slug so the page can redirect to
- *  `/app/tasks` with the right active context. */
+ *  Acceptance explicitly selects the joined Project. Returns its canonical
+ *  My work URL; the destination independently authorizes the Project. */
 export async function acceptInviteAction(token: string): Promise<{
   ok: true;
-  workspaceId: string;
+  workspaceId: ProjectId;
   workspaceSlug: string;
   workspaceName: string;
+  redirectTo: string;
 }> {
   // ── 1. Load and validate the invite row ──────────────────────────────────
   const [invite] = await db
@@ -734,7 +740,7 @@ export async function acceptInviteAction(token: string): Promise<{
   if (invite.acceptedAt) {
     throw new Error("This invite has already been accepted.");
   }
-  if (invite.expiresAt < new Date()) {
+  if (invite.expiresAt <= new Date()) {
     throw new Error("This invite has expired. Ask the owner for a fresh one.");
   }
 
@@ -745,11 +751,11 @@ export async function acceptInviteAction(token: string): Promise<{
   if (!clerkUser) {
     throw new Error("You need to be signed in to accept an invite.");
   }
-  const clerkEmail =
-    clerkUser.emailAddresses.find(
-      (e) => e.id === clerkUser.primaryEmailAddressId,
-    )?.emailAddress ?? null;
-  if (!clerkEmail) {
+  const primaryEmail = clerkUser.emailAddresses.find(
+    (e) => e.id === clerkUser.primaryEmailAddressId,
+  );
+  const clerkEmail = primaryEmail?.emailAddress;
+  if (!clerkEmail || primaryEmail?.verification?.status !== "verified") {
     throw new Error(
       "Your account doesn’t have a verified email. Complete email verification and try again.",
     );
@@ -768,16 +774,13 @@ export async function acceptInviteAction(token: string): Promise<{
     );
   }
 
-  // ── 4. Resolve workspace ────────────────────────────────────────────────
-  const [workspace] = await db
-    .select({ slug: workspaces.slug, name: workspaces.name })
-    .from(workspaces)
-    .where(eq(workspaces.id, invite.workspaceId));
-  if (!workspace) {
-    throw new Error("This workspace no longer exists.");
+  const projectId = parseProjectId(invite.workspaceId);
+  if (!projectId) {
+    throw new Error("This project is unavailable.");
   }
+  const redirectTo = withActiveProject(MY_WORK_APP_PATH, projectId);
 
-  // ── 5. All validation passed — now write ─────────────────────────────────
+  // ── 4. Resolve identity, then claim and revalidate inside the transaction ─
   const me = await getCurrentUser();
 
   // Clamp the stored role defensively (belt-and-braces against pre-migration
@@ -788,7 +791,32 @@ export async function acceptInviteAction(token: string): Promise<{
   const acceptedAt = new Date();
   const driveGrantIntent = await db.transaction(
     async (tx) => {
-      await assertProjectNotDeleting(tx, invite.workspaceId);
+      await assertProjectNotDeleting(tx, projectId);
+      const [project] = await tx.select({ slug: workspaces.slug, name: workspaces.name })
+        .from(workspaces)
+        .where(and(eq(workspaces.id, projectId), isNull(workspaces.archivedAt)));
+      if (!project) throw new Error("This project is unavailable or archived.");
+      // Burn exactly the still-live invite validated above. This closes the
+      // double-accept/expiry race while keeping membership, grant intent,
+      // audit event and token consumption atomic.
+      const accepted = await tx
+        .update(pendingInvites)
+        .set({ acceptedAt: acceptedAt, acceptedByUserId: me })
+        .where(
+          and(
+            eq(pendingInvites.token, token),
+            eq(pendingInvites.workspaceId, invite.workspaceId),
+            eq(pendingInvites.email, invite.email),
+            eq(pendingInvites.role, invite.role),
+            isNull(pendingInvites.acceptedAt),
+            gt(pendingInvites.expiresAt, new Date()),
+          ),
+        )
+        .returning({ token: pendingInvites.token });
+      if (!accepted[0]) {
+        throw new Error("This invite is unavailable or has expired. Ask the owner for a fresh one.");
+      }
+
       // Clerk's verified primary address is the authority used for both the
       // membership and its named-user Drive grant. Keep the local mirror in
       // the same transaction so the executor's fresh email recheck cannot see
@@ -805,6 +833,11 @@ export async function acceptInviteAction(token: string): Promise<{
         VALUES (${invite.workspaceId}, ${me}, ${grantedRole})
       `);
 
+      const [membership] = await tx.select({ role: workspaceMembers.role })
+        .from(workspaceMembers)
+        .where(and(eq(workspaceMembers.workspaceId, projectId), eq(workspaceMembers.userId, me)));
+      if (!membership) throw new Error("This project is unavailable.");
+
       // A configured board must never commit a membership without the exact
       // generation/email/role grant intent that will make its coverage true.
       // Provider work happens only after this transaction commits; a Google
@@ -816,37 +849,16 @@ export async function acceptInviteAction(token: string): Promise<{
         verifiedEmail: clerkEmail,
       });
 
-      // Burn exactly the still-live invite validated above. This closes the
-      // double-accept/expiry race while keeping membership, grant intent,
-      // audit event and token consumption atomic.
-      const accepted = await tx
-        .update(pendingInvites)
-        .set({ acceptedAt: acceptedAt, acceptedByUserId: me })
-        .where(
-          and(
-            eq(pendingInvites.token, token),
-            eq(pendingInvites.workspaceId, invite.workspaceId),
-            eq(pendingInvites.email, invite.email),
-            eq(pendingInvites.role, invite.role),
-            isNull(pendingInvites.acceptedAt),
-            gt(pendingInvites.expiresAt, acceptedAt),
-          ),
-        )
-        .returning({ token: pendingInvites.token });
-      if (!accepted[0]) {
-        throw new Error("This invite is no longer available.");
-      }
-
       // Record workspace audit event (D-019). No email address in payload.
       await tx.insert(workspaceEvents).values({
         id: mintEventId(),
         workspaceId: invite.workspaceId,
         userId: me,
         kind: "inviteAccepted",
-        payload: JSON.stringify({ userId: me, role: grantedRole }),
+        payload: JSON.stringify({ userId: me, role: membership.role }),
         createdAt: Math.floor(acceptedAt.getTime() / 1000),
       });
-      return preparedDriveGrant;
+      return { ...preparedDriveGrant, workspace: project };
     },
     { behavior: "immediate" },
   );
@@ -867,19 +879,14 @@ export async function acceptInviteAction(token: string): Promise<{
     }
   }
 
-  // Flip the active-workspace cookie so /app/tasks lands the user
-  // in the freshly-joined workspace.
-  //
-  // Attribute parity with the cookie's four sibling writers (D-021 writer #4,
-  // the last one WP3 left open). This was the only writer with neither
-  // `httpOnly` nor `secure`, so accepting an invite downgraded the last-active
-  // preference to a script-readable cookie sendable over plain HTTP until the
-  // next writer ran. Nothing on the client reads it — it exists so the *next*
-  // server request resolves into the joined workspace — so there was never a
-  // reason for it to be exposed. Pinned, with its siblings, by
-  // `src/server/projects/active-project-contract.test.mjs`.
+  const workspace = driveGrantIntent.workspace;
+
+  // Both resolver generations must agree after this explicit selection. The
+  // unified cookie outranks the legacy cookie; updating only legacy left A
+  // active after accepting B. Neither preference is an authorization grant.
+  await writeActiveProjectCookie(projectId);
   const c = await cookies();
-  c.set(ACTIVE_WORKSPACE_COOKIE_NAME, invite.workspaceId, {
+  c.set(ACTIVE_WORKSPACE_COOKIE_NAME, projectId, {
     path: "/",
     sameSite: "lax",
     httpOnly: true,
@@ -890,9 +897,10 @@ export async function acceptInviteAction(token: string): Promise<{
   revalidatePath("/app", "layout");
   return {
     ok: true,
-    workspaceId: invite.workspaceId,
+    workspaceId: projectId,
     workspaceSlug: workspace.slug,
     workspaceName: workspace.name,
+    redirectTo,
   };
 }
 
