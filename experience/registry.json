@@ -3705,7 +3705,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "8bad9c67ed0327ef"
+      "materialityHash": "778ef47b2a7cb691"
     },
     {
       "id": "tasks.resources.drive-upload",
@@ -3756,7 +3756,7 @@
       "lastReviewedAt": null,
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "b367ef3c53f5a7b3"
+      "materialityHash": "2bca87211d9ef154"
     },
     {
       "id": "tasks.resources.drive-upload-status",
@@ -3808,6 +3808,108 @@
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
       "materialityHash": "c33c4ff82c841368"
+    },
+    {
+      "id": "tasks.connections.storage-owner-change",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/settings/sections/drive-handover-view.tsx",
+      "trigger": "Connections > Change storage owner with NEXT_PUBLIC_PROJECT_DRIVE_UI=true",
+      "parentJourney": "signed-in-work",
+      "archetype": "settings-and-administration",
+      "primaryJob": "Confirm custody consequences and continue only the server-checked saved owner change.",
+      "primaryAction": "Review and confirm the storage owner change.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "disabled",
+        "read-only",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "9bd78407421421c2"
+    },
+    {
+      "id": "tasks.resources.drive-reload-recovery",
+      "product": "tasks",
+      "surfaceType": "nested-view",
+      "source": "tasks/src/components/app/detail-panel/drive-reload-notice.tsx",
+      "trigger": "Resources has an earlier pending Drive claim after reload with the UI flag enabled.",
+      "parentJourney": "signed-in-work",
+      "archetype": "feedback-interruption-and-exception",
+      "primaryJob": "Keep an uncertain upload intact and explain the missing safe file-reselection contract.",
+      "primaryAction": "Refresh saved status without sending another file.",
+      "roles": [
+        "owner",
+        "member"
+      ],
+      "requiredStates": [
+        "first-use",
+        "empty",
+        "populated",
+        "loading",
+        "partial-failure",
+        "error",
+        "success",
+        "disabled",
+        "read-only",
+        "reduced-motion",
+        "keyboard-only"
+      ],
+      "requiredBreakpoints": [
+        "mobile",
+        "tablet",
+        "desktop",
+        "wide"
+      ],
+      "componentDependencies": [],
+      "patternDependencies": [],
+      "reviewTier": "core",
+      "designOwner": "product-taste-design-integrity",
+      "engineeringOwner": "engineering-systems-architecture",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
+      "auditScore": null,
+      "openFindingIds": [],
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "none",
+      "accessibilityCoverage": "none",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": null,
+      "approvedBaselineReference": null,
+      "intentionalExceptions": [],
+      "materialityHash": "48a0de57d9914fe6"
     }
   ]
 }

@@ -456,7 +456,9 @@ falls back to Signal-native storage with a plain sentence.
 **2026-09-04 implementation update:** user-delegated selection of A · Custodian
 allows the internal default-off UI slice to proceed. It is not a founder pick,
 design lock or acceptance. `UI-SLICE.md` records reuse, evidence, verification
-and remaining status/handover/recovery gaps. The historical gate wording below
+and remaining status/handover/recovery gaps. `UI-FOLLOW-UP.md` records the bounded
+owner-handover controls and the missing content-binding prerequisite for safe
+upload reselection after reload. The historical gate wording below
 describes the prior exploration checkpoint, superseded for this delegated slice.
 
 **Goal.** Attaching a file stays ordinary while storage ownership and live

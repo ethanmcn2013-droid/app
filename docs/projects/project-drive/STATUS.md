@@ -10,8 +10,12 @@ implemented for internal review; WP-7 acceptance is still incomplete.
 
 Read `UI-SLICE.md`, `UI-MATERIALITY.md` and `ui-evidence/README.md` for the
 changed scope, preview/test pointers, implementation evidence and gaps.
-Handover candidates, full setup/repair visibility, killed-browser recovery and
-real provider acceptance remain open. The lead independently reviews browser
+The bounded follow-up in `UI-FOLLOW-UP.md` adds server-checked handover choices,
+confirmation and same-journal continuation. Pending uploads after reload now
+block new intake and explain the missing content-binding prerequisite; byte
+resumption after reselection is deliberately not implemented. Full setup/repair
+visibility, killed-browser recovery and real provider acceptance remain open.
+The lead independently reviews browser
 and security behavior. No production state, schema, provider credentials,
 billing/invite implementation or launch flags were changed.
 

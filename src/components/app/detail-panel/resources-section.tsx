@@ -42,6 +42,8 @@ import { projectDriveUiEnabled } from "@/lib/project-drive-ui";
 import { useDriveUploads } from "./use-drive-uploads";
 import { DriveUploadRow } from "./drive-upload-row";
 import { DriveUploadReview } from "./drive-upload-review";
+import { driveReloadCopy, driveReloadState } from "@/lib/project-drive-reload";
+import { DriveReloadNotice } from "./drive-reload-notice";
 
 // Client-side hint only; the server is the authority on size limits, and
 // it re-checks this against the board's tier and remaining quota before it
@@ -192,6 +194,7 @@ function TaskResources({ task }: { task: Task }) {
   const inputId = useId();
   const driveEnabled = projectDriveUiEnabled();
   const { entries: driveEntries, add: addDriveUpload } = useDriveUploads(task.id, sendFile, () => setReload((value) => value + 1));
+  const reloadState = driveEnabled && !isDemoMode() ? driveReloadState(items === null ? null : items.filter((row): row is RealRow => row.kind === "real"), loadFailed, driveEntries.map(entry => entry.id)) : null;
 
   const refreshKey = task.updatedAt?.getTime();
 
@@ -219,6 +222,12 @@ function TaskResources({ task }: { task: Task }) {
       if (list.length === 0) return;
       if (driveEnabled && isDemoMode()) {
         toast("Review only", { body: "No file was uploaded. Review fixtures never contact Google or storage." });
+        return;
+      }
+      // Applies to the shared input AND drop handler, even if a disabled button
+      // is bypassed. A reloaded pending claim must never become a new upload.
+      if (reloadState) {
+        toast("Check the existing upload", { body: driveReloadCopy[reloadState] });
         return;
       }
 
@@ -286,7 +295,7 @@ function TaskResources({ task }: { task: Task }) {
         });
       }
     },
-    [me, task.id, toast, driveEnabled, addDriveUpload],
+    [me, task.id, toast, driveEnabled, addDriveUpload, reloadState],
   );
 
   // ── Link add handler ──────────────────────────────────────────────────
@@ -407,6 +416,7 @@ function TaskResources({ task }: { task: Task }) {
             onClick={() => inputRef.current?.click()}
             className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-[12px] font-medium text-ink-quiet transition-colors hover:text-ink-soft"
             aria-label="Attach a file"
+            disabled={reloadState !== null}
           >
             <PaperclipGlyph />
             Attach
@@ -417,6 +427,7 @@ function TaskResources({ task }: { task: Task }) {
       {loadFailed ? <p role="alert" className="mb-3 text-[12px] text-ink-soft">Resources could not be refreshed. <button className="min-h-[44px] px-2 underline" onClick={() => setReload((value) => value + 1)}>Try again</button></p> : items === null ? <p role="status" className="mb-3 text-[12px] text-ink-soft">Loading Resources…</p> : total === 0 ? <p className="mb-3 text-[12px] text-ink-soft">No resources attached yet.</p> : null}
       {driveEnabled ? <p className="mb-3 text-[12px] leading-relaxed text-ink-soft">The destination is checked when you attach. If Drive is unavailable before sending, you can choose Signal Studio.</p> : null}
       {driveEnabled && isDemoMode() ? <DriveUploadReview /> : null}
+      {reloadState ? <DriveReloadNotice state={reloadState} onRefresh={() => setReload(value => value + 1)} /> : null}
       {driveEntries.length ? <ul aria-label="File upload status" className="mb-3 space-y-2">{driveEntries.map((entry) => <DriveUploadRow key={entry.id} name={entry.name} size={entry.size} state={entry.state} onRetry={() => void entry.attempt.run()} onNative={() => void entry.attempt.useNative()} onCancel={entry.attempt.cancel} />)}</ul> : null}
 
       {/* Hidden file input */}
@@ -425,6 +436,7 @@ function TaskResources({ task }: { task: Task }) {
         id={inputId}
         type="file"
         aria-label="Files to attach"
+        disabled={reloadState !== null}
         multiple
         className="sr-only"
         onChange={(e) => {

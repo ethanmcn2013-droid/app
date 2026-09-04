@@ -11,6 +11,14 @@ score, no approved baseline and no claimed design-owner review receipt. Their
 initial hashes identify the submitted source, not a waiver of later drift.
 `experience:validate` validates registration, not design quality.
 
+The bounded follow-up adds two material entries for owner-change confirmation
+and the pending-upload reload explanation. They remain `preview` /
+`under-remediation`, with no screenshot/accessibility acceptance, score or
+approved baseline. The two original unreviewed Connections/Resources source
+hashes identify this follow-up; no approved/reviewed surface hash is refreshed.
+`UI-FOLLOW-UP.md` records the available controls and missing content-binding
+prerequisite. No new exploration programme or human design gate was run.
+
 The delegated A · Custodian selection, reuse argument, material behavior,
 verification commands and unresolved gaps are in `UI-SLICE.md`. No prior
 critical surface's reviewed hash was refreshed. The Settings page source and

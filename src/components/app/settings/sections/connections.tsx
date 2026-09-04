@@ -6,6 +6,9 @@ import { projectDriveUiEnabled, type ProjectDriveStatus } from "@/lib/project-dr
 import { getProjectDriveStatusAction } from "@/server/actions/project-drive-status";
 import { ConnectionsView, driveButton } from "./connections-view";
 import { ConnectionsReview } from "./connections-review";
+import { DriveHandoverView } from "./drive-handover-view";
+import { driveHandoverOutcomeCopy, type DriveHandoverRead } from "@/lib/project-drive-handover-ui";
+import { changeProjectDriveOwnerAction, getProjectDriveHandoverAction } from "@/server/actions/project-drive-handover-ui";
 
 export function ConnectionsSection({ projectId, canManage }: { projectId: string | null; canManage: boolean }) {
   if (!projectDriveUiEnabled()) return null;
@@ -16,6 +19,7 @@ export function ConnectionsSection({ projectId, canManage }: { projectId: string
 
 function LiveConnections({ projectId }: { projectId: string }) {
   const [status, setStatus] = useState<ProjectDriveStatus | null>(null);
+  const [handover, setHandover] = useState<DriveHandoverRead>({ state: "unavailable", choices: [], continuation: null });
   const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
   const [confirmation, setConfirmation] = useState(false);
@@ -23,8 +27,9 @@ function LiveConnections({ projectId }: { projectId: string }) {
   const locked = useRef(false);
   const load = useCallback(() => {
     const request = ++sequence.current.value;
-    return getProjectDriveStatusAction(projectId).then((result) => {
+    return Promise.all([getProjectDriveStatusAction(projectId), getProjectDriveHandoverAction(projectId)]).then(([result, ownerChange]) => {
       if (request !== sequence.current.value) return;
+      setHandover(ownerChange.kind === "ready" ? ownerChange.handover : { state: "unavailable", choices: [], continuation: null });
       if (result.kind === "ready") { setStatus(result.status); }
       else setMessage("Connections could not be loaded. Check again.");
     }).catch(() => {
@@ -38,6 +43,16 @@ function LiveConnections({ projectId }: { projectId: string }) {
     await load();
   }, [load]);
   useEffect(() => { const gate = sequence.current; void load(); return () => { gate.value++; }; }, [load]);
+
+  async function changeOwner(targetOwnerUserId: string) {
+    if (locked.current) return;
+    locked.current = true;
+    setBusy(true);
+    setMessage(null);
+    try { setMessage(driveHandoverOutcomeCopy[await changeProjectDriveOwnerAction(projectId, targetOwnerUserId)]); }
+    catch { setMessage(driveHandoverOutcomeCopy.unavailable); }
+    finally { await refresh(); locked.current = false; }
+  }
 
   async function act(kind: "connect" | "enable" | "disconnect") {
     if (locked.current) return;
@@ -63,5 +78,5 @@ function LiveConnections({ projectId }: { projectId: string }) {
     finally { await refresh(); locked.current = false; }
   }
   if (!status) return <section aria-label="Connections"><h2 className="text-[22px] font-semibold text-ink">Connections</h2><p role="status" className="my-4 text-[13px] text-ink-soft">{busy ? "Loading connection and Google access…" : message}</p>{!busy ? <button className={driveButton} onClick={() => void refresh()}>Check again</button> : null}</section>;
-  return <ConnectionsView status={status} busy={busy} message={message} confirmation={confirmation} onRefresh={() => void refresh()} onConnect={() => void act("connect")} onEnable={() => void act("enable")} onDisconnect={() => setConfirmation(true)} onCancelDisconnect={() => setConfirmation(false)} onConfirmDisconnect={() => void act("disconnect")} />;
+  return <ConnectionsView status={status} busy={busy} message={message} confirmation={confirmation} onRefresh={() => void refresh()} onConnect={() => void act("connect")} onEnable={() => void act("enable")} onDisconnect={() => setConfirmation(true)} onCancelDisconnect={() => setConfirmation(false)} onConfirmDisconnect={() => void act("disconnect")} handover={<DriveHandoverView read={handover} busy={busy} onSubmit={target => void changeOwner(target)} />} />;
 }
