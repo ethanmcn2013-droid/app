@@ -1,5 +1,11 @@
 # January billing boundary repair
 
+Current follow-up: [Event delegated policy and sales hold](EVENT-ACCESS-CLOSURE.md).
+New Event sessions are held pending coherent project/public access enforcement.
+Earlier receipts below are retained history; the visible Event offer and archive
+promise described there are superseded. Existing settlement/refund recovery stays
+active. S2 Commercial remains partial.
+
 Observed locally on 2026-09-04. Owner: January principal integrator.
 Branch: `fix/january-checkout`, base `31c6646c`.
 

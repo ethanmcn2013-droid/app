@@ -7,6 +7,7 @@ import { createBillingPortalSessionAction } from "@/server/actions/plan";
 import { redeemCompCodeAction } from "@/server/actions/comp";
 import type { EntitlementTier } from "@/lib/data";
 import type { PaidTier } from "@/server/stripe";
+import { EVENT_SELF_SERVE_AVAILABLE, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 import { SectionHeader } from "../settings-app";
 
 type TierMeta = {
@@ -59,15 +60,14 @@ const TIER_META: TierMeta[] = [
     id: "event",
     label: "Event",
     price: "€89 once",
-    blurb: "One workspace for one event. 12 months active, reads forever.",
+    blurb: `One workspace for one event. ${EVENT_UNAVAILABLE_MESSAGE}`,
     paidTier: "event",
     features: [
       "One workspace, 12 months of editing",
       "Unlimited guests",
-      "Read-only forever after the event",
       "No subscription, no auto-renew",
     ],
-    selfServe: true,
+    selfServe: EVENT_SELF_SERVE_AVAILABLE,
   },
   {
     id: "studio",
@@ -231,7 +231,7 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
         </div>
       </div>
 
-      {/* Tier comparison, self-serve tiers (Free / Workspace / Event)
+      {/* Tier comparison, available self-serve tiers
        *  + the user's CURRENT tier when it isn't already in that set
        *  (Studio + Wedding only render when the user holds them). */}
       {(() => {
@@ -239,7 +239,8 @@ export function BillingSection({ tier }: { tier: EntitlementTier }) {
           (t) => t.selfServe || t.id === tier,
         );
         const cols =
-          visibleTiers.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3";
+          visibleTiers.length === 4 ? "md:grid-cols-4" :
+          visibleTiers.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
         return (
       <div className="mt-4 overflow-hidden rounded-xl border border-line-soft bg-bg-elevated">
         <div className={`grid grid-cols-1 divide-y divide-line-soft ${cols} md:divide-x md:divide-y-0`}>

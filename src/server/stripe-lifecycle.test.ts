@@ -10,6 +10,7 @@ import { freshFileDb } from "./db/memory-test-db";
 import { entitlements, users, workspaces, workspaceMembers } from "./db/schema";
 import * as sharedSchema from "../lib/entitlements-shared/schema";
 import type { StripeAccess } from "./stripe-access";
+import * as billingAvailability from "../lib/billing-availability";
 
 let access: typeof import("./stripe-access");
 let lifecycle: typeof import("./stripe-lifecycle");
@@ -130,7 +131,7 @@ const metadata = { userId: "buyer", workspaceId: "project-b", tier: "workspace" 
 function entryPoint<T>(path: string, imports: Record<string, unknown>): T {
   const source = readFileSync(new URL(path, import.meta.url), "utf8");
   const compiled = ts.transpileModule(source, { compilerOptions: {
-    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true,
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true, jsx: ts.JsxEmit.ReactJSX,
   } }).outputText;
   const loaded = { exports: {} };
   new Function("require", "module", "exports", compiled)((name: string) => {
@@ -274,6 +275,7 @@ test("recovery: real deletion route fences billing through orchestrated erasure 
         withBillingAccount: <T>(actor: string, work: () => Promise<T>) => access.withBillingAccount(actor, work, f.local.db),
       },
       "@/server/checkout-policy": await import("./checkout-policy"),
+      "@/lib/billing-availability": billingAvailability,
       "@clerk/nextjs/server": { auth: async () => ({ userId }), clerkClient: async () => ({
         users: { deleteUser: async () => { throw new Error("Clerk unavailable"); } },
       }) },
@@ -281,7 +283,7 @@ test("recovery: real deletion route fences billing through orchestrated erasure 
     };
     const checkout = entryPoint<typeof import("./actions/billing")>("./actions/billing.ts", imports).createCheckoutSessionAction;
     const portal = entryPoint<typeof import("./actions/plan")>("./actions/plan.ts", imports).createBillingPortalSessionAction;
-    await checkout("event"); await portal();
+    await checkout("workspace"); await portal();
     assert.equal(providerCalls.length, 2);
     const sharedBefore = await f.shared.select().from(sharedSchema.entitlements);
     let orchestrated = false;
@@ -292,7 +294,7 @@ test("recovery: real deletion route fences billing through orchestrated erasure 
         eraseNotes: async () => {
           orchestrated = true;
           assert.equal(await hasAccountDeletionStartedWith(f.local.db, actor), true);
-          await assert.rejects(checkout("event"), /account is not available/);
+          await assert.rejects(checkout("workspace"), /account is not available/);
           await assert.rejects(portal(), /account is not available/);
           return { ok: true, refreshTokens: [] };
         },
@@ -304,7 +306,7 @@ test("recovery: real deletion route fences billing through orchestrated erasure 
     assert.equal((await route.POST()).status, 500);
     assert.equal(orchestrated, true);
     assert.equal(await ensureUserProvisionedWith(f.local.db, userId), false);
-    await assert.rejects(checkout("event"), /account is not available/);
+    await assert.rejects(checkout("workspace"), /account is not available/);
     await assert.rejects(portal(), /account is not available/);
     await access.reconcileStripeAccess({ ...payment, reference: "stripe-sub:sub_delayed", subscriptionId: "sub_delayed" }, f.dependencies);
     assert.deepEqual(await f.local.db.select().from(users), []);
@@ -485,4 +487,150 @@ test("checkout re-reads settlement and refunds before granting the exact Event t
   assert.equal(writes.length, 2);
   session.payment_status = "paid"; session.client_reference_id = "stranger::project-b";
   await assert.rejects(lifecycle.handleStripeLifecycle(event("checkout.session.completed", { id: session.id }), provider, { sync }), /ownership/);
+});
+
+test("Event sales hold refuses direct actions before auth, billing writes or provider calls, including review", async () => {
+  let calls = 0;
+  const unexpected = async () => { calls++; throw new Error("Unexpected checkout side effect"); };
+  for (const review of [false, true]) {
+    const checkout = entryPoint<typeof import("./actions/billing")>("./actions/billing.ts", {
+      "@/lib/access-mode": { isDemoMode: () => review },
+      "@/lib/billing-availability": billingAvailability,
+      "@/server/checkout-policy": await import("./checkout-policy"),
+      "@/server/auth": { getCurrentUser: unexpected, getActiveWorkspaceOrNull: unexpected },
+      "@/server/actions/project-authz": { authorizeProjectCandidate: unexpected },
+      "@/server/stripe": { stripe: { checkout: { sessions: { create: unexpected } } }, priceIdFor: unexpected },
+      "@/server/stripe-access": { billingCustomerForUser: unexpected, withBillingAccount: unexpected },
+    }).createCheckoutSessionAction;
+    for (const interval of ["monthly", "annual"] as const) {
+      await assert.rejects(checkout("event", interval), { message: billingAvailability.EVENT_UNAVAILABLE_MESSAGE });
+    }
+  }
+  assert.equal(calls, 0);
+});
+
+test("Event checkout URL returns unavailable without login/onboarding redirects or review success", async () => {
+  let calls = 0;
+  const unexpected = async () => { calls++; throw new Error("Unexpected public checkout side effect"); };
+  for (const review of [false, true]) {
+    for (const configured of [false, true]) {
+      const route = entryPoint<typeof import("../app/api/checkout/route")>("../app/api/checkout/route.ts", {
+        "server-only": {}, "next/server": { NextResponse },
+        "@clerk/nextjs/server": { auth: unexpected },
+        "@/lib/access-mode": { isDemoMode: () => review },
+        "@/lib/billing-availability": billingAvailability,
+        "@/server/actions/billing": { createCheckoutSessionAction: unexpected },
+        "@/server/stripe": { stripeConfigured: configured },
+      });
+      for (const interval of ["monthly", "annual"]) {
+        const response = await route.GET(new Request(`https://app.example.invalid/api/checkout?tier=event&interval=${interval}`));
+        assert.equal(response.status, 503);
+        assert.equal(response.headers.get("location"), null);
+        assert.equal(response.headers.get("cache-control"), "no-store");
+        assert.deepEqual(await response.json(), {
+          error: billingAvailability.EVENT_UNAVAILABLE_MESSAGE, code: "plan_unavailable", tier: "event",
+        });
+      }
+    }
+  }
+  assert.equal(calls, 0);
+});
+
+test("Event hold leaves the annual Workspace checkout route and billing fence operational", async () => {
+  const f = await fixture();
+  try {
+    const sessions: Stripe.Checkout.SessionCreateParams[] = [];
+    const checkout = entryPoint<typeof import("./actions/billing")>("./actions/billing.ts", {
+      "@/lib/access-mode": { isDemoMode: () => false },
+      "@/lib/billing-availability": billingAvailability,
+      "@/server/checkout-policy": await import("./checkout-policy"),
+      "@/server/auth": { getCurrentUser: async () => "buyer", getActiveWorkspaceOrNull: async () => "project-b" },
+      "@/server/actions/project-authz": { authorizeProjectCandidate: async () => ({ ok: true, projectId: "project-b" }) },
+      "@/server/stripe": {
+        stripe: { checkout: { sessions: { create: async (input: Stripe.Checkout.SessionCreateParams) => {
+          sessions.push(input); return { url: "https://billing.example.invalid/annual" };
+        } } } },
+        priceIdFor: (tier: string, interval: string) => {
+          assert.equal(tier, "workspace"); assert.equal(interval, "annual"); return "price_annual_fixture";
+        },
+      },
+      "@/server/stripe-access": {
+        billingCustomerForUser: (actor: string) => access.billingCustomerForUser(actor, f.shared),
+        withBillingAccount: <T>(actor: string, work: () => Promise<T>) => access.withBillingAccount(actor, work, f.local.db),
+      },
+    }).createCheckoutSessionAction;
+    const route = entryPoint<typeof import("../app/api/checkout/route")>("../app/api/checkout/route.ts", {
+      "server-only": {}, "next/server": { NextResponse },
+      "@clerk/nextjs/server": { auth: async () => ({ userId: "buyer" }) },
+      "@/lib/access-mode": { isDemoMode: () => false },
+      "@/lib/billing-availability": billingAvailability,
+      "@/server/actions/billing": { createCheckoutSessionAction: checkout },
+      "@/server/stripe": { stripeConfigured: true },
+    });
+    const response = await route.GET(new Request("https://app.example.invalid/api/checkout?tier=workspace&interval=annual"));
+    assert.equal(response.status, 307);
+    assert.equal(response.headers.get("location"), "https://billing.example.invalid/annual");
+    assert.equal(sessions.length, 1);
+    assert.equal(sessions[0].mode, "subscription");
+    assert.equal(sessions[0].line_items?.[0].price, "price_annual_fixture");
+    assert.deepEqual(sessions[0].metadata, { userId: "buyer", workspaceId: "project-b", tier: "workspace" });
+    assert.deepEqual(await f.local.db.select().from(entitlements), []); // A click still grants nothing.
+  } finally { f.close(); }
+});
+
+test("Event sessions created before the hold still settle and refund through both real ledgers", async () => {
+  const f = await fixture();
+  try {
+    assert.equal(billingAvailability.checkoutAvailable("event"), false);
+    const charge = { created: 1800532800, status: "succeeded", paid: true, amount_refunded: 0 };
+    const session = { id: "cs_before_hold", mode: "payment", payment_status: "paid",
+      metadata: { ...metadata, tier: "event" }, client_reference_id: "buyer::project-b", customer: "cus_fixture",
+      payment_intent: { status: "succeeded", customer: "cus_fixture", latest_charge: charge },
+    };
+    const provider = { checkout: { sessions: { retrieve: async () => session } } } as unknown as Stripe;
+    const delivery = event("checkout.session.completed", { id: session.id });
+    const sync = (input: StripeAccess) => access.reconcileStripeAccess(input, f.dependencies);
+    await lifecycle.handleStripeLifecycle(delivery, provider, { sync });
+    const [paid] = await f.local.db.select().from(entitlements);
+    assert.equal(paid.notes, "stripe:cs_before_hold");
+    assert.ok(paid.expiresAt && paid.expiresAt.getTime() > 0);
+    assert.equal((await f.shared.select().from(sharedSchema.entitlements))[0].status, "active");
+
+    charge.amount_refunded = 8900;
+    await assert.rejects(lifecycle.handleStripeLifecycle(delivery, provider, {
+      sync: input => access.reconcileStripeAccess(input, { ...f.dependencies, mirror: async () => { throw new Error("mirror offline"); } }),
+    }), /mirror offline/);
+    assert.equal((await f.local.db.select().from(entitlements))[0].expiresAt?.getTime(), 0);
+    assert.equal((await f.shared.select().from(sharedSchema.entitlements))[0].status, "active");
+    await lifecycle.handleStripeLifecycle(delivery, provider, { sync });
+    assert.equal((await f.shared.select().from(sharedSchema.entitlements))[0].status, "revoked");
+    charge.amount_refunded = 0; // A stale positive delivery cannot undo the tombstone.
+    await lifecycle.handleStripeLifecycle(delivery, provider, { sync });
+    assert.equal((await f.local.db.select().from(entitlements))[0].expiresAt?.getTime(), 0);
+    assert.equal((await f.shared.select().from(sharedSchema.entitlements))[0].expiresAt, 0);
+  } finally { f.close(); }
+});
+
+test("billing renders available offers and preserves the current Event holder without an archive promise", async () => {
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { BillingSection } = entryPoint<typeof import("../components/app/settings/sections/billing")>(
+    "../components/app/settings/sections/billing.tsx", {
+      "react": React, "react/jsx-runtime": await import("react/jsx-runtime"),
+      "@/lib/billing-availability": billingAvailability,
+      "@/components/primitives/toast": { useToast: () => ({ toast: () => { throw new Error("Unexpected toast during render"); } }) },
+      "@/server/actions/billing": {}, "@/server/actions/plan": {}, "@/server/actions/comp": {},
+      "../settings-app": { SectionHeader: () => null },
+    },
+  );
+  const free = renderToStaticMarkup(React.createElement(BillingSection, { tier: "free" }));
+  assert.doesNotMatch(free, />Event</);
+  assert.match(free, />Workspace</);
+  assert.match(free, />Upgrade</);
+  const held = renderToStaticMarkup(React.createElement(BillingSection, { tier: "event" }));
+  assert.match(held, />Event</);
+  assert.match(held, /Manage billing/);
+  assert.match(held, /New Event purchases are currently unavailable/);
+  assert.doesNotMatch(held, /reads forever|read-only forever/i);
+  assert.equal((held.match(/>Upgrade</g) ?? []).length, 1); // Workspace, never another Event sale.
 });

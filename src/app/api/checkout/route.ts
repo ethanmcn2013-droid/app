@@ -9,6 +9,7 @@ import {
   type PaidTier,
 } from "@/server/stripe";
 import { isDemoMode } from "@/lib/access-mode";
+import { checkoutAvailable, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 
 /**
  * Cross-product checkout entry point (E-7, 2026-05-14).
@@ -53,6 +54,14 @@ export async function GET(req: Request) {
     );
   }
   const tier = tierParam as PaidTier;
+  // Refuse before sign-in, review redirects or provider setup; an unavailable
+  // offer must not loop through onboarding or look purchasable in a preview.
+  if (!checkoutAvailable(tier)) {
+    return NextResponse.json(
+      { error: EVENT_UNAVAILABLE_MESSAGE, code: "plan_unavailable", tier },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   const interval: BillingInterval =
     url.searchParams.get("interval") === "annual" ? "annual" : "monthly";
   const intervalQS = interval === "annual" ? "&interval=annual" : "";

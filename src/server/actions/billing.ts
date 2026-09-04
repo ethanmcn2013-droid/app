@@ -12,6 +12,7 @@ import {
 import { isDemoMode } from "@/lib/access-mode";
 import { checkoutModeFor, isPaidTier } from "@/server/checkout-policy";
 import { billingCustomerForUser, withBillingAccount } from "@/server/stripe-access";
+import { checkoutAvailable, EVENT_UNAVAILABLE_MESSAGE } from "@/lib/billing-availability";
 
 const FALLBACK_BASE = "http://localhost:3001";
 
@@ -40,6 +41,7 @@ export async function createCheckoutSessionAction(
   if (!isPaidTier(tier) || (interval !== "monthly" && interval !== "annual")) {
     throw new Error("That checkout option isn’t available.");
   }
+  if (!checkoutAvailable(tier)) throw new Error(EVENT_UNAVAILABLE_MESSAGE);
   if (isDemoMode()) {
     return { url: `${siteUrl()}/app/tasks?checkout=review&tier=${tier}` };
   }
