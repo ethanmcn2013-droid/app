@@ -30,7 +30,7 @@ async function fixture() {
     await f.db.insert(workspaces).values({ id, slug: id, name: id, ownerUserId: "owner" });
     await f.db.insert(workspaceMembers).values({ workspaceId: id, userId: "owner", role: "owner" });
   }
-  const state = { actor: "owner", ambient: "project-b", ambientReads: 0, identityReads: 0, effects: 0, failInvalidation: false, demo: false, venue: false, contextual: false };
+  const state = { actor: "owner", ambient: "project-b", ambientReads: 0, identityReads: 0, effects: 0, failInvalidation: false, demo: false, venue: false, venueProject: "project-a", contextual: false };
   const boundaries: Record<string, unknown> = {
     "@/server/db": { db: f.db },
     "@/server/auth": {
@@ -48,7 +48,7 @@ async function fixture() {
     "@/server/db/seed": { LEGACY_WORKSPACE_ID: "ws-legacy" },
     "@/server/actions/project-authz": loadModule<typeof import("./actions/project-authz")>("./actions/project-authz.ts", { "@/server/db": { db: f.db } }),
     "@/server/db/queries": { isFirstRun: async (workspaceId: string) => !(await f.db.select().from(workspaces).where(eq(workspaces.id, workspaceId)))[0]?.activeDomain },
-    "@/server/db/venue-welcome": { detectVenueWelcome: async () => state.venue ? { sponsorSlug: "synthetic-venue", sponsorName: "Synthetic venue", code: "fixture" } : null },
+    "@/server/db/venue-welcome": { detectVenueWelcome: async (actor: string, project: string) => state.venue && actor === state.actor && project === state.venueProject ? { sponsorSlug: "synthetic-venue", sponsorName: "Synthetic venue", code: "fixture" } : null },
     "@/lib/planning/flags": { resolvePlanningFeatureFlags: () => ({ contextualOnboarding: state.contextual }) },
     "@/components/welcome/onboarding-flow": { OnboardingFlow: () => null },
     "@/components/welcome/still-provisioning": { StillProvisioning: () => null },
@@ -137,13 +137,30 @@ test("venue welcome rolls back failed metadata, offers retry, then seeds once an
   } finally { f.cleanup(); }
 });
 
-test("contextual welcome forwards the authorized Project without setting an active cookie", async () => {
+test("an explicit setup link keeps its Project when the new-project contextual experiment is on", async () => {
   const f = await fixture();
   try {
     f.state.contextual = true;
-    await assert.rejects(f.page({ searchParams: Promise.resolve({ workspaceId: "project-a", use: "wedding" }) }), /workspaceId=project-a/);
+    const view = await f.page({ searchParams: Promise.resolve({ workspaceId: "project-a", use: "wedding" }) }) as ReactElement<{ workspaceId: string }>;
+    assert.equal(view.props.workspaceId, "project-a");
     assert.equal(f.state.ambientReads, 0);
     assert.equal(await f.count(), 0);
+  } finally { f.cleanup(); }
+});
+
+test("a grant on B never supplies sponsor setup for explicit A in either contextual flag state", async () => {
+  const f = await fixture();
+  try {
+    f.state.venue = true;
+    f.state.venueProject = "project-b";
+    for (const contextual of [false, true]) {
+      f.state.contextual = contextual;
+      const view = await f.page({ searchParams: Promise.resolve({ workspaceId: "project-a" }) }) as ReactElement<{ workspaceId: string }>;
+      assert.equal(view.props.workspaceId, "project-a");
+      assert.equal(await f.count(), 0);
+      assert.equal(await f.count("project-b"), 0);
+    }
+    assert.equal(f.state.ambientReads, 0);
   } finally { f.cleanup(); }
 });
 

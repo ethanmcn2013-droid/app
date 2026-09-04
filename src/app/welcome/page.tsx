@@ -78,9 +78,11 @@ export default async function WelcomePage({
   // Auto-apply the wedding workspace template and bounce them onto
   // the board with a query param so the welcome card can name the
   // sponsor.
-  const venueWelcome = await detectVenueWelcome(me);
+  const venueWelcome = await detectVenueWelcome(me, ws);
   const planningFlags = resolvePlanningFeatureFlags();
-  if (planningFlags.contextualOnboarding) {
+  // The contextual flow creates a new project. An explicit setup link must
+  // finish the authorized existing project, even while that experiment is on.
+  if (planningFlags.contextualOnboarding && params.workspaceId === undefined) {
     if (venueWelcome) redirect(withActiveProject("/welcome/plan?context=wedding_season", ws));
     if (preselectedSegment === "student") {
       redirect(withActiveProject("/welcome/plan?context=semester", ws));
@@ -97,7 +99,7 @@ export default async function WelcomePage({
       await persistOnboardingSubmission({
         workspaceId: ws,
         requestId: venueFirstRunRequestId(ws, me),
-        primaryUseCase: "venue",
+        primaryUseCase: "wedding",
         seedMode: "starter",
       }, me);
     } catch {

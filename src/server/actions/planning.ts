@@ -60,7 +60,7 @@ import {
 } from "@/lib/planning/context";
 import { assertIanaTimeZone } from "@/lib/planning/dates";
 import { trackPlanningEvent } from "@/server/planning/analytics-server";
-import { detectVenueWelcome } from "@/server/db/venue-welcome";
+import { detectVenueWelcomeForLegacyPlanning } from "@/server/db/venue-welcome";
 import { extendCoupleAccessForWeddingDate } from "@/server/db/couple-access-term";
 import { requirePlanningFeature } from "@/server/planning/flags";
 import { isDemoMode } from "@/lib/access-mode";
@@ -1009,7 +1009,7 @@ async function normalizeSponsor(
   if (sponsor.consentGranted !== true) {
     throw new Error("Consent is required before sharing activation metadata.");
   }
-  const verified = await detectVenueWelcome(actorUserId);
+  const verified = await detectVenueWelcomeForLegacyPlanning(actorUserId);
   if (!verified || verified.sponsorSlug !== sponsor.id) {
     throw new Error("The venue activation could not be verified.");
   }
