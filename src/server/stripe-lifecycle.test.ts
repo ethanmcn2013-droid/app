@@ -624,9 +624,10 @@ test("billing renders available offers and preserves the current Event holder wi
     },
   );
   const free = renderToStaticMarkup(React.createElement(BillingSection, { tier: "free" }));
-  assert.doesNotMatch(free, />Event</);
-  assert.match(free, />Workspace</);
-  assert.match(free, />Upgrade</);
+  const offerText = [...free.matchAll(/>([^<>]+)</g)].map(match => match[1]);
+  assert.ok(!offerText.includes("Event"));
+  assert.ok(offerText.includes("Workspace"));
+  assert.ok(offerText.includes("Upgrade"));
   const held = renderToStaticMarkup(React.createElement(BillingSection, { tier: "event" }));
   assert.match(held, />Event</);
   assert.match(held, /Manage billing/);
