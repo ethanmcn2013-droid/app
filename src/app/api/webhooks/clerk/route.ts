@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm";
 import * as Sentry from "@sentry/nextjs";
 import { db } from "@/server/db";
 import { users } from "@/server/db/schema";
-import { grantEntitlement } from "@/server/actions/billing";
+import { grantEntitlement } from "@/server/billing-entitlements";
 import { trackOnboardingEventServer } from "@/lib/onboarding/analytics-server";
 import type { WebhookEvent } from "@clerk/nextjs/server";
 

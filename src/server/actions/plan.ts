@@ -2,6 +2,7 @@
 
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { stripe } from "@/server/stripe";
+import { isDemoMode } from "@/lib/access-mode";
 
 const FALLBACK_BASE = "http://localhost:3001";
 
@@ -35,6 +36,7 @@ export async function createBillingPortalSessionAction(
 ): Promise<{
   url: string;
 }> {
+  if (isDemoMode()) throw new Error("Billing is unavailable in this preview.");
   if (!stripe) {
     throw new Error("Billing isn't connected yet. Try again later.");
   }

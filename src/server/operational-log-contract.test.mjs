@@ -89,7 +89,6 @@ const SINK = "src/server/operational-log.ts";
 const ALLOWED = Object.freeze({
   "src/server/account-unified-erasure.ts": 5,
   "src/server/actions/ai.ts": 4,
-  "src/server/actions/billing.ts": 2,
   "src/server/actions/import.ts": 1,
   "src/server/actions/nudge.ts": 1,
   "src/server/actions/security.ts": 1,

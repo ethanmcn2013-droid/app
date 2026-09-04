@@ -1,4 +1,5 @@
 import "server-only";
+import { createHash, randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { entitlementsDb } from "./client";
 import {
@@ -25,8 +26,8 @@ export async function writeSharedEntitlement(input: {
   metadata?: Record<string, unknown> | null;
   stripeCustomerId?: string | null;
   stripeSubscriptionId?: string | null;
-}): Promise<{ id: string; created: boolean }> {
-  const db = entitlementsDb();
+}, database?: ReturnType<typeof entitlementsDb>): Promise<{ id: string; created: boolean }> {
+  const db = database ?? entitlementsDb();
 
   if (input.sourceRef) {
     const existing = await db
@@ -43,7 +44,9 @@ export async function writeSharedEntitlement(input: {
     if (existing[0]) return { id: existing[0].id, created: false };
   }
 
-  const id = `e-${Math.random().toString(36).slice(2, 12)}`;
+  const id = input.sourceRef
+    ? `e-${createHash("sha256").update(JSON.stringify([input.userClerkId, input.source, input.sourceRef])).digest("hex")}`
+    : `e-${randomUUID()}`;
 
   // Retry on transient errors, Turso reads at the edge can briefly
   // reject writes during failover. Three attempts with short
@@ -55,7 +58,7 @@ export async function writeSharedEntitlement(input: {
   for (const wait of BACKOFFS_MS) {
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     try {
-      await db.insert(entitlements).values({
+      const inserted = await db.insert(entitlements).values({
         id,
         userClerkId: input.userClerkId,
         tier: input.tier,
@@ -66,8 +69,8 @@ export async function writeSharedEntitlement(input: {
         stripeCustomerId: input.stripeCustomerId ?? null,
         stripeSubscriptionId: input.stripeSubscriptionId ?? null,
         metadata: input.metadata ? JSON.stringify(input.metadata) : null,
-      });
-      return { id, created: true };
+      }).onConflictDoNothing({ target: entitlements.id }).returning({ id: entitlements.id });
+      return { id, created: inserted.length > 0 };
     } catch (err) {
       lastErr = err;
     }
