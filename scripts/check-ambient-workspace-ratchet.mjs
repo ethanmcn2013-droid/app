@@ -53,10 +53,6 @@ const BUDGET = {
   // to budget is a guard that has stopped guarding, and this script fails on
   // exactly that.
 
-  // First-run provisioning: the user has just been provisioned and there is no
-  // explicit Project to name. Genuinely ambient. Already guarded in-file.
-  "src/app/welcome/page.tsx": { budget: 1, why: "first-run provisioning — MUTATION_INVENTORY allowlist" },
-
   // Account-level billing surfaces. Neither is Project-scoped in the sense ADR
   // §9 governs — they resolve a workspace to price and gate a tier, not to
   // write into. Worth revisiting when entitlements gain explicit Project scope.

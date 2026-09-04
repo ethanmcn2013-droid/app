@@ -1477,23 +1477,18 @@
       "reviewTier": "supporting",
       "designOwner": "product-taste-design-integrity",
       "engineeringOwner": "engineering-systems-architecture",
-      "implementationStatus": "legacy",
-      "auditStatus": "registered",
+      "implementationStatus": "preview",
+      "auditStatus": "under-remediation",
       "auditScore": null,
       "openFindingIds": [],
-      "automatedTestCoverage": "none",
-      "screenshotCoverage": "none",
-      "accessibilityCoverage": "none",
-      "fixtureCoverage": "none",
-      "lastReviewedAt": "2026-08-13",
+      "automatedTestCoverage": "partial",
+      "screenshotCoverage": "partial",
+      "accessibilityCoverage": "partial",
+      "fixtureCoverage": "partial",
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "11d00f9a07f33588",
-      "materialityReview": {
-        "materialityHash": "11d00f9a07f33588",
-        "reviewedAt": "2026-08-13",
-        "evidence": "experience/reviews/tasks.page.welcome-2026-08-13-wp4-analytics.json"
-      }
+      "materialityHash": "7c59e7bee4a8ce98"
     },
     {
       "id": "tasks.page.welcome-plan",

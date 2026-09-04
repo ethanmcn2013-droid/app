@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useRef, useState, useEffect, useSyncExternalStore, useTransition } from "react";
 import { useToast } from "@/components/primitives/toast";
 import { Dialog } from "@/components/primitives/dialog";
 import {
@@ -15,6 +15,8 @@ import {
   isPrimaryUseCase,
   type PrimaryUseCase,
 } from "@/lib/onboarding/segments";
+import { createRetainedSubmission } from "@/lib/onboarding/retained-submission";
+import type { UpdateSegmentInput } from "@/server/actions/onboarding";
 import { updateSegmentAction } from "@/server/actions/onboarding";
 import { TASKS_PUBLIC_DOMAIN } from "@/lib/product-urls";
 import { SectionHeader } from "../settings-app";
@@ -73,6 +75,14 @@ export function WorkspaceSection({
   const [reseedingSegment, setReseedingSegment] = useState<PrimaryUseCase | null>(
     null,
   );
+  const [failedSegment, setFailedSegment] = useState<Omit<UpdateSegmentInput, "requestId"> | null>(null);
+  const segmentSubmissions = useRef<ReturnType<typeof createRetainedSubmission<Omit<UpdateSegmentInput, "requestId">>> | null>(null);
+  useEffect(() => {
+    if (!workspace?.id) return;
+    const controller = createRetainedSubmission<Omit<UpdateSegmentInput, "requestId">>(workspace.id);
+    segmentSubmissions.current = controller;
+    return () => controller.dispose();
+  }, [workspace?.id]);
   const inputRef = useRef<HTMLInputElement>(null);
   const canEdit = myRole === "owner";
   const [currencyValue, setCurrencyValue] = useState<string | null>(workspace?.currency ?? null);
@@ -142,36 +152,30 @@ export function WorkspaceSection({
     });
   }
 
-  function applySegment(next: PrimaryUseCase, reseed: boolean) {
+  function submitSegment(input: Omit<UpdateSegmentInput, "requestId">) {
+    const controller = segmentSubmissions.current;
+    if (!controller) return;
     setSegmentConfirm(null);
-    if (reseed) setReseedingSegment(next);
+    if (input.reseed) setReseedingSegment(input.primaryUseCase);
     startTransition(async () => {
       try {
-        await updateSegmentAction({
-          primaryUseCase: next,
-          secondaryContext: workspace?.secondaryContext ?? null,
-          reseed,
-        });
-        toast(
-          reseed
-            ? `Reseeded for ${SEGMENTS[next].label}`
-            : `Now coordinating as ${SEGMENTS[next].label}`,
-          {
+        if (await controller.run(input, updateSegmentAction)) {
+          setFailedSegment(null);
+          toast(`Now coordinating as ${SEGMENTS[input.primaryUseCase].label}`, {
             tone: "success",
-            body: reseed
-              ? "Board repopulated with new examples."
+            body: input.reseed
+              ? SEGMENTS[input.primaryUseCase].templateId ? "Starter tasks added. Your existing tasks are kept." : "Board repopulated with new examples."
               : "Copy and examples will reflect your choice.",
-          },
-        );
-      } catch (e) {
-        toast("Couldn’t update", {
-          tone: "error",
-          body: (e as Error).message,
-        });
-      } finally {
-        setReseedingSegment(null);
-      }
+          });
+        }
+      } catch {
+        setFailedSegment(controller.retained() ?? input);
+      } finally { setReseedingSegment(null); }
     });
+  }
+  function applySegment(next: PrimaryUseCase, reseed: boolean) {
+    if (!workspace) return;
+    submitSegment({ workspaceId: workspace.id, primaryUseCase: next, secondaryContext: workspace.secondaryContext ?? null, reseed });
   }
 
   function applyDomain(next: DomainId) {
@@ -294,6 +298,22 @@ export function WorkspaceSection({
           </div>
         </div>
 
+        {failedSegment?.workspaceId === workspace.id && (
+          <div role="alert" className="rounded-xl border border-line-soft bg-bg-elevated p-5 text-sm text-ink">
+            <p className="font-medium">We couldn’t confirm this change.</p>
+            {failedSegment.reseed && !SEGMENTS[failedSegment.primaryUseCase].templateId ? (
+              <>
+                <p className="mt-2 text-ink-soft">Check your project before starting this pack again. Retrying a reset could replace your work.</p>
+                <details className="mt-3 text-xs text-ink-soft"><summary>Setup details for recovery</summary><pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all">{JSON.stringify({ version: 1, ...failedSegment }, null, 2)}</pre></details>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-ink-soft">Try the same change again. Any starter tasks already added will be kept.</p>
+                <button type="button" disabled={pending} onClick={() => submitSegment(failedSegment)} className="mt-4 rounded-full bg-ink px-5 py-2.5 font-medium text-white disabled:opacity-60">{pending ? "Checking change…" : "Try again"}</button>
+              </>
+            )}
+          </div>
+        )}
         {/* Coordination type */}
         <div className="rounded-xl border border-line-soft bg-bg-elevated p-5">
           <Label>What you&apos;re coordinating</Label>
@@ -309,7 +329,7 @@ export function WorkspaceSection({
                 <button
                   key={id}
                   type="button"
-                  disabled={!canEdit || pending || isActive}
+                  disabled={!canEdit || pending || isActive || failedSegment?.workspaceId === workspace.id}
                   onClick={() => setSegmentConfirm(id)}
                   className={
                     "group rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed " +
@@ -362,7 +382,7 @@ export function WorkspaceSection({
                 <button
                   key={id}
                   type="button"
-                  disabled={!canEdit || pending || isActive}
+                  disabled={!canEdit || pending || isActive || failedSegment?.workspaceId === workspace.id}
                   onClick={() => setDomainConfirm(id)}
                   className={
                     "group rounded-lg border px-4 py-3 text-left transition-colors disabled:cursor-not-allowed " +
@@ -434,8 +454,9 @@ export function WorkspaceSection({
             Switch to {segmentConfirm ? SEGMENTS[segmentConfirm].label : ""}?
           </h3>
           <p className="mt-2 text-[13px] leading-[1.55] text-ink-soft">
-            Update only changes copy and examples. Re-seed wipes tasks and
-            loads new starters for this coordination type.
+            Update only changes copy and examples. {segmentConfirm && SEGMENTS[segmentConfirm].templateId
+              ? "Re-seed adds another set of starter tasks and keeps your existing tasks."
+              : "Re-seed replaces tasks with new starters for this coordination type."}
           </p>
           <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
             <button
