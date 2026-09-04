@@ -696,8 +696,13 @@ test("demo and review actions exit before tenant, database, or disk access", () 
   );
   assert.match(
     settingsApp,
-    /<div inert=\{readOnly \|\| undefined\} aria-disabled=\{readOnly \|\| undefined\}>/,
+    /<div inert=\{sectionReadOnly \|\| undefined\} aria-disabled=\{sectionReadOnly \|\| undefined\}>/,
   );
+
+  // The sole interactive read-only section is the credential-free Drive
+  // review fixture. The live mode and every other settings section stay inert.
+  assert.match(settingsApp, /interactiveDriveReview = readOnly && isDemoMode\(\) && tab === "storage" && driveEnabled/);
+  assert.match(settingsApp, /sectionReadOnly = readOnly && !interactiveDriveReview/);
 
   const calendarBody = calendarRoute.slice(
     calendarRoute.indexOf("export async function GET"),

@@ -143,6 +143,8 @@ export function SettingsApp({
 }) {
   const driveEnabled = projectDriveUiEnabled();
   const [tab, setTab] = useState<Tab>(driveEnabled && isDemoMode() ? "storage" : "workspace");
+  const interactiveDriveReview = readOnly && isDemoMode() && tab === "storage" && driveEnabled;
+  const sectionReadOnly = readOnly && !interactiveDriveReview;
   const tabs = TABS.map((item) => item.id === "storage" && driveEnabled ? { ...item, label: "Connections" } : item);
 
   return (
@@ -229,7 +231,7 @@ export function SettingsApp({
             })}
           </div>
 
-          <div inert={(readOnly && !(tab === "storage" && driveEnabled)) || undefined} aria-disabled={(readOnly && !(tab === "storage" && driveEnabled)) || undefined}>
+          <div inert={sectionReadOnly || undefined} aria-disabled={sectionReadOnly || undefined}>
           {tab === "workspace" ? (
             <WorkspaceSection workspace={workspace} myRole={myRole} />
           ) : null}
