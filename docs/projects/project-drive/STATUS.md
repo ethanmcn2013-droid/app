@@ -1,69 +1,32 @@
 # Status — Project Drive
 
-## UI slice update · 2026-09-04
+## January takeover · 2026-09-04
 
-`feat/january-drive-ui` starts at `7d4040cbd59f4611ca69a60967b34bd58181d4c5`.
-The current user delegation supersedes the historical "awaiting founder choice"
-implementation stop below: A · Custodian is the delegated proposed thesis,
-not a founder selection/lock. The default-off Connections/Resources slice is
-implemented for internal review; WP-7 acceptance is still incomplete.
+This task is accountable for Drive. The stopped Drive task and package evidence below remain provenance. User-owned work was preserved: unpublished changes committed in 1ea5dd8a, January dependency integration 24a59e72 and migration CI 7d4040cb. PR #165 now targets release/january-2027; PR #168 assembles Drive with the other January work. Nothing here authorizes production.
 
-Read `UI-SLICE.md`, `UI-MATERIALITY.md` and `ui-evidence/README.md` for the
-changed scope, preview/test pointers, implementation evidence and gaps.
-The bounded follow-up in `UI-FOLLOW-UP.md` adds server-checked handover choices,
-confirmation and same-journal continuation. Pending uploads after reload now
-block new intake and explain the missing content-binding prerequisite; byte
-resumption after reselection is deliberately not implemented. Full setup/repair
-visibility, killed-browser recovery and real provider acceptance remain open.
-The lead independently reviews browser
-and security behavior. No production state, schema, provider credentials,
-billing/invite implementation or launch flags were changed.
+**Latest complete Linux checkpoint: 50f16575d298cd2e2b7eb30f845da385e48e46bb.** Verify run 33916021010 passed lint, typecheck, full declared tests, db:contract 62/62, disposable migration fresh/no-op rehearsal, Drive stages 11/11 + 20/20 + 332/332, build and performance ceilings. CI 33916020920 and experience 33916020941 also passed. Shared runtime was 246.2 KB gzip against the 247 KB ceiling; the 170 KB target is still unmet. The former published deletion-order assertion and bundle-ceiling failure are superseded by this checkpoint, not excused as Windows faults. Later candidate commits need receiving gates.
 
-The lead reports Linux base lint/typecheck/full tests/Drive lifecycle/build
-passing. Shared perf 247.3 KB against 247 KB remains a separate agent's work.
-Settings registry carries pending billing visual acceptance; after integration
-consult `docs/execution/january-2027/BILLING-REHEARSAL.md`. No score or formal
-materiality approval is asserted by these mechanical registry updates.
+A built local demo at 50f16575 plus scoped copy changes subsequently committed in 450dda44 passed all 132 critical browser cases with Drive UI enabled. Direct synthetic owner-change and reload-state review is in experience/reviews/january-drive-copy-20260904/README.md. The critical fixture is regression context, not proof of every Drive state. No provider result or human comprehension is inferred.
 
-The older package log below is preserved as historical backend evidence and
-must not override this dated UI update.
+Independent scoped security review of immutable 50f16575 found no validated new Drive UI finding: 38 existing UI tests and 12 additional action-boundary tests passed. Existing backend code was traced only as needed; this is not a fresh exhaustive backend audit or live-provider acceptance.
 
-The durable execution record for a later Codex or Claude Code session. Read it
-with `PROJECT.md` and `DECISIONS.md`; code, receipts and test output remain the
-evidence behind every claim. Update it at the end of every work package and
-before a PR state changes. A `done` mark means the acceptance criteria and
-listed gates passed — not merely that code was written.
+## Current work packages
 
-**Last updated:** 2026-09-03 · WP-0 and the two-account WP-1 Google sharing spike are
-complete. WP-2 is integrated. Migrations 0028 and 0029 are staged behind the
-production founder gate; both have recorded disposable local rehearsal
-evidence below. The
-WP-4–6 backend is assembled as a draft release candidate, including immutable
-connections, durable folder and permission work, handover, exact access
-coverage and direct Drive upload. WP-8's deletion, account-erasure and native
-byte-custody controls are at final integration: the final integration commit,
-complete gate counts and app PR CI are explicitly pending below. Nothing is
-accepted or launched. Production UI still waits for the WP-7 founder design
-choice; production migrations, privacy wording, deployment and all four worker
-flags remain untouched or off.
+| WP | Package | State and next acceptance |
+|---|---|---|
+| 0 | Fix the floor | Historical acceptance retained. Browser-direct storage and single MAX_UPLOAD_BYTES (50 MiB, displayed 50 MB) remain. Native free allowance remains lower. Live regression is required before launch. |
+| 1 | Two-account sharing spike | Historical 2026-09-02 success retained. Separate full in-product lifecycle remains unobserved. |
+| 2 | Secrets | Implemented in ddbf7380 and retained through candidate checks. Production key/rotation/restore receipts remain separate. |
+| 3 | Schema | 0028/0029 rehearsed against disposable local DBs, including no-op rerun/integrity/FKs. Production remains unapplied and gated. |
+| 4 | Connection | Backend plus default-off Connections UI implemented. Actual OAuth/reauth/disconnect lifecycle and final UI acceptance open. |
+| 5 | Folder and sharing | Backend, live-permission DTO, exact-email display, owner choices and same-journal handover continuation implemented. Real two-account grant/revoke/handover and failure recovery open. |
+| 6 | Upload | Resources wired to same-claim resumable browser bytes and verified finalize. Mounted retry and definitive pre-delegation native fallback tested. Closed-tab pending discovery blocks new intake; safe ordinary probe/adoption and reselected-byte recovery remain incomplete. Live 50 MB/interruption/quota tests open. |
+| 7 | Surfaces | 5cb93f68 and cd0df47e implemented A Custodian under delegated authority. 450dda44 clarifies copy. No specific founder selection or seven-seat lock is claimed. Full responsive/accessibility/state quality acceptance open. |
+| 8 | Resilience/release | Backend candidate passes Linux checkpoint; metadata/native custody, deletion and repair stages are tested. Four workers are independently default off. Final combined checks, feature-disable recovery, operator/provider rehearsal and release evidence remain open. |
 
----
+The UI build flag NEXT_PUBLIC_PROJECT_DRIVE_UI is not a global backend kill switch. Feature disable and worker controls must be rehearsed according to their actual semantics. No UI may claim Google revocation complete while provider state is pending.
 
-## Work packages
-
-| WP | Package | Status | Notes |
-|---|---|---|---|
-| 0 | Fix the floor | **done** | Q1 answered: the token IS provisioned. A fifth, binding number was found (Vercel's 4.5 MB body cap) and uploads moved browser → Blob so 50 MB is real. Ten §2 rules ratcheted |
-| 1 | Spike the Drive chain | **done** | Owner flow passed. Signed in as `ethan@signalstudio.ie`, the member opened the shared board folder and file, could not open the parent, then lost both child links after exact permission revocation. This was a two-account Google sharing spike, not the still-pending in-product lifecycle; the member-token API 404 is documented separately from the real Drive-link path |
-| 2 | Secrets substrate | **done on feature branch** | AES-256-GCM envelope, versioned key custody, log/Sentry redaction and token-custody contracts are in commit `ddbf7380` |
-| 3 | Schema (migrations 0028 and 0029) | **staged, founder-gated** | Generation-aware storage, encrypted connection custody, exact grant receipts and the durable operation journal pass contract checks. Both migrations have fresh-apply/no-op evidence on disposable local databases. Neither migration has touched production; Q5 is open |
-| 4 | The connection | **backend integrated; acceptance blocked** | Exact callback origin, immutable connect/reconnect, private root, disconnect, own-user summary and GDPR integration are implemented. Exact permission and credential revocation retain encrypted custody until confirmed. The Connections product surface and live in-product lifecycle have not run |
-| 5 | Folder and sharing | **backend integrated; acceptance blocked** | Folder/grant execution, membership hooks, repair, handover, account fencing and exact current-email writer coverage are integrated. Not `done`: live in-product membership/access lifecycle and the selected visibility surface remain |
-| 6 | Upload | **backend integrated; acceptance blocked** | Destination-bound resumable sessions, quota fallback, provider-result verification, erasure recovery and exact-coverage fallback are integrated. The Resources UI is not wired to this path and the live 50 MB, killed-browser, full-Drive and disconnect criteria have not run |
-| 7 | Surfaces | **awaiting founder design choice** | Phase-2 exploration is complete: A · Custodian, B · Ledger and C · Threshold cover eight states at four viewports (96 frames, 202 assertions). Production UI for **Connections**, **Who can open this board's files** and **Resources** waits for one thesis plus any numbered zones to be selected and locked |
-| 8 | Resilience and launch | **backend assembled; final integrated verification pending** | Four independent count-only repair paths are present and default off; interactive handover and durable deletion controls are implemented. Final account/native integration and complete app gates remain placeholders. Launch also waits for WP-7 UI/live acceptance, founder-authorized migrations 0028/0029, founder-approved privacy wording, deployment authorization and individual worker activation |
-
----
+See PROJECT.md, DECISIONS.md, UI-SLICE.md, UI-FOLLOW-UP.md, UI-MATERIALITY.md and the owning Studio programme index. Prior package details below are dated historical receipts, not current override authority.
 
 ## Open questions
 
@@ -79,7 +42,7 @@ that depends on it.
 | ~~Q4~~ | ~~Which single file-size number becomes the truth in WP-0~~ **Answered 2026-08-27 by the founder: 50 MB, made real by client-direct upload.** See D11 | — | closed |
 | Q5 | Does the founder authorize migrations 0028 and 0029 against production through the target-bound `tasks-migration-execution/1` receipt workflow, after a verified backup and isolated-copy rehearsal | WP-3 | founder |
 | Q6 | Privacy-policy wording for files residing in a member's personal Drive | WP-8 | founder |
-| Q8 | Which design thesis — A · Custodian, B · Ledger or C · Threshold — should become the production UI, and which numbered zones (1 chrome/hierarchy, 2 ownership story, 3 live access truth, 4 Resources/provenance, 5 motion/reassurance) should carry forward | WP-7 | founder |
+| Q8 | A Custodian is the delegated internal implementation direction. Formal final design/state acceptance remains open; a renewed routine founder pick is not required. | WP-7 acceptance | principal integrator |
 | Q9 | After UI and live acceptance, does the founder authorize production deployment, and then the activation of each of the four repair flags as separate operational decisions | WP-8 | founder |
 
 ---
@@ -128,9 +91,9 @@ status.
 | 2026-09-03 | Four-worker independence and count-only response | Commits `face10eb` and `196a8cb1`; `src/app/api/cron/project-drive-grant-repair/route.test.ts` rerun on the integrated worktree | 4/4 passed. Revocation, grant creation, folder provision/rename and exact native-byte cleanup use four literal flags, default off, and one selection cannot enable another; output contains counts only |
 | 2026-09-03 | Connections design exploration | Branch `design/project-drive-connections-exploration`, commit `bc431a25`; deterministic comparison harness | A · Custodian, B · Ledger and C · Threshold each cover all eight brief states at 390, 768, 1280 and 1440 pixels: 96 frames total. Behaviour, overflow, accessible-name, focus and product-language review passed 202/202. Production implementation is intentionally paused for the founder selection gate |
 | 2026-09-03 | Migration 0029 disposable rehearsal | Unique local file `signal-project-drive-migration-49d3adba7e0b4c5cb4ed509a17889bd2/tasks.db`; `node scripts/db/migrate.mjs migrate --database-url file:<disposable-db> --environment=local` twice, then `status`; `pnpm db:contract` | First run applied the 0014 baseline and 15 forwards through `0029_project_drive_operations`; every recorded postcondition passed, including integrity `ok` and zero foreign-key violations. The second run returned `no-op`; status returned `current`, 30 registered SQL files and zero pending. The content-addressed ledger/receipt/journal contract passed 62/62. No remote or production database was contacted, and this is not production authorization |
-| 2026-09-03 | Final account/native custody integration | **[FINAL INTEGRATION PLACEHOLDER — replace with the integrated commit hash and focused test counts]** | Pending. Do not mark WP-8 backend hardening complete until exact native claims in owned and surviving Projects are covered across erasure, rollback, storage failure and replay |
-| 2026-09-03 | Final integrated release-candidate gates | **[FINAL GATES PLACEHOLDER — replace with command-by-command results and exact Project Drive assertion accounting]** | Pending: typecheck, lint, `test:project-drive`, full test, database contract, language, experience self-test/fixtures/validation, build, performance budgets, module boundaries and tenant rules |
-| 2026-09-03 | Draft app PR CI | **[FINAL CI PLACEHOLDER — replace with PR head SHA and every required check result after the final push]** | Pending. Linux CI is the release authority for the known Windows libSQL teardown behaviour; production migration and deployment gates must remain intentionally closed |
+| 2026-09-03 | Final account/native custody integration | Superseded by Linux checkpoint 50f16575, run 33916021010 | Integrated Drive stages 11/11 + 20/20 + 332/332 pass. This replaces the unfilled September 3 checkpoint; final provider/production acceptance remains open |
+| 2026-09-03 | Final integrated release-candidate gates | Superseded by 50f16575, runs 33916021010 / 33916020920 / 33916020941 | Declared Linux code/build/database/performance/experience gates passed at that exact checkpoint. Later integrated revisions require fresh checks; runtime target and live acceptance remain open |
+| 2026-09-03 | Draft app PR CI | PR #168 at 50f16575; the three candidate checks above passed | PR #165 is retained as source lineage. January branches disable Git deployments. Production migration checks remain separate; 0028/0029 are intentionally unapplied |
 
 ---
 

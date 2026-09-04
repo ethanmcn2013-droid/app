@@ -26,7 +26,7 @@ const purchase: StripeAccess = {
 };
 function sync(f: Awaited<ReturnType<typeof entitlementFixture>>, input: StripeAccess) {
   return access.reconcileStripeAccess(input, {
-    database: f.local.db, mirror: value => access.reconcileSharedStripeAccess(value, f.shared),
+    database: f.local.db, sharedDatabase: f.shared, mirror: value => access.reconcileSharedStripeAccess(value, f.shared),
   });
 }
 
@@ -57,7 +57,7 @@ for (const tier of ["event", "workspace", "studio"] as const) {
       const input = { ...purchase, tier, workspaceId: tier === "studio" ? null : "project-a" };
       await sync(f, input);
       await assert.rejects(access.reconcileStripeAccess({ ...input, revoked: true }, {
-        database: f.local.db, mirror: async () => { throw new Error("mirror offline"); },
+        database: f.local.db, sharedDatabase: f.shared, mirror: async () => { throw new Error("mirror offline"); },
       }), /mirror offline/);
       assert.equal((await f.local.db.select().from(entitlements))[0].expiresAt?.getTime(), 0);
       assert.equal((await f.shared.select().from(sharedEntitlements))[0].status, "active");
