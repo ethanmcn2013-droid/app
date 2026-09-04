@@ -44,6 +44,8 @@ import { DriveUploadRow } from "./drive-upload-row";
 import { DriveUploadReview } from "./drive-upload-review";
 import { driveReloadCopy, driveReloadState } from "@/lib/project-drive-reload";
 import { DriveReloadNotice } from "./drive-reload-notice";
+import { useDriveUploadRecovery } from "./use-drive-upload-recovery";
+import { pendingOwnDriveUploads } from "@/lib/project-drive-upload-recovery";
 
 // Client-side hint only; the server is the authority on size limits, and
 // it re-checks this against the board's tier and remaining quota before it
@@ -185,6 +187,7 @@ function TaskResources({ task }: { task: Task }) {
   const [items, setItems] = useState<DisplayRow[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [reload, setReload] = useState(0);
+  const resourceRead = useRef(0);
   const [, startTransition] = useTransition();
   const [dragDepth, setDragDepth] = useState(0);
   const [linkInput, setLinkInput] = useState("");
@@ -195,22 +198,39 @@ function TaskResources({ task }: { task: Task }) {
   const driveEnabled = projectDriveUiEnabled();
   const { entries: driveEntries, add: addDriveUpload } = useDriveUploads(task.id, sendFile, () => setReload((value) => value + 1));
   const reloadState = driveEnabled && !isDemoMode() ? driveReloadState(items === null ? null : items.filter((row): row is RealRow => row.kind === "real"), loadFailed, driveEntries.map(entry => entry.id)) : null;
+  const recoveryRows = (items ?? []).filter((row): row is RealRow => row.kind === "real").map(row => ({ ...row, taskId: task.id }));
+  const mountedIds = driveEntries.map(entry => entry.id);
+  const canCheckGoogle = pendingOwnDriveUploads(recoveryRows, task.id, me, mountedIds).length > 0;
+  const { state: recoveryState, check: checkUploads } = useDriveUploadRecovery(task.id, async () => {
+    // Use the ordinary scoped list after every attempt, including a lost CAS.
+    // A completion returned by the probe alone never fabricates a visible row.
+    const sequence = ++resourceRead.current;
+    try {
+      const rows = await listTaskResourcesAction(task.id);
+      if (resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
+    } catch {
+      if (resourceRead.current === sequence) setLoadFailed(true);
+      throw new Error("Resources unavailable");
+    }
+  });
 
   const refreshKey = task.updatedAt?.getTime();
 
   useEffect(() => {
     let ignore = false;
+    const sequence = ++resourceRead.current;
     listTaskResourcesAction(task.id)
       .then((rows) => {
-        if (!ignore) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
+        if (!ignore && resourceRead.current === sequence) { setItems(rows.map(toDisplayRow)); setLoadFailed(false); }
       })
       .catch(() => {
-        if (!ignore) {
+        if (!ignore && resourceRead.current === sequence) {
           setLoadFailed(true);
         }
       });
     return () => {
       ignore = true;
+      resourceRead.current += 1;
     };
   }, [task.id, refreshKey, reload]);
 
@@ -427,7 +447,7 @@ function TaskResources({ task }: { task: Task }) {
       {loadFailed ? <p role="alert" className="mb-3 text-[12px] text-ink-soft">Resources could not be refreshed. <button className="min-h-[44px] px-2 underline" onClick={() => setReload((value) => value + 1)}>Try again</button></p> : items === null ? <p role="status" className="mb-3 text-[12px] text-ink-soft">Loading Resources…</p> : total === 0 ? <p className="mb-3 text-[12px] text-ink-soft">No resources attached yet.</p> : null}
       {driveEnabled ? <p className="mb-3 text-[12px] leading-relaxed text-ink-soft">The destination is checked when you attach. If Drive is unavailable before sending, you can choose Signal Studio.</p> : null}
       {driveEnabled && isDemoMode() ? <DriveUploadReview /> : null}
-      {reloadState ? <DriveReloadNotice state={reloadState} onRefresh={() => setReload(value => value + 1)} /> : null}
+      {reloadState ? <DriveReloadNotice state={reloadState} canCheckGoogle={canCheckGoogle} recovery={recoveryState} onRefresh={() => void checkUploads(recoveryRows, me, mountedIds)} /> : null}
       {driveEntries.length ? <ul aria-label="File upload status" className="mb-3 space-y-2">{driveEntries.map((entry) => <DriveUploadRow key={entry.id} name={entry.name} size={entry.size} state={entry.state} onRetry={() => void entry.attempt.run()} onNative={() => void entry.attempt.useNative()} onCancel={entry.attempt.cancel} />)}</ul> : null}
 
       {/* Hidden file input */}

@@ -13,6 +13,8 @@ import {
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import { allowedMimeTypes } from "@/lib/upload-validation";
 import { MAX_UPLOAD_BYTES } from "@/lib/upload-limit";
+import type { DriveUploadRecoveryResult } from "@/lib/project-drive-upload-recovery";
+import { authorizeStoredProject } from "@/server/actions/project-authz";
 import {
   driveUploadSessionAadContext,
   keyRingFromEnv,
@@ -408,7 +410,10 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
   async function assertUnfencedUploadLineages(
     database: Pick<UploadDb, "select">,
     authorization: AuthorizedProjectDriveContext,
-    session: ProjectDriveStorageSession,
+    session: Readonly<{
+      storage: Pick<ProjectDriveStorageSession["storage"], "id" | "connectionId">;
+      credential: Pick<ProjectDriveStorageSession["credential"], "ownerUserId">;
+    }>,
     requireCurrent: boolean,
   ): Promise<CurrentStorage> {
     const storageRows = await database
@@ -596,10 +601,14 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
     row: DriveResource,
     input: NormalizedRequest,
     file: GoogleDriveFile,
+    recoveryTaskId?: string,
   ): Promise<DriveResource> {
     assertRequestMatches(row, authorization, input);
     const receipt = exactFileReceipt(file, input, session.storage.folderId);
     return deps.database.transaction(async (tx) => {
+      if (recoveryTaskId !== undefined) {
+        await assertRecoveryAuthority(tx, authorization, row, recoveryTaskId);
+      }
       const [persisted] = await tx
         .update(resources)
         .set({
@@ -653,7 +662,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
         false,
       );
       return persisted;
-    });
+    }, { behavior: "immediate" });
   }
 
   async function acquireClaim(
@@ -809,8 +818,12 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
     authorization: AuthorizedProjectDriveContext,
     session: ProjectDriveStorageSession,
     row: DriveResource,
+    recoveryTaskId?: string,
   ): Promise<DriveResource> {
     return deps.database.transaction(async (tx) => {
+      if (recoveryTaskId !== undefined) {
+        await assertRecoveryAuthority(tx, authorization, row, recoveryTaskId);
+      }
       const now = databaseNowSeconds(deps.databaseNowSeconds);
       const [refreshed] = await tx
         .update(resources)
@@ -826,6 +839,8 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
             eq(resources.addedByUserId, authorization.actorUserId),
             eq(resources.accessState, "pending"),
             eq(resources.storedPath, row.storedPath!),
+            recoveryTaskId === undefined ? undefined : row.refreshedAt === null
+              ? isNull(resources.refreshedAt) : eq(resources.refreshedAt, row.refreshedAt),
           ),
         )
         .returning();
@@ -840,7 +855,90 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
         false,
       );
       return refreshed;
+    }, { behavior: "immediate" });
+  }
+
+  async function assertRecoveryAuthority(
+    database: Pick<UploadDb, "select">,
+    authorization: AuthorizedProjectDriveContext,
+    row: DriveResource,
+    taskId: string,
+  ): Promise<void> {
+    if (row.taskId !== taskId || row.workspaceId !== authorization.projectId ||
+        row.addedByUserId !== authorization.actorUserId || row.kind !== "upload" ||
+        row.provider !== "drive" || row.storage !== "drive" || row.countsAgainstStorage !== 0) {
+      throw new DriveUploadError("request-conflict");
+    }
+    const [task] = await database.select({ workspaceId: tasks.workspaceId })
+      .from(tasks).where(eq(tasks.id, taskId));
+    if (task?.workspaceId !== row.workspaceId) throw new DriveUploadError("request-conflict");
+    const grant = await authorizeStoredProject({
+      storedProjectId: task.workspaceId, actorUserId: authorization.actorUserId,
+      capability: "createOrEditTasks", archivePolicy: "enforce", executor: database,
     });
+    if (!grant.ok) throw new DriveUploadError("request-conflict");
+    await assertUploadProjectNotDeleting(database, row.workspaceId);
+  }
+
+  /** Inspect one saved claim. This path cannot reach mintSession, quota cleanup
+   * or erasure recovery. It shares the ordinary upload receipt refresh/CAS and
+   * exact-file verifier; only verified completion changes attachment state. */
+  async function recover(
+    authorization: AuthorizedProjectDriveContext,
+    input: Readonly<{ taskId: string; resourceId: string }>,
+  ): Promise<DriveUploadRecoveryResult> {
+    try {
+      assertProjectDriveCapability(authorization, "createOrEditTasks");
+      if (!UUID_PATTERN.test(input.resourceId) || typeof input.taskId !== "string") return "unavailable";
+      // Before credential refresh (itself provider I/O), prove the stored task,
+      // original uploader, immutable generation and both account fences.
+      const row = await deps.database.transaction(async (tx) => {
+        const [claim] = await tx.select().from(resources).where(eq(resources.id, input.resourceId));
+        if (!claim) throw new DriveUploadError("not-found");
+        await assertRecoveryAuthority(tx, authorization, claim, input.taskId);
+        if (claim.accessState === "ok") return claim;
+        if (claim.accessState !== "pending" || claim.externalId !== null || claim.url !== null || !claim.storageGenerationId) {
+          throw new DriveUploadError("request-conflict");
+        }
+        const [storage] = await tx.select({ id: workspaceStorage.id, connectionId: workspaceStorage.connectionId, ownerUserId: providerConnections.userId })
+          .from(workspaceStorage).innerJoin(providerConnections, eq(providerConnections.id, workspaceStorage.connectionId))
+          .where(and(eq(workspaceStorage.id, claim.storageGenerationId), eq(workspaceStorage.workspaceId, claim.workspaceId)));
+        if (!storage) throw new DriveUploadError("request-conflict");
+        await assertUnfencedUploadLineages(tx, authorization, { storage, credential: storage }, false);
+        return claim;
+      }, { behavior: "immediate" });
+      if (row.accessState === "ok") return row.externalId && row.url ? "complete" : "unavailable";
+      // An undelegated or interrupted mint is not permission to create a session.
+      if (!row.storedPath) return "pending";
+      const request = normalizeRequest({ resourceId: row.id, taskId: row.taskId, name: row.title,
+        mimeType: row.mimeType!, sizeBytes: row.sizeBytes! });
+      return await deps.access.withStorageSession(authorization,
+        { kind: "generation", storageGenerationId: row.storageGenerationId! }, async (session) => {
+          const active = await refreshDelegatedReceipt(authorization, session, row, input.taskId);
+          const status = await queryGoogleDriveResumableUploadSession(
+            open(active.storedPath!, sessionContext(active), deps.keyRing), request.sizeBytes, deps.fetchImpl,
+          );
+          let file: GoogleDriveFile | null = null;
+          if (status.kind === "complete") file = status.file;
+          if (status.kind === "expired") {
+            // Global marker search detects wrong-parent/ambiguous matches; an
+            // empty result stays pending, never starts replacement bytes.
+            await assertRecoveryAuthority(deps.database, authorization, active, input.taskId);
+            await assertUnfencedUploadLineages(deps.database, authorization, session, false);
+            file = await markedFile(session, row.id);
+          }
+          if (!file) {
+            await assertRecoveryAuthority(deps.database, authorization, active, input.taskId);
+            return "pending";
+          }
+          await persistFile(authorization, session, active, request, file, input.taskId);
+          return "complete";
+        });
+    } catch {
+      // A concurrent finalize may win the same CAS. The caller re-reads saved
+      // Resources; do not guess success, expose provider errors or fall back.
+      return "unavailable";
+    }
   }
 
   async function mintSession(
@@ -1495,7 +1593,7 @@ export function createDriveUploadService(deps: DriveUploadServiceDependencies) {
     return deleted.length === 1;
   }
 
-  return Object.freeze({ start, finalize, remove });
+  return Object.freeze({ start, finalize, remove, recover });
 }
 
 function defaultDriveUploadService() {
@@ -1519,6 +1617,13 @@ export async function finalizeProjectDriveUpload(
   input: Readonly<{ resourceId: string; driveFileId: string }>,
 ): Promise<FinalizeDriveUploadResult> {
   return defaultDriveUploadService().finalize(authorization, input);
+}
+
+export async function recoverProjectDriveUpload(
+  authorization: AuthorizedProjectDriveContext,
+  input: Readonly<{ taskId: string; resourceId: string }>,
+): Promise<DriveUploadRecoveryResult> {
+  return defaultDriveUploadService().recover(authorization, input);
 }
 
 export async function removeProjectDriveResource(

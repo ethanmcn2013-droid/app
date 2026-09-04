@@ -7,9 +7,11 @@ const result = spawnSync(process.execPath, [
   "src/lib/project-drive-ui.test.ts",
   "src/lib/project-drive-follow-up.test.tsx",
   "src/lib/project-drive-upload-machine.test.ts",
+  "src/lib/project-drive-upload-recovery.test.ts",
   "src/lib/drive-resumable-upload.test.ts",
   "src/server/connections/project-drive-ui-status.test.ts",
   "src/server/connections/project-drive-handover-ui.test.ts",
+  "src/server/connections/project-drive-upload-recovery.test.ts",
   "src/server/project-drive-ui-contract.test.mjs",
 ], {
   stdio: "inherit",
