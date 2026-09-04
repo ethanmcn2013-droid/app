@@ -12,7 +12,7 @@ export function driveReloadState(
 }
 
 export const driveReloadCopy: Record<Exclude<DriveReloadState, null>, string> = {
-  loading: "Checking saved Resources before starting another upload…",
-  unavailable: "Saved Resources could not be checked. Refresh them before starting another upload.",
-  pending: "An earlier Drive upload is unconfirmed. Keep its existing entry. The uploader should return to the original tab if it is still open. This page cannot verify that a reselected file has the same contents. If the original tab is closed, ask for help checking the existing upload before attaching another copy. Refresh saved status after it is resolved.",
+  loading: "Checking earlier uploads…",
+  unavailable: "Earlier uploads could not be checked. Try again before adding another file.",
+  pending: "An earlier Drive upload still needs attention. Finish it in the original tab if it is open. If that tab has closed, contact support to check the upload before trying again. Keep the existing entry to avoid creating a second copy.",
 };

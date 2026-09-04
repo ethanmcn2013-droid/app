@@ -5,7 +5,7 @@ import type { DriveHandoverRead } from "@/lib/project-drive-handover-ui";
 import { driveButton } from "./connections-view";
 
 const stateCopy: Record<DriveHandoverRead["state"], string> = {
-  ready: "These board owners have a saved Drive connection. The server rechecks the change when you confirm; this list does not confirm Google access.",
+  ready: "Choose another board owner who has connected Google Drive. Their connection will be checked before the change.",
   in_progress: "A storage owner change is already in progress. Continue that saved change or check its status again.",
   needs_attention: "The saved change needs attention. Another change cannot be started here. Ask for help resolving it, then check again.",
   uploads_pending: "An earlier Drive upload is unconfirmed. Finish it in its original tab before changing the storage owner. If that tab is closed, ask for help checking the existing upload.",
@@ -33,7 +33,7 @@ export function DriveHandoverView({ read, busy, onSubmit }: {
         <option value="">Choose an owner</option>
         {read.choices.map(choice => <option key={choice.userId} value={choice.userId}>{choice.name}</option>)}
       </select>
-    </div> : <p className="mt-3 text-ink">No other board owner has a ready saved Drive connection. Another board owner can connect their own Google Drive, then you can check again.</p> : null}
+    </div> : <p className="mt-3 text-ink">Another board owner needs to connect their Google Drive first. Then check again to choose them.</p> : null}
     {read.state === "in_progress" && target ? <p className="mt-3 break-words font-medium text-ink">Saved change: {target.name}</p> : null}
     {target && !confirmation ? <button className={`${driveButton} mt-3`} disabled={busy} onClick={() => setConfirmation(true)}>{read.state === "in_progress" ? "Continue saved change" : "Review owner change"}</button> : null}
     {target && confirmation ? <div className="mt-4 rounded-lg border border-line p-4" role="group" aria-label="Confirm storage owner change">

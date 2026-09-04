@@ -19,10 +19,10 @@ test("reloaded claims block new intake regardless of file metadata; refresh erro
 
 test("reload explanation offers only saved-state refresh, never reselect/resume/remove/native controls", () => {
   const html = renderToStaticMarkup(<DriveReloadNotice state="pending" onRefresh={() => { throw Error("render cannot fetch"); }} />);
-  assert.match(html, /cannot verify that a reselected file has the same contents/);
-  assert.match(html, /does not send a file or check Google directly/);
+  assert.match(html, /contact support to check the upload before trying again/);
+  assert.match(html, /does not restart the upload/);
   assert.equal((html.match(/<button/g) || []).length, 1);
-  assert.match(html, />Refresh saved status<\/button>/);
+  assert.match(html, />Check for updates<\/button>/);
   assert.doesNotMatch(html, /<input|<a |sessionUrl|Use Signal Studio|Remove|Resume upload/);
 });
 

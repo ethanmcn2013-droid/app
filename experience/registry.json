@@ -3855,10 +3855,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "9bd78407421421c2"
+      "materialityHash": "52aa27dae6dafc3b",
+      "materialityReview": {
+        "materialityHash": "52aa27dae6dafc3b",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-drive-owner-copy-20260904.json"
+      }
     },
     {
       "id": "tasks.resources.drive-reload-recovery",
@@ -3906,10 +3911,15 @@
       "screenshotCoverage": "none",
       "accessibilityCoverage": "none",
       "fixtureCoverage": "partial",
-      "lastReviewedAt": null,
+      "lastReviewedAt": "2026-09-04",
       "approvedBaselineReference": null,
       "intentionalExceptions": [],
-      "materialityHash": "48a0de57d9914fe6"
+      "materialityHash": "dfeb78dab6cff98f",
+      "materialityReview": {
+        "materialityHash": "dfeb78dab6cff98f",
+        "reviewedAt": "2026-09-04",
+        "evidence": "experience/reviews/january-drive-reload-copy-20260904.json"
+      }
     }
   ]
 }
