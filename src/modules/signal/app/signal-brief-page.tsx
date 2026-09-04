@@ -1,7 +1,10 @@
+import { notFound } from "next/navigation";
 import { QuietBriefingLedger } from "../components/brief/quiet-briefing-ledger";
 import { EvidenceDrawer } from "../components/signal/evidence-drawer";
 import { formatInstant } from "../components/signal/format";
 import { planningPeriodsEnabled } from "../lib/planning-periods/scope";
+import { parseBriefingReadScopeHint } from "../lib/planning-periods/read-scope-hint";
+import { AnalyticsApiError } from "../server/analytics/api-error";
 import { buildProgressiveLedgerDTO } from "../server/analytics/build-ledger-dto";
 import { isSignalAnalyticsEnabled } from "../server/analytics/feature-flag";
 import { calculateSignalView } from "../server/analytics/service";
@@ -31,6 +34,8 @@ export async function SignalBriefPage({
   searchParams,
 }: BriefingPageProps) {
   const input = await searchParams;
+  const hint = parseBriefingReadScopeHint(input, planningPeriodsEnabled());
+  if (hint.kind === "invalid") notFound();
   const planningPeriodRequested =
     planningPeriodsEnabled() &&
     typeof input.planningPeriodId === "string";
@@ -39,7 +44,27 @@ export async function SignalBriefPage({
     return <SignalLegacyBriefing searchParams={input} />;
   }
 
-  const context = await requireAnalyticsPageContext(input);
+  const analyticsInput = { ...input };
+  if (hint.kind === "scope" && hint.scope.kind === "workspace") {
+    const workspaceId = hint.scope.workspaceId;
+    // Home and canonical suite URLs need no sourceProduct marker. Conflicting
+    // native and canonical project claims are refused, never silently ranked.
+    if (input.workspace_id !== undefined && input.workspace_id !== workspaceId) notFound();
+    analyticsInput.workspace_id = workspaceId;
+    if (input.scope_type !== undefined && (
+      typeof input.scope_type !== "string" || !["workspace", "user", "project"].includes(input.scope_type)
+    )) notFound();
+    if (!input.scope_type || input.scope_type === "workspace") {
+      if (input.scope_id !== undefined && input.scope_id !== workspaceId) notFound();
+    }
+  }
+  let context;
+  try {
+    context = await requireAnalyticsPageContext(analyticsInput);
+  } catch (error) {
+    if (error instanceof AnalyticsApiError && [400, 403, 404].includes(error.status)) notFound();
+    throw error;
+  }
   const params = canonicalSignalParams(context, input, "briefing");
   const result = await calculateSignalView(
     context.authorization,

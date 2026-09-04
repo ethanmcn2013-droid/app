@@ -11,6 +11,8 @@ import type { TaskSignal } from "@/modules/signal/lib/briefing/types";
 import type { PlanningCatalog, SignalScope } from "@/modules/signal/lib/planning-periods/scope";
 import type { BriefingForUserResult } from "@/modules/signal/home";
 import { parseBriefingReadScopeHint } from "@/modules/signal/lib/planning-periods/read-scope-hint";
+import { AnalyticsApiError } from "@/modules/signal/server/analytics/api-error";
+import type { ParsedAnalyticsQuery } from "@/modules/signal/server/analytics/query";
 
 function load<T>(relative: string, boundaries: Record<string, unknown>): T {
   const file = new URL(relative, import.meta.url);
@@ -229,5 +231,91 @@ test("actual Home page carries its explicit scope and never invents a new-user v
   await assert.rejects(page.default({ searchParams: Promise.resolve({ workspaceId: "project-b" }) }), /not-found/);
   await page.default();
   assert.deepEqual(calls.at(-1), { clerkId: "synthetic" }, "a bare new-user visit remains supported");
+});
+
+function analyticsDispatcherFixture() {
+  let selects = 0;
+  let denied = false;
+  let periods = false;
+  let analytics = true;
+  const observed: ParsedAnalyticsQuery[] = [];
+  const queryDb = { select: () => {
+    const index = selects++ % 3;
+    // B deliberately lies outside this bounded navigation catalog. The real
+    // policy, not catalog position, decides whether a requested B may open.
+    const rows = index === 0 ? [{ id: "actor" }] : index === 1 ? [{ id: "project-a", name: "A", planningPeriodId: null }] : [];
+    const query = { from: () => query, where: () => query, innerJoin: () => query, limit: async () => rows };
+    return query;
+  } };
+  const context = load<typeof import("@/modules/signal/server/analytics/page-context")>("../../../modules/signal/server/analytics/page-context.ts", {
+    "@clerk/nextjs/server": { auth: async () => ({ userId: "synthetic" }) },
+    "@/lib/access-mode": { getAccessMode: () => "production" },
+    "@/server/db/ensure-user": { ensureUserProvisioned: async () => {} },
+    "../tasks-db/signal-tasks-db-client": { getTasksDb: () => queryDb },
+    "./policy": {
+      resolveLinkedAnalyticsWorkspace: async () => "project-a",
+      authorizeAnalyticsRequest: async (parsed: ParsedAnalyticsQuery) => {
+        observed.push(parsed);
+        if (denied) throw new AnalyticsApiError(403, "forbidden", "Synthetic denied membership");
+        throw new Error(`policy-boundary:${parsed.scope.workspaceId}`);
+      },
+    },
+    "./preferences": {}, "./service": {},
+  });
+  const pageData = load<typeof import("@/modules/signal/app/signal-page-data")>("../../../modules/signal/app/signal-page-data.ts", {
+    "next/navigation": { notFound: () => { throw new Error("not-found"); }, redirect: () => { throw new Error("onboarding"); } },
+    "../server/analytics/page-context": context,
+  });
+  const page = load<typeof import("@/modules/signal/app/signal-brief-page")>("../../../modules/signal/app/signal-brief-page.tsx", {
+    "next/navigation": { notFound: () => { throw new Error("not-found"); } },
+    "../lib/planning-periods/scope": { planningPeriodsEnabled: () => periods },
+    "../server/analytics/feature-flag": { isSignalAnalyticsEnabled: () => analytics },
+    "./signal-page-data": pageData,
+    "../server/analytics/service": {}, "../server/analytics/build-ledger-dto": {},
+    "../components/brief/quiet-briefing-ledger": {}, "../components/signal/evidence-drawer": {},
+    "./signal-legacy-briefing": { SignalLegacyBriefing: () => null },
+  });
+  return { page, observed, deny: () => { denied = true; }, flags: (a: boolean, p: boolean) => { analytics = a; periods = p; } };
+}
+
+test("real analytics dispatcher/context authorizes exact Home B and native B, never saved A", async () => {
+  const { page, observed } = analyticsDispatcherFixture();
+  for (const input of [{ contextVersion: "2", workspaceId: "project-b" }, { workspace_id: "project-b" }]) {
+    await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve(input) }), /policy-boundary:project-b/);
+    assert.equal(observed.at(-1)?.scope.workspaceId, "project-b");
+  }
+  await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve({}) }), /policy-boundary:project-a/);
+  await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve({ workspaceId: "project-b", sourceProduct: "tasks", projectId: "historical-label" }) }), /policy-boundary:project-b/);
+  assert.deepEqual(observed.at(-1)?.labelIds, ["historical-label"], "native compatibility still interprets a legacy Label as a filter");
+});
+
+test("analytics dispatch refuses disabled, malformed, conflicting and removed scopes neutrally", async () => {
+  const { page, observed, deny } = analyticsDispatcherFixture();
+  const bad: Record<string, string | string[]>[] = [
+    { planningPeriodId: "season" }, { workspaceId: " " }, { workspaceId: ["project-b", "project-a"] },
+    { workspace_id: " " }, { workspace_id: ["project-b", "project-a"] },
+    { workspaceId: "project-b", workspace_id: "project-a" },
+    { workspaceId: "project-b", scope_type: "workspace", scope_id: "project-a" },
+    { workspaceId: "project-b", scope_type: ["workspace"] },
+  ];
+  for (const input of bad) await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve(input) }), /not-found/);
+  assert.equal(observed.length, 0);
+  deny();
+  await assert.rejects(page.SignalBriefPage({ searchParams: Promise.resolve({ workspaceId: "removed-project" }) }), /not-found/);
+  assert.equal(observed.at(-1)?.scope.workspaceId, "removed-project");
+});
+
+test("engine selection retains legacy/period behavior after shared hint validation", async () => {
+  const { page, observed, flags } = analyticsDispatcherFixture();
+  for (const [analytics, periods, input] of [
+    [false, false, { workspaceId: "project-b" }],
+    [true, true, { planningPeriodId: "season" }],
+    [true, true, { workspaceId: "project-b", planningPeriodId: "season" }],
+  ] as const) {
+    flags(analytics, periods);
+    const result = await page.SignalBriefPage({ searchParams: Promise.resolve(input) });
+    assert.deepEqual(result.props.searchParams, input);
+  }
+  assert.equal(observed.length, 0);
 });
 
