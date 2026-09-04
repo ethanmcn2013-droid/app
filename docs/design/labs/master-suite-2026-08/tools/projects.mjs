@@ -25,10 +25,14 @@
    appear in another. Deliberately drawn from the CONTENT rather than from
    the project name — a leak shows up as somebody else's work sitting on
    your board, not as a stray title. */
+/* REVISED 2026-09-02: the second and third projects were a marketing
+   degree and a school year — a different life leaking the moment the
+   switcher opened. They are now two more of Orla's: a dinner series and
+   a trade fair, and the markers are drawn from their content as before. */
 const MARKERS = {
-  orchard: ["Mara & Finn", "marquee", "The Orchard reserved", "run-sheet"],
-  academic: ["MK3021", "literature review", "Aldi Ireland", "dissertation"],
-  school: ["5th year", "Leaving Certificate", "Edco", "predicted grades"],
+  orchard: ["Mara & Finn", "The Orchard reserved", "run-sheet", "olives"],
+  dinners: ["six-course", "Burgundies", "fire officer", "glassware"],
+  fair: ["exhibitor pack", "floor plan", "stand applications", "signage"],
 };
 
 export async function projects({ browser, url, check, head }) {
@@ -154,7 +158,7 @@ export async function projects({ browser, url, check, head }) {
         document.querySelector(`[data-project="${id}"]`).click();
         await new Promise((r) => setTimeout(r, 800));
       };
-      await go("school");
+      await go("fair");
       const away = titles();
       await go("orchard");
       return { same: JSON.stringify(before) === JSON.stringify(titles()), moved: JSON.stringify(before) !== JSON.stringify(away) };
@@ -241,10 +245,10 @@ export async function projects({ browser, url, check, head }) {
       return {
         head: (document.querySelector(".projSwitch span") || {}).textContent || "",
         cards: document.querySelectorAll(".board .card").length,
-        holdsOrchard: /marquee/.test(scope),
-        holdsAcademic: /literature review/.test(scope),
-        holdsSchool: /lesson plans/.test(scope),
-        timelineMerged: /assignment|lesson|tasting|Menu|Semester/.test(tl),
+        holdsOrchard: /run-sheet/.test(scope),
+        holdsAcademic: /six-course/.test(scope),
+        holdsSchool: /exhibitor pack/.test(scope),
+        timelineMerged: /dinner|fair opens|tasting/.test(tl),
         /* Three plans on one measure have to be in date order or the
            Timeline is drawing them on top of each other. */
         inOrder: dates.every((d, i) => i === 0 || dates[i - 1] <= d),

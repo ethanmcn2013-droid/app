@@ -3,98 +3,89 @@
 **Read this first on any resumed session.** Everything below is on disk;
 nothing here depends on a conversation being remembered.
 
-Last worked: **2026-08-27**, session ended by the founder mid-task —
-"stop everything and save everything, resume Monday". Everything is
-committed, pushed and published. Nothing is half-applied.
+Last worked: **2026-09-03**. Round 6 is run, recorded and published. The
+surface is NO LONGER frozen — seven fixes landed after the seats sat, so
+round 7 needs a fresh freeze before it starts.
 
 ## Position
 
 | | |
 |---|---|
-| Rounds | **5 run.** 1–3 on 2026-08-26, 4–5 on 2026-08-27. |
-| Round 5 | 29 raised · 25 stood · 4 refuted · **all 25 closed** · `panel/round-5.json` |
-| Scores | floor 7.2 → **8.6**, ceiling 9.0, spread 1.40 → **0.40**, and the engagement's **first sign-off** |
-| Gates | **all four green** · `verify.mjs` **485** · `gate.mjs` · `interaction-check.mjs` 45 · `tools/prove-check.mjs` 4 |
-| Ending | **NOT MET.** Two consecutive rounds with no standing blocking or misleading, on a **frozen** surface. Round 5 stood 4 blocking and 6 misleading, and the surface has not been frozen since — three build passes have landed on top of it. |
-| Branch | `design/master-suite-2026-08` @ `3d8fae3b`, pushed |
-| Artifact | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 |
-| Report | https://claude.ai/code/artifact/42a27dec-1879-4341-9f96-86921f978124 |
+| Rounds | **6 run.** 1–3 on 2026-08-26, 4–5 on 2026-08-27, 6 on 2026-09-03 — the first on a frozen surface. |
+| Round 6 | 34 raised · **24 confirmed · 10 refuted** · 7 closed · **17 standing** · `panel/round-6.json` |
+| Scores | floor **8.4** (UI composition), ceiling **8.8** (Brand and copy), spread 0.40 |
+| Refutation | 14% → **29%**. Three seats sighted the Timeline wordmark; all three were killed. |
+| Gates | **all four green** · `verify.mjs` 497 · `gate.mjs` 20 · `interaction-check.mjs` **187** (45 at the start of this session) · `tools/prove-check.mjs` 4 |
+| Ending | **NOT MET.** Two consecutive rounds with no confirmed blocking or misleading finding. Round 6 confirmed 4 blocking and 3 misleading, all of them still standing. |
+| Branch | `claude/signal-studio-suite-redesigns-8t80xl`, PR ethanmcn2013-droid/app#166 (draft, CI green) |
+| Master | https://claude.ai/code/artifact/832d5b84-e6a0-43e6-a151-1f80dc17bd76 |
+| Workbench | https://claude.ai/code/artifact/2c152f3f-3369-4d22-8cb5-fcab6cc8860a — the same build, for reading on a phone |
+| Log | https://claude.ai/code/artifact/42a27dec-1879-4341-9f96-86921f978124 |
 | Console | https://claude.ai/code/artifact/a1300890-6c2c-4d36-9ce3-4a9e6420b6d7 |
+| Session record | https://claude.ai/code/artifact/07b1379c-aed3-49a7-94af-afcbe5d9ab2f — the 15-minute founder read: what stands, what it costs |
 
-## What landed after round 5, in order
+## The first job on any resumed session
 
-Three passes, all committed, all gated green, none of them panel work.
+**Seventeen confirmed findings stand unfixed.** They are adjudicated —
+each survived its own fresh refuter — and each carries the refuter's
+sharpened fix, which is usually more precise than the seat's own. They
+are in `panel/round-6.json` under `standing`, and they are round 7's
+work, in this order:
 
-**1 · The motion pass** (`3f6ec1ab`) — from a parallel session's audit.
+**Blocking (4)**
 
-- The product switch is a **same-document view transition**. `apply()`
-  wraps, `applyNow()` mutates. Measured cost of the wrap: **25ms** against
-  a 220ms animation.
-- **The motion vocabulary is five names**, one per value, written down in
-  `src/foundation.css` where the primitives are:
-  `--dur-quick` 80 · `--dur` 140 · `--dur-settle` 220 · `--dur-rare` 400 ·
-  `--curve`. 43 uses rewritten. `--dur-out` deleted. `--t-` is reserved
-  for TYPE.
-- **The rare tier is three places**: a lane cleared because the work is
-  finished (built), a timeline published (not built), a note becoming a
-  task (not built). The completion burst was at 400ms on every completion
-  and now settles at 220; 400 is kept for the completion that clears its
-  lane.
+- `card-note-unreadable-1100-to-1279` — 1280 trims zero notes, 1279 trims
+  all eight. The gate proves "five lanes fit at 1180" and "the note reads
+  at 1280" and never crosses the two.
+- `dense-lane-fold-reads-as-end-of-list` — 10 of 32 tasks hidden in dense
+  at 1920, the cut landing exactly on a card boundary.
+- `seam-landing-reported-four-ways` — after one Send the task title prints
+  three times and two controls carry `data-act="open-task"` 233px apart.
+- `three-keycaps-for-one-keyboard-model` — 10px mono / 11px sans-600 /
+  11px mono, four letterfits, three radii, and no box at all in Timeline.
 
-**2 · The interaction pass** (`6c82c552`) — four techniques from
-transitions.dev and liquid-gooey, adapted to the vocabulary above rather
-than pasted.
+**Misleading (3)** — `lead-tick-off-its-own-date` and
+`lead-tick-off-its-own-date-in-across` are ONE defect seen by two seats
+(the across measure's lead tick sits 28px left of its own date, 4.7 days
+early at 768); `notes-h1-says-all-your-notes-while-filtered`.
 
-- **morph** — a control becoming the surface it opens, six places, on
-  `__SUITE.morph`. The pair name is LENT for one transition; a static name
-  collides and Chromium skips the transition in silence.
-- **accordion** — the dialog's `<details>` became a button and a
-  `0fr → 1fr` grid panel.
-- **stack** — the undo strip is three deep; the two beneath are `inert`
-  and `aria-hidden`, and the "N more" count stays in words.
-- **travel** — `__SUITE.travel`, an accent moving between adjacent slots
-  as liquid, on the rail (down) and Notes' group switch (across).
+**Defect (5)** — `card-open-note-state-is-unreachable`,
+`seam-undo-denied-in-the-room-it-sent-you-to`, `keyboard-drop-has-no-undo`,
+`arrival-invisible-to-the-hand`, `the-approach-vanishes-while-you-place-a-moment`.
 
-**3 · List, and the switcher's travel** (`3d8fae3b`) — the wiring held
-back in pass 2, plus the live view it needed.
+**Refinement (5)** — `seam-card-repeats-its-own-title`,
+`one-filing-field-four-names`, `compact-density-is-a-reachable-unaudited-state`,
+`seam-payoff-card-stutters`, `completion-sentence-counts-the-same-notes-twice`.
 
-## Three things about the goo that cost an afternoon each
+Then RE-FREEZE and run round 7. Rounds 4 and 5 ran 86% and 79%
+self-inflicted because building continued between them; round 6 ran 12%
+because it did not.
 
-Written down because none of them is in any reference and all three
-present as "the effect simply does nothing".
+## What round 6 was actually about
 
-1. **`filterUnits="userSpaceOnUse"`.** A percentage region is a percentage
-   of the object bounding box. The first host tried was a 0×0 anchor,
-   where that region is empty and the element is not painted at all.
-2. **The shapes must be opaque.** The ramp is `18a − 7`, so anything under
-   ~39% alpha is driven to zero. The rail's accent is 16%: draw the blobs
-   opaque and fade the LAYER — CSS applies `filter` before `opacity`.
-3. **The tail needs a different CURVE, not a longer duration.** Sharing
-   `--curve` (a hard ease-out) puts both blobs at the destination at once.
-   The tail eases IN, hangs back, and snaps home. That is what draws the
-   band.
+Not the surface — the gates. Its worst finding was a defect four green
+gates had frozen hours earlier, and both blind spots it exposed have one
+cause: **a gate that opens a FRESH page per viewport never makes the
+journey between viewports, and never gives a narrow one a mouse.**
 
-**Where the goo does not go, measured:** the completion burst. Applied
-there it erased it — 365 green pixels of particles became 61, and the 61
-were the Done lane's own dot. Twelve 5px particles travelling 40px apart
-never touch, and shapes have to overlap to merge.
+1. **The crossing.** Three seats independently hit
+   `ReferenceError: C is not defined` on every crossing of 720, in all
+   three products. The media-query listeners the 2 September ledger added
+   had never executed once, so the timeline kept the desk composition on a
+   phone and Tasks kept a five-lane board in a 372px viewport. Fixed;
+   `interaction-check.mjs` now narrows one page and widens it again.
+2. **The reflow.** `open()` derives `isTouch` from `vp.isMobile`, and every
+   configured viewport under 480 sets it — so every no-sideways-scroll
+   assertion had only ever run on a coarse pointer. The dictation floor
+   overflowed the document by 145px at 320 on a fine one: WCAG 1.4.10,
+   failed on exactly the narrowed desktop window the guideline describes.
+   Fixed; the gate now sweeps 320/390/430 on a mouse.
 
-## Open, and the order to take them in
-
-1. **The List view and the switcher's travel have NO ASSERTIONS.** This is
-   the first job. Everything else in `tools/material.mjs` was written
-   against its fix; these two shipped green on a gate that does not look
-   at them. Add to `tools/material.mjs`: the list renders the same rows as
-   the board under the same filters, the lane is stated in type, `walk()`
-   is one-axis, the drag paths stay on `.card`, and the switcher travels.
-2. **The list at 390 is unverified.** The fold rule is written and was
-   never driven.
-3. **Round 6, on a FROZEN surface.** Rounds 4 and 5 ran 86% and 79%
-   self-inflicted because building continued between them; three more
-   build passes have landed since. No round is worth buying until the
-   surface stops moving.
-4. Timeline's wordmark sits 20px lower and 10px right of the other two.
-   Flagged in round 5, not changed.
+Also closed: Notes' heading outline (five orphan h3s at a desk, and at 390
+an h1 pruned from the tree entirely), the list row's first line, eleven
+door strings that invented "another screen", and the console artifact
+itself, which was pushing its own page 591px sideways on a phone since
+round 5 — the tool breaking the rule it exists to check.
 
 ## Traps this lab has already paid for
 
@@ -103,18 +94,36 @@ never touch, and shapes have to overlap to merge.
   Do not run it.
 - State names are `<product>.<state>` with a **dot**; a colon cannot be a
   Windows filename.
-- **Absence reads as a pass, eight times now.** A dead selector, a
+- **Absence reads as a pass, ELEVEN times now.** A dead selector, a
   `display: contents` zero rect, a missing refuter verdict, a rejected fix
   counted as a rejected finding, `visibility: hidden` hiding a control
   from a target audit, a count read off the wrong element (NaN passes
   every comparison), a claim guarded behind `if (the menu offered it)`,
-  and `.listBoard` losing to `.board` on source order. Write the existence
-  check BEFORE the claim, every time.
+  `.listBoard` losing to `.board` on source order — and, on 2 September,
+  a page no gate ever loaded (the column at a desk width), a handler that
+  only runs on a TRANSITION between viewports when every loop opens a
+  fresh page at each one, and a whole pointer type — every viewport under
+  480 was given a finger, so no assertion ever ran on a narrowed desktop
+  window. Write the existence check BEFORE the claim, every time, and ask
+  what the loop never does as well as what it does.
+- **A fixed clock measures the machine.** The switch's mid-frame is pinned
+  on the transition's own clock; the wrap cost is judged against a
+  measured empty transition; the tool panel is waited for by state. Run
+  the measured gates alone — a concurrent browser job stretches every
+  timing.
+- **Chromium blurs a field before the resize event when the crossing
+  hides its plane.** The truth gate's caret check passed on 27 August on
+  the other ordering. The product now records a caret the layout took.
 - **A helper that defers owns everything that depends on the deferral.**
   `startViewTransition` runs its callback a frame late, and three separate
   callers focused nodes that did not exist yet. `go()` takes a `then`,
   `openCard()` takes a `land`, and `apply()` takes an `after` for exactly
   this reason.
+- **`_wt-*` worktrees.** The fidelity section compares against the three
+  labs' own masters; on a fresh machine they have to exist as git
+  worktrees beside the repo (`_wt-design-tasks`, `_wt-design-notes`,
+  `_wt-timeline-redesign`) with `node_modules` linked, and the elevate
+  skill has to resolve at `/home/.claude/skills/elevate`.
 
 ## Driving it
 
@@ -123,10 +132,10 @@ _gate-suite.html?state=<product>.<state>&v=paper|ink&layout=across|down
 ```
 
 `tasks.board` `tasks.dense` `tasks.planning` `tasks.filtered`
-`notes.notebook` `notes.seam` `notes.voice` `notes.capture`
+`notes.notebook` `notes.seam` `notes.voice` `notes.capture` `notes.review`
 `timeline.owner-flight` `timeline.desk` `timeline.phone`
 
-No gated state, must be driven by hand: the List view (press List), the
-project switcher, the expanded task, Filter / Sort / Display / Share, the
-search at the foot, the completion moment, the drop tints, the rail's `+`,
-and every travelling accent.
+No gated state, must be driven by hand: the List view below 1100, the
+project switcher, the expanded task, Show and Share, the phone bottom
+sheet, the settings card, the account door's answer, the completion
+moment, the drop tints, the rail's `+`, and every travelling accent.

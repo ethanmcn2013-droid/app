@@ -1,0 +1,5 @@
+{
+  "id": "lead-tick-off-its-own-date",
+  "real": true,
+  "reason": "Every measurement checks out: at 1920&layout=across the lead .b-item anchors at x=524.45 and its tick centre at 496.45 (dx=-28.00, computed left:-28px), the other six ticks are dead on (dx=0.00), and the down axis is uniformly consistent (every tick centre at dx=-23.50, lead included) so the error exists only on the axis whose job is horizontal distance. Cause is the specificity stated — the (0,5,0) [data-medium=\"sheet\"|\"full\"] lead override outranks the (0,4,0) across-axis rule; medium resolves to \"full\" at every desk width, so it reproduces at 1440/1280/1024 and at 768-across, on paper and on ink, and the filled dot is visibly off its own leader stem in a crop. The proposed one-rule fix, applied in-page, takes dx to 0.00 and moves nothing else. Same defect as lead-tick-off-its-own-date-in-across, sighted independently by a second seat — one defect, one fix, two sightings."
+}

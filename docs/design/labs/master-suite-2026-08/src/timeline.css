@@ -762,36 +762,45 @@
 /* ── the row as a control ─────────────────────────────────────────
    The badge stays the visible mark and its hit area covers the row, so
    the thing that looks like the object is the thing you can press. */
+/* THE MOMENT IS THE CONTROL. Seven identical mono "Edit" words stood
+   under seven moments on the artefact that should delight on first
+   view — the product's quietest tier, repeated until it was furniture.
+   The control is still the same button with the same full accessible
+   name (the moment, its date, how far away, what guests see); it now
+   lies over the words rather than under them, and the affordance at
+   rest is a hairline under the title, taking ink on hover and focus. No
+   invisible tab stop: the button is the size of the words. */
 [data-app="timeline"] .b-grab {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0 var(--gap-tight);
-  margin-left: calc(-1 * var(--gap-tight));
-  margin-top: 4px;
-  border-radius: 4px;
-  font-family: var(--mono);
-  font-size: var(--size-label);
-  line-height: var(--lead-label);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
-  color: var(--fore-62);
-  /* A hairline underline is what declares it a control at rest. Dropping
-     its ink instead would make the only pressable thing in the row the
-     dimmest text on it. */
+  position: absolute;
+  inset: 0;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border-radius: 6px;
+  background: none;
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  cursor: pointer;
+}
+[data-app="timeline"] .b-grabWord {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+  /* Clipped, not shrunk. The grab itself is set at 0 so nothing strays
+     into the row; the word a screen reader gets is still on the ramp. */
+  font-size: var(--size-label); line-height: var(--lead-label);
+}
+[data-app="timeline"] .b-item:has(.b-grab) .b-title {
   text-decoration: underline;
   text-decoration-color: var(--fore-16);
   text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-  transition: background-color var(--dur) var(--curve), color var(--dur) var(--curve);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur) var(--curve);
 }
-[data-app="timeline"] .b-item:not([data-editing="true"]) .b-grab::after { content: ""; position: absolute; inset: 0; }
-[data-app="timeline"] .b-item:hover .b-grab,
-[data-app="timeline"] .b-item:focus-within .b-grab {
-  color: var(--fore);
-  background: var(--fore-06);
-  text-decoration-color: var(--fore-46);
-}
+[data-app="timeline"] .b-item:has(.b-grab):hover .b-title,
+[data-app="timeline"] .b-item:has(.b-grab):focus-within .b-title { text-decoration-color: var(--fore-46); }
+[data-app="timeline"] .b-grab:focus-visible { outline: 2px solid var(--indigo); outline-offset: 4px; }
 /* Only a row that OPENS may answer the pointer. The guest surfaces -
    the screens the company is judged by - drew a halo under every row,
    none of which carries a control or does anything when pressed, so the
@@ -1145,7 +1154,7 @@
 /* Press is scoped the same way, and given the ring its plate always
    had: a pressed row used to paint a 10% plate inside a 4% halo. */
 [data-app="timeline"] .b-item:has(.b-grab):active .b-copy { background: var(--fore-10); box-shadow: 0 0 0 12px var(--fore-10); }
-[data-app="timeline"] .b-grab:active { background: var(--fore-10); }
+[data-app="timeline"] .b-grab:active { background: none; }
 [data-app="timeline"] .b-act:active,
 [data-app="timeline"] .b-step:active,
 [data-app="timeline"] .b-behindSummary:active,
@@ -2019,7 +2028,7 @@
   letter-spacing: var(--track-data);
   color: var(--fore-62);
 }
-[data-app="timeline"] .b-grabWord { text-transform: none; letter-spacing: var(--track-data); }
+
 
 /* Provenance, said where a stranger looks first. */
 [data-app="timeline"] .b-keeper {
@@ -2028,6 +2037,23 @@
   line-height: var(--lead-label);
   margin: var(--gap-snug) 0 0;
 }
+
+/* ── the phone's More door ──────────────────────────────────────────
+   Preview and the link fold behind one door below 720, so the bar is
+   the filled act and a door, and the 79 shares the first screen with
+   the next moment. A real menu: paper, a hairline ring, the same act
+   buttons the desk shows, opened from the button it hangs off. */
+[data-app="timeline"] .b-moreWrap { position: relative; display: inline-flex; }
+[data-app="timeline"] .b-more { min-width: 44px; justify-content: center; letter-spacing: 0.08em; }
+[data-app="timeline"] .b-menu[hidden] { display: none; }
+[data-app="timeline"] .b-menu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 6;
+  display: grid; gap: 2px; min-width: 188px; padding: 6px;
+  background: var(--back);
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px var(--fore-16), 0 12px 32px var(--fore-16);
+}
+[data-app="timeline"] .b-menu .b-act { border: 0; width: 100%; justify-content: flex-start; text-align: left; }
 
 /* Forty-four pixels is the floor for anything a thumb presses, and the
    file wrote that down and then applied it to one control. Scoped to a

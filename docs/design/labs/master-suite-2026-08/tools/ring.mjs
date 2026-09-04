@@ -153,8 +153,10 @@ export async function ring({ browser, url, check, head, PNG }) {
            same promise — you are put back on the thing you undid — so it
            counts. A text field would NOT: dropping a caret into capture
            after an undo sends the next keystroke into a new note. */
+        /* The phone's desk is the sheet a tap opens; the peel and its
+           Send live there below 720, in the same DOM the desk uses. */
         landed: Boolean(el && el.closest &&
-          (el.closest(".desk, .hand") || el.matches(".idxRow"))),
+          (el.closest(".desk, .hand, .phoneSheet") || el.matches(".idxRow"))),
         shown: Boolean(el && el.checkVisibility &&
           el.checkVisibility({ checkVisibilityCSS: true, checkOpacity: true })),
         what: el ? (el.className || el.tagName) : "none",

@@ -1,0 +1,6 @@
+{
+  "id": "compact-density-is-a-reachable-unaudited-state",
+  "real": true,
+  "reason": "Driven at 1440 and 1280: Show → Compact sets data-density=compact in two clicks, and a full scan of every visible text box under [data-app=\"tasks\"] against the config's declared typeRamp returns 0 off-ramp sizes in comfortable and exactly 2 in compact — .when at 10.5px and its inner .sr at 10.5px. The audit's own tolerance is |size − step| < 0.35, so 10.5 fails against both 10 and 11; gate.mjs asserts every audit total at 0 and drops only sizeLadder/spaceLadder (EXCLUSIONS holds only contrast and tracking), so ramp is genuinely gated. 'compact' appears zero times in elevate.config.json and zero times in interaction-check.mjs, so no gate ever visits the state.",
+  "sharpenedFix": "Take the row height out of the type rather than off the ramp: src/tasks.css:2167 keeps font-size 11px (the comfortable value, already on the ramp) and gets its 18px from the declared height and padding it already sets — dropping to 10px shrinks the one metadata string an operator reads on every row for no gain. Then add tasks.compact to elevate.config.json states (the display-density handler at src/tasks.js:3204-3208 already accepts it) so the five-viewport audit walks it, and add a compact leg to the board loops in interaction-check.mjs."
+}

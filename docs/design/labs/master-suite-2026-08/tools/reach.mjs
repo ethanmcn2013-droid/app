@@ -70,6 +70,16 @@ export async function reach({ browser, url, check, head, lab }) {
     });
     await page.goto(url + query);
     await page.waitForTimeout(650);
+    /* The board's claims are the board's. Below 1100 the list is the
+       default view since 2026-09-02, so a drive that means the board says
+       so — the list has its own assertions in interaction-check.mjs. */
+    if (/tasks/.test(query)) {
+      await page.evaluate(() => {
+        const tab = document.querySelector('[data-app="tasks"] .segItem[data-view="board"]');
+        if (tab && !tab.hasAttribute("data-active")) tab.click();
+      });
+      await page.waitForTimeout(450);
+    }
     return page;
   };
 

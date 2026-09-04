@@ -4,6 +4,14 @@ The Tasks dispatch. Convention: BRAND.md §6.5. Entries before
 2026-05-14 keep their original shape; the new shape starts at the
 next cycle.
 
+## 2026-09-03 · T·109 · tightens · the suite closes its ledger, and the gates learn what they never looked at
+
+**Every finding from the 2 September critical review of the Signal Studio master is closed, a blind seven-seat panel has run against the frozen result, and the two defects that mattered most were ones four green gates had just certified.** The board becomes a list where a board cannot fit and pages one lane at a time on a phone; Filter, Sort and Display become one word, Show, that says what is on while it is shut; a ticked row holds its place until the undo window closes. The notebook stops counting how far behind a person is and keeps a caret the layout takes on the phone crossing. The timeline stops restating the next moment, puts Add a moment first, and makes the whole row the handle. Every closed door answers on screen, and Settings opens a real card.
+
+Thirty-three ledger findings, then thirty-four more from the panel — twenty-four confirmed, ten refuted by fresh adversarial readers who opened the files and drove the surface. Three seats independently found the same thing: the media-query listeners added that morning threw on every crossing of 720, in all three products, so the timeline kept its desk composition on a phone and Tasks kept a five-lane board in a 372px viewport. A fourth defect was a WCAG 1.4.10 reflow failure — the dictation floor pushed the document 145px sideways at 320 on a mouse.
+
+Both had the same cause, and it was not in the product. Every loop in both gates opens a fresh page at each width, so nothing had ever narrowed one page *across* a breakpoint, and every viewport under 480 was handed a finger, so no assertion had ever run on a narrowed desktop window. The behaviour gate now makes the journey in both directions and sweeps three widths on a mouse; it went from 45 assertions to 187 over the session. That is the eleventh time in this lab that absence has read as a pass, and the sharpest: the question is not only what a check looks at, but what its loop never does.
+
 ## 2026-07-29 · T·108 · ships · the note stays in sight while the work moves
 
 **Notes now keeps a private thought visibly continuous as it becomes a saved

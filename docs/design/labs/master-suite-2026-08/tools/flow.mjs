@@ -44,12 +44,14 @@ export async function flow({ browser, url, check, head }) {
       document.querySelector(`[data-project="${id}"]`).click();
       await new Promise((r) => setTimeout(r, 900));
     };
-    await go("academic");
+    await go("dinners");
     const tasks = [...document.querySelectorAll(".board .card .cardTitle")].map((e) => e.textContent);
     const tl = document.querySelector('[data-app="timeline"]').textContent || "";
+    /* The second project is the Winter dinner series since 2 September —
+       Orla's world, not a student's. Its markers are the fixture's own. */
     return {
-      ok: tasks.some((t) => /literature review/i.test(t)) &&
-          /Marketing strategy assignment/i.test(tl) &&
+      ok: tasks.some((t) => /six-course/i.test(t)) &&
+          /The first dinner/i.test(tl) &&
           !/Mara & Finn|marquee/.test(document.querySelector('[data-app="tasks"]').textContent) &&
           !/Mara & Finn/.test(tl),
       board: tasks.length, timelineHasWedding: /Mara & Finn/.test(tl),
@@ -65,7 +67,7 @@ export async function flow({ browser, url, check, head }) {
     await new Promise((r) => setTimeout(r, 900));
     const scope = [...document.querySelectorAll('[data-app="tasks"], [data-app="timeline"]')]
       .map((e) => e.textContent).join(" ");
-    return { ok: /marquee/.test(scope) && !/MK3021|literature review/.test(scope) };
+    return { ok: /marquee/.test(scope) && !/six-course|Burgundies|The first dinner/.test(scope) };
   });
 
   /* 4 · Open a task, and close it. */
@@ -137,7 +139,7 @@ export async function flow({ browser, url, check, head }) {
   });
 
   /* 8 · More, via the plus. Then Settings. */
-  await step("the plus opens More, and Settings is reachable and honest", async () => {
+  await step("the plus opens More, and Settings is a real door that opens and closes", async () => {
     document.querySelector('.rail [data-rail="more"]').click();
     await new Promise((r) => setTimeout(r, 320));
     const doors = [...document.querySelectorAll(".morePop .moreItem")].length;
@@ -149,12 +151,24 @@ export async function flow({ browser, url, check, head }) {
     (document.activeElement || document.body).dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
     await new Promise((r) => setTimeout(r, 260));
+    /* Settings is a real door since 2 September: reachable, and honest
+       by opening what it names — a card — and closing on Escape. */
     const gear = document.querySelector('.rail [data-rail="settings"]');
+    let card = false, closed = false;
+    if (gear) {
+      gear.click();
+      await new Promise((r) => setTimeout(r, 360));
+      const c = document.querySelector(".setLayer .setCard");
+      card = Boolean(c && c.getBoundingClientRect().height > 0);
+      (c || document.activeElement || document.body).dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+      await new Promise((r) => setTimeout(r, 360));
+      closed = !document.querySelector(".setLayer");
+    }
     return {
       ok: doors >= 3 && !document.querySelector(".morePop") && gear &&
-        gear.getAttribute("aria-disabled") === "true" &&
-        /not here yet/i.test(gear.getAttribute("title") || ""),
-      doors,
+        gear.getAttribute("aria-haspopup") === "dialog" && card && closed,
+      doors, card, closed,
     };
   });
 

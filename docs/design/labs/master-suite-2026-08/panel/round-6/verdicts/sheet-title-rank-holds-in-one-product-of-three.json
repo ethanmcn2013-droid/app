@@ -1,0 +1,5 @@
+{
+  "id": "sheet-title-rank-holds-in-one-product-of-three",
+  "real": false,
+  "reason": "The type ranks are measured correctly (Tasks h1 20px/600 ink-1 over a 17px wordmark; Notes h1.headName 15px/400 at 72% ink behind span.word 17px/600 and button.headNext b 15px/600; Timeline h1.b-who 12px/400 mono) but the argument and fix fail: at 1920 the h1's right edge is 644 and the toggle's left is 657, a 13px gap not the claimed 100px, and a .headRule separates the wordmark from the h1/fact pair, so there is no unseparated tie; Timeline's b-who is not 'the smallest text in the product' (b-measureHead and b-behindLabel are 11px). The fix would make a filter control (aria-pressed, narrows the notebook) the sheet's 20px/600 h1 while demoting the only element that names the sheet's scope to a 13px span, and would invent a second 20px/600 title in a head whose title object the finding itself concedes is the founder-locked 148px number."
+}

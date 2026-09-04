@@ -68,10 +68,43 @@ head("1 · the three engagements' own audits, repointed at this file");
 
 /* ── 2 · the suite, cross-product ────────────────────────────────── */
 head("2 · the suite — palette, weights, families, targets, radii, motion, ramp, leading");
-const audit = await run(path.join(SKILL, "audit.mjs"), [`--lab=${LAB}`, "--json"]);
-let report = null;
-try { report = JSON.parse(audit.out.slice(audit.out.indexOf("{"))); }
-catch { say(false, "the measured audit ran", audit.out.split(/\r?\n/).slice(-4).join(" | ")); }
+/* The audit answers in one of two shapes. The workspace skill audits the
+   five viewports in one run and reports `viewports`; the copies committed
+   with the three engagements audit one viewport per run and report
+   `states`. The gate holds the same claim either way — every category at
+   zero at every width the brief names — so a one-viewport audit is run
+   once per configured viewport and assembled into the shape the rest of
+   this file and tools/exclusions.mjs read. Nothing below cares which. */
+const config = JSON.parse(await readFile(path.join(LAB, "elevate.config.json"), "utf8"));
+const parse = (out) => { try { return JSON.parse(out.slice(out.indexOf("{"))); } catch { return null; } };
+async function measuredAudit() {
+  const first = await run(path.join(SKILL, "audit.mjs"), [`--lab=${LAB}`, "--json"]);
+  const one = parse(first.out);
+  if (one && one.viewports) return { report: one };
+  if (!one || !one.states) return { out: first.out };
+  const viewports = {};
+  for (const vp of config.viewports) {
+    const r = vp.width === 1440 && vp.height === 960 ? first
+      : await run(path.join(SKILL, "audit.mjs"), [`--lab=${LAB}`, "--json", `--viewport=${vp.width}x${vp.height}`]);
+    const p = parse(r.out);
+    if (!p || !p.states) return { out: r.out };
+    /* The source ladders are not this gate's: elevate.config.json leaves
+       ladders.sizes and ladders.spaces EMPTY on purpose (see notes.ladders)
+       because three products carry three ratified ladders and each is held
+       to its own in section 1. The one-viewport audit reads an empty ladder
+       as "everything is off it" and reports every size and every space; the
+       workspace audit reads it as "no ladder declared" and reports nothing.
+       This takes the second reading, which is the config's own. */
+    const totals = { ...p.totals };
+    if (!(config.ladders || {}).sizes) delete totals.sizeLadder;
+    if (!(config.ladders || {}).spaces) delete totals.spaceLadder;
+    viewports[vp.name] = { states: p.states, totals };
+  }
+  return { report: { viewports } };
+}
+const got = await measuredAudit();
+const report = got.report || null;
+if (!report) say(false, "the measured audit ran", (got.out || "").split(/\r?\n/).slice(-4).join(" | "));
 
 if (report) {
   const totals = {};

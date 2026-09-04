@@ -130,6 +130,173 @@ window.__SUITE = (function () {
   /* Is the plus open? One flag, because the rail is rendered whole. */
   var moreOpen = false;
 
+  /* ── settings ─────────────────────────────────────────────────
+     A door that answered only to a screen reader was not a designed
+     answer. Settings is a real card now: one column, a segmented switch
+     in the same grammar as Board / List, three panes — a portrait, a
+     grouped list, a receipt — 440px of paper over the live floor. Its
+     labels are sentence case; the wordmarks alone are lowercase. */
+  var settingsOpen = false;
+  var settingsTab = "you";
+  var mailDaily = "Weekdays";
+  var mailWeekly = "Mondays";
+  var SETTINGS = [
+    { id: "you", label: "You" },
+    { id: "mail", label: "Email" },
+    { id: "plan", label: "Plan" },
+  ];
+  function setRow(label, hint, control) {
+    return (
+      '<div class="setRow">' +
+        '<div class="setCopy"><p class="setLabel">' + esc(label) + "</p>" +
+        (hint ? '<p class="setHint">' + esc(hint) + "</p>" : "") + "</div>" +
+        '<div class="setControl">' + control + "</div>" +
+      "</div>"
+    );
+  }
+  function setSeg(which, options, on) {
+    return (
+      '<div class="setSeg" role="radiogroup" aria-label="' + esc(which) + '">' +
+      options.map(function (opt) {
+        var live = opt === on;
+        return (
+          '<button type="button" class="setSegOpt" role="radio" data-set="seg" data-set-which="' + esc(which) +
+          '" data-set-seg="' + esc(opt) + '"' +
+          (live ? ' aria-checked="true" data-on' : ' aria-checked="false"') +
+          ">" + esc(opt) + "</button>"
+        );
+      }).join("") +
+      "</div>"
+    );
+  }
+  function setPane(id) {
+    if (id === "you") {
+      return (
+        '<div class="setYou">' +
+          '<span class="setFace" aria-hidden="true">' + esc(B.operator.initials) + "</span>" +
+          '<h3 class="setName">' + esc(B.operator.name) + "</h3>" +
+          '<p class="setValue">Venue manager \u00b7 ' + esc(B.workspace) + "</p>" +
+        "</div>"
+      );
+    }
+    if (id === "mail") {
+      return (
+        '<div class="setGroup">' +
+        setRow("Daily briefing", "One quiet note in the morning.",
+          setSeg("Daily briefing", ["Off", "Weekdays", "Every day"], mailDaily)) +
+        setRow("Weekly summary", "Monday: last week, and this week.",
+          setSeg("Weekly summary", ["Off", "Mondays"], mailWeekly)) +
+        '<div class="setRow">' +
+          '<div class="setRowHead">' +
+            '<p class="setLabel">Time zone</p>' +
+            '<p class="setValue">Dublin</p>' +
+          "</div>" +
+          '<p class="setHint">Mail arrives at 06:00 here.</p>' +
+        "</div>" +
+        "</div>"
+      );
+    }
+    return (
+      '<div class="setReceipt">' +
+        '<p class="setReceiptWhere">' + esc(B.workspace) + "</p>" +
+        '<h3 class="setReceiptK">Free</h3>' +
+        '<ul class="setReceiptList">' +
+          "<li>Notes, Tasks and Timeline</li>" +
+          "<li>Three editing guests</li>" +
+        "</ul>" +
+      "</div>"
+    );
+  }
+  function settingsHtml() {
+    var tab = SETTINGS.filter(function (t) { return t.id === settingsTab; })[0] || SETTINGS[0];
+    var nav = SETTINGS.map(function (t) {
+      var on = t.id === tab.id;
+      return '<button type="button" class="setTab" role="tab" id="set-tab-' + t.id +
+        '" data-set-tab="' + t.id + '"' + (on ? " data-on" : "") +
+        ' aria-selected="' + (on ? "true" : "false") + '" tabindex="' + (on ? "0" : "-1") +
+        '" aria-controls="setPane">' + esc(t.label) + "</button>";
+    }).join("");
+    return (
+      '<div class="setLayer">' +
+        '<button type="button" class="setScrim" data-set="close" aria-label="Close settings" tabindex="-1"></button>' +
+        '<div class="setCard" role="dialog" aria-modal="true" aria-labelledby="setTitle" tabindex="-1">' +
+          '<div class="setTop">' +
+            '<h2 id="setTitle">Settings</h2>' +
+            '<button type="button" class="setClose" data-set="close" aria-label="Close settings">' + I.close + "</button>" +
+          "</div>" +
+          '<nav class="setSwitch" role="tablist" aria-label="Settings">' + nav + "</nav>" +
+          '<div class="setBody" role="tabpanel" id="setPane" aria-labelledby="set-tab-' + tab.id + '">' +
+            setPane(tab.id) +
+          "</div>" +
+        "</div>" +
+      "</div>"
+    );
+  }
+  function paintSettings() {
+    var was = deck.querySelector(".setLayer");
+    if (was) was.remove();
+    if (!settingsOpen) return;
+    deck.insertAdjacentHTML("beforeend", settingsHtml());
+    var card = deck.querySelector(".setCard");
+    if (card) card.focus({ preventScroll: true });
+  }
+  function openSettings() {
+    closeAnswer();
+    moreOpen = false;
+    settingsOpen = true;
+    paintRail();
+    paintSettings();
+    say("Settings.");
+  }
+  function closeSettings() {
+    if (!settingsOpen) return;
+    settingsOpen = false;
+    paintSettings();
+    paintRail();
+    var back = deck.querySelector('.rail [data-rail="settings"]');
+    if (!back || back.offsetParent === null) back = deck.querySelector('.rail [data-rail="more"]');
+    if (back) back.focus({ preventScroll: true });
+    say("Settings, closed.");
+  }
+
+  /* ── every door answers visibly ───────────────────────────────
+     Orla presses a face and nothing happens. The honest-doors decision
+     is right; a door that answers only through the live region is not a
+     designed answer. One small card, anchored to the control that was
+     pressed, in the More menu's own grammar — what it is, then "Not
+     here yet" — closed by Escape, by the next press anywhere, or by
+     pressing the control again. Any product may ask for it. */
+  var answerAt = null;
+  function closeAnswer() {
+    var pop = deck.querySelector(".answerPop");
+    if (pop) pop.remove();
+    answerAt = null;
+  }
+  function answer(anchor, sentence) {
+    var again = answerAt === anchor;
+    closeAnswer();
+    if (!anchor || !sentence || again) return;
+    var text = String(sentence).trim();
+    var what = text.replace(/\s*Not here yet\.?$/, "").replace(/\.$/, "");
+    var r = anchor.getBoundingClientRect();
+    var pop = document.createElement("div");
+    pop.className = "answerPop";
+    pop.setAttribute("role", "status");
+    pop.innerHTML = "<span>" + esc(what) + "</span><em>Not here yet</em>";
+    deck.appendChild(pop);
+    var w = pop.offsetWidth, hgt = pop.offsetHeight;
+    var phone = matchMedia("(max-width: 720px)").matches;
+    var onRail = Boolean(anchor.closest && anchor.closest(".rail")) && !phone;
+    var left = onRail ? r.right + 10
+      : Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8);
+    var top = onRail ? Math.min(Math.max(8, r.top + r.height / 2 - hgt / 2), innerHeight - hgt - 8)
+      : (r.top - hgt - 10 >= 8 ? r.top - hgt - 10 : r.bottom + 10);
+    pop.style.left = Math.round(left) + "px";
+    pop.style.top = Math.round(top) + "px";
+    answerAt = anchor;
+    say(text);
+  }
+
   function railHtml() {
     if (!railCurrent) railCurrent = current;
     var stop = function (key) { return ' tabindex="' + (key === railCurrent ? "0" : "-1") + '"'; };
@@ -165,6 +332,12 @@ window.__SUITE = (function () {
          children were plain buttons with no role at all, so the menu
          reported no items to anything reading the tree — a menu whose
          contents are invisible to the one reader most dependent on it. */
+      /* Settings is live. On a phone the cog hides and this is the door;
+         painting it "Not here yet" was a Saturday dead end. */
+      if (d.key === "settings") {
+        return '<button type="button" role="menuitem" class="moreItem" data-door="settings">' +
+          I.settings + "<span>Settings</span></button>";
+      }
       return '<button type="button" role="menuitem" class="moreItem" data-door="' + d.key + '" aria-disabled="true" title="' +
         esc(NOT_YET[d.key]) + '">' + I[d.key] + "<span>" + esc(d.label) + "</span>" +
         '<em>Not here yet</em></button>';
@@ -193,7 +366,8 @@ window.__SUITE = (function () {
            times. */
         util("more", "More", ' aria-expanded="' + (moreOpen ? "true" : "false") +
           '" aria-haspopup="menu"' + (moreOpen ? " data-open" : "")) +
-        util("settings", "Settings", notYet(NOT_YET.settings)) +
+        util("settings", "Settings", ' aria-haspopup="dialog" aria-expanded="' +
+          (settingsOpen ? "true" : "false") + '"' + (settingsOpen ? " data-open" : "")) +
       "</div>" +
       (moreOpen
         ? '<div class="morePop" role="menu" aria-label="More"><p>Also in Signal Studio</p>' + doors + "</div>"
@@ -725,9 +899,42 @@ window.__SUITE = (function () {
       (event.target.closest(".morePop") || event.target.closest('[data-rail="more"]'));
     if (moreOpen && !insideMore) { moreOpen = false; paintRail(); }
 
+    /* The settings card's own presses. */
+    var setAct = event.target.closest && event.target.closest("[data-set], [data-set-tab]");
+    if (setAct) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (setAct.getAttribute("data-set") === "close") { closeSettings(); return; }
+      if (setAct.getAttribute("data-set") === "seg") {
+        var which = setAct.getAttribute("data-set-which");
+        var pick = setAct.getAttribute("data-set-seg");
+        if (which === "Daily briefing") mailDaily = pick;
+        if (which === "Weekly summary") mailWeekly = pick;
+        paintSettings();
+        var opt = deck.querySelector('[data-set-which="' + which + '"][data-set-seg="' + pick + '"]');
+        if (opt) opt.focus();
+        say(which + ": " + pick + ".");
+        return;
+      }
+      var nextTab = setAct.getAttribute("data-set-tab");
+      if (nextTab && nextTab !== settingsTab) {
+        settingsTab = nextTab;
+        paintSettings();
+        var on = deck.querySelector('.setTab[data-set-tab="' + nextTab + '"]');
+        if (on) on.focus();
+      }
+      return;
+    }
+    if (event.target.closest && event.target.closest(".setLayer")) { event.stopPropagation(); return; }
+
+    /* An answer card closes on the next press anywhere but on itself. */
+    if (answerAt && !(event.target.closest && event.target.closest(".answerPop")) &&
+        !(answerAt.contains && answerAt.contains(event.target))) closeAnswer();
+
     var door = event.target.closest && event.target.closest(".moreItem");
     if (door) {
       event.preventDefault();
+      if (door.getAttribute("data-door") === "settings") { openSettings(); return; }
       say(door.getAttribute("title"));
       return;
     }
@@ -737,6 +944,11 @@ window.__SUITE = (function () {
     event.preventDefault();
     var key = tile.dataset.rail;
     railCurrent = key;
+
+    if (key === "settings") {
+      if (settingsOpen) closeSettings(); else openSettings();
+      return;
+    }
 
     if (key === "more") {
       /* THE PLUS BECOMES THE PANEL. A 40px round control on the ink floor
@@ -759,10 +971,11 @@ window.__SUITE = (function () {
       return;
     }
     if (tile.getAttribute("aria-disabled") === "true") {
-      say(tile.getAttribute("title"));
-      paintRail();
-      var back = deck.querySelector('.rail [data-rail="' + key + '"]');
-      if (back) back.focus();
+      /* The account tile: a face that answers on screen, not only in the
+         live region. paintRail() would replace the anchor under the card,
+         so the tile is kept and only its focus is confirmed. */
+      answer(tile, tile.getAttribute("title"));
+      tile.focus({ preventScroll: true });
       return;
     }
     if (key === "add") {
@@ -810,6 +1023,45 @@ window.__SUITE = (function () {
      the add verb on a phone and not at a desk, so its membership is
      different at the two widths and cannot be written down. */
   deck.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && settingsOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeSettings();
+      return;
+    }
+    if (event.key === "Escape" && answerAt) {
+      event.preventDefault();
+      event.stopPropagation();
+      var was = answerAt;
+      closeAnswer();
+      if (was && was.focus) was.focus({ preventScroll: true });
+      return;
+    }
+    /* A modal keeps the keyboard: Tab wraps inside the card, and the
+       arrows walk the tablist the way a tablist promises. */
+    if (settingsOpen) {
+      var card = deck.querySelector(".setCard");
+      if (card && card.contains(event.target)) {
+        if (event.key === "Tab") {
+          var stops = [].slice.call(card.querySelectorAll("button, [href], [tabindex]:not([tabindex='-1'])"))
+            .filter(function (el) { return el.offsetParent !== null; });
+          if (stops.length) {
+            var first = stops[0], last = stops[stops.length - 1];
+            if (event.shiftKey && (event.target === first || event.target === card)) { event.preventDefault(); last.focus(); return; }
+            if (!event.shiftKey && event.target === last) { event.preventDefault(); first.focus(); return; }
+          }
+        }
+        var tabBtn = event.target.closest && event.target.closest(".setTab");
+        if (tabBtn && (event.key === "ArrowRight" || event.key === "ArrowLeft")) {
+          event.preventDefault();
+          var tabs = [].slice.call(card.querySelectorAll(".setTab"));
+          var at = tabs.indexOf(tabBtn);
+          var to = tabs[(at + (event.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+          if (to) to.click();
+          return;
+        }
+      }
+    }
     /* Escape closes the plus, from anywhere, and puts the reader back on
        the control that opened it. Sited before the rover's own test so it
        works while focus is inside the panel, where there is no [data-rail]
@@ -883,6 +1135,8 @@ window.__SUITE = (function () {
     openTask: openTask,
     /* A control becoming the surface it opens. See `morph` above. */
     morph: morph,
+    /* A door answering on screen. Any product's closed door may ask. */
+    answer: answer,
     /* An active accent moving between two adjacent slots, as liquid. The
        rail travels down and a segmented control travels across; it is one
        idea and one implementation. See `travel` above. */

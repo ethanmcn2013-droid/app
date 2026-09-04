@@ -1,0 +1,139 @@
+  pass  no sideways scroll · tasks.board @ 390x844
+  pass  no sideways scroll · tasks.board @ 768x1024
+  pass  no sideways scroll · tasks.board @ 1280x900
+  pass  no sideways scroll · tasks.board @ 1440x960
+  pass  no sideways scroll · tasks.board @ 1920x1000
+  pass  no sideways scroll · tasks.dense @ 390x844
+  pass  no sideways scroll · tasks.dense @ 768x1024
+  pass  no sideways scroll · tasks.dense @ 1280x900
+  pass  no sideways scroll · tasks.dense @ 1440x960
+  pass  no sideways scroll · tasks.dense @ 1920x1000
+  pass  no sideways scroll · notes.notebook @ 390x844
+  pass  no sideways scroll · notes.notebook @ 768x1024
+  pass  no sideways scroll · notes.notebook @ 1280x900
+  pass  no sideways scroll · notes.notebook @ 1440x960
+  pass  no sideways scroll · notes.notebook @ 1920x1000
+  pass  no sideways scroll · notes.seam @ 390x844
+  pass  no sideways scroll · notes.seam @ 768x1024
+  pass  no sideways scroll · notes.seam @ 1280x900
+  pass  no sideways scroll · notes.seam @ 1440x960
+  pass  no sideways scroll · notes.seam @ 1920x1000
+  pass  no sideways scroll · notes.review @ 390x844
+  pass  no sideways scroll · notes.review @ 768x1024
+  pass  no sideways scroll · notes.review @ 1280x900
+  pass  no sideways scroll · notes.review @ 1440x960
+  pass  no sideways scroll · notes.review @ 1920x1000
+  pass  no sideways scroll · notes.voice @ 390x844
+  pass  no sideways scroll · notes.voice @ 768x1024
+  pass  no sideways scroll · notes.voice @ 1280x900
+  pass  no sideways scroll · notes.voice @ 1440x960
+  pass  no sideways scroll · notes.voice @ 1920x1000
+  pass  no sideways scroll · timeline.owner-flight @ 390x844
+  pass  no sideways scroll · timeline.owner-flight @ 768x1024
+  pass  no sideways scroll · timeline.owner-flight @ 1280x900
+  pass  no sideways scroll · timeline.owner-flight @ 1440x960
+  pass  no sideways scroll · timeline.owner-flight @ 1920x1000
+  pass  no sideways scroll · timeline.desk @ 390x844
+  pass  no sideways scroll · timeline.desk @ 768x1024
+  pass  no sideways scroll · timeline.desk @ 1280x900
+  pass  no sideways scroll · timeline.desk @ 1440x960
+  pass  no sideways scroll · timeline.desk @ 1920x1000
+  pass  no sideways scroll · timeline.phone @ 390x844
+  pass  no sideways scroll · timeline.phone @ 768x1024
+  pass  no sideways scroll · timeline.phone @ 1280x900
+  pass  no sideways scroll · timeline.phone @ 1440x960
+  pass  no sideways scroll · timeline.phone @ 1920x1000
+  pass  zero console errors across all states
+  pass  every visible interactive element has an accessible name
+  pass  nothing invisible can take focus
+  pass  focus paints a visible treatment
+  pass  no silent text clipping (hidden overflow without ellipsis)
+  pass  phone board · a tick never moves the floor
+  pass  phone board · the tick completes and offers the way back
+  pass  desk list · the List view opens
+  pass  desk list · a row to tick is on screen
+  pass  desk list · a tick keeps the list where it was
+  pass  desk list · focus stays on the row that was ticked
+  pass  desk list · the tick completed the row
+  pass  desk list · the row stays under the hand for the undo window
+  pass  desk list · undo puts the row back and the keyboard on it
+  pass  phone list · the List view opens
+  pass  phone list · a row to tick is on screen
+  pass  phone list · a tick keeps the list where it was
+  pass  phone list · focus stays on the row that was ticked
+  pass  phone list · the tick completed the row
+  pass  phone list · the row stays under the hand for the undo window
+  pass  phone list · undo puts the row back and the keyboard on it
+  pass  phone list · rows exist to judge
+  pass  phone list · titles and notes wrap on whole words, nothing is cut mid-word
+  pass  phone list · two weights, never a third
+  pass  a search that finds nothing offers the way back
+  pass  and the way back works: the board, an empty field, a sentence, and focus somewhere
+  pass  phone list · an empty project says what to do first
+  pass  phone list · and never claims a filter that is not on
+  pass  the view switcher promises only views that exist
+  pass  phone · search is a real field in the head, at a thumb's size
+  pass  phone · Ctrl K reaches it
+  pass  phone · and nothing apologises for a search that exists
+  pass  board @1180 · five lanes fit with nothing sliced
+  pass  board @1280 · five lanes fit with nothing sliced
+  pass  board @1366 · five lanes fit with nothing sliced
+  pass  board @1440 · five lanes fit with nothing sliced
+  pass  planning open @1440 · Done is still on the board, not deleted by the drawer
+  pass  board @1280 · the priority word is never cut
+  pass  board @1280 · a card's note is read in full on a desk
+  pass  board @1440 · the priority word is never cut
+  pass  board @1440 · a card's note is read in full on a desk
+  pass  desk · the no-day fact is on the head and it is a door
+  pass  desk · and it opens Planning
+  pass  phone · the no-day fact is on the head and it is a door
+  pass  phone · and it opens Planning
+  pass  the tools are one Show control
+  pass  Show opens as a menu and the keyboard is in it
+  pass  the arrows walk it
+  pass  Escape closes it and returns to the word that opened it
+  pass  filtered list · the sentence is said once
+  pass  phone review · nothing scrolls sideways
+  pass  phone review · every decision is on the sheet and the first move has the line
+  pass  notes head · no filled count on the capture surface, no keycap on a heading
+  pass  notes · the way into review is a quiet 13px text control in the index head
+  pass  notes · and it opens review
+  pass  notes @1920 · the index and the paper share one measure, and it is a measure
+  pass  notes @1920 · the stack is centred, not banded to one side
+  pass  dictation · the disclosure is two plain sentences, not a policy
+  pass  phone seam · the fixture opens the sheet with the peel out and Send to Tasks in reach
+  pass  timeline · no gap sentence names a day that holds a moment
+  pass  timeline · Add a moment is the filled act, the link and Preview are outline
+  pass  timeline · the moment is its own control: no Edit words, every control a real box with the date in its name
+  pass  timeline · the affordance at rest is a hairline under the title
+  pass  timeline across @768 · the composition is offered
+  pass  timeline across @768 · every label stays on the stage and the day is on screen
+  pass  phone timeline · no layout toggle, one filled act and a door
+  pass  phone timeline · the 79 and the next moment share the first screen
+  pass  phone timeline · the door opens a real menu with Preview and the link
+  pass  timeline · Add a moment lands tomorrow, named as what it is
+  pass  timeline · its editor opens above the line with the date in it, the keyboard in it and undo in view
+  pass  timeline publish · never 'had this since' beside 'sending comes next'
+  pass  desk · the account tile answers on screen, in the doors' one grammar
+  pass  desk · and Escape takes the answer away
+  pass  phone · the account tile answers on screen, in the doors' one grammar
+  pass  phone · and Escape takes the answer away
+  pass  settings · the door opens a modal card and the keyboard is in it
+  pass  settings · three panes, and every label is sentence case
+  pass  settings · the Email pane is a grouped list with real choices
+  pass  settings · Escape closes it and hands the cog back
+  pass  phone · Settings is a live door behind More
+  pass  phone · and it opens the same card, on screen
+  pass  projects · three projects from one world, none from another life
+  pass  tasks · Project settings answers on screen
+  pass  timeline · down at 1440 · every moment on its own line, the gap note quiet, no errors
+  FAIL  tasks · crossing 720 both ways throws nothing  — ReferenceError: C is not defined | ReferenceError: C is not defined
+  pass  tasks · and neither side of the crossing scrolls sideways
+  FAIL  tasks · narrowing to a phone becomes the list, and widening returns the board  — narrow lanes=5 rows=0 · wide lanes=5
+  FAIL  notes · crossing 720 both ways throws nothing  — ReferenceError: C is not defined | ReferenceError: C is not defined
+  pass  notes · and neither side of the crossing scrolls sideways
+  FAIL  timeline · crossing 720 both ways throws nothing  — ReferenceError: C is not defined | ReferenceError: C is not defined
+  pass  timeline · and neither side of the crossing scrolls sideways
+  FAIL  timeline · narrowing to a phone drops the desk composition  — layout=across visible toggles=2
+
+137 assertions, 5 failing

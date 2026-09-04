@@ -117,8 +117,10 @@ export async function delight({ browser, url, check, head }) {
       const field = () => document.querySelector('[data-app="tasks"] .dockField');
       const dock = () => document.querySelector('[data-app="tasks"] .dock');
       const centre = () => { const r = dock().getBoundingClientRect(); return Math.round(r.left + r.width / 2); };
+      /* Below 1100 the board is a list, by decision; the first row is
+         the first card's equal in every assertion below. */
       const firstCard = () => {
-        const c = document.querySelector(".board .card");
+        const c = document.querySelector(".board .card, .board .lrow");
         const r = c.getBoundingClientRect();
         return Math.round(r.left) + "," + Math.round(r.top);
       };
@@ -130,14 +132,14 @@ export async function delight({ browser, url, check, head }) {
       input.value = "marquee";
       input.dispatchEvent(new Event("input", { bubbles: true }));
       await new Promise((r) => setTimeout(r, 420));
-      const filtered = document.querySelectorAll(".board .card").length;
+      const filtered = document.querySelectorAll(".board .card, .board .lrow").length;
       const live = document.querySelector('[data-app="tasks"] .dockField').classList.contains("is-live");
       /* Escape twice: clear, then leave. */
       const esc = () => document.querySelector(".dockInput").dispatchEvent(
         new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
       esc();
       await new Promise((r) => setTimeout(r, 300));
-      const cleared = document.querySelectorAll(".board .card").length;
+      const cleared = document.querySelectorAll(".board .card, .board .lrow").length;
       document.querySelector(".dockInput").blur();
       await new Promise((r) => setTimeout(r, 420));
       const closed = Math.round(field().getBoundingClientRect().width);
@@ -374,19 +376,32 @@ export async function delight({ browser, url, check, head }) {
   }
 
   /* ── the control surfaces ───────────────────────────────────────
-     Filter, Sort, Display and Share. The founder's rule is that a person
-     must always know what is active WITHOUT opening anything, so the
-     load-bearing assertion here is not "the panel opens" — it is "the
-     button says it is on while the panel is shut". */
+     Show and Share. Filter, Sort and Display became one word — Show — on
+     2026-09-02, because they were three answers to one question; the
+     founder's rule is unchanged: a person must always know what is active
+     WITHOUT opening anything, so the load-bearing assertion is not "the
+     panel opens" — it is "the word says it is on while the panel is shut". */
   for (const width of [1440, 1920]) {
     const page = await open(width);
     const r = await page.evaluate(async () => {
       const btn = (t) => document.querySelector(`[data-act="tool"][data-tool="${t}"]`);
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      /* The word becomes the panel through a view transition, whose
+         callback runs a frame late and whose animation takes 220ms on a
+         quiet machine and longer on a loaded one. A fixed clock here
+         measured the machine, not the product: on 2 September a 240ms
+         wait at 1920 read the panel as absent while it was still
+         arriving, and the run died on a null. Wait for the STATE. */
+      const until = async (f, ms = 2000) => {
+        const t0 = performance.now();
+        while (!f() && performance.now() - t0 < ms) await wait(30);
+        return f();
+      };
+      const opened = async (t) => { btn(t).click(); await until(() => document.querySelector(".toolPop")); await wait(120); };
+      const shut = async () => { document.querySelector(".board").click(); await until(() => !document.querySelector(".toolPop")); await wait(60); };
       const out = { opens: {}, inView: {} };
-      for (const t of ["filter", "sort", "display", "share"]) {
-        btn(t).click();
-        await wait(260);
+      for (const t of ["show", "share"]) {
+        await opened(t);
         const pop = document.querySelector(".toolPop");
         out.opens[t] = Boolean(pop);
         if (pop) {
@@ -394,26 +409,26 @@ export async function delight({ browser, url, check, head }) {
           out.inView[t] = b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight;
         }
         /* Dismissal: a press on the board closes it. */
-        document.querySelector(".board").click();
-        await wait(200);
+        await shut();
         out["dismissed_" + t] = !document.querySelector(".toolPop");
       }
 
-      /* Filter changes the board and SAYS SO on its own face. */
+      /* A filter changes the board and Show SAYS SO on its own face. */
       const before = document.querySelectorAll(".board .card").length;
-      btn("filter").click(); await wait(240);
+      await opened("show");
       document.querySelector('[data-act="filter-set"][data-value="late"]').click();
       await wait(320);
       out.filtered = document.querySelectorAll(".board .card").length;
-      document.querySelector(".board").click(); await wait(200);
-      /* Panel SHUT, and the button still reports the live filter. */
-      out.badgeWhenShut = (btn("filter").querySelector(".toolDot") || {}).textContent;
+      await shut();
+      /* Panel SHUT, and the word still reports the live filter. */
+      out.badgeWhenShut = (btn("show").querySelector(".toolDot") || {}).textContent;
       out.panelShut = !document.querySelector(".toolPop");
-      btn("filter").click(); await wait(240);
+      await opened("show");
       document.querySelector('[data-act="filter-clear"]').click();
       await wait(320);
       out.cleared = document.querySelectorAll(".board .card").length;
-      out.badgeGone = !btn("filter").querySelector(".toolDot");
+      await shut();
+      out.badgeGone = !btn("show").querySelector(".toolDot");
 
       /* Sort actually reorders. */
       /* Every lane, not one. The To do lane's manual order happens to be
@@ -424,49 +439,49 @@ export async function delight({ browser, url, check, head }) {
       const laneTitles = () => [...document.querySelectorAll(".board [data-lane]")]
         .map((l) => [...l.querySelectorAll(".card .cardTitle")].map((e) => e.textContent.trim()));
       const manual = laneTitles();
-      btn("sort").click(); await wait(240);
+      await opened("show");
       document.querySelector('[data-act="sort-set"][data-value="title"]').click();
       await wait(320);
       const az = laneTitles();
       out.sorted = JSON.stringify(manual) !== JSON.stringify(az);
       out.reallyAZ = az.every((lane) =>
         JSON.stringify(lane) === JSON.stringify([...lane].sort((a, b) => a.localeCompare(b))));
-      out.sortDot = Boolean(btn("sort").querySelector(".toolDot"));
-      document.querySelector(".board").click(); await wait(200);
+      await shut();
+      out.sortDot = Boolean(btn("show").querySelector(".toolDot"));
 
       /* Display actually changes the card. */
       const notesBefore = document.querySelectorAll(".board .cardNote").length;
-      btn("display").click(); await wait(240);
+      await opened("show");
       document.querySelector('[data-act="display-notes"][data-value="off"]').click();
       await wait(320);
       const shown = [...document.querySelectorAll(".board .cardNote")]
         .filter((n) => n.getBoundingClientRect().height > 0).length;
       out.notesHidden = notesBefore > 0 && shown === 0;
-      document.querySelector(".board").click(); await wait(200);
+      await shut();
 
-      /* Escape closes and hands the button back. */
-      btn("sort").click(); await wait(240);
+      /* Escape closes and hands the word back. */
+      await opened("show");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
       await wait(260);
       out.escClosed = !document.querySelector(".toolPop");
-      out.escFocus = document.activeElement === btn("sort");
+      out.escFocus = document.activeElement === btn("show");
       return out;
     });
 
-    const allOpen = ["filter", "sort", "display", "share"].every((t) => r.opens[t] && r.inView[t]);
-    const allDismiss = ["filter", "sort", "display", "share"].every((t) => r["dismissed_" + t]);
-    check("delight", `controls @${width} · all four open inside the viewport`,
+    const allOpen = ["show", "share"].every((t) => r.opens[t] && r.inView[t]);
+    const allDismiss = ["show", "share"].every((t) => r["dismissed_" + t]);
+    check("delight", `controls @${width} · Show and Share open inside the viewport`,
       allOpen, JSON.stringify(r.opens));
     check("delight", `controls @${width} · a press outside closes them`,
-      allDismiss, JSON.stringify(["filter", "sort", "display", "share"].map((t) => r["dismissed_" + t])));
-    check("delight", `controls @${width} · Filter filters, and says so with the panel SHUT`,
+      allDismiss, JSON.stringify(["show", "share"].map((t) => r["dismissed_" + t])));
+    check("delight", `controls @${width} · a filter filters, and Show says so with the panel SHUT`,
       r.filtered < r.cleared && r.panelShut && r.badgeWhenShut === "1" && r.badgeGone,
       `${r.cleared} → ${r.filtered} · badge "${r.badgeWhenShut}" while shut · cleared:${r.badgeGone}`);
-    check("delight", `controls @${width} · Sort really reorders, and marks itself live`,
+    check("delight", `controls @${width} · Sort really reorders, and marks Show live`,
       r.sorted && r.reallyAZ && r.sortDot, `changed:${r.sorted} a-z:${r.reallyAZ} dot:${r.sortDot}`);
     check("delight", `controls @${width} · Display really changes the card`,
       r.notesHidden === true, String(r.notesHidden));
-    check("delight", `controls @${width} · Escape closes and hands the button back`,
+    check("delight", `controls @${width} · Escape closes and hands the word back`,
       r.escClosed && r.escFocus, `closed:${r.escClosed} focus:${r.escFocus}`);
     await page.close();
   }

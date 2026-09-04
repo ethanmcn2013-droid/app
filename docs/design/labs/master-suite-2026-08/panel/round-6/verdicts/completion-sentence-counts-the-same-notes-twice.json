@@ -1,0 +1,6 @@
+{
+  "id": "completion-sentence-counts-the-same-notes-twice",
+  "real": true,
+  "reason": "Reproduced verbatim: notes.review at 1440, K eight times, and .emptyBody reads '8 notes went through. 8 notes stayed here.' under 'Everything is decided.' The code path is exactly as described — src/notes.js:1601 returns `went + parts[0]` whenever only one outcome occurred, so the same tally is printed twice in adjacent sentences. The comment at :1580 records this class being fixed once for the zero branch, and the single-outcome branch is the residue.",
+  "sharpenedFix": "The proposed branch is right; note it also has to carry the other two single-outcome cases, which read worse than the keep one — all-task gives '8 notes went through. 8 notes became tasks.' and all-delete gives '8 notes went through. 8 notes went.' Also worth recording in the finding: Keep is the only one-press outcome in review (d-task opens the peel, and d-delete is a closed door), so the stuttering branch is the flow's default ending rather than an edge case."
+}

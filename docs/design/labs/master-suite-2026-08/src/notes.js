@@ -68,6 +68,7 @@
   let undoTimer = null;
   let settling = null;    /* a sheet on its way to the pile                */
   let refocus = null;     /* what to put focus back on after a repaint     */
+  let takenCaret = null;  /* a caret the layout blurred, kept for one paint  */
   /* What a note is ABOUT is the resting state. Shipped as an opt-in
      control it was, in a seat's words, an answer filed in a drawer: the
      product still opened on Today / Yesterday / Monday, which is the
@@ -1612,28 +1613,14 @@
        which also stops it naming the room it is standing in and takes
        the 390 head off a wrapped, orphaned "days". Scoped it keeps the
        full phrase, because there the scope word is doing real work. */
-    const chip =
-      state === "review"
-        ? ""
-        : c.pending > 0
-          ? /* The pill sat glued to the subject and read as that couple's
-               count, and the group two inches below it said "1 still to
-               decide" against the head's "8". The accessible name got
-               the scope right and the screen got it ambiguous, which is
-               the inversion: the credibility of every other number on
-               the surface, spent to save three words. Same accessor,
-               same words, on screen and in the name. */
-            `<button class="chip" type="button" data-act="review" aria-label="${
-              scope
-                ? `${c.pending} still to decide in ${attr(scopeLabel())}. Go through them.`
-                : `Go through the ${c.pending} notes still to decide.`
-            }"/* A NUMBER NEEDS ITS NOUN. The chip read "Go through 8" — eight of
-                    what, on a screen holding notes, tasks, days and
-                    projects. The tooltip had the noun and the chip did not,
-                    and the chip is the thing you read. The accessible name
-                    below keeps the fuller sentence. */
-                >${scope ? `${c.pending} still to decide in ${esc(scopeLabel())}` : phone.matches ? `${c.pending} to decide` : `Go through ${c.pending} ${c.pending === 1 ? "note" : "notes"}`}</button>`
-          : "";
+    /* THE HEAD CARRIES NO COUNT. For five rounds the loudest object on
+       the capture surface — solid ink, 600, top of the sheet — was a
+       tally of how far behind you are, on a product whose one job is to
+       make writing a thought down feel safe. The way into review is
+       still one press away: a quiet text control in the index head, in
+       the row that already says how many notes there are, which is where
+       a count belongs. (indexOf paints it.) */
+    const chip = "";
     return `
       <header class="head">
         <span class="word">notes</span>
@@ -1643,7 +1630,7 @@
         ${chip ? `<span class="headRule" aria-hidden="true"></span>${chip}` : ""}
         <div class="headActions">
           <button class="headAct" type="button" data-act="privacy" aria-label="${attr(N.copy.privacy)}. ${attr(N.copy.privacyLong)}.">${I.lock}<span>${esc(N.copy.privacy)}</span></button>
-          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="Notes options are on another screen. Not here yet.">${I.dots}</button>
+          <button class="headAct" type="button" data-act="options" aria-label="Notes options" aria-disabled="true" title="More for this note. Not here yet.">${I.dots}</button>
         </div>
       </header>`;
   }
@@ -1685,7 +1672,7 @@
                  <div class="dockRow" data-verbs>
                    <button class="dockGlyph" type="button" data-act="search" aria-label="Search everything you wrote">${I.search}</button>
                    <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
+                   <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}</button>
                    ${commit}
                  </div>
                  <div class="dockRow" data-suite>
@@ -1708,7 +1695,7 @@
                  }
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockGlyph" type="button" data-act="voice" aria-label="${attr(N.copy.voiceStart)}">${I.mic}</button>
-                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}</button>
+                 <button class="dockGlyph" type="button" data-act="photo" aria-label="Read a photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}</button>
                  <span class="dockRule" aria-hidden="true"></span>
                  <button class="dockAvatar" type="button" data-act="account" aria-disabled="true" title="Your account, in Signal Studio. Not here yet." aria-label="${attr(N.operator.role)}. Not here yet.">${N.operator.initials}</button>`
           }
@@ -1810,7 +1797,7 @@
           <span class="deskFact"><b>${esc(N.copy.otherWaysLabel)}</b>
             <span class="deskVerbs">
               <button class="verb" type="button" data-act="voice">${I.mic}${esc(N.copy.voiceStart)}</button>
-              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="Reading a photo happens on another screen. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
+              <button class="verb" type="button" data-act="photo" aria-disabled="true" title="A photo, read into words. Not here yet.">${I.photo}${esc(N.copy.photo)}</button>
             </span>
           </span>
         </div>
@@ -2138,7 +2125,7 @@
         /* Its own sticky context, so a rule is pushed out by the next one
            rather than every rule in the pile stacking at the top. */
         rows.push(
-          `<li class="idxSection"><h3 class="idxDay" role="heading" aria-level="3"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote dateStamp">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h3>` +
+          `<li class="idxSection"><h2 class="idxDay"${g.soon ? " data-soon" : ""}${g.undated ? " data-undated" : ""}>${esc(g.label)}${g.note ? `<span class="idxDayNote dateStamp">${esc(g.note)}</span>` : ""}${g.tail ? `<span class="idxDayTail">${esc(g.tail)}</span>` : ""}</h2>` +
             `<ul class="idxGroupRows">${g.rows.map((note) => idxRow(note, o)).join("")}</ul></li>`,
         );
       }
@@ -2147,7 +2134,22 @@
     return `
       <div class="indexWrap">
         <div class="indexHead">
-          <span>${esc(o.title || "Your notes")}</span>${o.mode === "crossed" || o.noDays ? "" : `<kbd class="headKbd">${cap("↓")}</kbd>`}
+          <span>${esc(o.title || "Your notes")}</span>${
+            /* The way into review, where the count lives. It used to be a
+               keycap here — CTRL ↓ on a grouping header, console furniture
+               on a notebook — and a filled pill in the head. The arrows
+               still walk the index; nothing advertises the chord. */
+            /* In every index head that is not already the hand: the
+               ledger of what crossed and the list of what was kept both
+               count notes, and both are rooms a person decides from. */
+            state === "review" || !counts().pending
+              ? ""
+              : `<button class="idxGo" type="button" data-act="review" aria-label="${
+                  scope
+                    ? `${counts().pending} still to decide in ${attr(scopeLabel())}. Go through them.`
+                    : `Go through the ${counts().pending} notes still to decide.`
+                }">${counts().pending} to decide</button>`
+          }
           ${o.count === null ? "" : `<span class="cnt">${esc(o.count || `${notes.length} notes`)}</span>`}
           ${o.group === false || o.noDays ? "" : groupControl()}
         </div>
@@ -2170,6 +2172,7 @@
     const bodyHtml = bodyHtmlOf(note, marked && note.body.includes(marked) ? marked : null);
     return `
       <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(note.title)}">
+        <h1 class="sr">${esc(note.title)}</h1>
         <div class="phoneSheetTop">
           <button class="act" data-quiet type="button" data-act="close">${I.chevron}Back to your notes</button>
           <span class="spacer"></span>
@@ -2339,6 +2342,7 @@
         dock: true,
         over: `
           <section class="phoneSheet" role="dialog" aria-modal="true" aria-label="${attr(`Deciding: ` + note.title)}">
+            <h1 class="sr">Deciding: ${esc(note.title)}</h1>
             <div class="phoneSheetTop">
               <button class="act" data-quiet type="button" data-act="notebook">${I.chevron}Back to your notes</button>
               <span class="spacer"></span>
@@ -2431,6 +2435,7 @@
       ...base,
       over: `
         <section class="dark" aria-label="Dictating">
+          <h1 class="sr">Dictating</h1>
           <div class="darkTop">
             <span class="darkTag"><span class="rec" aria-hidden="true"></span>Listening</span>
             <span class="darkTime tab">0:00</span>
@@ -2467,6 +2472,7 @@
         ...base,
         over: `
           <section class="dark" aria-label="What came back">
+            <h1 class="sr">What came back</h1>
             <div class="darkBody">
               <p class="saidHead">What came back, in ${pieces.length === 1 ? "one note" : `${pieces.length} notes`}.</p>
               <p class="saidHint">Edit ${editEither(pieces.length)} before you keep ${keepWhich(pieces.length)}.</p>
@@ -2553,15 +2559,25 @@
     if (!taskWording) {
       taskWording = pickedWords.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/[.]$/, "");
     }
+    const crossed = indexOf(CROSSED, {
+      title: "Already in Tasks",
+      count: `${CROSSED.length} so far, and every note stayed here`,
+      noDays: true,
+      mode: "crossed",
+      group: false,
+    });
+    /* THE PHONE SEAM. Below 720 the desk plane is not painted, so this
+       room used to show the crossed list and nothing else: no note, no
+       peel, no Send — the product was fine (a row tap opens the sheet
+       with all of it) but the fixture could not be photographed or
+       gated. It opens the same sheet a tap opens, with the peel already
+       out. */
+    if (phone.matches) {
+      return { desk: "", body: crossed, dock: true, over: phoneSheet(note) };
+    }
     return {
       desk: readSheet(note),
-      body: indexOf(CROSSED, {
-        title: "Already in Tasks",
-        count: `${CROSSED.length} so far, and every note stayed here`,
-        noDays: true,
-        mode: "crossed",
-        group: false,
-      }),
+      body: crossed,
       dock: true,
     };
   };
@@ -2875,7 +2891,10 @@
             start: active.selectionStart,
             end: active.selectionEnd,
           }
-        : null;
+        : takenCaret && performance.now() - takenCaret.when < 1500
+          ? takenCaret
+          : null;
+    takenCaret = null;
 
     if (state === "voice" && !voiceClock) startListening();
   else if (state !== "voice" && voiceClock) stopListening();
@@ -3197,6 +3216,17 @@
     const act = e.target.closest("[data-act]");
     if (!act) return;
     const a = act.dataset.act;
+    /* A closed door answers on screen. Notes options and the photo reader
+       carry their reason in a title a thumb can never hover; the suite
+       paints it beside the control, in the one grammar every closed door
+       shares. The send button also wears aria-disabled while the wording
+       is empty, and that is a state, not a door — it keeps its own path. */
+    if (act.getAttribute("aria-disabled") === "true" && /Not here yet/.test(act.getAttribute("title") || "")) {
+      e.preventDefault();
+      if (window.__SUITE && window.__SUITE.answer) window.__SUITE.answer(act, act.getAttribute("title"));
+      else say(act.getAttribute("title"));
+      return;
+    }
     /* THE SUITE SPINE ANSWERED NOTHING.
        Six controls per screen, in all ten states, carrying the strongest
        hover affordance in the product — white on a raised fill, held on
@@ -3214,7 +3244,7 @@
       }
       if (where === "more") {
         /* Still not a surface in the suite: the rest of Signal Studio. */
-        say("The rest of Signal Studio is on another screen.");
+        say("The rest of Signal Studio. Not here yet.");
         return;
       }
       /* The doors are real. */
@@ -3229,7 +3259,10 @@
          two contracts: a person who tried the quiet one and was told it
          does not exist has been told the loud one does. Two slots is
          correct and Tasks proves it; two promises is not. */
-      say("Your account, in Signal Studio. Not here yet.");
+      /* And shown, beside the disc that was pressed: the suite paints the
+         same two-part answer every closed door gets. */
+      if (window.__SUITE && window.__SUITE.answer) window.__SUITE.answer(act, "Your account, in Signal Studio. Not here yet.");
+      else say("Your account, in Signal Studio. Not here yet.");
       return;
     }
     if (a === "filing" || a === "refile") {
@@ -3432,12 +3465,24 @@
        where they go rather than sharing one sentence between seven. */
     const ELSEWHERE = {
       timeline: "Timeline is another surface in this suite. This lab is the Notes one.",
-      more: "The rest of Signal Studio is on another screen.",
-      privacy: `${N.copy.privacyLong} Your privacy settings are on another screen.`,
-      options: "Notes options are on another screen.",
-      photo: "Reading a photo happens on another screen. Nothing here changes.",
-      retry: "Sending again happens on another screen. Your note is still here.",
-      destroy: "Deleting for good happens on another screen. Nothing here is deleted.",
+      /* ONE GRAMMAR FOR A CLOSED DOOR, ratified in src/app.js:96-105:
+         name the thing, then "Not here yet.", then at most one sentence
+         of reassurance. "happens on another screen. Not here yet." was
+         two claims that cannot both be true, and it invented a
+         destination this product does not have.
+
+         `photo` and `options` are gone from this table rather than
+         rewritten: :3220 intercepts any aria-disabled control whose title
+         matches /Not here yet/ and announces the TITLE, so both entries
+         were unreachable. Their titles carry the words now.
+
+         `more` is reached only by the note-level button, whose own
+         accessible name is "More actions for this note" — so it says
+         what that button is, not what the suite door is. */
+      more: "More for this note. Not here yet.",
+      privacy: `${N.copy.privacyLong}. Your privacy settings. Not here yet.`,
+      retry: "Sending again. Not here yet. Your note is still here.",
+      destroy: "Deleting for good. Not here yet. Nothing here is deleted.",
     };
     if (ELSEWHERE[a]) {
       say(ELSEWHERE[a]);
@@ -4002,6 +4047,34 @@
       paint();
     }
   });
+  /* THE CARET THE LAYOUT TOOK. Crossing 720 with the keyboard in the
+     capture field, the browser blurs the field BEFORE any resize event
+     reaches this file: the desk plane goes display:none in the same
+     style pass that reports the media change, and a field that is not
+     drawn cannot hold focus. The repaint that follows then reads the
+     body as the active element and, correctly, restores nothing for a
+     person who left. This person did not leave. A blur with no
+     destination, in a document that still has focus, on a field still
+     in the tree but no longer drawn, is the layout's doing — so the
+     place is kept for the next paint, and dropped the moment the
+     keyboard lands anywhere real. Measured: the baseline lost the caret
+     on the crossing whenever the style pass ran first, which is most of
+     the time; the truth gate had passed on the other ordering. */
+  mount.addEventListener("focusout", (e) => {
+    const t = e.target;
+    if (!t || !(t.tagName === "TEXTAREA" || t.tagName === "INPUT")) return;
+    if (e.relatedTarget || !document.hasFocus() || !t.isConnected) return;
+    if (typeof t.checkVisibility === "function" && t.checkVisibility()) return;
+    takenCaret = {
+      sel: t.id ? `#${t.id}` : t.classList[0] ? `.${t.classList[0]}` : null,
+      role: t.getAttribute("aria-label") || null,
+      at: t.getAttribute("data-i"),
+      start: t.selectionStart,
+      end: t.selectionEnd,
+      when: performance.now(),
+    };
+  }, true);
+  mount.addEventListener("focusin", () => { takenCaret = null; }, true);
 
   /* Seed the cursor on the first row so the index always has a tab stop. */
   if (!cursorId) {
