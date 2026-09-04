@@ -22,9 +22,11 @@ Its map of the existing codebase stands.
 
 ## D2 · Scope is `drive.file`, permanently
 
-`drive.file` is non-sensitive: no CASA security assessment, no annual audit,
-and the 100-user cap on unverified apps does not apply to it once the consent
-screen is published.
+As verified against Google's published classification on 2026-08-27,
+`drive.file` is non-sensitive and did not require the sensitive/restricted-
+scope verification path or its unverified-app user cap. Re-check Google's
+current policy before any future scope change; this record is not a permanent
+compliance or cost guarantee.
 
 The blocking question was whether an app holding only `drive.file` may manage
 sharing. Google's own machine-generated API description (Drive v3, revision
@@ -37,20 +39,22 @@ Only `drives.list` requires a restricted scope, which is what puts Shared
 Drives out of reach and confirms the My Drive path.
 
 **This scope is also the primary security control.** Under `drive.file` the app
-cannot see, list or name anything it did not create. The rest of the user's
-Drive is not "data we promise not to read" — it is data the token cannot reach.
+can reach files it created or the user explicitly opened with the app; it
+cannot list or roam the rest of the user's Drive. That remainder is not "data
+we promise not to read" — it is data the token cannot reach.
 
-## D3 · Three new tables, not six
+## D3 · Four new tables, not a parallel file system
 
 The original brief proposed `Attachment`, `File`, `ExternalFile`,
 `StorageProvider`, `ProviderConnection`, `ProjectFile`, `TaskAttachment`.
 
-The system needs `provider_connections`, `workspace_storage` and
-`drive_folder_grants`, plus three additive columns on the existing `resources`
-table: `storage`, `storage_generation_id` and `stored_path`. The table already
-carries `kind`, `provider`, `external_id`, `access_state` and
-`counts_against_storage` from migration `0017`, and was designed for exactly
-this.
+The system needs `provider_connections`, `workspace_storage`,
+`drive_folder_grants` and `project_drive_operations`, plus three additive
+columns on the existing `resources` table: `storage`,
+`storage_generation_id` and `stored_path`. The table already carries `kind`,
+`provider`, `external_id`, `access_state` and `counts_against_storage` from
+migration `0017`, and was designed for exactly this. Exact Signal-native byte
+cleanup receipts reuse `meta`; they do not add a fifth table.
 
 `attachments` is left alone. Retiring it is a separate change and must not be
 coupled to this one.
@@ -61,7 +65,7 @@ generation that received it, removing a member revokes exactly what we granted
 rather than guessing, and a handover cannot overwrite the old folder's repair
 evidence.
 
-## D4 · One current storage owner per board; one Drive grant per person
+## D4 · One current storage owner per board; one current Drive connection per person
 
 A board nominates a **storage owner** — a member with `manageProject` who
 connects their Drive. Every upload to that board, by any member, is written
@@ -107,11 +111,13 @@ Reversible, and user-visible — confirm with the founder before changing.
 Signal Studio mints a resumable upload session server-side and hands the
 browser only the session URL. The access token stays on the server.
 
-This is the design's largest practical win. The current path posts the whole
-file to a server action, which caps real uploads at about 8 MB
-(`next.config.ts` `bodySizeLimit`) and buffers the entire file in memory.
-Uploading direct to Drive removes the body limit, the memory pressure and the
-egress at once, against a documented Drive maximum of 5 TB.
+This is the design's largest practical win. Before WP-0 the native path posted
+the whole file to a server action and could not reach the promised limit.
+Configured Signal-native Blob and Drive uploads now both send bytes directly
+from the browser; the server authorizes, binds and verifies metadata. The
+no-Blob fallback remains a separate 3 MB server path. Drive supports
+much larger files at the provider layer, but Signal Studio deliberately keeps
+the founder-approved 50 MB product limit.
 
 It also means **a client-supplied file id is never evidence**. On finalize the
 server must verify with `files.get` that the file carries our
@@ -135,9 +141,10 @@ Every upload is stamped with a Signal-generated id in `appProperties` — a fiel
 Google keeps private to the requesting app. Any retry queries for that id
 before creating anything.
 
-There is no queue or background worker in this repository, so retry safety
-cannot be delegated to infrastructure. This one decision removes the entire
-duplicate-file class.
+Retry safety never depends on a worker. The durable operation journal and
+default-off repair route may resume interrupted work, but every provider call
+is idempotent from its own immutable receipt. This one decision removes the
+duplicate-file class even when scheduled repair is disabled.
 
 ## D9 · Naming
 
@@ -199,8 +206,8 @@ in server-side, and the delegation is `put`-only, single-pathname and expiring.
 
 The trade is multipart: one `PUT` carries the whole file, so a dropped
 connection restarts rather than resumes. At a 50 MB ceiling that is a worse
-minute, not a broken feature, and WP-6 moves large files onto Drive's own
-resumable sessions regardless.
+minute, not a broken feature. WP-6 moves those files onto Drive's own resumable
+sessions while preserving the same 50 MB customer promise.
 
 **This is deliberately the same shape as WP-6.** Server mints a scoped session,
 browser sends the bytes to the provider, server verifies at finalize and treats
@@ -255,7 +262,7 @@ immutable storage generation, while a Signal-native resource must not name
 one. SQLite cannot add a composite foreign key to the existing `resources`
 table without rebuilding it, so matching insert/update guards enforce that the
 generation belongs to the resource's workspace. Provider scope payloads must
-be valid JSON; the exact one-scope allowlist remains a WP-4 application
+be valid JSON; the exact one-scope allowlist is enforced by the application
 contract because SQLite cannot safely encode the whole OAuth policy as a
 generic JSON-shape constraint.
 
@@ -337,8 +344,26 @@ making a canonical production URL part of OAuth identity.
 
 External permission receipts have stricter erasure ordering than refresh
 tokens. Google must confirm deletion of the exact `(folder_id, permission_id)`
-before `drive_folder_grants` is deleted; without an idempotent WP-5 revoker,
-account erasure fails closed and retains the receipt. Migration 0029's
-operation journal is now staged on this branch; export and erasure must include
-that table in the same explicit evidence-preserving order rather than relying
-on cascade before WP-5 can be called complete.
+before `drive_folder_grants` is deleted. The idempotent revoker, migration
+0029 operation journal, export and erasure ordering are implemented on the
+feature branch; production migration and launch remain founder-gated.
+
+## D16 · Deletion authority and byte custody are durable
+
+**Decided 2026-09-03 during release-candidate hardening.**
+
+Project deletion records durable intent before provider work, and every Drive
+or Signal-native writer orders its final database write against that intent
+and both account-erasure fence layers. A browser's native write authority
+remains fenced through its exact expiry plus a bounded in-flight drain margin.
+Once that authority is certainly dead, rejected or abandoned Signal-owned
+bytes move to an exact per-object cleanup receipt before their attachment row
+or marker disappears. The leased cleanup worker may retry only that locator;
+it cannot derive a prefix and never touches Drive-owned bytes.
+
+Account erasure yields when a live leased Project deletion committed first.
+Erasure may subsume a non-live deletion for a Project the account owns. For a
+surviving Project it preserves the deletion tombstone, re-arms ambiguous or
+expired work after the account fence lifts, and leaves unrelated bystander
+operations untouched. This first-committer model is an availability choice and
+a custody boundary, not an implementation convenience.

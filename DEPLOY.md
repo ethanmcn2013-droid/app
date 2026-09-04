@@ -66,7 +66,26 @@ GOOGLE_OAUTH_REDIRECT_URI=https://app.signalstudio.ie/api/connections/google/cal
 OAUTH_STATE_SECRET=<independent random value, at least 32 bytes>
 PROVIDER_TOKEN_KEY=<base64-encoded 32-byte key>
 PROVIDER_TOKEN_KEY_VERSION=1
+
+# Project Drive repair workers. Absence means disabled. Keep every value false
+# until the founder gates and launch checks below are complete; then activate
+# each independently so one recovery path never silently enables another.
+SIGNAL_PROJECT_DRIVE_REVOKE_REPAIR_ENABLED=false
+SIGNAL_PROJECT_DRIVE_GRANT_CREATE_REPAIR_ENABLED=false
+SIGNAL_PROJECT_DRIVE_FOLDER_REPAIR_ENABLED=false
+SIGNAL_PROJECT_DRIVE_NATIVE_BYTE_REPAIR_ENABLED=false
 ```
+
+Project Drive has five separate founder gates. Do not collapse them into a
+merge or a single "launch" instruction:
+
+1. select and lock A, B, or C (plus any numbered zones) before production UI;
+2. approve the privacy-policy wording;
+3. explicitly authorize migrations 0028 and 0029 after a verified backup and
+   isolated-copy rehearsal;
+4. explicitly authorize the production deployment after UI/live acceptance;
+5. activate each repair worker individually only after the deployed route and
+   production migration state have been verified.
 
 ### Google Drive connection contract
 
@@ -100,8 +119,10 @@ node -p "require('crypto').randomBytes(32).toString('base64')"    # PROVIDER_TOK
 ```
 
 The callback creates or reuses only an app-marked, unshared `Signal Studio`
-folder. Board folders and member permissions are WP-5 lifecycle work; do not
-create permissions on the root as an operator workaround.
+root. Enabling connected storage for a Project is a separate lifecycle action:
+it provisions that Project's immutable folder generation and its exact
+named-user grants. Never create permissions on the root as an operator
+workaround.
 
 **`PROVIDER_TOKEN_KEY` encrypts stored provider refresh tokens.** Project
 Drive holds a long-lived Google credential per connected account, and this
@@ -227,8 +248,24 @@ its production state can change independently.
 ## 5. Cron
 
 `vercel.json` declares the daily digest cron (`0 9 * * *` against
-`/api/cron/digest?send=1`). Confirm it appears in Vercel → Settings →
-Cron Jobs after the first deploy.
+`/api/cron/digest?send=1`), the analytics snapshot cron, and the shared Project
+Drive repair cron (`15 3 * * *` against
+`/api/cron/project-drive-grant-repair`). Confirm all three appear in Vercel →
+Settings → Cron Jobs after the first deploy.
+
+The Project Drive route is count-only in its response and logs: it never emits
+member emails, provider ids, operation ids, byte locators, or stored error
+detail. It serves four independent bounded workers behind the four flags above:
+revocation, grant creation, folder provision/rename, and exact Signal-native
+byte cleanup. The byte worker consumes only durable per-object receipts left by
+Project or upload cleanup; it never derives a prefix or touches provider-owned
+Drive files. Storage handover is deliberately excluded because its actor
+authority is not durable journal state. Leave every flag off until migrations
+0028 and 0029 are current and the corresponding feature code is deployed. At
+launch, enable each repair path deliberately; any flag may be disabled alone as
+an operational circuit breaker. On the Vercel Hobby daily cadence, interrupted
+work can wait up to one day for automatic recovery, so the interactive path
+still dispatches immediately and the cron is the safety net.
 
 ## 6. Smoke test (production, from a phone in incognito)
 
@@ -245,3 +282,14 @@ Cron Jobs after the first deploy.
 - [ ] Daily digest cron fires (`curl -H "Authorization: Bearer $CRON_SECRET"
   $URL/api/cron/digest?send=1`) → email lands
 - [ ] Clerk + Stripe webhooks show recent deliveries in their dashboards
+- [ ] Connections requests exactly `drive.file`; the `Signal Studio` root is
+  not shared and no broader OAuth scope is present
+- [ ] Enabling one test Project creates only its board folder and exact
+  named-user grants; a member opens the folder/file but not the parent
+- [ ] A 50 MB attachment completes browser-direct upload and verification
+- [ ] Removing a member revokes the exact Google permission; incomplete current-
+  email writer coverage keeps new files in Signal-native storage
+- [ ] Disconnect makes new uploads fall back to Signal-native storage while
+  existing Drive files remain in the owner's Drive
+- [ ] With all four repair flags absent/false, every worker reports `flag-off`;
+  enabling one worker does not enable any other worker

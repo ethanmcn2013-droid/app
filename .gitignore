@@ -26,6 +26,7 @@
 # misc
 .DS_Store
 *.pem
+/docs/*.last-good.html
 
 # claude code — per-machine permission grants, never shared
 .claude/settings.local.json

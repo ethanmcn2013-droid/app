@@ -1,12 +1,15 @@
-# Project Drive — build plan
+# Project Drive — durable build and handoff record
 
-**Store a board's files in the board owner's Google Drive, so that invited
-members can open them and nobody can reach anything else in that Drive.**
+**Let each board nominate a storage owner whose Google Drive holds that
+board's files, so current members can open them without exposing anything else
+in the storage owner's Drive.**
 
-Handoff document. Written to be executed by a Claude Code session working in
-this repository. Read this file, then `DECISIONS.md`, then start at WP-0.
-Record progress in `STATUS.md` as you go — it is the only place a later
-session can learn what is actually done.
+This began as the implementation plan. It is now the model-agnostic handoff
+for any Codex or Claude Code session working in this repository. Read
+`STATUS.md` first for the durable execution record, then `DECISIONS.md` for
+the settled constraints, and use this document for the intended shape and
+acceptance bar. Do **not** restart WP-0 or another completed package; continue
+from the first unfinished acceptance gate recorded in `STATUS.md`.
 
 Founder decision date: 2026-08-27. Founder-facing rationale:
 `docs/PROJECT_FILES_IN_DRIVE.html`. Current-state map of the codebase:
@@ -24,7 +27,7 @@ CI cycle or a production incident.
 | `AGENTS.md`, `CLAUDE.md` | Repo contract, north star, HQ sync duty |
 | `docs/adr/0001-canonical-project-identity.md` | **§9 governs every server action you write** |
 | `docs/SPACING_SCALE_COLLISION.md` | Vendored tokens remap Tailwind spacing; `min-h-11` is 80px |
-| `drizzle/MIGRATIONS.md` | The migration ledger contract. Migration 0028 is not just a `.sql` file |
+| `drizzle/MIGRATIONS.md` | The migration ledger contract. Migrations 0028 and 0029 are not just `.sql` files |
 | `DEPLOY.md` §1, §4 | Env vars and the database release gate |
 | `docs/COLLABORATION_LOOP.md` | Role vocabulary; who a "member" is |
 | `src/server/actions/attachments.ts` | The claim-then-verify pattern you will reuse |
@@ -38,7 +41,7 @@ CI cycle or a production incident.
 A board (a `workspaces` row) can nominate a **storage owner** — a member with
 `manageProject` who connects their Google Drive. Signal Studio creates one
 folder for that board inside a `Signal Studio` folder in their My Drive, and
-shares *the board folder only* with every current member. Every upload to that
+shares *the board folder only* with every current non-owner member. Every upload to that
 board, by any member, is written with the storage owner's credential into that
 folder, and the browser sends the bytes straight to Google. Members never see
 an OAuth screen. Signal Studio holds metadata and the relationship; Google
@@ -85,31 +88,39 @@ proved by a contract test, in the register this repo already uses
 
 ## 3 · Repo traps that will bite you
 
-- **Migration 0028 is not just SQL.** It needs a ledger entry in
-  `drizzle/migration-ledger.json` (ordinal, LF-canonical sha256, policy,
-  receipt path, receipt sha256), a `tasks-migration-receipt/1` review receipt
-  under `drizzle/receipts/`, and a `drizzle/meta/_journal.json` entry.
-  `pnpm db:contract` is the gate. Follow `0027_share_link_token_hash` as the
-  model, including its receipt wording: mark it **not authorized for
-  production** until the founder says otherwise.
+- **Migrations 0028 and 0029 are not just SQL.** Each needs its own ledger
+  entry in `drizzle/migration-ledger.json` (ordinal, LF-canonical sha256,
+  policy, receipt path and receipt sha256), a `tasks-migration-receipt/1`
+  review receipt under `drizzle/receipts/`, and a
+  `drizzle/meta/_journal.json` entry. `pnpm db:contract` is the gate. Both
+  receipts remain **not authorized for production** until the founder approves
+  the target-bound execution after backup and isolated-copy rehearsal.
 - **`experience/registry.json` is a hard gate.** New surfaces must be
   registered with a full entry and a materiality review, or
   `pnpm experience:validate` fails. Read `scripts/experience/validate.mjs`
   before adding entries.
 - **`pnpm first-contact:language`** scans `src/**/*.tsx` prose for jargon.
   Banned words include `config`, `endpoint`, `webhook`, `schema`. Write copy in
-  plain language: "Connect Google Drive", "Who can open these files".
-- **`experimental.serverActions.bodySizeLimit` is `8mb`** in `next.config.ts`,
-  while `SERVER_UPLOAD_LIMIT_BYTES` says 50 MB. WP-0 fixes this. Do not build
-  on the current numbers.
+  plain language: **Connect Google Drive** and
+  **Who can open this board's files**.
+- **Historical WP-0 baseline, now resolved:** `bodySizeLimit` used to be
+  `8mb`, above Vercel's binding 4.5 MB request limit, while the product said
+  50 MB. The framework limit is now 4 MB; configured Blob and Drive paths send
+  bytes browser-direct, while the no-Blob fallback remains a separate 3 MB
+  server path. The founder-approved product limit remains exactly 50 MB. Do
+  not reintroduce a server-mediated large-file path above that fallback limit.
 - **libSQL over stateless HTTP**: FK cascades are unreliable and hand-wired.
   Write retries are deliberately absent (`src/server/db/retry.ts` is reads
   only). `db.transaction()` works and is used.
 - **Module boundaries** (`scripts/check-module-boundaries.mjs`): this work is
   *core*, not a module. It belongs in `src/server/**`, `src/lib/**`,
   `src/components/app/**`. Do not put it under `src/modules/`.
-- **There is no background worker.** `vercel.json` schedules two crons; the
-  outbox cron is not among them. WP-8 adds one deliberately.
+- **Historical WP-8 baseline, now resolved in the release candidate:** there
+  was no Project Drive worker. One shared count-only cron route now contains
+  four independently gated repair paths: permission revocation, permission
+  creation, folder provision/rename and exact Signal-native byte cleanup.
+  Every flag defaults off. Storage handover is deliberately interactive
+  because its actor authority is not durable worker state.
 
 ---
 
@@ -121,28 +132,29 @@ criteria are met and recorded in `STATUS.md`.
 ### WP-0 · Fix the floor
 *No Drive work. Ships on its own.*
 
+**Current state:** complete. Keep this section as historical acceptance
+evidence; do not restart it.
+
 **Goal.** The Signal-native upload path — the fallback this entire design
 leans on — must demonstrably work before anything is built on top of it.
 
 **Do:**
-- Establish whether `BLOB_READ_WRITE_TOKEN` is provisioned in production.
-  `chooseBackend()` in `src/server/storage.ts` returns `vercel-no-token` and
-  `putBytes` **throws** when it is absent on Vercel. Add it to the
-  `RECOMMENDED_IN_PRODUCTION` list in `src/env.ts` so its absence warns at boot
-  instead of surfacing as a runtime failure.
-- Reconcile the file-size story. `next.config.ts` caps server-action bodies at
-  8 MB; `src/lib/storage-config.ts` says 50 MB; the free tier's own per-file
-  limit is 10 MB; the toast in `resources-section.tsx` says 50 MB. Pick one
-  truth and make all four agree. Note that WP-6 removes this ceiling entirely
-  for Drive-backed boards, so do not over-invest here — make it honest, not
-  clever.
-- `src/components/app/settings/sections/storage.tsx:87` renders
-  *"File uploads are not yet active on this workspace"* unconditionally. Either
-  make it true or delete it.
+- Resolved: `BLOB_READ_WRITE_TOKEN` was confirmed in all three Vercel
+  environments and is in `RECOMMENDED_IN_PRODUCTION`, so absence warns at boot
+  instead of first surfacing as an upload failure.
+- Historical contradiction: `next.config.ts` capped server-action bodies at
+  8 MB, `src/lib/storage-config.ts` said 50 MB, the free tier promised 10 MB
+  and the product said 50 MB. WP-0 resolved this with one 50 MB product limit,
+  a 4 MB framework body limit and browser-direct Signal-native Blob upload;
+  WP-6 applies the same byte path shape to Drive.
+- Resolved: the unconditional settings claim that uploads were inactive was
+  removed; settings now tells the truth.
 
-**Acceptance:** a real upload of a ~5 MB PDF succeeds in production and
-downloads back through `/api/attachments/[id]`; the four size numbers agree;
-settings tells the truth.
+**Acceptance (met):** a real upload of a ~5 MB PDF succeeded against the
+production Blob store and downloaded back through the route's own read path;
+the size contract agrees and settings tells the truth. This verification did
+not deploy Project Drive or change production configuration or schema; its
+disposable verification object was removed.
 
 **Gates:** `pnpm lint && pnpm typecheck && pnpm test`
 
@@ -195,19 +207,20 @@ answering all seven steps with observed behaviour and any surprises.
 - `src/lib/sentry-scrub.ts` — scrub token fields before anything leaves.
 - `DEPLOY.md` — document the new variable and how to generate it.
 
-**Note.** `calendar_connections` in the Notes module stores its Google refresh
-token in plaintext, relying on Turso at-rest encryption, and its own comment
-flags this as a follow-up. Once `secret-box` exists, retrofitting that table is
-a small, obviously-correct follow-up — record it in `STATUS.md` but do not let
-it block this project.
+**Note.** `calendar_connections` in the Notes module still stores its Google
+refresh token in plaintext, relying on Turso at-rest encryption, and its own
+comment flags this as a follow-up. The reviewed `secret-box` now exists, but a
+Notes schema migration remains a separate module change — keep it in
+`STATUS.md` and do not let it block this project.
 
 **Acceptance:** tests pass; no plaintext token can reach the database, logs, or
 Sentry.
 
 ---
 
-### WP-3 · Schema
-**Goal.** Migration 0028, done the way this repo demands.
+### WP-3 · Schema and durable journal
+**Goal.** Migrations 0028 and 0029, done the way this repo demands and held
+behind the production founder gate.
 
 **Tables** (see `DECISIONS.md` D3 for why these and not the six the original
 brief proposed):
@@ -249,6 +262,16 @@ CREATE TABLE drive_folder_grants (
   revoke_pending,           -- set when a delete failed; WP-8 drains it
   PRIMARY KEY (storage_generation_id, user_id)
 );
+
+-- Durable intent and provider receipts across database/provider splits.
+CREATE TABLE project_drive_operations (
+  id, workspace_id, operation_kind, status, dedupe_key,
+  connection_id, storage_generation_id, target_storage_generation_id,
+  subject_user_id, grantee_email, grant_role, workspace_revision,
+  provider_folder_id, provider_folder_web_view_link,
+  provider_permission_id, attempt_count, last_attempt_at, next_attempt_at,
+  lease_expires_at, last_error_code, created_at, updated_at, completed_at
+);
 ```
 
 Plus, additively on `resources`:
@@ -272,11 +295,16 @@ before deleting the evidence needed for repair.
 SQLite's twelve-step table rebuild and only buys project-level libraries, which
 are out of scope.
 
-**Also:** mirror in `src/server/db/schema.ts`; ledger entry; review receipt
-under `drizzle/receipts/`; journal entry.
+Exact Signal-native byte cleanup receipts reuse `meta`. They are one immutable
+receipt per object locator and do not create a fifth Project Drive table.
 
-**Acceptance:** `pnpm db:contract` passes; `pnpm db:status` against a local
-database reports current after `pnpm db:migrate`; a second run is a no-op.
+**Also:** mirror both migrations in `src/server/db/schema.ts`; give each its
+own ledger entry, review receipt under `drizzle/receipts/` and journal entry.
+
+**Acceptance:** `pnpm db:contract` passes; `pnpm db:status` against a disposable
+local database reports current through 0029 after `pnpm db:migrate`; a second
+run is a no-op. Neither migration reaches production without the founder's
+separate authorization.
 
 ---
 
@@ -316,9 +344,13 @@ and an alternate incoming Host cannot become an open redirect.
 
 **GDPR boundary.** Refresh credentials are collected, local generations are
 deleted explicitly in `RESTRICT` order, and tokens are revoked afterwards.
-An exact folder grant is different: its Google permission must be revoked
-*before* its `permission_id` receipt is deleted. Until WP-5 wires that
-idempotent executor, erasure fails closed and retains the receipt.
+An exact folder grant is different: Google must confirm deletion of its stored
+`permission_id` before that receipt disappears. The release candidate now
+wires this executor into account erasure, arbitrates it against durable Project
+deletion, and preserves encrypted custody on ambiguous provider results.
+Signal-native claims are inspected transactionally before attachment or
+Project rows can disappear; live or legacy-ambiguous writers block retryably,
+while expired authority first becomes an exact byte-cleanup receipt.
 
 **Contract tests:**
 - Requested scope set is exactly `["…/auth/drive.file"]`.
@@ -410,8 +442,8 @@ storage until coverage is complete.
    would discard the idempotency key and permit a duplicate.
 
 **Also:** `next.config.ts` CSP — `connect-src` needs
-`https://www.googleapis.com`; `frame-src` needs `https://drive.google.com` if
-you embed the preview.
+`https://www.googleapis.com`. V1 opens the provider's `webViewLink` in a new
+tab; it does not embed Drive's viewer.
 
 **Acceptance:** a file at the founder-approved 50 MB product limit attaches
 successfully; killing the browser
@@ -421,7 +453,21 @@ falls back to Signal-native storage with a plain sentence.
 ---
 
 ### WP-7 · Surfaces
-**Goal.** It should feel like nothing changed, except that bigger files work.
+**Goal.** Attaching a file stays ordinary while storage ownership and live
+access truth become easy to understand.
+
+**Founder design gate:** Phase-2 exploration is complete. A · Custodian,
+B · Ledger and C · Threshold each cover eight product states at 390, 768,
+1280 and 1440 pixels: 96 rendered frames, with 202 behaviour, overflow,
+accessible-name, focus and product-language assertions. Do not implement the
+production surface until the founder selects one thesis and any numbered zones
+to carry forward:
+
+1. chrome and hierarchy;
+2. ownership story;
+3. live access truth;
+4. Resources and provenance;
+5. motion and reassurance.
 
 - `src/components/app/detail-panel/resources-section.tsx` — "Attach" becomes a
   two-item menu (**Upload from computer** / **Add from Drive** is WP-9; for now
@@ -440,25 +486,64 @@ falls back to Signal-native storage with a plain sentence.
   review. Run `pnpm experience:validate` to learn exactly what it demands.
 
 **Acceptance:** `pnpm first-contact:language` passes; `pnpm experience:validate`
-passes; evidence captured at all four registry breakpoints.
+passes; the selected thesis is verified in the running app and evidence is
+captured at all four registry breakpoints. Existing Drive files open via
+`webViewLink` in a new tab, never an embedded viewer.
 
 ---
 
 ### WP-8 · Resilience and launch
 **Goal.** The things that are invisible and decide whether this is sellable.
 
-- **Revoke repair pass.** A failed `permissions.delete` leaves a removed member
-  with access while our UI says they are gone. Drain `revoke_pending` on a
-  schedule; add the cron to `vercel.json` deliberately (there is no worker
-  today). Surface unresolved rows on the access screen.
-- **Storage-owner handover.** Block the storage owner from leaving a board
-  without handing over. Build the handover before launch.
+- **Four repair paths.** The shared count-only cron independently drains exact
+  permission revocations, permission creations, folder provision/rename work
+  and Signal-native byte-cleanup receipts. All four flags default off and each
+  requires an individual founder-controlled launch decision. No response or
+  log exposes member emails, provider ids, operation ids or byte locators.
+- **Storage-owner handover.** The backend blocks the storage owner from leaving
+  without an authorized interactive handover. The worker must not replay
+  handover because its actor authority is not durable journal state.
+- **Deletion and erasure.** Durable Project deletion, Drive-writer fencing,
+  Signal-native writer custody and account-erasure precedence are implemented
+  as release-candidate backend controls. Their final integrated gate evidence
+  belongs in `STATUS.md`.
 - **Privacy copy.** Files now sit in a member's personal Drive; that is a real
   change to what you tell customers, and it affects account deletion — we can
   delete our rows but must not delete files that now belong to someone else.
   Founder task, not an engineering ticket.
 - **HQ sync**, per `AGENTS.md`: feature record, the token-storage risk, and the
   decision record in the `studio` repo, same cycle.
+
+**Still required before launch:** the selected WP-7 production UI and live
+in-product acceptance; founder-approved privacy wording; founder-authorized
+migrations 0028 and 0029 after backup and rehearsal; a separate production
+deployment authorization; then deliberate activation and observation of each
+repair flag.
+
+### Release-candidate custody addendum
+
+These rules were added during hardening and are now part of the acceptance
+contract:
+
+- Project deletion records durable intent before provider work. Every Drive or
+  Signal-native writer orders its final database change against that intent in
+  the same transaction.
+- A native browser upload carries an exact writer marker and exact cleanup
+  target. Deletion cannot outrun live authority. After the signed authority and
+  bounded in-flight drain margin expire, the exact locator enters durable
+  cleanup custody before its row or marker can disappear.
+- Ambiguous or rejected native writes retain evidence. The byte worker may
+  consume only the exact recorded Blob pathname, disk key or stored path; it
+  never derives a prefix and never touches Drive-owned bytes.
+- Account erasure and Project deletion use first-committer precedence. A live
+  Project deletion proceeds; erasure may subsume non-live deletion for a
+  Project the account owns. Surviving-Project tombstones are preserved and
+  ambiguous work is re-armed after the account fence lifts. Unrelated
+  bystander operations survive unchanged.
+- Exact cleanup receipts are staged in the same immediate transaction as the
+  rows they outlive. A storage failure leaves the receipt for idempotent replay;
+  a process crash cannot turn a broad prefix or client URL into deletion
+  authority.
 
 ---
 
@@ -487,22 +572,39 @@ Do not build these, and do not let them creep in:
 Do not decide these alone:
 
 1. Anything that would widen the OAuth scope beyond `drive.file`.
-2. Whether members get Drive `writer` or `reader` by default
-   (`DECISIONS.md` D5 proposes `writer`; it is reversible but user-visible).
-3. Authorizing migration 0028 against production — the receipt must say
-   *not authorized* until the founder says otherwise, per the `0027` precedent.
+2. Any change from the founder-approved Drive `writer` default to `reader` or
+   another role. It is reversible but user-visible.
+3. Authorizing migrations 0028 and 0029 against production — both receipts
+   must say *not authorized* until the founder approves a verified backup and
+   isolated-copy rehearsal.
 4. Any change to what the privacy policy says about where files live.
 5. Whether to charge differently for Drive-backed boards.
+6. Which WP-7 thesis — A · Custodian, B · Ledger or C · Threshold — and which
+   numbered zones become the production design.
+7. Authorizing the production deployment after the selected UI and live
+   acceptance are complete.
+8. Activating each of the four repair-worker flags. Treat each flag as a
+   separate operational decision.
 
 ---
 
 ## 7 · Definition of done
 
 - All hard rules in §2 enforced by code and proved by a contract test.
-- `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm db:contract`,
-  `pnpm first-contact:language`, `pnpm experience:validate` all pass.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test:project-drive`, `pnpm test`,
+  `pnpm db:contract`, `pnpm first-contact:language`,
+  `pnpm experience:self-test`, `pnpm experience:fixtures`,
+  `pnpm experience:validate`, `pnpm build` and `pnpm perf:budgets` all pass.
+- `node scripts/check-module-boundaries.mjs` and
+  `node --test src/server/tenant-scope-rules.test.mjs` pass; Linux CI is green.
+- The selected production UI passes browser verification in the real app at
+  all four registered breakpoints, including empty, loading, failure,
+  disconnected, incomplete-access and repair-pending states.
 - Two real Google accounts demonstrate the full lifecycle: connect → attach →
   second member opens → member removed → access lost.
 - Signal-native storage still works with Drive disconnected. The feature can be
   switched off without a customer losing a file.
-- `STATUS.md` reflects reality, and `CHANGELOG.md` has a dispatch entry.
+- `STATUS.md` reflects reality; `CHANGELOG.md` has a dispatch entry; the Studio
+  HQ record is synchronized.
+- Production remains unchanged until the founder separately approves privacy
+  wording, migrations 0028/0029, deployment and each repair-worker activation.
